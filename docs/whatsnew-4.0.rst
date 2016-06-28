@@ -216,7 +216,6 @@ a few special ones:
 ``CELERY_TASK_PUBLISH_RETRY_POLICY``   :setting:`task_publish_retry_policy`
 ``CELERY_QUEUES``                      :setting:`task_queues`
 ``CELERY_ROUTES``                      :setting:`task_routes`
-``CELERY_SEND_TASK_ERROR_EMAILS``      :setting:`task_send_error_emails`
 ``CELERY_SEND_TASK_SENT_EVENT``        :setting:`task_send_sent_event`
 ``CELERY_TASK_SERIALIZER``             :setting:`task_serializer`
 ``CELERYD_TASK_SOFT_TIME_LIMIT``       :setting:`task_soft_time_limit`
@@ -1005,11 +1004,6 @@ In Other News
 
     Contributed by Alexander Oblovatniy.
 
-- **Tasks**: New :setting:`email_charset` setting allows for changing
-  the character set used for outgoing error emails.
-
-    Contributed by Vladimir Gorbunov.
-
 - **Worker**: Now respects :setting:`broker_connection_retry` setting.
 
     Fix contributed by Nat Williams.
@@ -1063,9 +1057,6 @@ In Other News
 - **Tasks**: Task retry now also throws in eager mode.
 
     Fix contributed by Feanil Patel.
-
-- **Tasks**: Task error email character set now set to ``utf-8`` by default
-  (Issue #2737).
 
 - Apps can now define how tasks are named (:meth:`@gen_task_name`).
 

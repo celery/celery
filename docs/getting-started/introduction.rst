@@ -277,7 +277,6 @@ Quick Jump
         - :ref:`see a list of event message types <event-reference>`
         - :ref:`contribute to Celery <contributing>`
         - :ref:`learn about available configuration settings <configuration>`
-        - :ref:`receive email when a task fails <conf-error-mails>`
         - :ref:`get a list of people and companies using Celery <res-using-celery>`
         - :ref:`write my own remote control command <worker-custom-control-commands>`
         - :ref:`change worker queues at runtime <worker-queues>`

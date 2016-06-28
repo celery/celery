@@ -61,7 +61,6 @@ class test_defaults(AppCase):
     def test_find(self):
         find = self.defaults.find
 
-        self.assertEqual(find('server_email')[2].default, 'celery@localhost')
         self.assertEqual(find('default_queue')[2].default, 'celery')
         self.assertEqual(find('task_default_exchange')[2], 'celery')
 

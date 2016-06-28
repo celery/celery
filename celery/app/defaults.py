@@ -85,7 +85,6 @@ NAMESPACES = Namespace(
     enable_utc=Option(True, type='bool'),
     imports=Option((), type='tuple', old=OLD_NS),
     include=Option((), type='tuple', old=OLD_NS),
-    server_email=Option('celery@localhost'),
     timezone=Option(type='string', old=OLD_NS),
     beat=Namespace(
         __old__=OLD_NS_BEAT,
@@ -139,16 +138,6 @@ NAMESPACES = Namespace(
         __old__=old_ns('celery_couchbase'),
 
         backend_settings=Option(None, type='dict'),
-    ),
-    email=Namespace(
-        charset=Option('utf-8'),
-        host=Option('localhost'),
-        host_user=Option(),
-        host_password=Option(),
-        port=Option(25, type='int'),
-        timeout=Option(2, type='float'),
-        use_ssl=Option(False, type='bool'),
-        use_tls=Option(False, type='bool'),
     ),
     mongodb=Namespace(
         __old__=old_ns('celery_mongodb'),
@@ -247,9 +236,6 @@ NAMESPACES = Namespace(
         reject_on_worker_lost=Option(type='bool'),
         remote_tracebacks=Option(False, type='bool'),
         routes=Option(type='any'),
-        send_error_emails=Option(
-            False, type='bool', old={'celery_send_task_error_emails'},
-        ),
         send_sent_event=Option(
             False, type='bool', old={'celery_send_task_sent_event'},
         ),

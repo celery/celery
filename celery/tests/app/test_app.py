@@ -33,7 +33,6 @@ from celery.tests.case import (
     patch,
 )
 from celery.utils import uuid
-from celery.utils.mail import ErrorMail
 from celery.utils.objects import Bunch
 
 THIS_IS_A_KEY = 'this is a value'
@@ -708,19 +707,6 @@ class test_App(AppCase):
         self.app.start()
         execute.assert_called()
 
-    def test_mail_admins(self):
-
-        class Loader(BaseLoader):
-
-            def mail_admins(*args, **kwargs):
-                return args, kwargs
-
-        self.app.loader = Loader(app=self.app)
-        self.app.conf.admins = None
-        self.assertFalse(self.app.mail_admins('Subject', 'Body'))
-        self.app.conf.admins = [('George Costanza', 'george@vandelay.com')]
-        self.assertTrue(self.app.mail_admins('Subject', 'Body'))
-
     def test_amqp_get_broker_info(self):
         self.assertDictContainsSubset(
             {'hostname': 'localhost',
@@ -900,21 +886,6 @@ class test_App(AppCase):
             prod, 'footask', message, event_dispatcher=dispatcher,
             exchange='bar_exchange', routing_key='bar_exchange',
         )
-
-    def test_error_mail_sender(self):
-        x = ErrorMail.subject % {'name': 'task_name',
-                                 'id': uuid(),
-                                 'exc': 'FOOBARBAZ',
-                                 'hostname': 'lana'}
-        self.assertTrue(x)
-
-    def test_error_mail_disabled(self):
-        task = Mock()
-        x = ErrorMail(task)
-        x.should_send = Mock()
-        x.should_send.return_value = False
-        x.send(Mock(), Mock())
-        task.app.mail_admins.assert_not_called()
 
     def test_select_queues(self):
         self.app.amqp = Mock(name='amqp')

@@ -236,9 +236,6 @@ class TraceInfo(object):
                    exc_info=exc_info if policy.traceback else None,
                    extra={'data': context})
 
-        if policy.mail:
-            task.send_error_email(context, einfo.exception)
-
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                  Info=TraceInfo, eager=False, propagate=False, app=None,

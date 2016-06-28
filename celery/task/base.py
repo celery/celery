@@ -150,7 +150,6 @@ class Task(BaseTask):
     immediate = False  # XXX deprecated
     priority = None
     type = 'regular'
-    disable_error_emails = False
 
     from_config = BaseTask.from_config + (
         ('exchange_type', 'task_default_exchange_type'),

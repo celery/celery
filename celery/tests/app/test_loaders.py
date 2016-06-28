@@ -11,7 +11,6 @@ from celery.loaders import base
 from celery.loaders import default
 from celery.loaders.app import AppLoader
 from celery.utils.imports import NotAPackage
-from celery.utils.mail import SendmailWarning
 
 from celery.tests.case import AppCase, Case, Mock, mock, patch
 
@@ -97,33 +96,6 @@ class test_LoaderBase(AppCase):
         imp = Mock(name='imp')
         self.loader.import_from_cwd('foo', imp=imp)
         imp.assert_called()
-
-    @patch('celery.utils.mail.Mailer._send')
-    def test_mail_admins_errors(self, send):
-        send.side_effect = KeyError()
-        opts = dict(self.message_options, **self.server_options)
-
-        with self.assertWarnsRegex(SendmailWarning, r'KeyError'):
-            self.loader.mail_admins(fail_silently=True, **opts)
-
-        with self.assertRaises(KeyError):
-            self.loader.mail_admins(fail_silently=False, **opts)
-
-    @patch('celery.utils.mail.Mailer._send')
-    def test_mail_admins(self, send):
-        opts = dict(self.message_options, **self.server_options)
-        self.loader.mail_admins(**opts)
-        self.assertTrue(send.call_args)
-        message = send.call_args[0][0]
-        self.assertEqual(message.to, [self.message_options['to']])
-        self.assertEqual(message.subject, self.message_options['subject'])
-        self.assertEqual(message.sender, self.message_options['sender'])
-        self.assertEqual(message.body, self.message_options['body'])
-
-    def test_mail_attribute(self):
-        from celery.utils import mail
-        loader = base.BaseLoader(app=self.app)
-        self.assertIs(loader.mail, mail)
 
     def test_cmdline_config_ValueError(self):
         with self.assertRaises(ValueError):

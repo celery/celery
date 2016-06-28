@@ -452,17 +452,6 @@ class test_tasks(TasksCase):
         with self.assertRaises(Ignore):
             self.mytask.replace(c)
 
-    def test_send_error_email_enabled(self):
-        mytask = self.increment_counter._get_current_object()
-        mytask.send_error_emails = True
-        mytask.disable_error_emails = False
-        mytask.ErrorMail = Mock(name='ErrorMail')
-        context = Mock(name='context')
-        exc = Mock(name='context')
-        mytask.send_error_email(context, exc, foo=1)
-        mytask.ErrorMail.assert_called_with(mytask, foo=1)
-        mytask.ErrorMail().send.assert_called_with(context, exc)
-
     def test_add_trail__no_trail(self):
         mytask = self.increment_counter._get_current_object()
         mytask.trail = False

@@ -737,17 +737,6 @@ General
     If :const:`True`, errors will be stored even if the task is configured
     to ignore results.
 
-.. attribute:: Task.send_error_emails
-
-    Send an email whenever a task of this type fails.
-    Defaults to the :setting:`task_send_error_emails` setting.
-    See :ref:`conf-error-mails` for more information.
-
-.. attribute:: Task.ErrorMail
-
-    If the sending of error emails is enabled for this task, then
-    this is the class defining the logic to send error mails.
-
 .. attribute:: Task.serializer
 
     A string identifying the default serialization

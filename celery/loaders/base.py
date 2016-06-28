@@ -223,20 +223,6 @@ class BaseLoader(object):
             return ns_key, value
         return dict(getarg(arg) for arg in args)
 
-    def mail_admins(self, subject, body, fail_silently=False,
-                    sender=None, to=None, host=None, port=None,
-                    user=None, password=None, timeout=None,
-                    use_ssl=False, use_tls=False, charset='us-ascii'):
-        message = self.mail.Message(sender=sender, to=to,
-                                    subject=safe_str(subject),
-                                    body=safe_str(body),
-                                    charset=charset)
-        mailer = self.mail.Mailer(host=host, port=port,
-                                  user=user, password=password,
-                                  timeout=timeout, use_ssl=use_ssl,
-                                  use_tls=use_tls)
-        mailer.send(message, fail_silently=fail_silently)
-
     def read_configuration(self, env='CELERY_CONFIG_MODULE'):
         try:
             custom_config = os.environ[env]
@@ -258,10 +244,6 @@ class BaseLoader(object):
         if self._conf is unconfigured:
             self._conf = self.read_configuration()
         return self._conf
-
-    @cached_property
-    def mail(self):
-        return self.import_module('celery.utils.mail')
 
 
 def autodiscover_tasks(packages, related_name='tasks'):

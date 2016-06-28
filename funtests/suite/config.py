@@ -5,7 +5,6 @@ import os
 
 broker_url = os.environ.get('BROKER_URL') or 'amqp://'
 result_backend = 'amqp://'
-send_task_error_emails = False
 
 default_queue = 'testcelery'
 default_exchange = 'testcelery'

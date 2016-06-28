@@ -57,7 +57,6 @@ CELERY_TEST_CONFIG = {
     #: Don't want log output when running suite.
     'worker_hijack_root_logger': False,
     'worker_log_color': False,
-    'task_send_error_emails': False,
     'task_default_queue': 'testcelery',
     'task_default_exchange': 'testcelery',
     'task_default_routing_key': 'testcelery',

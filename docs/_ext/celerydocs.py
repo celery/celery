@@ -34,7 +34,7 @@ APPDIRECT = {
     'add_defaults', 'config_from_object', 'config_from_envvar',
     'config_from_cmdline', 'setup_security', 'autodiscover_tasks',
     'send_task', 'connection', 'connection_or_acquire',
-    'producer_or_acquire', 'prepare_config', 'now', 'mail_admins',
+    'producer_or_acquire', 'prepare_config', 'now',
     'select_queues', 'either', 'bugreport', 'create_task_cls',
     'subclass_with_self', 'annotations', 'current_task', 'oid',
     'timezone', '__reduce_keys__', 'fixups', 'finalized', 'configured',

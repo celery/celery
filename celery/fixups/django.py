@@ -60,7 +60,6 @@ class DjangoFixup(object):
 
         self._settings = symbol_by_name('django.conf:settings')
         self.app.loader.now = self.now
-        self.app.loader.mail_admins = self.mail_admins
 
         signals.import_modules.connect(self.on_import_modules)
         signals.worker_init.connect(self.on_worker_init)
@@ -86,9 +85,6 @@ class DjangoFixup(object):
     def now(self, utc=False):
         return datetime.utcnow() if utc else self._now()
 
-    def mail_admins(self, subject, body, fail_silently=False, **kwargs):
-        return self._mail_admins(subject, body, fail_silently=fail_silently)
-
     def autodiscover_tasks(self):
         try:
             from django.apps import apps
@@ -96,10 +92,6 @@ class DjangoFixup(object):
             return self._settings.INSTALLED_APPS
         else:
             return [config.name for config in apps.get_app_configs()]
-
-    @cached_property
-    def _mail_admins(self):
-        return symbol_by_name('django.core.mail:mail_admins')
 
     @cached_property
     def _now(self):

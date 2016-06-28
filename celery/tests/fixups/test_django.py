@@ -110,7 +110,6 @@ class test_DjangoFixup(FixupCase):
             f.install()
             self.sigs.worker_init.connect.assert_called_with(f.on_worker_init)
             self.assertEqual(self.app.loader.now, f.now)
-            self.assertEqual(self.app.loader.mail_admins, f.mail_admins)
             self.p.append.assert_called_with('/opt/vandelay')
 
     def test_now(self):
@@ -119,13 +118,6 @@ class test_DjangoFixup(FixupCase):
             f._now.assert_not_called()
             self.assertTrue(f.now(utc=False))
             f._now.assert_called()
-
-    def test_mail_admins(self):
-        with self.fixup_context(self.app) as (f, _, _):
-            f.mail_admins('sub', 'body', True)
-            f._mail_admins.assert_called_with(
-                'sub', 'body', fail_silently=True,
-            )
 
     def test_on_worker_init(self):
         with self.fixup_context(self.app) as (f, _, _):

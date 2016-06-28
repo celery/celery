@@ -58,7 +58,6 @@ rush in moving to the new settings format.
 ``CELERY_ENABLE_UTC``                  :setting:`enable_utc`
 ``CELERY_IMPORTS``                     :setting:`imports`
 ``CELERY_INCLUDE``                     :setting:`include`
-``SERVER_EMAIL``                       :setting:`server_email`
 ``CELERY_TIMEZONE``                    :setting:`timezone`
 ``CELERYBEAT_MAX_LOOP_INTERVAL``       :setting:`beat_max_loop_interval`
 ``CELERYBEAT_SCHEDULE``                :setting:`beat_schedule`
@@ -86,13 +85,6 @@ rush in moving to the new settings format.
 ``CASSANDRA_SERVERS``                  :setting:`cassandra_servers`
 ``CASSANDRA_WRITE_CONSISTENCY``        :setting:`cassandra_write_consistency`
 ``CELERY_COUCHBASE_BACKEND_SETTINGS``  :setting:`couchbase_backend_settings`
-``EMAIL_HOST``                         :setting:`email_host`
-``EMAIL_HOST_USER``                    :setting:`email_host_user`
-``EMAIL_HOST_PASSWORD``                :setting:`email_host_password`
-``EMAIL_PORT``                         :setting:`email_port`
-``EMAIL_TIMEOUT``                      :setting:`email_timeout`
-``EMAIL_USE_SSL``                      :setting:`email_use_ssl`
-``EMAIL_USE_TLS``                      :setting:`email_use_tls`
 ``CELERY_MONGODB_BACKEND_SETTINGS``    :setting:`mongodb_backend_settings`
 ``CELERY_EVENT_QUEUE_EXPIRES``         :setting:`event_queue_expires`
 ``CELERY_EVENT_QUEUE_TTL``             :setting:`event_queue_ttl`
@@ -135,7 +127,6 @@ rush in moving to the new settings format.
 ``CELERY_TASK_PUBLISH_RETRY_POLICY``   :setting:`task_publish_retry_policy`
 ``CELERY_QUEUES``                      :setting:`task_queues`
 ``CELERY_ROUTES``                      :setting:`task_routes`
-``CELERY_SEND_TASK_ERROR_EMAILS``      :setting:`task_send_error_emails`
 ``CELERY_SEND_TASK_SENT_EVENT``        :setting:`task_send_sent_event`
 ``CELERY_TASK_SERIALIZER``             :setting:`task_serializer`
 ``CELERYD_TASK_SOFT_TIME_LIMIT``       :setting:`task_soft_time_limit`
@@ -1884,127 +1875,6 @@ be 1 second. If you need near millisecond precision you can set this to 0.1.
 Specify if remote control of the workers is enabled.
 
 Default is :const:`True`.
-
-.. _conf-error-mails:
-
-Error E-Mails
--------------
-
-.. setting:: task_send_error_emails
-
-``task_send_error_emails``
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The default value for the `Task.send_error_emails` attribute, which if
-set to :const:`True` means errors occurring during task execution will be
-sent to :setting:`admins` by email.
-
-Disabled by default.
-
-.. setting:: admins
-
-``admins``
-~~~~~~~~~~
-
-List of `(name, email_address)` tuples for the administrators that should
-receive error emails.
-
-.. setting:: server_email
-
-``server_email``
-~~~~~~~~~~~~~~~~
-
-The email address this worker sends emails from.
-Default is celery@localhost.
-
-.. setting:: email_host
-
-``email_host``
-~~~~~~~~~~~~~~
-
-The mail server to use.  Default is ``localhost``.
-
-.. setting:: email_host_user
-
-``email_host_user``
-~~~~~~~~~~~~~~~~~~~
-
-User name (if required) to log on to the mail server with.
-
-.. setting:: email_host_password
-
-``email_host_password``
-~~~~~~~~~~~~~~~~~~~~~~~
-
-Password (if required) to log on to the mail server with.
-
-.. setting:: email_port
-
-``email_port``
-~~~~~~~~~~~~~~
-
-The port the mail server is listening on.  Default is `25`.
-
-.. setting:: email_use_ssl
-
-``email_use_ssl``
-~~~~~~~~~~~~~~~~~
-
-Use SSL when connecting to the SMTP server.  Disabled by default.
-
-.. setting:: email_use_tls
-
-``email_use_tls``
-~~~~~~~~~~~~~~~~~
-
-Use TLS when connecting to the SMTP server.  Disabled by default.
-
-.. setting:: email_timeout
-
-``email_timeout``
-~~~~~~~~~~~~~~~~~
-
-Timeout in seconds for when we give up trying to connect
-to the SMTP server when sending emails.
-
-The default is 2 seconds.
-
-.. setting:: email_charset
-
-``email_charset``
-~~~~~~~~~~~~~~~~~
-.. versionadded:: 4.0
-
-Character set for outgoing emails. Default is ``"utf-8"``.
-
-.. _conf-example-error-mail-config:
-
-Example E-Mail configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This configuration enables the sending of error emails to
-george@vandelay.com and kramer@vandelay.com:
-
-.. code-block:: python
-
-    # Enables error emails.
-    task_send_error_emails = True
-
-    # Name and email addresses of recipients
-    admins = (
-        ('George Costanza', 'george@vandelay.com'),
-        ('Cosmo Kramer', 'kosmo@vandelay.com'),
-    )
-
-    # Email address used as sender (From field).
-    server_email = 'no-reply@vandelay.com'
-
-    # Mailserver configuration
-    email_host = 'mail.vandelay.com'
-    email_port = 25
-    email_charset = 'utf-8'
-    # email_host_user = 'servers'
-    # email_host_password = 's3cr3t'
 
 .. _conf-events:
 

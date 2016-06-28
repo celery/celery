@@ -194,7 +194,6 @@ Settings
 =====================================  =====================================
 **Setting name**                       **Replace with**
 =====================================  =====================================
-``CELERY_TASK_ERROR_WITELIST``         Annotate ``Task.ErrorMail``
 ``CELERY_AMQP_TASK_RESULT_EXPIRES``    :setting:`result_expires`
 =====================================  =====================================
 

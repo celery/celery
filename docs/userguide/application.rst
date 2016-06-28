@@ -460,7 +460,7 @@ chain breaks:
         from celery.registry import tasks
 
         class Hello(Task):
-            send_error_emails = True
+            queue = 'hipri'
 
             def run(self, to):
                 return 'hello {0}'.format(to)
@@ -477,7 +477,7 @@ chain breaks:
 
         from celery.task import task
 
-        @task(send_error_emails=True)
+        @task(queue='hipri')
         def hello(x):
             return 'hello {0}'.format(to)
 
@@ -538,7 +538,7 @@ by changing its :meth:`@Task` attribute:
     >>> app = Celery()
 
     >>> class MyBaseTask(Task):
-    ...    send_error_emails = True
+    ...    queue = 'hipri'
 
     >>> app.Task = MyBaseTask
     >>> app.Task
