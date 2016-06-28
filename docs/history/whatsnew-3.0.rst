@@ -496,12 +496,12 @@ stable and is now documented as part of the official API.
         Remember that a control command without *destination* will be
         sent to **all workers**.
 
-- :control:`autoscale`
+- ``autoscale``
 
     Tells workers with ``--autoscale`` enabled to change autoscale
     max/min concurrency settings.
 
-    This command is available programmatically as :meth:`@control.autoscale`:
+    This command is available programmatically as ``control.autoscale``:
 
     .. code-block:: pycon
 

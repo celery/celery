@@ -1223,7 +1223,7 @@ Fixes
 - Eventlet/gevent/solo/threads pools now properly handles :exc:`BaseException`
   errors raised by tasks.
 
-- :control:`autoscale` and :control:`pool_grow`/:control:`pool_shrink` remote
+- ``autoscale`` and :control:`pool_grow`/:control:`pool_shrink` remote
   control commands will now also automatically increase and decrease the
   consumer prefetch count.
 
