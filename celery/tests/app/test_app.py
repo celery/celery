@@ -297,7 +297,7 @@ class test_App(AppCase):
                 task_default_delivery_mode=63,
                 worker_agent='foo:Barz',
                 CELERYD_CONSUMER='foo:Fooz',
-                CELERYD_AUTOSCALER='foo:Xuzzy',
+                CELERYD_POOL='foo:Xuzzy',
             )
             with self.assertRaises(ImproperlyConfigured):
                 self.assertEqual(app.conf.worker_consumer, 'foo:Fooz')
@@ -310,11 +310,11 @@ class test_App(AppCase):
                 worker_agent='foo:Barz',
                 CELERYD_CONSUMER='foo:Fooz',
                 worker_consumer='foo:Fooz',
-                CELERYD_AUTOSCALER='foo:Xuzzy',
-                worker_autoscaler='foo:Xuzzy'
+                CELERYD_POOL='foo:Xuzzy',
+                worker_pool='foo:Xuzzy'
             )
             self.assertEqual(app.conf.task_always_eager, 4)
-            self.assertEqual(app.conf.worker_autoscaler, 'foo:Xuzzy')
+            self.assertEqual(app.conf.worker_pool, 'foo:Xuzzy')
 
     def test_pending_configuration__setdefault(self):
         with self.Celery(broker='foo://bar') as app:

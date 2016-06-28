@@ -189,9 +189,6 @@ class Worker(WorkController):
             if loader.startswith('celery.loaders'):  # pragma: no cover
                 loader = loader[14:]
             appr += ' ({0})'.format(loader)
-        if self.autoscale:
-            max, min = self.autoscale
-            concurrency = '{{min={0}, max={1}}}'.format(min, max)
         pool = self.pool_cls
         if not isinstance(pool, string_t):
             pool = pool.__module__

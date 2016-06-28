@@ -119,15 +119,6 @@ The :program:`celery worker` command (previously known as ``celeryd``)
     completed and the child process will be replaced afterwards.
     Default: no limit.
 
-.. cmdoption:: --autoscale
-
-    Enable autoscaling by providing
-    max_concurrency, min_concurrency. Example::
-
-        --autoscale=10,3
-
-    (always keep 3 processes, but grow to 10 if necessary)
-
 .. cmdoption:: --autoreload
 
     Enable auto-reloading.
@@ -209,7 +200,6 @@ class worker(Command):
         celery worker -A proj --concurrency=4
         celery worker -A proj --concurrency=1000 -P eventlet
 
-        celery worker --autoscale=10,0
     """
     doc = __MODULE_DOC__  # parse help from this too
     namespace = 'worker'
@@ -332,7 +322,6 @@ class worker(Command):
         parser.add_option_group(qopts)
 
         fopts = OptionGroup(parser, 'Features')
-        fopts.add_option('--autoscale')
         fopts.add_option('--autoreload', action='store_true')
         fopts.add_option(
             '--without-gossip', action='store_true', default=False,

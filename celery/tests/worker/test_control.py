@@ -26,7 +26,6 @@ hostname = socket.gethostname()
 
 
 class WorkController(object):
-    autoscaler = None
 
     def stats(self):
         return {'total': worker_state.total_count}
@@ -336,11 +335,6 @@ class test_ControlPanel(AppCase):
 
         panel.state.consumer = Mock()
         panel.state.consumer.controller = Mock()
-        sc = panel.state.consumer.controller.autoscaler = Mock()
-        panel.handle('pool_grow')
-        sc.force_scale_up.assert_called()
-        panel.handle('pool_shrink')
-        sc.force_scale_down.assert_called()
 
     def test_add__cancel_consumer(self):
 
@@ -500,21 +494,6 @@ class test_ControlPanel(AppCase):
             self.assertIn('tasks unknown', r['ok'])
         finally:
             worker_state.task_ready(request)
-
-    def test_autoscale(self):
-        self.panel.state.consumer = Mock()
-        self.panel.state.consumer.controller = Mock()
-        sc = self.panel.state.consumer.controller.autoscaler = Mock()
-        sc.update.return_value = 10, 2
-        m = {'method': 'autoscale',
-             'destination': hostname,
-             'arguments': {'max': '10', 'min': '2'}}
-        r = self.panel.handle_message(m, None)
-        self.assertIn('ok', r)
-
-        self.panel.state.consumer.controller.autoscaler = None
-        r = self.panel.handle_message(m, None)
-        self.assertIn('error', r)
 
     def test_ping(self):
         m = {'method': 'ping',

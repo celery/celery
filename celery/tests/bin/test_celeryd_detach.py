@@ -91,7 +91,7 @@ class test_PartialOptionParser(AppCase):
 
 
 class test_Command(AppCase):
-    argv = ['--autoscale=10,2', '-c', '1',
+    argv = ['--foobar=10,2', '-c', '1',
             '--logfile=/var/log', '-lDEBUG',
             '--', '.disable_rate_limits=1']
 
@@ -99,7 +99,7 @@ class test_Command(AppCase):
         x = detached_celeryd(app=self.app)
         o, v, l = x.parse_options('cd', self.argv)
         self.assertEqual(o.logfile, '/var/log')
-        self.assertEqual(l, ['--autoscale=10,2', '-c', '1',
+        self.assertEqual(l, ['--foobar=10,2', '-c', '1',
                              '-lDEBUG', '--logfile=/var/log',
                              '--pidfile=celeryd.pid'])
         x.parse_options('cd', [])  # no args

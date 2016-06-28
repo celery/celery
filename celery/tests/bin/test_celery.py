@@ -541,11 +541,6 @@ class test_control(AppCase):
         i.pool_shrink('pool_shrink', n=2)
         i.call.assert_called_with('pool_shrink', 2)
 
-    def test_autoscale(self):
-        i = self.control(True)
-        i.autoscale('autoscale', max=3, min=2)
-        i.call.assert_called_with('autoscale', 3, 2)
-
     def test_rate_limit(self):
         i = self.control(True)
         i.rate_limit('rate_limit', 'proj.add', '1/s')

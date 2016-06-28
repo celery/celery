@@ -229,7 +229,7 @@ Features
 
     - View worker status and statistics
     - Shutdown and restart worker instances
-    - Control worker pool size and autoscale settings
+    - Control worker pool size
     - View and modify the queues a worker instance consumes from
     - View currently running tasks
     - View scheduled tasks (ETA/countdown)
@@ -245,7 +245,6 @@ Features
     - Restart worker’s pool
     - Grow worker’s pool
     - Shrink worker’s pool
-    - Autoscale worker pool
     - Start consuming from a queue
     - Stop consuming from a queue
     - List tasks

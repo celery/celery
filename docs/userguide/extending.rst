@@ -112,9 +112,12 @@ Worker
 ======
 
 The Worker is the first blueprint to start, and with it starts major components like
-the event loop, processing pool, the timer, and also optional components
-like the autoscaler.  When the worker is fully started it will continue
-to the Consumer blueprint.
+the event loop, processing pool, and the timer used for ETA tasks and other
+timed events.
+
+When the worker is fully started it will continue to the Consumer blueprint,
+which sets up how tasks are to be executed, connects to the broker and starts
+the message consumers.
 
 The :class:`~celery.worker.WorkController` is the core worker implementation,
 and contains several methods and attributes that you can use in your bootstep.
@@ -201,22 +204,6 @@ Attributes
 
         class WorkerStep(bootsteps.StartStopStep):
             requires = ('celery.worker.components:Statedb',)
-
-.. _extending-worker-autoscaler:
-
-.. attribute:: autoscaler
-
-    :class:`~celery.worker.autoscaler.Autoscaler` used to automatically grow
-    and shrink the number of processes in the pool.
-
-    This is only defined if the ``autoscale`` argument is enabled.
-
-    Your worker bootstep must require the `Autoscaler` bootstep to use this:
-
-    .. code-block:: python
-
-        class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.autoscaler:Autoscaler',)
 
 .. _extending-worker-autoreloader:
 
@@ -666,8 +653,7 @@ will show us more information about the boot process:
     [2013-05-29 16:18:20,511: DEBUG/MainProcess] | Worker: Building graph...
     <celery.apps.worker.Worker object at 0x101ad8410> is in init
     [2013-05-29 16:18:20,511: DEBUG/MainProcess] | Worker: New boot order:
-        {Hub, Pool, Autoreloader, Timer, StateDB,
-         Autoscaler, InfoStep, Beat, Consumer}
+        {Hub, Pool, Autoreloader, Timer, StateDB, InfoStep, Beat, Consumer}
     [2013-05-29 16:18:20,514: DEBUG/MainProcess] | Consumer: Preparing bootsteps.
     [2013-05-29 16:18:20,514: DEBUG/MainProcess] | Consumer: Building graph...
     <celery.worker.consumer.Consumer object at 0x101c2d8d0> is in init

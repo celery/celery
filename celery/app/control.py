@@ -290,15 +290,6 @@ class Control(object):
         """
         return self.broadcast('pool_shrink', {'n': n}, destination, **kwargs)
 
-    def autoscale(self, max, min, destination=None, **kwargs):
-        """Change worker(s) autoscale setting.
-
-        Supports the same arguments as :meth:`broadcast`.
-
-        """
-        return self.broadcast(
-            'autoscale', {'max': max, 'min': min}, destination, **kwargs)
-
     def broadcast(self, command, arguments=None, destination=None,
                   connection=None, reply=False, timeout=1, limit=None,
                   callback=None, channel=None, **extra_kwargs):

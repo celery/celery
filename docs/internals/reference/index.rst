@@ -14,7 +14,6 @@
     celery.worker.control
     celery.worker.pidbox
     celery.worker.autoreload
-    celery.worker.autoscale
     celery.concurrency
     celery.concurrency.solo
     celery.concurrency.prefork

@@ -82,7 +82,6 @@ class WorkController(object):
             'celery.worker.components:Timer',
             'celery.worker.components:StateDB',
             'celery.worker.components:Consumer',
-            'celery.worker.autoscale:WorkerComponent',
             'celery.worker.autoreload:WorkerComponent',
         }
 
@@ -342,7 +341,7 @@ class WorkController(object):
     def setup_defaults(self, concurrency=None, loglevel='WARN', logfile=None,
                        send_events=None, pool_cls=None, consumer_cls=None,
                        timer_cls=None, timer_precision=None,
-                       autoscaler_cls=None, autoreloader_cls=None,
+                       autoreloader_cls=None,
                        pool_putlocks=None, pool_restarts=None,
                        force_execv=None, state_db=None,
                        schedule_filename=None, scheduler_cls=None,
@@ -362,7 +361,6 @@ class WorkController(object):
         self.timer_precision = either(
             'worker_timer_precision', timer_precision,
         )
-        self.autoscaler_cls = either('worker_autoscaler', autoscaler_cls)
         self.autoreloader_cls = either('worker_autoreloader', autoreloader_cls)
         self.pool_putlocks = either('worker_pool_putlocks', pool_putlocks)
         self.pool_restarts = either('worker_pool_restarts', pool_restarts)

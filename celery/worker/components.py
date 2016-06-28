@@ -108,7 +108,6 @@ class Pool(bootsteps.StartStopStep):
 
     Adds attributes:
 
-        * autoscale
         * pool
         * max_concurrency
         * min_concurrency
@@ -116,18 +115,12 @@ class Pool(bootsteps.StartStopStep):
     """
     requires = (Hub,)
 
-    def __init__(self, w, autoscale=None, autoreload=None,
+    def __init__(self, w, autoreload=None,
                  no_execv=False, optimization=None, **kwargs):
-        if isinstance(autoscale, string_t):
-            max_c, _, min_c = autoscale.partition(',')
-            autoscale = [int(max_c), min_c and int(min_c) or 0]
-        w.autoscale = autoscale
         w.pool = None
         w.max_concurrency = None
         w.min_concurrency = w.concurrency
         w.no_execv = no_execv
-        if w.autoscale:
-            w.max_concurrency, w.min_concurrency = w.autoscale
         self.autoreload_enabled = autoreload
         self.optimization = optimization
 

@@ -341,21 +341,15 @@ def memdump(state, samples=10, **kwargs):  # pragma: no cover
 
 @Panel.register
 def pool_grow(state, n=1, **kwargs):
-    if state.consumer.controller.autoscaler:
-        state.consumer.controller.autoscaler.force_scale_up(n)
-    else:
-        state.consumer.pool.grow(n)
-        state.consumer._update_prefetch_count(n)
+    state.consumer.pool.grow(n)
+    state.consumer._update_prefetch_count(n)
     return ok('pool will grow')
 
 
 @Panel.register
 def pool_shrink(state, n=1, **kwargs):
-    if state.consumer.controller.autoscaler:
-        state.consumer.controller.autoscaler.force_scale_down(n)
-    else:
-        state.consumer.pool.shrink(n)
-        state.consumer._update_prefetch_count(-n)
+    state.consumer.pool.shrink(n)
+    state.consumer._update_prefetch_count(-n)
     return ok('pool will shrink')
 
 
@@ -366,15 +360,6 @@ def pool_restart(state, modules=None, reload=False, reloader=None, **kwargs):
         return ok('reload started')
     else:
         raise ValueError('Pool restarts not enabled')
-
-
-@Panel.register
-def autoscale(state, max=None, min=None):
-    autoscaler = state.consumer.controller.autoscaler
-    if autoscaler:
-        max_, min_ = autoscaler.update(max, min)
-        return ok('autoscale now max={0} min={1}'.format(max_, min_))
-    raise ValueError('Autoscale not enabled')
 
 
 @Panel.register

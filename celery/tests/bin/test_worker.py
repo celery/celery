@@ -150,8 +150,6 @@ class test_Worker(WorkerAppCase):
         self.assertTrue(worker.startup_info())
         worker.loglevel = logging.INFO
         self.assertTrue(worker.startup_info())
-        worker.autoscale = 13, 10
-        self.assertTrue(worker.startup_info())
 
         prev_loader = self.app.loader
         worker = self.Worker(app=self.app, queues='foo,bar,baz,xuzzy,do,re,mi')
@@ -220,14 +218,6 @@ class test_Worker(WorkerAppCase):
             Queue('image', Exchange('image'), routing_key='image'),
             app.amqp.queues['image'],
         )
-
-    @mock.stdouts
-    def test_autoscale_argument(self, stdout, stderr):
-        worker1 = self.Worker(app=self.app, autoscale='10,3')
-        self.assertListEqual(worker1.autoscale, [10, 3])
-        worker2 = self.Worker(app=self.app, autoscale='10')
-        self.assertListEqual(worker2.autoscale, [10, 0])
-        self.assert_no_logging_side_effect()
 
     def test_include_argument(self):
         worker1 = self.Worker(app=self.app, include='os')

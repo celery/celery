@@ -177,7 +177,7 @@ filename depending on the process that will eventually need to open the file.
 This can be used to specify one log file per child process.
 
 Note that the numbers will stay within the process limit even if processes
-exit or if autoscale/``maxtasksperchild``/time limits are used.  I.e. the number
+exit or if ``maxtasksperchild``/time limits are used.  I.e. the number
 is the *process index* not the process count or pid.
 
 * ``%i`` - Pool process index or 0 if MainProcess.
@@ -552,37 +552,6 @@ for example from closed source C extensions.
 The option can be set using the workers
 :option:`--maxmemperchild <celery worker --maxmemperchild>` argument
 or using the :setting:`worker_max_memory_per_child` setting.
-
-.. _worker-autoscaling:
-
-Autoscaling
-===========
-
-.. versionadded:: 2.2
-
-:pool support: *prefork*, *gevent*
-
-The *autoscaler* component is used to dynamically resize the pool
-based on load:
-
-- The autoscaler adds more pool processes when there is work to do,
-    - and starts removing processes when the workload is low.
-
-It's enabled by the :option:`--autoscale <celery worker --autoscale>` option,
-which needs two numbers: the maximum and minimum number of pool processes:
-
-.. code-block:: text
-
-        --autoscale=AUTOSCALE
-             Enable autoscaling by providing
-             max_concurrency,min_concurrency.  Example:
-               --autoscale=10,3 (always keep 3 processes, but grow to
-              10 if necessary).
-
-You can also define your own rules for the autoscaler by subclassing
-:class:`~celery.worker.autoscaler.Autoscaler`.
-Some ideas for metrics include load average or the amount of memory available.
-You can specify a custom autoscaler with the :setting:`worker_autoscaler` setting.
 
 .. _worker-queues:
 

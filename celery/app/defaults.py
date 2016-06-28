@@ -266,7 +266,6 @@ NAMESPACES = Namespace(
     worker=Namespace(
         __old__=OLD_NS_WORKER,
         agent=Option(None, type='string'),
-        autoscaler=Option('celery.worker.autoscale:Autoscaler'),
         autoreloader=Option('celery.worker.autoreload:Autoreloader'),
         concurrency=Option(0, type='int'),
         consumer=Option('celery.worker.consumer:Consumer', type='string'),

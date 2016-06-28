@@ -55,7 +55,6 @@ case "$words[1]" in
     '(-Q --queues=)'{-Q,--queues=}'[List of queues to enable for this worker, separated by comma. By default all configured queues are enabled.]' \
     '(-I --include=)'{-I,--include=}'[Comma separated list of additional modules to import.]' \
     '(--pidfile=)--pidfile=[Optional file used to store the process pid.]' \
-    '(--autoscale=)--autoscale=[Enable autoscaling by providing max_concurrency, min_concurrency.]' \
     '(--autoreload)--autoreload[Enable autoreloading.]' \
     '(--no-execv)--no-execv[Don"t do execv after multiprocessing child fork.]'
     compadd -a ifargs
@@ -76,7 +75,6 @@ case "$words[1]" in
     control)
     _values -s \
     'add_consumer[tell worker(s) to start consuming a queue]' \
-    'autoscale[change autoscale settings]' \
     'cancel_consumer[tell worker(s) to stop consuming a queue]' \
     'disable_events[tell worker(s) to disable events]' \
     'enable_events[tell worker(s) to enable events]' \

@@ -702,7 +702,6 @@ class control(_RemoteControl):
             1.0, 'tell worker(s) to modify the rate limit for a task type'),
         'time_limit': (
             1.0, 'tell worker(s) to modify the time limit for a task type.'),
-        'autoscale': (1.0, 'change autoscale settings'),
         'pool_grow': (1.0, 'start more pool processes'),
         'pool_shrink': (1.0, 'use less pool processes'),
     }
@@ -717,10 +716,6 @@ class control(_RemoteControl):
     def pool_shrink(self, method, n=1, **kwargs):
         """[N=1]"""
         return self.call(method, int(n), **kwargs)
-
-    def autoscale(self, method, max=None, min=None, **kwargs):
-        """[max] [min]"""
-        return self.call(method, int(max), int(min), **kwargs)
 
     def rate_limit(self, method, task_name, rate_limit, **kwargs):
         """<task_name> <rate_limit> (e.g. 5/s | 5/m | 5/h)>"""
