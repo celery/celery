@@ -73,7 +73,7 @@ Please specify one using the CELERY_RDB_PORT environment variable.
 """
 
 BANNER = """\
-{self.ident}: Please telnet into {self.host} {self.port}.
+{self.ident}: Ready to connect: telnet {self.host} {self.port}
 
 Type `exit` in session to continue.
 
