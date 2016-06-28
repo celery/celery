@@ -557,7 +557,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - ``execv`` is now disabled by default.
 
     It was causing too many problems for users, you can still enable
-    it using the :setting:`CELERYD_FORCE_EXECV` setting.
+    it using the `CELERYD_FORCE_EXECV` setting.
 
     execv was only enabled when transports other than AMQP/Redis was used,
     and it's there to prevent deadlocks caused by mutexes not being released

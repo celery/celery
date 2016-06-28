@@ -329,7 +329,7 @@ new in Celery 3.1.
 :release-date: 2014-11-19 03:30 P.M UTC
 :release-by: Ask Solem
 
-.. admonition:: Do not enable the :setting:`CELERYD_FORCE_EXECV` setting!
+.. admonition:: Do not enable the `CELERYD_FORCE_EXECV` setting!
 
     Please review your configuration and disable this option if you're using the
     RabbitMQ or Redis transport.

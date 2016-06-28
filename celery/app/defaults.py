@@ -275,7 +275,6 @@ NAMESPACES = Namespace(
         enable_remote_control=Option(
             True, type='bool', old={'celery_enable_remote_control'},
         ),
-        force_execv=Option(False, type='bool'),
         hijack_root_logger=Option(True, type='bool'),
         log_color=Option(type='bool'),
         log_format=Option(DEFAULT_PROCESS_LOG_FMT),

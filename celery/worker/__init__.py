@@ -341,11 +341,11 @@ class WorkController(object):
                        send_events=None, pool_cls=None, consumer_cls=None,
                        timer_cls=None, timer_precision=None,
                        pool_putlocks=None, pool_restarts=None,
-                       force_execv=None, state_db=None,
-                       schedule_filename=None, scheduler_cls=None,
-                       task_time_limit=None, task_soft_time_limit=None,
-                       max_tasks_per_child=None, prefetch_multiplier=None,
-                       disable_rate_limits=None, worker_lost_wait=None,
+                       state_db=None, schedule_filename=None,
+                       scheduler_cls=None, task_time_limit=None,
+                       task_soft_time_limit=None, max_tasks_per_child=None,
+                       prefetch_multiplier=None, disable_rate_limits=None,
+                       worker_lost_wait=None,
                        max_memory_per_child=None, **_kw):
         either = self.app.either
         self.loglevel = loglevel
@@ -361,7 +361,6 @@ class WorkController(object):
         )
         self.pool_putlocks = either('worker_pool_putlocks', pool_putlocks)
         self.pool_restarts = either('worker_pool_restarts', pool_restarts)
-        self.force_execv = either('worker_force_execv', force_execv)
         self.state_db = either('worker_state_db', state_db)
         self.schedule_filename = either(
             'beat_schedule_filename', schedule_filename,

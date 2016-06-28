@@ -147,7 +147,6 @@ rush in moving to the new settings format.
 ``CELERY_WORKER_DIRECT``               :setting:`worker_direct`
 ``CELERY_DISABLE_RATE_LIMITS``         :setting:`worker_disable_rate_limits`
 ``CELERY_ENABLE_REMOTE_CONTROL``       :setting:`worker_enable_remote_control`
-``CELERYD_FORCE_EXECV``                :setting:`worker_force_execv`
 ``CELERYD_HIJACK_ROOT_LOGGER``         :setting:`worker_hijack_root_logger`
 ``CELERYD_LOG_COLOR``                  :setting:`worker_log_color`
 ``CELERYD_LOG_FORMAT``                 :setting:`worker_log_format`

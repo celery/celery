@@ -115,12 +115,10 @@ class Pool(bootsteps.StartStopStep):
     """
     requires = (Hub,)
 
-    def __init__(self, w,
-                 no_execv=False, optimization=None, **kwargs):
+    def __init__(self, w, optimization=None, **kwargs):
         w.pool = None
         w.max_concurrency = None
         w.min_concurrency = w.concurrency
-        w.no_execv = no_execv
         self.optimization = optimization
 
     def close(self, w):
@@ -137,7 +135,6 @@ class Pool(bootsteps.StartStopStep):
             warnings.warn(UserWarning(W_POOL_SETTING))
         threaded = not w.use_eventloop or IS_WINDOWS
         procs = w.min_concurrency
-        forking_enable = w.no_execv if w.force_execv else True
         w.process_task = w._process_task
         if not threaded:
             semaphore = w.semaphore = LaxBoundedSemaphore(procs)
@@ -159,7 +156,7 @@ class Pool(bootsteps.StartStopStep):
             threads=threaded,
             max_restarts=max_restarts,
             allow_restart=allow_restart,
-            forking_enable=forking_enable,
+            forking_enable=True,
             semaphore=semaphore,
             sched_strategy=self.optimization,
             app=w.app,

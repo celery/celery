@@ -119,10 +119,6 @@ The :program:`celery worker` command (previously known as ``celeryd``)
     completed and the child process will be replaced afterwards.
     Default: no limit.
 
-.. cmdoption:: --no-execv
-
-    Don't do execv after multiprocessing child fork.
-
 .. cmdoption:: --detach
 
     Start worker as a background process.

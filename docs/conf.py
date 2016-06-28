@@ -58,7 +58,6 @@ ignored_settings = {
     'redis_port',
     'redis_db',
     'redis_password',
-    'worker_force_execv',
 }
 
 

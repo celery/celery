@@ -80,7 +80,7 @@ race condition leading to an annoying warning.
 Solution for hanging workers (but must be manually enabled)
 -----------------------------------------------------------
 
-The :setting:`CELERYD_FORCE_EXECV` setting has been added to solve
+The `CELERYD_FORCE_EXECV` setting has been added to solve
 a problem with deadlocks that originate when threads and fork is mixed
 together:
 
