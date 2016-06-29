@@ -10,7 +10,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import numbers
 import os
-import socket
 import sys
 import traceback
 import datetime
@@ -18,12 +17,11 @@ import datetime
 from functools import partial
 from pprint import pprint
 
-from kombu.entity import Exchange, Queue
-
 from celery.five import WhateverIO, items, reraise, string_t
 
-from .functional import memoize
-from .text import simple_format
+from .functional import memoize  # noqa
+
+from .nodenames import worker_direct, nodename, nodesplit
 
 __all__ = ['worker_direct', 'lpmerge',
            'is_iterable', 'isatty', 'cry', 'maybe_reraise', 'strtobool',
@@ -37,37 +35,6 @@ PY3 = sys.version_info[0] == 3
 #: module, so that we can properly rewrite the name of the
 #: task to be that of ``App.main``.
 MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE')
-
-#: Exchange for worker direct queues.
-WORKER_DIRECT_EXCHANGE = Exchange('C.dq2')
-
-#: Format for worker direct queue names.
-WORKER_DIRECT_QUEUE_FORMAT = '{hostname}.dq2'
-
-#: Separator for worker node name and hostname.
-NODENAME_SEP = '@'
-
-NODENAME_DEFAULT = 'celery'
-
-gethostname = memoize(1, Cache=dict)(socket.gethostname)
-
-
-def worker_direct(hostname):
-    """Return :class:`kombu.Queue` that is a direct route to
-    a worker by hostname.
-
-    :param hostname: The fully qualified node name of a worker
-                     (e.g. ``w1@example.com``).  If passed a
-                     :class:`kombu.Queue` instance it will simply return
-                     that instead.
-    """
-    if isinstance(hostname, Queue):
-        return hostname
-    return Queue(
-        WORKER_DIRECT_QUEUE_FORMAT.format(hostname=hostname),
-        WORKER_DIRECT_EXCHANGE,
-        hostname,
-    )
 
 
 def lpmerge(L, R):
@@ -215,53 +182,6 @@ def gen_task_name(app, name, module_name):
     if module_name == '__main__' and app.main:
         return '.'.join([app.main, name])
     return '.'.join(p for p in (module_name, name) if p)
-
-
-def nodename(name, hostname):
-    """Create node name from name/hostname pair."""
-    return NODENAME_SEP.join((name, hostname))
-
-
-def anon_nodename(hostname=None, prefix='gen'):
-    return nodename(''.join([prefix, str(os.getpid())]),
-                    hostname or gethostname())
-
-
-def nodesplit(nodename):
-    """Split node name into tuple of name/hostname."""
-    parts = nodename.split(NODENAME_SEP, 1)
-    if len(parts) == 1:
-        return None, parts[0]
-    return parts
-
-
-def default_nodename(hostname):
-    name, host = nodesplit(hostname or '')
-    return nodename(name or NODENAME_DEFAULT, host or gethostname())
-
-
-def node_format(s, nodename, **extra):
-    name, host = nodesplit(nodename)
-    return host_format(
-        s, host, name or NODENAME_DEFAULT, p=nodename, **extra)
-
-
-def _fmt_process_index(prefix='', default='0'):
-    from .log import current_process_index
-    index = current_process_index()
-    return '{0}{1}'.format(prefix, index) if index else default
-_fmt_process_index_with_prefix = partial(_fmt_process_index, '-', '')
-
-
-def host_format(s, host=None, name=None, **extra):
-    host = host or gethostname()
-    hname, _, domain = host.partition('.')
-    name = name or hname
-    keys = dict({
-        'h': host, 'n': name, 'd': domain,
-        'i': _fmt_process_index, 'I': _fmt_process_index_with_prefix,
-    }, **extra)
-    return simple_format(s, keys)
 
 
 # ------------------------------------------------------------------------ #

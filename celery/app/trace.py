@@ -34,8 +34,8 @@ from celery.app import set_default_app
 from celery.app.task import Task as BaseTask, Context
 from celery.exceptions import Ignore, Reject, Retry, InvalidTaskError
 from celery.five import monotonic
-from celery.utils import gethostname
 from celery.utils.log import get_logger
+from celery.utils.nodenames import gethostname
 from celery.utils.objects import mro_lookup
 from celery.utils.saferepr import saferepr
 from celery.utils.serialization import (

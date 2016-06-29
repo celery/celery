@@ -24,7 +24,7 @@ from celery.five import (
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
 from celery.utils import term
 from celery.utils import text
-from celery.utils import node_format, host_format
+from celery.utils.nodenames import node_format, host_format
 from celery.utils.imports import symbol_by_name, import_from_cwd
 
 try:

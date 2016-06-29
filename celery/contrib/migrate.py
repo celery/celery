@@ -19,7 +19,7 @@ from kombu.utils.encoding import ensure_bytes
 
 from celery.app import app_or_default
 from celery.five import python_2_unicode_compatible, string, string_t
-from celery.utils import worker_direct
+from celery.utils.nodenames import worker_direct
 
 __all__ = [
     'StopFiltering', 'State', 'republish', 'migrate_task',

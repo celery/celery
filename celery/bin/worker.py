@@ -173,8 +173,8 @@ from celery.bin.base import Command, daemon_options
 from celery.bin.celeryd_detach import detached_celeryd
 from celery.five import string_t
 from celery.platforms import maybe_drop_privileges
-from celery.utils import default_nodename
 from celery.utils.log import LOG_LEVELS, mlevel
+from celery.utils.nodenames import default_nodename
 
 __all__ = ['worker', 'main']
 

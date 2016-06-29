@@ -114,7 +114,9 @@ from celery import VERSION_BANNER
 from celery.five import items
 from celery.platforms import Pidfile, IS_WINDOWS
 from celery.utils import term
-from celery.utils import gethostname, host_format, node_format, nodesplit
+from celery.utils.nodenames import (
+    gethostname, host_format, node_format, nodesplit,
+)
 from celery.utils.text import pluralize
 
 __all__ = ['MultiTool']

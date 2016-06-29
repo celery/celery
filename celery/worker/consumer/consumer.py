@@ -30,9 +30,9 @@ from celery import signals
 from celery.app.trace import build_tracer
 from celery.exceptions import InvalidTaskError, NotRegistered
 from celery.five import buffer_t, items, python_2_unicode_compatible, values
-from celery.utils import gethostname
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
+from celery.utils.nodenames import gethostname
 from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.timeutils import humanize_seconds, rate

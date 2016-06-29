@@ -19,8 +19,8 @@ import sys
 from optparse import OptionParser, BadOptionError
 
 from celery.platforms import EX_FAILURE, detached
-from celery.utils import default_nodename, node_format
 from celery.utils.log import get_logger
+from celery.utils.nodenames import default_nodename, node_format
 
 from celery.bin.base import daemon_options
 
