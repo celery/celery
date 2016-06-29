@@ -17,7 +17,7 @@ from celery.app import base as _appbase
 from celery.app import defaults
 from celery.exceptions import ImproperlyConfigured
 from celery.five import keys
-from celery.loaders.base import BaseLoader, unconfigured
+from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.serialization import pickle
 from celery.utils.timeutils import timezone
@@ -32,7 +32,6 @@ from celery.tests.case import (
     mock,
     patch,
 )
-from celery.utils import uuid
 from celery.utils.objects import Bunch
 
 THIS_IS_A_KEY = 'this is a value'

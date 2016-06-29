@@ -90,6 +90,7 @@ def default(task, app, consumer,
                 body = bytes(body) if isinstance(body, buffer_t) else body
         else:
             body, headers, decoded, utc = proto1_to_proto2(message, body)
+
         req = Req(
             message,
             on_ack=ack, on_reject=reject, app=app, hostname=hostname,
@@ -100,7 +101,6 @@ def default(task, app, consumer,
             info('Received task: %s', req)
         if (req.expires or req.id in revoked_tasks) and req.revoked():
             return
-
 
         if events:
             send_event(

@@ -17,8 +17,6 @@ import sys
 from datetime import datetime
 
 from kombu.utils import json
-from kombu.utils import cached_property
-from kombu.utils.encoding import safe_str
 
 from celery import signals
 from celery.five import reraise, string_t
