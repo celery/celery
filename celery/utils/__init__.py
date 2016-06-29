@@ -21,7 +21,7 @@ from .functional import memoize  # noqa
 from .nodenames import worker_direct, nodename, nodesplit
 
 __all__ = ['worker_direct',
-           'maybe_reraise', 'strtobool',
+           'maybe_reraise',
            'jsonify', 'gen_task_name', 'nodename', 'nodesplit',
            'cached_property']
 
@@ -38,19 +38,6 @@ def maybe_reraise():
     finally:
         # see http://docs.python.org/library/sys.html#sys.exc_info
         del(exc_info)
-
-
-def strtobool(term, table={'false': False, 'no': False, '0': False,
-                           'true': True, 'yes': True, '1': True,
-                           'on': True, 'off': False}):
-    """Convert common terms for true/false to bool
-    (true/false/yes/no/on/off/1/0)."""
-    if isinstance(term, string_t):
-        try:
-            return table[term.lower()]
-        except KeyError:
-            raise TypeError('Cannot coerce {0!r} to type bool'.format(term))
-    return term
 
 
 def jsonify(obj,

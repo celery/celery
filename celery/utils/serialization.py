@@ -8,7 +8,7 @@
 """
 from __future__ import absolute_import, unicode_literals
 
-from celery.five import bytes_if_py2, python_2_unicode_compatible
+from celery.five import bytes_if_py2, python_2_unicode_compatible, string_t
 
 from base64 import b64encode as base64encode, b64decode as base64decode
 from inspect import getmro
@@ -26,7 +26,7 @@ from .encoding import safe_repr
 __all__ = ['UnpickleableExceptionWrapper', 'subclass_exception',
            'find_pickleable_exception', 'create_exception_cls',
            'get_pickleable_exception', 'get_pickleable_etype',
-           'get_pickled_exception']
+           'get_pickled_exception', 'strtobool']
 
 #: List of base classes we probably don't want to reduce to.
 try:
@@ -178,3 +178,16 @@ def b64encode(s):
 
 def b64decode(s):
     return base64decode(str_to_bytes(s))
+
+
+def strtobool(term, table={'false': False, 'no': False, '0': False,
+                           'true': True, 'yes': True, '1': True,
+                           'on': True, 'off': False}):
+    """Convert common terms for true/false to bool
+    (true/false/yes/no/on/off/1/0)."""
+    if isinstance(term, string_t):
+        try:
+            return table[term.lower()]
+        except KeyError:
+            raise TypeError('Cannot coerce {0!r} to type bool'.format(term))
+    return term
