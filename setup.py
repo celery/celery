@@ -99,7 +99,6 @@ classes = """
     Programming Language :: Python :: 3.5
     Programming Language :: Python :: Implementation :: CPython
     Programming Language :: Python :: Implementation :: PyPy
-    Programming Language :: Python :: Implementation :: Jython
     Operating System :: OS Independent
 """
 classifiers = [s.strip() for s in classes.split('\n') if s]
