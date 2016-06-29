@@ -96,11 +96,11 @@ def default(task, app, consumer,
             eventer=eventer, task=task, connection_errors=connection_errors,
             body=body, headers=headers, decoded=decoded, utc=utc,
         )
+        if _does_info:
+            info('Received task: %s', req)
         if (req.expires or req.id in revoked_tasks) and req.revoked():
             return
 
-        if _does_info:
-            info('Received task: %s', req)
 
         if events:
             send_event(
