@@ -8,7 +8,6 @@ from kombu import Queue
 
 from celery.utils import (
     chunks,
-    is_iterable,
     cached_property,
     jsonify,
 )
@@ -71,12 +70,6 @@ class test_chunks(Case):
 
 
 class test_utils(Case):
-
-    def test_is_iterable(self):
-        for a in 'f', ['f'], ('f',), {'f': 'f'}:
-            self.assertTrue(is_iterable(a))
-        for b in object(), 1:
-            self.assertFalse(is_iterable(b))
 
     def test_cached_property(self):
 

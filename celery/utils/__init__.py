@@ -21,19 +21,11 @@ from .functional import memoize  # noqa
 from .nodenames import worker_direct, nodename, nodesplit
 
 __all__ = ['worker_direct',
-           'is_iterable', 'maybe_reraise', 'strtobool',
+           'maybe_reraise', 'strtobool',
            'jsonify', 'gen_task_name', 'nodename', 'nodesplit',
            'cached_property']
 
 PY3 = sys.version_info[0] == 3
-
-
-def is_iterable(obj):
-    try:
-        iter(obj)
-    except TypeError:
-        return False
-    return True
 
 
 def maybe_reraise():

@@ -13,14 +13,13 @@ import numbers
 import re
 
 from bisect import bisect, bisect_left
-from collections import namedtuple
+from collections import Iterable, namedtuple
 from datetime import datetime, timedelta
 
 from kombu.utils import cached_property
 
 from . import current_app
 from .five import python_2_unicode_compatible, range, string_t
-from .utils import is_iterable
 from .utils.collections import AttributeDict
 from .utils.timeutils import (
     weekday, maybe_timedelta, remaining, humanize_seconds,
@@ -428,7 +427,7 @@ class crontab(schedule):
             result = crontab_parser(max_, min_).parse(cronspec)
         elif isinstance(cronspec, set):
             result = cronspec
-        elif is_iterable(cronspec):
+        elif isinstance(cronspec, Iterable):
             result = set(cronspec)
         else:
             raise TypeError(CRON_INVALID_TYPE.format(type=type(cronspec)))
