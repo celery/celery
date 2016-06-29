@@ -39,7 +39,8 @@ except ImportError:
 __all__ = [
     'AttributeDictMixin', 'AttributeDict', 'BufferMap', 'ChainMap',
     'ConfigurationView', 'DictAttribute', 'Evictable',
-    'LimitedSet', 'Messagebuffer', 'OrderedDict', 'force_mapping',
+    'LimitedSet', 'Messagebuffer', 'OrderedDict',
+    'force_mapping', 'lpmerge',
 ]
 
 PY3 = sys.version_info[0] >= 3
@@ -53,6 +54,15 @@ def force_mapping(m):
     if isinstance(m, (LazyObject, LazySettings)):
         m = m._wrapped
     return DictAttribute(m) if not isinstance(m, Mapping) else m
+
+
+def lpmerge(L, R):
+    """In place left precedent dictionary merge.
+
+    Keeps values from `L`, if the value in `R` is :const:`None`."""
+    setitem = L.__setitem__
+    [setitem(k, v) for k, v in items(R) if v is not None]
+    return L
 
 
 class OrderedDict(_OrderedDict):

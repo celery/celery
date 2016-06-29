@@ -20,21 +20,12 @@ from .functional import memoize  # noqa
 
 from .nodenames import worker_direct, nodename, nodesplit
 
-__all__ = ['worker_direct', 'lpmerge',
+__all__ = ['worker_direct',
            'is_iterable', 'maybe_reraise', 'strtobool',
            'jsonify', 'gen_task_name', 'nodename', 'nodesplit',
            'cached_property']
 
 PY3 = sys.version_info[0] == 3
-
-
-def lpmerge(L, R):
-    """In place left precedent dictionary merge.
-
-    Keeps values from `L`, if the value in `R` is :const:`None`."""
-    setitem = L.__setitem__
-    [setitem(k, v) for k, v in items(R) if v is not None]
-    return L
 
 
 def is_iterable(obj):

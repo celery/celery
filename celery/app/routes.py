@@ -18,7 +18,7 @@ from kombu import Queue
 
 from celery.exceptions import QueueNotFound
 from celery.five import items, string_t
-from celery.utils import lpmerge
+from celery.utils.collections import lpmerge
 from celery.utils.functional import firstmethod, fun_takes_argument, mlazy
 from celery.utils.imports import instantiate
 
