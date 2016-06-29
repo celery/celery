@@ -51,6 +51,7 @@
     celery.utils
     celery.utils.abstract
     celery.utils.collections
+    celery.utils.deprecated
     celery.utils.functional
     celery.utils.graph
     celery.utils.objects

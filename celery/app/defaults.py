@@ -324,10 +324,10 @@ _OLD_SETTING_KEYS = set(keys(_TO_NEW_KEY))
 
 
 def find_deprecated_settings(source):  # pragma: no cover
-    from celery.utils import warn_deprecated
+    from celery.utils import deprecated
     for name, opt in flatten(NAMESPACES):
         if (opt.deprecate_by or opt.remove_by) and getattr(source, name, None):
-            warn_deprecated(description='The {0!r} setting'.format(name),
+            deprecated.warn(description='The {0!r} setting'.format(name),
                             deprecation=opt.deprecate_by,
                             removal=opt.remove_by,
                             alternative='Use the {0.alt} instead'.format(opt))

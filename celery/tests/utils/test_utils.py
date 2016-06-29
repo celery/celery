@@ -8,11 +8,9 @@ from kombu import Queue
 
 from celery.utils import (
     chunks,
-    deprecated_property,
     isatty,
     is_iterable,
     cached_property,
-    warn_deprecated,
     worker_direct,
     gen_task_name,
     jsonify,
@@ -34,61 +32,6 @@ class test_worker_direct(Case):
     def test_returns_if_queue(self):
         q = Queue('foo')
         self.assertIs(worker_direct(q), q)
-
-
-class test_deprecated_property(Case):
-
-    @patch('celery.utils.warn_deprecated')
-    def test_deprecated(self, warn_deprecated):
-
-        class X(object):
-            _foo = None
-
-            @deprecated_property(deprecation='1.2')
-            def foo(self):
-                return self._foo
-
-            @foo.setter
-            def foo(self, value):
-                self._foo = value
-
-            @foo.deleter
-            def foo(self):
-                self._foo = None
-        self.assertTrue(X.foo)
-        self.assertTrue(X.foo.__set__(None, 1))
-        self.assertTrue(X.foo.__delete__(None))
-        x = X()
-        x.foo = 10
-        warn_deprecated.assert_called_with(
-            stacklevel=3, deprecation='1.2', alternative=None,
-            description='foo', removal=None,
-        )
-        warn_deprecated.reset_mock()
-        self.assertEqual(x.foo, 10)
-        warn_deprecated.assert_called_with(
-            stacklevel=3, deprecation='1.2', alternative=None,
-            description='foo', removal=None,
-        )
-        warn_deprecated.reset_mock()
-        del(x.foo)
-        warn_deprecated.assert_called_with(
-            stacklevel=3, deprecation='1.2', alternative=None,
-            description='foo', removal=None,
-        )
-        self.assertIsNone(x._foo)
-
-    def test_deprecated_no_setter_or_deleter(self):
-        class X(object):
-            @deprecated_property(deprecation='1.2')
-            def foo(self):
-                pass
-        self.assertTrue(X.foo)
-        x = X()
-        with self.assertRaises(AttributeError):
-            x.foo = 10
-        with self.assertRaises(AttributeError):
-            del(x.foo)
 
 
 class test_gen_task_name(Case):
@@ -171,8 +114,3 @@ class test_utils(Case):
         self.assertIs(x.__get__(None), x)
         self.assertIs(x.__set__(None, None), x)
         self.assertIs(x.__delete__(None), x)
-
-    @patch('warnings.warn')
-    def test_warn_deprecated(self, warn):
-        warn_deprecated('Foo')
-        warn.assert_called()

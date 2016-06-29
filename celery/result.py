@@ -587,7 +587,7 @@ class ResultSet(ResultBase):
         """`res[i] -> res.results[i]`"""
         return self.results[index]
 
-    @deprecated('4.0', '5.0')
+    @deprecated.Callable('4.0', '5.0')
     def iterate(self, timeout=None, propagate=True, interval=0.5):
         """Deprecated method, use :meth:`get` with a callback argument."""
         elapsed = 0.0

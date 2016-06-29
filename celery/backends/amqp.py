@@ -12,7 +12,7 @@ from __future__ import absolute_import, unicode_literals
 
 from .rpc import BaseRPCBackend
 
-from celery.utils import warn_deprecated
+from celery.utils import deprecated
 
 __all__ = ['AMQPBackend']
 
@@ -28,7 +28,7 @@ class AMQPBackend(BaseRPCBackend):
     """Publishes results by sending messages."""
 
     def __init__(self, *args, **kwargs):
-        warn_deprecated(
+        deprecated.warn(
             'The AMQP backend', deprecation='4.0', removal='5.0',
             alternative='Please use RPC backend or a persistent backend.')
         super(AMQPBackend, self).__init__(*args, **kwargs)

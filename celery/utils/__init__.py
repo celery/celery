@@ -13,38 +13,24 @@ import os
 import socket
 import sys
 import traceback
-import warnings
 import datetime
 
 from functools import partial
 from pprint import pprint
 
 from kombu.entity import Exchange, Queue
-from vine.utils import wraps
 
-from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 from celery.five import WhateverIO, items, reraise, string_t
 
 from .functional import memoize
 from .text import simple_format
 
-__all__ = ['worker_direct', 'warn_deprecated', 'deprecated', 'lpmerge',
+__all__ = ['worker_direct', 'lpmerge',
            'is_iterable', 'isatty', 'cry', 'maybe_reraise', 'strtobool',
            'jsonify', 'gen_task_name', 'nodename', 'nodesplit',
            'cached_property']
 
 PY3 = sys.version_info[0] == 3
-
-PENDING_DEPRECATION_FMT = """
-    {description} is scheduled for deprecation in \
-    version {deprecation} and removal in version v{removal}. \
-    {alternative}
-"""
-
-DEPRECATION_FMT = """
-    {description} is deprecated and scheduled for removal in
-    version {removal}. {alternative}
-"""
 
 #: Billiard sets this when execv is enabled.
 #: We use it to find out the name of the original ``__main__``
@@ -82,97 +68,6 @@ def worker_direct(hostname):
         WORKER_DIRECT_EXCHANGE,
         hostname,
     )
-
-
-def warn_deprecated(description=None, deprecation=None,
-                    removal=None, alternative=None, stacklevel=2):
-    ctx = {'description': description,
-           'deprecation': deprecation, 'removal': removal,
-           'alternative': alternative}
-    if deprecation is not None:
-        w = CPendingDeprecationWarning(PENDING_DEPRECATION_FMT.format(**ctx))
-    else:
-        w = CDeprecationWarning(DEPRECATION_FMT.format(**ctx))
-    warnings.warn(w, stacklevel=stacklevel)
-
-
-def deprecated(deprecation=None, removal=None,
-               alternative=None, description=None):
-    """Decorator for deprecated functions.
-
-    A deprecation warning will be emitted when the function is called.
-
-    :keyword deprecation: Version that marks first deprecation, if this
-      argument is not set a ``PendingDeprecationWarning`` will be emitted
-      instead.
-    :keyword removal:  Future version when this feature will be removed.
-    :keyword alternative:  Instructions for an alternative solution (if any).
-    :keyword description: Description of what is being deprecated.
-
-    """
-    def _inner(fun):
-
-        @wraps(fun)
-        def __inner(*args, **kwargs):
-            from .imports import qualname
-            warn_deprecated(description=description or qualname(fun),
-                            deprecation=deprecation,
-                            removal=removal,
-                            alternative=alternative,
-                            stacklevel=3)
-            return fun(*args, **kwargs)
-        return __inner
-    return _inner
-
-
-def deprecated_property(deprecation=None, removal=None,
-                        alternative=None, description=None):
-    def _inner(fun):
-        return _deprecated_property(
-            fun, deprecation=deprecation, removal=removal,
-            alternative=alternative, description=description or fun.__name__)
-    return _inner
-
-
-class _deprecated_property(object):
-
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None, **depreinfo):
-        self.__get = fget
-        self.__set = fset
-        self.__del = fdel
-        self.__name__, self.__module__, self.__doc__ = (
-            fget.__name__, fget.__module__, fget.__doc__,
-        )
-        self.depreinfo = depreinfo
-        self.depreinfo.setdefault('stacklevel', 3)
-
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        warn_deprecated(**self.depreinfo)
-        return self.__get(obj)
-
-    def __set__(self, obj, value):
-        if obj is None:
-            return self
-        if self.__set is None:
-            raise AttributeError('cannot set attribute')
-        warn_deprecated(**self.depreinfo)
-        self.__set(obj, value)
-
-    def __delete__(self, obj):
-        if obj is None:
-            return self
-        if self.__del is None:
-            raise AttributeError('cannot delete attribute')
-        warn_deprecated(**self.depreinfo)
-        self.__del(obj)
-
-    def setter(self, fset):
-        return self.__class__(self.__get, fset, self.__del, **self.depreinfo)
-
-    def deleter(self, fdel):
-        return self.__class__(self.__get, self.__set, fdel, **self.depreinfo)
 
 
 def lpmerge(L, R):
