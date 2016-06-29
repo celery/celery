@@ -9,11 +9,14 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
+import sys
+import traceback
 
 from contextlib import contextmanager
 from functools import partial
+from pprint import pprint
 
-from celery.five import range
+from celery.five import WhateverIO, items, range
 from celery.platforms import signals
 
 try:
@@ -23,7 +26,7 @@ except ImportError:
 
 __all__ = [
     'blockdetection', 'sample_mem', 'memdump', 'sample',
-    'humanbytes', 'mem_rss', 'ps',
+    'humanbytes', 'mem_rss', 'ps', 'cry',
 ]
 
 UNITS = (
@@ -165,3 +168,32 @@ def _process_memory_info(process):
         return process.memory_info()
     except AttributeError:
         return process.get_memory_info()
+
+
+def cry(out=None, sepchr='=', seplen=49):  # pragma: no cover
+    """Return stack-trace of all active threads,
+    taken from https://gist.github.com/737056."""
+    import threading
+
+    out = WhateverIO() if out is None else out
+    P = partial(print, file=out)
+
+    # get a map of threads by their ID so we can print their names
+    # during the traceback dump
+    tmap = {t.ident: t for t in threading.enumerate()}
+
+    sep = sepchr * seplen
+    for tid, frame in items(sys._current_frames()):
+        thread = tmap.get(tid)
+        if not thread:
+            # skip old junk (left-overs from a fork)
+            continue
+        P('{0.name}'.format(thread))
+        P(sep)
+        traceback.print_stack(frame, file=out)
+        P(sep)
+        P('LOCAL VARIABLES')
+        P(sep)
+        pprint(frame.f_locals, stream=out)
+        P('\n')
+    return out.getvalue()

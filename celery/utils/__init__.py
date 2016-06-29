@@ -10,20 +10,18 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import numbers
 import sys
-import traceback
 import datetime
 
 from functools import partial
-from pprint import pprint
 
-from celery.five import WhateverIO, items, reraise, string_t
+from celery.five import items, reraise, string_t
 
 from .functional import memoize  # noqa
 
 from .nodenames import worker_direct, nodename, nodesplit
 
 __all__ = ['worker_direct', 'lpmerge',
-           'is_iterable', 'cry', 'maybe_reraise', 'strtobool',
+           'is_iterable', 'maybe_reraise', 'strtobool',
            'jsonify', 'gen_task_name', 'nodename', 'nodesplit',
            'cached_property']
 
@@ -45,35 +43,6 @@ def is_iterable(obj):
     except TypeError:
         return False
     return True
-
-
-def cry(out=None, sepchr='=', seplen=49):  # pragma: no cover
-    """Return stack-trace of all active threads,
-    taken from https://gist.github.com/737056."""
-    import threading
-
-    out = WhateverIO() if out is None else out
-    P = partial(print, file=out)
-
-    # get a map of threads by their ID so we can print their names
-    # during the traceback dump
-    tmap = {t.ident: t for t in threading.enumerate()}
-
-    sep = sepchr * seplen
-    for tid, frame in items(sys._current_frames()):
-        thread = tmap.get(tid)
-        if not thread:
-            # skip old junk (left-overs from a fork)
-            continue
-        P('{0.name}'.format(thread))
-        P(sep)
-        traceback.print_stack(frame, file=out)
-        P(sep)
-        P('LOCAL VARIABLES')
-        P(sep)
-        pprint(frame.f_locals, stream=out)
-        P('\n')
-    return out.getvalue()
 
 
 def maybe_reraise():
