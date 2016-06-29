@@ -28,8 +28,8 @@ from celery.app import trace
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.five import string, string_t
 from celery.loaders.app import AppLoader
-from celery.platforms import EX_FAILURE, EX_OK, check_privileges
-from celery.utils import cry, isatty
+from celery.platforms import EX_FAILURE, EX_OK, check_privileges, isatty
+from celery.utils import cry
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
 from celery.utils.text import pluralize

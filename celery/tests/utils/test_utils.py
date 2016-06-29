@@ -8,21 +8,11 @@ from kombu import Queue
 
 from celery.utils import (
     chunks,
-    isatty,
     is_iterable,
     cached_property,
     jsonify,
 )
 from celery.tests.case import Case, Mock
-
-
-class test_isatty(Case):
-
-    def test_tty(self):
-        fh = Mock(name='fh')
-        self.assertIs(isatty(fh), fh.isatty())
-        fh.isatty.side_effect = AttributeError()
-        self.assertFalse(isatty(fh))
 
 
 class test_jsonify(Case):

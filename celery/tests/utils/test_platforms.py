@@ -31,6 +31,7 @@ from celery.platforms import (
     _setgroups_hack,
     close_open_fds,
     fd_by_path,
+    isatty,
 )
 
 try:
@@ -39,6 +40,15 @@ except ImportError:  # pragma: no cover
     resource = None  # noqa
 
 from celery.tests.case import Case, Mock, call, mock, patch, skip
+
+
+class test_isatty(Case):
+
+    def test_tty(self):
+        fh = Mock(name='fh')
+        self.assertIs(isatty(fh), fh.isatty())
+        fh.isatty.side_effect = AttributeError()
+        self.assertFalse(isatty(fh))
 
 
 class test_find_option_with_arg(Case):

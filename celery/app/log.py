@@ -23,7 +23,7 @@ from kombu.utils.encoding import set_default_encoding_file
 from celery import signals
 from celery._state import get_current_task
 from celery.five import class_property, string_t
-from celery.utils import isatty
+from celery.platforms import isatty
 from celery.utils.log import (
     get_logger, mlevel,
     ColorFormatter, LoggingProxy, get_multiprocessing_logger,

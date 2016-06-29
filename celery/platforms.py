@@ -48,7 +48,7 @@ __all__ = ['EX_OK', 'EX_FAILURE', 'EX_UNAVAILABLE', 'EX_USAGE', 'SYSTEM',
            'parse_gid', 'setgroups', 'initgroups', 'setgid', 'setuid',
            'maybe_drop_privileges', 'signals', 'set_process_title',
            'set_mp_process_title', 'get_errno_name', 'ignore_errno',
-           'fd_by_path']
+           'fd_by_path', 'isatty']
 
 # exitcodes
 EX_OK = getattr(os, 'EX_OK', 0)
@@ -91,6 +91,13 @@ Please specify a different user using the -u option.
 
 User information: uid={uid} euid={euid} gid={gid} egid={egid}
 """
+
+
+def isatty(fh):
+    try:
+        return fh.isatty()
+    except AttributeError:
+        pass
 
 
 def pyimplementation():

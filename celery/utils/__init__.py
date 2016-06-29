@@ -9,7 +9,6 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import numbers
-import os
 import sys
 import traceback
 import datetime
@@ -24,17 +23,11 @@ from .functional import memoize  # noqa
 from .nodenames import worker_direct, nodename, nodesplit
 
 __all__ = ['worker_direct', 'lpmerge',
-           'is_iterable', 'isatty', 'cry', 'maybe_reraise', 'strtobool',
+           'is_iterable', 'cry', 'maybe_reraise', 'strtobool',
            'jsonify', 'gen_task_name', 'nodename', 'nodesplit',
            'cached_property']
 
 PY3 = sys.version_info[0] == 3
-
-#: Billiard sets this when execv is enabled.
-#: We use it to find out the name of the original ``__main__``
-#: module, so that we can properly rewrite the name of the
-#: task to be that of ``App.main``.
-MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE')
 
 
 def lpmerge(L, R):
@@ -52,13 +45,6 @@ def is_iterable(obj):
     except TypeError:
         return False
     return True
-
-
-def isatty(fh):
-    try:
-        return fh.isatty()
-    except AttributeError:
-        pass
 
 
 def cry(out=None, sepchr='=', seplen=49):  # pragma: no cover
