@@ -262,7 +262,7 @@ and can contain the following keys:
     Maximum number of retries before giving up, in this case the
     exception that caused the retry to fail will be raised.
 
-    A value of 0 or :const:`None` means it will retry forever.
+    A value of :const:`None` means it will retry forever.
 
     The default is to retry 3 times.
 
