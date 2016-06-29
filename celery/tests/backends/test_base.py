@@ -14,7 +14,7 @@ from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.utils.serialization import get_pickleable_exception as gpe
 
 from celery import states
-from celery import group
+from celery import group, uuid
 from celery.backends.base import (
     BaseBackend,
     KeyValueStoreBackend,
@@ -22,7 +22,6 @@ from celery.backends.base import (
     _nulldict,
 )
 from celery.result import result_from_tuple
-from celery.utils import uuid
 from celery.utils.functional import pass1
 
 from celery.tests.case import ANY, AppCase, Case, Mock, call, patch, skip

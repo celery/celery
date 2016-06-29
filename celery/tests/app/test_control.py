@@ -3,9 +3,9 @@ from __future__ import absolute_import, unicode_literals
 from kombu.pidbox import Mailbox
 from vine.utils import wraps
 
+from celery import uuid
 from celery.app import control
 from celery.exceptions import DuplicateNodenameWarning
-from celery.utils import uuid
 from celery.tests.case import AppCase
 
 

@@ -6,9 +6,9 @@ from datetime import datetime, timedelta
 from pickle import dumps, loads
 
 from celery import beat
+from celery import uuid
 from celery.five import keys, string_t
 from celery.schedules import schedule
-from celery.utils import uuid
 from celery.utils.objects import Bunch
 
 from celery.tests.case import AppCase, Mock, call, patch, skip

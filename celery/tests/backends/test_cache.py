@@ -7,13 +7,11 @@ from contextlib import contextmanager
 
 from kombu.utils.encoding import str_to_bytes, ensure_bytes
 
-from celery import signature
 from celery import states
-from celery import group
+from celery import group, signature, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
 from celery.five import items, bytes_if_py2, string, text_t
-from celery.utils import uuid
 
 from celery.tests.case import AppCase, Mock, mock, patch, skip
 

@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import traceback
 from contextlib import contextmanager
 
+from celery import uuid
 from celery import states
 from celery.backends.base import SyncBackendMixin
 from celery.exceptions import (
@@ -16,7 +17,6 @@ from celery.result import (
     result_from_tuple,
     assert_will_not_block,
 )
-from celery.utils import uuid
 from celery.utils.serialization import pickle
 
 from celery.tests.case import (

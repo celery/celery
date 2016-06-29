@@ -10,9 +10,9 @@ from __future__ import absolute_import, unicode_literals
 
 from kombu.utils.encoding import ensure_bytes
 
+from celery import uuid
 from celery.exceptions import ImproperlyConfigured
 from celery.backends.base import KeyValueStoreBackend
-from celery.utils import uuid
 
 import os
 import locale

@@ -8,10 +8,10 @@ from io import StringIO
 from tempfile import mktemp
 
 from celery import signals
+from celery import uuid
 from celery.app.log import TaskFormatter
 from celery.five import python_2_unicode_compatible
 from celery.utils.log import LoggingProxy
-from celery.utils import uuid
 from celery.utils.log import (
     get_logger,
     ColorFormatter,

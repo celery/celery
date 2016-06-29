@@ -8,6 +8,7 @@ from time import time
 from itertools import count
 
 from celery import states
+from celery import uuid
 from celery.events import Event
 from celery.events.state import (
     HEARTBEAT_EXPIRE_WINDOW,
@@ -18,7 +19,6 @@ from celery.events.state import (
     heartbeat_expires,
 )
 from celery.five import range
-from celery.utils import uuid
 from celery.tests.case import AppCase, Mock, patch, skip
 
 try:

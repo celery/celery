@@ -1,9 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
-from celery.utils import (
-    chunks,
-    cached_property,
-)
+from celery.utils import chunks, cached_property
+
 from celery.tests.case import Case
 
 

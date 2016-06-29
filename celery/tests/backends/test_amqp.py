@@ -9,10 +9,10 @@ from pickle import dumps, loads
 from billiard.einfo import ExceptionInfo
 
 from celery import states
+from celery import uuid
 from celery.backends.amqp import AMQPBackend
 from celery.five import Empty, Queue, range
 from celery.result import AsyncResult
-from celery.utils import uuid
 
 from celery.tests.case import AppCase, Mock, depends_on_current_app, mock
 

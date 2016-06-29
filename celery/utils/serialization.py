@@ -10,6 +10,7 @@ from __future__ import absolute_import, unicode_literals
 
 import datetime
 import numbers
+import sys
 
 from base64 import b64encode as base64encode, b64decode as base64decode
 from functools import partial
@@ -19,7 +20,7 @@ from itertools import takewhile
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
 from celery.five import (
-    bytes_if_py2, python_2_unicode_compatible, items, string_t,
+    bytes_if_py2, python_2_unicode_compatible, items, reraise, string_t,
 )
 
 from .encoding import safe_repr
@@ -244,3 +245,15 @@ def jsonify(obj,
                 'Unsupported type: {0!r} {1!r} (parent: {2})'.format(
                     type(obj), obj, key))
         return unknown_type_filter(obj)
+
+
+def maybe_reraise():
+    """Re-raise if an exception is currently being handled, or return
+    otherwise."""
+    exc_info = sys.exc_info()
+    try:
+        if exc_info[2]:
+            reraise(exc_info[0], exc_info[1], exc_info[2])
+    finally:
+        # see http://docs.python.org/library/sys.html#sys.exc_info
+        del(exc_info)

@@ -5,35 +5,22 @@
 
     Utility functions.
 
+    Do not import from here directly anymore, these are only
+    here for backwards compatibility.
+
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
 
-from celery.five import reraise
-
 from .functional import memoize  # noqa
 
 from .nodenames import worker_direct, nodename, nodesplit
 
-__all__ = ['worker_direct',
-           'maybe_reraise',
-           'gen_task_name', 'nodename', 'nodesplit',
-           'cached_property']
+__all__ = ['worker_direct', 'gen_task_name', 'nodename', 'nodesplit',
+           'cached_property', 'uuid']
 
 PY3 = sys.version_info[0] == 3
-
-
-def maybe_reraise():
-    """Re-raise if an exception is currently being handled, or return
-    otherwise."""
-    exc_info = sys.exc_info()
-    try:
-        if exc_info[2]:
-            reraise(exc_info[0], exc_info[1], exc_info[2])
-    finally:
-        # see http://docs.python.org/library/sys.html#sys.exc_info
-        del(exc_info)
 
 
 # ------------------------------------------------------------------------ #

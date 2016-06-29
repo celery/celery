@@ -14,6 +14,7 @@ from kombu import Connection
 from kombu.common import QoS, ignore_errors
 from kombu.transport.base import Message
 from kombu.transport.memory import Transport
+from kombu.utils import uuid
 
 from celery.bootsteps import RUN, CLOSE, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
@@ -23,7 +24,6 @@ from celery.exceptions import (
 )
 from celery.five import Empty, range, Queue as FastQueue
 from celery.platforms import EX_FAILURE
-from celery.utils import uuid
 from celery import worker as worker_module
 from celery.worker import components
 from celery.worker import consumer

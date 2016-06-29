@@ -2,9 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 from kombu import Queue
 
-from celery.utils import (
-    worker_direct,
-)
+from celery.utils.nodenames import worker_direct
 
 from celery.tests.case import Case
 

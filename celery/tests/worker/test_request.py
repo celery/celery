@@ -10,9 +10,8 @@ import sys
 from datetime import datetime, timedelta
 
 from billiard.einfo import ExceptionInfo
-from kombu.utils.encoding import (
-    default_encode, from_utf8, safe_str, safe_repr,
-)
+from kombu.utils import uuid
+from kombu.utils.encoding import default_encode, from_utf8, safe_str, safe_repr
 
 from celery import states
 from celery.app.trace import (
@@ -36,7 +35,6 @@ from celery.exceptions import (
 )
 from celery.five import monotonic
 from celery.signals import task_revoked
-from celery.utils import uuid
 from celery.worker import request as module
 from celery.worker.request import (
     Request, create_request_cls, logger as req_logger,

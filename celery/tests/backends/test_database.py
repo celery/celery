@@ -5,8 +5,8 @@ from datetime import datetime
 from pickle import loads, dumps
 
 from celery import states
+from celery import uuid
 from celery.exceptions import ImproperlyConfigured
-from celery.utils import uuid
 
 from celery.tests.case import (
     AppCase, Mock, depends_on_current_app, patch, skip,

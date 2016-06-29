@@ -11,6 +11,7 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 from billiard.einfo import ExceptionInfo
+from kombu.utils import uuid
 
 from celery import current_app, group
 from celery import states
@@ -20,9 +21,9 @@ from celery.exceptions import Ignore, MaxRetriesExceededError, Reject, Retry
 from celery.five import class_property, items, python_2_unicode_compatible
 from celery.result import EagerResult
 from celery.utils import abstract
-from celery.utils import uuid, maybe_reraise
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
+from celery.utils.serialization import maybe_reraise
 
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2

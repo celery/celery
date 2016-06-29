@@ -6,12 +6,11 @@ from kombu import Queue
 
 from celery import Task
 
-from celery import group
+from celery import group, uuid
 from celery.app.task import _reprtask
 from celery.exceptions import Ignore, Retry
 from celery.five import items, range, string_t
 from celery.result import EagerResult
-from celery.utils import uuid
 from celery.utils.timeutils import parse_iso8601
 
 from celery.tests.case import (

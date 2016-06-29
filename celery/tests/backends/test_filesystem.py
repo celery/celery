@@ -5,10 +5,10 @@ import os
 import shutil
 import tempfile
 
+from celery import uuid
 from celery import states
 from celery.backends.filesystem import FilesystemBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.utils import uuid
 
 from celery.tests.case import AppCase, skip
 
