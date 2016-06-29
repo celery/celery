@@ -24,7 +24,7 @@ is_pypy = hasattr(sys, 'pypy_version_info')
 
 DEFAULT_POOL = 'prefork'
 if is_jython:
-    DEFAULT_POOL = 'threads'
+    DEFAULT_POOL = 'solo'
 elif is_pypy:
     if sys.pypy_version_info[0:3] < (1, 5, 0):
         DEFAULT_POOL = 'solo'

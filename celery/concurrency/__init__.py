@@ -19,7 +19,6 @@ ALIASES = {
     'prefork': 'celery.concurrency.prefork:TaskPool',
     'eventlet': 'celery.concurrency.eventlet:TaskPool',
     'gevent': 'celery.concurrency.gevent:TaskPool',
-    'threads': 'celery.concurrency.threads:TaskPool',
     'solo': 'celery.concurrency.solo:TaskPool',
     'processes': 'celery.concurrency.prefork:TaskPool',  # XXX compat alias
 }

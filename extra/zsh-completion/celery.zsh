@@ -40,7 +40,7 @@ case "$words[1]" in
     worker)
     _arguments \
     '(-C --concurrency=)'{-C,--concurrency=}'[Number of child processes processing the queue. The default is the number of CPUs.]' \
-    '(--pool)--pool=:::(prefork eventlet gevent threads solo)' \
+    '(--pool)--pool=:::(prefork eventlet gevent solo)' \
     '(--purge --discard)'{--discard,--purge}'[Purges all waiting tasks before the daemon is started.]' \
     '(-f --logfile=)'{-f,--logfile=}'[Path to log file. If no logfile is specified, stderr is used.]' \
     '(--loglevel=)--loglevel=:::(critical error warning info debug)' \

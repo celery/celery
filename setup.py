@@ -193,7 +193,7 @@ def extras(*p):
 # Celery specific
 features = set([
     'auth', 'cassandra', 'elasticsearch', 'memcache', 'pymemcache',
-    'couchbase', 'threads', 'eventlet', 'gevent', 'msgpack', 'yaml',
+    'couchbase', 'eventlet', 'gevent', 'msgpack', 'yaml',
     'redis', 'sqs', 'couchdb', 'riak', 'zookeeper',
     'zeromq', 'sqlalchemy', 'librabbitmq', 'pyro', 'slmq', 'tblib', 'consul'
 ])

@@ -111,7 +111,7 @@ of CPU's is rarely effective, and likely to degrade performance
 instead.
 
 Including the default prefork pool, Celery also supports using
-Eventlet, Gevent, and threads (see :ref:`concurrency`).
+Eventlet, Gevent, and running in a single thread (see :ref:`concurrency`).
 
 -- *Events* is an option that when enabled causes Celery to send
 monitoring messages (events) for actions occurring in the worker.

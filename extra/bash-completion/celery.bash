@@ -16,7 +16,7 @@ _celery()
     dopts="--detach --umask= --gid= --uid= --pidfile=
            --logfile= --loglevel= --executable="
     controlargs="--timeout --destination"
-    pools="prefork eventlet gevent threads solo"
+    pools="prefork eventlet gevent solo"
     loglevels="critical error warning info debug"
     in_opt=0
 

@@ -232,7 +232,7 @@ Remote control
     commands from the command-line.  It supports all of the commands
     listed below.  See :ref:`monitoring-control` for more information.
 
-:pool support: *prefork, eventlet, gevent*, blocking:*threads/solo* (see note)
+:pool support: *prefork, eventlet, gevent*, blocking:*solo* (see note)
 :broker support: *amqp*
 
 Workers have the ability to be remote controlled using a high-priority
@@ -255,7 +255,7 @@ to the number of destination hosts.
 
 .. note::
 
-    The solo and threads pool supports remote control commands,
+    The ``solo`` pool supports remote control commands,
     but any task executing will block any waiting control command,
     so it is of limited use if the worker is very busy.  In that
     case you must increase the timeout waiting for replies in the client.

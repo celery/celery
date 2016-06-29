@@ -133,7 +133,7 @@ Celery is…
 
             - prefork (multiprocessing),
             - Eventlet_, gevent_
-            - threads/single threaded
+            - `solo` (single threaded)
 
         - **Result Stores**
 

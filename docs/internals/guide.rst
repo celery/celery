@@ -268,7 +268,7 @@ Module Overview
 
 - celery.concurrency
 
-    Execution pool implementations (prefork, eventlet, gevent, threads).
+    Execution pool implementations (prefork, eventlet, gevent, solo).
 
 - celery.db
 

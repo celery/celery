@@ -54,10 +54,6 @@ class test_defaults(AppCase):
         for key in _TO_OLD_KEY:
             self.assertIn(key, SETTING_KEYS)
 
-    @mock.sys_platform('java 1.6.51')
-    def test_default_pool_jython(self):
-        self.assertEqual(self.defaults.DEFAULT_POOL, 'threads')
-
     def test_find(self):
         find = self.defaults.find
 

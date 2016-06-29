@@ -59,9 +59,6 @@ Concurrency
 :``celery[gevent]``:
     for using the :pypi:`gevent` pool.
 
-:``celery[threads]``:
-    for using the thread pool.
-
 Transports and Backends
 ~~~~~~~~~~~~~~~~~~~~~~~
 
