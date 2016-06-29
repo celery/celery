@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-from celery.tests.case import Case, Mock, patch
+from celery.tests.case import Case, patch
 
 from celery.utils import deprecated
 
@@ -58,7 +58,6 @@ class test_deprecated_property(Case):
             x.foo = 10
         with self.assertRaises(AttributeError):
             del(x.foo)
-
 
 
 class test_warn(Case):

@@ -14,7 +14,7 @@ from vine.utils import wraps
 
 from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 
-__all__ = ['Callbable', 'Property', 'warn']
+__all__ = ['Callable', 'Property', 'warn']
 
 
 PENDING_DEPRECATION_FMT = """
@@ -71,7 +71,7 @@ def Callable(deprecation=None, removal=None,
 
 
 def Property(deprecation=None, removal=None,
-                        alternative=None, description=None):
+             alternative=None, description=None):
     def _inner(fun):
         return _deprecated_property(
             fun, deprecation=deprecation, removal=removal,

@@ -6,7 +6,7 @@ from celery.utils import (
     worker_direct,
 )
 
-from celery.tests.case import Case, Mock, patch
+from celery.tests.case import Case
 
 
 class test_worker_direct(Case):
@@ -14,5 +14,3 @@ class test_worker_direct(Case):
     def test_returns_if_queue(self):
         q = Queue('foo')
         self.assertIs(worker_direct(q), q)
-
-

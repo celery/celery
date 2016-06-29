@@ -11,11 +11,10 @@ from celery.utils import (
     isatty,
     is_iterable,
     cached_property,
-    worker_direct,
     gen_task_name,
     jsonify,
 )
-from celery.tests.case import Case, Mock, patch
+from celery.tests.case import Case, Mock
 
 
 class test_isatty(Case):
@@ -25,13 +24,6 @@ class test_isatty(Case):
         self.assertIs(isatty(fh), fh.isatty())
         fh.isatty.side_effect = AttributeError()
         self.assertFalse(isatty(fh))
-
-
-class test_worker_direct(Case):
-
-    def test_returns_if_queue(self):
-        q = Queue('foo')
-        self.assertIs(worker_direct(q), q)
 
 
 class test_gen_task_name(Case):
