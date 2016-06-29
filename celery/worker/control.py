@@ -20,7 +20,7 @@ from celery.platforms import signals as _signals
 from celery.utils import timeutils
 from celery.utils.functional import maybe_list
 from celery.utils.log import get_logger
-from celery.utils import jsonify
+from celery.utils.serialization import jsonify
 
 from . import state as worker_state
 from .request import Request

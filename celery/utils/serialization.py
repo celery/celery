@@ -8,20 +8,26 @@
 """
 from __future__ import absolute_import, unicode_literals
 
-from celery.five import bytes_if_py2, python_2_unicode_compatible, string_t
+import datetime
+import numbers
 
 from base64 import b64encode as base64encode, b64decode as base64decode
+from functools import partial
 from inspect import getmro
 from itertools import takewhile
+
+from kombu.utils.encoding import bytes_to_str, str_to_bytes
+
+from celery.five import (
+    bytes_if_py2, python_2_unicode_compatible, items, string_t,
+)
+
+from .encoding import safe_repr
 
 try:
     import cPickle as pickle
 except ImportError:
     import pickle  # noqa
-
-from kombu.utils.encoding import bytes_to_str, str_to_bytes
-
-from .encoding import safe_repr
 
 __all__ = ['UnpickleableExceptionWrapper', 'subclass_exception',
            'find_pickleable_exception', 'create_exception_cls',
@@ -191,3 +197,50 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
         except KeyError:
             raise TypeError('Cannot coerce {0!r} to type bool'.format(term))
     return term
+
+
+def jsonify(obj,
+            builtin_types=(numbers.Real, string_t), key=None,
+            keyfilter=None,
+            unknown_type_filter=None):
+    """Transforms object making it suitable for json serialization"""
+    from kombu.abstract import Object as KombuDictType
+    _jsonify = partial(jsonify, builtin_types=builtin_types, key=key,
+                       keyfilter=keyfilter,
+                       unknown_type_filter=unknown_type_filter)
+
+    if isinstance(obj, KombuDictType):
+        obj = obj.as_dict(recurse=True)
+
+    if obj is None or isinstance(obj, builtin_types):
+        return obj
+    elif isinstance(obj, (tuple, list)):
+        return [_jsonify(v) for v in obj]
+    elif isinstance(obj, dict):
+        return {
+            k: _jsonify(v, key=k) for k, v in items(obj)
+            if (keyfilter(k) if keyfilter else 1)
+        }
+    elif isinstance(obj, datetime.datetime):
+        # See "Date Time String Format" in the ECMA-262 specification.
+        r = obj.isoformat()
+        if obj.microsecond:
+            r = r[:23] + r[26:]
+        if r.endswith('+00:00'):
+            r = r[:-6] + 'Z'
+        return r
+    elif isinstance(obj, datetime.date):
+        return obj.isoformat()
+    elif isinstance(obj, datetime.time):
+        r = obj.isoformat()
+        if obj.microsecond:
+            r = r[:12]
+        return r
+    elif isinstance(obj, datetime.timedelta):
+        return str(obj)
+    else:
+        if unknown_type_filter is None:
+            raise ValueError(
+                'Unsupported type: {0!r} {1!r} (parent: {2})'.format(
+                    type(obj), obj, key))
+        return unknown_type_filter(obj)
