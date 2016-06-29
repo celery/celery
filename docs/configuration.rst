@@ -532,10 +532,6 @@ Can be one of the following:
     Use a shared directory to store the results.
     See :ref:`conf-filesystem-result-backend`.
 
-* ``amqp``
-    Older AMQP backend (badly) emulating a database-based backend.
-    See :ref:`conf-amqp-result-backend`.
-
 * ``consul``
     Use the `Consul`_ K/V store to store the results
     See :ref:`conf-consul-result-backend`.
@@ -604,8 +600,8 @@ Default is to expire after 1 day.
 ``result_cache_max``
 ~~~~~~~~~~~~~~~~~~~~
 
-Enables client caching of results, which can be useful for the old 'amqp'
-backend where the result is unavailable as soon as one result instance
+Enables client caching of results, which can be useful for the old deprecated
+'amqp' backend where the result is unavailable as soon as one result instance
 consumes it.
 
 This is the total number of results to cache before older results are evicted.
@@ -708,6 +704,21 @@ you to customize the table names:
 
 RPC backend settings
 --------------------
+
+.. setting:: result_exchange
+
+``result_exchange``
+~~~~~~~~~~~~~~~~~~~
+
+Name of the exchange to publish results in.  Default is `celeryresults`.
+
+.. setting:: result_exchange_type
+
+``result_exchange_type``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The exchange type of the result exchange.  Default is to use a `direct`
+exchange.
 
 .. setting:: result_persistent
 
@@ -1165,56 +1176,6 @@ The URL is formed out of the following parts:
 
     The default container the CouchDB server is writing to.
     Defaults to ``default``.
-
-.. _conf-amqp-result-backend:
-
-AMQP backend settings
----------------------
-
-.. admonition:: Do not use in production.
-
-    This is the old AMQP result backend that creates one queue per task,
-    if you want to send results back as message please consider using the
-    RPC backend instead, or if you need the results to be persistent
-    use a result backend designed for that purpose (e.g. Redis, or a database).
-
-.. note::
-
-    The AMQP backend requires RabbitMQ 1.1.0 or higher to automatically
-    expire results.  If you are running an older version of RabbitMQ
-    you should disable result expiration like this:
-
-        result_expires = None
-
-.. setting:: result_exchange
-
-``result_exchange``
-~~~~~~~~~~~~~~~~~~~
-
-Name of the exchange to publish results in.  Default is `celeryresults`.
-
-.. setting:: result_exchange_type
-
-``result_exchange_type``
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-The exchange type of the result exchange.  Default is to use a `direct`
-exchange.
-
-``result_persistent``
-~~~~~~~~~~~~~~~~~~~~~
-
-If set to :const:`True`, result messages will be persistent.  This means the
-messages will not be lost after a broker restart.  The default is for the
-results to be transient.
-
-Example configuration
-~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-    result_backend = 'amqp'
-    result_expires = 18000  # 5 hours.
 
 .. _conf-filesystem-result-backend:
 

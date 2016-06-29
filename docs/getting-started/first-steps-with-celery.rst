@@ -203,7 +203,8 @@ Keeping Results
 If you want to keep track of the tasks' states, Celery needs to store or send
 the states somewhere.  There are several
 built-in result backends to choose from: `SQLAlchemy`_/`Django`_ ORM,
-`Memcached`_, `Redis`_, AMQP (`RabbitMQ`_), and -- or you can define your own.
+`Memcached`_, `Redis`_, :ref:`RPC <conf-rpc-result-backend>` (`RabbitMQ`_/AMQP),
+and -- or you can define your own.
 
 .. _`Memcached`: http://memcached.org
 .. _`MongoDB`: http://www.mongodb.org

@@ -154,7 +154,7 @@ class AsyncResult(ResultBase):
         :keyword propagate: Re-raise exception if the task failed.
         :keyword interval: Time to wait (in seconds) before retrying to
            retrieve the result.  Note that this does not have any effect
-           when using the amqp result store backend, as it does not
+           when using the RPC/redis result store backends, as they do not
            use polling.
         :keyword no_ack: Enable amqp no ack (automatically acknowledge
             message).  If this is :const:`False` then the message will

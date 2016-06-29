@@ -1042,7 +1042,7 @@ In Other News
 
     Contributed by Samuel Jaillet.
 
-- **Result Backends**: Fix problem with RPC/AMQP backends where exception
+- **Result Backends**: Fix problem with RPC backend where exception
     was not deserialized properly with the json serializer (Issue #2518).
 
     Fix contributed by Allard Hoeve.

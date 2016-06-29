@@ -47,7 +47,7 @@ you simply import this instance.
 - The ``backend`` argument specifies the result backend to use,
 
     It's used to keep track of task state and results.
-    While results are disabled by default I use the amqp result backend here
+    While results are disabled by default I use the RPC result backend here
     because I demonstrate how retrieving results work later, you may want to use
     a different backend for your application. They all have different
     strengths and weaknesses.  If you don't need results it's better
@@ -334,7 +334,7 @@ exception, in fact ``result.get()`` will propagate any errors by default:
     File "<stdin>", line 1, in <module>
     File "/opt/devel/celery/celery/result.py", line 113, in get
         interval=interval)
-    File "/opt/devel/celery/celery/backends/amqp.py", line 138, in wait_for
+    File "/opt/devel/celery/celery/backends/rpc.py", line 138, in wait_for
         raise meta['result']
     TypeError: add() takes exactly 2 arguments (1 given)
 

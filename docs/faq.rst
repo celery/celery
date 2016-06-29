@@ -501,6 +501,10 @@ When running with the AMQP result backend, every task result will be sent
 as a message. If you don't collect these results, they will build up and
 RabbitMQ will eventually run out of memory.
 
+This result backend is now deprecated so you should not be using it.
+Use either the RPC backend for rpc-style calls, or a persistent backend
+if you need multi-consumer access to results.
+
 Results expire after 1 day by default.  It may be a good idea
 to lower this value by configuring the :setting:`result_expires`
 setting.

@@ -54,12 +54,6 @@ class test_RPCBackend(AppCase):
         self.assertFalse(queue.durable)
         self.assertTrue(queue.auto_delete)
 
-    def test_many_bindings(self):
-        self.assertListEqual(
-            self.b._many_bindings(['a', 'b']),
-            [self.b.binding],
-        )
-
     def test_create_binding(self):
         self.assertEqual(self.b._create_binding('id'), self.b.binding)
 
