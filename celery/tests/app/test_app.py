@@ -407,8 +407,8 @@ class test_App(AppCase):
             check.assert_called_with(foo)
 
     def test_task_sets_main_name_MP_MAIN_FILE(self):
-        from celery import utils as _utils
-        _utils.MP_MAIN_FILE = __file__
+        from celery.utils import imports as _imports
+        _imports.MP_MAIN_FILE = __file__
         try:
             with self.Celery('xuzzy') as app:
 
@@ -418,7 +418,7 @@ class test_App(AppCase):
 
                 self.assertEqual(foo.name, 'xuzzy.foo')
         finally:
-            _utils.MP_MAIN_FILE = None
+            _imports.MP_MAIN_FILE = None
 
     def test_annotate_decorator(self):
         from celery.app.task import Task

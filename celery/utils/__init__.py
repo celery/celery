@@ -162,34 +162,12 @@ def jsonify(obj,
         return unknown_type_filter(obj)
 
 
-def gen_task_name(app, name, module_name):
-    """Generate task name from name/module pair."""
-    module_name = module_name or '__main__'
-    try:
-        module = sys.modules[module_name]
-    except KeyError:
-        # Fix for manage.py shell_plus (Issue #366)
-        module = None
-
-    if module is not None:
-        module_name = module.__name__
-        # - If the task module is used as the __main__ script
-        # - we need to rewrite the module part of the task name
-        # - to match App.main.
-        if MP_MAIN_FILE and module.__file__ == MP_MAIN_FILE:
-            # - see comment about :envvar:`MP_MAIN_FILE` above.
-            module_name = '__main__'
-    if module_name == '__main__' and app.main:
-        return '.'.join([app.main, name])
-    return '.'.join(p for p in (module_name, name) if p)
-
-
 # ------------------------------------------------------------------------ #
 # > XXX Compat
 from .log import LOG_LEVELS     # noqa
 from .imports import (          # noqa
     qualname as get_full_cls_name, symbol_by_name as get_cls_by_name,
-    instantiate, import_from_cwd
+    instantiate, import_from_cwd, gen_task_name,
 )
 from .functional import chunks, noop                    # noqa
 from kombu.utils import cached_property, uuid   # noqa

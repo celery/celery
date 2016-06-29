@@ -19,9 +19,16 @@ from kombu.utils import symbol_by_name
 
 from celery.five import reload
 
+#: Billiard sets this when execv is enabled.
+#: We use it to find out the name of the original ``__main__``
+#: module, so that we can properly rewrite the name of the
+#: task to be that of ``App.main``.
+MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE')
+
 __all__ = [
-    'NotAPackage', 'qualname', 'instantiate', 'symbol_by_name', 'cwd_in_path',
-    'find_module', 'import_from_cwd', 'reload_from_cwd', 'module_file',
+    'NotAPackage', 'qualname', 'instantiate', 'symbol_by_name',
+    'cwd_in_path', 'find_module', 'import_from_cwd',
+    'reload_from_cwd', 'module_file', 'gen_task_name',
 ]
 
 
@@ -112,3 +119,25 @@ def module_file(module):
     """Return the correct original file name of a module."""
     name = module.__file__
     return name[:-1] if name.endswith('.pyc') else name
+
+
+def gen_task_name(app, name, module_name):
+    """Generate task name from name/module pair."""
+    module_name = module_name or '__main__'
+    try:
+        module = sys.modules[module_name]
+    except KeyError:
+        # Fix for manage.py shell_plus (Issue #366)
+        module = None
+
+    if module is not None:
+        module_name = module.__name__
+        # - If the task module is used as the __main__ script
+        # - we need to rewrite the module part of the task name
+        # - to match App.main.
+        if MP_MAIN_FILE and module.__file__ == MP_MAIN_FILE:
+            # - see comment about :envvar:`MP_MAIN_FILE` above.
+            module_name = '__main__'
+    if module_name == '__main__' and app.main:
+        return '.'.join([app.main, name])
+    return '.'.join(p for p in (module_name, name) if p)

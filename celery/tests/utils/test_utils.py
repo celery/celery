@@ -11,7 +11,6 @@ from celery.utils import (
     isatty,
     is_iterable,
     cached_property,
-    gen_task_name,
     jsonify,
 )
 from celery.tests.case import Case, Mock
@@ -24,14 +23,6 @@ class test_isatty(Case):
         self.assertIs(isatty(fh), fh.isatty())
         fh.isatty.side_effect = AttributeError()
         self.assertFalse(isatty(fh))
-
-
-class test_gen_task_name(Case):
-
-    def test_no_module(self):
-        app = Mock()
-        app.name == '__main__'
-        self.assertTrue(gen_task_name(app, 'foo', 'axsadaewe'))
 
 
 class test_jsonify(Case):

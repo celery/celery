@@ -3,11 +3,12 @@ from __future__ import absolute_import, unicode_literals
 from celery.five import bytes_if_py2
 
 from celery.utils.imports import (
+    NotAPackage,
     qualname,
+    gen_task_name,
     reload_from_cwd,
     module_file,
     find_module,
-    NotAPackage,
 )
 
 from celery.tests.case import Case, Mock, patch
@@ -47,3 +48,11 @@ class test_import_utils(Case):
         m2 = Mock()
         m2.__file__ = '/opt/foo/xyz.py'
         self.assertEqual(module_file(m1), '/opt/foo/xyz.py')
+
+
+class test_gen_task_name(Case):
+
+    def test_no_module(self):
+        app = Mock()
+        app.name == '__main__'
+        self.assertTrue(gen_task_name(app, 'foo', 'axsadaewe'))
