@@ -208,6 +208,7 @@ and -- or you can define your own.
 
 .. _`Memcached`: http://memcached.org
 .. _`MongoDB`: http://www.mongodb.org
+.. _`Redis`: http://redis.io
 .. _`SQLAlchemy`: http://www.sqlalchemy.org/
 .. _`Django`: http://djangoproject.com
 

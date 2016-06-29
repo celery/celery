@@ -27,6 +27,7 @@
     celery.backends.database
     celery.backends.amqp
     celery.backends.cache
+    celery.backends.consul
     celery.backends.couchdb
     celery.backends.mongodb
     celery.backends.elasticsearch

@@ -81,7 +81,6 @@ class Option(object):
 
 NAMESPACES = Namespace(
     accept_content=Option(DEFAULT_ACCEPT_CONTENT, type='list', old=OLD_NS),
-    admins=Option((), type='tuple'),
     enable_utc=Option(True, type='bool'),
     imports=Option((), type='tuple', old=OLD_NS),
     include=Option((), type='tuple', old=OLD_NS),

@@ -54,6 +54,7 @@ ignored_settings = {
     'broker_port',
     'broker_transport',
     'chord_propagates',
+    'mongodb_backend_settings',
     'redis_host',
     'redis_port',
     'redis_db',
