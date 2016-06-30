@@ -267,16 +267,8 @@ class WorkController(object):
                 self.blueprint.join()
 
     def reload(self, modules=None, reload=False, reloader=None):
-        modules = self.app.loader.task_modules if modules is None else modules
-        imp = self.app.loader.import_from_cwd
-
-        for module in set(modules or ()):
-            if module not in sys.modules:
-                logger.debug('importing module %s', module)
-                imp(module)
-            elif reload:
-                logger.debug('reloading module %s', module)
-                reload_from_cwd(sys.modules[module], reloader)
+        list(self._reload_modules(
+            modules, force_reload=reload, reloader=reloader))
 
         if self.consumer:
             self.consumer.update_strategies()
@@ -285,6 +277,21 @@ class WorkController(object):
             self.pool.restart()
         except NotImplementedError:
             pass
+
+    def _reload_modules(self, modules=None, **kwargs):
+        return (
+            self._maybe_reload_module(m, **kwargs)
+            for m in set(self.app.loader.task_modules
+                         if modules is None else (modules or ()))
+        )
+
+    def _maybe_reload_module(self, module, force_reload=False, reloader=None):
+        if module not in sys.modules:
+            logger.debug('importing module %s', module)
+            return self.app.loader.import_from_cwd(module)
+        elif force_reload:
+            logger.debug('reloading module %s', module)
+            return reload_from_cwd(sys.modules[module], reloader)
 
     def info(self):
         return {'total': self.state.total_count,

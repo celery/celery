@@ -568,17 +568,16 @@ class test_ControlPanel(AppCase):
         _reload = Mock()
 
         self.app.conf.worker_pool_restarts = True
-        panel.handle('pool_restart', {'modules': ['foo', 'bar'],
-                                      'reloader': _reload})
+        with patch('sys.modules'):
+            panel.handle('pool_restart', {'modules': ['foo', 'bar'],
+                                          'reloader': _reload})
 
         consumer.controller.pool.restart.assert_called()
         consumer.reset_rate_limits.assert_called_with()
         consumer.update_strategies.assert_called_with()
         _reload.assert_not_called()
-        self.assertItemsEqual(
-            [call('bar'), call('foo')],
-            _import.call_args_list,
-        )
+        _import.assert_has_calls([call('bar'), call('foo')], any_order=True)
+        self.assertEqual(_import.call_count, 2)
 
     def test_pool_restart_reload_modules(self):
         consumer = Consumer(self.app)
