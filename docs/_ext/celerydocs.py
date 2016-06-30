@@ -54,16 +54,6 @@ ABBR_EMPTY = {
 DEFAULT_EMPTY = 'celery.Celery'
 
 
-if sys.version_info[0] < 3:
-    def bytes_if_py2(s):
-        if isinstance(s, unicode):
-            return s.encode()
-        return s
-else:
-    def bytes_if_py2(s):  # noqa
-        return s
-
-
 def typeify(S, type):
     if type in ('meth', 'func'):
         return S + '()'
@@ -152,28 +142,25 @@ def maybe_resolve_abbreviations(app, env, node, contnode):
 
 
 def setup(app):
-    app.connect(
-        bytes_if_py2('missing-reference'),
-        maybe_resolve_abbreviations,
-    )
+    app.connect('missing-reference', maybe_resolve_abbreviations)
 
     app.add_crossref_type(
-        directivename=bytes_if_py2('sig'),
-        rolename=bytes_if_py2('sig'),
-        indextemplate=bytes_if_py2('pair: %s; sig'),
+        directivename='sig',
+        rolename='sig',
+        indextemplate='pair: %s; sig',
     )
     app.add_crossref_type(
-        directivename=bytes_if_py2('state'),
-        rolename=bytes_if_py2('state'),
-        indextemplate=bytes_if_py2('pair: %s; state'),
+        directivename='state',
+        rolename='state',
+        indextemplate='pair: %s; state',
     )
     app.add_crossref_type(
-        directivename=bytes_if_py2('control'),
-        rolename=bytes_if_py2('control'),
-        indextemplate=bytes_if_py2('pair: %s; control'),
+        directivename='control',
+        rolename='control',
+        indextemplate='pair: %s; control',
     )
     app.add_crossref_type(
-        directivename=bytes_if_py2('event'),
-        rolename=bytes_if_py2('event'),
-        indextemplate=bytes_if_py2('pair: %s; event'),
+        directivename='event',
+        rolename='event',
+        indextemplate='pair: %s; event',
     )

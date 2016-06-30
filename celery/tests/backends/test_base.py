@@ -1,8 +1,5 @@
 from __future__ import absolute_import, unicode_literals
 
-import sys
-import types
-
 from contextlib import contextmanager
 
 from celery.exceptions import ChordError, TimeoutError
@@ -23,7 +20,7 @@ from celery.backends.base import (
 from celery.result import result_from_tuple
 from celery.utils.functional import pass1
 
-from celery.tests.case import ANY, AppCase, Case, Mock, call, patch, skip
+from celery.tests.case import ANY, AppCase, Case, Mock, call, patch
 
 
 class wrapobject:
@@ -111,10 +108,7 @@ class test_prepare_exception(AppCase):
         self.assertTrue(str(x))
         y = self.b.exception_to_python(x)
         self.assertEqual(y.__class__.__name__, 'Impossible')
-        if sys.version_info < (2, 5):
-            self.assertTrue(y.__class__.__module__)
-        else:
-            self.assertEqual(y.__class__.__module__, 'foo.module')
+        self.assertEqual(y.__class__.__module__, 'foo.module')
 
     def test_regular(self):
         self.b.serializer = 'pickle'

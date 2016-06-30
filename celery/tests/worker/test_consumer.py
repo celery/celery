@@ -8,16 +8,14 @@ from collections import deque
 from billiard.exceptions import RestartFreqExceeded
 
 from celery.worker.consumer.agent import Agent
-from celery.worker.consumer.consumer import CLOSE, Consumer, dump_body
+from celery.worker.consumer.consumer import CLOSE, Consumer
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
 from celery.worker.consumer.tasks import Tasks
 from celery.utils.collections import LimitedSet
 
-from celery.tests.case import (
-    AppCase, ContextMock, Mock, call, patch, skip,
-)
+from celery.tests.case import AppCase, ContextMock, Mock, call, patch
 
 
 class test_Consumer(AppCase):
@@ -46,12 +44,6 @@ class test_Consumer(AppCase):
     def test_taskbuckets_defaultdict(self):
         c = self.get_consumer()
         self.assertIsNone(c.task_buckets['fooxasdwx.wewe'])
-
-    @skip.if_python3(reason='buffer type not available')
-    def test_dump_body_buffer(self):
-        msg = Mock()
-        msg.body = 'str'
-        self.assertTrue(dump_body(msg, buffer(msg.body)))
 
     def test_sets_heartbeat(self):
         c = self.get_consumer(amqheartbeat=10)

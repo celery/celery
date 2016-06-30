@@ -29,19 +29,13 @@ class NotAPackage(Exception):
     pass
 
 
-if sys.version_info > (3, 3):  # pragma: no cover
-    def qualname(obj):
-        if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
-            obj = obj.__class__
-        q = getattr(obj, '__qualname__', None)
-        if '.' not in q:
-            q = '.'.join((obj.__module__, q))
-        return q
-else:
-    def qualname(obj):  # noqa
-        if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
-            obj = obj.__class__
-        return '.'.join((obj.__module__, obj.__name__))
+def qualname(obj):
+    if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
+        obj = obj.__class__
+    q = getattr(obj, '__qualname__', None)
+    if '.' not in q:
+        q = '.'.join((obj.__module__, q))
+    return q
 
 
 def instantiate(name, *args, **kwargs):

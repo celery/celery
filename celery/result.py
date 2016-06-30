@@ -827,7 +827,6 @@ class GroupResult(ResultSet):
 
     def __bool__(self):
         return bool(self.id or self.results)
-    __nonzero__ = __bool__  # Included for Py2 backwards compatibility
 
     def __eq__(self, other):
         if isinstance(other, GroupResult):

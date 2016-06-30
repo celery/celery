@@ -9,13 +9,10 @@ Parts of this module is Copyright by Werkzeug Team.
 from __future__ import absolute_import, unicode_literals
 
 import importlib
-import sys
 
 __all__ = ['Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate']
 
 __module__ = __name__  # used by Proxy class body
-
-PY3 = sys.version_info[0] == 3
 
 
 def _default_cls_attr(name, type_, cls_value):
@@ -124,7 +121,6 @@ class Proxy:
             return bool(self._get_current_object())
         except RuntimeError:  # pragma: no cover
             return False
-    __nonzero__ = __bool__  # Py2
 
     def __dir__(self):
         try:
@@ -280,19 +276,6 @@ class Proxy:
 
     def __reduce__(self):
         return self._get_current_object().__reduce__()
-
-    if not PY3:  # pragma: no cover
-        def __cmp__(self, other):
-            return cmp(self._get_current_object(), other)  # noqa
-
-        def __long__(self):
-            return long(self._get_current_object())  # noqa
-
-        def __unicode__(self):
-            try:
-                return str(self._get_current_object())
-            except RuntimeError:  # pragma: no cover
-                return repr(self)
 
 
 class PromiseProxy(Proxy):

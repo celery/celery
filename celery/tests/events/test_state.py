@@ -20,15 +20,6 @@ from celery.events.state import (
 )
 from celery.tests.case import AppCase, Mock, patch, skip
 
-try:
-    Decimal(2.6)
-except TypeError:  # pragma: no cover
-    # Py2.6: Must first convert float to str
-    _float_to_decimal = str
-else:
-    def _float_to_decimal(f):  # noqa
-        return f
-
 
 class replay:
 
@@ -196,12 +187,12 @@ class test_Worker(AppCase):
 
     def test_compatible_with_Decimal(self):
         w = Worker('george@vandelay.com')
-        timestamp, local_received = Decimal(_float_to_decimal(time())), time()
+        timestamp, local_received = Decimal(time()), time()
         w.event('worker-online', timestamp, local_received, fields={
             'hostname': 'george@vandelay.com',
             'timestamp': timestamp,
             'local_received': local_received,
-            'freq': Decimal(_float_to_decimal(5.6335431)),
+            'freq': Decimal(5.6335431),
         })
         self.assertTrue(w.alive)
 

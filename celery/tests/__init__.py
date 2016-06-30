@@ -7,7 +7,7 @@ import warnings
 
 from importlib import import_module
 
-PYPY3 = getattr(sys, 'pypy_version_info', None) and sys.version_info[0] > 3
+PYPY3 = getattr(sys, 'pypy_version_info', None)
 
 try:
     WindowsError = WindowsError  # noqa

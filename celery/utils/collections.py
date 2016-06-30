@@ -2,7 +2,6 @@
 """Custom maps, sets, sequences and other data structures."""
 from __future__ import absolute_import, unicode_literals
 
-import sys
 import time
 
 from collections import (
@@ -36,8 +35,6 @@ __all__ = [
     'force_mapping', 'lpmerge',
 ]
 
-PY3 = sys.version_info[0] >= 3
-
 REPR_LIMITED_SET = """\
 <{name}({size}): maxlen={0.maxlen}, expires={0.expires}, minlen={0.minlen}>\
 """
@@ -61,50 +58,10 @@ def lpmerge(L, R):
 
 class OrderedDict(_OrderedDict):
 
-    if PY3:  # pragma: no cover
-        def _LRUkey(self):
-            # return value of od.keys does not support __next__,
-            # but this version will also not create a copy of the list.
-            return next(iter(self.keys()))
-    else:
-        if _dict_is_ordered:  # pragma: no cover
-            def _LRUkey(self):
-                # iterkeys is iterable.
-                return next(self.iterkeys())
-        else:
-            def _LRUkey(self):
-                return self._OrderedDict__root[1][2]
-
-    if not hasattr(_OrderedDict, 'move_to_end'):
-        if _dict_is_ordered:  # pragma: no cover
-
-            def move_to_end(self, key, last=True):
-                if not last:
-                    # we don't use this argument, and the only way to
-                    # implement this on PyPy seems to be O(n): creating a
-                    # copy with the order changed, so we just raise.
-                    raise NotImplementedError('no last=True on PyPy')
-                self[key] = self.pop(key)
-
-        else:
-
-            def move_to_end(self, key, last=True):
-                link = self._OrderedDict__map[key]
-                link_prev = link[0]
-                link_next = link[1]
-                link_prev[1] = link_next
-                link_next[0] = link_prev
-                root = self._OrderedDict__root
-                if last:
-                    last = root[0]
-                    link[0] = last
-                    link[1] = root
-                    last[1] = root[0] = link
-                else:
-                    first = root[1]
-                    link[0] = root
-                    link[1] = first
-                    root[1] = first[0] = link
+    def _LRUkey(self):
+        # return value of od.keys does not support __next__,
+        # but this version will also not create a copy of the list.
+        return next(iter(self.keys()))
 
 
 class AttributeDictMixin:
@@ -260,7 +217,6 @@ class ChainMap(MutableMapping):
 
     def __bool__(self):
         return any(self.maps)
-    __nonzero__ = __bool__  # Py2
 
     def setdefault(self, key, default):
         key = self._key(key)
@@ -283,7 +239,6 @@ class ChainMap(MutableMapping):
         """New ChainMap or subclass with a new copy of maps[0] and
         refs to maps[1:]."""
         return self.__class__(self.maps[0].copy(), *self.maps[1:])
-    __copy__ = copy  # Py2
 
     def _iter(self, op):
         # defaults must be first in the stream, so values in
@@ -585,7 +540,6 @@ class LimitedSet:
 
     def __bool__(self):
         return bool(self._data)
-    __nonzero__ = __bool__  # Py2
 
     @property
     def _heap_overload(self):

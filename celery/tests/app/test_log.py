@@ -22,7 +22,7 @@ from celery.utils.log import (
 )
 
 from case.utils import get_logger_handlers
-from celery.tests.case import AppCase, Mock, mock, patch, skip
+from celery.tests.case import AppCase, Mock, mock, patch
 
 
 class test_TaskFormatter(AppCase):
@@ -111,8 +111,6 @@ class test_ColorFormatter(AppCase):
             raise Exception()
         except Exception:
             self.assertTrue(x.formatException(sys.exc_info()))
-        if sys.version_info[0] == 2:
-            safe_str.assert_called()
 
     @patch('logging.Formatter.format')
     def test_format_object(self, _format):
@@ -152,17 +150,6 @@ class test_ColorFormatter(AppCase):
 
         msg = x.format(record)
         self.assertIn('<Unrepresentable', msg)
-        self.assertEqual(safe_str.call_count, 1)
-
-    @skip.if_python3()
-    @patch('celery.utils.log.safe_str')
-    def test_format_raises_no_color(self, safe_str):
-        x = ColorFormatter(use_color=False)
-        record = Mock()
-        record.levelname = 'ERROR'
-        record.msg = 'HELLO'
-        record.exc_text = 'error text'
-        x.format(record)
         self.assertEqual(safe_str.call_count, 1)
 
 
@@ -252,9 +239,7 @@ class test_default_logger(AppCase):
     @patch('os.fstat')
     def test_setup_logger_no_handlers_file(self, *args):
         tempfile = mktemp(suffix='unittest', prefix='celery')
-        _open = ('builtins.open' if sys.version_info[0] == 3
-                 else '__builtin__.open')
-        with patch(_open) as osopen:
+        with patch('builtins.open') as osopen:
             with mock.restore_logging():
                 files = defaultdict(StringIO)
 

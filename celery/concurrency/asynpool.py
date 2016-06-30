@@ -21,7 +21,6 @@ import os
 import select
 import socket
 import struct
-import sys
 import time
 
 from collections import Counter, deque, namedtuple
@@ -50,14 +49,7 @@ try:
     from struct import unpack_from as _unpack_from
     memoryview = memoryview
     readcanbuf = True
-
-    if sys.version_info[0] == 2 and sys.version_info < (2, 7, 6):
-
-        def unpack_from(fmt, view, _unpack_from=_unpack_from):  # noqa
-            return _unpack_from(fmt, view.tobytes())  # <- memoryview
-    else:
-        # unpack_from supports memoryview in 2.7.6 and 3.3+
-        unpack_from = _unpack_from  # noqa
+    unpack_from = _unpack_from  # noqa
 
 except (ImportError, NameError):  # pragma: no cover
 

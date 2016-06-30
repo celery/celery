@@ -42,7 +42,6 @@ from celery.utils.serialization import (
 __all__ = ['BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend']
 
 EXCEPTION_ABLE_CODECS = frozenset({'pickle'})
-PY3 = sys.version_info >= (3, 0)
 
 logger = get_logger(__name__)
 
@@ -244,7 +243,6 @@ class Backend:
         return self.meta_from_decoded(self.decode(payload))
 
     def decode(self, payload):
-        payload = PY3 and payload or str(payload)
         return loads(payload,
                      content_type=self.content_type,
                      content_encoding=self.content_encoding,

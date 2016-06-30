@@ -2,8 +2,6 @@
 """Memcached and in-memory cache result backend."""
 from __future__ import absolute_import, unicode_literals
 
-import sys
-
 from kombu.utils import cached_property
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 
@@ -15,8 +13,6 @@ from .base import KeyValueStoreBackend
 __all__ = ['CacheBackend']
 
 _imp = [None]
-
-PY3 = sys.version_info[0] == 3
 
 REQUIRES_BACKEND = """\
 The Memcached backend requires either pylibmc or python-memcached.\
@@ -30,7 +26,7 @@ Please use one of the following backends instead: {1}\
 
 def import_best_memcache():
     if _imp[0] is None:
-        is_pylibmc, memcache_key_t = False, ensure_bytes
+        is_pylibmc = False
         try:
             import pylibmc as memcache
             is_pylibmc = True
@@ -39,9 +35,7 @@ def import_best_memcache():
                 import memcache  # noqa
             except ImportError:
                 raise ImproperlyConfigured(REQUIRES_BACKEND)
-        if PY3:  # pragma: no cover
-            memcache_key_t = bytes_to_str
-        _imp[0] = (is_pylibmc, memcache, memcache_key_t)
+        _imp[0] = (is_pylibmc, memcache, bytes_to_str)
     return _imp[0]
 
 

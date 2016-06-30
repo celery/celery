@@ -12,7 +12,7 @@ def _hasattr(C, attr):
     return any(attr in B.__dict__ for B in C.__mro__)
 
 
-class _AbstractClass(metaclass=ABCMeta)
+class _AbstractClass(metaclass=ABCMeta):
     __required_attributes__ = frozenset()
 
     @classmethod

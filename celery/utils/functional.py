@@ -21,8 +21,6 @@ __all__ = [
     'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun',
 ]
 
-IS_PY3 = sys.version_info[0] == 3
-
 FUNHEAD_TEMPLATE = """
 def {fun_name}({fun_args}):
     return {fun_value}

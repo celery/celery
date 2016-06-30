@@ -2,7 +2,6 @@
 """Apache Cassandra result store backend using the DataStax driver."""
 from __future__ import absolute_import, unicode_literals
 
-import sys
 try:  # pragma: no cover
     import cassandra
     import cassandra.auth
@@ -58,11 +57,9 @@ Q_EXPIRES = """
     USING TTL {0}
 """
 
-if sys.version_info[0] == 3:
-    def buf_t(x):
-        return bytes(x, 'utf8')
-else:
-    buf_t = buffer  # noqa
+
+def buf_t(x):
+    return bytes(x, 'utf8')
 
 
 class CassandraBackend(BaseBackend):

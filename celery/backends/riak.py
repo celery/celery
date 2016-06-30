@@ -2,8 +2,6 @@
 """Riak result store backend."""
 from __future__ import absolute_import, unicode_literals
 
-import sys
-
 try:
     import riak
     from riak import RiakClient
@@ -21,18 +19,13 @@ E_BUCKET_NAME = """\
 Riak bucket names must be composed of ASCII characters only, not: {0!r}\
 """
 
-if sys.version_info[0] == 3:
 
-    def to_bytes(s):
-        return s.encode() if isinstance(s, str) else s
+def to_bytes(s):
+    return s.encode() if isinstance(s, str) else s
 
-    def str_decode(s, encoding):
-        return to_bytes(s).decode(encoding)
 
-else:
-
-    def str_decode(s, encoding):
-        return s.decode('ascii')
+def str_decode(s, encoding):
+    return to_bytes(s).decode(encoding)
 
 
 def is_ascii(s):

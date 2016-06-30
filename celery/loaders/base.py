@@ -158,8 +158,9 @@ class BaseLoader:
             self.find_module(name)
         except NotAPackage:
             if name.endswith('.py'):
-                 raise NotAPackage(CONFIG_WITH_SUFFIX.format(
-                    module=name, suggest=name[:-3])).with_traceback(sys.exc_info()[2])
+                raise NotAPackage(CONFIG_WITH_SUFFIX.format(
+                    module=name, suggest=name[:-3])
+                ).with_traceback(sys.exc_info()[2])
             raise NotAPackage(CONFIG_INVALID_NAME.format(
                 module=name)).with_traceback(sys.exc_info()[2])
         else:

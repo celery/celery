@@ -1,16 +1,12 @@
 from __future__ import absolute_import, unicode_literals
 
-import sys
-
 from celery.local import (
     Proxy,
     PromiseProxy,
     maybe_evaluate,
     try_import,
 )
-from celery.tests.case import Case, Mock, skip
-
-PY3 = sys.version_info[0] == 3
+from celery.tests.case import Case, Mock
 
 
 class test_try_import(Case):
@@ -79,24 +75,6 @@ class test_Proxy(Case):
         x = Proxy(X)
         with self.assertRaises(AttributeError):
             x.__dict__
-
-    @skip.if_python3()
-    def test_unicode(self):
-
-        class X:
-
-            def __unicode__(self):
-                return 'UNICODE'
-            __str__ = __unicode__
-
-            def __repr__(self):
-                return 'REPR'
-
-        x = Proxy(lambda: X())
-        self.assertEqual(str(x), 'UNICODE')
-        del(X.__unicode__)
-        del(X.__str__)
-        self.assertEqual(str(x), 'REPR')
 
     def test_dir(self):
 
@@ -168,8 +146,6 @@ class test_Proxy(Case):
         x[0:2] = [1, 2]
         del(x[0:2])
         self.assertTrue(str(x))
-        if sys.version_info[0] < 3:
-            self.assertEqual(x.__cmp__(object()), -1)
 
     def test_complex_cast(self):
 

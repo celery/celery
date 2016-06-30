@@ -5,14 +5,13 @@ import numbers
 import os
 import signal
 import socket
-import sys
 
 from datetime import datetime, timedelta
 from time import monotonic
 
 from billiard.einfo import ExceptionInfo
 from kombu.utils import uuid
-from kombu.utils.encoding import default_encode, from_utf8, safe_str, safe_repr
+from kombu.utils.encoding import from_utf8, safe_str, safe_repr
 
 from celery import states
 from celery.app.trace import (
@@ -48,7 +47,6 @@ from celery.tests.case import (
     TaskMessage,
     task_message_from_sig,
     patch,
-    skip,
 )
 
 
@@ -121,29 +119,6 @@ def jail(app, task_id, name, args, kwargs):
     return trace_task(
         task, task_id, args, kwargs, request=request, eager=False, app=app,
     ).retval
-
-
-@skip.if_python3()
-class test_default_encode(AppCase):
-
-    def test_jython(self):
-        prev, sys.platform = sys.platform, 'java 1.6.1'
-        try:
-            self.assertEqual(default_encode(bytes('foo')), 'foo')
-        finally:
-            sys.platform = prev
-
-    def test_cpython(self):
-        prev, sys.platform = sys.platform, 'darwin'
-        gfe, sys.getfilesystemencoding = (
-            sys.getfilesystemencoding,
-            lambda: 'utf-8',
-        )
-        try:
-            self.assertEqual(default_encode(bytes('foo')), 'foo')
-        finally:
-            sys.platform = prev
-            sys.getfilesystemencoding = gfe
 
 
 class test_Retry(AppCase):

@@ -7,8 +7,6 @@
 """
 from __future__ import absolute_import, unicode_literals
 
-import sys
-
 from collections import MutableSequence, deque
 from copy import deepcopy
 from functools import partial as _partial, reduce
@@ -19,7 +17,6 @@ from kombu.utils import cached_property, fxrange, reprcall, uuid
 from vine import barrier
 
 from celery._state import current_app
-from celery.local import try_import
 from celery.result import GroupResult
 from celery.utils import abstract
 from celery.utils.functional import (
@@ -31,11 +28,6 @@ __all__ = [
     'Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
     'group', 'chord', 'signature', 'maybe_signature',
 ]
-
-PY3 = sys.version_info[0] == 3
-
-# json in Python 2.7 borks if dict contains byte keys.
-JSON_NEEDS_UNICODE_KEYS = PY3 and not try_import('simplejson')
 
 
 class _getitem_property:
@@ -454,11 +446,6 @@ class Signature(dict):
 
     def __repr__(self):
         return self.reprcall()
-
-    if JSON_NEEDS_UNICODE_KEYS:  # pragma: no cover
-        def items(self):
-            for k, v in dict.items(self):
-                yield k.decode() if isinstance(k, bytes) else k, v
 
     @property
     def name(self):

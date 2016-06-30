@@ -3,7 +3,6 @@
 from __future__ import absolute_import, unicode_literals
 
 import numbers
-import sys
 
 from collections import Mapping, namedtuple
 from datetime import timedelta
@@ -16,7 +15,6 @@ from kombu.utils import cached_property
 from kombu.utils.functional import maybe_list
 
 from celery import signals
-from celery.local import try_import
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
@@ -26,13 +24,8 @@ from . import routes as _routes
 
 __all__ = ['AMQP', 'Queues', 'task_message']
 
-PY3 = sys.version_info[0] == 3
-
 #: earliest date supported by time.mktime.
 INT_MIN = -2147483648
-
-# json in Python 2.7 borks if dict contains byte keys.
-JSON_NEEDS_UNICODE_KEYS = not PY3 and not try_import('simplejson')
 
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
@@ -329,14 +322,6 @@ class AMQP:
         if kwargsrepr is None:
             kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize)
 
-        if JSON_NEEDS_UNICODE_KEYS:  # pragma: no cover
-            if callbacks:
-                callbacks = [utf8dict(callback) for callback in callbacks]
-            if errbacks:
-                errbacks = [utf8dict(errback) for errback in errbacks]
-            if chord:
-                chord = utf8dict(chord)
-
         return task_message(
             headers={
                 'lang': 'py',
@@ -408,14 +393,6 @@ class AMQP:
                 expires = to_utc(expires).astimezone(timezone)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
-
-        if JSON_NEEDS_UNICODE_KEYS:  # pragma: no cover
-            if callbacks:
-                callbacks = [utf8dict(callback) for callback in callbacks]
-            if errbacks:
-                errbacks = [utf8dict(errback) for errback in errbacks]
-            if chord:
-                chord = utf8dict(chord)
 
         return task_message(
             headers={},

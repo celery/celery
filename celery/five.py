@@ -15,7 +15,6 @@ from vine.five import __all__ as _all_five
 
 # bloody flake8
 items = five.items
-bytes_if_py2 = five.bytes_if_py2
 string_t = five.string_t
 
 try:
@@ -42,15 +41,6 @@ The module %s is deprecated and will be removed in a future version.
 """
 
 DEFAULT_ATTRS = {'__file__', '__path__', '__doc__', '__all__'}
-
-# im_func is no longer available in Py3.
-# instead the unbound method itself can be used.
-if sys.version_info[0] == 3:  # pragma: no cover
-    def fun_of_method(method):
-        return method
-else:
-    def fun_of_method(method):  # noqa
-        return method.im_func
 
 
 def getappattr(path):
@@ -134,7 +124,7 @@ class class_property:
 
 
 def reclassmethod(method):
-    return classmethod(fun_of_method(method))
+    return classmethod(method)
 
 
 class LazyModule(ModuleType):
@@ -173,8 +163,7 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
         attr_name: (prepare_attr(attr) if prepare_attr else attr)
         for attr_name, attr in items(attrs)
     }
-    module = sys.modules[fqdn] = type(
-        bytes_if_py2(modname), (base,), cls_attrs)(bytes_if_py2(name))
+    module = sys.modules[fqdn] = type(modname, (base,), cls_attrs)(name)
     module.__dict__.update(attrs)
     return module
 
@@ -189,8 +178,6 @@ def recreate_module(name, compat_modules=(), by_module={}, direct={},
         operator.add,
         [tuple(v) for v in [compat_modules, origins, direct, attrs]],
     )))
-    if sys.version_info[0] < 3:
-        _all = [s.encode() for s in _all]
     cattrs = dict(
         _compat_modules=compat_modules,
         _all_by_module=by_module, _direct=direct,

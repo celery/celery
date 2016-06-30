@@ -467,7 +467,7 @@ def _args_for_node(p, name, prefix, suffix, cmd, append, options):
 
     argv = ([expand(cmd)] +
             [format_opt(opt, expand(value))
-                for opt, value in p.optmerge(ns, options).items())] +
+                for opt, value in p.optmerge(ns, options).items()] +
             [p.passthrough])
     if append:
         argv.append(expand(append))

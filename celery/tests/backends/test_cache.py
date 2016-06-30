@@ -14,8 +14,6 @@ from celery.exceptions import ImproperlyConfigured
 
 from celery.tests.case import AppCase, Mock, mock, patch, skip
 
-PY3 = sys.version_info[0] == 3
-
 
 class SomeClass:
 
@@ -149,10 +147,7 @@ class MyMemcachedStringEncodingError(Exception):
 class MemcachedClient(DummyClient):
 
     def set(self, key, value, *args, **kwargs):
-        if PY3:
-            key_t, must_be, not_be, cod = bytes, 'string', 'bytes', 'decode'
-        else:
-            key_t, must_be, not_be, cod = str, 'bytes', 'string', 'encode'
+        key_t, must_be, not_be, cod = bytes, 'string', 'bytes', 'decode'
         if isinstance(key, key_t):
             raise MyMemcachedStringEncodingError(
                 'Keys must be {0}, not {1}.  Convert your '
