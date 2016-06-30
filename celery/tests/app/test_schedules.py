@@ -6,7 +6,6 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pickle import dumps, loads
 
-from celery.five import items
 from celery.schedules import (
     ParseException, crontab, crontab_parser, schedule, solar,
 )
@@ -610,7 +609,7 @@ class test_crontab_is_due(AppCase):
         l2, d2, n2 = due.remaining_delta(last_ran, ffwd=relativedelta)
         if not isinstance(d1, relativedelta):
             self.assertEqual(l1, l2)
-            for field, value in items(d1._fields()):
+            for field, value in d1._fields().items():
                 self.assertEqual(getattr(d1, field), value)
             self.assertFalse(d2.years)
             self.assertFalse(d2.months)

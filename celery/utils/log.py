@@ -10,11 +10,8 @@ import threading
 import traceback
 
 from contextlib import contextmanager
-from kombu.five import values
 from kombu.log import get_logger as _get_logger, LOG_LEVELS
 from kombu.utils.encoding import safe_str
-
-from celery.five import string_t, text_t
 
 from .term import colored
 
@@ -46,7 +43,7 @@ def set_in_sighandler(value):
 
 def iter_open_logger_fds():
     seen = set()
-    loggers = (list(values(logging.Logger.manager.loggerDict)) +
+    loggers = (list(logging.Logger.manager.loggerDict.values()) +
                [logging.getLogger(None)])
     for logger in loggers:
         try:
@@ -148,8 +145,8 @@ class ColorFormatter(logging.Formatter):
                 # so need to reorder calls based on type.
                 # Issue #427
                 try:
-                    if isinstance(msg, string_t):
-                        return text_t(color(safe_str(msg)))
+                    if isinstance(msg, str):
+                        return str(color(safe_str(msg)))
                     return safe_str(color(msg))
                 except UnicodeDecodeError:  # pragma: no cover
                     return safe_str(msg)  # skip colors

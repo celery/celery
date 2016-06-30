@@ -10,8 +10,6 @@ from textwrap import fill
 
 from pprint import pformat
 
-from celery.five import string_t
-
 __all__ = [
     'abbr', 'abbrtask', 'dedent', 'dedent_initial',
     'ensure_newlines', 'ensure_sep',
@@ -29,7 +27,7 @@ RE_FORMAT = re.compile(r'%(\w)')
 
 
 def str_to_list(s):
-    if isinstance(s, string_t):
+    if isinstance(s, str):
         return s.split(',')
     return s
 

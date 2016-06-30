@@ -8,7 +8,6 @@ from celery.app.defaults import (
     _OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY, _TO_OLD_KEY,
     DEFAULTS, NAMESPACES, SETTING_KEYS
 )
-from celery.five import values
 
 from celery.tests.case import AppCase, mock
 
@@ -46,8 +45,8 @@ class test_defaults(AppCase):
         self.assertFalse(any(key.islower() for key in _TO_NEW_KEY))
         self.assertFalse(any(key.isupper() for key in SETTING_KEYS))
         self.assertFalse(any(key.islower() for key in _OLD_SETTING_KEYS))
-        self.assertFalse(any(value.isupper() for value in values(_TO_NEW_KEY)))
-        self.assertFalse(any(value.islower() for value in values(_TO_OLD_KEY)))
+        self.assertFalse(any(value.isupper() for value in _TO_NEW_KEY.values()))
+        self.assertFalse(any(value.islower() for value in _TO_OLD_KEY.values()))
 
         for key in _TO_NEW_KEY:
             self.assertIn(key, _OLD_SETTING_KEYS)

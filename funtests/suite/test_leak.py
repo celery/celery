@@ -7,7 +7,6 @@ import shlex
 import subprocess
 
 from celery import current_app
-from celery.five import range
 from celery.tests.case import SkipTest, unittest
 
 import suite  # noqa

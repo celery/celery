@@ -22,7 +22,6 @@ from kombu.mixins import ConsumerMixin
 from kombu.utils import cached_property, uuid
 
 from celery.app import app_or_default
-from celery.five import items
 from celery.utils.functional import dictfilter
 from celery.utils.nodenames import anon_nodename
 from celery.utils.timeutils import adjust_timestamp, utcoffset, maybe_s_to_ms
@@ -262,7 +261,7 @@ class EventDispatcher:
                 self._outbound_buffer.clear()
         if groups:
             with self.mutex:
-                for group, events in items(self._group_buffer):
+                for group, events in self._group_buffer.items():
                     self._publish(events, self.producer, '%s.multi' % group)
                     events[:] = []  # list.clear
 

@@ -4,8 +4,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
 
+from collections import UserList
 from functools import partial
-from inspect import isfunction
+from inspect import getfullargspec, isfunction
 from itertools import chain, islice
 
 from kombu.utils.functional import (
@@ -13,8 +14,6 @@ from kombu.utils.functional import (
     is_list, maybe_list,
 )
 from vine import promise
-
-from celery.five import UserList, getfullargspec, range
 
 __all__ = [
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',

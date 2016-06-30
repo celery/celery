@@ -5,11 +5,12 @@ from __future__ import absolute_import, unicode_literals
 import io
 import tempfile
 
+from collections import UserDict
+
 from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr
 
 from celery.exceptions import WorkerShutdown
-from celery.five import UserDict, items, string_t
 from celery.platforms import signals as _signals
 from celery.utils import timeutils
 from celery.utils.functional import maybe_list
@@ -59,7 +60,7 @@ def dump_conf(state, with_defaults=False, **kwargs):
 
 
 def _wanted_config_key(key):
-    return isinstance(key, string_t) and not key.startswith('__')
+    return isinstance(key, str) and not key.startswith('__')
 
 
 # -- Task
@@ -292,7 +293,7 @@ def dump_tasks(state, taskinfoitems=None, builtins=False, **kwargs):
             if getattr(task, field, None) is not None
         }
         if fields:
-            info = ['='.join(f) for f in items(fields)]
+            info = ['='.join(f) for f in fields.items()]
             return '{0} [{1}]'.format(task.name, ' '.join(info))
         return task.name
 

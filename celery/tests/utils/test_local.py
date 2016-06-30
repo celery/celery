@@ -2,7 +2,6 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 
-from celery.five import string, long_t
 from celery.local import (
     Proxy,
     PromiseProxy,
@@ -94,10 +93,10 @@ class test_Proxy(Case):
                 return 'REPR'
 
         x = Proxy(lambda: X())
-        self.assertEqual(string(x), 'UNICODE')
+        self.assertEqual(str(x), 'UNICODE')
         del(X.__unicode__)
         del(X.__str__)
-        self.assertEqual(string(x), 'REPR')
+        self.assertEqual(str(x), 'REPR')
 
     def test_dir(self):
 
@@ -267,8 +266,6 @@ class test_Proxy(Case):
         x = Proxy(lambda: 10)
         self.assertEqual(type(x.__float__()), float)
         self.assertEqual(type(x.__int__()), int)
-        if not PY3:
-            self.assertEqual(type(x.__long__()), long_t)
         self.assertTrue(hex(x))
         self.assertTrue(oct(x))
 

@@ -5,11 +5,11 @@ import socket
 
 from collections import defaultdict
 from datetime import datetime, timedelta
+from queue import Queue as FastQueue
 
 from kombu import pidbox
 from kombu.utils import uuid
 
-from celery.five import Queue as FastQueue
 from celery.utils.timer2 import Timer
 from celery.worker import WorkController as _WC
 from celery.worker import consumer

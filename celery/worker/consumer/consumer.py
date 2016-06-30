@@ -26,7 +26,7 @@ from celery import bootsteps
 from celery import signals
 from celery.app.trace import build_tracer
 from celery.exceptions import InvalidTaskError, NotRegistered
-from celery.five import buffer_t, items, values
+from celery.five import buffer_t
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -230,7 +230,7 @@ class Consumer:
 
     def reset_rate_limits(self):
         self.task_buckets.update(
-            (n, self.bucket_for_task(t)) for n, t in items(self.app.tasks)
+            (n, self.bucket_for_task(t)) for n, t in self.app.tasks.items()
         )
 
     def _update_prefetch_count(self, index=0):
@@ -381,7 +381,7 @@ class Consumer:
             self.controller.semaphore.clear()
         if self.timer:
             self.timer.clear()
-        for bucket in values(self.task_buckets):
+        for bucket in self.task_buckets.values():
             if bucket:
                 bucket.clear_pending()
         reserved_requests.clear()
@@ -507,7 +507,7 @@ class Consumer:
 
     def update_strategies(self):
         loader = self.app.loader
-        for name, task in items(self.app.tasks):
+        for name, task in self.app.tasks.items():
             self.strategies[name] = task.start_strategy(self.app, self)
             task.__trace__ = build_tracer(name, task, loader, self.hostname,
                                           app=self.app)

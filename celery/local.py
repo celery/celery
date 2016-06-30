@@ -11,8 +11,6 @@ from __future__ import absolute_import, unicode_literals
 import importlib
 import sys
 
-from .five import bytes_if_py2, string
-
 __all__ = ['Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate']
 
 __module__ = __name__  # used by Proxy class body
@@ -35,7 +33,7 @@ def _default_cls_attr(name, type_, cls_value):
     def __get__(self, obj, cls=None):
         return self.__getter(obj) if obj is not None else self
 
-    return type(bytes_if_py2(name), (type_,), {
+    return type(name, (type_,), {
         '__new__': __new__, '__get__': __get__,
     })
 
@@ -292,7 +290,7 @@ class Proxy:
 
         def __unicode__(self):
             try:
-                return string(self._get_current_object())
+                return str(self._get_current_object())
             except RuntimeError:  # pragma: no cover
                 return repr(self)
 

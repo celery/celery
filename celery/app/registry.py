@@ -8,7 +8,6 @@ from importlib import import_module
 
 from celery._state import get_current_app
 from celery.exceptions import NotRegistered
-from celery.five import items
 
 __all__ = ['TaskRegistry']
 
@@ -50,7 +49,7 @@ class TaskRegistry(dict):
         return self.filter_types('periodic')
 
     def filter_types(self, type):
-        return {name: task for name, task in items(self)
+        return {name: task for name, task in self.items()
                 if getattr(task, 'type', 'regular') == type}
 
 

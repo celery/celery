@@ -9,7 +9,6 @@ This prepares and performs the annotations in the
 """
 from __future__ import absolute_import, unicode_literals
 
-from celery.five import string_t
 from celery.utils.functional import firstmethod, mlazy
 from celery.utils.imports import instantiate
 
@@ -40,7 +39,7 @@ def prepare(annotations):
     def expand_annotation(annotation):
         if isinstance(annotation, dict):
             return MapAnnotation(annotation)
-        elif isinstance(annotation, string_t):
+        elif isinstance(annotation, str):
             return mlazy(instantiate, annotation)
         return annotation
 

@@ -18,7 +18,6 @@ from celery.events.state import (
     Task,
     heartbeat_expires,
 )
-from celery.five import range
 from celery.tests.case import AppCase, Mock, patch, skip
 
 try:

@@ -20,7 +20,6 @@ from celery.exceptions import (
     SoftTimeLimitExceeded, TimeLimitExceeded,
     WorkerLostError, Terminated, Retry, Reject,
 )
-from celery.five import string
 from celery.platforms import signals as _signals
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
@@ -344,7 +343,7 @@ class Request:
         # time to write the result.
         if isinstance(exc, Terminated):
             self._announce_revoked(
-                'terminated', True, string(exc), False)
+                'terminated', True, str(exc), False)
             send_failed_event = False  # already sent revoked event
         elif isinstance(exc, WorkerLostError) or not return_ok:
             self.task.backend.mark_as_failure(

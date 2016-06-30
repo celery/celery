@@ -4,15 +4,15 @@ from __future__ import absolute_import, unicode_literals
 import socket
 
 from collections import deque
-from time import sleep
+from time import monotonic, sleep
 from weakref import WeakKeyDictionary
+from queue import Empty
 
 from kombu.syn import detect_environment
 from kombu.utils import cached_property
 
 from celery import states
 from celery.exceptions import TimeoutError
-from celery.five import Empty, monotonic
 
 drainers = {}
 

@@ -5,13 +5,13 @@ import pickle
 from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
+from queue import Empty, Queue
 
 from billiard.einfo import ExceptionInfo
 
 from celery import states
 from celery import uuid
 from celery.backends.amqp import AMQPBackend
-from celery.five import Empty, Queue, range
 from celery.result import AsyncResult
 
 from celery.tests.case import AppCase, Mock, depends_on_current_app, mock

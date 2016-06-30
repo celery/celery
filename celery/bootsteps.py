@@ -9,7 +9,6 @@ from kombu.common import ignore_errors
 from kombu.utils import symbol_by_name
 from kombu.utils.encoding import bytes_to_str
 
-from .five import bytes_if_py2, values, with_metaclass
 from .utils.graph import DependencyGraph, GraphFormatter
 from .utils.imports import instantiate, qualname
 from .utils.log import get_logger
@@ -225,12 +224,12 @@ class Blueprint:
         return self.steps[name]
 
     def _find_last(self):
-        return next((C for C in values(self.steps) if C.last), None)
+        return next((C for C in self.steps.values() if C.last), None)
 
     def _firstpass(self, steps):
-        for step in values(steps):
+        for step in steps.values():
             step.requires = [symbol_by_name(dep) for dep in step.requires]
-        stream = deque(step.requires for step in values(steps))
+        stream = deque(step.requires for step in steps.values())
         while stream:
             for node in stream.popleft():
                 node = symbol_by_name(node)
@@ -241,7 +240,7 @@ class Blueprint:
     def _finalize_steps(self, steps):
         last = self._find_last()
         self._firstpass(steps)
-        it = ((C, C.requires) for C in values(steps))
+        it = ((C, C.requires) for C in steps.values())
         G = self.graph = DependencyGraph(
             it, formatter=self.GraphFormatter(root=last),
         )
@@ -285,14 +284,13 @@ class StepType(type):
         return super(StepType, cls).__new__(cls, name, bases, attrs)
 
     def __str__(self):
-        return bytes_if_py2(self.name)
+        return self.name
 
     def __repr__(self):
-        return bytes_if_py2('step:{0.name}{{{0.requires!r}}}'.format(self))
+        return 'step:{0.name}{{{0.requires!r}}}'.format(self)
 
 
-@with_metaclass(StepType)
-class Step:
+class Step(metaclass=StepType):
     """A Bootstep.
 
     The :meth:`__init__` method is called when the step
@@ -347,7 +345,7 @@ class Step:
         pass
 
     def __repr__(self):
-        return bytes_if_py2('<step: {0.alias}>'.format(self))
+        return '<step: {0.alias}>'.format(self)
 
     @property
     def alias(self):

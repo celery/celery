@@ -11,8 +11,7 @@ from collections import (
 )
 from heapq import heapify, heappush, heappop
 from itertools import chain, count
-
-from celery.five import Empty, items, keys, values
+from queue import Empty
 
 from .functional import first, uniq
 from .text import match_case
@@ -56,7 +55,7 @@ def lpmerge(L, R):
     Keeps values from `L`, if the value in `R` is :const:`None`.
     """
     setitem = L.__setitem__
-    [setitem(k, v) for k, v in items(R) if v is not None]
+    [setitem(k, v) for k, v in R.items() if v is not None]
     return L
 
 
@@ -66,7 +65,7 @@ class OrderedDict(_OrderedDict):
         def _LRUkey(self):
             # return value of od.keys does not support __next__,
             # but this version will also not create a copy of the list.
-            return next(iter(keys(self)))
+            return next(iter(self.keys()))
     else:
         if _dict_is_ordered:  # pragma: no cover
             def _LRUkey(self):
@@ -172,37 +171,19 @@ class DictAttribute:
     def __contains__(self, key):
         return hasattr(self.obj, key)
 
-    def _iterate_keys(self):
+    def keys(self):
         return iter(dir(self.obj))
-    iterkeys = _iterate_keys
 
     def __iter__(self):
-        return self._iterate_keys()
+        return self.keys()
 
-    def _iterate_items(self):
-        for key in self._iterate_keys():
+    def items(self):
+        for key in self.keys():
             yield key, getattr(self.obj, key)
-    iteritems = _iterate_items
 
-    def _iterate_values(self):
-        for key in self._iterate_keys():
+    def values(self):
+        for key in self.keys():
             yield getattr(self.obj, key)
-    itervalues = _iterate_values
-
-    if sys.version_info[0] == 3:  # pragma: no cover
-        items = _iterate_items
-        keys = _iterate_keys
-        values = _iterate_values
-    else:
-
-        def keys(self):
-            return list(self)
-
-        def items(self):
-            return list(self._iterate_items())
-
-        def values(self):
-            return list(self._iterate_values())
 MutableMapping.register(DictAttribute)
 
 
@@ -271,7 +252,7 @@ class ChainMap(MutableMapping):
         return len(set().union(*self.maps))
 
     def __iter__(self):
-        return self._iterate_keys()
+        return self.keys()
 
     def __contains__(self, key):
         key = self._key(key)
@@ -309,32 +290,14 @@ class ChainMap(MutableMapping):
         # changes take precedence.
         return chain(*[op(d) for d in reversed(self.maps)])
 
-    def _iterate_keys(self):
+    def keys(self):
         return uniq(self._iter(lambda d: d.keys()))
-    iterkeys = _iterate_keys
 
-    def _iterate_items(self):
+    def items(self):
         return ((key, self[key]) for key in self)
-    iteritems = _iterate_items
 
-    def _iterate_values(self):
+    def values(self):
         return (self[key] for key in self)
-    itervalues = _iterate_values
-
-    if sys.version_info[0] == 3:  # pragma: no cover
-        keys = _iterate_keys
-        items = _iterate_items
-        values = _iterate_values
-
-    else:  # noqa
-        def keys(self):
-            return list(self._iterate_keys())
-
-        def items(self):
-            return list(self._iterate_items())
-
-        def values(self):
-            return list(self._iterate_values())
 
 
 class ConfigurationView(ChainMap, AttributeDictMixin):
@@ -494,7 +457,7 @@ class LimitedSet:
 
     def _refresh_heap(self):
         """Time consuming recreating of heap. Do not run this too often."""
-        self._heap[:] = [entry for entry in values(self._data)]
+        self._heap[:] = [entry for entry in self._data.values()]
         heapify(self._heap)
 
     def _maybe_refresh_heap(self):
@@ -527,7 +490,7 @@ class LimitedSet:
             self.purge()
         elif isinstance(other, dict):
             # revokes are sent as a dict
-            for key, inserted in items(other):
+            for key, inserted in other.items():
                 if isinstance(inserted, (tuple, list)):
                     # in case someone uses ._data directly for sending update
                     inserted = inserted[0]
@@ -594,7 +557,7 @@ class LimitedSet:
             >>> r == s
             True
         """
-        return {key: inserted for inserted, key in values(self._data)}
+        return {key: inserted for inserted, key in self._data.values()}
 
     def __eq__(self, other):
         return self._data == other._data
@@ -608,7 +571,7 @@ class LimitedSet:
         )
 
     def __iter__(self):
-        return (i for _, i in sorted(values(self._data)))
+        return (i for _, i in sorted(self._data.values()))
 
     def __len__(self):
         return len(self._data)
@@ -730,7 +693,7 @@ class BufferMap(OrderedDict, Evictable):
         self.bufmaxsize = 1000
         if iterable:
             self.update(iterable)
-        self.total = sum(len(buf) for buf in items(self))
+        self.total = sum(len(buf) for buf in self.items())
 
     def put(self, key, item):
         self._get_or_create_buffer(key).put(item)

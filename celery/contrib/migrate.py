@@ -12,7 +12,6 @@ from kombu.common import maybe_declare
 from kombu.utils.encoding import ensure_bytes
 
 from celery.app import app_or_default
-from celery.five import string, string_t
 from celery.utils.nodenames import worker_direct
 
 __all__ = [
@@ -41,7 +40,7 @@ class State:
     def strtotal(self):
         if not self.total_apx:
             return '?'
-        return string(self.total_apx)
+        return str(self.total_apx)
 
     def __repr__(self):
         if self.filtered:
@@ -113,7 +112,7 @@ def migrate_tasks(source, dest, migrate=migrate_task, app=None,
 
 
 def _maybe_queue(app, q):
-    if isinstance(q, string_t):
+    if isinstance(q, str):
         return app.amqp.queues[q]
     return q
 
@@ -167,7 +166,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
     .. code-block:: python
 
         def transform(value):
-            if isinstance(value, string_t):
+            if isinstance(value, str):
                 return Queue(value, Exchange(value), value)
             return value
 
@@ -225,7 +224,7 @@ def task_id_in(ids, body, message):
 
 
 def prepare_queues(queues):
-    if isinstance(queues, string_t):
+    if isinstance(queues, str):
         queues = queues.split(',')
     if isinstance(queues, list):
         queues = dict(tuple(islice(cycle(q.split(':')), None, 2))
@@ -243,7 +242,7 @@ def start_filter(app, conn, filter, limit=None, timeout=1.0,
     queues = prepare_queues(queues)
     consume_from = [_maybe_queue(app, q)
                     for q in consume_from or list(queues)]
-    if isinstance(tasks, string_t):
+    if isinstance(tasks, str):
         tasks = set(tasks.split(','))
     if tasks is None:
         tasks = set()

@@ -13,6 +13,7 @@ import traceback
 from collections import namedtuple
 from functools import total_ordering
 from threading import Event, Thread
+from time import monotonic
 
 from billiard import ensure_multiprocessing
 from billiard.context import Process
@@ -23,7 +24,6 @@ from kombu.utils.functional import maybe_evaluate
 from . import __version__
 from . import platforms
 from . import signals
-from .five import items, monotonic, reraise, values
 from .schedules import maybe_schedule, crontab
 from .utils.imports import instantiate
 from .utils.timeutils import humanize_seconds
@@ -132,7 +132,7 @@ class ScheduleEntry:
         return self.schedule.is_due(self.last_run_at)
 
     def __iter__(self):
-        return iter(items(vars(self)))
+        return iter(vars(self).items())
 
     def __repr__(self):
         return '<{name} {0.name} {call} {0.schedule}'.format(
@@ -250,7 +250,7 @@ class Scheduler:
         H = self._heap
         if H is None:
             H = self._heap = [event_t(_when(e, e.is_due()[1]) or 0, 5, e)
-                              for e in values(self.schedule)]
+                              for e in self.schedule.values()]
             heapify(H)
         if not H:
             return max_interval
@@ -300,9 +300,9 @@ class Scheduler:
                                       producer=producer,
                                       **entry.options)
         except Exception as exc:
-            reraise(SchedulingError, SchedulingError(
+            raise SchedulingError(
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
-                    entry, exc=exc)), sys.exc_info()[2])
+                    entry, exc=exc)).with_traceback(sys.exc_info()[2])
         finally:
             self._tasks_since_sync += 1
             if self.should_sync():
@@ -342,7 +342,7 @@ class Scheduler:
     def update_from_dict(self, dict_):
         self.schedule.update({
             name: self._maybe_entry(name, entry)
-            for name, entry in items(dict_)
+            for name, entry in dict_.items()
         })
 
     def merge_inplace(self, b):
@@ -468,7 +468,7 @@ class PersistentScheduler(Scheduler):
         self._store.update(__version__=__version__, tz=tz, utc_enabled=utc)
         self.sync()
         debug('Current schedule:\n' + '\n'.join(
-            repr(entry) for entry in values(entries)))
+            repr(entry) for entry in entries.values()))
 
     def get_schedule(self):
         return self._store['entries']

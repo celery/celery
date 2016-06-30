@@ -13,8 +13,6 @@ from itertools import takewhile
 
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
-from celery.five import bytes_if_py2, items, reraise, string_t
-
 from .encoding import safe_repr
 
 try:
@@ -37,7 +35,7 @@ except NameError:  # pragma: no cover
 
 
 def subclass_exception(name, parent, module):  # noqa
-    return type(bytes_if_py2(name), (parent,), {'__module__': module})
+    return type(name, (parent,), {'__module__': module})
 
 
 def find_pickleable_exception(exc, loads=pickle.loads,
@@ -181,7 +179,7 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
                            'on': True, 'off': False}):
     """Convert common terms for true/false to bool
     (true/false/yes/no/on/off/1/0)."""
-    if isinstance(term, string_t):
+    if isinstance(term, str):
         try:
             return table[term.lower()]
         except KeyError:
@@ -190,7 +188,7 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
 
 
 def jsonify(obj,
-            builtin_types=(numbers.Real, string_t), key=None,
+            builtin_types=(numbers.Real, str), key=None,
             keyfilter=None,
             unknown_type_filter=None):
     """Transforms object making it suitable for json serialization"""
@@ -208,7 +206,7 @@ def jsonify(obj,
         return [_jsonify(v) for v in obj]
     elif isinstance(obj, dict):
         return {
-            k: _jsonify(v, key=k) for k, v in items(obj)
+            k: _jsonify(v, key=k) for k, v in obj.items()
             if (keyfilter(k) if keyfilter else 1)
         }
     elif isinstance(obj, datetime.datetime):
@@ -242,7 +240,7 @@ def maybe_reraise():
     exc_info = sys.exc_info()
     try:
         if exc_info[2]:
-            reraise(exc_info[0], exc_info[1], exc_info[2])
+            raise
     finally:
         # see http://docs.python.org/library/sys.html#sys.exc_info
         del(exc_info)

@@ -16,7 +16,6 @@ from celery import _state
 from celery.app import base as _appbase
 from celery.app import defaults
 from celery.exceptions import ImproperlyConfigured
-from celery.five import keys
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.serialization import pickle
@@ -323,7 +322,7 @@ class test_App(AppCase):
         with self.Celery(broker='foo://bar') as app:
             app.conf.worker_agent = 'foo:Bar'
             self.assertFalse(app.configured)
-            self.assertTrue(list(keys(app.conf)))
+            self.assertTrue(list(app.conf.keys()))
             self.assertFalse(app.configured)
             self.assertIn('worker_agent', app.conf)
             self.assertFalse(app.configured)

@@ -7,7 +7,6 @@ from __future__ import absolute_import, unicode_literals
 
 from operator import itemgetter
 
-from celery.five import items
 from celery.utils.graph import DependencyGraph, GraphFormatter
 
 from .base import Command
@@ -148,7 +147,7 @@ class graph(Command):
         except KeyError:
             replies = self.app.control.inspect().stats()
             workers, threads = [], []
-            for worker, reply in items(replies):
+            for worker, reply in replies.items():
                 workers.append(worker)
                 threads.append(reply['pool']['max-concurrency'])
 

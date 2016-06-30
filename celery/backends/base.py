@@ -27,7 +27,6 @@ from celery import states
 from celery import current_app, group, maybe_signature
 from celery.app import current_task
 from celery.exceptions import ChordError, TimeoutError, TaskRevokedError
-from celery.five import items
 from celery.result import (
     GroupResult, ResultBase, allow_join_result, result_from_tuple,
 )
@@ -390,7 +389,7 @@ class Backend:
 
     def apply_chord(self, header, partial_args, group_id, body,
                     options={}, **kwargs):
-        fixed_options = {k: v for k, v in items(options) if k != 'task_id'}
+        fixed_options = {k: v for k, v in options.items() if k != 'task_id'}
         result = header(*partial_args, task_id=group_id, **fixed_options or {})
         self.fallback_chord_unlock(group_id, body, **kwargs)
         return result
@@ -555,7 +554,7 @@ class BaseKeyValueStoreBackend(Backend):
             # client returns dict so mapping preserved.
             return {
                 self._strip_prefix(k): v
-                for k, v in self._filter_ready(items(values))
+                for k, v in self._filter_ready(values.items())
             }
         else:
             # client returns list so need to recreate mapping.
@@ -589,7 +588,7 @@ class BaseKeyValueStoreBackend(Backend):
                                                  for k in keys]), keys)
             cache.update(r)
             ids.difference_update({bytes_to_str(v) for v in r})
-            for key, value in items(r):
+            for key, value in r.items():
                 if on_message is not None:
                     on_message(value)
                 yield bytes_to_str(key), value
@@ -644,7 +643,7 @@ class BaseKeyValueStoreBackend(Backend):
                           result=None, options={}, **kwargs):
         self.save_group(group_id, self.app.GroupResult(group_id, result))
 
-        fixed_options = {k: v for k, v in items(options) if k != 'task_id'}
+        fixed_options = {k: v for k, v in options.items() if k != 'task_id'}
 
         return header(*partial_args, task_id=group_id, **fixed_options or {})
 

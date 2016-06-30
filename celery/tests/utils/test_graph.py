@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-from celery.five import WhateverIO, items
+from celery.five import WhateverIO
 from celery.utils.graph import DependencyGraph
 
 from celery.tests.case import Case, Mock
@@ -53,7 +53,7 @@ class test_DependencyGraph(Case):
 
     def test_items(self):
         self.assertDictEqual(
-            dict(items(self.graph1())),
+            dict(self.graph1().items()),
             {'A': [], 'B': [], 'C': ['A'], 'D': ['C', 'B']},
         )
 

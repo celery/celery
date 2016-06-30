@@ -11,7 +11,6 @@ from vine.utils import wraps
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.five import range
 from celery.utils.timeutils import maybe_timedelta
 
 from .models import Task

@@ -6,12 +6,13 @@ import logging
 import os
 import sys
 
+from time import monotonic
+
 from billiard.einfo import ExceptionInfo
 from billiard.exceptions import WorkerLostError
 from kombu.utils.encoding import safe_repr
 
 from celery.exceptions import WorkerShutdown, WorkerTerminate
-from celery.five import monotonic, reraise
 from celery.utils import timer2
 from celery.utils.text import truncate
 from celery.utils.log import get_logger
@@ -36,8 +37,7 @@ def apply_target(target, args=(), kwargs={}, callback=None,
         raise
     except BaseException as exc:
         try:
-            reraise(WorkerLostError, WorkerLostError(repr(exc)),
-                    sys.exc_info()[2])
+            raise WorkerLostError(repr(exc)).with_traceback(sys.exc_info()[2])
         except WorkerLostError:
             callback(ExceptionInfo())
     else:

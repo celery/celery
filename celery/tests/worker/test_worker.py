@@ -8,6 +8,7 @@ from collections import deque
 from datetime import datetime, timedelta
 from functools import partial
 from threading import Event
+from queue import Empty, Queue as FastQueue
 
 from amqp import ChannelError
 from kombu import Connection
@@ -22,7 +23,6 @@ from celery.exceptions import (
     WorkerShutdown, WorkerTerminate, TaskRevokedError,
     InvalidTaskError, ImproperlyConfigured,
 )
-from celery.five import Empty, range, Queue as FastQueue
 from celery.platforms import EX_FAILURE
 from celery import worker as worker_module
 from celery.worker import components

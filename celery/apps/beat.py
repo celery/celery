@@ -14,7 +14,6 @@ import sys
 from datetime import datetime
 
 from celery import VERSION_BANNER, platforms, beat
-from celery.five import text_t
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger
 from celery.utils.timeutils import humanize_seconds
@@ -110,7 +109,7 @@ class Beat:
 
     def banner(self, service):
         c = self.colored
-        return text_t(  # flake8: noqa
+        return str(  # flake8: noqa
             c.blue('__    ', c.magenta('-'),
             c.blue('    ... __   '), c.magenta('-'),
             c.blue('        _\n'),

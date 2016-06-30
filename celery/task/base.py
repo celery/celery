@@ -12,7 +12,7 @@ from kombu import Exchange
 
 from celery import current_app
 from celery.app.task import Context, Task as BaseTask, _reprtask
-from celery.five import class_property, reclassmethod, with_metaclass
+from celery.five import class_property, reclassmethod
 from celery.local import Proxy
 from celery.schedules import maybe_schedule
 from celery.utils.log import get_task_logger
@@ -119,8 +119,7 @@ class TaskType(type):
         return _reprtask(cls)
 
 
-@with_metaclass(TaskType)
-class Task(BaseTask):
+class Task(BaseTask, metaclass=TaskType):
     """Deprecated Task base class.
 
     Modern applications should use :class:`celery.Task` instead.

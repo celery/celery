@@ -12,7 +12,7 @@ from celery import states
 from celery._state import _task_stack
 from celery.canvas import signature
 from celery.exceptions import Ignore, MaxRetriesExceededError, Reject, Retry
-from celery.five import class_property, items
+from celery.five import class_property
 from celery.result import EagerResult
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
@@ -326,7 +326,7 @@ class Task:
     @classmethod
     def annotate(self):
         for d in resolve_all_annotations(self.app.annotations, self):
-            for key, value in items(d):
+            for key, value in d.items():
                 if key.startswith('@'):
                     self.add_around(key[1:], value)
                 else:

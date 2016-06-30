@@ -14,10 +14,11 @@ Generated with:
 """
 from __future__ import absolute_import, unicode_literals
 
+import builtins
+
 from kombu.serialization import disable_insecure_serializers
 
 from celery.exceptions import ImproperlyConfigured, SecurityError
-from celery.five import builtins
 from celery.security import disable_untrusted_serializers, setup_security
 from celery.security.utils import reraise_errors
 from kombu.serialization import registry

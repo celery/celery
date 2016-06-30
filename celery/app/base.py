@@ -6,7 +6,7 @@ import os
 import threading
 import warnings
 
-from collections import defaultdict, deque
+from collections import UserDict, defaultdict, deque
 from operator import attrgetter
 
 from kombu import pools
@@ -25,7 +25,6 @@ from celery._state import (
     _announce_app_finalized,
 )
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
-from celery.five import UserDict, bytes_if_py2, values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
@@ -437,7 +436,7 @@ class Celery:
                 while pending:
                     maybe_evaluate(pending.popleft())
 
-                for task in values(self._tasks):
+                for task in self._tasks.values():
                     task.bind(self)
 
                 self.on_after_finalize.send(sender=self)
@@ -930,7 +929,7 @@ class Celery:
         if not keep_reduce:
             attrs['__reduce__'] = __reduce__
 
-        return type(bytes_if_py2(name or Class.__name__), (Class,), attrs)
+        return type(name or Class.__name__, (Class,), attrs)
 
     def _rgetattr(self, path):
         return attrgetter(path)(self)

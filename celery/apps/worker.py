@@ -21,7 +21,6 @@ from kombu.utils.encoding import safe_str
 from celery import VERSION_BANNER, platforms, signals
 from celery.app import trace
 from celery.exceptions import WorkerShutdown, WorkerTerminate
-from celery.five import string, string_t
 from celery.loaders.app import AppLoader
 from celery.platforms import EX_FAILURE, EX_OK, check_privileges, isatty
 from celery.utils.debug import cry
@@ -136,8 +135,8 @@ class Worker(WorkController):
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
         print(safe_str(''.join([
-            string(self.colored.cyan(' \n', self.startup_info())),
-            string(self.colored.reset(self.extra_info() or '')),
+            str(self.colored.cyan(' \n', self.startup_info())),
+            str(self.colored.reset(self.extra_info() or '')),
         ])), file=sys.__stdout__)
         self.set_process_status('-active-')
         self.install_platform_tweaks(self)
@@ -175,7 +174,7 @@ class Worker(WorkController):
 
     def startup_info(self):
         app = self.app
-        concurrency = string(self.concurrency)
+        concurrency = str(self.concurrency)
         appr = '{0}:{1:#x}'.format(app.main or '__main__', id(app))
         if not isinstance(app.loader, AppLoader):
             loader = qualname(app.loader)
@@ -183,7 +182,7 @@ class Worker(WorkController):
                 loader = loader[14:]
             appr += ' ({0})'.format(loader)
         pool = self.pool_cls
-        if not isinstance(pool, string_t):
+        if not isinstance(pool, str):
             pool = pool.__module__
         concurrency += ' ({0})'.format(pool.split('.')[-1])
         events = 'ON'

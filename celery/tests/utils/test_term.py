@@ -5,7 +5,6 @@ import sys
 
 from celery.utils import term
 from celery.utils.term import colored, fg
-from celery.five import text_t
 
 from celery.tests.case import Case, skip
 
@@ -53,7 +52,7 @@ class test_colored(Case):
         self.assertTrue(str(colored().iwhite('f')))
         self.assertTrue(str(colored().reset('f')))
 
-        self.assertTrue(text_t(colored().green('∂bar')))
+        self.assertTrue(str(colored().green('∂bar')))
 
         self.assertTrue(
             colored().red('éefoo') + colored().green('∂bar'))

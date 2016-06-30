@@ -16,7 +16,6 @@ from celery import signals
 from celery._state import set_default_app, _set_task_join_will_block
 from celery.app import trace
 from celery.concurrency.base import BasePool
-from celery.five import items
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 
@@ -73,7 +72,7 @@ def process_initializer(app, hostname):
         trace._tasks = app._tasks  # enables fast_trace_task optimization.
     # rebuild execution handler for all tasks.
     from celery.app.trace import build_tracer
-    for name, task in items(app.tasks):
+    for name, task in app.tasks.items():
         task.__trace__ = build_tracer(name, task, app.loader, hostname,
                                       app=app)
     from celery.worker import state as worker_state

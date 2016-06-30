@@ -9,7 +9,6 @@ from kombu.utils.url import maybe_sanitize_url
 from kombu.exceptions import EncodeError
 from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.five import string_t, items
 
 from .base import BaseBackend
 
@@ -67,7 +66,7 @@ class MongoBackend(BaseBackend):
                 'MongoDB backend.')
 
         # Set option defaults
-        for key, value in items(self._prepare_client_options()):
+        for key, value in self._prepare_client_options().items():
             self.options.setdefault(key, value)
 
         # update conf with mongo uri data, only if uri was given
@@ -138,8 +137,8 @@ class MongoBackend(BaseBackend):
                 # This enables the use of replica sets and sharding.
                 # See pymongo.Connection() for more info.
                 host = self.host
-                if isinstance(host, string_t) \
-                   and not host.startswith('mongodb://'):
+                if (isinstance(host, str) and
+                        not host.startswith('mongodb://')):
                     host = 'mongodb://{0}:{1}'.format(host, self.port)
             # don't change self.options
             conf = dict(self.options)

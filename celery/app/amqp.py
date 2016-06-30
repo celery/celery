@@ -16,7 +16,6 @@ from kombu.utils import cached_property
 from kombu.utils.functional import maybe_list
 
 from celery import signals
-from celery.five import items, string_t
 from celery.local import try_import
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
@@ -47,7 +46,7 @@ task_message = namedtuple('task_message',
 
 def utf8dict(d, encoding='utf-8'):
     return {k.decode(encoding) if isinstance(k, bytes) else k: v
-            for k, v in items(d)}
+            for k, v in d.items()}
 
 
 class Queues(dict):
@@ -77,7 +76,7 @@ class Queues(dict):
         self.max_priority = max_priority
         if isinstance(queues, (tuple, list)):
             queues = {q.name: q for q in queues}
-        for name, q in items(queues or {}):
+        for name, q in (queues or {}).items():
             self.add(q) if isinstance(q, Queue) else self.add_compat(name, **q)
 
     def __getitem__(self, name):
@@ -157,7 +156,7 @@ class Queues(dict):
         if not active:
             return ''
         info = [QUEUE_FORMAT.strip().format(q)
-                for _, q in sorted(items(active))]
+                for _, q in sorted(active.items())]
         if indent_first:
             return textindent('\n'.join(info), indent)
         return info[0] + '\n' + textindent('\n'.join(info[1:]), indent)
@@ -495,7 +494,7 @@ class AMQP:
             if queue is None and exchange is None:
                 queue = default_queue
             if queue is not None:
-                if isinstance(queue, string_t):
+                if isinstance(queue, str):
                     qname, queue = queue, queues[queue]
                 else:
                     qname = queue.name

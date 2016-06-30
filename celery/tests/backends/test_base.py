@@ -6,7 +6,6 @@ import types
 from contextlib import contextmanager
 
 from celery.exceptions import ChordError, TimeoutError
-from celery.five import items, bytes_if_py2, range
 from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
 from celery.utils.serialization import find_pickleable_exception as fnpe
@@ -32,19 +31,9 @@ class wrapobject:
     def __init__(self, *args, **kwargs):
         self.args = args
 
-if sys.version_info[0] == 3 or getattr(sys, 'pypy_version_info', None):
-    Oldstyle = None
-else:
-    Oldstyle = types.ClassType(bytes_if_py2('Oldstyle'), (), {})
-Unpickleable = subclass_exception(
-    bytes_if_py2('Unpickleable'), KeyError, 'foo.module',
-)
-Impossible = subclass_exception(
-    bytes_if_py2('Impossible'), object, 'foo.module',
-)
-Lookalike = subclass_exception(
-    bytes_if_py2('Lookalike'), wrapobject, 'foo.module',
-)
+Unpickleable = subclass_exception('Unpickleable', KeyError, 'foo.module')
+Impossible = subclass_exception('Impossible', object, 'foo.module')
+Lookalike = subclass_exception('Lookalike', wrapobject, 'foo.module')
 
 
 class test_nulldict(Case):
@@ -90,11 +79,6 @@ class test_BaseBackend_interface(AppCase):
 
 
 class test_exception_pickle(AppCase):
-
-    @skip.if_python3(reason='does not support old style classes')
-    @skip.if_pypy()
-    def test_oldstyle(self):
-        self.assertTrue(fnpe(Oldstyle()))
 
     def test_BaseException(self):
         self.assertIsNone(fnpe(Exception()))
@@ -355,7 +339,7 @@ class test_KeyValueStoreBackend(AppCase):
         for is_dict in True, False:
             self.b.mget_returns_dict = is_dict
             ids = {uuid(): i for i in range(10)}
-            for id, i in items(ids):
+            for id, i in ids.items():
                 self.b.mark_as_done(id, i)
             it = self.b.get_many(list(ids))
             for i, (got_id, got_state) in enumerate(it):

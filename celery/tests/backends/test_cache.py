@@ -11,7 +11,6 @@ from celery import states
 from celery import group, signature, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items, bytes_if_py2, string, text_t
 
 from celery.tests.case import AppCase, Mock, mock, patch, skip
 
@@ -153,7 +152,7 @@ class MemcachedClient(DummyClient):
         if PY3:
             key_t, must_be, not_be, cod = bytes, 'string', 'bytes', 'decode'
         else:
-            key_t, must_be, not_be, cod = text_t, 'bytes', 'string', 'encode'
+            key_t, must_be, not_be, cod = str, 'bytes', 'string', 'encode'
         if isinstance(key, key_t):
             raise MyMemcachedStringEncodingError(
                 'Keys must be {0}, not {1}.  Convert your '
@@ -166,7 +165,7 @@ class MockCacheMixin:
 
     @contextmanager
     def mock_memcache(self):
-        memcache = types.ModuleType(bytes_if_py2('memcache'))
+        memcache = types.ModuleType('memcache')
         memcache.Client = MemcachedClient
         memcache.Client.__module__ = memcache.__name__
         prev, sys.modules['memcache'] = sys.modules.get('memcache'), memcache
@@ -178,7 +177,7 @@ class MockCacheMixin:
 
     @contextmanager
     def mock_pylibmc(self):
-        pylibmc = types.ModuleType(bytes_if_py2('pylibmc'))
+        pylibmc = types.ModuleType('pylibmc')
         pylibmc.Client = MemcachedClient
         pylibmc.Client.__module__ = pylibmc.__name__
         prev = sys.modules.get('pylibmc')
@@ -229,7 +228,7 @@ class test_get_best_memcache(AppCase, MockCacheMixin):
     def test_backends(self):
         from celery.backends.cache import backends
         with self.mock_memcache():
-            for name, fun in items(backends):
+            for name, fun in backends.items():
                 self.assertTrue(fun())
 
 
@@ -241,7 +240,7 @@ class test_memcache_key(AppCase, MockCacheMixin):
                 with mock.mask_modules('pylibmc'):
                     from celery.backends import cache
                     cache._imp = [None]
-                    task_id, result = string(uuid()), 42
+                    task_id, result = str(uuid()), 42
                     b = cache.CacheBackend(backend='memcache', app=self.app)
                     b.store_result(task_id, result, state=states.SUCCESS)
                     self.assertEqual(b.get_result(task_id), result)
@@ -262,7 +261,7 @@ class test_memcache_key(AppCase, MockCacheMixin):
             with self.mock_pylibmc():
                 from celery.backends import cache
                 cache._imp = [None]
-                task_id, result = string(uuid()), 42
+                task_id, result = str(uuid()), 42
                 b = cache.CacheBackend(backend='memcache', app=self.app)
                 b.store_result(task_id, result, state=states.SUCCESS)
                 self.assertEqual(b.get_result(task_id), result)

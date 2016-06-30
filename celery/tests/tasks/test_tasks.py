@@ -9,7 +9,6 @@ from celery import Task
 from celery import group, uuid
 from celery.app.task import _reprtask
 from celery.exceptions import Ignore, Retry
-from celery.five import items, range, string_t
 from celery.result import EagerResult
 from celery.utils.timeutils import parse_iso8601
 
@@ -307,14 +306,14 @@ class test_tasks(TasksCase):
         self.assertEqual(task_data['task'], task_name)
         task_kwargs = task_data.get('kwargs', {})
         if test_eta:
-            self.assertIsInstance(task_data.get('eta'), string_t)
+            self.assertIsInstance(task_data.get('eta'), str)
             to_datetime = parse_iso8601(task_data.get('eta'))
             self.assertIsInstance(to_datetime, datetime)
         if test_expires:
-            self.assertIsInstance(task_data.get('expires'), string_t)
+            self.assertIsInstance(task_data.get('expires'), str)
             to_datetime = parse_iso8601(task_data.get('expires'))
             self.assertIsInstance(to_datetime, datetime)
-        for arg_name, arg_value in items(kwargs):
+        for arg_name, arg_value in kwargs.items():
             self.assertEqual(task_kwargs.get(arg_name), arg_value)
 
     def test_incomplete_task_cls(self):

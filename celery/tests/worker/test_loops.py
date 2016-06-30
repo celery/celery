@@ -3,13 +3,14 @@ from __future__ import absolute_import, unicode_literals
 import errno
 import socket
 
+from queue import Empty
+
 from kombu.async import Hub, READ, WRITE, ERR
 
 from celery.bootsteps import CLOSE, RUN
 from celery.exceptions import (
     InvalidTaskError, WorkerLostError, WorkerShutdown, WorkerTerminate,
 )
-from celery.five import Empty
 from celery.platforms import EX_FAILURE
 from celery.worker import state
 from celery.worker.consumer import Consumer

@@ -170,7 +170,6 @@ from optparse import OptionGroup
 from celery import concurrency
 from celery.bin.base import Command, daemon_options
 from celery.bin.celeryd_detach import detached_celeryd
-from celery.five import string_t
 from celery.platforms import maybe_drop_privileges
 from celery.utils.log import LOG_LEVELS, mlevel
 from celery.utils.nodenames import default_nodename
@@ -231,7 +230,7 @@ class worker(Command):
             except KeyError:  # pragma: no cover
                 self.die('Unknown level {0!r}. Please use one of {1}.'.format(
                     loglevel, '|'.join(
-                        l for l in LOG_LEVELS if isinstance(l, string_t))))
+                        l for l in LOG_LEVELS if isinstance(l, str))))
 
         worker = self.app.Worker(
             hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,

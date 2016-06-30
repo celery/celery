@@ -15,8 +15,6 @@ import threading
 from itertools import count
 from time import sleep
 
-from celery.five import THREAD_TIMEOUT_MAX
-
 from kombu.async.timer import Entry, Timer as Schedule, to_timestamp, logger
 
 TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
@@ -92,7 +90,7 @@ class Timer(threading.Thread):
         self._is_shutdown.set()
         if self.running:
             self._is_stopped.wait()
-            self.join(THREAD_TIMEOUT_MAX)
+            self.join(threading.TIMEOUT_MAX)
             self.running = False
 
     def ensure_started(self):

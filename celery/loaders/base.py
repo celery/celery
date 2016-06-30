@@ -13,7 +13,6 @@ from datetime import datetime
 from kombu.utils import json
 
 from celery import signals
-from celery.five import reraise, string_t
 from celery.utils.collections import DictAttribute, force_mapping
 from celery.utils.functional import maybe_list
 from celery.utils.imports import (
@@ -129,7 +128,7 @@ class BaseLoader:
         self.on_worker_process_init()
 
     def config_from_object(self, obj, silent=False):
-        if isinstance(obj, string_t):
+        if isinstance(obj, str):
             try:
                 obj = self._smart_import(obj, imp=self.import_from_cwd)
             except (ImportError, AttributeError):
@@ -159,10 +158,10 @@ class BaseLoader:
             self.find_module(name)
         except NotAPackage:
             if name.endswith('.py'):
-                reraise(NotAPackage, NotAPackage(CONFIG_WITH_SUFFIX.format(
-                    module=name, suggest=name[:-3])), sys.exc_info()[2])
-            reraise(NotAPackage, NotAPackage(CONFIG_INVALID_NAME.format(
-                module=name)), sys.exc_info()[2])
+                 raise NotAPackage(CONFIG_WITH_SUFFIX.format(
+                    module=name, suggest=name[:-3])).with_traceback(sys.exc_info()[2])
+            raise NotAPackage(CONFIG_INVALID_NAME.format(
+                module=name)).with_traceback(sys.exc_info()[2])
         else:
             return self.import_from_cwd(name)
 

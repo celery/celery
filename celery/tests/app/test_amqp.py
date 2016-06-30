@@ -6,7 +6,6 @@ from kombu import Exchange, Queue
 
 from celery import uuid
 from celery.app.amqp import Queues, utf8dict
-from celery.five import keys
 from celery.utils.timeutils import to_utc
 
 from celery.tests.case import AppCase, Mock
@@ -116,13 +115,13 @@ class test_Queues(AppCase):
         q = Queues()
         q.select(['foo', 'bar'])
         q.select_add('baz')
-        self.assertItemsEqual(keys(q._consume_from), ['foo', 'bar', 'baz'])
+        self.assertItemsEqual(q._consume_from.keys(), ['foo', 'bar', 'baz'])
 
     def test_deselect(self):
         q = Queues()
         q.select(['foo', 'bar'])
         q.deselect('bar')
-        self.assertItemsEqual(keys(q._consume_from), ['foo'])
+        self.assertItemsEqual(q._consume_from.keys(), ['foo'])
 
     def test_with_ha_policy_compat(self):
         q = Queues(ha_policy='all')

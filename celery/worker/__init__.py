@@ -33,7 +33,6 @@ from celery import signals
 from celery.exceptions import (
     ImproperlyConfigured, WorkerTerminate, TaskRevokedError,
 )
-from celery.five import values
 from celery.platforms import EX_FAILURE, create_pidlock
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel, worker_logger as logger
@@ -190,7 +189,7 @@ class WorkController:
             [self.app.loader.import_task_module(m) for m in includes]
         self.include = includes
         task_modules = {task.__class__.__module__
-                        for task in values(self.app.tasks)}
+                        for task in self.app.tasks.values()}
         self.app.conf.include = tuple(set(prev) | task_modules)
 
     def prepare_args(self, **kwargs):

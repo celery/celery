@@ -6,7 +6,6 @@ from celery import group, uuid
 from celery import canvas
 from celery import result
 from celery.exceptions import ChordError, Retry
-from celery.five import range
 from celery.result import AsyncResult, GroupResult, EagerResult
 from celery.tests.case import AppCase, Mock
 

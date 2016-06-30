@@ -24,7 +24,7 @@ import struct
 import sys
 import time
 
-from collections import deque, namedtuple
+from collections import Counter, deque, namedtuple
 from io import BytesIO
 from numbers import Integral
 from pickle import HIGHEST_PROTOCOL
@@ -41,7 +41,6 @@ from kombu.utils import fxrange
 from kombu.utils.eventio import SELECT_BAD_FD
 from vine import promise
 
-from celery.five import Counter, items, values
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.worker import state as worker_state
@@ -469,7 +468,7 @@ class AsynPool(_pool.Pool):
 
         # Timers include calling maintain_pool at a regular interval
         # to be certain processes are restarted.
-        for handler, interval in items(self.timers):
+        for handler, interval in self.timers.items():
             hub.call_repeatedly(interval, handler)
 
         hub.on_tick.add(self.on_poll_start)
@@ -569,7 +568,7 @@ class AsynPool(_pool.Pool):
             # job._write_to and job._scheduled_for attributes used to recover
             # message boundaries when processes exit.
             infd = proc.inqW_fd
-            for job in values(cache):
+            for job in cache.values():
                 if job._write_to and job._write_to.inqW_fd == infd:
                     job._write_to = proc
                 if job._scheduled_for and job._scheduled_for.inqW_fd == infd:
@@ -928,7 +927,7 @@ class AsynPool(_pool.Pool):
         if self._state == TERMINATE:
             return
         # cancel all tasks that have not been accepted so that NACK is sent.
-        for job in values(self._cache):
+        for job in self._cache.values():
             if not job._accepted:
                 job._cancel()
 
@@ -947,7 +946,7 @@ class AsynPool(_pool.Pool):
                 # flush outgoing buffers
                 intervals = fxrange(0.01, 0.1, 0.01, repeatlast=True)
                 owned_by = {}
-                for job in values(self._cache):
+                for job in self._cache.values():
                     writer = _get_job_writer(job)
                     if writer is not None:
                         owned_by[writer] = job
@@ -1009,7 +1008,7 @@ class AsynPool(_pool.Pool):
         Here we will find an unused slot, as there should always
         be one available when we start a new process.
         """
-        return next(q for q, owner in items(self._queues)
+        return next(q for q, owner in self._queues.items()
                     if owner is None)
 
     def on_grow(self, n):
@@ -1078,7 +1077,7 @@ class AsynPool(_pool.Pool):
     def human_write_stats(self):
         if self.write_stats is None:
             return 'N/A'
-        vals = list(values(self.write_stats))
+        vals = list(self.write_stats.values())
         total = sum(vals)
 
         def per(v, total):
@@ -1136,7 +1135,7 @@ class AsynPool(_pool.Pool):
     def _find_worker_queues(self, proc):
         """Find the queues owned by ``proc``."""
         try:
-            return next(q for q, owner in items(self._queues)
+            return next(q for q, owner in self._queues.items()
                         if owner == proc)
         except StopIteration:
             raise ValueError(proc)

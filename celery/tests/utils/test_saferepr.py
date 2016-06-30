@@ -5,8 +5,6 @@ import re
 from decimal import Decimal
 from pprint import pprint
 
-from celery.five import items, long_t, text_t, values
-
 from celery.utils.saferepr import saferepr
 
 from celery.tests.case import Case
@@ -15,10 +13,9 @@ D_NUMBERS = {
     b'integer': 1,
     b'float': 1.3,
     b'decimal': Decimal('1.3'),
-    b'long': long_t(4),
     b'complex': complex(13.3),
 }
-D_INT_KEYS = {v: k for k, v in items(D_NUMBERS)}
+D_INT_KEYS = {v: k for k, v in D_NUMBERS.items()}
 
 QUICK_BROWN_FOX = 'The quick brown fox jumps over the lazy dog.'
 B_QUICK_BROWN_FOX = b'The quick brown fox jumps over the lazy dog.'
@@ -30,7 +27,7 @@ D_TEXT = {
     b'xuzzy': B_QUICK_BROWN_FOX,
 }
 
-L_NUMBERS = list(values(D_NUMBERS))
+L_NUMBERS = list(D_NUMBERS.values())
 
 D_TEXT_LARGE = {
     b'bazxuzzyfoobarlongverylonglong': QUICK_BROWN_FOX * 30,
@@ -55,7 +52,7 @@ RE_LONG_SUFFIX = re.compile(r'(\d)+L')
 
 
 def old_repr(s):
-    return text_t(RE_LONG_SUFFIX.sub(
+    return str(RE_LONG_SUFFIX.sub(
         r'\1',
         RE_EMPTY_SET_REPR.sub(
             RE_EMPTY_SET_REPR_REPLACE,
@@ -122,7 +119,7 @@ class dict3(dict):
 class test_saferepr(Case):
 
     def test_safe_types(self):
-        for value in values(D_NUMBERS):
+        for value in D_NUMBERS.values():
             self.assertEqual(saferepr(value), old_repr(value))
 
     def test_numbers_dict(self):

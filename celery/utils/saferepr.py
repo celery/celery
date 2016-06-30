@@ -24,8 +24,6 @@ from pprint import _recursion
 
 from kombu.utils.encoding import bytes_to_str
 
-from celery.five import items, text_t
-
 from .text import truncate, truncate_bytes
 
 __all__ = ['saferepr', 'reprstream']
@@ -43,7 +41,7 @@ _key = namedtuple('_key', ('value',))
 _quoted = namedtuple('_quoted', ('value',))
 _dirty = namedtuple('_dirty', ('objid',))
 
-chars_t = (bytes, text_t)
+chars_t = (bytes, str)
 safe_t = (Number,)
 set_t = (frozenset, set)
 
@@ -70,7 +68,7 @@ def _chaindict(mapping,
                LIT_DICT_KVSEP=LIT_DICT_KVSEP,
                LIT_LIST_SEP=LIT_LIST_SEP):
     size = len(mapping)
-    for i, (k, v) in enumerate(items(mapping)):
+    for i, (k, v) in enumerate(mapping.items()):
         yield _key(k)
         yield LIT_DICT_KVSEP
         yield v
@@ -155,7 +153,7 @@ def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
             elif isinstance(val, Decimal):
                 yield repr(val), it
             elif isinstance(val, safe_t):
-                yield text_t(val), it
+                yield str(val), it
             elif isinstance(val, chars_t):
                 yield _quoted(val), it
             elif isinstance(val, range_t):  # pragma: no cover

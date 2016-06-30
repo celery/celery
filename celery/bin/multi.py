@@ -110,7 +110,6 @@ from kombu.utils import cached_property
 from kombu.utils.encoding import from_utf8
 
 from celery import VERSION_BANNER
-from celery.five import items
 from celery.platforms import Pidfile, IS_WINDOWS
 from celery.utils import term
 from celery.utils.nodenames import (
@@ -468,7 +467,7 @@ def _args_for_node(p, name, prefix, suffix, cmd, append, options):
 
     argv = ([expand(cmd)] +
             [format_opt(opt, expand(value))
-                for opt, value in items(p.optmerge(ns, options))] +
+                for opt, value in p.optmerge(ns, options).items())] +
             [p.passthrough])
     if append:
         argv.append(expand(append))
@@ -508,7 +507,7 @@ def _get_ranges(names):
 def _update_ns_opts(p, names):
     # Numbers in args always refers to the index in the list of names.
     # (e.g. `start foo bar baz -c:1` where 1 is foo, 2 is bar, and so on).
-    for ns_name, ns_opts in list(items(p.namespaces)):
+    for ns_name, ns_opts in list(p.namespaces.items()):
         if ns_name.isdigit():
             ns_index = int(ns_name) - 1
             if ns_index < 0:
@@ -520,7 +519,7 @@ def _update_ns_opts(p, names):
 
 
 def _update_ns_ranges(p, ranges):
-    for ns_name, ns_opts in list(items(p.namespaces)):
+    for ns_name, ns_opts in list(p.namespaces.items()):
         if ',' in ns_name or (ranges and '-' in ns_name):
             for subns in parse_ns_range(ns_name, ranges):
                 p.namespaces[subns].update(ns_opts)

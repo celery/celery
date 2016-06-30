@@ -14,8 +14,6 @@ from kombu.utils import cached_property, reprcall
 
 from pytz import timezone as _timezone, AmbiguousTimeError, FixedOffset
 
-from celery.five import string_t
-
 from .functional import dictfilter
 from .iso8601 import parse_iso8601
 from .text import pluralize
@@ -140,7 +138,7 @@ class _Zone:
         return localize(dt, self.local)
 
     def get_timezone(self, zone):
-        if isinstance(zone, string_t):
+        if isinstance(zone, str):
             return _timezone(zone)
         return zone
 
@@ -219,7 +217,7 @@ def rate(rate):
     """Parse rate strings, such as `"100/m"`, `"2/h"` or `"0.5/s"`
     and convert them to seconds."""
     if rate:
-        if isinstance(rate, string_t):
+        if isinstance(rate, str):
             ops, _, modifier = rate.partition('/')
             return RATE_MODIFIER_MAP[modifier or 's'](float(ops)) or 0
         return rate or 0

@@ -9,7 +9,6 @@ from celery.backends.base import SyncBackendMixin
 from celery.exceptions import (
     ImproperlyConfigured, IncompleteStream, TimeoutError,
 )
-from celery.five import range
 from celery.result import (
     AsyncResult,
     EagerResult,

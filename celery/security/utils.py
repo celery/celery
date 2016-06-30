@@ -7,7 +7,6 @@ import sys
 from contextlib import contextmanager
 
 from celery.exceptions import SecurityError
-from celery.five import reraise
 
 try:
     from OpenSSL import crypto
@@ -24,6 +23,4 @@ def reraise_errors(msg='{0!r}', errors=None):
     try:
         yield
     except errors as exc:
-        reraise(SecurityError,
-                SecurityError(msg.format(exc)),
-                sys.exc_info()[2])
+        raise SecurityError(msg.format(exc)).with_traceback(sys.exc_info()[2])

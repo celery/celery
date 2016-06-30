@@ -7,7 +7,6 @@ from pickle import dumps, loads
 
 from celery import beat
 from celery import uuid
-from celery.five import keys, string_t
 from celery.schedules import schedule
 from celery.utils.objects import Bunch
 
@@ -238,7 +237,7 @@ class test_Scheduler(AppCase):
 
     def test_info(self):
         scheduler = mScheduler(app=self.app)
-        self.assertIsInstance(scheduler.info, string_t)
+        self.assertIsInstance(scheduler.info, str)
 
     def test_maybe_entry(self):
         s = mScheduler(app=self.app)
@@ -440,7 +439,7 @@ class test_Service(AppCase):
         self.assertIsInstance(schedule, dict)
         self.assertIsInstance(s.scheduler, beat.Scheduler)
         scheduled = list(schedule.keys())
-        for task_name in keys(sh['entries']):
+        for task_name in sh['entries'].keys():
             self.assertIn(task_name, scheduled)
 
         s.sync()

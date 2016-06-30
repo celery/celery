@@ -2,7 +2,6 @@ from __future__ import absolute_import, unicode_literals
 
 from kombu.utils.functional import lazy
 
-from celery.five import range, nextfun
 from celery.utils.functional import (
     DummyContext,
     fun_takes_argument,
@@ -89,7 +88,7 @@ class test_mlazy(Case):
     def test_is_memoized(self):
 
         it = iter(range(20, 30))
-        p = mlazy(nextfun(it))
+        p = mlazy(next(it))
         self.assertEqual(p(), 20)
         self.assertTrue(p.evaluated)
         self.assertEqual(p(), 20)

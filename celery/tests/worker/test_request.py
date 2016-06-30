@@ -8,6 +8,7 @@ import socket
 import sys
 
 from datetime import datetime, timedelta
+from time import monotonic
 
 from billiard.einfo import ExceptionInfo
 from kombu.utils import uuid
@@ -33,7 +34,6 @@ from celery.exceptions import (
     Terminated,
     WorkerLostError,
 )
-from celery.five import monotonic
 from celery.signals import task_revoked
 from celery.worker import request as module
 from celery.worker.request import (

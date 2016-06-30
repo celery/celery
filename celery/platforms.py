@@ -22,7 +22,6 @@ from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 
 from .local import try_import
-from .five import items, reraise, string_t
 
 try:
     from billiard.process import current_process
@@ -138,7 +137,7 @@ class Pidfile:
         try:
             self.write_pid()
         except OSError as exc:
-            reraise(LockFailed, LockFailed(str(exc)), sys.exc_info()[2])
+            raise LockFailed(str(exc)).with_traceback(sys.exc_info()[2])
         return self
     __enter__ = acquire
 
@@ -293,7 +292,7 @@ class DaemonContext:
     def __init__(self, pidfile=None, workdir=None, umask=None,
                  fake=False, after_chdir=None, after_forkers=True,
                  **kwargs):
-        if isinstance(umask, string_t):
+        if isinstance(umask, str):
             # octal or decimal, depending on initial zero.
             umask = int(umask, 8 if umask.startswith('0') else 10)
         self.workdir = workdir or DAEMON_WORKDIR
@@ -619,8 +618,8 @@ class Signals:
         """Get signal number from signal name."""
         if isinstance(signal_name, numbers.Integral):
             return signal_name
-        if not isinstance(signal_name, string_t) \
-                or not signal_name.isupper():
+        if (not isinstance(signal_name, str) or
+                not signal_name.isupper()):
             raise TypeError('signal name must be uppercase string.')
         if not signal_name.startswith('SIG'):
             signal_name = 'SIG' + signal_name
@@ -658,7 +657,7 @@ class Signals:
 
     def update(self, _d_=None, **sigmap):
         """Set signal handlers from a mapping."""
-        for signal_name, handler in items(dict(_d_ or {}, **sigmap)):
+        for signal_name, handler in dict(_d_ or {}, **sigmap).items():
             self[signal_name] = handler
 
 signals = Signals()
@@ -707,7 +706,7 @@ else:
 
 def get_errno_name(n):
     """Get errno for string, e.g. ``ENOENT``."""
-    if isinstance(n, string_t):
+    if isinstance(n, str):
         return getattr(errno, n)
     return n
 

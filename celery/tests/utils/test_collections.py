@@ -16,7 +16,6 @@ from celery.utils.collections import (
     LimitedSet,
     Messagebuffer,
 )
-from celery.five import items
 from celery.utils.objects import Bunch
 
 from celery.tests.case import Case, skip
@@ -101,7 +100,7 @@ class test_ConfigurationView(Case):
         expected = {'changed_key': 1,
                     'default_key': 1,
                     'both': 2}
-        self.assertDictEqual(dict(items(self.view)), expected)
+        self.assertDictEqual(dict(self.view.items()), expected)
         self.assertItemsEqual(list(iter(self.view)),
                               list(expected.keys()))
         self.assertItemsEqual(list(self.view.keys()), list(expected.keys()))
