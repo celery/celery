@@ -60,7 +60,7 @@ def _reprtask(task, fmt=None, flags=None):
 
 
 @python_2_unicode_compatible
-class Context(object):
+class Context:
     logfile = None
     loglevel = None
     hostname = None
@@ -136,7 +136,7 @@ class Context(object):
 
 @abstract.CallableTask.register
 @python_2_unicode_compatible
-class Task(object):
+class Task:
     """Task base class.
 
     When called tasks apply the :meth:`run` method.  This method must

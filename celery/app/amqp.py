@@ -209,7 +209,7 @@ class Queues(dict):
         return self
 
 
-class AMQP(object):
+class AMQP:
     Connection = Connection
     Consumer = Consumer
     Producer = Producer

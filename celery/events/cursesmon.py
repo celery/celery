@@ -36,7 +36,7 @@ events: {s.event_count} tasks:{s.task_count} workers:{w_alive}/{w_all}
 """
 
 
-class CursesMonitor(object):  # pragma: no cover
+class CursesMonitor:  # pragma: no cover
     keymap = {}
     win = None
     screen_width = None

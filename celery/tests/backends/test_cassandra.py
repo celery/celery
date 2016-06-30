@@ -104,7 +104,7 @@ class test_CassandraBackend(AppCase):
         class OTOExc(Exception):
             pass
 
-        class VeryFaultyCluster(object):
+        class VeryFaultyCluster:
             def __init__(self, *args, **kwargs):
                 pass
 
@@ -132,7 +132,7 @@ class test_CassandraBackend(AppCase):
         # Ensure that Cluster object IS shut down.
         from celery.backends import cassandra as mod
 
-        class RAMHoggingCluster(object):
+        class RAMHoggingCluster:
 
             objects_alive = 0
 
@@ -163,7 +163,7 @@ class test_CassandraBackend(AppCase):
         # ImproperlyConfigured exception.
         from celery.backends import cassandra as mod
 
-        class DummyAuth(object):
+        class DummyAuth:
             ValidAuthProvider = Mock()
 
         mod.cassandra = Mock()

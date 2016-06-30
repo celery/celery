@@ -63,7 +63,7 @@ class test_Proxy(Case):
 
     def test_bool(self):
 
-        class X(object):
+        class X:
 
             def __bool__(self):
                 return False
@@ -74,7 +74,7 @@ class test_Proxy(Case):
 
     def test_slots(self):
 
-        class X(object):
+        class X:
             __slots__ = ()
 
         x = Proxy(X)
@@ -85,7 +85,7 @@ class test_Proxy(Case):
     def test_unicode(self):
 
         @python_2_unicode_compatible
-        class X(object):
+        class X:
 
             def __unicode__(self):
                 return 'UNICODE'
@@ -102,7 +102,7 @@ class test_Proxy(Case):
 
     def test_dir(self):
 
-        class X(object):
+        class X:
 
             def __dir__(self):
                 return ['a', 'b', 'c']
@@ -110,7 +110,7 @@ class test_Proxy(Case):
         x = Proxy(lambda: X())
         self.assertListEqual(dir(x), ['a', 'b', 'c'])
 
-        class Y(object):
+        class Y:
 
             def __dir__(self):
                 raise RuntimeError()
@@ -119,7 +119,7 @@ class test_Proxy(Case):
 
     def test_getsetdel_attr(self):
 
-        class X(object):
+        class X:
             a = 1
             b = 2
             c = 3
@@ -175,7 +175,7 @@ class test_Proxy(Case):
 
     def test_complex_cast(self):
 
-        class O(object):
+        class O:
 
             def __complex__(self):
                 return complex(10.333)
@@ -185,7 +185,7 @@ class test_Proxy(Case):
 
     def test_index(self):
 
-        class O(object):
+        class O:
 
             def __index__(self):
                 return 1
@@ -195,7 +195,7 @@ class test_Proxy(Case):
 
     def test_coerce(self):
 
-        class O(object):
+        class O:
 
             def __coerce__(self, other):
                 return self, other
@@ -275,7 +275,7 @@ class test_Proxy(Case):
 
     def test_hash(self):
 
-        class X(object):
+        class X:
 
             def __hash__(self):
                 return 1234
@@ -284,7 +284,7 @@ class test_Proxy(Case):
 
     def test_call(self):
 
-        class X(object):
+        class X:
 
             def __call__(self):
                 return 1234
@@ -293,7 +293,7 @@ class test_Proxy(Case):
 
     def test_context(self):
 
-        class X(object):
+        class X:
             entered = exited = False
 
             def __enter__(self):
@@ -312,7 +312,7 @@ class test_Proxy(Case):
 
     def test_reduce(self):
 
-        class X(object):
+        class X:
 
             def __reduce__(self):
                 return 123
@@ -325,7 +325,7 @@ class test_PromiseProxy(Case):
 
     def test_only_evaluated_once(self):
 
-        class X(object):
+        class X:
             attr = 123
             evals = 0
 

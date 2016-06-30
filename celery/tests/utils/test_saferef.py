@@ -5,7 +5,7 @@ from celery.utils.dispatch.saferef import safe_ref
 from celery.tests.case import Case
 
 
-class Class1(object):
+class Class1:
 
     def x(self):
         pass
@@ -15,7 +15,7 @@ def fun(obj):
     pass
 
 
-class Class2(object):
+class Class2:
 
     def __call__(self, obj):
         pass

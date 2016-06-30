@@ -49,7 +49,7 @@ def try_import(module, default=None):
         return default
 
 
-class Proxy(object):
+class Proxy:
     """Proxy to another object."""
 
     # Code stolen from werkzeug.local.Proxy.

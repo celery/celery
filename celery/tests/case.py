@@ -85,7 +85,7 @@ class Case(_Case):
     PendingDeprecationWarning = CPendingDeprecationWarning
 
 
-class Trap(object):
+class Trap:
 
     def __getattr__(self, name):
         raise RuntimeError('Test depends on current_app')
@@ -162,7 +162,7 @@ class AppCase(Case):
         self._prev_tls = _state._tls
         _state.set_default_app(trap)
 
-        class NonTLS(object):
+        class NonTLS:
             current_app = trap
         _state._tls = NonTLS()
 

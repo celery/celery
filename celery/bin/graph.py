@@ -56,7 +56,7 @@ class graph(Command):
                                          node._label.split('://')[0])
 
         @python_2_unicode_compatible
-        class Node(object):
+        class Node:
             force_label = None
             scheme = {}
 

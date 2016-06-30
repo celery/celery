@@ -133,7 +133,7 @@ def get_log_policy(task, einfo, exc):
         return log_policy_unexpected
 
 
-class TraceInfo(object):
+class TraceInfo:
     __slots__ = ('state', 'retval')
 
     def __init__(self, state, retval=None):

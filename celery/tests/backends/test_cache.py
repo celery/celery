@@ -18,7 +18,7 @@ from celery.tests.case import AppCase, Mock, mock, patch, skip
 PY3 = sys.version_info[0] == 3
 
 
-class SomeClass(object):
+class SomeClass:
 
     def __init__(self, data):
         self.data = data
@@ -162,7 +162,7 @@ class MemcachedClient(DummyClient):
         return super(MemcachedClient, self).set(key, value, *args, **kwargs)
 
 
-class MockCacheMixin(object):
+class MockCacheMixin:
 
     @contextmanager
     def mock_memcache(self):

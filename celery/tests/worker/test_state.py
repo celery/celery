@@ -161,7 +161,7 @@ class test_Persistent(StateResetCase):
             self.assertIn(item, saved)
 
 
-class SimpleReq(object):
+class SimpleReq:
 
     def __init__(self, name):
         self.id = uuid()

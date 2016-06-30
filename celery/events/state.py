@@ -146,7 +146,7 @@ def with_unique_field(attr):
 
 @with_unique_field('hostname')
 @python_2_unicode_compatible
-class Worker(object):
+class Worker:
     """Worker State."""
     heartbeat_max = 4
     expire_window = HEARTBEAT_EXPIRE_WINDOW
@@ -239,7 +239,7 @@ class Worker(object):
 
 @with_unique_field('uuid')
 @python_2_unicode_compatible
-class Task(object):
+class Task:
     """Task State."""
     name = received = sent = started = succeeded = failed = retried = \
         revoked = rejected = args = kwargs = eta = expires = retries = \
@@ -374,7 +374,7 @@ class Task(object):
         return self.root_id and self.cluster_state.tasks[self.root_id]
 
 
-class State(object):
+class State:
     """Records clusters state."""
     Worker = Worker
     Task = Task

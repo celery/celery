@@ -35,7 +35,7 @@ IS_PY3 = sys.version_info[0] == 3
 if IS_PY3:  # pragma: no cover
     range_t = (range, )
 else:
-    class range_t(object):  # noqa
+    class range_t:  # noqa
         pass
 
 _literal = namedtuple('_literal', ('value', 'truncate', 'direction'))

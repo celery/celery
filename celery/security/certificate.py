@@ -15,7 +15,7 @@ from .utils import crypto, reraise_errors
 __all__ = ['Certificate', 'CertStore', 'FSCertStore']
 
 
-class Certificate(object):
+class Certificate:
     """X.509 certificate."""
 
     def __init__(self, cert):
@@ -46,7 +46,7 @@ class Certificate(object):
             crypto.verify(self._cert, signature, data, digest)
 
 
-class CertStore(object):
+class CertStore:
     """Base class for certificate stores"""
 
     def __init__(self):

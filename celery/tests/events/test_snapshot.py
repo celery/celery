@@ -6,7 +6,7 @@ from celery.events.snapshot import Polaroid, evcam
 from celery.tests.case import AppCase, Mock, mock, patch
 
 
-class MockTimer(object):
+class MockTimer:
     installed = []
 
     def call_repeatedly(self, secs, fun, *args, **kwargs):
@@ -87,7 +87,7 @@ class test_Polaroid(AppCase):
 
 class test_evcam(AppCase):
 
-    class MockReceiver(object):
+    class MockReceiver:
         raise_keyboard_interrupt = False
 
         def capture(self, **kwargs):

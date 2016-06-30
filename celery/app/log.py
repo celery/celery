@@ -47,7 +47,7 @@ class TaskFormatter(ColorFormatter):
         return ColorFormatter.format(self, record)
 
 
-class Logging(object):
+class Logging:
     #: The logging subsystem is only configured once per process.
     #: setup_logging_subsystem sets this flag, and subsequent calls
     #: will do nothing.

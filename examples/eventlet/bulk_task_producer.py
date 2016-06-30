@@ -7,7 +7,7 @@ from eventlet.event import Event
 monkey_patch()
 
 
-class Receipt(object):
+class Receipt:
     result = None
 
     def __init__(self, callback=None):
@@ -25,7 +25,7 @@ class Receipt(object):
             return self.ready.wait()
 
 
-class ProducerPool(object):
+class ProducerPool:
     """Usage::
 
         >>> app = Celery(broker='amqp://')

@@ -18,7 +18,7 @@ def _after_fork_cleanup_session(session):
     session._after_fork()
 
 
-class SessionManager(object):
+class SessionManager:
 
     def __init__(self):
         self._engines = {}

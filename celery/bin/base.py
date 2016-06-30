@@ -70,7 +70,7 @@ class UsageError(Error):
     status = EX_USAGE
 
 
-class Extensions(object):
+class Extensions:
 
     def __init__(self, namespace, register):
         self.names = []
@@ -111,7 +111,7 @@ class HelpFormatter(IndentedHelpFormatter):
             text.fill_paragraphs(text.dedent(description), self.width))
 
 
-class Command(object):
+class Command:
     """Base class for command-line applications.
 
     Arguments:

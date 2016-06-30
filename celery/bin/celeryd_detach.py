@@ -106,7 +106,7 @@ class PartialOptionParser(OptionParser):
                 self.leftovers.append(rargs.pop(0))
 
 
-class detached_celeryd(object):
+class detached_celeryd:
     usage = '%prog [options] [celeryd options]'
     version = celery.VERSION_BANNER
     description = ('Detaches Celery worker nodes.  See `celery worker --help` '

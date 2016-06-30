@@ -33,7 +33,7 @@ class StopFiltering(Exception):
 
 
 @python_2_unicode_compatible
-class State(object):
+class State:
     count = 0
     filtered = 0
     total_apx = 0

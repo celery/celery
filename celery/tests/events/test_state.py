@@ -31,7 +31,7 @@ else:
         return f
 
 
-class replay(object):
+class replay:
 
     def __init__(self, state):
         self.state = state

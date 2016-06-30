@@ -24,7 +24,7 @@ __all__ = ['Polaroid', 'evcam']
 logger = get_logger('celery.evcam')
 
 
-class Polaroid(object):
+class Polaroid:
 
     timer = None
     shutter_signal = Signal(providing_args=('state',))

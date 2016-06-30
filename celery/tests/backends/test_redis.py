@@ -28,14 +28,14 @@ def raise_on_second_call(mock, exc, *retval):
         mock.return_value, = retval
 
 
-class Connection(object):
+class Connection:
     connected = True
 
     def disconnect(self):
         self.connected = False
 
 
-class Pipeline(object):
+class Pipeline:
 
     def __init__(self, client):
         self.client = client
@@ -108,15 +108,15 @@ class Redis(mock.MockCallbacks):
         return len(self.keyspace.get(key) or [])
 
 
-class redis(object):
+class redis:
     StrictRedis = Redis
 
-    class ConnectionPool(object):
+    class ConnectionPool:
 
         def __init__(self, **kwargs):
             pass
 
-    class UnixDomainSocketConnection(object):
+    class UnixDomainSocketConnection:
 
         def __init__(self, **kwargs):
             pass

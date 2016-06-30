@@ -89,7 +89,7 @@ class test_mro_lookup(Case):
 
     def test_order(self):
 
-        class A(object):
+        class A:
             pass
 
         class B(A):

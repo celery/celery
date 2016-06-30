@@ -44,7 +44,7 @@ def apply_target(target, args=(), kwargs={}, callback=None,
         callback(ret)
 
 
-class BasePool(object):
+class BasePool:
     RUN = 0x1
     CLOSE = 0x2
     TERMINATE = 0x3

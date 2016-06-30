@@ -237,7 +237,7 @@ class test_maybe_drop_privileges(Case):
         geteuid.return_value = 10
         getuid.return_value = 10
 
-        class pw_struct(object):
+        class pw_struct:
             pw_gid = 50001
 
         def raise_on_second_call(*args, **kwargs):
@@ -353,7 +353,7 @@ class test_setget_uid_gid(Case):
     @patch('pwd.getpwnam')
     def test_parse_uid_when_existing_name(self, getpwnam):
 
-        class pwent(object):
+        class pwent:
             pw_uid = 5001
 
         getpwnam.return_value = pwent()
@@ -372,7 +372,7 @@ class test_setget_uid_gid(Case):
     @patch('grp.getgrnam')
     def test_parse_gid_when_existing_name(self, getgrnam):
 
-        class grent(object):
+        class grent:
             gr_gid = 50001
 
         getgrnam.return_value = grent()
@@ -408,7 +408,7 @@ class test_initgroups(Case):
         try:
             getpwuid.return_value = ['user']
 
-            class grent(object):
+            class grent:
                 gr_mem = ['user']
 
                 def __init__(self, gid):
@@ -830,8 +830,10 @@ class test_setgroups(Case):
 class test_check_privileges(Case):
 
     def test_suspicious(self):
-        class Obj(object):
+
+        class Obj:
             fchown = 13
+
         prev, platforms.os = platforms.os, Obj()
         try:
             with self.assertRaises(AssertionError):

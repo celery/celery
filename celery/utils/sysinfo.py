@@ -22,7 +22,7 @@ else:  # pragma: no cover
         return (0.0, 0.0, 0.0)
 
 
-class df(object):
+class df:
 
     def __init__(self, path):
         self.path = path

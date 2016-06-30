@@ -25,7 +25,7 @@ class MockShelve(dict):
         self.synced = True
 
 
-class MockService(object):
+class MockService:
     started = False
     stopped = False
 
@@ -494,7 +494,7 @@ class test_EmbeddedService(AppCase):
         self.assertIsInstance(s.service, beat.Service)
         s.service = MockService()
 
-        class _Popen(object):
+        class _Popen:
             terminated = False
 
             def terminate(self):

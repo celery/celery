@@ -29,7 +29,7 @@ from celery.tests.case import AppCase, Mock, mock, patch, skip
 class test_TaskFormatter(AppCase):
 
     def test_no_task(self):
-        class Record(object):
+        class Record:
             msg = 'hello world'
             levelname = 'info'
             exc_text = exc_info = None
@@ -136,7 +136,7 @@ class test_ColorFormatter(AppCase):
         safe_str.side_effect = on_safe_str
 
         @python_2_unicode_compatible
-        class Record(object):
+        class Record:
             levelname = 'ERROR'
             msg = 'HELLO'
             exc_info = 1

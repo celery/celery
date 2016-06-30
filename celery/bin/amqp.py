@@ -39,7 +39,7 @@ Example:
 say = partial(print, file=sys.stderr)
 
 
-class Spec(object):
+class Spec:
     """AMQP Command specification.
 
     Used to convert arguments to Python values and display various help
@@ -306,7 +306,7 @@ class AMQShell(cmd.Cmd):
         return self.prompt_fmt.format(self=self)
 
 
-class AMQPAdmin(object):
+class AMQPAdmin:
     """The celery :program:`celery amqp` utility."""
 
     Shell = AMQShell

@@ -37,7 +37,7 @@ def humanize_type(type):
         return type.lower().replace('-', ' ')
 
 
-class Dumper(object):
+class Dumper:
 
     def __init__(self, out=sys.stdout):
         self.out = out

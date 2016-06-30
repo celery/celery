@@ -164,7 +164,7 @@ if C_BENCH:  # pragma: no cover
         return __ready(request)
 
 
-class Persistent(object):
+class Persistent:
     """This is the persistent data stored by the worker when
     :option:`celery worker --statedb` is enabled.
 

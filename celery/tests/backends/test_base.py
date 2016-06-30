@@ -27,7 +27,7 @@ from celery.utils.functional import pass1
 from celery.tests.case import ANY, AppCase, Case, Mock, call, patch, skip
 
 
-class wrapobject(object):
+class wrapobject:
 
     def __init__(self, *args, **kwargs):
         self.args = args

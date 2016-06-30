@@ -581,10 +581,10 @@ the signature ``(name, args, kwargs, options, task=None, **kwargs)``:
 .. code-block:: python
 
     def route_task(name, args, kwargs, options, task=None, **kwargs):
-            if name == 'myapp.tasks.compress_video':
-                return {'exchange': 'video',
-                        'exchange_type': 'topic',
-                        'routing_key': 'video.compress'}
+        if name == 'myapp.tasks.compress_video':
+            return {'exchange': 'video',
+                    'exchange_type': 'topic',
+                    'routing_key': 'video.compress'}
 
 If you return the ``queue`` key, it will expand with the defined settings of
 that queue in :setting:`task_queues`:
@@ -615,7 +615,6 @@ Router functions can also be added by name:
 .. code-block:: python
 
     task_routes = ('myapp.routers.route_task',)
-
 
 For simple task name -> route mappings like the router example above,
 you can simply drop a dict into :setting:`task_routes` to get the

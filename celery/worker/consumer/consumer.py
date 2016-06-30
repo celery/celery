@@ -118,7 +118,7 @@ def dump_body(m, body):
 
 
 @python_2_unicode_compatible
-class Consumer(object):
+class Consumer:
 
     Strategies = dict
 

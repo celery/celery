@@ -300,7 +300,7 @@ class test_MultiTool(AppCase):
         self.assertEqual(sigs[2][0], ('c', 12, signal.SIGKILL))
 
     def prepare_pidfile_for_getpids(self, Pidfile):
-        class pids(object):
+        class pids:
 
             def __init__(self, path):
                 self.path = path

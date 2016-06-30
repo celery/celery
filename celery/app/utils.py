@@ -232,7 +232,7 @@ def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
     return Settings(preconf, [conf, defaults], info.key_t, prefix=prefix)
 
 
-class AppPickler(object):
+class AppPickler:
     """Old application pickler/unpickler (< 3.1)."""
 
     def __call__(self, cls, *args):

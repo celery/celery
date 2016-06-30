@@ -19,7 +19,7 @@ from celery.tests.case import AppCase, Mock, task_message_from_sig
 
 
 @python_2_unicode_compatible
-class PromiseEqual(object):
+class PromiseEqual:
 
     def __init__(self, fun, *args, **kwargs):
         self.fun = fun
@@ -35,7 +35,7 @@ class PromiseEqual(object):
         return '<promise: {0.fun!r} {0.args!r} {0.kwargs!r}>'.format(self)
 
 
-class X(object):
+class X:
 
     def __init__(self, app, heartbeat=None, on_task_message=None,
                  transport_driver_type=None):

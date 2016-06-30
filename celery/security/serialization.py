@@ -18,7 +18,7 @@ __all__ = ['SecureSerializer', 'register_auth']
 PY3 = sys.version_info[0] == 3
 
 
-class SecureSerializer(object):
+class SecureSerializer:
 
     def __init__(self, key=None, cert=None, cert_store=None,
                  digest='sha1', serializer='json'):

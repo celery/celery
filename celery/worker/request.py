@@ -59,7 +59,7 @@ revoked_tasks = state.revoked
 
 
 @python_2_unicode_compatible
-class Request(object):
+class Request:
     """A request for task execution."""
     acknowledged = False
     time_start = None

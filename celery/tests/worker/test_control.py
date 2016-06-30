@@ -25,7 +25,7 @@ from celery.tests.case import AppCase, Mock, TaskMessage, call, patch
 hostname = socket.gethostname()
 
 
-class WorkController(object):
+class WorkController:
 
     def stats(self):
         return {'total': worker_state.total_count}
@@ -303,7 +303,7 @@ class test_ControlPanel(AppCase):
 
     def test_pool_grow(self):
 
-        class MockPool(object):
+        class MockPool:
 
             def __init__(self, size=1):
                 self.size = size
@@ -338,7 +338,7 @@ class test_ControlPanel(AppCase):
 
     def test_add__cancel_consumer(self):
 
-        class MockConsumer(object):
+        class MockConsumer:
             queues = []
             canceled = []
             consuming = False
@@ -417,7 +417,7 @@ class test_ControlPanel(AppCase):
 
     def test_rate_limit(self):
 
-        class xConsumer(object):
+        class xConsumer:
             reset = False
 
             def reset_rate_limits(self):

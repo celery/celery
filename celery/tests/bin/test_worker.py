@@ -323,7 +323,7 @@ class test_Worker(WorkerAppCase):
         def install_HUP_nosupport(controller):
             controller.hup_not_supported_installed = True
 
-        class Controller(object):
+        class Controller:
             pass
 
         prev = cd.install_HUP_not_supported_handler
@@ -345,7 +345,7 @@ class test_Worker(WorkerAppCase):
         def install_worker_restart_handler(worker):
             restart_worker_handler_installed[0] = True
 
-        class Controller(object):
+        class Controller:
             pass
 
         prev = cd.install_worker_restart_handler
@@ -418,7 +418,7 @@ class test_funs(WorkerAppCase):
 @mock.stdouts
 class test_signal_handlers(WorkerAppCase):
 
-    class _Worker(object):
+    class _Worker:
         stopped = False
         terminated = False
 

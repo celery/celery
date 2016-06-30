@@ -40,7 +40,7 @@ def flatten_reply(reply):
     return nodes
 
 
-class Inspect(object):
+class Inspect:
     app = None
 
     def __init__(self, destination=None, timeout=1, callback=None,
@@ -121,7 +121,7 @@ class Inspect(object):
         return self._request('objgraph', num=n, max_depth=max_depth, type=type)
 
 
-class Control(object):
+class Control:
     Mailbox = Mailbox
 
     def __init__(self, app=None):

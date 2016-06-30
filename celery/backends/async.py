@@ -26,7 +26,7 @@ def register_drainer(name):
 
 
 @register_drainer('default')
-class Drainer(object):
+class Drainer:
 
     def __init__(self, result_consumer):
         self.result_consumer = result_consumer
@@ -97,7 +97,7 @@ class geventDrainer(greenletDrainer):
         return spawn
 
 
-class AsyncBackendMixin(object):
+class AsyncBackendMixin:
 
     def _collect_into(self, result, bucket):
         self.result_consumer.buckets[result] = bucket
@@ -176,7 +176,7 @@ class AsyncBackendMixin(object):
         return True
 
 
-class BaseResultConsumer(object):
+class BaseResultConsumer:
 
     def __init__(self, backend, app, accept,
                  pending_results, pending_messages):

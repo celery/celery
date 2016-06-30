@@ -29,7 +29,7 @@ def _make_id(target):  # pragma: no cover
 
 
 @python_2_unicode_compatible
-class Signal(object):  # pragma: no cover
+class Signal:  # pragma: no cover
     """Observer pattern implementation.
 
     Arguments:

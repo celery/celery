@@ -111,7 +111,7 @@ class LocalTimezone(tzinfo):
         return tt.tm_isdst > 0
 
 
-class _Zone(object):
+class _Zone:
 
     def tz_or_local(self, tzinfo=None):
         if tzinfo is None:
@@ -324,7 +324,7 @@ def maybe_make_aware(dt, tz=None):
 
 
 @python_2_unicode_compatible
-class ffwd(object):
+class ffwd:
     """Version of ``dateutil.relativedelta`` that only supports addition."""
 
     def __init__(self, year=None, month=None, weeks=0, weekday=None, day=None,

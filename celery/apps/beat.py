@@ -35,9 +35,9 @@ Configuration ->
 logger = get_logger('celery.beat')
 
 
-class Beat(object):
-
+class Beat:
     Service = beat.Service
+
     app = None
 
     def __init__(self, max_interval=None, app=None,

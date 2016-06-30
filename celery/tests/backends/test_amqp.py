@@ -17,7 +17,7 @@ from celery.result import AsyncResult
 from celery.tests.case import AppCase, Mock, depends_on_current_app, mock
 
 
-class SomeClass(object):
+class SomeClass:
 
     def __init__(self, data):
         self.data = data
@@ -146,7 +146,7 @@ class test_AMQPBackend(AppCase):
     def _result_context(self):
         results = Queue()
 
-        class Message(object):
+        class Message:
             acked = 0
             requeued = 0
 
@@ -164,7 +164,7 @@ class test_AMQPBackend(AppCase):
             def requeue(self, *args, **kwargs):
                 self.requeued += 1
 
-        class MockBinding(object):
+        class MockBinding:
 
             def __init__(self, *args, **kwargs):
                 self.channel = Mock()

@@ -45,7 +45,7 @@ def safe_ref(target, on_delete=None):  # pragma: no cover
 
 
 @python_2_unicode_compatible
-class BoundMethodWeakref(object):  # pragma: no cover
+class BoundMethodWeakref:  # pragma: no cover
     """'Safe' and reusable weak references to instance methods.
 
     BoundMethodWeakref objects provide a mechanism for

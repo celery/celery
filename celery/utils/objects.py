@@ -5,7 +5,7 @@ from __future__ import absolute_import, unicode_literals
 __all__ = ['Bunch', 'FallbackContext', 'mro_lookup']
 
 
-class Bunch(object):
+class Bunch:
     """Object that enables you to modify attributes."""
 
     def __init__(self, **kwargs):
@@ -42,7 +42,7 @@ def mro_lookup(cls, attr, stop=set(), monkey_patched=[]):
             return node
 
 
-class FallbackContext(object):
+class FallbackContext:
     """The built-in ``@contextmanager`` utility does not work well
     when wrapping other contexts, as the traceback is wrong when
     the wrapped context raises.

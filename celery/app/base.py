@@ -104,7 +104,7 @@ class PendingConfiguration(UserDict, AttributeDictMixin):
 
 
 @python_2_unicode_compatible
-class Celery(object):
+class Celery:
     """Celery application.
 
     Arguments:

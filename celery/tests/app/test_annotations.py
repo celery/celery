@@ -6,7 +6,7 @@ from celery.utils.imports import qualname
 from celery.tests.case import AppCase
 
 
-class MyAnnotation(object):
+class MyAnnotation:
     foo = 65
 
 

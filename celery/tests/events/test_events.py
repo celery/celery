@@ -7,7 +7,7 @@ from celery.events import CLIENT_CLOCK_SKEW, Event
 from celery.tests.case import AppCase, Mock, call
 
 
-class MockProducer(object):
+class MockProducer:
 
     raise_on_publish = False
 

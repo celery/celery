@@ -63,7 +63,7 @@ defined in the `task_queues` setting.
 
 
 @python_2_unicode_compatible
-class WorkController(object):
+class WorkController:
     """Unmanaged worker instance."""
 
     app = None

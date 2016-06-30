@@ -72,7 +72,7 @@ def group_from(type):
     return type.split('-', 1)[0]
 
 
-class EventDispatcher(object):
+class EventDispatcher:
     """Dispatches event messages.
 
     Arguments:
@@ -405,7 +405,7 @@ class EventReceiver(ConsumerMixin):
         return self.channel.connection.client if self.channel else None
 
 
-class Events(object):
+class Events:
 
     def __init__(self, app=None):
         self.app = app

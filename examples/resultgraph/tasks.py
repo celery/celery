@@ -92,7 +92,7 @@ def A_callback(res):
     return res
 
 
-class chord2(object):
+class chord2:
 
     def __init__(self, tasks, **options):
         self.tasks = tasks

@@ -73,7 +73,7 @@ def Property(deprecation=None, removal=None,
     return _inner
 
 
-class _deprecated_property(object):
+class _deprecated_property:
 
     def __init__(self, fget=None, fset=None, fdel=None, doc=None, **depreinfo):
         self.__get = fget

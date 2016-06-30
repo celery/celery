@@ -13,7 +13,7 @@ class test_encoding(Case):
     def test_safe_repr(self):
         self.assertTrue(encoding.safe_repr(object()))
 
-        class foo(object):
+        class foo:
             def __repr__(self):
                 raise ValueError('foo')
 

@@ -39,7 +39,7 @@ PY3 = sys.version_info[0] == 3
 JSON_NEEDS_UNICODE_KEYS = PY3 and not try_import('simplejson')
 
 
-class _getitem_property(object):
+class _getitem_property:
     """Attribute -> dict key descriptor.
 
     The target object must support ``__getitem__``,

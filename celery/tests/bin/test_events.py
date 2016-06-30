@@ -5,7 +5,7 @@ from celery.bin import events
 from celery.tests.case import AppCase, patch, _old_patch, skip
 
 
-class MockCommand(object):
+class MockCommand:
     executed = []
 
     def execute_from_commandline(self, **kwargs):

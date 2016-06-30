@@ -52,7 +52,7 @@ def old_ns(ns):
 
 
 @python_2_unicode_compatible
-class Option(object):
+class Option:
     alt = None
     deprecate_by = None
     remove_by = None

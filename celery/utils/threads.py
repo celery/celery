@@ -113,7 +113,7 @@ def release_local(local):
     local.__release_local__()
 
 
-class Local(object):
+class Local:
     __slots__ = ('__storage__', '__ident_func__')
 
     def __init__(self):
@@ -151,7 +151,7 @@ class Local(object):
             raise AttributeError(name)
 
 
-class _LocalStack(object):
+class _LocalStack:
     """This class works similar to a :class:`Local` but keeps a stack
     of objects instead.  This is best explained with an example::
 
@@ -244,7 +244,7 @@ class _LocalStack(object):
 
 
 @python_2_unicode_compatible
-class LocalManager(object):
+class LocalManager:
     """Local objects cannot manage themselves. For that you need a local
     manager.  You can pass a local manager multiple locals or add them
     later by appending them to ``manager.locals``.  Every time the manager

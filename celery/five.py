@@ -104,7 +104,7 @@ COMPAT_MODULES = {
 }
 
 
-class class_property(object):
+class class_property:
 
     def __init__(self, getter=None, setter=None):
         if getter is not None and not isinstance(getter, classmethod):

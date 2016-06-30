@@ -158,7 +158,7 @@ def celery_exe(*args):
     return ' '.join((CELERY_EXE,) + args)
 
 
-class MultiTool(object):
+class MultiTool:
     retcode = 0  # Final exit code.
 
     def __init__(self, env=None, fh=None, quiet=False, verbose=False,
@@ -545,7 +545,7 @@ def _get_nodename(name, prefix, suffix, options):
         return name, nodename, expand
 
 
-class NamespacedOptionParser(object):
+class NamespacedOptionParser:
 
     def __init__(self, args):
         self.args = args
