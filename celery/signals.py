@@ -23,7 +23,7 @@ __all__ = [
     'celeryd_after_setup', 'worker_init', 'worker_process_init',
     'worker_ready', 'worker_shutdown', 'setup_logging',
     'after_setup_logger', 'after_setup_task_logger',
-    'beat_init', 'beat_embedded_init', 'heartbeat',
+    'beat_init', 'beat_embedded_init', 'heartbeat_sent',
     'eventlet_pool_started', 'eventlet_pool_preshutdown',
     'eventlet_pool_postshutdown', 'eventlet_pool_apply',
 ]
