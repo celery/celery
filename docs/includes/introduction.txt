@@ -38,10 +38,9 @@ by `using webhooks`_.
 What do I need?
 ===============
 
-Celery version 4.0 runs on,
+Celery version 5.0 runs on,
 
-- Python (2.7, 3.4, 3.5)
-- PyPy (5.1, 2.4)
+- Python (3.6)
 
 
 This is the last version to support Python 2.7,
