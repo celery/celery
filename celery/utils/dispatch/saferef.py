@@ -10,8 +10,6 @@ import sys
 import traceback
 import weakref
 
-from celery.five import python_2_unicode_compatible
-
 __all__ = ['safe_ref']
 
 PY3 = sys.version_info[0] == 3
@@ -44,7 +42,6 @@ def safe_ref(target, on_delete=None):  # pragma: no cover
         return weakref.ref(target)
 
 
-@python_2_unicode_compatible
 class BoundMethodWeakref:  # pragma: no cover
     """'Safe' and reusable weak references to instance methods.
 

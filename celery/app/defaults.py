@@ -7,7 +7,7 @@ import sys
 from collections import deque, namedtuple
 from datetime import timedelta
 
-from celery.five import items, keys, python_2_unicode_compatible, values
+from celery.five import items, keys, values
 from celery.utils.functional import memoize
 from celery.utils.serialization import strtobool
 
@@ -51,7 +51,6 @@ def old_ns(ns):
     return {'{0}_{{0}}'.format(ns)}
 
 
-@python_2_unicode_compatible
 class Option:
     alt = None
     deprecate_by = None

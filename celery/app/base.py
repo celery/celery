@@ -25,9 +25,7 @@ from celery._state import (
     _announce_app_finalized,
 )
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
-from celery.five import (
-    UserDict, bytes_if_py2, python_2_unicode_compatible, values,
-)
+from celery.five import UserDict, bytes_if_py2, values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
@@ -103,7 +101,6 @@ class PendingConfiguration(UserDict, AttributeDictMixin):
         return self.callback(key)
 
 
-@python_2_unicode_compatible
 class Celery:
     """Celery application.
 

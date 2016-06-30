@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 
-from celery.five import python_2_unicode_compatible, string, long_t
+from celery.five import string, long_t
 from celery.local import (
     Proxy,
     PromiseProxy,
@@ -84,7 +84,6 @@ class test_Proxy(Case):
     @skip.if_python3()
     def test_unicode(self):
 
-        @python_2_unicode_compatible
         class X:
 
             def __unicode__(self):

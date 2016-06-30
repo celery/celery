@@ -14,7 +14,7 @@ from kombu.utils import cached_property, reprcall
 
 from pytz import timezone as _timezone, AmbiguousTimeError, FixedOffset
 
-from celery.five import python_2_unicode_compatible, string_t
+from celery.five import string_t
 
 from .functional import dictfilter
 from .iso8601 import parse_iso8601
@@ -54,7 +54,6 @@ ZERO = timedelta(0)
 _local_timezone = None
 
 
-@python_2_unicode_compatible
 class LocalTimezone(tzinfo):
     """Local time implementation taken from Python's docs.
 
@@ -323,7 +322,6 @@ def maybe_make_aware(dt, tz=None):
     )
 
 
-@python_2_unicode_compatible
 class ffwd:
     """Version of ``dateutil.relativedelta`` that only supports addition."""
 

@@ -4,7 +4,7 @@ from __future__ import absolute_import, unicode_literals
 
 import weakref
 
-from celery.five import python_2_unicode_compatible, range, text_t
+from celery.five import range, text_t
 from celery.local import PromiseProxy, Proxy
 from celery.utils.log import get_logger
 
@@ -28,7 +28,6 @@ def _make_id(target):  # pragma: no cover
     return id(target)
 
 
-@python_2_unicode_compatible
 class Signal:  # pragma: no cover
     """Observer pattern implementation.
 

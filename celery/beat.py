@@ -23,9 +23,7 @@ from kombu.utils.functional import maybe_evaluate
 from . import __version__
 from . import platforms
 from . import signals
-from .five import (
-    items, monotonic, python_2_unicode_compatible, reraise, values,
-)
+from .five import items, monotonic, reraise, values
 from .schedules import maybe_schedule, crontab
 from .utils.imports import instantiate
 from .utils.timeutils import humanize_seconds
@@ -50,7 +48,6 @@ class SchedulingError(Exception):
 
 
 @total_ordering
-@python_2_unicode_compatible
 class ScheduleEntry:
     """An entry in the scheduler.
 

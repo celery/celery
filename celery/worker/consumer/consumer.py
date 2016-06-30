@@ -26,7 +26,7 @@ from celery import bootsteps
 from celery import signals
 from celery.app.trace import build_tracer
 from celery.exceptions import InvalidTaskError, NotRegistered
-from celery.five import buffer_t, items, python_2_unicode_compatible, values
+from celery.five import buffer_t, items, values
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -113,11 +113,10 @@ def dump_body(m, body):
     body = m.body if body is None else body
     if isinstance(body, buffer_t):
         body = bytes_t(body)
-    return '{0} ({1}b)'.format(truncate(safe_repr(body), 1024),
-                               len(m.body))
+    return '{0} ({1}b)'.format(
+        truncate(safe_repr(body), 1024), len(m.body))
 
 
-@python_2_unicode_compatible
 class Consumer:
 
     Strategies = dict

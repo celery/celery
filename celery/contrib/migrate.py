@@ -12,7 +12,7 @@ from kombu.common import maybe_declare
 from kombu.utils.encoding import ensure_bytes
 
 from celery.app import app_or_default
-from celery.five import python_2_unicode_compatible, string, string_t
+from celery.five import string, string_t
 from celery.utils.nodenames import worker_direct
 
 __all__ = [
@@ -32,7 +32,6 @@ class StopFiltering(Exception):
     pass
 
 
-@python_2_unicode_compatible
 class State:
     count = 0
     filtered = 0

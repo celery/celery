@@ -12,10 +12,7 @@ from kombu import Exchange
 
 from celery import current_app
 from celery.app.task import Context, Task as BaseTask, _reprtask
-from celery.five import (
-    class_property, reclassmethod,
-    python_2_unicode_compatible, with_metaclass,
-)
+from celery.five import class_property, reclassmethod, with_metaclass
 from celery.local import Proxy
 from celery.schedules import maybe_schedule
 from celery.utils.log import get_task_logger
@@ -30,7 +27,6 @@ _COMPAT_CLASSMETHODS = (
 )
 
 
-@python_2_unicode_compatible
 class _CompatShared:
 
     def __init__(self, name, cons):
@@ -124,7 +120,6 @@ class TaskType(type):
 
 
 @with_metaclass(TaskType)
-@python_2_unicode_compatible
 class Task(BaseTask):
     """Deprecated Task base class.
 

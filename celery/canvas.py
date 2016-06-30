@@ -19,7 +19,6 @@ from kombu.utils import cached_property, fxrange, reprcall, uuid
 from vine import barrier
 
 from celery._state import current_app
-from celery.five import python_2_unicode_compatible
 from celery.local import try_import
 from celery.result import GroupResult
 from celery.utils import abstract
@@ -117,7 +116,6 @@ def _upgrade(fields, sig):
 
 
 @abstract.CallableSignature.register
-@python_2_unicode_compatible
 class Signature(dict):
     """Class that wraps the arguments and execution options
     for a single task invocation.
@@ -503,7 +501,6 @@ class Signature(dict):
 
 
 @Signature.register_type
-@python_2_unicode_compatible
 class chain(Signature):
     """Chains tasks together, so that each tasks follows each other
     by being applied as a callback of the previous task.
@@ -768,7 +765,6 @@ class _basemap(Signature):
 
 
 @Signature.register_type
-@python_2_unicode_compatible
 class xmap(_basemap):
     _task_name = 'celery.map'
 
@@ -779,7 +775,6 @@ class xmap(_basemap):
 
 
 @Signature.register_type
-@python_2_unicode_compatible
 class xstarmap(_basemap):
     _task_name = 'celery.starmap'
 
@@ -842,7 +837,6 @@ def _maybe_group(tasks, app):
 
 
 @Signature.register_type
-@python_2_unicode_compatible
 class group(Signature):
     """Creates a group of tasks to be executed in parallel.
 
@@ -1068,7 +1062,6 @@ class group(Signature):
 
 
 @Signature.register_type
-@python_2_unicode_compatible
 class chord(Signature):
     """Barrier synchronization primitive.
 

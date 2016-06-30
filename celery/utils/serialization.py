@@ -13,9 +13,7 @@ from itertools import takewhile
 
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
-from celery.five import (
-    bytes_if_py2, python_2_unicode_compatible, items, reraise, string_t,
-)
+from celery.five import bytes_if_py2, items, reraise, string_t
 
 from .encoding import safe_repr
 
@@ -80,7 +78,6 @@ def create_exception_cls(name, module, parent=None):
     return subclass_exception(name, parent, module)
 
 
-@python_2_unicode_compatible
 class UnpickleableExceptionWrapper(Exception):
     """Wraps unpickleable exceptions.
 

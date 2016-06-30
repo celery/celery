@@ -5,9 +5,7 @@ import re
 from decimal import Decimal
 from pprint import pprint
 
-from celery.five import (
-    items, long_t, python_2_unicode_compatible, text_t, values,
-)
+from celery.five import items, long_t, text_t, values
 
 from celery.utils.saferepr import saferepr
 
@@ -75,7 +73,6 @@ class list2(list):
     pass
 
 
-@python_2_unicode_compatible
 class list3(list):
 
     def __repr__(self):
@@ -86,7 +83,6 @@ class tuple2(tuple):
     pass
 
 
-@python_2_unicode_compatible
 class tuple3(tuple):
 
     def __repr__(self):
@@ -97,7 +93,6 @@ class set2(set):
     pass
 
 
-@python_2_unicode_compatible
 class set3(set):
 
     def __repr__(self):
@@ -108,7 +103,6 @@ class frozenset2(frozenset):
     pass
 
 
-@python_2_unicode_compatible
 class frozenset3(frozenset):
 
     def __repr__(self):
@@ -119,7 +113,6 @@ class dict2(dict):
     pass
 
 
-@python_2_unicode_compatible
 class dict3(dict):
 
     def __repr__(self):

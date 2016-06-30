@@ -19,9 +19,7 @@ from pprint import pformat
 from celery import VERSION_BANNER, Celery, maybe_patch_concurrency
 from celery import signals
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
-from celery.five import (
-    getfullargspec, items, python_2_unicode_compatible, string, string_t,
-)
+from celery.five import getfullargspec, items, string, string_t
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
 from celery.utils import term
 from celery.utils import text
@@ -53,7 +51,6 @@ find_rst_ref = re.compile(r':\w+:`(.+?)`')
 find_rst_decl = re.compile(r'^\s*\.\. .+?::.+$')
 
 
-@python_2_unicode_compatible
 class Error(Exception):
     status = EX_FAILURE
 
