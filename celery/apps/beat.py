@@ -90,7 +90,6 @@ class Beat(object):
                            colorize=colorize)
 
     def start_scheduler(self):
-        c = self.colored
         if self.pidfile:
             platforms.create_pidlock(self.pidfile)
         beat = self.Service(app=self.app,
@@ -98,12 +97,8 @@ class Beat(object):
                             scheduler_cls=self.scheduler_cls,
                             schedule_filename=self.schedule)
 
-        print(text_t(   # noqa (pyflakes chokes on print)
-            c.blue('__    ', c.magenta('-'),
-            c.blue('    ... __   '), c.magenta('-'),
-            c.blue('        _\n'),
-            c.reset(self.startup_info(beat))),
-        ))
+        print(self.banner())
+
         self.setup_logging()
         if self.socket_timeout:
             logger.debug('Setting default socket timeout to %r',
@@ -117,6 +112,15 @@ class Beat(object):
                             exc.__class__, exc,
                             exc_info=True)
             raise
+
+    def banner(self):
+        c = self.colored
+        return text_t(  # flake8: noqa
+            c.blue('__    ', c.magenta('-'),
+            c.blue('    ... __   '), c.magenta('-'),
+            c.blue('        _\n'),
+            c.reset(self.startup_info(beat))),
+        )
 
     def init_loader(self):
         # Run the worker init handler.

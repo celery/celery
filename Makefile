@@ -67,7 +67,7 @@ configcheck:
 
 flakecheck:
 	# the only way to enable all-1 errors is to ignore one of them.
-	$(FLAKE8) --ignore=W503 "$(PROJ)"
+	$(FLAKE8) --ignore=X999 "$(PROJ)"
 
 flakediag:
 	-$(MAKE) flakecheck
