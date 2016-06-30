@@ -215,3 +215,4 @@ Colin McIntosh, 2016/04/26
 Jeremy Zafran, 2016/05/17
 Anand Reddy Pandikunta, 2016/06/18
 Adriano Martins de Jesus, 2016/06/22
+Kevin Richardson, 2016/06/29
