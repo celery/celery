@@ -48,16 +48,22 @@ class Pidbox(object):
             self.reset()
 
     def start(self, c):
-        self.node.channel = c.connection.channel()
-        self.consumer = self.node.listen(callback=self.on_message)
-        self.consumer.on_decode_error = c.on_decode_error
+        if 'transport_options' in c.connection.info():
+            connection_transport_options = c.connection.info().get('transport_options')
+            if 'supports_fanout' in connection_transport_options:
+                supports_fanout = connection_transport_options.get('supports_fanout')
+                if(supports_fanout):
+                    self.node.channel = c.connection.channel()
+                    self.consumer = self.node.listen(callback=self.on_message)
+                    self.consumer.on_decode_error = c.on_decode_error
 
     def on_stop(self):
         pass
 
     def stop(self, c):
-        self.on_stop()
-        self.consumer = self._close_channel(c)
+        if self.consumer:
+            self.on_stop()
+            self.consumer = self._close_channel(c)
 
     def reset(self):
         """Sets up the process mailbox."""
