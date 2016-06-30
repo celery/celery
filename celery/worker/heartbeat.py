@@ -9,7 +9,7 @@
 """
 from __future__ import absolute_import, unicode_literals
 
-from celery.signals import heartbeat
+from celery.signals import heartbeat_sent
 from celery.utils.sysinfo import load_average
 
 from .state import SOFTWARE_INFO, active_requests, all_total_count
@@ -37,8 +37,13 @@ class Heart(object):
         self.eventer.on_enabled.add(self.start)
         self.eventer.on_disabled.add(self.stop)
 
+        # Only send heartbeat_sent signal if it has receivers.
+        self._send_sent_signal = (
+            heartbeat_sent.send if heartbeat_sent.receivers else None)
+
     def _send(self, event):
-        heartbeat.send(sender=self)
+        if self._send_sent_signal is not None:
+            self._send_sent_signal(sender=self)
         return self.eventer.send(event, freq=self.interval,
                                  active=len(active_requests),
                                  processed=all_total_count[0],

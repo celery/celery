@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from celery.worker.heartbeat import Heart
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock
 
 
 class MockDispatcher(object):
@@ -49,6 +49,14 @@ class test_Heart(AppCase):
         h.stop()
         self.assertIsNone(h.tref)
         h.stop()
+
+    def test_send_sends_signal(self):
+        h = Heart(MockTimer(), MockDispatcher(), interval=1)
+        h._send_sent_signal = None
+        h._send('worker-heartbeat')
+        h._send_sent_signal = Mock(name='send_sent_signal')
+        h._send('worker')
+        h._send_sent_signal.assert_called_with(sender=h)
 
     def test_start_when_disabled(self):
         timer = MockTimer()
