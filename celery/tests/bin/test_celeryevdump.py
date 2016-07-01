@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from time import time
 
 from celery.events.dumper import (

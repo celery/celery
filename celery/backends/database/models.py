@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Database models used by the SQLAlchemy result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime
 
 import sqlalchemy as sa

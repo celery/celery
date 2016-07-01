@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from celery.exceptions import SecurityError
 from celery.security.key import PrivateKey
 

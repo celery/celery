@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Utilities for safely pickling exceptions."""
-from __future__ import absolute_import, unicode_literals
-
 import datetime
 import numbers
 import sys

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from celery import backends
 from celery.backends.amqp import AMQPBackend
 from celery.backends.cache import CacheBackend

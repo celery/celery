@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from celery.platforms import IS_WINDOWS
 from celery.bin.celeryd_detach import (
     detach,

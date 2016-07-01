@@ -13,7 +13,7 @@ This code deals with three major challenges:
 #. Sending jobs to the processes and receiving results back.
 #. Safely shutting down this system.
 """
-from __future__ import absolute_import, unicode_literals
+from __future__ import generator_stop
 
 import errno
 import gc
@@ -849,6 +849,8 @@ class AsynPool(_pool.Pool):
                         yield
                     else:
                         errors = 0
+            except StopIteration:
+                pass
             finally:
                 hub_remove(fd)
                 write_stats[proc.index] += 1

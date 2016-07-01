@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """The periodic task scheduler."""
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import heapq
 import os

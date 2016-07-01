@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import celery
 
 from celery.app.task import Task as ModernTask

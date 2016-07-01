@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Graphical monitor of Celery events using curses."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import curses
 import sys
 import threading

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 # some of these are tested in test_worker, so I've only written tests
 # here to complete coverage.  Should move everyting to this module at some
 # point [-ask]

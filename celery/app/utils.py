@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """App utilities: Compat settings, bug-report tool, pickling apps."""
-from __future__ import absolute_import, unicode_literals
-
 import os
 import platform as _platform
 import re

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from celery.backends import couchdb as module
 from celery.backends.couchdb import CouchBackend
 from celery.exceptions import ImproperlyConfigured

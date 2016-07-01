@@ -555,8 +555,6 @@ Here's an example errback:
 
 .. code-block:: python
 
-    from __future__ import print_function
-
     import os
 
     from proj.celery import app

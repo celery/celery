@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from celery.app.registry import _unpickle_task, _unpickle_task_v2
 from celery.tests.case import AppCase, depends_on_current_app
 

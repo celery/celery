@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from celery import backends
 from celery.backends import elasticsearch as module
 from celery.backends.elasticsearch import ElasticsearchBackend

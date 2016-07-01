@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from celery.events import Events
 from celery.events.snapshot import Polaroid, evcam
 

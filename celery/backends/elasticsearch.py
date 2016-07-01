@@ -1,7 +1,5 @@
 # -* coding: utf-8 -*-
 """Elasticsearch result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime
 
 from kombu.utils.url import _parse_url

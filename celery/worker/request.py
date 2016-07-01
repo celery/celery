@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """This module defines the :class:`Request` class, which specifies
 how tasks are executed."""
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import sys
 

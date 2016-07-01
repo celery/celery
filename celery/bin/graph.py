@@ -3,8 +3,6 @@
 
 .. program:: celery graph
 """
-from __future__ import absolute_import, unicode_literals
-
 from operator import itemgetter
 
 from celery.utils.graph import DependencyGraph, GraphFormatter

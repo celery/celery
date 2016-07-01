@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Memcached and in-memory cache result backend."""
-from __future__ import absolute_import, unicode_literals
-
 from kombu.utils import cached_property
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 

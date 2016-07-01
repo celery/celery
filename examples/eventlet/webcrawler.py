@@ -19,8 +19,6 @@ We don't have to do compression manually, just set the tasks compression
 to "zlib", and the serializer to "pickle".
 
 """
-from __future__ import absolute_import, unicode_literals
-
 import re
 
 try:

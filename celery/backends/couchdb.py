@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """CouchDB result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from kombu.exceptions import EncodeError
 
 from celery import group, uuid

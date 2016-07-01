@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from kombu.utils.functional import lazy
 
 from celery.utils.functional import (

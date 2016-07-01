@@ -3,8 +3,6 @@
 
 This backend publishes results as messages, one queue per task(!)
 """
-from __future__ import absolute_import, unicode_literals
-
 from .rpc import BaseRPCBackend
 
 from celery.utils import deprecated

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from celery import group, chord
 from celery.app import builtins
 from celery.utils.functional import pass1

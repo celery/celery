@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import socket
 
 from celery.events import CLIENT_CLOCK_SKEW, Event

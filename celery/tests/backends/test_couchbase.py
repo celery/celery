@@ -1,7 +1,4 @@
 """Tests for the CouchbaseBackend."""
-
-from __future__ import absolute_import, unicode_literals
-
 from kombu.utils.encoding import str_t
 
 from celery.backends import couchbase as module

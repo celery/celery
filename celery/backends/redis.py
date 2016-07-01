@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Redis result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 from functools import partial
 
 from kombu.utils import cached_property, retry_over_time

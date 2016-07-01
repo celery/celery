@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from celery.tests.case import Case, patch
 
 from celery.utils import deprecated

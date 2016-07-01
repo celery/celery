@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from celery.worker.heartbeat import Heart
 from celery.tests.case import AppCase, Mock
 

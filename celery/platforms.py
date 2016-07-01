@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Utilities dealing with platform specifics: signals, daemonization,
 users, groups, and so on."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import atexit
 import errno
 import math
@@ -136,7 +134,7 @@ class Pidfile:
         """Acquire lock."""
         try:
             self.write_pid()
-        except FileExistsError:
+        except FileExistsError as exc:
             raise LockFailed(str(exc)).with_traceback(sys.exc_info()[2])
         return self
     __enter__ = acquire

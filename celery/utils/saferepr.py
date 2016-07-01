@@ -11,8 +11,6 @@ Differences from regular :func:`repr`:
 
 Very slow with no limits, super quick with limits.
 """
-from __future__ import absolute_import, unicode_literals
-
 from collections import Iterable, Mapping, deque, namedtuple
 
 from decimal import Decimal

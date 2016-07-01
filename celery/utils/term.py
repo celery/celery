@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Terminals and colors."""
-from __future__ import absolute_import, unicode_literals
-
 import platform
 
 from functools import reduce

@@ -1,6 +1,4 @@
 """Worker <-> Worker communication Bootstep."""
-from __future__ import absolute_import, unicode_literals
-
 from collections import defaultdict
 from functools import partial
 from heapq import heappush

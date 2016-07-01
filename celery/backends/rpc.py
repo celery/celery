@@ -3,8 +3,6 @@
 
 RPC-style result backend, using reply-to and one queue per client.
 """
-from __future__ import absolute_import, unicode_literals
-
 from kombu import Consumer, Exchange, Producer, Queue
 from kombu.common import maybe_declare
 from kombu.utils import cached_property, register_after_fork
