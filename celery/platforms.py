@@ -136,7 +136,7 @@ class Pidfile:
         """Acquire lock."""
         try:
             self.write_pid()
-        except OSError as exc:
+        except FileExistsError:
             raise LockFailed(str(exc)).with_traceback(sys.exc_info()[2])
         return self
     __enter__ = acquire
@@ -466,9 +466,7 @@ def setgroups(groups):
         pass
     try:
         return _setgroups_hack(groups[:max_groups])
-    except OSError as exc:
-        if exc.errno != errno.EPERM:
-            raise
+    except PermissionError:
         if any(group not in groups for group in os.getgroups()):
             # we shouldn't be allowed to change to this group.
             raise
@@ -534,9 +532,7 @@ def maybe_drop_privileges(uid=None, gid=None):
         # ... and make sure privileges cannot be restored:
         try:
             setuid(0)
-        except OSError as exc:
-            if exc.errno != errno.EPERM:
-                raise
+        except PermissionError:
             pass  # Good: cannot restore privileges.
         else:
             raise RuntimeError(

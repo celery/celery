@@ -1122,6 +1122,7 @@ Example using reject when a task causes an out of memory condition:
         except OSError as exc:
             if exc.errno == errno.ENOMEM:
                 raise Reject(exc, requeue=False)
+            raise self.retry(exc, countdown=10)
 
         # For any other error we retry after 10 seconds.
         except Exception as exc:

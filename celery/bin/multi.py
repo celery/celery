@@ -263,9 +263,7 @@ class MultiTool:
     def signal_node(self, nodename, pid, sig):
         try:
             os.kill(pid, sig)
-        except OSError as exc:
-            if exc.errno != errno.ESRCH:
-                raise
+        except ProcessLookupError:
             self.note('Could not signal {0} ({1}): No such process'.format(
                 nodename, pid))
             return False
@@ -274,10 +272,8 @@ class MultiTool:
     def node_alive(self, pid):
         try:
             os.kill(pid, 0)
-        except OSError as exc:
-            if exc.errno == errno.ESRCH:
-                return False
-            raise
+        except ProcessLookupError:
+            return False
         return True
 
     def shutdown_nodes(self, nodes, sig=signal.SIGTERM, retry=None,
