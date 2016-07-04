@@ -54,7 +54,6 @@ def _compat_periodic_task_decorator(*args, **kwargs):
 
 COMPAT_MODULES = {
     'celery.task': {
-        'schedules': 'celery.schedules',
         'chords': 'celery.canvas',
     }
 }
