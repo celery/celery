@@ -31,9 +31,6 @@ BACKEND_ALIASES = {
     'consul': 'celery.backends.consul:ConsulBackend'
 }
 
-#: deprecated alias to ``current_app.backend``.
-default_backend = Proxy(lambda: current_app.backend)
-
 
 def get_backend_cls(backend=None, loader=None):
     """Get backend class by name/alias"""

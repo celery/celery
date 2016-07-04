@@ -22,10 +22,6 @@ class test_backends(AppCase):
         with self.assertRaises(ImportError):
             backends.get_backend_cls('fasodaopjeqijwqe', self.app.loader)
 
-    @depends_on_current_app
-    def test_default_backend(self):
-        self.assertEqual(backends.default_backend, self.app.backend)
-
     def test_backend_by_url(self, url='redis://localhost/1'):
         from celery.backends.redis import RedisBackend
         backend, url_ = backends.get_backend_by_url(url, self.app.loader)
