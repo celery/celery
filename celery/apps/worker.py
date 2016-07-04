@@ -49,7 +49,7 @@ def active_thread_count():
 
 
 def safe_say(msg):
-    print('\n{0}'.format(msg), file=sys.__stderr__)
+    print('\n{0}'.format(msg), file=sys.stderr)
 
 ARTLINES = [
     ' --------------',
