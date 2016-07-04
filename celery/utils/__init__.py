@@ -13,7 +13,6 @@ __all__ = ['worker_direct', 'gen_task_name', 'nodename', 'nodesplit',
 
 # ------------------------------------------------------------------------ #
 # > XXX Compat
-from .log import LOG_LEVELS     # noqa
 from .imports import (          # noqa
     qualname as get_full_cls_name, symbol_by_name as get_cls_by_name,
     instantiate, import_from_cwd, gen_task_name,
