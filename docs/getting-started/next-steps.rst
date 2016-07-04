@@ -764,3 +764,6 @@ Now that you have read this document you should continue
 to the :ref:`User Guide <guide>`.
 
 There's also an :ref:`API reference <apiref>` if you are so inclined.
+
+Clustering Celery is as simple as pointing all the workers to the same broker
+URL.
