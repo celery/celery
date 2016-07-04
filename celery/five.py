@@ -54,10 +54,6 @@ def _compat_periodic_task_decorator(*args, **kwargs):
 
 COMPAT_MODULES = {
     'celery': {
-        'decorators': {
-            'task': 'task',
-            'periodic_task': _compat_periodic_task_decorator,
-        },
         'log': {
             'get_default_logger': 'log.get_default_logger',
             'setup_logger': 'log.setup_logger',
