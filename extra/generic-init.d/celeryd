@@ -31,17 +31,11 @@ CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/default/celeryd"}
 
 test -f "$CELERY_DEFAULTS" && . "$CELERY_DEFAULTS"
 
-# Set CELERY_CREATE_DIRS to always create log/pid dirs.
-CELERY_CREATE_DIRS=${CELERY_CREATE_DIRS:-0}
-CELERY_CREATE_RUNDIR=$CELERY_CREATE_DIRS
-CELERY_CREATE_LOGDIR=$CELERY_CREATE_DIRS
 if [ -z "$CELERYD_PID_FILE" ]; then
     CELERYD_PID_FILE="$DEFAULT_PID_FILE"
-    CELERY_CREATE_RUNDIR=1
 fi
 if [ -z "$CELERYD_LOG_FILE" ]; then
     CELERYD_LOG_FILE="$DEFAULT_LOG_FILE"
-    CELERY_CREATE_LOGDIR=1
 fi
 
 CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-${CELERYD_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
@@ -109,10 +103,10 @@ create_default_dir() {
 
 
 check_paths() {
-    if [ $CELERY_CREATE_LOGDIR -eq 1 ]; then
+    if [ ! -d $CELERYD_LOG_DIR ]; then
         create_default_dir "$CELERYD_LOG_DIR"
     fi
-    if [ $CELERY_CREATE_RUNDIR -eq 1 ]; then
+    if [ ! -d $CELERYD_PID_DIR ]; then
         create_default_dir "$CELERYD_PID_DIR"
     fi
 }
@@ -135,6 +129,10 @@ stop_workers () {
     sleep $SLEEP_SECONDS
 }
 
+kill_workers () {
+    $CELERYD_MULTI kill $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
+    sleep $SLEEP_SECONDS
+}
 
 start_workers () {
     $CELERYD_MULTI start $CELERYD_NODES $DAEMON_OPTS        \
@@ -197,15 +195,16 @@ case "$1" in
         check_paths
         stop_workers
     ;;
-
+    kill)
+        check_dev_null
+        kill_workers
+    ;;
     reload|force-reload)
         echo "Use restart"
     ;;
-
     status)
         check_status
     ;;
-
     restart)
         check_dev_null
         check_paths
@@ -225,7 +224,7 @@ case "$1" in
         check_paths
     ;;
     *)
-        echo "Usage: /etc/init.d/celeryd {start|stop|restart|kill|create-paths}"
+        echo "Usage: /etc/init.d/celeryd {start|stop|restart|kill|status}"
         exit 64  # EX_USAGE
     ;;
 esac
