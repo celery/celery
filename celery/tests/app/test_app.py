@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import with_statement
 
 import os
+import itertools
 
 from mock import Mock, patch
 from pickle import loads, dumps
@@ -396,6 +397,27 @@ class test_App(Case):
         conn = self.app.connection('amqp:////value')
         self.assertDictContainsSubset({'virtual_host': '/value'},
                                       conn.info())
+
+
+    def test_amqp_failover_strategy_selection(self):
+        # Test passing in a string and make sure the string gets there untouched
+        self.app.conf.BROKER_FAILOVER_STRATEGY = 'foo-bar'
+        self.assertEquals(self.app.connection('amqp:////value').failover_strategy,
+                          'foo-bar')
+
+        # Try passing in None
+        self.app.conf.BROKER_FAILOVER_STRATEGY = None
+        self.assertEquals(self.app.connection('amqp:////value').failover_strategy,
+                          itertools.cycle)
+
+        # Test passing in a method
+        def my_failover_strategy(it):
+            yield True
+
+        self.app.conf.BROKER_FAILOVER_STRATEGY = my_failover_strategy
+        self.assertEquals(self.app.connection('amqp:////value').failover_strategy,
+                          my_failover_strategy)
+
 
     def test_BROKER_BACKEND_alias(self):
         self.assertEqual(self.app.conf.BROKER_BACKEND,
