@@ -159,7 +159,7 @@ class Settings(ConfigurationView):
         configuration."""
         return '\n'.join(
             '{0}: {1}'.format(key, pretty(value, width=50))
-            for key, value in self.table(with_defaults, censored.items()))
+            for key, value in self.table(with_defaults, censored).items())
 
 
 def _new_key_to_old(key, convert=_TO_OLD_KEY.get):

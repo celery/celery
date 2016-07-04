@@ -388,8 +388,7 @@ class test_MultiTool(AppCase):
     def test_node_alive(self, kill):
         kill.return_value = True
         self.assertTrue(self.t.node_alive(13))
-        esrch = OSError()
-        esrch.errno = errno.ESRCH
+        esrch = ProcessLookupError()
         kill.side_effect = esrch
         self.assertFalse(self.t.node_alive(13))
         kill.assert_called_with(13, 0)
@@ -404,8 +403,7 @@ class test_MultiTool(AppCase):
     def test_signal_node(self, kill):
         kill.return_value = True
         self.assertTrue(self.t.signal_node('foo', 13, 9))
-        esrch = OSError()
-        esrch.errno = errno.ESRCH
+        esrch = ProcessLookupError()
         kill.side_effect = esrch
         self.assertFalse(self.t.signal_node('foo', 13, 9))
         kill.assert_called_with(13, 9)

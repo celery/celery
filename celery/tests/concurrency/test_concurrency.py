@@ -77,16 +77,6 @@ class test_BasePool(AppCase):
         apply_target(target, callback=callback)
         callback.assert_called()
 
-    @patch('celery.concurrency.base.reraise')
-    def test_apply_target__raises_BaseException_raises_else(self, reraise):
-        target = Mock(name='target')
-        callback = Mock(name='callback')
-        reraise.side_effect = KeyError()
-        target.side_effect = BaseException()
-        with self.assertRaises(KeyError):
-            apply_target(target, callback=callback)
-        callback.assert_not_called()
-
     def test_does_not_debug(self):
         x = BasePool(10)
         x._does_debug = False

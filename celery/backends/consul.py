@@ -7,7 +7,7 @@
 from kombu.utils.url import parse_url
 
 from celery.exceptions import ImproperlyConfigured
-from celery.backends.base import KeyValueStoreBackend, PY3
+from celery.backends.base import KeyValueStoreBackend
 from celery.utils.log import get_logger
 
 try:
@@ -50,8 +50,7 @@ class ConsulBackend(KeyValueStoreBackend):
                                     consistency=self.consistency)
 
     def _key_to_consul_key(self, key):
-        if PY3:
-            key = key.encode('utf-8')
+        key = key.encode('utf-8')
         return key if self.path is None else '{0}/{1}'.format(self.path, key)
 
     def get(self, key):
@@ -78,9 +77,7 @@ class ConsulBackend(KeyValueStoreBackend):
         If the session expires it will remove the key so that results
         can auto expire from the K/V store
         """
-        session_name = key
-        if PY3:
-            session_name = key.decode('utf-8')
+        session_name = key.decode('utf-8')
         key = self._key_to_consul_key(key)
 
         logger.debug('Trying to create Consul session %s with TTL %d',
