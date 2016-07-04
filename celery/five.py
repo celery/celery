@@ -52,9 +52,6 @@ def _compat_periodic_task_decorator(*args, **kwargs):
     from celery.task import periodic_task
     return periodic_task(*args, **kwargs)
 
-COMPAT_MODULES = {
-}
-
 
 class class_property:
 
@@ -134,7 +131,6 @@ def recreate_module(name, compat_modules=(), by_module={}, direct={},
                     base=LazyModule, **attrs):
     old_module = sys.modules[name]
     origins = get_origins(by_module)
-    compat_modules = COMPAT_MODULES.get(name, ())
 
     _all = tuple(set(reduce(
         operator.add,
@@ -147,27 +143,7 @@ def recreate_module(name, compat_modules=(), by_module={}, direct={},
         __all__=_all,
     )
     new_module = create_module(name, attrs, cls_attrs=cattrs, base=base)
-    new_module.__dict__.update({
-        mod: get_compat_module(new_module, mod) for mod in compat_modules
-    })
     return old_module, new_module
-
-
-def get_compat_module(pkg, name):
-    from .local import Proxy
-
-    def prepare(attr):
-        if isinstance(attr, string_t):
-            return Proxy(getappattr, (attr,))
-        return attr
-
-    attrs = COMPAT_MODULES[pkg.__name__][name]
-    if isinstance(attrs, string_t):
-        fqdn = '.'.join([pkg.__name__, name])
-        module = sys.modules[fqdn] = import_module(attrs)
-        return module
-    attrs['__all__'] = list(attrs)
-    return create_module(name, dict(attrs), pkg=pkg, prepare_attr=prepare)
 
 
 def get_origins(defs):
