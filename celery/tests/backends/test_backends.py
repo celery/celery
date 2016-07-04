@@ -1,5 +1,5 @@
 from celery import backends
-from celery.backends.amqp import AMQPBackend
+from celery.backends.rpc import RPCBackend
 from celery.backends.cache import CacheBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.tests.case import AppCase, depends_on_current_app, patch
@@ -8,7 +8,7 @@ from celery.tests.case import AppCase, depends_on_current_app, patch
 class test_backends(AppCase):
 
     def test_get_backend_aliases(self):
-        expects = [('amqp://', AMQPBackend),
+        expects = [('rpc://', RPCBackend),
                    ('cache+memory://', CacheBackend)]
 
         for url, expect_cls in expects:
