@@ -95,7 +95,7 @@ class BoundMethodWeakref:  # pragma: no cover
             current.deletion_methods.append(on_delete)
             return current
         else:
-            base = super(BoundMethodWeakref, cls).__new__(cls)
+            base = super().__new__(cls)
             cls._all_instances[key] = base
             base.__init__(target, on_delete, *arguments, **named)
             return base
@@ -230,8 +230,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
                 which will be passed a pointer to this object.
         """
         assert getattr(target.__self__, target.__name__) == target
-        super(BoundNonDescriptorMethodWeakref, self).__init__(target,
-                                                              on_delete)
+        super().__init__(target, on_delete)
 
     def __call__(self):
         """Return a strong reference to the bound method

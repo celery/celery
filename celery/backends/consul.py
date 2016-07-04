@@ -35,7 +35,7 @@ class ConsulBackend(KeyValueStoreBackend):
     path = None
 
     def __init__(self, *args, **kwargs):
-        super(ConsulBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if self.consul is None:
             raise ImproperlyConfigured(CONSUL_MISSING)

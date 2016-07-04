@@ -34,7 +34,7 @@ class CouchBackend(KeyValueStoreBackend):
     password = None
 
     def __init__(self, url=None, *args, **kwargs):
-        super(CouchBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
 
         if pycouchdb is None:

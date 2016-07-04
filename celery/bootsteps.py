@@ -279,7 +279,7 @@ class StepType(type):
             __qualname__=qname,
             name=attrs.get('name') or qname,
         )
-        return super(StepType, cls).__new__(cls, name, bases, attrs)
+        return super().__new__(cls, name, bases, attrs)
 
     def __str__(self):
         return self.name

@@ -978,11 +978,11 @@ In Other News
         class Celery(celery.Celery):
 
             def __init__(self, *args, **kwargs):
-                super(Celery, self).__init__(*args, **kwargs)
+                super().__init__(*args, **kwargs)
                 self.foo = kwargs.get('foo')
 
             def __reduce_keys__(self):
-                return super(Celery, self).__reduce_keys__().update(
+                return super().__reduce_keys__().update(
                     foo=self.foo,
                 )
 

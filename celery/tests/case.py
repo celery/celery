@@ -92,7 +92,7 @@ class Trap:
 class UnitLogging(symbol_by_name(Celery.log_cls)):
 
     def __init__(self, *args, **kwargs):
-        super(UnitLogging, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.already_setup = True
 
 
@@ -126,7 +126,7 @@ class AppCase(Case):
     _threads_at_startup = [None]
 
     def __init__(self, *args, **kwargs):
-        super(AppCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         setUp = self.__class__.__dict__.get('setUp')
         tearDown = self.__class__.__dict__.get('tearDown')
         if setUp and not hasattr(setUp, '__wrapped__'):

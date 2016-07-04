@@ -37,7 +37,7 @@ class FilesystemBackend(KeyValueStoreBackend):
 
     def __init__(self, url=None, open=open, unlink=os.unlink, sep=os.sep,
                  encoding=default_encoding, *args, **kwargs):
-        super(FilesystemBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
         path = self._find_path(url)
 

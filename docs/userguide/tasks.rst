@@ -292,7 +292,7 @@ may contain:
         def gen_task_name(self, name, module):
             if module.endswith('.tasks'):
                 module = module[:-6]
-            return super(MyCelery, self).gen_task_name(name, module)
+            return super().gen_task_name(name, module)
 
     app = MyCelery('main')
 
@@ -1033,7 +1033,7 @@ you have to pass them as regular args:
             self.headers = headers
             self.body = body
 
-            super(HttpError, self).__init__(status_code, headers, body)
+            super().__init__(status_code, headers, body)
 
 .. _task-semipredicates:
 

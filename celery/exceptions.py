@@ -94,7 +94,7 @@ class Reject(TaskPredicate):
     def __init__(self, reason=None, requeue=False):
         self.reason = reason
         self.requeue = requeue
-        super(Reject, self).__init__(reason, requeue)
+        super().__init__(reason, requeue)
 
     def __repr__(self):
         return 'reject requeue=%s: %s' % (self.requeue, self.reason)

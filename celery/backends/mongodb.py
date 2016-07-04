@@ -56,7 +56,7 @@ class MongoBackend(BaseBackend):
     def __init__(self, app=None, **kwargs):
         self.options = {}
 
-        super(MongoBackend, self).__init__(app, **kwargs)
+        super().__init__(app, **kwargs)
 
         if not pymongo:
             raise ImproperlyConfigured(
@@ -150,12 +150,12 @@ class MongoBackend(BaseBackend):
         if self.serializer == 'bson':
             # mongodb handles serialization
             return data
-        return super(MongoBackend, self).encode(data)
+        return super().encode(data)
 
     def decode(self, data):
         if self.serializer == 'bson':
             return data
-        return super(MongoBackend, self).decode(data)
+        return super().decode(data)
 
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
@@ -240,7 +240,7 @@ class MongoBackend(BaseBackend):
         )
 
     def __reduce__(self, args=(), kwargs={}):
-        return super(MongoBackend, self).__reduce__(
+        return super().__reduce__(
             args, dict(kwargs, expires=self.expires, url=self.url))
 
     def _get_database(self):

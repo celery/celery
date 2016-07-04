@@ -45,7 +45,7 @@ class ResultConsumer(async.BaseResultConsumer):
     _pubsub = None
 
     def __init__(self, *args, **kwargs):
-        super(ResultConsumer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._get_key_for_task = self.backend.get_key_for_task
         self._decode_result = self.backend.decode_result
         self.subscribed_to = set()
@@ -105,7 +105,7 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
     def __init__(self, host=None, port=None, db=None, password=None,
                  max_connections=None, url=None,
                  connection_pool=None, **kwargs):
-        super(RedisBackend, self).__init__(expires_type=int, **kwargs)
+        super().__init__(expires_type=int, **kwargs)
         _get = self.app.conf.get
         if self.redis is None:
             raise ImproperlyConfigured(REDIS_MISSING)
@@ -305,7 +305,7 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         return self._create_client(**self.connparams)
 
     def __reduce__(self, args=(), kwargs={}):
-        return super(RedisBackend, self).__reduce__(
+        return super().__reduce__(
             (self.url,), {'expires': self.expires},
         )
 

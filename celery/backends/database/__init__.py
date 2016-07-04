@@ -68,7 +68,7 @@ class DatabaseBackend(BaseBackend):
     def __init__(self, dburi=None, engine_options=None, url=None, **kwargs):
         # The `url` argument was added later and is used by
         # the app to set backend by url (celery.backends.get_backend_by_url)
-        super(DatabaseBackend, self).__init__(
+        super().__init__(
             expires_type=maybe_timedelta, url=url, **kwargs)
         conf = self.app.conf
         self.url = url or dburi or conf.sqlalchemy_dburi
@@ -181,4 +181,4 @@ class DatabaseBackend(BaseBackend):
             dict(dburi=self.url,
                  expires=self.expires,
                  engine_options=self.engine_options))
-        return super(DatabaseBackend, self).__reduce__(args, kwargs)
+        return super().__reduce__(args, kwargs)

@@ -55,7 +55,7 @@ class Error(Exception):
     def __init__(self, reason, status=None):
         self.reason = reason
         self.status = status if status is not None else self.status
-        super(Error, self).__init__(reason, status)
+        super().__init__(reason, status)
 
     def __str__(self):
         return self.reason

@@ -36,7 +36,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     port = 9200
 
     def __init__(self, url=None, *args, **kwargs):
-        super(ElasticsearchBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
 
         if elasticsearch is None:

@@ -12,7 +12,7 @@ class TaskPool(BasePool):
     body_can_be_buffer = True
 
     def __init__(self, *args, **kwargs):
-        super(TaskPool, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.on_apply = apply_target
         self.limit = 1
 

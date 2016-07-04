@@ -151,7 +151,7 @@ class MemcachedClient(DummyClient):
                 'Keys must be {0}, not {1}.  Convert your '
                 'strings using mystring.{2}(charset)!'.format(
                     must_be, not_be, cod))
-        return super(MemcachedClient, self).set(key, value, *args, **kwargs)
+        return super().set(key, value, *args, **kwargs)
 
 
 class MockCacheMixin:

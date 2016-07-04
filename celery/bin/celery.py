@@ -557,7 +557,7 @@ class _RemoteControl(Command):
     def __init__(self, *args, **kwargs):
         self.show_body = kwargs.pop('show_body', True)
         self.show_reply = kwargs.pop('show_reply', True)
-        super(_RemoteControl, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @classmethod
     def get_command_info(self, command,
@@ -1157,7 +1157,7 @@ class CeleryCommand(Command):
             self.respects_app_option = False
         try:
             sys.exit(determine_exit_status(
-                super(CeleryCommand, self).execute_from_commandline(argv)))
+                super().execute_from_commandline(argv)))
         except KeyboardInterrupt:
             sys.exit(EX_FAILURE)
 

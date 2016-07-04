@@ -34,7 +34,7 @@ class Timer(threading.Thread):
             import traceback
             print('- Timer starting')
             traceback.print_stack()
-            super(Timer, self).start(*args, **kwargs)
+            super().start(*args, **kwargs)
 
     def __init__(self, schedule=None, on_error=None, on_tick=None,
                  on_start=None, max_interval=None, **kwargs):

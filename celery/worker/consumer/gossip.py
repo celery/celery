@@ -96,7 +96,7 @@ class Gossip(bootsteps.ConsumerStep):
         self.dispatcher.send('worker-elect-ack', id=id_)
 
     def start(self, c):
-        super(Gossip, self).start(c)
+        super().start(c)
         self.dispatcher = c.event_dispatcher
 
     def on_elect_ack(self, event):

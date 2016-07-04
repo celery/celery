@@ -121,7 +121,7 @@ class KVBackend(KeyValueStoreBackend):
 
     def __init__(self, app, *args, **kwargs):
         self.db = {}
-        super(KVBackend, self).__init__(app)
+        super().__init__(app)
 
     def get(self, key):
         return self.db.get(key)

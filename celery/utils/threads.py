@@ -44,7 +44,7 @@ def default_socket_timeout(timeout):
 class bgThread(threading.Thread):
 
     def __init__(self, name=None, **kwargs):
-        super(bgThread, self).__init__()
+        super().__init__()
         self._is_shutdown = threading.Event()
         self._is_stopped = threading.Event()
         self.daemon = True

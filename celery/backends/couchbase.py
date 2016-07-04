@@ -39,7 +39,7 @@ class CouchbaseBackend(KeyValueStoreBackend):
     key_t = str_t
 
     def __init__(self, url=None, *args, **kwargs):
-        super(CouchbaseBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
 
         if Couchbase is None:

@@ -114,7 +114,7 @@ class ev_logical_clock_ordering(replay):
     def __init__(self, state, offset=0, uids=None):
         self.offset = offset or 0
         self.uids = self.setuids(uids)
-        super(ev_logical_clock_ordering, self).__init__(state)
+        super().__init__(state)
 
     def setuids(self, uids):
         uids = self.tA, self.tB, self.tC = uids or [uuid(), uuid(), uuid()]

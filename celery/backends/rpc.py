@@ -38,7 +38,7 @@ class ResultConsumer(BaseResultConsumer):
     _consumer = None
 
     def __init__(self, *args, **kwargs):
-        super(ResultConsumer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._create_binding = self.backend._create_binding
 
     def start(self, initial_task_id, no_ack=True):
@@ -101,7 +101,7 @@ class BaseRPCBackend(base.Backend, AsyncBackendMixin):
 
     def __init__(self, app, connection=None, exchange=None, exchange_type=None,
                  persistent=None, serializer=None, auto_delete=True, **kwargs):
-        super(BaseRPCBackend, self).__init__(app, **kwargs)
+        super().__init__(app, **kwargs)
         conf = self.app.conf
         self._connection = connection
         self._out_of_band = {}
@@ -241,7 +241,7 @@ class BaseRPCBackend(base.Backend, AsyncBackendMixin):
             'delete_group is not supported by this backend.')
 
     def __reduce__(self, args=(), kwargs={}):
-        return super(BaseRPCBackend, self).__reduce__(args, dict(
+        return super().__reduce__(args, dict(
             kwargs,
             connection=self._connection,
             exchange=self.exchange.name,

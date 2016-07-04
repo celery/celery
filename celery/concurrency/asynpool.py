@@ -197,7 +197,7 @@ class ResultHandler(_pool.ResultHandler):
     def __init__(self, *args, **kwargs):
         self.fileno_to_outq = kwargs.pop('fileno_to_outq')
         self.on_process_alive = kwargs.pop('on_process_alive')
-        super(ResultHandler, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # add our custom message handler
         self.state_handlers[WORKER_UP] = self.on_process_alive
 
@@ -351,7 +351,7 @@ class AsynPool(_pool.Pool):
     Worker = Worker
 
     def WorkerProcess(self, worker):
-        worker = super(AsynPool, self).WorkerProcess(worker)
+        worker = super().WorkerProcess(worker)
         worker.dead = False
         return worker
 
@@ -398,7 +398,7 @@ class AsynPool(_pool.Pool):
 
         self.write_stats = Counter()
 
-        super(AsynPool, self).__init__(processes, *args, **kwargs)
+        super().__init__(processes, *args, **kwargs)
 
         for proc in self._pool:
             # create initial mappings, these will be updated
@@ -415,7 +415,7 @@ class AsynPool(_pool.Pool):
 
     def _create_worker_process(self, i):
         gc.collect()  # Issue #2927
-        return super(AsynPool, self)._create_worker_process(i)
+        return super()._create_worker_process(i)
 
     def _event_process_exit(self, hub, proc):
         # This method is called whenever the process sentinel is readable.
@@ -1101,7 +1101,7 @@ class AsynPool(_pool.Pool):
                         raise
 
     def create_result_handler(self):
-        return super(AsynPool, self).create_result_handler(
+        return super().create_result_handler(
             fileno_to_outq=self._fileno_to_outq,
             on_process_alive=self.on_process_alive,
         )
