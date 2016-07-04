@@ -90,12 +90,6 @@ class test_AsyncResult(AppCase):
         with self.assertRaises(ValueError):
             AsyncResult(None, app=self.app)
 
-    def test_compat_properties(self):
-        x = self.app.AsyncResult('1')
-        self.assertEqual(x.task_id, x.id)
-        x.task_id = '2'
-        self.assertEqual(x.id, '2')
-
     @depends_on_current_app
     def test_reduce_direct(self):
         x = AsyncResult('1', app=self.app)

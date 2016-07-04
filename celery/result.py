@@ -415,15 +415,6 @@ class AsyncResult(ResultBase):
         """
         return self._get_task_meta()['status']
 
-    @property
-    def task_id(self):
-        """compat alias to :attr:`id`"""
-        return self.id
-
-    @task_id.setter  # noqa
-    def task_id(self, id):
-        self.id = id
-
 
 @Thenable.register
 class ResultSet(ResultBase):

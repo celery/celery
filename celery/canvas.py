@@ -644,7 +644,7 @@ class chain(Signature):
                 results.pop()
                 task = chord(
                     task, body=prev_task,
-                    task_id=prev_res.task_id, root_id=root_id, app=app,
+                    task_id=prev_res.id, root_id=root_id, app=app,
                 )
                 prev_res = prev_prev_res
             if is_last_task:
