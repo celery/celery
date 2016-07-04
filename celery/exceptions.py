@@ -101,7 +101,6 @@ class Reject(TaskPredicate):
 
 class WorkerTerminate(SystemExit):
     """Signals that the worker should terminate immediately."""
-SystemTerminate = WorkerTerminate  # XXX compat
 
 
 class WorkerShutdown(SystemExit):
