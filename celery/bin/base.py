@@ -434,7 +434,6 @@ class Command:
 
     def symbol_by_name(self, name, imp=import_from_cwd):
         return symbol_by_name(name, imp=imp)
-    get_cls_by_name = symbol_by_name  # XXX compat
 
     def process_cmdline_config(self, argv):
         try:
