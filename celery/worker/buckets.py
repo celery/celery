@@ -60,7 +60,7 @@ class AsyncTaskBucket(object):
         try:
             bucket = self.buckets[name]
         except KeyError:
-            bucket = self.add_bucket_for_type(name)
+            bucket = self.add_task_type(name)
         if not bucket:
             return self._quick_put(request)
         return self.cont(request, bucket, 1)
