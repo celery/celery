@@ -431,48 +431,6 @@ class test_ResultSet(AppCase):
 
             yield
 
-    def test_iterate_respects_subpolling_interval(self):
-        r1 = self.app.AsyncResult(uuid())
-        r2 = self.app.AsyncResult(uuid())
-        backend = r1.backend = r2.backend = Mock()
-        backend.subpolling_interval = 10
-
-        ready = r1.ready = r2.ready = Mock()
-
-        def se(*args, **kwargs):
-            ready.side_effect = KeyError()
-            return False
-        ready.return_value = False
-        ready.side_effect = se
-
-        x = self.app.ResultSet([r1, r2])
-        with self.dummy_copy():
-            with patch('celery.result.time') as _time:
-                with self.assertPendingDeprecation():
-                    with self.assertRaises(KeyError):
-                        list(x.iterate())
-                _time.sleep.assert_called_with(10)
-
-            backend.subpolling_interval = 0
-            with patch('celery.result.time') as _time:
-                with self.assertPendingDeprecation():
-                    with self.assertRaises(KeyError):
-                        ready.return_value = False
-                        ready.side_effect = se
-                        list(x.iterate())
-                    _time.sleep.assert_not_called()
-
-    def test_times_out(self):
-        r1 = self.app.AsyncResult(uuid)
-        r1.ready = Mock()
-        r1.ready.return_value = False
-        x = self.app.ResultSet([r1])
-        with self.dummy_copy():
-            with patch('celery.result.time'):
-                with self.assertPendingDeprecation():
-                    with self.assertRaises(TimeoutError):
-                        list(x.iterate(timeout=1))
-
     def test_add_discard(self):
         x = self.app.ResultSet([])
         x.add(self.app.AsyncResult('1'))
@@ -582,14 +540,6 @@ class test_GroupResult(AppCase):
     def test_pickleable(self):
         self.assertTrue(pickle.loads(pickle.dumps(self.ts)))
 
-    def test_iterate_raises(self):
-        ar = MockAsyncResultFailure(uuid(), app=self.app)
-        ts = self.app.GroupResult(uuid(), [ar])
-        with self.assertPendingDeprecation():
-            it = ts.iterate()
-        with self.assertRaises(KeyError):
-            next(it)
-
     def test_forget(self):
         subs = [MockAsyncResultSuccess(uuid(), app=self.app),
                 MockAsyncResultSuccess(uuid(), app=self.app)]
@@ -670,24 +620,6 @@ class test_GroupResult(AppCase):
         backend.ids = [result.id for result in results]
         self.assertEqual(len(list(ts.iter_native())), 10)
 
-    def test_iterate_yields(self):
-        ar = MockAsyncResultSuccess(uuid(), app=self.app)
-        ar2 = MockAsyncResultSuccess(uuid(), app=self.app)
-        ts = self.app.GroupResult(uuid(), [ar, ar2])
-        with self.assertPendingDeprecation():
-            it = ts.iterate()
-        self.assertEqual(next(it), 42)
-        self.assertEqual(next(it), 42)
-
-    def test_iterate_eager(self):
-        ar1 = EagerResult(uuid(), 42, states.SUCCESS)
-        ar2 = EagerResult(uuid(), 42, states.SUCCESS)
-        ts = self.app.GroupResult(uuid(), [ar1, ar2])
-        with self.assertPendingDeprecation():
-            it = ts.iterate()
-        self.assertEqual(next(it), 42)
-        self.assertEqual(next(it), 42)
-
     def test_join_timeout(self):
         ar = MockAsyncResultSuccess(uuid(), app=self.app)
         ar2 = MockAsyncResultSuccess(uuid(), app=self.app)
@@ -707,12 +639,6 @@ class test_GroupResult(AppCase):
     def test_iter_native_when_empty_group(self):
         ts = self.app.GroupResult(uuid(), [])
         self.assertListEqual(list(ts.iter_native()), [])
-
-    def test_iterate_simple(self):
-        with self.assertPendingDeprecation():
-            it = self.ts.iterate()
-        results = sorted(list(it))
-        self.assertListEqual(results, list(range(self.size)))
 
     def test___iter__(self):
         self.assertListEqual(list(iter(self.ts)), self.ts.results)
@@ -770,16 +696,6 @@ class test_failed_AsyncResult(test_GroupResult):
 
     def test_completed_count(self):
         self.assertEqual(self.ts.completed_count(), len(self.ts) - 1)
-
-    def test_iterate_simple(self):
-        with self.assertPendingDeprecation():
-            it = self.ts.iterate()
-
-        def consume():
-            return list(it)
-
-        with self.assertRaises(KeyError):
-            consume()
 
     def test_join(self):
         with self.assertRaises(KeyError):
