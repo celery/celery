@@ -53,9 +53,6 @@ def _compat_periodic_task_decorator(*args, **kwargs):
     return periodic_task(*args, **kwargs)
 
 COMPAT_MODULES = {
-    'celery.task': {
-        'chords': 'celery.canvas',
-    }
 }
 
 
