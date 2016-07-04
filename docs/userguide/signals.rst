@@ -287,6 +287,9 @@ Provides arguments:
 
     The :class:`billiard.einfo.ExceptionInfo` instance.
 
+* sender
+    The failed task function.
+
 .. signal:: task_revoked
 
 ``task_revoked``
