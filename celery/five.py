@@ -54,15 +54,6 @@ def _compat_periodic_task_decorator(*args, **kwargs):
 
 COMPAT_MODULES = {
     'celery.task': {
-        'control': {
-            'broadcast': 'control.broadcast',
-            'rate_limit': 'control.rate_limit',
-            'time_limit': 'control.time_limit',
-            'ping': 'control.ping',
-            'revoke': 'control.revoke',
-            'discard_all': 'control.purge',
-            'inspect': 'control.inspect',
-        },
         'schedules': 'celery.schedules',
         'chords': 'celery.canvas',
     }
