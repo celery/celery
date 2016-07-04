@@ -3,6 +3,7 @@
 import platform
 
 from functools import reduce
+from typing import Any, Tuple
 
 __all__ = ['colored']
 
@@ -14,7 +15,7 @@ COLOR_SEQ = '\033[1;%dm'
 IS_WINDOWS = platform.system() == 'Windows'
 
 
-def fg(s):
+def fg(s: str) -> str:
     return COLOR_SEQ % s
 
 
@@ -29,23 +30,32 @@ class colored:
         ...       c.green('dog ')))
     """
 
-    def __init__(self, *s, **kwargs):
+    def __init__(self, *s: [str], enabled: bool=True, op: str='', **kwargs):
+        # type: str
         self.s = s
-        self.enabled = not IS_WINDOWS and kwargs.get('enabled', True)
-        self.op = kwargs.get('op', '')
-        self.names = {'black': self.black,
-                      'red': self.red,
-                      'green': self.green,
-                      'yellow': self.yellow,
-                      'blue': self.blue,
-                      'magenta': self.magenta,
-                      'cyan': self.cyan,
-                      'white': self.white}
 
-    def _add(self, a, b):
+        # type: bool
+        self.enabled = not IS_WINDOWS and enabled
+
+        # type: str
+        self.op = kwargs.get('op', '')
+
+        # type: Mapping[str, str]
+        self.names = {
+            'black': self.black,
+            'red': self.red,
+            'green': self.green,
+            'yellow': self.yellow,
+            'blue': self.blue,
+            'magenta': self.magenta,
+            'cyan': self.cyan,
+            'white': self.white,
+        }
+
+    def _add(self, a: str, b: str) -> str:
         return str(a) + str(b)
 
-    def _fold_no_color(self, a, b):
+    def _fold_no_color(self, a: Any, b: Any) -> str:
         try:
             A = a.no_color()
         except AttributeError:
@@ -57,91 +67,91 @@ class colored:
 
         return ''.join((str(A), str(B)))
 
-    def no_color(self):
+    def no_color(self) -> str:
         if self.s:
             return str(reduce(self._fold_no_color, self.s))
         return ''
 
-    def embed(self):
+    def embed(self) -> str:
         prefix = ''
         if self.enabled:
             prefix = self.op
         return ''.join((str(prefix), str(reduce(self._add, self.s))))
 
-    def __str__(self):
+    def node(self, s: Any, op: str) -> Any:
+        return self.__class__(enabled=self.enabled, op=op, *s)
+
+    def black(self, *s: Tuple[str]) -> Any:
+        return self.node(s, fg(30 + BLACK))
+
+    def red(self, *s: Tuple[str]) -> Any:
+        return self.node(s, fg(30 + RED))
+
+    def green(self, *s: Tuple[str]) -> Any:
+        return self.node(s, fg(30 + GREEN))
+
+    def yellow(self, *s: Tuple[str]) -> Any:
+        return self.node(s, fg(30 + YELLOW))
+
+    def blue(self, *s: Tuple[str]) -> Any:
+        return self.node(s, fg(30 + BLUE))
+
+    def magenta(self, *s: Tuple[str]) -> Any:
+        return self.node(s, fg(30 + MAGENTA))
+
+    def cyan(self, *s: Tuple[str]) -> Any:
+        return self.node(s, fg(30 + CYAN))
+
+    def white(self, *s: Tuple[str]) -> Any:
+        return self.node(s, fg(30 + WHITE))
+
+    def bold(self, *s: Tuple[str]) -> Any:
+        return self.node(s, OP_SEQ % 1)
+
+    def underline(self, *s: Tuple[str]) -> Any:
+        return self.node(s, OP_SEQ % 4)
+
+    def blink(self, *s: Tuple[str]) -> Any:
+        return self.node(s, OP_SEQ % 5)
+
+    def reverse(self, *s: Tuple[str]) -> Any:
+        return self.node(s, OP_SEQ % 7)
+
+    def bright(self, *s: Tuple[str]) -> Any:
+        return self.node(s, OP_SEQ % 8)
+
+    def ired(self, *s: Tuple[str]) -> Any:
+        return self.node(s, fg(40 + RED))
+
+    def igreen(self, *s: Tuple[str]) -> Any:
+        return self.node(s, fg(40 + GREEN))
+
+    def iyellow(self, *s: Tuple[str]) -> Any:
+        return self.node(s, fg(40 + YELLOW))
+
+    def iblue(self, *s: Tuple[str]) -> Any:
+        return self.node(s, fg(40 + BLUE))
+
+    def imagenta(self, *s: Tuple[str]) -> Any:
+        return self.node(s, fg(40 + MAGENTA))
+
+    def icyan(self, *s: Tuple[str]) -> any:
+        return self.node(s, fg(40 + CYAN))
+
+    def iwhite(self, *s: Tuple[str]) -> any:
+        return self.node(s, fg(40 + WHITE))
+
+    def reset(self, *s: Tuple[str]) -> any:
+        return self.node(s or [''], RESET_SEQ)
+
+    def __add__(self, other: Any) -> str:
+        return str(self) + str(other)
+
+    def __repr__(self) -> str:
+        return repr(self.no_color())
+
+    def __str__(self) -> str:
         suffix = ''
         if self.enabled:
             suffix = RESET_SEQ
         return str(''.join((self.embed(), str(suffix))))
-
-    def node(self, s, op):
-        return self.__class__(enabled=self.enabled, op=op, *s)
-
-    def black(self, *s):
-        return self.node(s, fg(30 + BLACK))
-
-    def red(self, *s):
-        return self.node(s, fg(30 + RED))
-
-    def green(self, *s):
-        return self.node(s, fg(30 + GREEN))
-
-    def yellow(self, *s):
-        return self.node(s, fg(30 + YELLOW))
-
-    def blue(self, *s):
-        return self.node(s, fg(30 + BLUE))
-
-    def magenta(self, *s):
-        return self.node(s, fg(30 + MAGENTA))
-
-    def cyan(self, *s):
-        return self.node(s, fg(30 + CYAN))
-
-    def white(self, *s):
-        return self.node(s, fg(30 + WHITE))
-
-    def __repr__(self):
-        return repr(self.no_color())
-
-    def bold(self, *s):
-        return self.node(s, OP_SEQ % 1)
-
-    def underline(self, *s):
-        return self.node(s, OP_SEQ % 4)
-
-    def blink(self, *s):
-        return self.node(s, OP_SEQ % 5)
-
-    def reverse(self, *s):
-        return self.node(s, OP_SEQ % 7)
-
-    def bright(self, *s):
-        return self.node(s, OP_SEQ % 8)
-
-    def ired(self, *s):
-        return self.node(s, fg(40 + RED))
-
-    def igreen(self, *s):
-        return self.node(s, fg(40 + GREEN))
-
-    def iyellow(self, *s):
-        return self.node(s, fg(40 + YELLOW))
-
-    def iblue(self, *s):
-        return self.node(s, fg(40 + BLUE))
-
-    def imagenta(self, *s):
-        return self.node(s, fg(40 + MAGENTA))
-
-    def icyan(self, *s):
-        return self.node(s, fg(40 + CYAN))
-
-    def iwhite(self, *s):
-        return self.node(s, fg(40 + WHITE))
-
-    def reset(self, *s):
-        return self.node(s or [''], RESET_SEQ)
-
-    def __add__(self, other):
-        return str(self) + str(other)
