@@ -54,9 +54,6 @@ def _compat_periodic_task_decorator(*args, **kwargs):
 
 COMPAT_MODULES = {
     'celery': {
-        'execute': {
-            'send_task': 'send_task',
-        },
         'decorators': {
             'task': 'task',
             'periodic_task': _compat_periodic_task_decorator,
