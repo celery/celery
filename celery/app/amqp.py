@@ -563,7 +563,6 @@ class AMQP:
                 self.app.connection_for_write()]
             self._producer_pool.limit = self.app.pool.limit
         return self._producer_pool
-    publisher_pool = producer_pool  # compat alias
 
     @cached_property
     def default_exchange(self):
