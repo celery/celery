@@ -34,10 +34,6 @@ __all__ += _all_five
 
 # import fails in python 2.5. fallback to reduce in stdlib
 
-MODULE_DEPRECATED = """
-The module %s is deprecated and will be removed in a future version.
-"""
-
 DEFAULT_ATTRS = {'__file__', '__path__', '__doc__', '__all__'}
 
 
