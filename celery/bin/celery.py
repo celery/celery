@@ -1206,12 +1206,5 @@ class CeleryCommand(Command):
             command_classes.append(('Extensions', names, 'magenta'))
 
 
-def command(*args, **kwargs):
-    """Deprecated: Use classmethod :meth:`CeleryCommand.register_command`
-    instead."""
-    _register = CeleryCommand.register_command
-    return _register(args[0]) if args else _register
-
-
 if __name__ == '__main__':          # pragma: no cover
     main()
