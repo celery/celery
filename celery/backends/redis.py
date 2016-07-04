@@ -9,7 +9,6 @@ from celery import states
 from celery._state import task_join_will_block
 from celery.canvas import maybe_signature
 from celery.exceptions import ChordError, ImproperlyConfigured
-from celery.utils import deprecated
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.timeutils import humanize_seconds
@@ -308,19 +307,3 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         return super().__reduce__(
             (self.url,), {'expires': self.expires},
         )
-
-    @deprecated.Property(4.0, 5.0)
-    def host(self):
-        return self.connparams['host']
-
-    @deprecated.Property(4.0, 5.0)
-    def port(self):
-        return self.connparams['port']
-
-    @deprecated.Property(4.0, 5.0)
-    def db(self):
-        return self.connparams['db']
-
-    @deprecated.Property(4.0, 5.0)
-    def password(self):
-        return self.connparams['password']

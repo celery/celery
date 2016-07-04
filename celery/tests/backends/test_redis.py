@@ -175,19 +175,6 @@ class test_RedisBackend(AppCase):
         self.assertNotIn('port', x.connparams)
         self.assertEqual(x.connparams['db'], 3)
 
-    def test_compat_propertie(self):
-        x = self.Backend(
-            'redis://:bosco@vandelay.com:123//1', app=self.app,
-        )
-        with self.assertPendingDeprecation():
-            self.assertEqual(x.host, 'vandelay.com')
-        with self.assertPendingDeprecation():
-            self.assertEqual(x.db, 1)
-        with self.assertPendingDeprecation():
-            self.assertEqual(x.port, 123)
-        with self.assertPendingDeprecation():
-            self.assertEqual(x.password, 'bosco')
-
     def test_conf_raises_KeyError(self):
         self.app.conf = AttributeDict({
             'result_serializer': 'json',
