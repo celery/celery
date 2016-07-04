@@ -74,7 +74,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 .. cmdoption:: -E, --events
 
     Send task-related events that can be captured by monitors like
-    :program:`celery events`, `celerymon`, and others.
+    :program:`celery events`, :pypi:`flower` and others.
 
 .. cmdoption:: --without-gossip
 

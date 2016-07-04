@@ -1042,7 +1042,7 @@ Enable/disable events
 
 You can enable/disable events by using the `enable_events`,
 `disable_events` commands.  This is useful to temporarily monitor
-a worker using :program:`celery events`/:program:`celerymon`.
+a worker using :program:`celery events`/:pypi:`flower`.
 
 .. code-block:: pycon
 
