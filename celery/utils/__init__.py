@@ -19,4 +19,3 @@ from .imports import (          # noqa
 )
 from .functional import chunks, noop                    # noqa
 from kombu.utils import cached_property, uuid   # noqa
-gen_unique_id = uuid
