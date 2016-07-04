@@ -426,15 +426,6 @@ class Request:
                 self.task.store_errors_even_if_ignored)
 
     @property
-    def task_name(self):
-        # XXX compat
-        return self.name
-
-    @task_name.setter  # noqa
-    def task_name(self, value):
-        self.name = value
-
-    @property
     def reply_to(self):
         # used by rpc backend when failures reported by parent process
         return self.request_dict['reply_to']
