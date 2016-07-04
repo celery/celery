@@ -60,6 +60,7 @@ class PartialOptionParser(OptionParser):
     def __init__(self, *args, **kwargs):
         self.leftovers = []
         OptionParser.__init__(self, *args, **kwargs)
+        self.add_option("--working_directory",)
 
     def _process_long_opt(self, rargs, values):
         arg = rargs.pop(0)

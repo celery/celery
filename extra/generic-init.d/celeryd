@@ -158,7 +158,7 @@ CELERYD_PID_DIR=`dirname $CELERYD_PID_FILE`
 
 # Extra start-stop-daemon options, like user/group.
 if [ -n "$CELERYD_CHDIR" ]; then
-    DAEMON_OPTS="$DAEMON_OPTS --workdir=$CELERYD_CHDIR"
+    DAEMON_OPTS="$DAEMON_OPTS --working_directory=$CELERYD_CHDIR"
 fi
 
 
