@@ -420,7 +420,7 @@ Connections
 .. sidebar:: Automatic Pool Support
 
     Since version 2.3 there is support for automatic connection pools,
-    so you don't have to manually handle connections and publishers
+    so you don't have to manually handle connections and producers
     to reuse connections.
 
     The connection pool is enabled by default since version 2.5.
@@ -428,18 +428,16 @@ Connections
     See the :setting:`broker_pool_limit` setting for more information.
 
 You can handle the connection manually by creating a
-publisher:
+producer:
 
 .. code-block:: python
 
 
     results = []
-    with add.app.pool.acquire(block=True) as connection:
-        with add.get_publisher(connection) as publisher:
-            try:
-                for args in numbers:
-                    res = add.apply_async((2, 2), publisher=publisher)
-                    results.append(res)
+    with add.app.producer_or_acquire() as producer:
+        for args in numbers:
+            res = add.apply_async((2, 2), producer=producer)
+            results.append(res)
     print([res.get() for res in results])
 
 

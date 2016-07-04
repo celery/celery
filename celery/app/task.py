@@ -460,8 +460,6 @@ class Task:
                 attribute.  Trailing can also be disabled by default using the
                 :attr:`trail` attribute
 
-            publisher (kombu.Producer): Deprecated alias to ``producer``.
-
             headers (Dict): Message headers to be included in the message.
 
         Returns:

@@ -561,7 +561,7 @@ class chain(Signature):
             dict(self.options, **options) if options else self.options))
 
     def run(self, args=(), kwargs={}, group_id=None, chord=None,
-            task_id=None, link=None, link_error=None, publisher=None,
+            task_id=None, link=None, link_error=None,
             producer=None, root_id=None, parent_id=None, app=None, **options):
         app = app or self.app
         use_link = self._use_link
@@ -1129,7 +1129,7 @@ class chord(Signature):
         return app if app is not None else current_app
 
     def apply_async(self, args=(), kwargs={}, task_id=None,
-                    producer=None, publisher=None, connection=None,
+                    producer=None, connection=None,
                     router=None, result_cls=None, **options):
         args = (tuple(args) + tuple(self.args)
                 if args and not self.immutable else self.args)

@@ -276,9 +276,8 @@ This is an example task message represented as a Python dictionary:
 Producers, consumers and brokers
 --------------------------------
 
-The client sending messages is typically called a *publisher*, or
-a *producer*, while the entity receiving messages is called
-a *consumer*.
+The client sending messages is typically called a *producer*,
+while the entity receiving messages is called a *consumer*.
 
 The *broker* is the message server, routing messages from producers
 to consumers.
