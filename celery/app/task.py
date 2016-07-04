@@ -48,7 +48,6 @@ def _strflags(flags, default=''):
 
 def _reprtask(task, fmt=None, flags=None):
     flags = list(flags) if flags is not None else []
-    flags.append('v2 compatible') if task.__v2_compat__ else None
     if not fmt:
         fmt = R_BOUND_TASK if task._app else R_UNBOUND_TASK
     return fmt.format(

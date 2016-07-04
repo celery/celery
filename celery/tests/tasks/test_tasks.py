@@ -453,10 +453,6 @@ class test_tasks(TasksCase):
         mytask.trail = False
         mytask.add_trail('foo')
 
-    def test_repr_v2_compat(self):
-        self.mytask.__v2_compat__ = True
-        self.assertIn('v2 compatible', repr(self.mytask))
-
     def test_apply_with_self(self):
 
         @self.app.task(__self__=42, shared=False)
