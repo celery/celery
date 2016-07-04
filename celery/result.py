@@ -415,7 +415,6 @@ class AsyncResult(ResultBase):
                 then contains the tasks return value.
         """
         return self._get_task_meta()['status']
-    status = state  # XXX compat
 
     @property
     def task_id(self):

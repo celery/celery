@@ -508,12 +508,12 @@ class test_tasks(TasksCase):
         try:
             tid = uuid()
             yyy.update_state(tid, 'FROBULATING', {'fooz': 'baaz'})
-            self.assertEqual(yyy.AsyncResult(tid).status, 'FROBULATING')
+            self.assertEqual(yyy.AsyncResult(tid).state, 'FROBULATING')
             self.assertDictEqual(yyy.AsyncResult(tid).result, {'fooz': 'baaz'})
 
             yyy.request.id = tid
             yyy.update_state(state='FROBUZATING', meta={'fooz': 'baaz'})
-            self.assertEqual(yyy.AsyncResult(tid).status, 'FROBUZATING')
+            self.assertEqual(yyy.AsyncResult(tid).state, 'FROBUZATING')
             self.assertDictEqual(yyy.AsyncResult(tid).result, {'fooz': 'baaz'})
         finally:
             yyy.pop_request()
