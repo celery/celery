@@ -428,7 +428,7 @@ class test_Request(RequestCase):
             job.revoked()
             self.assertIn(job.id, revoked)
             self.assertEqual(
-                self.mytask.backend.get_status(job.id),
+                self.mytask.backend.get_state(job.id),
                 states.REVOKED,
             )
 
@@ -439,7 +439,7 @@ class test_Request(RequestCase):
         job.revoked()
         self.assertNotIn(job.id, revoked)
         self.assertNotEqual(
-            self.mytask.backend.get_status(job.id),
+            self.mytask.backend.get_state(job.id),
             states.REVOKED,
         )
 
@@ -451,7 +451,7 @@ class test_Request(RequestCase):
         job.revoked()
         self.assertIn(job.id, revoked)
         self.assertNotEqual(
-            self.mytask.backend.get_status(job.id), states.REVOKED,
+            self.mytask.backend.get_state(job.id), states.REVOKED,
         )
 
     def test_already_revoked(self):
@@ -577,7 +577,7 @@ class test_Request(RequestCase):
         exc_info = get_ei()
         job.on_failure(exc_info)
         self.assertEqual(
-            self.mytask.backend.get_status(job.id), states.FAILURE,
+            self.mytask.backend.get_state(job.id), states.FAILURE,
         )
 
         self.mytask.ignore_result = True
@@ -585,7 +585,7 @@ class test_Request(RequestCase):
         job = self.xRequest()
         job.on_failure(exc_info)
         self.assertEqual(
-            self.mytask.backend.get_status(job.id), states.PENDING,
+            self.mytask.backend.get_state(job.id), states.PENDING,
         )
 
     def test_on_failure_acks_late(self):
@@ -617,7 +617,7 @@ class test_Request(RequestCase):
         job.on_timeout(soft=False, timeout=1337)
         self.assertIn('Hard time limit', error.call_args[0][0])
         self.assertEqual(
-            self.mytask.backend.get_status(job.id), states.FAILURE,
+            self.mytask.backend.get_state(job.id), states.FAILURE,
         )
         job.acknowledge.assert_called_with()
 
@@ -625,7 +625,7 @@ class test_Request(RequestCase):
         job = self.xRequest()
         job.on_timeout(soft=True, timeout=1336)
         self.assertEqual(
-            self.mytask.backend.get_status(job.id), states.PENDING,
+            self.mytask.backend.get_state(job.id), states.PENDING,
         )
 
         job = self.xRequest()
@@ -719,13 +719,13 @@ class test_Request(RequestCase):
                     self.mytask, self.mytask.request, store_errors=False,
                 )
                 self.assertEqual(
-                    self.mytask.backend.get_status(tid), states.PENDING,
+                    self.mytask.backend.get_state(tid), states.PENDING,
                 )
                 w.handle_retry(
                     self.mytask, self.mytask.request, store_errors=True,
                 )
                 self.assertEqual(
-                    self.mytask.backend.get_status(tid), states.RETRY,
+                    self.mytask.backend.get_state(tid), states.RETRY,
                 )
         finally:
             self.mytask.pop_request()
@@ -743,13 +743,13 @@ class test_Request(RequestCase):
                     self.mytask, self.mytask.request, store_errors=False,
                 )
                 self.assertEqual(
-                    self.mytask.backend.get_status(tid), states.PENDING,
+                    self.mytask.backend.get_state(tid), states.PENDING,
                 )
                 w.handle_failure(
                     self.mytask, self.mytask.request, store_errors=True,
                 )
                 self.assertEqual(
-                    self.mytask.backend.get_status(tid), states.FAILURE,
+                    self.mytask.backend.get_state(tid), states.FAILURE,
                 )
         finally:
             self.mytask.pop_request()

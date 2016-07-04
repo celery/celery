@@ -288,7 +288,6 @@ class Backend:
     def get_state(self, task_id):
         """Get the state of a task."""
         return self.get_task_meta(task_id)['status']
-    get_status = get_state  # XXX compat
 
     def get_traceback(self, task_id):
         """Get the traceback for a failed task."""
@@ -727,5 +726,5 @@ class DisabledBackend(BaseBackend):
     def as_uri(self, *args, **kwargs):
         return 'disabled://'
 
-    get_state = get_status = get_result = get_traceback = _is_disabled
+    get_state = get_result = get_traceback = _is_disabled
     wait_for = get_many = _is_disabled
