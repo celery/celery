@@ -918,9 +918,9 @@ Handlers
     :param status: Current task state.
     :param retval: Task return value/exception.
     :param task_id: Unique id of the task.
-    :param args: Original arguments for the task that failed.
+    :param args: Original arguments for the task that returned.
     :param kwargs: Original keyword arguments for the task
-                   that failed.
+                   that fa.
 
     :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
                     instance, containing the traceback (if any).
