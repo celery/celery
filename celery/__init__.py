@@ -67,7 +67,7 @@ if STATICA_HACK:  # pragma: no cover
     from celery._state import current_app, current_task  # noqa
     from celery.canvas import (                          # noqa
         chain, chord, chunks, group,
-        signature, maybe_signature, xmap, xstarmap, subtask,
+        signature, maybe_signature, xmap, xstarmap,
     )
     from celery.utils import uuid                        # noqa
 
@@ -150,7 +150,7 @@ old_module, new_module = five.recreate_module(  # pragma: no cover
         'celery._state': ['current_app', 'current_task'],
         'celery.canvas': [
             'Signature', 'chain', 'chord', 'chunks', 'group',
-            'signature', 'maybe_signature', 'subtask',
+            'signature', 'maybe_signature',
             'xmap', 'xstarmap',
         ],
         'celery.utils': ['uuid'],

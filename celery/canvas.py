@@ -1237,7 +1237,6 @@ def signature(varies, *args, **kwargs):
             return varies.clone()
         return Signature.from_dict(varies, app=app)
     return Signature(varies, *args, **kwargs)
-subtask = signature   # XXX compat
 
 
 def maybe_signature(d, app=None):
