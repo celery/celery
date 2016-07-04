@@ -54,12 +54,6 @@ def _compat_periodic_task_decorator(*args, **kwargs):
 
 COMPAT_MODULES = {
     'celery': {
-        'log': {
-            'get_default_logger': 'log.get_default_logger',
-            'setup_logger': 'log.setup_logger',
-            'setup_logging_subsystem': 'log.setup_logging_subsystem',
-            'redirect_stdouts_to_logger': 'log.redirect_stdouts_to_logger',
-        },
         'messaging': {
             'TaskConsumer': 'amqp.TaskConsumer',
             'establish_connection': 'connection',
