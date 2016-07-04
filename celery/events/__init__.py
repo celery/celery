@@ -272,13 +272,6 @@ class EventDispatcher:
         self.mutex.locked() and self.mutex.release()
         self.producer = None
 
-    def _get_publisher(self):
-        return self.producer
-
-    def _set_publisher(self, producer):
-        self.producer = producer
-    publisher = property(_get_publisher, _set_publisher)  # XXX compat
-
 
 class EventReceiver(ConsumerMixin):
     """Capture events.

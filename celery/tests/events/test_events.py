@@ -177,14 +177,6 @@ class test_EventDispatcher(AppCase):
             dispatcher.enable()
             self.assertTrue(dispatcher.enabled)
             self.assertTrue(dispatcher.producer)
-
-            # XXX test compat attribute
-            self.assertIs(dispatcher.publisher, dispatcher.producer)
-            prev, dispatcher.publisher = dispatcher.producer, 42
-            try:
-                self.assertEqual(dispatcher.producer, 42)
-            finally:
-                dispatcher.producer = prev
         finally:
             channel.close()
             connection.close()
