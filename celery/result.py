@@ -181,7 +181,6 @@ class AsyncResult(ResultBase):
             propagate=propagate,
             callback=callback,
         )
-    wait = get  # deprecated alias to :meth:`get`.
 
     def _maybe_reraise_parent_error(self):
         for node in reversed(list(self._parents())):
@@ -891,7 +890,6 @@ class EagerResult(AsyncResult):
             if propagate:
                 raise self.result
             return self.result
-    wait = get  # XXX Compat (remove 5.0)
 
     def forget(self):
         pass

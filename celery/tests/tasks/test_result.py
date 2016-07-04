@@ -832,15 +832,15 @@ class test_EagerResult(AppCase):
             raise KeyError(x, y)
         self.raising = raising
 
-    def test_wait_raises(self):
+    def test_get_raises(self):
         res = self.raising.apply(args=[3, 3])
         with self.assertRaises(KeyError):
-            res.wait()
-        self.assertTrue(res.wait(propagate=False))
+            res.get()
+        self.assertTrue(res.get(propagate=False))
 
-    def test_wait(self):
+    def test_get(self):
         res = EagerResult('x', 'x', states.RETRY)
-        res.wait()
+        res.get()
         self.assertEqual(res.state, states.RETRY)
         self.assertEqual(res.status, states.RETRY)
 
