@@ -295,6 +295,21 @@ going stale through inactivity.  For example, intermittent errors like
 `(OperationalError) (2006, 'MySQL server has gone away')` can be fixed by enabling
 short lived sessions.  This option only affects the database backend.
 
+Specifying Table Names
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. setting:: CELERY_RESULT_DB_TASK_TABLENAME
+
+.. setting:: CELERY_RESULT_DB_TASKSET_TABLENAME
+
+When SQLAlchemy is configured as the result backend, Celery automatically
+creates two tables to store result metadata for tasks.  These settings allow
+you to customize the table names::
+
+    # use custom table names
+    CELERY_RESULT_DB_TASK_TABLENAME = "myapp_taskmeta"
+    CELERY_RESULT_DB_TASKSET_TABLENAME = "myapp_tasksetmeta"
+
 .. _`Supported Databases`:
     http://www.sqlalchemy.org/docs/core/engines.html#supported-databases
 
@@ -308,6 +323,8 @@ Example configuration
 
     CELERY_RESULT_BACKEND = "database"
     CELERY_RESULT_DBURI = "mysql://user:password@host/dbname"
+    CELERY_RESULT_DB_TASK_TABLENAME = "myapp_taskmeta"
+    CELERY_RESULT_DB_TASKSET_TABLENAME = "myapp_tasksetmeta"
 
 .. _conf-amqp-result-backend:
 

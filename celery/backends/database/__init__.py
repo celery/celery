@@ -68,6 +68,10 @@ class DatabaseBackend(BaseDictBackend):
             'short_lived_sessions',
             conf.CELERY_RESULT_DB_SHORT_LIVED_SESSIONS,
         )
+
+        Task.__table__.name = conf.CELERY_RESULT_DB_TASK_TABLENAME
+        TaskSet.__table__.name = conf.CELERY_RESULT_DB_TASKSET_TABLENAME
+
         if not self.dburi:
             raise ImproperlyConfigured(
                 'Missing connection string! Do you have '
