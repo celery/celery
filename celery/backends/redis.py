@@ -229,13 +229,13 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
     def add_to_chord(self, group_id, result):
         self.client.incr(self.get_key_for_group(group_id, '.t'), 1)
 
-    def _unpack_chord_result(self, tup, decode,
+    def _unpack_chord_result(self, tup, decode, propagate,
                              EXCEPTION_STATES=states.EXCEPTION_STATES,
                              PROPAGATE_STATES=states.PROPAGATE_STATES):
         _, tid, state, retval = decode(tup)
         if state in EXCEPTION_STATES:
             retval = self.exception_to_python(retval)
-        if state in PROPAGATE_STATES:
+        if propagate and state in PROPAGATE_STATES:
             raise ChordError('Dependency {0} raised {1!r}'.format(tid, retval))
         return retval
 
@@ -278,7 +278,7 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
                         .delete(tkey)               \
                         .execute()
                 try:
-                    callback.delay([unpack(tup, decode) for tup in resl])
+                    callback.delay([unpack(tup, decode, propagate) for tup in resl])
                 except Exception as exc:
                     error('Chord callback for %r raised: %r',
                           request.group, exc, exc_info=1)
