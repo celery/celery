@@ -773,7 +773,6 @@ class Celery:
         return FallbackContext(
             producer, self.producer_pool.acquire, block=True,
         )
-    default_producer = producer_or_acquire  # XXX compat
 
     def prepare_config(self, c):
         """Prepare configuration before it is merged with the defaults."""
