@@ -477,10 +477,6 @@ class State:
         with self._mutex:
             return self._event(event)
 
-    def task_event(self, type_, fields):
-        """Deprecated, use :meth:`event`."""
-        return self._event(dict(fields, type='-'.join(['task', type_])))[0]
-
     def worker_event(self, type_, fields):
         """Deprecated, use :meth:`event`."""
         return self._event(dict(fields, type='-'.join(['worker', type_])))[0]
