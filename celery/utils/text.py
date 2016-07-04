@@ -4,9 +4,10 @@ import re
 
 from collections import Callable
 from functools import partial
-from textwrap import fill
-
 from pprint import pformat
+from textwrap import fill
+from typing import Any, ByteString, Mapping, Pattern, Sequence, Union
+
 
 __all__ = [
     'abbr', 'abbrtask', 'dedent', 'dedent_initial',
@@ -24,34 +25,34 @@ or did you escape and the value was expanded twice? (%%N -> %N -> %hostname)?
 RE_FORMAT = re.compile(r'%(\w)')
 
 
-def str_to_list(s):
+def str_to_list(s: Union[str, Sequence[str]]) -> Sequence[str]:
     if isinstance(s, str):
         return s.split(',')
     return s
 
 
-def dedent_initial(s, n=4):
+def dedent_initial(s: str, n: int=4) -> str:
     return s[n:] if s[:n] == ' ' * n else s
 
 
-def dedent(s, n=4, sep='\n'):
+def dedent(s: str, n: int=4, sep: str='\n') -> str:
     return sep.join(dedent_initial(l) for l in s.splitlines())
 
 
-def fill_paragraphs(s, width, sep='\n'):
+def fill_paragraphs(s: str, width: int, sep: str='\n') -> str:
     return sep.join(fill(p, width) for p in s.split(sep))
 
 
-def join(l, sep='\n'):
+def join(l: Sequence[str], sep: str='\n') -> str:
     return sep.join(v for v in l if v)
 
 
-def ensure_sep(sep, s, n=2):
+def ensure_sep(sep: str, s: str, n: int=2) -> str:
     return s + sep * (n - s.count(sep))
 ensure_newlines = partial(ensure_sep, '\n')
 
 
-def abbr(S, max, ellipsis='...'):
+def abbr(S: str, max: int, ellipsis: str='...') -> str:
     if S is None:
         return '???'
     if len(S) > max:
@@ -59,7 +60,7 @@ def abbr(S, max, ellipsis='...'):
     return S
 
 
-def abbrtask(S, max):
+def abbrtask(S: str, max: int) -> str:
     if S is None:
         return '???'
     if len(S) > max:
@@ -69,31 +70,33 @@ def abbrtask(S, max):
     return S
 
 
-def indent(t, indent=0, sep='\n'):
+def indent(t: str, indent: int=0, sep: str='\n') -> str:
     """Indent text."""
     return sep.join(' ' * indent + p for p in t.split(sep))
 
 
-def truncate(s, maxlen=128, suffix='...'):
+def truncate(s: str, maxlen: int=128, suffix: str='...') -> str:
     """Truncates text to a maximum number of characters."""
     if maxlen and len(s) >= maxlen:
         return s[:maxlen].rsplit(' ', 1)[0] + suffix
     return s
 
 
-def truncate_bytes(s, maxlen=128, suffix=b'...'):
+def truncate_bytes(s: ByteString,
+                   maxlen: int=128, suffix: ByteString=b'...') -> ByteString:
     if maxlen and len(s) >= maxlen:
         return s[:maxlen].rsplit(b' ', 1)[0] + suffix
     return s
 
 
-def pluralize(n, text, suffix='s'):
+def pluralize(n: int, text: str, suffix: str='s') -> str:
     if n != 1:
         return text + suffix
     return text
 
 
-def pretty(value, width=80, nl_width=80, sep='\n', **kw):
+def pretty(value: Any,
+           width: int=80, nl_width: int=80, sep: str='\n', **kw) -> str:
     if isinstance(value, dict):
         return '{{{0} {1}'.format(sep, pformat(value, 4, nl_width)[1:])
     elif isinstance(value, tuple):
@@ -104,11 +107,12 @@ def pretty(value, width=80, nl_width=80, sep='\n', **kw):
         return pformat(value, width=width, **kw)
 
 
-def match_case(s, other):
+def match_case(s: str, other: str) -> str:
     return s.upper() if other.isupper() else s.lower()
 
 
-def simple_format(s, keys, pattern=RE_FORMAT, expand=r'\1'):
+def simple_format(s: str, keys: Mapping[str, Any],
+                  pattern: Pattern=RE_FORMAT, expand: Pattern=r'\1') -> str:
     if s:
         keys.setdefault('%', '%')
 
