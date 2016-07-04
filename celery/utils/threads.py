@@ -234,17 +234,14 @@ class _LocalStack(object):
             return stack.pop()
 
     def __len__(self):
-        stack = getattr(self._local, 'stack', None)
-        return len(stack) if stack else 0
+        stack = getattr(self._local, 'stack', [])
+        return len(stack)
 
     @property
     def stack(self):
         """get_current_worker_task uses this to find
         the original task that was executed by the worker."""
-        stack = getattr(self._local, 'stack', None)
-        if stack is not None:
-            return stack
-        return []
+        return getattr(self._local, 'stack', [])
 
     @property
     def top(self):
