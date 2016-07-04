@@ -11,6 +11,7 @@
 """
 from __future__ import absolute_import, unicode_literals
 
+import functools
 from kombu import Exchange
 
 from celery import current_app
@@ -282,3 +283,40 @@ def task(*args, **kwargs):
 def periodic_task(*args, **options):
     """Deprecated decorator, please use :setting:`beat_schedule`."""
     return task(**dict({'base': PeriodicTask}, **options))
+
+
+def task_autoretry(*args_task, **kwargs_task):
+    """ This decorator expands behavior of @task decorator by adding
+    automatic task retries on exceptions. `autoretry_on` parameter defines
+    tuple of exceptions, that will be handled. Default value is `Exception`,
+    which means retrying on every exception
+
+        .. admonition:: Examples
+            @task_autoretry(max_retries=5, default_retry_delay=1, autoretry_on=(ZeroDivisionError, IndexError))
+            def foo(a, b):
+                pass
+            @task_autoretry(max_retries=5, default_retry_delay=1, autoretry_on=ZeroDivisionError)
+            def baz(a, b):
+                pass
+            @task_autoretry(max_retries=5)
+            def bar(a, b):
+                pass
+    """
+    def real_decorator(func):
+        """
+        Top level wrapper, which use args_task and kwargs_task as params
+        for @task
+        """
+        @task(*args_task, **kwargs_task)
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            """
+            Wrapper, that catch exceptions
+            """
+            try:
+                func(*args, **kwargs)
+            except kwargs_task.get('autoretry_on', Exception), exc:
+                log.exception(exc)
+                wrapper.retry(exc=exc)
+        return wrapper
+    return real_decorator
