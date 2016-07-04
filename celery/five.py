@@ -54,11 +54,6 @@ def _compat_periodic_task_decorator(*args, **kwargs):
 
 COMPAT_MODULES = {
     'celery': {
-        'messaging': {
-            'TaskConsumer': 'amqp.TaskConsumer',
-            'establish_connection': 'connection',
-            'get_consumer_set': 'amqp.TaskConsumer',
-        },
         'registry': {
             'tasks': 'tasks',
         },
