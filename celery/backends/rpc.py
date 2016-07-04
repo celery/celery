@@ -186,7 +186,6 @@ class BaseRPCBackend(base.Backend, AsyncBackendMixin):
             except KeyError:
                 # result probably pending.
                 return {'status': states.PENDING, 'result': None}
-    poll = get_task_meta  # XXX compat
 
     def _set_cache_by_message(self, task_id, message):
         payload = self._cache[task_id] = self.meta_from_decoded(
