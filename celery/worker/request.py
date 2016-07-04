@@ -426,15 +426,6 @@ class Request:
                 self.task.store_errors_even_if_ignored)
 
     @property
-    def task_id(self):
-        # XXX compat
-        return self.id
-
-    @task_id.setter  # noqa
-    def task_id(self, value):
-        self.id = value
-
-    @property
     def task_name(self):
         # XXX compat
         return self.name

@@ -380,15 +380,6 @@ class test_Request(RequestCase):
             einfo.internal = True
             job.on_failure(einfo)
 
-    def test_compat_properties(self):
-        job = self.xRequest()
-        self.assertEqual(job.task_id, job.id)
-        self.assertEqual(job.task_name, job.name)
-        job.task_id = 'ID'
-        self.assertEqual(job.id, 'ID')
-        job.task_name = 'NAME'
-        self.assertEqual(job.name, 'NAME')
-
     def test_terminate__pool_ref(self):
         pool = Mock()
         signum = signal.SIGTERM
