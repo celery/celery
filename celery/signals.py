@@ -50,10 +50,6 @@ task_rejected = Signal(providing_args=[
 task_unknown = Signal(providing_args=[
     'message', 'exc', 'name', 'id',
 ])
-#: Deprecated, use after_task_publish instead.
-task_sent = Signal(providing_args=[
-    'task_id', 'task', 'args', 'kwargs', 'eta', 'taskset',
-])
 
 celeryd_init = Signal(providing_args=['instance', 'conf', 'options'])
 celeryd_after_setup = Signal(providing_args=['instance', 'conf'])

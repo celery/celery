@@ -166,25 +166,6 @@ Settings
 =====================================  =====================================
 
 
-Task_sent signal
-----------------
-
-The :signal:`task_sent` signal will be removed in version 4.0.
-Please use the :signal:`before_task_publish` and :signal:`after_task_publish`
-signals instead.
-
-Result
-------
-
-Apply to: :class:`~celery.result.AsyncResult`,
-:class:`~celery.result.EagerResult`:
-
-- ``Result.wait()`` -> ``Result.get()``
-
-- ``Result.task_id()`` -> ``Result.id``
-
-- ``Result.status`` -> ``Result.state``.
-
 .. _deprecations-v3.1:
 
 

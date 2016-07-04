@@ -749,13 +749,3 @@ Provides arguments:
 * ``options``
 
     Mapping of the parsed user preload options (with default values).
-
-Deprecated Signals
-------------------
-
-.. signal:: task_sent
-
-``task_sent``
-~~~~~~~~~~~~~
-
-This signal is deprecated, please use :signal:`after_task_publish` instead.

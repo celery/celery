@@ -1018,10 +1018,10 @@ In Other News
 - New :signal:`before_task_publish` signal dispatched before a task message
   is sent and can be used to modify the final message fields (Issue #1281).
 
-- New :signal:`after_task_publish` signal replaces the old :signal:`task_sent`
+- New :signal:`after_task_publish` signal replaces the old ``task_sent``
   signal.
 
-    The :signal:`task_sent` signal is now deprecated and should not be used.
+    The ``task_sent`` signal is now deprecated and should not be used.
 
 - New :signal:`worker_process_shutdown` signal is dispatched in the
   prefork pool child processes as they exit.
