@@ -1247,5 +1247,3 @@ def maybe_signature(d, app=None):
         if app is not None:
             d._app = app
         return d
-
-maybe_subtask = maybe_signature  # XXX compat
