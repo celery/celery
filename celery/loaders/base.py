@@ -116,7 +116,11 @@ class BaseLoader(object):
         )
 
     def import_default_modules(self):
-        return [
+        preload = [
+            self.import_task_module(m) for m in (
+                set(maybe_list(self.app.conf.CELERY_IMPORTS)))
+        ]
+        return preload + [
             self.import_task_module(m) for m in (
                 tuple(self.builtin_modules) +
                 tuple(maybe_list(self.app.conf.CELERY_IMPORTS)) +
