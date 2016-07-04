@@ -4,6 +4,7 @@ import os
 import socket
 
 from functools import partial
+from typing import Dict, Optional, Tuple
 
 from kombu.entity import Exchange, Queue
 
@@ -30,7 +31,7 @@ __all__ = [
 ]
 
 
-def worker_direct(hostname):
+def worker_direct(hostname: str) -> Queue:
     """Return :class:`kombu.Queue` that is a direct route to
     a worker by hostname.
 
@@ -49,17 +50,17 @@ def worker_direct(hostname):
     )
 
 
-def nodename(name, hostname):
+def nodename(name: str, hostname: str) -> str:
     """Create node name from name/hostname pair."""
     return NODENAME_SEP.join((name, hostname))
 
 
-def anon_nodename(hostname=None, prefix='gen'):
+def anon_nodename(hostname: Optional[str]=None, prefix: str='gen') -> str:
     return nodename(''.join([prefix, str(os.getpid())]),
                     hostname or gethostname())
 
 
-def nodesplit(nodename):
+def nodesplit(nodename: str) -> Tuple[str]:
     """Split node name into tuple of name/hostname."""
     parts = nodename.split(NODENAME_SEP, 1)
     if len(parts) == 1:
@@ -67,25 +68,27 @@ def nodesplit(nodename):
     return parts
 
 
-def default_nodename(hostname):
+def default_nodename(hostname: str) -> str:
     name, host = nodesplit(hostname or '')
     return nodename(name or NODENAME_DEFAULT, host or gethostname())
 
 
-def node_format(s, nodename, **extra):
+def node_format(s: str, nodename: str, **extra: Dict[str, str]) -> str:
     name, host = nodesplit(nodename)
     return host_format(
         s, host, name or NODENAME_DEFAULT, p=nodename, **extra)
 
 
-def _fmt_process_index(prefix='', default='0'):
+def _fmt_process_index(prefix: str='', default: str='0') -> str:
     from .log import current_process_index
     index = current_process_index()
     return '{0}{1}'.format(prefix, index) if index else default
 _fmt_process_index_with_prefix = partial(_fmt_process_index, '-', '')
 
 
-def host_format(s, host=None, name=None, **extra):
+def host_format(s: str,
+                host: Optional[str]=None, name: Optional[str]=None,
+                **extra: Dict[str, str]) -> str:
     host = host or gethostname()
     hname, _, domain = host.partition('.')
     name = name or hname
