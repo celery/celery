@@ -1128,4 +1128,3 @@ class Celery:
             return (timezone.get_timezone('UTC') if conf.enable_utc
                     else timezone.local)
         return timezone.get_timezone(conf.timezone)
-App = Celery  # compat
