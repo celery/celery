@@ -603,7 +603,7 @@ class Celery:
     def send_task(self, name, args=None, kwargs=None, countdown=None,
                   eta=None, task_id=None, producer=None, connection=None,
                   router=None, result_cls=None, expires=None,
-                  publisher=None, link=None, link_error=None,
+                  link=None, link_error=None,
                   add_to_parent=True, group_id=None, retries=0, chord=None,
                   reply_to=None, time_limit=None, soft_time_limit=None,
                   root_id=None, parent_id=None, route_name=None,
@@ -619,7 +619,6 @@ class Celery:
         parent = have_parent = None
         amqp = self.amqp
         task_id = task_id or uuid()
-        producer = producer or publisher  # XXX compat
         router = router or amqp.router
         conf = self.conf
         if conf.task_always_eager:  # pragma: no cover
