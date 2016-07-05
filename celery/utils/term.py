@@ -30,15 +30,11 @@ class colored:
         ...       c.green('dog ')))
     """
 
-    def __init__(self, *s: [str], enabled: bool=True, op: str='', **kwargs):
-        # type: str
+    def __init__(self, *s: Tuple[Any],
+                 enabled: bool=True, op: str='', **kwargs):
         self.s = s
-
-        # type: bool
         self.enabled = not IS_WINDOWS and enabled
-
-        # type: str
-        self.op = kwargs.get('op', '')
+        self.op = op
 
         # type: Mapping[str, str]
         self.names = {
@@ -52,7 +48,7 @@ class colored:
             'white': self.white,
         }
 
-    def _add(self, a: str, b: str) -> str:
+    def _add(self, a: Any, b: Any) -> str:
         return str(a) + str(b)
 
     def _fold_no_color(self, a: Any, b: Any) -> str:
@@ -81,67 +77,67 @@ class colored:
     def node(self, s: Any, op: str) -> Any:
         return self.__class__(enabled=self.enabled, op=op, *s)
 
-    def black(self, *s: Tuple[str]) -> Any:
+    def black(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(30 + BLACK))
 
-    def red(self, *s: Tuple[str]) -> Any:
+    def red(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(30 + RED))
 
-    def green(self, *s: Tuple[str]) -> Any:
+    def green(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(30 + GREEN))
 
-    def yellow(self, *s: Tuple[str]) -> Any:
+    def yellow(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(30 + YELLOW))
 
-    def blue(self, *s: Tuple[str]) -> Any:
+    def blue(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(30 + BLUE))
 
-    def magenta(self, *s: Tuple[str]) -> Any:
+    def magenta(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(30 + MAGENTA))
 
-    def cyan(self, *s: Tuple[str]) -> Any:
+    def cyan(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(30 + CYAN))
 
-    def white(self, *s: Tuple[str]) -> Any:
+    def white(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(30 + WHITE))
 
-    def bold(self, *s: Tuple[str]) -> Any:
+    def bold(self, *s: Tuple[Any]) -> Any:
         return self.node(s, OP_SEQ % 1)
 
-    def underline(self, *s: Tuple[str]) -> Any:
+    def underline(self, *s: Tuple[Any]) -> Any:
         return self.node(s, OP_SEQ % 4)
 
-    def blink(self, *s: Tuple[str]) -> Any:
+    def blink(self, *s: Tuple[Any]) -> Any:
         return self.node(s, OP_SEQ % 5)
 
-    def reverse(self, *s: Tuple[str]) -> Any:
+    def reverse(self, *s: Tuple[Any]) -> Any:
         return self.node(s, OP_SEQ % 7)
 
-    def bright(self, *s: Tuple[str]) -> Any:
+    def bright(self, *s: Tuple[Any]) -> Any:
         return self.node(s, OP_SEQ % 8)
 
-    def ired(self, *s: Tuple[str]) -> Any:
+    def ired(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(40 + RED))
 
-    def igreen(self, *s: Tuple[str]) -> Any:
+    def igreen(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(40 + GREEN))
 
-    def iyellow(self, *s: Tuple[str]) -> Any:
+    def iyellow(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(40 + YELLOW))
 
-    def iblue(self, *s: Tuple[str]) -> Any:
+    def iblue(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(40 + BLUE))
 
-    def imagenta(self, *s: Tuple[str]) -> Any:
+    def imagenta(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(40 + MAGENTA))
 
-    def icyan(self, *s: Tuple[str]) -> any:
+    def icyan(self, *s: Tuple[Any]) -> any:
         return self.node(s, fg(40 + CYAN))
 
-    def iwhite(self, *s: Tuple[str]) -> any:
+    def iwhite(self, *s: Tuple[Any]) -> any:
         return self.node(s, fg(40 + WHITE))
 
-    def reset(self, *s: Tuple[str]) -> any:
+    def reset(self, *s: Tuple[Any]) -> any:
         return self.node(s or [''], RESET_SEQ)
 
     def __add__(self, other: Any) -> str:
