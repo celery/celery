@@ -8,6 +8,8 @@
 """
 from __future__ import absolute_import, unicode_literals
 
+import json
+
 try:
     import pycouchdb
 except ImportError:
@@ -91,13 +93,16 @@ class CouchBackend(KeyValueStoreBackend):
             return None
 
     def set(self, key, value):
-        data = {'_id': key, 'value': value}
+        # data = {'_id': key, 'value': value}
+        data = json.loads(value)
+        data['_id'] = key
         try:
             self.connection.save(data)
         except pycouchdb.exceptions.Conflict:
             # document already exists, update it
             data = self.connection.get(key)
-            data['value'] = value
+            # data['value'] = value
+            data.update(json.loads(value))
             self.connection.save(data)
 
     def mget(self, keys):
