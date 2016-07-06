@@ -67,9 +67,9 @@ across data centers.
 Get Started
 ===========
 
-If this is the first time you're trying to use Celery, or you are
-new to Celery 3.0 coming from previous versions then you should read our
-getting started tutorials:
+If this is the first time you're trying to use Celery, or if you haven't
+kept up with development in the 3.1 version and are coming from previous versions,
+then you should read our getting started tutorials:
 
 - :ref:`first-steps`
 - :ref:`next-steps`

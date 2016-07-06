@@ -77,7 +77,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you are
-new to Celery 3.0 coming from previous versions then you should read our
+new to Celery 4.0 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -268,9 +268,6 @@ Concurrency
 :``celery[gevent]``:
     for using the ``gevent`` pool.
 
-:``celery[threads]``:
-    for using the thread pool.
-
 Transports and Backends
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -303,9 +300,6 @@ Transports and Backends
 
 :``celery[zookeeper]``:
     for using Zookeeper as a message transport.
-
-:``celery[zeromq]``:
-    for using ZeroMQ as a message transport (*experimental*).
 
 :``celery[sqlalchemy]``:
     for using SQLAlchemy as a result backend (*supported*).

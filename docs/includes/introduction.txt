@@ -38,7 +38,7 @@ by `using webhooks`_.
 What do I need?
 ===============
 
-Celery version 3.0 runs on,
+Celery version 4.0 runs on,
 
 - Python (2.7, 3.4, 3.5)
 - PyPy (5.1, 2.4)
@@ -69,7 +69,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you are
-new to Celery 3.0 coming from previous versions then you should read our
+new to Celery 4.0 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
