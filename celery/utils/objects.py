@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Object related utilities including introspection, etc."""
+from typing import Any, Callable, Set, Sequence
 
 __all__ = ['Bunch', 'FallbackContext', 'mro_lookup']
 
@@ -7,11 +8,12 @@ __all__ = ['Bunch', 'FallbackContext', 'mro_lookup']
 class Bunch:
     """Object that enables you to modify attributes."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         self.__dict__.update(kwargs)
 
 
-def mro_lookup(cls, attr, stop=set(), monkey_patched=[]):
+def mro_lookup(cls: Any, attr: str,
+               stop: Set=set(), monkey_patched: Sequence=[]) -> Any:
     """Return the first node by MRO order that defines an attribute.
 
     Arguments:
@@ -67,14 +69,15 @@ class FallbackContext:
             return FallbackContext(connection, create_new_connection)
     """
 
-    def __init__(self, provided, fallback, *fb_args, **fb_kwargs):
+    def __init__(self, provided: Any, fallback: Callable,
+                 *fb_args, **fb_kwargs) -> None:
         self.provided = provided
         self.fallback = fallback
         self.fb_args = fb_args
         self.fb_kwargs = fb_kwargs
         self._context = None
 
-    def __enter__(self):
+    def __enter__(self) -> Any:
         if self.provided is not None:
             return self.provided
         context = self._context = self.fallback(
@@ -82,6 +85,6 @@ class FallbackContext:
         ).__enter__()
         return context
 
-    def __exit__(self, *exc_info):
+    def __exit__(self, *exc_info) -> Any:
         if self._context is not None:
             return self._context.__exit__(*exc_info)

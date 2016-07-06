@@ -4,14 +4,21 @@ import sys
 
 from collections import UserList
 from functools import partial
-from inspect import getfullargspec, isfunction
+from inspect import FullArgSpec, getfullargspec, isfunction
 from itertools import chain, islice
+from typing import (
+    Any, Callable, Iterable, Iterator, Optional,
+    Mapping, MutableSequence, Sequence, Tuple, Union,
+)
+from typing import MutableSet  # noqa
 
 from kombu.utils.functional import (
     LRUCache, dictfilter, lazy, maybe_evaluate, memoize,
     is_list, maybe_list,
 )
 from vine import promise
+
+from .typing import ExcInfo
 
 __all__ = [
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
@@ -27,10 +34,10 @@ def {fun_name}({fun_args}):
 
 class DummyContext:
 
-    def __enter__(self):
+    def __enter__(self) -> Any:
         return self
 
-    def __exit__(self, *exc_info):
+    def __exit__(self, *exc_info: ExcInfo) -> Any:
         pass
 
 
@@ -40,19 +47,18 @@ class mlazy(lazy):
     The function is only evaluated once, every subsequent access
     will return the same value.
     """
-
     #: Set to :const:`True` after the object has been evaluated.
-    evaluated = False
-    _value = None
+    evaluated = False  # type: bool
+    _value = None      # type: Any
 
-    def evaluate(self):
+    def evaluate(self) -> Any:
         if not self.evaluated:
             self._value = super().evaluate()
             self.evaluated = True
         return self._value
 
 
-def noop(*args, **kwargs):
+def noop(*args: Tuple, **kwargs: Mapping) -> Any:
     """No operation.
 
     Takes any arguments/keyword arguments and does nothing.
@@ -60,20 +66,20 @@ def noop(*args, **kwargs):
     pass
 
 
-def pass1(arg, *args, **kwargs):
+def pass1(arg: Any, *args: Tuple, **kwargs: Mapping) -> Any:
     """Take any number of arguments/keyword arguments and return
     the first positional argument."""
     return arg
 
 
-def evaluate_promises(it):
+def evaluate_promises(it: Iterable) -> Iterator[Any]:
     for value in it:
         if isinstance(value, promise):
             value = value()
         yield value
 
 
-def first(predicate, it):
+def first(predicate: Callable[[Any], Any], it: Iterable) -> Any:
     """Return the first element in ``iterable`` that ``predicate`` gives a
     :const:`True` value for.
 
@@ -87,7 +93,7 @@ def first(predicate, it):
     )
 
 
-def firstmethod(method, on_call=None):
+def firstmethod(method: str, on_call: Optional[Callable]=None) -> Any:
     """Return a function that with a list of instances,
     finds the first instance that gives a value for the given method.
 
@@ -109,7 +115,7 @@ def firstmethod(method, on_call=None):
     return _matcher
 
 
-def chunks(it, n):
+def chunks(it: Iterable, n: int) -> Iterable:
     """Split an iterator into chunks with `n` elements each.
 
     Example:
@@ -127,7 +133,8 @@ def chunks(it, n):
         yield [first] + list(islice(it, n - 1))
 
 
-def padlist(container, size, default=None):
+def padlist(container: Sequence, size: int,
+            default: Optional[Any]=None) -> Sequence:
     """Pad list with default elements.
 
     Example:
@@ -143,19 +150,19 @@ def padlist(container, size, default=None):
     return list(container)[:size] + [default] * (size - len(container))
 
 
-def mattrgetter(*attrs):
+def mattrgetter(*attrs: str) -> Callable[[Any], Mapping[str, Any]]:
     """Like :func:`operator.itemgetter` but return :const:`None` on missing
     attributes instead of raising :exc:`AttributeError`."""
     return lambda obj: {attr: getattr(obj, attr, None) for attr in attrs}
 
 
-def uniq(it):
+def uniq(it: Iterable) -> Iterable[Any]:
     """Return all unique elements in ``it``, preserving order."""
-    seen = set()
+    seen = set()  # type: MutableSet
     return (seen.add(obj) or obj for obj in it if obj not in seen)
 
 
-def regen(it):
+def regen(it: Iterable) -> Union[list, tuple, '_regen']:
     """``Regen`` takes any iterable, and if the object is an
     generator it will cache the evaluated list on first access,
     so that the generator can be "consumed" multiple times."""
@@ -167,21 +174,21 @@ def regen(it):
 class _regen(UserList, list):
     # must be subclass of list so that json can encode.
 
-    def __init__(self, it):
-        self.__it = it
-        self.__index = 0
-        self.__consumed = []
+    def __init__(self, it: Iterable) -> None:
+        self.__it = it        # type: Iterator
+        self.__index = 0      # type: int
+        self.__consumed = []  # type: MutableSequence[Any]
 
-    def __reduce__(self):
+    def __reduce__(self) -> Any:
         return list, (self.data,)
 
-    def __length_hint__(self):
+    def __length_hint__(self) -> int:
         return self.__it.__length_hint__()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator:
         return chain(self.__consumed, self.__it)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: Any) -> Any:
         if index < 0:
             return self.data[index]
         try:
@@ -196,7 +203,7 @@ class _regen(UserList, list):
                 return self.__consumed[index]
 
     @property
-    def data(self):
+    def data(self) -> MutableSequence:
         try:
             self.__consumed.extend(list(self.__it))
         except StopIteration:
@@ -204,7 +211,7 @@ class _regen(UserList, list):
         return self.__consumed
 
 
-def _argsfromspec(spec, replace_defaults=True):
+def _argsfromspec(spec: FullArgSpec, replace_defaults: bool=True) -> str:
     if spec.defaults:
         split = len(spec.defaults)
         defaults = (list(range(len(spec.defaults))) if replace_defaults
@@ -221,7 +228,8 @@ def _argsfromspec(spec, replace_defaults=True):
     ]))
 
 
-def head_from_fun(fun, bound=False, debug=False):
+def head_from_fun(fun: Callable,
+                  bound: bool=False, debug: bool=False) -> partial:
     # we could use inspect.Signature here, but that implementation
     # is very slow since it implements the argument checking
     # in pure-Python.  Instead we use exec to create a new function
@@ -231,7 +239,7 @@ def head_from_fun(fun, bound=False, debug=False):
         name, fun = fun.__class__.__name__, fun.__call__
     else:
         name = fun.__name__
-    definition = FUNHEAD_TEMPLATE.format(
+    definition = FUNHEAD_TEMPLATE.format(   # type: str
         fun_name=name,
         fun_args=_argsfromspec(getfullargspec(fun)),
         fun_value=1,
@@ -240,21 +248,22 @@ def head_from_fun(fun, bound=False, debug=False):
         print(definition, file=sys.stderr)
     namespace = {'__name__': fun.__module__}
     exec(definition, namespace)
-    result = namespace[name]
+    result = namespace[name]  # type: Any
     result._source = definition
     if bound:
         return partial(result, object())
     return result
 
 
-def arity_greater(fun, n):
+def arity_greater(fun: Callable, n: int) -> bool:
     argspec = getfullargspec(fun)
-    return argspec.varargs or len(argspec.args) > n
+    return bool(argspec.varargs or len(argspec.args) > n)
 
 
-def fun_takes_argument(name, fun, position=None):
+def fun_takes_argument(name: str, fun: Callable,
+                       position: Optional[int]=None) -> bool:
     spec = getfullargspec(fun)
-    return (
+    return bool(
         spec.varkw or spec.varargs or
         (len(spec.args) >= position if position else name in spec.args)
     )

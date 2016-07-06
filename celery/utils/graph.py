@@ -2,6 +2,10 @@
 """Dependency graph implementation."""
 from collections import Counter
 from textwrap import dedent
+from typing import (
+    Any, Dict, MutableSet, MutableSequence,
+    Optional, IO, Iterable, Iterator, Sequence, Tuple,
+)
 
 from kombu.utils.encoding import safe_str, bytes_to_str
 
@@ -25,7 +29,7 @@ class CycleError(Exception):
     """A cycle was detected in an acyclic graph."""
 
 
-class DependencyGraph:
+class DependencyGraph(Iterable):
     """A directed acyclic graph of objects and their dependencies.
 
     Supports a robust topological sort
@@ -38,26 +42,27 @@ class DependencyGraph:
         Does not support cycle detection.
     """
 
-    def __init__(self, it=None, formatter=None):
+    def __init__(self, it: Optional[Iterable]=None,
+                 formatter: Optional['GraphFormatter']=None) -> None:
         self.formatter = formatter or GraphFormatter()
-        self.adjacent = {}
+        self.adjacent = {}  # type: Dict[Any, Any]
         if it is not None:
             self.update(it)
 
-    def add_arc(self, obj):
+    def add_arc(self, obj: Any) -> None:
         """Add an object to the graph."""
         self.adjacent.setdefault(obj, [])
 
-    def add_edge(self, A, B):
+    def add_edge(self, A: Any, B: Any) -> None:
         """Add an edge from object ``A`` to object ``B``
         (``A`` depends on ``B``)."""
         self[A].append(B)
 
-    def connect(self, graph):
+    def connect(self, graph: 'DependencyGraph') -> None:
         """Add nodes from another graph."""
         self.adjacent.update(graph.adjacent)
 
-    def topsort(self):
+    def topsort(self) -> Sequence[Any]:
         """Sort the graph topologically.
 
         Returns:
@@ -79,7 +84,7 @@ class DependencyGraph:
                     graph.add_edge(node_c, successor_c)
         return [t[0] for t in graph._khan62()]
 
-    def valency_of(self, obj):
+    def valency_of(self, obj: Any) -> int:
         """Return the valency (degree) of a vertex in the graph."""
         try:
             l = [len(self[obj])]
@@ -89,7 +94,7 @@ class DependencyGraph:
             l.append(self.valency_of(node))
         return sum(l)
 
-    def update(self, it):
+    def update(self, it: Iterable) -> None:
         """Update the graph with data from a list
         of ``(obj, dependencies)`` tuples."""
         tups = list(it)
@@ -99,17 +104,17 @@ class DependencyGraph:
             for dep in deps:
                 self.add_edge(obj, dep)
 
-    def edges(self):
+    def edges(self) -> Iterator[Any]:
         """Return generator that yields for all edges in the graph."""
         return (obj for obj, adj in self.items() if adj)
 
-    def _khan62(self):
+    def _khan62(self) -> Sequence[Any]:
         """Khans simple topological sort algorithm from '62
 
         See https://en.wikipedia.org/wiki/Topological_sorting
         """
-        count = Counter()
-        result = []
+        count = Counter()  # type: Counter
+        result = []        # type: MutableSequence[Any]
 
         for node in self:
             for successor in self[node]:
@@ -127,13 +132,15 @@ class DependencyGraph:
         result.reverse()
         return result
 
-    def _tarjan72(self):
+    def _tarjan72(self) -> Sequence[Any]:
         """Tarjan's algorithm to find strongly connected components.
 
         See Also:
             http://bit.ly/vIMv3h.
         """
-        result, stack, low = [], [], {}
+        result = []  # type: MutableSequence[Any]
+        stack = []   # type: MutableSequence[Any]
+        low = {}     # type: Dict[Any, Any]
 
         def visit(node):
             if node in low:
@@ -159,7 +166,8 @@ class DependencyGraph:
 
         return result
 
-    def to_dot(self, fh, formatter=None):
+    def to_dot(self, fh: IO,
+               formatter: Optional['GraphFormatter']=None) -> None:
         """Convert the graph to DOT format.
 
         Arguments:
@@ -167,7 +175,7 @@ class DependencyGraph:
             formatter (celery.utils.graph.GraphFormatter): Custom graph
                 formatter to use.
         """
-        seen = set()
+        seen = set()  # type: MutableSet
         draw = formatter or self.formatter
 
         def P(s):
@@ -187,28 +195,28 @@ class DependencyGraph:
                 P(draw.edge(obj, req))
         P(draw.tail())
 
-    def format(self, obj):
-        return self.formatter(obj) if self.formatter else obj
+    def format(self, obj: Any) -> Any:
+        return self.formatter.node(obj) if self.formatter else obj
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Any]:
         return iter(self.adjacent)
 
-    def __getitem__(self, node):
+    def __getitem__(self, node: Any) -> Any:
         return self.adjacent[node]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.adjacent)
 
-    def __contains__(self, obj):
+    def __contains__(self, obj: Any) -> bool:
         return obj in self.adjacent
 
-    def items(self):
+    def items(self) -> Any:
         return self.adjacent.items()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '\n'.join(self.repr_node(N) for N in self)
 
-    def repr_node(self, obj, level=1, fmt='{0}({1})'):
+    def repr_node(self, obj: Any, level: int=1, fmt: str='{0}({1})') -> str:
         output = [fmt.format(obj, self.valency_of(obj))]
         if obj in self:
             for other in self[obj]:
@@ -242,8 +250,13 @@ class GraphFormatter:
     term_scheme = {'fillcolor': 'palegreen1', 'color': 'palegreen2'}
     graph_scheme = {'bgcolor': 'mintcream'}
 
-    def __init__(self, root=None, type=None, id=None,
-                 indent=0, inw=' ' * 4, **scheme):
+    def __init__(self,
+                 root: Any=None,
+                 type: Optional[str]=None,
+                 id: Optional[str]=None,
+                 indent: int=0,
+                 inw: str=' ' * 4,
+                 **scheme) -> None:
         self.id = id or 'dependencies'
         self.root = root
         self.type = type or 'digraph'
@@ -253,52 +266,56 @@ class GraphFormatter:
         self.scheme = dict(self.scheme, **scheme)
         self.graph_scheme = dict(self.graph_scheme, root=self.label(self.root))
 
-    def attr(self, name, value):
+    def attr(self, name: str, value: Any) -> str:
         value = '"{0}"'.format(value)
         return self.FMT(self._attr, name=name, value=value)
 
-    def attrs(self, d, scheme=None):
+    def attrs(self, d: Dict, scheme: Optional[Dict]=None) -> str:
         d = dict(self.scheme, **dict(scheme, **d or {}) if scheme else d)
         return self._attrsep.join(
             safe_str(self.attr(k, v)) for k, v in d.items()
         )
 
-    def head(self, **attrs):
+    def head(self, **attrs: Dict[str, str]) -> str:
         return self.FMT(
             self._head, id=self.id, type=self.type,
             attrs=self.attrs(attrs, self.graph_scheme),
         )
 
-    def tail(self):
+    def tail(self) -> str:
         return self.FMT(self._tail)
 
-    def label(self, obj):
+    def label(self, obj: Any) -> str:
         return obj
 
-    def node(self, obj, **attrs):
+    def node(self, obj: Any, **attrs: Dict[str, str]) -> str:
         return self.draw_node(obj, self.node_scheme, attrs)
 
-    def terminal_node(self, obj, **attrs):
+    def terminal_node(self, obj: Any, **attrs: Dict[str, str]) -> str:
         return self.draw_node(obj, self.term_scheme, attrs)
 
-    def edge(self, a, b, **attrs):
+    def edge(self, a: Any, b: Any, **attrs: Dict[str, str]) -> str:
         return self.draw_edge(a, b, **attrs)
 
-    def _enc(self, s):
-        return s.encode('utf-8', 'ignore')
+    def _enc(self, s: str) -> str:
+        return s.encode('utf-8', 'ignore').decode()
 
-    def FMT(self, fmt, *args, **kwargs):
+    def FMT(self, fmt: str, *args, **kwargs) -> str:
         return self._enc(fmt.format(
             *args, **dict(kwargs, IN=self.IN, INp=self.INp)
         ))
 
-    def draw_edge(self, a, b, scheme=None, attrs=None):
+    def draw_edge(self, a: Any, b: Any,
+                  scheme: Optional[Dict]=None,
+                  attrs: Optional[Dict]=None) -> str:
         return self.FMT(
             self._edge, self.label(a), self.label(b),
             dir=self.direction, attrs=self.attrs(attrs, self.edge_scheme),
         )
 
-    def draw_node(self, obj, scheme=None, attrs=None):
+    def draw_node(self, obj: Any,
+                  scheme: Optional[Dict]=None,
+                  attrs: Optional[Dict]=None) -> str:
         return self.FMT(
             self._node, self.label(obj), attrs=self.attrs(attrs, scheme),
         )

@@ -8,6 +8,8 @@ import threading
 import traceback
 
 from contextlib import contextmanager
+from typing import Any, Iterable, Iterator, Optional, Tuple, Union
+
 from kombu.log import get_logger as _get_logger, LOG_LEVELS
 from kombu.utils.encoding import safe_str
 
@@ -30,15 +32,15 @@ MP_LOG = os.environ.get('MP_LOG', False)
 # Every logger in the celery package inherits from the "celery"
 # logger, and every task logger inherits from the "celery.task"
 # logger.
-base_logger = logger = _get_logger('celery')
+base_logger = logger = _get_logger('celery')  # type: logging.Logger
 
 
-def set_in_sighandler(value):
+def set_in_sighandler(value: bool) -> None:
     global _in_sighandler
     _in_sighandler = value
 
 
-def iter_open_logger_fds():
+def iter_open_logger_fds() -> Iterable[Any]:
     seen = set()
     loggers = (list(logging.Logger.manager.loggerDict.values()) +
                [logging.getLogger(None)])
@@ -56,7 +58,7 @@ def iter_open_logger_fds():
 
 
 @contextmanager
-def in_sighandler():
+def in_sighandler() -> Iterator:
     set_in_sighandler(True)
     try:
         yield
@@ -64,7 +66,7 @@ def in_sighandler():
         set_in_sighandler(False)
 
 
-def logger_isa(l, p, max=1000):
+def logger_isa(l: logging.Logger, p: logging.Logger, max: int=1000) -> bool:
     this, seen = l, set()
     for _ in range(max):
         if this == p:
@@ -83,7 +85,7 @@ def logger_isa(l, p, max=1000):
     return False
 
 
-def get_logger(name):
+def get_logger(name: Union[str, logging.Logger]) -> logging.Logger:
     l = _get_logger(name)
     if logging.root not in (l, l.parent) and l is not base_logger:
         if not logger_isa(l, base_logger):  # pragma: no cover
@@ -93,14 +95,14 @@ task_logger = get_logger('celery.task')
 worker_logger = get_logger('celery.worker')
 
 
-def get_task_logger(name):
+def get_task_logger(name: Union[str, logging.Logger]) -> logging.Logger:
     logger = get_logger(name)
     if not logger_isa(logger, task_logger):
         logger.parent = task_logger
     return logger
 
 
-def mlevel(level):
+def mlevel(level: Union[int, str]) -> int:
     if level and not isinstance(level, numbers.Integral):
         return LOG_LEVELS[level.upper()]
     return level
@@ -116,16 +118,16 @@ class ColorFormatter(logging.Formatter):
         'CRITICAL': COLORS['magenta'],
     }
 
-    def __init__(self, fmt=None, use_color=True):
+    def __init__(self, fmt: Optional[str]=None, use_color: bool=True) -> None:
         logging.Formatter.__init__(self, fmt)
         self.use_color = use_color
 
-    def formatException(self, ei):
+    def formatException(self, ei: Tuple) -> str:
         if ei and not isinstance(ei, tuple):
             ei = sys.exc_info()
         return logging.Formatter.formatException(self, ei)
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         msg = logging.Formatter.format(self, record)
         color = self.colors.get(record.levelname)
 
@@ -171,7 +173,8 @@ class LoggingProxy:
     loglevel = logging.ERROR
     _thread = threading.local()
 
-    def __init__(self, logger, loglevel=None):
+    def __init__(self, logger: logging.Logger,
+                 loglevel: Optional[Union[int, str]]=None) -> None:
         self.logger = logger
         self.loglevel = mlevel(loglevel or self.logger.level or self.loglevel)
         self._safewrap_handlers()
@@ -194,7 +197,7 @@ class LoggingProxy:
             handler.handleError = WithSafeHandleError().handleError
         return [wrap_handler(h) for h in self.logger.handlers]
 
-    def write(self, data):
+    def write(self, data: Any) -> None:
         """Write message to logging object."""
         if _in_sighandler:
             return print(safe_str(data), file=sys.__stderr__)
@@ -209,7 +212,7 @@ class LoggingProxy:
             finally:
                 self._thread.recurse_protection = False
 
-    def writelines(self, sequence):
+    def writelines(self, sequence: Iterable[str]) -> None:
         """`writelines(sequence_of_strings) -> None`.
 
         Write the strings to the file.
@@ -220,22 +223,22 @@ class LoggingProxy:
         for part in sequence:
             self.write(part)
 
-    def flush(self):
+    def flush(self) -> None:
         """This object is not buffered so any :meth:`flush` requests
         are ignored."""
         pass
 
-    def close(self):
+    def close(self) -> None:
         """When the object is closed, no write requests are forwarded to
         the logging object anymore."""
         self.closed = True
 
-    def isatty(self):
+    def isatty(self) -> bool:
         """Always return :const:`False`. Just here for file support."""
         return False
 
 
-def get_multiprocessing_logger():
+def get_multiprocessing_logger() -> logging.Logger:
     try:
         from billiard import util
     except ImportError:  # pragma: no cover
@@ -244,7 +247,7 @@ def get_multiprocessing_logger():
         return util.get_logger()
 
 
-def reset_multiprocessing_logger():
+def reset_multiprocessing_logger() -> None:
     try:
         from billiard import util
     except ImportError:  # pragma: no cover
@@ -254,7 +257,7 @@ def reset_multiprocessing_logger():
             util._logger = None
 
 
-def current_process():
+def current_process() -> Any:
     try:
         from billiard import process
     except ImportError:  # pragma: no cover
@@ -263,6 +266,6 @@ def current_process():
         return process.current_process()
 
 
-def current_process_index(base=1):
+def current_process_index(base: int=1) -> int:
     index = getattr(current_process(), 'index', None)
     return index + base if index is not None else index

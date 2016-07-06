@@ -4,6 +4,7 @@ import platform
 
 from functools import reduce
 from typing import Any, Tuple
+from typing import Mapping  # noqa
 
 __all__ = ['colored']
 
@@ -30,8 +31,8 @@ class colored:
         ...       c.green('dog ')))
     """
 
-    def __init__(self, *s: Tuple[Any],
-                 enabled: bool=True, op: str='', **kwargs):
+    def __init__(self, *s: Tuple[str],
+                 enabled: bool=True, op: str='', **kwargs) -> None:
         self.s = s
         self.enabled = not IS_WINDOWS and enabled
         self.op = op

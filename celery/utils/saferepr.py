@@ -17,6 +17,9 @@ from decimal import Decimal
 from itertools import chain
 from numbers import Number
 from pprint import _recursion
+from typing import (
+    Any, Callable, Iterator, MutableSequence, Optional, Set, Sequence, Tuple,
+)
 
 from kombu.utils.encoding import bytes_to_str
 
@@ -46,15 +49,16 @@ LIT_TUPLE_END = _literal(')', False, -1)
 LIT_TUPLE_END_SV = _literal(',)', False, -1)
 
 
-def saferepr(o, maxlen=None, maxlevels=3, seen=None):
+def saferepr(o: Any, maxlen: Optional[int]=None,
+             maxlevels: int=3, seen: Optional[Set]=None) -> str:
     return ''.join(_saferepr(
         o, maxlen=maxlen, maxlevels=maxlevels, seen=seen
     ))
 
 
-def _chaindict(mapping,
-               LIT_DICT_KVSEP=LIT_DICT_KVSEP,
-               LIT_LIST_SEP=LIT_LIST_SEP):
+def _chaindict(mapping: Mapping,
+               LIT_DICT_KVSEP: str=LIT_DICT_KVSEP,
+               LIT_LIST_SEP: str=LIT_LIST_SEP) -> Iterator[Any]:
     size = len(mapping)
     for i, (k, v) in enumerate(mapping.items()):
         yield _key(k)
@@ -64,7 +68,7 @@ def _chaindict(mapping,
             yield LIT_LIST_SEP
 
 
-def _chainlist(it, LIT_LIST_SEP=LIT_LIST_SEP):
+def _chainlist(it: Sequence, LIT_LIST_SEP: str=LIT_LIST_SEP) -> Iterator[Any]:
     size = len(it)
     for i, v in enumerate(it):
         yield v
@@ -72,11 +76,12 @@ def _chainlist(it, LIT_LIST_SEP=LIT_LIST_SEP):
             yield LIT_LIST_SEP
 
 
-def _repr_empty_set(s):
+def _repr_empty_set(s: Any) -> str:
     return '%s()' % (type(s).__name__,)
 
 
-def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
+def _saferepr(o: Any, maxlen: Optional[int]=None,
+              maxlevels: int=3, seen: Optional[Set]=None) -> str:
     stack = deque([iter([o])])
     for token, it in reprstream(stack, seen=seen, maxlevels=maxlevels):
         if maxlen is not None and maxlen <= 0:
@@ -105,7 +110,8 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
                 yield rest2.value
 
 
-def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
+def _reprseq(val: Any, lit_start: str, lit_end: str, builtin_type: Any,
+             chainer: Callable) -> Tuple[Any, Any, Any]:
     if type(val) is builtin_type:  # noqa
         return lit_start, lit_end, chainer(val)
     return (
@@ -115,7 +121,9 @@ def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
     )
 
 
-def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
+def reprstream(stack: MutableSequence, seen: Optional[Set]=None,
+               maxlevels: int=3, level: int=0,
+               isinstance: Callable=isinstance) -> Iterator[Any]:
     seen = seen or set()
     append = stack.append
     popleft = stack.popleft

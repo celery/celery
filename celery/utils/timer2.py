@@ -10,7 +10,9 @@ import sys
 import threading
 
 from itertools import count
+from numbers import Number
 from time import sleep
+from typing import Callable, MutableSequence, Optional, Union
 
 from kombu.async.timer import Entry, Timer as Schedule, to_timestamp, logger
 
@@ -30,14 +32,17 @@ class Timer(threading.Thread):
     _timer_count = count(1)
 
     if TIMER_DEBUG:  # pragma: no cover
-        def start(self, *args, **kwargs):
+        def start(self, *args, **kwargs) -> None:
             import traceback
             print('- Timer starting')
             traceback.print_stack()
             super().start(*args, **kwargs)
 
-    def __init__(self, schedule=None, on_error=None, on_tick=None,
-                 on_start=None, max_interval=None, **kwargs):
+    def __init__(self, schedule: Optional[Schedule]=None,
+                 on_error: Optional[Callable]=None,
+                 on_tick: Optional[Callable]=None,
+                 on_start: Optional[Callable]=None,
+                 max_interval: Optional[Number]=None, **kwargs) -> None:
         self.schedule = schedule or self.Schedule(on_error=on_error,
                                                   max_interval=max_interval)
         self.on_start = on_start
@@ -50,7 +55,7 @@ class Timer(threading.Thread):
         self.daemon = True
         self.name = 'Timer-{0}'.format(next(self._timer_count))
 
-    def _next_entry(self):
+    def _next_entry(self) -> Optional[Number]:
         with self.not_empty:
             delay, entry = next(self.scheduler)
             if entry is None:
@@ -60,7 +65,7 @@ class Timer(threading.Thread):
         return self.schedule.apply_entry(entry)
     __next__ = next = _next_entry  # for 2to3
 
-    def run(self):
+    def run(self) -> None:
         try:
             self.running = True
             self.scheduler = iter(self.schedule)
@@ -83,60 +88,61 @@ class Timer(threading.Thread):
             logger.error('Thread Timer crashed: %r', exc, exc_info=True)
             os._exit(1)
 
-    def stop(self):
+    def stop(self) -> None:
         self._is_shutdown.set()
         if self.running:
             self._is_stopped.wait()
             self.join(threading.TIMEOUT_MAX)
             self.running = False
 
-    def ensure_started(self):
+    def ensure_started(self) -> None:
         if not self.running and not self.isAlive():
             if self.on_start:
                 self.on_start(self)
             self.start()
 
-    def _do_enter(self, meth, *args, **kwargs):
+    def _do_enter(self, meth: str, *args, **kwargs) -> Entry:
         self.ensure_started()
         with self.mutex:
             entry = getattr(self.schedule, meth)(*args, **kwargs)
             self.not_empty.notify()
             return entry
 
-    def enter(self, entry, eta, priority=None):
+    def enter(self, entry: Entry, eta: float,
+              priority: Optional[int]=None) -> Entry:
         return self._do_enter('enter_at', entry, eta, priority=priority)
 
-    def call_at(self, *args, **kwargs):
+    def call_at(self, *args, **kwargs) -> Entry:
         return self._do_enter('call_at', *args, **kwargs)
 
-    def enter_after(self, *args, **kwargs):
+    def enter_after(self, *args, **kwargs) -> Entry:
         return self._do_enter('enter_after', *args, **kwargs)
 
-    def call_after(self, *args, **kwargs):
+    def call_after(self, *args, **kwargs) -> Entry:
         return self._do_enter('call_after', *args, **kwargs)
 
-    def call_repeatedly(self, *args, **kwargs):
+    def call_repeatedly(self, *args, **kwargs) -> Entry:
         return self._do_enter('call_repeatedly', *args, **kwargs)
 
-    def exit_after(self, secs, priority=10):
+    def exit_after(self, secs: Union[int, float],
+                   priority: Optional[int]=10) -> None:
         self.call_after(secs, sys.exit, priority)
 
-    def cancel(self, tref):
+    def cancel(self, tref: Entry) -> None:
         tref.cancel()
 
-    def clear(self):
+    def clear(self) -> None:
         self.schedule.clear()
 
-    def empty(self):
+    def empty(self) -> bool:
         return not len(self)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.schedule)
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return True
-    __nonzero__ = __bool__
 
     @property
-    def queue(self):
+    def queue(self) -> MutableSequence:
         return self.schedule.queue

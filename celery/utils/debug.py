@@ -6,22 +6,31 @@ import traceback
 
 from contextlib import contextmanager
 from functools import partial
+from io import StringIO
+from numbers import Number
 from pprint import pprint
+from typing import (
+    Any, AnyStr, Generator, IO, Iterator, Iterable, MutableSequence,
+    Optional, Sequence, SupportsInt, Tuple, Union,
+)
 
 from celery.five import WhateverIO
 from celery.platforms import signals
 
+from .typing import Timeout
+
 try:
     from psutil import Process
 except ImportError:
-    Process = None  # noqa
+    class Process:  # noqa
+        pass
 
 __all__ = [
     'blockdetection', 'sample_mem', 'memdump', 'sample',
     'humanbytes', 'mem_rss', 'ps', 'cry',
 ]
 
-UNITS = (
+UNITS = (               # type: Sequence[Tuple[float, str]]
     (2 ** 40.0, 'TB'),
     (2 ** 30.0, 'GB'),
     (2 ** 20.0, 'MB'),
@@ -29,11 +38,11 @@ UNITS = (
     (0.0, 'b'),
 )
 
-_process = None
-_mem_sample = []
+_process = None         # type: Optional[Process]
+_mem_sample = []        # type: MutableSequence[str]
 
 
-def _on_blocking(signum, frame):
+def _on_blocking(signum: int, frame: Any) -> None:
     import inspect
     raise RuntimeError(
         'Blocking detection timed-out at: {0}'.format(
@@ -43,7 +52,7 @@ def _on_blocking(signum, frame):
 
 
 @contextmanager
-def blockdetection(timeout):
+def blockdetection(timeout: Timeout) -> Generator:
     """A timeout context using ``SIGALRM`` that can be used to detect blocking
     functions."""
     if not timeout:
@@ -62,7 +71,7 @@ def blockdetection(timeout):
             signals.reset_alarm()
 
 
-def sample_mem():
+def sample_mem() -> str:
     """Sample RSS memory usage.
 
     Statistics can then be output by calling :func:`memdump`.
@@ -72,7 +81,7 @@ def sample_mem():
     return current_rss
 
 
-def _memdump(samples=10):  # pragma: no cover
+def _memdump(samples: int=10) -> Tuple[Iterable[Any], str]:  # pragma: no cover
     S = _mem_sample
     prev = list(S) if len(S) <= samples else sample(S, samples)
     _mem_sample[:] = []
@@ -82,7 +91,7 @@ def _memdump(samples=10):  # pragma: no cover
     return prev, after_collect
 
 
-def memdump(samples=10, file=None):  # pragma: no cover
+def memdump(samples: int=10, file: IO=None) -> None:  # pragma: no cover
     """Dump memory statistics.
 
     Will print a sample of all RSS memory samples added by
@@ -101,7 +110,7 @@ def memdump(samples=10, file=None):  # pragma: no cover
     say('- rss (end): {0}.'.format(after_collect))
 
 
-def sample(x, n, k=0):
+def sample(x: Sequence, n: int, k: int=0) -> Iterator[Any]:
     """Given a list `x` a sample of length ``n`` of that list is returned.
 
     E.g. if `n` is 10, and `x` has 100 items, a list of every tenth.
@@ -118,7 +127,7 @@ def sample(x, n, k=0):
         k += j
 
 
-def hfloat(f, p=5):
+def hfloat(f: Union[SupportsInt, AnyStr], p: int=5) -> str:
     """Convert float to value suitable for humans.
 
     Arguments:
@@ -126,10 +135,10 @@ def hfloat(f, p=5):
         p (int): Floating point precision (default is 5).
     """
     i = int(f)
-    return i if i == f else '{0:.{p}}'.format(f, p=p)
+    return str(i) if i == f else '{0:.{p}}'.format(f, p=p)
 
 
-def humanbytes(s):
+def humanbytes(s: Union[float, int]) -> str:
     """Convert bytes to human-readable form (e.g. KB, MB)."""
     return next(
         '{0}{1}'.format(hfloat(s / div if div else s), unit)
@@ -137,14 +146,14 @@ def humanbytes(s):
     )
 
 
-def mem_rss():
+def mem_rss() -> str:
     """Return RSS memory usage as a humanized string."""
     p = ps()
     if p is not None:
         return humanbytes(_process_memory_info(p).rss)
 
 
-def ps():  # pragma: no cover
+def ps() -> Process:  # pragma: no cover
     """Return the global :class:`psutil.Process` instance,
     or :const:`None` if :pypi:`psutil` is not installed."""
     global _process
@@ -153,14 +162,15 @@ def ps():  # pragma: no cover
     return _process
 
 
-def _process_memory_info(process):
+def _process_memory_info(process: Process) -> Any:
     try:
         return process.memory_info()
     except AttributeError:
         return process.get_memory_info()
 
 
-def cry(out=None, sepchr='=', seplen=49):  # pragma: no cover
+def cry(out: Optional[StringIO]=None,
+        sepchr: str='=', seplen: int=49) -> None:  # pragma: no cover
     """Return stack-trace of all active threads,
     taken from https://gist.github.com/737056."""
     import threading

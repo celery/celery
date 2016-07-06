@@ -8,6 +8,7 @@ from base64 import b64encode as base64encode, b64decode as base64decode
 from functools import partial
 from inspect import getmro
 from itertools import takewhile
+from typing import Any, AnyStr, Callable, Optional, Sequence, Union
 
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
@@ -32,12 +33,14 @@ except NameError:  # pragma: no cover
     unwanted_base_classes = (Exception, BaseException, object)  # py3k
 
 
-def subclass_exception(name, parent, module):  # noqa
+def subclass_exception(name: str, parent: Any, module: str) -> Any:  # noqa
     return type(name, (parent,), {'__module__': module})
 
 
-def find_pickleable_exception(exc, loads=pickle.loads,
-                              dumps=pickle.dumps):
+def find_pickleable_exception(
+        exc: Exception,
+        loads: Callable[[AnyStr], Any]=pickle.loads,
+        dumps: Callable[[Any], AnyStr]=pickle.dumps) -> Optional[Exception]:
     """With an exception instance, iterate over its super classes (by MRO)
     and find the first super exception that is pickleable.  It does
     not go below :exc:`Exception` (i.e. it skips :exc:`Exception`,
@@ -63,11 +66,12 @@ def find_pickleable_exception(exc, loads=pickle.loads,
             return superexc
 
 
-def itermro(cls, stop):
+def itermro(cls: Any, stop: Any) -> Any:
     return takewhile(lambda sup: sup not in stop, getmro(cls))
 
 
-def create_exception_cls(name, module, parent=None):
+def create_exception_cls(name: str, module: str,
+                         parent: Optional[Any]=None) -> Exception:
     """Dynamically create an exception class."""
     if not parent:
         parent = Exception
@@ -96,15 +100,16 @@ class UnpickleableExceptionWrapper(Exception):
     """
 
     #: The module of the original exception.
-    exc_module = None
+    exc_module = None       # type: str
 
     #: The name of the original exception class.
-    exc_cls_name = None
+    exc_cls_name = None     # type: str
 
     #: The arguments for the original exception.
-    exc_args = None
+    exc_args = None         # type: Sequence[Any]
 
-    def __init__(self, exc_module, exc_cls_name, exc_args, text=None):
+    def __init__(self, exc_module: str, exc_cls_name: str,
+                 exc_args: Sequence[Any], text: Optional[str]=None) -> None:
         safe_exc_args = []
         for arg in exc_args:
             try:
@@ -118,22 +123,22 @@ class UnpickleableExceptionWrapper(Exception):
         self.text = text
         Exception.__init__(self, exc_module, exc_cls_name, safe_exc_args, text)
 
-    def restore(self):
+    def restore(self) -> Exception:
         return create_exception_cls(self.exc_cls_name,
                                     self.exc_module)(*self.exc_args)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.text
 
     @classmethod
-    def from_exception(cls, exc):
+    def from_exception(cls, exc: Exception) -> 'UnpickleableExceptionWrapper':
         return cls(exc.__class__.__module__,
                    exc.__class__.__name__,
                    getattr(exc, 'args', []),
                    safe_repr(exc))
 
 
-def get_pickleable_exception(exc):
+def get_pickleable_exception(exc: Exception) -> Exception:
     """Make sure exception is pickleable."""
     try:
         pickle.loads(pickle.dumps(exc))
@@ -147,7 +152,10 @@ def get_pickleable_exception(exc):
     return UnpickleableExceptionWrapper.from_exception(exc)
 
 
-def get_pickleable_etype(cls, loads=pickle.loads, dumps=pickle.dumps):
+def get_pickleable_etype(
+        cls: Any,
+        loads: Callable[[AnyStr], Any]=pickle.loads,
+        dumps: Callable[[Any], AnyStr]=pickle.dumps) -> Exception:
     try:
         loads(dumps(cls))
     except:
@@ -156,7 +164,7 @@ def get_pickleable_etype(cls, loads=pickle.loads, dumps=pickle.dumps):
         return cls
 
 
-def get_pickled_exception(exc):
+def get_pickled_exception(exc: Exception) -> Exception:
     """Get original exception from exception pickled using
     :meth:`get_pickleable_exception`."""
     if isinstance(exc, UnpickleableExceptionWrapper):
@@ -164,17 +172,18 @@ def get_pickled_exception(exc):
     return exc
 
 
-def b64encode(s):
+def b64encode(s: AnyStr) -> str:
     return bytes_to_str(base64encode(str_to_bytes(s)))
 
 
-def b64decode(s):
+def b64decode(s: AnyStr) -> bytes:
     return base64decode(str_to_bytes(s))
 
 
-def strtobool(term, table={'false': False, 'no': False, '0': False,
-                           'true': True, 'yes': True, '1': True,
-                           'on': True, 'off': False}):
+def strtobool(term: Union[str, bool],
+              table={'false': False, 'no': False, '0': False,
+                     'true': True, 'yes': True, '1': True,
+                     'on': True, 'off': False}) -> bool:
     """Convert common terms for true/false to bool
     (true/false/yes/no/on/off/1/0)."""
     if isinstance(term, str):
@@ -185,10 +194,10 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
     return term
 
 
-def jsonify(obj,
-            builtin_types=(numbers.Real, str), key=None,
-            keyfilter=None,
-            unknown_type_filter=None):
+def jsonify(obj: Any,
+            builtin_types=(numbers.Real, str), key: Optional[str]=None,
+            keyfilter: Optional[Callable[[str], Any]]=None,
+            unknown_type_filter: Optional[Callable[[Any], Any]]=None) -> Any:
     """Transforms object making it suitable for json serialization"""
     from kombu.abstract import Object as KombuDictType
     _jsonify = partial(jsonify, builtin_types=builtin_types, key=key,
@@ -232,7 +241,7 @@ def jsonify(obj,
         return unknown_type_filter(obj)
 
 
-def maybe_reraise():
+def maybe_reraise() -> None:
     """Re-raise if an exception is currently being handled, or return
     otherwise."""
     exc_info = sys.exc_info()
