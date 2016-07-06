@@ -340,7 +340,7 @@ class worker(Command):
         user_options = self.app.user_options['worker']
         if user_options:
             uopts = OptionGroup(parser, 'User Options')
-            uopts.options_list.extend(user_options)
+            uopts.option_list.extend(user_options)
             parser.add_option_group(uopts)
 
 
