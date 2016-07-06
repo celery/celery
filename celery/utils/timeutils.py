@@ -6,7 +6,7 @@ import time as _time
 
 from calendar import monthrange
 from datetime import date, datetime, timedelta, tzinfo
-from typing import Any, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 from kombu.utils import cached_property, reprcall
 
@@ -321,6 +321,7 @@ class ffwd:
                  month: Optional[int]=None,
                  weeks: int=0,
                  weekday: Optional[int]=None,
+                 day: Optional[int]=None,
                  hour: Optional[int]=None,
                  minute: Optional[int]=None,
                  second: Optional[numbers.Number]=None,

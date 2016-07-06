@@ -27,6 +27,36 @@ class _AbstractClass(metaclass=ABCMeta):
         return other
 
 
+class AbstractApp(_AbstractClass):  # pragma: no cover
+    __required_attributes = frozenset({
+        'close' 'start', 'task', 'AsyncResult', 'finalize',
+    })
+
+    @abstractmethod
+    def close(self):
+        pass
+
+    @abstractmethod
+    def start(self):
+        pass
+
+    @abstractmethod
+    def task(self) -> 'CallableTask':
+        pass
+
+    @abstractmethod
+    def finalize(self):
+        pass
+
+    @abstractproperty
+    def conf(self):
+        pass
+
+    @abstractproperty
+    def AsyncResult(self):
+        pass
+
+
 class CallableTask(_AbstractClass, Callable):  # pragma: no cover
     __required_attributes__ = frozenset({
         'delay', 'apply_async', 'apply',

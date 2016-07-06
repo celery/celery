@@ -20,18 +20,24 @@ try:
 except ImportError:  # pragma: no cover
     resource = None  # noqa
 
+from numbers import Number
+from typing import Any, Callable, Mapping, Optional, Sequence, Union
+
 from billiard import cpu_count
 from billiard.util import Finalize
+from kombu.async import Hub
 from kombu.syn import detect_environment
 
 from celery import bootsteps
 from celery.bootsteps import RUN, TERMINATE
 from celery import concurrency as _concurrency
+from celery.concurrency.base import BasePool  # noqa
 from celery import signals
 from celery.exceptions import (
     ImproperlyConfigured, WorkerTerminate, TaskRevokedError,
 )
-from celery.platforms import EX_FAILURE, create_pidlock
+from celery.platforms import EX_FAILURE, Pidfile, create_pidlock
+from celery.utils.abstract import AbstractApp
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel, worker_logger as logger
 from celery.utils.nodenames import default_nodename, worker_direct
@@ -58,19 +64,22 @@ Trying to deselect queue subset of {0!r}, but queue {1} is not
 defined in the `task_queues` setting.
 """
 
+CsvArgument = Union[Sequence[str], str]
+PidfileArgument = Union[Pidfile, str]
+
 
 class WorkController:
     """Unmanaged worker instance."""
 
-    app = None
+    app = None        # type: Optional[AbstractApp]
 
-    pidlock = None
-    blueprint = None
-    pool = None
-    semaphore = None
+    pidlock = None    # type: Optional[Pidfile]
+    blueprint = None  # type: bootsteps.Blueprint
+    pool = None       # type: Optional[BasePool]
+    semaphore = None  # type: threading.Semaphore
 
     #: contains the exit code if a :exc:`SystemExit` event is handled.
-    exitcode = None
+    exitcode = None   # type: Optional[int]
 
     class Blueprint(bootsteps.Blueprint):
         """Worker bootstep blueprint."""
@@ -85,7 +94,10 @@ class WorkController:
             'celery.worker.components:Consumer',
         }
 
-    def __init__(self, app=None, hostname=None, **kwargs):
+    def __init__(self,
+                 app: Optional[AbstractApp]=None,
+                 hostname: Optional[str]=None,
+                 **kwargs) -> None:
         self.app = app or self.app
         self.hostname = default_nodename(hostname)
         self.app.loader.init_worker()
@@ -98,9 +110,15 @@ class WorkController:
             Finalize(self, self._send_worker_shutdown, exitpriority=10),
         ]
 
-    def setup_instance(self, queues=None, ready_callback=None, pidfile=None,
-                       include=None, use_eventloop=None, exclude_queues=None,
-                       **kwargs):
+    def setup_instance(
+            self,
+            queues: Optional[CsvArgument]=None,
+            ready_callback: Optional[Callable[[Any], Any]]=None,
+            pidfile: Optional[PidfileArgument]=None,
+            include: Optional[CsvArgument]=None,
+            use_eventloop: Optional[bool]=None,
+            exclude_queues: Optional[CsvArgument]=None,
+            **kwargs) -> None:
         self.pidfile = pidfile
         self.setup_queues(queues, exclude_queues)
         self.setup_includes(str_to_list(include))
@@ -136,33 +154,34 @@ class WorkController:
                                         on_stopped=self.on_stopped)
         self.blueprint.apply(self, **kwargs)
 
-    def on_init_blueprint(self):
+    def on_init_blueprint(self) -> None:
         pass
 
-    def on_before_init(self, **kwargs):
+    def on_before_init(self, **kwargs) -> None:
         pass
 
-    def on_after_init(self, **kwargs):
+    def on_after_init(self, **kwargs) -> None:
         pass
 
-    def on_start(self):
+    def on_start(self) -> None:
         if self.pidfile:
             self.pidlock = create_pidlock(self.pidfile)
 
-    def on_consumer_ready(self, consumer):
+    def on_consumer_ready(self, consumer: Any) -> None:
         pass
 
-    def on_close(self):
+    def on_close(self) -> None:
         self.app.loader.shutdown_worker()
 
-    def on_stopped(self):
+    def on_stopped(self) -> None:
         self.timer.stop()
         self.consumer.shutdown()
 
         if self.pidlock:
             self.pidlock.release()
 
-    def setup_queues(self, include, exclude=None):
+    def setup_queues(self, include: Optional[CsvArgument],
+                     exclude: Optional[CsvArgument]=None) -> None:
         include = str_to_list(include)
         exclude = str_to_list(exclude)
         try:
@@ -178,7 +197,7 @@ class WorkController:
         if self.app.conf.worker_direct:
             self.app.amqp.queues.select_add(worker_direct(self.hostname))
 
-    def setup_includes(self, includes):
+    def setup_includes(self, includes: Optional[CsvArgument]) -> None:
         # Update celery_include to have all known task modules, so that we
         # ensure all task modules are imported in case an execv happens.
         prev = tuple(self.app.conf.include)
@@ -190,13 +209,13 @@ class WorkController:
                         for task in self.app.tasks.values()}
         self.app.conf.include = tuple(set(prev) | task_modules)
 
-    def prepare_args(self, **kwargs):
+    def prepare_args(self, **kwargs) -> Mapping:
         return kwargs
 
-    def _send_worker_shutdown(self):
+    def _send_worker_shutdown(self) -> None:
         signals.worker_shutdown.send(sender=self)
 
-    def start(self):
+    def start(self) -> None:
         """Starts the workers main loop."""
         try:
             self.blueprint.start(self)
@@ -210,16 +229,16 @@ class WorkController:
         except KeyboardInterrupt:
             self.stop(exitcode=EX_FAILURE)
 
-    def register_with_event_loop(self, hub):
+    def register_with_event_loop(self, hub: Hub) -> None:
         self.blueprint.send_all(
             self, 'register_with_event_loop', args=(hub,),
             description='hub.register',
         )
 
-    def _process_task_sem(self, req):
+    def _process_task_sem(self, req: Any) -> Any:
         return self._quick_acquire(self._process_task, req)
 
-    def _process_task(self, req):
+    def _process_task(self, req: Any) -> None:
         """Process task by sending it to the pool of workers."""
         try:
             req.execute_using_pool(self.pool)
@@ -232,18 +251,19 @@ class WorkController:
             logger.critical('Internal error: %r\n%s',
                             exc, traceback.format_exc(), exc_info=True)
 
-    def signal_consumer_close(self):
+    def signal_consumer_close(self) -> None:
         try:
             self.consumer.close()
         except AttributeError:
             pass
 
-    def should_use_eventloop(self):
+    def should_use_eventloop(self) -> bool:
         return (detect_environment() == 'default' and
                 self._conninfo.transport.implements.async and
                 not self.app.IS_WINDOWS)
 
-    def stop(self, in_sighandler=False, exitcode=None):
+    def stop(self, in_sighandler: bool=False,
+             exitcode: Optional[int]=None) -> None:
         """Graceful shutdown of the worker server."""
         if exitcode is not None:
             self.exitcode = exitcode
@@ -252,14 +272,14 @@ class WorkController:
             if not in_sighandler or self.pool.signal_safe:
                 self._shutdown(warm=True)
 
-    def terminate(self, in_sighandler=False):
+    def terminate(self, in_sighandler: bool=False) -> None:
         """Not so graceful shutdown of the worker server."""
         if self.blueprint.state != TERMINATE:
             self.signal_consumer_close()
             if not in_sighandler or self.pool.signal_safe:
                 self._shutdown(warm=False)
 
-    def _shutdown(self, warm=True):
+    def _shutdown(self, warm: bool=True) -> None:
         # if blueprint does not exist it means that we had an
         # error before the bootsteps could be initialized.
         if self.blueprint is not None:
@@ -267,7 +287,8 @@ class WorkController:
                 self.blueprint.stop(self, terminate=not warm)
                 self.blueprint.join()
 
-    def reload(self, modules=None, reload=False, reloader=None):
+    def reload(self, modules: Optional[Sequence[str]]=None,
+               reload: bool=False, reloader: Optional[Callable]=None) -> None:
         list(self._reload_modules(
             modules, force_reload=reload, reloader=reloader))
 
@@ -279,14 +300,18 @@ class WorkController:
         except NotImplementedError:
             pass
 
-    def _reload_modules(self, modules=None, **kwargs):
+    def _reload_modules(
+            self,
+            modules: Optional[Sequence[str]]=None, **kwargs) -> Sequence[Any]:
         return (
             self._maybe_reload_module(m, **kwargs)
             for m in set(self.app.loader.task_modules
                          if modules is None else (modules or ()))
         )
 
-    def _maybe_reload_module(self, module, force_reload=False, reloader=None):
+    def _maybe_reload_module(self, module: str,
+                             force_reload: bool=False,
+                             reloader: Optional[Callable]=None) -> Any:
         if module not in sys.modules:
             logger.debug('importing module %s', module)
             return self.app.loader.import_from_cwd(module)
@@ -294,12 +319,12 @@ class WorkController:
             logger.debug('reloading module %s', module)
             return reload_from_cwd(sys.modules[module], reloader)
 
-    def info(self):
+    def info(self) -> Mapping:
         return {'total': self.state.total_count,
                 'pid': os.getpid(),
                 'clock': str(self.app.clock)}
 
-    def rusage(self):
+    def rusage(self) -> Mapping:
         if resource is None:
             raise NotImplementedError('rusage not supported by this platform')
         s = resource.getrusage(resource.RUSAGE_SELF)
@@ -322,7 +347,7 @@ class WorkController:
             'nivcsw': s.ru_nivcsw,
         }
 
-    def stats(self):
+    def stats(self) -> Mapping:
         info = self.info()
         info.update(self.blueprint.info(self))
         info.update(self.consumer.blueprint.info(self.consumer))
@@ -332,29 +357,42 @@ class WorkController:
             info['rusage'] = 'N/A'
         return info
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Worker: {self.hostname} ({state})>'.format(
             self=self,
             state=self.blueprint.human_state() if self.blueprint else 'INIT',
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.hostname
 
     @property
-    def state(self):
+    def state(self) -> int:
         return state
 
-    def setup_defaults(self, concurrency=None, loglevel='WARN', logfile=None,
-                       send_events=None, pool_cls=None, consumer_cls=None,
-                       timer_cls=None, timer_precision=None,
-                       pool_putlocks=None, pool_restarts=None,
-                       state_db=None, schedule_filename=None,
-                       scheduler_cls=None, task_time_limit=None,
-                       task_soft_time_limit=None, max_tasks_per_child=None,
-                       prefetch_multiplier=None, disable_rate_limits=None,
-                       worker_lost_wait=None,
-                       max_memory_per_child=None, **_kw):
+    def setup_defaults(
+            self,
+            concurrency: Optional[int]=None,
+            loglevel: Union[str, int]='WARN',
+            logfile: Optional[str]=None,
+            send_events: Optional[bool]=None,
+            pool_cls: Optional[Any]=None,
+            consumer_cls: Optional[Any]=None,
+            timer_cls: Optional[Any]=None,
+            timer_precision: Optional[Number]=None,
+            pool_putlocks: Optional[bool]=None,
+            pool_restarts: Optional[bool]=None,
+            state_db: Optional[str]=None,
+            schedule_filename: Optional[str]=None,
+            scheduler_cls: Optional[Any]=None,
+            task_time_limit: Optional[Number]=None,
+            task_soft_time_limit: Optional[Number]=None,
+            max_tasks_per_child: Optional[int]=None,
+            prefetch_multiplier: Optional[int]=None,
+            disable_rate_limits: Optional[bool]=None,
+            worker_lost_wait: Optional[Number]=None,
+            max_memory_per_child: Optional[Union[str, Number]]=None,
+            **_kw) -> None:
         either = self.app.either
         self.loglevel = loglevel
         self.logfile = logfile
