@@ -19,18 +19,10 @@ from kombu import Queue
 from celery.exceptions import QueueNotFound
 from celery.five import items, string_t
 from celery.utils.collections import lpmerge
-from celery.utils.functional import firstmethod, fun_takes_argument, mlazy
-from celery.utils.imports import instantiate
+from celery.utils.functional import maybe_evaluate, mlazy
+from celery.utils.imports import symbol_by_name
 
 __all__ = ['MapRoute', 'Router', 'prepare']
-
-
-def _try_route(meth, task, args, kwargs, options=None):
-    if fun_takes_argument('options', meth, position=4):
-        return meth(task, args, kwargs, options)
-    return meth(task, args, kwargs)
-
-_first_route = firstmethod('route_for_task')
 
 
 def glob_to_re(glob, quote=string.punctuation.replace('*', '')):
@@ -53,15 +45,15 @@ class MapRoute(object):
             else:
                 self.map[k] = v
 
-    def route_for_task(self, task, *args, **kwargs):
+    def __call__(self, name, *args, **kwargs):
         try:
-            return dict(self.map[task])
+            return dict(self.map[name])
         except KeyError:
             pass
         except ValueError:
-            return {'queue': self.map[task]}
+            return {'queue': self.map[name]}
         for regex, route in items(self.patterns):
-            if regex.match(task):
+            if regex.match(name):
                 try:
                     return dict(route)
                 except ValueError:
@@ -77,10 +69,10 @@ class Router(object):
         self.routes = [] if routes is None else routes
         self.create_missing = create_missing
 
-    def route(self, options, task, args=(), kwargs={}):
+    def route(self, options, name, args=(), kwargs={}, task_type=None):
         options = self.expand_destination(options)  # expands 'queue'
         if self.routes:
-            route = self.lookup_route(task, args, kwargs, options)
+            route = self.lookup_route(name, args, kwargs, options, task_type)
             if route:  # expands 'queue' in route.
                 return lpmerge(self.expand_destination(route), options)
         if 'queue' not in options:
@@ -108,8 +100,28 @@ class Router(object):
                         'Queue {0!r} missing from task_queues'.format(queue))
         return route
 
-    def lookup_route(self, task, args=None, kwargs=None, options=None):
-        return _first_route(self.routes, task, args, kwargs, options)
+    def lookup_route(self, name,
+                     args=None, kwargs=None, options=None, task_type=None):
+        query = self.query_router
+        for router in self.routes:
+            route = query(router, name, args, kwargs, options, task_type)
+            if route is not None:
+                return route
+
+    def query_router(self, router, task, args, kwargs, options, task_type):
+        router = maybe_evaluate(router)
+        if hasattr(router, 'route_for_task'):
+            # pre 4.0 router class
+            return router.route_for_task(task, args, kwargs)
+        return router(task, args, kwargs, options, task=task_type)
+
+
+def expand_router_string(router):
+    router = symbol_by_name(router)
+    if hasattr(router, 'route_for_task'):
+        # need to instantiate pre 4.0 router classes
+        router = router()
+    return router
 
 
 def prepare(routes):
@@ -119,7 +131,7 @@ def prepare(routes):
         if isinstance(route, (Mapping, list, tuple)):
             return MapRoute(route)
         if isinstance(route, string_t):
-            return mlazy(instantiate, route)
+            return mlazy(expand_router_string, route)
         return route
 
     if routes is None:

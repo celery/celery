@@ -629,7 +629,7 @@ class Celery(object):
                   add_to_parent=True, group_id=None, retries=0, chord=None,
                   reply_to=None, time_limit=None, soft_time_limit=None,
                   root_id=None, parent_id=None, route_name=None,
-                  shadow=None, chain=None, **options):
+                  shadow=None, chain=None, task_type=None, **options):
         """Send task by name.
 
         :param name: Name of task to call (e.g. `"tasks.add"`).
@@ -649,7 +649,8 @@ class Celery(object):
             warnings.warn(AlwaysEagerIgnored(
                 'task_always_eager has no effect on send_task',
             ), stacklevel=2)
-        options = router.route(options, route_name or name, args, kwargs)
+        options = router.route(
+            options, route_name or name, args, kwargs, task_type)
 
         if root_id is None:
             parent, have_parent = self.current_worker_task, True

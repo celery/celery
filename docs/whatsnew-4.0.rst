@@ -770,6 +770,7 @@ will "accumulate" the results of the group tasks.
 A new built-in task (`celery.accumulate` was added for this purpose)
 
 Closes #817
+
 Optimized Beat implementation
 =============================
 
@@ -811,6 +812,43 @@ eventlet/gevent drainers, promises, BLA BLA
 
 Closed issue #2529.
 
+New Task Router API
+===================
+
+The :setting:`task_routes` setting can now hold functions, and map routes
+now support glob patterns and regexes.
+
+Instead of using router classes you can now simply define a function:
+
+.. code-block:: python
+
+    def route_for_task(name, args, kwargs, options, task=None, **kwargs):
+        from proj import tasks
+
+        if name == tasks.add.name:
+            return {'queue': 'hipri'}
+
+If you don't need the arguments you can use start arguments, just make
+sure you always also accept star arguments so that we have the ability
+to add more features in the future:
+
+.. code-block:: python
+
+    def route_for_task(name, *args, **kwargs):
+        from proj import tasks
+        if name == tasks.add.name:
+            return {'queue': 'hipri', 'priority': 9}
+
+Both the ``options`` argument and the new ``task`` keyword argument
+are new to the function-style routers, and will make it easier to write
+routers based on execution options, or properties of the task.
+
+The optional ``task`` keyword argument will not be set if a task is called
+by name using :meth:`@send_task`.
+
+For more examples, including using glob/regexes in routers please see
+:setting:`task_routes` and :ref:`routing-automatic`.
+
 In Other News
 -------------
 
@@ -826,11 +864,6 @@ In Other News
 - **Tasks**: The "anon-exchange" is now used for simple name-name direct routing.
 
   This increases performance as it completely bypasses the routing table.
-
-- **Tasks**: :setting:`task_routes` can now contain glob patterns and
-  regexes.
-
-    See new examples in :setting:`task_routes` and :ref:`routing-automatic`.
 
 - **Eventlet/Gevent**: Fixed race condition leading to "simultaneous read"
   errors (Issue #2812).

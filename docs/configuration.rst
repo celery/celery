@@ -1251,8 +1251,9 @@ in order.
 
 A router can be specified as either:
 
-*  A router class instance.
-*  A string which provides the path to a router class
+*  A function with the signature ``(name, args, kwargs,
+   options, task=None, **kwargs)``
+*  A string which provides the path to a router function.
 *  A dict containing router specification:
      Will be converted to a :class:`celery.routes.MapRoute` instance.
 * A list of ``(pattern, route)`` tuples:
@@ -1274,19 +1275,17 @@ Examples:
         },
     }
 
-    task_routes = ('myapp.tasks.Router', {'celery.ping': 'default})
+    task_routes = ('myapp.tasks.route_task', {'celery.ping': 'default})
 
-Where ``myapp.tasks.Router`` could be:
+Where ``myapp.tasks.route_task`` could be:
 
 .. code-block:: python
 
-    class Router(object):
-
-        def route_for_task(self, task, args=None, kwargs=None):
+    def route_task(self, name, args, kwargs, options, task=None, **kwargs):
             if task == 'celery.ping':
                 return {'queue': 'default'}
 
-``route_for_task`` may return a string or a dict. A string then means
+``route_task`` may return a string or a dict. A string then means
 it's a queue name in :setting:`task_queues`, a dict means it's a custom route.
 
 When sending tasks, the routers are consulted in order. The first

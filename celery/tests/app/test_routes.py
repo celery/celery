@@ -5,9 +5,9 @@ from kombu.utils.functional import maybe_evaluate
 
 from celery.app import routes
 from celery.exceptions import QueueNotFound
-from celery.utils.functional import LRUCache
+from celery.utils.imports import qualname
 
-from celery.tests.case import AppCase
+from celery.tests.case import ANY, AppCase, Mock
 
 
 def Router(app, *args, **kwargs):
@@ -45,9 +45,20 @@ class RouteCase(AppCase):
         }
 
         @self.app.task(shared=False)
-        def mytask():
+        def mytask(*args, **kwargs):
             pass
         self.mytask = mytask
+
+    def assert_routes_to_queue(self, queue, router, name,
+                               args=[], kwargs={}, options={}):
+        self.assertEqual(
+            router.route(options, name, args, kwargs)['queue'].name,
+            queue,
+        )
+
+    def assert_routes_to_default_queue(self, router, name, *args, **kwargs):
+        self.assert_routes_to_queue(
+            self.app.conf.task_default_queue, router, name, *args, **kwargs)
 
 
 class test_MapRoute(RouteCase):
@@ -57,10 +68,10 @@ class test_MapRoute(RouteCase):
         expand = E(self.app, self.app.amqp.queues)
         route = routes.MapRoute({self.mytask.name: {'queue': 'foo'}})
         self.assertEqual(
-            expand(route.route_for_task(self.mytask.name))['queue'].name,
+            expand(route(self.mytask.name))['queue'].name,
             'foo',
         )
-        self.assertIsNone(route.route_for_task('celery.awesome'))
+        self.assertIsNone(route('celery.awesome'))
 
     def test_route_for_task(self):
         set_queues(self.app, foo=self.a_queue, bar=self.b_queue)
@@ -68,33 +79,27 @@ class test_MapRoute(RouteCase):
         route = routes.MapRoute({self.mytask.name: self.b_queue})
         self.assertDictContainsSubset(
             self.b_queue,
-            expand(route.route_for_task(self.mytask.name)),
+            expand(route(self.mytask.name)),
         )
-        self.assertIsNone(route.route_for_task('celery.awesome'))
+        self.assertIsNone(route('celery.awesome'))
 
     def test_route_for_task__glob(self):
         route = routes.MapRoute([
             ('proj.tasks.*', 'routeA'),
             ('demoapp.tasks.bar.*', {'exchange': 'routeB'}),
         ])
-        self.assertDictEqual(
-            route.route_for_task('proj.tasks.foo'),
-            {'queue': 'routeA'},
-        )
-        self.assertDictEqual(
-            route.route_for_task('demoapp.tasks.bar.moo'),
-            {'exchange': 'routeB'},
-        )
-        self.assertIsNone(
-            route.route_for_task('demoapp.foo.bar.moo'),
-        )
+        self.assertDictEqual(route('proj.tasks.foo'), {'queue': 'routeA'})
+        self.assertDictEqual(route('demoapp.tasks.bar.moo'), {
+            'exchange': 'routeB',
+        })
+        self.assertIsNone(route('demoapp.foo.bar.moo'))
 
     def test_expand_route_not_found(self):
         expand = E(self.app, self.app.amqp.Queues(
                    self.app.conf.task_queues, False))
         route = routes.MapRoute({'a': {'queue': 'x'}})
         with self.assertRaises(QueueNotFound):
-            expand(route.route_for_task('a'))
+            expand(route('a'))
 
 
 class test_lookup_route(RouteCase):
@@ -108,8 +113,7 @@ class test_lookup_route(RouteCase):
         R = routes.prepare(({self.mytask.name: {'queue': 'bar'}},
                             {self.mytask.name: {'queue': 'foo'}}))
         router = Router(self.app, R, self.app.amqp.queues)
-        self.assertEqual(router.route({}, self.mytask.name,
-                         args=[1, 2], kwargs={})['queue'].name, 'bar')
+        self.assert_routes_to_queue('bar', router, self.mytask.name)
 
     def test_expands_queue_in_options(self):
         set_queues(self.app)
@@ -145,32 +149,74 @@ class test_lookup_route(RouteCase):
         self.assertIs(dest['queue'], queue)
 
     def test_lookup_paths_traversed(self):
-        set_queues(
-            self.app, foo=self.a_queue, bar=self.b_queue,
-            **{self.app.conf.task_default_queue: self.d_queue}
-        )
+        self.simple_queue_setup()
         R = routes.prepare((
             {'celery.xaza': {'queue': 'bar'}},
             {self.mytask.name: {'queue': 'foo'}}
         ))
         router = Router(self.app, R, self.app.amqp.queues)
-        self.assertEqual(router.route({}, self.mytask.name,
-                         args=[1, 2], kwargs={})['queue'].name, 'foo')
-        self.assertEqual(
-            router.route({}, 'celery.poza')['queue'].name,
-            self.app.conf.task_default_queue,
+        self.assert_routes_to_queue('foo', router, self.mytask.name)
+        self.assert_routes_to_default_queue(router, 'celery.poza')
+
+    def test_compat_router_class(self):
+        self.simple_queue_setup()
+        R = routes.prepare((
+            TestRouter(),
+        ))
+        router = Router(self.app, R, self.app.amqp.queues)
+        self.assert_routes_to_queue('bar', router, 'celery.xaza')
+        self.assert_routes_to_default_queue(router, 'celery.poza')
+
+    def test_router_fun__called_with(self):
+        self.simple_queue_setup()
+        step = Mock(spec=['__call__'])
+        step.return_value = None
+        R = routes.prepare([step])
+        router = Router(self.app, R, self.app.amqp.queues)
+        self.mytask.apply_async((2, 2), {'kw': 3}, router=router, priority=3)
+        step.assert_called_with(
+            self.mytask.name, (2, 2), {'kw': 3}, ANY,
+            task=self.mytask,
         )
+        options = step.call_args[0][3]
+        self.assertEqual(options['priority'], 3)
+
+    def test_compat_router_classes__called_with(self):
+        self.simple_queue_setup()
+        step = Mock(spec=['route_for_task'])
+        step.route_for_task.return_value = None
+        R = routes.prepare([step])
+        router = Router(self.app, R, self.app.amqp.queues)
+        self.mytask.apply_async((2, 2), {'kw': 3}, router=router, priority=3)
+        step.route_for_task.assert_called_with(
+            self.mytask.name, (2, 2), {'kw': 3},
+        )
+
+    def simple_queue_setup(self):
+        set_queues(
+            self.app, foo=self.a_queue, bar=self.b_queue,
+            **{self.app.conf.task_default_queue: self.d_queue})
+
+
+class TestRouter(object):
+
+    def route_for_task(self, task, args, kwargs):
+        if task == 'celery.xaza':
+            return 'bar'
 
 
 class test_prepare(AppCase):
 
     def test_prepare(self):
         o = object()
-        R = [{'foo': 'bar'},
-             'celery.utils.functional.LRUCache', o]
+        R = [
+            {'foo': 'bar'},
+            qualname(TestRouter),
+            o,
+        ]
         p = routes.prepare(R)
         self.assertIsInstance(p[0], routes.MapRoute)
-        self.assertIsInstance(maybe_evaluate(p[1]), LRUCache)
+        self.assertIsInstance(maybe_evaluate(p[1]), TestRouter)
         self.assertIs(p[2], o)
 
         self.assertEqual(routes.prepare(o), [o])

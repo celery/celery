@@ -573,21 +573,18 @@ as task attributes.
 Routers
 -------
 
-A router is a class that decides the routing options for a task.
+A router is a function that decides the routing options for a task.
 
-All you need to define a new router is to create a class with a
-``route_for_task`` method:
+All you need to define a new router is to define a function with
+the signature ``(name, args, kwargs, options, task=None, **kwargs)``:
 
 .. code-block:: python
 
-    class MyRouter(object):
-
-        def route_for_task(self, task, args=None, kwargs=None):
-            if task == 'myapp.tasks.compress_video':
+    def route_task(name, args, kwargs, options, task=None, **kwargs):
+            if name == 'myapp.tasks.compress_video':
                 return {'exchange': 'video',
                         'exchange_type': 'topic',
                         'routing_key': 'video.compress'}
-            return None
 
 If you return the ``queue`` key, it will expand with the defined settings of
 that queue in :setting:`task_queues`:
@@ -611,13 +608,13 @@ setting:
 
 .. code-block:: python
 
-    task_routes = (MyRouter(),)
+    task_routes = (route_task,)
 
-Router classes can also be added by name:
+Router functions can also be added by name:
 
 .. code-block:: python
 
-    task_routes = ('myapp.routers.MyRouter',)
+    task_routes = ('myapp.routers.route_task',)
 
 
 For simple task name -> route mappings like the router example above,
@@ -626,15 +623,31 @@ same behavior:
 
 .. code-block:: python
 
-    task_routes = (
-        {'myapp.tasks.compress_video': {
+    task_routes = {
+        'myapp.tasks.compress_video': {
             'queue': 'video',
             'routing_key': 'video.compress',
-        }},
-    )
+        },
+    }
 
 The routers will then be traversed in order, it will stop at the first router
 returning a true value, and use that as the final route for the task.
+
+You can also have multiple routers defined in a sequence:
+
+.. code-block:: python
+
+    task_routes = [
+        route_task,
+        {
+            'myapp.tasks.compress_video': {
+                'queue': 'video',
+                'routing_key': 'video.compress',
+        },
+    ]
+
+The routers will then be visited in turn, and the first to return
+a value will be chosen.
 
 Broadcast
 ---------
