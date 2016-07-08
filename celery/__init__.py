@@ -16,7 +16,7 @@ from collections import namedtuple
 
 SERIES = '0today8'
 
-__version__ = '4.0.0rc2'
+__version__ = '4.0.0rc3'
 __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://celeryproject.org'
