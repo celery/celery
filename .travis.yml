@@ -5,7 +5,6 @@ python:
     - '3.5'
 os:
     - linux
-    - osx
 env:
   global:
     PYTHONUNBUFFERED=yes
