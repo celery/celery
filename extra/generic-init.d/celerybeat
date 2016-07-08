@@ -309,9 +309,7 @@ case "$1" in
     restart)
         echo "Restarting celery periodic task scheduler"
         check_paths
-        stop_beat
-        check_dev_null
-        start_beat
+        stop_beat && check_dev_null && start_beat
     ;;
     create-paths)
         check_dev_null
