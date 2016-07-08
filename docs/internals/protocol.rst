@@ -125,6 +125,8 @@ Changes from version 1
 
     - Java/C, etc. can use a Thrift/protobuf document as the body
 
+- ``origin`` is the name of the node sending the task.
+
 - Dispatches to actor based on ``task``, ``meth`` headers
 
     ``meth`` is unused by python, but may be used in the future
