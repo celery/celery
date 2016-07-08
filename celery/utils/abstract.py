@@ -3,6 +3,8 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import Callable
 
+from typing import Any, Sequence, Tuple
+
 __all__ = ['CallableTask', 'CallableSignature']
 
 
@@ -21,7 +23,7 @@ class _AbstractClass(metaclass=ABCMeta):
         ) or NotImplemented
 
     @classmethod
-    def register(cls, other):
+    def register(cls, other: Any):
         # we override `register` to return other for use as a decorator.
         type(cls).register(cls, other)
         return other
@@ -54,6 +56,56 @@ class AbstractApp(_AbstractClass):  # pragma: no cover
 
     @abstractproperty
     def AsyncResult(self):
+        pass
+
+
+class AbstractResult(_AbstractClass):  # pragma: no cover
+    __required_attributes__ = frozenset({
+        'as_tuple', 'forget', 'get', 'ready', 'successful', 'failed',
+    })
+
+    @abstractmethod
+    def as_tuple(self) -> Tuple:
+        pass
+
+    @abstractmethod
+    def forget(self) -> None:
+        pass
+
+    @abstractmethod
+    def get(self, *args, **kwargs) -> Any:
+        pass
+
+    @abstractmethod
+    def ready(self) -> bool:
+        pass
+
+    @abstractmethod
+    def successful(self) -> bool:
+        pass
+
+    @abstractmethod
+    def failed(self) -> bool:
+        pass
+
+    @abstractproperty
+    def backend(self) -> Any:
+        pass
+
+    @abstractproperty
+    def children(self) -> Sequence['AbstractResult']:
+        pass
+
+    @abstractproperty
+    def result(self) -> Any:
+        pass
+
+    @abstractproperty
+    def traceback(self) -> str:
+        pass
+
+    @abstractproperty
+    def state(self) -> str:
         pass
 
 
@@ -133,29 +185,30 @@ class CallableSignature(CallableTask):  # pragma: no cover
         pass
 
     @abstractmethod
-    def freeze(self, id=None, group_id=None, chord=None, root_id=None):
+    def freeze(self, id: str=None, group_id: str=None,
+               chord: str=None, root_id: str=None) -> AbstractResult:
         pass
 
     @abstractmethod
-    def set(self, immutable=None, **options):
+    def set(self, immutable: bool=None, **options) -> 'CallableSignature':
         pass
 
     @abstractmethod
-    def link(self, callback):
+    def link(self, callback: 'CallableSignature') -> 'CallableSignature':
         pass
 
     @abstractmethod
-    def link_error(self, errback):
+    def link_error(self, errback: 'CallableSignature') -> 'CallableSignature':
         pass
 
     @abstractmethod
-    def __or__(self, other):
+    def __or__(self, other: 'CallableSignature') -> 'CallableSignature':
         pass
 
     @abstractmethod
-    def __invert__(self):
+    def __invert__(self) -> Any:
         pass
 
     @classmethod
-    def __subclasshook__(cls, C):
+    def __subclasshook__(cls, C: Any) -> Any:
         return cls._subclasshook_using(CallableSignature, C)

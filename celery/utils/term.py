@@ -4,7 +4,7 @@ import platform
 
 from functools import reduce
 from typing import Any, Tuple
-from typing import Mapping  # noqa
+from typing import Callable, Mapping  # noqa
 
 __all__ = ['colored']
 
@@ -16,7 +16,7 @@ COLOR_SEQ = '\033[1;%dm'
 IS_WINDOWS = platform.system() == 'Windows'
 
 
-def fg(s: str) -> str:
+def fg(s: int) -> str:
     return COLOR_SEQ % s
 
 
@@ -31,13 +31,13 @@ class colored:
         ...       c.green('dog ')))
     """
 
-    def __init__(self, *s: Tuple[str],
+    def __init__(self, *s: Tuple[Any],
                  enabled: bool=True, op: str='', **kwargs) -> None:
         self.s = s
         self.enabled = not IS_WINDOWS and enabled
         self.op = op
 
-        # type: Mapping[str, str]
+        # type: Mapping[str, Callable]
         self.names = {
             'black': self.black,
             'red': self.red,
@@ -132,13 +132,13 @@ class colored:
     def imagenta(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(40 + MAGENTA))
 
-    def icyan(self, *s: Tuple[Any]) -> any:
+    def icyan(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(40 + CYAN))
 
-    def iwhite(self, *s: Tuple[Any]) -> any:
+    def iwhite(self, *s: Tuple[Any]) -> Any:
         return self.node(s, fg(40 + WHITE))
 
-    def reset(self, *s: Tuple[Any]) -> any:
+    def reset(self, *s: Tuple[Any]) -> Any:
         return self.node(s or [''], RESET_SEQ)
 
     def __add__(self, other: Any) -> str:
