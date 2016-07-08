@@ -1269,7 +1269,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - The ``inspect reserved`` control command did not work properly.
 
-- Should now play better with static analyzation tools by explicitly
+- Should now play better with tools for static analysis by explicitly
   specifying dynamically created attributes in the :mod:`celery` and
   :mod:`celery.task` modules.
 
