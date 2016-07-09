@@ -77,9 +77,10 @@ class _getitem_property(object):
 
     """
 
-    def __init__(self, keypath):
+    def __init__(self, keypath, doc=None):
         path, _, self.key = keypath.rpartition('.')
         self.path = path.split('.') if path else None
+        self.__doc__ = doc
 
     def _path(self, obj):
         return (reduce(lambda d, k: d[k], [obj] + self.path) if self.path
@@ -402,22 +403,24 @@ class Signature(dict):
             return self.type.apply_async
         except KeyError:
             return _partial(self.app.send_task, self['task'])
-    id = _getitem_property('options.task_id')
-    parent_id = _getitem_property('options.parent_id')
-    root_id = _getitem_property('options.root_id')
-    task = _getitem_property('task')
-    args = _getitem_property('args')
-    kwargs = _getitem_property('kwargs')
-    options = _getitem_property('options')
-    subtask_type = _getitem_property('subtask_type')
-    chord_size = _getitem_property('chord_size')
-    immutable = _getitem_property('immutable')
+    id = _getitem_property('options.task_id', 'Task UUID')
+    parent_id = _getitem_property('options.parent_id', 'Task parent UUID.')
+    root_id = _getitem_property('options.root_id', 'Task root UUID.')
+    task = _getitem_property('task', 'Name of task.')
+    args = _getitem_property('args', 'Positional arguments to task.')
+    kwargs = _getitem_property('kwargs', 'Keyword arguments to task.')
+    options = _getitem_property('options', 'Task execution options.')
+    subtask_type = _getitem_property('subtask_type', 'Type of signature')
+    chord_size = _getitem_property(
+        'chord_size', 'Size of chord (if applicable)')
+    immutable = _getitem_property(
+        'immutable', 'Flag set if no longer accepts new arguments')
 
 
 @Signature.register_type
 @python_2_unicode_compatible
 class chain(Signature):
-    tasks = _getitem_property('kwargs.tasks')
+    tasks = _getitem_property('kwargs.tasks', 'Tasks in chain.')
 
     def __init__(self, *tasks, **options):
         tasks = (regen(tasks[0]) if len(tasks) == 1 and is_list(tasks[0])
@@ -712,7 +715,7 @@ def _maybe_group(tasks, app):
 @Signature.register_type
 @python_2_unicode_compatible
 class group(Signature):
-    tasks = _getitem_property('kwargs.tasks')
+    tasks = _getitem_property('kwargs.tasks', 'Tasks in group.')
 
     def __init__(self, *tasks, **options):
         if len(tasks) == 1:
@@ -1056,8 +1059,8 @@ class chord(Signature):
             return self.body.reprcall(self.tasks)
         return '<chord without body: {0.tasks!r}>'.format(self)
 
-    tasks = _getitem_property('kwargs.header')
-    body = _getitem_property('kwargs.body')
+    tasks = _getitem_property('kwargs.header', 'Tasks in chord header.')
+    body = _getitem_property('kwargs.body', 'Body task of chord.')
 
 
 def signature(varies, *args, **kwargs):
