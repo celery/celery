@@ -649,6 +649,9 @@ General
 
 .. attribute:: Task.max_retries
 
+    Only applies if the task calls ``self.retry`` or if the task is decorated
+    with the :ref:`autoretry_for <task-autoretry>` argument.
+
     The maximum number of attempted retries before giving up.
     If the number of retries exceeds this value a :exc:`~@MaxRetriesExceededError`
     exception will be raised.  *NOTE:* You have to call :meth:`~@Task.retry`
