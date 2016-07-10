@@ -1259,7 +1259,7 @@ Events
 
     Fix contributed by **Dongweiming**.
 
--  New :setting:`event_queue_prefix` setting can now be used
+- New :setting:`event_queue_prefix` setting can now be used
   to change the default ``celeryev`` queue prefix for event receiver queues.
 
     Contributed by **Takeshi Kanemoto**.
