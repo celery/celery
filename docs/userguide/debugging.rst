@@ -1,11 +1,16 @@
+.. _guide-debugging:
+
+======================================
+ Debugging
+======================================
+
 .. _tut-remote_debug:
 
-======================================
- Debugging Tasks Remotely (using pdb)
-======================================
+Debugging Tasks Remotely (using pdb)
+====================================
 
 Basics
-======
+------
 
 :mod:`celery.contrib.rdb` is an extended version of :mod:`pdb` that
 enables remote debugging of processes that does not have terminal
@@ -90,12 +95,12 @@ The result of our vandalism can be seen in the worker logs:
 
 
 Tips
-====
+----
 
 .. _breakpoint_signal:
 
 Enabling the break-point signal
--------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If the environment variable :envvar:`CELERY_RDBSIG` is set, the worker
 will open up an rdb instance whenever the `SIGUSR2` signal is sent.

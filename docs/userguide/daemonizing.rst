@@ -1,11 +1,8 @@
 .. _daemonizing:
 
 ======================================================================
-                     Running the worker as a daemon
+  Daemonization
 ======================================================================
-
-Celery does not daemonize itself, please use one of the following
-daemonization tools.
 
 .. contents::
     :local:
