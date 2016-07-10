@@ -396,7 +396,7 @@ The Django integration :ref:`example in the documentation
 <django-first-steps>` has been updated to use the argument-less call.
 
 Worker direct queues no longer use auto-delete.
-===============================================
+-----------------------------------------------
 
 Workers/clients running 4.0 will no longer be able to send
 worker direct messages to worker running older versions, and vice versa.
@@ -447,7 +447,7 @@ News
 ====
 
 New Task Message Protocol
-=========================
+-------------------------
 .. :sha:`e71652d384b1b5df2a4e6145df9f0efb456bc71c`
 
 This version introduces a brand new task message protocol,
@@ -467,7 +467,7 @@ need backwards compatibility.
 Once enabled task messages sent is unreadable to older versions of Celery.
 
 New protocol highlights
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 The new protocol fixes many problems with the old one, and enables
 some long-requested features:
@@ -561,7 +561,7 @@ some long-requested features:
     :ref:`message-protocol-task-v2`.
 
 Prefork: Tasks now log from the child process
-=============================================
+---------------------------------------------
 
 Logging of task success/failure now happens from the child process
 actually executing the task, which means that logging utilities
@@ -569,7 +569,7 @@ like Sentry can get full information about tasks that fail, including
 variables in the traceback.
 
 Prefork: One log-file per child process
-=======================================
+---------------------------------------
 
 Init-scrips and :program:`celery multi` now uses the `%I` log file format
 option (e.g. :file:`/var/log/celery/%n%I.log`).
@@ -583,7 +583,7 @@ You are encouraged to upgrade your init-scripts and
 :program:`celery multi` arguments to use this new option.
 
 Configure broker URL for read/write separately.
-===============================================
+-----------------------------------------------
 
 New :setting:`broker_read_url` and :setting:`broker_write_url` settings
 have been added so that separate broker URLs can be provided
@@ -615,7 +615,7 @@ the intent of the required connection.
                 ...
 
 Canvas Refactor
-===============
+---------------
 
 The canvas/work-flow implementation have been heavily refactored
 to fix some long outstanding issues.
@@ -677,7 +677,7 @@ to fix some long outstanding issues.
   to chord (Issue #2922).
 
 Amazon SQS transport now officially supported.
-==============================================
+----------------------------------------------
 
 The SQS broker transport has been rewritten to use async I/O and as such
 joins RabbitMQ and Qpid as officially supported transports.
@@ -688,19 +688,19 @@ and closes several issues related to using SQS as a broker.
 This work was sponsored by Nextdoor.
 
 Apache QPid transport now officially supported.
-===============================================
+-----------------------------------------------
 
 Contributed by **Brian Bouterse**.
 
 Schedule tasks based on sunrise, sunset, dawn and dusk.
-=======================================================
+-------------------------------------------------------
 
 See :ref:`beat-solar` for more information.
 
 Contributed by **Mark Parncutt**.
 
 New API for configuring periodic tasks
-======================================
+--------------------------------------
 
 This new API enables you to use signatures when defining periodic tasks,
 removing the chance of mistyping task names.
@@ -711,14 +711,14 @@ An example of the new API is :ref:`here <beat-entries>`.
 .. :sha:`132d8d94d38f4050db876f56a841d5a5e487b25b`
 
 RabbitMQ Priority queue support
-===============================
+-------------------------------
 
 See :ref:`routing-options-rabbitmq-priorities` for more information.
 
 Contributed by **Gerald Manipon**.
 
 Prefork: Limit child process resident memory size.
-==================================================
+--------------------------------------------------
 .. :sha:`5cae0e754128750a893524dcba4ae030c414de33`
 
 You can now limit the maximum amount of memory allocated per prefork
@@ -736,10 +736,10 @@ See :ref:`worker-maxmemperchild` for more information.
 Contributed by **Dave Smith**.
 
 Redis: Result backend optimizations
-===================================
+-----------------------------------
 
 RPC is now using pub/sub for streaming task results.
-----------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Calling ``result.get()`` when using the Redis result backend
 used to be extremely expensive as it was using polling to wait
@@ -754,7 +754,7 @@ task round-trip times.
 Contributed by **Yaroslav Zhavoronkov** and **Ask Solem**.
 
 New optimized chord join implementation.
-----------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This was an experimental feature introduced in Celery 3.1,
 that could only be enabled by adding ``?new_join=1`` to the
@@ -767,21 +767,21 @@ The new implementation greatly reduces the overhead of chords,
 and especially with larger chords the performance benefit can be massive.
 
 New Riak result backend Introduced.
-===================================
+-----------------------------------
 
 See :ref:`conf-riak-result-backend` for more information.
 
 Contributed by **Gilles Dartiguelongue**, **Alman One** and **NoKriK**.
 
 New CouchDB result backend introduced.
-======================================
+--------------------------------------
 
 See :ref:`conf-couchdb-result-backend` for more information.
 
 Contributed by **Nathan Van Gheem**.
 
 New Consul result backend introduced.
-=====================================
+-------------------------------------
 
 Add support for Consul as a backend using the Key/Value store of Consul.
 
@@ -810,7 +810,7 @@ That installs the required package to talk to Consul's HTTP API from Python.
 Contributed by **Wido den Hollander**.
 
 Brand new Cassandra result backend.
-===================================
+-----------------------------------
 
 A brand new Cassandra backend utilizing the new :pypi:`cassandra-driver`
 library is replacing the old result backend which was using the older
@@ -821,21 +821,21 @@ See :ref:`conf-cassandra-result-backend` for more information.
 .. # XXX What changed?
 
 New Elasticsearch result backend introduced.
-============================================
+--------------------------------------------
 
 See :ref:`conf-elasticsearch-result-backend` for more information.
 
 Contributed by **Ahmet Demir**.
 
 New File-system result backend introduced.
-==========================================
+------------------------------------------
 
 See :ref:`conf-filesystem-result-backend` for more information.
 
 Contributed by **Môshe van der Sterre**.
 
 Event Batching
-==============
+--------------
 
 Events are now buffered in the worker and sent as a list which reduces
 the overhead required to send monitoring events.
@@ -858,7 +858,7 @@ in the following way:
 .. :sha:`03399b4d7c26fb593e61acf34f111b66b340ba4e`
 
 Task.replace
-============
+------------
 
 Task.replace changed, removes Task.replace_in_chord.
 
@@ -881,7 +881,7 @@ A new built-in task (`celery.accumulate` was added for this purpose)
 Closes #817
 
 Optimized Beat implementation
-=============================
+-----------------------------
 
 The :program:`celery beat` implementation has been optimized
 for millions of periodic tasks by using a heap to schedule entries.
@@ -889,7 +889,7 @@ for millions of periodic tasks by using a heap to schedule entries.
 Contributed by **Ask Solem** and **Alexander Koshelev**.
 
 Task Auto-retry Decorator
-=========================
+-------------------------
 
 Writing custom retry handling for exception events is so common
 that we now have built-in support for it.
@@ -905,7 +905,7 @@ Contributed by **Dmitry Malinovsky**.
 .. :sha:`75246714dd11e6c463b9dc67f4311690643bff24`
 
 Remote Task Tracebacks
-======================
+----------------------
 
 The new :setting:`task_remote_tracebacks` will make task tracebacks more
 useful by injecting the stack of the remote worker.
@@ -915,24 +915,22 @@ This feature requires the additional :pypi:`tblib` library.
 Contributed by **Ionel Cristian Mărieș**.
 
 Async Result API
-================
+----------------
 
 eventlet/gevent drainers, promises, BLA BLA
 
 Closed issue #2529.
 
-RPC Result Backend matured
-==========================
+RPC Result Backend matured.
+---------------------------
 
 Lots of bugs in the previously experimental RPC result backend have been fixed
 and we now consider it production ready.
 
 Contributed by **Ask Solem**, **Morris Tweed**.
 
-
-
 New Task Router API
-===================
+-------------------
 
 The :setting:`task_routes` setting can now hold functions, and map routes
 now support glob patterns and regexes.
@@ -1340,7 +1338,7 @@ Result Backends
   (Issue #2643).
 
 Documentation Improvements
-==========================
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Contributed by:
 
@@ -1357,8 +1355,11 @@ Contributed by:
 - Rik
 - Tayfun Sen
 
+Reorganization, Deprecations, and Removals
+==========================================
+
 Incompatible changes
-====================
+--------------------
 
 - Prefork: Calling ``result.get()`` or joining any result from within a task
   now raises :exc:`RuntimeError`.
@@ -1385,7 +1386,7 @@ Incompatible changes
 .. _v400-unscheduled-removals:
 
 Unscheduled Removals
-====================
+--------------------
 
 - The experimental :mod:`celery.contrib.methods` feature has been removed,
   as there were far many bugs in the implementation to be useful.
@@ -1400,7 +1401,7 @@ Unscheduled Removals
 .. _v400-deprecations-reorg:
 
 Reorganization Deprecations
-===========================
+---------------------------
 
 These symbols have been renamed, and while there is an alias available in this
 version for backward compatibility, they will be removed in Celery 5.0, so
@@ -1429,10 +1430,10 @@ know:
 .. _v400-removals:
 
 Scheduled Removals
-==================
+------------------
 
 Modules
--------
+~~~~~~~
 
 - Module ``celery.worker.job`` has been renamed to :mod:`celery.worker.request`.
 
@@ -1457,7 +1458,7 @@ Modules
     - Removed ``celery.loaders.load_settings()``, use: ``current_app.conf``
 
 Result
-------
+~~~~~~
 
 - ``AsyncResult.serializable()`` and ``celery.result.from_serializable``
     has been removed:
@@ -1483,7 +1484,7 @@ Result
 
 
 TaskSet
--------
+~~~~~~~
 
 TaskSet has been renamed to group and TaskSet will be removed in version 4.0.
 
@@ -1499,7 +1500,7 @@ New::
     >>> group(add.s(i, i) for i in xrange(10))()
 
 Events
-------
+~~~~~~
 
 - Removals for class :class:`celery.events.state.Worker`:
 
@@ -1572,7 +1573,7 @@ Events
         Contact us if you need this.
 
 Magic keyword arguments
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Support for the very old magic keyword arguments accepted by tasks is
 finally removed in this version.
@@ -1596,8 +1597,8 @@ should be rewritten into::
     def add(self, x, y):
         print('My task id is {0.request.id}'.format(self))
 
-Settings
---------
+Removed Settings
+----------------
 
 The following settings have been removed, and is no longer supported:
 
@@ -1667,9 +1668,3 @@ Deprecation Time-line Changes
 =============================
 
 See the :ref:`deprecation-timeline`.
-
-.. _v400-fixes:
-
-Fixes
-=====
-
