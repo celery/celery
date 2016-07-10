@@ -29,7 +29,7 @@ language.  In addition to Python there's node-celery_ for Node.js,
 and a `PHP client`_.
 
 Language interoperability can also be achieved
-by :ref:`using webhooks <guide-webhooks>`.
+exposing an HTTP endpoint and having a task that requests it (webhooks).
 
 .. _`PHP client`: https://github.com/gjedeer/celery-php
 .. _node-celery: https://github.com/mher/node-celery

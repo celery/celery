@@ -70,24 +70,11 @@ platforms, including Microsoft Windows:
     http://www.rabbitmq.com/download.html
 
 
-Using a database
-----------------
-
-Using a database as a message queue is not recommended, but can be sufficient
-for very small installations.  Your options include:
-
-* :ref:`broker-sqlalchemy`
-* :ref:`broker-django`
-
-If you're already using a Django database for example, using it as your
-message broker can be convenient while developing even if you use a more
-robust system in production.
-
 Other brokers
 -------------
 
 In addition to the above, there are other experimental transport implementations
-to choose from, including :ref:`Amazon SQS <broker-sqs>`, :ref:`broker-mongodb`.
+to choose from, including :ref:`Amazon SQS <broker-sqs>`.
 
 See :ref:`broker-overview` for a full list.
 

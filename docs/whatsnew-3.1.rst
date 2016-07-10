@@ -1032,8 +1032,6 @@ In Other News
 
 - MongoDB Backend: Can now be configured using a URL:
 
-    See :ref:`example-mongodb-result-config`.
-
 - MongoDB Backend: No longer using deprecated ``pymongo.Connection``.
 
 - MongoDB Backend: Now disables ``auto_start_request``.

@@ -534,7 +534,7 @@ and signatures can be linked too:
     >>> s.link(mul.s(4))
     >>> s.link(log_result.s())
 
-You can also add *error callbacks* using the `on_error` method::
+You can also add *error callbacks* using the `on_error` method:
 
 .. code-block:: pycon
 

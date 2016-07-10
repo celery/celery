@@ -146,6 +146,63 @@ changes the transport will be removed completely starting with Celery 5.0.
     Using Redis as a result backend is still supported, and has some
     really nice improvements in this version.  Read on for the good news :-)
 
+Removed features
+----------------
+
+- Microsoft Windows is no longer supported.
+
+- Jython is no longer supported.
+
+- Webhook task machinery (``celery.task.http``) has been removed.
+
+    Nowadays it's so easy to use the :pypi:`requests` module to write
+    webhook tasks manually, so there's no real reason to keep this
+    legacy implementation anymore.
+
+- Using MongoDB as a broker is no longer supported.
+
+- Using the Django ORM as a broker is no longer supported.
+
+- Using SQLAlchemy as a broker is no longer supported.
+
+- Using CouchDB as a broker is no longer supported.
+
+- Using IronMQ as a broker is no longer supported.
+
+- Using Beanstalk as a broker is no longer supported.
+
+
+- Task no longer sends error emails.
+
+    This also removes support for ``app.mail_admins``, and any functionality
+    related to sending emails.
+
+- ``celery.contrib.batches`` has been removed.
+
+- The ``--autoreload`` feature has been removed.
+
+- The ``--autoscale`` feature has been removed.
+
+- The ``threads`` pool is no longer supported and has been removed.
+
+- The old legacy "amqp" result backend has been deprecated, and will
+  be removed in Celery 5.0.
+
+    Please use the ``rpc`` result backend for RPC-style calls, and a
+    persistent result backend for multi-consumer results.
+
+    The old "amqp" result backends has been discouraged in use for a long time
+    now, as it creates on queue per task it does not scale well and easily
+    leads to trouble.
+
+- The force_execv feature is no longer supported.
+
+    Enabling this usually only caused more problems.
+
+    The ``celery worker`` command no longer suports the ``--no-execv`` and
+    ``--force-execv`` options, and the ``CELERYD_FORCE_EXECV`` setting is
+    ignored.
+
 Lowercase setting names
 -----------------------
 
@@ -569,28 +626,47 @@ to fix some long outstanding issues.
 .. :sha:`e442df61b2ff1fe855881c1e2ff9acc970090f54`
 .. :sha:`0673da5c09ac22bdd49ba811c470b73a036ee776`
 
+- Error callbacks can now take real exception and traceback instances
+  (Issue #2538).
+
+    .. code-block:: pycon
+
+        >>> add.s(2, 2).on_error(log_error.s()).delay()
+
+    Where ``log_error`` could be defined as:
+
+    .. code-block:: python
+
+        @app.task
+        def log_error(request, exc, traceback):
+            with open(os.path.join('/var/errors', request.id), 'a') as fh:
+                print('--\n\n{0} {1} {2}'.format(
+                    task_id, exc, traceback), file=fh)
+
+    See :ref:`guide-canvas` for more examples.
+
 - Now unrolls groups within groups into a single group (Issue #1509).
 - chunks/map/starmap tasks now routes based on the target task
 - chords and chains can now be immutable.
 - Fixed bug where serialized signatures were not converted back into
   signatures (Issue #2078)
 
-    Fix contributed by Ross Deane.
+    Fix contributed by **Ross Deane**.
 
 - Fixed problem where chains and groups did not work when using JSON
   serialization (Issue #2076).
 
-    Fix contributed by Ross Deane.
+    Fix contributed by **Ross Deane**.
 
 - Creating a chord no longer results in multiple values for keyword
   argument 'task_id' (Issue #2225).
 
-    Fix contributed by Aneil Mallavarapu
+    Fix contributed by **Aneil Mallavarapu**.
 
 - Fixed issue where the wrong result is returned when a chain
   contains a chord as the penultimate task.
 
-    Fix contributed by Aneil Mallavarapu
+    Fix contributed by **Aneil Mallavarapu**.
 
 - Special case of ``group(A.s() | group(B.s() | C.s()))`` now works.
 
@@ -612,12 +688,17 @@ and closes several issues related to using SQS as a broker.
 
 This work was sponsored by Nextdoor.
 
+Apache QPid transport now officially supported.
+===============================================
+
+Contributed by **Brian Bouterse**.
+
 Schedule tasks based on sunrise, sunset, dawn and dusk.
 =======================================================
 
 See :ref:`beat-solar` for more information.
 
-Contributed by Mark Parncutt.
+Contributed by **Mark Parncutt**.
 
 New API for configuring periodic tasks
 ======================================
@@ -635,7 +716,7 @@ RabbitMQ Priority queue support
 
 See :ref:`routing-options-rabbitmq-priorities` for more information.
 
-Contributed by Gerald Manipon.
+Contributed by **Gerald Manipon**.
 
 Prefork: Limit child process resident memory size.
 ==================================================
@@ -653,7 +734,7 @@ with a new process after the currently executing task returns.
 
 See :ref:`worker-maxmemperchild` for more information.
 
-Contributed by Dave Smith.
+Contributed by **Dave Smith**.
 
 Redis: Result backend optimizations
 ===================================
@@ -671,7 +752,7 @@ The new implementation is using Redis Pub/Sub mechanisms to
 publish and retrieve results immediately, greatly improving
 task round-trip times.
 
-Contributed by Yaroslav Zhavoronkov and Ask Solem.
+Contributed by **Yaroslav Zhavoronkov** and **Ask Solem**.
 
 New optimized chord join implementation.
 ----------------------------------------
@@ -691,14 +772,43 @@ New Riak result backend Introduced.
 
 See :ref:`conf-riak-result-backend` for more information.
 
-Contributed by Gilles Dartiguelongue, Alman One and NoKriK.
+Contributed by **Gilles Dartiguelongue**, **Alman One** and **NoKriK**.
 
 New CouchDB result backend introduced.
 ======================================
 
 See :ref:`conf-couchdb-result-backend` for more information.
 
-Contributed by Nathan Van Gheem
+Contributed by **Nathan Van Gheem**.
+
+New Consul result backend introduced.
+=====================================
+
+Add support for Consul as a backend using the Key/Value store of Consul.
+
+Consul has a HTTP API where through you can store keys with their values.
+
+The backend extends KeyValueStoreBackend and implements most of the methods.
+
+Mainly to set, get and remove objects.
+
+This allows Celery to store Task results in the K/V store of Consul.
+
+Consul also allows to set a TTL on keys using the Sessions from Consul. This way
+the backend supports auto expiry of Task results.
+
+For more information on Consul visit http://consul.io/
+
+The backend uses python-consul for talking to the HTTP API. This package is fully
+Python 3 compliant just as this backend is:
+
+.. code-block:: console
+
+    $ pip install python-consul
+
+That installs the required package to talk to Consul's HTTP API from Python.
+
+Contributed by **Wido den Hollander**.
 
 Brand new Cassandra result backend.
 ===================================
@@ -716,14 +826,14 @@ New Elasticsearch result backend introduced.
 
 See :ref:`conf-elasticsearch-result-backend` for more information.
 
-Contributed by Ahmet Demir.
+Contributed by **Ahmet Demir**.
 
 New File-system result backend introduced.
 ==========================================
 
 See :ref:`conf-filesystem-result-backend` for more information.
 
-Contributed by Môshe van der Sterre.
+Contributed by **Môshe van der Sterre**.
 
 Event Batching
 ==============
@@ -777,7 +887,7 @@ Optimized Beat implementation
 The :program:`celery beat` implementation has been optimized
 for millions of periodic tasks by using a heap to schedule entries.
 
-Contributed by Ask Solem and Alexander Koshelev.
+Contributed by **Ask Solem** and **Alexander Koshelev**.
 
 Task Auto-retry Decorator
 =========================
@@ -791,7 +901,7 @@ to automatically retry for.
 
 See :ref:`task-autoretry` for more information.
 
-Contributed by Dmitry Malinovsky.
+Contributed by **Dmitry Malinovsky**.
 
 .. :sha:`75246714dd11e6c463b9dc67f4311690643bff24`
 
@@ -803,7 +913,7 @@ useful by injecting the stack of the remote worker.
 
 This feature requires the additional :pypi:`tblib` library.
 
-Contributed by Ionel Cristian Mărieș.
+Contributed by **Ionel Cristian Mărieș**.
 
 Async Result API
 ================
@@ -811,6 +921,16 @@ Async Result API
 eventlet/gevent drainers, promises, BLA BLA
 
 Closed issue #2529.
+
+RPC Result Backend matured
+==========================
+
+Lots of bugs in the previously experimental RPC result backend have been fixed
+and we now consider it production ready.
+
+Contributed by **Ask Solem**, **Morris Tweed**.
+
+
 
 New Task Router API
 ===================
@@ -852,61 +972,181 @@ For more examples, including using glob/regexes in routers please see
 In Other News
 -------------
 
-- **Requirements**:
+Requirements
+~~~~~~~~~~~~
 
-    - Now depends on :ref:`Kombu 4.0 <kombu:version-4.0>`.
+- Now depends on :ref:`Kombu 4.0 <kombu:version-4.0>`.
 
-    - Now depends on :pypi:`billiard` version 3.5.
+- Now depends on :pypi:`billiard` version 3.5.
 
-    - No longer depends on :pypi:`anyjson` :(
+- No longer depends on :pypi:`anyjson` :(
 
 
-- **Tasks**: The "anon-exchange" is now used for simple name-name direct routing.
+Tasks
+~~~~~
+
+- The "anon-exchange" is now used for simple name-name direct routing.
 
   This increases performance as it completely bypasses the routing table.
+
+- An empty ResultSet now evaluates to True.
+
+    Fix contributed by **Colin McIntosh**.
+
+- New :setting:`task_reject_on_worker_lost` setting, and
+  :attr:`~@Task.reject_on_worker_lost` task attribute decides what happens
+  when the child worker process executing a late ack task is terminated.
+
+    Contributed by **Michael Permana**.
+
+- ``Task.subtask`` renamed to ``Task.signature`` with alias.
+
+- ``Task.subtask_from_request`` renamed to
+  ``Task.signature_from_request`` with alias.
+
+- The ``delivery_mode`` attribute for :class:`kombu.Queue` is now
+  respected (Issue #1953).
+
+- Routes in :setting:`task-routes` can now specify a
+  :class:`~kombu.Queue` instance directly.
+
+    Example:
+
+    .. code-block:: python
+
+        task_routes = {'proj.tasks.add': {'queue': Queue('add')}}
+
+- ``AsyncResult`` now raises :exc:`ValueError` if task_id is None.
+  (Issue #1996).
+
+- Retried tasks did not forward expires setting (Issue #3297).
+
+- ``result.get()`` now supports an ``on_message`` argument to set a
+  callback to be called for every message received.
+
+- New abstract classes added:
+
+    - :class:`~celery.utils.abstract.CallableTask`
+
+        Looks like a task.
+
+    - :class:`~celery.utils.abstract.CallableSignature`
+
+        Looks like a task signature.
+
+- ``Task.replace`` now properly forwards callbacks (Issue #2722).
+
+    Fix contributed by **Nicolas Unravel**.
+
+- ``Task.replace``: Append to chain/chord (Closes #3232)
+
+    Fixed issue #3232, adding the signature to the chain (if there is any).
+    Fixed the chord suppress if the given signature contains one.
+
+    Fix contributed by :github_user:`honux`.
+
+- Task retry now also throws in eager mode.
+
+    Fix contributed by **Feanil Patel**.
+
+
+Beat
+~~~~
+
+- Fixed crontab infinite loop with invalid date.
+
+    When occurrence can never be reached (example, April, 31th), trying
+    to reach the next occurrence would trigger an infinite loop.
+
+    Try fixing that by raising a RuntimeError after 2,000 iterations
+
+    (Also added a test for crontab leap years in the process)
+
+    Fix contributed by **Romuald Brunet**.
+
+- Now ensures the program exits with a non-zero exit code when an
+  exception terminates the service.
+
+    Fix contributed by **Simon Peeters**.
+
+App
+~~~
+
+- Dates are now always timezone aware even if
+  :setting:`enable_utc` is disabled (Issue #943).
+
+    Fix contributed by **Omer Katz**.
+
+- **Config**: App preconfiguration is now also pickled with the configuration.
+
+    Fix contributed by **Jeremy Zafran**.
+
+- The application can now change how task names are generated using
+    the :meth:`~@gen_task_name` method.
+
+    Contributed by **Dmitry Malinovsky**.
+
+- App has new ``app.current_worker_task`` property that
+  returns the task that is currently being worked on (or :const:`None`).
+  (Issue #2100).
+
+Execution Pools
+~~~~~~~~~~~~~~~
 
 - **Eventlet/Gevent**: Fixed race condition leading to "simultaneous read"
   errors (Issue #2812).
 
-- **Programs**: ``%n`` format for :program:`celery multi` is now synonym with
+- **Prefork**: Prefork pool now uses ``poll`` instead of ``select`` where
+  available (Issue #2373).
+
+- **Prefork**: Fixed bug where the pool would refuse to shut down the
+  worker (Issue #2606).
+
+- **Eventlet**: Now returns pool size in :program:`celery inspect stats`
+  command.
+
+    Contributed by **Alexander Oblovatniy**.
+
+
+Programs
+~~~~~~~~
+
+- :program:`celery multi`: ``%n`` format for is now synonym with
   ``%N`` to be consistent with :program:`celery worker`.
 
-- **Programs**: celery inspect/control now supports a new
+- :program:`celery inspect`/:program:`celery control`: now supports a new
   :option:`--json <celery inspect --json>` option to give output in json format.
 
-- **Programs**: :program:`celery inspect registered` now ignores built-in
-  tasks.
+- :program:`celery inspect registered`: now ignores built-in tasks.
 
-- **Programs**: New :program:`celery logtool`: Utility for filtering and parsing
+- :program:`celery purge` now takes ``-Q`` and ``-X`` options
+  used to specify which queues to include and exclude from the purge.
+
+- New :program:`celery logtool`: Utility for filtering and parsing
   celery worker log-files
 
-- **Worker**: Worker now only starts the remote control command consumer if the
-  broker transport used actually supports them.
+- :program:`celery multi`: now passes through `%i` and `%I` log
+  file formats.
 
-- **Worker**: Gossip now sets ``x-message-ttl`` for event queue to heartbeat_interval s.
-  (Issue #2005).
+- General: ``%p`` can now be used to expand to the full worker node-name
+  in log-file/pid-file arguments.
 
-- **Worker**: Now preserves exit code (Issue #2024).
+- A new command line option
+   :option:`--executable <celery worker --executable>` is now
+   available for daemonizing programs (:program:`celery worker` and
+   :program:`celery beat`).
 
-- **Worker**: Log--level for unrecoverable errors changed from ``error`` to
-  ``critical``.
+    Contributed by **Bert Vanderbauwhede**.
 
-- **Worker**: Improved rate limiting accuracy.
+- :program:`celery worker`: supports new
+  :option:`--prefetch-multiplier <celery worker --prefetch-multiplier>` option.
 
-- **Worker**: Account for missing timezone information in task expires field.
+    Contributed by **Mickaël Penhard**.
 
-    Fix contributed by Albert Wang.
+Worker
+~~~~~~
 
-- **Worker**: The worker no longer has a ``Queues`` bootsteps, as it is now
-    superfluous.
-
-- **Tasks**: New :setting:`task_reject_on_worker_lost` setting, and
-  :attr:`~@Task.reject_on_worker_lost` task attribute decides what happens
-  when the child worker process executing a late ack task is terminated.
-
-    Contributed by Michael Permana.
-
-- **Worker**: Improvements and fixes for LimitedSet
+- Improvements and fixes for :class:`~celery.utils.collections.LimitedSet`.
 
     Getting rid of leaking memory + adding ``minlen`` size of the set:
     the minimal residual size of the set after operating for some time.
@@ -930,7 +1170,61 @@ In Other News
 
     This should fix issues #3095, #3086.
 
-    Contributed by David Pravec.
+    Contributed by **David Pravec**.
+
+- Worker now only starts the remote control command consumer if the
+  broker transport used actually supports them.
+
+- Gossip now sets ``x-message-ttl`` for event queue to heartbeat_interval s.
+  (Issue #2005).
+
+- Now preserves exit code (Issue #2024).
+
+- Fixed crash when the ``-purge`` argument was used.
+
+- Log--level for unrecoverable errors changed from ``error`` to
+  ``critical``.
+
+- Improved rate limiting accuracy.
+
+- Account for missing timezone information in task expires field.
+
+    Fix contributed by **Albert Wang**.
+
+- The worker no longer has a ``Queues`` bootsteps, as it is now
+    superfluous.
+
+- Now emits the "Received task" line even for revoked tasks.
+  (Issue #3155).
+
+- Now respects :setting:`broker_connection_retry` setting.
+
+    Fix contributed by **Nat Williams**.
+
+- New :data:`celery.worker.state.requests` enables O(1) loookup
+  of active/reserved tasks by id.
+
+- Auto-scale did not always update keep-alive when scaling down.
+
+    Fix contributed by **Philip Garnero**.
+
+- Fixed typo ``options_list`` -> ``option_list``.
+
+    Fix contributed by **Greg Wilbur**.
+
+Debugging Utilities
+~~~~~~~~~~~~~~~~~~~
+
+- :mod:`celery.contrib.rdb`: Changed remote debugger banner so that you can copy and paste
+  the address easily (no longer has a period in the address).
+
+    Contributed by **Jonathan Vanasco**.
+
+- Fixed compatibility with recent :pypi:`psutil` versions (Issue #3262).
+
+
+Signals
+~~~~~~~
 
 - **App**: New signals for app configuration/finalization:
 
@@ -943,162 +1237,126 @@ In Other News
     - :data:`celery.signals.task_rejected`.
     - :data:`celery.signals.task_unknown`.
 
-- **Events**: Event messages now uses the RabbitMQ ``x-message-ttl`` option
-    to ensure older event messages are discarded.
+- **Worker**: New signal for when a heartbeat event is sent.
+
+    - :data:`celery.signals.heartbeat_sent`
+
+        Contributed by **Kevin Richardson**.
+
+Events
+~~~~~~
+
+- Event messages now uses the RabbitMQ ``x-message-ttl`` option
+  to ensure older event messages are discarded.
 
     The default is 5 seconds, but can be changed using the
     :setting:`event_queue_ttl` setting.
 
-- **Events**: New :setting:`event_queue_prefix` setting can now be used
-  to change the default ``celeryev`` queue prefix for event receiver queues.
-
-    Contributed by Takeshi Kanemoto.
-
-- **Events**: Event monitors now sets the :setting:`event_queue_expires`
+- Event monitors now sets the :setting:`event_queue_expires`
   setting by default.
 
     The queues will now expire after 60 seconds after the monitor stops
     consuming from it.
 
-- **Canvas**: ``chunks``/``map``/``starmap`` are now routed based on the target task.
+- Fixed a bug where a None value was not handled properly.
 
-- **Canvas**: ``Signature.link`` now works when argument is scalar (not a list)
+    Fix contributed by **Dongweiming**.
+
+-  New :setting:`event_queue_prefix` setting can now be used
+  to change the default ``celeryev`` queue prefix for event receiver queues.
+
+    Contributed by **Takeshi Kanemoto**.
+
+- ``State.tasks_by_type`` and ``State.tasks_by_worker`` can now be
+  used as a mapping for fast access to this information.
+
+Canvas
+~~~~~~
+
+- ``chunks``/``map``/``starmap`` are now routed based on the target task.
+
+- ``Signature.link`` now works when argument is scalar (not a list)
     (Issue #2019).
 
-- **App**: The application can now change how task names are generated using
-    the :meth:`~@gen_task_name` method.
+Deployment
+~~~~~~~~~~
 
-    Contributed by Dmitry Malinovsky.
-
-- **App**: App has new ``app.current_worker_task`` property that
-  returns the task that is currently being worked on (or :const:`None`).
-  (Issue #2100).
-
-- **Tasks**: ``Task.subtask`` renamed to ``Task.signature`` with alias.
-
-- **Tasks**: ``Task.subtask_from_request`` renamed to
-  ``Task.signature_from_request`` with alias.
-
-- **Tasks**: The ``delivery_mode`` attribute for :class:`kombu.Queue` is now
-  respected (Issue #1953).
-
-- **Tasks**: Routes in :setting:`task-routes` can now specify a
-  :class:`~kombu.Queue` instance directly.
-
-    Example:
-
-    .. code-block:: python
-
-        task_routes = {'proj.tasks.add': {'queue': Queue('add')}}
-
-- **Tasks**: ``AsyncResult`` now raises :exc:`ValueError` if task_id is None.
-  (Issue #1996).
-
-- **Tasks**: ``result.get()`` now supports an ``on_message`` argument to set a
-  callback to be called for every message received.
-
-- **Tasks**: New abstract classes added:
-
-    - :class:`~celery.utils.abstract.CallableTask`
-
-        Looks like a task.
-
-    - :class:`~celery.utils.abstract.CallableSignature`
-
-        Looks like a task signature.
-
-- **Programs**: :program:`celery multi` now passes through `%i` and `%I` log
-  file formats.
-
-- **Programs**: ``%p`` can now be used to expand to the full worker node-name
-  in log-file/pid-file arguments.
-
-- **Programs**: A new command line option
-   :option:`--executable <celery worker --executable>` is now
-   available for daemonizing programs (:program:`celery worker` and
-   :program:`celery beat`).
-
-    Contributed by Bert Vanderbauwhede.
-
-- **Programs**: :program:`celery worker` supports new
-  :option:`--prefetch-multiplier <celery worker --prefetch-multiplier>` option.
-
-    Contributed by Mickaël Penhard.
-
-- **Deployment**: Generic init-scripts now support
+- Generic init-scripts now support
   :envvar:`CELERY_SU`` and :envvar:`CELERYD_SU_ARGS` environment variables
   to set the path and arguments for :command:`su` (:manpage:`su(1)`).
 
-- **Prefork**: Prefork pool now uses ``poll`` instead of ``select`` where
-  available (Issue #2373).
+- Generic init-scripts now better support FreBSD and other BSD
+  systems by searching :file:`/usr/local/etc/` for the configuration file.
 
-- **Eventlet**: Now returns pool size in :program:`celery inspect stats`
-  command.
+    Contributed by **Taha Jahangir**.
 
-    Contributed by Alexander Oblovatniy.
+- Generic init-script: Fixed strange bug for ``celerybeat`` where
+  restart did not always work (Issue #3018).
 
-- **Worker**: Now respects :setting:`broker_connection_retry` setting.
+- The systemd init script now uses a shell when executing
+  services.
 
-    Fix contributed by Nat Williams.
+    Contributed by **Tomas Machalek**.
 
-- **Worker**: Auto-scale did not always update keep-alive when scaling down.
+Result Backends
+~~~~~~~~~~~~~~~
 
-    Fix contributed by Philip Garnero.
-
-- **General**: Dates are now always timezone aware even if
-  :setting:`enable_utc` is disabled (Issue #943).
-
-    Fix contributed by Omer Katz.
-
-- **Result Backends**: The redis result backend now has a default socket
-   timeout of 5 seconds.
+- Redis: Now has a default socket timeout of 5 seconds.
 
     The default can be changed using the new :setting:`redis_socket_timeout`
     setting.
 
-    Contributed by Raghuram Srinivasan.
+    Contributed by **Raghuram Srinivasan**.
 
-- **Result Backends**: RPC Backend result queues are now auto delete by
-  default (Issue #2001).
+- RPC Backend result queues are now auto delete by default (Issue #2001).
 
-- **Result Backends**: MongoDB now supports setting the
-  :setting:`result_serialzier` setting to ``bson`` to use the MongoDB
-  libraries own serializer.
+- RPC Backend: Fixed problem where exception
+  was not deserialized properly with the json serializer (Issue #2518).
 
-    Contributed by Davide Quarta.
+    Fix contributed by **Allard Hoeve**.
 
-- **Result Backends**: SQLAlchemy result backend now ignores all result
-   engine options when using NullPool (Issue #1930).
+- CouchDB: Fixed typo causing the backend to not be found
+  (Issue #3287).
 
-- **Result Backends**: MongoDB URI handling has been improved to use
+    Fix contributed by **Andrew Stewart**.
+
+- MongoDB: Now supports setting the :setting:`result_serialzier` setting
+  to ``bson`` to use the MongoDB libraries own serializer.
+
+    Contributed by **Davide Quarta**.
+
+- MongoDB: URI handling has been improved to use
     database name, user and password from the URI if provided.
 
-    Contributed by Samuel Jaillet.
+    Contributed by **Samuel Jaillet**.
 
-- **Result Backends**: Fix problem with RPC backend where exception
-    was not deserialized properly with the json serializer (Issue #2518).
+- SQLAlchemy result backend: Now ignores all result
+  engine options when using NullPool (Issue #1930).
 
-    Fix contributed by Allard Hoeve.
-
-- **Result Backends**: Database backend now sets max char size to 155 to deal
+- SQLAlchemy result backend: Now sets max char size to 155 to deal
   with brain damaged MySQL unicode implementation (Issue #1748).
 
 - **General**: All Celery exceptions/warnings now inherit from common
   :class:`~celery.exceptions.CeleryException`/:class:`~celery.exceptions.CeleryWarning`.
   (Issue #2643).
 
-- **Tasks**: Task retry now also throws in eager mode.
+Documentation Improvements
+==========================
 
-    Fix contributed by Feanil Patel.
+Contributed by:
 
-- Apps can now define how tasks are named (:meth:`@gen_task_name`).
-
-    Contributed by Dmitry Malinovsky
-
-- Module ``celery.worker.job`` renamed to :mod:`celery.worker.request`.
-
-- Beat: ``Scheduler.Publisher``/``.publisher`` renamed to
-  ``.Producer``/``.producer``.
+- Adam Chainz
+- Arthur Vuillard
+- Batiste Bieler
+- Daniel Devine
+- Edward Betts
+- Jason Veatch
+- Jeff Widman
+- Manuel Kaufmann
+- Maxime Beauchemin
+- Mitchel Humpherys
+- Rik
+- Tayfun Sen
 
 Incompatible changes
 ====================
@@ -1110,6 +1368,11 @@ Incompatible changes
 
 - :mod:`celery.worker.consumer` is now a package, not a module.
 
+- Module ``celery.worker.job`` renamed to :mod:`celery.worker.request`.
+
+- Beat: ``Scheduler.Publisher``/``.publisher`` renamed to
+  ``.Producer``/``.producer``.
+
 - Result: The task_name argument/attribute of :class:`@AsyncResult` was
   removed.
 
@@ -1119,6 +1382,8 @@ Incompatible changes
 - Backends: Arguments named ``status`` renamed to ``state``.
 
 - Backends: ``backend.get_status()`` renamed to ``backend.get_state()``.
+
+.. _v400-unscheduled-removals:
 
 Unscheduled Removals
 ====================
@@ -1132,6 +1397,35 @@ Unscheduled Removals
     so you are encouraged to use them instead, or something like
     :pypi:`supervisor`.
 
+
+.. _v400-deprecations-reorg:
+
+Reorganization Deprecations
+===========================
+
+These symbols have been renamed, and while there is an alias available in this
+version for backward compatibility, they will be removed in Celery 5.0, so
+make sure you rename these ASAP to make sure it won't break for that release.
+
+Chances are that you will only use the first in this list, but you never
+know:
+
+- ``celery.utils.worker_direct`` ->
+  :meth:`celery.utils.nodenames.worker_direct`.
+
+- ``celery.utils.nodename`` -> :meth:`celery.utils.nodenames.nodename`.
+
+- ``celery.utils.anon_nodename`` ->
+  :meth:`celery.utils.nodenames.anon_nodename`.
+
+- ``celery.utils.nodesplit`` -> :meth:`celery.utils.nodenames.nodesplit`.
+
+- ``celery.utils.default_nodename`` ->
+  :meth:`celery.utils.nodenames.default_nodename`.
+
+- ``celery.utils.node_format`` -> :meth:`celery.utils.nodenames.node_format`.
+
+- ``celery.utils.host_format`` -> :meth:`celery.utils.nodenames.host_format`.
 
 .. _v400-removals:
 
@@ -1331,6 +1625,42 @@ Task Settings
 =====================================  =====================================
 ``CELERY_CHORD_PROPAGATES``            N/A
 =====================================  =====================================
+
+Changes to internal API
+-----------------------
+
+- Module ``celery.datastructures`` renamed to :mod:`celery.utils.collections`.
+
+- ``celery.utils.datastructures.DependencyGraph`` moved to
+  :mod:`celery.utils.graph`.
+
+- ``celery.utils.jsonify`` is now :func:`celery.utils.serialization.jsonify`.
+
+- ``celery.utils.strtobool`` is now
+  :func:`celery.utils.serialization.strtobool`.
+
+- ``celery.utils.is_iterable`` has been removed.
+
+    Instead use::
+
+        isinstance(x, collections.Iterable)
+
+- ``celery.utils.lpmerge`` is now :func:`celery.utils.collections.lpmerge`.
+
+- ``celery.utils.cry`` is now :func:`celery.utils.debug.cry`.
+
+- ``celery.utils.isatty`` is now :func:`celery.platforms.isatty`.
+
+- ``celery.utils.gen_task_name`` is now
+  :func:`celery.utils.imports.gen_task_name`.
+
+- ``celery.utils.deprecated`` is now :func:`celery.utils.deprecated.Callable`
+
+- ``celery.utils.deprecated_property`` is now
+  :func:`celery.utils.deprecated.Property`.
+
+- ``celery.utils.warn_deprecated`` is now :func:`celery.utils.deprecated.warn`
+
 
 .. _v400-deprecations:
 

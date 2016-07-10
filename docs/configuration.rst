@@ -54,7 +54,6 @@ rush in moving to the new settings format.
 **Setting name**                       **Replace with**
 =====================================  ==============================================
 ``CELERY_ACCEPT_CONTENT``              :setting:`accept_content`
-``ADMINS``                             :setting:`admins`
 ``CELERY_ENABLE_UTC``                  :setting:`enable_utc`
 ``CELERY_IMPORTS``                     :setting:`imports`
 ``CELERY_INCLUDE``                     :setting:`include`
