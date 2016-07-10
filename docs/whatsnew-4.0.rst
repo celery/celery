@@ -102,7 +102,6 @@ and also drops support for Python 3.3 so supported versions are:
 - CPython 3.5
 - PyPy 4.0 (``pypy2``)
 - PyPy 2.4 (``pypy3``)
-- Jython 2.7.0
 
 Last major version to support Python 2
 --------------------------------------
