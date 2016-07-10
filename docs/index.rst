@@ -42,7 +42,6 @@ Contents
 .. toctree::
     :maxdepth: 1
 
-    configuration
     django/index
     contributing
     community
