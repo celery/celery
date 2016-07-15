@@ -1,4 +1,6 @@
-"""Originally taken from :pypi:`pyiso8601`
+"""Parse ISO8601 dates.
+
+Originally taken from :pypi:`pyiso8601`
 (http://code.google.com/p/pyiso8601/)
 
 Modified to match the behavior of ``dateutil.parser``:
@@ -29,7 +31,6 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
 CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 """
 from __future__ import absolute_import, unicode_literals
 

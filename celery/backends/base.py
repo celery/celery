@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.backends.base
-    ~~~~~~~~~~~~~~~~~~~~
+"""Result backend base classes.
 
-    Result backend base classes.
+- :class:`BaseBackend` defines the interface.
 
-    - :class:`BaseBackend` defines the interface.
-
-    - :class:`KeyValueStoreBackend` is a common base class
-      using K/V semantics like _get and _put.
-
+- :class:`KeyValueStoreBackend` is a common base class
+    using K/V semantics like _get and _put.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -72,6 +67,7 @@ class _nulldict(dict):
 
 
 class Backend(object):
+
     READY_STATES = states.READY_STATES
     UNREADY_STATES = states.UNREADY_STATES
     EXCEPTION_STATES = states.EXCEPTION_STATES
@@ -115,8 +111,7 @@ class Backend(object):
 
         self.expires = self.prepare_expires(expires, expires_type)
         self.accept = prepare_accept_content(
-            conf.accept_content if accept is None else accept,
-        )
+            conf.accept_content if accept is None else accept)
         self._pending_results = pending_results_t({}, WeakValueDictionary())
         self._pending_messages = BufferMap(MESSAGE_BUFFER_MAX)
         self.url = url
@@ -444,10 +439,10 @@ class SyncBackendMixin(object):
         If the task raises an exception, this exception
         will be re-raised by :func:`wait_for`.
 
-        If `timeout` is not :const:`None`, this raises the
-        :class:`celery.exceptions.TimeoutError` exception if the operation
-        takes longer than `timeout` seconds.
-
+        Raises:
+            celery.exceptions.TimeoutError:
+                If `timeout` is not :const:`None`, and the operation
+                takes longer than `timeout` seconds.
         """
         self._ensure_not_eager()
 

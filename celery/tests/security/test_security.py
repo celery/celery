@@ -1,5 +1,4 @@
-"""
-Keys and certificates for tests (KEY1 is a private key of CERT1, etc.)
+"""Keys and certificates for tests (KEY1 is a private key of CERT1, etc.)
 
 Generated with:
 
@@ -12,7 +11,6 @@ Generated with:
     $ openssl x509 -req -days 365 -in cert1.csr \
               -signkey key1.key -out cert1.crt
     $ rm key1.key.org cert1.csr
-
 """
 from __future__ import absolute_import, unicode_literals
 

@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.app
-    ~~~~~~~~~~
-
-    Celery Application.
-
-"""
+"""Celery Application."""
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
@@ -20,10 +14,12 @@ from celery._state import (
 
 from .base import Celery, AppPickler
 
-__all__ = ['Celery', 'AppPickler', 'default_app', 'app_or_default',
-           'bugreport', 'enable_trace', 'disable_trace', 'shared_task',
-           'set_default_app', 'current_app', 'current_task',
-           'push_current_task', 'pop_current_task']
+__all__ = [
+    'Celery', 'AppPickler', 'default_app', 'app_or_default',
+    'bugreport', 'enable_trace', 'disable_trace', 'shared_task',
+    'set_default_app', 'current_app', 'current_task',
+    'push_current_task', 'pop_current_task',
+]
 
 #: Proxy always returning the app set as default.
 default_app = Proxy(lambda: _state.default_app)
@@ -91,14 +87,15 @@ else:
 
 def shared_task(*args, **kwargs):
     """Create shared tasks (decorator).
-    Will return a proxy that always takes the task from the current apps
-    task registry.
 
     This can be used by library authors to create tasks that will work
     for any app environment.
 
-    Example:
+    Returns:
+        ~celery.local.Proxy: A proxy that always takes the task from the
+        current apps task registry.
 
+    Example:
         >>> from celery import Celery, shared_task
         >>> @shared_task
         ... def add(x, y):
@@ -110,7 +107,6 @@ def shared_task(*args, **kwargs):
 
         >>> app2 = Celery(broker='amqp://B.example.com')
         >>> add.app is app2
-
     """
 
     def create_shared_task(**options):

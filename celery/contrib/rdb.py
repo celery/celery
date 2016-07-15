@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
-"""
-``celery.contrib.rdb``
-======================
+"""Remote Debugger.
 
-Remote debugger for Celery tasks running in multiprocessing pool workers.
-Inspired by http://snippets.dzone.com/posts/show/7248
+Introduction
+============
 
-**Usage**
+This is a remote debugger for Celery tasks running in multiprocessing
+pool workers.  Inspired by http://snippets.dzone.com/posts/show/7248
+
+Usage
+-----
 
 .. code-block:: python
 
@@ -19,8 +21,8 @@ Inspired by http://snippets.dzone.com/posts/show/7248
         rdb.set_trace()
         return result
 
-
-**Environment Variables**
+Environment Variables
+=====================
 
 .. envvar:: CELERY_RDB_HOST
 
@@ -38,7 +40,6 @@ Inspired by http://snippets.dzone.com/posts/show/7248
     Base port to bind to.  Default is 6899.
     The debugger will try to find an available port starting from the
     base port.  The selected port will be logged by the worker.
-
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -53,13 +54,15 @@ from billiard.process import current_process
 
 from celery.five import range
 
-__all__ = ['CELERY_RDB_HOST', 'CELERY_RDB_PORT', 'default_port',
-           'Rdb', 'debugger', 'set_trace']
+__all__ = [
+    'CELERY_RDB_HOST', 'CELERY_RDB_PORT', 'DEFAULT_PORT',
+    'Rdb', 'debugger', 'set_trace',
+]
 
-default_port = 6899
+DEFAULT_PORT = 6899
 
 CELERY_RDB_HOST = os.environ.get('CELERY_RDB_HOST') or '127.0.0.1'
-CELERY_RDB_PORT = int(os.environ.get('CELERY_RDB_PORT') or default_port)
+CELERY_RDB_PORT = int(os.environ.get('CELERY_RDB_PORT') or DEFAULT_PORT)
 
 #: Holds the currently active debugger.
 _current = [None]

@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.concurrency
-    ~~~~~~~~~~~~~~~~~~
-
-    Pool implementation abstract factory, and alias definitions.
-
-"""
+"""Pool implementation abstract factory, and alias definitions."""
 from __future__ import absolute_import, unicode_literals
 
 # Import from kombu directly as it's used

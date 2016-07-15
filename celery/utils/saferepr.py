@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.utils.saferepr``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
+"""Streaming, truncating, non-recursive version of :func:`repr`.
 
-    Streaming, truncating, non-recursive version of :func:`repr`.
 
-    Differences from regular :func:`repr`:
+Differences from regular :func:`repr`:
 
-    - Sets are represented the Python 3 way: ``{1, 2}`` vs ``set([1, 2])``.
-    - Unicode strings does not have the ``u'`` prefix, even on Python 2.
-    - Empty set formatted as ``set()`` (Python 3), not ``set([])`` (Python 2).
-    - Longs do not have the ``L`` suffix.
+- Sets are represented the Python 3 way: ``{1, 2}`` vs ``set([1, 2])``.
+- Unicode strings does not have the ``u'`` prefix, even on Python 2.
+- Empty set formatted as ``set()`` (Python 3), not ``set([])`` (Python 2).
+- Longs do not have the ``L`` suffix.
 
-    Very slow with no limits, super quick with limits.
-
+Very slow with no limits, super quick with limits.
 """
 from __future__ import absolute_import, unicode_literals
 

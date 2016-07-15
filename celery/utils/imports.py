@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.utils.import
-    ~~~~~~~~~~~~~~~~~~~
-
-    Utilities related to importing modules and symbols by name.
-
-"""
+"""Utilities related to importing modules and symbols by name."""
 from __future__ import absolute_import, unicode_literals
 
 import imp as _imp
@@ -55,7 +49,6 @@ def instantiate(name, *args, **kwargs):
     """Instantiate class by name.
 
     See :func:`symbol_by_name`.
-
     """
     return symbol_by_name(name)(*args, **kwargs)
 

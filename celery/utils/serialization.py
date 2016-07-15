@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.utils.serialization
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Utilities for safely pickling exceptions.
-
-"""
+"""Utilities for safely pickling exceptions."""
 from __future__ import absolute_import, unicode_literals
 
 import datetime
@@ -30,10 +24,12 @@ try:
 except ImportError:
     import pickle  # noqa
 
-__all__ = ['UnpickleableExceptionWrapper', 'subclass_exception',
-           'find_pickleable_exception', 'create_exception_cls',
-           'get_pickleable_exception', 'get_pickleable_etype',
-           'get_pickled_exception', 'strtobool']
+__all__ = [
+    'UnpickleableExceptionWrapper', 'subclass_exception',
+    'find_pickleable_exception', 'create_exception_cls',
+    'get_pickleable_exception', 'get_pickleable_etype',
+    'get_pickled_exception', 'strtobool',
+]
 
 #: List of base classes we probably don't want to reduce to.
 try:
@@ -54,14 +50,13 @@ def find_pickleable_exception(exc, loads=pickle.loads,
     :class:`BaseException` and :class:`object`).  If that happens
     you should use :exc:`UnpickleableException` instead.
 
-    :param exc: An exception instance.
+    Arguments:
+        exc (BaseException): An exception instance.
 
-    Will return the nearest pickleable parent exception class
-    (except :exc:`Exception` and parents), or if the exception is
-    pickleable it will return :const:`None`.
-
-    :rtype :exc:`Exception`:
-
+    Returns:
+        Exception: Nearest pickleable parent exception class
+            (except :exc:`Exception` and parents), or if the exception is
+            pickleable it will return :const:`None`.
     """
     exc_args = getattr(exc, 'args', [])
     for supercls in itermro(exc.__class__, unwanted_base_classes):
@@ -89,14 +84,12 @@ def create_exception_cls(name, module, parent=None):
 class UnpickleableExceptionWrapper(Exception):
     """Wraps unpickleable exceptions.
 
-    :param exc_module: see :attr:`exc_module`.
-    :param exc_cls_name: see :attr:`exc_cls_name`.
-    :param exc_args: see :attr:`exc_args`
+    Arguments:
+        exc_module (str): See :attr:`exc_module`.
+        exc_cls_name (str): See :attr:`exc_cls_name`.
+        exc_args (Tuple[Any, ...]): See :attr:`exc_args`.
 
-    **Example**
-
-    .. code-block:: pycon
-
+    Example:
         >>> def pickle_it(raising_function):
         ...     try:
         ...         raising_function()
@@ -107,7 +100,6 @@ class UnpickleableExceptionWrapper(Exception):
         ...             e.args,
         ...         )
         ...         pickle.dumps(exc)  # Works fine.
-
     """
 
     #: The module of the original exception.

@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.app.log
-    ~~~~~~~~~~~~~~
+"""Logging configuration.
 
-    The Celery instances logging section: ``Celery.log``.
+The Celery instances logging section: ``Celery.log``.
 
-    Sets up logging for the worker and other programs,
-    redirects standard outs, colors log output, patches logging
-    related compatibility fixes, and so on.
-
+Sets up logging for the worker and other programs,
+redirects standard outs, colors log output, patches logging
+related compatibility fixes, and so on.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -162,7 +159,6 @@ class Logging(object):
         If `logfile` is not specified, then `sys.stderr` is used.
 
         Will return the base task logger object.
-
         """
         loglevel = mlevel(loglevel or self.loglevel)
         format = format or self.task_format
@@ -188,9 +184,10 @@ class Logging(object):
         """Redirect :class:`sys.stdout` and :class:`sys.stderr` to a
         logging instance.
 
-        :param logger: The :class:`logging.Logger` instance to redirect to.
-        :param loglevel: The loglevel redirected messages will be logged as.
-
+        Arguments:
+            logger (logging.Logger): Logger instance to redirect to.
+            loglevel (int, str): The loglevel redirected message
+                will be logged as.
         """
         proxy = LoggingProxy(logger, loglevel)
         if stdout:

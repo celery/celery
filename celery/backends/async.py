@@ -1,10 +1,4 @@
-"""
-    ``celery.backends.async``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Async backend support utilities.
-
-"""
+"""Async I/O backend support utilities."""
 from __future__ import absolute_import, unicode_literals
 
 import socket

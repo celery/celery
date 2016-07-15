@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.security.key
-    ~~~~~~~~~~~~~~~~~~~
-
-    Private key for the security serializer.
-
-"""
+"""Private keys for the security serializer."""
 from __future__ import absolute_import, unicode_literals
 
 from kombu.utils.encoding import ensure_bytes

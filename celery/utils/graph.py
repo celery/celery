@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.utils.graph``
-    ~~~~~~~~~~~~~~~~~~~~~~
-
-    Dependency graph implementation.
-
-"""
+"""Dependency graph implementation."""
 from __future__ import absolute_import, print_function, unicode_literals
 
 from collections import Counter
@@ -45,10 +39,8 @@ class DependencyGraph(object):
     Takes an optional iterator of ``(obj, dependencies)``
     tuples to build the graph from.
 
-    .. warning::
-
+    Warning:
         Does not support cycle detection.
-
     """
 
     def __init__(self, it=None, formatter=None):
@@ -73,9 +65,8 @@ class DependencyGraph(object):
     def topsort(self):
         """Sort the graph topologically.
 
-        :returns: a list of objects in the order
-            in which they must be handled.
-
+        Returns:
+            List: of objects in the order in which they must be handled.
         """
         graph = DependencyGraph()
         components = self._tarjan72()
@@ -121,7 +112,6 @@ class DependencyGraph(object):
         """Khans simple topological sort algorithm from '62
 
         See https://en.wikipedia.org/wiki/Topological_sorting
-
         """
         count = Counter()
         result = []
@@ -145,8 +135,8 @@ class DependencyGraph(object):
     def _tarjan72(self):
         """Tarjan's algorithm to find strongly connected components.
 
-        See http://bit.ly/vIMv3h.
-
+        See Also:
+            http://bit.ly/vIMv3h.
         """
         result, stack, low = [], [], {}
 
@@ -177,8 +167,10 @@ class DependencyGraph(object):
     def to_dot(self, fh, formatter=None):
         """Convert the graph to DOT format.
 
-        :param fh: A file, or a file-like object to write the graph to.
-
+        Arguments:
+            fh (IO): A file, or a file-like object to write the graph to.
+            formatter (celery.utils.graph.GraphFormatter): Custom graph
+                formatter to use.
         """
         seen = set()
         draw = formatter or self.formatter

@@ -202,7 +202,8 @@ to process messages.
 Also, there's another way to be language independent, and that is to use REST
 tasks, instead of your tasks being functions, they're URLs. With this
 information you can even create simple web servers that enable preloading of
-code. See: :ref:`User Guide: Remote Tasks <guide-webhooks>`.
+code. Simply expose an endpoint that performs an operation, and create a task
+that just performs an HTTP request to that endpoint.
 
 .. _faq-troubleshooting:
 

@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.utils.threads
-    ~~~~~~~~~~~~~~~~~~~~
-
-    Threading utilities.
-
-"""
+"""Threading primitives and utilities."""
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
@@ -18,6 +12,21 @@ from contextlib import contextmanager
 
 from celery.local import Proxy
 from celery.five import THREAD_TIMEOUT_MAX, items, python_2_unicode_compatible
+
+try:
+    from greenlet import getcurrent as get_ident
+except ImportError:  # pragma: no cover
+    try:
+        from _thread import get_ident                   # noqa
+    except ImportError:
+        try:
+            from thread import get_ident                # noqa
+        except ImportError:  # pragma: no cover
+            try:
+                from _dummy_thread import get_ident     # noqa
+            except ImportError:
+                from dummy_thread import get_ident      # noqa
+
 
 __all__ = [
     'bgThread', 'Local', 'LocalStack', 'LocalManager',
@@ -46,16 +55,11 @@ class bgThread(threading.Thread):
         self.name = name or self.__class__.__name__
 
     def body(self):
-        raise NotImplementedError('subclass responsibility')
+        raise NotImplementedError()
 
     def on_crash(self, msg, *fmt, **kwargs):
         print(msg.format(*fmt), file=sys.stderr)
-        exc_info = sys.exc_info()
-        try:
-            traceback.print_exception(exc_info[0], exc_info[1], exc_info[2],
-                                      None, sys.stderr)
-        finally:
-            del(exc_info)
+        traceback.print_exc(None, sys.stderr)
 
     def run(self):
         body = self.body
@@ -88,40 +92,23 @@ class bgThread(threading.Thread):
         if self.is_alive():
             self.join(THREAD_TIMEOUT_MAX)
 
-try:
-    from greenlet import getcurrent as get_ident
-except ImportError:  # pragma: no cover
-    try:
-        from _thread import get_ident                   # noqa
-    except ImportError:
-        try:
-            from thread import get_ident                # noqa
-        except ImportError:  # pragma: no cover
-            try:
-                from _dummy_thread import get_ident     # noqa
-            except ImportError:
-                from dummy_thread import get_ident      # noqa
-
 
 def release_local(local):
     """Releases the contents of the local for the current context.
     This makes it possible to use locals without a manager.
 
-    Example::
+    With this function one can release :class:`Local` objects as well as
+    :class:`StackLocal` objects.  However it's not possible to
+    release data held by proxies that way, one always has to retain
+    a reference to the underlying local object in order to be able
+    to release it.
 
+    Example:
         >>> loc = Local()
         >>> loc.foo = 42
         >>> release_local(loc)
         >>> hasattr(loc, 'foo')
         False
-
-    With this function one can release :class:`Local` objects as well
-    as :class:`StackLocal` objects.  However it is not possible to
-    release data held by proxies that way, one always has to retain
-    a reference to the underlying local object in order to be able
-    to release it.
-
-    .. versionadded:: 0.6.1
     """
     local.__release_local__()
 
@@ -187,7 +174,6 @@ class _LocalStack(object):
 
     By calling the stack without arguments it will return a proxy that
     resolves to the topmost item on the stack.
-
     """
 
     def __init__(self):
@@ -267,7 +253,6 @@ class LocalManager(object):
 
     The ``ident_func`` parameter can be added to override the default ident
     function for the wrapped locals.
-
     """
 
     def __init__(self, locals=None, ident_func=None):
@@ -295,7 +280,6 @@ class LocalManager(object):
         """Manually clean up the data in the locals for this context.
 
         Call this at the end of the request or use ``make_middleware()``.
-
         """
         for local in self.locals:
             release_local(local)

@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.utils.deprecated
-    ~~~~~~~~~~~~~~~~~~~~~~~
-
-    Deprecation utilities.
-
-"""
+"""Deprecation utilities."""
 from __future__ import absolute_import, print_function, unicode_literals
 
 import warnings
@@ -47,13 +41,13 @@ def Callable(deprecation=None, removal=None,
 
     A deprecation warning will be emitted when the function is called.
 
-    :keyword deprecation: Version that marks first deprecation, if this
-      argument is not set a ``PendingDeprecationWarning`` will be emitted
-      instead.
-    :keyword removal:  Future version when this feature will be removed.
-    :keyword alternative:  Instructions for an alternative solution (if any).
-    :keyword description: Description of what is being deprecated.
-
+    Arguments:
+        deprecation (str): Version that marks first deprecation, if this
+            argument is not set a ``PendingDeprecationWarning`` will be
+            emitted instead.
+        removal (str): Future version when this feature will be removed.
+        alternative (str): Instructions for an alternative solution (if any).
+        description (str): Description of what is being deprecated.
     """
     def _inner(fun):
 

@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.concurrency.gevent
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    gevent pool implementation.
-
-"""
+"""Gevent execution pool."""
 from __future__ import absolute_import, unicode_literals
 
 from time import time

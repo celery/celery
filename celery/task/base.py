@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.task.base
-    ~~~~~~~~~~~~~~~~
+"""Deprecated task base class.
 
-    The task implementation has been moved to :mod:`celery.app.task`.
+The task implementation has been moved to :mod:`celery.app.task`.
 
-    This contains the backward compatible Task class used in the old API,
-    and shouldn't be used in new applications.
-
+This contains the backward compatible Task class used in the old API,
+and shouldn't be used in new applications.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -58,7 +55,6 @@ class TaskType(type):
 
     If no :attr:`Task.name` attribute is provided, then the name is generated
     from the module and class name.
-
     """
     _creation_count = {}  # used by old non-abstract task classes
 
@@ -133,7 +129,6 @@ class Task(BaseTask):
     """Deprecated Task base class.
 
     Modern applications should use :class:`celery.Task` instead.
-
     """
     abstract = True
     __bound__ = False
@@ -219,7 +214,6 @@ class Task(BaseTask):
 
                 with app.producer_or_acquire() as prod:
                     my_task.apply_async(producer=prod)
-
         """
         exchange = self.exchange if exchange is None else exchange
         if exchange_type is None:
@@ -237,7 +231,6 @@ class Task(BaseTask):
         this task is sent to.
 
         Should be replaced with :class:`@amqp.TaskConsumer` instead:
-
         """
         Q = self._get_app().amqp
         connection = connection or self.establish_connection()

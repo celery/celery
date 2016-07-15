@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.utils.functional
-    ~~~~~~~~~~~~~~~~~~~~~~~
-
-    Utilities for functions.
-
-"""
+"""Functional-style utilties."""
 from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
@@ -50,12 +44,9 @@ class mlazy(lazy):
 
     The function is only evaluated once, every subsequent access
     will return the same value.
-
-    .. attribute:: evaluated
-
-        Set to to :const:`True` after the object has been evaluated.
-
     """
+
+    #: Set to :const:`True` after the object has been evaluated.
     evaluated = False
     _value = None
 
@@ -70,12 +61,13 @@ def noop(*args, **kwargs):
     """No operation.
 
     Takes any arguments/keyword arguments and does nothing.
-
     """
     pass
 
 
 def pass1(arg, *args, **kwargs):
+    """Take any number of arguments/keyword arguments and return
+    the first positional argument."""
     return arg
 
 
@@ -92,7 +84,6 @@ def first(predicate, it):
 
     If ``predicate`` is None it will return the first item that is not
     :const:`None`.
-
     """
     return next(
         (v for v in evaluate_promises(it) if (
@@ -107,7 +98,6 @@ def firstmethod(method, on_call=None):
 
     The list can also contain lazy instances
     (:class:`~kombu.utils.functional.lazy`.)
-
     """
 
     def _matcher(it, *args, **kwargs):
@@ -127,10 +117,7 @@ def firstmethod(method, on_call=None):
 def chunks(it, n):
     """Split an iterator into chunks with `n` elements each.
 
-    Examples:
-
-    .. code-block:: pycon
-
+    Example:
         # n == 2
         >>> x = chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 2)
         >>> list(x)
@@ -140,7 +127,6 @@ def chunks(it, n):
         >>> x = chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 3)
         >>> list(x)
         [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10]]
-
     """
     for first in it:
         yield [first] + list(islice(it, n - 1))
@@ -149,10 +135,7 @@ def chunks(it, n):
 def padlist(container, size, default=None):
     """Pad list with default elements.
 
-    Examples:
-
-    .. code-block:: pycon
-
+    Example:
         >>> first, last, city = padlist(['George', 'Costanza', 'NYC'], 3)
         ('George', 'Costanza', 'NYC')
         >>> first, last, city = padlist(['George', 'Costanza'], 3)
@@ -161,7 +144,6 @@ def padlist(container, size, default=None):
         ...     ['George', 'Costanza', 'NYC'], 4, default='Earth',
         ... )
         ('George', 'Costanza', 'NYC', 'Earth')
-
     """
     return list(container)[:size] + [default] * (size - len(container))
 

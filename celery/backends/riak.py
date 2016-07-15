@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.backends.riak``
-    ~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Riak result store backend.
-
-"""
+"""Riak result store backend."""
 from __future__ import absolute_import, unicode_literals
 
 import sys
@@ -52,10 +46,11 @@ def is_ascii(s):
 class RiakBackend(KeyValueStoreBackend):
     """Riak result backend.
 
-    :raises celery.exceptions.ImproperlyConfigured: if
-        module :pypi:`riak` is not available.
-
+    Raises:
+        celery.exceptions.ImproperlyConfigured:
+            if module :pypi:`riak` is not available.
     """
+
     # TODO: allow using other protocols than protobuf ?
     #: default protocol used to connect to Riak, might be `http` or `pbc`
     protocol = 'pbc'

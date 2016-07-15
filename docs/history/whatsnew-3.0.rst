@@ -865,7 +865,7 @@ In Other News
 - :setting:`CELERY_FORCE_EXECV` is now enabled by default.
 
     If the old behavior is wanted the setting can be set to False,
-    or the new :option:`celery worker --no-execv` option.
+    or the new `--no-execv` option to :program:`celery worker`.
 
 - Deprecated module ``celery.conf`` has been removed.
 

@@ -1,14 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.utils.objects
-    ~~~~~~~~~~~~~~~~~~~~
-
-    Object related utilities including introspection, etc.
-
-"""
+"""Object related utilities including introspection, etc."""
 from __future__ import absolute_import, unicode_literals
 
-__all__ = ['mro_lookup']
+__all__ = ['Bunch', 'FallbackContext', 'mro_lookup']
 
 
 class Bunch(object):
@@ -21,13 +15,17 @@ class Bunch(object):
 def mro_lookup(cls, attr, stop=set(), monkey_patched=[]):
     """Return the first node by MRO order that defines an attribute.
 
-    :keyword stop: A list of types that if reached will stop the search.
-    :keyword monkey_patched: Use one of the stop classes if the
-        attributes module origin is not in this list, this to detect
-        monkey patched attributes.
+    Arguments:
+        cls (Any): Child class to traverse.
+        attr (str): Name of attribute to find.
+        stop (Set[Any]): A set of types that if reached will stop
+            the search.
+        monkey_patched (Sequence): Use one of the stop classes
+            if the attributes module origin is not in this list.
+            Used to detect monkey patched attributes.
 
-    :returns: None if the attribute was not found.
-
+    Returns:
+        Any: The attribute value, or :const:`None` if not found.
     """
     for node in cls.mro():
         if node in stop:
@@ -68,7 +66,6 @@ class FallbackContext(object):
 
         def connection_or_default_connection(connection=None):
             return FallbackContext(connection, create_new_connection)
-
     """
 
     def __init__(self, provided, fallback, *fb_args, **fb_kwargs):

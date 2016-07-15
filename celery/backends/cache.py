@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.backends.cache``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Memcached and in-memory cache result backend.
-
-"""
+"""Memcached and in-memory cache result backend."""
 from __future__ import absolute_import, unicode_literals
 
 import sys
@@ -85,13 +79,16 @@ class DummyClient(object):
         return self.cache.incr(key, delta)
 
 
-backends = {'memcache': get_best_memcache,
-            'memcached': get_best_memcache,
-            'pylibmc': get_best_memcache,
-            'memory': lambda: (DummyClient, ensure_bytes)}
+backends = {
+    'memcache': get_best_memcache,
+    'memcached': get_best_memcache,
+    'pylibmc': get_best_memcache,
+    'memory': lambda: (DummyClient, ensure_bytes),
+}
 
 
 class CacheBackend(KeyValueStoreBackend):
+
     servers = None
     supports_autoexpire = True
     supports_native_join = True
@@ -132,8 +129,7 @@ class CacheBackend(KeyValueStoreBackend):
     def _apply_chord_incr(self, header, partial_args, group_id, body, **opts):
         self.client.set(self.get_key_for_chord(group_id), 0, time=86400)
         return super(CacheBackend, self)._apply_chord_incr(
-            header, partial_args, group_id, body, **opts
-        )
+            header, partial_args, group_id, body, **opts)
 
     def incr(self, key):
         return self.client.incr(key)
@@ -155,7 +151,6 @@ class CacheBackend(KeyValueStoreBackend):
         """Return the backend as an URI.
 
         This properly handles the case of multiple servers.
-
         """
         servers = ';'.join(self.servers)
         return '{0}://{1}/'.format(self.backend, servers)

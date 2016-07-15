@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.schedules
-    ~~~~~~~~~~~~~~~~
-
-    Schedules define the intervals at which periodic tasks
-    should run.
-
-"""
+"""Schedules define the intervals at which periodic tasks run."""
 from __future__ import absolute_import, unicode_literals
 
 import numbers
@@ -26,11 +19,12 @@ from .utils.timeutils import (
     timezone, maybe_make_aware, ffwd, localize
 )
 
-__all__ = ['ParseException', 'schedule', 'crontab', 'crontab_parser',
-           'maybe_schedule', 'solar']
+__all__ = [
+    'ParseException', 'schedule', 'crontab', 'crontab_parser',
+    'maybe_schedule', 'solar',
+]
 
 schedstate = namedtuple('schedstate', ('is_due', 'next'))
-
 
 CRON_PATTERN_INVALID = """\
 Invalid crontab pattern. Valid range is {min}-{max}. \
@@ -72,13 +66,13 @@ class ParseException(Exception):
 class schedule(object):
     """Schedule for periodic task.
 
-    :param run_every: Interval in seconds (or a :class:`~datetime.timedelta`).
-    :keyword relative:  If set to True the run time will be rounded to the
-        resolution of the interval.
-    :keyword nowfun: Function returning the current date and time
-        (class:`~datetime.datetime`).
-    :keyword app: Celery app instance.
-
+    Arguments:
+        run_every (float, ~datetime.timedelta): Time interval.
+        relative (bool):  If set to True the run time will be rounded to the
+            resolution of the interval.
+        nowfun (Callable): Function returning the current date and time
+            (class:`~datetime.datetime`).
+        app (~@Celery): Celery app instance.
     """
     relative = False
 
@@ -124,7 +118,6 @@ class schedule(object):
             For the default scheduler the value is 5 minutes, but for e.g.
             the :pypi:`django-celery` database scheduler the value
             is 5 seconds.
-
         """
         last_run_at = self.maybe_make_aware(last_run_at)
         rem_delta = self.remaining_estimate(last_run_at)
@@ -224,7 +217,6 @@ class crontab_parser(object):
     The maximum possible expanded value returned is found by the formula:
 
         :math:`max_ + min_ - 1`
-
     """
     ParseException = ParseException
 
@@ -377,7 +369,6 @@ class crontab(schedule):
     execution events.  Or, ``day_of_week`` is 1 and ``day_of_month``
     is '1-7,15-21' means every first and third Monday of every month
     present in ``month_of_year``.
-
     """
 
     def __init__(self, minute='*', hour='*', day_of_week='*',
@@ -419,7 +410,6 @@ class crontab(schedule):
         the expansion of ``*`` and ranges for 1-based cronspecs, such as
         day of month or month of year.  The default is sufficient for minute,
         hour, and day of week.
-
         """
         if isinstance(cronspec, numbers.Integral):
             result = {cronspec}
@@ -446,7 +436,6 @@ class crontab(schedule):
 
         Only called when ``day_of_month`` and/or ``month_of_year``
         cronspec is specified to further limit scheduled task execution.
-
         """
         datedata = AttributeDict(year=last_run_at.year)
         days_of_month = sorted(self.day_of_month)
@@ -589,7 +578,6 @@ class crontab(schedule):
         where next time to run is in seconds.
 
         See :meth:`celery.schedules.schedule.is_due` for more information.
-
         """
         rem_delta = self.remaining_estimate(last_run_at)
         rem = max(rem_delta.total_seconds(), 0)
@@ -633,16 +621,28 @@ class solar(schedule):
     """A solar event can be used as the ``run_every`` value of a
     periodic task entry to schedule based on certain solar events.
 
-    :param event: Solar event that triggers this task. Available
-        values are: ``dawn_astronomical``, ``dawn_nautical``, ``dawn_civil``,
-        ``sunrise``, ``solar_noon``, ``sunset``, ``dusk_civil``,
-        ``dusk_nautical``, ``dusk_astronomical``.
-    :param lat: The latitude of the observer.
-    :param lon: The longitude of the observer.
-    :param nowfun: Function returning the current date and time
-        (class:`~datetime.datetime`).
-    :param app: Celery app instance.
+    Notes:
 
+        Available event valus are:
+
+            - ``dawn_astronomical``
+            - ``dawn_nautical``
+            - ``dawn_civil``
+            - ``sunrise``
+            - ``solar_noon``
+            - ``sunset``
+            - ``dusk_civil``
+            - ``dusk_nautical``
+            - ``dusk_astronomical``
+
+    Arguments:
+        event (str): Solar event that triggers this task.
+            See note for available values.
+        lat (int): The latitude of the observer.
+        lon (int): The longitude of the observer.
+        nowfun (Callable): Function returning the current date and time
+            as a class:`~datetime.datetime`.
+        app (~@Celery): Celery app instance.
     """
 
     _all_events = {
@@ -756,7 +756,6 @@ class solar(schedule):
         where next time to run is in seconds.
 
         See :meth:`celery.schedules.schedule.is_due` for more information.
-
         """
         rem_delta = self.remaining_estimate(last_run_at)
         rem = max(rem_delta.total_seconds(), 0)

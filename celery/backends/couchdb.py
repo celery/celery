@@ -1,23 +1,17 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.backends.couchdb``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    CouchDB result store backend.
-
-"""
+"""CouchDB result store backend."""
 from __future__ import absolute_import, unicode_literals
-
-try:
-    import pycouchdb
-except ImportError:
-    pycouchdb = None  # noqa
 
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
 
 from .base import KeyValueStoreBackend
+
+try:
+    import pycouchdb
+except ImportError:
+    pycouchdb = None  # noqa
 
 __all__ = ['CouchBackend']
 
@@ -29,10 +23,11 @@ You need to install the pycouchdb library to use the CouchDB result backend\
 class CouchBackend(KeyValueStoreBackend):
     """CouchDB backend.
 
-    :raises celery.exceptions.ImproperlyConfigured: if
-        module :pypi:`pycouchdb` is not available.
-
+    Raises:
+        celery.exceptions.ImproperlyConfigured:
+            if module :pypi:`pycouchdb` is not available.
     """
+
     container = 'default'
     scheme = 'http'
     host = 'localhost'

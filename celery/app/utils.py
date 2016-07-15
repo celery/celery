@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.app.utils
-    ~~~~~~~~~~~~~~~~
-
-    App utilities: Compat settings, bug-report tool, pickling apps.
-
-"""
+"""App utilities: Compat settings, bug-report tool, pickling apps."""
 from __future__ import absolute_import, unicode_literals
 
 import os
@@ -30,8 +24,10 @@ from .defaults import (
     DEFAULTS, SETTING_KEYS, find,
 )
 
-__all__ = ['Settings', 'appstr', 'bugreport',
-           'filter_hidden_settings', 'find_app']
+__all__ = [
+    'Settings', 'appstr', 'bugreport',
+    'filter_hidden_settings', 'find_app',
+]
 
 #: Format used to generate bug-report information.
 BUGREPORT_INFO = """
@@ -125,16 +121,17 @@ class Settings(ConfigurationView):
     def find_option(self, name, namespace=''):
         """Search for option by name.
 
-        Will return ``(namespace, key, type)`` tuple, e.g.::
-
+        Example:
             >>> from proj.celery import app
             >>> app.conf.find_option('disable_rate_limits')
             ('worker', 'prefetch_multiplier',
              <Option: type->bool default->False>))
 
-        :param name: Name of option, cannot be partial.
-        :keyword namespace: Preferred name-space (``None`` by default).
-
+        Arguments:
+            name (str): Name of option, cannot be partial.
+            namespace (str): Preferred name-space (``None`` by default).
+        Returns:
+            Tuple: of ``(namespace, key, type)``.
         """
         return find(name, namespace)
 
@@ -145,12 +142,10 @@ class Settings(ConfigurationView):
     def get_by_parts(self, *parts):
         """Return the current value for setting specified as a path.
 
-        Example::
-
+        Example:
             >>> from proj.celery import app
             >>> app.conf.get_by_parts('worker', 'disable_rate_limits')
             False
-
         """
         return self['_'.join(part for part in parts if part)]
 

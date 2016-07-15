@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.app.base``
-    ~~~~~~~~~~~~~~~~~~~
-
-    Actual App instance implementation.
-
-"""
+"""Actual App instance implementation."""
 from __future__ import absolute_import, unicode_literals
 
 import os
@@ -113,31 +107,31 @@ class PendingConfiguration(UserDict, AttributeDictMixin):
 class Celery(object):
     """Celery application.
 
-    :param main: Name of the main module if running as `__main__`.
-        This is used as the prefix for auto-generated task names.
+    Arguments:
+        main (str): Name of the main module if running as `__main__`.
+            This is used as the prefix for auto-generated task names.
 
-    :keyword broker: URL of the default broker used.
-    :keyword loader: The loader class, or the name of the loader class to use.
-                     Default is :class:`celery.loaders.app.AppLoader`.
-    :keyword backend: The result store backend class, or the name of the
-                      backend class to use. Default is the value of the
-                      :setting:`result_backend` setting.
-    :keyword amqp: AMQP object or class name.
-    :keyword events: Events object or class name.
-    :keyword log: Log object or class name.
-    :keyword control: Control object or class name.
-    :keyword set_as_current:  Make this the global current app.
-    :keyword tasks: A task registry or the name of a registry class.
-    :keyword include: List of modules every worker should import.
-    :keyword fixups: List of fix-up plug-ins (see e.g.
-        :mod:`celery.fixups.django`).
-    :keyword autofinalize: If set to False a :exc:`RuntimeError`
-        will be raised if the task registry or tasks are used before
-        the app is finalized.
-    :keyword config_source: receives a class with class level attributes that
-        allows configurating Celery from a single object. All attributes
-        described in the documentation can be defined.
-
+        broker (str): URL of the default broker used.
+        loader (str, type): The loader class, or the name of the loader
+            class to use.  Default is :class:`celery.loaders.app.AppLoader`.
+        backend (str, type): The result store backend class, or the name of the
+            backend class to use. Default is the value of the
+            :setting:`result_backend` setting.
+        amqp (str, type): AMQP object or class name.
+        events (str, type): Events object or class name.
+        log (str, type): Log object or class name.
+        control (str, type): Control object or class name.
+        set_as_current (bool):  Make this the global current app.
+        tasks (str, type): A task registry or the name of a registry class.
+        include (List[str]): List of modules every worker should import.
+        fixups (List[str]): List of fix-up plug-ins (see e.g.
+            :mod:`celery.fixups.django`).
+        autofinalize (bool): If set to False a :exc:`RuntimeError`
+            will be raised if the task registry or tasks are used before
+            the app is finalized.
+        config_source (str, type): receives a class with class level attributes
+            that allows configurating Celery from a single object.
+            All attributes described in the documentation can be defined.
     """
     #: This is deprecated, use :meth:`reduce_keys` instead
     Pickler = AppPickler
@@ -304,7 +298,6 @@ class Celery(object):
         """Run :program:`celery` using `argv`.
 
         Uses :data:`sys.argv` if `argv` is not specified.
-
         """
         return instantiate(
             'celery.bin.celery:CeleryCommand', app=self
@@ -314,7 +307,6 @@ class Celery(object):
         """Run :program:`celery worker` using `argv`.
 
         Uses :data:`sys.argv` if `argv` is not specified.
-
         """
         return instantiate(
             'celery.bin.worker:worker', app=self
@@ -324,31 +316,28 @@ class Celery(object):
         """Decorator to create a task class out of any callable.
 
         Examples:
+            .. code-block:: python
 
-        .. code-block:: python
+                @app.task
+                def refresh_feed(url):
+                    store_feed(feedparser.parse(url))
 
-            @app.task
-            def refresh_feed(url):
-                store_feed(feedparser.parse(url))
+            with setting extra options:
 
-        with setting extra options:
+            .. code-block:: python
 
-        .. code-block:: python
+                @app.task(exchange='feeds')
+                def refresh_feed(url):
+                    return store_feed(feedparser.parse(url))
 
-            @app.task(exchange='feeds')
-            def refresh_feed(url):
-                return store_feed(feedparser.parse(url))
-
-        .. admonition:: App Binding
-
-            For custom apps the task decorator will return a proxy
-            object, so that the act of creating the task is not performed
-            until the task is used or the task registry is accessed.
+        Note:
+            App Binding: For custom apps the task decorator will return
+            a proxy object, so that the act of creating the task is not
+            performed until the task is used or the task registry is accessed.
 
             If you are depending on binding to be deferred, then you must
             not access any attributes on the returned object until the
             application is fully set up (finalized).
-
         """
         if USING_EXECV and opts.get('lazy', True):
             # When using execv the task in the original module will point to a
@@ -473,7 +462,6 @@ class Celery(object):
         not be transferred when the worker spawns child processes, so
         it's important that the same configuration happens at import time
         when pickle restores the object on the other side.
-
         """
         if not callable(fun):
             d, fun = fun, lambda: d
@@ -486,18 +474,16 @@ class Celery(object):
         """Reads configuration from object, where object is either
         an object or the name of a module to import.
 
-        :keyword silent: If true then import errors will be ignored.
-
-        :keyword force:  Force reading configuration immediately.
-            By default the configuration will be read only when required.
-
-        .. code-block:: pycon
-
+        Example:
             >>> celery.config_from_object('myapp.celeryconfig')
 
             >>> from myapp import celeryconfig
             >>> celery.config_from_object(celeryconfig)
 
+        Arguments:
+            silent (bool): If true then import errors will be ignored.
+            force (bool): Force reading configuration immediately.
+                By default the configuration will be read only when required.
         """
         self._config_source = obj
         self.namespace = namespace or self.namespace
@@ -516,7 +502,6 @@ class Celery(object):
 
             >>> os.environ['CELERY_CONFIG_MODULE'] = 'myapp.celeryconfig'
             >>> celery.config_from_envvar('CELERY_CONFIG_MODULE')
-
         """
         module_name = os.environ.get(variable_name)
         if not module_name:
@@ -541,21 +526,20 @@ class Celery(object):
         serializer will register the ``auth`` serializer with the provided
         settings into the Kombu serializer registry.
 
-        :keyword allowed_serializers: List of serializer names, or
-            content_types that should be exempt from being disabled.
-        :keyword key: Name of private key file to use.
-            Defaults to the :setting:`security_key` setting.
-        :keyword cert: Name of certificate file to use.
-            Defaults to the :setting:`security_certificate` setting.
-        :keyword store: Directory containing certificates.
-            Defaults to the :setting:`security_cert_store` setting.
-        :keyword digest: Digest algorithm used when signing messages.
-            Default is ``sha1``.
-        :keyword serializer: Serializer used to encode messages after
-            they have been signed.  See :setting:`task_serializer` for
-            the serializers supported.
-            Default is ``json``.
-
+        Arguments:
+            allowed_serializers (Set[str]): List of serializer names, or
+                content_types that should be exempt from being disabled.
+            key (str): Name of private key file to use.
+                Defaults to the :setting:`security_key` setting.
+            cert (str): Name of certificate file to use.
+                Defaults to the :setting:`security_certificate` setting.
+            store (str): Directory containing certificates.
+                Defaults to the :setting:`security_cert_store` setting.
+            digest (str): Digest algorithm used when signing messages.
+                Default is ``sha1``.
+            serializer (str): Serializer used to encode messages after
+                they have been signed.  See :setting:`task_serializer` for
+                the serializers supported.  Default is ``json``.
         """
         from celery.security import setup_security
         return setup_security(allowed_serializers, key, cert,
@@ -586,17 +570,17 @@ class Celery(object):
         Then calling ``app.autodiscover_tasks(['foo', bar', 'baz'])`` will
         result in the modules ``foo.tasks`` and ``bar.tasks`` being imported.
 
-        :param packages: List of packages to search.
-            This argument may also be a callable, in which case the
-            value returned is used (for lazy evaluation).
-        :keyword related_name: The name of the module to find.  Defaults
-            to "tasks", which means it look for "module.tasks" for every
-            module in ``packages``.
-        :keyword force: By default this call is lazy so that the actual
-            auto-discovery will not happen until an application imports the
-            default modules.  Forcing will cause the auto-discovery to happen
-            immediately.
-
+        Arguments:
+            packages (List[str]): List of packages to search.
+                This argument may also be a callable, in which case the
+                value returned is used (for lazy evaluation).
+            related_name (str): The name of the module to find.  Defaults
+                to "tasks", which means it look for "module.tasks" for every
+                module in ``packages``.
+            force (bool): By default this call is lazy so that the actual
+                auto-discovery will not happen until an application imports
+                the default modules.  Forcing will cause the auto-discovery
+                to happen immediately.
         """
         if force:
             return self._autodiscover_tasks(packages, related_name)
@@ -632,12 +616,11 @@ class Celery(object):
                   shadow=None, chain=None, task_type=None, **options):
         """Send task by name.
 
-        :param name: Name of task to call (e.g. `"tasks.add"`).
-        :keyword result_cls: Specify custom result class. Default is
-            using :meth:`AsyncResult`.
+        Supports the same arguments as :meth:`@-Task.apply_async`.
 
-        Otherwise supports the same arguments as :meth:`@-Task.apply_async`.
-
+        Arguments:
+            name (str): Name of task to call (e.g. `"tasks.add"`).
+            result_cls (~@AsyncResult): Specify custom result class.
         """
         parent = have_parent = None
         amqp = self.amqp
@@ -688,7 +671,6 @@ class Celery(object):
         """Establish connection used for consuming.
 
         See :meth:`connection` for supported arguments.
-
         """
         return self._connection(url or self.conf.broker_read_url, **kwargs)
 
@@ -696,7 +678,6 @@ class Celery(object):
         """Establish connection used for producing.
 
         See :meth:`connection` for supported arguments.
-
         """
         return self._connection(url or self.conf.broker_write_url, **kwargs)
 
@@ -711,26 +692,28 @@ class Celery(object):
         :meth:`connection_for_write` instead, to convey the intent
         of use for this connection.
 
-        :param url: Either the URL or the hostname of the broker to use.
+        Arguments:
+            url: Either the URL or the hostname of the broker to use.
 
-        :keyword hostname: URL, Hostname/IP-address of the broker.
-            If a URL is used, then the other argument below will
-            be taken from the URL instead.
-        :keyword userid: Username to authenticate as.
-        :keyword password: Password to authenticate with
-        :keyword virtual_host: Virtual host to use (domain).
-        :keyword port: Port to connect to.
-        :keyword ssl: Defaults to the :setting:`broker_use_ssl` setting.
-        :keyword transport: defaults to the :setting:`broker_transport`
-                 setting.
-        :keyword transport_options: Dictionary of transport specific options.
-        :keyword heartbeat: AMQP Heartbeat in seconds (``pyamqp`` only).
-        :keyword login_method: Custom login method to use (AMQP only).
-        :keyword failover_strategy: Custom failover strategy.
-        :keyword \*\*kwargs: Additional arguments to :class:`kombu.Connection`.
+            hostname (str): URL, Hostname/IP-address of the broker.
+                If a URL is used, then the other argument below will
+                be taken from the URL instead.
+            userid (str): Username to authenticate as.
+            password (str): Password to authenticate with
+            virtual_host (str): Virtual host to use (domain).
+            port (int): Port to connect to.
+            ssl (bool, Dict): Defaults to the :setting:`broker_use_ssl`
+                setting.
+            transport (str): defaults to the :setting:`broker_transport`
+                setting.
+            transport_options (Dict): Dictionary of transport specific options.
+            heartbeat (int): AMQP Heartbeat in seconds (``pyamqp`` only).
+            login_method (str): Custom login method to use (AMQP only).
+            failover_strategy (str, Callable): Custom failover strategy.
+            **kwargs: Additional arguments to :class:`kombu.Connection`.
 
-        :returns: :class:`kombu.Connection`
-
+        Returns:
+            kombu.Connection: the lazy connection instance.
         """
         return self.connection_for_write(
             hostname or self.conf.broker_write_url,
@@ -780,8 +763,9 @@ class Celery(object):
         """For use within a :keyword:`with` statement to get a connection
         from the pool if one is not already provided.
 
-        :keyword connection: If not provided, then a connection will be
-                             acquired from the connection pool.
+        Arguments:
+            connection (kombu.Connection): If not provided, a connection
+                will be acquired from the connection pool.
         """
         return FallbackContext(connection, self._acquire_connection, pool=pool)
     default_connection = connection_or_acquire  # XXX compat
@@ -790,9 +774,9 @@ class Celery(object):
         """For use within a :keyword:`with` statement to get a producer
         from the pool if one is not already provided
 
-        :keyword producer: If not provided, then a producer will be
-                           acquired from the producer pool.
-
+        Arguments:
+            producer (kombu.Producer): If not provided, a producer
+                will be acquired from the producer pool.
         """
         return FallbackContext(
             producer, self.producer_pool.acquire, block=True,
@@ -878,7 +862,6 @@ class Celery(object):
         """Return a new :class:`~celery.canvas.Signature` bound to this app.
 
         See :meth:`~celery.signature`
-
         """
         kwargs['app'] = self
         return self.canvas.signature(*args, **kwargs)
@@ -926,15 +909,15 @@ class Celery(object):
         provides the default app it should use, e.g.
         ``class Foo: app = None``.
 
-        :param Class: The app-compatible class to subclass.
-        :keyword name: Custom name for the target class.
-        :keyword attribute: Name of the attribute holding the app,
-                            default is 'app'.
-        :keyword reverse: Reverse path to this object used for pickling
-            purposes.  E.g. for ``app.AsyncResult`` use ``"AsyncResult"``.
-        :keyword keep_reduce: If enabled a custom ``__reduce__`` implementation
-           will not be provided.
-
+        Arguments:
+            Class (type): The app-compatible class to subclass.
+            name (str): Custom name for the target class.
+            attribute (str): Name of the attribute holding the app,
+                Default is 'app'.
+            reverse (str): Reverse path to this object used for pickling
+                purposes.  E.g. for ``app.AsyncResult`` use ``"AsyncResult"``.
+            keep_reduce (bool): If enabled a custom ``__reduce__``
+                implementation will not be provided.
         """
         Class = symbol_by_name(Class)
         reverse = reverse if reverse else Class.__name__
@@ -942,10 +925,11 @@ class Celery(object):
         def __reduce__(self):
             return _unpickle_appattr, (reverse, self.__reduce_args__())
 
-        attrs = dict({attribute: self},
-                     __module__=Class.__module__,
-                     __doc__=Class.__doc__,
-                     **kw)
+        attrs = dict(
+            {attribute: self},
+            __module__=Class.__module__,
+            __doc__=Class.__doc__,
+            **kw)
         if not keep_reduce:
             attrs['__reduce__'] = __reduce__
 
@@ -1012,7 +996,6 @@ class Celery(object):
         """:program:`celery beat` scheduler application.
 
         See :class:`~@Beat`.
-
         """
         return self.subclass_with_self('celery.apps.beat:Beat')
 
@@ -1030,7 +1013,6 @@ class Celery(object):
         """Create new result instance.
 
         See :class:`celery.result.AsyncResult`.
-
         """
         return self.subclass_with_self('celery.result:AsyncResult')
 
@@ -1043,7 +1025,6 @@ class Celery(object):
         """Create new group result instance.
 
         See :class:`celery.result.GroupResult`.
-
         """
         return self.subclass_with_self('celery.result:GroupResult')
 
@@ -1052,7 +1033,6 @@ class Celery(object):
         """Broker connection pool: :class:`~@pool`.
 
         This attribute is not related to the workers concurrency pool.
-
         """
         if self._pool is None:
             self._ensure_after_fork()
@@ -1073,7 +1053,6 @@ class Celery(object):
 
         Differs from :data:`current_task` in that it's not affected
         by tasks calling other tasks directly, or eagerly.
-
         """
         return get_current_worker_task()
 
@@ -1137,7 +1116,6 @@ class Celery(object):
         """Task registry.
 
         Accessing this attribute will also finalize the app.
-
         """
         self.finalize(auto=True)
         return self._tasks
@@ -1152,7 +1130,6 @@ class Celery(object):
 
         This is a cached property taking the time zone from the
         :setting:`timezone` setting.
-
         """
         conf = self.conf
         tz = conf.timezone

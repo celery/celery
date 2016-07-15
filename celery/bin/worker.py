@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
+"""Program used to start a Celery worker instance.
 
 The :program:`celery worker` command (previously known as ``celeryd``)
 
@@ -160,7 +160,6 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 .. cmdoption:: --executable
 
     Executable to use for the detached process.
-
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -184,14 +183,14 @@ __MODULE_DOC__ = __doc__
 class worker(Command):
     """Start worker instance.
 
-    Examples::
+    Examples:
+        .. code-block:: console
 
-        celery worker --app=proj -l info
-        celery worker -A proj -l info -Q hipri,lopri
+            $ celery worker --app=proj -l info
+            $ celery worker -A proj -l info -Q hipri,lopri
 
-        celery worker -A proj --concurrency=4
-        celery worker -A proj --concurrency=1000 -P eventlet
-
+            $ celery worker -A proj --concurrency=4
+            $ celery worker -A proj --concurrency=1000 -P eventlet
     """
     doc = __MODULE_DOC__  # parse help from this too
     namespace = 'worker'

@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.security.utils
-    ~~~~~~~~~~~~~~~~~~~~~
-
-    Utilities used by the message signing serializer.
-
-"""
+"""Utilities used by the message signing serializer."""
 from __future__ import absolute_import, unicode_literals
 
 import sys

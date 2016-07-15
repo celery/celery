@@ -81,9 +81,10 @@ if STATICA_HACK:  # pragma: no cover
 def _find_option_with_arg(argv, short_opts=None, long_opts=None):
     """Search argv for options specifying short and longopt alternatives.
 
-    :returns: value for option found
-    :raises KeyError: if option not found.
-
+    Returns:
+        str: value for option found
+    Raises:
+        KeyError: if option not found.
     """
     for i, arg in enumerate(argv):
         if arg.startswith('-'):
@@ -151,7 +152,7 @@ old_module, new_module = five.recreate_module(  # pragma: no cover
         'celery.app.task': ['Task'],
         'celery._state': ['current_app', 'current_task'],
         'celery.canvas': [
-            'chain', 'chord', 'chunks', 'group',
+            'Signature', 'chain', 'chord', 'chunks', 'group',
             'signature', 'maybe_signature', 'subtask',
             'xmap', 'xstarmap',
         ],

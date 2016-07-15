@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.loaders.base
-    ~~~~~~~~~~~~~~~~~~~
-
-    Loader base class.
-
-"""
+"""Loader base class."""
 from __future__ import absolute_import, unicode_literals
 
 import imp as _imp
@@ -29,6 +23,7 @@ from celery.utils.imports import (
 __all__ = ['BaseLoader']
 
 _RACE_PROTECTION = False
+
 CONFIG_INVALID_NAME = """\
 Error: Module '{module}' doesn't exist, or it's not a valid \
 Python module name.
@@ -58,7 +53,6 @@ class BaseLoader(object):
             See :meth:`on_worker_shutdown`.
 
         * What modules are imported to find tasks?
-
     """
     builtin_modules = frozenset()
     configured = False

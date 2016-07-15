@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.concurrency.solo
-    ~~~~~~~~~~~~~~~~~~~~~~~
-
-    Single-threaded pool implementation.
-
-"""
+"""Single-threaded execution pool."""
 from __future__ import absolute_import, unicode_literals
 
 import os

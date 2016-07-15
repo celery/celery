@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.utils.encoding
-    ~~~~~~~~~~~~~~~~~~~~~
-
-    This module has moved to :mod:`kombu.utils.encoding`.
-
-"""
+"""**DEPRECATED**: This module has moved to :mod:`kombu.utils.encoding`."""
 from __future__ import absolute_import, unicode_literals
 
 from kombu.utils.encoding import (  # noqa

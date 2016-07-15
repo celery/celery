@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.backends.amqp``
-    ~~~~~~~~~~~~~~~~~~~~~~~~
+"""The AMQP result backend (DEPRECATED)
 
-    The AMQP result backend.
-
-    This backend publishes results as messages.
-
+This backend publishes results as messages, one queue per task(!)
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -25,7 +20,6 @@ def repair_uuid(s):
 
 
 class AMQPBackend(BaseRPCBackend):
-    """Publishes results by sending messages."""
 
     def __init__(self, *args, **kwargs):
         deprecated.warn(

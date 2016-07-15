@@ -1,11 +1,5 @@
 # -* coding: utf-8 -*-
-"""
-    ``celery.backends.elasticsearch``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Elasticsearch result store backend.
-
-"""
+"""Elasticsearch result store backend."""
 from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime
@@ -32,9 +26,9 @@ result backend.\
 class ElasticsearchBackend(KeyValueStoreBackend):
     """Elasticsearch Backend.
 
-    :raises celery.exceptions.ImproperlyConfigured: if
-        module :pypi:`elasticsearch` is not available.
-
+    Raises:
+        celery.exceptions.ImproperlyConfigured:
+            if module :pypi:`elasticsearch` is not available.
     """
 
     index = 'celery'

@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.app.registry
-    ~~~~~~~~~~~~~~~~~~~
-
-    Registry of available tasks.
-
-"""
+"""Registry of available tasks."""
 from __future__ import absolute_import, unicode_literals
 
 import inspect
@@ -30,19 +24,18 @@ class TaskRegistry(dict):
 
         The task will be automatically instantiated if not already an
         instance.
-
         """
         self[task.name] = inspect.isclass(task) and task() or task
 
     def unregister(self, name):
         """Unregister task by name.
 
-        :param name: name of the task to unregister, or a
-            :class:`celery.task.base.Task` with a valid `name` attribute.
+        Arguments:
+            name (str): name of the task to unregister, or a
+                :class:`celery.task.base.Task` with a valid `name` attribute.
 
-        :raises celery.exceptions.NotRegistered: if the task has not
-            been registered.
-
+        Raises:
+            celery.exceptions.NotRegistered: if the task is not registered.
         """
         try:
             self.pop(getattr(name, 'name', name))

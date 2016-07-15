@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-
-The :program:`celery logtool` command.
+"""The :program:`celery logtool` command.
 
 .. program:: celery logtool
-
 """
 
 from __future__ import absolute_import, unicode_literals

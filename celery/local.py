@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.local
-    ~~~~~~~~~~~~
+"""Proxy/PromiseProxy implementation.
 
-    This module contains critical utilities that
-    needs to be loaded as soon as possible, and that
-    shall not load any third party modules.
+This module contains critical utilities that needs to be loaded as
+soon as possible, and that shall not load any third party modules.
 
-    Parts of this module is Copyright by Werkzeug Team.
-
+Parts of this module is Copyright by Werkzeug Team.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -101,8 +97,7 @@ class Proxy(object):
     def _get_current_object(self):
         """Return the current object.  This is useful if you want the real
         object behind the proxy at a time for performance reasons or because
-        you want to pass the object into a different context.
-        """
+        you want to pass the object into a different context."""
         loc = object.__getattribute__(self, '_Proxy__local')
         if not hasattr(loc, '__release_local__'):
             return loc(*self.__args, **self.__kwargs)
@@ -307,7 +302,6 @@ class PromiseProxy(Proxy):
 
     :class:`Proxy` will evaluate the object each time, while the
     promise will only evaluate it once.
-
     """
 
     __slots__ = ('__pending__',)

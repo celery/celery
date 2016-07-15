@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.worker.state
-    ~~~~~~~~~~~~~~~~~~~
+"""Internal worker state (global)
 
-    Internal worker state (global)
-
-    This includes the currently active and reserved tasks,
-    statistics, and revoked tasks.
-
+This includes the currently active and reserved tasks,
+statistics, and revoked tasks.
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -26,14 +21,18 @@ from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.five import Counter
 from celery.utils.collections import LimitedSet
 
-__all__ = ['SOFTWARE_INFO', 'reserved_requests', 'active_requests',
-           'total_count', 'revoked', 'task_reserved', 'maybe_shutdown',
-           'task_accepted', 'task_reserved', 'task_ready', 'Persistent']
+__all__ = [
+    'SOFTWARE_INFO', 'reserved_requests', 'active_requests',
+    'total_count', 'revoked', 'task_reserved', 'maybe_shutdown',
+    'task_accepted', 'task_reserved', 'task_ready', 'Persistent',
+]
 
 #: Worker software/platform information.
-SOFTWARE_INFO = {'sw_ident': 'py-celery',
-                 'sw_ver': __version__,
-                 'sw_sys': platform.system()}
+SOFTWARE_INFO = {
+    'sw_ident': 'py-celery',
+    'sw_ver': __version__,
+    'sw_sys': platform.system(),
+}
 
 #: maximum number of revokes to keep in memory.
 REVOKES_MAX = 50000
@@ -169,8 +168,7 @@ class Persistent(object):
     """This is the persistent data stored by the worker when
     :option:`celery worker --statedb` is enabled.
 
-    It currently only stores revoked task id's.
-
+    Currently only stores revoked task id's.
     """
     storage = shelve
     protocol = pickle_protocol

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-
-The :program:`celery` umbrella command.
+"""The :program:`celery` umbrella command.
 
 .. program:: celery
 
@@ -255,7 +253,6 @@ in any command that also has a `--detach` option.
 .. cmdoption:: --routing-key
 
     Destination routing key (defaults to the queue routing key).
-
 """
 from __future__ import absolute_import, unicode_literals, print_function
 
@@ -355,12 +352,15 @@ class multi(Command):
 class list_(Command):
     """Get info from broker.
 
-    Examples::
+    Note:
+       For RabbitMQ the management plugin is required.
 
-        celery list bindings
+    Example:
+        .. code-block:: console
 
-    NOTE: For RabbitMQ the management plugin is required.
+            $ celery list bindings
     """
+
     args = '[bindings]'
 
     def list_bindings(self, management):
@@ -394,12 +394,15 @@ class list_(Command):
 class call(Command):
     """Call a task by name.
 
-    Examples::
+    Examples:
+        .. code-block:: console
 
-        celery call tasks.add --args='[2, 2]'
-        celery call tasks.add --args='[2, 2]' --countdown=10
+            $ celery call tasks.add --args='[2, 2]'
+            $ celery call tasks.add --args='[2, 2]' --countdown=10
     """
+
     args = '<task_name>'
+
     option_list = Command.option_list + (
         Option('--args', '-a', help='positional arguments (json).'),
         Option('--kwargs', '-k', help='keyword arguments (json).'),
@@ -413,19 +416,18 @@ class call(Command):
         Option('--routing-key', help='custom routing key.'),
     )
 
-    def run(self, name, *_, **kw):
-        # Positional args.
-        args = kw.get('args') or ()
-        if isinstance(args, string_t):
-            args = json.loads(args)
+    def run(self, name, *_, **kwargs):
+        self._send_task(name, **kwargs)
 
-        # Keyword args.
-        kwargs = kw.get('kwargs') or {}
-        if isinstance(kwargs, string_t):
-            kwargs = json.loads(kwargs)
+    def _send_task(self, name, args=None, kwargs=None,
+                   countdown=None, serializer=None,
+                   queue=None, exchange=None, routing_key=None,
+                   eta=None, expires=None):
+        # arguments
+        args = json.loads(args) if isinstance(args, string_t) else args
+        kwargs = json.loads(kwargs) if isinstance(kwargs, string_t) else kwargs
 
         # Expires can be int/float.
-        expires = kw.get('expires') or None
         try:
             expires = float(expires)
         except (TypeError, ValueError):
@@ -435,31 +437,37 @@ class call(Command):
             except (TypeError, ValueError):
                 raise
 
-        res = self.app.send_task(name, args=args, kwargs=kwargs,
-                                 countdown=kw.get('countdown'),
-                                 serializer=kw.get('serializer'),
-                                 queue=kw.get('queue'),
-                                 exchange=kw.get('exchange'),
-                                 routing_key=kw.get('routing_key'),
-                                 eta=maybe_iso8601(kw.get('eta')),
-                                 expires=expires)
-        self.out(res.id)
+        # send the task and print the id.
+        self.out(self.app.send_task(
+            name,
+            args=args or (), kwargs=kwargs or {},
+            countdown=countdown,
+            serializer=serializer,
+            queue=queue,
+            exchange=exchange,
+            routing_key=routing_key,
+            eta=maybe_iso8601(eta),
+            expires=expires,
+        ).id)
 
 
 class purge(Command):
     """Erase all messages from all known task queues.
 
-    WARNING: There is no undo operation for this command.
-
+    Warning:
+        There's no undo operation for this command.
     """
+
     warn_prelude = (
         '{warning}: This will remove all tasks from {queues}: {names}.\n'
         '         There is no undo for this operation!\n\n'
         '(to skip this prompt use the -f option)\n'
     )
     warn_prompt = 'Are you sure you want to delete all tasks'
+
     fmt_purged = 'Purged {mnum} {messages} from {qnum} known task {queues}.'
     fmt_empty = 'No messages purged from {qnum} {queues}'
+
     option_list = Command.option_list + (
         Option('--force', '-f', action='store_true',
                help='Do not prompt for verification'),
@@ -503,14 +511,16 @@ class purge(Command):
 class result(Command):
     """Gives the return value for a given task id.
 
-    Examples::
+    Examples:
+        .. code-block:: console
 
-        celery result 8f511516-e2f5-4da4-9d2f-0fb83a86e500
-        celery result 8f511516-e2f5-4da4-9d2f-0fb83a86e500 -t tasks.add
-        celery result 8f511516-e2f5-4da4-9d2f-0fb83a86e500 --traceback
-
+            $ celery result 8f511516-e2f5-4da4-9d2f-0fb83a86e500
+            $ celery result 8f511516-e2f5-4da4-9d2f-0fb83a86e500 -t tasks.add
+            $ celery result 8f511516-e2f5-4da4-9d2f-0fb83a86e500 --traceback
     """
+
     args = '<task_id>'
+
     option_list = Command.option_list + (
         Option('--task', '-t', help='name of task (if custom backend)'),
         Option('--traceback', action='store_true',
@@ -533,9 +543,11 @@ class result(Command):
 
 
 class _RemoteControl(Command):
+
     name = None
     choices = None
     leaf = False
+
     option_list = Command.option_list + (
         Option('--timeout', '-t', type='float',
                help='Timeout in seconds (float) waiting for reply'),
@@ -635,14 +647,16 @@ class inspect(_RemoteControl):
 
     Availability: RabbitMQ (AMQP) transport.
 
-    Examples::
+    Examples:
+        .. code-block:: console
 
-        celery inspect active --timeout=5
-        celery inspect scheduled -d worker1@example.com
-        celery inspect revoked -d w1@e.com,w2@e.com
-
+            $ celery inspect active --timeout=5
+            $ celery inspect scheduled -d worker1@example.com
+            $ celery inspect revoked -d w1@e.com,w2@e.com
     """
+
     name = 'inspect'
+
     choices = {
         'active': (1.0, 'dump active tasks (being processed)'),
         'active_queues': (1.0, 'dump queues being consumed from'),
@@ -680,19 +694,21 @@ class control(_RemoteControl):
 
     Availability: RabbitMQ (AMQP) transport.
 
-    Examples::
+    Examples:
+        .. code-block:: console
 
-        celery control enable_events --timeout=5
-        celery control -d worker1@example.com enable_events
-        celery control -d w1.e.com,w2.e.com enable_events
+            $ celery control enable_events --timeout=5
+            $ celery control -d worker1@example.com enable_events
+            $ celery control -d w1.e.com,w2.e.com enable_events
 
-        celery control -d w1.e.com add_consumer queue_name
-        celery control -d w1.e.com cancel_consumer queue_name
+            $ celery control -d w1.e.com add_consumer queue_name
+            $ celery control -d w1.e.com cancel_consumer queue_name
 
-        celery control -d w1.e.com add_consumer queue exchange direct rkey
-
+            $ celery control add_consumer queue exchange direct rkey
     """
+
     name = 'control'
+
     choices = {
         'enable_events': (1.0, 'tell worker(s) to enable events'),
         'disable_events': (1.0, 'tell worker(s) to disable events'),
@@ -739,6 +755,7 @@ class control(_RemoteControl):
 
 class status(Command):
     """Show list of workers that are online."""
+
     option_list = inspect.option_list
 
     def run(self, *args, **kwargs):
@@ -761,16 +778,18 @@ class status(Command):
 class migrate(Command):
     """Migrate tasks from one broker to another.
 
+    Warning:
+        This command is experimental, make sure you have a backup of
+        the tasks before you continue.
+
     Example:
+        .. code-block:: console
 
-    .. code-block:: console
-
-        $ celery migrate amqp://A.example.com amqp://guest@B.example.com//
-
-    NOTE: This command is experimental, make sure you have
-          a backup of the tasks before you continue.
+            $ celery migrate amqp://A.example.com amqp://guest@B.example.com//
     """
+
     args = '<source_url> <dest_url>'
+
     option_list = Command.option_list + (
         Option('--limit', '-n', type='int',
                help='Number of tasks to consume (int)'),
@@ -785,6 +804,7 @@ class migrate(Command):
         Option('--forever', '-F', action='store_true',
                help='Continually migrate tasks until killed.'),
     )
+
     progress_fmt = MIGRATE_PROGRESS_FMT
 
     def on_migrate_task(self, state, body, message):
@@ -805,12 +825,12 @@ class shell(Command):  # pragma: no cover
 
     The following symbols will be added to the main globals:
 
-        - celery:  the current application.
-        - chord, group, chain, chunks,
-          xmap, xstarmap subtask, Task
+        - ``celery``:  the current application.
+        - ``chord``, ``group``, ``chain``, ``chunks``,
+          ``xmap``, ``xstarmap`` ``subtask``, ``Task``
         - all registered tasks.
-
     """
+
     option_list = Command.option_list + (
         Option('--ipython', '-I',
                action='store_true', dest='force_ipython',
@@ -839,17 +859,19 @@ class shell(Command):  # pragma: no cover
         import celery
         import celery.task.base
         self.app.loader.import_default_modules()
-        self.locals = {'app': self.app,
-                       'celery': self.app,
-                       'Task': celery.Task,
-                       'chord': celery.chord,
-                       'group': celery.group,
-                       'chain': celery.chain,
-                       'chunks': celery.chunks,
-                       'xmap': celery.xmap,
-                       'xstarmap': celery.xstarmap,
-                       'subtask': celery.subtask,
-                       'signature': celery.signature}
+        self.locals = {
+            'app': self.app,
+            'celery': self.app,
+            'Task': celery.Task,
+            'chord': celery.chord,
+            'group': celery.group,
+            'chain': celery.chain,
+            'chunks': celery.chunks,
+            'xmap': celery.xmap,
+            'xstarmap': celery.xstarmap,
+            'subtask': celery.subtask,
+            'signature': celery.signature,
+        }
 
         if not without_tasks:
             self.locals.update({
@@ -929,6 +951,7 @@ class shell(Command):  # pragma: no cover
 
 class upgrade(Command):
     """Perform upgrade between versions."""
+
     option_list = Command.option_list + (
         Option('--django', action='store_true',
                help='Upgrade Django project'),
@@ -937,6 +960,7 @@ class upgrade(Command):
         Option('--no-backup', action='store_true',
                help='Dont backup original files'),
     )
+
     choices = {'settings'}
 
     def usage(self, command):
@@ -1017,7 +1041,7 @@ class report(Command):
 
 
 class CeleryCommand(Command):
-    ext_fmt = '{self.namespace}.commands'
+
     commands = {
         'amqp': amqp,
         'beat': beat,
@@ -1038,8 +1062,8 @@ class CeleryCommand(Command):
         'status': status,
         'upgrade': upgrade,
         'worker': worker,
-
     }
+    ext_fmt = '{self.namespace}.commands'
     enable_config_from_cmdline = True
     prog_name = 'celery'
     namespace = 'celery'

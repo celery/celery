@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-celery.states
-=============
-
-Built-in task states.
+"""Built-in task states.
 
 .. _states:
 
@@ -52,29 +48,32 @@ ALL_STATES
 
 Set of all possible states.
 
-
 Misc.
 -----
 
 """
 from __future__ import absolute_import, unicode_literals
 
-__all__ = ['PENDING', 'RECEIVED', 'STARTED', 'SUCCESS', 'FAILURE',
-           'REVOKED', 'RETRY', 'IGNORED', 'READY_STATES', 'UNREADY_STATES',
-           'EXCEPTION_STATES', 'PROPAGATE_STATES', 'precedence', 'state']
+__all__ = [
+    'PENDING', 'RECEIVED', 'STARTED', 'SUCCESS', 'FAILURE',
+    'REVOKED', 'RETRY', 'IGNORED', 'READY_STATES', 'UNREADY_STATES',
+    'EXCEPTION_STATES', 'PROPAGATE_STATES', 'precedence', 'state',
+]
 
 #: State precedence.
 #: None represents the precedence of an unknown state.
 #: Lower index means higher precedence.
-PRECEDENCE = ['SUCCESS',
-              'FAILURE',
-              None,
-              'REVOKED',
-              'STARTED',
-              'RECEIVED',
-              'REJECTED',
-              'RETRY',
-              'PENDING']
+PRECEDENCE = [
+    'SUCCESS',
+    'FAILURE',
+    None,
+    'REVOKED',
+    'STARTED',
+    'RECEIVED',
+    'REJECTED',
+    'RETRY',
+    'PENDING',
+]
 
 #: Hash lookup of PRECEDENCE to index
 PRECEDENCE_LOOKUP = dict(zip(PRECEDENCE, range(0, len(PRECEDENCE))))
@@ -85,7 +84,6 @@ def precedence(state):
     """Get the precedence index for state.
 
     Lower index means higher precedence.
-
     """
     try:
         return PRECEDENCE_LOOKUP[state]
@@ -110,7 +108,6 @@ class state(str):
 
         >>> state('PROGRESS') > state('SUCCESS')
         False
-
     """
 
     def __gt__(self, other):
@@ -149,5 +146,6 @@ UNREADY_STATES = frozenset({PENDING, RECEIVED, STARTED, REJECTED, RETRY})
 EXCEPTION_STATES = frozenset({RETRY, FAILURE, REVOKED})
 PROPAGATE_STATES = frozenset({FAILURE, REVOKED})
 
-ALL_STATES = frozenset({PENDING, RECEIVED, STARTED,
-                        SUCCESS, FAILURE, RETRY, REVOKED})
+ALL_STATES = frozenset({
+    PENDING, RECEIVED, STARTED, SUCCESS, FAILURE, RETRY, REVOKED,
+})

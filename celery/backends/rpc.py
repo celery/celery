@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.backends.rpc``
-    ~~~~~~~~~~~~~~~~~~~~~~~
+"""The ``RPC`` result backend for AMQP brokers.
 
-    RPC-style result backend, using reply-to and one queue per client.
-
+RPC-style result backend, using reply-to and one queue per client.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -247,7 +244,8 @@ class BaseRPCBackend(base.Backend, AsyncBackendMixin):
             'delete_group is not supported by this backend.')
 
     def __reduce__(self, args=(), kwargs={}):
-        kwargs.update(
+        return super(BaseRPCBackend, self).__reduce__(args, dict(
+            kwargs,
             connection=self._connection,
             exchange=self.exchange.name,
             exchange_type=self.exchange.type,
@@ -255,8 +253,7 @@ class BaseRPCBackend(base.Backend, AsyncBackendMixin):
             serializer=self.serializer,
             auto_delete=self.auto_delete,
             expires=self.expires,
-        )
-        return super(BaseRPCBackend, self).__reduce__(args, kwargs)
+        ))
 
 
 class RPCBackend(BaseRPCBackend):
@@ -286,8 +283,7 @@ class RPCBackend(BaseRPCBackend):
             request = request or current_task.request
         except AttributeError:
             raise RuntimeError(
-                'RPC backend missing task request for {0!r}'.format(task_id),
-            )
+                'RPC backend missing task request for {0!r}'.format(task_id))
         return request.reply_to, request.correlation_id or task_id
 
     def on_reply_declare(self, task_id):
@@ -301,8 +297,10 @@ class RPCBackend(BaseRPCBackend):
 
     @property
     def binding(self):
-        return self.Queue(self.oid, self.exchange, self.oid,
-                          durable=False, auto_delete=True)
+        return self.Queue(
+            self.oid, self.exchange, self.oid,
+            durable=False, auto_delete=True
+        )
 
     @cached_property
     def oid(self):

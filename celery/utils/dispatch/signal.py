@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Signal class."""
+"""Implementation of the Observer pattern."""
 from __future__ import absolute_import, unicode_literals
 
 import weakref
@@ -32,9 +32,9 @@ def _make_id(target):  # pragma: no cover
 class Signal(object):  # pragma: no cover
     """Observer pattern implementation.
 
-    :param providing_args: A list of the arguments this signal can pass
-        along in a :meth:`send` call.
-
+    Arguments:
+        providing_args (List): A list of the arguments this signal can pass
+            along in a :meth:`send` call.
     """
 
     #: Holds a dictionary of
@@ -55,32 +55,32 @@ class Signal(object):  # pragma: no cover
     def connect(self, *args, **kwargs):
         """Connect receiver to sender for signal.
 
-        :param receiver: A function or an instance method which is to
-            receive signals. Receivers must be hashable objects.
+        Arguments:
+            receiver (Callable): A function or an instance method which is to
+                receive signals. Receivers must be hashable objects.
 
-            if weak is :const:`True`, then receiver must be weak-referenceable
-            (more precisely :func:`saferef.safe_ref()` must be able to create a
-            reference to the receiver).
+                if weak is :const:`True`, then receiver must be
+                weak-referenceable (more precisely :func:`saferef.safe_ref()`
+                must be able to create a reference to the receiver).
 
-            Receivers must be able to accept keyword arguments.
+                Receivers must be able to accept keyword arguments.
 
-            If receivers have a `dispatch_uid` attribute, the receiver will
-            not be added if another receiver already exists with that
-            `dispatch_uid`.
+                If receivers have a `dispatch_uid` attribute, the receiver will
+                not be added if another receiver already exists with that
+                `dispatch_uid`.
 
-        :keyword sender: The sender to which the receiver should respond.
-            Must either be of type :class:`Signal`, or :const:`None` to receive
-            events from any sender.
+            sender (Any): The sender to which the receiver should respond.
+                Must either be of type :class:`Signal`, or :const:`None` to
+                receive events from any sender.
 
-        :keyword weak: Whether to use weak references to the receiver.
-            By default, the module will attempt to use weak references to the
-            receiver objects. If this parameter is false, then strong
-            references will be used.
+            weak (bool): Whether to use weak references to the receiver.
+                By default, the module will attempt to use weak references to
+                the receiver objects. If this parameter is false, then strong
+                references will be used.
 
-        :keyword dispatch_uid: An identifier used to uniquely identify a
-            particular instance of a receiver. This will usually be a
-            string, though it may be anything hashable.
-
+            dispatch_uid (Hashable): An identifier used to uniquely identify a
+                particular instance of a receiver. This will usually be a
+                string, though it may be anything hashable.
         """
         def _handle_options(sender=None, weak=True, dispatch_uid=None):
 
@@ -124,16 +124,16 @@ class Signal(object):  # pragma: no cover
         If weak references are used, disconnect need not be called. The
         receiver will be removed from dispatch automatically.
 
-        :keyword receiver: The registered receiver to disconnect. May be
-            none if `dispatch_uid` is specified.
+        Arguments:
+            receiver (Callable): The registered receiver to disconnect. May be
+                none if `dispatch_uid` is specified.
 
-        :keyword sender: The registered sender to disconnect.
+            sender (Any): The registered sender to disconnect.
 
-        :keyword weak: The weakref state to disconnect.
+            weak (bool): The weakref state to disconnect.
 
-        :keyword dispatch_uid: the unique identifier of the receiver
-            to disconnect
-
+            dispatch_uid (Hashable): The unique identifier of the receiver
+                to disconnect.
         """
         if dispatch_uid:
             lookup_key = (dispatch_uid, _make_id(sender))
@@ -153,13 +153,13 @@ class Signal(object):  # pragma: no cover
         send, terminating the dispatch loop, so it is quite possible to not
         have all receivers called if a raises an error.
 
-        :param sender: The sender of the signal. Either a specific
-            object or :const:`None`.
+        Arguments:
+            sender (Any): The sender of the signal. Either a specific
+                object or :const:`None`.
+            **named (Any): Named arguments which will be passed to receivers.
 
-        :keyword \*\*named: Named arguments which will be passed to receivers.
-
-        :returns: a list of tuple pairs: `[(receiver, response), … ]`.
-
+        Returns:
+            List: of tuple pairs: `[(receiver, response), … ]`.
         """
         responses = []
         if not self.receivers:
@@ -180,7 +180,6 @@ class Signal(object):  # pragma: no cover
 
         This checks for weak references and resolves them, then returning only
         live receivers.
-
         """
         none_senderkey = _make_id(None)
         receivers = []

@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.concurrency.prefork
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""Prefork execution pool.
 
-    Pool implementation using :mod:`multiprocessing`.
-
+Pool implementation using :mod:`multiprocessing`.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -45,10 +42,8 @@ warning, debug = logger.warning, logger.debug
 def process_initializer(app, hostname):
     """Pool child process initializer.
 
-    This will initialize a child pool process to ensure the correct
-    app instance is used and things like
-    logging works.
-
+    Initialize the child pool process to ensure the correct
+    app instance is used and things like logging works.
     """
     _set_task_join_will_block(True)
     platforms.signals.reset(*WORKER_SIGRESET)
@@ -90,7 +85,6 @@ def process_destructor(pid, exitcode):
     """Pool child process destructor
 
     Dispatch the :signal:`worker_process_shutdown` signal.
-
     """
     signals.worker_process_shutdown.send(
         sender=None, pid=pid, exitcode=exitcode,

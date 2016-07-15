@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.backends
-    ~~~~~~~~~~~~~~~
-
-    Backend abstract factory (...did I just say that?) and alias definitions.
-
-"""
+"""Backend abstract factory (...did I just say that?) and alias definitions."""
 from __future__ import absolute_import, unicode_literals
 
 import sys

@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.app.amqp``
-    ~~~~~~~~~~~~~~~~~~~
-
-    Sending and receiving messages using Kombu.
-
-"""
+"""Sending/Receiving Messages (Kombu integration)."""
 from __future__ import absolute_import, unicode_literals
 
 import numbers
@@ -59,15 +53,13 @@ def utf8dict(d, encoding='utf-8'):
 class Queues(dict):
     """Queue name⇒ declaration mapping.
 
-    :param queues: Initial list/tuple or dict of queues.
-    :keyword create_missing: By default any unknown queues will be
-                             added automatically, but if disabled
-                             the occurrence of unknown queues
-                             in `wanted` will raise :exc:`KeyError`.
-    :keyword ha_policy: Default HA policy for queues with none set.
-    :keyword max_priority: Default x-max-priority for queues with none set.
-
-
+    Arguments:
+        queues (Iterable): Initial list/tuple or dict of queues.
+        create_missing (bool): By default any unknown queues will be
+            added automatically, but if this flag is disabled the occurrence
+            of unknown queues in `wanted` will raise :exc:`KeyError`.
+        ha_policy (Sequence, str): Default HA policy for queues with none set.
+        max_priority (int): Default x-max-priority for queues with none set.
     """
     #: If set, this is a subset of queues to consume from.
     #: The rest of the queues are then used for routing only.
@@ -114,12 +106,14 @@ class Queues(dict):
         arguments are ignored, and options are simply taken from the queue
         instance.
 
-        :param queue: :class:`kombu.Queue` instance or name of the queue.
-        :keyword exchange: (if named) specifies exchange name.
-        :keyword routing_key: (if named) specifies binding key.
-        :keyword exchange_type: (if named) specifies type of exchange.
-        :keyword \*\*options: (if named) Additional declaration options.
-
+        Arguments:
+            queue (kombu.Queue, str): Queue to add.
+            exchange (kombu.Exchange, str):
+                if queue is str, specifies exchange name.
+            routing_key (str): if queue is str, specifies binding key.
+            exchange_type (str): if queue is str, specifies type of exchange.
+            **options (Any): Additional declaration options used when
+                queue is a str.
         """
         if not isinstance(queue, Queue):
             return self.add_compat(queue, **kwargs)
@@ -181,8 +175,8 @@ class Queues(dict):
         """Sets :attr:`consume_from` by selecting a subset of the
         currently defined queues.
 
-        :param include: Names of queues to consume from.
-                        Can be iterable or string.
+        Arguments:
+            include (Sequence[str], str): Names of queues to consume from.
         """
         if include:
             self._consume_from = {
@@ -192,9 +186,9 @@ class Queues(dict):
     def deselect(self, exclude):
         """Deselect queues so that they will not be consumed from.
 
-        :param exclude: Names of queues to avoid consuming from.
-                        Can be iterable or string.
-
+        Arguments:
+            exclude (Sequence[str], str): Names of queues to avoid
+                consuming from.
         """
         if exclude:
             exclude = maybe_list(exclude)

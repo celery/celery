@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.utils.timeutils``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    This module contains various utilities related to dates and times.
-
-"""
+"""Utilities related to dates, times, intervals and timezones."""
 from __future__ import absolute_import, print_function, unicode_literals
 
 import numbers
@@ -42,14 +36,18 @@ C_REMDEBUG = os.environ.get('C_REMDEBUG', False)
 DAYNAMES = 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'
 WEEKDAYS = dict(zip(DAYNAMES, range(7)))
 
-RATE_MODIFIER_MAP = {'s': lambda n: n,
-                     'm': lambda n: n / 60.0,
-                     'h': lambda n: n / 60.0 / 60.0}
+RATE_MODIFIER_MAP = {
+    's': lambda n: n,
+    'm': lambda n: n / 60.0,
+    'h': lambda n: n / 60.0 / 60.0,
+}
 
-TIME_UNITS = (('day', 60 * 60 * 24.0, lambda n: format(n, '.2f')),
-              ('hour', 60 * 60.0, lambda n: format(n, '.2f')),
-              ('minute', 60.0, lambda n: format(n, '.2f')),
-              ('second', 1.0, lambda n: format(n, '.2f')))
+TIME_UNITS = (
+    ('day', 60 * 60 * 24.0, lambda n: format(n, '.2f')),
+    ('hour', 60 * 60.0, lambda n: format(n, '.2f')),
+    ('minute', 60.0, lambda n: format(n, '.2f')),
+    ('second', 1.0, lambda n: format(n, '.2f')),
+)
 
 ZERO = timedelta(0)
 
@@ -60,7 +58,7 @@ _local_timezone = None
 class LocalTimezone(tzinfo):
     """Local time implementation taken from Python's docs.
 
-    Used only when UTC is not enabled.
+    Used only when :setting:`enable_utc` is not enabled.
     """
     _offset_cache = {}
 
@@ -175,7 +173,6 @@ def delta_resolution(dt, delta):
     :class:`~datetime.datetime` will be rounded to the nearest hour,
     and so on until seconds which will just return the original
     :class:`~datetime.datetime`.
-
     """
     delta = max(delta.total_seconds(), 0)
 
@@ -196,14 +193,17 @@ def remaining(start, ends_in, now=None, relative=False):
 
     e.g. "how many seconds left for 30 seconds after start?"
 
-    :param start: Start :class:`~datetime.datetime`.
-    :param ends_in: The end delta as a :class:`~datetime.timedelta`.
-    :keyword relative: If enabled the end time will be
-        calculated using :func:`delta_resolution` (i.e. rounded to the
-        resolution of `ends_in`).
-    :keyword now: Function returning the current time and date,
-        defaults to :func:`datetime.utcnow`.
+    Arguments:
+        start (~datetime.datetime): Starting date.
+        ends_in (~datetime.timedelta): The end delta.
+        relative (bool): If enabled the end time will be calculated
+            using :func:`delta_resolution` (i.e. rounded to the
+            resolution of `ends_in`).
+        now (Callable): Function returning the current time and date.
+            Defaults to :func:`datetime.utcnow`.
 
+    Returns:
+        ~datetime.timedelta: Remaining time.
     """
     now = now or datetime.utcnow()
     end_date = start + ends_in
@@ -230,11 +230,9 @@ def rate(rate):
 def weekday(name):
     """Return the position of a weekday (0 - 7, where 0 is Sunday).
 
-    Example::
-
+    Example:
         >>> weekday('sunday'), weekday('sun'), weekday('mon')
         (0, 0, 1)
-
     """
     abbreviation = name[0:3].lower()
     try:
@@ -248,9 +246,11 @@ def humanize_seconds(secs, prefix='', sep='', now='now', microseconds=False):
     """Show seconds in human form, e.g. 60 is "1 minute", 7200 is "2
     hours".
 
-    :keyword prefix: Can be used to add a preposition to the output,
-        e.g. 'in' will give 'in 1 second', but add nothing to 'now'.
-
+    Arguments:
+        prefix (str): can be used to add a preposition to the output,
+            e.g. 'in' will give 'in 1 second', but add nothing to 'now'.
+        now (str): Literal 'now'.
+        microseconds (bool): Include microseconds.
     """
     secs = float(format(float(secs), '.2f'))
     for unit, divider, formatter in TIME_UNITS:

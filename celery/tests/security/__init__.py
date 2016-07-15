@@ -2,7 +2,6 @@
 Keys and certificates for tests (KEY1 is a private key of CERT1, etc.)
 
 Generated with `extra/security/get-cert.sh`
-
 """
 from __future__ import absolute_import, unicode_literals
 

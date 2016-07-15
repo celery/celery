@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.backends.database.session
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    SQLAlchemy sessions.
-
-"""
+"""SQLAlchemy session."""
 from __future__ import absolute_import, unicode_literals
 
 from sqlalchemy import create_engine

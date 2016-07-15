@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.exceptions
-    ~~~~~~~~~~~~~~~~~
-
-    This module contains all exceptions used by the Celery API.
-
-"""
+"""This module contains all exceptions used by the Celery API."""
 from __future__ import absolute_import, unicode_literals
 
 import numbers
@@ -46,8 +40,8 @@ class SecurityError(CeleryError):
     """Security related exceptions.
 
     Handle with care.
-
     """
+    pass
 
 
 class TaskPredicate(CeleryError):

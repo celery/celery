@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
+"""Start multiple worker instances from the command-line.
 
 .. program:: celery multi
 
@@ -92,7 +92,6 @@ Examples
     celery worker -n bar@myhost -c 10
     celery worker -n baz@myhost -c 10
     celery worker -n xuzzy@myhost -c 3
-
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -173,17 +172,19 @@ class MultiTool(object):
         self.verbose = verbose
         self.no_color = no_color
         self.prog_name = 'celery multi'
-        self.commands = {'start': self.start,
-                         'show': self.show,
-                         'stop': self.stop,
-                         'stopwait': self.stopwait,
-                         'stop_verify': self.stopwait,  # compat alias
-                         'restart': self.restart,
-                         'kill': self.kill,
-                         'names': self.names,
-                         'expand': self.expand,
-                         'get': self.get,
-                         'help': self.help}
+        self.commands = {
+            'start': self.start,
+            'show': self.show,
+            'stop': self.stop,
+            'stopwait': self.stopwait,
+            'stop_verify': self.stopwait,  # compat alias
+            'restart': self.restart,
+            'kill': self.kill,
+            'names': self.names,
+            'expand': self.expand,
+            'get': self.get,
+            'help': self.help,
+        }
 
     def execute_from_commandline(self, argv, cmd='celery worker'):
         argv = list(argv)   # don't modify callers argv.

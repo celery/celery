@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.apps.beat
-    ~~~~~~~~~~~~~~~~
+"""This module is the 'program-version' of :mod:`celery.beat`.
 
-    This module is the 'program-version' of :mod:`celery.beat`.
-
-    It does everything necessary to run that module
-    as an actual application, like installing signal handlers
-    and so on.
-
+It does everything necessary to run that module
+as an actual application, like installing signal handlers
+and so on.
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -41,6 +36,7 @@ logger = get_logger('celery.beat')
 
 
 class Beat(object):
+
     Service = beat.Service
     app = None
 
@@ -49,7 +45,6 @@ class Beat(object):
                  loglevel='WARN', logfile=None, schedule=None,
                  scheduler_cls=None, redirect_stdouts=None,
                  redirect_stdouts_level=None, **kwargs):
-        """Starts the beat task scheduler."""
         self.app = app = app or self.app
         either = self.app.either
         self.loglevel = loglevel
@@ -57,11 +52,9 @@ class Beat(object):
         self.schedule = either('beat_schedule_filename', schedule)
         self.scheduler_cls = either('beat_scheduler', scheduler_cls)
         self.redirect_stdouts = either(
-            'worker_redirect_stdouts', redirect_stdouts,
-        )
+            'worker_redirect_stdouts', redirect_stdouts)
         self.redirect_stdouts_level = either(
-            'worker_redirect_stdouts_level', redirect_stdouts_level,
-        )
+            'worker_redirect_stdouts_level', redirect_stdouts_level)
 
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout

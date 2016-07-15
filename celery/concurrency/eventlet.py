@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.concurrency.eventlet
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Eventlet pool implementation.
-
-"""
+"""Eventlet execution pool."""
 from __future__ import absolute_import, unicode_literals
 
 import sys

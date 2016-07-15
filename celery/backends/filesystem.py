@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.backends.filesystem``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    File-system result store backend.
-
-"""
+"""File-system result store backend."""
 from __future__ import absolute_import, unicode_literals
 
 from kombu.utils.encoding import ensure_bytes
@@ -35,14 +29,12 @@ the correct permissions.\
 class FilesystemBackend(KeyValueStoreBackend):
     """File-system result backend.
 
-    Keyword arguments (in addition to those of KeyValueStoreBackend):
-
-    :param url:  URL to the directory we should use
-    :param open: open function to use when opening files
-    :param unlink: unlink function to use when deleting files
-    :param sep: directory separator (to join the directory with the key)
-    :param encoding: encoding used on the file-system
-
+    Arguments:
+        url (str):  URL to the directory we should use
+        open (Callable): open function to use when opening files
+        unlink (Callable): unlink function to use when deleting files
+        sep (str): directory separator (to join the directory with the key)
+        encoding (str): encoding used on the file-system
     """
 
     def __init__(self, url=None, open=open, unlink=os.unlink, sep=os.sep,

@@ -1,3 +1,4 @@
+"""Worker <-> Worker communication Bootstep."""
 from __future__ import absolute_import, unicode_literals
 
 from collections import defaultdict

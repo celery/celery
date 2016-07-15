@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.app.defaults
-    ~~~~~~~~~~~~~~~~~~~
-
-    Configuration introspection and defaults.
-
-"""
+"""Configuration introspection and defaults."""
 from __future__ import absolute_import, unicode_literals
 
 import sys
