@@ -137,7 +137,7 @@ class CassandraBackend(BaseBackend):
         Arguments:
             write (bool): are we a writer?
         """
-        if self._connections is not None:
+        if self._connection is not None:
             return
         try:
             self._connection = cassandra.cluster.Cluster(
