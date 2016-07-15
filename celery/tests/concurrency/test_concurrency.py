@@ -4,7 +4,7 @@ from itertools import count
 
 from celery.concurrency.base import apply_target, BasePool
 from celery.exceptions import WorkerShutdown, WorkerTerminate
-from celery.tests.case import AppCase, Mock, patch
+from celery.tests.case import AppCase, Mock
 
 
 class test_BasePool(AppCase):

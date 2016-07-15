@@ -3,9 +3,9 @@
 from collections import Counter
 from textwrap import dedent
 from typing import (
-    Any, Dict, MutableSet, MutableSequence,
-    Optional, IO, Iterable, Iterator, Sequence, Tuple,
+    Any, Dict, Optional, IO, Iterable, Iterator, Sequence,
 )
+from typing import MutableSet, MutableSequence  # noqa
 
 from kombu.utils.encoding import safe_str, bytes_to_str
 

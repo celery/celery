@@ -4,7 +4,6 @@ import sys
 import types
 
 from celery.exceptions import ImproperlyConfigured
-from celery.local import Proxy
 from celery._state import current_app
 from celery.utils.imports import symbol_by_name
 

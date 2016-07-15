@@ -2,7 +2,7 @@ from celery import backends
 from celery.backends.rpc import RPCBackend
 from celery.backends.cache import CacheBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.tests.case import AppCase, depends_on_current_app, patch
+from celery.tests.case import AppCase, patch
 
 
 class test_backends(AppCase):

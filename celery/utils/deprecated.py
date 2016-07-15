@@ -2,7 +2,7 @@
 """Deprecation utilities."""
 import warnings
 
-from typing import Any, Callable, Mapping, Optional
+from typing import Any, Callable, Optional
 
 from vine.utils import wraps
 

@@ -7,12 +7,12 @@ import traceback
 from contextlib import contextmanager
 from functools import partial
 from io import StringIO
-from numbers import Number
 from pprint import pprint
 from typing import (
-    Any, AnyStr, Generator, IO, Iterator, Iterable, MutableSequence,
+    Any, AnyStr, Generator, IO, Iterator, Iterable,
     Optional, Sequence, SupportsInt, Tuple, Union,
 )
+from typing import MutableSequence  # noqa
 
 from celery.five import WhateverIO
 from celery.platforms import signals

@@ -5,7 +5,6 @@ import os
 from collections import namedtuple
 
 from math import ceil
-from typing import Tuple
 
 from kombu.utils import cached_property
 
