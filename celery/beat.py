@@ -138,7 +138,7 @@ class ScheduleEntry(object):
         return iter(items(vars(self)))
 
     def __repr__(self):
-        return '<{name} {0.name} {call} {0.schedule}'.format(
+        return '<{name}: {0.name} {call} {0.schedule}'.format(
             self,
             call=reprcall(self.task, self.args or (), self.kwargs or {}),
             name=type(self).__name__,
