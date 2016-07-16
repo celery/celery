@@ -19,8 +19,9 @@ from operator import itemgetter
 from kombu import Exchange, Queue, Producer
 from kombu.connection import maybe_channel
 from kombu.mixins import ConsumerMixin
-from kombu.utils import cached_property, uuid
+from kombu.utils.objects import cached_property
 
+from celery import uuid
 from celery.app import app_or_default
 from celery.five import items
 from celery.utils.functional import dictfilter

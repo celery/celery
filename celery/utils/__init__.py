@@ -26,5 +26,6 @@ from .imports import (          # noqa
     instantiate, import_from_cwd, gen_task_name,
 )
 from .functional import chunks, noop                    # noqa
-from kombu.utils import cached_property, uuid   # noqa
+from kombu.utils.objects import cached_property
+from kombu.utils.uuid import uuid   # noqa
 gen_unique_id = uuid

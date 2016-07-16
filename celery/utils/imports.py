@@ -9,7 +9,7 @@ import sys
 
 from contextlib import contextmanager
 
-from kombu.utils import symbol_by_name
+from kombu.utils.imports import symbol_by_name
 
 from celery.five import reload
 

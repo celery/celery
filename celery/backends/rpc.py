@@ -7,7 +7,8 @@ from __future__ import absolute_import, unicode_literals
 
 from kombu import Consumer, Exchange, Producer, Queue
 from kombu.common import maybe_declare
-from kombu.utils import cached_property, register_after_fork
+from kombu.utils.compat import register_after_fork
+from kombu.utils.objects import cached_property
 
 from celery import current_task
 from celery import states

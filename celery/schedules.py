@@ -9,7 +9,7 @@ from bisect import bisect, bisect_left
 from collections import Iterable, namedtuple
 from datetime import datetime, timedelta
 
-from kombu.utils import cached_property
+from kombu.utils.objects import cached_property
 
 from . import current_app
 from .five import python_2_unicode_compatible, range, string_t

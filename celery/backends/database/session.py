@@ -7,7 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
-from kombu.utils import register_after_fork
+from kombu.utils.compat import register_after_fork
 
 ResultModelBase = declarative_base()
 

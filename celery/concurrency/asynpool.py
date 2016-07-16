@@ -37,8 +37,8 @@ from billiard.compat import buf_t, setblocking, isblocking
 from billiard.queues import _SimpleQueue
 from kombu.async import READ, WRITE, ERR
 from kombu.serialization import pickle as _pickle
-from kombu.utils import fxrange
 from kombu.utils.eventio import SELECT_BAD_FD
+from kombu.utils.functional import fxrange
 from vine import promise
 
 from celery.five import Counter, items, values

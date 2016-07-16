@@ -14,7 +14,7 @@ from kombu import Connection
 from kombu.common import QoS, ignore_errors
 from kombu.transport.base import Message
 from kombu.transport.memory import Transport
-from kombu.utils import uuid
+from kombu.utils.uuid import uuid
 
 from celery.bootsteps import RUN, CLOSE, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool

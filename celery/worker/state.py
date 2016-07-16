@@ -14,7 +14,7 @@ import weakref
 import zlib
 
 from kombu.serialization import pickle, pickle_protocol
-from kombu.utils import cached_property
+from kombu.utils.objects import cached_property
 
 from celery import __version__
 from celery.exceptions import WorkerShutdown, WorkerTerminate

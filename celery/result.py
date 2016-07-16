@@ -8,7 +8,7 @@ from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
 
-from kombu.utils import cached_property
+from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
 
 from . import current_app

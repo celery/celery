@@ -6,8 +6,8 @@ from collections import deque
 from threading import Event
 
 from kombu.common import ignore_errors
-from kombu.utils import symbol_by_name
 from kombu.utils.encoding import bytes_to_str
+from kombu.utils.imports import symbol_by_name
 
 from .five import bytes_if_py2, values, with_metaclass
 from .utils.graph import DependencyGraph, GraphFormatter

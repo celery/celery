@@ -10,7 +10,8 @@ import time as _time
 from calendar import monthrange
 from datetime import date, datetime, timedelta, tzinfo
 
-from kombu.utils import cached_property, reprcall
+from kombu.utils.functional import reprcall
+from kombu.utils.objects import cached_property
 
 from pytz import timezone as _timezone, AmbiguousTimeError, FixedOffset
 

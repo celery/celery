@@ -12,7 +12,9 @@ from operator import attrgetter
 from kombu import pools
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
-from kombu.utils import cached_property, register_after_fork, uuid
+from kombu.utils.compat import register_after_fork
+from kombu.utils.objects import cached_property
+from kombu.utils.uuid import uuid
 from vine import starpromise
 from vine.utils import wraps
 

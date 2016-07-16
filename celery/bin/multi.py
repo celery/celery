@@ -106,8 +106,8 @@ from functools import partial
 from subprocess import Popen
 from time import sleep
 
-from kombu.utils import cached_property
 from kombu.utils.encoding import from_utf8
+from kombu.utils.objects import cached_property
 
 from celery import VERSION_BANNER
 from celery.five import items

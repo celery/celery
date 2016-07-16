@@ -12,8 +12,8 @@ from weakref import WeakValueDictionary
 from kombu import pools
 from kombu import Connection, Consumer, Exchange, Producer, Queue
 from kombu.common import Broadcast
-from kombu.utils import cached_property
 from kombu.utils.functional import maybe_list
+from kombu.utils.objects import cached_property
 
 from celery import signals
 from celery.five import items, string_t

@@ -7,7 +7,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 from kombu import pidbox
-from kombu.utils import uuid
+from kombu.utils.uuid import uuid
 
 from celery.five import Queue as FastQueue
 from celery.utils.timer2 import Timer
