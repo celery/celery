@@ -7,7 +7,9 @@ both workers and clients.
 Functions can be connected to these signals, and connected
 functions are called whenever a signal is called.
 
-See :ref:`signals` for more information.
+.. seealso::
+
+    :ref:`signals` for more information.
 """
 from __future__ import absolute_import, unicode_literals
 

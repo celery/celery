@@ -48,7 +48,8 @@ else:
 def instantiate(name, *args, **kwargs):
     """Instantiate class by name.
 
-    See :func:`symbol_by_name`.
+    See Also:
+        :func:`symbol_by_name`.
     """
     return symbol_by_name(name)(*args, **kwargs)
 

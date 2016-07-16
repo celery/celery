@@ -1082,7 +1082,7 @@ class chord(Signature):
 
     Example:
 
-        The chrod:
+        The chord:
 
         .. code-block:: pycon
 

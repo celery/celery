@@ -283,13 +283,12 @@ class Celery(object):
         """Clean up after the application.
 
         Only necessary for dynamically created apps for which you can
-        use the :keyword:`with` statement instead:
+        use the :keyword:`with` statement instead
 
-        .. code-block:: python
-
-            with Celery(set_as_current=False) as app:
-                with app.connection_for_write() as conn:
-                    pass
+        Example:
+            >>> with Celery(set_as_current=False) as app:
+            ...     with app.connection_for_write() as conn:
+            ...         pass
         """
         self._pool = None
         _deregister_app(self)
@@ -498,8 +497,7 @@ class Celery(object):
         The value of the environment variable must be the name
         of a module to import.
 
-        .. code-block:: pycon
-
+        Example:
             >>> os.environ['CELERY_CONFIG_MODULE'] = 'myapp.celeryconfig'
             >>> celery.config_from_envvar('CELERY_CONFIG_MODULE')
         """
@@ -552,7 +550,7 @@ class Celery(object):
 
         If the name is empty, this will be delegated to fix-ups (e.g. Django).
 
-        For example if you have an (imagined) directory tree like this:
+        For example if you have an directory layout like this:
 
         .. code-block:: text
 
@@ -670,14 +668,16 @@ class Celery(object):
     def connection_for_read(self, url=None, **kwargs):
         """Establish connection used for consuming.
 
-        See :meth:`connection` for supported arguments.
+        See Also:
+            :meth:`connection` for supported arguments.
         """
         return self._connection(url or self.conf.broker_read_url, **kwargs)
 
     def connection_for_write(self, url=None, **kwargs):
         """Establish connection used for producing.
 
-        See :meth:`connection` for supported arguments.
+        See Also:
+            :meth:`connection` for supported arguments.
         """
         return self._connection(url or self.conf.broker_write_url, **kwargs)
 
@@ -694,7 +694,6 @@ class Celery(object):
 
         Arguments:
             url: Either the URL or the hostname of the broker to use.
-
             hostname (str): URL, Hostname/IP-address of the broker.
                 If a URL is used, then the other argument below will
                 be taken from the URL instead.
@@ -859,10 +858,7 @@ class Celery(object):
         self.on_after_fork.send(sender=self)
 
     def signature(self, *args, **kwargs):
-        """Return a new :class:`~celery.canvas.Signature` bound to this app.
-
-        See :meth:`~celery.signature`
-        """
+        """Return a new :class:`~celery.Signature` bound to this app."""
         kwargs['app'] = self
         return self.canvas.signature(*args, **kwargs)
 
@@ -983,19 +979,28 @@ class Celery(object):
 
     @cached_property
     def Worker(self):
-        """Worker application. See :class:`~@Worker`."""
+        """Worker application.
+
+        See Also:
+            :class:`~@Worker`.
+        """
         return self.subclass_with_self('celery.apps.worker:Worker')
 
     @cached_property
     def WorkController(self, **kwargs):
-        """Embeddable worker. See :class:`~@WorkController`."""
+        """Embeddable worker.
+
+        See Also:
+            :class:`~@WorkController`.
+        """
         return self.subclass_with_self('celery.worker:WorkController')
 
     @cached_property
     def Beat(self, **kwargs):
         """:program:`celery beat` scheduler application.
 
-        See :class:`~@Beat`.
+        See Also:
+            :class:`~@Beat`.
         """
         return self.subclass_with_self('celery.apps.beat:Beat')
 
@@ -1012,7 +1017,8 @@ class Celery(object):
     def AsyncResult(self):
         """Create new result instance.
 
-        See :class:`celery.result.AsyncResult`.
+        See Also:
+            :class:`celery.result.AsyncResult`.
         """
         return self.subclass_with_self('celery.result:AsyncResult')
 
@@ -1024,7 +1030,8 @@ class Celery(object):
     def GroupResult(self):
         """Create new group result instance.
 
-        See :class:`celery.result.GroupResult`.
+        See Also:
+            :class:`celery.result.GroupResult`.
         """
         return self.subclass_with_self('celery.result:GroupResult')
 
@@ -1032,7 +1039,8 @@ class Celery(object):
     def pool(self):
         """Broker connection pool: :class:`~@pool`.
 
-        This attribute is not related to the workers concurrency pool.
+        Note:
+            This attribute is not related to the workers concurrency pool.
         """
         if self._pool is None:
             self._ensure_after_fork()
@@ -1115,7 +1123,8 @@ class Celery(object):
     def tasks(self):
         """Task registry.
 
-        Accessing this attribute will also finalize the app.
+        Warning:
+            Accessing this attribute will also auto-finalize the app.
         """
         self.finalize(auto=True)
         return self._tasks

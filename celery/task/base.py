@@ -184,15 +184,14 @@ class Task(BaseTask):
         Should be replaced with :meth:`@Celery.connection`
         instead, or by acquiring connections from the connection pool:
 
-        .. code-block:: python
+        Examples:
+            >>> # using the connection pool
+            >>> with celery.pool.acquire(block=True) as conn:
+            ...     pass
 
-            # using the connection pool
-            with celery.pool.acquire(block=True) as conn:
-                ...
-
-            # establish fresh connection
-            with celery.connection_for_write() as conn:
-                ...
+            >>> # establish fresh connection
+            >>> with celery.connection_for_write() as conn:
+            ...     pass
         """
         return self._get_app().connection_for_write()
 
@@ -208,7 +207,7 @@ class Task(BaseTask):
                 with app.amqp.Producer(conn) as prod:
                     my_task.apply_async(producer=prod)
 
-            or event better is to use the :class:`@amqp.producer_pool`:
+            or even better is to use the :class:`@amqp.producer_pool`:
 
             .. code-block:: python
 
@@ -230,7 +229,7 @@ class Task(BaseTask):
         """Deprecated method used to get consumer for the queue
         this task is sent to.
 
-        Should be replaced with :class:`@amqp.TaskConsumer` instead:
+        Should be replaced by :class:`@amqp.TaskConsumer`.
         """
         Q = self._get_app().amqp
         connection = connection or self.establish_connection()
