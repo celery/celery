@@ -16,8 +16,8 @@ from time import monotonic
 from billiard import ensure_multiprocessing
 from billiard.context import Process
 from billiard.common import reset_signals
-from kombu.utils import cached_property, reprcall
-from kombu.utils.functional import maybe_evaluate
+from kombu.utils.functional import maybe_evaluate, reprcall
+from kombu.utils.objects import cached_property
 
 from . import __version__
 from . import platforms
@@ -133,7 +133,7 @@ class ScheduleEntry:
         return iter(vars(self).items())
 
     def __repr__(self):
-        return '<{name} {0.name} {call} {0.schedule}'.format(
+        return '<{name}: {0.name} {call} {0.schedule}'.format(
             self,
             call=reprcall(self.task, self.args or (), self.kwargs or {}),
             name=type(self).__name__,

@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from functools import partial
 
 from kombu import Queue
-from kombu.utils import symbol_by_name
+from kombu.utils.imports import symbol_by_name
 from vine.utils import wraps
 
 from celery import Celery

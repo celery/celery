@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from queue import Queue as FastQueue
 
 from kombu import pidbox
-from kombu.utils import uuid
+from kombu.utils.uuid import uuid
 
 from celery.utils.timer2 import Timer
 from celery.worker import WorkController as _WC

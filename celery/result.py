@@ -4,7 +4,7 @@ from collections import deque
 from contextlib import contextmanager
 from time import monotonic
 
-from kombu.utils import cached_property
+from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
 
 from . import current_app

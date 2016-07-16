@@ -10,7 +10,7 @@ from imp import reload
 from types import ModuleType
 from typing import Any, Callable, Iterator, Optional
 
-from kombu.utils import symbol_by_name
+from kombu.utils.imports import symbol_by_name
 
 #: Billiard sets this when execv is enabled.
 #: We use it to find out the name of the original ``__main__``
@@ -41,7 +41,8 @@ def qualname(obj: Any) -> str:
 def instantiate(name: Any, *args, **kwargs) -> Any:
     """Instantiate class by name.
 
-    See :func:`symbol_by_name`.
+    See Also:
+        :func:`symbol_by_name`.
     """
     return symbol_by_name(name)(*args, **kwargs)
 

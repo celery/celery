@@ -5,7 +5,7 @@ from threading import Event
 from typing import Any, Callable, Mapping, Optional, Set, Sequence, Tuple
 
 from kombu.common import ignore_errors
-from kombu.utils import symbol_by_name
+from kombu.utils.imports import symbol_by_name
 
 from .utils.abstract import AbstractApp
 from .utils.graph import DependencyGraph, GraphFormatter

@@ -15,7 +15,7 @@ from collections import namedtuple
 
 from billiard.compat import get_fdmax, close_open_fds
 # fileno used to be in this module
-from kombu.utils import maybe_fileno
+from kombu.utils.compat import maybe_fileno
 from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 

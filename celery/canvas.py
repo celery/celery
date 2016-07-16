@@ -11,7 +11,9 @@ from functools import partial as _partial, reduce
 from operator import itemgetter
 from itertools import chain as _chain
 
-from kombu.utils import cached_property, fxrange, reprcall, uuid
+from kombu.utils.functional import fxrange, reprcall
+from kombu.utils.objects import cached_property
+from kombu.utils.uuid import uuid
 from vine import barrier
 
 from celery._state import current_app
@@ -1060,7 +1062,7 @@ class chord(Signature):
 
     Example:
 
-        The chrod:
+        The chord:
 
         .. code-block:: pycon
 

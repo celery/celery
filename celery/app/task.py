@@ -3,7 +3,7 @@
 import sys
 
 from billiard.einfo import ExceptionInfo
-from kombu.utils import uuid
+from kombu.utils.uuid import uuid
 
 from celery import current_app, group
 from celery import states

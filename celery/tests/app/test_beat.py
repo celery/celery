@@ -76,7 +76,7 @@ class test_ScheduleEntry(AppCase):
 
     def test_repr(self):
         entry = self.create_entry()
-        self.assertIn('<Entry:', repr(entry))
+        self.assertIn('<ScheduleEntry:', repr(entry))
 
     def test_reduce(self):
         entry = self.create_entry(schedule=timedelta(seconds=10))

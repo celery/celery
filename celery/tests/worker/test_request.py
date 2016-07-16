@@ -8,8 +8,8 @@ from datetime import datetime, timedelta
 from time import monotonic
 
 from billiard.einfo import ExceptionInfo
-from kombu.utils import uuid
 from kombu.utils.encoding import from_utf8, safe_str, safe_repr
+from kombu.utils.uuid import uuid
 
 from celery import states
 from celery.app.trace import (
