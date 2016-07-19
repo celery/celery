@@ -650,7 +650,7 @@ power of AMQP routing, see the :ref:`Routing Guide <guide-routing>`.
 Remote Control
 ==============
 
-If you're using RabbitMQ (AMQP) or Qpid as a broker then
+If you're using RabbitMQ (AMQP), Redis or Qpid as the broker then
 you can control and inspect the worker at runtime.
 
 For example you can see what tasks the worker is currently working on:

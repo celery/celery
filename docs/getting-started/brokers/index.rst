@@ -18,6 +18,7 @@ Broker Instructions
     :maxdepth: 1
 
     rabbitmq
+    redis
     sqs
 
 .. _broker-overview:
@@ -33,6 +34,8 @@ individual transport (see :ref:`broker_toc`).
 | **Name**      | **Status**   | **Monitoring** | **Remote Control** |
 +---------------+--------------+----------------+--------------------+
 | *RabbitMQ*    | Stable       | Yes            | Yes                |
++---------------+--------------+----------------+--------------------+
+| *Redis*       | Stable       | Yes            | Yes                |
 +---------------+--------------+----------------+--------------------+
 | *Amazon SQS*  | Stable       | No             | No                 |
 +---------------+--------------+----------------+--------------------+

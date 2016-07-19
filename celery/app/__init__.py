@@ -101,11 +101,11 @@ def shared_task(*args, **kwargs):
         ... def add(x, y):
         ...     return x + y
 
-        >>> app1 = Celery(broker='amqp://A.example.com')
+        >>> app1 = Celery(broker='amqp://')
         >>> add.app is app1
         True
 
-        >>> app2 = Celery(broker='amqp://B.example.com')
+        >>> app2 = Celery(broker='redis://')
         >>> add.app is app2
     """
 
