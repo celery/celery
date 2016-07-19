@@ -44,9 +44,13 @@ and also supported on PyPy.
 Preface
 =======
 
+XXX To be written
+
 
 Wall of Contributors
 --------------------
+
+XXX Needs update
 
 Aaron McMillin, Adam Renberg, Adrien Guinet, Ahmet Demir, Aitor Gómez-Goiri,
 Albert Wang, Alex Koshelev, Alex Rattray, Alex Williams, Alexander Koshelev,
@@ -127,11 +131,40 @@ Removed features
 
 - Jython is no longer supported.
 
+Features removed for simplicity
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 - Webhook task machinery (``celery.task.http``) has been removed.
 
-    Nowadays it's so easy to use the :pypi:`requests` module to write
-    webhook tasks manually, so there's no real reason to keep this
-    legacy implementation anymore.
+    Nowadays it's easy to use the :pypi:`requests` module to write
+    webhook tasks manually.  We would love to use requests but we
+    are simply unable to as there's a very vocal 'anti-dependency'
+    mob in the Python community
+
+    If you need backwards compatibility
+    you can simply copy + paste the 3.1 version of the module and make sure
+    it's imported by the worker:
+    https://github.com/celery/celery/blob/3.1/celery/task/http.py
+
+- Task no longer sends error emails.
+
+    This also removes support for ``app.mail_admins``, and any functionality
+    related to sending emails.
+
+- ``celery.contrib.batches`` has been removed.
+
+    This was an experimental feature, so not covered by our deprecation
+    timeline guarantee.
+
+Features removed for lack of funding
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We announced with the 3.1 release that some transports were
+moved to experimental status, and that there would be no official
+support for the transports, citing a lack of resources.
+
+As this subtle hint for the need of funding failed
+we have removed them completely, breaking backwards compatibility.
 
 - Using MongoDB as a broker is no longer supported.
 
@@ -145,18 +178,33 @@ Removed features
 
 - Using Beanstalk as a broker is no longer supported.
 
-- Task no longer sends error emails.
-
-    This also removes support for ``app.mail_admins``, and any functionality
-    related to sending emails.
-
-- ``celery.contrib.batches`` has been removed.
+In addition some features have been removed completely so that
+attempting to use them will raise an exception:
 
 - The ``--autoreload`` feature has been removed.
 
+  This was an experimental feature, and not covered by our deprecation
+  timeline guarantee.  The flag is removed completely so the worker
+  will crash at startup when present.  Luckily this
+  flag is not used in production systems.
+
 - The ``--autoscale`` feature has been removed.
 
-- The ``threads`` pool is no longer supported and has been removed.
+    This flag is only used by companies to save money, but had
+    bugs either nobody cared to work on, or sponsor a few hours of work to get it fixed.
+
+    The flag has been removed completely, so you must remove this command-line
+    argument or your workers will crash.
+
+- The experimental ``threads`` pool is no longer supported and has been removed.
+
+- The force_execv feature is no longer supported.
+
+    The ``celery worker`` command now ignores the ``--no-execv``,
+    ``--force-execv``, and the ``CELERYD_FORCE_EXECV`` setting.
+
+    This flag will be removed completely in 5.0 and the worker
+    will raise an error.
 
 - The old legacy "amqp" result backend has been deprecated, and will
   be removed in Celery 5.0.
@@ -164,27 +212,18 @@ Removed features
     Please use the ``rpc`` result backend for RPC-style calls, and a
     persistent result backend for multi-consumer results.
 
-    The old "amqp" result backends has been discouraged in use for a long time
-    now, as it creates on queue per task it does not scale well and easily
-    leads to trouble.
 
-- The force_execv feature is no longer supported.
-
-    Enabling this usually only caused more problems.
-
-    The ``celery worker`` command no longer suports the ``--no-execv`` and
-    ``--force-execv`` options, and the ``CELERYD_FORCE_EXECV`` setting is
-    ignored.
+**Now to the good news...**
 
 Lowercase setting names
 -----------------------
 
-In the pursuit of beauty all settings have been renamed to be in all
-lowercase, and some setting names have been renamed for naming consistency.
+In the pursuit of beauty all settings are now renamed to be in all
+lowercase and some setting names have been renamed for consistency.
 
 This change is fully backwards compatible so you can still use the uppercase
 setting names, but we would like you to upgrade as soon as possible and
-you can even do so automatically using the :program:`celery upgrade settings`
+you can this automatically using the :program:`celery upgrade settings`
 command:
 
 .. code-block:: console
@@ -335,7 +374,7 @@ no longer has any effect.
 Task argument checking
 ----------------------
 
-The arguments of the task is now verified when calling the task,
+The arguments of the task are now verified when calling the task,
 even asynchronously:
 
 .. code-block:: pycon
@@ -360,15 +399,15 @@ Redis Events not backward compatible
 ------------------------------------
 
 The Redis ``fanout_patterns`` and ``fanout_prefix`` transport
-options are now enabled by default, which means that workers
-running 4.0 cannot see workers running 3.1 on the default configuration,
-and vice versa.
+options are now enabled by default.
 
-This is only related to monitor event messages, the workers should still
-execute tasks as normally.
+Workers/monitors without these flags enabled will not be able to
+see workers with this flag disabled.  They can still execute tasks,
+but they cannot receive each others monitoring messages.
 
-You can avoid this situation by configuring the 3.1 workers (and clients)
-to enable these settings, before upgrading to 4.0:
+You can upgrade in a backward compatible manner by first configuring
+your 3.1 workers and monitors to enable the settings, before the final
+upgrade to 4.0:
 
 .. code-block:: python
 
@@ -390,11 +429,14 @@ and the Django handler will automatically find your installed apps:
 The Django integration :ref:`example in the documentation
 <django-first-steps>` has been updated to use the argument-less call.
 
+This also ensures comaptibility with the new, ehm, ``appconfig`` stuff
+introduced in recent Django versions.
+
 Worker direct queues no longer use auto-delete.
 -----------------------------------------------
 
 Workers/clients running 4.0 will no longer be able to send
-worker direct messages to worker running older versions, and vice versa.
+worker direct messages to workers running older versions, and vice versa.
 
 If you're relying on worker direct messages you should upgrade
 your 3.x workers and clients to use the new routing settings first,
@@ -971,7 +1013,7 @@ Requirements
 
 - Now depends on :pypi:`billiard` version 3.5.
 
-- No longer depends on :pypi:`anyjson` :(
+- No longer depends on :pypi:`anyjson`. Good-bye old friend :(
 
 
 Tasks
@@ -1524,8 +1566,6 @@ Events
     - ``Worker.on_heartbeat``
 
         Use ``Worker.event('heartbeat', timestamp, received, fields)``
-
-
 
 - Removals for class :class:`celery.events.state.Task`:
 

@@ -196,8 +196,10 @@ class worker(Command):
     namespace = 'worker'
     enable_config_from_cmdline = True
     supports_args = False
+    removed_flags = {'--no-execv', '--force-execv'}
 
     def run_from_argv(self, prog_name, argv=None, command=None):
+        argv = [x for x in argv if x not in self.removed_flags]
         command = sys.argv[0] if command is None else command
         argv = sys.argv[1:] if argv is None else argv
         # parse options before detaching so errors can be handled.
