@@ -120,31 +120,6 @@ there are no convenient alternatives in older versions.
 Celery 4.x will continue to work on Python 2.7, 3.4, 3.5; just as Celery 3.x
 still works on Python 2.6.
 
-Support for Redis as a broker is deprecated
--------------------------------------------
-
-The Redis transport will no longer be supported going forward.
-
-It is with a heavy heart, and the decision was not taken lightly but
-there are several open issues related to this transport and as a project
-without a budget we don't have the resources to resolve them.
-
-The issues have been open for a very long time, and we are doing our
-users a disservice by keeping them open with no resolution in sight.
-
-As Redis is such a huge part of Celery development
-time, this is time we can spend on moving the project
-forward into the asyncio era of Python 3.6.
-
-The transport is still active, so you can still use it, but it has been
-undocumented so that new users will not find it.  Unless the situation
-changes the transport will be removed completely starting with Celery 5.0.
-
-.. note::
-
-    Using Redis as a result backend is still supported, and has some
-    really nice improvements in this version.  Read on for the good news :-)
-
 Removed features
 ----------------
 
@@ -169,7 +144,6 @@ Removed features
 - Using IronMQ as a broker is no longer supported.
 
 - Using Beanstalk as a broker is no longer supported.
-
 
 - Task no longer sends error emails.
 
