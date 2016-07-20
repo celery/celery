@@ -4,13 +4,6 @@
  Using Amazon SQS
 ==================
 
-.. admonition:: Experimental Status
-
-    The SQS transport is in need of improvements in many areas and there
-    are several open bugs.  Unfortunately we don't have the resources or funds
-    required to improve the situation, so we're looking for contributors
-    and partners willing to help.
-
 .. _broker-sqs-installation:
 
 Installation
