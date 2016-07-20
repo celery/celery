@@ -137,7 +137,10 @@ class Command:
 
     # Some programs (multi) does not want to load the app specified
     # (Issue #1008).
-    respects_app_option = True
+    requires_app = True
+
+    # Some programs (multi) does not want to set up fixups etc.
+    fake_app = False
 
     #: List of options to parse before parsing other options.
     preload_options = (
@@ -176,7 +179,7 @@ class Command:
                  stdout=None, stderr=None, quiet=False, on_error=None,
                  on_usage_error=None):
         self.app = app
-        self.get_app = get_app or self._get_default_app
+        self.get_app = get_app
         self.stdout = stdout or sys.stdout
         self.stderr = stderr or sys.stderr
         self._colored = None
@@ -408,15 +411,8 @@ class Command:
         config = preload_options.get('config')
         if config:
             os.environ['CELERY_CONFIG_MODULE'] = config
-        if self.respects_app_option:
-            if app:
-                self.app = self.find_app(app)
-            elif self.app is None:
-                self.app = self.get_app(loader=loader)
-            if self.enable_config_from_cmdline:
-                argv = self.process_cmdline_config(argv)
-        else:
-            self.app = Celery(fixups=[])
+
+        self.initialize_app(app, loader)
 
         user_preload = tuple(self.app.user_options['preload'] or ())
         if user_preload:
@@ -427,6 +423,25 @@ class Command:
                 sender=self, app=self.app, options=user_options,
             )
         return argv
+
+    def initialize_app(self, app=None, loader=None):
+        if self.requires_app:
+            if app:
+                self.app = self.find_app(app)
+            elif self.app is None:
+                self.app = self.get_default_app(app, loader)
+            if self.enable_config_from_cmdline:
+                argv = self.process_cmdline_config(argv)
+        else:
+            if self.fake_app:
+                self.app = Celery(fixups=[])
+            else:
+                self.app = self.get_default_app(app, loader)
+
+    def get_default_app(self, app=None, loader=None):
+        if self.get_app is not None:
+            return self.get_app(loader=loader)
+        raise ImproperlyConfigured('Missing required --app|-A option')
 
     def find_app(self, app):
         from celery.app.utils import find_app

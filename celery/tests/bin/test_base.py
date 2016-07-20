@@ -211,9 +211,9 @@ class test_Command(AppCase):
             if prev is not None:
                 os.environ['CELERY_LOADER'] = prev
 
-    def test_setup_app_no_respect(self):
+    def test_setup_app__no_requires_app(self):
         cmd = MockCommand(app=self.app)
-        cmd.respects_app_option = False
+        cmd.requires_app = False
         with patch('celery.bin.base.Celery') as cp:
             cmd.setup_app_from_commandline(['--app=x.y:z'])
             cp.assert_called()

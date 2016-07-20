@@ -288,14 +288,18 @@ class test_CeleryCommand(AppCase):
         with self.assertRaises(SystemExit):
             x.execute_from_commandline()
 
-        x.respects_app_option = True
+        x.requires_app = True
+        x.fake_app = False
         with self.assertRaises(SystemExit):
             x.execute_from_commandline(['celery', 'multi'])
-        self.assertFalse(x.respects_app_option)
-        x.respects_app_option = True
+        self.assertFalse(x.requires_app)
+        self.assertTrue(x.fake_app)
+        x.requires_app = True
+        x.fake_app = False
         with self.assertRaises(SystemExit):
             x.execute_from_commandline(['manage.py', 'celery', 'multi'])
-        self.assertFalse(x.respects_app_option)
+        self.assertFalse(x.requires_app)
+        self.assertTrue(x.fake_app)
 
     def test_with_pool_option(self):
         x = CeleryCommand(app=self.app)

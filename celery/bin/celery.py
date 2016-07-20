@@ -333,7 +333,8 @@ def main(argv=None):
 
 class multi(Command):
     """Start multiple worker instances."""
-    respects_app_option = False
+    fake_app = True
+    requires_app = False
 
     def get_options(self):
         pass
@@ -1154,7 +1155,8 @@ class CeleryCommand(Command):
     def execute_from_commandline(self, argv=None):
         argv = sys.argv if argv is None else argv
         if 'multi' in argv[1:3]:  # Issue 1008
-            self.respects_app_option = False
+            self.requires_app = False
+            self.fake_app = True
         try:
             sys.exit(determine_exit_status(
                 super().execute_from_commandline(argv)))
