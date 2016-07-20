@@ -133,8 +133,8 @@ class Beat(object):
             loader=qualname(self.app.loader),
             scheduler=qualname(scheduler),
             scheduler_info=scheduler.info,
-            hmax_interval=humanize_seconds(service.max_interval),
-            max_interval=service.max_interval,
+            hmax_interval=humanize_seconds(scheduler.max_interval),
+            max_interval=scheduler.max_interval,
         )
 
     def set_process_title(self):
