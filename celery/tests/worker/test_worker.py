@@ -616,7 +616,7 @@ class test_Consumer(AppCase):
         self.assertTrue(connections[0].closed)
 
     @patch('kombu.connection.Connection._establish_connection')
-    @patch('kombu.utils.sleep')
+    @patch('kombu.utils.functional.sleep')
     def test_connect_errback(self, sleep, connect):
         c = self.NoopConsumer()
         Transport.connection_errors = (ChannelError,)
