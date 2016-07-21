@@ -215,6 +215,31 @@ attempting to use them will raise an exception:
 
 **Now to the good news...**
 
+New Task Message Protocol
+-------------------------
+.. :sha:`e71652d384b1b5df2a4e6145df9f0efb456bc71c`
+
+This version introduces a brand new task message protocol,
+the first major change to the protocol since the beginning of the project.
+
+The new protocol is enabled by default in this version and since the new
+version is not backwards compatible you have to be careful when upgrading.
+
+The 3.1.24 version was released to add compatibility with the new protocol
+so the easiest way to upgrade is to upgrade to that version first, then
+upgrade to 4.0 in a second deployment.
+
+If you wish to keep using the old protocol you may also configure
+the protocol version number used:
+
+.. code-block:: python
+
+    app = Celery()
+    app.conf.task_protocol = 1
+
+Read more about the features available in the new protocol in the news
+section found later in this document.
+
 Lowercase setting names
 -----------------------
 
@@ -483,28 +508,8 @@ to use the new umbrella command:
 News
 ====
 
-New Task Message Protocol
--------------------------
-.. :sha:`e71652d384b1b5df2a4e6145df9f0efb456bc71c`
-
-This version introduces a brand new task message protocol,
-the first major change to the protocol since the beginning of the project.
-
-The new protocol is backwards incompatible, so you need to set
-the :setting:`task_protocol` configuration option to ``2`` to take advantage:
-
-.. code-block:: python
-
-    app = Celery()
-    app.conf.task_protocol = 2
-
-Using the new protocol is recommended for everybody who don't
-need backwards compatibility.
-
-Once enabled task messages sent is unreadable to older versions of Celery.
-
 New protocol highlights
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 The new protocol fixes many problems with the old one, and enables
 some long-requested features:

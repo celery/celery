@@ -285,8 +285,14 @@ The default is to send uncompressed messages.
 ``task_protocol``
 ~~~~~~~~~~~~~~~~~
 
+.. versionadded: 4.0
+
 Default task message protocol version.
-Supports protocols: 1 and 2 (default is 1 for backwards compatibility).
+Supports protocols: 1 and 2.
+
+Protocol 2 is supported by 3.1.24 and 4.x+.
+
+Default is 2 since 4.0.0.
 
 .. setting:: task_serializer
 

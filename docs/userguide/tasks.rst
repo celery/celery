@@ -450,9 +450,9 @@ Hiding sensitive information in arguments
 
 .. versionadded:: 4.0
 
-When using :setting:`task_protocol` 2 or higher, you can override how
-positional arguments and keyword arguments are represented in logs and in
-monitoring events using the ``argsrepr`` and ``kwargsrepr`` calling
+When using :setting:`task_protocol` 2 or higher (default since 4.0), you can
+override how positional arguments and keyword arguments are represented in logs
+and monitoring events using the ``argsrepr`` and ``kwargsrepr`` calling
 arguments:
 
 .. code-block:: pycon
