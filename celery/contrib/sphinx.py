@@ -48,7 +48,7 @@ class TaskDocumenter(FunctionDocumenter):
         return isinstance(member, BaseTask) and getattr(member, '__wrapped__')
 
     def format_args(self):
-        wrapped = getattr(self.object, '__wrapped__')
+        wrapped = getattr(self.object, '__wrapped__', None)
         if wrapped is not None:
             argspec = getfullargspec(wrapped)
             fmt = formatargspec(*argspec)
