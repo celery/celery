@@ -337,7 +337,7 @@ def add_chord_task(app):
             ], app=self.app)
             # - eager applies the group inline
             if eager:
-                return header.apply(args=partial_args, task_id=group_id)
+                return header.apply(partial_args, task_id=group_id)
 
             body['chord_size'] = len(header.tasks)
             results = header.freeze(group_id=group_id, chord=body).results
@@ -375,5 +375,5 @@ def add_chord_task(app):
             res = super(Chord, self).apply(args, dict(kwargs, eager=True),
                                            **options)
             return maybe_signature(body, app=self.app).apply(
-                args=(res.get(propagate=propagate).get(), ))
+                (res.get(propagate=propagate).get(), ))
     return Chord

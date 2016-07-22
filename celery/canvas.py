@@ -365,7 +365,11 @@ class chain(Signature):
     def from_dict(self, d, app=None):
         tasks = [maybe_signature(t, app=app) for t in d['kwargs']['tasks']]
         if d['args'] and tasks:
-            # partial args passed on to first task in chain (Issue #1057).
+            # Partial args passed on to first task in chain (Issue #1057).
+            # We need to clone first task because we're changing it by adding
+            # args. The task in the chain should change, but not the original
+            # task.
+            tasks[0] = tasks[0].clone()
             tasks[0]['args'] = tasks[0]._merge(d['args'])[0]
         return _upgrade(d, chain(*tasks, app=app, **d['options']))
 
@@ -583,9 +587,9 @@ class chord(Signature):
 
     def apply(self, partial_args=(), args=(), kwargs={}, **options):
         """Apply the chord task with partial_args."""
-        # partial_args which will passed on to the header tasks are put in
-        # kwargs to be passed on.
-        kwargs['partial_args'] = partial_args
+        # partial_args will passed on to the header tasks.
+        kwargs['partial_args'] = (
+            tuple(partial_args) + tuple(self.kwargs.get('partial_args', ())))
         # For callbacks: extra args are prepended to the stored args.
         args, kwargs, options = self._merge(args, kwargs, options)
         return self.type.apply(args, kwargs, **options)
@@ -629,7 +633,8 @@ class chord(Signature):
         return self.apply_async(partial_args)
 
     def apply_async(self, partial_args=(), args=(), kwargs={}, task_id=None,
-                    **options):
+                    producer=None, publisher=None, connection=None,
+                    router=None, result_cls=None, **options):
         args = (tuple(args) + tuple(self.args)
                 if args and not self.immutable else self.args)
         body = kwargs.get('body') or self.kwargs['body']
@@ -640,6 +645,10 @@ class chord(Signature):
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
             return self.apply(partial_args, args, kwargs,
                               task_id=task_id, **options)
+        # If not eagerly executed, we'd need to have previous partial_args to
+        # hand over to the chord task.
+        partial_args = (
+            tuple(partial_args) + tuple(self.kwargs.get('partial_args', ())))
         res = body.freeze(task_id)
         parent = _chord(self.tasks, body, partial_args, **options)
         res.parent = parent
@@ -649,8 +658,15 @@ class chord(Signature):
         return self.apply_async(
             (), (), {'body': body} if body else {}, **options)
 
-    def clone(self, *args, **kwargs):
+    def clone(self, partial_args=(), *args, **kwargs):
         s = Signature.clone(self, *args, **kwargs)
+        # Need to save partial_args
+        if partial_args:
+            if s.kwargs.get('partial_args'):
+                s.kwargs['partial_args'] = (
+                    tuple(partial_args) + tuple(s.kwargs['partial_args']))
+            else:
+                s.kwargs['partial_args'] = tuple(partial_args)
         # need to make copy of body
         try:
             s.kwargs['body'] = s.kwargs['body'].clone()
