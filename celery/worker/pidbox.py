@@ -1,3 +1,4 @@
+"""Worker Pidbox (remote control)."""
 from __future__ import absolute_import, unicode_literals
 
 import socket
@@ -19,6 +20,7 @@ debug, error, info = logger.debug, logger.error, logger.info
 
 
 class Pidbox(object):
+
     consumer = None
 
     def __init__(self, c):
@@ -106,7 +108,6 @@ class gPidbox(Pidbox):
         stopped = self._node_stopped = threading.Event()
         try:
             with c.connect() as connection:
-
                 info('pidbox: Connected to %s.', connection.as_uri())
                 self._do_reset(c, connection)
                 while not shutdown.is_set() and c.connection:

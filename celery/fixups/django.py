@@ -1,10 +1,12 @@
+"""Django-specific customization."""
 from __future__ import absolute_import, unicode_literals
 
 import os
 import sys
 import warnings
 
-from kombu.utils import cached_property, symbol_by_name
+from kombu.utils.imports import symbol_by_name
+from kombu.utils.objects import cached_property
 
 from datetime import datetime
 from importlib import import_module

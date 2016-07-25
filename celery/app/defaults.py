@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.app.defaults
-    ~~~~~~~~~~~~~~~~~~~
-
-    Configuration introspection and defaults.
-
-"""
+"""Configuration introspection and defaults."""
 from __future__ import absolute_import, unicode_literals
 
 import sys
@@ -218,7 +212,7 @@ NAMESPACES = Namespace(
             False, type='bool', old={'celery_eager_propagates_exceptions'},
         ),
         ignore_result=Option(False, type='bool'),
-        protocol=Option(1, type='int', old={'celery_task_protocol'}),
+        protocol=Option(2, type='int', old={'celery_task_protocol'}),
         publish_retry=Option(
             True, type='bool', old={'celery_task_publish_retry'},
         ),

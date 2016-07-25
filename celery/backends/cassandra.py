@@ -1,11 +1,5 @@
 # -* coding: utf-8 -*-
-"""
-    ``celery.backends.cassandra``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Apache Cassandra result store backend using DataStax driver
-
-"""
+"""Apache Cassandra result store backend using the DataStax driver."""
 from __future__ import absolute_import, unicode_literals
 
 import sys
@@ -74,9 +68,10 @@ else:
 class CassandraBackend(BaseBackend):
     """Cassandra backend utilizing DataStax driver
 
-    :raises celery.exceptions.ImproperlyConfigured: if
-        module :pypi:`cassandra-driver` is not available.
-
+    Raises:
+        celery.exceptions.ImproperlyConfigured:
+            if module :pypi:`cassandra-driver` is not available,
+            or if the :setting:`cassandra_servers` setting is not set.
     """
 
     #: List of Cassandra servers with format: ``hostname``.
@@ -86,46 +81,34 @@ class CassandraBackend(BaseBackend):
 
     def __init__(self, servers=None, keyspace=None, table=None, entry_ttl=None,
                  port=9042, **kwargs):
-        """Initialize Cassandra backend.
-
-        Raises :class:`celery.exceptions.ImproperlyConfigured` if
-        the :setting:`cassandra_servers` setting is not set.
-
-        """
         super(CassandraBackend, self).__init__(**kwargs)
 
         if not cassandra:
             raise ImproperlyConfigured(E_NO_CASSANDRA)
 
         conf = self.app.conf
-        self.servers = (servers or
-                        conf.get('cassandra_servers', None))
-        self.port = (port or
-                     conf.get('cassandra_port', None))
-        self.keyspace = (keyspace or
-                         conf.get('cassandra_keyspace', None))
-        self.table = (table or
-                      conf.get('cassandra_table', None))
+        self.servers = servers or conf.get('cassandra_servers', None)
+        self.port = port or conf.get('cassandra_port', None)
+        self.keyspace = keyspace or conf.get('cassandra_keyspace', None)
+        self.table = table or conf.get('cassandra_table', None)
 
         if not self.servers or not self.keyspace or not self.table:
             raise ImproperlyConfigured('Cassandra backend not configured.')
 
-        expires = (entry_ttl or conf.get('cassandra_entry_ttl', None))
+        expires = entry_ttl or conf.get('cassandra_entry_ttl', None)
 
-        self.cqlexpires = (Q_EXPIRES.format(expires)
-                           if expires is not None else '')
+        self.cqlexpires = (
+            Q_EXPIRES.format(expires) if expires is not None else '')
 
         read_cons = conf.get('cassandra_read_consistency') or 'LOCAL_QUORUM'
         write_cons = conf.get('cassandra_write_consistency') or 'LOCAL_QUORUM'
 
         self.read_consistency = getattr(
             cassandra.ConsistencyLevel, read_cons,
-            cassandra.ConsistencyLevel.LOCAL_QUORUM,
-        )
+            cassandra.ConsistencyLevel.LOCAL_QUORUM)
         self.write_consistency = getattr(
             cassandra.ConsistencyLevel, write_cons,
-            cassandra.ConsistencyLevel.LOCAL_QUORUM,
-        )
+            cassandra.ConsistencyLevel.LOCAL_QUORUM)
 
         self.auth_provider = None
         auth_provider = conf.get('cassandra_auth_provider', None)
@@ -145,64 +128,64 @@ class CassandraBackend(BaseBackend):
     def process_cleanup(self):
         if self._connection is not None:
             self._connection.shutdown()  # also shuts down _session
-
         self._connection = None
         self._session = None
 
     def _get_connection(self, write=False):
         """Prepare the connection for action
 
-        :param write: bool - are we a writer?
-
+        Arguments:
+            write (bool): are we a writer?
         """
-        if self._connection is None:
-            try:
-                self._connection = cassandra.cluster.Cluster(
-                    self.servers, port=self.port,
-                    auth_provider=self.auth_provider)
-                self._session = self._connection.connect(self.keyspace)
+        if self._connection is not None:
+            return
+        try:
+            self._connection = cassandra.cluster.Cluster(
+                self.servers, port=self.port,
+                auth_provider=self.auth_provider)
+            self._session = self._connection.connect(self.keyspace)
 
-                # We are forced to do concatenation below, as formatting would
-                # blow up on superficial %s that will be processed by Cassandra
-                self._write_stmt = cassandra.query.SimpleStatement(
-                    Q_INSERT_RESULT.format(
-                        table=self.table, expires=self.cqlexpires),
+            # We are forced to do concatenation below, as formatting would
+            # blow up on superficial %s that will be processed by Cassandra
+            self._write_stmt = cassandra.query.SimpleStatement(
+                Q_INSERT_RESULT.format(
+                    table=self.table, expires=self.cqlexpires),
+            )
+            self._write_stmt.consistency_level = self.write_consistency
+
+            self._read_stmt = cassandra.query.SimpleStatement(
+                Q_SELECT_RESULT.format(table=self.table),
+            )
+            self._read_stmt.consistency_level = self.read_consistency
+
+            if write:
+                # Only possible writers "workers" are allowed to issue
+                # CREATE TABLE. This is to prevent conflicting situations
+                # where both task-creator and task-executor would issue it
+                # at the same time.
+
+                # Anyway; if you're doing anything critical, you should
+                # have created this table in advance, in which case
+                # this query will be a no-op (AlreadyExists)
+                self._make_stmt = cassandra.query.SimpleStatement(
+                    Q_CREATE_RESULT_TABLE.format(table=self.table),
                 )
-                self._write_stmt.consistency_level = self.write_consistency
+                self._make_stmt.consistency_level = self.write_consistency
 
-                self._read_stmt = cassandra.query.SimpleStatement(
-                    Q_SELECT_RESULT.format(table=self.table),
-                )
-                self._read_stmt.consistency_level = self.read_consistency
+                try:
+                    self._session.execute(self._make_stmt)
+                except cassandra.AlreadyExists:
+                    pass
 
-                if write:
-                    # Only possible writers "workers" are allowed to issue
-                    # CREATE TABLE. This is to prevent conflicting situations
-                    # where both task-creator and task-executor would issue it
-                    # at the same time.
+        except cassandra.OperationTimedOut:
+            # a heavily loaded or gone Cassandra cluster failed to respond.
+            # leave this class in a consistent state
+            if self._connection is not None:
+                self._connection.shutdown()     # also shuts down _session
 
-                    # Anyway; if you're doing anything critical, you should
-                    # have created this table in advance, in which case
-                    # this query will be a no-op (AlreadyExists)
-                    self._make_stmt = cassandra.query.SimpleStatement(
-                        Q_CREATE_RESULT_TABLE.format(table=self.table),
-                    )
-                    self._make_stmt.consistency_level = self.write_consistency
-
-                    try:
-                        self._session.execute(self._make_stmt)
-                    except cassandra.AlreadyExists:
-                        pass
-
-            except cassandra.OperationTimedOut:
-                # a heavily loaded or gone Cassandra cluster failed to respond.
-                # leave this class in a consistent state
-                if self._connection is not None:
-                    self._connection.shutdown()     # also shuts down _session
-
-                self._connection = None
-                self._session = None
-                raise   # we did fail after all - reraise
+            self._connection = None
+            self._session = None
+            raise   # we did fail after all - reraise
 
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):

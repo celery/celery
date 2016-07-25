@@ -4,13 +4,6 @@
  Using Amazon SQS
 ==================
 
-.. admonition:: Experimental Status
-
-    The SQS transport is in need of improvements in many areas and there
-    are several open bugs.  Unfortunately we don't have the resources or funds
-    required to improve the situation, so we're looking for contributors
-    and partners willing to help.
-
 .. _broker-sqs-installation:
 
 Installation
@@ -100,7 +93,8 @@ setting::
 
 Very frequent polling intervals can cause *busy loops*, which results in the
 worker using a lot of CPU time.  If you need sub-millisecond precision you
-should consider using another transport, like `RabbitMQ <broker-amqp>`.
+should consider using another transport, like `RabbitMQ <broker-amqp>`,
+or `Redis <broker-redis>`.
 
 Queue Prefix
 ------------

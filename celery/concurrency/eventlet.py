@@ -1,16 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.concurrency.eventlet
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Eventlet pool implementation.
-
-"""
+"""Eventlet execution pool."""
 from __future__ import absolute_import, unicode_literals
 
 import sys
 
-from time import time
+from kombu.five import monotonic
 
 __all__ = ['TaskPool']
 
@@ -55,7 +49,7 @@ class Timer(_timer.Timer):
         self._queue = set()
 
     def _enter(self, eta, priority, entry):
-        secs = max(eta - time(), 0)
+        secs = max(eta - monotonic(), 0)
         g = self._spawn_after(secs, entry)
         self._queue.add(g)
         g.link(self._entry_exit, entry)

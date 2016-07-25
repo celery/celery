@@ -1,10 +1,4 @@
-"""
-    ``celery.backends.async``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Async backend support utilities.
-
-"""
+"""Async I/O backend support utilities."""
 from __future__ import absolute_import, unicode_literals
 
 import socket
@@ -14,7 +8,7 @@ from time import sleep
 from weakref import WeakKeyDictionary
 
 from kombu.syn import detect_environment
-from kombu.utils import cached_property
+from kombu.utils.objects import cached_property
 
 from celery import states
 from celery.exceptions import TimeoutError

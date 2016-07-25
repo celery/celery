@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.routes
-    ~~~~~~~~~~~~~
+"""Task Routing.
 
-    Contains utilities for working with task routers,
-    (:setting:`task_routes`).
-
+Contains utilities for working with task routers, (:setting:`task_routes`).
 """
 from __future__ import absolute_import, unicode_literals
 

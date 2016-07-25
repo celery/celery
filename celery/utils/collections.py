@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.utils.collections``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Custom maps, sets, sequences and other data structures.
-
-"""
+"""Custom maps, sets, sequences and other data structures."""
 from __future__ import absolute_import, unicode_literals
 
 import sys
@@ -59,7 +53,8 @@ def force_mapping(m):
 def lpmerge(L, R):
     """In place left precedent dictionary merge.
 
-    Keeps values from `L`, if the value in `R` is :const:`None`."""
+    Keeps values from `L`, if the value in `R` is :const:`None`.
+    """
     setitem = L.__setitem__
     [setitem(k, v) for k, v in items(R) if v is not None]
     return L
@@ -117,7 +112,6 @@ class AttributeDictMixin(object):
     """Augment classes with a Mapping interface by adding attribute access.
 
     I.e. `d.key -> d[key]`.
-
     """
 
     def __getattr__(self, k):
@@ -144,7 +138,6 @@ class DictAttribute(object):
 
     `obj[k] -> obj.k`
     `obj[k] = val -> obj.k = val`
-
     """
     obj = None
 
@@ -353,10 +346,10 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
     If the key does not exist in ``changes``, the ``defaults``
     dictionaries are consulted.
 
-    :param changes:  Dict containing changes to the configuration.
-    :param defaults: List of dictionaries containing the default
-                     configuration.
-
+    Arguments:
+        changes (Mapping): Map of configuration changes.
+        defaults (List[Mapping]): List of dictionaries containing
+            the default configuration.
     """
 
     def __init__(self, changes, defaults=None, key_t=None, prefix=None):
@@ -438,33 +431,28 @@ class LimitedSet(object):
 
     All arguments are optional, and no limits are enabled by default.
 
-    :keyword maxlen: Optional max number of items.
+    Arguments:
+        maxlen (int): Optional max number of items.
+            Adding more items than ``maxlen`` will result in immediate
+            removal of items sorted by oldest insertion time.
 
-        Adding more items than ``maxlen`` will result in immediate
-        removal of items sorted by oldest insertion time.
+        expires (float): TTL for all items.
+            Expired items are purged as keys are inserted.
 
-    :keyword expires: TTL for all items.
+        minlen (int): Minimal residual size of this set.
+            .. versionadded:: 4.0
 
-        Expired items are purged as keys are inserted.
+            Value must be less than ``maxlen`` if both are configured.
 
-    :keyword minlen: Minimal residual size of this set.
+            Older expired items will be deleted, only after the set
+            exceeds ``minlen`` number of items.
 
-        .. versionadded:: 4.0
-
-        Value must be less than ``maxlen`` if both are configured.
-
-        Older expired items will be deleted, only after the set
-        exceeds ``minlen`` number of items.
-
-    :keyword data: Initial data to initialize set with.
-        Can be an iterable of ``(key, value)`` pairs,
-        a dict (``{key: insertion_time}``), or another instance
-        of :class:`LimitedSet`.
+        data (Sequence): Initial data to initialize set with.
+            Can be an iterable of ``(key, value)`` pairs,
+            a dict (``{key: insertion_time}``), or another instance
+            of :class:`LimitedSet`.
 
     Example:
-
-    .. code-block:: pycon
-
         >>> s = LimitedSet(maxlen=50000, expires=3600, minlen=4000)
         >>> for i in range(60000):
         ...     s.add(i)
@@ -481,7 +469,6 @@ class LimitedSet(object):
         4000
         >>>> 57000 in s  # even this item is gone now
         False
-
     """
 
     max_heap_percent_overload = 15
@@ -567,9 +554,9 @@ class LimitedSet(object):
     def purge(self, now=None):
         """Check oldest items and remove them if needed.
 
-        :keyword now: Time of purging -- by default right now.
-                      This can be useful for unit testing.
-
+        Arguments:
+            now (float): Time of purging -- by default right now.
+                This can be useful for unit testing.
         """
         now = now or time.time()
         now = now() if isinstance(now, Callable) else now
@@ -599,8 +586,7 @@ class LimitedSet(object):
     def as_dict(self):
         """Whole set as serializable dictionary.
 
-        Example::
-
+        Example:
             >>> s = LimitedSet(maxlen=200)
             >>> r = LimitedSet(maxlen=200)
             >>> for i in range(500):
@@ -609,7 +595,6 @@ class LimitedSet(object):
             >>> r.update(s.as_dict())
             >>> r == s
             True
-
         """
         return {key: inserted for inserted, key in values(self._data)}
 

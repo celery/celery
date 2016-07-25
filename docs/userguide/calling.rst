@@ -500,4 +500,4 @@ AMQP's full routing capabilities. Interested parties may read the
 
     A number between `0` and `255`, where `255` is the highest priority.
 
-    Supported by: RabbitMQ
+    Supported by: RabbitMQ, Redis (priority reversed, 0 is highest).

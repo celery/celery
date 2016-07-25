@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.app.builtins``
-    ~~~~~~~~~~~~~~~~~~~~~~~
+"""Built-in Tasks.
 
-    Built-in tasks that are always available in all
-    app instances. E.g. :class:`@chord`, :class:`@group`
-    and :class:`@xmap`.
-
+The built-in tasks are always available in all app instances.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -26,7 +21,6 @@ def add_backend_cleanup_task(app):
     If the configured backend requires periodic cleanup this task is also
     automatically configured to run every day at 4am (requires
     :program:`celery beat` to be running).
-
     """
     @app.task(name='celery.backend_cleanup', shared=False, lazy=False)
     def backend_cleanup():
@@ -49,7 +43,6 @@ def add_unlock_chord_task(app):
     """This task is used by result backends without native chord support.
 
     It joins chords by creating a task chain polling the header for completion.
-
     """
     from celery.canvas import maybe_signature
     from celery.exceptions import ChordError

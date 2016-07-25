@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.worker.request
-    ~~~~~~~~~~~~~~~~~~~~~
-
-    This module defines the :class:`Request` class,
-    which specifies how tasks are executed.
-
-"""
+"""This module defines the :class:`Request` class, which specifies
+how tasks are executed."""
 from __future__ import absolute_import, unicode_literals
 
 import logging
@@ -16,8 +10,8 @@ from datetime import datetime
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
-from kombu.utils import cached_property
 from kombu.utils.encoding import safe_repr, safe_str
+from kombu.utils.objects import cached_property
 
 from celery import signals
 from celery.app.trace import trace_task, trace_task_ret
@@ -172,11 +166,12 @@ class Request(object):
     def execute_using_pool(self, pool, **kwargs):
         """Used by the worker to send this task to the pool.
 
-        :param pool: A :class:`celery.concurrency.base.TaskPool` instance.
+        Arguments:
+            pool (~celery.concurrency.base.TaskPool): The execution pool
+                used to execute this request.
 
-        :raises celery.exceptions.TaskRevokedError: if the task was revoked
-            and ignored.
-
+        Raises:
+            celery.exceptions.TaskRevokedError: if the task was revoked.
         """
         task_id = self.id
         task = self.task
@@ -203,9 +198,9 @@ class Request(object):
     def execute(self, loglevel=None, logfile=None):
         """Execute the task in a :func:`~celery.app.trace.trace_task`.
 
-        :keyword loglevel: The loglevel used by the task.
-        :keyword logfile: The logfile used by the task.
-
+        Arguments:
+            loglevel (int): The loglevel used by the task.
+            logfile (str): The logfile used by the task.
         """
         if self.revoked():
             return

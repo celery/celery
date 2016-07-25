@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.app.annotations``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""Task Annotations.
 
-    Annotations is a nice term for monkey-patching
-    task classes in the configuration.
+Annotations is a nice term for monkey-patching task classes
+in the configuration.
 
-    This prepares and performs the annotations in the
-    :setting:`task_annotations` setting.
-
+This prepares and performs the annotations in the
+:setting:`task_annotations` setting.
 """
 from __future__ import absolute_import, unicode_literals
 

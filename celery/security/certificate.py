@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.security.certificate
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    X.509 certificates.
-
-"""
+"""X.509 certificates."""
 from __future__ import absolute_import, unicode_literals
 
 import glob

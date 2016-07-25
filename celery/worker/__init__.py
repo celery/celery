@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.worker
-    ~~~~~~~~~~~~~
+"""WorkerController  can be used to instantiate in-process workers.
 
-    :class:`WorkController` can be used to instantiate in-process workers.
+The command-line interface for the worker is in :mod:`celery.bin.worker`,
+while the worker program is in :mod:`celery.apps.worker`.
 
-    The worker consists of several components, all managed by bootsteps
-    (mod:`celery.bootsteps`).
+The worker program is responsible for adding signal handlers,
+setting up logging, etc.  This is a bare-bones worker without
+global side-effects (i.e. except for the global state stored in
+:mod:`celery.worker.state`).
 
+The worker consists of several components, all managed by bootsteps
+(mod:`celery.bootsteps`).
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -62,6 +65,7 @@ defined in the `task_queues` setting.
 @python_2_unicode_compatible
 class WorkController(object):
     """Unmanaged worker instance."""
+
     app = None
 
     pidlock = None
@@ -74,6 +78,7 @@ class WorkController(object):
 
     class Blueprint(bootsteps.Blueprint):
         """Worker bootstep blueprint."""
+
         name = 'Worker'
         default_steps = {
             'celery.worker.components:Hub',

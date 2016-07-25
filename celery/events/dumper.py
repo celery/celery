@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.events.dumper
-    ~~~~~~~~~~~~~~~~~~~~
+"""Utility to dump events to screen.
 
-    This is a simple program that dumps events to the console
-    as they happen. Think of it like a `tcpdump` for Celery events.
-
+This is a simple program that dumps events to the console
+as they happen. Think of it like a `tcpdump` for Celery events.
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -21,9 +18,11 @@ __all__ = ['Dumper', 'evdump']
 
 TASK_NAMES = LRUCache(limit=0xFFF)
 
-HUMAN_TYPES = {'worker-offline': 'shutdown',
-               'worker-online': 'started',
-               'worker-heartbeat': 'heartbeat'}
+HUMAN_TYPES = {
+    'worker-offline': 'shutdown',
+    'worker-online': 'started',
+    'worker-heartbeat': 'heartbeat',
+}
 
 CONNECTION_ERROR = """\
 -> Cannot connect to %s: %s.

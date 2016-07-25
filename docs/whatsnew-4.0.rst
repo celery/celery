@@ -44,9 +44,13 @@ and also supported on PyPy.
 Preface
 =======
 
+XXX To be written
+
 
 Wall of Contributors
 --------------------
+
+XXX Needs update
 
 Aaron McMillin, Adam Renberg, Adrien Guinet, Ahmet Demir, Aitor Gómez-Goiri,
 Albert Wang, Alex Koshelev, Alex Rattray, Alex Williams, Alexander Koshelev,
@@ -120,31 +124,6 @@ there are no convenient alternatives in older versions.
 Celery 4.x will continue to work on Python 2.7, 3.4, 3.5; just as Celery 3.x
 still works on Python 2.6.
 
-Support for Redis as a broker is deprecated
--------------------------------------------
-
-The Redis transport will no longer be supported going forward.
-
-It is with a heavy heart, and the decision was not taken lightly but
-there are several open issues related to this transport and as a project
-without a budget we don't have the resources to resolve them.
-
-The issues have been open for a very long time, and we are doing our
-users a disservice by keeping them open with no resolution in sight.
-
-As Redis is such a huge part of Celery development
-time, this is time we can spend on moving the project
-forward into the asyncio era of Python 3.6.
-
-The transport is still active, so you can still use it, but it has been
-undocumented so that new users will not find it.  Unless the situation
-changes the transport will be removed completely starting with Celery 5.0.
-
-.. note::
-
-    Using Redis as a result backend is still supported, and has some
-    really nice improvements in this version.  Read on for the good news :-)
-
 Removed features
 ----------------
 
@@ -152,11 +131,40 @@ Removed features
 
 - Jython is no longer supported.
 
+Features removed for simplicity
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 - Webhook task machinery (``celery.task.http``) has been removed.
 
-    Nowadays it's so easy to use the :pypi:`requests` module to write
-    webhook tasks manually, so there's no real reason to keep this
-    legacy implementation anymore.
+    Nowadays it's easy to use the :pypi:`requests` module to write
+    webhook tasks manually.  We would love to use requests but we
+    are simply unable to as there's a very vocal 'anti-dependency'
+    mob in the Python community
+
+    If you need backwards compatibility
+    you can simply copy + paste the 3.1 version of the module and make sure
+    it's imported by the worker:
+    https://github.com/celery/celery/blob/3.1/celery/task/http.py
+
+- Task no longer sends error emails.
+
+    This also removes support for ``app.mail_admins``, and any functionality
+    related to sending emails.
+
+- ``celery.contrib.batches`` has been removed.
+
+    This was an experimental feature, so not covered by our deprecation
+    timeline guarantee.
+
+Features removed for lack of funding
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We announced with the 3.1 release that some transports were
+moved to experimental status, and that there would be no official
+support for the transports, citing a lack of resources.
+
+As this subtle hint for the need of funding failed
+we have removed them completely, breaking backwards compatibility.
 
 - Using MongoDB as a broker is no longer supported.
 
@@ -170,19 +178,33 @@ Removed features
 
 - Using Beanstalk as a broker is no longer supported.
 
-
-- Task no longer sends error emails.
-
-    This also removes support for ``app.mail_admins``, and any functionality
-    related to sending emails.
-
-- ``celery.contrib.batches`` has been removed.
+In addition some features have been removed completely so that
+attempting to use them will raise an exception:
 
 - The ``--autoreload`` feature has been removed.
 
+  This was an experimental feature, and not covered by our deprecation
+  timeline guarantee.  The flag is removed completely so the worker
+  will crash at startup when present.  Luckily this
+  flag is not used in production systems.
+
 - The ``--autoscale`` feature has been removed.
 
-- The ``threads`` pool is no longer supported and has been removed.
+    This flag is only used by companies to save money, but had
+    bugs either nobody cared to work on, or sponsor a few hours of work to get it fixed.
+
+    The flag has been removed completely, so you must remove this command-line
+    argument or your workers will crash.
+
+- The experimental ``threads`` pool is no longer supported and has been removed.
+
+- The force_execv feature is no longer supported.
+
+    The ``celery worker`` command now ignores the ``--no-execv``,
+    ``--force-execv``, and the ``CELERYD_FORCE_EXECV`` setting.
+
+    This flag will be removed completely in 5.0 and the worker
+    will raise an error.
 
 - The old legacy "amqp" result backend has been deprecated, and will
   be removed in Celery 5.0.
@@ -190,27 +212,43 @@ Removed features
     Please use the ``rpc`` result backend for RPC-style calls, and a
     persistent result backend for multi-consumer results.
 
-    The old "amqp" result backends has been discouraged in use for a long time
-    now, as it creates on queue per task it does not scale well and easily
-    leads to trouble.
 
-- The force_execv feature is no longer supported.
+**Now to the good news...**
 
-    Enabling this usually only caused more problems.
+New Task Message Protocol
+-------------------------
+.. :sha:`e71652d384b1b5df2a4e6145df9f0efb456bc71c`
 
-    The ``celery worker`` command no longer suports the ``--no-execv`` and
-    ``--force-execv`` options, and the ``CELERYD_FORCE_EXECV`` setting is
-    ignored.
+This version introduces a brand new task message protocol,
+the first major change to the protocol since the beginning of the project.
+
+The new protocol is enabled by default in this version and since the new
+version is not backwards compatible you have to be careful when upgrading.
+
+The 3.1.24 version was released to add compatibility with the new protocol
+so the easiest way to upgrade is to upgrade to that version first, then
+upgrade to 4.0 in a second deployment.
+
+If you wish to keep using the old protocol you may also configure
+the protocol version number used:
+
+.. code-block:: python
+
+    app = Celery()
+    app.conf.task_protocol = 1
+
+Read more about the features available in the new protocol in the news
+section found later in this document.
 
 Lowercase setting names
 -----------------------
 
-In the pursuit of beauty all settings have been renamed to be in all
-lowercase, and some setting names have been renamed for naming consistency.
+In the pursuit of beauty all settings are now renamed to be in all
+lowercase and some setting names have been renamed for consistency.
 
 This change is fully backwards compatible so you can still use the uppercase
 setting names, but we would like you to upgrade as soon as possible and
-you can even do so automatically using the :program:`celery upgrade settings`
+you can this automatically using the :program:`celery upgrade settings`
 command:
 
 .. code-block:: console
@@ -361,7 +399,7 @@ no longer has any effect.
 Task argument checking
 ----------------------
 
-The arguments of the task is now verified when calling the task,
+The arguments of the task are now verified when calling the task,
 even asynchronously:
 
 .. code-block:: pycon
@@ -382,6 +420,27 @@ even asynchronously:
         check_arguments(*(args or ()), **(kwargs or {}))
     TypeError: add() takes exactly 2 arguments (1 given)
 
+Redis Events not backward compatible
+------------------------------------
+
+The Redis ``fanout_patterns`` and ``fanout_prefix`` transport
+options are now enabled by default.
+
+Workers/monitors without these flags enabled will not be able to
+see workers with this flag disabled.  They can still execute tasks,
+but they cannot receive each others monitoring messages.
+
+You can upgrade in a backward compatible manner by first configuring
+your 3.1 workers and monitors to enable the settings, before the final
+upgrade to 4.0:
+
+.. code-block:: python
+
+    BROKER_TRANSPORT_OPTIONS = {
+        'fanout_patterns': True,
+        'fanout_prefix': True,
+    }
+
 Django: Auto-discover now supports Django app configurations
 ------------------------------------------------------------
 
@@ -395,11 +454,14 @@ and the Django handler will automatically find your installed apps:
 The Django integration :ref:`example in the documentation
 <django-first-steps>` has been updated to use the argument-less call.
 
+This also ensures comaptibility with the new, ehm, ``appconfig`` stuff
+introduced in recent Django versions.
+
 Worker direct queues no longer use auto-delete.
 -----------------------------------------------
 
 Workers/clients running 4.0 will no longer be able to send
-worker direct messages to worker running older versions, and vice versa.
+worker direct messages to workers running older versions, and vice versa.
 
 If you're relying on worker direct messages you should upgrade
 your 3.x workers and clients to use the new routing settings first,
@@ -446,28 +508,8 @@ to use the new umbrella command:
 News
 ====
 
-New Task Message Protocol
--------------------------
-.. :sha:`e71652d384b1b5df2a4e6145df9f0efb456bc71c`
-
-This version introduces a brand new task message protocol,
-the first major change to the protocol since the beginning of the project.
-
-The new protocol is backwards incompatible, so you need to set
-the :setting:`task_protocol` configuration option to ``2`` to take advantage:
-
-.. code-block:: python
-
-    app = Celery()
-    app.conf.task_protocol = 2
-
-Using the new protocol is recommended for everybody who don't
-need backwards compatibility.
-
-Once enabled task messages sent is unreadable to older versions of Celery.
-
 New protocol highlights
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 The new protocol fixes many problems with the old one, and enables
 some long-requested features:
@@ -680,7 +722,7 @@ Amazon SQS transport now officially supported.
 ----------------------------------------------
 
 The SQS broker transport has been rewritten to use async I/O and as such
-joins RabbitMQ and Qpid as officially supported transports.
+joins RabbitMQ and Redis as officially supported transports.
 
 The new implementation also takes advantage of long polling,
 and closes several issues related to using SQS as a broker.
@@ -976,7 +1018,7 @@ Requirements
 
 - Now depends on :pypi:`billiard` version 3.5.
 
-- No longer depends on :pypi:`anyjson` :(
+- No longer depends on :pypi:`anyjson`. Good-bye old friend :(
 
 
 Tasks
@@ -984,7 +1026,8 @@ Tasks
 
 - The "anon-exchange" is now used for simple name-name direct routing.
 
-  This increases performance as it completely bypasses the routing table.
+  This increases performance as it completely bypasses the routing table,
+  in addition it also improves reliability for the Redis broker transport.
 
 - An empty ResultSet now evaluates to True.
 
@@ -1104,6 +1147,11 @@ Execution Pools
 
     Contributed by **Alexander Oblovatniy**.
 
+Transports
+~~~~~~~~~~
+
+- **Redis Transport**: The Redis transport now supports the
+  :setting:`broker_use_ssl` option.
 
 Programs
 ~~~~~~~~
@@ -1523,8 +1571,6 @@ Events
     - ``Worker.on_heartbeat``
 
         Use ``Worker.event('heartbeat', timestamp, received, fields)``
-
-
 
 - Removals for class :class:`celery.events.state.Task`:
 

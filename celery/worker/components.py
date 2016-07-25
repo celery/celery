@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.worker.components
-    ~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Default worker bootsteps.
-
-"""
+"""Worker-level Bootsteps."""
 from __future__ import absolute_import, unicode_literals
 
 import atexit
@@ -110,7 +104,6 @@ class Pool(bootsteps.StartStopStep):
         * pool
         * max_concurrency
         * min_concurrency
-
     """
     requires = (Hub,)
 
@@ -173,9 +166,7 @@ class Pool(bootsteps.StartStopStep):
 class Beat(bootsteps.StartStopStep):
     """Step used to embed a beat process.
 
-    This will only be enabled if the ``beat``
-    argument is set.
-
+    This will only be enabled if the ``beat`` argument is set.
     """
     label = 'Beat'
     conditional = True
@@ -207,6 +198,7 @@ class StateDB(bootsteps.Step):
 
 
 class Consumer(bootsteps.StartStopStep):
+
     last = True
 
     def create(self, w):

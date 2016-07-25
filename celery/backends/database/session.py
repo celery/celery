@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.backends.database.session
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    SQLAlchemy sessions.
-
-"""
+"""SQLAlchemy session."""
 from __future__ import absolute_import, unicode_literals
 
 from sqlalchemy import create_engine
@@ -13,7 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
-from kombu.utils import register_after_fork
+from kombu.utils.compat import register_after_fork
 
 ResultModelBase = declarative_base()
 

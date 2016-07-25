@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.apps.worker
-    ~~~~~~~~~~~~~~~~~~
+"""This module is the 'program-version' of :mod:`celery.worker`.
 
-    This module is the 'program-version' of :mod:`celery.worker`.
-
-    It does everything necessary to run that module
-    as an actual application, like installing signal handlers,
-    platform tweaks, and so on.
-
+It does everything necessary to run that module
+as an actual application, like installing signal handlers,
+platform tweaks, and so on.
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -104,11 +99,9 @@ class Worker(WorkController):
                       redirect_stdouts=None, redirect_stdouts_level=None,
                       **kwargs):
         self.redirect_stdouts = self.app.either(
-            'worker_redirect_stdouts', redirect_stdouts,
-        )
+            'worker_redirect_stdouts', redirect_stdouts)
         self.redirect_stdouts_level = self.app.either(
-            'worker_redirect_stdouts_level', redirect_stdouts_level,
-        )
+            'worker_redirect_stdouts_level', redirect_stdouts_level)
         super(Worker, self).setup_defaults(**kwargs)
         self.purge = purge
         self.no_color = no_color

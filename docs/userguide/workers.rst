@@ -233,7 +233,7 @@ Remote control
     listed below.  See :ref:`monitoring-control` for more information.
 
 :pool support: *prefork, eventlet, gevent*, blocking:*solo* (see note)
-:broker support: *amqp*
+:broker support: *amqp, redis*
 
 Workers have the ability to be remote controlled using a high-priority
 broadcast message queue.  The commands can be directed to all, or a specific
@@ -313,7 +313,7 @@ Commands
 ``revoke``: Revoking tasks
 --------------------------
 :pool support: all, terminate only supported by prefork
-:broker support: *amqp*
+:broker support: *amqp, redis*
 :command: :program:`celery -A proj control revoke <task_id>`
 
 All worker nodes keeps a memory of revoked task ids, either in-memory or
@@ -412,8 +412,8 @@ name:
 See also :ref:`worker-files`
 
 Note that remote control commands must be working for revokes to work.
-Remote control commands are only supported by the RabbitMQ (amqp) at this
-point.
+Remote control commands are only supported by the RabbitMQ (amqp) and Redis
+at this point.
 
 .. _worker-time-limits:
 
@@ -467,7 +467,7 @@ Changing time limits at run-time
 --------------------------------
 .. versionadded:: 2.3
 
-:broker support: *amqp*
+:broker support: *amqp, redis*
 
 There is a remote control command that enables you to change both soft
 and hard time limits for a task — named ``time_limit``.
@@ -852,11 +852,21 @@ The output will include the following fields:
 
     * ``transport``
 
-        Name of transport used (e.g. ``amqp``)
+        Name of transport used (e.g. ``amqp`` or ``redis``)
 
     * ``transport_options``
 
         Options passed to transport.
+
+    * ``uri_prefix``
+
+        Some transports expects the host name to be a URL.
+
+        .. code-block:: text
+
+            redis+socket:///tmp/redis.sock
+
+        In this example the URI-prefix will be ``redis``.
 
     * ``userid``
 

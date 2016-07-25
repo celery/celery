@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-
-The :program:`celery beat` command.
+"""The :program:`celery beat` command.
 
 .. program:: celery beat
 
@@ -65,7 +63,6 @@ The :program:`celery beat` command.
 .. cmdoption:: --executable
 
     Executable to use for the detached process.
-
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -81,12 +78,12 @@ __all__ = ['beat']
 class beat(Command):
     """Start the beat periodic task scheduler.
 
-    Examples::
+    Examples:
+        .. code-block:: console
 
-        celery beat -l info
-        celery beat -s /var/run/celery/beat-schedule --detach
-        celery beat -S djcelery.schedulers.DatabaseScheduler
-
+            $ celery beat -l info
+            $ celery beat -s /var/run/celery/beat-schedule --detach
+            $ celery beat -S djcelery.schedulers.DatabaseScheduler
     """
     doc = __doc__
     enable_config_from_cmdline = True

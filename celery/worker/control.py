@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.worker.control
-    ~~~~~~~~~~~~~~~~~~~~~
-
-    Remote control commands.
-
-"""
+"""Worker remote control command implementations."""
 from __future__ import absolute_import, unicode_literals
 
 import io
@@ -41,7 +35,8 @@ def nok(value):
 
 
 class Panel(UserDict):
-    data = dict()  # global registry.
+    """Global registry of remote control commands."""
+    data = dict()  # global dict.
 
     @classmethod
     def register(cls, method, name=None):
@@ -135,11 +130,12 @@ def rate_limit(state, task_name, rate_limit, **kwargs):
     """Tell worker(s) to modify the rate limit for a task by type."""
     """Set new rate limit for a task type.
 
-    See :attr:`celery.task.base.Task.rate_limit`.
+    See Also:
+        :attr:`celery.task.base.Task.rate_limit`.
 
-    :param task_name: Type of task.
-    :param rate_limit: New rate limit.
-
+    Arguments:
+        task_name (str): Type of task to set rate limit for.
+        rate_limit (int, str): New rate limit.
     """
 
     try:

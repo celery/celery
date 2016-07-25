@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.signals
-    ~~~~~~~~~~~~~~
+"""Celery Signals.
 
-    This module defines the signals (Observer pattern) sent by
-    both workers and clients.
+This module defines the signals (Observer pattern) sent by
+both workers and clients.
 
-    Functions can be connected to these signals, and connected
-    functions are called whenever a signal is called.
+Functions can be connected to these signals, and connected
+functions are called whenever a signal is called.
 
-    See :ref:`signals` for more information.
+.. seealso::
 
+    :ref:`signals` for more information.
 """
 from __future__ import absolute_import, unicode_literals
 

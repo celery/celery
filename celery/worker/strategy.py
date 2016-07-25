@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.worker.strategy
-    ~~~~~~~~~~~~~~~~~~~~~~
-
-    Task execution strategy (optimization).
-
-"""
+"""Task execution strategy (optimization)."""
 from __future__ import absolute_import, unicode_literals
 
 import logging
@@ -29,8 +23,8 @@ logger = get_logger(__name__)
 def proto1_to_proto2(message, body):
     """Converts Task message protocol 1 arguments to protocol 2.
 
-    Returns tuple of ``(body, headers, already_decoded_status, utc)``
-
+    Returns:
+        Tuple: of ``(body, headers, already_decoded_status, utc)``
     """
     try:
         args, kwargs = body['args'], body['kwargs']

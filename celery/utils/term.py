@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.utils.term
-    ~~~~~~~~~~~~~~~~~
-
-    Terminals and colors.
-
-"""
+"""Terminals and colors."""
 from __future__ import absolute_import, unicode_literals
 
 import platform
@@ -32,13 +26,12 @@ def fg(s):
 class colored(object):
     """Terminal colored text.
 
-    Example::
+    Example:
         >>> c = colored(enabled=True)
         >>> print(str(c.red('the quick '), c.blue('brown ', c.bold('fox ')),
         ...       c.magenta(c.underline('jumps over')),
         ...       c.yellow(' the lazy '),
         ...       c.green('dog ')))
-
     """
 
     def __init__(self, *s, **kwargs):

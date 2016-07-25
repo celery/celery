@@ -69,6 +69,15 @@ platforms, including Microsoft Windows:
 
     http://www.rabbitmq.com/download.html
 
+Redis
+-----
+
+`Redis`_ is also feature-complete, but is more susceptible to data loss in
+the event of abrupt termination or power failures. Detailed information about using Redis:
+
+:ref:`broker-redis`
+
+.. _`Redis`: http://redis.io/
 
 Other brokers
 -------------
@@ -119,7 +128,8 @@ this is needed so that names can be automatically generated, the second
 argument is the broker keyword argument which specifies the URL of the
 message broker you want to use, using RabbitMQ here, which is already the
 default option.  See :ref:`celerytut-broker` above for more choices,
-e.g. for RabbitMQ you can use ``amqp://localhost``.
+e.g. for RabbitMQ you can use ``amqp://localhost``, or for Redis you can
+use ``redis://localhost``.
 
 You defined a single task, called ``add``, which returns the sum of two numbers.
 
@@ -195,7 +205,6 @@ and -- or you can define your own.
 
 .. _`Memcached`: http://memcached.org
 .. _`MongoDB`: http://www.mongodb.org
-.. _`Redis`: http://redis.io
 .. _`SQLAlchemy`: http://www.sqlalchemy.org/
 .. _`Django`: http://djangoproject.com
 
@@ -208,7 +217,7 @@ you choose to use a configuration module):
 
     app = Celery('tasks', backend='rpc://', broker='amqp://')
 
-Or if you want to use Redis as the result backend, but use RabbitMQ as
+Or if you want to use Redis as the result backend, but still use RabbitMQ as
 the message broker (a popular combination):
 
 .. code-block:: python
@@ -363,8 +372,8 @@ instead, so that only 10 tasks of this type can be processed in a minute
         'tasks.add': {'rate_limit': '10/m'}
     }
 
-If you are using RabbitMQ as broker you can also direct the
-workers to set a new rate limit
+If you are using RabbitMQ or Redis as the
+broker then you can also direct the workers to set a new rate limit
 for the task at runtime:
 
 .. code-block:: console

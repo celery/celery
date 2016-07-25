@@ -1,3 +1,7 @@
+====================================
+ ``celery.utils.collections``
+====================================
+
 .. currentmodule:: celery.utils.collections
 
 .. contents::

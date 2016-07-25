@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-celery.worker.consumer
-~~~~~~~~~~~~~~~~~~~~~~
+"""Worker Consumer Blueprint.
 
 This module contains the components responsible for consuming messages
 from the broker, processing the messages and keeping the broker connections
 up and running.
-
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -243,13 +240,11 @@ class Consumer(object):
         Index must be the change in number of processes as a positive
         (increasing) or negative (decreasing) number.
 
-        .. note::
-
+        Note:
             Currently pool grow operations will end up with an offset
             of +1 if the initial size of the pool was 0 (which could
             be the case with old deprecated autoscale option, may consider
             removing this now that it's no longer supported).
-
         """
         num_processes = self.pool.num_processes
         if not self.initial_prefetch_count or not num_processes:
@@ -369,9 +364,9 @@ class Consumer(object):
         Simply logs the error and acknowledges the message so it
         doesn't enter a loop.
 
-        :param message: The message with errors.
-        :param exc: The original exception instance.
-
+        Arguments:
+            message (Message): The message received.
+            exc (Exception): The exception being handled.
         """
         crit(MESSAGE_DECODE_ERROR,
              exc, message.content_type, message.content_encoding,
@@ -397,9 +392,8 @@ class Consumer(object):
     def connect(self):
         """Establish the broker connection.
 
-        Will retry establishing the connection if the
+        Retries establishing the connection if the
         :setting:`broker_connection_retry` setting is enabled
-
         """
         conn = self.app.connection_for_read(heartbeat=self.amqheartbeat)
 

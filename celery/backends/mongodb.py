@@ -1,18 +1,13 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.backends.mongodb``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    MongoDB result store backend.
-
-"""
+"""MongoDB result store backend."""
 from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime, timedelta
 
-from kombu.utils import cached_property
+from kombu.utils.objects import cached_property
 from kombu.utils.url import maybe_sanitize_url
 from kombu.exceptions import EncodeError
+
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.five import string_t, items
@@ -42,9 +37,9 @@ __all__ = ['MongoBackend']
 class MongoBackend(BaseBackend):
     """MongoDB result backend.
 
-    :raises celery.exceptions.ImproperlyConfigured: if
-        module :pypi:`pymongo` is not available.
-
+    Raises:
+        celery.exceptions.ImproperlyConfigured:
+            if module :pypi:`pymongo` is not available.
     """
 
     mongo_host = None
@@ -169,15 +164,16 @@ class MongoBackend(BaseBackend):
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
         """Store return value and state of an executed task."""
-
-        meta = {'_id': task_id,
-                'status': state,
-                'result': self.encode(result),
-                'date_done': datetime.utcnow(),
-                'traceback': self.encode(traceback),
-                'children': self.encode(
-                    self.current_task_children(request),
-                )}
+        meta = {
+            '_id': task_id,
+            'status': state,
+            'result': self.encode(result),
+            'date_done': datetime.utcnow(),
+            'traceback': self.encode(traceback),
+            'children': self.encode(
+                self.current_task_children(request),
+            ),
+        }
 
         try:
             self.collection.save(meta)
@@ -202,27 +198,24 @@ class MongoBackend(BaseBackend):
 
     def _save_group(self, group_id, result):
         """Save the group result."""
-
-        task_ids = [i.id for i in result]
-
-        meta = {'_id': group_id,
-                'result': self.encode(task_ids),
-                'date_done': datetime.utcnow()}
-        self.group_collection.save(meta)
-
+        self.group_collection.save({
+            '_id': group_id,
+            'result': self.encode([i.id for i in result]),
+            'date_done': datetime.utcnow(),
+        })
         return result
 
     def _restore_group(self, group_id):
         """Get the result for a group by id."""
         obj = self.group_collection.find_one({'_id': group_id})
         if obj:
-            tasks = [self.app.AsyncResult(task)
-                     for task in self.decode(obj['result'])]
-
             return {
                 'task_id': obj['_id'],
-                'result': tasks,
                 'date_done': obj['date_done'],
+                'result': [
+                    self.app.AsyncResult(task)
+                    for task in self.decode(obj['result'])
+                ],
             }
 
     def _delete_group(self, group_id):
@@ -232,9 +225,9 @@ class MongoBackend(BaseBackend):
     def _forget(self, task_id):
         """Remove result from MongoDB.
 
-        :raises celery.exceptions.OperationsError:
-            if the task_id could not be removed.
-
+        Raises:
+            pymongo.exceptions.OperationsError:
+                if the task_id could not be removed.
         """
         # By using safe=True, this will wait until it receives a response from
         # the server.  Likewise, it will raise an OperationsError if the
@@ -252,15 +245,13 @@ class MongoBackend(BaseBackend):
 
     def __reduce__(self, args=(), kwargs={}):
         return super(MongoBackend, self).__reduce__(
-            args, dict(kwargs, expires=self.expires, url=self.url),
-        )
+            args, dict(kwargs, expires=self.expires, url=self.url))
 
     def _get_database(self):
         conn = self._get_connection()
         db = conn[self.database_name]
         if self.user and self.password:
-            if not db.authenticate(self.user,
-                                   self.password):
+            if not db.authenticate(self.user, self.password):
                 raise ImproperlyConfigured(
                     'Invalid MongoDB username or password.')
         return db
@@ -298,8 +289,8 @@ class MongoBackend(BaseBackend):
     def as_uri(self, include_password=False):
         """Return the backend as an URI.
 
-        :keyword include_password: Censor passwords.
-
+        Arguments:
+            include_password (bool): Password censored if disabled.
         """
         if not self.url:
             return 'mongodb://'

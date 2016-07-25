@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-"""
-    timer2
-    ~~~~~~
+"""Scheduler for Python functions.
 
-    Scheduler for Python functions.
-
+.. note::
+    This is used for the thread-based worker only,
+    not for amqp/redis/sqs/qpid where :mod:`kombu.async.timer` is used.
 """
 from __future__ import absolute_import, print_function, unicode_literals
+
 
 import os
 import sys
@@ -16,6 +16,7 @@ from itertools import count
 from time import sleep
 
 from celery.five import THREAD_TIMEOUT_MAX
+
 from kombu.async.timer import Entry, Timer as Schedule, to_timestamp, logger
 
 TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
@@ -24,11 +25,13 @@ __all__ = ['Entry', 'Schedule', 'Timer', 'to_timestamp']
 
 
 class Timer(threading.Thread):
+
     Entry = Entry
     Schedule = Schedule
 
     running = False
     on_tick = None
+
     _timer_count = count(1)
 
     if TIMER_DEBUG:  # pragma: no cover

@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.utils.log
-    ~~~~~~~~~~~~~~~~
-
-    Logging utilities.
-
-"""
+"""Logging utilities."""
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
@@ -24,16 +18,18 @@ from celery.five import string_t, text_t
 
 from .term import colored
 
-__all__ = ['ColorFormatter', 'LoggingProxy', 'base_logger',
-           'set_in_sighandler', 'in_sighandler', 'get_logger',
-           'get_task_logger', 'mlevel',
-           'get_multiprocessing_logger', 'reset_multiprocessing_logger']
+__all__ = [
+    'ColorFormatter', 'LoggingProxy', 'base_logger',
+    'set_in_sighandler', 'in_sighandler', 'get_logger',
+    'get_task_logger', 'mlevel',
+    'get_multiprocessing_logger', 'reset_multiprocessing_logger',
+]
 
 _process_aware = False
+_in_sighandler = False
 PY3 = sys.version_info[0] == 3
 
 MP_LOG = os.environ.get('MP_LOG', False)
-
 
 # Sets up our logging hierarchy.
 #
@@ -41,8 +37,6 @@ MP_LOG = os.environ.get('MP_LOG', False)
 # logger, and every task logger inherits from the "celery.task"
 # logger.
 base_logger = logger = _get_logger('celery')
-
-_in_sighandler = False
 
 
 def set_in_sighandler(value):
@@ -121,8 +115,12 @@ def mlevel(level):
 class ColorFormatter(logging.Formatter):
     #: Loglevel -> Color mapping.
     COLORS = colored().names
-    colors = {'DEBUG': COLORS['blue'], 'WARNING': COLORS['yellow'],
-              'ERROR': COLORS['red'], 'CRITICAL': COLORS['magenta']}
+    colors = {
+        'DEBUG': COLORS['blue'],
+        'WARNING': COLORS['yellow'],
+        'ERROR': COLORS['red'],
+        'CRITICAL': COLORS['magenta'],
+    }
 
     def __init__(self, fmt=None, use_color=True):
         logging.Formatter.__init__(self, fmt)
@@ -172,9 +170,9 @@ class ColorFormatter(logging.Formatter):
 class LoggingProxy(object):
     """Forward file object to :class:`logging.Logger` instance.
 
-    :param logger: The :class:`logging.Logger` instance to forward to.
-    :param loglevel: Loglevel to use when writing messages.
-
+    Arguments:
+        logger (~logging.Logger): Logger instance to forward to.
+        loglevel (int, str): Log level to use when logging messages.
     """
     mode = 'w'
     name = None
@@ -189,7 +187,7 @@ class LoggingProxy(object):
 
     def _safewrap_handlers(self):
         """Make the logger handlers dump internal errors to
-        `sys.__stderr__` instead of `sys.stderr` to circumvent
+        :data:`sys.__stderr__` instead of :data:`sys.stderr` to circumvent
         infinite loops."""
 
         def wrap_handler(handler):                  # pragma: no cover
@@ -197,17 +195,10 @@ class LoggingProxy(object):
             class WithSafeHandleError(logging.Handler):
 
                 def handleError(self, record):
-                    exc_info = sys.exc_info()
                     try:
-                        try:
-                            traceback.print_exception(exc_info[0],
-                                                      exc_info[1],
-                                                      exc_info[2],
-                                                      None, sys.__stderr__)
-                        except IOError:
-                            pass    # see python issue 5971
-                    finally:
-                        del(exc_info)
+                        traceback.print_exc(None, sys.__stderr__)
+                    except IOError:
+                        pass    # see python issue 5971
 
             handler.handleError = WithSafeHandleError().handleError
         return [wrap_handler(h) for h in self.logger.handlers]
@@ -234,7 +225,6 @@ class LoggingProxy(object):
 
         The sequence can be any iterable object producing strings.
         This is equivalent to calling :meth:`write` for each string.
-
         """
         for part in sequence:
             self.write(part)

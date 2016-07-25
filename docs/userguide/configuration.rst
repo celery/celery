@@ -285,8 +285,14 @@ The default is to send uncompressed messages.
 ``task_protocol``
 ~~~~~~~~~~~~~~~~~
 
+.. versionadded: 4.0
+
 Default task message protocol version.
-Supports protocols: 1 and 2 (default is 1 for backwards compatibility).
+Supports protocols: 1 and 2.
+
+Protocol 2 is supported by 3.1.24 and 4.x+.
+
+Default is 2 since 4.0.0.
 
 .. setting:: task_serializer
 
@@ -589,7 +595,7 @@ Default is to expire after 1 day.
 .. note::
 
     For the moment this only works with the AMQP, database, cache,
-    and Redis result backends.
+    and Redis backends.
 
     When using the database backend, `celery beat` must be
     running for the results to be expired.
@@ -1689,7 +1695,7 @@ A dict of additional options passed to the underlying transport.
 
 See your transport user manual for supported options (if any).
 
-Example setting the visibility timeout (supported by SQS
+Example setting the visibility timeout (supported by Redis and SQS
 transports):
 
 .. code-block:: python

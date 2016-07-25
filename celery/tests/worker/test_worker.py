@@ -14,7 +14,7 @@ from kombu import Connection
 from kombu.common import QoS, ignore_errors
 from kombu.transport.base import Message
 from kombu.transport.memory import Transport
-from kombu.utils import uuid
+from kombu.utils.uuid import uuid
 
 from celery.bootsteps import RUN, CLOSE, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
@@ -616,7 +616,7 @@ class test_Consumer(AppCase):
         self.assertTrue(connections[0].closed)
 
     @patch('kombu.connection.Connection._establish_connection')
-    @patch('kombu.utils.sleep')
+    @patch('kombu.utils.functional.sleep')
     def test_connect_errback(self, sleep, connect):
         c = self.NoopConsumer()
         Transport.connection_errors = (ChannelError,)

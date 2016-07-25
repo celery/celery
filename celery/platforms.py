@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.platforms
-    ~~~~~~~~~~~~~~~~
-
-    Utilities dealing with platform specifics: signals, daemonization,
-    users, groups, and so on.
-
-"""
+"""Utilities dealing with platform specifics: signals, daemonization,
+users, groups, and so on."""
 from __future__ import absolute_import, print_function, unicode_literals
 
 import atexit
@@ -23,7 +17,7 @@ from collections import namedtuple
 
 from billiard.compat import get_fdmax, close_open_fds
 # fileno used to be in this module
-from kombu.utils import maybe_fileno
+from kombu.utils.compat import maybe_fileno
 from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 
@@ -41,14 +35,16 @@ pwd = try_import('pwd')
 grp = try_import('grp')
 mputil = try_import('multiprocessing.util')
 
-__all__ = ['EX_OK', 'EX_FAILURE', 'EX_UNAVAILABLE', 'EX_USAGE', 'SYSTEM',
-           'IS_macOS', 'IS_WINDOWS', 'pyimplementation', 'LockFailed',
-           'get_fdmax', 'Pidfile', 'create_pidlock',
-           'close_open_fds', 'DaemonContext', 'detached', 'parse_uid',
-           'parse_gid', 'setgroups', 'initgroups', 'setgid', 'setuid',
-           'maybe_drop_privileges', 'signals', 'set_process_title',
-           'set_mp_process_title', 'get_errno_name', 'ignore_errno',
-           'fd_by_path', 'isatty']
+__all__ = [
+    'EX_OK', 'EX_FAILURE', 'EX_UNAVAILABLE', 'EX_USAGE', 'SYSTEM',
+    'IS_macOS', 'IS_WINDOWS', 'pyimplementation', 'LockFailed',
+    'get_fdmax', 'Pidfile', 'create_pidlock',
+    'close_open_fds', 'DaemonContext', 'detached', 'parse_uid',
+    'parse_gid', 'setgroups', 'initgroups', 'setgid', 'setuid',
+    'maybe_drop_privileges', 'signals', 'set_process_title',
+    'set_mp_process_title', 'get_errno_name', 'ignore_errno',
+    'fd_by_path', 'isatty',
+]
 
 # exitcodes
 EX_OK = getattr(os, 'EX_OK', 0)
@@ -124,10 +120,11 @@ class Pidfile(object):
 
     This is the type returned by :func:`create_pidlock`.
 
-    TIP: Use the :func:`create_pidlock` function instead,
-    which is more convenient and also removes stale pidfiles (when
-    the process holding the lock is no longer running).
-
+    See Also:
+        Best practice is to not use this directly but rather use
+        the :func:`create_pidlock` function instead,
+        which is more convenient and also removes stale pidfiles (when
+        the process holding the lock is no longer running).
     """
 
     #: Path to the pid lock file.
@@ -234,14 +231,11 @@ def create_pidlock(pidfile):
     to release the lock at exit, you can skip this by calling
     :func:`_create_pidlock` instead.
 
-    :returns: :class:`Pidfile`.
+    Returns:
+       Pidfile: used to manage the lock.
 
-    **Example**:
-
-    .. code-block:: python
-
-        pidlock = create_pidlock('/var/run/app.pid')
-
+    Example:
+        >>> pidlock = create_pidlock('/var/run/app.pid')
     """
     pidlock = _create_pidlock(pidfile)
     atexit.register(pidlock.release)
@@ -263,16 +257,14 @@ def fd_by_path(paths):
     This method returns list of file descriptors corresponding to
     file paths passed in paths variable.
 
-    :keyword paths: List of file paths.
+    Arguments:
+        paths: List[str]: List of file paths.
 
-    :returns: :list:.
+    Returns:
+        List[int]: List of file descriptors.
 
-    **Example**:
-
-    .. code-block:: python
-
-        keep = fd_by_path(['/dev/urandom',
-                           '/my/precious/'])
+    Example:
+        >>> keep = fd_by_path(['/dev/urandom', '/my/precious/'])
     """
     stats = set()
     for path in paths:
@@ -295,6 +287,7 @@ def fd_by_path(paths):
 
 
 class DaemonContext(object):
+
     _is_open = False
 
     def __init__(self, pidfile=None, workdir=None, umask=None,
@@ -360,38 +353,38 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
              workdir=None, fake=False, **opts):
     """Detach the current process in the background (daemonize).
 
-    :keyword logfile: Optional log file.  The ability to write to this file
-       will be verified before the process is detached.
-    :keyword pidfile: Optional pidfile.  The pidfile will not be created,
-      as this is the responsibility of the child.  But the process will
-      exit if the pid lock exists and the pid written is still running.
-    :keyword uid: Optional user id or user name to change
-      effective privileges to.
-    :keyword gid: Optional group id or group name to change effective
-      privileges to.
-    :keyword umask: Optional umask that will be effective in the child process.
-    :keyword workdir: Optional new working directory.
-    :keyword fake: Don't actually detach, intended for debugging purposes.
-    :keyword \*\*opts: Ignored.
+    Arguments:
+        logfile (str): Optional log file.
+            The ability to write to this file
+            will be verified before the process is detached.
+        pidfile (str): Optional pid file.
+            The pidfile will not be created,
+            as this is the responsibility of the child.  But the process will
+            exit if the pid lock exists and the pid written is still running.
+        uid (int, str): Optional user id or user name to change
+            effective privileges to.
+        gid (int, str): Optional group id or group name to change
+            effective privileges to.
+        umask (str, int): Optional umask that will be effective in
+            the child process.
+        workdir (str): Optional new working directory.
+        fake (bool): Don't actually detach, intended for debugging purposes.
+        **opts (Any): Ignored.
 
-    **Example**:
-
-    .. code-block:: python
-
-        from celery.platforms import detached, create_pidlock
-
-        with detached(logfile='/var/log/app.log', pidfile='/var/run/app.pid',
-                      uid='nobody'):
-            # Now in detached child process with effective user set to nobody,
-            # and we know that our logfile can be written to, and that
-            # the pidfile is not locked.
-            pidlock = create_pidlock('/var/run/app.pid')
-
-            # Run the program
-            program.run(logfile='/var/log/app.log')
-
+    Example:
+        >>> from celery.platforms import detached, create_pidlock
+        >>> with detached(
+        ...           logfile='/var/log/app.log',
+        ...           pidfile='/var/run/app.pid',
+        ...           uid='nobody'):
+        ... # Now in detached child process with effective user set to nobody,
+        ... # and we know that our logfile can be written to, and that
+        ... # the pidfile is not locked.
+        ... pidlock = create_pidlock('/var/run/app.pid')
+        ...
+        ... # Run the program
+        ... program.run(logfile='/var/log/app.log')
     """
-
     if not resource:
         raise RuntimeError('This platform does not support detach.')
     workdir = os.getcwd() if workdir is None else workdir
@@ -415,9 +408,10 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
 def parse_uid(uid):
     """Parse user id.
 
-    uid can be an integer (uid) or a string (user name), if a user name
-    the uid is taken from the system user registry.
-
+    Arguments:
+        uid (str, int): Actual uid, or the username of a user.
+    Returns:
+        int: The actual uid.
     """
     try:
         return int(uid)
@@ -431,9 +425,10 @@ def parse_uid(uid):
 def parse_gid(gid):
     """Parse group id.
 
-    gid can be an integer (gid) or a string (group name), if a group name
-    the gid is taken from the system group registry.
-
+    Arguments:
+        gid (str, int): Actual gid, or the name of a group.
+    Returns:
+        int: The actual gid of the group.
     """
     try:
         return int(gid)
@@ -512,7 +507,6 @@ def maybe_drop_privileges(uid=None, gid=None):
     changed to the users primary group.
 
     If only GID is specified, only the group is changed.
-
     """
     if sys.platform == 'win32':
         return
@@ -563,10 +557,7 @@ class Signals(object):
     If the requested signal is not supported on the current platform,
     the operation will be ignored.
 
-    **Examples**:
-
-    .. code-block:: pycon
-
+    Example:
         >>> from celery.platforms import signals
 
         >>> from proj.handlers import my_handler
@@ -593,7 +584,6 @@ class Signals(object):
         >>> signals.update(INT=exit_handler,
         ...                TERM=exit_handler,
         ...                HUP=hup_handler)
-
     """
 
     ignored = _signal.SIG_IGN
@@ -639,18 +629,16 @@ class Signals(object):
     def reset(self, *signal_names):
         """Reset signals to the default signal handler.
 
-        Does nothing if the platform doesn't support signals,
+        Does nothing if the platform has no support for signals,
         or the specified signal in particular.
-
         """
         self.update((sig, self.default) for sig in signal_names)
 
     def ignore(self, *signal_names):
         """Ignore signal using :const:`SIG_IGN`.
 
-        Does nothing if the platform doesn't support signals,
+        Does nothing if the platform has no support for signals,
         or the specified signal in particular.
-
         """
         self.update((sig, self.ignored) for sig in signal_names)
 
@@ -660,9 +648,8 @@ class Signals(object):
     def __setitem__(self, signal_name, handler):
         """Install signal handler.
 
-        Does nothing if the current platform doesn't support signals,
+        Does nothing if the current platform has no support for signals,
         or the specified signal in particular.
-
         """
         try:
             _signal.signal(self.signum(signal_name), handler)
@@ -692,7 +679,6 @@ def set_process_title(progname, info=None):
     """Set the :command:`ps` name for the currently running process.
 
     Only works if :pypi:`setproctitle` is installed.
-
     """
     proctitle = '[{0}]'.format(progname)
     proctitle = '{0} {1}'.format(proctitle, info) if info else proctitle
@@ -712,7 +698,6 @@ else:
         process name.
 
         Only works if :pypi:`setproctitle` is installed.
-
         """
         if hostname:
             progname = '{0}: {1}'.format(progname, hostname)
@@ -741,8 +726,9 @@ def ignore_errno(*errnos, **kwargs):
         >>> with ignore_errno(errno.ENOENT, errno.EPERM):
         ...    pass
 
-    :keyword types: A tuple of exceptions to ignore (when the errno matches),
-                    defaults to :exc:`Exception`.
+    Arguments:
+        types (Tuple[Exception]): A tuple of exceptions to ignore
+            (when the errno matches).  Defaults to :exc:`Exception`.
     """
     types = kwargs.get('types') or (Exception,)
     errnos = [get_errno_name(errno) for errno in errnos]

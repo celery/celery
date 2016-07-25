@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Base command-line interface."""
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
@@ -113,10 +114,12 @@ class HelpFormatter(IndentedHelpFormatter):
 class Command(object):
     """Base class for command-line applications.
 
-    :keyword app: The current app.
-    :keyword get_app: Callable returning the current app if no app provided.
-
+    Arguments:
+        app (~@Celery): The app to use.
+        get_app (Callable): Fucntion returning the current app
+            when no app provided.
     """
+
     Error = Error
     UsageError = UsageError
     Parser = OptionParser
@@ -231,9 +234,9 @@ class Command(object):
     def execute_from_commandline(self, argv=None):
         """Execute application from command-line.
 
-        :keyword argv: The list of command-line arguments.
-                       Defaults to ``sys.argv``.
-
+        Arguments:
+            argv (List[str]): The list of command-line arguments.
+                Defaults to ``sys.argv``.
         """
         if argv is None:
             argv = list(sys.argv)
@@ -276,15 +279,15 @@ class Command(object):
     def ask(self, q, choices, default=None):
         """Prompt user to choose from a tuple of string values.
 
-        :param q: the question to ask (do not include questionark)
-        :param choice: tuple of possible choices, must be lowercase.
-        :param default: Default value if any.
-
         If a default is not specified the question will be repeated
         until the user gives a valid choice.
 
-        Matching is done case insensitively.
+        Matching is case insensitive.
 
+        Arguments:
+            q (str): the question to ask (do not include questionark)
+            choice (Tuple[str]): tuple of possible choices, must be lowercase.
+            default (Any): Default value if any.
         """
         schoices = choices
         if default is not None:
@@ -305,12 +308,13 @@ class Command(object):
         """Parse command-line arguments from ``argv`` and dispatch
         to :meth:`run`.
 
-        :param prog_name: The program name (``argv[0]``).
-        :param argv: Command arguments.
+        Warning:
+            Exits with an error message if :attr:`supports_args` is disabled
+            and ``argv`` contains positional arguments.
 
-        Exits with an error message if :attr:`supports_args` is disabled
-        and ``argv`` contains positional arguments.
-
+        Arguments:
+            prog_name (str): The program name (``argv[0]``).
+            argv (List[str]): Rest of command-line arguments.
         """
         options, args = self.prepare_args(
             *self.parse_options(prog_name, argv, command))

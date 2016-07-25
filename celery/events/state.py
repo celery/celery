@@ -1,20 +1,17 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.events.state
-    ~~~~~~~~~~~~~~~~~~~
+"""In-memory representation of cluster state.
 
-    This module implements a data-structure used to keep
-    track of the state of a cluster of workers and the tasks
-    it is working on (by consuming events).
+This module implements a data-structure used to keep
+track of the state of a cluster of workers and the tasks
+it is working on (by consuming events).
 
-    For every event consumed the state is updated,
-    so the state represents the state of the cluster
-    at the time of the last event.
+For every event consumed the state is updated,
+so the state represents the state of the cluster
+at the time of the last event.
 
-    Snapshots (:mod:`celery.events.snapshot`) can be used to
-    take "pictures" of this state at regular intervals
-    to e.g. store that in a database.
-
+Snapshots (:mod:`celery.events.snapshot`) can be used to
+take "pictures" of this state at regular intervals
+to e.g. store that in a database.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -31,7 +28,7 @@ from time import time
 from weakref import WeakSet, ref
 
 from kombu.clocks import timetuple
-from kombu.utils import cached_property
+from kombu.utils.objects import cached_property
 
 from celery import states
 from celery.five import items, python_2_unicode_compatible, values
@@ -90,7 +87,6 @@ class CallableDefaultdict(defaultdict):
 
         >>> add_tasks = list(state.tasks_by_type(
         ...     'proj.tasks.add', reverse=True))
-
     """
 
     def __init__(self, fun, *args, **kwargs):
@@ -461,7 +457,8 @@ class State(object):
     def get_or_create_worker(self, hostname, **kwargs):
         """Get or create worker by hostname.
 
-        Return tuple of ``(worker, was_created)``.
+        Returns:
+            Tuple: of ``(worker, was_created)`` pairs.
         """
         try:
             worker = self.workers[hostname]
@@ -656,8 +653,8 @@ class State(object):
         This is slower than accessing :attr:`tasks_by_type`,
         but will be ordered by time.
 
-        Return a generator giving ``(uuid, Task)`` tuples.
-
+        Returns:
+            Generator: giving ``(uuid, Task)`` pairs.
         """
         return islice(
             ((uuid, task) for uuid, task in self.tasks_by_time(reverse=reverse)
@@ -668,9 +665,7 @@ class State(object):
     def _tasks_by_worker(self, hostname, limit=None, reverse=True):
         """Get all tasks by worker.
 
-        This is slower than accessing :attr:`tasks_by_worker`,
-        but will be ordered by time.
-
+        Slower than accessing :attr:`tasks_by_worker`, but ordered by time.
         """
         return islice(
             ((uuid, task) for uuid, task in self.tasks_by_time(reverse=reverse)

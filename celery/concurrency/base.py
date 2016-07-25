@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.concurrency.base
-    ~~~~~~~~~~~~~~~~~~~~~~~
-
-    TaskPool interface.
-
-"""
+"""Base Execution Pool"""
 from __future__ import absolute_import, unicode_literals
 
 import logging
@@ -146,7 +140,6 @@ class BasePool(object):
 
         Callbacks should optimally return as soon as possible since
         otherwise the thread which handles the result will get blocked.
-
         """
         if self._does_debug:
             logger.debug('TaskPool: Apply %s (args:%s kwargs:%s)',

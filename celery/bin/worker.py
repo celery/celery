@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
+"""Program used to start a Celery worker instance.
 
 The :program:`celery worker` command (previously known as ``celeryd``)
 
@@ -160,7 +160,6 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 .. cmdoption:: --executable
 
     Executable to use for the detached process.
-
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -184,21 +183,23 @@ __MODULE_DOC__ = __doc__
 class worker(Command):
     """Start worker instance.
 
-    Examples::
+    Examples:
+        .. code-block:: console
 
-        celery worker --app=proj -l info
-        celery worker -A proj -l info -Q hipri,lopri
+            $ celery worker --app=proj -l info
+            $ celery worker -A proj -l info -Q hipri,lopri
 
-        celery worker -A proj --concurrency=4
-        celery worker -A proj --concurrency=1000 -P eventlet
-
+            $ celery worker -A proj --concurrency=4
+            $ celery worker -A proj --concurrency=1000 -P eventlet
     """
     doc = __MODULE_DOC__  # parse help from this too
     namespace = 'worker'
     enable_config_from_cmdline = True
     supports_args = False
+    removed_flags = {'--no-execv', '--force-execv'}
 
     def run_from_argv(self, prog_name, argv=None, command=None):
+        argv = [x for x in argv if x not in self.removed_flags]
         command = sys.argv[0] if command is None else command
         argv = sys.argv[1:] if argv is None else argv
         # parse options before detaching so errors can be handled.

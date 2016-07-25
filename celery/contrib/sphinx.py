@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-``celery.contrib.sphinx``
-=========================
+"""Sphinx documentation plugin used to document tasks.
 
-Sphinx documentation plugin
+Introduction
+============
 
-**Usage**
+Usage
+-----
 
 Add the extension to your :file:`docs/conf.py` configuration module:
 
@@ -21,14 +21,12 @@ then you can change the ``celery_task_prefix`` configuration value:
 
     celery_task_prefix = '(task)'  # < default
 
-
 With the extension installed `autodoc` will automatically find
 task decorated objects and generate the correct (as well as
 add a ``(task)`` prefix), and you can also refer to the tasks
 using `:task:proj.tasks.add` syntax.
 
 Use ``.. autotask::`` to manually document a task.
-
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -50,7 +48,7 @@ class TaskDocumenter(FunctionDocumenter):
         return isinstance(member, BaseTask) and getattr(member, '__wrapped__')
 
     def format_args(self):
-        wrapped = getattr(self.object, '__wrapped__')
+        wrapped = getattr(self.object, '__wrapped__', None)
         if wrapped is not None:
             argspec = getfullargspec(wrapped)
             fmt = formatargspec(*argspec)

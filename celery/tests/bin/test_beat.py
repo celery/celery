@@ -11,11 +11,16 @@ from celery.apps import beat as beatapp
 from celery.tests.case import AppCase, Mock, mock, patch
 
 
-class MockBeat(beatapp.Beat):
-    Service = Mock(
-        name='MockBeat.Service',
-        return_value=Mock(name='MockBeat()', max_interval=3.3),
-    )
+def MockBeat(*args, **kwargs):
+    class _Beat(beatapp.Beat):
+        Service = Mock(
+            name='MockBeat.Service',
+            return_value=Mock(name='MockBeat()', max_interval=3.3),
+        )
+    b = _Beat(*args, **kwargs)
+    sched = b.Service.return_value.get_scheduler = Mock()
+    sched.return_value.max_interval = 3.3
+    return b
 
 
 class test_Beat(AppCase):

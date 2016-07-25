@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.backends.couchbase``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Couchbase result store backend.
-
-"""
+"""Couchbase result store backend."""
 from __future__ import absolute_import, unicode_literals
 
 import logging
@@ -30,10 +24,11 @@ __all__ = ['CouchbaseBackend']
 class CouchbaseBackend(KeyValueStoreBackend):
     """Couchbase backend.
 
-    :raises celery.exceptions.ImproperlyConfigured: if
-        module :pypi:`couchbase` is not available.
-
+    Raises:
+        celery.exceptions.ImproperlyConfigured:
+            if module :pypi:`couchbase` is not available.
     """
+
     bucket = 'default'
     host = 'localhost'
     port = 8091

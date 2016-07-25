@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.bin.celeryd_detach
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
+"""Program used to daemonize the worker.
 
-    Program used to daemonize the worker
-
-    Using :func:`os.execv` because forking and multiprocessing
-    leads to weird issues (it was a long time ago now, but it
-    could have something to do with the threading mutex bug)
-
+Using :func:`os.execv` as forking and multiprocessing
+leads to weird issues (it was a long time ago now, but it
+could have something to do with the threading mutex bug)
 """
 from __future__ import absolute_import, unicode_literals
 

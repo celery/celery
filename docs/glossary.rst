@@ -12,7 +12,7 @@ Glossary
         will cause the message to be redelivered.   Exactly when a
         transaction is considered a failure varies by transport.  In AMQP the
         transaction fails when the connection/channel is closed (or lost),
-        but in SQS the transaction times out after a configurable amount
+        but in Redis/SQS the transaction times out after a configurable amount
         of time (the ``visibility_timeout``).
 
     ack

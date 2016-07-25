@@ -1,16 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.backends.redis``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Redis result store backend.
-
-"""
+"""Redis result store backend."""
 from __future__ import absolute_import, unicode_literals
 
 from functools import partial
 
-from kombu.utils import cached_property, retry_over_time
+from kombu.utils.functional import retry_over_time
+from kombu.utils.objects import cached_property
 from kombu.utils.url import _parse_url
 
 from celery import states
@@ -120,14 +115,12 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             raise ImproperlyConfigured(REDIS_MISSING)
 
         if host and '://' in host:
-            url = host
-            host = None
+            url, host = host, None
 
         self.max_connections = (
             max_connections or
             _get('redis_max_connections') or
-            self.max_connections
-        )
+            self.max_connections)
         self._ConnectionPool = connection_pool
 
         self.connparams = {
@@ -196,8 +189,7 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         return retry_over_time(
             fun, self.connection_errors, args, {},
             partial(self.on_connection_error, max_retries),
-            **retry_policy
-        )
+            **retry_policy)
 
     def on_connection_error(self, max_retries, exc, intervals, retries):
         tts = next(intervals)

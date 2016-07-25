@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.app.trace
-    ~~~~~~~~~~~~~~~~
+"""Trace task execution.
 
-    This module defines how the task execution is traced:
-    errors are recorded, handlers are applied and so on.
-
+This module defines how the task execution is traced:
+errors are recorded, handlers are applied and so on.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -43,8 +40,10 @@ from celery.utils.serialization import (
 )
 from celery.utils.text import truncate
 
-__all__ = ['TraceInfo', 'build_tracer', 'trace_task',
-           'setup_worker_optimizations', 'reset_worker_optimizations']
+__all__ = [
+    'TraceInfo', 'build_tracer', 'trace_task',
+    'setup_worker_optimizations', 'reset_worker_optimizations',
+]
 
 logger = get_logger(__name__)
 info = logger.info

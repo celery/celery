@@ -1,19 +1,13 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.bootsteps
-    ~~~~~~~~~~~~~~~~
-
-    A directed acyclic graph of reusable components.
-
-"""
+"""A directed acyclic graph of reusable components."""
 from __future__ import absolute_import, unicode_literals
 
 from collections import deque
 from threading import Event
 
 from kombu.common import ignore_errors
-from kombu.utils import symbol_by_name
 from kombu.utils.encoding import bytes_to_str
+from kombu.utils.imports import symbol_by_name
 
 from .five import bytes_if_py2, values, with_metaclass
 from .utils.graph import DependencyGraph, GraphFormatter
@@ -83,13 +77,14 @@ class StepFormatter(GraphFormatter):
 class Blueprint(object):
     """Blueprint containing bootsteps that can be applied to objects.
 
-    :keyword steps: List of steps.
-    :keyword name: Set explicit name for this blueprint.
-    :keyword app: Set the Celery app for this blueprint.
-    :keyword on_start: Optional callback applied after blueprint start.
-    :keyword on_close: Optional callback applied before blueprint close.
-    :keyword on_stopped: Optional callback applied after blueprint stopped.
-
+    Arguments:
+        steps Sequence[Union[str, Step]]: List of steps.
+        name (str): Set explicit name for this blueprint.
+        app (~@Celery): Set the Celery app for this blueprint.
+        on_start (Callable): Optional callback applied after blueprint start.
+        on_close (Callable): Optional callback applied before blueprint close.
+        on_stopped (Callable): Optional callback applied after
+            blueprint stopped.
     """
     GraphFormatter = StepFormatter
 
@@ -206,7 +201,6 @@ class Blueprint(object):
 
         For :class:`StartStopStep` the services created
         will also be added to the objects ``steps`` attribute.
-
         """
         self._debug('Preparing bootsteps.')
         order = self.order = []
@@ -305,7 +299,6 @@ class Step(object):
     is bound to a parent object, and can as such be used
     to initialize attributes in the parent object at
     parent instantiation-time.
-
     """
 
     #: Optional step name, will use ``qualname`` if not specified.

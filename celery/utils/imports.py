@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.utils.import
-    ~~~~~~~~~~~~~~~~~~~
-
-    Utilities related to importing modules and symbols by name.
-
-"""
+"""Utilities related to importing modules and symbols by name."""
 from __future__ import absolute_import, unicode_literals
 
 import imp as _imp
@@ -15,7 +9,7 @@ import sys
 
 from contextlib import contextmanager
 
-from kombu.utils import symbol_by_name
+from kombu.utils.imports import symbol_by_name
 
 from celery.five import reload
 
@@ -54,8 +48,8 @@ else:
 def instantiate(name, *args, **kwargs):
     """Instantiate class by name.
 
-    See :func:`symbol_by_name`.
-
+    See Also:
+        :func:`symbol_by_name`.
     """
     return symbol_by_name(name)(*args, **kwargs)
 

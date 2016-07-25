@@ -1,20 +1,17 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.concurrency.asynpool
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""Version of multiprocessing.Pool using Async I/O.
 
-    .. note::
+.. note::
 
-        This module will be moved soon, so don't use it directly.
+    This module will be moved soon, so don't use it directly.
 
-    Non-blocking version of :class:`multiprocessing.Pool`.
+This is a non-blocking version of :class:`multiprocessing.Pool`.
 
-    This code deals with three major challenges:
+This code deals with three major challenges:
 
-        1) Starting up child processes and keeping them running.
-        2) Sending jobs to the processes and receiving results back.
-        3) Safely shutting down this system.
-
+#. Starting up child processes and keeping them running.
+#. Sending jobs to the processes and receiving results back.
+#. Safely shutting down this system.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -40,8 +37,8 @@ from billiard.compat import buf_t, setblocking, isblocking
 from billiard.queues import _SimpleQueue
 from kombu.async import READ, WRITE, ERR
 from kombu.serialization import pickle as _pickle
-from kombu.utils import fxrange
 from kombu.utils.eventio import SELECT_BAD_FD
+from kombu.utils.functional import fxrange
 from vine import promise
 
 from celery.five import Counter, items, values
@@ -153,21 +150,22 @@ def _select(readers=None, writers=None, err=None, timeout=0,
     """Simple wrapper to :class:`~select.select`, using :`~select.poll`
     as the implementation.
 
-    :param readers: Set of reader fds to test if readable.
-    :param writers: Set of writer fds to test if writable.
-    :param err: Set of fds to test for error condition.
+    Arguments:
+        readers (Set[Fd]): Set of reader fds to test if readable.
+        writers (Set[Fd]): Set of writer fds to test if writable.
+        err (Set[Fd]): Set of fds to test for error condition.
 
     All fd sets passed must be mutable as this function
     will remove non-working fds from them, this also means
     the caller must make sure there are still fds in the sets
     before calling us again.
 
-    :returns: tuple of ``(readable, writable, again)``, where
+    Returns:
+        Tuple[Set, Set, Set]: of ``(readable, writable, again)``, where
         ``readable`` is a set of fds that have data available for read,
         ``writable`` is a set of fds that is ready to be written to
         and ``again`` is a flag that if set means the caller must
         throw away the result and call us again.
-
     """
     readers = set() if readers is None else readers
     writers = set() if writers is None else writers
@@ -1158,7 +1156,6 @@ class AsynPool(_pool.Pool):
 
         In Celery this is called whenever the transport connection is lost
         (consumer restart), and when a process is terminated.
-
         """
         resq = proc.outq._reader
         on_state_change = self._result_handler.on_state_change

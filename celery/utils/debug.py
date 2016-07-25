@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.utils.debug
-    ~~~~~~~~~~~~~~~~~~
-
-    Utilities for debugging memory usage.
-
-"""
+"""Utilities for debugging memory usage, blocking calls, etc."""
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
@@ -74,7 +68,6 @@ def sample_mem():
     """Sample RSS memory usage.
 
     Statistics can then be output by calling :func:`memdump`.
-
     """
     current_rss = mem_rss()
     _mem_sample.append(current_rss)
@@ -97,7 +90,6 @@ def memdump(samples=10, file=None):  # pragma: no cover
     Will print a sample of all RSS memory samples added by
     calling :func:`sample_mem`, and in addition print
     used RSS memory after :func:`gc.collect`.
-
     """
     say = partial(print, file=file)
     if ps() is None:
@@ -118,7 +110,6 @@ def sample(x, n, k=0):
     item is returned.
 
     ``k`` can be used as offset.
-
     """
     j = len(x) // n
     for _ in range(n):
@@ -132,8 +123,9 @@ def sample(x, n, k=0):
 def hfloat(f, p=5):
     """Convert float to value suitable for humans.
 
-    :keyword p: Float precision.
-
+    Arguments:
+        f (float): The floating point number.
+        p (int): Floating point precision (default is 5).
     """
     i = int(f)
     return i if i == f else '{0:.{p}}'.format(f, p=p)

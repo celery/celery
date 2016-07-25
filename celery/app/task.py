@@ -1,17 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.app.task
-    ~~~~~~~~~~~~~~~
-
-    Task Implementation: Task request context, and the base task class.
-
-"""
+"""Task implementation: request context and the task base class."""
 from __future__ import absolute_import, unicode_literals
 
 import sys
 
 from billiard.einfo import ExceptionInfo
-from kombu.utils import uuid
+from kombu.utils.uuid import uuid
 
 from celery import current_app, group
 from celery import states
@@ -67,7 +61,6 @@ def _reprtask(task, fmt=None, flags=None):
 
 @python_2_unicode_compatible
 class Context(object):
-    # Default context
     logfile = None
     loglevel = None
     hostname = None
@@ -149,7 +142,6 @@ class Task(object):
     When called tasks apply the :meth:`run` method.  This method must
     be defined by all tasks (that is unless the :meth:`__call__` method
     is overridden).
-
     """
     __trace__ = None
     __v2_compat__ = False  # set by old base in celery.task.base
@@ -385,11 +377,11 @@ class Task(object):
 
         Does not support the extra options enabled by :meth:`apply_async`.
 
-        :param \*args: positional arguments passed on to the task.
-        :param \*\*kwargs: keyword arguments passed on to the task.
-
-        :returns: :class:`celery.result.AsyncResult`
-
+        Arguments:
+            *args (Any): Positional arguments passed on to the task.
+            **kwargs (Any): Keyword arguments passed on to the task.
+        Returns:
+            celery.result.AsyncResult: Future promise.
         """
         return self.apply_async(args, kwargs)
 
@@ -397,103 +389,91 @@ class Task(object):
                     link=None, link_error=None, shadow=None, **options):
         """Apply tasks asynchronously by sending a message.
 
-        :keyword args: The positional arguments to pass on to the
-                       task (a :class:`list` or :class:`tuple`).
+        Arguments:
+            args (Tuple): The positional arguments to pass on to the task.
 
-        :keyword kwargs: The keyword arguments to pass on to the
-                         task (a :class:`dict`)
+            kwargs (Dict): The keyword arguments to pass on to the task.
 
-        :keyword countdown: Number of seconds into the future that the
-                            task should execute. Defaults to immediate
-                            execution.
+            countdown (float): Number of seconds into the future that the
+                task should execute.  Defaults to immediate execution.
 
-        :keyword eta: A :class:`~datetime.datetime` object describing
-                      the absolute time and date of when the task should
-                      be executed.  May not be specified if `countdown`
-                      is also supplied.
+            eta (~datetime.datetime): Absolute time and date of when the task
+                should be executed.  May not be specified if `countdown`
+                is also supplied.
 
-        :keyword expires: Either a :class:`int`, describing the number of
-                          seconds, or a :class:`~datetime.datetime` object
-                          that describes the absolute time and date of when
-                          the task should expire.  The task will not be
-                          executed after the expiration time.
+            expires (float, ~datetime.datetime): Datetime or
+                seconds in the future for the task should expire.
+                The task will not be executed after the expiration time.
 
-        :keyword shadow: Override task name used in logs/monitoring
-            (default from :meth:`shadow_name`).
+            shadow (str): Override task name used in logs/monitoring.
+                Default is retrieved from :meth:`shadow_name`.
 
-        :keyword connection: Re-use existing broker connection instead
-                             of establishing a new one.
+            connection (kombu.Connection): Re-use existing broker connection
+                instead of acquiring one from the connection pool.
 
-        :keyword retry: If enabled sending of the task message will be retried
-                        in the event of connection loss or failure.  Default
-                        is taken from the :setting:`task_publish_retry`
-                        setting.  Note that you need to handle the
-                        producer/connection manually for this to work.
+            retry (bool): If enabled sending of the task message will be
+                retried in the event of connection loss or failure.
+                Default is taken from the :setting:`task_publish_retry`
+                setting.  Note that you need to handle the
+                producer/connection manually for this to work.
 
-        :keyword retry_policy:  Override the retry policy used.  See the
-                                :setting:`task_publish_retry_policy`
-                                setting.
+            retry_policy (Mapping): Override the retry policy used.
+                See the :setting:`task_publish_retry_policy` setting.
 
-        :keyword routing_key: Custom routing key used to route the task to a
-                              worker server. If in combination with a
-                              ``queue`` argument only used to specify custom
-                              routing keys to topic exchanges.
+            queue (str, kombu.Queue): The queue to route the task to.
+                This must be a key present in :setting:`task_queues`, or
+                :setting:`task_create_missing_queues` must be
+                enabled.  See :ref:`guide-routing` for more
+                information.
 
-        :keyword queue: The queue to route the task to.  This must be a key
-                        present in :setting:`task_queues`, or
-                        :setting:`task_create_missing_queues` must be
-                        enabled.  See :ref:`guide-routing` for more
-                        information.
+            exchange (str, kombu.Exchange): Named custom exchange to send the
+                task to.  Usually not used in combination with the ``queue``
+                argument.
 
-        :keyword exchange: Named custom exchange to send the task to.
-                           Usually not used in combination with the ``queue``
-                           argument.
+            routing_key (str): Custom routing key used to route the task to a
+                worker server. If in combination with a ``queue`` argument
+                only used to specify custom routing keys to topic exchanges.
 
-        :keyword priority: The task priority, a number between 0 and 9.
-                           Defaults to the :attr:`priority` attribute.
+            priority (int): The task priority, a number between 0 and 9.
+                Defaults to the :attr:`priority` attribute.
 
-        :keyword serializer: A string identifying the default
-                             serialization method to use.  Can be `pickle`,
-                             `json`, `yaml`, `msgpack` or any custom
-                             serialization method that has been registered
-                             with :mod:`kombu.serialization.registry`.
-                             Defaults to the :attr:`serializer` attribute.
+            serializer (str): Serialization method to use.
+                Can be `pickle`, `json`, `yaml`, `msgpack` or any custom
+                serialization method that has been registered
+                with :mod:`kombu.serialization.registry`.
+                Defaults to the :attr:`serializer` attribute.
 
-        :keyword compression: A string identifying the compression method
-                              to use.  Can be one of ``zlib``, ``bzip2``,
-                              or any custom compression methods registered with
-                              :func:`kombu.compression.register`. Defaults to
-                              the :setting:`task_compression`
-                              setting.
-        :keyword link: A single, or a list of tasks to apply if the
-                       task exits successfully.
-        :keyword link_error: A single, or a list of tasks to apply
-                      if an error occurs while executing the task.
+            compression (str): Optional compression method
+                to use.  Can be one of ``zlib``, ``bzip2``,
+                or any custom compression methods registered with
+                :func:`kombu.compression.register`. Defaults to
+                the :setting:`task_compression` setting.
 
-        :keyword producer: :class:`kombu.Producer` instance to use.
+            link (~@Signature): A single, or a list of tasks signatures
+                to apply if the task returns successfully.
 
-        :keyword add_to_parent: If set to True (default) and the task
-            is applied while executing another task, then the result
-            will be appended to the parent tasks ``request.children``
-            attribute.  Trailing can also be disabled by default using the
-            :attr:`trail` attribute
+            link_error (~@Signature): A single, or a list of task signatures
+                to apply if an error occurs while executing the task.
 
-        :keyword publisher: Deprecated alias to ``producer``.
+            producer (kombu.Producer): custom producer to use when publishing
+                the task.
 
-        :keyword headers: Message headers to be sent in the
-            task (a :class:`dict`)
+            add_to_parent (bool): If set to True (default) and the task
+                is applied while executing another task, then the result
+                will be appended to the parent tasks ``request.children``
+                attribute.  Trailing can also be disabled by default using the
+                :attr:`trail` attribute
 
-        :rtype :class:`celery.result.AsyncResult`: if
-            :setting:`task_always_eager` is not set, otherwise
-            :class:`celery.result.EagerResult`:
+            publisher (kombu.Producer): Deprecated alias to ``producer``.
 
-        Also supports all keyword arguments supported by
-        :meth:`kombu.Producer.publish`.
+            headers (Dict): Message headers to be included in the message.
 
-        .. note::
-            If the :setting:`task_always_eager` setting is set, it will
-            be replaced by a local :func:`apply` call instead.
+        Returns:
+            ~@AsyncResult: Future promise.
 
+        Note:
+            Also supports all keyword arguments supported by
+            :meth:`kombu.Producer.publish`.
         """
         try:
             check_arguments = self.__header__
@@ -524,23 +504,22 @@ class Task(object):
     def shadow_name(self, args, kwargs, options):
         """Override for custom task name in worker logs/monitoring.
 
-        :param args: Task positional arguments.
-        :param kwargs: Task keyword arguments.
-        :param options: Task execution options.
+        Example:
+            .. code-block:: python
 
-        **Example**:
+                from celery.utils.imports import qualname
 
-        .. code-block:: python
+                def shadow_name(task, args, kwargs, options):
+                    return qualname(args[0])
 
-            from celery.utils.imports import qualname
+                @app.task(shadow_name=shadow_name, serializer='pickle')
+                def apply_function_async(fun, *args, **kwargs):
+                    return fun(*args, **kwargs)
 
-            def shadow_name(task, args, kwargs, options):
-                return qualname(args[0])
-
-            @app.task(shadow_name=shadow_name, serializer='pickle')
-            def apply_function_async(fun, *args, **kwargs):
-                return fun(*args, **kwargs)
-
+        Arguments:
+            args (Tuple): Task positional arguments.
+            kwargs (Dict): Task keyword arguments.
+            options (Dict): Task execution options.
         """
         pass
 
@@ -562,48 +541,7 @@ class Task(object):
               eta=None, countdown=None, max_retries=None, **options):
         """Retry the task.
 
-        :param args: Positional arguments to retry with.
-        :param kwargs: Keyword arguments to retry with.
-        :keyword exc: Custom exception to report when the max restart
-            limit has been exceeded (default:
-            :exc:`~@MaxRetriesExceededError`).
-
-            If this argument is set and retry is called while
-            an exception was raised (``sys.exc_info()`` is set)
-            it will attempt to re-raise the current exception.
-
-            If no exception was raised it will raise the ``exc``
-            argument provided.
-        :keyword countdown: Time in seconds to delay the retry for.
-        :keyword eta: Explicit time and date to run the retry at
-                      (must be a :class:`~datetime.datetime` instance).
-        :keyword max_retries: If set, overrides the default retry limit for
-            this execution. Changes to this parameter do not propagate to
-            subsequent task retry attempts. A value of :const:`None`, means
-            "use the default", so if you want infinite retries you would
-            have to set the :attr:`max_retries` attribute of the task to
-            :const:`None` first.
-        :keyword time_limit: If set, overrides the default time limit.
-        :keyword soft_time_limit: If set, overrides the default soft
-                                  time limit.
-        :keyword \*\*options: Any extra options to pass on to
-                              :meth:`apply_async`.
-        :keyword throw: If this is :const:`False`, do not raise the
-                        :exc:`~@Retry` exception,
-                        that tells the worker to mark the task as being
-                        retried.  Note that this means the task will be
-                        marked as failed if the task raises an exception,
-                        or successful if it returns.
-
-        :raises celery.exceptions.Retry: To tell the worker that
-            the task has been re-sent for retry. This always happens,
-            unless the `throw` keyword argument has been explicitly set
-            to :const:`False`, and is considered normal operation.
-
-        **Example**
-
-        .. code-block:: pycon
-
+        Example:
             >>> from imaginary_twitter_lib import Twitter
             >>> from proj.celery import app
 
@@ -616,10 +554,49 @@ class Task(object):
             ...         # Retry in 5 minutes.
             ...         raise self.retry(countdown=60 * 5, exc=exc)
 
-        Although the task will never return above as `retry` raises an
-        exception to notify the worker, we use `raise` in front of the retry
-        to convey that the rest of the block will not be executed.
+        Note:
+            Although the task will never return above as `retry` raises an
+            exception to notify the worker, we use `raise` in front of the
+            retry to convey that the rest of the block will not be executed.
 
+        Arguments:
+            args (Tuple): Positional arguments to retry with.
+            kwargs (Dict): Keyword arguments to retry with.
+            exc (Exception): Custom exception to report when the max restart
+                limit has been exceeded (default:
+                :exc:`~@MaxRetriesExceededError`).
+
+                If this argument is set and retry is called while
+                an exception was raised (``sys.exc_info()`` is set)
+                it will attempt to re-raise the current exception.
+
+                If no exception was raised it will raise the ``exc``
+                argument provided.
+            countdown (float): Time in seconds to delay the retry for.
+            eta (~datetime.dateime): Explicit time and date to run the
+                retry at.
+            max_retries (int): If set, overrides the default retry limit for
+                this execution. Changes to this parameter do not propagate to
+                subsequent task retry attempts. A value of :const:`None`, means
+                "use the default", so if you want infinite retries you would
+                have to set the :attr:`max_retries` attribute of the task to
+                :const:`None` first.
+            time_limit (int): If set, overrides the default time limit.
+            soft_time_limit (int): If set, overrides the default soft
+                time limit.
+            throw (bool): If this is :const:`False`, do not raise the
+                :exc:`~@Retry` exception, that tells the worker to mark
+                the task as being retried.  Note that this means the task
+                will be marked as failed if the task raises an exception,
+                or successful if it returns after the retry call.
+            **options (Any): Extra options to pass on to :meth:`apply_async`.
+
+        Raises:
+            celery.exceptions.Retry:
+                To tell the worker that the task has been re-sent for retry.
+                This always happens, unless the `throw` keyword argument
+                has been explicitly set to :const:`False`, and is considered
+                normal operation.
         """
         request = self.request
         retries = request.retries + 1
@@ -670,17 +647,19 @@ class Task(object):
         return ret
 
     def apply(self, args=None, kwargs=None,
-              link=None, link_error=None, **options):
+              link=None, link_error=None,
+              task_id=None, retries=None, throw=None,
+              logfile=None, loglevel=None, headers=None, **options):
         """Execute this task locally, by blocking until the task returns.
 
-        :param args: positional arguments passed on to the task.
-        :param kwargs: keyword arguments passed on to the task.
-        :keyword throw: Re-raise task exceptions.  Defaults to
-                        the :setting:`task_eager_propagates`
-                        setting.
+        Arguments:
+            args (Tuple): positional arguments passed on to the task.
+            kwargs (Dict): keyword arguments passed on to the task.
+            throw (bool): Re-raise task exceptions.
+                Defaults to the :setting:`task_eager_propagates` setting.
 
-        :rtype :class:`celery.result.EagerResult`:
-
+        Returns:
+            celery.result.EagerResult: pre-evaluated result.
         """
         # trace imports Task, so need to import inline.
         from celery.app.trace import build_tracer
@@ -691,22 +670,25 @@ class Task(object):
         if self.__self__ is not None:
             args = (self.__self__,) + tuple(args)
         kwargs = kwargs or {}
-        task_id = options.get('task_id') or uuid()
-        retries = options.get('retries', 0)
-        throw = app.either('task_eager_propagates', options.pop('throw', None))
+        task_id = task_id or uuid()
+        retries = retries or 0
+        if throw is None:
+            throw = app.conf.task_eager_propagates
 
         # Make sure we get the task instance, not class.
         task = app._tasks[self.name]
 
-        request = {'id': task_id,
-                   'retries': retries,
-                   'is_eager': True,
-                   'logfile': options.get('logfile'),
-                   'loglevel': options.get('loglevel', 0),
-                   'callbacks': maybe_list(link),
-                   'errbacks': maybe_list(link_error),
-                   'headers': options.get('headers'),
-                   'delivery_info': {'is_eager': True}}
+        request = {
+            'id': task_id,
+            'retries': retries,
+            'is_eager': True,
+            'logfile': logfile,
+            'loglevel': loglevel or 0,
+            'callbacks': maybe_list(link),
+            'errbacks': maybe_list(link_error),
+            'headers': headers,
+            'delivery_info': {'is_eager': True},
+        }
         tb = None
         tracer = build_tracer(
             task.name, task, eager=True,
@@ -722,8 +704,8 @@ class Task(object):
     def AsyncResult(self, task_id, **kwargs):
         """Get AsyncResult instance for this kind of task.
 
-        :param task_id: Task id to get result for.
-
+        Arguments:
+            task_id (str): Task id to get result for.
         """
         return self._get_app().AsyncResult(task_id, backend=self.backend,
                                            task_name=self.name, **kwargs)
@@ -768,14 +750,15 @@ class Task(object):
         """Replace the current task, with a new task inheriting the
         same task id.
 
-        :param sig: :class:`@signature`
-
         .. versionadded:: 4.0
 
-        Note: This will raise :exc:`~@Ignore`, so the best practice
-        is to always use ``raise self.replace(...)`` to convey
-        to the reader that the task will not continue after being replaced.
+        Arguments:
+            sig (~@Signature): signature to replace with.
 
+        Raises:
+            ~@Ignore: This is always raised, so the best practice
+            is to always use ``raise self.replace(...)`` to convey
+            to the reader that the task will not continue after being replaced.
         """
         chord = self.request.chord
         if 'chord' in sig.options:
@@ -807,14 +790,14 @@ class Task(object):
     def add_to_chord(self, sig, lazy=False):
         """Add signature to the chord the current task is a member of.
 
-        :param sig: Signature to extend chord with.
-        :param lazy: If enabled the new task will not actually be called,
-                      and ``sig.delay()`` must be called manually.
-
         .. versionadded:: 4.0
 
         Currently only supported by the Redis result backend.
 
+        Arguments:
+            sig (~@Signature): Signature to extend chord with.
+            lazy (bool): If enabled the new task will not actually be called,
+                and ``sig.delay()`` must be called manually.
         """
         if not self.request.chord:
             raise ValueError('Current task is not member of any chord')
@@ -827,13 +810,11 @@ class Task(object):
     def update_state(self, task_id=None, state=None, meta=None):
         """Update task state.
 
-        :keyword task_id: Id of the task to update, defaults to the
-                          id of the current task
-        :keyword state: New state (:class:`str`).
-        :keyword meta: State meta-data (:class:`dict`).
-
-
-
+        Arguments:
+            task_id (str): Id of the task to update.
+                Defaults to the id of the current task.
+            state (str): New state.
+            meta (Dict): State meta-data.
         """
         if task_id is None:
             task_id = self.request.id
@@ -844,13 +825,14 @@ class Task(object):
 
         Run by the worker if the task executes successfully.
 
-        :param retval: The return value of the task.
-        :param task_id: Unique id of the executed task.
-        :param args: Original arguments for the executed task.
-        :param kwargs: Original keyword arguments for the executed task.
+        Arguments:
+            retval (Any): The return value of the task.
+            task_id (str): Unique id of the executed task.
+            args (Tuple): Original arguments for the executed task.
+            kwargs (Dict): Original keyword arguments for the executed task.
 
-        The return value of this handler is ignored.
-
+        Returns:
+            None: The return value of this handler is ignored.
         """
         pass
 
@@ -859,16 +841,15 @@ class Task(object):
 
         This is run by the worker when the task is to be retried.
 
-        :param exc: The exception sent to :meth:`retry`.
-        :param task_id: Unique id of the retried task.
-        :param args: Original arguments for the retried task.
-        :param kwargs: Original keyword arguments for the retried task.
+        Arguments:
+            exc (Exception): The exception sent to :meth:`retry`.
+            task_id (str): Unique id of the retried task.
+            args (Tuple): Original arguments for the retried task.
+            kwargs (Dict): Original keyword arguments for the retried task.
+            einfo (~billiard.einfo.ExceptionInfo): Exception information.
 
-        :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
-                        instance, containing the traceback.
-
-        The return value of this handler is ignored.
-
+        Returns:
+            None: The return value of this handler is ignored.
         """
         pass
 
@@ -877,34 +858,31 @@ class Task(object):
 
         This is run by the worker when the task fails.
 
-        :param exc: The exception raised by the task.
-        :param task_id: Unique id of the failed task.
-        :param args: Original arguments for the task that failed.
-        :param kwargs: Original keyword arguments for the task
-                       that failed.
+        Arguments:
+            exc (Exception): The exception raised by the task.
+            task_id (str): Unique id of the failed task.
+            args (Tuple): Original arguments for the task that failed.
+            kwargs (Dict): Original keyword arguments for the task that failed.
+            einfo (~billiard.einfo.ExceptionInfo): Exception information.
 
-        :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
-                        instance, containing the traceback.
-
-        The return value of this handler is ignored.
-
+        Returns:
+            None: The return value of this handler is ignored.
         """
         pass
 
     def after_return(self, status, retval, task_id, args, kwargs, einfo):
         """Handler called after the task returns.
 
-        :param status: Current task state.
-        :param retval: Task return value/exception.
-        :param task_id: Unique id of the task.
-        :param args: Original arguments for the task.
-        :param kwargs: Original keyword arguments for the task.
+        Arguments:
+            status (str): Current task state.
+            retval (Any): Task return value/exception.
+            task_id (str): Unique id of the task.
+            args (Tuple): Original arguments for the task.
+            kwargs (Dict): Original keyword arguments for the task.
+            einfo (~billiard.einfo.ExceptionInfo): Exception information.
 
-        :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
-                        instance, containing the traceback (if any).
-
-        The return value of this handler is ignored.
-
+        Returns:
+            None: The return value of this handler is ignored.
         """
         pass
 

@@ -1,14 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.concurrency.gevent
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    gevent pool implementation.
-
-"""
+"""Gevent execution pool."""
 from __future__ import absolute_import, unicode_literals
 
-from time import time
 
 try:
     from gevent import Timeout
@@ -16,6 +9,7 @@ except ImportError:  # pragma: no cover
     Timeout = None  # noqa
 
 from kombu.async import timer as _timer
+from kombu.five import monotonic
 
 from .base import apply_target, BasePool
 
@@ -49,7 +43,7 @@ class Timer(_timer.Timer):
         self._queue = set()
 
     def _enter(self, eta, priority, entry):
-        secs = max(eta - time(), 0)
+        secs = max(eta - monotonic(), 0)
         g = self._Greenlet.spawn_later(secs, entry)
         self._queue.add(g)
         g.link(self._entry_exit)

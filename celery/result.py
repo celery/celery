@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.result
-    ~~~~~~~~~~~~~
-
-    Task results/state and groups of results.
-
-"""
+"""Task results/state and results for groups of tasks."""
 from __future__ import absolute_import, unicode_literals
 
 import time
@@ -14,7 +8,7 @@ from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
 
-from kombu.utils import cached_property
+from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
 
 from . import current_app
@@ -72,9 +66,9 @@ class ResultBase(object):
 class AsyncResult(ResultBase):
     """Query task state.
 
-    :param id: see :attr:`id`.
-    :keyword backend: see :attr:`backend`.
-
+    Arguments:
+        id (str): See :attr:`id`.
+        backend (Backend): See :attr:`backend`.
     """
     app = None
 
@@ -124,15 +118,16 @@ class AsyncResult(ResultBase):
         Any worker receiving the task, or having reserved the
         task, *must* ignore it.
 
-        :keyword terminate: Also terminate the process currently working
-            on the task (if any).
-        :keyword signal: Name of signal to send to process if terminate.
-            Default is TERM.
-        :keyword wait: Wait for replies from workers.  Will wait for 1 second
-           by default or you can specify a custom ``timeout``.
-        :keyword timeout: Time in seconds to wait for replies if ``wait``
-                          enabled.
-
+        Arguments:
+            terminate (bool): Also terminate the process currently working
+                on the task (if any).
+            signal (str): Name of signal to send to process if terminate.
+                Default is TERM.
+            wait (bool): Wait for replies from workers.
+                The ``timeout`` argument specifies the seconds to wait.
+                Disabled by default.
+            timeout (float): Time in seconds to wait for replies when
+                ``wait`` is enabled.
         """
         self.app.control.revoke(self.id, connection=connection,
                                 terminate=terminate, signal=signal,
@@ -144,30 +139,30 @@ class AsyncResult(ResultBase):
             PROPAGATE_STATES=states.PROPAGATE_STATES):
         """Wait until task is ready, and return its result.
 
-        .. warning::
-
+        Warning:
            Waiting for tasks within a task may lead to deadlocks.
            Please read :ref:`task-synchronous-subtasks`.
 
-        :keyword timeout: How long to wait, in seconds, before the
-                          operation times out.
-        :keyword propagate: Re-raise exception if the task failed.
-        :keyword interval: Time to wait (in seconds) before retrying to
-           retrieve the result.  Note that this does not have any effect
-           when using the RPC/redis result store backends, as they do not
-           use polling.
-        :keyword no_ack: Enable amqp no ack (automatically acknowledge
-            message).  If this is :const:`False` then the message will
-            **not be acked**.
-        :keyword follow_parents: Re-raise any exception raised by parent task.
+        Arguments:
+            timeout (float): How long to wait, in seconds, before the
+                operation times out.
+            propagate (bool): Re-raise exception if the task failed.
+            interval (float): Time to wait (in seconds) before retrying to
+                retrieve the result.  Note that this does not have any effect
+                when using the RPC/redis result store backends, as they do not
+                use polling.
+            no_ack (bool): Enable amqp no ack (automatically acknowledge
+                message).  If this is :const:`False` then the message will
+                **not be acked**.
+            follow_parents (bool): Re-raise any exception raised by
+                parent tasks.
 
-        :raises celery.exceptions.TimeoutError: if `timeout` is not
-            :const:`None` and the result does not arrive within `timeout`
-            seconds.
-
-        If the remote call raised an exception then that exception will
-        be re-raised.
-
+        Raises:
+            celery.exceptions.TimeoutError: if `timeout` is not
+                :const:`None` and the result does not arrive within
+                `timeout` seconds.
+            Exception: If the remote call raised an exception then that
+                exception will be re-raised in the caller process.
         """
         assert_will_not_block()
         _on_interval = promise()
@@ -228,12 +223,6 @@ class AsyncResult(ResultBase):
             def pow2(i):
                 return i ** 2
 
-        Note that the ``trail`` option must be enabled
-        so that the list of children is stored in ``result.children``.
-        This is the default but enabled explicitly for illustration.
-
-        Calling :meth:`collect` would return:
-
         .. code-block:: pycon
 
             >>> from celery.result import ResultBase
@@ -244,6 +233,14 @@ class AsyncResult(ResultBase):
             ...  if not isinstance(v, (ResultBase, tuple))]
             [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
+        Note:
+            The ``Task.trail`` option must be enabled
+            so that the list of children is stored in ``result.children``.
+            This is the default but enabled explicitly for illustration.
+
+        Yields:
+            Tuple[AsyncResult, Any]: tuples containing the result instance
+            of the child task, and the return value of that task.
         """
         for _, R in self.iterdeps(intermediate=intermediate):
             yield R, R.get(**kwargs)
@@ -271,7 +268,6 @@ class AsyncResult(ResultBase):
 
         If the task is still running, pending, or is waiting
         for retry then :const:`False` is returned.
-
         """
         return self.state in self.backend.READY_STATES
 
@@ -422,7 +418,6 @@ class AsyncResult(ResultBase):
 
                 The task executed successfully. The :attr:`result` attribute
                 then contains the tasks return value.
-
         """
         return self._get_task_meta()['status']
     status = state  # XXX compat
@@ -442,8 +437,8 @@ class AsyncResult(ResultBase):
 class ResultSet(ResultBase):
     """Working with more than one result.
 
-    :param results: List of result instances.
-
+    Arguments:
+        results (Sequence[AsyncResult]): List of result instances.
     """
     _app = None
 
@@ -463,7 +458,6 @@ class ResultSet(ResultBase):
         """Add :class:`AsyncResult` as a new member of the set.
 
         Does nothing if the result is already a member.
-
         """
         if result not in self.results:
             self.results.append(result)
@@ -479,8 +473,8 @@ class ResultSet(ResultBase):
     def remove(self, result):
         """Remove result from the set; it must be a member.
 
-        :raises KeyError: if the result is not a member.
-
+        Raises:
+            KeyError: if the result is not a member.
         """
         if isinstance(result, string_t):
             result = self.app.AsyncResult(result)
@@ -490,11 +484,8 @@ class ResultSet(ResultBase):
             raise KeyError(result)
 
     def discard(self, result):
-        """Remove result from the set if it is a member.
-
-        If it is not a member, do nothing.
-
-        """
+        """Remove result from the set if it is a member,
+        or do nothing if it's not."""
         try:
             self.remove(result)
         except KeyError:
@@ -512,18 +503,18 @@ class ResultSet(ResultBase):
     def successful(self):
         """Was all of the tasks successful?
 
-        :returns: :const:`True` if all of the tasks finished
-            successfully (i.e. did not raise an exception).
-
+        Returns:
+            bool: true if all of the tasks finished
+                successfully (i.e. did not raise an exception).
         """
         return all(result.successful() for result in self.results)
 
     def failed(self):
         """Did any of the tasks fail?
 
-        :returns: :const:`True` if one of the tasks failed.
-            (i.e., raised an exception)
-
+        Returns:
+            bool: true if one of the tasks failed.
+                (i.e., raised an exception)
         """
         return any(result.failed() for result in self.results)
 
@@ -534,26 +525,25 @@ class ResultSet(ResultBase):
     def waiting(self):
         """Are any of the tasks incomplete?
 
-        :returns: :const:`True` if one of the tasks are still
-            waiting for execution.
-
+        Returns:
+            bool: true if one of the tasks are still
+                waiting for execution.
         """
         return any(not result.ready() for result in self.results)
 
     def ready(self):
         """Did all of the tasks complete? (either by success of failure).
 
-        :returns: :const:`True` if all of the tasks has been
-            executed.
-
+        Returns:
+            bool: true if all of the tasks have been executed.
         """
         return all(result.ready() for result in self.results)
 
     def completed_count(self):
         """Task completion count.
 
-        :returns: the number of tasks completed.
-
+        Returns:
+            int: the number of tasks completed.
         """
         return sum(int(result.successful()) for result in self.results)
 
@@ -566,15 +556,16 @@ class ResultSet(ResultBase):
                wait=False, timeout=None):
         """Send revoke signal to all workers for all tasks in the set.
 
-        :keyword terminate: Also terminate the process currently working
-            on the task (if any).
-        :keyword signal: Name of signal to send to process if terminate.
-            Default is TERM.
-        :keyword wait: Wait for replies from worker.  Will wait for 1 second
-           by default or you can specify a custom ``timeout``.
-        :keyword timeout: Time in seconds to wait for replies if ``wait``
-                          enabled.
-
+        Arguments:
+            terminate (bool): Also terminate the process currently working
+                on the task (if any).
+            signal (str): Name of signal to send to process if terminate.
+                Default is TERM.
+            wait (bool): Wait for replies from worker.
+                The ``timeout`` argument specifies the number of seconds
+                to wait.  Disabled by default.
+            timeout (float): Time in seconds to wait for replies when
+                the ``wait`` argument is enabled.
         """
         self.app.control.revoke([r.id for r in self.results],
                                 connection=connection, timeout=timeout,
@@ -618,7 +609,6 @@ class ResultSet(ResultBase):
         This is here for API compatibility with :class:`AsyncResult`,
         in addition it uses :meth:`join_native` if available for the
         current result backend.
-
         """
         if self._cache is not None:
             return self._cache
@@ -632,50 +622,44 @@ class ResultSet(ResultBase):
              callback=None, no_ack=True, on_message=None, on_interval=None):
         """Gathers the results of all tasks as a list in order.
 
-        .. note::
-
+        Note:
             This can be an expensive operation for result store
             backends that must resort to polling (e.g. database).
 
             You should consider using :meth:`join_native` if your backend
             supports it.
 
-        .. warning::
-
+        Warning:
             Waiting for tasks within a task may lead to deadlocks.
             Please see :ref:`task-synchronous-subtasks`.
 
-        :keyword timeout: The number of seconds to wait for results before
-                          the operation times out.
+        Arguments:
+            timeout (float): The number of seconds to wait for results
+                before the operation times out.
+            propagate (bool): If any of the tasks raises an exception,
+                the exception will be re-raised when this flag is set.
+            interval (float): Time to wait (in seconds) before retrying to
+                retrieve a result from the set.  Note that this does not have
+                any effect when using the amqp result store backend,
+                as it does not use polling.
+            callback (Callable): Optional callback to be called for every
+                result received.  Must have signature ``(task_id, value)``
+                No results will be returned by this function if a callback
+                is specified.  The order of results is also arbitrary when a
+                callback is used.  To get access to the result object for
+                a particular id you will have to generate an index first:
+                ``index = {r.id: r for r in gres.results.values()}``
+                Or you can create new result objects on the fly:
+                ``result = app.AsyncResult(task_id)`` (both will
+                take advantage of the backend cache anyway).
+            no_ack (bool): Automatic message acknowledgment (Note that if this
+                is set to :const:`False` then the messages
+                *will not be acknowledged*).
 
-        :keyword propagate: If any of the tasks raises an exception, the
-                            exception will be re-raised.
-
-        :keyword interval: Time to wait (in seconds) before retrying to
-                           retrieve a result from the set.  Note that this
-                           does not have any effect when using the amqp
-                           result store backend, as it does not use polling.
-
-        :keyword callback: Optional callback to be called for every result
-                           received.  Must have signature ``(task_id, value)``
-                           No results will be returned by this function if
-                           a callback is specified.  The order of results
-                           is also arbitrary when a callback is used.
-                           To get access to the result object for a particular
-                           id you will have to generate an index first:
-                           ``index = {r.id: r for r in gres.results.values()}``
-                           Or you can create new result objects on the fly:
-                           ``result = app.AsyncResult(task_id)`` (both will
-                           take advantage of the backend cache anyway).
-
-        :keyword no_ack: Automatic message acknowledgment (Note that if this
-            is set to :const:`False` then the messages *will not be
-            acknowledged*).
-
-        :raises celery.exceptions.TimeoutError: if ``timeout`` is not
-            :const:`None` and the operation takes longer than ``timeout``
-            seconds.
-
+        Raises:
+            celery.exceptions.TimeoutError: if ``timeout`` is not
+                :const:`None` and the operation takes longer than ``timeout``
+                seconds.
         """
         assert_will_not_block()
         time_start = monotonic()
@@ -716,7 +700,6 @@ class ResultSet(ResultBase):
 
         This is currently only supported by the amqp, Redis and cache
         result backends.
-
         """
         return self.backend.iter_native(
             self,
@@ -736,7 +719,6 @@ class ResultSet(ResultBase):
 
         This is currently only supported by the amqp, Redis and cache
         result backends.
-
         """
         assert_will_not_block()
         order_index = None if callback else {
@@ -813,9 +795,9 @@ class GroupResult(ResultSet):
     It enables inspection of the tasks state and return values as
     a single entity.
 
-    :param id: The id of the group.
-    :param results: List of result instances.
-
+    Arguments:
+        id (str): The id of the group.
+        results (Sequence[AsyncResult]): List of result instances.
     """
 
     #: The UUID of the group.
@@ -831,12 +813,10 @@ class GroupResult(ResultSet):
     def save(self, backend=None):
         """Save group-result for later retrieval using :meth:`restore`.
 
-        Example::
-
+        Example:
             >>> def save_and_restore(result):
             ...     result.save()
             ...     result = GroupResult.restore(result.id)
-
         """
         return (backend or self.app.backend).save_group(self.id, self)
 
@@ -934,8 +914,12 @@ class EagerResult(AsyncResult):
 
     @property
     def _cache(self):
-        return {'task_id': self.id, 'result': self._result, 'status':
-                self._state, 'traceback': self._traceback}
+        return {
+            'task_id': self.id,
+            'result': self._result,
+            'status': self._state,
+            'traceback': self._traceback,
+        }
 
     @property
     def result(self):

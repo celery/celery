@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.worker.heartbeat
-    ~~~~~~~~~~~~~~~~~~~~~~~
-
-    This is the internal thread that sends heartbeat events
-    at regular intervals.
-
-"""
+"""This is the internal thread responsible for sending heartbeat events
+at regular intervals (may not be an actual thread)."""
 from __future__ import absolute_import, unicode_literals
 
 from celery.signals import heartbeat_sent
@@ -20,11 +14,12 @@ __all__ = ['Heart']
 class Heart(object):
     """Timer sending heartbeats at regular intervals.
 
-    :param timer: Timer instance.
-    :param eventer: Event dispatcher used to send the event.
-    :keyword interval: Time in seconds between heartbeats.
-                       Default is 2 seconds.
-
+    Arguments:
+        timer (kombu.async.timer.Timer): Timer to use.
+        eventer (celery.events.EventDispatcher): Event dispatcher
+            to use.
+        interval (float): Time in seconds between sending
+            heartbeats.  Default is 2 seconds.
     """
 
     def __init__(self, timer, eventer, interval=None):

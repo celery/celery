@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    ``celery.events.cursesmon``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Graphical monitor of Celery events using curses.
-
-"""
+"""Graphical monitor of Celery events using curses."""
 from __future__ import absolute_import, print_function, unicode_literals
 
 import curses
@@ -62,13 +56,15 @@ class CursesMonitor(object):  # pragma: no cover
         self.app = app
         self.keymap = keymap or self.keymap
         self.state = state
-        default_keymap = {'J': self.move_selection_down,
-                          'K': self.move_selection_up,
-                          'C': self.revoke_selection,
-                          'T': self.selection_traceback,
-                          'R': self.selection_result,
-                          'I': self.selection_info,
-                          'L': self.selection_rate_limit}
+        default_keymap = {
+            'J': self.move_selection_down,
+            'K': self.move_selection_up,
+            'C': self.revoke_selection,
+            'T': self.selection_traceback,
+            'R': self.selection_result,
+            'I': self.selection_info,
+            'L': self.selection_rate_limit,
+        }
         self.keymap = dict(default_keymap, **self.keymap)
         self.lock = threading.RLock()
 

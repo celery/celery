@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.app.control
-    ~~~~~~~~~~~~~~~~~~~
+"""Worker Remote Control Client.
 
-    Client for worker remote control commands.
-    Server implementation is in :mod:`celery.worker.control`.
-
+Client for worker remote control commands.
+Server implementation is in :mod:`celery.worker.control`.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -14,8 +11,8 @@ import warnings
 from billiard.common import TERM_SIGNAME
 
 from kombu.pidbox import Mailbox
-from kombu.utils import cached_property
 from kombu.utils.functional import lazy
+from kombu.utils.objects import cached_property
 
 from celery.exceptions import DuplicateNodenameWarning
 from celery.utils.text import pluralize
@@ -146,8 +143,13 @@ class Control(object):
         This will ignore all tasks waiting for execution, and they will
         be deleted from the messaging server.
 
-        :returns: the number of tasks discarded.
+        Arguments:
+            connection (kombu.Connection): Optional specific connection
+                instance to use.  If not provided a connection will
+                be acquired from the connection pool.
 
+        Returns:
+            int: the number of tasks discarded.
         """
         with self.app.connection_or_acquire(connection) as conn:
             return self.app.amqp.TaskConsumer(conn).purge()
@@ -165,14 +167,15 @@ class Control(object):
         If a task is revoked, the workers will ignore the task and
         not execute it after all.
 
-        :param task_id: Id of the task to revoke.
-        :keyword terminate: Also terminate the process currently working
-            on the task (if any).
-        :keyword signal: Name of signal to send to process if terminate.
-            Default is TERM.
+        Arguments:
+            task_id (str): Id of the task to revoke.
+            terminate (bool): Also terminate the process currently working
+                on the task (if any).
+            signal (str): Name of signal to send to process if terminate.
+                Default is TERM.
 
-        See :meth:`broadcast` for supported keyword arguments.
-
+        See Also:
+            :meth:`broadcast` for supported keyword arguments.
         """
         return self.broadcast('revoke', destination=destination,
                               arguments={'task_id': task_id,
@@ -182,10 +185,11 @@ class Control(object):
     def ping(self, destination=None, timeout=1, **kwargs):
         """Ping all (or specific) workers.
 
-        Will return the list of answers.
+        Returns:
+            List[Dict]: List of ``{'hostname': reply}`` dictionaries.
 
-        See :meth:`broadcast` for supported keyword arguments.
-
+        See Also:
+            :meth:`broadcast` for supported keyword arguments.
         """
         return self.broadcast('ping', reply=True, destination=destination,
                               timeout=timeout, **kwargs)
@@ -194,14 +198,15 @@ class Control(object):
         """Tell all (or specific) workers to set a new rate limit
         for task by type.
 
-        :param task_name: Name of task to change rate limit for.
-        :param rate_limit: The rate limit as tasks per second, or a rate limit
-            string (`'100/m'`, etc.
-            see :attr:`celery.task.base.Task.rate_limit` for
-            more information).
+        Arguments:
+            task_name (str): Name of task to change rate limit for.
+            rate_limit (int, str): The rate limit as tasks per second,
+                or a rate limit string (`'100/m'`, etc.
+                see :attr:`celery.task.base.Task.rate_limit` for
+                more information).
 
-        See :meth:`broadcast` for supported keyword arguments.
-
+        See Also:
+            :meth:`broadcast` for supported keyword arguments.
         """
         return self.broadcast('rate_limit', destination=destination,
                               arguments={'task_name': task_name,
@@ -216,21 +221,21 @@ class Control(object):
         then the exchange/routing key will be set to the same name (
         like automatic queues do).
 
-        .. note::
-
+        Note:
             This command does not respect the default queue/exchange
             options in the configuration.
 
-        :param queue: Name of queue to start consuming from.
-        :keyword exchange: Optional name of exchange.
-        :keyword exchange_type: Type of exchange (defaults to 'direct')
-            command to, when empty broadcast to all workers.
-        :keyword routing_key: Optional routing key.
-        :keyword options: Additional options as supported
-            by :meth:`kombu.entitiy.Queue.from_dict`.
+        Arguments:
+            queue (str): Name of queue to start consuming from.
+            exchange (str): Optional name of exchange.
+            exchange_type (str): Type of exchange (defaults to 'direct')
+                command to, when empty broadcast to all workers.
+            routing_key (str): Optional routing key.
+            options (Dict): Additional options as supported
+                by :meth:`kombu.entitiy.Queue.from_dict`.
 
-        See :meth:`broadcast` for supported keyword arguments.
-
+        See Also:
+            :meth:`broadcast` for supported keyword arguments.
         """
         return self.broadcast(
             'add_consumer',
@@ -243,8 +248,8 @@ class Control(object):
     def cancel_consumer(self, queue, **kwargs):
         """Tell all (or specific) workers to stop consuming from ``queue``.
 
-        Supports the same keyword arguments as :meth:`broadcast`.
-
+        See Also:
+            Supports the same arguments as :meth:`broadcast`.
         """
         return self.broadcast(
             'cancel_consumer', arguments={'queue': queue}, **kwargs
@@ -254,12 +259,11 @@ class Control(object):
         """Tell all (or specific) workers to set time limits for
         a task by type.
 
-        :param task_name: Name of task to change time limits for.
-        :keyword soft: New soft time limit (in seconds).
-        :keyword hard: New hard time limit (in seconds).
-
-        Any additional keyword arguments are passed on to :meth:`broadcast`.
-
+        Arguments:
+            task_name (str): Name of task to change time limits for.
+            soft (float): New soft time limit (in seconds).
+            hard (float): New hard time limit (in seconds).
+            **kwargs (Any): arguments passed on to :meth:`broadcast`.
         """
         return self.broadcast(
             'time_limit',
@@ -267,26 +271,34 @@ class Control(object):
                        'hard': hard, 'soft': soft}, **kwargs)
 
     def enable_events(self, destination=None, **kwargs):
-        """Tell all (or specific) workers to enable events."""
+        """Tell all (or specific) workers to enable events.
+
+        See Also:
+            Supports the same arguments as :meth:`broadcast`.
+        """
         return self.broadcast('enable_events', {}, destination, **kwargs)
 
     def disable_events(self, destination=None, **kwargs):
-        """Tell all (or specific) workers to disable events."""
+        """Tell all (or specific) workers to disable events.
+
+        See Also:
+            Supports the same arguments as :meth:`broadcast`.
+        """
         return self.broadcast('disable_events', {}, destination, **kwargs)
 
     def pool_grow(self, n=1, destination=None, **kwargs):
         """Tell all (or specific) workers to grow the pool by ``n``.
 
-        Supports the same arguments as :meth:`broadcast`.
-
+        See Also:
+            Supports the same arguments as :meth:`broadcast`.
         """
         return self.broadcast('pool_grow', {'n': n}, destination, **kwargs)
 
     def pool_shrink(self, n=1, destination=None, **kwargs):
         """Tell all (or specific) workers to shrink the pool by ``n``.
 
-        Supports the same arguments as :meth:`broadcast`.
-
+        See Also:
+            Supports the same arguments as :meth:`broadcast`.
         """
         return self.broadcast('pool_shrink', {'n': n}, destination, **kwargs)
 
@@ -295,18 +307,18 @@ class Control(object):
                   callback=None, channel=None, **extra_kwargs):
         """Broadcast a control command to the celery workers.
 
-        :param command: Name of command to send.
-        :param arguments: Keyword arguments for the command.
-        :keyword destination: If set, a list of the hosts to send the
-            command to, when empty broadcast to all workers.
-        :keyword connection: Custom broker connection to use, if not set,
-            a connection will be established automatically.
-        :keyword reply: Wait for and return the reply.
-        :keyword timeout: Timeout in seconds to wait for the reply.
-        :keyword limit: Limit number of replies.
-        :keyword callback: Callback called immediately for each reply
-            received.
-
+        Arguments:
+            command (str): Name of command to send.
+            arguments (Dict): Keyword arguments for the command.
+            destination (List): If set, a list of the hosts to send the
+                command to, when empty broadcast to all workers.
+            connection (kombu.Connection): Custom broker connection to use,
+                if not set, a connection will be acquired from the pool.
+            reply (bool): Wait for and return the reply.
+            timeout (float): Timeout in seconds to wait for the reply.
+            limit (int): Limit number of replies.
+            callback (Callable): Callback called immediately for
+                each reply received.
         """
         with self.app.connection_or_acquire(connection) as conn:
             arguments = dict(arguments or {}, **extra_kwargs)

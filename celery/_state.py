@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-    celery._state
-    ~~~~~~~~~~~~~~~
+"""Internal state.
 
-    This is an internal module containing thread state
-    like the ``current_app``, and ``current_task``.
+This is an internal module containing thread state
+like the ``current_app``, and ``current_task``.
 
-    This module shouldn't be used directly.
-
+This module shouldn't be used directly.
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -111,7 +108,6 @@ def get_current_worker_task():
     This is used to differentiate between the actual task
     executed by the worker and any task that was called within
     a task (using ``task.__call__`` or ``task.apply``)
-
     """
     for task in reversed(_task_stack.stack):
         if not task.request.called_directly:

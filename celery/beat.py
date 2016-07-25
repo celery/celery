@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.beat
-    ~~~~~~~~~~~
-
-    The periodic task scheduler.
-
-"""
+"""The periodic task scheduler."""
 from __future__ import absolute_import, unicode_literals
 
 import errno
@@ -23,8 +17,8 @@ from threading import Event, Thread
 from billiard import ensure_multiprocessing
 from billiard.context import Process
 from billiard.common import reset_signals
-from kombu.utils import cached_property, reprcall
-from kombu.utils.functional import maybe_evaluate
+from kombu.utils.functional import maybe_evaluate, reprcall
+from kombu.utils.objects import cached_property
 
 from . import __version__
 from . import platforms
@@ -60,15 +54,15 @@ class SchedulingError(Exception):
 class ScheduleEntry(object):
     """An entry in the scheduler.
 
-    :keyword name: see :attr:`name`.
-    :keyword schedule: see :attr:`schedule`.
-    :keyword args: see :attr:`args`.
-    :keyword kwargs: see :attr:`kwargs`.
-    :keyword options: see :attr:`options`.
-    :keyword last_run_at: see :attr:`last_run_at`.
-    :keyword total_run_count: see :attr:`total_run_count`.
-    :keyword relative: Is the time relative to when the server starts?
-
+    Arguments:
+        name (str): see :attr:`name`.
+        schedule (~celery.schedules.schedule): see :attr:`schedule`.
+        args (Tuple): see :attr:`args`.
+        kwargs (Dict): see :attr:`kwargs`.
+        options (Dict): see :attr:`options`.
+        last_run_at (~datetime.datetime): see :attr:`last_run_at`.
+        total_run_count (int): see :attr:`total_run_count`.
+        relative (bool): Is the time relative to when the server starts?
     """
 
     #: The task name
@@ -127,13 +121,14 @@ class ScheduleEntry(object):
     def update(self, other):
         """Update values from another entry.
 
-        Does only update "editable" fields (task, schedule, args, kwargs,
-        options).
-
+        Will only update "editable" fields:
+            ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
         """
-        self.__dict__.update({'task': other.task, 'schedule': other.schedule,
-                              'args': other.args, 'kwargs': other.kwargs,
-                              'options': other.options})
+        self.__dict__.update({
+            'task': other.task, 'schedule': other.schedule,
+            'args': other.args, 'kwargs': other.kwargs,
+            'options': other.options,
+        })
 
     def is_due(self):
         """See :meth:`~celery.schedule.schedule.is_due`."""
@@ -143,9 +138,10 @@ class ScheduleEntry(object):
         return iter(items(vars(self)))
 
     def __repr__(self):
-        return '<Entry: {0.name} {call} {0.schedule}'.format(
+        return '<{name}: {0.name} {call} {0.schedule}'.format(
             self,
             call=reprcall(self.task, self.args or (), self.kwargs or {}),
+            name=type(self).__name__,
         )
 
     def __lt__(self, other):
@@ -168,11 +164,12 @@ class Scheduler(object):
     ``lazy`` argument set.  It is important for subclasses to
     be idempotent when this argument is set.
 
-    :keyword schedule: see :attr:`schedule`.
-    :keyword max_interval: see :attr:`max_interval`.
-    :keyword lazy: Do not set up the schedule.
-
+    Arguments:
+        schedule (~celery.schedules.schedule): see :attr:`schedule`.
+        max_interval (int): see :attr:`max_interval`.
+        lazy (bool): Do not set up the schedule.
     """
+
     Entry = ScheduleEntry
 
     #: The schedule dict/shelve.
@@ -243,7 +240,8 @@ class Scheduler(object):
 
         Executes one due task per call.
 
-        Returns preferred delay in seconds for next call.
+        Returns:
+            float: preferred delay in seconds for next call.
         """
 
         def _when(entry, next_time_to_run):
@@ -609,9 +607,9 @@ else:
 def EmbeddedService(app, max_interval=None, **kwargs):
     """Return embedded clock service.
 
-    :keyword thread: Run threaded instead of as a separate process.
-        Uses :mod:`multiprocessing` by default, if available.
-
+    Arguments:
+        thread (bool): Run threaded instead of as a separate process.
+            Uses :mod:`multiprocessing` by default, if available.
     """
     if kwargs.pop('thread', False) or _Process is None:
         # Need short max interval to be able to stop thread

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-
-The :program:`celery events` command.
+"""The :program:`celery events` command.
 
 .. program:: celery events
 
@@ -66,7 +64,6 @@ The :program:`celery events` command.
 .. cmdoption:: --executable
 
     Executable to use for the detached process.
-
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -83,21 +80,23 @@ __all__ = ['events']
 class events(Command):
     """Event-stream utilities.
 
-    Commands::
+    Notes:
+        .. code-block:: console
 
-        celery events --app=proj
-            start graphical monitor (requires curses)
-        celery events -d --app=proj
-            dump events to screen.
-        celery events -b amqp://
-        celery events -c <camera> [options]
-            run snapshot camera.
+            # - Start graphical monitor (requires curses)
+            $ celery events --app=proj
+            $ celery events -d --app=proj
+            # - Dump events to screen.
+            $ celery events -b amqp://
+            # - Run snapshot camera.
+            $ celery events -c <camera> [options]
 
-    Examples::
+    Examples:
+        .. code-block:: console
 
-        celery events
-        celery events -d
-        celery events -c mod.attr -F 1.0 --detach --maxrate=100/m -l info
+            $ celery events
+            $ celery events -d
+            $ celery events -c mod.attr -F 1.0 --detach --maxrate=100/m -l info
     """
     doc = __doc__
     supports_args = False

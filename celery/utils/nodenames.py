@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.utils.nodenames
-    ~~~~~~~~~~~~~~~~~~~~~~
-
-    Worker name utilities.
-
-"""
+"""Worker name utilities."""
 from __future__ import absolute_import, unicode_literals
 
 import os
@@ -42,10 +36,11 @@ def worker_direct(hostname):
     """Return :class:`kombu.Queue` that is a direct route to
     a worker by hostname.
 
-    :param hostname: The fully qualified node name of a worker
-                     (e.g. ``w1@example.com``).  If passed a
-                     :class:`kombu.Queue` instance it will simply return
-                     that instead.
+    Arguments:
+        hostname (str, ~kombu.Queue): The fully qualified node name of
+            a worker (e.g. ``w1@example.com``).  If passed a
+            :class:`kombu.Queue` instance it will simply return
+            that instead.
     """
     if isinstance(hostname, Queue):
         return hostname

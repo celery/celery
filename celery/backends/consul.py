@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.backends.consul
-    ~~~~~~~~~~~~~~~~~~~~~~
+"""Consul result store backend.
 
-    Consul result store backend.
-
-    - :class:`ConsulBackend` implements KeyValueStoreBackend to store results
-      in the key-value store of Consul.
-
+- :class:`ConsulBackend` implements KeyValueStoreBackend to store results
+    in the key-value store of Consul.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -84,7 +79,6 @@ class ConsulBackend(KeyValueStoreBackend):
 
         If the session expires it will remove the key so that results
         can auto expire from the K/V store
-
         """
         session_name = key
         if PY3:

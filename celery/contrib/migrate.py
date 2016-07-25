@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.contrib.migrate
-    ~~~~~~~~~~~~~~~~~~~~~~
-
-    Migration tools.
-
-"""
+"""Message migration tools (Broker <-> Broker)."""
 from __future__ import absolute_import, print_function, unicode_literals
 
 import socket
@@ -130,29 +124,30 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
          **kwargs):
     """Find tasks by filtering them and move the tasks to a new queue.
 
-    :param predicate: Filter function used to decide which messages
-        to move.  Must accept the standard signature of ``(body, message)``
-        used by Kombu consumer callbacks. If the predicate wants the message
-        to be moved it must return either:
+    Arguments:
+        predicate (Callable): Filter function used to decide which messages
+            to move.  Must accept the standard signature of ``(body, message)``
+            used by Kombu consumer callbacks. If the predicate wants the
+            message to be moved it must return either:
 
-            1) a tuple of ``(exchange, routing_key)``, or
+                1) a tuple of ``(exchange, routing_key)``, or
 
-            2) a :class:`~kombu.entity.Queue` instance, or
+                2) a :class:`~kombu.entity.Queue` instance, or
 
-            3) any other true value which means the specified
-               ``exchange`` and ``routing_key`` arguments will be used.
-
-    :keyword connection: Custom connection to use.
-    :keyword source: Optional list of source queues to use instead of the
-        default (which is the queues in :setting:`task_queues`).
-        This list can also contain new :class:`~kombu.entity.Queue` instances.
-    :keyword exchange: Default destination exchange.
-    :keyword routing_key: Default destination routing key.
-    :keyword limit: Limit number of messages to filter.
-    :keyword callback: Callback called after message moved,
-        with signature ``(state, body, message)``.
-    :keyword transform: Optional function to transform the return
-        value (destination) of the filter function.
+                3) any other true value which means the specified
+                    ``exchange`` and ``routing_key`` arguments will be used.
+        connection (kombu.Connection): Custom connection to use.
+        source: List[Union[str, kombu.Queue]]: Optional list of source
+            queues to use instead of the default (which is the queues
+            in :setting:`task_queues`).  This list can also contain
+            :class:`~kombu.entity.Queue` instances.
+        exchange (str, kombu.Exchange): Default destination exchange.
+        routing_key (str): Default destination routing key.
+        limit (int): Limit number of messages to filter.
+        callback (Callable): Callback called after message moved,
+            with signature ``(state, body, message)``.
+        transform (Callable): Optional function to transform the return
+            value (destination) of the filter function.
 
     Also supports the same keyword arguments as :func:`start_filter`.
 
@@ -179,12 +174,12 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
 
         move(is_wanted_task, transform=transform)
 
-    The predicate may also return a tuple of ``(exchange, routing_key)``
-    to specify the destination to where the task should be moved,
-    or a :class:`~kombu.entitiy.Queue` instance.
-    Any other true value means that the task will be moved to the
-    default exchange/routing_key.
-
+    Note:
+        The predicate may also return a tuple of ``(exchange, routing_key)``
+        to specify the destination to where the task should be moved,
+        or a :class:`~kombu.entitiy.Queue` instance.
+        Any other true value means that the task will be moved to the
+        default exchange/routing_key.
     """
     app = app_or_default(app)
     queues = [_maybe_queue(app, queue) for queue in source or []] or None
@@ -309,11 +304,11 @@ def start_filter(app, conn, filter, limit=None, timeout=1.0,
 def move_task_by_id(task_id, dest, **kwargs):
     """Find a task by id and move it to another queue.
 
-    :param task_id: Id of task to move.
-    :param dest: Destination queue.
-
-    Also supports the same keyword arguments as :func:`move`.
-
+    Arguments:
+        task_id (str): Id of task to find and move.
+        dest: (str, kombu.Queue): Destination queue.
+        **kwargs (Any): Also supports the same keyword
+            arguments as :func:`move`.
     """
     return move_by_idmap({task_id: dest}, **kwargs)
 
@@ -322,14 +317,12 @@ def move_by_idmap(map, **kwargs):
     """Moves tasks by matching from a ``task_id: queue`` mapping,
     where ``queue`` is a queue to move the task to.
 
-    Example::
-
+    Example:
         >>> move_by_idmap({
         ...     '5bee6e82-f4ac-468e-bd3d-13e8600250bc': Queue('name'),
         ...     'ada8652d-aef3-466b-abd2-becdaf1b82b3': Queue('name'),
         ...     '3a2b140d-7db1-41ba-ac90-c36a0ef4ab1f': Queue('name')},
         ...   queues=['hipri'])
-
     """
     def task_id_in_map(body, message):
         return map.get(body['id'])
@@ -343,13 +336,11 @@ def move_by_taskmap(map, **kwargs):
     """Moves tasks by matching from a ``task_name: queue`` mapping,
     where ``queue`` is the queue to move the task to.
 
-    Example::
-
+    Example:
         >>> move_by_taskmap({
         ...     'tasks.add': Queue('name'),
         ...     'tasks.mul': Queue('name'),
         ... })
-
     """
 
     def task_name_in_map(body, message):

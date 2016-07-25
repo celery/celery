@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.security.serialization
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Secure serializer.
-
-"""
+"""Secure serializer."""
 from __future__ import absolute_import, unicode_literals
 
 import sys

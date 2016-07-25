@@ -1,3 +1,7 @@
+==================================
+ ``celery.contrib.rdb``
+==================================
+
 .. currentmodule:: celery.contrib.rdb
 
 .. automodule:: celery.contrib.rdb

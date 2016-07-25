@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-"Safe weakrefs", originally from :pypi:`pyDispatcher`.
+"""Safe weakrefs, originally from :pypi:`pyDispatcher`.
 
 Provides a way to safely weakref any function, including bound methods (which
 aren't handled by the core weakref module).
@@ -21,14 +20,15 @@ PY3 = sys.version_info[0] == 3
 def safe_ref(target, on_delete=None):  # pragma: no cover
     """Return a *safe* weak reference to a callable target
 
-    :param target: the object to be weakly referenced, if it's a
-        bound method reference, will create a :class:`BoundMethodWeakref`,
-        otherwise creates a simple :class:`weakref.ref`.
+    Arguments:
+        target (Any): The object to be weakly referenced, if it's a
+            bound method reference, will create a :class:`BoundMethodWeakref`,
+            otherwise creates a simple :class:`weakref.ref`.
 
-    :keyword on_delete: if provided, will have a hard reference stored
-        to the callable to be called after the safe reference
-        goes out of scope with the reference object, (either a
-        :class:`weakref.ref` or a :class:`BoundMethodWeakref`) as argument.
+        on_delete (Callable): If provided, will have a hard reference stored
+            to the callable to be called after the safe reference
+            goes out of scope with the reference object, (either a
+            :class:`weakref.ref` or a :class:`BoundMethodWeakref`) as argument.
     """
     if getattr(target, '__self__', None) is not None:
         # Turn a bound method into a BoundMethodWeakref instance.
@@ -55,39 +55,31 @@ class BoundMethodWeakref(object):  # pragma: no cover
     object keeps weak references to both the object and the
     function which together define the instance method.
 
-    .. attribute:: key
+    Attributes:
 
-        the identity key for the reference, calculated
-        by the class's :meth:`calculate_key` method applied to the
-        target instance method
+        key (str): the identity key for the reference, calculated
+            by the class's :meth:`calculate_key` method applied to the
+            target instance method.
 
-    .. attribute:: deletion_methods
+        deletion_methods (Sequence[Callable]): Callables taking
+            single argument, a reference to this object which
+            will be called when *either* the target object or
+            target function is garbage collected (i.e. when
+            this object becomes invalid).  These are specified
+            as the on_delete parameters of :func:`safe_ref` calls.
 
-        sequence of callable objects taking
-        single argument, a reference to this object which
-        will be called when *either* the target object or
-        target function is garbage collected (i.e. when
-        this object becomes invalid).  These are specified
-        as the on_delete parameters of :func:`safe_ref` calls.
+        weak_self (weakref.ref): weak reference to the target object.
 
-    .. attribute:: weak_self
+        weak_fun (weakref.ref): weak reference to the target function
 
-        weak reference to the target object
-
-    .. attribute:: weak_fun
-
-        weak reference to the target function
-
-    .. attribute:: _all_instances
-
-        class attribute pointing to all live
-        BoundMethodWeakref objects indexed by the class's
-        `calculate_key(target)` method applied to the target
-        objects. This weak value dictionary is used to
-        short-circuit creation so that multiple references
-        to the same (object, function) pair produce the
-        same BoundMethodWeakref instance.
-
+        _all_instances (weakref.WeakValueDictionary):
+            class attribute pointing to all live
+            BoundMethodWeakref objects indexed by the class's
+            `calculate_key(target)` method applied to the target
+            objects. This weak value dictionary is used to
+            short-circuit creation so that multiple references
+            to the same (object, function) pair produce the
+            same BoundMethodWeakref instance.
     """
 
     _all_instances = weakref.WeakValueDictionary()
@@ -95,15 +87,15 @@ class BoundMethodWeakref(object):  # pragma: no cover
     def __new__(cls, target, on_delete=None, *arguments, **named):
         """Create new instance or return current instance
 
-        Basically this method of construction allows us to
-        short-circuit creation of references to already-
-        referenced instance methods.  The key corresponding
-        to the target is calculated, and if there is already
-        an existing reference, that is returned, with its
-        deletionMethods attribute updated.  Otherwise the
-        new instance is created and registered in the table
-        of already-referenced methods.
-
+        Note:
+            Basically this method of construction allows us to
+            short-circuit creation of references to already-
+            referenced instance methods.  The key corresponding
+            to the target is calculated, and if there is already
+            an existing reference, that is returned, with its
+            deletionMethods attribute updated.  Otherwise the
+            new instance is created and registered in the table
+            of already-referenced methods.
         """
         key = cls.calculate_key(target)
         current = cls._all_instances.get(key)
@@ -117,22 +109,22 @@ class BoundMethodWeakref(object):  # pragma: no cover
             return base
 
     def __init__(self, target, on_delete=None):
-        """Return a weak-reference-like instance for a bound method
+        """Return a weak-reference-like instance for a bound method.
 
-        :param target: the instance-method target for the weak
-            reference, must have `__self__` and `__func__` attributes
-            and be reconstructable via::
+        Arguments:
+            target (Any): The instance-method target for the weak
+                reference, must have `__self__` and `__func__` attributes
+                and be reconstructable via::
 
-                target.__func__.__get__(target.__self__)
+                    target.__func__.__get__(target.__self__)
 
-            which is true of built-in instance methods.
+                which is true of built-in instance methods.
 
-        :keyword on_delete: optional callback which will be called
-            when this weak reference ceases to be valid
-            (i.e. either the object or the function is garbage
-            collected).  Should take a single argument,
-            which will be passed a pointer to this object.
-
+            on_delete (Callable): Optional callback which will be called
+                when this weak reference ceases to be valid
+                (i.e. either the object or the function is garbage
+                collected).  Should take a single argument,
+                which will be passed a pointer to this object.
         """
         def remove(weak, self=self):
             """Set self.is_dead to true when method or instance is destroyed"""
@@ -163,8 +155,10 @@ class BoundMethodWeakref(object):  # pragma: no cover
     def calculate_key(cls, target):
         """Calculate the reference key for this reference
 
-        Currently this is a two-tuple of the `id()`'s of the
-        target object and the target function respectively.
+        Returns:
+            Tuple[int, int]: Currently this is a two-tuple of
+                the `id()`'s of the target object and the target
+                function respectively.
         """
         return id(target.__self__), id(target.__func__)
     calculate_key = classmethod(calculate_key)
@@ -213,40 +207,42 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
     """A specialized :class:`BoundMethodWeakref`, for platforms where
     instance methods are not descriptors.
 
-    It assumes that the function name and the target attribute name are the
-    same, instead of assuming that the function is a descriptor. This approach
-    is equally fast, but not 100% reliable because functions can be stored on
-    an attribute named differenty than the function's name such as in::
+    Warning:
 
-        >>> class A(object):
-        ...     pass
+        It assumes that the function name and the target attribute name are
+        the same, instead of assuming that the function is a descriptor.
+        This approach is equally fast, but not 100% reliable because
+        functions can be stored on an attribute named differenty than the
+        function's name such as in::
 
-        >>> def foo(self):
-        ...     return 'foo'
-        >>> A.bar = foo
+            >>> class A(object):
+            ...     pass
 
-    But this shouldn't be a common use case. So, on platforms where methods
-    aren't descriptors (such as Jython) this implementation has the advantage
-    of working in the most cases.
+            >>> def foo(self):
+            ...     return 'foo'
+            >>> A.bar = foo
 
+        But this shouldn't be a common use case. So, on platforms where methods
+        aren't descriptors (such as Jython) this implementation has the
+        advantage of working in the most cases.
     """
     def __init__(self, target, on_delete=None):
-        """Return a weak-reference-like instance for a bound method
+        """Return a weak-reference-like instance for a bound method.
 
-        :param target: the instance-method target for the weak
-            reference, must have `__self__` and `__func__` attributes
-            and be reconstructable via::
+        Arguments:
+            target (Any): the instance-method target for the weak
+                reference, must have `__self__` and `__func__` attributes
+                and be reconstructable via::
 
-                target.__func__.__get__(target.__self__)
+                    target.__func__.__get__(target.__self__)
 
-            which is true of built-in instance methods.
+                which is true of built-in instance methods.
 
-        :keyword on_delete: optional callback which will be called
-            when this weak reference ceases to be valid
-            (i.e. either the object or the function is garbage
-            collected). Should take a single argument,
-            which will be passed a pointer to this object.
-
+            on_delete (Callable): Optional callback which will be called
+                when this weak reference ceases to be valid
+                (i.e. either the object or the function is garbage
+                collected). Should take a single argument,
+                which will be passed a pointer to this object.
         """
         assert getattr(target.__self__, target.__name__) == target
         super(BoundNonDescriptorMethodWeakref, self).__init__(target,
@@ -260,9 +256,9 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
         method for our object and function.
 
         Note:
+
             You may call this method any number of times,
             as it does not invalidate the reference.
-
         """
         target = self.weak_self()
         if target is not None:
@@ -285,5 +281,5 @@ def get_bound_method_weakref(target, on_delete):  # pragma: no cover
         return BoundMethodWeakref(target=target, on_delete=on_delete)
     else:
         # no luck, use the alternative implementation:
-        return BoundNonDescriptorMethodWeakref(target=target,
-                                               on_delete=on_delete)
+        return BoundNonDescriptorMethodWeakref(
+            target=target, on_delete=on_delete)

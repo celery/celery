@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.events
-    ~~~~~~~~~~~~~
+"""Monitoring Event Receiver+Dispatcher.
 
-    Events is a stream of messages sent for certain actions occurring
-    in the worker (and clients if :setting:`task_send_sent_event`
-    is enabled), used for monitoring purposes.
-
+Events is a stream of messages sent for certain actions occurring
+in the worker (and clients if :setting:`task_send_sent_event`
+is enabled), used for monitoring purposes.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -22,8 +19,9 @@ from operator import itemgetter
 from kombu import Exchange, Queue, Producer
 from kombu.connection import maybe_channel
 from kombu.mixins import ConsumerMixin
-from kombu.utils import cached_property, uuid
+from kombu.utils.objects import cached_property
 
+from celery import uuid
 from celery.app import app_or_default
 from celery.five import items
 from celery.utils.functional import dictfilter
@@ -52,7 +50,6 @@ def Event(type, _fields=None, __dict__=dict, __now__=time.time, **fields):
 
     An event is a dictionary, the only required field is ``type``.
     A ``timestamp`` field will be set to the current time if not provided.
-
     """
     event = __dict__(_fields, **fields) if _fields else fields
     if 'timestamp' not in event:
@@ -72,7 +69,6 @@ def group_from(type):
 
         >>> group_from('custom-my-event')
         'custom'
-
     """
     return type.split('-', 1)[0]
 
@@ -80,29 +76,30 @@ def group_from(type):
 class EventDispatcher(object):
     """Dispatches event messages.
 
-    :param connection: Connection to the broker.
+    Arguments:
+        connection (kombu.Connection): Connection to the broker.
 
-    :keyword hostname: Hostname to identify ourselves as,
-        by default uses the hostname returned by
-        :func:`~celery.utils.anon_nodename`.
+        hostname (str): Hostname to identify ourselves as,
+            by default uses the hostname returned by
+            :func:`~celery.utils.anon_nodename`.
 
-    :keyword groups: List of groups to send events for.  :meth:`send` will
-        ignore send requests to groups not in this list.
-        If this is :const:`None`, all events will be sent. Example groups
-        include ``"task"`` and ``"worker"``.
+        groups (Sequence[str]): List of groups to send events for.
+            :meth:`send` will ignore send requests to groups not in this list.
+            If this is :const:`None`, all events will be sent. Example groups
+            include ``"task"`` and ``"worker"``.
 
-    :keyword enabled: Set to :const:`False` to not actually publish any events,
-        making :meth:`send` a no-op.
+        enabled (bool): Set to :const:`False` to not actually publish any
+            events, making :meth:`send` a no-op.
 
-    :keyword channel: Can be used instead of `connection` to specify
-        an exact channel to use when sending events.
+        channel (kombu.Channel): Can be used instead of `connection` to specify
+            an exact channel to use when sending events.
 
-    :keyword buffer_while_offline: If enabled events will be buffered
-       while the connection is down. :meth:`flush` must be called
-       as soon as the connection is re-established.
+        buffer_while_offline (bool): If enabled events will be buffered
+            while the connection is down. :meth:`flush` must be called
+            as soon as the connection is re-established.
 
-    You need to :meth:`close` this after use.
-
+    Note:
+        You need to :meth:`close` this after use.
     """
     DISABLED_TRANSPORTS = {'sql'}
 
@@ -175,19 +172,20 @@ class EventDispatcher(object):
         """Publish event using a custom :class:`~kombu.Producer`
         instance.
 
-        :param type: Event type name, with group separated by dash (`-`).
-        :param fields: Dictionary of event fields, must be json serializable.
-        :param producer: :class:`~kombu.Producer` instance to use,
-            only the ``publish`` method will be called.
-        :keyword retry: Retry in the event of connection failure.
-        :keyword retry_policy: Dict of custom retry policy, see
-            :meth:`~kombu.Connection.ensure`.
-        :keyword blind: Don't set logical clock value (also do not forward
-            the internal logical clock).
-        :keyword Event: Event type used to create event,
-            defaults to :func:`Event`.
-        :keyword utcoffset: Function returning the current utcoffset in hours.
-
+        Arguments:
+            type (str): Event type name, with group separated by dash (`-`).
+                fields: Dictionary of event fields, must be json serializable.
+            producer (kombu.Producer): Producer instance to use:
+                only the ``publish`` method will be called.
+            retry (bool): Retry in the event of connection failure.
+            retry_policy (Mapping): Map of custom retry policy options.
+                See :meth:`~kombu.Connection.ensure`.
+            blind (bool): Don't set logical clock value (also do not forward
+                the internal logical clock).
+            Event (Callable): Event type used to create event.
+                Defaults to :func:`Event`.
+            utcoffset (Callable): Function returning the current
+                utc offset in hours.
         """
         clock = None if blind else self.clock.forward()
         event = Event(type, hostname=self.hostname, utcoffset=utcoffset(),
@@ -220,17 +218,18 @@ class EventDispatcher(object):
              retry_policy=None, Event=Event, **fields):
         """Send event.
 
-        :param type: Event type name, with group separated by dash (`-`).
-        :keyword retry: Retry in the event of connection failure.
-        :keyword retry_policy: Dict of custom retry policy, see
-            :meth:`~kombu.Connection.ensure`.
-        :keyword blind: Don't set logical clock value (also do not forward
-            the internal logical clock).
-        :keyword Event: Event type used to create event,
-            defaults to :func:`Event`.
-        :keyword utcoffset: Function returning the current utcoffset in hours.
-        :keyword \*\*fields: Event fields, must be json serializable.
-
+        Arguments:
+            type (str): Event type name, with group separated by dash (`-`).
+            retry (bool): Retry in the event of connection failure.
+            retry_policy (Mapping): Map of custom retry policy options.
+                See :meth:`~kombu.Connection.ensure`.
+            blind (bool): Don't set logical clock value (also do not forward
+                the internal logical clock).
+            Event (Callable): Event type used to create event,
+                defaults to :func:`Event`.
+            utcoffset (Callable): unction returning the current utc offset
+                in hours.
+            **fields (Any): Event fields -- must be json serializable.
         """
         if self.enabled:
             groups, group = self.groups, group_from(type)
@@ -288,13 +287,12 @@ class EventDispatcher(object):
 class EventReceiver(ConsumerMixin):
     """Capture events.
 
-    :param connection: Connection to the broker.
-    :keyword handlers: Event handlers.
-
-    :attr:`handlers` is a dict of event types and their handlers,
-    the special handler `"*"` captures all events that doesn't have a
-    handler.
-
+    Arguments:
+        connection (kombu.Connection): Connection to the broker.
+        handlers (Mapping[Callable]): Event handlers.
+            This is  a map of event type names and their handlers.
+            The special handler `"*"` captures all events that don't have a
+            handler.
     """
     app = None
 
@@ -361,7 +359,6 @@ class EventReceiver(ConsumerMixin):
         This has to run in the main process, and it will never stop
         unless :attr:`EventDispatcher.should_stop` is set to True, or
         forced via :exc:`KeyboardInterrupt` or :exc:`SystemExit`.
-
         """
         return list(self.consume(limit=limit, timeout=timeout, wakeup=wakeup))
 

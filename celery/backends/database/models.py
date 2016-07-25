@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.backends.database.models
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Database tables for the SQLAlchemy result store backend.
-
-"""
+"""Database models used by the SQLAlchemy result store backend."""
 from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime
@@ -24,12 +18,12 @@ __all__ = ['Task', 'TaskSet']
 @python_2_unicode_compatible
 class Task(ResultModelBase):
     """Task result/status."""
+
     __tablename__ = 'celery_taskmeta'
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = sa.Column(sa.Integer, sa.Sequence('task_id_sequence'),
-                   primary_key=True,
-                   autoincrement=True)
+                   primary_key=True, autoincrement=True)
     task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
     result = sa.Column(PickleType, nullable=True)
@@ -41,11 +35,13 @@ class Task(ResultModelBase):
         self.task_id = task_id
 
     def to_dict(self):
-        return {'task_id': self.task_id,
-                'status': self.status,
-                'result': self.result,
-                'traceback': self.traceback,
-                'date_done': self.date_done}
+        return {
+            'task_id': self.task_id,
+            'status': self.status,
+            'result': self.result,
+            'traceback': self.traceback,
+            'date_done': self.date_done,
+        }
 
     def __repr__(self):
         return '<Task {0.task_id} state: {0.status}>'.format(self)
@@ -54,6 +50,7 @@ class Task(ResultModelBase):
 @python_2_unicode_compatible
 class TaskSet(ResultModelBase):
     """TaskSet result"""
+
     __tablename__ = 'celery_tasksetmeta'
     __table_args__ = {'sqlite_autoincrement': True}
 
@@ -69,9 +66,11 @@ class TaskSet(ResultModelBase):
         self.result = result
 
     def to_dict(self):
-        return {'taskset_id': self.taskset_id,
-                'result': self.result,
-                'date_done': self.date_done}
+        return {
+            'taskset_id': self.taskset_id,
+            'result': self.result,
+            'date_done': self.date_done,
+        }
 
     def __repr__(self):
         return '<TaskSet: {0.taskset_id}>'.format(self)

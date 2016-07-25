@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.events.snapshot
-    ~~~~~~~~~~~~~~~~~~~~~~
+"""Periodically store events in a database.
 
-    Consuming the events as a stream is not always suitable
-    so this module implements a system to take snapshots of the
-    state of a cluster at regular intervals.  There is a full
-    implementation of this writing the snapshots to a database
-    in :mod:`djcelery.snapshots` in the `django-celery` distribution.
-
+Consuming the events as a stream is not always suitable
+so this module implements a system to take snapshots of the
+state of a cluster at regular intervals.  There is a full
+implementation of this writing the snapshots to a database
+in :mod:`djcelery.snapshots` in the `django-celery` distribution.
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -28,6 +25,7 @@ logger = get_logger('celery.evcam')
 
 
 class Polaroid(object):
+
     timer = None
     shutter_signal = Signal(providing_args=('state',))
     cleanup_signal = Signal()

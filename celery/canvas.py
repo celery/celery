@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.canvas
-    ~~~~~~~~~~~~~
+"""Composing task work-flows.
 
-    Composing task work-flows.
+.. seealso:
 
-    Documentation for some of these types are in :mod:`celery`.
     You should import these from :mod:`celery` and not this module.
-
-
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -20,7 +15,9 @@ from functools import partial as _partial, reduce
 from operator import itemgetter
 from itertools import chain as _chain
 
-from kombu.utils import cached_property, fxrange, reprcall, uuid
+from kombu.utils.functional import fxrange, reprcall
+from kombu.utils.objects import cached_property
+from kombu.utils.uuid import uuid
 from vine import barrier
 
 from celery._state import current_app
@@ -33,8 +30,10 @@ from celery.utils.functional import (
 )
 from celery.utils.text import truncate
 
-__all__ = ['Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
-           'group', 'chord', 'signature', 'maybe_signature']
+__all__ = [
+    'Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
+    'group', 'chord', 'signature', 'maybe_signature',
+]
 
 PY3 = sys.version_info[0] == 3
 
@@ -49,7 +48,6 @@ class _getitem_property(object):
     and optionally ``__setitem__``.
 
     Example:
-
         >>> from collections import defaultdict
 
         >>> class Me(dict):
@@ -74,7 +72,6 @@ class _getitem_property(object):
         42
         >>> me.deep
         defaultdict(<type 'dict'>, {'thing': 42})
-
     """
 
     def __init__(self, keypath, doc=None):
@@ -131,20 +128,52 @@ class Signature(dict):
     or to pass tasks around as callbacks while being compatible
     with serializers with a strict type subset.
 
-    :param task: Either a task class/instance, or the name of a task.
-    :keyword args: Positional arguments to apply.
-    :keyword kwargs: Keyword arguments to apply.
-    :keyword options: Additional options to :meth:`Task.apply_async`.
+    Signatures can also be created from tasks:
 
-    Note that if the first argument is a :class:`dict`, the other
-    arguments will be ignored and the values in the dict will be used
-    instead.
+    - Using the ``.signature()`` method which has the same signature
+      as ``Task.apply_async``:
 
-        >>> s = signature('tasks.add', args=(2, 2))
-        >>> signature(s)
-        {'task': 'tasks.add', args=(2, 2), kwargs={}, options={}}
+        .. code-block:: pycon
 
+            >>> add.signature(args=(1,), kwargs={'kw': 2}, options={})
+
+    - or the ``.s()`` shortcut that works for star arguments:
+
+        .. code-block:: pycon
+
+            >>> add.s(1, kw=2)
+
+    - the ``.s()`` shortcut does not allow you to specify execution options
+      but there's a chaning `.set` method that returns the signature:
+
+        .. code-block:: pycon
+
+            >>> add.s(2, 2).set(countdown=10).set(expires=30).delay()
+
+    Note:
+        You should use :func:`~celery.signature` to create new signatures.
+        The ``Signature`` class is the type returned by that function and
+        should be used for ``isinstance`` checks for signatures.
+
+    See Also:
+        :ref:`guide-canvas` for the complete guide.
+
+    Arguments:
+        task (Task, str): Either a task class/instance, or the name of a task.
+        args (Tuple): Positional arguments to apply.
+        kwargs (Dict): Keyword arguments to apply.
+        options (Dict): Additional options to :meth:`Task.apply_async`.
+
+    Note:
+        If the first argument is a :class:`dict`, the other
+        arguments will be ignored and the values in the dict will be used
+        instead::
+
+            >>> s = signature('tasks.add', args=(2, 2))
+            >>> signature(s)
+            {'task': 'tasks.add', args=(2, 2), kwargs={}, options={}}
     """
+
     TYPES = {}
     _app = _type = None
 
@@ -188,17 +217,47 @@ class Signature(dict):
              chord_size=None)
 
     def __call__(self, *partial_args, **partial_kwargs):
+        """Call the task directly (in the current process)."""
         args, kwargs, _ = self._merge(partial_args, partial_kwargs, None)
         return self.type(*args, **kwargs)
 
     def delay(self, *partial_args, **partial_kwargs):
+        """Shortcut to :meth:`apply_async` using star arguments."""
         return self.apply_async(partial_args, partial_kwargs)
 
     def apply(self, args=(), kwargs={}, **options):
-        """Apply this task locally."""
+        """Same as :meth:`apply_async` but executed the task inline instead
+        of sending a task message."""
         # For callbacks: extra args are prepended to the stored args.
         args, kwargs, options = self._merge(args, kwargs, options)
         return self.type.apply(args, kwargs, **options)
+
+    def apply_async(self, args=(), kwargs={}, route_name=None, **options):
+        """Apply this task asynchronously.
+
+        Arguments:
+            args (Tuple): Partial args to be prepended to the existing args.
+            kwargs (Dict): Partial kwargs to be merged with existing kwargs.
+            options (Dict): Partial options to be merged
+                with existing options.
+
+        Returns:
+            ~@AsyncResult: promise of future evaluation.
+
+        See also:
+            :meth:`~@Task.apply_async` and the :ref:`guide-calling` guide.
+        """
+        try:
+            _apply = self._apply_async
+        except IndexError:  # pragma: no cover
+            # no tasks for chain, etc to find type
+            return
+        # For callbacks: extra args are prepended to the stored args.
+        if args or kwargs or options:
+            args, kwargs, options = self._merge(args, kwargs, options)
+        else:
+            args, kwargs, options = self.args, self.kwargs, self.options
+        return _apply(args, kwargs, **options)
 
     def _merge(self, args=(), kwargs={}, options={}, force=False):
         if self.immutable and not force:
@@ -209,6 +268,14 @@ class Signature(dict):
                 dict(self.options, **options) if options else self.options)
 
     def clone(self, args=(), kwargs={}, **opts):
+        """Create a copy of this signature.
+
+        Arguments:
+            args (Tuple): Partial args to be prepended to the existing args.
+            kwargs (Dict): Partial kwargs to be merged with existing kwargs.
+            options (Dict): Partial options to be merged with
+                existing options.
+        """
         # need to deepcopy options so origins links etc. is not modified.
         if args or kwargs or opts:
             args, kwargs, opts = self._merge(args, kwargs, opts)
@@ -225,6 +292,15 @@ class Signature(dict):
 
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None):
+        """Finalize the signature by adding a concrete task id.
+
+        The task will not be called and you should not call the signature
+        twice after freezing it as that will result in two task messages
+        using the same task id.
+
+        Returns:
+            ~@AsyncResult: promise of future evaluation.
+        """
         opts = self.options
         try:
             tid = opts['task_id']
@@ -244,6 +320,9 @@ class Signature(dict):
     _freeze = freeze
 
     def replace(self, args=None, kwargs=None, options=None):
+        """Replace the args, kwargs or options set for this signature.
+        These are only replaced if the argument for the section is
+        not :const:`None`."""
         s = self.clone()
         if args is not None:
             s.args = args
@@ -254,6 +333,12 @@ class Signature(dict):
         return s
 
     def set(self, immutable=None, **options):
+        """Set arbitrary execution options (same as ``.options.update(…)``).
+
+        Returns:
+            Signature: This is a chaining method call
+                (i.e. it will return ``self``).
+        """
         if immutable is not None:
             self.set_immutable(immutable)
         self.options.update(options)
@@ -264,19 +349,6 @@ class Signature(dict):
 
     def set_parent_id(self, parent_id):
         self.parent_id = parent_id
-
-    def apply_async(self, args=(), kwargs={}, route_name=None, **options):
-        try:
-            _apply = self._apply_async
-        except IndexError:  # pragma: no cover
-            # no tasks for chain, etc to find type
-            return
-        # For callbacks: extra args are prepended to the stored args.
-        if args or kwargs or options:
-            args, kwargs, options = self._merge(args, kwargs, options)
-        else:
-            args, kwargs, options = self.args, self.kwargs, self.options
-        return _apply(args, kwargs, **options)
 
     def _with_list_option(self, key):
         items = self.options.setdefault(key, [])
@@ -295,9 +367,23 @@ class Signature(dict):
         items.extend(maybe_list(value))
 
     def link(self, callback):
+        """Add a callback task to be applied if this task
+        executes successfully.
+
+        Returns:
+            Signature: the argument passed, for chaining
+                or use with :func:`~functools.reduce`.
+        """
         return self.append_to_list_option('link', callback)
 
     def link_error(self, errback):
+        """Add a callback task to be applied if an error occurs
+        while executing this task.
+
+        Returns:
+            Signature: the argument passed, for chaining
+                or use with :func:`~functools.reduce`.
+        """
         return self.append_to_list_option('link_error', errback)
 
     def on_error(self, errback):
@@ -309,12 +395,13 @@ class Signature(dict):
 
         calls the ``add`` task, not the ``errback`` task, but the
         reverse is true for :meth:`link_error`.
-
         """
         self.link_error(errback)
         return self
 
     def flatten_links(self):
+        """Return a recursive list of dependencies (unchain if you will,
+        but with links intact)."""
         return list(_chain.from_iterable(_chain(
             [[self]],
             (link.flatten_links()
@@ -420,6 +507,50 @@ class Signature(dict):
 @Signature.register_type
 @python_2_unicode_compatible
 class chain(Signature):
+    """Chains tasks together, so that each tasks follows each other
+    by being applied as a callback of the previous task.
+
+    Note:
+        If called with only one argument, then that argument must
+        be an iterable of tasks to chain, which means you can
+        use this with a generator expression.
+
+    Example:
+        This is effectively :math:`((2 + 2) + 4)`:
+
+        .. code-block:: pycon
+
+            >>> res = chain(add.s(2, 2), add.s(4))()
+            >>> res.get()
+            8
+
+        Calling a chain will return the result of the last task in the chain.
+        You can get to the other tasks by following the ``result.parent``'s:
+
+        .. code-block:: pycon
+
+            >>> res.parent.get()
+            4
+
+        Using a generator expression:
+
+        .. code-block:: pycon
+
+            >>> lazy_chain = chain(add.s(i) for i in range(10))
+            >>> res = lazy_chain(3)
+
+    Arguments:
+        *tasks (Signature): List of task signatures to chain.
+            If only one argument is passed and that argument is
+            an iterable, then that will be used as the list of signatures
+            to chain instead.  This means that you can use a generator
+            expression.
+
+    Returns:
+        ~celery.chain: A lazy signature that can be called to apply the first
+            task in the chain.  When that task succeeed the next task in the
+            chain is applied, and so on.
+    """
     tasks = _getitem_property('kwargs.tasks', 'Tasks in chain.')
 
     def __init__(self, *tasks, **options):
@@ -715,6 +846,34 @@ def _maybe_group(tasks, app):
 @Signature.register_type
 @python_2_unicode_compatible
 class group(Signature):
+    """Creates a group of tasks to be executed in parallel.
+
+    A group is lazy so you must call it to take action and evaluate
+    the group.
+
+    Note:
+        If only one argument is passed, and that argument is an iterable
+        then that will be used as the list of tasks instead, which
+        means you can use ``group`` with generator expressions.
+
+    Example:
+        >>> lazy_group = group([add.s(2, 2), add.s(4, 4)])
+        >>> promise = lazy_group()  # <-- evaluate: returns lazy result.
+        >>> promise.get()  # <-- will wait for the task to return
+        [4, 8]
+
+    Arguments:
+        *tasks (Signature): A list of signatures that this group will call.
+            If there is only one argument, and that argument is an iterable,
+            then that will define the list of signatures instead.
+        **options (Any): Execution options applied to all tasks
+            in the group.
+
+    Returns:
+        ~celery.group: signature that when called will then call all of the
+            tasks in the group (and return a :class:`GroupResult` instance
+            that can be used to inspect the state of the group).
+    """
     tasks = _getitem_property('kwargs.tasks', 'Tasks in group.')
 
     def __init__(self, *tasks, **options):
@@ -913,7 +1072,31 @@ class group(Signature):
 @Signature.register_type
 @python_2_unicode_compatible
 class chord(Signature):
+    """Barrier synchronization primitive.
 
+    A chord consists of a header and a body.
+
+    The header is a group of tasks that must complete before the callback is
+    called.  A chord is essentially a callback for a group of tasks.
+
+    The body is applied with the return values of all the header
+    tasks as a list.
+
+    Example:
+
+        The chord:
+
+        .. code-block:: pycon
+
+            >>> res = chord([add.s(2, 2), add.s(4, 4)])(sum_task.s())
+
+        is effectively :math:`\Sigma ((2 + 2) + (4 + 4))`:
+
+        .. code-block:: pycon
+
+            >>> res.get()
+            12
+    """
     def __init__(self, header, body=None, task='celery.chord',
                  args=(), kwargs={}, app=None, **options):
         Signature.__init__(
@@ -1064,6 +1247,14 @@ class chord(Signature):
 
 
 def signature(varies, *args, **kwargs):
+    """Create new signature
+
+    - if the first argument is a signature already then it's cloned.
+    - if the first argument is a dict, then a Signature version is returned.
+
+    Returns:
+        Signature: The resulting signature.
+    """
     app = kwargs.get('app')
     if isinstance(varies, dict):
         if isinstance(varies, abstract.CallableSignature):

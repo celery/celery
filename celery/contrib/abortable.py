@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-=========================
+"""Abortable Tasks.
+
 Abortable tasks overview
 =========================
 
@@ -82,7 +82,6 @@ have it block until the task is finished.
    producer and the consumer.  This is currently implemented through the
    database backend.  Therefore, this class will only work with the
    database backends.
-
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -113,7 +112,6 @@ class AbortableAsyncResult(AsyncResult):
 
     Specifically, this gives the `AsyncResult` a :meth:`abort()` method,
     which sets the state of the underlying Task to `'ABORTED'`.
-
     """
 
     def is_aborted(self):
@@ -126,10 +124,9 @@ class AbortableAsyncResult(AsyncResult):
         Abortable tasks monitor their state at regular intervals and
         terminate execution if so.
 
-        Be aware that invoking this method does not guarantee when the
-        task will be aborted (or even if the task will be aborted at
-        all).
-
+        Warning:
+            Be aware that invoking this method does not guarantee when the
+            task will be aborted (or even if the task will be aborted at all).
         """
         # TODO: store_result requires all four arguments to be set,
         # but only state should be updated here
@@ -144,7 +141,6 @@ class AbortableTask(Task):
     All subclasses of :class:`AbortableTask` must call the
     :meth:`is_aborted` method periodically and act accordingly when
     the call evaluates to :const:`True`.
-
     """
     abstract = True
 
@@ -163,7 +159,6 @@ class AbortableTask(Task):
         backend (for example a database query), so find a good balance
         between calling it regularly (for responsiveness), but not too
         often (for performance).
-
         """
         task_id = kwargs.get('task_id', self.request.id)
         result = self.AsyncResult(task_id)

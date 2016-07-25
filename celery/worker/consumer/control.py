@@ -1,3 +1,9 @@
+"""Worker Remote Control Bootstep.
+
+``Control`` -> :mod:`celery.worker.pidbox` -> :mod:`kombu.pidbox`.
+
+The actual commands are implemented in :mod:`celery.worker.control`.
+"""
 from __future__ import absolute_import, unicode_literals
 
 from celery import bootsteps
@@ -8,6 +14,7 @@ from celery.worker import pidbox
 from .tasks import Tasks
 
 __all__ = ['Control']
+
 logger = get_logger(__name__)
 
 

@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.backends.database
-    ~~~~~~~~~~~~~~~~~~~~~~~~
-
-    SQLAlchemy result store backend.
-
-"""
+"""SQLAlchemy result store backend."""
 from __future__ import absolute_import, unicode_literals
 
 import logging
@@ -61,8 +55,7 @@ def retry(fun):
                 logger.warning(
                     'Failed operation %s. Retrying %s more times.',
                     fun.__name__, max_retries - retries - 1,
-                    exc_info=True,
-                )
+                    exc_info=True)
                 if retries + 1 >= max_retries:
                     raise
 
@@ -79,10 +72,7 @@ class DatabaseBackend(BaseBackend):
         # The `url` argument was added later and is used by
         # the app to set backend by url (celery.backends.get_backend_by_url)
         super(DatabaseBackend, self).__init__(
-            expires_type=maybe_timedelta,
-            url=url,
-            **kwargs
-        )
+            expires_type=maybe_timedelta, url=url, **kwargs)
         conf = self.app.conf
         self.url = url or dburi or conf.sqlalchemy_dburi
         self.engine_options = dict(
@@ -90,8 +80,7 @@ class DatabaseBackend(BaseBackend):
             **conf.sqlalchemy_engine_options or {})
         self.short_lived_sessions = kwargs.get(
             'short_lived_sessions',
-            conf.sqlalchemy_short_lived_sessions,
-        )
+            conf.sqlalchemy_short_lived_sessions)
 
         tablenames = conf.sqlalchemy_table_names or {}
         Task.__table__.name = tablenames.get('task', 'celery_taskmeta')
@@ -106,8 +95,7 @@ class DatabaseBackend(BaseBackend):
         return session_manager.session_factory(
             dburi=self.url,
             short_lived_sessions=self.short_lived_sessions,
-            **self.engine_options
-        )
+            **self.engine_options)
 
     @retry
     def _store_result(self, task_id, result, state,
