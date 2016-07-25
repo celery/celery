@@ -69,8 +69,9 @@ def _wanted_config_key(key):
 
 # -- Task
 
-@Panel.register
+@Panel.register(type='inspect')
 def query_task(state, ids, **kwargs):
+    """Query for task information by id."""
     return {
         req.id: (_state_of_task(req), req.info())
         for req in _find_requests_by_id(maybe_list(ids))
@@ -96,9 +97,14 @@ def _state_of_task(request,
     return 'ready'
 
 
-@Panel.register
+@Panel.register(type='control')
 def revoke(state, task_id, terminate=False, signal=None, **kwargs):
-    """Revoke task by task id."""
+    """Revoke task by task id (or list of ids).
+
+    Keyword Arguments:
+        terminate (bool): Also terminate the process if the task is active.
+        signal (str): Name of signal to use for terminate. E.g. ``KILL``.
+    """
     # supports list argument since 3.1
     task_ids, task_id = set(maybe_list(task_id) or []), None
     size = len(task_ids)
@@ -124,8 +130,9 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
     return ok('tasks {0} flagged as revoked'.format(idstr))
 
 
-@Panel.register
+@Panel.register(type='control')
 def rate_limit(state, task_name, rate_limit, **kwargs):
+    """Tell worker(s) to modify the rate limit for a task by type."""
     """Set new rate limit for a task type.
 
     See :attr:`celery.task.base.Task.rate_limit`.
