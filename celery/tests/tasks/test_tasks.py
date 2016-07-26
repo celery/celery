@@ -37,6 +37,7 @@ class MockApplyTask(Task):
 class TasksCase(AppCase):
 
     def setup(self):
+        self.app.conf.task_protocol = 1  # XXX  Still using proto1
         self.mytask = self.app.task(shared=False)(return_True)
 
         @self.app.task(bind=True, count=0, shared=False)
@@ -120,6 +121,10 @@ class TasksCase(AppCase):
             return a / b
 
         self.autoretry_task = autoretry_task
+
+        # memove all messages from memory-transport
+        from kombu.transport.memory import Channel
+        Channel.queues.clear()
 
 
 class MyCustomException(Exception):

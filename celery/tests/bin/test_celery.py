@@ -430,16 +430,16 @@ class test_inspect(AppCase):
     def test_command_info(self):
         i = inspect(app=self.app)
         self.assertTrue(i.get_command_info(
-            'ping', help=True, color=i.colored.red,
+            'ping', help=True, color=i.colored.red, app=self.app,
         ))
 
     def test_list_commands_color(self):
         i = inspect(app=self.app)
         self.assertTrue(i.list_commands(
-            help=True, color=i.colored.red,
+            help=True, color=i.colored.red, app=self.app,
         ))
         self.assertTrue(i.list_commands(
-            help=False, color=None,
+            help=False, color=None, app=self.app,
         ))
 
     def test_epilog(self):
@@ -489,12 +489,12 @@ class test_inspect(AppCase):
         callback({'foo': {'ok': 'pong'}})
         self.assertIn('OK', out.getvalue())
 
-        with patch('celery.bin.celery.json.dumps') as dumps:
+        with patch('celery.bin.celery.dumps') as dumps:
             i.run('ping', json=True)
             dumps.assert_called()
 
         instance = real.return_value = Mock()
-        instance.ping.return_value = None
+        instance._request.return_value = None
         with self.assertRaises(Error):
             i.run('ping')
 
@@ -503,18 +503,6 @@ class test_inspect(AppCase):
         i.quiet = True
         i.say_chat('<-', 'hello')
         self.assertFalse(out.getvalue())
-
-    def test_objgraph(self):
-        i = inspect(app=self.app)
-        i.call = Mock(name='call')
-        i.objgraph('Message', foo=1)
-        i.call.assert_called_with('objgraph', 'Message', foo=1)
-
-    def test_conf(self):
-        i = inspect(app=self.app)
-        i.call = Mock(name='call')
-        i.conf(with_defaults=True, foo=1)
-        i.call.assert_called_with('conf', True, foo=1)
 
 
 class test_control(AppCase):
@@ -528,44 +516,9 @@ class test_control(AppCase):
 
     def test_call(self):
         i = self.control(False)
-        i.call('foo', 1, kw=2)
-        i.app.control.foo.assert_called_with(1, kw=2, reply=True)
-
-    def test_pool_grow(self):
-        i = self.control(True)
-        i.pool_grow('pool_grow', n=2)
-        i.call.assert_called_with('pool_grow', 2)
-
-    def test_pool_shrink(self):
-        i = self.control(True)
-        i.pool_shrink('pool_shrink', n=2)
-        i.call.assert_called_with('pool_shrink', 2)
-
-    def test_rate_limit(self):
-        i = self.control(True)
-        i.rate_limit('rate_limit', 'proj.add', '1/s')
-        i.call.assert_called_with('rate_limit', 'proj.add', '1/s')
-
-    def test_time_limit(self):
-        i = self.control(True)
-        i.time_limit('time_limit', 'proj.add', 10, 30)
-        i.call.assert_called_with('time_limit', 'proj.add', 10, 30)
-
-    def test_add_consumer(self):
-        i = self.control(True)
-        i.add_consumer(
-            'add_consumer', 'queue', 'exchange', 'topic', 'rkey',
-            durable=True,
-        )
-        i.call.assert_called_with(
-            'add_consumer', 'queue', 'exchange', 'topic', 'rkey',
-            durable=True,
-        )
-
-    def test_cancel_consumer(self):
-        i = self.control(True)
-        i.cancel_consumer('cancel_consumer', 'queue')
-        i.call.assert_called_with('cancel_consumer', 'queue')
+        i.call('foo', arguments={'kw': 2})
+        i.app.control.broadcast.assert_called_with(
+            'foo', arguments={'kw': 2}, reply=True)
 
 
 class test_multi(AppCase):

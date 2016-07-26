@@ -77,23 +77,26 @@ class Inspect(object):
     def clock(self):
         return self._request('clock')
 
-    def active(self, safe=False):
-        return self._request('dump_active', safe=safe)
+    def active(self, safe=None):
+        # safe is ignored since 4.0
+        # as we now have argsrepr/kwargsrepr which means no objects
+        # will need to be serialized.
+        return self._request('active')
 
-    def scheduled(self, safe=False):
-        return self._request('dump_schedule', safe=safe)
+    def scheduled(self, safe=None):
+        return self._request('scheduled')
 
-    def reserved(self, safe=False):
-        return self._request('dump_reserved', safe=safe)
+    def reserved(self, safe=None):
+        return self._request('reserved')
 
     def stats(self):
         return self._request('stats')
 
     def revoked(self):
-        return self._request('dump_revoked')
+        return self._request('revoked')
 
     def registered(self, *taskinfoitems):
-        return self._request('dump_tasks', taskinfoitems=taskinfoitems)
+        return self._request('registered', taskinfoitems=taskinfoitems)
     registered_tasks = registered
 
     def ping(self):
@@ -106,7 +109,7 @@ class Inspect(object):
         return self._request('query_task', ids=ids)
 
     def conf(self, with_defaults=False):
-        return self._request('dump_conf', with_defaults=with_defaults)
+        return self._request('conf', with_defaults=with_defaults)
 
     def hello(self, from_node, revoked=None):
         return self._request('hello', from_node=from_node, revoked=revoked)

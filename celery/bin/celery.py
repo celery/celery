@@ -264,10 +264,11 @@ import sys
 from functools import partial
 from importlib import import_module
 
-from kombu.utils import json
+from kombu.utils.json import dumps, loads
+from kombu.utils.objects import cached_property
 
 from celery.app import defaults
-from celery.five import keys, string_t, values
+from celery.five import items, keys, string_t, values
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
 from celery.utils import term
 from celery.utils import text
@@ -424,8 +425,8 @@ class call(Command):
                    queue=None, exchange=None, routing_key=None,
                    eta=None, expires=None):
         # arguments
-        args = json.loads(args) if isinstance(args, string_t) else args
-        kwargs = json.loads(kwargs) if isinstance(kwargs, string_t) else kwargs
+        args = loads(args) if isinstance(args, string_t) else args
+        kwargs = loads(kwargs) if isinstance(kwargs, string_t) else kwargs
 
         # Expires can be int/float.
         try:
@@ -545,8 +546,8 @@ class result(Command):
 class _RemoteControl(Command):
 
     name = None
-    choices = None
     leaf = False
+    control_group = None
 
     option_list = Command.option_list + (
         Option('--timeout', '-t', type='float',
@@ -564,38 +565,31 @@ class _RemoteControl(Command):
 
     @classmethod
     def get_command_info(self, command,
-                         indent=0, prefix='', color=None, help=False):
+                         indent=0, prefix='', color=None,
+                         help=False, app=None, choices=None):
+        if choices is None:
+            choices = self._choices_by_group(app)
+        meta = choices[command]
         if help:
-            help = '|' + text.indent(self.choices[command][1], indent + 4)
+            help = '|' + text.indent(meta.help, indent + 4)
         else:
             help = None
-        try:
-            # see if it uses args.
-            meth = getattr(self, command)
-            return text.join([
-                '|' + text.indent('{0}{1} {2}'.format(
-                    prefix, color(command), meth.__doc__), indent),
-                help,
-            ])
-
-        except AttributeError:
-            return text.join([
-                '|' + text.indent(prefix + str(color(command)), indent), help,
-            ])
+        return text.join([
+            '|' + text.indent('{0}{1} {2}'.format(
+                prefix, color(command), meta.signature or ''), indent),
+            help,
+        ])
 
     @classmethod
-    def list_commands(self, indent=0, prefix='', color=None, help=False):
+    def list_commands(self, indent=0, prefix='',
+                      color=None, help=False, app=None):
+        choices = self._choices_by_group(app)
         color = color if color else lambda x: x
         prefix = prefix + ' ' if prefix else ''
-        return '\n'.join(self.get_command_info(c, indent, prefix, color, help)
-                         for c in sorted(self.choices))
-
-    @property
-    def epilog(self):
-        return '\n'.join([
-            '[Commands]',
-            self.list_commands(indent=4, help=True)
-        ])
+        return '\n'.join(
+            self.get_command_info(c, indent, prefix, color, help,
+                                  app=app, choices=choices)
+            for c in sorted(choices))
 
     def usage(self, command):
         return '%prog {0} [options] {1} <command> [arg1 .. argN]'.format(
@@ -610,36 +604,98 @@ class _RemoteControl(Command):
                 'Missing {0.name} method. See --help'.format(self))
         return self.do_call_method(args, **kwargs)
 
-    def do_call_method(self, args, **kwargs):
+    def _ensure_fanout_supported(self):
+        with self.app.connection_for_write() as conn:
+            if not conn.supports_exchange_type('fanout'):
+                raise self.Error(
+                    'Broadcast not supported by transport {0!r}'.format(
+                        conn.info()['transport']))
+
+    def do_call_method(self, args,
+                       timeout=None, destination=None, json=False, **kwargs):
         method = args[0]
         if method == 'help':
             raise self.Error("Did you mean '{0.name} --help'?".format(self))
-        if method not in self.choices:
+        try:
+            meta = self.choices[method]
+        except KeyError:
             raise self.UsageError(
                 'Unknown {0.name} method {1}'.format(self, method))
 
-        if self.app.connection_for_write().transport.driver_type == 'sql':
-            raise self.Error('Broadcast not supported by SQL broker transport')
+        self._ensure_fanout_supported()
 
-        output_json = kwargs.get('json')
-        destination = kwargs.get('destination')
-        timeout = kwargs.get('timeout') or self.choices[method][0]
+        timeout = timeout or meta.default_timeout
         if destination and isinstance(destination, string_t):
             destination = [dest.strip() for dest in destination.split(',')]
 
-        handler = getattr(self, method, self.call)
-
-        callback = None if output_json else self.say_remote_command_reply
-
-        replies = handler(method, *args[1:], timeout=timeout,
-                          destination=destination,
-                          callback=callback)
+        replies = self.call(
+            method,
+            arguments=self.compile_arguments(meta, method, args[1:]),
+            timeout=timeout,
+            destination=destination,
+            callback=None if json else self.say_remote_command_reply,
+        )
         if not replies:
             raise self.Error('No nodes replied within time constraint.',
                              status=EX_UNAVAILABLE)
-        if output_json:
-            self.out(json.dumps(replies))
+        if json:
+            self.out(dumps(replies))
         return replies
+
+    def compile_arguments(self, meta, method, args):
+        args = list(args)
+        kw = {}
+        if meta.args:
+            kw.update({
+                k: v for k, v in self._consume_args(meta, method, args)
+            })
+        if meta.variadic:
+            kw.update({meta.variadic: args})
+        if not kw and args:
+            raise self.Error(
+                'Command {0!r} takes no arguments.'.format(method),
+                status=EX_USAGE)
+        return kw or {}
+
+    def _consume_args(self, meta, method, args):
+        i = 0
+        try:
+            for i, arg in enumerate(args):
+                try:
+                    name, typ = meta.args[i]
+                except IndexError:
+                    if meta.variadic:
+                        break
+                    raise self.Error(
+                        'Command {0!r} takes arguments: {1}'.format(
+                            method, meta.signature),
+                        status=EX_USAGE)
+                else:
+                    yield name, typ(arg) if typ is not None else arg
+        finally:
+            args[:] = args[i:]
+
+    @classmethod
+    def _choices_by_group(self, app):
+        from celery.worker.control import Panel
+        # need to import task modules for custom user-remote control commands.
+        app.loader.import_default_modules()
+
+        return {
+            name: info for name, info in items(Panel.meta)
+            if info.type == self.control_group and info.visible
+        }
+
+    @cached_property
+    def choices(self):
+        return self._choices_by_group(self.app)
+
+    @property
+    def epilog(self):
+        return '\n'.join([
+            '[Commands]',
+            self.list_commands(indent=4, help=True, app=self.app)
+        ])
 
 
 class inspect(_RemoteControl):
@@ -656,37 +712,11 @@ class inspect(_RemoteControl):
     """
 
     name = 'inspect'
+    control_group = 'inspect'
 
-    choices = {
-        'active': (1.0, 'dump active tasks (being processed)'),
-        'active_queues': (1.0, 'dump queues being consumed from'),
-        'clock': (1.0, 'get value of logical clock'),
-        'conf': (1.0, 'dump worker configuration'),
-        'memdump': (1.0, 'dump memory samples (requires psutil)'),
-        'memsample': (1.0, 'sample memory (requires psutil)'),
-        'objgraph': (60.0, 'create object graph (requires objgraph)'),
-        'ping': (0.2, 'ping worker(s)'),
-        'query_task': (1.0, 'query for task information by id'),
-        'reserved': (1.0, 'dump reserved tasks (waiting to be processed)'),
-        'scheduled': (1.0, 'dump scheduled tasks (eta/countdown/retry)'),
-        'stats': (1.0, 'dump worker statistics'),
-        'registered': (1.0, 'dump of registered tasks'),
-        'report': (1.0, 'get bugreport info'),
-        'revoked': (1.0, 'dump of revoked task ids'),
-    }
-
-    def call(self, method, *args, **options):
-        i = self.app.control.inspect(**options)
-        return getattr(i, method)(*args)
-
-    def objgraph(self, type_='Request', *args, **kwargs):
-        return self.call('objgraph', type_, **kwargs)
-
-    def conf(self, with_defaults=False, *args, **kwargs):
-        return self.call('conf', with_defaults, **kwargs)
-
-    def query_task(self, *ids, **options):
-        return self.call('query_task', ids, **options)
+    def call(self, method, arguments, **options):
+        return self.app.control.inspect(**options)._request(
+            method, **arguments)
 
 
 class control(_RemoteControl):
@@ -708,49 +738,11 @@ class control(_RemoteControl):
     """
 
     name = 'control'
+    control_group = 'control'
 
-    choices = {
-        'enable_events': (1.0, 'tell worker(s) to enable events'),
-        'disable_events': (1.0, 'tell worker(s) to disable events'),
-        'add_consumer': (1.0, 'tell worker(s) to start consuming a queue'),
-        'cancel_consumer': (1.0, 'tell worker(s) to stop consuming a queue'),
-        'rate_limit': (
-            1.0, 'tell worker(s) to modify the rate limit for a task type'),
-        'time_limit': (
-            1.0, 'tell worker(s) to modify the time limit for a task type.'),
-        'pool_grow': (1.0, 'start more pool processes'),
-        'pool_shrink': (1.0, 'use less pool processes'),
-    }
-
-    def call(self, method, *args, **options):
-        return getattr(self.app.control, method)(*args, reply=True, **options)
-
-    def pool_grow(self, method, n=1, **kwargs):
-        """[N=1]"""
-        return self.call(method, int(n), **kwargs)
-
-    def pool_shrink(self, method, n=1, **kwargs):
-        """[N=1]"""
-        return self.call(method, int(n), **kwargs)
-
-    def rate_limit(self, method, task_name, rate_limit, **kwargs):
-        """<task_name> <rate_limit> (e.g. 5/s | 5/m | 5/h)>"""
-        return self.call(method, task_name, rate_limit, **kwargs)
-
-    def time_limit(self, method, task_name, soft, hard=None, **kwargs):
-        """<task_name> <soft_secs> [hard_secs]"""
-        return self.call(method, task_name,
-                         float(soft), float(hard), **kwargs)
-
-    def add_consumer(self, method, queue, exchange=None,
-                     exchange_type='direct', routing_key=None, **kwargs):
-        """<queue> [exchange [type [routing_key]]]"""
-        return self.call(method, queue, exchange,
-                         exchange_type, routing_key, **kwargs)
-
-    def cancel_consumer(self, method, queue, **kwargs):
-        """<queue>"""
-        return self.call(method, queue, **kwargs)
+    def call(self, method, arguments, **options):
+        return self.app.control.broadcast(
+            method, arguments=arguments, reply=True, **options)
 
 
 class status(Command):
@@ -1027,7 +1019,8 @@ class help(Command):
         self.parser.print_help()
         self.out(HELP.format(
             prog_name=self.prog_name,
-            commands=CeleryCommand.list_commands(colored=self.colored),
+            commands=CeleryCommand.list_commands(
+                colored=self.colored, app=self.app),
         ))
 
         return EX_USAGE
@@ -1166,7 +1159,8 @@ class CeleryCommand(Command):
             sys.exit(EX_FAILURE)
 
     @classmethod
-    def get_command_info(self, command, indent=0, color=None, colored=None):
+    def get_command_info(self, command, indent=0,
+                         color=None, colored=None, app=None):
         colored = term.colored() if colored is None else colored
         colored = colored.names[color] if color else lambda x: x
         obj = self.commands[command]
@@ -1176,11 +1170,12 @@ class CeleryCommand(Command):
         return text.join([
             ' ',
             '|' + text.indent('{0} --help'.format(cmd), indent),
-            obj.list_commands(indent, 'celery {0}'.format(command), colored),
+            obj.list_commands(indent, 'celery {0}'.format(command), colored,
+                              app=app),
         ])
 
     @classmethod
-    def list_commands(self, indent=0, colored=None):
+    def list_commands(self, indent=0, colored=None, app=None):
         colored = term.colored() if colored is None else colored
         white = colored.white
         ret = []
@@ -1188,7 +1183,8 @@ class CeleryCommand(Command):
             ret.extend([
                 text.indent('+ {0}: '.format(white(cls)), indent),
                 '\n'.join(
-                    self.get_command_info(command, indent + 4, color, colored)
+                    self.get_command_info(command, indent + 4, color, colored,
+                                          app=app)
                     for command in commands),
                 ''
             ])

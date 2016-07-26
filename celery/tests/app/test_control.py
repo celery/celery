@@ -76,7 +76,7 @@ class test_inspect(AppCase):
     @with_mock_broadcast
     def test_active(self):
         self.i.active()
-        self.assertIn('dump_active', MockMailbox.sent)
+        self.assertIn('active', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_clock(self):
@@ -86,7 +86,7 @@ class test_inspect(AppCase):
     @with_mock_broadcast
     def test_conf(self):
         self.i.conf()
-        self.assertIn('dump_conf', MockMailbox.sent)
+        self.assertIn('conf', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_hello(self):
@@ -111,12 +111,12 @@ class test_inspect(AppCase):
     @with_mock_broadcast
     def test_scheduled(self):
         self.i.scheduled()
-        self.assertIn('dump_schedule', MockMailbox.sent)
+        self.assertIn('scheduled', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_reserved(self):
         self.i.reserved()
-        self.assertIn('dump_reserved', MockMailbox.sent)
+        self.assertIn('reserved', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_stats(self):
@@ -126,12 +126,12 @@ class test_inspect(AppCase):
     @with_mock_broadcast
     def test_revoked(self):
         self.i.revoked()
-        self.assertIn('dump_revoked', MockMailbox.sent)
+        self.assertIn('revoked', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_tasks(self):
         self.i.registered()
-        self.assertIn('dump_tasks', MockMailbox.sent)
+        self.assertIn('registered', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_ping(self):
