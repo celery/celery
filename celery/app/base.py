@@ -657,8 +657,9 @@ class Celery(object):
         if connection:
             producer = amqp.Producer(connection)
         with self.producer_or_acquire(producer) as P:
-            self.backend.on_task_call(P, task_id)
-            amqp.send_task_message(P, name, message, **options)
+            with P.connection._reraise_as_library_errors():
+                self.backend.on_task_call(P, task_id)
+                amqp.send_task_message(P, name, message, **options)
         result = (result_cls or self.AsyncResult)(task_id)
         if add_to_parent:
             if not have_parent:

@@ -5,6 +5,7 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 from billiard.einfo import ExceptionInfo
+from kombu.exceptions import OperationalError
 from kombu.utils.uuid import uuid
 
 from celery import current_app, group
@@ -147,6 +148,7 @@ class Task(object):
     __v2_compat__ = False  # set by old base in celery.task.base
 
     MaxRetriesExceededError = MaxRetriesExceededError
+    OperationalError = OperationalError
 
     #: Execution strategy used, or the qualified name of one.
     Strategy = 'celery.worker.strategy:default'
