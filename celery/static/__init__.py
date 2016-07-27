@@ -16,6 +16,3 @@ def logo():
 def logo_as_base64():
     with codecs.open(logo(), mode='rb') as fh:
         return base64.b64encode(fh.read())
-
-
-
