@@ -17,6 +17,7 @@ recursive-include extra/systemd *
 recursive-include extra/zsh-completion *
 recursive-include examples *
 recursive-include requirements *.txt *.rst
+recursive-include celery/static *.png
 
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]

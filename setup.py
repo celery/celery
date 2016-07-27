@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 import os
 import re
@@ -198,8 +198,8 @@ setup(
     url=meta['homepage'],
     platforms=['any'],
     license='BSD',
-    packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
-    include_package_data=False,
+    packages=['celery'],
+    include_package_data=True,
     zip_safe=False,
     install_requires=install_requires,
     tests_require=reqs('test.txt'),

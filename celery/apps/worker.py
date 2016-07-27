@@ -18,7 +18,10 @@ from functools import partial
 from billiard.process import current_process
 from kombu.utils.encoding import safe_str
 
-from celery import VERSION_BANNER, platforms, signals
+from celery import VERSION_BANNER
+from celery import platforms
+from celery import signals
+from celery import static
 from celery.app import trace
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.five import string, string_t
@@ -119,9 +122,6 @@ class Worker(WorkController):
 
     def on_start(self):
         app = self.app
-        if not self._custom_logging and self.redirect_stdouts:
-            app.log.redirect_stdouts(self.redirect_stdouts_level)
-
         WorkController.on_start(self)
 
         # this signal can be used to e.g. change queues after
@@ -135,12 +135,21 @@ class Worker(WorkController):
 
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
+        use_image = self._term_supports_images()
+        if use_image:
+            self.termimage(static.logo_as_base64())
         print(safe_str(''.join([
-            string(self.colored.cyan(' \n', self.startup_info())),
+            string(self.colored.cyan(
+                ' \n', self.startup_info(artlines=not use_image))),
             string(self.colored.reset(self.extra_info() or '')),
         ])), file=sys.__stdout__)
         self.set_process_status('-active-')
         self.install_platform_tweaks(self)
+        if not self._custom_logging and self.redirect_stdouts:
+            app.log.redirect_stdouts(self.redirect_stdouts_level)
+
+    def _term_supports_images(self):
+        return isatty(sys.stdin) and os.environ.get('ITERM_PROFILE')
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
@@ -173,7 +182,11 @@ class Worker(WorkController):
             tasklist = self.tasklist(include_builtins=include_builtins)
             return EXTRA_INFO_FMT.format(tasks=tasklist)
 
-    def startup_info(self):
+    def termimage(self, s):
+        print('\n\033]1337;File=inline=1;'
+              'preserveAspectRatio=0:%s\a' % (s,))
+
+    def startup_info(self, artlines=True):
         app = self.app
         concurrency = string(self.concurrency)
         appr = '{0}:{1:#x}'.format(app.main or '__main__', id(app))
@@ -204,11 +217,12 @@ class Worker(WorkController):
         ).splitlines()
 
         # integrate the ASCII art.
-        for i, x in enumerate(banner):
-            try:
-                banner[i] = ' '.join([ARTLINES[i], banner[i]])
-            except IndexError:
-                banner[i] = ' ' * 16 + banner[i]
+        if artlines:
+            for i, x in enumerate(banner):
+                try:
+                    banner[i] = ' '.join([ARTLINES[i], banner[i]])
+                except IndexError:
+                    banner[i] = ' ' * 16 + banner[i]
         return '\n'.join(banner) + '\n'
 
     def install_platform_tweaks(self, worker):
