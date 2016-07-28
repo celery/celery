@@ -95,34 +95,20 @@ Examples
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
-import errno
 import os
-import shlex
-import signal
 import sys
 
-from collections import OrderedDict, defaultdict, namedtuple
-from functools import partial
-from subprocess import Popen
-from time import sleep
+from functools import wraps
 
-from kombu.utils.encoding import from_utf8
 from kombu.utils.objects import cached_property
 
 from celery import VERSION_BANNER
-from celery.five import items
-from celery.platforms import Pidfile, IS_WINDOWS
+from celery.apps.multi import Cluster
+from celery.platforms import EX_FAILURE, EX_OK
 from celery.utils import term
-from celery.utils.nodenames import (
-    gethostname, host_format, node_format, nodesplit,
-)
 from celery.utils.text import pluralize
 
 __all__ = ['MultiTool']
-
-SIGNAMES = {sig for sig in dir(signal)
-            if sig.startswith('SIG') and '_' not in sig}
-SIGMAP = {getattr(signal, name): name for name in SIGNAMES}
 
 USAGE = """\
 usage: {prog_name} start <node1 node2 nodeN|range> [worker options]
@@ -143,34 +129,94 @@ additional options (must appear after command name):
     * --verbose:    Show more output.
     * --no-color:   Don't display colors.
 """
-CELERY_EXE = 'celery'
-
-multi_args_t = namedtuple(
-    'multi_args_t', ('name', 'argv', 'expander', 'namespace'),
-)
 
 
 def main():
     sys.exit(MultiTool().execute_from_commandline(sys.argv))
 
 
-def celery_exe(*args):
-    return ' '.join((CELERY_EXE,) + args)
+def splash(fun):
+
+    @wraps(fun)
+    def _inner(self, *args, **kwargs):
+        self.splash()
+        return fun(self, *args, **kwargs)
+    return _inner
 
 
-class MultiTool(object):
-    retcode = 0  # Final exit code.
+class TermLogger(object):
 
-    def __init__(self, env=None, fh=None, quiet=False, verbose=False,
-                 no_color=False, nosplash=False, stdout=None, stderr=None):
-        """fh is an old alias to stdout."""
-        self.stdout = self.fh = stdout or fh or sys.stdout
+    splash_text = 'celery multi v{version}'
+    splash_context = {'version': VERSION_BANNER}
+
+    #: Final exit code.
+    retcode = 0
+
+    def setup_terminal(self, stdout, stderr,
+                       nosplash=False, quiet=False, verbose=False,
+                       no_color=False, **kwargs):
+        self.stdout = stdout or sys.stdout
         self.stderr = stderr or sys.stderr
-        self.env = env
         self.nosplash = nosplash
         self.quiet = quiet
         self.verbose = verbose
         self.no_color = no_color
+
+    def ok(self, m, newline=True, file=None):
+        self.say(m, newline=newline, file=file)
+        return EX_OK
+
+    def say(self, m, newline=True, file=None):
+        print(m, file=file or self.stdout, end='\n' if newline else '')
+
+    def carp(self, m, newline=True, file=None):
+        return self.say(m, newline, file or self.stderr)
+
+    def error(self, msg=None):
+        if msg:
+            self.carp(msg)
+        self.usage()
+        return EX_FAILURE
+
+    def info(self, msg, newline=True):
+        if self.verbose:
+            self.note(msg, newline=newline)
+
+    def note(self, msg, newline=True):
+        if not self.quiet:
+            self.say(str(msg), newline=newline)
+
+    @splash
+    def usage(self):
+        self.say(USAGE.format(prog_name=self.prog_name))
+
+    def splash(self):
+        if not self.nosplash:
+            self.note(self.colored.cyan(
+                self.splash_text.format(**self.splash_context)))
+
+    @cached_property
+    def colored(self):
+        return term.colored(enabled=not self.no_color)
+
+
+class MultiTool(TermLogger):
+
+    reserved_options = [
+        ('--nosplash', 'nosplash'),
+        ('--quiet', 'quiet'),
+        ('-q', 'quiet'),
+        ('--verbose', 'verbose'),
+        ('--no-color', 'no_color'),
+    ]
+
+    def __init__(self, env=None, cmd=None,
+                 fh=None, stdout=None, stderr=None, **kwargs):
+        """fh is an old alias to stdout."""
+        self.env = env
+        self.cmd = cmd
+        self.setup_terminal(stdout or fh, stderr, **kwargs)
+        self.fh = self.stdout
         self.prog_name = 'celery multi'
         self.commands = {
             'start': self.start,
@@ -186,263 +232,156 @@ class MultiTool(object):
             'help': self.help,
         }
 
-    def execute_from_commandline(self, argv, cmd='celery worker'):
-        argv = list(argv)   # don't modify callers argv.
-
+    def execute_from_commandline(self, argv, cmd=None):
         # Reserve the --nosplash|--quiet|-q/--verbose options.
-        if '--nosplash' in argv:
-            self.nosplash = argv.pop(argv.index('--nosplash'))
-        if '--quiet' in argv:
-            self.quiet = argv.pop(argv.index('--quiet'))
-        if '-q' in argv:
-            self.quiet = argv.pop(argv.index('-q'))
-        if '--verbose' in argv:
-            self.verbose = argv.pop(argv.index('--verbose'))
-        if '--no-color' in argv:
-            self.no_color = argv.pop(argv.index('--no-color'))
-
+        argv = self._handle_reserved_options(argv)
+        self.cmd = cmd if cmd is not None else self.cmd
         self.prog_name = os.path.basename(argv.pop(0))
-        if not argv or argv[0][0] == '-':
+
+        if not self.validate_arguments(argv):
             return self.error()
 
+        return self.call_command(argv[0], argv[1:])
+
+    def validate_arguments(self, argv):
+        return argv and argv[0][0] != '-'
+
+    def call_command(self, command, argv):
         try:
-            self.commands[argv[0]](argv[1:], cmd)
+            return self.commands[command](*argv) or EX_OK
         except KeyError:
-            self.error('Invalid command: {0}'.format(argv[0]))
+            return self.error('Invalid command: {0}'.format(command))
 
-        return self.retcode
+    def _handle_reserved_options(self, argv):
+        argv = list(argv)  # don't modify callers argv.
+        for arg, attr in self.reserved_options:
+            if arg in argv:
+                setattr(self, attr, bool(argv.pop(argv.index(arg))))
+        return argv
 
-    def say(self, m, newline=True, file=None):
-        print(m, file=file or self.stdout, end='\n' if newline else '')
-
-    def carp(self, m, newline=True, file=None):
-        return self.say(m, newline, file or self.stderr)
-
-    def names(self, argv, cmd):
-        p = NamespacedOptionParser(argv)
-        self.say('\n'.join(
-            n.name for n in multi_args(p, cmd)),
-        )
-
-    def get(self, argv, cmd):
-        wanted = argv[0]
-        p = NamespacedOptionParser(argv[1:])
-        for node in multi_args(p, cmd):
-            if node.name == wanted:
-                self.say(' '.join(node.argv))
-                return
-
-    def show(self, argv, cmd):
-        p = NamespacedOptionParser(argv)
-        self.with_detacher_default_options(p)
-        self.say('\n'.join(
-            ' '.join([sys.executable] + n.argv) for n in multi_args(p, cmd)),
-        )
-
-    def start(self, argv, cmd):
-        self.splash()
-        p = NamespacedOptionParser(argv)
-        self.with_detacher_default_options(p)
-        retcodes = []
+    @splash
+    def start(self, *argv):
         self.note('> Starting nodes...')
-        for node in multi_args(p, cmd):
-            self.note('\t> {0}: '.format(node.name), newline=False)
-            retcode = self.waitexec(node.argv, path=p.options['--executable'])
-            self.note(retcode and self.FAILED or self.OK)
-            retcodes.append(retcode)
-        self.retcode = int(any(retcodes))
+        return int(any(self.Cluster(argv).start()))
 
-    def with_detacher_default_options(self, p):
-        _setdefaultopt(p.options, ['--pidfile', '-p'], '%n.pid')
-        _setdefaultopt(p.options, ['--logfile', '-f'], '%n%I.log')
-        p.options.setdefault(
-            '--cmd',
-            '-m {0}'.format(celery_exe('worker', '--detach')),
-        )
-        _setdefaultopt(p.options, ['--executable'], sys.executable)
+    @splash
+    def stop(self, *argv, **kwargs):
+        return self.Cluster(argv).stop(**kwargs)
 
-    def signal_node(self, nodename, pid, sig):
-        try:
-            os.kill(pid, sig)
-        except OSError as exc:
-            if exc.errno != errno.ESRCH:
-                raise
-            self.note('Could not signal {0} ({1}): No such process'.format(
-                nodename, pid))
-            return False
-        return True
-
-    def node_alive(self, pid):
-        try:
-            os.kill(pid, 0)
-        except OSError as exc:
-            if exc.errno == errno.ESRCH:
-                return False
-            raise
-        return True
-
-    def shutdown_nodes(self, nodes, sig=signal.SIGTERM, retry=None,
-                       callback=None):
-        if not nodes:
-            return
-        P = set(nodes)
-
-        def on_down(node):
-            P.discard(node)
-            if callback:
-                callback(*node)
-
-        self.note(self.colored.blue('> Stopping nodes...'))
-        for node in list(P):
-            if node in P:
-                nodename, _, pid = node
-                self.note('\t> {0}: {1} -> {2}'.format(
-                    nodename, SIGMAP[sig][3:], pid))
-                if not self.signal_node(nodename, pid, sig):
-                    on_down(node)
-
-        def note_waiting():
-            left = len(P)
-            if left:
-                pids = ', '.join(str(pid) for _, _, pid in P)
-                self.note(self.colored.blue(
-                    '> Waiting for {0} {1} -> {2}...'.format(
-                        left, pluralize(left, 'node'), pids)), newline=False)
-
-        if retry:
-            note_waiting()
-            its = 0
-            while P:
-                for node in P:
-                    its += 1
-                    self.note('.', newline=False)
-                    nodename, _, pid = node
-                    if not self.node_alive(pid):
-                        self.note('\n\t> {0}: {1}'.format(nodename, self.OK))
-                        on_down(node)
-                        note_waiting()
-                        break
-                if P and not its % len(P):
-                    sleep(float(retry))
-            self.note('')
-
-    def getpids(self, p, cmd, callback=None):
-        _setdefaultopt(p.options, ['--pidfile', '-p'], '%n.pid')
-
-        nodes = []
-        for node in multi_args(p, cmd):
-            try:
-                pidfile_template = _getopt(
-                    p.namespaces[node.namespace], ['--pidfile', '-p'],
-                )
-            except KeyError:
-                pidfile_template = _getopt(p.options, ['--pidfile', '-p'])
-            pid = None
-            pidfile = node.expander(pidfile_template)
-            try:
-                pid = Pidfile(pidfile).read_pid()
-            except ValueError:
-                pass
-            if pid:
-                nodes.append((node.name, tuple(node.argv), pid))
-            else:
-                self.note('> {0.name}: {1}'.format(node, self.DOWN))
-                if callback:
-                    callback(node.name, node.argv, pid)
-
-        return nodes
-
-    def kill(self, argv, cmd):
-        self.splash()
-        p = NamespacedOptionParser(argv)
-        for nodename, _, pid in self.getpids(p, cmd):
-            self.note('Killing node {0} ({1})'.format(nodename, pid))
-            self.signal_node(nodename, pid, signal.SIGKILL)
-
-    def stop(self, argv, cmd, retry=None, callback=None):
-        self.splash()
-        p = NamespacedOptionParser(argv)
-        return self._stop_nodes(p, cmd, retry=retry, callback=callback)
-
-    def _stop_nodes(self, p, cmd, retry=None, callback=None):
-        restargs = p.args[len(p.values):]
-        self.shutdown_nodes(self.getpids(p, cmd, callback=callback),
-                            sig=findsig(restargs),
-                            retry=retry,
-                            callback=callback)
-
-    def restart(self, argv, cmd):
-        self.splash()
-        p = NamespacedOptionParser(argv)
-        self.with_detacher_default_options(p)
-        retvals = []
-
-        def on_node_shutdown(nodename, argv, pid):
-            self.note(self.colored.blue(
-                '> Restarting node {0}: '.format(nodename)), newline=False)
-            retval = self.waitexec(argv, path=p.options['--executable'])
-            self.note(retval and self.FAILED or self.OK)
-            retvals.append(retval)
-
-        self._stop_nodes(p, cmd, retry=2, callback=on_node_shutdown)
-        self.retval = int(any(retvals))
-
-    def stopwait(self, argv, cmd):
-        self.splash()
-        p = NamespacedOptionParser(argv)
-        self.with_detacher_default_options(p)
-        return self._stop_nodes(p, cmd, retry=2)
+    @splash
+    def stopwait(self, *argv, **kwargs):
+        return self.Cluster(argv).stopwait(**kwargs)
     stop_verify = stopwait  # compat
 
-    def expand(self, argv, cmd=None):
-        template = argv[0]
-        p = NamespacedOptionParser(argv[1:])
-        for node in multi_args(p, cmd):
-            self.say(node.expander(template))
+    @splash
+    def restart(self, *argv, **kwargs):
+        return int(any(self.Cluster(argv).restart(**kwargs)))
 
-    def help(self, argv, cmd=None):
+    def names(self, *argv):
+        self.say('\n'.join(n.name for n in self.Cluster(argv)))
+
+    def get(self, wanted, *argv):
+        try:
+            node = self.Cluster(argv).find(wanted)
+        except KeyError:
+            return EX_FAILURE
+        else:
+            return self.ok(' '.join(node.argv))
+
+    def show(self, *argv):
+        return self.ok('\n'.join(
+            ' '.join(node.argv_with_executable)
+            for node in self.Cluster(argv)
+        ))
+
+    @splash
+    def kill(self, *argv):
+        return self.Cluster(argv).kill()
+
+    def expand(self, template, *argv):
+        return self.ok('\n'.join(
+            node.expander(template)
+            for node in self.Cluster(argv)
+        ))
+
+    def help(self, *argv):
         self.say(__doc__)
 
-    def usage(self):
-        self.splash()
-        self.say(USAGE.format(prog_name=self.prog_name))
+    def Cluster(self, argv, cmd=None):
+        return Cluster(
+            argv, cmd if cmd is not None else self.cmd,
+            env=self.env,
+            on_stopping_preamble=self.on_stopping_preamble,
+            on_send_signal=self.on_send_signal,
+            on_still_waiting_for=self.on_still_waiting_for,
+            on_still_waiting_progress=self.on_still_waiting_progress,
+            on_still_waiting_end=self.on_still_waiting_end,
+            on_node_start=self.on_node_start,
+            on_node_restart=self.on_node_restart,
+            on_node_shutdown_ok=self.on_node_shutdown_ok,
+            on_node_status=self.on_node_status,
+            on_node_signal_dead=self.on_node_signal_dead,
+            on_node_signal=self.on_node_signal,
+            on_node_down=self.on_node_down,
+            on_child_spawn=self.on_child_spawn,
+            on_child_signalled=self.on_child_signalled,
+            on_child_failure=self.on_child_failure,
+        )
 
-    def splash(self):
-        if not self.nosplash:
-            c = self.colored
-            self.note(c.cyan('celery multi v{0}'.format(VERSION_BANNER)))
+    def on_stopping_preamble(self, nodes):
+        self.note(self.colored.blue('> Stopping nodes...'))
 
-    def waitexec(self, argv, path=sys.executable):
-        args = ' '.join([path] + list(argv))
-        argstr = shlex.split(from_utf8(args), posix=not IS_WINDOWS)
-        pipe = Popen(argstr, env=self.env)
-        self.info('  {0}'.format(' '.join(argstr)))
-        retcode = pipe.wait()
-        if retcode < 0:
-            self.note('* Child was terminated by signal {0}'.format(-retcode))
-            return -retcode
-        elif retcode > 0:
-            self.note('* Child terminated with errorcode {0}'.format(retcode))
-        return retcode
+    def on_send_signal(self, node, sig):
+        self.note('\t> {0.name}: {1} -> {0.pid}'.format(node, sig))
 
-    def error(self, msg=None):
-        if msg:
-            self.carp(msg)
-        self.usage()
-        self.retcode = 1
-        return 1
+    def on_still_waiting_for(self, nodes):
+        num_left = len(nodes)
+        if num_left:
+            self.note(self.colored.blue(
+                '> Waiting for {0} {1} -> {2}...'.format(
+                    num_left, pluralize(num_left, 'node'),
+                    ', '.join(str(node.pid) for node in nodes)),
+            ), newline=False)
 
-    def info(self, msg, newline=True):
-        if self.verbose:
-            self.note(msg, newline=newline)
+    def on_still_waiting_progress(self, nodes):
+        self.note('.', newline=False)
 
-    def note(self, msg, newline=True):
-        if not self.quiet:
-            self.say(str(msg), newline=newline)
+    def on_still_waiting_end(self):
+        self.note('')
 
-    @cached_property
-    def colored(self):
-        return term.colored(enabled=not self.no_color)
+    def on_node_signal_dead(self, node):
+        self.note(
+            'Could not signal {0.name} ({0.pid}): No such process'.format(
+                node))
+
+    def on_node_start(self, node):
+        self.note('\t> {0.name}: '.format(node), newline=False)
+
+    def on_node_restart(self, node):
+        self.note(self.colored.blue(
+            '> Restarting node {0.name}: '.format(node)), newline=False)
+
+    def on_node_down(self, node):
+        self.note('> {0.name}: {1.DOWN}'.format(node, self))
+
+    def on_node_shutdown_ok(self, node):
+        self.note('\n\t> {0.name}: {1.OK}'.format(node, self))
+
+    def on_node_status(self, node, retval):
+        self.note(retval and self.FAILED or self.OK)
+
+    def on_node_signal(self, node, sig):
+        self.note('Sending {sig} to node {0.name} ({0.pid})'.format(
+            node, sig=sig))
+
+    def on_child_spawn(self, node, argstr, env):
+        self.info('  {0}'.format(argstr))
+
+    def on_child_signalled(self, node, signum):
+        self.note('* Child was terminated by signal {0}'.format(signum))
+
+    def on_child_failure(self, node, retcode):
+        self.note('* Child terminated with exit code {0}'.format(retcode))
 
     @cached_property
     def OK(self):
@@ -455,206 +394,6 @@ class MultiTool(object):
     @cached_property
     def DOWN(self):
         return str(self.colored.magenta('DOWN'))
-
-
-def _args_for_node(p, name, prefix, suffix, cmd, append, options):
-    name, nodename, expand = _get_nodename(
-        name, prefix, suffix, options)
-
-    if nodename in p.namespaces:
-        ns = nodename
-    else:
-        ns = name
-
-    argv = ([expand(cmd)] +
-            [format_opt(opt, expand(value))
-                for opt, value in items(p.optmerge(ns, options))] +
-            [p.passthrough])
-    if append:
-        argv.append(expand(append))
-    return multi_args_t(nodename, argv, expand, name)
-
-
-def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
-    names = p.values
-    options = dict(p.options)
-    ranges = len(names) == 1
-    if ranges:
-        try:
-            names, prefix = _get_ranges(names)
-        except ValueError:
-            pass
-    cmd = options.pop('--cmd', cmd)
-    append = options.pop('--append', append)
-    hostname = options.pop('--hostname',
-                           options.pop('-n', gethostname()))
-    prefix = options.pop('--prefix', prefix) or ''
-    suffix = options.pop('--suffix', suffix) or hostname
-    suffix = '' if suffix in ('""', "''") else suffix
-
-    _update_ns_opts(p, names)
-    _update_ns_ranges(p, ranges)
-    return (_args_for_node(p, name, prefix, suffix, cmd, append, options)
-            for name in names)
-
-
-def _get_ranges(names):
-    noderange = int(names[0])
-    names = [str(n) for n in range(1, noderange + 1)]
-    prefix = 'celery'
-    return names, prefix
-
-
-def _update_ns_opts(p, names):
-    # Numbers in args always refers to the index in the list of names.
-    # (e.g. `start foo bar baz -c:1` where 1 is foo, 2 is bar, and so on).
-    for ns_name, ns_opts in list(items(p.namespaces)):
-        if ns_name.isdigit():
-            ns_index = int(ns_name) - 1
-            if ns_index < 0:
-                raise KeyError('Indexes start at 1 got: %r' % (ns_name,))
-            try:
-                p.namespaces[names[ns_index]].update(ns_opts)
-            except IndexError:
-                raise KeyError('No node at index %r' % (ns_name,))
-
-
-def _update_ns_ranges(p, ranges):
-    for ns_name, ns_opts in list(items(p.namespaces)):
-        if ',' in ns_name or (ranges and '-' in ns_name):
-            for subns in parse_ns_range(ns_name, ranges):
-                p.namespaces[subns].update(ns_opts)
-            p.namespaces.pop(ns_name)
-
-
-def _get_nodename(name, prefix, suffix, options):
-        hostname = suffix
-        if '@' in name:
-            nodename = options['-n'] = host_format(name)
-            shortname, hostname = nodesplit(nodename)
-            name = shortname
-        else:
-            shortname = '%s%s' % (prefix, name)
-            nodename = options['-n'] = host_format(
-                '{0}@{1}'.format(shortname, hostname),
-            )
-        expand = partial(
-            node_format, nodename=nodename, N=shortname, d=hostname,
-            h=nodename, i='%i', I='%I',
-        )
-        return name, nodename, expand
-
-
-class NamespacedOptionParser(object):
-
-    def __init__(self, args):
-        self.args = args
-        self.options = OrderedDict()
-        self.values = []
-        self.passthrough = ''
-        self.namespaces = defaultdict(lambda: OrderedDict())
-
-        self.parse()
-
-    def parse(self):
-        rargs = list(self.args)
-        pos = 0
-        while pos < len(rargs):
-            arg = rargs[pos]
-            if arg == '--':
-                self.passthrough = ' '.join(rargs[pos:])
-                break
-            elif arg[0] == '-':
-                if arg[1] == '-':
-                    self.process_long_opt(arg[2:])
-                else:
-                    value = None
-                    if len(rargs) > pos + 1 and rargs[pos + 1][0] != '-':
-                        value = rargs[pos + 1]
-                        pos += 1
-                    self.process_short_opt(arg[1:], value)
-            else:
-                self.values.append(arg)
-            pos += 1
-
-    def process_long_opt(self, arg, value=None):
-        if '=' in arg:
-            arg, value = arg.split('=', 1)
-        self.add_option(arg, value, short=False)
-
-    def process_short_opt(self, arg, value=None):
-        self.add_option(arg, value, short=True)
-
-    def optmerge(self, ns, defaults=None):
-        if defaults is None:
-            defaults = self.options
-        return OrderedDict(defaults, **self.namespaces[ns])
-
-    def add_option(self, name, value, short=False, ns=None):
-        prefix = short and '-' or '--'
-        dest = self.options
-        if ':' in name:
-            name, ns = name.split(':')
-            dest = self.namespaces[ns]
-        dest[prefix + name] = value
-
-
-def quote(v):
-    return "\\'".join("'" + p + "'" for p in v.split("'"))
-
-
-def format_opt(opt, value):
-    if not value:
-        return opt
-    if opt.startswith('--'):
-        return '{0}={1}'.format(opt, value)
-    return '{0} {1}'.format(opt, value)
-
-
-def parse_ns_range(ns, ranges=False):
-    ret = []
-    for space in ',' in ns and ns.split(',') or [ns]:
-        if ranges and '-' in space:
-            start, stop = space.split('-')
-            ret.extend(
-                str(n) for n in range(int(start), int(stop) + 1)
-            )
-        else:
-            ret.append(space)
-    return ret
-
-
-def findsig(args, default=signal.SIGTERM):
-    for arg in reversed(args):
-        if len(arg) == 2 and arg[0] == '-':
-            try:
-                return int(arg[1])
-            except ValueError:
-                pass
-        if arg[0] == '-':
-            maybe_sig = 'SIG' + arg[1:]
-            if maybe_sig in SIGNAMES:
-                return getattr(signal, maybe_sig)
-    return default
-
-
-def _getopt(d, alt):
-    for opt in alt:
-        try:
-            return d[opt]
-        except KeyError:
-            pass
-    raise KeyError(alt[0])
-
-
-def _setdefaultopt(d, alt, value):
-    for opt in alt[1:]:
-        try:
-            return d[opt]
-        except KeyError:
-            pass
-    return d.setdefault(alt[0], value)
-
 
 if __name__ == '__main__':              # pragma: no cover
     main()

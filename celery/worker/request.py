@@ -22,7 +22,7 @@ from celery.exceptions import (
 )
 from celery.five import python_2_unicode_compatible, string
 from celery.platforms import signals as _signals
-from celery.utils.functional import noop
+from celery.utils.functional import maybe, noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.timeutils import maybe_iso8601, timezone, maybe_make_aware
@@ -192,7 +192,7 @@ class Request(object):
             correlation_id=task_id,
         )
         # cannot create weakref to None
-        self._apply_result = ref(result) if result is not None else result
+        self._apply_result = maybe(ref, result)
         return result
 
     def execute(self, loglevel=None, logfile=None):
@@ -513,7 +513,7 @@ def create_request_cls(base, task, pool, hostname, eventer,
                 correlation_id=task_id,
             )
             # cannot create weakref to None
-            self._apply_result = ref(result) if result is not None else result
+            self._apply_result = maybe(ref, result)
             return result
 
         def on_success(self, failed__retval__runtime, **kwargs):

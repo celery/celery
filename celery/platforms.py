@@ -37,13 +37,12 @@ mputil = try_import('multiprocessing.util')
 
 __all__ = [
     'EX_OK', 'EX_FAILURE', 'EX_UNAVAILABLE', 'EX_USAGE', 'SYSTEM',
-    'IS_macOS', 'IS_WINDOWS', 'pyimplementation', 'LockFailed',
-    'get_fdmax', 'Pidfile', 'create_pidlock',
-    'close_open_fds', 'DaemonContext', 'detached', 'parse_uid',
-    'parse_gid', 'setgroups', 'initgroups', 'setgid', 'setuid',
-    'maybe_drop_privileges', 'signals', 'set_process_title',
-    'set_mp_process_title', 'get_errno_name', 'ignore_errno',
-    'fd_by_path', 'isatty',
+    'IS_macOS', 'IS_WINDOWS', 'SIGMAP', 'pyimplementation', 'LockFailed',
+    'get_fdmax', 'Pidfile', 'create_pidlock', 'close_open_fds',
+    'DaemonContext', 'detached', 'parse_uid', 'parse_gid', 'setgroups',
+    'initgroups', 'setgid', 'setuid', 'maybe_drop_privileges', 'signals',
+    'signal_name', 'set_process_title', 'set_mp_process_title',
+    'get_errno_name', 'ignore_errno', 'fd_by_path', 'isatty',
 ]
 
 # exitcodes
@@ -87,6 +86,12 @@ Please specify a different user using the -u option.
 
 User information: uid={uid} euid={euid} gid={gid} egid={egid}
 """
+
+SIGNAMES = {
+    sig for sig in dir(_signal)
+    if sig.startswith('SIG') and '_' not in sig
+}
+SIGMAP = {getattr(_signal, name): name for name in SIGNAMES}
 
 
 def isatty(fh):
@@ -666,6 +671,10 @@ get_signal = signals.signum                   # compat
 install_signal_handler = signals.__setitem__  # compat
 reset_signal = signals.reset                  # compat
 ignore_signal = signals.ignore                # compat
+
+
+def signal_name(signum):
+    return SIGMAP[signum][3:]
 
 
 def strargv(argv):

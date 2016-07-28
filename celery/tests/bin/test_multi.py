@@ -1,172 +1,260 @@
 from __future__ import absolute_import, unicode_literals
 
-import errno
-import signal
 import sys
 
 from celery.bin.multi import (
     main,
     MultiTool,
-    findsig,
-    parse_ns_range,
-    format_opt,
-    quote,
-    NamespacedOptionParser,
-    multi_args,
     __doc__ as doc,
 )
 from celery.five import WhateverIO
 
-from celery.tests.case import AppCase, Mock, patch, skip
-
-
-class test_functions(AppCase):
-
-    def test_findsig(self):
-        self.assertEqual(findsig(['a', 'b', 'c', '-1']), 1)
-        self.assertEqual(findsig(['--foo=1', '-9']), 9)
-        self.assertEqual(findsig(['-INT']), signal.SIGINT)
-        self.assertEqual(findsig([]), signal.SIGTERM)
-        self.assertEqual(findsig(['-s']), signal.SIGTERM)
-        self.assertEqual(findsig(['-log']), signal.SIGTERM)
-
-    def test_parse_ns_range(self):
-        self.assertEqual(parse_ns_range('1-3', True), ['1', '2', '3'])
-        self.assertEqual(parse_ns_range('1-3', False), ['1-3'])
-        self.assertEqual(parse_ns_range(
-            '1-3,10,11,20', True),
-            ['1', '2', '3', '10', '11', '20'],
-        )
-
-    def test_format_opt(self):
-        self.assertEqual(format_opt('--foo', None), '--foo')
-        self.assertEqual(format_opt('-c', 1), '-c 1')
-        self.assertEqual(format_opt('--log', 'foo'), '--log=foo')
-
-    def test_quote(self):
-        self.assertEqual(quote("the 'quick"), "'the '\\''quick'")
-
-
-class test_NamespacedOptionParser(AppCase):
-
-    def test_parse(self):
-        x = NamespacedOptionParser(['-c:1,3', '4'])
-        self.assertEqual(x.namespaces.get('1,3'), {'-c': '4'})
-        x = NamespacedOptionParser(['-c:jerry,elaine', '5',
-                                    '--loglevel:kramer=DEBUG',
-                                    '--flag',
-                                    '--logfile=foo', '-Q', 'bar', 'a', 'b',
-                                    '--', '.disable_rate_limits=1'])
-        self.assertEqual(x.options, {'--logfile': 'foo',
-                                     '-Q': 'bar',
-                                     '--flag': None})
-        self.assertEqual(x.values, ['a', 'b'])
-        self.assertEqual(x.namespaces.get('jerry,elaine'), {'-c': '5'})
-        self.assertEqual(x.namespaces.get('kramer'), {'--loglevel': 'DEBUG'})
-        self.assertEqual(x.passthrough, '-- .disable_rate_limits=1')
-
-
-class test_multi_args(AppCase):
-
-    @patch('celery.bin.multi.gethostname')
-    def test_parse(self, gethostname):
-        gethostname.return_value = 'example.com'
-        p = NamespacedOptionParser([
-            '-c:jerry,elaine', '5',
-            '--loglevel:kramer=DEBUG',
-            '--flag',
-            '--logfile=foo', '-Q', 'bar', 'jerry',
-            'elaine', 'kramer',
-            '--', '.disable_rate_limits=1',
-        ])
-        it = multi_args(p, cmd='COMMAND', append='*AP*',
-                        prefix='*P*', suffix='*S*')
-        names = list(it)
-
-        def assert_line_in(name, args):
-            self.assertIn(name, {tup[0] for tup in names})
-            argv = None
-            for item in names:
-                if item[0] == name:
-                    argv = item[1]
-            self.assertTrue(argv)
-            for arg in args:
-                self.assertIn(arg, argv)
-
-        assert_line_in(
-            '*P*jerry@*S*',
-            ['COMMAND', '-n *P*jerry@*S*', '-Q bar',
-             '-c 5', '--flag', '--logfile=foo',
-             '-- .disable_rate_limits=1', '*AP*'],
-        )
-        assert_line_in(
-            '*P*elaine@*S*',
-            ['COMMAND', '-n *P*elaine@*S*', '-Q bar',
-             '-c 5', '--flag', '--logfile=foo',
-             '-- .disable_rate_limits=1', '*AP*'],
-        )
-        assert_line_in(
-            '*P*kramer@*S*',
-            ['COMMAND', '--loglevel=DEBUG', '-n *P*kramer@*S*',
-             '-Q bar', '--flag', '--logfile=foo',
-             '-- .disable_rate_limits=1', '*AP*'],
-        )
-        expand = names[0][2]
-        self.assertEqual(expand('%h'), '*P*jerry@*S*')
-        self.assertEqual(expand('%n'), '*P*jerry')
-        names2 = list(multi_args(p, cmd='COMMAND', append='',
-                      prefix='*P*', suffix='*S*'))
-        self.assertEqual(names2[0][1][-1], '-- .disable_rate_limits=1')
-
-        p2 = NamespacedOptionParser(['10', '-c:1', '5'])
-        names3 = list(multi_args(p2, cmd='COMMAND'))
-        self.assertEqual(len(names3), 10)
-        self.assertEqual(
-            names3[0][0:2],
-            ('celery1@example.com',
-             ['COMMAND', '-n celery1@example.com', '-c 5', '']),
-        )
-        for i, worker in enumerate(names3[1:]):
-            self.assertEqual(
-                worker[0:2],
-                ('celery%s@example.com' % (i + 2),
-                 ['COMMAND', '-n celery%s@example.com' % (i + 2), '']),
-            )
-
-        names4 = list(multi_args(p2, cmd='COMMAND', suffix='""'))
-        self.assertEqual(len(names4), 10)
-        self.assertEqual(
-            names4[0][0:2],
-            ('celery1@',
-             ['COMMAND', '-n celery1@', '-c 5', '']),
-        )
-
-        p3 = NamespacedOptionParser(['foo@', '-c:foo', '5'])
-        names5 = list(multi_args(p3, cmd='COMMAND', suffix='""'))
-        self.assertEqual(
-            names5[0][0:2],
-            ('foo@',
-             ['COMMAND', '-n foo@', '-c 5', '']),
-        )
-
-        p4 = NamespacedOptionParser(['foo', '-Q:1', 'test'])
-        names6 = list(multi_args(p4, cmd='COMMAND', suffix='""'))
-        self.assertEqual(
-            names6[0][0:2],
-            ('foo@',
-             ['COMMAND', '-n foo@', '-Q test', '']),
-        )
-
-        p5 = NamespacedOptionParser(['foo@bar', '-Q:1', 'test'])
-        names7 = list(multi_args(p5, cmd='COMMAND', suffix='""'))
-        self.assertEqual(
-            names7[0][0:2],
-            ('foo@bar',
-             ['COMMAND', '-n foo@bar', '-Q test', '']),
-        )
+from celery.tests.case import AppCase, Mock, patch
 
 
 class test_MultiTool(AppCase):
+
+    def setup(self):
+        self.fh = WhateverIO()
+        self.env = {}
+        self.t = MultiTool(env=self.env, fh=self.fh)
+        self.t.Cluster = Mock(name='Cluster')
+        self.t.carp = Mock(name='.carp')
+        self.t.usage = Mock(name='.usage')
+        self.t.splash = Mock(name='.splash')
+        self.t.say = Mock(name='.say')
+        self.t.ok = Mock(name='.ok')
+        self.cluster = self.t.Cluster.return_value
+
+    def test_execute_from_commandline(self):
+        self.t.call_command = Mock(name='call_command')
+        self.t.execute_from_commandline(
+            'multi start --verbose 10 --foo'.split(),
+            cmd='X',
+        )
+        self.assertEqual(self.t.cmd, 'X')
+        self.assertEqual(self.t.prog_name, 'multi')
+        self.t.call_command.assert_called_with('start', ['10', '--foo'])
+
+    def test_execute_from_commandline__arguments(self):
+        self.assertTrue(self.t.execute_from_commandline('multi'.split()))
+        self.assertTrue(self.t.execute_from_commandline('multi -bar'.split()))
+
+    def test_call_command(self):
+        cmd = self.t.commands['foo'] = Mock(name='foo')
+        self.t.retcode = 303
+        self.assertIs(
+            self.t.call_command('foo', ['1', '2', '--foo=3']),
+            cmd.return_value,
+        )
+        cmd.assert_called_with('1', '2', '--foo=3')
+
+    def test_call_command__error(self):
+        self.assertEqual(
+            self.t.call_command('asdqwewqe', ['1', '2']),
+            1,
+        )
+        self.t.carp.assert_called()
+
+    def test_handle_reserved_options(self):
+        self.assertListEqual(
+            self.t._handle_reserved_options(
+                ['a', '-q', 'b', '--no-color', 'c']),
+            ['a', 'b', 'c'],
+        )
+
+    def test_start(self):
+        self.cluster.start.return_value = [0, 0, 1, 0]
+        self.assertTrue(self.t.start('10', '-A', 'proj'))
+        self.t.splash.assert_called_with()
+        self.t.Cluster.assert_called_with(('10', '-A', 'proj'))
+        self.cluster.start.assert_called_with()
+
+    def test_start__exitcodes(self):
+        self.cluster.start.return_value = [0, 0, 0]
+        self.assertFalse(self.t.start('foo', 'bar', 'baz'))
+        self.cluster.start.assert_called_with()
+
+        self.cluster.start.return_value = [0, 1, 0]
+        self.assertTrue(self.t.start('foo', 'bar', 'baz'))
+
+    def test_stop(self):
+        self.t.stop('10', '-A', 'proj', retry=3)
+        self.t.splash.assert_called_with()
+        self.t.Cluster.assert_called_with(('10', '-A', 'proj'))
+        self.cluster.stop.assert_called_with(retry=3)
+
+    def test_stopwait(self):
+        self.t.stopwait('10', '-A', 'proj', retry=3)
+        self.t.splash.assert_called_with()
+        self.t.Cluster.assert_called_with(('10', '-A', 'proj'))
+        self.cluster.stopwait.assert_called_with(retry=3)
+
+    def test_restart(self):
+        self.cluster.restart.return_value = [0, 0, 1, 0]
+        self.t.restart('10', '-A', 'proj')
+        self.t.splash.assert_called_with()
+        self.t.Cluster.assert_called_with(('10', '-A', 'proj'))
+        self.cluster.restart.assert_called_with()
+
+    def test_names(self):
+        self.t.Cluster.return_value = [Mock(), Mock()]
+        self.t.Cluster.return_value[0].name = 'x'
+        self.t.Cluster.return_value[1].name = 'y'
+        self.t.names('10', '-A', 'proj')
+        self.t.say.assert_called()
+
+    def test_get(self):
+        node = self.cluster.find.return_value = Mock(name='node')
+        node.argv = ['A', 'B', 'C']
+        self.assertIs(
+            self.t.get('wanted', '10', '-A', 'proj'),
+            self.t.ok.return_value,
+        )
+        self.cluster.find.assert_called_with('wanted')
+        self.t.Cluster.assert_called_with(('10', '-A', 'proj'))
+        self.t.ok.assert_called_with(' '.join(node.argv))
+
+    def test_get__KeyError(self):
+        self.cluster.find.side_effect = KeyError()
+        self.assertTrue(self.t.get('wanted', '10', '-A', 'proj'))
+
+    def test_show(self):
+        nodes = self.t.Cluster.return_value = [
+            Mock(name='n1'),
+            Mock(name='n2'),
+        ]
+        nodes[0].argv_with_executable = ['python', 'foo', 'bar']
+        nodes[1].argv_with_executable = ['python', 'xuzzy', 'baz']
+
+        self.assertIs(
+            self.t.show('10', '-A', 'proj'),
+            self.t.ok.return_value,
+        )
+        self.t.ok.assert_called_with(
+            '\n'.join(' '.join(node.argv_with_executable) for node in nodes))
+
+    def test_kill(self):
+        self.t.kill('10', '-A', 'proj')
+        self.t.splash.assert_called_with()
+        self.t.Cluster.assert_called_with(('10', '-A', 'proj'))
+        self.cluster.kill.assert_called_with()
+
+    def test_expand(self):
+        node1 = Mock(name='n1')
+        node2 = Mock(name='n2')
+        node1.expander.return_value = 'A'
+        node2.expander.return_value = 'B'
+        nodes = self.t.Cluster.return_value = [node1, node2]
+        self.assertIs(self.t.expand('%p', '10'), self.t.ok.return_value)
+        self.t.Cluster.assert_called_with(('10',))
+        for node in nodes:
+            node.expander.assert_called_with('%p')
+        self.t.ok.assert_called_with('A\nB')
+
+    def test_note(self):
+        self.t.quiet = True
+        self.t.note('foo')
+        self.t.say.assert_not_called()
+        self.t.quiet = False
+        self.t.note('foo')
+        self.t.say.assert_called_with('foo', newline=True)
+
+    def test_splash(self):
+        x = MultiTool()
+        x.note = Mock()
+        x.nosplash = True
+        x.splash()
+        x.note.assert_not_called()
+        x.nosplash = False
+        x.splash()
+        x.note.assert_called()
+
+    def test_Cluster(self):
+        m = MultiTool()
+        c = m.Cluster(['A', 'B', 'C'])
+        self.assertListEqual(c.argv, ['A', 'B', 'C'])
+        self.assertIs(c.env, m.env)
+        self.assertEqual(c.cmd, 'celery worker')
+        self.assertEqual(c.on_stopping_preamble, m.on_stopping_preamble)
+        self.assertEqual(c.on_send_signal, m.on_send_signal)
+        self.assertEqual(c.on_still_waiting_for, m.on_still_waiting_for)
+        self.assertEqual(
+            c.on_still_waiting_progress,
+            m.on_still_waiting_progress,
+        )
+        self.assertEqual(c.on_still_waiting_end, m.on_still_waiting_end)
+        self.assertEqual(c.on_node_start, m.on_node_start)
+        self.assertEqual(c.on_node_restart, m.on_node_restart)
+        self.assertEqual(c.on_node_shutdown_ok, m.on_node_shutdown_ok)
+        self.assertEqual(c.on_node_status, m.on_node_status)
+        self.assertEqual(c.on_node_signal_dead, m.on_node_signal_dead)
+        self.assertEqual(c.on_node_signal, m.on_node_signal)
+        self.assertEqual(c.on_node_down, m.on_node_down)
+        self.assertEqual(c.on_child_spawn, m.on_child_spawn)
+        self.assertEqual(c.on_child_signalled, m.on_child_signalled)
+        self.assertEqual(c.on_child_failure, m.on_child_failure)
+
+    def test_on_stopping_preamble(self):
+        self.t.on_stopping_preamble([])
+
+    def test_on_send_signal(self):
+        self.t.on_send_signal(Mock(), Mock())
+
+    def test_on_still_waiting_for(self):
+        self.t.on_still_waiting_for([Mock(), Mock()])
+
+    def test_on_still_waiting_for__empty(self):
+        self.t.on_still_waiting_for([])
+
+    def test_on_still_waiting_progress(self):
+        self.t.on_still_waiting_progress([])
+
+    def test_on_still_waiting_end(self):
+        self.t.on_still_waiting_end()
+
+    def test_on_node_signal_dead(self):
+        self.t.on_node_signal_dead(Mock())
+
+    def test_on_node_start(self):
+        self.t.on_node_start(Mock())
+
+    def test_on_node_restart(self):
+        self.t.on_node_restart(Mock())
+
+    def test_on_node_down(self):
+        self.t.on_node_down(Mock())
+
+    def test_on_node_shutdown_ok(self):
+        self.t.on_node_shutdown_ok(Mock())
+
+    def test_on_node_status__FAIL(self):
+        self.t.on_node_status(Mock(), 1)
+        self.t.say.assert_called_with(self.t.FAILED, newline=True)
+
+    def test_on_node_status__OK(self):
+        self.t.on_node_status(Mock(), 0)
+        self.t.say.assert_called_with(self.t.OK, newline=True)
+
+    def test_on_node_signal(self):
+        self.t.on_node_signal(Mock(), Mock())
+
+    def test_on_child_spawn(self):
+        self.t.on_child_spawn(Mock(), Mock(), Mock())
+
+    def test_on_child_signalled(self):
+        self.t.on_child_signalled(Mock(), Mock())
+
+    def test_on_child_failure(self):
+        self.t.on_child_failure(Mock(), Mock())
+
+    def test_constant_strings(self):
+        self.assertTrue(self.t.OK)
+        self.assertTrue(self.t.DOWN)
+        self.assertTrue(self.t.FAILED)
+
+
+class test_MultiTool_functional(AppCase):
 
     def setup(self):
         self.fh = WhateverIO()
@@ -208,26 +296,6 @@ class test_MultiTool(AppCase):
         self.assertEqual(self.t.error(), 1)
         self.t.carp.assert_not_called()
 
-        self.assertEqual(self.t.retcode, 1)
-
-    @patch('celery.bin.multi.Popen')
-    def test_waitexec(self, Popen):
-        self.t.note = Mock()
-        pipe = Popen.return_value = Mock()
-        pipe.wait.return_value = -10
-        self.assertEqual(self.t.waitexec(['-m', 'foo'], 'path'), 10)
-        Popen.assert_called_with(['path', '-m', 'foo'], env=self.t.env)
-        self.t.note.assert_called_with('* Child was terminated by signal 10')
-
-        pipe.wait.return_value = 2
-        self.assertEqual(self.t.waitexec(['-m', 'foo'], 'path'), 2)
-        self.t.note.assert_called_with(
-            '* Child terminated with errorcode 2',
-        )
-
-        pipe.wait.return_value = 0
-        self.assertFalse(self.t.waitexec(['-m', 'foo', 'path']))
-
     def test_nosplash(self):
         self.t.nosplash = True
         self.t.splash()
@@ -247,202 +315,23 @@ class test_MultiTool(AppCase):
         self.assertIn(doc, self.fh.getvalue())
 
     def test_expand(self):
-        self.t.expand(['foo%n', 'ask', 'klask', 'dask'])
+        self.t.expand('foo%n', 'ask', 'klask', 'dask')
         self.assertEqual(
             self.fh.getvalue(), 'fooask\nfooklask\nfoodask\n',
         )
 
-    def test_restart(self):
-        stop = self.t._stop_nodes = Mock()
-        self.t.restart(['jerry', 'george'], 'celery worker')
-        waitexec = self.t.waitexec = Mock()
-        stop.assert_called()
-        callback = stop.call_args[1]['callback']
-        self.assertTrue(callback)
-
-        waitexec.return_value = 0
-        callback('jerry', ['arg'], 13)
-        waitexec.assert_called_with(['arg'], path=sys.executable)
-        self.assertIn('OK', self.fh.getvalue())
-        self.fh.seek(0)
-        self.fh.truncate()
-
-        waitexec.return_value = 1
-        callback('jerry', ['arg'], 13)
-        self.assertIn('FAILED', self.fh.getvalue())
-
-    def test_stop(self):
-        self.t.getpids = Mock()
-        self.t.getpids.return_value = [2, 3, 4]
-        self.t.shutdown_nodes = Mock()
-        self.t.stop(['a', 'b', '-INT'], 'celery worker')
-        self.t.shutdown_nodes.assert_called_with(
-            [2, 3, 4], sig=signal.SIGINT, retry=None, callback=None,
-
-        )
-
-    @skip.unless_symbol('signal.SIGKILL')
-    def test_kill(self):
-        self.t.getpids = Mock()
-        self.t.getpids.return_value = [
-            ('a', None, 10),
-            ('b', None, 11),
-            ('c', None, 12)
-        ]
-        sig = self.t.signal_node = Mock()
-
-        self.t.kill(['a', 'b', 'c'], 'celery worker')
-
-        sigs = sig.call_args_list
-        self.assertEqual(len(sigs), 3)
-        self.assertEqual(sigs[0][0], ('a', 10, signal.SIGKILL))
-        self.assertEqual(sigs[1][0], ('b', 11, signal.SIGKILL))
-        self.assertEqual(sigs[2][0], ('c', 12, signal.SIGKILL))
-
-    def prepare_pidfile_for_getpids(self, Pidfile):
-        class pids(object):
-
-            def __init__(self, path):
-                self.path = path
-
-            def read_pid(self):
-                try:
-                    return {'foo.pid': 10,
-                            'bar.pid': 11}[self.path]
-                except KeyError:
-                    raise ValueError()
-        Pidfile.side_effect = pids
-
-    @patch('celery.bin.multi.Pidfile')
-    @patch('celery.bin.multi.gethostname')
-    def test_getpids(self, gethostname, Pidfile):
-        gethostname.return_value = 'e.com'
-        self.prepare_pidfile_for_getpids(Pidfile)
-        callback = Mock()
-
-        p = NamespacedOptionParser(['foo', 'bar', 'baz'])
-        nodes = self.t.getpids(p, 'celery worker', callback=callback)
-        node_0, node_1 = nodes
-        self.assertEqual(node_0[0], 'foo@e.com')
-        self.assertEqual(
-            sorted(node_0[1]),
-            sorted(('celery worker', '--pidfile=foo.pid',
-                    '-n foo@e.com', '')),
-        )
-        self.assertEqual(node_0[2], 10)
-
-        self.assertEqual(node_1[0], 'bar@e.com')
-        self.assertEqual(
-            sorted(node_1[1]),
-            sorted(('celery worker', '--pidfile=bar.pid',
-                    '-n bar@e.com', '')),
-        )
-        self.assertEqual(node_1[2], 11)
-        callback.assert_called()
-        cargs, _ = callback.call_args
-        self.assertEqual(cargs[0], 'baz@e.com')
-        self.assertItemsEqual(
-            cargs[1],
-            ['celery worker', '--pidfile=baz.pid', '-n baz@e.com', ''],
-        )
-        self.assertIsNone(cargs[2])
-        self.assertIn('DOWN', self.fh.getvalue())
-
-        # without callback, should work
-        nodes = self.t.getpids(p, 'celery worker', callback=None)
-
-    @patch('celery.bin.multi.Pidfile')
-    @patch('celery.bin.multi.gethostname')
-    @patch('celery.bin.multi.sleep')
-    def test_shutdown_nodes(self, slepp, gethostname, Pidfile):
-        gethostname.return_value = 'e.com'
-        self.prepare_pidfile_for_getpids(Pidfile)
-        self.assertIsNone(self.t.shutdown_nodes([]))
-        self.t.signal_node = Mock()
-        node_alive = self.t.node_alive = Mock()
-        self.t.node_alive.return_value = False
-
-        callback = Mock()
-        self.t.stop(['foo', 'bar', 'baz'], 'celery worker', callback=callback)
-        sigs = sorted(self.t.signal_node.call_args_list)
-        self.assertEqual(len(sigs), 2)
-        self.assertIn(
-            ('foo@e.com', 10, signal.SIGTERM),
-            {tup[0] for tup in sigs},
-        )
-        self.assertIn(
-            ('bar@e.com', 11, signal.SIGTERM),
-            {tup[0] for tup in sigs},
-        )
-        self.t.signal_node.return_value = False
-        callback.assert_called()
-        self.t.stop(['foo', 'bar', 'baz'], 'celery worker', callback=None)
-
-        def on_node_alive(pid):
-            if node_alive.call_count > 4:
-                return True
-            return False
-        self.t.signal_node.return_value = True
-        self.t.node_alive.side_effect = on_node_alive
-        self.t.stop(['foo', 'bar', 'baz'], 'celery worker', retry=True)
-
-    @patch('os.kill')
-    def test_node_alive(self, kill):
-        kill.return_value = True
-        self.assertTrue(self.t.node_alive(13))
-        esrch = OSError()
-        esrch.errno = errno.ESRCH
-        kill.side_effect = esrch
-        self.assertFalse(self.t.node_alive(13))
-        kill.assert_called_with(13, 0)
-
-        enoent = OSError()
-        enoent.errno = errno.ENOENT
-        kill.side_effect = enoent
-        with self.assertRaises(OSError):
-            self.t.node_alive(13)
-
-    @patch('os.kill')
-    def test_signal_node(self, kill):
-        kill.return_value = True
-        self.assertTrue(self.t.signal_node('foo', 13, 9))
-        esrch = OSError()
-        esrch.errno = errno.ESRCH
-        kill.side_effect = esrch
-        self.assertFalse(self.t.signal_node('foo', 13, 9))
-        kill.assert_called_with(13, 9)
-        self.assertIn('Could not signal foo', self.fh.getvalue())
-
-        enoent = OSError()
-        enoent.errno = errno.ENOENT
-        kill.side_effect = enoent
-        with self.assertRaises(OSError):
-            self.t.signal_node('foo', 13, 9)
-
-    def test_start(self):
-        self.t.waitexec = Mock()
-        self.t.waitexec.return_value = 0
-        self.assertFalse(self.t.start(['foo', 'bar', 'baz'], 'celery worker'))
-
-        self.t.waitexec.return_value = 1
-        self.assertFalse(self.t.start(['foo', 'bar', 'baz'], 'celery worker'))
-
-    def test_show(self):
-        self.t.show(['foo', 'bar', 'baz'], 'celery worker')
-        self.assertTrue(self.fh.getvalue())
-
-    @patch('celery.bin.multi.gethostname')
+    @patch('celery.apps.multi.gethostname')
     def test_get(self, gethostname):
         gethostname.return_value = 'e.com'
-        self.t.get(['xuzzy@e.com', 'foo', 'bar', 'baz'], 'celery worker')
+        self.t.get('xuzzy@e.com', 'foo', 'bar', 'baz')
         self.assertFalse(self.fh.getvalue())
-        self.t.get(['foo@e.com', 'foo', 'bar', 'baz'], 'celery worker')
+        self.t.get('foo@e.com', 'foo', 'bar', 'baz')
         self.assertTrue(self.fh.getvalue())
 
-    @patch('celery.bin.multi.gethostname')
+    @patch('celery.apps.multi.gethostname')
     def test_names(self, gethostname):
         gethostname.return_value = 'e.com'
-        self.t.names(['foo', 'bar', 'baz'], 'celery worker')
+        self.t.names('foo', 'bar', 'baz')
         self.assertIn('foo@e.com\nbar@e.com\nbaz@e.com', self.fh.getvalue())
 
     def test_execute_from_commandline(self):
@@ -450,7 +339,7 @@ class test_MultiTool(AppCase):
         self.t.error = Mock()
         self.t.execute_from_commandline(['multi', 'start', 'foo', 'bar'])
         self.t.error.assert_not_called()
-        start.assert_called_with(['foo', 'bar'], 'celery worker')
+        start.assert_called_with('foo', 'bar')
 
         self.t.error = Mock()
         self.t.execute_from_commandline(['multi', 'frob', 'foo', 'bar'])
@@ -472,11 +361,6 @@ class test_MultiTool(AppCase):
         self.assertTrue(self.t.quiet)
         self.assertTrue(self.t.verbose)
         self.assertTrue(self.t.no_color)
-
-    def test_stopwait(self):
-        self.t._stop_nodes = Mock()
-        self.t.stopwait(['foo', 'bar', 'baz'], 'celery worker')
-        self.assertEqual(self.t._stop_nodes.call_args[1]['retry'], 2)
 
     @patch('celery.bin.multi.MultiTool')
     def test_main(self, MultiTool):

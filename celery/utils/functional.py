@@ -20,6 +20,7 @@ __all__ = [
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
     'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
     'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun',
+    'maybe',
 ]
 
 IS_PY3 = sys.version_info[0] == 3
@@ -263,3 +264,7 @@ def fun_takes_argument(name, fun, position=None):
         spec.varkw or spec.varargs or
         (len(spec.args) >= position if position else name in spec.args)
     )
+
+
+def maybe(typ, val):
+    return typ(val) if val is not None else val
