@@ -21,12 +21,13 @@ from kombu.utils.encoding import safe_str
 from celery import VERSION_BANNER
 from celery import platforms
 from celery import signals
-from celery import static
 from celery.app import trace
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.five import string, string_t
 from celery.loaders.app import AppLoader
 from celery.platforms import EX_FAILURE, EX_OK, check_privileges, isatty
+from celery.utils import static
+from celery.utils import term
 from celery.utils.debug import cry
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
@@ -135,9 +136,9 @@ class Worker(WorkController):
 
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
-        use_image = self._term_supports_images()
+        use_image = term.supports_images()
         if use_image:
-            self.termimage(static.logo_as_base64())
+            print(term.imgcat(static.logo()))
         print(safe_str(''.join([
             string(self.colored.cyan(
                 ' \n', self.startup_info(artlines=not use_image))),
@@ -147,9 +148,6 @@ class Worker(WorkController):
         self.install_platform_tweaks(self)
         if not self._custom_logging and self.redirect_stdouts:
             app.log.redirect_stdouts(self.redirect_stdouts_level)
-
-    def _term_supports_images(self):
-        return isatty(sys.stdin) and os.environ.get('ITERM_PROFILE')
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
@@ -181,10 +179,6 @@ class Worker(WorkController):
             include_builtins = self.loglevel <= logging.DEBUG
             tasklist = self.tasklist(include_builtins=include_builtins)
             return EXTRA_INFO_FMT.format(tasks=tasklist)
-
-    def termimage(self, s):
-        print('\n\033]1337;File=inline=1;'
-              'preserveAspectRatio=0:%s\a' % (s,))
 
     def startup_info(self, artlines=True):
         app = self.app

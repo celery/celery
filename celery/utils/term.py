@@ -2,11 +2,17 @@
 """Terminals and colors."""
 from __future__ import absolute_import, unicode_literals
 
+import base64
+import codecs
+import os
+import sys
+
 import platform
 
 from functools import reduce
 
 from celery.five import python_2_unicode_compatible, string
+from celery.platforms import isatty
 
 __all__ = ['colored']
 
@@ -16,6 +22,16 @@ RESET_SEQ = '\033[0m'
 COLOR_SEQ = '\033[1;%dm'
 
 IS_WINDOWS = platform.system() == 'Windows'
+
+ITERM_PROFILE = os.environ.get('ITERM_PROFILE')
+TERM = os.environ.get('TERM')
+TERM_IS_SCREEN = TERM.startswith('screen')
+
+# tmux requires unrecognized OSC sequences to be wrapped with DCS tmux;
+# <sequence> ST, and for all ESCs in <sequence> to be replaced with ESC ESC.
+# It only accepts ESC backslash for ST.
+_IMG_PRE = '\033Ptmux;\033\033]' if TERM_IS_SCREEN else '\033]'
+_IMG_POST = '\a\033\\' if TERM_IS_SCREEN else '\a'
 
 
 def fg(s):
@@ -150,3 +166,18 @@ class colored(object):
 
     def __add__(self, other):
         return string(self) + string(other)
+
+
+def supports_images():
+    return isatty(sys.stdin) and ITERM_PROFILE
+
+
+def _read_as_base64(path):
+    with codecs.open(path, mode='rb') as fh:
+        return base64.b64encode(fh.read())
+
+
+def imgcat(path, inline=1, preserve_aspect_ratio=0, **kwargs):
+    return '\n%s1337;File=inline=%d;preserveAspectRatio=%d:%s%s' % (
+        _IMG_PRE, inline, preserve_aspect_ratio,
+        _read_as_base64(path), _IMG_POST)
