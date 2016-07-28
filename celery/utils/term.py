@@ -25,7 +25,7 @@ IS_WINDOWS = platform.system() == 'Windows'
 
 ITERM_PROFILE = os.environ.get('ITERM_PROFILE')
 TERM = os.environ.get('TERM')
-TERM_IS_SCREEN = TERM.startswith('screen')
+TERM_IS_SCREEN = TERM and TERM.startswith('screen')
 
 # tmux requires unrecognized OSC sequences to be wrapped with DCS tmux;
 # <sequence> ST, and for all ESCs in <sequence> to be replaced with ESC ESC.
