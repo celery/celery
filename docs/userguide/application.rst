@@ -478,7 +478,7 @@ chain breaks:
         from celery.task import task
 
         @task(queue='hipri')
-        def hello(x):
+        def hello(to):
             return 'hello {0}'.format(to)
 
 Abstract Tasks
