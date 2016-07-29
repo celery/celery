@@ -19,6 +19,7 @@ from celery.platforms import IS_WINDOWS, Pidfile, signal_name, signals
 from celery.utils.nodenames import (
     gethostname, host_format, node_format, nodesplit,
 )
+from celery.utils.saferepr import saferepr
 
 __all__ = ['Cluster', 'Node']
 
@@ -96,14 +97,17 @@ class Node(object):
         return self.send(0)
 
     def send(self, sig, on_error=None):
-        try:
-            os.kill(self.pid, sig)
-        except OSError as exc:
-            if exc.errno != errno.ESRCH:
-                raise
-            maybe_call(on_error, self)
-            return False
-        return True
+        pid = self.pid
+        if pid:
+            try:
+                os.kill(pid, sig)
+            except OSError as exc:
+                if exc.errno != errno.ESRCH:
+                    raise
+                maybe_call(on_error, self)
+                return False
+            return True
+        maybe_call(on_error, self)
 
     def start(self, env=None, **kwargs):
         return self._waitexec(
@@ -152,6 +156,9 @@ class Node(object):
                 pass
         raise KeyError(alt[0])
 
+    def __repr__(self):
+        return '<{name}: {0.name}>'.format(self, name=type(self).__name__)
+
     @cached_property
     def pidfile(self):
         return self.expander(self.getopt('--pidfile', '-p'))
@@ -160,7 +167,7 @@ class Node(object):
     def logfile(self):
         return self.expander(self.getopt('--logfile', '-f'))
 
-    @cached_property
+    @property
     def pid(self):
         try:
             return Pidfile(self.pidfile).read_pid()
@@ -465,6 +472,12 @@ class Cluster(UserList):
                 yield node
             else:
                 maybe_call(on_down, node)
+
+    def __repr__(self):
+        return '<{name}({0}): {1}>'.format(
+            len(self), saferepr([n.name for n in self]),
+            name=type(self).__name__,
+        )
 
     @cached_property
     def data(self):
