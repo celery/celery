@@ -92,6 +92,7 @@ class Node(object):
         self.argv = tuple(argv)
         self.expander = expander
         self.namespace = namespace
+        self._pid = None
 
     def alive(self):
         return self.send(0)
@@ -169,10 +170,16 @@ class Node(object):
 
     @property
     def pid(self):
+        if self._pid is not None:
+            return self._pid
         try:
             return Pidfile(self.pidfile).read_pid()
         except ValueError:
             pass
+
+    @pid.setter
+    def pid(self, value):
+        self._pid = value
 
     @cached_property
     def executable(self):
