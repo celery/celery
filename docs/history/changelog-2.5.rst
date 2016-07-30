@@ -144,7 +144,7 @@ Fixes
 
 - [celery control|inspect] can now be configured on the command-line.
 
-    Like with the worker it is now possible to configure celery settings
+    Like with the worker it is now possible to configure Celery settings
     on the command-line for celery control|inspect
 
     .. code-block:: console

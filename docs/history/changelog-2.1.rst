@@ -464,7 +464,7 @@ News
     arguments, this will be used for *all defined loggers*.
 
     Remember that the worker also redirects stdout and stderr
-    to the celery logger, if manually configure logging
+    to the Celery logger, if manually configure logging
     you also need to redirect the standard outs manually:
 
     .. code-block:: python

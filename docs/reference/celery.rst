@@ -15,7 +15,7 @@ It includes commonly needed things for calling tasks,
 and creating Celery applications.
 
 ===================== ===================================================
-:class:`Celery`       celery application instance
+:class:`Celery`       Celery application instance
 :class:`group`        group tasks together
 :class:`chain`        chain tasks together
 :class:`chord`        chords enable callbacks for groups

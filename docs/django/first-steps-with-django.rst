@@ -63,7 +63,7 @@ for the :program:`celery` command-line program:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proj.settings')
 
 You don't need this line, but it saves you from always passing in the
-settings module to the celery program. It must always come before
+settings module to the ``celery`` program. It must always come before
 creating the app instances, which is what we do next:
 
 .. code-block:: python
@@ -155,7 +155,7 @@ To use this with your project you need to follow these four steps:
 
 2. Add ``djcelery`` to ``INSTALLED_APPS``.
 
-3. Create the celery database tables.
+3. Create the Celery database tables.
 
     This step will create the tables used to store results
     when using the database result backend and the tables used
@@ -168,7 +168,7 @@ To use this with your project you need to follow these four steps:
 
         $ python manage.py migrate djcelery
 
-4. Configure celery to use the :pypi:`django-celery` backend.
+4. Configure Celery to use the :pypi:`django-celery` backend.
 
     For the database backend you must use:
 

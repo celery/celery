@@ -8,7 +8,7 @@ Getting Help
 Mailing list
 ------------
 
-For discussions about the usage, development, and future of celery,
+For discussions about the usage, development, and future of Celery,
 please join the `celery-users`_ mailing list.
 
 .. _`celery-users`: http://groups.google.com/group/celery-users/

@@ -25,7 +25,7 @@ Let's create one now:
     <Celery __main__:0x100469fd0>
 
 The last line shows the textual representation of the application,
-which includes the name of the celery class (``Celery``), the name of the
+which includes the name of the app class (``Celery``), the name of the
 current main module (``__main__``), and the memory address of the object
 (``0x100469fd0``).
 

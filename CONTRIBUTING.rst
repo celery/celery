@@ -206,7 +206,7 @@ spelling or other errors on the website/docs/code.
        hard to get or might not be that useful. Try to inspect the process to
        get more diagnostic data. Some ideas:
 
-       * Enable celery's ``breakpoint_signal`` and use it
+       * Enable Celery's ``breakpoint_signal`` and use it
          to inspect the process's state. This will allow you to open a
          ``pdb`` session.
        * Collect tracing data using `strace`_(Linux),

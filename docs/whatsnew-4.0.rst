@@ -256,7 +256,7 @@ command:
     $ celery upgrade settings proj/settings.py
 
 This command will modify your module in-place to use the new lower-case
-names (if you want uppercase with a celery prefix see block below),
+names (if you want uppercase with a "``CELERY``" prefix see block below),
 and save a backup in :file:`proj/settings.py.orig`.
 
 .. admonition:: For Django users and others who want to keep uppercase names
@@ -282,7 +282,7 @@ and save a backup in :file:`proj/settings.py.orig`.
 
         app.config_from_object('django.conf:settings', namespace='CELERY')
 
-    You can find the most up to date Django celery integration example
+    You can find the most up to date Django Celery integration example
     here: :ref:`django-first-steps`.
 
     Note that this will also add a prefix to settings that didn't previously
@@ -883,7 +883,7 @@ Events are now buffered in the worker and sent as a list which reduces
 the overhead required to send monitoring events.
 
 For authors of custom event monitors there will be no action
-required as long as you're using the Python celery
+required as long as you're using the Python Celery
 helpers (:class:`~@events.Receiver`) to implement your monitor.
 However, if you're manually receiving event messages you must now account
 for batched event messages which differ from normal event messages

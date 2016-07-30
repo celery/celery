@@ -26,7 +26,7 @@ It should contain all you need to run a basic Celery set-up.
     ## Broker settings.
     broker_url = 'amqp://guest:guest@localhost:5672//'
 
-    # List of modules to import when celery starts.
+    # List of modules to import when the Celery worker starts.
     imports = ('myapp.tasks',)
 
     ## Using the database to store task state and results.
@@ -597,7 +597,7 @@ Default is to expire after 1 day.
     For the moment this only works with the AMQP, database, cache,
     and Redis backends.
 
-    When using the database backend, `celery beat` must be
+    When using the database backend, ``celery beat`` must be
     running for the results to be expired.
 
 .. setting:: result_cache_max
@@ -2131,11 +2131,11 @@ The maximum number of seconds :mod:`~celery.bin.beat` can sleep
 between checking the schedule.
 
 The default for this value is scheduler specific.
-For the default celery beat scheduler the value is 300 (5 minutes),
+For the default Celery beat scheduler the value is 300 (5 minutes),
 but for e.g. the :pypi:`django-celery` database scheduler it's 5 seconds
 because the schedule may be changed externally, and so it must take
 changes to the schedule into account.
 
-Also when running celery beat embedded (:option:`-B <celery worker -B>`)
+Also when running Celery beat embedded (:option:`-B <celery worker -B>`)
 on Jython as a thread the max interval is overridden and set to 1 so
 that it's possible to shut down in a timely manner.

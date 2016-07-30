@@ -282,7 +282,7 @@ News
 
 * multi: now supports "pass through" options.
 
-    Pass through options makes it easier to use celery without a
+    Pass through options makes it easier to use Celery without a
     configuration file, or just add last-minute options on the command
     line.
 

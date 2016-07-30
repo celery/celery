@@ -1,5 +1,5 @@
 =================================
- celery - Distributed Task Queue
+ Celery - Distributed Task Queue
 =================================
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
@@ -372,7 +372,7 @@ Getting Help
 Mailing list
 ------------
 
-For discussions about the usage, development, and future of celery,
+For discussions about the usage, development, and future of Celery,
 please join the `celery-users`_ mailing list.
 
 .. _`celery-users`: http://groups.google.com/group/celery-users/

@@ -513,7 +513,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Improved init-scripts for CentOS.
 
-    - Updated to support celery 3.x conventions.
+    - Updated to support Celery 3.x conventions.
     - Now uses CentOS built-in ``status`` and ``killproc``
     - Support for multi-node / multi-pid worker services.
     - Standard color-coded CentOS service-init output.
@@ -1296,7 +1296,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Eventlet fixed so that the environment is patched as soon as possible.
 
-- eventlet: Now warns if celery related modules that depends on threads
+- eventlet: Now warns if Celery related modules that depends on threads
   are imported before eventlet is patched.
 
 - Improved event and camera examples in the monitoring guide.
@@ -1438,7 +1438,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
         app.add_defaults(initialize_config)
 
     which means the same as the above except that it won't happen
-    until the celery configuration is actually used.
+    until the Celery configuration is actually used.
 
     As an example, Celery can lazily use the configuration of a Flask app::
 

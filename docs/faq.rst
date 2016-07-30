@@ -764,7 +764,7 @@ create a new schedule subclass and override
 
 .. _faq-task-priorities:
 
-Does celery support task priorities?
+Does Celery support task priorities?
 ------------------------------------
 
 **Answer**: Yes.

@@ -71,7 +71,7 @@ these can be specified as arguments to the decorator:
     The task decorator is available on your :class:`@Celery` application instance,
     if you don't know what this is then please read :ref:`first-steps`.
 
-    If you're using Django or are still using the "old" module based celery API,
+    If you're using Django or are still using the "old" module based Celery API,
     then you can import the task decorator like this:
 
     .. code-block:: python

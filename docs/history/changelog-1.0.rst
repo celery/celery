@@ -129,7 +129,7 @@ Important notes
 
     See: http://bit.ly/d5OwMr
 
-    This means those who created their celery tables (via ``syncdb`` or
+    This means those who created their Celery tables (via ``syncdb`` or
     ``celeryinit``) with :pypi:`django-picklefield``
     versions >= 0.1.5 has to alter their tables to
     allow the result field to be `NULL` manually.
@@ -1135,7 +1135,7 @@ Important changes
 
 * Celery can now be used in pure Python (outside of a Django project).
 
-    This means celery is no longer Django specific.
+    This means Celery is no longer Django specific.
 
     For more information see the FAQ entry
     :ref:`faq-is-celery-for-django-only`.
@@ -1275,7 +1275,7 @@ News
 
 * Tested with Django 1.1
 
-* New Tutorial: Creating a click counter using carrot and celery
+* New Tutorial: Creating a click counter using Carrot and Celery
 
 * Database entries for periodic tasks are now created at the workers
     start-up instead of for each check (which has been a forgotten TODO/XXX
@@ -1342,7 +1342,7 @@ News
 * Adds eager execution. `celery.execute.apply`|`Task.apply` executes the
   function blocking until the task is done, for API compatibility it
   returns an `celery.result.EagerResult` instance. You can configure
-  celery to always run tasks locally by setting the
+  Celery to always run tasks locally by setting the
   :setting:`CELERY_ALWAYS_EAGER` setting to `True`.
 
 * Now depends on `anyjson`.
@@ -1399,7 +1399,7 @@ News
   by running `python manage.py celerystats`. See
   `celery.monitoring` for more information.
 
-* The celery daemon can now be supervised (i.e. it is automatically
+* The Celery daemon can now be supervised (i.e. it is automatically
   restarted if it crashes). To use this start the worker with the
   --supervised` option (or alternatively `-S`).
 
@@ -1556,11 +1556,11 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * **IMPORTANT** Celery now depends on carrot >= 0.4.1.
 
-* The celery daemon now sends task errors to the registered admin emails.
+* The Celery daemon now sends task errors to the registered admin emails.
   To turn off this feature, set `SEND_CELERY_TASK_ERROR_EMAILS` to
   `False` in your `settings.py`. Thanks to Grégoire Cachet.
 
-* You can now run the celery daemon by using `manage.py`:
+* You can now run the Celery daemon by using `manage.py`:
 
   .. code-block:: console
 
@@ -1669,7 +1669,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 :release-date: 2009-05-19 04:13 P.M CET
 :release-by: Ask Solem
 
-* The celery daemon was leaking AMQP connections, this should be fixed,
+* The Celery daemon was leaking AMQP connections, this should be fixed,
   if you have any problems with too many files open (like `emfile`
   errors in `rabbit.log`, please contact us!
 
@@ -1724,7 +1724,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * Added ``dmap()`` and ``dmap_async()``. This works like the
   `multiprocessing.Pool` versions except they're tasks
-  distributed to the celery server. Example:
+  distributed to the Celery server. Example:
 
     .. code-block:: pycon
 
@@ -1840,7 +1840,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * Can now check if a task has been executed or not via HTTP.
 
-* You can do this by including the celery `urls.py` into your project,
+* You can do this by including the Celery `urls.py` into your project,
 
         >>> url(r'^celery/$', include('celery.urls'))
 

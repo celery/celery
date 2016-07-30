@@ -179,7 +179,7 @@ can't co-exist in the same process space, this later posed a problem
 for using Celery with frameworks that doesn't have this limitation.
 
 Therefore the app concept was introduced. When using apps you use 'celery'
-objects instead of importing things from celery sub-modules, this
+objects instead of importing things from Celery sub-modules, this
 (unfortunately) also means that Celery essentially has two API's.
 
 Here's an example using Celery in single-mode:
@@ -239,7 +239,7 @@ Module Overview
 
         - app
 
-            Custom celery app instances uses this loader by default.
+            Custom Celery app instances uses this loader by default.
 
         - default
 
@@ -299,7 +299,7 @@ Module Overview
 
 - celery.utils
 
-    Utility functions used by the celery code base.
+    Utility functions used by the Celery code base.
     Much of it is there to be compatible across Python versions.
 
 - celery.contrib

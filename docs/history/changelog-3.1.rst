@@ -1044,7 +1044,7 @@ News
 
     .. note::
 
-        Note that upgrading celery won't update the init-scripts,
+        Note that upgrading Celery won't update the init-scripts,
         instead you need to manually copy the improved versions from the
         source distribution:
         https://github.com/celery/celery/tree/3.1/extra/generic-init.d
@@ -1108,7 +1108,7 @@ News
 - **App:** Fixed rare bug with ``autodiscover_tasks()`` (*Issue #1797*).
 
 - **Distribution:** The sphinx docs will now always add the parent directory
-  to path so that the current celery source code is used as a basis for
+  to path so that the current Celery source code is used as a basis for
   API documentation (*Issue #1782*).
 
 - **Documentation:** :pypi:`supervisor` examples contained an

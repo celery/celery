@@ -571,7 +571,7 @@ Backward incompatible changes
     isn't set up. This makes it possible to use `--help` etc., without having a
     working configuration.
 
-    Also this makes it possible to use the client side of celery without being
+    Also this makes it possible to use the client side of Celery without being
     configured:
 
     .. code-block:: pycon
@@ -626,7 +626,7 @@ Backward incompatible changes
     This bug became visible with RabbitMQ 1.8.0, which no longer
     allows conflicting declarations for the auto_delete and durable settings.
 
-    If you've already used celery with this backend chances are you
+    If you've already used Celery with this backend chances are you
     have to delete the previous declaration:
 
     .. code-block:: console
@@ -700,7 +700,7 @@ News
 
 * Worker: Standard out/error is now being redirected to the log file.
 
-* :pypi:`billiard` has been moved back to the celery repository.
+* :pypi:`billiard` has been moved back to the Celery repository.
 
     =====================================  =====================================
     **Module name**                        **celery equivalent**

@@ -45,7 +45,7 @@ see `Installing RabbitMQ on macOS`_.
 Setting up RabbitMQ
 -------------------
 
-To use celery we need to create a RabbitMQ user, a virtual host and
+To use Celery we need to create a RabbitMQ user, a virtual host and
 allow that user access to that virtual host:
 
 .. code-block:: console

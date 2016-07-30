@@ -103,7 +103,7 @@ with standard Python tools like ``pip`` or ``easy_install``:
 Application
 ===========
 
-The first thing you need is a Celery instance, which is called the celery
+The first thing you need is a Celery instance, which is called the Celery
 application or just "app" for short. Since this instance is used as
 the entry-point for everything you want to do in Celery, like creating tasks and
 managing workers, it must be possible for other modules to import it.
@@ -136,7 +136,7 @@ You defined a single task, called ``add``, which returns the sum of two numbers.
 
 .. _celerytut-running-the-worker:
 
-Running the celery worker server
+Running the Celery worker server
 ================================
 
 You now run the worker by executing our program with the ``worker``
