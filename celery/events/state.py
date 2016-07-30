@@ -110,7 +110,7 @@ def heartbeat_expires(timestamp, freq=60,
                       expire_window=HEARTBEAT_EXPIRE_WINDOW,
                       Decimal=Decimal, float=float, isinstance=isinstance):
     # some json implementations returns decimal.Decimal objects,
-    # which are not compatible with float.
+    # which aren't compatible with float.
     freq = float(freq) if isinstance(freq, Decimal) else freq
     if isinstance(timestamp, Decimal):
         timestamp = float(timestamp)
@@ -261,7 +261,7 @@ class Task(object):
 
     #: How to merge out of order events.
     #: Disorder is detected by logical ordering (e.g. :event:`task-received`
-    #: must have happened before a :event:`task-failed` event).
+    #: must've happened before a :event:`task-failed` event).
     #:
     #: A merge rule consists of a state and a list of fields to keep from
     #: that state. ``(RECEIVED, ('name', 'args')``, means the name and args

@@ -300,7 +300,7 @@ class crontab(schedule):
     periodic task entry to add :manpage:`crontab(5)`-like scheduling.
 
     Like a :manpage:`cron(5)`-job, you can specify units of time of when
-    you would like the task to execute. It is a reasonably complete
+    you'd like the task to execute. It's a reasonably complete
     implementation of :command:`cron`'s features, so it should provide a fair
     degree of scheduling needs.
 
@@ -361,7 +361,7 @@ class crontab(schedule):
 
         The Celery app instance.
 
-    It is important to realize that any day on which execution should
+    It's important to realize that any day on which execution should
     occur must be represented by entries in all three of the day and
     month attributes.  For example, if ``day_of_week`` is 0 and
     ``day_of_month`` is every seventh day, only months that begin
@@ -399,8 +399,8 @@ class crontab(schedule):
 
         And convert it to an (expanded) set representing all time unit
         values on which the Crontab triggers.  Only in case of the base
-        type being :class:`str`, parsing occurs.  (It is fast and
-        happens only once for each Crontab instance, so there is no
+        type being :class:`str`, parsing occurs.  (It's fast and
+        happens only once for each Crontab instance, so there's no
         significant performance overhead involved.)
 
         For the other base types, merely Python type conversions happen.
@@ -740,7 +740,7 @@ class solar(schedule):
                 start=last_run_at_utc, use_center=self.use_center,
             )
         except self.ephem.CircumpolarError:  # pragma: no cover
-            # Sun will not rise/set today. Check again tomorrow
+            # Sun won't rise/set today. Check again tomorrow
             # (specifically, after the next anti-transit).
             next_utc = (
                 self.cal.next_antitransit(self.ephem.Sun()) +

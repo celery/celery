@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, os.getcwd())
 
 # ## Start worker with -P eventlet
-# Never use the worker_pool setting as that will patch
+# Never use the worker_pool setting as that'll patch
 # the worker too late.
 
 broker_url = 'amqp://guest:guest@localhost:5672//'

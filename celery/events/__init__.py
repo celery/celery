@@ -180,7 +180,7 @@ class EventDispatcher(object):
             retry (bool): Retry in the event of connection failure.
             retry_policy (Mapping): Map of custom retry policy options.
                 See :meth:`~kombu.Connection.ensure`.
-            blind (bool): Don't set logical clock value (also do not forward
+            blind (bool): Don't set logical clock value (also don't forward
                 the internal logical clock).
             Event (Callable): Event type used to create event.
                 Defaults to :func:`Event`.
@@ -223,7 +223,7 @@ class EventDispatcher(object):
             retry (bool): Retry in the event of connection failure.
             retry_policy (Mapping): Map of custom retry policy options.
                 See :meth:`~kombu.Connection.ensure`.
-            blind (bool): Don't set logical clock value (also do not forward
+            blind (bool): Don't set logical clock value (also don't forward
                 the internal logical clock).
             Event (Callable): Event type used to create event,
                 defaults to :func:`Event`.

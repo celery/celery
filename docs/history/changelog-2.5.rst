@@ -34,15 +34,15 @@ This is a dummy release performed for the following goals:
 :release-by: Ask Solem
 
 * A bug causes messages to be sent with UTC time-stamps even though
-  :setting:`CELERY_ENABLE_UTC` was not enabled (Issue #636).
+  :setting:`CELERY_ENABLE_UTC` wasn't enabled (Issue #636).
 
 * ``celerybeat``: No longer crashes if an entry's args is set to None
   (Issue #657).
 
-* Auto-reload did not work if a module's ``__file__`` attribute
+* Auto-reload didn't work if a module's ``__file__`` attribute
   was set to the modules ``.pyc`` file.  (Issue #647).
 
-* Fixes early 2.5 compatibility where ``__package__`` does not exist
+* Fixes early 2.5 compatibility where ``__package__`` doesn't exist
   (Issue #638).
 
 .. _version-2.5.2:
@@ -181,7 +181,7 @@ Fixes
 -----
 
 * Eventlet/Gevent: A small typo caused the worker to hang when eventlet/gevent
-  was used, this was because the environment was not monkey patched
+  was used, this was because the environment wasn't monkey patched
   early enough.
 
 * Eventlet/Gevent: Another small typo caused the mediator to be started

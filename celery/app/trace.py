@@ -322,7 +322,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         # retval - is the always unmodified return value.
         # state  - is the resulting task state.
 
-        # This function is very long because we have unrolled all the calls
+        # This function is very long because we've unrolled all the calls
         # for performance reasons, and because the function is so long
         # we want the main variables (I, and R) to stand out visually from the
         # the rest of the variables, so breaking PEP8 is worth it ;)
@@ -539,7 +539,7 @@ def setup_worker_optimizations(app, hostname=None):
     hostname = hostname or gethostname()
 
     # make sure custom Task.__call__ methods that calls super
-    # will not mess up the request/task stack.
+    # won't mess up the request/task stack.
     _install_stack_protection()
 
     # all new threads start without a current app, so if an app is not
@@ -593,7 +593,7 @@ def _install_stack_protection():
     #   they work when tasks are called directly.
     #
     # The worker only optimizes away __call__ in the case
-    # where it has not been overridden, so the request/task stack
+    # where it hasn't been overridden, so the request/task stack
     # will blow if a custom task class defines __call__ and also
     # calls super().
     if not getattr(BaseTask, '_stackprotected', False):

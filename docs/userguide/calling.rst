@@ -25,14 +25,14 @@ The API defines a standard set of execution options, as well as three methods:
 
     - ``delay(*args, **kwargs)``
 
-        Shortcut to send a task message, but does not support execution
+        Shortcut to send a task message, but doesn't support execution
         options.
 
     - *calling* (``__call__``)
 
         Applying an object supporting the calling API (e.g. ``add(2, 2)``)
         means that the task will be executed in the current process, and
-        not by a worker (a message will not be sent).
+        not by a worker (a message won't be sent).
 
 .. _calling-cheat:
 
@@ -75,7 +75,7 @@ Using :meth:`~@Task.apply_async` instead you have to write:
 
 .. sidebar:: Tip
 
-    If the task is not registered in the current process
+    If the task isn't registered in the current process
     you can use :meth:`~@send_task` to call the task by name instead.
 
 
@@ -83,7 +83,7 @@ So `delay` is clearly convenient, but if you want to set additional execution
 options you have to use ``apply_async``.
 
 The rest of this document will go into the task execution
-options in detail.  All examples use a task
+options in detail. All examples use a task
 called `add`, returning the sum of two arguments:
 
 .. code-block:: python
@@ -95,7 +95,7 @@ called `add`, returning the sum of two arguments:
 
 .. topic:: There's another way…
 
-    You will learn more about this later while reading about the :ref:`Canvas
+    You'll learn more about this later while reading about the :ref:`Canvas
     <guide-canvas>`, but :class:`~celery.signature`'s are objects used to pass around
     the signature of a task invocation, (for example to send it over the
     network), and they also support the Calling API:
@@ -117,7 +117,7 @@ as a partial argument:
 
     add.apply_async((2, 2), link=add.s(16))
 
-.. sidebar:: What is ``s``?
+.. sidebar:: What's ``s``?
 
     The ``add.s`` call used here is called a signature, I talk
     more about signatures in the :ref:`canvas guide <guide-canvas>`,
@@ -125,8 +125,8 @@ as a partial argument:
     is a simpler way to chain tasks together.
 
     In practice the ``link`` execution option is considered an internal
-    primitive, and you will probably not use it directly, but
-    rather use chains instead.
+    primitive, and you'll probably not use it directly, but
+    use chains instead.
 
 Here the result of the first task (4) will be sent to a new
 task that adds 16 to the previous result, forming the expression
@@ -177,7 +177,7 @@ ETA and countdown
 =================
 
 The ETA (estimated time of arrival) lets you set a specific date and time that
-is the earliest time at which your task will be executed.  `countdown` is
+is the earliest time at which your task will be executed. `countdown` is
 a shortcut to set eta by seconds into the future.
 
 .. code-block:: pycon
@@ -189,10 +189,10 @@ a shortcut to set eta by seconds into the future.
 The task is guaranteed to be executed at some time *after* the
 specified date and time, but not necessarily at that exact time.
 Possible reasons for broken deadlines may include many items waiting
-in the queue, or heavy network latency.  To make sure your tasks
+in the queue, or heavy network latency. To make sure your tasks
 are executed in a timely manner you should monitor the queue for congestion. Use
 Munin, or similar tools, to receive alerts, so appropriate action can be
-taken to ease the workload.  See :ref:`monitoring-munin`.
+taken to ease the workload. See :ref:`monitoring-munin`.
 
 While `countdown` is an integer, `eta` must be a :class:`~datetime.datetime`
 object, specifying an exact date and time (including millisecond precision,
@@ -269,18 +269,18 @@ and can contain the following keys:
 - `interval_start`
 
     Defines the number of seconds (float or integer) to wait between
-    retries.  Default is 0, which means the first retry will be
+    retries. Default is 0, which means the first retry will be
     instantaneous.
 
 - `interval_step`
 
     On each consecutive retry this number will be added to the retry
-    delay (float or integer).  Default is 0.2.
+    delay (float or integer). Default is 0.2.
 
 - `interval_max`
 
     Maximum number of seconds (float or integer) to wait between
-    retries.  Default is 0.2.
+    retries. Default is 0.2.
 
 For example, the default policy correlates to:
 
@@ -293,7 +293,7 @@ For example, the default policy correlates to:
         'interval_max': 0.2,
     })
 
-the maximum time spent retrying will be 0.4 seconds.  It is set relatively
+the maximum time spent retrying will be 0.4 seconds. It's set relatively
 short by default because a connection failure could lead to a retry pile effect
 if the broker connection is down: e.g. many web server processes waiting
 to retry blocking other incoming requests.
@@ -358,7 +358,7 @@ pickle -- If you have no desire to support any language other than
 
 yaml -- YAML has many of the same characteristics as json,
     except that it natively supports more data types (including dates,
-    recursive references, etc.)
+    recursive references, etc.).
 
     However, the Python libraries for YAML are a good bit slower than the
     libraries for JSON.
@@ -368,14 +368,14 @@ yaml -- YAML has many of the same characteristics as json,
 
     See http://yaml.org/ for more information.
 
-msgpack -- msgpack is a binary serialization format that is closer to JSON
-    in features.  It is very young however, and support should be considered
+msgpack -- msgpack is a binary serialization format that's closer to JSON
+    in features. It's very young however, and support should be considered
     experimental at this point.
 
     See http://msgpack.org/ for more information.
 
 The encoding used is available as a message header, so the worker knows how to
-deserialize any task.  If you use a custom serializer, this serializer must
+deserialize any task. If you use a custom serializer, this serializer must
 be available for the worker.
 
 The following order is used to decide which serializer
@@ -419,7 +419,7 @@ Connections
 
 .. sidebar:: Automatic Pool Support
 
-    Since version 2.3 there is support for automatic connection pools,
+    Since version 2.3 there's support for automatic connection pools,
     so you don't have to manually handle connections and publishers
     to reuse connections.
 
@@ -475,7 +475,7 @@ the workers :option:`-Q <celery worker -Q>` argument:
 
 .. seealso::
 
-    Hard-coding queue names in code is not recommended, the best practice
+    Hard-coding queue names in code isn't recommended, the best practice
     is to use configuration routers (:setting:`task_routes`).
 
     To find out more about routing, please see :ref:`guide-routing`.

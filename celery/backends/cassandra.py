@@ -145,8 +145,8 @@ class CassandraBackend(BaseBackend):
                 auth_provider=self.auth_provider)
             self._session = self._connection.connect(self.keyspace)
 
-            # We are forced to do concatenation below, as formatting would
-            # blow up on superficial %s that will be processed by Cassandra
+            # We're forced to do concatenation below, as formatting would
+            # blow up on superficial %s that'll be processed by Cassandra
             self._write_stmt = cassandra.query.SimpleStatement(
                 Q_INSERT_RESULT.format(
                     table=self.table, expires=self.cqlexpires),

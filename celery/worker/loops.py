@@ -52,7 +52,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
         raise WorkerLostError('Could not start worker processes')
 
     # consumer.consume() may have prefetched up to our
-    # limit - drain an event so we are in a clean state
+    # limit - drain an event so we're in a clean state
     # prior to starting our event loop.
     if connection.transport.driver_type == 'amqp':
         hub.call_soon(_quick_drain, connection)
@@ -74,7 +74,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
             elif should_terminate is not None and should_stop is not False:
                 raise WorkerTerminate(should_terminate)
 
-            # We only update QoS when there is no more messages to read.
+            # We only update QoS when there's no more messages to read.
             # This groups together qos calls, and makes sure that remote
             # control commands will be prioritized over task messages.
             if qos.prev != qos.value:

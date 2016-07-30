@@ -163,7 +163,7 @@ class Queues(dict):
         return info[0] + '\n' + textindent('\n'.join(info[1:]), indent)
 
     def select_add(self, queue, **kwargs):
-        """Add new task queue that will be consumed from even when
+        """Add new task queue that'll be consumed from even when
         a subset has been selected using the
         :option:`celery worker -Q` option."""
         q = self.add(queue, **kwargs)
@@ -184,7 +184,7 @@ class Queues(dict):
             }
 
     def deselect(self, exclude):
-        """Deselect queues so that they will not be consumed from.
+        """Deselect queues so that they won't be consumed from.
 
         Arguments:
             exclude (Sequence[str], str): Names of queues to avoid

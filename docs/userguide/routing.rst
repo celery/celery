@@ -27,12 +27,12 @@ Automatic routing
 The simplest way to do routing is to use the
 :setting:`task_create_missing_queues` setting (on by default).
 
-With this setting on, a named queue that is not already defined in
-:setting:`task_queues` will be created automatically.  This makes it easy to
+With this setting on, a named queue that's not already defined in
+:setting:`task_queues` will be created automatically. This makes it easy to
 perform simple routing tasks.
 
 Say you have two servers, `x`, and `y` that handles regular tasks,
-and one server `z`, that only handles feed related tasks.  You can use this
+and one server `z`, that only handles feed related tasks. You can use this
 configuration::
 
     task_routes = {'feed.tasks.import_feed': {'queue': 'feeds'}}
@@ -111,7 +111,7 @@ A queue named `"video"` will be created with the following settings:
      'exchange_type': 'direct',
      'routing_key': 'video'}
 
-The non-AMQP backends like `Redis` or `SQS` do not support exchanges,
+The non-AMQP backends like `Redis` or `SQS` don't support exchanges,
 so they require the exchange to have the same name as the queue. Using this
 design ensures it will work for them as well.
 
@@ -255,8 +255,8 @@ AMQP Primer
 Messages
 --------
 
-A message consists of headers and a body.  Celery uses headers to store
-the content type of the message and its content encoding.  The
+A message consists of headers and a body. Celery uses headers to store
+the content type of the message and its content encoding. The
 content type is usually the serialization format used to serialize the
 message. The body contains the name of the task to execute, the
 task id (UUID), the arguments to apply it with and some additional
@@ -283,7 +283,7 @@ a *consumer*.
 The *broker* is the message server, routing messages from producers
 to consumers.
 
-You are likely to see these terms used a lot in AMQP related material.
+You're likely to see these terms used a lot in AMQP related material.
 
 .. _amqp-exchanges-queues-keys:
 
@@ -291,7 +291,7 @@ Exchanges, queues and routing keys.
 -----------------------------------
 
 1. Messages are sent to exchanges.
-2. An exchange routes messages to one or more queues.  Several exchange types
+2. An exchange routes messages to one or more queues. Several exchange types
    exists, providing different ways to do routing, or implementing
    different messaging scenarios.
 3. The message waits in the queue until someone consumes it.
@@ -330,7 +330,7 @@ Exchange types
 
 The exchange type defines how the messages are routed through the exchange.
 The exchange types defined in the standard are `direct`, `topic`,
-`fanout` and `headers`.  Also non-standard exchange types are available
+`fanout` and `headers`. Also non-standard exchange types are available
 as plug-ins to RabbitMQ, like the `last-value-cache plug-in`_ by Michael
 Bridgen.
 
@@ -373,7 +373,7 @@ Related API commands
     :keyword passive: Passive means the exchange won't be created, but you
         can use this to check if the exchange already exists.
 
-    :keyword durable: Durable exchanges are persistent.  That is - they survive
+    :keyword durable: Durable exchanges are persistent. I.e. they survive
         a broker restart.
 
     :keyword auto_delete: This means the queue will be deleted by the broker
@@ -393,7 +393,7 @@ Related API commands
 
     Binds a queue to an exchange with a routing key.
 
-    Unbound queues will not receive messages, so this is necessary.
+    Unbound queues won't receive messages, so this is necessary.
 
     See :meth:`amqp:Channel.queue_bind <amqp.channel.Channel.queue_bind>`
 
@@ -411,10 +411,10 @@ Related API commands
 
 .. note::
 
-    Declaring does not necessarily mean "create".  When you declare you
-    *assert* that the entity exists and that it's operable.  There is no
+    Declaring doesn't necessarily mean "create". When you declare you
+    *assert* that the entity exists and that it's operable. There's no
     rule as to whom should initially create the exchange/queue/binding,
-    whether consumer or producer.  Usually the first one to need it will
+    whether consumer or producer. Usually the first one to need it will
     be the one to create it.
 
 .. _amqp-api-hands-on:
@@ -423,9 +423,9 @@ Hands-on with the API
 ---------------------
 
 Celery comes with a tool called :program:`celery amqp`
-that is used for command line access to the AMQP API, enabling access to
+that's used for command line access to the AMQP API, enabling access to
 administration tasks like creating/deleting queues and exchanges, purging
-queues or sending messages.  It can also be used for non-AMQP brokers,
+queues or sending messages. It can also be used for non-AMQP brokers,
 but different implementation may not implement all commands.
 
 You can write commands directly in the arguments to :program:`celery amqp`,
@@ -438,8 +438,8 @@ or just start with no arguments to start it in shell-mode:
     -> connected.
     1>
 
-Here ``1>`` is the prompt.  The number 1, is the number of commands you
-have executed so far.  Type ``help`` for a list of commands available.
+Here ``1>`` is the prompt. The number 1, is the number of commands you
+have executed so far. Type ``help`` for a list of commands available.
 It also supports auto-completion, so you can start typing a command and then
 hit the `tab` key to show a list of possible matches.
 
@@ -456,11 +456,11 @@ Let's create a queue you can send messages to:
     ok.
 
 This created the direct exchange ``testexchange``, and a queue
-named ``testqueue``.  The queue is bound to the exchange using
+named ``testqueue``. The queue is bound to the exchange using
 the routing key ``testkey``.
 
 From now on all messages sent to the exchange ``testexchange`` with routing
-key ``testkey`` will be moved to this queue.  You can send a message by
+key ``testkey`` will be moved to this queue. You can send a message by
 using the ``basic.publish`` command:
 
 .. code-block:: console
@@ -468,7 +468,7 @@ using the ``basic.publish`` command:
     4> basic.publish 'This is a message!' testexchange testkey
     ok.
 
-Now that the message is sent you can retrieve it again.  You can use the
+Now that the message is sent you can retrieve it again. You can use the
 ``basic.get``` command here, which polls for new messages on the queue
 (which is alright for maintenance tasks, for services you'd want to use
 ``basic.consume`` instead)
@@ -488,14 +488,14 @@ Pop a message off the queue:
 
 
 AMQP uses acknowledgment to signify that a message has been received
-and processed successfully.  If the message has not been acknowledged
+and processed successfully. If the message hasn't been acknowledged
 and consumer channel is closed, the message will be delivered to
 another consumer.
 
 Note the delivery tag listed in the structure above; Within a connection
 channel, every received message has a unique delivery tag,
-This tag is used to acknowledge the message.  Also note that
-delivery tags are not unique across connections, so in another client
+This tag is used to acknowledge the message. Also note that
+delivery tags aren't unique across connections, so in another client
 the delivery tag `1` might point to a different message than in this channel.
 
 You can acknowledge the message you received using ``basic.ack``:
@@ -563,7 +563,7 @@ The destination for a task is decided by the following (in order):
 3. Routing related attributes defined on the :class:`~celery.task.base.Task`
    itself.
 
-It is considered best practice to not hard-code these settings, but rather
+It's considered best practice to not hard-code these settings, but rather
 leave that as configuration options by using :ref:`routers`;
 This is the most flexible approach, but sensible defaults can still be set
 as task attributes.
@@ -586,7 +586,7 @@ the signature ``(name, args, kwargs, options, task=None, **kwargs)``:
                         'exchange_type': 'topic',
                         'routing_key': 'video.compress'}
 
-If you return the ``queue`` key, it will expand with the defined settings of
+If you return the ``queue`` key, it'll expand with the defined settings of
 that queue in :setting:`task_queues`:
 
 .. code-block:: javascript
@@ -687,9 +687,9 @@ a :program:`celery beat` schedule:
 
 .. admonition:: Broadcast & Results
 
-    Note that Celery result does not define what happens if two
-    tasks have the same task_id.  If the same task is distributed to more
+    Note that Celery result doesn't define what happens if two
+    tasks have the same task_id. If the same task is distributed to more
     than one worker, then the state history may not be preserved.
 
-    It is a good idea to set the ``task.ignore_result`` attribute in
+    It's a good idea to set the ``task.ignore_result`` attribute in
     this case.

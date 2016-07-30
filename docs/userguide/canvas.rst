@@ -44,7 +44,7 @@ or even serialized and sent across the wire.
         >>> add.signature((2, 2), countdown=10)
         tasks.add(2, 2)
 
-- There is also a shortcut using star arguments:
+- There's also a shortcut using star arguments:
 
     .. code-block:: pycon
 
@@ -171,7 +171,7 @@ Immutability
 
 Partials are meant to be used with callbacks, any tasks linked or chord
 callbacks will be applied with the result of the parent task.
-Sometimes you want to specify a callback that does not take
+Sometimes you want to specify a callback that doesn't take
 additional arguments, and in that case you can set the signature
 to be immutable:
 
@@ -265,7 +265,7 @@ The Primitives
 
     - ``chord``
 
-        A chord is just like a group but with a callback.  A chord consists
+        A chord is just like a group but with a callback. A chord consists
         of a header group and a body,  where the body is a task that should execute
         after all of the tasks in the header are complete.
 
@@ -392,7 +392,7 @@ Here's some examples:
     into a list and sent to the ``xsum`` task.
 
     The body of a chord can also be immutable, so that the return value
-    of the group is not passed on to the callback:
+    of the group isn't passed on to the callback:
 
     .. code-block:: pycon
 
@@ -515,8 +515,8 @@ the results:
      (<AsyncResult: 8c350acf-519d-4553-8a53-4ad3a5c5aeb4>, 64)]
 
 By default :meth:`~@AsyncResult.collect` will raise an
-:exc:`~@IncompleteStream` exception if the graph is not fully
-formed (one of the tasks has not completed yet),
+:exc:`~@IncompleteStream` exception if the graph isn't fully
+formed (one of the tasks hasn't completed yet),
 but you can get an intermediate representation of the graph
 too:
 
@@ -547,7 +547,7 @@ is applied:
 
     >>> add.apply_async((2, 2), link_error=log_error.s())
 
-The worker will not actually call the errback as a task, but will
+The worker won't actually call the errback as a task, but will
 instead call the errback function directly so that the raw request, exception
 and traceback objects can be passed to it.
 
@@ -567,7 +567,7 @@ Here's an example errback:
             print('--\n\n{0} {1} {2}'.format(
                 task_id, exc, traceback), file=fh)
 
-To make it even easier to link tasks together there is
+To make it even easier to link tasks together there's
 a special signature called :class:`~celery.chain` that lets
 you chain tasks together:
 
@@ -722,7 +722,7 @@ It supports the following operations:
 * :meth:`~celery.result.GroupResult.successful`
 
     Return :const:`True` if all of the subtasks finished
-    successfully (e.g. did not raise an exception).
+    successfully (e.g. didn't raise an exception).
 
 * :meth:`~celery.result.GroupResult.failed`
 
@@ -731,7 +731,7 @@ It supports the following operations:
 * :meth:`~celery.result.GroupResult.waiting`
 
     Return :const:`True` if any of the subtasks
-    is not ready yet.
+    isn't ready yet.
 
 * :meth:`~celery.result.GroupResult.ready`
 
@@ -822,9 +822,9 @@ Let's break the chord expression down:
     9900
 
 Remember, the callback can only be executed after all of the tasks in the
-header have returned.  Each step in the header is executed as a task, in
-parallel, possibly on different nodes.  The callback is then applied with
-the return value of each task in the header.  The task id returned by
+header have returned. Each step in the header is executed as a task, in
+parallel, possibly on different nodes. The callback is then applied with
+the return value of each task in the header. The task id returned by
 :meth:`chord` is the id of the callback, so you can wait for it to complete
 and get the final return value (but remember to :ref:`never have a task wait
 for other tasks <task-synchronous-subtasks>`)
@@ -858,13 +858,13 @@ to the :exc:`~@ChordError` exception:
 
 While the traceback may be different depending on which result backend is
 being used, you can see the error description includes the id of the task that failed
-and a string representation of the original exception.  You can also
+and a string representation of the original exception. You can also
 find the original traceback in ``result.traceback``.
 
 Note that the rest of the tasks will still execute, so the third task
 (``add.s(8, 8)``) is still executed even though the middle task failed.
 Also the :exc:`~@ChordError` only shows the task that failed
-first (in time): it does not respect the ordering of the header group.
+first (in time): it doesn't respect the ordering of the header group.
 
 To perform an action when a chord fails you can therefore attach
 an errback to the chord callback:
@@ -927,8 +927,8 @@ Example implementation:
 
 This is used by all result backends except Redis and Memcached, which
 increment a counter after each task in the header, then applying the callback
-when the counter exceeds the number of tasks in the set. *Note:* chords do not
-properly work with Redis before version 2.2; you will need to upgrade to at
+when the counter exceeds the number of tasks in the set. *Note:* chords don't
+properly work with Redis before version 2.2; you'll need to upgrade to at
 least 2.2 to use them.
 
 The Redis and Memcached approach is a much better solution, but not easily
@@ -937,9 +937,9 @@ implemented in other backends (suggestions welcome!).
 
 .. note::
 
-    If you are using chords with the Redis result backend and also overriding
+    If you're using chords with the Redis result backend and also overriding
     the :meth:`Task.after_return` method, you need to make sure to call the
-    super method or else the chord callback will not be applied.
+    super method or else the chord callback won't be applied.
 
     .. code-block:: python
 
@@ -1012,7 +1012,7 @@ thousand objects each.
 
 Some may worry that chunking your tasks results in a degradation
 of parallelism, but this is rarely true for a busy cluster
-and in practice since you are avoiding the overhead  of messaging
+and in practice since you're avoiding the overhead  of messaging
 it may considerably increase performance.
 
 To create a chunks signature you can use :meth:`@Task.chunks`:

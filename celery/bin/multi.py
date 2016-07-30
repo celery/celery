@@ -20,7 +20,7 @@ Examples
 
 
     $ # You need to add the same arguments when you restart,
-    $ # as these are not persisted anywhere.
+    $ # as these aren't persisted anywhere.
     $ celery multi restart Leslie -E --pidfile=/var/run/celery/%n.pid
                                      --logfile=/var/run/celery/%n%I.log
 

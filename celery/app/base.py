@@ -336,7 +336,7 @@ class Celery(object):
             a proxy object, so that the act of creating the task is not
             performed until the task is used or the task registry is accessed.
 
-            If you are depending on binding to be deferred, then you must
+            If you're depending on binding to be deferred, then you must
             not access any attributes on the returned object until the
             application is fully set up (finalized).
         """
@@ -538,7 +538,7 @@ class Celery(object):
             digest (str): Digest algorithm used when signing messages.
                 Default is ``sha1``.
             serializer (str): Serializer used to encode messages after
-                they have been signed.  See :setting:`task_serializer` for
+                they've been signed.  See :setting:`task_serializer` for
                 the serializers supported.  Default is ``json``.
         """
         from celery.security import setup_security
@@ -578,7 +578,7 @@ class Celery(object):
                 to "tasks", which means it look for "module.tasks" for every
                 module in ``packages``.
             force (bool): By default this call is lazy so that the actual
-                auto-discovery will not happen until an application imports
+                auto-discovery won't happen until an application imports
                 the default modules.  Forcing will cause the auto-discovery
                 to happen immediately.
         """
@@ -916,7 +916,7 @@ class Celery(object):
             reverse (str): Reverse path to this object used for pickling
                 purposes.  E.g. for ``app.AsyncResult`` use ``"AsyncResult"``.
             keep_reduce (bool): If enabled a custom ``__reduce__``
-                implementation will not be provided.
+                implementation won't be provided.
         """
         Class = symbol_by_name(Class)
         reverse = reverse if reverse else Class.__name__
@@ -1054,7 +1054,7 @@ class Celery(object):
 
     @property
     def current_task(self):
-        """The instance of the task that is being executed, or
+        """The instance of the task that's being executed, or
         :const:`None`."""
         return _task_stack.top
 

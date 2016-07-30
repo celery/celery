@@ -91,7 +91,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
             Basically this method of construction allows us to
             short-circuit creation of references to already-
             referenced instance methods.  The key corresponding
-            to the target is calculated, and if there is already
+            to the target is calculated, and if there's already
             an existing reference, that is returned, with its
             deletionMethods attribute updated.  Otherwise the
             new instance is created and registered in the table
@@ -174,7 +174,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
         return str(self)
 
     def __bool__(self):
-        """Whether we are still a valid reference"""
+        """Whether we're still a valid reference"""
         return self() is not None
     __nonzero__ = __bool__  # py2
 

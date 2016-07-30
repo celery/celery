@@ -14,7 +14,7 @@ Ensuring a task is only executed one at a time
 
 You can accomplish this by using a lock.
 
-In this example we'll be using the cache framework to set a lock that is
+In this example we'll be using the cache framework to set a lock that's
 accessible for all workers.
 
 It's part of an imaginary RSS feed importer called `djangofeeds`.
@@ -26,7 +26,7 @@ consisting of the MD5 check-sum of the feed URL.
 The cache key expires after some time in case something unexpected happens,
 and something always will...
 
-For this reason your tasks run-time should not exceed the timeout.
+For this reason your tasks run-time shouldn't exceed the timeout.
 
 
 .. note::
@@ -60,7 +60,7 @@ For this reason your tasks run-time should not exceed the timeout.
             # memcache delete is very slow, but we have to use it to take
             # advantage of using add() for atomic locking
             if monotonic() < timeout_at:
-                # do not release the lock if we exceeded the timeout
+                # don't release the lock if we exceeded the timeout
                 # to lessen the chance of releasing an expired lock
                 # owned by someone else.
                 cache.delete(lock_id)

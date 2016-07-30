@@ -49,7 +49,7 @@ __all__ = ['WorkController', 'default_nodename']
 SHUTDOWN_SOCKET_TIMEOUT = 5.0
 
 SELECT_UNKNOWN_QUEUE = """\
-Trying to select queue subset of {0!r}, but queue {1} is not
+Trying to select queue subset of {0!r}, but queue {1} isn't
 defined in the `task_queues` setting.
 
 If you want to automatically declare unknown queues you can
@@ -57,7 +57,7 @@ enable the `task_create_missing_queues` setting.
 """
 
 DESELECT_UNKNOWN_QUEUE = """\
-Trying to deselect queue subset of {0!r}, but queue {1} is not
+Trying to deselect queue subset of {0!r}, but queue {1} isn't
 defined in the `task_queues` setting.
 """
 
@@ -120,7 +120,7 @@ class WorkController(object):
         self.loglevel = mlevel(self.loglevel)
         self.ready_callback = ready_callback or self.on_consumer_ready
 
-        # this connection is not established, only used for params
+        # this connection won't establish, only used for params
         self._conninfo = self.app.connection_for_read()
         self.use_eventloop = (
             self.should_use_eventloop() if use_eventloop is None

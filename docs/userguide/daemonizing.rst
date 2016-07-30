@@ -36,8 +36,8 @@ directory to when it starts (to find the module containing your app, or your
 configuration module).
 
 The daemonization script is configured by the file :file:`/etc/default/celeryd`,
-which is a shell (:command:`sh`) script.  You can add environment variables and the
-configuration options below to this file.  To add environment variables you
+which is a shell (:command:`sh`) script. You can add environment variables and the
+configuration options below to this file. To add environment variables you
 must also export them (e.g. :command:`export DISPLAY=":0"`)
 
 .. Admonition:: Superuser privileges required
@@ -45,7 +45,7 @@ must also export them (e.g. :command:`export DISPLAY=":0"`)
     The init-scripts can only be used by root,
     and the shell configuration file must also be owned by root.
 
-    Unprivileged users do not need to use the init-script,
+    Unprivileged users don't need to use the init-script,
     instead they can use the :program:`celery multi` utility (or
     :program:`celery worker --detach`):
 
@@ -128,7 +128,7 @@ shell:
 
     CELERYD_SU_ARGS="-l"
 
-Note that this is not recommended, and that you should only use this option
+Note that this isn't recommended, and that you should only use this option
 when absolutely necessary.
 
 .. _generic-initd-celeryd-django-example:
@@ -169,7 +169,7 @@ Available options
 * ``CELERYD_OPTS``
 
     Additional command-line arguments for the worker, see
-    `celery worker --help` for a list.  This also supports the extended
+    `celery worker --help` for a list. This also supports the extended
     syntax used by `multi` to configure settings for individual nodes.
     See `celery multi --help` for some multi-node configuration examples.
 
@@ -207,12 +207,12 @@ Available options
 
 * ``CELERY_CREATE_RUNDIR``
 
-    Always create pidfile directory.  By default only enabled when no custom
+    Always create pidfile directory. By default only enabled when no custom
     pidfile location set.
 
 * ``CELERY_CREATE_LOGDIR``
 
-    Always create logfile directory.  By default only enable when no custom
+    Always create logfile directory. By default only enable when no custom
     logfile location set.
 
 .. _generic-initd-celerybeat:
@@ -288,7 +288,7 @@ Available options
 
 * ``CELERYBEAT_LOG_LEVEL``
 
-    Log level to use.  Default is ``INFO``.
+    Log level to use. Default is ``INFO``.
 
 * ``CELERYBEAT_USER``
 
@@ -305,12 +305,12 @@ Available options
 
 * ``CELERY_CREATE_RUNDIR``
 
-    Always create pidfile directory.  By default only enabled when no custom
+    Always create pidfile directory. By default only enabled when no custom
     pidfile location set.
 
 * ``CELERY_CREATE_LOGDIR``
 
-    Always create logfile directory.  By default only enable when no custom
+    Always create logfile directory. By default only enable when no custom
     logfile location set.
 
 .. _generic-initd-troubleshooting:
@@ -328,9 +328,9 @@ them in *verbose mode*:
 This can reveal hints as to why the service won't start.
 
 If the worker starts with *"OK"* but exits almost immediately afterwards
-and there is nothing in the log file, then there is probably an error
+and there's no evidence in the log file, then there's probably an error
 but as the daemons standard outputs are already closed you'll
-not be able to see them anywhere.  For this situation you can use
+not be able to see them anywhere. For this situation you can use
 the :envvar:`C_FAKEFORK` environment variable to skip the
 daemonization step:
 
@@ -480,11 +480,11 @@ use the Environment in :file:`celery.service`.
 Running the worker with superuser privileges (root)
 ======================================================================
 Running the worker with superuser privileges is a very dangerous practice.
-There should always be a workaround to avoid running as root.  Celery may
+There should always be a workaround to avoid running as root. Celery may
 run arbitrary code in messages serialized with pickle - which is dangerous,
 especially if run as root.
 
-By default Celery will not run workers as root. The associated error
+By default Celery won't run workers as root. The associated error
 message may not be visible in the logs but may be seen if :envvar:`C_FAKEFORK`
 is used.
 

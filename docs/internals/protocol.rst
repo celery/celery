@@ -220,7 +220,7 @@ Message body
     :`string` (ISO 8601):
 
     Estimated time of arrival. This is the date and time in ISO 8601
-    format. If not provided the message is not scheduled, but will be
+    format. If not provided the message isn't scheduled, but will be
     executed asap.
 
 * ``expires``
@@ -243,7 +243,7 @@ Message body
 
     .. versionadded:: 2.3
 
-    Signifies that this task is one of the header parts of a chord.  The value
+    Signifies that this task is one of the header parts of a chord. The value
     of this key is the body of the cord that should be executed when all of
     the tasks in the header has returned.
 
@@ -334,7 +334,7 @@ Standard body fields
 
 - *string* ``type``
 
-    The type of event.  This is a string containing the *category* and
+    The type of event. This is a string containing the *category* and
     *action* separated by a dash delimiter (e.g. ``task-succeeded``).
 
 - *string* ``hostname``
@@ -352,7 +352,7 @@ Standard body fields
 - *signed short* ``utcoffset``
 
     This field describes the timezone of the originating host, and is
-    specified as the number of hours ahead of/behind UTC.  E.g. ``-2`` or
+    specified as the number of hours ahead of/behind UTC. E.g. ``-2`` or
     ``+1``.
 
 - *unsigned long long* ``pid``

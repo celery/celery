@@ -18,7 +18,7 @@ What kinds of things should I use Celery for?
 ---------------------------------------------
 
 **Answer:** `Queue everything and delight everyone`_ is a good article
-describing why you would use a queue in a web context.
+describing why you'd use a queue in a web context.
 
 .. _`Queue everything and delight everyone`:
     http://decafbad.com/blog/2008/07/04/queue-everything-and-delight-everyone
@@ -62,8 +62,8 @@ The numbers as of this writing are:
     - tests: 14,209 lines.
     - backends, contrib, compat utilities: 9,032 lines.
 
-Lines of code is not a useful metric, so
-even if Celery did consist of 50k lines of code you would not
+Lines of code isn't a useful metric, so
+even if Celery did consist of 50k lines of code you wouldn't
 be able to draw any conclusions from such a number.
 
 Does Celery have many dependencies?
@@ -85,8 +85,8 @@ celery
 - `kombu`_
 
 Kombu is part of the Celery ecosystem and is the library used
-to send and receive messages.  It is also the library that enables
-us to support many different message brokers.  It is also used by the
+to send and receive messages. It's also the library that enables
+us to support many different message brokers. It's also used by the
 OpenStack project, and many others, validating the choice to separate
 it from the Celery code-base.
 
@@ -95,10 +95,10 @@ it from the Celery code-base.
 - `billiard`_
 
 Billiard is a fork of the Python multiprocessing module containing
-many performance and stability improvements.  It is an eventual goal
+many performance and stability improvements. It's an eventual goal
 that these improvements will be merged back into Python one day.
 
-It is also used for compatibility with older Python versions
+It's also used for compatibility with older Python versions
 that don't come with the multiprocessing module.
 
 .. _`billiard`: http://pypi.python.org/pypi/billiard
@@ -113,9 +113,9 @@ The pytz module provides timezone definitions and related tools.
 ~~~~~~~~~~~~~~~~~
 
 If you use :pypi:`django-celery` then you don't have to install Celery
-separately, as it will make sure that the required version is installed.
+separately, as it'll make sure that the required version is installed.
 
-:pypi:`django-celery` does not have any other dependencies.
+:pypi:`django-celery` doesn't have any other dependencies.
 
 kombu
 ~~~~~
@@ -124,7 +124,7 @@ Kombu depends on the following packages:
 
 - `amqp`_
 
-The underlying pure-Python amqp client implementation.  AMQP being the default
+The underlying pure-Python amqp client implementation. AMQP being the default
 broker this is a natural dependency.
 
 .. _`amqp`: http://pypi.python.org/pypi/amqp
@@ -144,7 +144,7 @@ Is Celery heavy-weight?
 Celery poses very little overhead both in memory footprint and
 performance.
 
-But please note that the default configuration is not optimized for time nor
+But please note that the default configuration isn't optimized for time nor
 space, see the :ref:`guide-optimizing` guide for more information.
 
 .. _faq-serializion-is-a-choice:
@@ -158,11 +158,11 @@ Celery can support any serialization scheme and has built-in support for
 JSON, YAML, Pickle and msgpack. Also, as every task is associated with a
 content type, you can even send one task using pickle, and another using JSON.
 
-The default serialization format is pickle simply because it is
+The default serialization format is pickle simply because it's
 convenient (it supports sending complex Python objects as task arguments).
 
 If you need to communicate with other languages you should change
-to a serialization format that is suitable for that.
+to a serialization format that's suitable for that.
 
 You can set a global default serializer, the default serializer for a
 particular Task, or even what serializer to use when sending a single task
@@ -189,10 +189,10 @@ See :ref:`brokers` for more information.
 
 Redis as a broker won't perform as well as
 an AMQP broker, but the combination RabbitMQ as broker and Redis as a result
-store is commonly used.  If you have strict reliability requirements you are
+store is commonly used. If you have strict reliability requirements you're
 encouraged to use RabbitMQ or another AMQP broker. Some transports also uses
-polling, so they are likely to consume more resources. However, if you for
-some reason are not able to use AMQP, feel free to use these alternatives.
+polling, so they're likely to consume more resources. However, if you for
+some reason aren't able to use AMQP, feel free to use these alternatives.
 They will probably work fine for most use cases, and note that the above
 points are not specific to Celery; If using Redis/database as a queue worked
 fine for you before, it probably will now. You can always upgrade later
@@ -207,10 +207,10 @@ Is Celery multilingual?
 
 :mod:`~celery.bin.worker` is an implementation of Celery in Python. If the
 language has an AMQP client, there shouldn't be much work to create a worker
-in your language.  A Celery worker is just a program connecting to the broker
+in your language. A Celery worker is just a program connecting to the broker
 to process messages.
 
-Also, there's another way to be language independent, and that is to use REST
+Also, there's another way to be language independent, and that's to use REST
 tasks, instead of your tasks being functions, they're URLs. With this
 information you can even create simple web servers that enable preloading of
 code. Simply expose an endpoint that performs an operation, and create a task
@@ -242,8 +242,8 @@ Transaction Model and Locking`_ in the MySQL user manual.
 
 .. _faq-worker-hanging:
 
-The worker is not doing anything, just hanging
-----------------------------------------------
+The worker isn't doing anything, just hanging
+---------------------------------------------
 
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
             or `Why is Task.delay/apply\* just hanging?`.
@@ -261,10 +261,10 @@ using MySQL, see `MySQL is throwing deadlock errors, what can I do?`_.
 Why is Task.delay/apply\*/the worker just hanging?
 --------------------------------------------------
 
-**Answer:** There is a bug in some AMQP clients that will make it hang if
+**Answer:** There's a bug in some AMQP clients that'll make it hang if
 it's not able to authenticate the current user, the password doesn't match or
-the user does not have access to the virtual host specified. Be sure to check
-your broker logs (for RabbitMQ that is :file:`/var/log/rabbitmq/rabbit.log` on
+the user doesn't have access to the virtual host specified. Be sure to check
+your broker logs (for RabbitMQ that's :file:`/var/log/rabbitmq/rabbit.log` on
 most systems), it usually contains a message describing the reason.
 
 .. _faq-worker-on-freebsd:
@@ -317,7 +317,7 @@ worker process taking the messages hostage. This could happen if the worker
 wasn't properly shut down.
 
 When a message is received by a worker the broker waits for it to be
-acknowledged before marking the message as processed. The broker will not
+acknowledged before marking the message as processed. The broker won't
 re-send that message to another consumer until the consumer is shut down
 properly.
 
@@ -326,7 +326,7 @@ them::
 
     ps auxww | grep celeryd | awk '{print $2}' | xargs kill
 
-You might have to wait a while until all workers have finished the work they're
+You may have to wait a while until all workers have finished the work they're
 doing. If it's still hanging after a long time you can kill them by force
 with::
 
@@ -394,9 +394,9 @@ I've purged messages, but there are still messages left in the queue?
 ---------------------------------------------------------------------
 
 **Answer:** Tasks are acknowledged (removed from the queue) as soon
-as they are actually executed. After the worker has received a task, it will
-take some time until it is actually executed, especially if there are a lot
-of tasks already waiting for execution. Messages that are not acknowledged are
+as they're actually executed. After the worker has received a task, it will
+take some time until it's actually executed, especially if there are a lot
+of tasks already waiting for execution. Messages that aren't acknowledged are
 held on to by the worker until it closes the connection to the broker (AMQP
 server). When that connection is closed (e.g. because the worker was stopped)
 the tasks will be re-sent by the broker to the next available worker (or the
@@ -437,14 +437,14 @@ Security
 Isn't using `pickle` a security concern?
 ----------------------------------------
 
-**Answer**: Yes, indeed it is.
+**Answer**: Yes, indeed it's.
 
-You are right to have a security concern, as this can indeed be a real issue.
-It is essential that you protect against unauthorized
+You're right to have a security concern, as this can indeed be a real issue.
+It's essential that you protect against unauthorized
 access to your broker, databases and other services transmitting pickled
 data.
 
-Note that this is not just something you should be aware of with Celery, for
+Note that this isn't just something you should be aware of with Celery, for
 example also Django uses pickle for its cache client.
 
 For the task messages you can set the :setting:`task_serializer`
@@ -461,7 +461,7 @@ Can messages be encrypted?
 **Answer**: Some AMQP brokers supports using SSL (including RabbitMQ).
 You can enable this using the :setting:`broker_use_ssl` setting.
 
-It is also possible to add additional encryption and security to messages,
+It's also possible to add additional encryption and security to messages,
 if you have a need for this then you should contact the :ref:`mailing-list`.
 
 Is it safe to run :program:`celery worker` as root?
@@ -489,7 +489,7 @@ http://www.rabbitmq.com/faq.html#node-runs-out-of-memory
 .. note::
 
     This is no longer the case, RabbitMQ versions 2.0 and above
-    includes a new persister, that is tolerant to out of memory
+    includes a new persister, that's tolerant to out of memory
     errors. RabbitMQ 2.1 or higher is recommended for Celery.
 
     If you're still running an older version of RabbitMQ and experience
@@ -497,8 +497,8 @@ http://www.rabbitmq.com/faq.html#node-runs-out-of-memory
 
 Misconfiguration of Celery can eventually lead to a crash
 on older version of RabbitMQ. Even if it doesn't crash, this
-can still consume a lot of resources, so it is very
-important that you are aware of the common pitfalls.
+can still consume a lot of resources, so it's
+important that you're aware of the common pitfalls.
 
 * Events.
 
@@ -514,11 +514,11 @@ When running with the AMQP result backend, every task result will be sent
 as a message. If you don't collect these results, they will build up and
 RabbitMQ will eventually run out of memory.
 
-This result backend is now deprecated so you should not be using it.
+This result backend is now deprecated so you shouldn't be using it.
 Use either the RPC backend for rpc-style calls, or a persistent backend
 if you need multi-consumer access to results.
 
-Results expire after 1 day by default.  It may be a good idea
+Results expire after 1 day by default. It may be a good idea
 to lower this value by configuring the :setting:`result_expires`
 setting.
 
@@ -539,13 +539,13 @@ If you don't use the results for a task, make sure you set the
 Can I use Celery with ActiveMQ/STOMP?
 -------------------------------------
 
-**Answer**: No.  It used to be supported by Carrot,
-but is not currently supported in Kombu.
+**Answer**: No. It used to be supported by Carrot,
+but isn't currently supported in Kombu.
 
 .. _faq-non-amqp-missing-features:
 
-What features are not supported when not using an AMQP broker?
---------------------------------------------------------------
+What features aren't supported when not using an AMQP broker?
+-------------------------------------------------------------
 
 This is an incomplete list of features not available when
 using the virtual transports:
@@ -575,7 +575,7 @@ The connection pool is enabled by default since version 2.5.
 :command:`sudo` in a :mod:`subprocess` returns :const:`None`
 ------------------------------------------------------------
 
-There is a :command:`sudo` configuration option that makes it illegal
+There's a :command:`sudo` configuration option that makes it illegal
 for process without a tty to run :command:`sudo`:
 
 .. code-block:: text
@@ -583,22 +583,22 @@ for process without a tty to run :command:`sudo`:
     Defaults requiretty
 
 If you have this configuration in your :file:`/etc/sudoers` file then
-tasks will not be able to call :command:`sudo` when the worker is
-running as a daemon.  If you want to enable that, then you need to remove
+tasks won't be able to call :command:`sudo` when the worker is
+running as a daemon. If you want to enable that, then you need to remove
 the line from :file:`/etc/sudoers`.
 
 See: http://timelordz.com/wiki/Apache_Sudo_Commands
 
 .. _faq-deletes-unknown-tasks:
 
-Why do workers delete tasks from the queue if they are unable to process them?
-------------------------------------------------------------------------------
+Why do workers delete tasks from the queue if they're unable to process them?
+-----------------------------------------------------------------------------
 **Answer**:
 
 The worker rejects unknown tasks, messages with encoding errors and messages
 that don't contain the proper fields (as per the task message protocol).
 
-If it did not reject them they could be redelivered again and again,
+If it didn't reject them they could be redelivered again and again,
 causing a loop.
 
 Recent versions of RabbitMQ has the ability to configure a dead-letter
@@ -611,7 +611,7 @@ Can I call a task by name?
 
 **Answer**: Yes. Use :meth:`@send_task`.
 You can also call a task by name from any language
-that has an AMQP client.
+with an AMQP client.
 
     >>> app.send_task('tasks.add', args=[2, 2], kwargs={})
     <AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d>
@@ -634,7 +634,7 @@ For more information see :ref:`task-request-info`.
 Can I specify a custom task_id?
 -------------------------------
 
-**Answer**: Yes.  Use the `task_id` argument to :meth:`Task.apply_async`::
+**Answer**: Yes. Use the `task_id` argument to :meth:`Task.apply_async`::
 
     >>> task.apply_async(args, kwargs, task_id='…')
 
@@ -642,14 +642,14 @@ Can I specify a custom task_id?
 Can I use decorators with tasks?
 --------------------------------
 
-**Answer**: Yes.  But please see note in the sidebar at :ref:`task-basics`.
+**Answer**: Yes, but please see note in the sidebar at :ref:`task-basics`.
 
 .. _faq-natural-task-ids:
 
 Can I use natural task ids?
 ---------------------------
 
-**Answer**: Yes, but make sure it is unique, as the behavior
+**Answer**: Yes, but make sure it's unique, as the behavior
 for two tasks existing with the same id is undefined.
 
 The world will probably not explode, but at the worst
@@ -733,7 +733,7 @@ See :doc:`userguide/routing` for more information.
 Can I disable prefetching of tasks?
 -----------------------------------
 
-**Answer**: The term prefetch must have confused you, as as in Celery it's only used
+**Answer**: The AMQP term "prefetch" is confusing, as it's only used
 to describe the task prefetching *limits*.
 
 Disabling the prefetch limits is possible, but that means the worker will
@@ -773,8 +773,8 @@ RabbitMQ supports priorities since version 3.5.0.
 Redis transport emulates support of priorities.
 
 You can also prioritize work by routing high priority tasks
-to different workers.  In the real world this may actually work better
-than per message priorities.  You can use this in combination with rate
+to different workers. In the real world this may actually work better
+than per message priorities. You can use this in combination with rate
 limiting to achieve a responsive system.
 
 .. _faq-acks_late-vs-retry:
@@ -786,16 +786,16 @@ Should I use retry or acks_late?
 to use both.
 
 `Task.retry` is used to retry tasks, notably for expected errors that
-is catch-able with the :keyword:`try` block. The AMQP transaction is not used
-for these errors: **if the task raises an exception it is still acknowledged!**
+is catch-able with the :keyword:`try` block. The AMQP transaction isn't used
+for these errors: **if the task raises an exception it's still acknowledged!**
 
 The `acks_late` setting would be used when you need the task to be
 executed again if the worker (for some reason) crashes mid-execution.
-It's important to note that the worker is not known to crash, and if
-it does it is usually an unrecoverable error that requires human
+It's important to note that the worker isn't known to crash, and if
+it does it's usually an unrecoverable error that requires human
 intervention (bug in the worker, or task code).
 
-In an ideal world you could safely retry any task that has failed, but
+In an ideal world you could safely retry any task that's failed, but
 this is rarely the case. Imagine the following task:
 
 .. code-block:: python
@@ -808,7 +808,7 @@ this is rarely the case. Imagine the following task:
         copy_file_to_destination(filename, tmpfile)
 
 If this crashed in the middle of copying the file to its destination
-the world would contain incomplete state. This is not a critical
+the world would contain incomplete state. This isn't a critical
 scenario of course, but you can probably imagine something far more
 sinister. So for ease of programming we have less reliability;
 It's a good default, users who require it and know what they
@@ -850,7 +850,7 @@ Also make sure you kill the main worker process, not its child processes.
 You can direct a kill signal to a specific child process if you know the
 process is currently executing a task the worker shutdown is depending on,
 but this also means that a ``WorkerLostError`` state will be set for the
-task so the task will not run again.
+task so the task won't run again.
 
 Identifying the type of process is easier if you have installed the
 :pypi:`setproctitle` module:
@@ -859,7 +859,7 @@ Identifying the type of process is easier if you have installed the
 
     $ pip install setproctitle
 
-With this library installed you will be able to see the type of process in
+With this library installed you'll be able to see the type of process in
 :command:`ps` listings, but the worker must be restarted for this to take effect.
 
 .. seealso::
@@ -903,7 +903,7 @@ Several database tables are created by default, these relate to
     backward compatibility).
 
     The results are stored in the ``TaskMeta`` and ``TaskSetMeta`` models.
-    *these tables are not created if another result backend is configured*.
+    *these tables aren't created if another result backend is configured*.
 
 .. _faq-windows:
 

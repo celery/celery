@@ -82,7 +82,7 @@ UNAVAIL = frozenset({errno.EAGAIN, errno.EINTR})
 #: Constant sent by child process when started (ready to accept work)
 WORKER_UP = 15
 
-#: A process must have started before this timeout (in secs.) expires.
+#: A process must've started before this timeout (in secs.) expires.
 PROC_ALIVE_TIMEOUT = 4.0
 
 SCHED_STRATEGY_PREFETCH = 1
@@ -163,7 +163,7 @@ def _select(readers=None, writers=None, err=None, timeout=0,
     Returns:
         Tuple[Set, Set, Set]: of ``(readable, writable, again)``, where
         ``readable`` is a set of fds that have data available for read,
-        ``writable`` is a set of fds that is ready to be written to
+        ``writable`` is a set of fds that's ready to be written to
         and ``again`` is a flag that if set means the caller must
         throw away the result and call us again.
     """
@@ -307,7 +307,7 @@ class ResultHandler(_pool.ResultHandler):
         on_state_change = self.on_state_change
         join_exited_workers = self.join_exited_workers
 
-        # flush the processes outqueues until they have all terminated.
+        # flush the processes outqueues until they've all terminated.
         outqueues = set(fileno_to_outq)
         while cache and outqueues and self._state != TERMINATE:
             if check_timeouts is not None:
@@ -386,7 +386,7 @@ class AsynPool(_pool.Pool):
         # synqueue fileno -> process mapping
         self._fileno_to_synq = {}
 
-        # We keep track of processes that have not yet
+        # We keep track of processes that haven't yet
         # sent a WORKER_UP message.  If a process fails to send
         # this message within proc_up_timeout we terminate it
         # and hope the next process will recover.
@@ -564,7 +564,7 @@ class AsynPool(_pool.Pool):
 
         def on_process_up(proc):
             """Called when a process has started."""
-            # If we got the same fd as a previous process then we will also
+            # If we got the same fd as a previous process then we'll also
             # receive jobs in the old buffer, so we need to reset the
             # job._write_to and job._scheduled_for attributes used to recover
             # message boundaries when processes exit.
@@ -603,7 +603,7 @@ class AsynPool(_pool.Pool):
 
             try:
                 if index[fd] is proc:
-                    # fd has not been reused so we can remove it from index.
+                    # fd hasn't been reused so we can remove it from index.
                     index.pop(fd, None)
             except KeyError:
                 pass
@@ -927,7 +927,7 @@ class AsynPool(_pool.Pool):
     def flush(self):
         if self._state == TERMINATE:
             return
-        # cancel all tasks that have not been accepted so that NACK is sent.
+        # cancel all tasks that haven't been accepted so that NACK is sent.
         for job in values(self._cache):
             if not job._accepted:
                 job._cancel()
@@ -957,7 +957,7 @@ class AsynPool(_pool.Pool):
                     for gen in writers:
                         if (gen.__name__ == '_write_job' and
                                 gen_not_started(gen)):
-                            # has not started writing the job so can
+                            # hasn't started writing the job so can
                             # discard the task, but we must also remove
                             # it from the Pool._cache.
                             try:
@@ -1006,7 +1006,7 @@ class AsynPool(_pool.Pool):
     def get_process_queues(self):
         """Get queues for a new process.
 
-        Here we will find an unused slot, as there should always
+        Here we'll find an unused slot, as there should always
         be one available when we start a new process.
         """
         return next(q for q, owner in items(self._queues)
@@ -1028,8 +1028,8 @@ class AsynPool(_pool.Pool):
         """Creates new in, out (and optionally syn) queues,
         returned as a tuple."""
         # NOTE: Pipes must be set O_NONBLOCK at creation time (the original
-        # fd), otherwise it will not be possible to change the flags until
-        # there is an actual reader/writer on the other side.
+        # fd), otherwise it won't be possible to change the flags until
+        # there's an actual reader/writer on the other side.
         inq = _SimpleQueue(wnonblock=True)
         outq = _SimpleQueue(rnonblock=True)
         synq = None
@@ -1106,7 +1106,7 @@ class AsynPool(_pool.Pool):
 
     @staticmethod
     def _stop_task_handler(task_handler):
-        """Called at shutdown to tell processes that we are shutting down."""
+        """Called at shutdown to tell processes that we're shutting down."""
         for proc in task_handler.pool:
             try:
                 setblocking(proc.inq._writer, 1)
@@ -1145,14 +1145,14 @@ class AsynPool(_pool.Pool):
         # this is only used by the original pool which uses a shared
         # queue for all processes.
 
-        # these attributes makes no sense for us, but we will still
+        # these attributes makes no sense for us, but we'll still
         # have to initialize them.
         self._inqueue = self._outqueue = \
             self._quick_put = self._quick_get = self._poll_result = None
 
     def process_flush_queues(self, proc):
         """Flushes all queues, including the outbound buffer, so that
-        all tasks that have not been started will be discarded.
+        all tasks that haven't been started will be discarded.
 
         In Celery this is called whenever the transport connection is lost
         (consumer restart), and when a process is terminated.

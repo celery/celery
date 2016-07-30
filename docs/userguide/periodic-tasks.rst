@@ -10,7 +10,7 @@
 Introduction
 ============
 
-:program:`celery beat` is a scheduler.  It kicks off tasks at regular intervals,
+:program:`celery beat` is a scheduler. It kicks off tasks at regular intervals,
 which are then executed by the worker nodes available in the cluster.
 
 By default the entries are taken from the :setting:`beat_schedule` setting,
@@ -18,8 +18,8 @@ but custom stores can also be used, like storing the entries
 in an SQL database.
 
 You have to ensure only a single scheduler is running for a schedule
-at a time, otherwise you would end up with duplicate tasks.  Using
-a centralized approach means the schedule does not have to be synchronized,
+at a time, otherwise you'd end up with duplicate tasks. Using
+a centralized approach means the schedule doesn't have to be synchronized,
 and the service can operate without using locks.
 
 .. _beat-timezones:
@@ -40,13 +40,13 @@ An example time zone could be `Europe/London`:
 This setting must be added to your app, either by configuration it directly
 using (``app.conf.timezone = 'Europe/London'``), or by adding
 it to your configuration module if you have set one up using
-``app.config_from_object``.  See :ref:`celerytut-configuration` for
+``app.config_from_object``. See :ref:`celerytut-configuration` for
 more information about configuration options.
 
 The default scheduler (storing the schedule in the :file:`celerybeat-schedule`
 file) will automatically detect that the time zone has changed, and so will
 reset the schedule itself, but other schedulers may not be so smart (e.g. the
-Django database scheduler, see below) and in that case you will have to reset the
+Django database scheduler, see below) and in that case you'll have to reset the
 schedule manually.
 
 .. admonition:: Django Users
@@ -58,7 +58,7 @@ schedule manually.
     will be used, or you can specify a custom time zone for Celery alone
     by using the :setting:`timezone` setting.
 
-    The database scheduler will not reset when timezone related settings
+    The database scheduler won't reset when timezone related settings
     change, so you must do this manually:
 
     .. code-block:: console
@@ -102,7 +102,7 @@ beat schedule list.
 
 
 Setting these up from within the :data:`~@on_after_configure` handler means
-that we will not evaluate the app at module level when using ``test.s()``.
+that we'll not evaluate the app at module level when using ``test.s()``.
 
 The :meth:`~@add_periodic_task` function will add the entry to the
 :setting:`beat_schedule` setting behind the scenes, which also
@@ -124,8 +124,8 @@ Example: Run the `tasks.add` task every 30 seconds.
 
 .. note::
 
-    If you are wondering where these settings should go then
-    please see :ref:`celerytut-configuration`.  You can either
+    If you're wondering where these settings should go then
+    please see :ref:`celerytut-configuration`. You can either
     set these options on your app directly or you can keep
     a separate module for configuration.
 
@@ -139,8 +139,8 @@ after the last run).
 
 A Crontab like schedule also exists, see the section on `Crontab schedules`_.
 
-Like with :command:`cron`, the tasks may overlap if the first task does not complete
-before the next.  If that is a concern you should use a locking
+Like with :command:`cron`, the tasks may overlap if the first task doesn't complete
+before the next. If that's a concern you should use a locking
 strategy to ensure only one instance can run at a time (see for example
 :ref:`cookbook-task-serial`).
 
@@ -185,7 +185,7 @@ Available Fields
     second, minute, hour or day depending on the period of the
     :class:`~datetime.timedelta`.
 
-    If `relative` is true the frequency is not rounded and will be
+    If `relative` is true the frequency isn't rounded and will be
     relative to the time when :program:`celery beat` was started.
 
 .. _beat-crontab:
@@ -210,7 +210,9 @@ the :class:`~celery.schedules.crontab` schedule type:
         },
     }
 
-The syntax of these Crontab expressions are very flexible.  Some examples:
+The syntax of these Crontab expressions are very flexible.
+
+Some examples:
 
 +-----------------------------------------+--------------------------------------------+
 | **Example**                             | **Meaning**                                |
@@ -317,12 +319,12 @@ Possible event types are:
 |                                         | is no longer completely dark. This is when |
 |                                         | the sun is 18 degrees below the horizon.   |
 +-----------------------------------------+--------------------------------------------+
-| ``dawn_nautical``                       | Execute when there is enough sunlight for  |
+| ``dawn_nautical``                       | Execute when there's enough sunlight for   |
 |                                         | the horizon and some objects to be         |
 |                                         | distinguishable; formally, when the sun is |
 |                                         | 12 degrees below the horizon.              |
 +-----------------------------------------+--------------------------------------------+
-| ``dawn_civil``                          | Execute when there is enough light for     |
+| ``dawn_civil``                          | Execute when there's enough light for      |
 |                                         | objects to be distinguishable so that      |
 |                                         | outdoor activities can commence;           |
 |                                         | formally, when the Sun is 6 degrees below  |
@@ -386,7 +388,7 @@ To start the :program:`celery beat` service:
 You can also start embed `beat` inside the worker by enabling
 workers :option:`-B <celery worker -B>` option, this is convenient if you'll
 never run more than one worker node, but it's not commonly used and for that
-reason is not recommended for production use:
+reason isn't recommended for production use:
 
 .. code-block:: console
 

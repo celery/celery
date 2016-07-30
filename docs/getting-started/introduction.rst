@@ -8,8 +8,8 @@
     :local:
     :depth: 1
 
-What is a Task Queue?
-=====================
+What's a Task Queue?
+====================
 
 Task queues are used as a mechanism to distribute work across threads or
 machines.
@@ -18,14 +18,14 @@ A task queue's input is a unit of work called a task. Dedicated worker
 processes constantly monitor task queues for new work to perform.
 
 Celery communicates via messages, usually using a broker
-to mediate between clients and workers.  To initiate a task, a client adds a
+to mediate between clients and workers. To initiate a task, a client adds a
 message to the queue, which the broker then delivers to a worker.
 
 A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
-language.  In addition to Python there's node-celery_ for Node.js,
+language. In addition to Python there's node-celery_ for Node.js,
 and a `PHP client`_.
 
 Language interoperability can also be achieved
@@ -46,7 +46,7 @@ What do I need?
     This is the last version to support Python 2.7,
     and from the next version (Celery 5.x) Python 3.6 or newer is required.
 
-    If you are running an older version of Python, you need to be running
+    If you're running an older version of Python, you need to be running
     an older version of Celery:
 
     - Python 2.6: Celery series 3.1 or earlier.
@@ -54,8 +54,8 @@ What do I need?
     - Python 2.4 was Celery series 2.2 or earlier.
 
     Celery is a project with minimal funding,
-    so we do not support Microsoft Windows.
-    Please do not open any issues related to that platform.
+    so we don't support Microsoft Windows.
+    Please don't open any issues related to that platform.
 
 *Celery* requires a message transport to send and receive messages.
 The RabbitMQ and Redis broker transports are feature complete,
@@ -203,7 +203,7 @@ Features
         - **User Components**
 
             Each worker component can be customized, and additional components
-            can be defined by the user.  The worker is built up using "bootsteps" — a
+            can be defined by the user. The worker is built up using "bootsteps" — a
             dependency graph enabling fine grained control of the worker's
             internals.
 
@@ -230,7 +230,7 @@ integration packages:
     | `Tornado`_         | `tornado-celery`_      |
     +--------------------+------------------------+
 
-The integration packages are not strictly necessary, but they can make
+The integration packages aren't strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
 database connections at :manpage:`fork(2)`.
 

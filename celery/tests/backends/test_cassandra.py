@@ -126,7 +126,7 @@ class test_CassandraBackend(AppCase):
         self.assertIsNone(x._connection)
         self.assertIsNone(x._session)
 
-        x.process_cleanup()  # should not raise
+        x.process_cleanup()  # shouldn't raise
 
     def test_please_free_memory(self):
         # Ensure that Cluster object IS shut down.

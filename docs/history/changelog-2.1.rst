@@ -20,17 +20,17 @@ Fixes
 -----
 
 * Execution options to `apply_async` now takes precedence over options
-  returned by active routers.  This was a regression introduced recently
+  returned by active routers. This was a regression introduced recently
   (Issue #244).
 
 * curses monitor: Long arguments are now truncated so curses
-  doesn't crash with out of bounds errors.  (Issue #235).
+  doesn't crash with out of bounds errors (Issue #235).
 
 * multi: Channel errors occurring while handling control commands no
   longer crash the worker but are instead logged with severity error.
 
 * SQLAlchemy database backend: Fixed a race condition occurring when
-  the client wrote the pending state.  Just like the Django database backend,
+  the client wrote the pending state. Just like the Django database backend,
   it does no longer save the pending state (Issue #261 + Issue #262).
 
 * Error email body now uses `repr(exception)` instead of `str(exception)`,
@@ -50,7 +50,7 @@ Fixes
   the message.
 
 * `TaskRequest.on_failure` now encodes traceback using the current file-system
-   encoding.  (Issue #286).
+   encoding (Issue #286).
 
 * `EagerResult` can now be pickled (Issue #288).
 
@@ -156,9 +156,9 @@ Fixes
 
     `got multiple values for keyword argument 'concurrency'`.
 
-    Additional command-line arguments are now ignored, and does not
-    produce this error.  However -- we do reserve the right to use
-    positional arguments in the future, so please do not depend on this
+    Additional command-line arguments are now ignored, and doesn't
+    produce this error. However -- we do reserve the right to use
+    positional arguments in the future, so please don't depend on this
     behavior.
 
 * ``celerybeat``: Now respects routers and task execution options again.
@@ -182,7 +182,7 @@ News
   :setting:`CELERYD_REDIRECT_STDOUTS_LEVEL` settings.
 
     :setting:`CELERY_REDIRECT_STDOUTS` is used by the worker and
-    beat.  All output to `stdout` and `stderr` will be
+    beat. All output to `stdout` and `stderr` will be
     redirected to the current logger if enabled.
 
     :setting:`CELERY_REDIRECT_STDOUTS_LEVEL` decides the log level used and is
@@ -267,8 +267,8 @@ Important Notes
 
 * Celery is now following the versioning semantics defined by `semver`_.
 
-    This means we are no longer allowed to use odd/even versioning semantics
-    By our previous versioning scheme this stable release should have
+    This means we're no longer allowed to use odd/even versioning semantics
+    By our previous versioning scheme this stable release should've
     been version 2.2.
 
 .. _`semver`: http://semver.org
@@ -279,7 +279,7 @@ Important Notes
   if the database result backend is used.
 
 * :pypi:`django-celery` now comes with a monitor for the Django Admin
-  interface.  This can also be used if you're not a Django user.
+  interface. This can also be used if you're not a Django user.
   (Update: Django-Admin monitor has been replaced with Flower, see the
   Monitoring guide).
 
@@ -330,8 +330,8 @@ News
     If enabled, the worker sends messages about what the worker is doing.
     These messages are called "events".
     The events are used by real-time monitors to show what the
-    cluster is doing, but they are not very useful for monitoring
-    over a longer period of time.  Snapshots
+    cluster is doing, but they're not very useful for monitoring
+    over a longer period of time. Snapshots
     lets you take "pictures" of the clusters state at regular intervals.
     This can then be stored in a database to generate statistics
     with, or even monitoring over longer time periods.
@@ -423,7 +423,7 @@ News
         >>> task.apply_async(args, kwargs,
         ...                  expires=datetime.now() + timedelta(days=1)
 
-    When a worker receives a task that has been expired it will be
+    When a worker receives a task that's been expired it will be
     marked as revoked (:exc:`~@TaskRevokedError`).
 
 * Changed the way logging is configured.
@@ -515,13 +515,13 @@ News
 
     See issue #182.
 
-* worker: Now emits a warning if there is already a worker node using the same
+* worker: Now emits a warning if there's already a worker node using the same
   name running on the same virtual host.
 
 * AMQP result backend: Sending of results are now retried if the connection
   is down.
 
-* AMQP result backend: `result.get()`: Wait for next state if state is not
+* AMQP result backend: `result.get()`: Wait for next state if state isn't
     in :data:`~celery.states.READY_STATES`.
 
 * TaskSetResult now supports subscription.
@@ -569,7 +569,7 @@ News
     See issue #134.
 
 * Implemented `AsyncResult.forget` for SQLAlchemy/Memcached/Redis/Tokyo Tyrant
-  backends.  (Forget and remove task result).
+  backends (forget and remove task result).
 
     See issue #184.
 
@@ -738,7 +738,7 @@ Experimental
 
 * worker: Added `--pidfile` argument.
 
-   The worker will write its pid when it starts.  The worker will
+   The worker will write its pid when it starts. The worker will
    not be started if this file exists and the pid contained is still alive.
 
 * Added generic init.d script using `celeryd-multi`

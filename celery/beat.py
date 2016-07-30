@@ -150,7 +150,7 @@ class ScheduleEntry(object):
             # in the scheduler heap, the order is decided by the
             # preceding members of the tuple ``(time, priority, entry)``.
             #
-            # If all that is left to order on is the entry then it can
+            # If all that's left to order on is the entry then it can
             # just as well be random.
             return id(self) < id(other)
         return NotImplemented
@@ -161,13 +161,13 @@ class Scheduler(object):
 
     The :program:`celery beat` program may instantiate this class
     multiple times for introspection purposes, but then with the
-    ``lazy`` argument set.  It is important for subclasses to
+    ``lazy`` argument set.  It's important for subclasses to
     be idempotent when this argument is set.
 
     Arguments:
         schedule (~celery.schedules.schedule): see :attr:`schedule`.
         max_interval (int): see :attr:`max_interval`.
-        lazy (bool): Do not set up the schedule.
+        lazy (bool): Don't set up the schedule.
     """
 
     Entry = ScheduleEntry
@@ -236,7 +236,7 @@ class Scheduler(object):
     def tick(self, event_t=event_t, min=min,
              heappop=heapq.heappop, heappush=heapq.heappush,
              heapify=heapq.heapify, mktime=time.mktime):
-        """Run a tick, that is one iteration of the scheduler.
+        """Run a tick - one iteration of the scheduler.
 
         Executes one due task per call.
 

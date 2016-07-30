@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Old deprecated task module.
 
-This is the old task module, it should not be used anymore,
+This is the old task module, it shouldn't be used anymore,
 import from the main 'celery' module instead.
 If you're looking for the decorator implementation then that's in
 ``celery.app.base.Celery.task``.

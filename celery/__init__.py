@@ -113,7 +113,7 @@ def _patch_gevent():
     monkey.patch_all()
     if version_info[0] == 0:  # pragma: no cover
         # Signals aren't working in gevent versions <1.0,
-        # and are not monkey patched by patch_all()
+        # and aren't monkey patched by patch_all()
         _signal = __import__('signal')
         _signal.signal = gsignal
 

@@ -61,7 +61,7 @@ Fixes
          'routing_key': 'tasks.add',
          'serializer': 'json'}
 
-    This was not the case before: the values
+    This wasn't the case before: the values
     in :setting:`CELERY_QUEUES` would take precedence.
 
 * Worker crashed if the value of :setting:`CELERY_TASK_ERROR_WHITELIST` was
@@ -73,7 +73,7 @@ Fixes
 * `AsyncResult.traceback`: Now returns :const:`None`, instead of raising
   :exc:`KeyError` if traceback is missing.
 
-* :class:`~celery.task.control.inspect`: Replies did not work correctly
+* :class:`~celery.task.control.inspect`: Replies didn't work correctly
   if no destination was specified.
 
 * Can now store result/meta-data for custom states.
@@ -86,8 +86,8 @@ Fixes
 
     See issue #160.
 
-* Worker: On macOS it is not possible to run `os.exec*` in a process
-  that is threaded.
+* Worker: On macOS it isn't possible to run `os.exec*` in a process
+  that's threaded.
 
       This breaks the SIGHUP restart handler,
       and is now disabled on macOS, emitting a warning instead.
@@ -105,7 +105,7 @@ Fixes
     This is now fixed by using a workaround.
     See issue #143.
 
-* Debian init-scripts: Commands should not run in a sub shell
+* Debian init-scripts: Commands shouldn't run in a sub shell
 
     See issue #163.
 
@@ -185,7 +185,7 @@ Documentation
     this would make each child process start a new worker instance when
     the terminal window was closed :/
 
-* Worker: Do not install SIGHUP handler if running from a terminal.
+* Worker: Don't install SIGHUP handler if running from a terminal.
 
     This fixes the problem where the worker is launched in the background
     when closing the terminal.
@@ -280,7 +280,7 @@ Documentation
 * multiprocessing.pool: Now handles encoding errors, so that pickling errors
   doesn't crash the worker processes.
 
-* The remote control command replies was not working with RabbitMQ 1.8.0's
+* The remote control command replies wasn't working with RabbitMQ 1.8.0's
   stricter equivalence checks.
 
     If you've already hit this problem you may have to delete the
@@ -316,7 +316,7 @@ Documentation
     is met, it will take at most 0.8 seconds for the task to be moved to the
     ready queue.
 
-* Pool: Supervisor did not release the semaphore.
+* Pool: Supervisor didn't release the semaphore.
 
     This would lead to a deadlock if all workers terminated prematurely.
 
@@ -351,7 +351,7 @@ Documentation
 
         CELERY_ROUTES = {'feed.tasks.import_feed': 'feeds'}
 
-* `CREATE_MISSING_QUEUES` was not honored by apply_async.
+* `CREATE_MISSING_QUEUES` wasn't honored by apply_async.
 
 * New remote control command: `stats`
 
@@ -374,7 +374,7 @@ Documentation
 
     Gives a list of tasks currently being executed by the worker.
     By default arguments are passed through repr in case there
-    are arguments that is not JSON encodable. If you know
+    are arguments that's not JSON encodable. If you know
     the arguments are JSON safe, you can pass the argument `safe=True`.
 
     Example reply:
@@ -476,8 +476,8 @@ Django integration has been moved to a separate package: `django-celery`_.
     =====================================  =====================================
 
 Importing :mod:`djcelery` will automatically setup Celery to use Django loader.
-loader.  It does this by setting the :envvar:`CELERY_LOADER` environment variable to
-`"django"` (it won't change it if a loader is already set.)
+loader. It does this by setting the :envvar:`CELERY_LOADER` environment variable to
+`"django"` (it won't change it if a loader is already set).
 
 When the Django loader is used, the "database" and "cache" result backend
 aliases will point to the :mod:`djcelery` backends instead of the built-in backends,
@@ -568,7 +568,7 @@ Backward incompatible changes
   instead of raising :exc:`ImportError`.
 
     The worker raises :exc:`~@ImproperlyConfigured` if the configuration
-    is not set up. This makes it possible to use `--help` etc., without having a
+    isn't set up. This makes it possible to use `--help` etc., without having a
     working configuration.
 
     Also this makes it possible to use the client side of celery without being
@@ -807,7 +807,7 @@ News
     * :setting:`CELERYD_TASK_SOFT_TIME_LIMIT`
 
         Soft time limit. The :exc:`~@SoftTimeLimitExceeded`
-        exception will be raised when this is exceeded.  The task can catch
+        exception will be raised when this is exceeded. The task can catch
         this to e.g. clean up before the hard time limit comes.
 
     New command-line arguments to ``celeryd`` added:

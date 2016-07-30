@@ -34,7 +34,7 @@ Naming
 - Follows :pep:`8`.
 
 - Class names must be `CamelCase`.
-- but not if they are verbs, verbs shall be `lower_case`:
+- but not if they're verbs, verbs shall be `lower_case`:
 
     .. code-block:: python
 
@@ -62,8 +62,8 @@ Naming
     .. note::
 
         Sometimes it makes sense to have a class mask as a function,
-        and there is precedence for this in the Python standard library (e.g.
-        :class:`~contextlib.contextmanager`).  Celery examples include
+        and there's precedence for this in the Python standard library (e.g.
+        :class:`~contextlib.contextmanager`). Celery examples include
         :class:`~celery.signature`, :class:`~celery.chord`,
         ``inspect``, :class:`~kombu.utils.functional.promise` and more..
 
@@ -148,7 +148,7 @@ Composites
 ~~~~~~~~~~
 
 Similarly to exceptions, composite classes should be override-able by
-inheritance and/or instantiation.  Common sense can be used when
+inheritance and/or instantiation. Common sense can be used when
 selecting what classes to include, but often it's better to add one
 too many: predicting what users need to override is hard (this has
 saved us from many a monkey patch).
@@ -174,11 +174,11 @@ In the beginning Celery was developed for Django, simply because
 this enabled us get the project started quickly, while also having
 a large potential user base.
 
-In Django there is a global settings object, so multiple Django projects
+In Django there's a global settings object, so multiple Django projects
 can't co-exist in the same process space, this later posed a problem
 for using Celery with frameworks that doesn't have this limitation.
 
-Therefore the app concept was introduced.  When using apps you use 'celery'
+Therefore the app concept was introduced. When using apps you use 'celery'
 objects instead of importing things from celery sub-modules, this
 (unfortunately) also means that Celery essentially has two API's.
 
@@ -231,7 +231,7 @@ Module Overview
 
 - celery.loaders
 
-    Every app must have a loader.  The loader decides how configuration
+    Every app must have a loader. The loader decides how configuration
     is read, what happens when the worker starts, when a task starts and ends,
     and so on.
 

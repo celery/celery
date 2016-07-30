@@ -78,15 +78,15 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: --without-gossip
 
-    Do not subscribe to other workers events.
+    Don't subscribe to other workers events.
 
 .. cmdoption:: --without-mingle
 
-    Do not synchronize with other workers at start-up.
+    Don't synchronize with other workers at start-up.
 
 .. cmdoption:: --without-heartbeat
 
-    Do not send event heartbeats.
+    Don't send event heartbeats.
 
 .. cmdoption:: --heartbeat-interval
 
@@ -136,7 +136,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
     Optional file used to store the process pid.
 
-    The program will not start if this file already exists
+    The program won't start if this file already exists
     and the pid is still alive.
 
 .. cmdoption:: --uid

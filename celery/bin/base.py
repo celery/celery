@@ -285,7 +285,7 @@ class Command(object):
         Matching is case insensitive.
 
         Arguments:
-            q (str): the question to ask (do not include questionark)
+            q (str): the question to ask (don't include questionark)
             choice (Tuple[str]): tuple of possible choices, must be lowercase.
             default (Any): Default value if any.
         """

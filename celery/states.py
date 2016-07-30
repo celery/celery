@@ -25,7 +25,7 @@ Set of states meaning the task result is ready (has been executed).
 UNREADY_STATES
 ~~~~~~~~~~~~~~
 
-Set of states meaning the task result is not ready (has not been executed).
+Set of states meaning the task result is not ready (hasn't been executed).
 
 .. state:: EXCEPTION_STATES
 

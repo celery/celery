@@ -26,7 +26,7 @@ end up having world-writable permissions.
 In practice this means that local users will be able to modify and possibly
 corrupt the files created by user tasks.
 
-This is not immediately exploitable but can be if those files are later
+This isn't immediately exploitable but can be if those files are later
 evaluated as a program, for example a task that creates Python program files
 that are later executed.
 
@@ -56,7 +56,7 @@ NOTE:
     then files may already have been created with insecure permissions.
 
     So after upgrading, or using the workaround, then please make sure
-    that files already created are not world writable.
+    that files already created aren't world writable.
 
 To work around the issue you can set a custom umask using the ``--umask``
 argument:
@@ -83,7 +83,7 @@ with updated packages.
 Please direct questions to the celery-users mailing-list:
 http://groups.google.com/group/celery-users/,
 
-or if you are planning to report a new security related issue we request that
+or if you're planning to report a new security related issue we request that
 you keep the information confidential by contacting
 security@celeryproject.org instead.
 

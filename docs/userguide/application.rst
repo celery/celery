@@ -32,10 +32,10 @@ current main module (``__main__``), and the memory address of the object
 Main Name
 =========
 
-Only one of these is important, and that is the main module name.
+Only one of these is important, and that's the main module name.
 Let's look at why that is.
 
-When you send a task message in Celery, that message will not contain
+When you send a task message in Celery, that message won't contain
 any source code, but only the name of the task you want to execute.
 This works similarly to how host names work on the internet: every worker
 maintains a mapping of task names to their actual functions, called the *task
@@ -58,7 +58,7 @@ Whenever you define a task, that task will also be added to the local registry:
     >>> app.tasks['__main__.add']
     <@task: __main__.add>
 
-and there you see that ``__main__`` again; whenever Celery is not able
+and there you see that ``__main__`` again; whenever Celery isn't able
 to detect what module the function belongs to, it uses the main module
 name to generate the beginning of the task name.
 
@@ -113,8 +113,8 @@ You can specify another name for the main module:
 Configuration
 =============
 
-There are several options you can set that will change how
-Celery works.  These options can be set directly on the app instance,
+There are several options you can set that'll change how
+Celery works. These options can be set directly on the app instance,
 or you can use a dedicated configuration module.
 
 The configuration is available as :attr:`@conf`:
@@ -163,7 +163,7 @@ from a configuration object.
 This can be a configuration module, or any object with configuration attributes.
 
 Note that any configuration that was previously set will be reset when
-:meth:`~@config_from_object` is called.  If you want to set additional
+:meth:`~@config_from_object` is called. If you want to set additional
 configuration you should do so after.
 
 Example 1: Using the name of a module
@@ -197,12 +197,12 @@ Example 2: Passing an actual module object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can also pass an already imported module object, but this
-is not always recommended.
+isn't always recommended.
 
 .. tip::
 
     Using the name of a module is recommended as this means the module does
-    not need to be serialized when the prefork pool is used.  If you're
+    not need to be serialized when the prefork pool is used. If you're
     experiencing configuration problems or pickle errors then please
     try using the name of a module instead.
 
@@ -275,7 +275,7 @@ one is :meth:`~celery.app.utils.Settings.humanize`:
 
     >>> app.conf.humanize(with_defaults=False, censored=True)
 
-This method returns the configuration as a tabulated string.  This will
+This method returns the configuration as a tabulated string. This will
 only contain changes to the configuration by default, but you can include the
 built-in default keys and values by enabling the ``with_defaults`` argument.
 
@@ -286,7 +286,7 @@ can use the :meth:`~celery.app.utils.Settings.table` method:
 
     >>> app.conf.table(with_defaults=False, censored=True)
 
-Please note that Celery will not be able to remove all sensitive information,
+Please note that Celery won't be able to remove all sensitive information,
 as it merely uses a regular expression to search for commonly named keys.
 If you add custom settings containing sensitive information you should name
 the keys using a name that Celery identifies as secret.
@@ -299,7 +299,7 @@ these sub-strings:
 Laziness
 ========
 
-The application instance is lazy, meaning it will not be evaluated
+The application instance is lazy, meaning it won't be evaluated
 until it's actually needed.
 
 Creating a :class:`@Celery` instance will only do the following:
@@ -310,12 +310,12 @@ Creating a :class:`@Celery` instance will only do the following:
        argument was disabled)
     #. Call the :meth:`@on_init` callback (does nothing by default).
 
-The :meth:`@task` decorators do not create the tasks at the point when
-the task is defined, instead it will defer the creation
+The :meth:`@task` decorators don't create the tasks at the point when
+the task is defined, instead it'll defer the creation
 of the task to happen either when the task is used, or after the
 application has been *finalized*,
 
-This example shows how the task is not created until
+This example shows how the task isn't created until
 you use the task, or access an attribute (in this case :meth:`repr`):
 
 .. code-block:: pycon
@@ -359,15 +359,15 @@ Finalizing the object will:
 
 .. topic:: The "default app".
 
-    Celery did not always have applications, it used to be that
+    Celery didn't always have applications, it used to be that
     there was only a module-based API, and for backwards compatibility
     the old API is still there until the release of Celery 5.0.
 
-    Celery always creates a special app that is the "default app",
+    Celery always creates a special app - the "default app",
     and this is used if no custom application has been instantiated.
 
     The :mod:`celery.task` module is there to accommodate the old API,
-    and should not be used if you use a custom app. You should
+    and shouldn't be used if you use a custom app. You should
     always use the methods on the app instance, not the module based API.
 
     For example, the old Task base class enables many compatibility
@@ -516,7 +516,7 @@ class: :class:`celery.Task`.
     default request used when a task is called directly.
 
 The neutral base class is special because it's not bound to any specific app
-yet.  Once a task is bound to an app it will read configuration to set default
+yet. Once a task is bound to an app it'll read configuration to set default
 values and so on.
 
 To realize a base class you need to create a task using the :meth:`@task`

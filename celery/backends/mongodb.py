@@ -96,7 +96,7 @@ class MongoBackend(BaseBackend):
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(
                     'MongoDB backend settings should be grouped in a dict')
-            config = dict(config)  # do not modify original
+            config = dict(config)  # don't modify original
 
             if 'host' in config or 'port' in config:
                 # these should take over uri conf

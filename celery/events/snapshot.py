@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Periodically store events in a database.
 
-Consuming the events as a stream is not always suitable
+Consuming the events as a stream isn't always suitable
 so this module implements a system to take snapshots of the
-state of a cluster at regular intervals.  There is a full
+state of a cluster at regular intervals.  There's a full
 implementation of this writing the snapshots to a database
 in :mod:`djcelery.snapshots` in the `django-celery` distribution.
 """

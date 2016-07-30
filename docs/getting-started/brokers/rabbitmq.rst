@@ -10,7 +10,7 @@
 Installation & Configuration
 ============================
 
-RabbitMQ is the default broker so it does not require any additional
+RabbitMQ is the default broker so it doesn't require any additional
 dependencies or initial configuration, other than the URL location of
 the broker instance you want to use:
 
@@ -107,7 +107,7 @@ shell (e.g. :file:`.bash_profile` or :file:`.profile`).
 Configuring the system host name
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you're using a DHCP server that is giving you a random host name, you need
+If you're using a DHCP server that's giving you a random host name, you need
 to permanently configure the host name. This is because RabbitMQ uses the host name
 to communicate with nodes.
 

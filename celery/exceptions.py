@@ -24,7 +24,7 @@ __all__ = [
 ]
 
 UNREGISTERED_FMT = """\
-Task of kind {0} is not registered, please make sure it's imported.\
+Task of kind {0} never registered, please make sure it's imported.\
 """
 
 
@@ -125,7 +125,7 @@ class ImproperlyConfigured(ImportError):
 
 @python_2_unicode_compatible
 class NotRegistered(KeyError, CeleryError):
-    """The task is not registered."""
+    """The task ain't registered."""
 
     def __repr__(self):
         return UNREGISTERED_FMT.format(self)
@@ -148,7 +148,7 @@ class TaskRevokedError(CeleryError):
 
 
 class NotConfigured(CeleryWarning):
-    """Celery has not been configured, as no config module has been found."""
+    """Celery hasn't been configured, as no config module has been found."""
 
 
 class AlwaysEagerIgnored(CeleryWarning):
@@ -156,11 +156,11 @@ class AlwaysEagerIgnored(CeleryWarning):
 
 
 class InvalidTaskError(CeleryError):
-    """The task has invalid data or is not properly constructed."""
+    """The task has invalid data or ain't properly constructed."""
 
 
 class IncompleteStream(CeleryError):
-    """Found the end of a stream of data, but the data is not yet complete."""
+    """Found the end of a stream of data, but the data isn't complete."""
 
 
 class ChordError(CeleryError):

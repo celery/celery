@@ -13,25 +13,25 @@ called (sends a message), and what happens when a worker receives that message.
 Every task class has a unique name, and this name is referenced in messages
 so that the worker can find the right function to execute.
 
-A task message does not disappear
+A task message doesn't disappear
 until the message has been :term:`acknowledged` by a worker. A worker can reserve
 many messages in advance and even if the worker is killed -- caused by power failure
 or otherwise -- the message will be redelivered to another worker.
 
 Ideally task functions should be :term:`idempotent`, which means that
-the function will not cause unintended effects even if called
+the function won't cause unintended effects even if called
 multiple times with the same arguments.
 Since the worker cannot detect if your tasks are idempotent, the default
 behavior is to acknowledge the message in advance, before it's executed,
-so that a task that has already been started is never executed again..
+so that a task that's already been started is never executed again..
 
 If your task is idempotent you can set the :attr:`acks_late` option
 to have the worker acknowledge the message *after* the task returns
-instead.  See also the FAQ entry :ref:`faq-acks_late-vs-retry`.
+instead. See also the FAQ entry :ref:`faq-acks_late-vs-retry`.
 
 --
 
-In this chapter you will learn all about defining tasks,
+In this chapter you'll learn all about defining tasks,
 and this is the **table of contents**:
 
 .. contents::
@@ -66,10 +66,10 @@ these can be specified as arguments to the decorator:
         User.objects.create(username=username, password=password)
 
 
-.. sidebar:: How do I import the task decorator? And what is "app"?
+.. sidebar:: How do I import the task decorator? And what's "app"?
 
     The task decorator is available on your :class:`@Celery` application instance,
-    if you don't know what that is then please read :ref:`first-steps`.
+    if you don't know what this is then please read :ref:`first-steps`.
 
     If you're using Django or are still using the "old" module based celery API,
     then you can import the task decorator like this:
@@ -139,7 +139,7 @@ Names
 =====
 
 Every task must have a unique name, and a new name
-will be generated out of the function name if a custom name is not provided.
+will be generated out of the function name if a custom name isn't provided.
 
 For example:
 
@@ -169,7 +169,7 @@ You can tell the name of the task by investigating its name attribute:
     >>> add.name
     'tasks.add'
 
-Which is exactly the name that would have been generated anyway,
+Which is exactly the name that would've been generated anyway,
 if the module name is :file:`tasks.py`:
 
 :file:`tasks.py`:
@@ -189,7 +189,7 @@ if the module name is :file:`tasks.py`:
 Automatic naming and relative imports
 -------------------------------------
 
-Relative imports and automatic name generation do not go well together,
+Relative imports and automatic name generation don't go well together,
 so if you're using relative imports you should set the name explicitly.
 
 For example if the client imports the module ``"myapp.tasks"``
@@ -230,7 +230,7 @@ since the worker and the client imports the modules under different names:
 So for this reason you must be consistent in how you
 import modules, which is also a Python best practice.
 
-Similarly, you should not use old-style relative imports:
+Similarly, you shouldn't use old-style relative imports:
 
 .. code-block:: python
 
@@ -262,7 +262,7 @@ Changing the automatic naming behavior
 
 .. versionadded:: 4.0
 
-There are some cases when the default automatic naming is not suitable.
+There are some cases when the default automatic naming isn't suitable.
 Consider you have many tasks within many different modules::
 
     project/
@@ -339,7 +339,7 @@ The request defines the following attributes:
           This is in UTC time (depending on the :setting:`enable_utc`
           setting).
 
-:logfile: The file the worker logs to.  See `Logging`_.
+:logfile: The file the worker logs to. See `Logging`_.
 
 :loglevel: The current log level used.
 
@@ -347,12 +347,12 @@ The request defines the following attributes:
 
 :delivery_info: Additional message delivery information. This is a mapping
                 containing the exchange and routing key used to deliver this
-                task.  Used by e.g. :meth:`~@Task.retry`
+                task. Used by e.g. :meth:`~@Task.retry`
                 to resend the task to the same destination queue.
                 Availability of keys in this dict depends on the
                 message broker used.
 
-:called_directly: This flag is set to true if the task was not
+:called_directly: This flag is set to true if the task wasn't
                   executed by the worker.
 
 :callbacks: A list of signatures to be called if this task returns successfully.
@@ -421,7 +421,7 @@ see :setting:`worker_redirect_stdouts`).
 
 .. note::
 
-    The worker will not update the redirection if you create a logger instance
+    The worker won't update the redirection if you create a logger instance
     somewhere in your task or task module.
 
     If you want to redirect ``sys.stdout`` and ``sys.stderr`` to a custom
@@ -482,8 +482,8 @@ Retrying
 :meth:`~@Task.retry` can be used to re-execute the task,
 for example in the event of recoverable errors.
 
-When you call ``retry`` it will send a new message, using the same
-task-id, and it will take care to make sure the message is delivered
+When you call ``retry`` it'll send a new message, using the same
+task-id, and it'll take care to make sure the message is delivered
 to the same queue as the originating task.
 
 When a task is retried this is also recorded as a task state,
@@ -505,8 +505,8 @@ Here's an example using ``retry``:
 .. note::
 
     The :meth:`~@Task.retry` call will raise an exception so any code after the retry
-    will not be reached.  This is the :exc:`~@Retry`
-    exception, it is not handled as an error but rather as a semi-predicate
+    won't be reached. This is the :exc:`~@Retry`
+    exception, it isn't handled as an error but rather as a semi-predicate
     to signify to the worker that the task is to be retried,
     so that it can store the correct state when a result backend is enabled.
 
@@ -516,21 +516,21 @@ Here's an example using ``retry``:
 The bind argument to the task decorator will give access to ``self`` (the
 task type instance).
 
-The ``exc`` method is used to pass exception information that is
+The ``exc`` method is used to pass exception information that's
 used in logs, and when storing task results.
 Both the exception and the traceback will
 be available in the task state (if a result backend is enabled).
 
 If the task has a ``max_retries`` value the current exception
 will be re-raised if the max number of retries has been exceeded,
-but this will not happen if:
+but this won't happen if:
 
-- An ``exc`` argument was not given.
+- An ``exc`` argument wasn't given.
 
     In this case the :exc:`~@MaxRetriesExceededError`
     exception will be raised.
 
-- There is no current exception
+- There's no current exception
 
     If there's no original exception to re-raise the ``exc``
     argument will be used instead, so:
@@ -575,7 +575,7 @@ Automatic retry for known exceptions
 Sometimes you just want to retry a task whenever a particular exception
 is raised.
 
-As this is such a common pattern we have built-in support for it
+As this is such a common pattern we've built-in support for it
 with the
 This may not be acceptable all the time, since you may have a lot of such
 tasks.
@@ -637,13 +637,14 @@ General
     The name the task is registered as.
 
     You can set this name manually, or a name will be
-    automatically generated using the module and class name.  See
-    :ref:`task-names`.
+    automatically generated using the module and class name.
+
+    See also :ref:`task-names`.
 
 .. attribute:: Task.request
 
     If the task is being executed this will contain information
-    about the current request.  Thread local storage is used.
+    about the current request. Thread local storage is used.
 
     See :ref:`task-request-info`.
 
@@ -654,20 +655,24 @@ General
 
     The maximum number of attempted retries before giving up.
     If the number of retries exceeds this value a :exc:`~@MaxRetriesExceededError`
-    exception will be raised.  *NOTE:* You have to call :meth:`~@Task.retry`
-    manually, as it will not automatically retry on exception..
+    exception will be raised.
 
-    The default value is 3.
+    .. note::
+
+        You have to call :meth:`~@Task.retry`
+        manually, as it won't automatically retry on exception..
+
+    The default is ``3``.
     A value of :const:`None` will disable the retry limit and the
     task will retry forever until it succeeds.
 
 .. attribute:: Task.throws
 
-    Optional tuple of expected error classes that should not be regarded
+    Optional tuple of expected error classes that shouldn't be regarded
     as an actual error.
 
     Errors in this list will be reported as a failure to the result backend,
-    but the worker will not log the event as an error, and no traceback will
+    but the worker won't log the event as an error, and no traceback will
     be included.
 
     Example:
@@ -691,13 +696,13 @@ General
 .. attribute:: Task.default_retry_delay
 
     Default time in seconds before a retry of the task
-    should be executed.  Can be either :class:`int` or :class:`float`.
+    should be executed. Can be either :class:`int` or :class:`float`.
     Default is a 3 minute delay.
 
 .. attribute:: Task.rate_limit
 
     Set the rate limit for this task type which limits the number of tasks
-    that can be run in a given time frame.  Tasks will still complete when
+    that can be run in a given time frame. Tasks will still complete when
     a rate limit is in effect, but it may take some time before it's allowed to
     start.
 
@@ -705,7 +710,7 @@ General
     If it is an integer or float, it is interpreted as "tasks per second".
 
     The rate limits can be specified in seconds, minutes or hours
-    by appending `"/s"`, `"/m"` or `"/h"` to the value.  Tasks will be evenly
+    by appending `"/s"`, `"/m"` or `"/h"` to the value. Tasks will be evenly
     distributed over the specified time frame.
 
     Example: `"100/m"` (hundred tasks a minute). This will enforce a minimum
@@ -721,17 +726,17 @@ General
 
 .. attribute:: Task.time_limit
 
-    The hard time limit, in seconds, for this task.  If not set then the workers default
-    will be used.
+    The hard time limit, in seconds, for this task.
+    If not set then the workers default will be used.
 
 .. attribute:: Task.soft_time_limit
 
-    The soft time limit for this task.  If not set then the workers default
-    will be used.
+    The soft time limit for this task.
+    If not set then the workers default will be used.
 
 .. attribute:: Task.ignore_result
 
-    Don't store task state.    Note that this means you can't use
+    Don't store task state. Note that this means you can't use
     :class:`~celery.result.AsyncResult` to check if the task is ready,
     or get its return value.
 
@@ -744,7 +749,7 @@ General
 
     A string identifying the default serialization
     method to use. Defaults to the :setting:`task_serializer`
-    setting.  Can be `pickle`, `json`, `yaml`, or any custom
+    setting. Can be `pickle`, `json`, `yaml`, or any custom
     serialization methods that have been registered with
     :mod:`kombu.serialization.registry`.
 
@@ -787,8 +792,8 @@ General
     when the task is executed by a worker.
     The default value is :const:`False` as the normal behavior is to not
     report that level of granularity. Tasks are either pending, finished,
-    or waiting to be retried.  Having a "started" status can be useful for
-    when there are long running tasks and there is a need to report which
+    or waiting to be retried. Having a "started" status can be useful for
+    when there are long running tasks and there's a need to report which
     task is currently running.
 
     The host name and process id of the worker executing the task
@@ -807,7 +812,7 @@ General
 States
 ======
 
-Celery can keep track of the tasks current state.  The state also contains the
+Celery can keep track of the tasks current state. The state also contains the
 result of a successful task, or the exception and traceback information of a
 failed task.
 
@@ -815,7 +820,7 @@ There are several *result backends* to choose from, and they all have
 different strengths and weaknesses (see :ref:`task-result-backends`).
 
 During its lifetime a task will transition through several possible states,
-and each state may have arbitrary meta-data attached to it.  When a task
+and each state may have arbitrary meta-data attached to it. When a task
 moves into a new state the previous state is
 forgotten about, but some transitions can be deducted, (e.g. a task now
 in the :state:`FAILED` state, is implied to have been in the
@@ -851,13 +856,13 @@ the most appropriate for your needs.
 RPC Result Backend (RabbitMQ/QPid)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The RPC result backend (`rpc://`) is special as it does not actually *store*
-the states, but rather sends them as messages.  This is an important difference as it
+The RPC result backend (`rpc://`) is special as it doesn't actually *store*
+the states, but rather sends them as messages. This is an important difference as it
 means that a result *can only be retrieved once*, and *only by the client
-that initiated the task*. Two different processes can not wait for the same result.
+that initiated the task*. Two different processes can't wait for the same result.
 
 Even with that limitation, it is an excellent choice if you need to receive
-state changes in real-time.  Using messaging means the client does not have to
+state changes in real-time. Using messaging means the client doesn't have to
 poll for new states.
 
 The messages are transient (non-persistent) by default, so the results will
@@ -875,12 +880,12 @@ limitations.
   increase the polling intervals of operations such as `result.get()`.
 
 * Some databases use a default transaction isolation level that
-  is not suitable for polling tables for changes.
+  isn't suitable for polling tables for changes.
 
   In MySQL the default transaction isolation level is `REPEATABLE-READ`, which
-  means the transaction will not see changes by other transactions until the
-  transaction is committed.  It is recommended that you change to the
-  `READ-COMMITTED` isolation level.
+  means the transaction won't see changes by other transactions until the
+  transaction is committed. Changing that to the `READ-COMMITTED` isolation
+  level is recommended.
 
 .. _task-builtin-states:
 
@@ -893,7 +898,7 @@ PENDING
 ~~~~~~~
 
 Task is waiting for execution or unknown.
-Any task id that is not known is implied to be in the pending state.
+Any task id that's not known is implied to be in the pending state.
 
 .. state:: STARTED
 
@@ -956,7 +961,7 @@ Custom states
 -------------
 
 You can easily define your own states, all you need is a unique name.
-The name of the state is usually an uppercase string.  As an example
+The name of the state is usually an uppercase string. As an example
 you could have a look at :mod:`abortable tasks <~celery.contrib.abortable>`
 which defines its own custom :state:`ABORTED` state.
 
@@ -975,7 +980,7 @@ Use :meth:`~@Task.update_state` to update a task's state:.
 Here I created the state `"PROGRESS"`, which tells any application
 aware of this state that the task is currently in progress, and also where
 it is in the process by having `current` and `total` counts as part of the
-state meta-data.  This can then be used to create e.g. progress bars.
+state meta-data. This can then be used to create e.g. progress bars.
 
 .. _pickling_exceptions:
 
@@ -985,12 +990,12 @@ Creating pickleable exceptions
 A rarely known Python fact is that exceptions must conform to some
 simple rules to support being serialized by the pickle module.
 
-Tasks that raise exceptions that are not pickleable will not work
+Tasks that raise exceptions that aren't pickleable won't work
 properly when Pickle is used as the serializer.
 
 To make sure that your exceptions are pickleable the exception
 *MUST* provide the original arguments it was instantiated
-with in its ``.args`` attribute.  The simplest way
+with in its ``.args`` attribute. The simplest way
 to ensure this is to have the exception call ``Exception.__init__``.
 
 Let's look at some examples that work, and one that doesn't:
@@ -1020,7 +1025,7 @@ So the rule is:
 For any exception that supports custom arguments ``*args``,
 ``Exception.__init__(self, *args)`` must be used.
 
-There is no special support for *keyword arguments*, so if you
+There's no special support for *keyword arguments*, so if you
 want to preserve keyword arguments when the exception is unpickled
 you have to pass them as regular args:
 
@@ -1041,7 +1046,7 @@ Semipredicates
 ==============
 
 The worker wraps the task in a tracing function which records the final
-state of the task.  There are a number of exceptions that can be used to
+state of the task. There are a number of exceptions that can be used to
 signal this function to change how it treats the return of the task.
 
 .. _task-semipred-ignore:
@@ -1050,7 +1055,7 @@ Ignore
 ------
 
 The task may raise :exc:`~@Ignore` to force the worker to ignore the
-task.  This means that no state will be recorded for the task, but the
+task. This means that no state will be recorded for the task, but the
 message is still acknowledged (removed from queue).
 
 This can be used if you want to implement custom revoke-like
@@ -1087,7 +1092,7 @@ Reject
 ------
 
 The task may raise :exc:`~@Reject` to reject the task message using
-AMQPs ``basic_reject`` method.  This will not have any effect unless
+AMQPs ``basic_reject`` method. This won't have any effect unless
 :attr:`Task.acks_late` is enabled.
 
 Rejecting a message has the same effect as acking it, but some
@@ -1306,8 +1311,8 @@ How it works
 Here come the technical details. This part isn't something you need to know,
 but you may be interested.
 
-All defined tasks are listed in a registry.  The registry contains
-a list of task names and their task classes.  You can investigate this registry
+All defined tasks are listed in a registry. The registry contains
+a list of task names and their task classes. You can investigate this registry
 yourself:
 
 .. code-block:: pycon
@@ -1321,8 +1326,8 @@ yourself:
      'celery.chord':
         <@task: celery.chord>}
 
-This is the list of tasks built-in to celery.  Note that tasks
-will only be registered when the module they are defined in is imported.
+This is the list of tasks built-in to Celery. Note that tasks
+will only be registered when the module they're defined in is imported.
 
 The default loader imports any modules listed in the
 :setting:`imports` setting.
@@ -1331,12 +1336,12 @@ The :meth:`@task` decorator is responsible for registering your task
 in the applications task registry.
 
 When tasks are sent, no actual function code is sent with it, just the name
-of the task to execute.  When the worker then receives the message it can look
+of the task to execute. When the worker then receives the message it can look
 up the name in its task registry to find the execution code.
 
 This means that your workers should always be updated with the same software
-as the client.  This is a drawback, but the alternative is a technical
-challenge that has yet to be solved.
+as the client. This is a drawback, but the alternative is a technical
+challenge that's yet to be solved.
 
 .. _task-best-practices:
 
@@ -1367,7 +1372,7 @@ Disable rate limits if they're not used
 ---------------------------------------
 
 Disabling rate limits altogether is recommended if you don't have
-any tasks using them.  This is because the rate limit subsystem introduces
+any tasks using them. This is because the rate limit subsystem introduces
 quite a lot of complexity.
 
 Set the :setting:`worker_disable_rate_limits` setting to globally disable
@@ -1469,7 +1474,7 @@ overhead may not be worth it in the end.
 .. _`Art of Concurrency`: http://oreilly.com/catalog/9780596521547
 
 .. [AOC1] Breshears, Clay. Section 2.2.1, "The Art of Concurrency".
-   O'Reilly Media, Inc. May 15, 2009.  ISBN-13 978-0-596-52153-0.
+   O'Reilly Media, Inc. May 15, 2009. ISBN-13 978-0-596-52153-0.
 
 .. _task-data-locality:
 
@@ -1477,7 +1482,7 @@ Data locality
 -------------
 
 The worker processing the task should be as close to the data as
-possible.  The best would be to have a copy in memory, the worst would be a
+possible. The best would be to have a copy in memory, the worst would be a
 full transfer from another continent.
 
 If the data is far away, you could try to run another worker at location, or
@@ -1503,19 +1508,19 @@ State
 -----
 
 Since celery is a distributed system, you can't know in which process, or
-on what machine the task will be executed.  You can't even know if the task will
+on what machine the task will be executed. You can't even know if the task will
 run in a timely manner.
 
 The ancient async sayings tells us that “asserting the world is the
-responsibility of the task”.  What this means is that the world view may
+responsibility of the task”. What this means is that the world view may
 have changed since the task was requested, so the task is responsible for
 making sure the world is how it should be;  If you have a task
 that re-indexes a search engine, and the search engine should only be
 re-indexed at maximum every 5 minutes, then it must be the tasks
 responsibility to assert that, not the callers.
 
-Another gotcha is Django model objects.  They shouldn't be passed on as
-arguments to tasks.  It's almost always better to re-fetch the object from
+Another gotcha is Django model objects. They shouldn't be passed on as
+arguments to tasks. It's almost always better to re-fetch the object from
 the database when the task is running instead,  as using old data may lead
 to race conditions.
 
@@ -1581,12 +1586,12 @@ Let's have a look at another example:
         expand_abbreviations.delay(article.pk)
 
 This is a Django view creating an article object in the database,
-then passing the primary key to a task.  It uses the `commit_on_success`
+then passing the primary key to a task. It uses the `commit_on_success`
 decorator, which will commit the transaction when the view returns, or
 roll back if the view raises an exception.
 
-There is a race condition if the task starts executing
-before the transaction has been committed; The database object does not exist
+There's a race condition if the task starts executing
+before the transaction has been committed; The database object doesn't exist
 yet!
 
 The solution is to *always commit transactions before sending tasks
@@ -1615,7 +1620,7 @@ depending on state from the current transaction*:
 
     However, enabling ``ATOMIC_REQUESTS`` on the database
     connection will bring back the transaction-per-request model and the
-    race condition along with it.  In this case, the simple solution is
+    race condition along with it. In this case, the simple solution is
     using the ``@transaction.non_atomic_requests`` decorator to go back
     to autocommit for that view only.
 
@@ -1625,11 +1630,11 @@ Example
 =======
 
 Let's take a real world example: a blog where comments posted need to be
-filtered for spam.  When the comment is created, the spam filter runs in the
+filtered for spam. When the comment is created, the spam filter runs in the
 background, so the user doesn't have to wait for it to finish.
 
 I have a Django blog application allowing comments
-on blog posts.  I'll describe parts of the models/views and tasks for this
+on blog posts. I'll describe parts of the models/views and tasks for this
 application.
 
 ``blog/models.py``
@@ -1705,8 +1710,8 @@ to the database, then I launch the spam filter task in the background.
 
 To filter spam in comments I use `Akismet`_, the service
 used to filter spam in comments posted to the free blog platform
-`Wordpress`.  `Akismet`_ is free for personal use, but for commercial use you
-need to pay.  You have to sign up to their service to get an API key.
+`Wordpress`. `Akismet`_ is free for personal use, but for commercial use you
+need to pay. You have to sign up to their service to get an API key.
 
 To make API calls to `Akismet`_ I use the `akismet.py`_ library written by
 `Michael Foord`_.

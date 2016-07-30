@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility functions.
 
-Do not import from here directly anymore, as these are only
+Don't import from here directly anymore, as these are only
 here for backwards compatibility.
 """
 from __future__ import absolute_import, print_function, unicode_literals

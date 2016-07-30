@@ -44,7 +44,7 @@ CASE_REDEFINES_TEARDOWN = """\
 should be: "teardown"\
 """
 CASE_LOG_REDIRECT_EFFECT = """\
-Test {0} did not disable LoggingProxy for {1}\
+Test {0} didn't disable LoggingProxy for {1}\
 """
 CASE_LOG_LEVEL_EFFECT = """\
 Test {0} Modified the level of the root logger\

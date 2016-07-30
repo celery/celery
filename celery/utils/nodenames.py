@@ -33,7 +33,7 @@ __all__ = [
 
 
 def worker_direct(hostname):
-    """Return :class:`kombu.Queue` that is a direct route to
+    """Return :class:`kombu.Queue` that's a direct route to
     a worker by hostname.
 
     Arguments:

@@ -172,7 +172,7 @@ class Rdb(Pdb):
     do_q = do_exit = do_quit
 
     def set_quit(self):
-        # this raises a BdbQuit exception that we are unable to catch.
+        # this raises a BdbQuit exception that we're unable to catch.
         sys.settrace(None)
 
 

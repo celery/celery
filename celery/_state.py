@@ -25,7 +25,7 @@ __all__ = [
 #: Global default app used when no current app.
 default_app = None
 
-#: List of all app instances (weakrefs), must not be used directly.
+#: List of all app instances (weakrefs), mustn't be used directly.
 _apps = weakref.WeakSet()
 
 #: global set of functions to call whenever a new app is finalized

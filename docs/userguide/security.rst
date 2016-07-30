@@ -26,9 +26,9 @@ Areas of Concern
 Broker
 ------
 
-It is imperative that the broker is guarded from unwanted access, especially
+It's imperative that the broker is guarded from unwanted access, especially
 if accessible to the public.
-By default, workers trust that the data they get from the broker has not
+By default, workers trust that the data they get from the broker hasn't
 been tampered with. See `Message Signing`_ for information on how to make
 the broker connection more trustworthy.
 
@@ -37,10 +37,10 @@ allowing only white-listed machines to access it.
 
 Keep in mind that both firewall misconfiguration, and temporarily disabling
 the firewall, is common in the real world. Solid security policy includes
-monitoring of firewall equipment to detect if they have been disabled, be it
+monitoring of firewall equipment to detect if they've been disabled, be it
 accidentally or on purpose.
 
-In other words, one should not blindly trust the firewall either.
+In other words, one shouldn't blindly trust the firewall either.
 
 If your broker supports fine-grained access control, like RabbitMQ,
 this is something you should look at enabling. See for example
@@ -156,8 +156,8 @@ paths used to locate private keys and certificates on the file-system:
 the :setting:`security_key`,
 :setting:`security_certificate` and :setting:`security_cert_store`
 settings respectively.
-With these configured it is also necessary to call the
-:func:`celery.setup_security` function.  Note that this will also
+With these configured it's also necessary to call the
+:func:`celery.setup_security` function. Note that this will also
 disable all insecure serializers so that the worker won't accept
 messages with untrusted content types.
 
@@ -176,7 +176,7 @@ with the private key and certificate files located in `/etc/ssl`.
 
 .. note::
 
-    While relative paths are not disallowed, using absolute paths
+    While relative paths aren't disallowed, using absolute paths
     is recommended for these files.
 
     Also note that the `auth` serializer won't encrypt the contents of
@@ -197,7 +197,7 @@ Logs
 ----
 
 Logs are usually the first place to look for evidence
-of security breaches, but they are useless if they can be tampered with.
+of security breaches, but they're useless if they can be tampered with.
 
 A good solution is to set up centralized logging with a dedicated logging
 server. Access to it should be restricted.
@@ -205,7 +205,7 @@ In addition to having all of the logs in a single place, if configured
 correctly, it can make it harder for intruders to tamper with your logs.
 
 This should be fairly easy to setup using syslog (see also `syslog-ng`_ and
-`rsyslog`_.).  Celery uses the :mod:`logging` library, and already has
+`rsyslog`_). Celery uses the :mod:`logging` library, and already has
 support for using syslog.
 
 A tip for the paranoid is to send logs using UDP and cut the
@@ -223,7 +223,7 @@ cryptographic hashes of files in the file-system, so that administrators
 can be alerted when they change. This way when the damage is done and your
 system has been compromised you can tell exactly what files intruders
 have changed  (password files, logs, back-doors, root-kits and so on).
-Often this is the only way you will be able to detect an intrusion.
+Often this is the only way you'll be able to detect an intrusion.
 
 Some open source implementations include:
 

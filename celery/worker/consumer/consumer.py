@@ -76,7 +76,7 @@ Received unregistered task of type %s.
 The message has been ignored and discarded.
 
 Did you remember to import the module containing this task?
-Or maybe you are using relative imports?
+Or maybe you're using relative imports?
 Please see http://bit.ly/gLye1c for more information.
 
 The full contents of the message body was:

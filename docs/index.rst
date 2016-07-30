@@ -18,7 +18,7 @@ Celery is Open Source and licensed under the `BSD License`_.
 Getting Started
 ===============
 
-- If you are new to Celery you can get started by following
+- If you're new to Celery you can get started by following
   the :ref:`first-steps` tutorial.
 
 - You can also check out the :ref:`FAQ <faq>`.

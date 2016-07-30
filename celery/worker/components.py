@@ -24,7 +24,7 @@ use standalone beat instead.\
 """
 
 W_POOL_SETTING = """
-The worker_pool setting should not be used to select the eventlet/gevent
+The worker_pool setting shouldn't be used to select the eventlet/gevent
 pools, instead you *must use the -P* argument so that patches are applied
 as early as possible.
 """

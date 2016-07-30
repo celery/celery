@@ -16,7 +16,7 @@ Starting the worker
 .. sidebar:: Daemonizing
 
     You probably want to use a daemonization tool to start
-    in the background.  See :ref:`daemonizing` for help
+    in the background. See :ref:`daemonizing` for help
     detaching the worker using popular daemonization tools.
 
 You can start the worker in the foreground by executing the command:
@@ -78,7 +78,7 @@ be lost (unless the tasks have the :attr:`~@Task.acks_late`
 option set).
 
 Also as processes can't override the :sig:`KILL` signal, the worker will
-not be able to reap its children, so make sure to do so manually.  This
+not be able to reap its children, so make sure to do so manually. This
 command usually does the trick:
 
 .. code-block:: console
@@ -91,7 +91,7 @@ Restarting the worker
 =====================
 
 To restart the worker you should send the `TERM` signal and start a new
-instance.  The easiest way to manage workers for development
+instance. The easiest way to manage workers for development
 is by using `celery multi`:
 
 .. code-block:: console
@@ -105,7 +105,7 @@ supervision systems (see :ref:`daemonizing`).
 Other than stopping then starting the worker to restart, you can also
 restart the worker using the :sig:`HUP` signal, but note that the worker
 will be responsible for restarting itself so this is prone to problems and
-is not recommended in production:
+isn't recommended in production:
 
 .. code-block:: console
 
@@ -114,7 +114,7 @@ is not recommended in production:
 .. note::
 
     Restarting by :sig:`HUP` only works if the worker is running
-    in the background as a daemon (it does not have a controlling
+    in the background as a daemon (it doesn't have a controlling
     terminal).
 
     :sig:`HUP` is disabled on macOS because of a limitation on
@@ -172,12 +172,12 @@ Prefork pool process index
 --------------------------
 
 The prefork pool process index specifiers will expand into a different
-filename depending on the process that will eventually need to open the file.
+filename depending on the process that'll eventually need to open the file.
 
 This can be used to specify one log file per child process.
 
 Note that the numbers will stay within the process limit even if processes
-exit or if ``maxtasksperchild``/time limits are used.  I.e. the number
+exit or if ``maxtasksperchild``/time limits are used. I.e. the number
 is the *process index* not the process count or pid.
 
 * ``%i`` - Pool process index or 0 if MainProcess.
@@ -204,7 +204,7 @@ Concurrency
 ===========
 
 By default multiprocessing is used to perform concurrent execution of tasks,
-but you can also use :ref:`Eventlet <concurrency-eventlet>`.  The number
+but you can also use :ref:`Eventlet <concurrency-eventlet>`. The number
 of worker processes/threads can be changed using the
 :option:`--concurrency <celery worker --concurrency>` argument and defaults
 to the number of CPUs available on the machine.
@@ -213,9 +213,9 @@ to the number of CPUs available on the machine.
 
     More pool processes are usually better, but there's a cut-off point where
     adding more pool processes affects performance in negative ways.
-    There is even some evidence to support that having multiple worker
+    There's even some evidence to support that having multiple worker
     instances running, may perform better than having a single worker.
-    For example 3 workers with 10 pool processes each.  You need to experiment
+    For example 3 workers with 10 pool processes each. You need to experiment
     to find the numbers that works best for you, as this varies based on
     application, work load, task run times and other factors.
 
@@ -229,35 +229,35 @@ Remote control
 .. sidebar:: The ``celery`` command
 
     The :program:`celery` program is used to execute remote control
-    commands from the command-line.  It supports all of the commands
-    listed below.  See :ref:`monitoring-control` for more information.
+    commands from the command-line. It supports all of the commands
+    listed below. See :ref:`monitoring-control` for more information.
 
 :pool support: *prefork, eventlet, gevent*, blocking:*solo* (see note)
 :broker support: *amqp, redis*
 
 Workers have the ability to be remote controlled using a high-priority
-broadcast message queue.  The commands can be directed to all, or a specific
+broadcast message queue. The commands can be directed to all, or a specific
 list of workers.
 
-Commands can also have replies.  The client can then wait for and collect
-those replies.  Since there's no central authority to know how many
-workers are available in the cluster, there is also no way to estimate
+Commands can also have replies. The client can then wait for and collect
+those replies. Since there's no central authority to know how many
+workers are available in the cluster, there's also no way to estimate
 how many workers may send a reply, so the client has a configurable
-timeout — the deadline in seconds for replies to arrive in.  This timeout
-defaults to one second.  If the worker doesn't reply within the deadline
+timeout — the deadline in seconds for replies to arrive in. This timeout
+defaults to one second. If the worker doesn't reply within the deadline
 it doesn't necessarily mean the worker didn't reply, or worse is dead, but
 may simply be caused by network latency or the worker being slow at processing
 commands, so adjust the timeout accordingly.
 
 In addition to timeouts, the client can specify the maximum number
-of replies to wait for.  If a destination is specified, this limit is set
+of replies to wait for. If a destination is specified, this limit is set
 to the number of destination hosts.
 
 .. note::
 
     The ``solo`` pool supports remote control commands,
     but any task executing will block any waiting control command,
-    so it is of limited use if the worker is very busy.  In that
+    so it is of limited use if the worker is very busy. In that
     case you must increase the timeout waiting for replies in the client.
 
 .. _worker-broadcast-fun:
@@ -326,15 +326,15 @@ the `terminate` option is set.
 .. note::
 
     The terminate option is a last resort for administrators when
-    a task is stuck.  It's not for terminating the task,
-    it's for terminating the process that is executing the task, and that
+    a task is stuck. It's not for terminating the task,
+    it's for terminating the process that's executing the task, and that
     process may have already started processing another task at the point
     when the signal is sent, so for this reason you must never call this
     programmatically.
 
 If `terminate` is set the worker child process processing the task
-will be terminated.  The default signal sent is `TERM`, but you can
-specify this using the `signal` argument.  Signal can be the uppercase name
+will be terminated. The default signal sent is `TERM`, but you can
+specify this using the `signal` argument. Signal can be the uppercase name
 of any signal defined in the :mod:`signal` module in the Python Standard
 Library.
 
@@ -388,11 +388,11 @@ Persistent revokes
 ------------------
 
 Revoking tasks works by sending a broadcast message to all the workers,
-the workers then keep a list of revoked tasks in memory.  When a worker starts
+the workers then keep a list of revoked tasks in memory. When a worker starts
 up it will synchronize revoked tasks with other workers in the cluster.
 
 The list of revoked tasks is in-memory so if all workers restart the list
-of revoked ids will also vanish.  If you want to preserve this list between
+of revoked ids will also vanish. If you want to preserve this list between
 restarts you need to specify a file for these to be stored in by using the `--statedb`
 argument to :program:`celery worker`:
 
@@ -400,8 +400,8 @@ argument to :program:`celery worker`:
 
     $ celery -A proj worker -l info --statedb=/var/run/celery/worker.state
 
-or if you use :program:`celery multi` you will want to create one file per
-worker instance so then you can use the `%n` format to expand the current node
+or if you use :program:`celery multi` you want to create one file per
+worker instance so use the `%n` format to expand the current node
 name:
 
 .. code-block:: console
@@ -428,17 +428,17 @@ Time Limits
 
     The time limit is set in two values, `soft` and `hard`.
     The soft time limit allows the task to catch an exception
-    to clean up before it is killed: the hard timeout is not catch-able
+    to clean up before it is killed: the hard timeout isn't catch-able
     and force terminates the task.
 
 A single task can potentially run forever, if you have lots of tasks
-waiting for some event that will never happen you will block the worker
-from processing new tasks indefinitely.  The best way to defend against
+waiting for some event that'll never happen you'll block the worker
+from processing new tasks indefinitely. The best way to defend against
 this scenario happening is enabling time limits.
 
 The time limit (`--time-limit`) is the maximum number of seconds a task
 may run before the process executing it is terminated and replaced by a
-new process.  You can also enable a soft time limit (`--soft-time-limit`),
+new process. You can also enable a soft time limit (`--soft-time-limit`),
 this raises an exception the task can catch to clean up before the hard
 time limit kills it:
 
@@ -459,7 +459,7 @@ Time limits can also be set using the :setting:`task_time_limit` /
 
 .. note::
 
-    Time limits do not currently work on platforms that do not support
+    Time limits don't currently work on platforms that don't support
     the :sig:`SIGUSR1` signal.
 
 
@@ -469,7 +469,7 @@ Changing time limits at run-time
 
 :broker support: *amqp, redis*
 
-There is a remote control command that enables you to change both soft
+There's a remote control command that enables you to change both soft
 and hard time limits for a task — named ``time_limit``.
 
 Example changing the time limit for the ``tasks.crawl_the_web`` task
@@ -501,8 +501,8 @@ at most 200 tasks of that type every minute:
 
     >>> app.control.rate_limit('myapp.mytask', '200/m')
 
-The above does not specify a destination, so the change request will affect
-all worker instances in the cluster.  If you only want to affect a specific
+The above doesn't specify a destination, so the change request will affect
+all worker instances in the cluster. If you only want to affect a specific
 list of workers you can include the ``destination`` argument:
 
 .. code-block:: pycon
@@ -615,7 +615,7 @@ The same can be accomplished dynamically using the :meth:`@control.add_consumer`
     [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
 
 
-By now I have only shown examples using automatic queues,
+By now we've only shown examples using automatic queues,
 If you need more control you can also specify the exchange, routing_key and
 even other options:
 
@@ -704,7 +704,7 @@ This can also be done programmatically by using the
 Inspecting workers
 ==================
 
-:class:`@control.inspect` lets you inspect running workers.  It
+:class:`@control.inspect` lets you inspect running workers. It
 uses remote control commands under the hood.
 
 You can also use the ``celery`` command to inspect workers,
@@ -878,7 +878,7 @@ The output will include the following fields:
 
 - ``clock``
 
-    Value of the workers logical clock.  This is a positive integer and should
+    Value of the workers logical clock. This is a positive integer and should
     be increasing every time you receive statistics.
 
 - ``pid``
@@ -920,7 +920,7 @@ The output will include the following fields:
 
 - ``rusage``
 
-    System usage statistics.  The fields available may be different
+    System usage statistics. The fields available may be different
     on your platform.
 
     From :manpage:`getrusage(2)`:
@@ -1051,7 +1051,7 @@ Enable/disable events
 ---------------------
 
 You can enable/disable events by using the `enable_events`,
-`disable_events` commands.  This is useful to temporarily monitor
+`disable_events` commands. This is useful to temporarily monitor
 a worker using :program:`celery events`/:program:`celerymon`.
 
 .. code-block:: pycon

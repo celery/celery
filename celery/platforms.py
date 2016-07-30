@@ -79,7 +79,7 @@ User information: uid={uid} euid={euid} gid={gid} egid={egid}
 """
 
 ROOT_DISCOURAGED = """\
-You are running the worker with superuser privileges, which is
+You're running the worker with superuser privileges, which is
 absolutely not recommended!
 
 Please specify a different user using the -u option.
@@ -177,7 +177,7 @@ class Pidfile(object):
             os.unlink(self.path)
 
     def remove_if_stale(self):
-        """Remove the lock if the process is not running.
+        """Remove the lock if the process isn't running.
         (does not respond to signals)."""
         try:
             pid = self.read_pid()
@@ -229,7 +229,7 @@ def create_pidlock(pidfile):
     """Create and verify pidfile.
 
     If the pidfile already exists the program exits with an error message,
-    however if the process it refers to is not running anymore, the pidfile
+    however if the process it refers to isn't running anymore, the pidfile
     is deleted and the program continues.
 
     This function will automatically install an :mod:`atexit` handler
@@ -363,14 +363,14 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
             The ability to write to this file
             will be verified before the process is detached.
         pidfile (str): Optional pid file.
-            The pidfile will not be created,
+            The pidfile won't be created,
             as this is the responsibility of the child.  But the process will
             exit if the pid lock exists and the pid written is still running.
         uid (int, str): Optional user id or user name to change
             effective privileges to.
         gid (int, str): Optional group id or group name to change
             effective privileges to.
-        umask (str, int): Optional umask that will be effective in
+        umask (str, int): Optional umask that'll be effective in
             the child process.
         workdir (str): Optional new working directory.
         fake (bool): Don't actually detach, intended for debugging purposes.
@@ -384,7 +384,7 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
         ...           uid='nobody'):
         ... # Now in detached child process with effective user set to nobody,
         ... # and we know that our logfile can be written to, and that
-        ... # the pidfile is not locked.
+        ... # the pidfile isn't locked.
         ... pidlock = create_pidlock('/var/run/app.pid')
         ...
         ... # Run the program
@@ -446,7 +446,7 @@ def parse_gid(gid):
 
 def _setgroups_hack(groups):
     """:fun:`setgroups` may have a platform-dependent limit,
-    and it is not always possible to know in advance what this limit
+    and it's not always possible to know in advance what this limit
     is, so we use this ugly hack stolen from glibc."""
     groups = groups[:]
 
@@ -559,7 +559,7 @@ def maybe_drop_privileges(uid=None, gid=None):
 class Signals(object):
     """Convenience interface to :mod:`signals`.
 
-    If the requested signal is not supported on the current platform,
+    If the requested signal isn't supported on the current platform,
     the operation will be ignored.
 
     Example:

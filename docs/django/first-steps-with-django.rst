@@ -12,9 +12,9 @@ Using Celery with Django
     Previous versions of Celery required a separate library to work with Django,
     but since 3.1 this is no longer the case. Django is supported out of the
     box now so this document only contains a basic way to integrate Celery and
-    Django.  You will use the same API as non-Django users so it's recommended that
-    you read the :ref:`first-steps` tutorial
-    first and come back to this tutorial.  When you have a working example you can
+    Django. You'll use the same API as non-Django users so you're recommended
+    to read the :ref:`first-steps` tutorial
+    first and come back to this tutorial. When you have a working example you can
     continue to the :ref:`next-steps` guide.
 
 To use Celery with your Django project you must first define
@@ -36,7 +36,7 @@ that defines the Celery instance:
 .. literalinclude:: ../../examples/django/proj/celery.py
 
 Then you need to import this app in your :file:`proj/proj/__init__.py`
-module.  This ensures that the app is loaded when Django starts
+module. This ensures that the app is loaded when Django starts
 so that the ``@shared_task`` decorator (mentioned later) will use it:
 
 :file:`proj/proj/__init__.py`:
@@ -49,7 +49,7 @@ both the app and tasks, like in the :ref:`tut-celery` tutorial.
 
 Let's break down what happens in the first module,
 first we import absolute imports from the future, so that our
-``celery.py`` module will not clash with the library:
+``celery.py`` module won't clash with the library:
 
 .. code-block:: python
 
@@ -63,7 +63,7 @@ for the :program:`celery` command-line program:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proj.settings')
 
 You don't need this line, but it saves you from always passing in the
-settings module to the celery program.  It must always come before
+settings module to the celery program. It must always come before
 creating the app instances, which is what we do next:
 
 .. code-block:: python
@@ -74,7 +74,7 @@ This is our instance of the library, you can have many instances
 but there's probably no reason for that when using Django.
 
 We also add the Django settings module as a configuration source
-for Celery.  This means that you don't have to use multiple
+for Celery. This means that you don't have to use multiple
 configuration files, and instead configure Celery directly
 from the Django settings; but you can also separate them if wanted.
 
@@ -110,13 +110,13 @@ of your installed apps, following the ``tasks.py`` convention::
         - models.py
 
 
-This way you do not have to manually add the individual modules
-to the :setting:`CELERY_IMPORTS <imports>` setting.  The ``lambda`` so that the
+This way you don't have to manually add the individual modules
+to the :setting:`CELERY_IMPORTS <imports>` setting. The ``lambda`` so that the
 auto-discovery can happen only when needed, and so that importing your
-module will not evaluate the Django settings object.
+module won't evaluate the Django settings object.
 
 Finally, the ``debug_task`` example is a task that dumps
-its own request information.  This is using the new ``bind=True`` task option
+its own request information. This is using the new ``bind=True`` task option
 introduced in Celery 3.1 to easily refer to the current task instance.
 
 Using the ``@shared_task`` decorator
@@ -159,23 +159,16 @@ To use this with your project you need to follow these four steps:
 
     This step will create the tables used to store results
     when using the database result backend and the tables used
-    by the database periodic task scheduler.  You can skip
+    by the database periodic task scheduler. You can skip
     this step if you don't use these.
 
-    If you are using Django 1.7+ or south_, you'll want to:
+    Create the tables by migrating your database:
 
     .. code-block:: console
 
         $ python manage.py migrate djcelery
 
-    For those who are on Django 1.6 or lower and not using south, a normal
-    ``syncdb`` will work:
-
-    .. code-block:: console
-
-        $ python manage.py syncdb
-
-4.  Configure celery to use the :pypi:`django-celery` backend.
+4. Configure celery to use the :pypi:`django-celery` backend.
 
     For the database backend you must use:
 
@@ -213,10 +206,10 @@ To use this with your project you need to follow these four steps:
 Starting the worker process
 ===========================
 
-In a production environment you will want to run the worker in the background
+In a production environment you'll want to run the worker in the background
 as a daemon - see :ref:`daemonizing` - but for testing and
 development it is useful to be able to start a worker instance by using the
-:program:`celery worker` manage command, much as you would use Django's
+:program:`celery worker` manage command, much as you'd use Django's
 :command:`manage.py runserver`:
 
 .. code-block:: console

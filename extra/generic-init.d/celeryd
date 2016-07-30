@@ -77,7 +77,7 @@ _config_sanity() {
         echo "Error: Config script '$path' must be owned by root!"
         echo
         echo "Resolution:"
-        echo "Review the file carefully and make sure it has not been "
+        echo "Review the file carefully and make sure it hasn't been "
         echo "modified with mailicious intent.  When sure the "
         echo "script is safe to execute with superuser privileges "
         echo "you can change ownership of the script:"
@@ -89,7 +89,7 @@ _config_sanity() {
         echo "Error: Config script '$path' cannot be writable by others!"
         echo
         echo "Resolution:"
-        echo "Review the file carefully and make sure it has not been "
+        echo "Review the file carefully and make sure it hasn't been "
         echo "modified with malicious intent.  When sure the "
         echo "script is safe to execute with superuser privileges "
         echo "you can change the scripts permissions:"
@@ -100,7 +100,7 @@ _config_sanity() {
         echo "Error: Config script '$path' cannot be writable by group!"
         echo
         echo "Resolution:"
-        echo "Review the file carefully and make sure it has not been "
+        echo "Review the file carefully and make sure it hasn't been "
         echo "modified with malicious intent.  When sure the "
         echo "script is safe to execute with superuser privileges "
         echo "you can change the scripts permissions:"

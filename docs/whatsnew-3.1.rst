@@ -44,8 +44,8 @@ and also supported on PyPy.
 Preface
 =======
 
-Deadlocks have long plagued our workers, and while uncommon they are
-not acceptable.  They are also infamous for being extremely hard to diagnose
+Deadlocks have long plagued our workers, and while uncommon they're
+not acceptable. They're also infamous for being extremely hard to diagnose
 and reproduce, so to make this job easier I wrote a stress test suite that
 bombards the worker with different tasks in an attempt to break it.
 
@@ -56,26 +56,26 @@ worker, and it reruns these tests using different configuration combinations
 to find edge case bugs.
 
 The end result was that I had to rewrite the prefork pool to avoid the use
-of the POSIX semaphore.  This was extremely challenging, but after
+of the POSIX semaphore. This was extremely challenging, but after
 months of hard work the worker now finally passes the stress test suite.
 
 There's probably more bugs to find, but the good news is
 that we now have a tool to reproduce them, so should you be so unlucky to
 experience a bug then we'll write a test for it and squash it!
 
-Note that I have also moved many broker transports into experimental status:
+Note that I've also moved many broker transports into experimental status:
 the only transports recommended for production use today is RabbitMQ and
 Redis.
 
 I don't have the resources to maintain all of them, so bugs are left
-unresolved.  I wish that someone will step up and take responsibility for
+unresolved. I wish that someone will step up and take responsibility for
 these transports or donate resources to improve them, but  as the situation
 is now I don't think the quality is up to date with the rest of the code-base
 so I cannot recommend them for production use.
 
 The next version of Celery 4.0 will focus on performance and removing
-rarely used parts of the library.  Work has also started on a new message
-protocol, supporting multiple languages and more.  The initial draft can
+rarely used parts of the library. Work has also started on a new message
+protocol, supporting multiple languages and more. The initial draft can
 be found :ref:`here <message-protocol-task-v2>`.
 
 This has probably been the hardest release I've worked on, so no
@@ -121,7 +121,7 @@ setting:
     CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 
 Make sure you only select the serialization formats you'll actually be using,
-and make sure you have properly secured your broker from unwanted access
+and make sure you've properly secured your broker from unwanted access
 (see the :ref:`Security Guide <guide-security>`).
 
 The worker will emit a deprecation warning if you don't define this setting.
@@ -137,10 +137,10 @@ Old command-line programs removed and deprecated
 ------------------------------------------------
 
 Everyone should move to the new :program:`celery` umbrella
-command, so we are incrementally deprecating the old command names.
+command, so we're incrementally deprecating the old command names.
 
-In this version we've removed all commands that are not used
-in init-scripts.  The rest will be removed in 4.0.
+In this version we've removed all commands that aren't used
+in init-scripts. The rest will be removed in 4.0.
 
 +-------------------+--------------+-------------------------------------+
 | Program           | New Status   | Replacement                         |
@@ -158,7 +158,7 @@ in init-scripts.  The rest will be removed in 4.0.
 | ``camqadm``       | **REMOVED**  | :program:`celery amqp`              |
 +-------------------+--------------+-------------------------------------+
 
-If this is not a new installation then you may want to remove the old
+If this isn't a new installation then you may want to remove the old
 commands:
 
 .. code-block:: console
@@ -180,7 +180,7 @@ Prefork Pool Improvements
 -------------------------
 
 These improvements are only active if you use an async capable
-transport.  This means only RabbitMQ (AMQP) and Redis are supported
+transport. This means only RabbitMQ (AMQP) and Redis are supported
 at this point and other transports will still use the thread-based fallback
 implementation.
 
@@ -191,14 +191,14 @@ implementation.
     access.
 
     The POSIX semaphore has now been removed and each child process
-    gets a dedicated queue.  This means that the worker will require more
+    gets a dedicated queue. This means that the worker will require more
     file descriptors (two descriptors per process), but it also means
     that performance is improved and we can send work to individual child
     processes.
 
-    POSIX semaphores are not released when a process is killed, so killing
+    POSIX semaphores aren't released when a process is killed, so killing
     processes could lead to a deadlock if it happened while the semaphore was
-    acquired.  There is no good solution to fix this, so the best option
+    acquired. There's no good solution to fix this, so the best option
     was to remove the semaphore.
 
 - Asynchronous write operations
@@ -209,11 +209,11 @@ implementation.
 
     If a child process is killed or exits mysteriously the pool previously
     had to wait for 30 seconds before marking the task with a
-    :exc:`~celery.exceptions.WorkerLostError`.  It had to do this because
-    the out-queue was shared between all processes, and the pool could not
-    be certain whether the process completed the task or not.  So an arbitrary
+    :exc:`~celery.exceptions.WorkerLostError`. It had to do this because
+    the out-queue was shared between all processes, and the pool couldn't
+    be certain whether the process completed the task or not. So an arbitrary
     timeout of 30 seconds was chosen, as it was believed that the out-queue
-    would have been drained by this point.
+    would've been drained by this point.
 
     This timeout is no longer necessary, and so the task can be marked as
     failed as soon as the pool gets the notification that the process exited.
@@ -243,7 +243,7 @@ Caveats
 
         -> send T3 to Process A
         # A still executing T1, T3 stuck in local buffer and
-        # will not start until T1 returns
+        # won't start until T1 returns
 
     The buffer size varies based on the operating system: some may
     have a buffer as small as 64KB but on recent Linux versions the buffer
@@ -274,7 +274,7 @@ Caveats
 Django supported out of the box
 -------------------------------
 
-Celery 3.0 introduced a shiny new API, but unfortunately did not
+Celery 3.0 introduced a shiny new API, but unfortunately didn't
 have a solution for Django users.
 
 The situation changes with this version as Django is now supported
@@ -293,8 +293,8 @@ With this version we challenge that convention and Django users will
 use the same library, the same API and the same documentation as
 everyone else.
 
-There is no rush to port your existing code to use the new API,
-but if you would like to experiment with it you should know that:
+There's no rush to port your existing code to use the new API,
+but if you'd like to experiment with it you should know that:
 
 - You need to use a Celery application instance.
 
@@ -309,7 +309,7 @@ but if you would like to experiment with it you should know that:
 
 - You need to explicitly integrate Celery with Django
 
-    Celery will not automatically use the Django settings, so you can
+    Celery won't automatically use the Django settings, so you can
     either configure Celery separately or you can tell it to use the Django
     settings with:
 
@@ -353,8 +353,8 @@ https://github.com/celery/celery/tree/3.1/examples/django
 
 Some features still require the :pypi:`django-celery` library:
 
-    - Celery does not implement the Django database or cache result backends.
-    - Celery does not ship with the database-based periodic task
+    - Celery doesn't implement the Django database or cache result backends.
+    - Celery doesn't ship with the database-based periodic task
         scheduler.
 
 .. note::
@@ -365,14 +365,14 @@ Some features still require the :pypi:`django-celery` library:
     no longer happen as a side-effect of importing the :pypi:`django-celery`
     module.
 
-    New users (or if you have ported to the new API) don't need the ``setup_loader``
+    New users (or if you've ported to the new API) don't need the ``setup_loader``
     line anymore, and must make sure to remove it.
 
 Events are now ordered using logical time
 -----------------------------------------
 
 Keeping physical clocks in perfect sync is impossible, so using
-time-stamps to order events in a distributed system is not reliable.
+time-stamps to order events in a distributed system isn't reliable.
 
 Celery event messages have included a logical clock value for some time,
 but starting with this version that field is also used to order them.
@@ -399,7 +399,7 @@ to the local timezone.
     persist the clock value at shutdown.
 
     You may notice that the logical clock is an integer value and
-    increases very rapidly.  Do not worry about the value overflowing
+    increases very rapidly. Don't worry about the value overflowing
     though, as even in the most busy clusters it may take several
     millennium before the clock exceeds a 64 bits value.
 
@@ -412,7 +412,7 @@ separated by '@'.
 This change was made to more easily identify multiple instances running
 on the same machine.
 
-If a custom name is not specified then the
+If a custom name isn't specified then the
 worker will use the name 'celery' by default, resulting in a
 fully qualified node name of 'celery@hostname':
 
@@ -430,7 +430,7 @@ To also set the name you must include the @:
 
 The worker will identify itself using the fully qualified
 node name in events and broadcast messages, so where before
-a worker would identify itself as 'worker1.example.com', it will now
+a worker would identify itself as 'worker1.example.com', it'll now
 use 'celery@worker1.example.com'.
 
 Remember that the :option:`-n <celery worker -n>` argument also supports
@@ -474,7 +474,7 @@ task will receive the ``self`` argument.
 
 Using *bound tasks* is now the recommended approach whenever
 you need access to the task instance or request context.
-Previously one would have to refer to the name of the task
+Previously one would've to refer to the name of the task
 instead (``send_twitter_status.retry``), but this could lead to problems
 in some configurations.
 
@@ -499,7 +499,7 @@ Workers are now passively subscribing to worker related events like
 heartbeats.
 
 This means that a worker knows what other workers are doing and
-can detect if they go offline.  Currently this is only used for clock
+can detect if they go offline. Currently this is only used for clock
 synchronization, but there are many possibilities for future additions
 and you can write extensions that take advantage of this already.
 
@@ -519,7 +519,7 @@ By writing bootsteps you can now easily extend the consumer part
 of the worker to add additional features, like custom message consumers.
 
 The worker has been using bootsteps for some time, but these were never
-documented.  In this version the consumer part of the worker
+documented. In this version the consumer part of the worker
 has also been rewritten to use bootsteps and the new :ref:`guide-extending`
 guide documents examples extending the worker, including adding
 custom message consumers.
@@ -528,11 +528,11 @@ See the :ref:`guide-extending` guide for more information.
 
 .. note::
 
-    Bootsteps written for older versions will not be compatible
+    Bootsteps written for older versions won't be compatible
     with this version, as the API has changed significantly.
 
     The old API was experimental and internal but should you be so unlucky
-    to use it then please contact the mailing-list and we will help you port
+    to use it then please contact the mailing-list and we'll help you port
     the bootstep to the new API.
 
 New RPC result backend
@@ -543,12 +543,12 @@ alternative to use in classical RPC scenarios, where the process that initiates
 the task is always the process to retrieve the result.
 
 It uses Kombu to send and retrieve results, and each client
-uses a unique queue for replies to be sent to.  This avoids
+uses a unique queue for replies to be sent to. This avoids
 the significant overhead of the original amqp result backend which creates
 one queue per task.
 
-By default results sent using this backend will not persist, so they won't
-survive a broker restart.  You can enable
+By default results sent using this backend won't persist, so they won't
+survive a broker restart. You can enable
 the :setting:`CELERY_RESULT_PERSISTENT` setting to change that.
 
 .. code-block:: python
@@ -578,7 +578,7 @@ Redis: Broadcast messages and virtual hosts
 -------------------------------------------
 
 Broadcast messages are currently seen by all virtual hosts when
-using the Redis transport.  You can now fix this by enabling a prefix to all channels
+using the Redis transport. You can now fix this by enabling a prefix to all channels
 so that the messages are separated:
 
 .. code-block:: python
@@ -586,7 +586,7 @@ so that the messages are separated:
     BROKER_TRANSPORT_OPTIONS = {'fanout_prefix': True}
 
 Note that you'll not be able to communicate with workers running older
-versions or workers that does not have this setting enabled.
+versions or workers that doesn't have this setting enabled.
 
 This setting will be the default in a future version.
 
@@ -608,7 +608,7 @@ Support for :pypi:`setuptools` extra requirements
 -------------------------------------------------
 
 Pip now supports the :pypi:`setuptools` extra requirements format,
-so we have removed the old bundles concept, and instead specify
+so we've removed the old bundles concept, and instead specify
 setuptools extras.
 
 You install extras by specifying them inside brackets:
@@ -617,13 +617,13 @@ You install extras by specifying them inside brackets:
 
     $ pip install celery[redis,mongodb]
 
-The above will install the dependencies for Redis and MongoDB.  You can list
+The above will install the dependencies for Redis and MongoDB. You can list
 as many extras as you want.
 
 
 .. warning::
 
-    You can't use the ``celery-with-*`` packages anymore, as these will not be
+    You can't use the ``celery-with-*`` packages anymore, as these won't be
     updated to use Celery 3.1.
 
 +-------------+-------------------------+---------------------------+
@@ -652,7 +652,7 @@ The complete list with examples is found in the :ref:`bundles` section.
 -----------------------------------------------------
 
 A misunderstanding led to ``Signature.__call__`` being an alias of
-``.delay`` but this does not conform to the calling API of ``Task`` which
+``.delay`` but this doesn't conform to the calling API of ``Task`` which
 calls the underlying task method.
 
 This means that:
@@ -685,7 +685,7 @@ In Other News
 
     That the group and chord primitives supported the "calling API" like other
     subtasks was a nice idea, but it was useless in practice and often
-    confused users.  If you still want this behavior you can define a
+    confused users. If you still want this behavior you can define a
     task to do it for you.
 
 - New method ``Signature.freeze()`` can be used to "finalize"
@@ -768,10 +768,10 @@ In Other News
   events, which is set to the time of when the event was received.
 
 - :class:`@events.Dispatcher` now accepts a ``groups`` argument
-  which decides a white-list of event groups that will be sent.
+  which decides a white-list of event groups that'll be sent.
 
     The type of an event is a string separated by '-', where the part
-    before the first '-' is the group.  Currently there are only
+    before the first '-' is the group. Currently there are only
     two groups: ``worker`` and ``task``.
 
     A dispatcher instantiated as follows:
@@ -787,7 +787,7 @@ In Other News
 
     This setting can be used to change the transport fail-over strategy,
     can either be a callable returning an iterable or the name of a
-    Kombu built-in failover strategy.  Default is "round-robin".
+    Kombu built-in failover strategy. Default is "round-robin".
 
     Contributed by Matt Wise.
 
@@ -836,7 +836,7 @@ In Other News
   :setting:`CELERY_EVENT_QUEUE_EXPIRES`.
 
     These control when a monitors event queue is deleted, and for how long
-    events published to that queue will be visible.  Only supported on
+    events published to that queue will be visible. Only supported on
     RabbitMQ.
 
 - New Couchbase result backend.
@@ -869,14 +869,14 @@ In Other News
     Contributed by Adrien Guinet
 
 - The ``dump_conf`` remote control command will now give the string
-  representation for types that are not JSON compatible.
+  representation for types that aren't JSON compatible.
 
 - Function `celery.security.setup_security` is now :func:`@setup_security`.
 
 - Task retry now propagates the message expiry value (Issue #980).
 
-    The value is forwarded at is, so the expiry time will not change.
-    To update the expiry time you would have to pass a new expires
+    The value is forwarded at is, so the expiry time won't change.
+    To update the expiry time you'd've to pass a new expires
     argument to ``retry()``.
 
 - Worker now crashes if a channel error occurs.
@@ -966,8 +966,8 @@ In Other News
 
 - Changed the way that app instances are pickled.
 
-    Apps can now define a ``__reduce_keys__`` method that is used instead
-    of the old ``AppPickler`` attribute.  E.g. if your app defines a custom
+    Apps can now define a ``__reduce_keys__`` method that's used instead
+    of the old ``AppPickler`` attribute. E.g. if your app defines a custom
     'foo' attribute that needs to be preserved when pickling you can define
     a ``__reduce_keys__`` as such:
 
@@ -1021,7 +1021,7 @@ In Other News
 - New :signal:`after_task_publish` signal replaces the old :signal:`task_sent`
   signal.
 
-    The :signal:`task_sent` signal is now deprecated and should not be used.
+    The :signal:`task_sent` signal is now deprecated and shouldn't be used.
 
 - New :signal:`worker_process_shutdown` signal is dispatched in the
   prefork pool child processes as they exit.
@@ -1117,7 +1117,7 @@ In Other News
 
         $ C_FAKEFORK=1 /etc/init.d/celeryd start
 
-    to avoid the daemonization step to see errors that are not visible
+    to avoid the daemonization step to see errors that aren't visible
     due to missing stdout/stderr.
 
     A ``dryrun`` command has been added to the generic init-script that
@@ -1156,7 +1156,7 @@ Scheduled Removals
 - The ``CELERY_TASK_ERROR_WHITELIST`` setting is no longer supported.
 
     You should set the :class:`~celery.utils.mail.ErrorMail` attribute
-    of the task class instead.  You can also do this using
+    of the task class instead. You can also do this using
     :setting:`CELERY_ANNOTATIONS`:
 
         .. code-block:: python
@@ -1181,7 +1181,7 @@ Scheduled Removals
   supports the ``connect_timeout`` argument.
 
     This can now only be set using the :setting:`BROKER_CONNECTION_TIMEOUT`
-    setting.  This is because functions no longer create connections
+    setting. This is because functions no longer create connections
     directly, but instead get them from the connection pool.
 
 - The ``CELERY_AMQP_TASK_RESULT_EXPIRES`` setting is no longer supported.
@@ -1200,13 +1200,13 @@ See the :ref:`deprecation-timeline`.
 Fixes
 =====
 
-- AMQP Backend: join did not convert exceptions when using the json
+- AMQP Backend: join didn't convert exceptions when using the json
   serializer.
 
 - Non-abstract task classes are now shared between apps (Issue #1150).
 
-    Note that non-abstract task classes should not be used in the
-    new API.  You should only create custom task classes when you
+    Note that non-abstract task classes shouldn't be used in the
+    new API. You should only create custom task classes when you
     use them as a base class in the ``@task`` decorator.
 
     This fix ensure backwards compatibility with older Celery versions
@@ -1227,13 +1227,13 @@ Fixes
 
     Fix contributed by Daniel M. Taub.
 
-- ``celery control pool_`` commands did not coerce string arguments to int.
+- ``celery control pool_`` commands didn't coerce string arguments to int.
 
 - Redis/Cache chords: Callback result is now set to failure if the group
   disappeared from the database (Issue #1094).
 
-- Worker: Now makes sure that the shutdown process is not initiated multiple
-  times.
+- Worker: Now makes sure that the shutdown process isn't initiated more
+  than once.
 
 - Programs: :program:`celery multi` now properly handles both ``-f`` and
   :option:`--logfile <celery worker --logfile>` options (Issue #1541).

@@ -71,8 +71,8 @@ In the producer:
         time.sleep(10)
         result.abort()
 
-After the `result.abort()` call, the task execution is not
-aborted immediately. In fact, it is not guaranteed to abort at all. Keep
+After the `result.abort()` call, the task execution isn't
+aborted immediately. In fact, it's not guaranteed to abort at all. Keep
 checking `result.state` status, or call `result.get(timeout=)` to
 have it block until the task is finished.
 

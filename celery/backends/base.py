@@ -83,7 +83,7 @@ class Backend(object):
     supports_native_join = False
 
     #: If true the backend must automatically expire results.
-    #: The daily backend_cleanup periodic task will not be triggered
+    #: The daily backend_cleanup periodic task won't be triggered
     #: in this case.
     supports_autoexpire = False
 

@@ -11,7 +11,7 @@ from django.conf import settings  # noqa
 
 app = Celery('proj')
 
-# Using a string here means the worker does not have to serialize
+# Using a string here means the worker doesn't have to serialize
 # the configuration object.
 app.config_from_object('django.conf:settings', namespace='CELERY')
 

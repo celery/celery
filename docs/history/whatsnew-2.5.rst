@@ -15,7 +15,7 @@ or :ref:`our mailing-list <mailing-list>`.
 To read more about Celery you should visit our `website`_.
 
 While this version is backward compatible with previous versions
-it is important that you read the following section.
+it's important that you read the following section.
 
 If you use Celery in combination with Django you must also
 read the `django-celery changelog <djcelery:version-2.5.0>` and upgrade to `django-celery 2.5`_.
@@ -74,7 +74,7 @@ race condition leading to an annoying warning.
         CELERY_RESULT_EXCHANGE = 'celeryresults2'
 
     But you have to make sure that all clients and workers
-    use this new setting, so they are updated to use the same
+    use this new setting, so they're updated to use the same
     exchange name.
 
 Solution for hanging workers (but must be manually enabled)
@@ -98,7 +98,7 @@ setting.
 Enabling this option will result in a slight performance penalty
 when new child worker processes are started, and it will also increase
 memory usage (but many platforms are optimized, so the impact may be
-minimal).  Considering that it ensures reliability when replacing
+minimal). Considering that it ensures reliability when replacing
 lost worker processes, it should be worth it.
 
 - It's already the default behavior on Windows.
@@ -113,7 +113,7 @@ Optimization
 
 - The code path used when the worker executes a task has been heavily
   optimized, meaning the worker is able to process a great deal
-  more tasks/second compared to previous versions.  As an example the solo
+  more tasks/second compared to previous versions. As an example the solo
   pool can now process up to 15000 tasks/second on a 4 core MacBook Pro
   when using the `pylibrabbitmq`_ transport, where it previously
   could only do 5000 tasks/second.
@@ -142,10 +142,10 @@ Removals
   scheduled for removal in 2.3).
 
 * The built-in ``ping`` task has been removed (originally scheduled
-  for removal in 2.3).  Please use the ping broadcast command
+  for removal in 2.3). Please use the ping broadcast command
   instead.
 
-* It is no longer possible to import ``subtask`` and ``TaskSet``
+* It's no longer possible to import ``subtask`` and ``TaskSet``
   from :mod:`celery.task.base`, please import them from :mod:`celery.task`
   instead (originally scheduled for removal in 2.4).
 
@@ -154,7 +154,7 @@ Deprecated modules
 
 * The :mod:`celery.decorators` module has changed status
   from pending deprecation to deprecated, and is scheduled for removal
-  in version 4.0.  The ``celery.task`` module must be used instead.
+  in version 4.0. The ``celery.task`` module must be used instead.
 
 .. _v250-news:
 
@@ -167,7 +167,7 @@ Timezone support
 Celery can now be configured to treat all incoming and outgoing dates
 as UTC, and the local timezone can be configured.
 
-This is not yet enabled by default, since enabling
+This isn't yet enabled by default, since enabling
 time zone support means workers running versions pre-2.5
 will be out of sync with upgraded workers.
 
@@ -180,7 +180,7 @@ converted to UTC, and then converted back to the local timezone
 when received by a worker.
 
 You can change the local timezone using the :setting:`CELERY_TIMEZONE`
-setting.  Installing the :pypi:`pytz` library is recommended when
+setting. Installing the :pypi:`pytz` library is recommended when
 using a custom timezone, to keep timezone definition up-to-date,
 but it will fallback to a system definition of the timezone if available.
 
@@ -274,11 +274,11 @@ executing task.
             # retry in 10 seconds.
             current.retry(countdown=10, exc=exc)
 
-Previously you would have to type ``update_twitter_status.retry(…)``
+Previously you'd've to type ``update_twitter_status.retry(…)``
 here, which can be annoying for long task names.
 
 .. note::
-    This will not work if the task function is called directly, i.e:
+    This won't work if the task function is called directly, i.e:
     ``update_twitter_status(a, b)``. For that to work ``apply`` must
     be used: ``update_twitter_status.apply((a, b))``.
 
@@ -300,7 +300,7 @@ In Other News
 
 - Sending :sig:`QUIT` to ``celeryd`` will now cause it cold terminate.
 
-    That is, it will not finish executing the tasks it is currently
+    That is, it won't finish executing the tasks it's currently
     working on.
 
     Contributed by Alec Clowes.
@@ -330,7 +330,7 @@ In Other News
 
     $ celerybeat -l info -- celerybeat.max_loop_interval=10.0
 
-- Now limits the number of frames in a traceback so that ``celeryd`` does not
+- Now limits the number of frames in a traceback so that ``celeryd`` doesn't
   crash on maximum recursion limit exceeded exceptions (Issue #615).
 
     The limit is set to the current recursion limit divided by 8 (which
@@ -396,7 +396,7 @@ In Other News
 
 - Redis result backend: Adds support for a ``max_connections`` parameter.
 
-    It is now possible to configure the maximum number of
+    It's now possible to configure the maximum number of
     simultaneous connections in the Redis connection pool used for
     results.
 

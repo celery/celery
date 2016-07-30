@@ -94,7 +94,7 @@ Fixes
 :release-date: 2011-11-14 12:00 P.M GMT
 :release-by: Ask Solem
 
-* Program module no longer uses relative imports so that it is
+* Program module no longer uses relative imports so that it's
   possible to do ``python -m celery.bin.name``.
 
 .. _version-2.4.1:
@@ -108,7 +108,7 @@ Fixes
 
 * processes pool: Decrease polling interval for less idle CPU usage.
 
-* processes pool: MaybeEncodingError was not wrapped in ExceptionInfo
+* processes pool: MaybeEncodingError wasn't wrapped in ExceptionInfo
   (Issue #524).
 
 * worker: would silence errors occurring after task consumer started.
@@ -133,11 +133,11 @@ Important Notes
 * Fixed deadlock in worker process handling (Issue #496).
 
     A deadlock could occur after spawning new child processes because
-    the logging library's mutex was not properly reset after fork.
+    the logging library's mutex wasn't properly reset after fork.
 
     The symptoms of this bug affecting would be that the worker simply
     stops processing tasks, as none of the workers child processes
-    are functioning.  There was a greater chance of this bug occurring
+    are functioning. There was a greater chance of this bug occurring
     with ``maxtasksperchild`` or a time-limit enabled.
 
     This is a workaround for http://bugs.python.org/issue6721#msg140215.
@@ -157,8 +157,8 @@ Important Notes
     deprecated and will be removed in version 4.0.
 
     Note that this means that the result backend requires RabbitMQ 2.1.0 or
-    higher, and that you have to disable expiration if you are running
-    with an older version.  You can do so by disabling the
+    higher, and that you have to disable expiration if you're running
+    with an older version. You can do so by disabling the
     :setting:`CELERY_TASK_RESULT_EXPIRES` setting::
 
         CELERY_TASK_RESULT_EXPIRES = None
@@ -188,7 +188,7 @@ Important Notes
     .. note::
 
         Note that the path component (virtual_host) always starts with a
-        forward-slash.  This is necessary to distinguish between the virtual
+        forward-slash. This is necessary to distinguish between the virtual
         host ``''`` (empty) and ``'/'``, which are both acceptable virtual
         host names.
 
@@ -207,8 +207,8 @@ Important Notes
         So the leading slash in the path component is **always required**.
 
     In addition the :setting:`BROKER_URL` setting has been added as an alias
-    to ``BROKER_HOST``.  Any broker setting specified in both the URL and in
-    the configuration will be ignored, if a setting is not provided in the URL
+    to ``BROKER_HOST``. Any broker setting specified in both the URL and in
+    the configuration will be ignored, if a setting isn't provided in the URL
     then the value from the configuration will be used as default.
 
     Also, programs now support the :option:`--broker <celery --broker>`
@@ -278,11 +278,11 @@ News
 
 * CELERY_IMPORTS can now be a scalar value (Issue #485).
 
-    It is too easy to forget to add the comma after the sole element of a
+    It's too easy to forget to add the comma after the sole element of a
     tuple, and this is something that often affects newcomers.
 
     The docs should probably use a list in examples, as using a tuple
-    for this doesn't even make sense.  Nonetheless, there are many
+    for this doesn't even make sense. Nonetheless, there are many
     tutorials out there using a tuple, and this change should be a help
     to new users.
 
@@ -292,7 +292,7 @@ News
 
     Contributed by Kornelijus Survila.
 
-* The ``statedb`` was not saved at exit.
+* The ``statedb`` wasn't saved at exit.
 
     This has now been fixed and it should again remember previously
     revoked tasks when a ``--statedb`` is enabled.
@@ -317,7 +317,7 @@ News
   the :setting:`CELERY_RESULT_SERIALIZER` setting (Issue #435).
 
     This means that only the database (Django/SQLAlchemy) backends
-    currently does not support using custom serializers.
+    currently doesn't support using custom serializers.
 
     Contributed by Steeve Morin
 
@@ -330,7 +330,7 @@ News
 * ``multi`` now supports a ``stop_verify`` command to wait for
   processes to shutdown.
 
-* Cache backend did not work if the cache key was unicode (Issue #504).
+* Cache backend didn't work if the cache key was unicode (Issue #504).
 
     Fix contributed by Neil Chintomby.
 
@@ -345,7 +345,7 @@ News
 
     Fix contributed by Remy Noel
 
-* multi did not work on Windows (Issue #472).
+* multi didn't work on Windows (Issue #472).
 
 * New-style ``CELERY_REDIS_*`` settings now takes precedence over
   the old ``REDIS_*`` configuration keys (Issue #508).
@@ -356,12 +356,12 @@ News
 
     Fix contributed by Roger Hu.
 
-* Documented that Chords do not work well with :command:`redis-server` versions
+* Documented that Chords don't work well with :command:`redis-server` versions
   before 2.2.
 
     Contributed by Dan McGee.
 
-* The :setting:`CELERYBEAT_MAX_LOOP_INTERVAL` setting was not respected.
+* The :setting:`CELERYBEAT_MAX_LOOP_INTERVAL` setting wasn't respected.
 
 * ``inspect.registered_tasks`` renamed to ``inspect.registered`` for naming
   consistency.
@@ -395,10 +395,10 @@ News
 
     Contributed by Yury V. Zaytsev.
 
-* KeyValueStoreBackend.get_many did not respect the ``timeout`` argument
+* KeyValueStoreBackend.get_many didn't respect the ``timeout`` argument
   (Issue #512).
 
-* beat/events's ``--workdir`` option did not :manpage:`chdir(2)` before after
+* beat/events's ``--workdir`` option didn't :manpage:`chdir(2)` before after
   configuration was attempted (Issue #506).
 
 * After deprecating 2.4 support we can now name modules correctly, since we

@@ -14,7 +14,7 @@ Add the extension to your :file:`docs/conf.py` configuration module:
     extensions = (...,
                   'celery.contrib.sphinx')
 
-If you would like to change the prefix for tasks in reference documentation
+If you'd like to change the prefix for tasks in reference documentation
 then you can change the ``celery_task_prefix`` configuration value:
 
 .. code-block:: python

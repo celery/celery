@@ -171,7 +171,7 @@ class BaseRPCBackend(base.Backend, AsyncBackendMixin):
             tid = self._get_message_task_id(acc)
             prev, latest_by_id[tid] = latest_by_id.get(tid), acc
             if prev:
-                # backends are not expected to keep history,
+                # backends aren't expected to keep history,
                 # so we delete everything except the most recent state.
                 prev.ack()
                 prev = None

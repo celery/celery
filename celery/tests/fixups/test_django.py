@@ -208,7 +208,7 @@ class test_DjangoWorkerFixup(FixupCase):
                     f.close_database.assert_called()
                     f.close_cache.assert_called()
 
-            # when a task is eager, do not close connections
+            # when a task is eager, don't close connections
             with patch.object(f, 'close_cache'):
                 task.request.is_eager = True
                 with patch.object(f, 'close_database'):

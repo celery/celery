@@ -121,7 +121,7 @@ class Signal(object):  # pragma: no cover
                    dispatch_uid=None):
         """Disconnect receiver from sender for signal.
 
-        If weak references are used, disconnect need not be called. The
+        If weak references are used, disconnect needn't be called. The
         receiver will be removed from dispatch automatically.
 
         Arguments:

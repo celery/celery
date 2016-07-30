@@ -216,7 +216,7 @@ def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
         # always use new format if prefix is used.
         info, left = _settings_info, set()
 
-    # only raise error for keys that the user did not provide two keys
+    # only raise error for keys that the user didn't provide two keys
     # for (e.g. both ``result_expires`` and ``CELERY_TASK_RESULT_EXPIRES``).
     really_left = {key for key in left if info.convert[key] not in have}
     if really_left:

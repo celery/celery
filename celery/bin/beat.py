@@ -39,7 +39,7 @@
 
     Optional file used to store the process pid.
 
-    The program will not start if this file already exists
+    The program won't start if this file already exists
     and the pid is still alive.
 
 .. cmdoption:: --uid

@@ -6,7 +6,7 @@
 
 Welcome!
 
-This document is fairly extensive and you are not really expected
+This document is fairly extensive and you aren't really expected
 to study this in detail for small contributions;
 
     The most important rule is that contributing must be easy
@@ -17,7 +17,7 @@ If you're reporting a bug you should read the Reporting bugs section
 below to ensure that your bug report contains enough information
 to successfully diagnose the issue, and if you're contributing code
 you should try to mimic the conventions you see surrounding the code
-you are working on, but in the end all patches will be cleaned up by
+you're working on, but in the end all patches will be cleaned up by
 the person merging the changes so don't worry too much.
 
 .. contents::
@@ -28,8 +28,8 @@ the person merging the changes so don't worry too much.
 Community Code of Conduct
 =========================
 
-The goal is to maintain a diverse community that is pleasant for everyone.
-That is why we would greatly appreciate it if everyone contributing to and
+The goal is to maintain a diverse community that's pleasant for everyone.
+That's why we would greatly appreciate it if everyone contributing to and
 interacting with the community also followed this Code of Conduct.
 
 The Code of Conduct covers our behavior as members of the community,
@@ -46,22 +46,22 @@ Be considerate.
 ---------------
 
 Your work will be used by other people, and you in turn will depend on the
-work of others.  Any decision you take will affect users and colleagues, and
+work of others. Any decision you take will affect users and colleagues, and
 we expect you to take those consequences into account when making decisions.
 Even if it's not obvious at the time, our contributions to Celery will impact
-the work of others.  For example, changes to code, infrastructure, policy,
+the work of others. For example, changes to code, infrastructure, policy,
 documentation and translations during a release may negatively impact
 others work.
 
 Be respectful.
 --------------
 
-The Celery community and its members treat one another with respect.  Everyone
-can make a valuable contribution to Celery.  We may not always agree, but
-disagreement is no excuse for poor behavior and poor manners.  We might all
+The Celery community and its members treat one another with respect. Everyone
+can make a valuable contribution to Celery. We may not always agree, but
+disagreement is no excuse for poor behavior and poor manners. We might all
 experience some frustration now and then, but we cannot allow that frustration
-to turn into a personal attack.  It's important to remember that a community
-where people feel uncomfortable or threatened is not a productive one.  We
+to turn into a personal attack. It's important to remember that a community
+where people feel uncomfortable or threatened isn't a productive one. We
 expect members of the Celery community to be respectful when dealing with
 other contributors as well as with people outside the Celery project and with
 users of Celery.
@@ -70,11 +70,11 @@ Be collaborative.
 -----------------
 
 Collaboration is central to Celery and to the larger free software community.
-We should always be open to collaboration.  Your work should be done
+We should always be open to collaboration. Your work should be done
 transparently and patches from Celery should be given back to the community
-when they are made, not just when the distribution releases.  If you wish
+when they're made, not just when the distribution releases. If you wish
 to work on new code for existing upstream projects, at least keep those
-projects informed of your ideas and progress.  It many not be possible to
+projects informed of your ideas and progress. It many not be possible to
 get consensus from upstream, or even from your colleagues about the correct
 implementation for an idea, so don't feel obliged to have that agreement
 before you begin, but at least keep the outside world informed of your work,
@@ -85,29 +85,29 @@ When you disagree, consult others.
 ----------------------------------
 
 Disagreements, both political and technical, happen all the time and
-the Celery community is no exception.  It is important that we resolve
+the Celery community is no exception. It's important that we resolve
 disagreements and differing views constructively and with the help of the
-community and community process.  If you really want to go a different
+community and community process. If you really want to go a different
 way, then we encourage you to make a derivative distribution or alternate
 set of packages that still build on the work we've done to utilize as common
 of a core as possible.
 
-When you are unsure, ask for help.
-----------------------------------
+When you're unsure, ask for help.
+---------------------------------
 
-Nobody knows everything, and nobody is expected to be perfect.  Asking
+Nobody knows everything, and nobody is expected to be perfect. Asking
 questions avoids many problems down the road, and so questions are
-encouraged.  Those who are asked questions should be responsive and helpful.
+encouraged. Those who are asked questions should be responsive and helpful.
 However, when asking a question, care must be taken to do so in an appropriate
 forum.
 
 Step down considerately.
 ------------------------
 
-Developers on every project come and go and Celery is no different.  When you
+Developers on every project come and go and Celery is no different. When you
 leave or disengage from the project, in whole or in part, we ask that you do
-so in a way that minimizes disruption to the project.  This means you should
-tell people you are leaving and take the proper steps to ensure that others
+so in a way that minimizes disruption to the project. This means you should
+tell people you're leaving and take the proper steps to ensure that others
 can pick up where you leave off.
 
 .. _reporting-bugs:
@@ -174,12 +174,12 @@ and participate in the discussion.
 
 2) **Determine if your bug is really a bug.**
 
-You should not file a bug if you are requesting support.  For that you can use
+You shouldn't file a bug if you're requesting support. For that you can use
 the `mailing-list`_, or `irc-channel`_.
 
 3) **Make sure your bug hasn't already been reported.**
 
-Search through the appropriate Issue tracker.  If a bug like yours was found,
+Search through the appropriate Issue tracker. If a bug like yours was found,
 check if you have new information that could be reported to help
 the developers fix the bug.
 
@@ -192,7 +192,7 @@ celery, billiard, kombu, amqp and vine.
 5) **Collect information about the bug.**
 
 To have the best chance of having a bug fixed, we need to be able to easily
-reproduce the conditions that caused it.  Most of the time this information
+reproduce the conditions that caused it. Most of the time this information
 will be from a Python traceback message, though some bugs might be in design,
 spelling or other errors on the website/docs/code.
 
@@ -202,12 +202,12 @@ spelling or other errors on the website/docs/code.
        etc.), the version of your Python interpreter, and the version of Celery,
        and related packages that you were running when the bug occurred.
 
-    C) If you are reporting a race condition or a deadlock, tracebacks can be
+    C) If you're reporting a race condition or a deadlock, tracebacks can be
        hard to get or might not be that useful. Try to inspect the process to
        get more diagnostic data. Some ideas:
 
        * Enable celery's ``breakpoint_signal`` and use it
-         to inspect the process's state.  This will allow you to open a
+         to inspect the process's state. This will allow you to open a
          ``pdb`` session.
        * Collect tracing data using `strace`_(Linux),
          ``dtruss`` (macOS), and ``ktrace`` (BSD),
@@ -251,7 +251,7 @@ issue tracker.
 * ``librabbitmq``: https://github.com/celery/librabbitmq/issues
 * ``django-celery``: https://github.com/celery/django-celery/issues
 
-If you are unsure of the origin of the bug you can ask the
+If you're unsure of the origin of the bug you can ask the
 `mailing-list`_, or just use the Celery issue tracker.
 
 Contributors guide to the code base
@@ -326,7 +326,7 @@ Maintenance branches
 --------------------
 
 Maintenance branches are named after the version, e.g. the maintenance branch
-for the 2.2.x series is named ``2.2``.  Previously these were named
+for the 2.2.x series is named ``2.2``. Previously these were named
 ``releaseXX-maint``.
 
 The versions we currently maintain is:
@@ -344,7 +344,7 @@ Archived branches
 
 Archived branches are kept for preserving history only,
 and theoretically someone could provide patches for these if they depend
-on a series that is no longer officially supported.
+on a series that's no longer officially supported.
 
 An archived version is named ``X.Y-archived``.
 
@@ -366,17 +366,17 @@ Feature branches
 ----------------
 
 Major new features are worked on in dedicated branches.
-There is no strict naming requirement for these branches.
+There's no strict naming requirement for these branches.
 
-Feature branches are removed once they have been merged into a release branch.
+Feature branches are removed once they've been merged into a release branch.
 
 Tags
 ====
 
-Tags are used exclusively for tagging releases.  A release tag is
+Tags are used exclusively for tagging releases. A release tag is
 named with the format ``vX.Y.Z``, e.g. ``v2.3.1``.
 Experimental releases contain an additional identifier ``vX.Y.Z-id``, e.g.
-``v3.0.0-rc1``.  Experimental tags may be removed after the official release.
+``v3.0.0-rc1``. Experimental tags may be removed after the official release.
 
 .. _contributing-changes:
 
@@ -388,7 +388,7 @@ Working on Features & Patches
     Contributing to Celery should be as simple as possible,
     so none of these steps should be considered mandatory.
 
-    You can even send in patches by email if that is your preferred
+    You can even send in patches by email if that's your preferred
     work method. We won't like you any less, any contribution you make
     is always appreciated!
 
@@ -497,7 +497,7 @@ When your feature/bugfix is complete you may want to submit
 a pull requests so that it can be reviewed by the maintainers.
 
 Creating pull requests is easy, and also let you track the progress
-of your contribution.  Read the `Pull Requests`_ section in the GitHub
+of your contribution. Read the `Pull Requests`_ section in the GitHub
 Guide to learn how this is done.
 
 You can also attach pull requests to existing issues by following
@@ -537,7 +537,7 @@ The coverage XML output will then be located at ``coverage.xml``
 Running the tests on all supported Python versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There is a ``tox`` configuration file in the top directory of the
+There's a ``tox`` configuration file in the top directory of the
 distribution.
 
 To run the tests for all supported Python versions simply execute:
@@ -575,7 +575,7 @@ After building succeeds the documentation is available at ``_build/html``.
 Verifying your contribution
 ---------------------------
 
-To use these tools you need to install a few dependencies.  These dependencies
+To use these tools you need to install a few dependencies. These dependencies
 can be found in ``requirements/pkgutils.txt``.
 
 Installing the dependencies:
@@ -611,7 +611,7 @@ reference please execute:
 If files are missing you can add them by copying an existing reference file.
 
 If the module is internal it should be part of the internal reference
-located in ``docs/internals/reference/``.  If the module is public
+located in ``docs/internals/reference/``. If the module is public
 it should be located in ``docs/reference/``.
 
 For example if reference is missing for the module ``celery.worker.awesome``
@@ -697,7 +697,7 @@ is following the conventions.
 
 .. _`PEP-257`: http://www.python.org/dev/peps/pep-0257/
 
-* Lines should not exceed 78 columns.
+* Lines shouldn't exceed 78 columns.
 
   You can enforce this in ``vim`` by setting the ``textwidth`` option:
   ::
@@ -748,12 +748,12 @@ is following the conventions.
         from __future__ import absolute_import
 
     * If the module uses the ``with`` statement and must be compatible
-      with Python 2.5 (celery is not) then it must also enable that::
+      with Python 2.5 (celery isn't) then it must also enable that::
 
         from __future__ import with_statement
 
     * Every future import must be on its own line, as older Python 2.5
-      releases did not support importing multiple features on the
+      releases didn't support importing multiple features on the
       same future import line::
 
         # Good
@@ -763,12 +763,12 @@ is following the conventions.
         # Bad
         from __future__ import absolute_import, with_statement
 
-     (Note that this rule does not apply if the package does not include
+     (Note that this rule doesn't apply if the package doesn't include
      support for Python 2.5)
 
 
 * Note that we use "new-style` relative imports when the distribution
-  does not support Python versions below 2.5
+  doesn't support Python versions below 2.5
 
     This requires Python 2.5 or later:
     ::
@@ -796,7 +796,7 @@ that require third-party libraries must be added.
         pycassa
 
     These are pip requirement files so you can have version specifiers and
-    multiple packages are separated by newline.  A more complex example could
+    multiple packages are separated by newline. A more complex example could
     be:
     ::
 
@@ -829,7 +829,7 @@ that require third-party libraries must be added.
 
 That's all that needs to be done, but remember that if your feature
 adds additional configuration options then these needs to be documented
-in ``docs/configuration.rst``.  Also all settings need to be added to the
+in ``docs/configuration.rst``. Also all settings need to be added to the
 ``celery/app/defaults.py`` module.
 
 Result backends require a separate section in the ``docs/configuration.rst``
@@ -844,7 +844,7 @@ This is a list of people that can be contacted for questions
 regarding the official git repositories, PyPI packages
 Read the Docs pages.
 
-If the issue is not an emergency then it is better
+If the issue isn't an emergency then it's better
 to `report an issue`_.
 
 
@@ -957,7 +957,7 @@ Promise/deferred implementation.
 ------------
 
 Fork of multiprocessing containing improvements
-that will eventually be merged into the Python stdlib.
+that'll eventually be merged into the Python stdlib.
 
 :git: https://github.com/celery/billiard
 :CI: http://travis-ci.org/#!/celery/billiard/
@@ -1054,7 +1054,7 @@ The version number must be updated two places:
     * ``docs/include/introduction.txt``
 
 After you have changed these files you must render
-the ``README`` files.  There is a script to convert sphinx syntax
+the ``README`` files. There's a script to convert sphinx syntax
 to generic reStructured Text syntax, and the make target `readme`
 does this for you:
 ::

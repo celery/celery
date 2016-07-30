@@ -181,7 +181,7 @@ is missing.
         def __init__(self, app=None):
             self.app = app_or_default(app)
 
-The problem with this approach is that there is a chance
+The problem with this approach is that there's a chance
 that the app instance is lost along the way, and everything
 seems to be working normally. Testing app instance leaks
 is hard. The environment variable :envvar:`CELERY_TRACE_APP`

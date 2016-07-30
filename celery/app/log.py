@@ -202,7 +202,7 @@ class Logging(object):
             # Windows does not support ANSI color codes.
             return False
         if colorize or colorize is None:
-            # Only use color if there is no active log file
+            # Only use color if there's no active log file
             # and stderr is an actual terminal.
             return logfile is None and isatty(sys.stderr)
         return colorize

@@ -294,8 +294,8 @@ class Signature(dict):
                root_id=None, parent_id=None):
         """Finalize the signature by adding a concrete task id.
 
-        The task will not be called and you should not call the signature
-        twice after freezing it as that will result in two task messages
+        The task won't be called and you shouldn't call the signature
+        twice after freezing it as that'll result in two task messages
         using the same task id.
 
         Returns:
@@ -542,7 +542,7 @@ class chain(Signature):
     Arguments:
         *tasks (Signature): List of task signatures to chain.
             If only one argument is passed and that argument is
-            an iterable, then that will be used as the list of signatures
+            an iterable, then that'll be used as the list of signatures
             to chain instead.  This means that you can use a generator
             expression.
 
@@ -853,7 +853,7 @@ class group(Signature):
 
     Note:
         If only one argument is passed, and that argument is an iterable
-        then that will be used as the list of tasks instead, which
+        then that'll be used as the list of tasks instead, which
         means you can use ``group`` with generator expressions.
 
     Example:
@@ -864,8 +864,8 @@ class group(Signature):
 
     Arguments:
         *tasks (Signature): A list of signatures that this group will call.
-            If there is only one argument, and that argument is an iterable,
-            then that will define the list of signatures instead.
+            If there's only one argument, and that argument is an iterable,
+            then that'll define the list of signatures instead.
         **options (Any): Execution options applied to all tasks
             in the group.
 
@@ -904,7 +904,7 @@ class group(Signature):
         for task in tasks:
             if isinstance(task, CallableSignature):
                 # local sigs are always of type Signature, and we
-                # clone them to make sure we do not modify the originals.
+                # clone them to make sure we don't modify the originals.
                 task = task.clone()
             else:
                 # serialized sigs must be converted to Signature.
@@ -969,7 +969,7 @@ class group(Signature):
         p.finalize()
 
         # - Special case of group(A.s() | group(B.s(), C.s()))
-        # That is, group with single item that is a chain but the
+        # That is, group with single item that's a chain but the
         # last task in that chain is a group.
         #
         # We cannot actually support arbitrary GroupResults in chains,

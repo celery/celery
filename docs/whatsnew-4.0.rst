@@ -119,7 +119,7 @@ version: ``celery==4.0.0``, or a range: ``celery>=4.0,<5.0``.
 Dropping support for Python 2 will enable us to remove massive
 amounts of compatibility code, and going with Python 3.6 allows
 us to take advantage of typing, async/await, asyncio, ++, for which
-there are no convenient alternatives in older versions.
+there're no convenient alternatives in older versions.
 
 Celery 4.x will continue to work on Python 2.7, 3.4, 3.5; just as Celery 3.x
 still works on Python 2.6.
@@ -137,7 +137,7 @@ Features removed for simplicity
 - Webhook task machinery (``celery.task.http``) has been removed.
 
     Nowadays it's easy to use the :pypi:`requests` module to write
-    webhook tasks manually.  We would love to use requests but we
+    webhook tasks manually. We would love to use requests but we
     are simply unable to as there's a very vocal 'anti-dependency'
     mob in the Python community
 
@@ -160,11 +160,11 @@ Features removed for lack of funding
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We announced with the 3.1 release that some transports were
-moved to experimental status, and that there would be no official
+moved to experimental status, and that there'd be no official
 support for the transports, citing a lack of resources.
 
 As this subtle hint for the need of funding failed
-we have removed them completely, breaking backwards compatibility.
+we've removed them completely, breaking backwards compatibility.
 
 - Using MongoDB as a broker is no longer supported.
 
@@ -184,9 +184,9 @@ attempting to use them will raise an exception:
 - The ``--autoreload`` feature has been removed.
 
   This was an experimental feature, and not covered by our deprecation
-  timeline guarantee.  The flag is removed completely so the worker
-  will crash at startup when present.  Luckily this
-  flag is not used in production systems.
+  timeline guarantee. The flag is removed completely so the worker
+  will crash at startup when present. Luckily this
+  flag isn't used in production systems.
 
 - The ``--autoscale`` feature has been removed.
 
@@ -223,7 +223,7 @@ This version introduces a brand new task message protocol,
 the first major change to the protocol since the beginning of the project.
 
 The new protocol is enabled by default in this version and since the new
-version is not backwards compatible you have to be careful when upgrading.
+version isn't backwards compatible you have to be careful when upgrading.
 
 The 3.1.24 version was released to add compatibility with the new protocol
 so the easiest way to upgrade is to upgrade to that version first, then
@@ -262,12 +262,12 @@ and save a backup in :file:`proj/settings.py.orig`.
 .. admonition:: For Django users and others who want to keep uppercase names
 
     If you're loading Celery configuration from the Django settings module
-    then you will want to keep using the uppercase names.
+    then you'll want to keep using the uppercase names.
 
-    You will also want to use a ``CELERY_`` prefix so that no Celery settings
+    You also want to use a ``CELERY_`` prefix so that no Celery settings
     collide with Django settings used by other apps.
 
-    To do this, you will first need to convert your settings file
+    To do this, you'll first need to convert your settings file
     to use the new consistent naming scheme, and add the prefix to all
     Celery related settings:
 
@@ -293,8 +293,8 @@ and save a backup in :file:`proj/settings.py.orig`.
     right thing.
 
 The loader will try to detect if your configuration is using the new format,
-and act accordingly, but this also means that you are not allowed to mix and
-match new and old setting names, that is unless you provide a value for both
+and act accordingly, but this also means you're not allowed to mix and
+match new and old setting names, that's unless you provide a value for both
 alternatives.
 
 The major difference between previous versions, apart from the lower case
@@ -426,8 +426,8 @@ Redis Events not backward compatible
 The Redis ``fanout_patterns`` and ``fanout_prefix`` transport
 options are now enabled by default.
 
-Workers/monitors without these flags enabled will not be able to
-see workers with this flag disabled.  They can still execute tasks,
+Workers/monitors without these flags enabled won't be able to
+see workers with this flag disabled. They can still execute tasks,
 but they cannot receive each others monitoring messages.
 
 You can upgrade in a backward compatible manner by first configuring
@@ -480,7 +480,7 @@ by replacing :func:`celery.utils.worker_direct` with this implementation:
             routing_key=hostname,
         )
 
-(This feature closed Issue #2492.)
+This feature closed Issue #2492.
 
 
 Old command-line programs removed
@@ -519,13 +519,13 @@ some long-requested features:
 
     In version 1 of the protocol the worker always had to deserialize
     the message to be able to read task meta-data like the task id,
-    name, etc.  This also meant that the worker was forced to double-decode
+    name, etc. This also meant that the worker was forced to double-decode
     the data, first deserializing the message on receipt, serializing
     the message again to send to child process, then finally the child process
     deserializes the message again.
 
     Keeping the meta-data fields in the message headers means the worker
-    does not actually have to decode the payload before delivering
+    doesn't actually have to decode the payload before delivering
     the task to the child process, and also that it's now possible
     for the worker to reroute a task written in a language different
     from Python to a different worker.
@@ -568,7 +568,7 @@ some long-requested features:
 - New ``argsrepr`` and ``kwargsrepr`` fields contain textual representations
   of the task arguments (possibly truncated) for use in logs, monitors, etc.
 
-    This means the worker does not have to deserialize the message payload
+    This means the worker doesn't have to deserialize the message payload
     to display the task arguments for informational purposes.
 
 - Chains now use a dedicated ``chain`` field enabling support for chains
@@ -589,7 +589,7 @@ some long-requested features:
 
     Dividing the responsibilities into creating and sending means that
     people who want to send messages using a Python AMQP client directly,
-    does not have to implement the protocol.
+    doesn't have to implement the protocol.
 
     The :meth:`@amqp.create_task_message` method calls either
     :meth:`@amqp.as_task_v2`, or :meth:`@amqp.as_task_v1` depending
@@ -621,7 +621,7 @@ process has a separate log file after moving task logging
 to the child process, as multiple processes writing to the same
 log file can cause corruption.
 
-You are encouraged to upgrade your init-scripts and
+You're encouraged to upgrade your init-scripts and
 :program:`celery multi` arguments to use this new option.
 
 Configure broker URL for read/write separately.
@@ -643,7 +643,7 @@ the intent of the required connection.
 .. note::
 
     Two connection pools are available: ``app.pool`` (read), and
-    ``app.producer_pool`` (write).  The latter does not actually give connections
+    ``app.producer_pool`` (write). The latter doesn't actually give connections
     but full :class:`kombu.Producer` instances.
 
     .. code-block:: python
@@ -689,12 +689,12 @@ to fix some long outstanding issues.
 - Now unrolls groups within groups into a single group (Issue #1509).
 - chunks/map/starmap tasks now routes based on the target task
 - chords and chains can now be immutable.
-- Fixed bug where serialized signatures were not converted back into
+- Fixed bug where serialized signatures weren't converted back into
   signatures (Issue #2078)
 
     Fix contributed by **Ross Deane**.
 
-- Fixed problem where chains and groups did not work when using JSON
+- Fixed problem where chains and groups didn't work when using JSON
   serialization (Issue #2076).
 
     Fix contributed by **Ross Deane**.
@@ -715,7 +715,7 @@ to fix some long outstanding issues.
 
 - ``group | group`` is now flattened into a single group (Issue #2573).
 
-- Fixed issue where ``group | task`` was not upgrading correctly
+- Fixed issue where ``group | task`` wasn't upgrading correctly
   to chord (Issue #2922).
 
 Amazon SQS transport now officially supported.
@@ -786,7 +786,7 @@ RPC is now using pub/sub for streaming task results.
 Calling ``result.get()`` when using the Redis result backend
 used to be extremely expensive as it was using polling to wait
 for the result to become available. A default polling
-interval of 0.5 seconds did not help performance, but was
+interval of 0.5 seconds didn't help performance, but was
 necessary to avoid a spin loop.
 
 The new implementation is using Redis Pub/Sub mechanisms to
@@ -894,7 +894,7 @@ in the following way:
       is currently ``task`` (giving a routing key of ``task.multi``).
 
     - The message body will be a serialized list-of-dictionaries instead
-      of a dictionary.  Each item in the list can be regarded
+      of a dictionary. Each item in the list can be regarded
       as a normal event message body.
 
 .. :sha:`03399b4d7c26fb593e61acf34f111b66b340ba4e`
@@ -908,7 +908,7 @@ The two methods had almost the same functionality, but the old
 ``Task.replace`` would force the new task to inherit the
 callbacks/errbacks of the existing task.
 
-If you replace a node in a tree, then you would not expect the new node to
+If you replace a node in a tree, then you wouldn't expect the new node to
 inherit the children of the old node, so this seems like unexpected
 behavior.
 
@@ -988,7 +988,7 @@ Instead of using router classes you can now simply define a function:
             return {'queue': 'hipri'}
 
 If you don't need the arguments you can use start arguments, just make
-sure you always also accept star arguments so that we have the ability
+sure you always also accept star arguments so that we've the ability
 to add more features in the future:
 
 .. code-block:: python
@@ -1002,7 +1002,7 @@ Both the ``options`` argument and the new ``task`` keyword argument
 are new to the function-style routers, and will make it easier to write
 routers based on execution options, or properties of the task.
 
-The optional ``task`` keyword argument will not be set if a task is called
+The optional ``task`` keyword argument won't be set if a task is called
 by name using :meth:`@send_task`.
 
 For more examples, including using glob/regexes in routers please see
@@ -1059,7 +1059,7 @@ Tasks
 - ``AsyncResult`` now raises :exc:`ValueError` if task_id is None.
   (Issue #1996).
 
-- Retried tasks did not forward expires setting (Issue #3297).
+- Retried tasks didn't forward expires setting (Issue #3297).
 
 - ``result.get()`` now supports an ``on_message`` argument to set a
   callback to be called for every message received.
@@ -1080,7 +1080,7 @@ Tasks
 
 - ``Task.replace``: Append to chain/chord (Closes #3232)
 
-    Fixed issue #3232, adding the signature to the chain (if there is any).
+    Fixed issue #3232, adding the signature to the chain (if there's any).
     Fixed the chord suppress if the given signature contains one.
 
     Fix contributed by :github_user:`honux`.
@@ -1127,7 +1127,7 @@ App
     Contributed by **Dmitry Malinovsky**.
 
 - App has new ``app.current_worker_task`` property that
-  returns the task that is currently being worked on (or :const:`None`).
+  returns the task that's currently being worked on (or :const:`None`).
   (Issue #2100).
 
 Execution Pools
@@ -1195,21 +1195,21 @@ Worker
 
     Getting rid of leaking memory + adding ``minlen`` size of the set:
     the minimal residual size of the set after operating for some time.
-    ``minlen`` items are kept, even if they should have been expired.
+    ``minlen`` items are kept, even if they should've been expired.
 
     Problems with older and even more old code:
 
     #. Heap would tend to grow in some scenarios
        (like adding an item multiple times).
 
-    #. Adding many items fast would not clean them soon enough (if ever).
+    #. Adding many items fast wouldn't clean them soon enough (if ever).
 
     #. When talking to other workers, revoked._data was sent, but
        it was processed on the other side as iterable.
        That means giving those keys new (current)
        time-stamp. By doing this workers could recycle
        items forever. Combined with 1) and 2), this means that in
-       large set of workers, you are getting out of memory soon.
+       large set of workers, you're getting out of memory soon.
 
     All those problems should be fixed now.
 
@@ -1249,7 +1249,7 @@ Worker
 - New :data:`celery.worker.state.requests` enables O(1) loookup
   of active/reserved tasks by id.
 
-- Auto-scale did not always update keep-alive when scaling down.
+- Auto-scale didn't always update keep-alive when scaling down.
 
     Fix contributed by **Philip Garnero**.
 
@@ -1303,7 +1303,7 @@ Events
     The queues will now expire after 60 seconds after the monitor stops
     consuming from it.
 
-- Fixed a bug where a None value was not handled properly.
+- Fixed a bug where a None value wasn't handled properly.
 
     Fix contributed by **Dongweiming**.
 
@@ -1336,7 +1336,7 @@ Deployment
     Contributed by **Taha Jahangir**.
 
 - Generic init-script: Fixed strange bug for ``celerybeat`` where
-  restart did not always work (Issue #3018).
+  restart didn't always work (Issue #3018).
 
 - The systemd init script now uses a shell when executing
   services.
@@ -1356,7 +1356,7 @@ Result Backends
 - RPC Backend result queues are now auto delete by default (Issue #2001).
 
 - RPC Backend: Fixed problem where exception
-  was not deserialized properly with the json serializer (Issue #2518).
+  wasn't deserialized properly with the json serializer (Issue #2518).
 
     Fix contributed by **Allard Hoeve**.
 
@@ -1441,8 +1441,8 @@ Unscheduled Removals
 
 - The CentOS init-scripts have been removed.
 
-    These did not really add any features over the generic init-scripts,
-    so you are encouraged to use them instead, or something like
+    These didn't really add any features over the generic init-scripts,
+    so you're encouraged to use them instead, or something like
     :pypi:`supervisor`.
 
 
@@ -1451,11 +1451,11 @@ Unscheduled Removals
 Reorganization Deprecations
 ---------------------------
 
-These symbols have been renamed, and while there is an alias available in this
+These symbols have been renamed, and while there's an alias available in this
 version for backward compatibility, they will be removed in Celery 5.0, so
 make sure you rename these ASAP to make sure it won't break for that release.
 
-Chances are that you will only use the first in this list, but you never
+Chances are that you'll only use the first in this list, but you never
 know:
 
 - ``celery.utils.worker_direct`` ->
@@ -1485,11 +1485,11 @@ Modules
 
 - Module ``celery.worker.job`` has been renamed to :mod:`celery.worker.request`.
 
-    This was an internal module so should not have any effect.
-    It is now part of the public API so should not change again.
+    This was an internal module so shouldn't have any effect.
+    It's now part of the public API so must not change again.
 
 - Module ``celery.task.trace`` has been renamed to ``celery.app.trace``
-  as the ``celery.task`` package is being phased out.  The module
+  as the ``celery.task`` package is being phased out. The module
   will be removed in version 5.0 so please change any import from::
 
     from celery.task.trace import X
@@ -1624,7 +1624,7 @@ Magic keyword arguments
 Support for the very old magic keyword arguments accepted by tasks is
 finally removed in this version.
 
-If you are still using these you have to rewrite any task still
+If you're still using these you have to rewrite any task still
 using the old ``celery.decorators`` module and depending
 on keyword arguments being passed to the task,
 for example::

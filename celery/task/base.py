@@ -62,7 +62,7 @@ class TaskType(type):
         new = super(TaskType, cls).__new__
         task_module = attrs.get('__module__') or '__main__'
 
-        # - Abstract class: abstract attribute should not be inherited.
+        # - Abstract class: abstract attribute shouldn't be inherited.
         abstract = attrs.pop('abstract', None)
         if abstract or not attrs.get('autoregister', True):
             return new(cls, name, bases, attrs)
@@ -92,13 +92,13 @@ class TaskType(type):
             # an app is created multiple times due to modules
             # imported under multiple names.
             # Hairy stuff,  here to be compatible with 2.x.
-            # People should not use non-abstract task classes anymore,
+            # People shouldn't use non-abstract task classes anymore,
             # use the task decorator.
             from celery._state import connect_on_app_finalize
             unique_name = '.'.join([task_module, name])
             if unique_name not in cls._creation_count:
                 # the creation count is used as a safety
-                # so that the same task is not added recursively
+                # so that the same task isn't added recursively
                 # to the set of constructors.
                 cls._creation_count[unique_name] = 1
                 connect_on_app_finalize(_CompatShared(

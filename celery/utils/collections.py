@@ -424,7 +424,7 @@ class LimitedSet(object):
     but the set should not grow unbounded.
 
     ``maxlen`` is enforced at all times, so if the limit is reached
-    we will also remove non-expired items.
+    we'll also remove non-expired items.
 
     You can also configure ``minlen``, which is the minimal residual size
     of the set.
@@ -495,7 +495,7 @@ class LimitedSet(object):
             raise ValueError('expires cannot be negative!')
 
     def _refresh_heap(self):
-        """Time consuming recreating of heap. Do not run this too often."""
+        """Time consuming recreating of heap. Don't run this too often."""
         self._heap[:] = [entry for entry in values(self._data)]
         heapify(self._heap)
 
@@ -568,7 +568,7 @@ class LimitedSet(object):
             while len(self._data) > self.minlen >= 0:
                 inserted_time, _ = self._heap[0]
                 if inserted_time + self.expires > now:
-                    break  # oldest item has not expired yet
+                    break  # oldest item hasn't expired yet
                 self.pop()
 
     def pop(self, default=None):

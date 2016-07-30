@@ -341,7 +341,7 @@ class Request(object):
         if isinstance(exc, Retry):
             return self.on_retry(exc_info)
 
-        # These are special cases where the process would not have had
+        # These are special cases where the process wouldn't've had
         # time to write the result.
         if isinstance(exc, Terminated):
             self._announce_revoked(

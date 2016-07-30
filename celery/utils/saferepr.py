@@ -7,7 +7,7 @@ Differences from regular :func:`repr`:
 - Sets are represented the Python 3 way: ``{1, 2}`` vs ``set([1, 2])``.
 - Unicode strings does not have the ``u'`` prefix, even on Python 2.
 - Empty set formatted as ``set()`` (Python 3), not ``set([])`` (Python 2).
-- Longs do not have the ``L`` suffix.
+- Longs don't have the ``L`` suffix.
 
 Very slow with no limits, super quick with limits.
 """

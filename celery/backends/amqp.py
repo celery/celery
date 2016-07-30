@@ -14,7 +14,7 @@ __all__ = ['AMQPBackend']
 
 def repair_uuid(s):
     # Historically the dashes in UUIDS are removed from AMQ entity names,
-    # but there is no known reason to.  Hopefully we'll be able to fix
+    # but there's no known reason to.  Hopefully we'll be able to fix
     # this in v4.0.
     return '%s-%s-%s-%s-%s' % (s[:8], s[8:12], s[12:16], s[16:20], s[20:])
 

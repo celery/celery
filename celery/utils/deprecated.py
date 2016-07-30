@@ -43,11 +43,11 @@ def Callable(deprecation=None, removal=None,
 
     Arguments:
         deprecation (str): Version that marks first deprecation, if this
-            argument is not set a ``PendingDeprecationWarning`` will be
+            argument isn't set a ``PendingDeprecationWarning`` will be
             emitted instead.
         removal (str): Future version when this feature will be removed.
         alternative (str): Instructions for an alternative solution (if any).
-        description (str): Description of what is being deprecated.
+        description (str): Description of what's being deprecated.
     """
     def _inner(fun):
 

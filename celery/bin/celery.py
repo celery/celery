@@ -56,7 +56,7 @@ in any command that also has a `--detach` option.
 
     Optional file used to store the process pid.
 
-    The program will not start if this file already exists
+    The program won't start if this file already exists
     and the pid is still alive.
 
 .. cmdoption:: --uid
@@ -471,7 +471,7 @@ class purge(Command):
 
     option_list = Command.option_list + (
         Option('--force', '-f', action='store_true',
-               help='Do not prompt for verification'),
+               help="Don't prompt for verification"),
         Option('--queues', '-Q', default=[],
                help='Comma separated list of queue names to purge.'),
         Option('--exclude-queues', '-X', default=[],
@@ -1106,7 +1106,7 @@ class CeleryCommand(Command):
                 elif value.startswith('-'):
                     # we eat the next argument even though we don't know
                     # if this option takes an argument or not.
-                    # instead we will assume what is the command name in the
+                    # instead we'll assume what's the command name in the
                     # return statements below.
                     try:
                         nxt = argv[index + 1]

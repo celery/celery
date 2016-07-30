@@ -149,7 +149,7 @@ class AsyncResult(ResultBase):
             propagate (bool): Re-raise exception if the task failed.
             interval (float): Time to wait (in seconds) before retrying to
                 retrieve the result.  Note that this does not have any effect
-                when using the RPC/redis result store backends, as they do not
+                when using the RPC/redis result store backends, as they don't
                 use polling.
             no_ack (bool): Enable amqp no ack (automatically acknowledge
                 message).  If this is :const:`False` then the message will
@@ -158,7 +158,7 @@ class AsyncResult(ResultBase):
                 parent tasks.
 
         Raises:
-            celery.exceptions.TimeoutError: if `timeout` is not
+            celery.exceptions.TimeoutError: if `timeout` isn't
                 :const:`None` and the result does not arrive within
                 `timeout` seconds.
             Exception: If the remote call raised an exception then that
@@ -474,7 +474,7 @@ class ResultSet(ResultBase):
         """Remove result from the set; it must be a member.
 
         Raises:
-            KeyError: if the result is not a member.
+            KeyError: if the result isn't a member.
         """
         if isinstance(result, string_t):
             result = self.app.AsyncResult(result)
@@ -505,7 +505,7 @@ class ResultSet(ResultBase):
 
         Returns:
             bool: true if all of the tasks finished
-                successfully (i.e. did not raise an exception).
+                successfully (i.e. didn't raise an exception).
         """
         return all(result.successful() for result in self.results)
 
@@ -647,7 +647,7 @@ class ResultSet(ResultBase):
                 No results will be returned by this function if a callback
                 is specified.  The order of results is also arbitrary when a
                 callback is used.  To get access to the result object for
-                a particular id you will have to generate an index first:
+                a particular id you'll have to generate an index first:
                 ``index = {r.id: r for r in gres.results.values()}``
                 Or you can create new result objects on the fly:
                 ``result = app.AsyncResult(task_id)`` (both will
@@ -657,7 +657,7 @@ class ResultSet(ResultBase):
                 *will not be acknowledged*).
 
         Raises:
-            celery.exceptions.TimeoutError: if ``timeout`` is not
+            celery.exceptions.TimeoutError: if ``timeout`` isn't
                 :const:`None` and the operation takes longer than ``timeout``
                 seconds.
         """
@@ -953,7 +953,7 @@ def result_from_tuple(r, app=None):
             return app.GroupResult(
                 res, [result_from_tuple(child, app) for child in nodes],
             )
-        # previously did not include parent
+        # previously didn't include parent
         id, parent = res if isinstance(res, (list, tuple)) else (res, None)
         if parent:
             parent = result_from_tuple(parent, app)

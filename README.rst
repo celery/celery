@@ -15,8 +15,8 @@
 
 --
 
-What is a Task Queue?
-=====================
+What's a Task Queue?
+====================
 
 Task queues are used as a mechanism to distribute work across threads or
 machines.
@@ -25,14 +25,14 @@ A task queue's input is a unit of work, called a task, dedicated worker
 processes then constantly monitor the queue for new work to perform.
 
 Celery communicates via messages, usually using a broker
-to mediate between clients and workers.  To initiate a task a client puts a
+to mediate between clients and workers. To initiate a task a client puts a
 message on the queue, the broker then delivers the message to a worker.
 
 A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
-language.  In addition to Python there's node-celery_ for Node.js,
+language. In addition to Python there's node-celery_ for Node.js,
 and a `PHP client`_.
 
 Language interoperability can also be achieved
@@ -55,7 +55,7 @@ Celery version 4.0 runs on,
 This is the last version to support Python 2.7,
 and from the next version (Celery 5.x) Python 3.6 or newer is required.
 
-If you are running an older version of Python, you need to be running
+If you're running an older version of Python, you need to be running
 an older version of Celery:
 
 - Python 2.6: Celery series 3.1 or earlier.
@@ -63,8 +63,8 @@ an older version of Celery:
 - Python 2.4 was Celery series 2.2 or earlier.
 
 Celery is a project with minimal funding,
-so we do not support Microsoft Windows.
-Please do not open any issues related to that platform.
+so we don't support Microsoft Windows.
+Please don't open any issues related to that platform.
 
 *Celery* is usually used with a message broker to send and receive messages.
 The RabbitMQ, Redis transports are feature complete,
@@ -77,7 +77,7 @@ across datacenters.
 Get Started
 ===========
 
-If this is the first time you're trying to use Celery, or you are
+If this is the first time you're trying to use Celery, or you're
 new to Celery 4.0 coming from previous versions then you should read our
 getting started tutorials:
 
@@ -184,7 +184,7 @@ integration packages:
     | `Tornado`_         | `tornado-celery`_      |
     +--------------------+------------------------+
 
-The integration packages are not strictly necessary, but they can make
+The integration packages aren't strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
 database connections at ``fork``.
 
@@ -238,7 +238,7 @@ Celery also defines a group of bundles that can be used
 to install Celery and the dependencies for a given feature.
 
 You can specify these in your requirements or on the ``pip``
-command-line by using brackets.  Multiple bundles can be specified by
+command-line by using brackets. Multiple bundles can be specified by
 separating them by commas.
 ::
 
@@ -334,7 +334,7 @@ You can install it by doing the following,:
     # python setup.py install
 
 The last command must be executed as a privileged user if
-you are not currently using a virtualenv.
+you aren't currently using a virtualenv.
 
 .. _celery-installing-from-git:
 
@@ -409,7 +409,7 @@ Contributing
 
 Development of `celery` happens at GitHub: https://github.com/celery/celery
 
-You are highly encouraged to participate in the development
+You're highly encouraged to participate in the development
 of `celery`. If you don't like GitHub (for some reason) you're welcome
 to send regular patches.
 

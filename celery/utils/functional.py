@@ -83,7 +83,7 @@ def first(predicate, it):
     """Return the first element in ``iterable`` that ``predicate`` gives a
     :const:`True` value for.
 
-    If ``predicate`` is None it will return the first item that is not
+    If ``predicate`` is None it will return the first item that's not
     :const:`None`.
     """
     return next(

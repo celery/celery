@@ -76,7 +76,7 @@ class test_unlock_chord_task(ChordCase):
             cb.type.apply_async.assert_called_with(
                 ([2, 4, 8, 6],), {}, task_id=cb.id,
             )
-            # did not retry
+            # didn't retry
             self.assertFalse(retry.call_count)
 
     def test_deps_ready_fails(self):
@@ -114,7 +114,7 @@ class test_unlock_chord_task(ChordCase):
 
         with self._chord_context(Failed) as (cb, retry, fail_current):
             cb.type.apply_async.assert_not_called()
-            # did not retry
+            # didn't retry
             self.assertFalse(retry.call_count)
             fail_current.assert_called()
             self.assertEqual(

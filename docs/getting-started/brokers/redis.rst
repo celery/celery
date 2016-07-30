@@ -58,7 +58,7 @@ Visibility Timeout
 
 The visibility timeout defines the number of seconds to wait
 for the worker to acknowledge the task before the message is redelivered
-to another worker.  Be sure to see :ref:`redis-caveats` below.
+to another worker. Be sure to see :ref:`redis-caveats` below.
 
 This option is set via the :setting:`broker_transport_options` setting:
 
@@ -100,8 +100,8 @@ they will only be received by the active virtual host:
 
     app.conf.broker_transport_options = {'fanout_prefix': True}
 
-Note that you will not be able to communicate with workers running older
-versions or workers that does not have this setting enabled.
+Note that you won't be able to communicate with workers running older
+versions or workers that doesn't have this setting enabled.
 
 This setting will be the default in the future, so better to migrate
 sooner rather than later.
@@ -121,7 +121,7 @@ the workers may only subscribe to worker related events:
     app.conf.broker_transport_options = {'fanout_patterns': True}
 
 Note that this change is backward incompatible so all workers in the
-cluster must have this option enabled, or else they will not be able to
+cluster must have this option enabled, or else they won't be able to
 communicate.
 
 This option will be enabled by default in the future.
@@ -129,7 +129,7 @@ This option will be enabled by default in the future.
 Visibility timeout
 ------------------
 
-If a task is not acknowledged within the :ref:`redis-visibility_timeout`
+If a task isn't acknowledged within the :ref:`redis-visibility_timeout`
 the task will be redelivered to another worker and executed.
 
 This causes problems with ETA/countdown/retry tasks where the
@@ -137,14 +137,14 @@ time to execute exceeds the visibility timeout; in fact if that
 happens it will be executed again, and again in a loop.
 
 So you have to increase the visibility timeout to match
-the time of the longest ETA you are planning to use.
+the time of the longest ETA you're planning to use.
 
 Note that Celery will redeliver messages at worker shutdown,
 so having a long visibility timeout will only delay the redelivery
 of 'lost' tasks in the event of a power failure or forcefully terminated
 workers.
 
-Periodic tasks will not be affected by the visibility timeout,
+Periodic tasks won't be affected by the visibility timeout,
 as this is a concept separate from ETA/countdown.
 
 You can increase this timeout by configuring a transport option

@@ -88,7 +88,7 @@ else:
 def shared_task(*args, **kwargs):
     """Create shared tasks (decorator).
 
-    This can be used by library authors to create tasks that will work
+    This can be used by library authors to create tasks that'll work
     for any app environment.
 
     Returns:

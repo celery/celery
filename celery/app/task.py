@@ -175,7 +175,7 @@ class Task(object):
     #: a minute),`'100/h'` (hundred tasks an hour)
     rate_limit = None
 
-    #: If enabled the worker will not store task state and return values
+    #: If enabled the worker won't store task state and return values
     #: for this task.  Defaults to the :setting:`task_ignore_result`
     #: setting.
     ignore_result = None
@@ -213,7 +213,7 @@ class Task(object):
     #: finished, or waiting to be retried.
     #:
     #: Having a 'started' status can be useful for when there are long
-    #: running tasks and there is a need to report which task is currently
+    #: running tasks and there's a need to report which task is currently
     #: running.
     #:
     #: The application default can be overridden using the
@@ -247,9 +247,9 @@ class Task(object):
     #: Tuple of expected exceptions.
     #:
     #: These are errors that are expected in normal operation
-    #: and that should not be regarded as a real error by the worker.
+    #: and that shouldn't be regarded as a real error by the worker.
     #: Currently this means that the state will be updated to an error
-    #: state, but the worker will not log the event as an error.
+    #: state, but the worker won't log the event as an error.
     throws = ()
 
     #: Default task expiry time.
@@ -261,7 +261,7 @@ class Task(object):
     #: Task request stack, the current request will be the topmost.
     request_stack = None
 
-    #: Some may expect a request to exist even if the task has not been
+    #: Some may expect a request to exist even if the task hasn't been
     #: called.  This should probably be deprecated.
     _default_request = None
 
@@ -362,7 +362,7 @@ class Task(object):
         # - simply grabs it from the local registry.
         # - in later versions the module of the task is also included,
         # - and the receiving side tries to import that module so that
-        # - it will work even if the task has not been registered.
+        # - it will work even if the task hasn't been registered.
         mod = type(self).__module__
         mod = mod if mod and mod in sys.modules else None
         return (_unpickle_task_v2, (self.name, mod), None)
@@ -405,7 +405,7 @@ class Task(object):
 
             expires (float, ~datetime.datetime): Datetime or
                 seconds in the future for the task should expire.
-                The task will not be executed after the expiration time.
+                The task won't be executed after the expiration time.
 
             shadow (str): Override task name used in logs/monitoring.
                 Default is retrieved from :meth:`shadow_name`.
@@ -441,7 +441,7 @@ class Task(object):
 
             serializer (str): Serialization method to use.
                 Can be `pickle`, `json`, `yaml`, `msgpack` or any custom
-                serialization method that has been registered
+                serialization method that's been registered
                 with :mod:`kombu.serialization.registry`.
                 Defaults to the :attr:`serializer` attribute.
 
@@ -559,7 +559,7 @@ class Task(object):
         Note:
             Although the task will never return above as `retry` raises an
             exception to notify the worker, we use `raise` in front of the
-            retry to convey that the rest of the block will not be executed.
+            retry to convey that the rest of the block won't be executed.
 
         Arguments:
             args (Tuple): Positional arguments to retry with.
@@ -578,15 +578,15 @@ class Task(object):
             eta (~datetime.dateime): Explicit time and date to run the
                 retry at.
             max_retries (int): If set, overrides the default retry limit for
-                this execution. Changes to this parameter do not propagate to
+                this execution. Changes to this parameter don't propagate to
                 subsequent task retry attempts. A value of :const:`None`, means
-                "use the default", so if you want infinite retries you would
+                "use the default", so if you want infinite retries you'd
                 have to set the :attr:`max_retries` attribute of the task to
                 :const:`None` first.
             time_limit (int): If set, overrides the default time limit.
             soft_time_limit (int): If set, overrides the default soft
                 time limit.
-            throw (bool): If this is :const:`False`, do not raise the
+            throw (bool): If this is :const:`False`, don't raise the
                 :exc:`~@Retry` exception, that tells the worker to mark
                 the task as being retried.  Note that this means the task
                 will be marked as failed if the task raises an exception,
@@ -760,7 +760,7 @@ class Task(object):
         Raises:
             ~@Ignore: This is always raised, so the best practice
             is to always use ``raise self.replace(...)`` to convey
-            to the reader that the task will not continue after being replaced.
+            to the reader that the task won't continue after being replaced.
         """
         chord = self.request.chord
         if 'chord' in sig.options:
@@ -798,7 +798,7 @@ class Task(object):
 
         Arguments:
             sig (~@Signature): Signature to extend chord with.
-            lazy (bool): If enabled the new task will not actually be called,
+            lazy (bool): If enabled the new task won't actually be called,
                 and ``sig.delay()`` must be called manually.
         """
         if not self.request.chord:

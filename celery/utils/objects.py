@@ -21,7 +21,7 @@ def mro_lookup(cls, attr, stop=set(), monkey_patched=[]):
         stop (Set[Any]): A set of types that if reached will stop
             the search.
         monkey_patched (Sequence): Use one of the stop classes
-            if the attributes module origin is not in this list.
+            if the attributes module origin isn't in this list.
             Used to detect monkey patched attributes.
 
     Returns:
@@ -53,11 +53,11 @@ class FallbackContext(object):
         @contextmanager
         def connection_or_default_connection(connection=None):
             if connection:
-                # user already has a connection, should not close
+                # user already has a connection, shouldn't close
                 # after use
                 yield connection
             else:
-                # must have new connection, and also close the connection
+                # must've new connection, and also close the connection
                 # after the block returns
                 with create_new_connection() as connection:
                     yield connection

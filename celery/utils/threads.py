@@ -311,6 +311,6 @@ if USE_FAST_LOCALS:  # pragma: no cover
 else:
     # - See #706
     # since each thread has its own greenlet we can just use those as
-    # identifiers for the context.  If greenlets are not available we
+    # identifiers for the context.  If greenlets aren't available we
     # fall back to the  current thread ident.
     LocalStack = _LocalStack  # noqa

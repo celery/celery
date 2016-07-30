@@ -95,7 +95,7 @@ Fixes
 
 * Task: Don't use ``app.main`` if the task name is set explicitly.
 
-* Sending emails did not work on Python 2.5, due to a bug in
+* Sending emails didn't work on Python 2.5, due to a bug in
   the version detection code (Issue #378).
 
 * Beat: Adds method ``ScheduleEntry._default_now``
@@ -106,16 +106,16 @@ Fixes
 * An error occurring in process cleanup could mask task errors.
 
   We no longer propagate errors happening at process cleanup,
-  but log them instead.  This way they will not interfere with publishing
+  but log them instead. This way they won't interfere with publishing
   the task result (Issue #365).
 
-* Defining tasks did not work properly when using the Django
+* Defining tasks didn't work properly when using the Django
   ``shell_plus`` utility (Issue #366).
 
-* ``AsyncResult.get`` did not accept the ``interval`` and ``propagate``
+* ``AsyncResult.get`` didn't accept the ``interval`` and ``propagate``
    arguments.
 
-* worker: Fixed a bug where the worker would not shutdown if a
+* worker: Fixed a bug where the worker wouldn't shutdown if a
    :exc:`socket.error` was raised.
 
 .. _version-2.2.5:
@@ -145,7 +145,7 @@ News
   (Issue #321)
 
     This is accomplished by using the ``WatchedFileHandler``, which re-opens
-    the file if it is renamed or deleted.
+    the file if it's renamed or deleted.
 
 .. _`logrotate.d`:
     http://www.ducea.com/2006/06/06/rotating-linux-log-files-part-2-logrotate/
@@ -180,7 +180,7 @@ News
 * The taskset_id (if any) is now available in the Task request context.
 
 * SQLAlchemy result backend: taskset_id and taskset_id columns now have a
-  unique constraint.  (Tables need to recreated for this to take affect).
+  unique constraint (tables need to recreated for this to take affect).
 
 * Task user guide: Added section about choosing a result backend.
 
@@ -198,19 +198,19 @@ Fixes
     but we have no reliable way to detect that this is the case.
 
     So we have to wait for 10 seconds before marking the result with
-    WorkerLostError.  This gives the result handler a chance to retrieve the
+    WorkerLostError. This gives the result handler a chance to retrieve the
     result.
 
 * multiprocessing.Pool: Shutdown could hang if rate limits disabled.
 
     There was a race condition when the MainThread was waiting for the pool
-    semaphore to be released.  The ResultHandler now terminates after 5
+    semaphore to be released. The ResultHandler now terminates after 5
     seconds if there are unacked jobs, but no worker processes left to start
     them  (it needs to timeout because there could still be an ack+result
     that we haven't consumed from the result queue. It
-    is unlikely we will receive any after 5 seconds with no worker processes).
+    is unlikely we'll receive any after 5 seconds with no worker processes).
 
-* ``celerybeat``: Now creates pidfile even if the ``--detach`` option is not set.
+* ``celerybeat``: Now creates pidfile even if the ``--detach`` option isn't set.
 
 * eventlet/gevent: The broadcast command consumer is now running in a separate
   green-thread.
@@ -231,7 +231,7 @@ Fixes
 
 * AMQP Result Backend: Now resets cached channel if the connection is lost.
 
-* Polling results with the AMQP result backend was not working properly.
+* Polling results with the AMQP result backend wasn't working properly.
 
 * Rate limits: No longer sleeps if there are no tasks, but rather waits for
   the task received condition (Performance improvement).
@@ -250,7 +250,7 @@ Fixes
 * Autoscaler: The "all processes busy" log message is now severity debug
   instead of error.
 
-* worker: If the message body can't be decoded, it is now passed through
+* worker: If the message body can't be decoded, it's now passed through
   ``safe_str`` when logging.
 
     This to ensure we don't get additional decoding errors when trying to log
@@ -269,9 +269,9 @@ Fixes
   count value exceeded 65535 (Issue #359).
 
     The prefetch count is incremented for every received task with an
-    ETA/countdown defined.  The prefetch count is a short, so can only support
-    a maximum value of 65535.  If the value exceeds the maximum value we now
-    disable the prefetch count, it is re-enabled as soon as the value is below
+    ETA/countdown defined. The prefetch count is a short, so can only support
+    a maximum value of 65535. If the value exceeds the maximum value we now
+    disable the prefetch count, it's re-enabled as soon as the value is below
     the limit again.
 
 * ``cursesmon``: Fixed unbound local error (Issue #303).
@@ -288,7 +288,7 @@ Fixes
   version.
 
 * multiprocessing.Pool: No longer cares if the ``putlock`` semaphore is released
-  too many times. (this can happen if one or more worker processes are
+  too many times (this can happen if one or more worker processes are
   killed).
 
 * SQLAlchemy Result Backend: Now returns accidentally removed ``date_done`` again
@@ -316,7 +316,7 @@ Fixes
 
 * worker: 2.2.3 broke error logging, resulting in tracebacks not being logged.
 
-* AMQP result backend: Polling task states did not work properly if there were
+* AMQP result backend: Polling task states didn't work properly if there were
   more than one result message in the queue.
 
 * ``TaskSet.apply_async()`` and ``TaskSet.apply()`` now supports an optional
@@ -326,10 +326,10 @@ Fixes
   ``request.taskset`` (Issue #329).
 
 * SQLAlchemy result backend: `date_done` was no longer part of the results as it had
-  been accidentally removed.  It is now available again (Issue #325).
+  been accidentally removed. It's now available again (Issue #325).
 
 * SQLAlchemy result backend: Added unique constraint on `Task.id` and
-  `TaskSet.taskset_id`.  Tables needs to be recreated for this to take effect.
+  `TaskSet.taskset_id`. Tables needs to be recreated for this to take effect.
 
 * Fixed exception raised when iterating on the result of ``TaskSet.apply()``.
 
@@ -353,30 +353,30 @@ Fixes
   default value.
 
 * `multiprocessing.cpu_count` may raise :exc:`NotImplementedError` on
-  platforms where this is not supported (Issue #320).
+  platforms where this isn't supported (Issue #320).
 
-* Coloring of log messages broke if the logged object was not a string.
+* Coloring of log messages broke if the logged object wasn't a string.
 
 * Fixed several typos in the init-script documentation.
 
 * A regression caused `Task.exchange` and `Task.routing_key` to no longer
-  have any effect.  This is now fixed.
+  have any effect. This is now fixed.
 
 * Routing user guide: Fixes typo, routers in :setting:`CELERY_ROUTES` must be
   instances, not classes.
 
-* :program:`celeryev` did not create pidfile even though the
+* :program:`celeryev` didn't create pidfile even though the
   :option:`--pidfile <celery events --pidfile>` argument was set.
 
-* Task logger format was no longer used. (Issue #317).
+* Task logger format was no longer used (Issue #317).
 
    The id and name of the task is now part of the log message again.
 
 * A safe version of ``repr()`` is now used in strategic places to ensure
-  objects with a broken ``__repr__`` does not crash the worker, or otherwise
+  objects with a broken ``__repr__`` doesn't crash the worker, or otherwise
   make errors hard to understand (Issue #298).
 
-* Remote control command :control:`active_queues`: did not account for queues added
+* Remote control command :control:`active_queues`: didn't account for queues added
   at runtime.
 
     In addition the dictionary replied by this command now has a different
@@ -405,8 +405,8 @@ Fixes
 Fixes
 -----
 
-* ``celerybeat`` could not read the schedule properly, so entries in
-  :setting:`CELERYBEAT_SCHEDULE` would not be scheduled.
+* ``celerybeat`` couldn't read the schedule properly, so entries in
+  :setting:`CELERYBEAT_SCHEDULE` wouldn't be scheduled.
 
 * Task error log message now includes `exc_info` again.
 
@@ -441,10 +441,10 @@ Fixes
 * Deprecated function ``celery.execute.delay_task`` was accidentally removed,
   now available again.
 
-* ``BasePool.on_terminate`` stub did not exist
+* ``BasePool.on_terminate`` stub didn't exist
 
-* ``celeryd_detach``: Adds readable error messages if user/group name does not
-   exist.
+* ``celeryd_detach``: Adds readable error messages if user/group name
+  doesn't exist.
 
 * Smarter handling of unicode decode errors when logging errors.
 
@@ -478,8 +478,8 @@ Important Notes
     This means that `ghettoq` is no longer needed as the
     functionality it provided is already available in Celery by default.
     The virtual transports are also more feature complete with support
-    for exchanges (direct and topic).  The Redis transport even supports
-    fanout exchanges so it is able to perform worker remote control
+    for exchanges (direct and topic). The Redis transport even supports
+    fanout exchanges so it's able to perform worker remote control
     commands.
 
 .. _`Kombu`: http://pypi.python.org/pypi/kombu
@@ -491,7 +491,7 @@ Important Notes
     collisions in keyword arguments for the unaware.
 
     It wasn't easy to find a way to deprecate the magic keyword arguments,
-    but we think this is a solution that makes sense and it will not
+    but we think this is a solution that makes sense and it won't
     have any adverse effects for existing code.
 
     The path to a magic keyword argument free world is:
@@ -515,7 +515,7 @@ Important Notes
                     print('In task %s' % kwargs['task_id'])
                     return x + y
 
-        And this will not use magic keyword arguments (new style):
+        And this won't use magic keyword arguments (new style):
 
             .. code-block:: python
 
@@ -542,10 +542,10 @@ Important Notes
 
 * The magic keyword arguments are now available as `task.request`
 
-    This is called *the context*.  Using thread-local storage the
-    context contains state that is related to the current request.
+    This is called *the context*. Using thread-local storage the
+    context contains state that's related to the current request.
 
-    It is mutable and you can add custom attributes that will only be seen
+    It's mutable and you can add custom attributes that'll only be seen
     by the current task request.
 
     The following context attributes are always available:
@@ -576,7 +576,7 @@ Important Notes
 
     To change pool implementations you use the :option:`celery worker --pool`
     argument, or globally using the
-    :setting:`CELERYD_POOL` setting.  This can be the full name of a class,
+    :setting:`CELERYD_POOL` setting. This can be the full name of a class,
     or one of the following aliases: `processes`, `eventlet`, `gevent`.
 
     For more information please see the :ref:`concurrency-eventlet` section
@@ -584,8 +584,8 @@ Important Notes
 
     .. admonition:: Why not gevent?
 
-        For our first alternative concurrency implementation we have focused
-        on `Eventlet`_, but there is also an experimental `gevent`_ pool
+        For our first alternative concurrency implementation we've focused
+        on `Eventlet`_, but there's also an experimental `gevent`_ pool
         available. This is missing some features, notably the ability to
         schedule ETA tasks.
 
@@ -600,8 +600,8 @@ Important Notes
     We're happy^H^H^H^H^Hsad to announce that this is the last version
     to support Python 2.4.
 
-    You are urged to make some noise if you're currently stuck with
-    Python 2.4.  Complain to your package maintainers, sysadmins and bosses:
+    You're urged to make some noise if you're currently stuck with
+    Python 2.4. Complain to your package maintainers, sysadmins and bosses:
     tell them it's time to move on!
 
     Apart from wanting to take advantage of :keyword:`with` statements,
@@ -611,7 +611,7 @@ Important Notes
 
     If it really isn't your choice, and you don't have the option to upgrade
     to a newer version of Python, you can just continue to use Celery 2.2.
-    Important fixes can be back ported for as long as there is interest.
+    Important fixes can be back ported for as long as there's interest.
 
 * worker: Now supports Autoscaling of child worker processes.
 
@@ -622,14 +622,14 @@ Important Notes
 
         --autoscale=AUTOSCALE
              Enable autoscaling by providing
-             max_concurrency,min_concurrency.  Example:
+             max_concurrency,min_concurrency. Example:
                --autoscale=10,3 (always keep 3 processes, but grow to
               10 if necessary).
 
 * Remote Debugging of Tasks
 
    ``celery.contrib.rdb`` is an extended version of :mod:`pdb` that
-   enables remote debugging of processes that does not have terminal
+   enables remote debugging of processes that doesn't have terminal
    access.
 
    Example usage:
@@ -670,7 +670,7 @@ Important Notes
         [2011-01-18 14:25:44,119: WARNING/PoolWorker-1] Remote Debugger:6900:
             Waiting for client...
 
-    If you telnet the port specified you will be presented
+    If you telnet the port specified you'll be presented
     with a ``pdb`` shell:
 
     .. code-block:: console
@@ -694,15 +694,15 @@ Important Notes
     The `CELERYD_EVENT_EXCHANGE`, `CELERYD_EVENT_ROUTING_KEY`,
     `CELERYD_EVENT_EXCHANGE_TYPE` settings are no longer in use.
 
-    This means events will not be stored until there is a consumer, and the
-    events will be gone as soon as the consumer stops.  Also it means there
+    This means events won't be stored until there's a consumer, and the
+    events will be gone as soon as the consumer stops. Also it means there
     can be multiple monitors running at the same time.
 
     The routing key of an event is the type of event (e.g. `worker.started`,
-    `worker.heartbeat`, `task.succeeded`, etc.  This means a consumer can
+    `worker.heartbeat`, `task.succeeded`, etc. This means a consumer can
     filter on specific types, to only be alerted of the events it cares about.
 
-    Each consumer will create a unique queue, meaning it is in effect a
+    Each consumer will create a unique queue, meaning it's in effect a
     broadcast exchange.
 
     This opens up a lot of possibilities, for example the workers could listen
@@ -713,9 +713,9 @@ Important Notes
     .. note::
 
         The event exchange has been renamed from ``"celeryevent"``
-        to ``"celeryev"`` so it does not collide with older versions.
+        to ``"celeryev"`` so it doesn't collide with older versions.
 
-        If you would like to remove the old exchange you can do so
+        If you'd like to remove the old exchange you can do so
         by executing the following command:
 
         .. code-block:: console
@@ -739,7 +739,7 @@ Important Notes
   will no longer have any effect.
 
     The default configuration is now available in the
-    :mod:`celery.app.defaults` module.  The available configuration options
+    :mod:`celery.app.defaults` module. The available configuration options
     and their types can now be introspected.
 
 * Remote control commands are now provided by `kombu.pidbox`, the generic
@@ -758,15 +758,15 @@ Important Notes
     Executing arbitrary code using pickle is a potential security issue if
     someone gains unrestricted access to the message broker.
 
-    If you really need this functionality, then you would have to add
+    If you really need this functionality, then you'd've to add
     this to your own project.
 
 * [Security: Low severity] The `stats` command no longer transmits the
   broker password.
 
-    One would have needed an authenticated broker connection to receive
+    One would've needed an authenticated broker connection to receive
     this password in the first place, but sniffing the password at the
-    wire level would have been possible if using unencrypted communication.
+    wire level would've been possible if using unencrypted communication.
 
 .. _v220-news:
 
@@ -836,7 +836,7 @@ News
 * Periodic Task classes (`@periodic_task`/`PeriodicTask`) will *not* be
   deprecated as previously indicated in the source code.
 
-    But you are encouraged to use the more flexible
+    But you're encouraged to use the more flexible
     :setting:`CELERYBEAT_SCHEDULE` setting.
 
 * Built-in daemonization support of the worker using `celery multi`
@@ -847,10 +847,10 @@ News
 
 * Added support for message compression using the
   :setting:`CELERY_MESSAGE_COMPRESSION` setting, or the `compression` argument
-  to `apply_async`.  This can also be set using routers.
+  to `apply_async`. This can also be set using routers.
 
 * worker: Now logs stack-trace of all threads when receiving the
-   `SIGUSR1` signal.  (Does not work on CPython 2.4, Windows or Jython).
+   `SIGUSR1` signal (doesn't work on CPython 2.4, Windows or Jython).
 
     Inspired by https://gist.github.com/737056
 
@@ -878,7 +878,7 @@ News
     multiple results at once, unlike `join()` which fetches the results
     one by one.
 
-    So far only supported by the AMQP result backend.  Support for Memcached
+    So far only supported by the AMQP result backend. Support for Memcached
     and Redis may be added later.
 
 * Improved implementations of `TaskSetResult.join` and `AsyncResult.wait`.
@@ -940,12 +940,12 @@ News
     * :signal:`celery.signals.beat_init`
 
         Dispatched when :program:`celerybeat` starts (either standalone or
-        embedded).  Sender is the :class:`celery.beat.Service` instance.
+        embedded). Sender is the :class:`celery.beat.Service` instance.
 
     * :signal:`celery.signals.beat_embedded_init`
 
         Dispatched in addition to the :signal:`beat_init` signal when
-        :program:`celerybeat` is started as an embedded process.  Sender
+        :program:`celerybeat` is started as an embedded process. Sender
         is the :class:`celery.beat.Service` instance.
 
 * Redis result backend: Removed deprecated settings `REDIS_TIMEOUT` and
@@ -1010,7 +1010,7 @@ Experimental
     multiple instances (e.g. using :program:`multi`).
 
     Sadly an initial benchmark seems to show a 30% performance decrease on
-    ``pypy-1.4.1`` + JIT.  We would like to find out why this is, so stay tuned.
+    ``pypy-1.4.1`` + JIT. We would like to find out why this is, so stay tuned.
 
 * :class:`PublisherPool`: Experimental pool of task publishers and
   connections to be used with the `retry` argument to `apply_async`.

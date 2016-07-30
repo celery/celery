@@ -32,7 +32,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - The worker would no longer start if the `-P solo` pool was selected
   (Issue #1548).
 
-- Redis/Cache result backends would not complete chords
+- Redis/Cache result backends wouldn't complete chords
   if any of the tasks were retried (Issue #1401).
 
 - Task decorator is no longer lazy if app is finalized.
@@ -65,7 +65,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     This works with the `celery multi` command in general.
 
-- ``get_pickleable_etype`` did not always return a value (Issue #1556).
+- ``get_pickleable_etype`` didn't always return a value (Issue #1556).
 - Fixed bug where ``app.GroupResult.restore`` would fall back to the default
   app.
 
@@ -82,7 +82,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on :ref:`Kombu 2.5.14 <kombu:version-2.5.14>`.
 
-- ``send_task`` did not honor ``link`` and ``link_error`` arguments.
+- ``send_task`` didn't honor ``link`` and ``link_error`` arguments.
 
     This had the side effect of chains not calling unregistered tasks,
     silently discarding them.
@@ -93,14 +93,14 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Contributed by Matt Robenolt.
 
-- POSIX: Daemonization did not redirect ``sys.stdin`` to ``/dev/null``.
+- POSIX: Daemonization didn't redirect ``sys.stdin`` to ``/dev/null``.
 
     Fix contributed by Alexander Smirnov.
 
 - Canvas: group bug caused fallback to default app when ``.apply_async`` used
   (Issue #1516)
 
-- Canvas: generator arguments was not always pickleable.
+- Canvas: generator arguments wasn't always pickleable.
 
 .. _version-3.0.22:
 
@@ -226,11 +226,11 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - A Python 3 related fix managed to disable the deadlock fix
   announced in 3.0.18.
 
-    Tests have been added to make sure this does not happen again.
+    Tests have been added to make sure this doesn't happen again.
 
 - Task retry policy:  Default max_retries is now 3.
 
-    This ensures clients will not be hanging while the broker is down.
+    This ensures clients won't be hanging while the broker is down.
 
     .. note::
 
@@ -304,7 +304,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Worker: Fixed a deadlock that could occur while revoking tasks (Issue #1297).
 
 - Worker: The :sig:`HUP` handler now closes all open file descriptors
-  before restarting to ensure file descriptors does not leak (Issue #1270).
+  before restarting to ensure file descriptors doesn't leak (Issue #1270).
 
 - Worker: Optimized storing/loading the revoked tasks list (Issue #1289).
 
@@ -354,7 +354,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   eta/expires fields (Issue #1232).
 
 - The ``pool_restart`` remote control command now reports
-  an error if the :setting:`CELERYD_POOL_RESTARTS` setting is not set.
+  an error if the :setting:`CELERYD_POOL_RESTARTS` setting isn't set.
 
 - :meth:`@add_defaults`` can now be used with non-dict objects.
 
@@ -561,13 +561,13 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     execv was only enabled when transports other than AMQP/Redis was used,
     and it's there to prevent deadlocks caused by mutexes not being released
-    before the process forks.  Unfortunately it also changes the environment
-    introducing many corner case bugs that is hard to fix without adding
-    horrible hacks.  Deadlock issues are reported far less often than the
+    before the process forks. Unfortunately it also changes the environment
+    introducing many corner case bugs that're hard to fix without adding
+    horrible hacks. Deadlock issues are reported far less often than the
     bugs that execv are causing, so we now disable it by default.
 
     Work is in motion to create non-blocking versions of these transports
-    so that execv is not necessary (which is the situation with the amqp
+    so that execv isn't necessary (which is the situation with the amqp
     and redis broker transports)
 
 - Chord exception behavior defined (Issue #1172).
@@ -579,11 +579,11 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     and the actual behavior was very unsatisfactory, indeed
     it will just forward the exception value to the chord callback.
 
-    For backward compatibility reasons we do not change to the new
+    For backward compatibility reasons we don't change to the new
     behavior in a bugfix release, even if the current behavior was
-    never documented.  Instead you can enable the
+    never documented. Instead you can enable the
     :setting:`CELERY_CHORD_PROPAGATES` setting to get the new behavior
-    that will be default from Celery 3.1.
+    that'll be default from Celery 3.1.
 
     See more at :ref:`chord-errors`.
 
@@ -735,7 +735,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   task modules will always use the correct app instance (Issue #1072).
 
 - AMQP Backend: Now republishes result messages that have been polled
-  (using ``result.ready()`` and friends, ``result.get()`` will not do this
+  (using ``result.ready()`` and friends, ``result.get()`` won't do this
   in this version).
 
 - Crontab schedule values can now "wrap around"
@@ -794,7 +794,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Contributed by Locker537.
 
-- The ``add_consumer`` control command did not properly persist
+- The ``add_consumer`` control command didn't properly persist
   the addition of new queues so that they survived connection failure
   (Issue #1079).
 
@@ -811,7 +811,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     - [Redis] Number of messages that can be restored in one interval is no
               longer limited (but can be set using the
               ``unacked_restore_limit``
-              :setting:`transport option <BROKER_TRANSPORT_OPTIONS>`.)
+              :setting:`transport option <BROKER_TRANSPORT_OPTIONS>`).
     - Heartbeat value can be specified in broker URLs (Mher Movsisyan).
     - Fixed problem with msgpack on Python 3 (Jasper Bryant-Greene).
 
@@ -830,7 +830,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - New method ``Task.subtask_from_request`` returns a subtask using the current
   request.
 
-- Results get_many method did not respect timeout argument.
+- Results get_many method didn't respect timeout argument.
 
     Fix contributed by Remigiusz Modrzejewski
 
@@ -880,7 +880,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
         CELERYD_PID_FILE="/var/run/celery/%n.pid"
 
     But in the scripts themselves the default files were ``/var/log/celery%n.log``
-    and ``/var/run/celery%n.pid``, so if the user did not change the location
+    and ``/var/run/celery%n.pid``, so if the user didn't change the location
     by configuration, the directories ``/var/log`` and ``/var/run`` would be
     created - and worse have their permissions and owners changed.
 
@@ -899,7 +899,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
         $ sudo /etc/init.d/celeryd create-paths
 
-    .. admonition:: Upgrading Celery will not update init-scripts
+    .. admonition:: Upgrading Celery won't update init-scripts
 
         To update the init-scripts you have to re-download
         the files from source control and update them manually.
@@ -912,7 +912,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Fixes request stack protection when app is initialized more than
   once (Issue #1003).
 
-- ETA tasks now properly works when system timezone is not the same
+- ETA tasks now properly works when system timezone isn't same
   as the configured timezone (Issue #1004).
 
 - Terminating a task now works if the task has been sent to the
@@ -963,7 +963,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     - Billiard now installs even if the C extension cannot be built.
 
-        It's still recommended to build the C extension if you are using
+        It's still recommended to build the C extension if you're using
         a transport other than RabbitMQ/Redis (or use forced execv for some
         other reason).
 
@@ -982,7 +982,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
         >>> c() <-- call again
 
     at the second time the ids for the tasks would be the same as in the
-    previous invocation.  This is now fixed, so that calling a subtask
+    previous invocation. This is now fixed, so that calling a subtask
     won't mutate any options.
 
 - Canvas: Chaining a chord to another task now works (Issue #965).
@@ -1009,7 +1009,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
             if redis.sismember('tasks.revoked', custom_revokes.request.id):
                 raise Ignore()
 
-- The worker now makes sure the request/task stacks are not modified
+- The worker now makes sure the request/task stacks aren't modified
   by the initial ``Task.__call__``.
 
     This would previously be a problem if a custom task class defined
@@ -1019,7 +1019,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   and can only be enabled by setting the :envvar:`USE_FAST_LOCALS` attribute.
 
 - Worker: Now sets a default socket timeout of 5 seconds at shutdown
-  so that broken socket reads do not hinder proper shutdown (Issue #975).
+  so that broken socket reads don't hinder proper shutdown (Issue #975).
 
 - More fixes related to late eventlet/gevent patching.
 
@@ -1057,7 +1057,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     ``instance.app.queues`` -> ``instance.app.amqp.queues``.
 
-- Eventlet/gevent: The worker did not properly set the custom app
+- Eventlet/gevent: The worker didn't properly set the custom app
   for new greenlets.
 
 - Eventlet/gevent: Fixed a bug where the worker could not recover
@@ -1093,7 +1093,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Note about the :setting:`CELERY_ENABLE_UTC` setting.
 
     If you previously disabled this just to force periodic tasks to work with
-    your timezone, then you are now *encouraged to re-enable it*.
+    your timezone, then you're now *encouraged to re-enable it*.
 
 - Now depends on Kombu 2.4.5 which fixes PyPy + Jython installation.
 
@@ -1219,13 +1219,13 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   with the exception object instead of its string representation.
 
 - The worker daemon would try to create the pid file before daemonizing
-  to catch errors, but this file was not immediately released (Issue #923).
+  to catch errors, but this file wasn't immediately released (Issue #923).
 
 - Fixes Jython compatibility.
 
 - ``billiard.forking_enable`` was called by all pools not just the
   processes pool, which would result in a useless warning if the billiard
-  C extensions were not installed.
+  C extensions weren't installed.
 
 .. _version-3.0.6:
 
@@ -1267,7 +1267,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     A regression long ago disabled magic kwargs for these, and since
     no one has complained about it we don't have any incentive to fix it now.
 
-- The ``inspect reserved`` control command did not work properly.
+- The ``inspect reserved`` control command didn't work properly.
 
 - Should now play better with tools for static analysis by explicitly
   specifying dynamically created attributes in the :mod:`celery` and
@@ -1385,7 +1385,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Fixing this bug also means that the SQS transport is now working again.
 
-- The semaphore was not properly released when a task was revoked (Issue #877).
+- The semaphore wasn't properly released when a task was revoked (Issue #877).
 
     This could lead to tasks being swallowed and not released until a worker
     restart.
@@ -1426,8 +1426,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
         app.add_defaults(config)
 
-    is the same as ``app.conf.update(config)`` except that data will not be
-    copied, and that it will not be pickled when the worker spawns child
+    is the same as ``app.conf.update(config)`` except that data won't be
+    copied, and that it won't be pickled when the worker spawns child
     processes.
 
     In addition the method accepts a callable::
@@ -1437,7 +1437,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
         app.add_defaults(initialize_config)
 
-    which means the same as the above except that it will not happen
+    which means the same as the above except that it won't happen
     until the celery configuration is actually used.
 
     As an example, Celery can lazily use the configuration of a Flask app::
@@ -1446,7 +1446,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
         app = Celery()
         app.add_defaults(lambda: flask_app.config)
 
-- Revoked tasks were not marked as revoked in the result backend (Issue #871).
+- Revoked tasks weren't marked as revoked in the result backend (Issue #871).
 
     Fix contributed by Hynek Schlawack.
 
@@ -1565,7 +1565,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - The :program:`celery worker` command now works with eventlet/gevent.
 
-    Previously it would not patch the environment early enough.
+    Previously it wouldn't patch the environment early enough.
 
 - The :program:`celery` command now supports extension commands
   using setuptools entry-points.
