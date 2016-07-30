@@ -579,8 +579,8 @@ class Task(object):
                 retry at.
             max_retries (int): If set, overrides the default retry limit for
                 this execution.  Changes to this parameter don't propagate to
-                subsequent task retry attempts.  A value of :const:`None`, means
-                "use the default", so if you want infinite retries you'd
+                subsequent task retry attempts.  A value of :const:`None`,
+                means "use the default", so if you want infinite retries you'd
                 have to set the :attr:`max_retries` attribute of the task to
                 :const:`None` first.
             time_limit (int): If set, overrides the default time limit.

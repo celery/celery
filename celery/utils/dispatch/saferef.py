@@ -208,7 +208,6 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
     instance methods are not descriptors.
 
     Warning:
-
         It assumes that the function name and the target attribute name are
         the same, instead of assuming that the function is a descriptor.
         This approach is equally fast, but not 100% reliable because
@@ -222,7 +221,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
             ...     return 'foo'
             >>> A.bar = foo
 
-        But this shouldn't be a common use case.  So, on platforms where methods
+        This shouldn't be a common use case.  So, on platforms where methods
         aren't descriptors (such as Jython) this implementation has the
         advantage of working in the most cases.
     """
