@@ -499,7 +499,7 @@ class DisplayThread(threading.Thread):  # pragma: no cover
 def capture_events(app, state, display):  # pragma: no cover
 
     def on_connection_error(exc, interval):
-        print('Connection Error: {0!r}. Retry in {1}s.'.format(
+        print('Connection Error: {0!r}.  Retry in {1}s.'.format(
             exc, interval), file=sys.stderr)
 
     while 1:

@@ -495,7 +495,7 @@ class LimitedSet(object):
             raise ValueError('expires cannot be negative!')
 
     def _refresh_heap(self):
-        """Time consuming recreating of heap. Don't run this too often."""
+        """Time consuming recreating of heap.  Don't run this too often."""
         self._heap[:] = [entry for entry in values(self._data)]
         heapify(self._heap)
 
@@ -546,7 +546,7 @@ class LimitedSet(object):
                 self.add(obj)
 
     def discard(self, item):
-        # mark an existing item as removed. If KeyError is not found, pass.
+        # mark an existing item as removed.  If KeyError is not found, pass.
         self._data.pop(item, None)
         self._maybe_refresh_heap()
     pop_value = discard

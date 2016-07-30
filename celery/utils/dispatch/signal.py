@@ -57,7 +57,7 @@ class Signal(object):  # pragma: no cover
 
         Arguments:
             receiver (Callable): A function or an instance method which is to
-                receive signals. Receivers must be hashable objects.
+                receive signals.  Receivers must be hashable objects.
 
                 if weak is :const:`True`, then receiver must be
                 weak-referenceable (more precisely :func:`saferef.safe_ref()`
@@ -75,11 +75,11 @@ class Signal(object):  # pragma: no cover
 
             weak (bool): Whether to use weak references to the receiver.
                 By default, the module will attempt to use weak references to
-                the receiver objects. If this parameter is false, then strong
+                the receiver objects.  If this parameter is false, then strong
                 references will be used.
 
             dispatch_uid (Hashable): An identifier used to uniquely identify a
-                particular instance of a receiver. This will usually be a
+                particular instance of a receiver.  This will usually be a
                 string, though it may be anything hashable.
         """
         def _handle_options(sender=None, weak=True, dispatch_uid=None):
@@ -121,12 +121,12 @@ class Signal(object):  # pragma: no cover
                    dispatch_uid=None):
         """Disconnect receiver from sender for signal.
 
-        If weak references are used, disconnect needn't be called. The
-        receiver will be removed from dispatch automatically.
+        If weak references are used, disconnect needn't be called.
+        The receiver will be removed from dispatch automatically.
 
         Arguments:
-            receiver (Callable): The registered receiver to disconnect. May be
-                none if `dispatch_uid` is specified.
+            receiver (Callable): The registered receiver to disconnect.
+                May be none if `dispatch_uid` is specified.
 
             sender (Any): The registered sender to disconnect.
 
@@ -154,8 +154,8 @@ class Signal(object):  # pragma: no cover
         have all receivers called if a raises an error.
 
         Arguments:
-            sender (Any): The sender of the signal. Either a specific
-                object or :const:`None`.
+            sender (Any): The sender of the signal.
+                Either a specific object or :const:`None`.
             **named (Any): Named arguments which will be passed to receivers.
 
         Returns:

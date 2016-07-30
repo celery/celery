@@ -34,7 +34,7 @@
 
 .. cmdoption:: -f, --logfile
 
-    Path to log file. If no logfile is specified, `stderr` is used.
+    Path to log file.  If no logfile is specified, `stderr` is used.
 
 .. cmdoption:: --pidfile
 

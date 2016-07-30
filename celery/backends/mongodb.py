@@ -134,7 +134,7 @@ class MongoBackend(BaseBackend):
             if not host:
                 # The first pymongo.Connection() argument (host) can be
                 # a list of ['host:port'] elements or a mongodb connection
-                # URI. If this is the case, don't use self.port
+                # URI.  If this is the case, don't use self.port
                 # but let pymongo get the port(s) from the URI instead.
                 # This enables the use of replica sets and sharding.
                 # See pymongo.Connection() for more info.
@@ -268,7 +268,7 @@ class MongoBackend(BaseBackend):
         collection = self.database[self.taskmeta_collection]
 
         # Ensure an index on date_done is there, if not process the index
-        # in the background. Once completed cleanup will be much faster
+        # in the background.  Once completed cleanup will be much faster
         collection.ensure_index('date_done', background='true')
         return collection
 
@@ -278,7 +278,7 @@ class MongoBackend(BaseBackend):
         collection = self.database[self.groupmeta_collection]
 
         # Ensure an index on date_done is there, if not process the index
-        # in the background. Once completed cleanup will be much faster
+        # in the background.  Once completed cleanup will be much faster
         collection.ensure_index('date_done', background='true')
         return collection
 

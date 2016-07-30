@@ -50,7 +50,7 @@ in any command that also has a `--detach` option.
 
 .. cmdoption:: -f, --logfile
 
-    Path to log file. If no logfile is specified, `stderr` is used.
+    Path to log file.  If no logfile is specified, `stderr` is used.
 
 .. cmdoption:: --pidfile
 
@@ -601,7 +601,7 @@ class _RemoteControl(Command):
     def run(self, *args, **kwargs):
         if not args:
             raise self.UsageError(
-                'Missing {0.name} method. See --help'.format(self))
+                'Missing {0.name} method.  See --help'.format(self))
         return self.do_call_method(args, **kwargs)
 
     def _ensure_fanout_supported(self):

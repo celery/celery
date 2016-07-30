@@ -76,7 +76,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
             class attribute pointing to all live
             BoundMethodWeakref objects indexed by the class's
             `calculate_key(target)` method applied to the target
-            objects. This weak value dictionary is used to
+            objects.  This weak value dictionary is used to
             short-circuit creation so that multiple references
             to the same (object, function) pair produce the
             same BoundMethodWeakref instance.
@@ -222,7 +222,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
             ...     return 'foo'
             >>> A.bar = foo
 
-        But this shouldn't be a common use case. So, on platforms where methods
+        But this shouldn't be a common use case.  So, on platforms where methods
         aren't descriptors (such as Jython) this implementation has the
         advantage of working in the most cases.
     """
@@ -241,7 +241,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
             on_delete (Callable): Optional callback which will be called
                 when this weak reference ceases to be valid
                 (i.e. either the object or the function is garbage
-                collected). Should take a single argument,
+                collected).  Should take a single argument,
                 which will be passed a pointer to this object.
         """
         assert getattr(target.__self__, target.__name__) == target
@@ -265,7 +265,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
             function = self.weak_fun()
             if function is not None:
                 # Using curry() would be another option, but it erases the
-                # "signature" of the function. That is, after a function is
+                # "signature" of the function.  That is, after a function is
                 # curried, the inspect module can't be used to determine how
                 # many arguments the function expects, nor what keyword
                 # arguments it supports, and pydispatcher needs this

@@ -182,7 +182,7 @@ class Pidfile(object):
         try:
             pid = self.read_pid()
         except ValueError as exc:
-            print('Broken pidfile found. Removing it.', file=sys.stderr)
+            print('Broken pidfile found - Removing it.', file=sys.stderr)
             self.remove()
             return True
         if not pid:
@@ -193,7 +193,7 @@ class Pidfile(object):
             os.kill(pid, 0)
         except os.error as exc:
             if exc.errno == errno.ESRCH:
-                print('Stale pidfile exists. Removing it.', file=sys.stderr)
+                print('Stale pidfile exists - Removing it.', file=sys.stderr)
                 self.remove()
                 return True
         return False

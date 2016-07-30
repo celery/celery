@@ -65,7 +65,7 @@ Will retry using next failover.\
 """
 
 UNKNOWN_FORMAT = """\
-Received and deleted unknown message. Wrong destination?!?
+Received and deleted unknown message.  Wrong destination?!?
 
 The full contents of the message body was: %s
 """

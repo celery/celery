@@ -27,7 +27,7 @@ __all__ = [
 schedstate = namedtuple('schedstate', ('is_due', 'next'))
 
 CRON_PATTERN_INVALID = """\
-Invalid crontab pattern. Valid range is {min}-{max}. \
+Invalid crontab pattern.  Valid range is {min}-{max}. \
 '{value}' was found.\
 """
 
@@ -174,7 +174,7 @@ class schedule(object):
 
 
 class crontab_parser(object):
-    """Parser for Crontab expressions. Any expression of the form 'groups'
+    """Parser for Crontab expressions.  Any expression of the form 'groups'
     (see BNF grammar below) is accepted and expanded to a set of numbers.
     These numbers represent the units of time that the Crontab needs to
     run on:
@@ -300,7 +300,7 @@ class crontab(schedule):
     periodic task entry to add :manpage:`crontab(5)`-like scheduling.
 
     Like a :manpage:`cron(5)`-job, you can specify units of time of when
-    you'd like the task to execute. It's a reasonably complete
+    you'd like the task to execute.  It's a reasonably complete
     implementation of :command:`cron`'s features, so it should provide a fair
     degree of scheduling needs.
 
@@ -740,7 +740,7 @@ class solar(schedule):
                 start=last_run_at_utc, use_center=self.use_center,
             )
         except self.ephem.CircumpolarError:  # pragma: no cover
-            # Sun won't rise/set today. Check again tomorrow
+            # Sun won't rise/set today.  Check again tomorrow
             # (specifically, after the next anti-transit).
             next_utc = (
                 self.cal.next_antitransit(self.ephem.Sun()) +

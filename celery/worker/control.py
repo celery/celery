@@ -144,7 +144,7 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
 
     Keyword Arguments:
         terminate (bool): Also terminate the process if the task is active.
-        signal (str): Name of signal to use for terminate. E.g. ``KILL``.
+        signal (str): Name of signal to use for terminate.  E.g. ``KILL``.
     """
     # supports list argument since 3.1
     task_ids, task_id = set(maybe_list(task_id) or []), None

@@ -85,8 +85,8 @@ class EventDispatcher(object):
 
         groups (Sequence[str]): List of groups to send events for.
             :meth:`send` will ignore send requests to groups not in this list.
-            If this is :const:`None`, all events will be sent. Example groups
-            include ``"task"`` and ``"worker"``.
+            If this is :const:`None`, all events will be sent.
+            Example groups include ``"task"`` and ``"worker"``.
 
         enabled (bool): Set to :const:`False` to not actually publish any
             events, making :meth:`send` a no-op.

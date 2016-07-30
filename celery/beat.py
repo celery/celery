@@ -423,8 +423,8 @@ class PersistentScheduler(Scheduler):
         try:
             self._store = self._open_schedule()
             # In some cases there may be different errors from a storage
-            # backend for corrupted files. Example - DBPageNotFoundError
-            # exception from bsddb. In such case the file will be
+            # backend for corrupted files.  Example - DBPageNotFoundError
+            # exception from bsddb.  In such case the file will be
             # successfully opened but the error will be raised on first key
             # retrieving.
             self._store.keys()

@@ -13,7 +13,7 @@
 
 .. cmdoption:: -s, --schedule
 
-    Path to the schedule database. Defaults to `celerybeat-schedule`.
+    Path to the schedule database.  Defaults to `celerybeat-schedule`.
     The extension '.db' may be appended to the filename.
     Default is {default}.
 
@@ -28,7 +28,7 @@
 
 .. cmdoption:: -f, --logfile
 
-    Path to log file. If no logfile is specified, `stderr` is used.
+    Path to log file.  If no logfile is specified, `stderr` is used.
 
 .. cmdoption:: -l, --loglevel
 

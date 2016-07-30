@@ -190,7 +190,7 @@ class AMQShell(cmd.Cmd):
         self._reconnect()
 
     def note(self, m):
-        """Say something to the user. Disabled if :attr:`silent`."""
+        """Say something to the user.  Disabled if :attr:`silent`."""
         if not self.silent:
             say(m, file=self.out)
 

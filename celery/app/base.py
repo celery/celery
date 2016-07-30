@@ -117,7 +117,7 @@ class Celery(object):
         loader (str, type): The loader class, or the name of the loader
             class to use.  Default is :class:`celery.loaders.app.AppLoader`.
         backend (str, type): The result store backend class, or the name of the
-            backend class to use. Default is the value of the
+            backend class to use.  Default is the value of the
             :setting:`result_backend` setting.
         amqp (str, type): AMQP object or class name.
         events (str, type): Events object or class name.

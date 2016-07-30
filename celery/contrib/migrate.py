@@ -127,7 +127,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
     Arguments:
         predicate (Callable): Filter function used to decide which messages
             to move.  Must accept the standard signature of ``(body, message)``
-            used by Kombu consumer callbacks. If the predicate wants the
+            used by Kombu consumer callbacks.  If the predicate wants the
             message to be moved it must return either:
 
                 1) a tuple of ``(exchange, routing_key)``, or

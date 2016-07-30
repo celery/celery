@@ -245,7 +245,7 @@ class _LocalStack(object):
 
 @python_2_unicode_compatible
 class LocalManager(object):
-    """Local objects cannot manage themselves. For that you need a local
+    """Local objects cannot manage themselves.  For that you need a local
     manager.  You can pass a local manager multiple locals or add them
     later by appending them to ``manager.locals``.  Every time the manager
     cleans up, it will clean up all the data left in the locals for this

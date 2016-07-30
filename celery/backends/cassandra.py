@@ -21,7 +21,7 @@ logger = get_logger(__name__)
 
 E_NO_CASSANDRA = """
 You need to install the cassandra-driver library to
-use the Cassandra backend. See https://github.com/datastax/python-driver
+use the Cassandra backend.  See https://github.com/datastax/python-driver
 """
 
 E_NO_SUCH_CASSANDRA_AUTH_PROVIDER = """
@@ -160,7 +160,7 @@ class CassandraBackend(BaseBackend):
 
             if write:
                 # Only possible writers "workers" are allowed to issue
-                # CREATE TABLE. This is to prevent conflicting situations
+                # CREATE TABLE.  This is to prevent conflicting situations
                 # where both task-creator and task-executor would issue it
                 # at the same time.
 

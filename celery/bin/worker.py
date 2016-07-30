@@ -11,7 +11,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: -c, --concurrency
 
-    Number of child processes processing the queue. The default
+    Number of child processes processing the queue.  The default
     is the number of CPUs available on your system.
 
 .. cmdoption:: -P, --pool
@@ -22,12 +22,12 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: -n, --hostname
 
-    Set custom hostname, e.g. 'w1.%h'. Expands: %h (hostname),
+    Set custom hostname, e.g. 'w1.%h'.  Expands: %h (hostname),
     %n (name) and %d, (domain).
 
 .. cmdoption:: -B, --beat
 
-    Also run the `celery beat` periodic task scheduler. Please note that
+    Also run the `celery beat` periodic task scheduler.  Please note that
     there must only be one instance of this service.
 
 .. cmdoption:: -Q, --queues
@@ -50,7 +50,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 .. cmdoption:: -s, --schedule
 
     Path to the schedule database if running with the `-B` option.
-    Defaults to `celerybeat-schedule`. The extension ".db" may be
+    Defaults to `celerybeat-schedule`.  The extension ".db" may be
     appended to the filename.
 
 .. cmdoption:: -O
@@ -63,13 +63,13 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: --scheduler
 
-    Scheduler class to use. Default is
+    Scheduler class to use.  Default is
     :class:`celery.beat.PersistentScheduler`
 
 .. cmdoption:: -S, --statedb
 
-    Path to the state database. The extension '.db' may
-    be appended to the filename. Default: {default}
+    Path to the state database.  The extension '.db' may
+    be appended to the filename.  Default: {default}
 
 .. cmdoption:: -E, --events
 
@@ -114,7 +114,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 .. cmdoption:: --maxmemperchild
 
     Maximum amount of resident memory, in KiB, that may be consumed by a
-    child process before it will be replaced by a new one. If a single
+    child process before it will be replaced by a new one.  If a single
     task causes a child process to exceed this limit, the task will be
     completed and the child process will be replaced afterwards.
     Default: no limit.
@@ -125,7 +125,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: -f, --logfile
 
-    Path to log file. If no logfile is specified, `stderr` is used.
+    Path to log file.  If no logfile is specified, `stderr` is used.
 
 .. cmdoption:: -l, --loglevel
 
@@ -231,7 +231,7 @@ class worker(Command):
             try:
                 loglevel = mlevel(loglevel)
             except KeyError:  # pragma: no cover
-                self.die('Unknown level {0!r}. Please use one of {1}.'.format(
+                self.die('Unknown level {0!r}.  Please use one of {1}.'.format(
                     loglevel, '|'.join(
                         l for l in LOG_LEVELS if isinstance(l, string_t))))
 

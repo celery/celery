@@ -50,7 +50,7 @@ def process_initializer(app, hostname):
     platforms.signals.ignore(*WORKER_SIGIGNORE)
     platforms.set_mp_process_title('celeryd', hostname=hostname)
     # This is for Windows and other platforms not supporting
-    # fork(). Note that init_worker makes sure it's only
+    # fork().  Note that init_worker makes sure it's only
     # run once per process.
     app.loader.init_worker()
     app.loader.init_worker_process()

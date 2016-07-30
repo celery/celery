@@ -416,7 +416,7 @@ class AsyncResult(ResultBase):
 
             *SUCCESS*
 
-                The task executed successfully. The :attr:`result` attribute
+                The task executed successfully.  The :attr:`result` attribute
                 then contains the tasks return value.
         """
         return self._get_task_meta()['status']

@@ -141,7 +141,7 @@ class Backend(object):
                         traceback=None, request=None,
                         store_result=True, call_errbacks=True,
                         state=states.FAILURE):
-        """Mark task as executed with failure. Stores the exception."""
+        """Mark task as executed with failure."""
         if store_result:
             self.store_result(task_id, exc, state,
                               traceback=traceback, request=request)
@@ -179,8 +179,11 @@ class Backend(object):
 
     def mark_as_retry(self, task_id, exc, traceback=None,
                       request=None, store_result=True, state=states.RETRY):
-        """Mark task as being retries. Stores the current
-        exception (if any)."""
+        """Mark task as being retries.
+
+        Note:
+            Stores the current exception (if any).
+        """
         return self.store_result(task_id, exc, state,
                                  traceback=traceback, request=request)
 
@@ -364,8 +367,11 @@ class Backend(object):
         return self._delete_group(group_id)
 
     def cleanup(self):
-        """Backend cleanup. Is run by
-        :class:`celery.task.DeleteExpiredTaskMetaTask`."""
+        """Backend cleanup.
+
+        Note:
+            This is run by :class:`celery.task.DeleteExpiredTaskMetaTask`.
+        """
         pass
 
     def process_cleanup(self):

@@ -433,7 +433,7 @@ class Task(object):
                 argument.
 
             routing_key (str): Custom routing key used to route the task to a
-                worker server. If in combination with a ``queue`` argument
+                worker server.  If in combination with a ``queue`` argument
                 only used to specify custom routing keys to topic exchanges.
 
             priority (int): The task priority, a number between 0 and 9.
@@ -448,8 +448,8 @@ class Task(object):
             compression (str): Optional compression method
                 to use.  Can be one of ``zlib``, ``bzip2``,
                 or any custom compression methods registered with
-                :func:`kombu.compression.register`. Defaults to
-                the :setting:`task_compression` setting.
+                :func:`kombu.compression.register`.
+                Defaults to the :setting:`task_compression` setting.
 
             link (~@Signature): A single, or a list of tasks signatures
                 to apply if the task returns successfully.
@@ -578,8 +578,8 @@ class Task(object):
             eta (~datetime.dateime): Explicit time and date to run the
                 retry at.
             max_retries (int): If set, overrides the default retry limit for
-                this execution. Changes to this parameter don't propagate to
-                subsequent task retry attempts. A value of :const:`None`, means
+                this execution.  Changes to this parameter don't propagate to
+                subsequent task retry attempts.  A value of :const:`None`, means
                 "use the default", so if you want infinite retries you'd
                 have to set the :attr:`max_retries` attribute of the task to
                 :const:`None` first.
