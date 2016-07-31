@@ -51,7 +51,7 @@ class Timer(bootsteps.Step):
         logger.error('Timer error: %r', exc, exc_info=True)
 
     def on_timer_tick(self, delay):
-        logger.debug('Timer wake-up! Next eta %s secs.', delay)
+        logger.debug('Timer wake-up! Next ETA %s secs.', delay)
 
 
 class Hub(bootsteps.StartStopStep):

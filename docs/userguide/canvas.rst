@@ -343,7 +343,8 @@ Here's some examples:
 
         >>> add.signature((2, 2), immutable=True)
 
-    There's also an ``.si`` shortcut for this:
+    There's also a ``.si()`` shortcut for this, which is the preffered way of
+    creating signatures:
 
     .. code-block:: pycon
 

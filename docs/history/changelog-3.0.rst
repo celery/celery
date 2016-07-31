@@ -13,7 +13,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.24
 ======
-:release-date: 2013-10-11 04:40 P.M BST
+:release-date: 2013-10-11 04:40 p.m. BST
 :release-by: Ask Solem
 
 - Now depends on :ref:`Kombu 2.5.15 <kombu:version-2.5.15>`.
@@ -77,7 +77,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.23
 ======
-:release-date: 2013-09-02 01:00 P.M BST
+:release-date: 2013-09-02 01:00 p.m. BST
 :release-by: Ask Solem
 
 - Now depends on :ref:`Kombu 2.5.14 <kombu:version-2.5.14>`.
@@ -106,7 +106,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.22
 ======
-:release-date: 2013-08-16 04:30 P.M BST
+:release-date: 2013-08-16 04:30 p.m. BST
 :release-by: Ask Solem
 
 - Now depends on :ref:`Kombu 2.5.13 <kombu:version-2.5.13>`.
@@ -131,7 +131,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.21
 ======
-:release-date: 2013-07-05 04:30 P.M BST
+:release-date: 2013-07-05 04:30 p.m. BST
 :release-by: Ask Solem
 
 - Now depends on :pypi:`billiard` 2.7.3.31.
@@ -149,7 +149,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.20
 ======
-:release-date: 2013-06-28 04:00 P.M BST
+:release-date: 2013-06-28 04:00 p.m. BST
 :release-by: Ask Solem
 
 - Contains workaround for deadlock problems.
@@ -218,7 +218,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.19
 ======
-:release-date: 2013-04-17 04:30:00 P.M BST
+:release-date: 2013-04-17 04:30:00 p.m. BST
 :release-by: Ask Solem
 
 - Now depends on :pypi:`billiard` 2.7.3.28
@@ -259,7 +259,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.18
 ======
-:release-date: 2013-04-12 05:00:00 P.M BST
+:release-date: 2013-04-12 05:00:00 p.m. BST
 :release-by: Ask Solem
 
 - Now depends on :pypi:`kombu` 2.5.10.
@@ -351,7 +351,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   it now raises the expected :exc:`TypeError` instead (Issue #1125).
 
 - The worker will now properly handle messages with invalid
-  eta/expires fields (Issue #1232).
+  ETA/expires fields (Issue #1232).
 
 - The ``pool_restart`` remote control command now reports
   an error if the :setting:`CELERYD_POOL_RESTARTS` setting isn't set.
@@ -381,13 +381,13 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Worker: The start-up banner now includes system platform.
 
 - ``celery inspect|status|control`` now gives an error if used
-  with an SQL based broker transport.
+  with a SQL based broker transport.
 
 .. _version-3.0.17:
 
 3.0.17
 ======
-:release-date: 2013-03-22 04:00:00 P.M UTC
+:release-date: 2013-03-22 04:00:00 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on kombu 2.5.8
@@ -447,7 +447,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.16
 ======
-:release-date: 2013-03-07 04:00:00 P.M UTC
+:release-date: 2013-03-07 04:00:00 p.m. UTC
 :release-by: Ask Solem
 
 - Happy International Women's Day!
@@ -536,7 +536,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.15
 ======
-:release-date: 2013-02-11 04:30:00 P.M UTC
+:release-date: 2013-02-11 04:30:00 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on billiard 2.7.3.21 which fixed a syntax error crash.
@@ -547,7 +547,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.14
 ======
-:release-date: 2013-02-08 05:00:00 P.M UTC
+:release-date: 2013-02-08 05:00:00 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on Kombu 2.5.6
@@ -665,7 +665,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.13
 ======
-:release-date: 2013-01-07 04:00:00 P.M UTC
+:release-date: 2013-01-07 04:00:00 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on Kombu 2.5
@@ -801,7 +801,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.12
 ======
-:release-date: 2012-11-06 02:00 P.M UTC
+:release-date: 2012-11-06 02:00 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on kombu 2.4.8
@@ -867,7 +867,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.11
 ======
-:release-date: 2012-09-26 04:00 P.M UTC
+:release-date: 2012-09-26 04:00 p.m. UTC
 :release-by: Ask Solem
 
 - [security:low] generic-init.d scripts changed permissions of /var/log & /var/run
@@ -948,7 +948,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.10
 ======
-:release-date: 2012-09-20 05:30 P.M BST
+:release-date: 2012-09-20 05:30 p.m. BST
 :release-by: Ask Solem
 
 - Now depends on kombu 2.4.7
@@ -1069,7 +1069,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.9
 =====
-:release-date: 2012-08-31 06:00 P.M BST
+:release-date: 2012-08-31 06:00 p.m. BST
 :release-by: Ask Solem
 
 - Important note for users of Django and the database scheduler!
@@ -1137,7 +1137,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.8
 =====
-:release-date: 2012-08-29 05:00 P.M BST
+:release-date: 2012-08-29 05:00 p.m. BST
 :release-by: Ask Solem
 
 - Now depends on Kombu 2.4.4
@@ -1178,7 +1178,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.7
 =====
-:release-date: 2012-08-24 05:00 P.M BST
+:release-date: 2012-08-24 05:00 p.m. BST
 :release-by: Ask Solem
 
 - Fixes several problems with periodic tasks and timezones (Issue #937).
@@ -1231,8 +1231,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.6
 =====
-:release-date: 2012-08-17 11:00 P.M BST
-:release-by: Ask Solem
+:release-date: 2012-08-17 11:00 p.mp.m. Ask Solem
 
 - Now depends on kombu 2.4.0
 
@@ -1312,7 +1311,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.5
 =====
-:release-date: 2012-08-01 04:00 P.M BST
+:release-date: 2012-08-01 04:00 p.m. BST
 :release-by: Ask Solem
 
 - Now depends on kombu 2.3.1 + billiard 2.7.3.11
@@ -1339,7 +1338,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.4
 =====
-:release-date: 2012-07-26 07:00 P.M BST
+:release-date: 2012-07-26 07:00 p.m. BST
 :release-by: Ask Solem
 
 - Now depends on Kombu 2.3
@@ -1471,7 +1470,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.3
 =====
-:release-date: 2012-07-20 09:17 P.M BST
+:release-date: 2012-07-20 09:17 p.m. BST
 :release-by: Ask Solem
 
 - :pypi:`amqplib` passes the channel object as part of the delivery_info
@@ -1481,7 +1480,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.2
 =====
-:release-date: 2012-07-20 04:00 P.M BST
+:release-date: 2012-07-20 04:00 p.m. BST
 :release-by: Ask Solem
 
 - A bug caused the following task options to not take defaults from the
@@ -1498,7 +1497,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Task Request: ``delivery_info`` is now passed through as-is (Issue #807).
 
-- The eta argument now supports datetime's with a timezone set (Issue #855).
+- The ETA argument now supports datetime's with a timezone set (Issue #855).
 
 - The worker's banner displayed the autoscale settings in the wrong order
   (Issue #859).
@@ -1545,7 +1544,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.1
 =====
-:release-date: 2012-07-10 06:00 P.M BST
+:release-date: 2012-07-10 06:00 p.m. BST
 :release-by: Ask Solem
 
 - Now depends on kombu 2.2.5
@@ -1600,7 +1599,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.0 (Chiastic Slide)
 ======================
-:release-date: 2012-07-07 01:30 P.M BST
+:release-date: 2012-07-07 01:30 p.m. BST
 :release-by: Ask Solem
 
 See :ref:`whatsnew-3.0`.

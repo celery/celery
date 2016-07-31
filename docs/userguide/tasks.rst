@@ -1,8 +1,8 @@
 .. _guide-tasks:
 
-=======
- Tasks
-=======
+=====================================================================
+                            Tasks
+=====================================================================
 
 Tasks are the building blocks of Celery applications.
 
@@ -11,23 +11,69 @@ dual roles in that it defines both what happens when a task is
 called (sends a message), and what happens when a worker receives that message.
 
 Every task class has a unique name, and this name is referenced in messages
-so that the worker can find the right function to execute.
+so the worker can find the right function to execute.
 
-A task message doesn't disappear
-until the message has been :term:`acknowledged` by a worker. A worker can reserve
-many messages in advance and even if the worker is killed -- caused by power failure
-or otherwise -- the message will be redelivered to another worker.
+A task message is not removed from the queue
+until that message has been :term:`acknowledged` by a worker. A worker can reserve
+many messages in advance and even if the worker is killed -- by power failure
+or some other reason -- the message will be redelivered to another worker.
 
-Ideally task functions should be :term:`idempotent`, which means that
+Ideally task functions should be :term:`idempotent`, which means
 the function won't cause unintended effects even if called
 multiple times with the same arguments.
 Since the worker cannot detect if your tasks are idempotent, the default
-behavior is to acknowledge the message in advance, before it's executed,
-so that a task that's already been started is never executed again..
+behavior is to acknowledge the message in advance, just before it's executed,
+so that a task invocation that already started is never executed again.
 
-If your task is idempotent you can set the :attr:`acks_late` option
+If your task is idempotent you can set the :attr:`~Task.acks_late` option
 to have the worker acknowledge the message *after* the task returns
 instead. See also the FAQ entry :ref:`faq-acks_late-vs-retry`.
+
+Note that the worker will acknowledge the message if the child process executing
+the task is terminated (either by the task calling :func:`sys.exit`, or by signal)
+even when :attr:`~Task.acks_late` is enabled.  This behavior is by purpose
+as...
+
+#. We don't want to rerun tasks that forces the kernel to send
+   a :sig:`SIGSEGV` (segmentation fault) or similar signals to the process.
+#. We assume that a system administrator deliberately killing the task
+   does not want it to automatically restart.
+#. A task that allocates to much memory is in danger of triggering the kernel
+   OOM killer, the same may happen again.
+#. A task that always fails when redelivered may cause a high-frequency
+   message loop taking down the system.
+
+If you really want a task to be redelivered in these scenarios you should
+consider enabling the :setting:`task_reject_on_worker_lost` setting.
+
+.. warning::
+
+    A task that blocks indefinitely may eventually stop the worker instance
+    from doing any other work.
+
+    If you task does I/O then make sure you add timeouts to these operations,
+    like adding a timeout to a web request using the :pypi:`requests` library:
+
+    .. code-block:: python
+
+        connect_timeout, read_timeout = 5.0, 30.0
+        response = requests.get(URL, timeout=(connect_timeout, read_timeout))
+
+    :ref:`Time limits <worker-time-limits>` are convenient for making sure all
+    tasks return in a timely manner, but a time limit event will actually kill
+    the process by force so only use them to detect cases where you haven't
+    used manual timeouts yet.
+
+    The default prefork pool scheduler is not friendly to long-running tasks,
+    so if you have tasks that run for minutes/hours make sure you enable
+    the -Ofair`` command-line argument to the :program:`celery worker`.
+    See :ref:`prefork-pool-prefetch` for more information, and for the
+    best performance route long-running and short-running tasks to
+    dedicated workers (:ref:`routing-automatic`).
+
+    If your worker hangs then please investigate what tasks are running
+    before submitting an issue, as most likely the hanging is caused
+    by one or more tasks hanging on a network operation.
 
 --
 
@@ -71,14 +117,14 @@ these can be specified as arguments to the decorator:
     The task decorator is available on your :class:`@Celery` application instance,
     if you don't know what this is then please read :ref:`first-steps`.
 
-    If you're using Django or are still using the "old" module based Celery API,
-    then you can import the task decorator like this:
+    If you're using Django (see :ref:`django-first-steps`), or you're the author
+    of a library then you probably want to use the :func:`@shared_task` decorator:
 
     .. code-block:: python
 
-        from celery import task
+        from celery import shared_task
 
-        @task
+        @shared_task
         def add(x, y):
             return x + y
 
@@ -111,9 +157,9 @@ be the task instance (``self``), just like Python bound methods:
     def add(self, x, y):
         logger.info(self.request.id)
 
-Bound tasks are needed for retries (using :meth:`@Task.retry`), for
-accessing information about the current task request, and for any additional
-functionality you add to custom task base classes.
+Bound tasks are needed for retries (using :meth:`Task.retry() <@Task.retry>`),
+for accessing information about the current task request, and for any
+additional functionality you add to custom task base classes.
 
 Task inheritance
 ----------------
@@ -138,10 +184,13 @@ The ``base`` argument to the task decorator specifies the base class of the task
 Names
 =====
 
-Every task must have a unique name, and a new name
-will be generated out of the function name if a custom name isn't provided.
+Every task must have a unique name.
 
-For example:
+If no explicit name is provided the task decorator will generate one for you,
+and this name will be based on 1) the module the task is defined in, and 2)
+the name of the task function.
+
+Example setting explicit name:
 
 .. code-block:: pycon
 
@@ -162,15 +211,16 @@ defined in another module.
     >>> def add(x, y):
     ...     return x + y
 
-You can tell the name of the task by investigating its name attribute:
+You can tell the name of the task by investigating its ``.name`` attribute:
 
 .. code-block:: pycon
 
     >>> add.name
     'tasks.add'
 
-Which is exactly the name that would've been generated anyway,
-if the module name is :file:`tasks.py`:
+The name we specified here (``tasks.add``) is exactly the name that would've
+been automatically generated for us if the task was defined in a module
+named :file:`tasks.py`:
 
 :file:`tasks.py`:
 
@@ -180,6 +230,8 @@ if the module name is :file:`tasks.py`:
     def add(x, y):
         return x + y
 
+.. code-block:: pycon
+
     >>> from tasks import add
     >>> add.name
     'tasks.add'
@@ -188,6 +240,21 @@ if the module name is :file:`tasks.py`:
 
 Automatic naming and relative imports
 -------------------------------------
+
+.. sidebar:: Absolute Imports
+
+    The best practice for developers targetting Python 2 is to add the
+    following to the top of **every module**:
+
+    .. code-block:: python
+
+        from __future__ import absolute_import
+
+    This will force you to always use absolute imports so you will
+    never have any problems with tasks using relative names.
+
+    Absolute imports are the default in Python 3 so you don't need this
+    if you target that version.
 
 Relative imports and automatic name generation don't go well together,
 so if you're using relative imports you should set the name explicitly.
@@ -306,11 +373,11 @@ So each task will have a name like `moduleA.taskA`, `moduleA.taskB` and
 
 .. _task-request-info:
 
-Context
-=======
+Task Request
+============
 
-:attr:`~@Task.request` contains information and state related to
-the executing task.
+:attr:`Task.request <@Task.request>` contains information and state
+related to the currently executing task.
 
 The request defines the following attributes:
 
@@ -321,9 +388,13 @@ The request defines the following attributes:
 :chord: The unique id of the chord this task belongs to (if the task
         is part of the header).
 
+:correlation_id: Custom ID used for e.g. de-duplication.
+
 :args: Positional arguments.
 
 :kwargs: Keyword arguments.
+
+:origin: Name of host that sent this task.
 
 :retries: How many times the current task has been retried.
           An integer starting at `0`.
@@ -339,21 +410,23 @@ The request defines the following attributes:
           This is in UTC time (depending on the :setting:`enable_utc`
           setting).
 
-:logfile: The file the worker logs to. See `Logging`_.
-
-:loglevel: The current log level used.
-
 :hostname: Node name of the worker instance executing the task.
 
 :delivery_info: Additional message delivery information. This is a mapping
                 containing the exchange and routing key used to deliver this
-                task. Used by e.g. :meth:`~@Task.retry`
+                task. Used by e.g. :meth:`Task.retry() <@Task.retry>`
                 to resend the task to the same destination queue.
                 Availability of keys in this dict depends on the
                 message broker used.
 
+:reply-to: Name of queue to send replies back to (used with e.g. RPC result
+           backend).
+
 :called_directly: This flag is set to true if the task wasn't
                   executed by the worker.
+
+:timelimit: A tuple of the current ``(soft, hard)`` time limits active for
+            this task (if any).
 
 :callbacks: A list of signatures to be called if this task returns successfully.
 
@@ -364,13 +437,25 @@ The request defines the following attributes:
 
 .. versionadded:: 3.1
 
-:headers:  Mapping of message headers (may be :const:`None`).
+:headers:  Mapping of message headers sent with this task message
+           (may be :const:`None`).
 
 :reply_to:  Where to send reply to (queue name).
 
 :correlation_id: Usually the same as the task id, often used in amqp
                  to keep track of what a reply is for.
 
+.. versionadded:: 4.0
+
+:root_id: The unique id of the first task in the workflow this task
+          is part of (if any).
+
+:parent_id: The unique id of the task that called this task (if any).
+
+:chain: Reversed list of tasks that form a chain (if any).
+        The last item in this list will be the next task to succeed the
+        current task.  If using version one of the task protocol the chain
+        tasks will be in ``request.callbacks`` instead.
 
 An example task accessing information in the context is:
 
@@ -479,7 +564,7 @@ arguments:
 Retrying
 ========
 
-:meth:`~@Task.retry` can be used to re-execute the task,
+:meth:`Task.retry() <@Task.retry>` can be used to re-execute the task,
 for example in the event of recoverable errors.
 
 When you call ``retry`` it'll send a new message, using the same
@@ -504,8 +589,8 @@ Here's an example using ``retry``:
 
 .. note::
 
-    The :meth:`~@Task.retry` call will raise an exception so any code after the retry
-    won't be reached. This is the :exc:`~@Retry`
+    The :meth:`Task.retry() <@Task.retry>` call will raise an exception so any
+    code after the retry won't be reached. This is the :exc:`~@Retry`
     exception, it isn't handled as an error but rather as a semi-predicate
     to signify to the worker that the task is to be retried,
     so that it can store the correct state when a result backend is enabled.
@@ -697,7 +782,7 @@ General
 
     Default time in seconds before a retry of the task
     should be executed. Can be either :class:`int` or :class:`float`.
-    Default is a 3 minute delay.
+    Default is a three minute delay.
 
 .. attribute:: Task.rate_limit
 

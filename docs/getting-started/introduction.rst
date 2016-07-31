@@ -217,17 +217,17 @@ Celery is easy to integrate with web frameworks, some of which even have
 integration packages:
 
     +--------------------+------------------------+
-    | `Django`_          | `django-celery`_       |
+    | `Django`_          | :pypi:`django-celery`  |
     +--------------------+------------------------+
-    | `Pyramid`_         | `pyramid_celery`_      |
+    | `Pyramid`_         | :pypi:`pyramid_celery` |
     +--------------------+------------------------+
-    | `Pylons`_          | `celery-pylons`_       |
+    | `Pylons`_          | :pypi:`celery-pylons`  |
     +--------------------+------------------------+
     | `Flask`_           | not needed             |
     +--------------------+------------------------+
-    | `web2py`_          | `web2py-celery`_       |
+    | `web2py`_          | :pypi:`web2py-celery`  |
     +--------------------+------------------------+
-    | `Tornado`_         | `tornado-celery`_      |
+    | `Tornado`_         | :pypi:`tornado-celery` |
     +--------------------+------------------------+
 
 The integration packages aren't strictly necessary, but they can make
@@ -240,10 +240,6 @@ database connections at :manpage:`fork(2)`.
 .. _`web2py`: http://web2py.com/
 .. _`Bottle`: http://bottlepy.org/
 .. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
-.. _`pyramid_celery`: http://pypi.python.org/pypi/pyramid_celery/
-.. _`django-celery`: http://pypi.python.org/pypi/django-celery
-.. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
-.. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
 

@@ -173,12 +173,12 @@ as a partial argument.
 
 .. _calling-eta:
 
-ETA and countdown
+ETA and Countdown
 =================
 
 The ETA (estimated time of arrival) lets you set a specific date and time that
 is the earliest time at which your task will be executed. `countdown` is
-a shortcut to set eta by seconds into the future.
+a shortcut to set ETA by seconds into the future.
 
 .. code-block:: pycon
 
@@ -298,6 +298,54 @@ short by default because a connection failure could lead to a retry pile effect
 if the broker connection is down: e.g. many web server processes waiting
 to retry blocking other incoming requests.
 
+.. _calling-connection-errors:
+
+Connection Error Handling
+=========================
+
+When you send a task and the message transport connection is lost, or
+the connection cannot be iniated, an :exc:`~kombu.exceptions.OperationalError`
+error will be raised:
+
+.. code-block:: pycon
+
+    >>> from proj.tasks import add
+    >>> add.delay(2, 2)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "celery/app/task.py", line 388, in delay
+            return self.apply_async(args, kwargs)
+      File "celery/app/task.py", line 503, in apply_async
+        **options
+      File "celery/app/base.py", line 662, in send_task
+        amqp.send_task_message(P, name, message, **options)
+      File "celery/backends/rpc.py", line 275, in on_task_call
+        maybe_declare(self.binding(producer.channel), retry=True)
+      File "/opt/celery/kombu/kombu/messaging.py", line 204, in _get_channel
+        channel = self._channel = channel()
+      File "/opt/celery/py-amqp/amqp/connection.py", line 272, in connect
+        self.transport.connect()
+      File "/opt/celery/py-amqp/amqp/transport.py", line 100, in connect
+        self._connect(self.host, self.port, self.connect_timeout)
+      File "/opt/celery/py-amqp/amqp/transport.py", line 141, in _connect
+        self.sock.connect(sa)
+      kombu.exceptions.OperationalError: [Errno 61] Connection refused
+
+If you have :ref:`retries <calling-retry>` enabled this will only happen after
+retries are exhausted, or when disabled immediately.
+
+You can handle this error too:
+
+.. code-block:: pycon
+
+    >>> from celery.utils.log import get_logger
+    >>> logger = get_logger(__name__)
+
+    >>> try:
+    ...     add.delay(2, 2)
+    ... except add.OperationalError as exc:
+    ...     logger.exception('Sending task raised: %r', exc)
+
 .. _calling-serializers:
 
 Serializers
@@ -354,7 +402,7 @@ pickle -- If you have no desire to support any language other than
     messages when sending binary files, and a slight speedup over JSON
     processing.
 
-    See http://docs.python.org/library/pickle.html for more information.
+    See :mod:`pickle` for more information.
 
 yaml -- YAML has many of the same characteristics as json,
     except that it natively supports more data types (including dates,

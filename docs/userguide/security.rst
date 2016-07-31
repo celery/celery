@@ -132,7 +132,6 @@ Using `Public-key cryptography` the `auth` serializer can verify the
 authenticity of senders, to enable this read :ref:`message-signing`
 for more information.
 
-.. _`pickle`: http://docs.python.org/library/pickle.html
 .. _`Public-key cryptography`:
     https://en.wikipedia.org/wiki/Public-key_cryptography
 
@@ -141,7 +140,7 @@ for more information.
 Message Signing
 ===============
 
-Celery can use the `pyOpenSSL`_ library to sign message using
+Celery can use the :pypi:`pyOpenSSL` library to sign message using
 `Public-key cryptography`, where
 messages sent by clients are signed using a private key
 and then later verified by the worker using a public certificate.
@@ -182,7 +181,6 @@ with the private key and certificate files located in `/etc/ssl`.
     Also note that the `auth` serializer won't encrypt the contents of
     a message, so if needed this will have to be enabled separately.
 
-.. _`pyOpenSSL`: http://pypi.python.org/pypi/pyOpenSSL
 .. _`X.509`: https://en.wikipedia.org/wiki/X.509
 .. _`Certificate Authority`:
     https://en.wikipedia.org/wiki/Certificate_authority

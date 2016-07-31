@@ -540,7 +540,7 @@ Methods
 
 .. method:: apply_eta_task(request)
 
-    Schedule eta task to execute based on the ``request.eta`` attribute.
+    Schedule ETA task to execute based on the ``request.eta`` attribute.
     (:class:`~celery.worker.request.Request`)
 
 
@@ -785,7 +785,7 @@ of :class:`celery.bin.base.Command`. There's limited documentation,
 unfortunately, but you can find inspiration from the various commands in the
 :mod:`celery.bin` package.
 
-This is how the Flower_ monitoring extension adds the :program:`celery flower` command,
+This is how the :pypi:`Flower` monitoring extension adds the :program:`celery flower` command,
 by adding an entry-point in :file:`setup.py`:
 
 .. code-block:: python
@@ -798,9 +798,6 @@ by adding an entry-point in :file:`setup.py`:
             ],
         }
     )
-
-
-.. _Flower: http://pypi.python.org/pypi/flower
 
 The command definition is in two parts separated by the equal sign, where the
 first part is the name of the sub-command (flower), then the second part is

@@ -780,7 +780,7 @@ You can get a list of tasks waiting to be scheduled by using
 
 .. note::
 
-    These are tasks with an eta/countdown argument, not periodic tasks.
+    These are tasks with an ETA/countdown argument, not periodic tasks.
 
 .. _worker-inspect-reserved:
 

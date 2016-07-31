@@ -3,7 +3,7 @@
 =========================================
 :contact: security@celeryproject.org
 :CVE id: TBA
-:date: 2014-07-10 05:00:00 P.M UTC
+:date: 2014-07-10 05:00:00 p.m. UTC
 
 Details
 =======

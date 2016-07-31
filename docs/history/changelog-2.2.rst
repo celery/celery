@@ -11,7 +11,7 @@
 
 2.2.8
 =====
-:release-date: 2011-11-25 04:00 P.M GMT
+:release-date: 2011-11-25 04:00 p.m. GMT
 :release-by: Ask Solem
 
 .. _v228-security-fixes:
@@ -36,7 +36,7 @@ Security Fixes
 
 2.2.7
 =====
-:release-date: 2011-06-13 04:00 P.M BST
+:release-date: 2011-06-13 04:00 p.m. BST
 :release-by: Ask Solem
 
 * New signals: :signal:`after_setup_logger` and
@@ -60,7 +60,7 @@ Security Fixes
 
 2.2.6
 =====
-:release-date: 2011-04-15 04:00 P.M CEST
+:release-date: 2011-04-15 04:00 p.m. CEST
 :release-by: Ask Solem
 
 .. _v226-important:
@@ -68,7 +68,7 @@ Security Fixes
 Important Notes
 ---------------
 
-* Now depends on Kombu 1.1.2.
+* Now depends on :pypi:`Kombu` 1.1.2.
 
 * Dependency lists now explicitly specifies that we don't want
   :pypi:`python-dateutil` 2.x, as this version only supports Python 3.
@@ -122,7 +122,7 @@ Fixes
 
 2.2.5
 =====
-:release-date: 2011-03-28 06:00 P.M CEST
+:release-date: 2011-03-28 06:00 p.m. CEST
 :release-by: Ask Solem
 
 .. _v225-important:
@@ -339,7 +339,7 @@ Fixes
 
 2.2.3
 =====
-:release-date: 2011-02-12 04:00 P.M CET
+:release-date: 2011-02-12 04:00 p.m. CET
 :release-by: Ask Solem
 
 .. _v223-fixes:
@@ -347,7 +347,7 @@ Fixes
 Fixes
 -----
 
-* Now depends on Kombu 1.0.3
+* Now depends on :pypi:`Kombu` 1.0.3
 
 * Task.retry now supports a ``max_retries`` argument, used to change the
   default value.
@@ -397,7 +397,7 @@ Fixes
 
 2.2.2
 =====
-:release-date: 2011-02-03 04:00 P.M CET
+:release-date: 2011-02-03 04:00 p.m. CET
 :release-by: Ask Solem
 
 .. _v222-fixes:
@@ -428,7 +428,7 @@ Fixes
 
 2.2.1
 =====
-:release-date: 2011-02-02 04:00 P.M CET
+:release-date: 2011-02-02 04:00 p.m. CET
 :release-by: Ask Solem
 
 .. _v221-fixes:
@@ -460,7 +460,7 @@ Fixes
 Important Notes
 ---------------
 
-* Carrot has been replaced with `Kombu`_
+* Carrot has been replaced with :pypi:`Kombu`
 
     Kombu is the next generation messaging library for Python,
     fixing several flaws present in Carrot that was hard to fix
@@ -481,8 +481,6 @@ Important Notes
     for exchanges (direct and topic). The Redis transport even supports
     fanout exchanges so it's able to perform worker remote control
     commands.
-
-.. _`Kombu`: http://pypi.python.org/pypi/kombu
 
 * Magic keyword arguments pending deprecation.
 

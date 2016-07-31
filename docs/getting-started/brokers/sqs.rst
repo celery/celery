@@ -9,14 +9,12 @@
 Installation
 ============
 
-For the Amazon SQS support you have to install the `boto`_ library:
+For the Amazon SQS support you have to install the :pypi:`boto`
+library using :command:`pip`:
 
 .. code-block:: console
 
     $ pip install -U boto
-
-.. _boto:
-    http://pypi.python.org/pypi/boto
 
 .. _broker-sqs-configuration:
 

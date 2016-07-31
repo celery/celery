@@ -809,7 +809,7 @@ class test_WorkController(AppCase):
         xargs = self.comp_logger.debug.call_args[0]
         fmt, arg = xargs[0], xargs[1]
         self.assertEqual(30.0, arg)
-        self.assertIn('Next eta %s secs', fmt)
+        self.assertIn('Next ETA %s secs', fmt)
 
     def test_process_task(self):
         worker = self.worker

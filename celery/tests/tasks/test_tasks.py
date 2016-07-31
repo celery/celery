@@ -374,7 +374,7 @@ class test_tasks(TasksCase):
                 consumer, sresult, self.mytask.name, name='Elaine M. Benes',
             )
 
-            # With eta.
+            # With ETA.
             presult2 = self.mytask.apply_async(
                 kwargs=dict(name='George Costanza'),
                 eta=self.now() + timedelta(days=1),

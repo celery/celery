@@ -12,7 +12,7 @@ new in Celery 3.1.
 
 3.1.21
 ======
-:release-date: 2016-03-04 11:16 A.M PST
+:release-date: 2016-03-04 11:16 a.m. PST
 :release-by: Ask Solem
 
 - **Requirements**
@@ -71,7 +71,7 @@ new in Celery 3.1.
 
 3.1.20
 ======
-:release-date: 2016-01-22 06:50 P.M UTC
+:release-date: 2016-01-22 06:50 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**
@@ -184,7 +184,7 @@ new in Celery 3.1.
 
 3.1.19
 ======
-:release-date: 2015-10-26 01:00 P.M UTC
+:release-date: 2015-10-26 01:00 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**
@@ -265,7 +265,7 @@ new in Celery 3.1.
 
 3.1.18
 ======
-:release-date: 2015-04-22 05:30 P.M UTC
+:release-date: 2015-04-22 05:30 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**
@@ -326,7 +326,7 @@ new in Celery 3.1.
 
 3.1.17
 ======
-:release-date: 2014-11-19 03:30 P.M UTC
+:release-date: 2014-11-19 03:30 p.m. UTC
 :release-by: Ask Solem
 
 .. admonition:: Don't enable the `CELERYD_FORCE_EXECV` setting!
@@ -424,7 +424,7 @@ new in Celery 3.1.
 
 3.1.16
 ======
-:release-date: 2014-10-03 06:00 P.M UTC
+:release-date: 2014-10-03 06:00 p.m. UTC
 :release-by: Ask Solem
 
 - **Worker**: 3.1.15 broke :option:`-Ofair <celery worker -O>`
@@ -459,7 +459,7 @@ new in Celery 3.1.
 
 3.1.15
 ======
-:release-date: 2014-09-14 11:00 P.M UTC
+:release-date: 2014-09-14 11:00 p.m. UTC
 :release-by: Ask Solem
 
 - **Django**: Now makes sure ``django.setup()`` is called
@@ -473,7 +473,7 @@ new in Celery 3.1.
 
 3.1.14
 ======
-:release-date: 2014-09-08 03:00 P.M UTC
+:release-date: 2014-09-08 03:00 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**
@@ -571,7 +571,7 @@ News
 
 3.1.12
 ======
-:release-date: 2014-06-09 10:12 P.M UTC
+:release-date: 2014-06-09 10:12 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**
@@ -693,7 +693,7 @@ News
 
 3.1.11
 ======
-:release-date: 2014-04-16 11:00 P.M UTC
+:release-date: 2014-04-16 11:00 p.m. UTC
 :release-by: Ask Solem
 
 - **Now compatible with RabbitMQ 3.3.0**
@@ -768,7 +768,7 @@ News
 
 3.1.10
 ======
-:release-date: 2014-03-22 09:40 P.M UTC
+:release-date: 2014-03-22 09:40 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**:
@@ -914,7 +914,7 @@ News
 
 3.1.9
 =====
-:release-date: 2014-02-10 06:43 P.M UTC
+:release-date: 2014-02-10 06:43 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**:
@@ -988,7 +988,7 @@ News
 
 3.1.8
 =====
-:release-date: 2014-01-17 10:45 P.M UTC
+:release-date: 2014-01-17 10:45 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**:
@@ -1121,7 +1121,7 @@ News
 
 3.1.7
 =====
-:release-date: 2013-12-17 06:00 P.M UTC
+:release-date: 2013-12-17 06:00 p.m. UTC
 :release-by: Ask Solem
 
 .. _v317-important:
@@ -1295,7 +1295,7 @@ Fixes
 
 3.1.6
 =====
-:release-date: 2013-12-02 06:00 P.M UTC
+:release-date: 2013-12-02 06:00 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on :mod:`billiard` 3.3.0.10.
@@ -1342,7 +1342,7 @@ Fixes
 
 - Canvas: Now unrolls groups with only one task (optimization) (Issue #1656).
 
-- Task: Fixed problem with eta and timezones.
+- Task: Fixed problem with ETA and timezones.
 
     Fix contributed by Alexander Koval.
 
@@ -1369,7 +1369,7 @@ Fixes
 
 3.1.5
 =====
-:release-date: 2013-11-21 06:20 P.M UTC
+:release-date: 2013-11-21 06:20 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on :ref:`Kombu 3.0.6 <kombu:version-3.0.6>`.
@@ -1483,7 +1483,7 @@ Fixes
 
 3.1.4
 =====
-:release-date: 2013-11-15 11:40 P.M UTC
+:release-date: 2013-11-15 11:40 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on :ref:`Kombu 3.0.5 <kombu:version-3.0.5>`.
@@ -1515,7 +1515,7 @@ Fixes
 
 3.1.3
 =====
-:release-date: 2013-11-13 00:55 A.M UTC
+:release-date: 2013-11-13 00:55 a.m. UTC
 :release-by: Ask Solem
 
 - Fixed compatibility problem with Python 2.7.0 - 2.7.5 (Issue #1637)
@@ -1532,7 +1532,7 @@ Fixes
 
 3.1.2
 =====
-:release-date: 2013-11-12 08:00 P.M UTC
+:release-date: 2013-11-12 08:00 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on :mod:`billiard` 3.3.0.6
@@ -1557,7 +1557,7 @@ Fixes
 
 3.1.1
 =====
-:release-date: 2013-11-11 06:30 P.M UTC
+:release-date: 2013-11-11 06:30 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on :mod:`billiard` 3.3.0.4.
@@ -1593,7 +1593,7 @@ Fixes
 
 3.1.0
 =======
-:release-date: 2013-11-09 11:00 P.M UTC
+:release-date: 2013-11-09 11:00 p.m. UTC
 :release-by: Ask Solem
 
 See :ref:`whatsnew-3.1`.

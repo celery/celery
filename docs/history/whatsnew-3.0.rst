@@ -21,7 +21,8 @@ While this version is backward compatible with previous versions
 it's important that you read the following section.
 
 If you use Celery in combination with Django you must also
-read the `django-celery changelog`_ and upgrade to `django-celery 3.0`_.
+read the `django-celery changelog`_ and upgrade
+to :pypi:`django-celery 3.0 <django-celery>`.
 
 This version is officially supported on CPython 2.5, 2.6, 2.7, 3.2 and 3.3,
 as well as PyPy and Jython.
@@ -75,7 +76,6 @@ Highlights
 .. _`website`: http://celeryproject.org/
 .. _`django-celery changelog`:
     https://github.com/celery/django-celery/tree/master/Changelog
-.. _`django-celery 3.0`: http://pypi.python.org/pypi/django-celery/
 
 .. contents::
     :local:

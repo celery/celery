@@ -752,7 +752,22 @@ An example of the new API is :ref:`here <beat-entries>`.
 .. :sha:`bc18d0859c1570f5eb59f5a969d1d32c63af764b`
 .. :sha:`132d8d94d38f4050db876f56a841d5a5e487b25b`
 
-RabbitMQ Priority queue support
+Handling task connection errors
+-------------------------------
+
+Connection related errors occuring while sending a task is now re-raised
+as a :exc:`kombu.exceptions.OperationalError` error:
+
+.. code-block:: pycon
+
+    >>> try:
+    ...     add.delay(2, 2)
+    ... except add.OperationalError as exc:
+    ...     print('Could not send task %r: %r' % (add, exc))
+
+See :ref:`calling-connection-errors` for more information.
+
+RabbitMQ priority queue support
 -------------------------------
 
 See :ref:`routing-options-rabbitmq-priorities` for more information.
@@ -827,7 +842,7 @@ New Consul result backend introduced.
 
 Add support for Consul as a backend using the Key/Value store of Consul.
 
-Consul has a HTTP API where through you can store keys with their values.
+Consul has an HTTP API where through you can store keys with their values.
 
 The backend extends KeyValueStoreBackend and implements most of the methods.
 
@@ -840,8 +855,8 @@ the backend supports auto expiry of Task results.
 
 For more information on Consul visit http://consul.io/
 
-The backend uses python-consul for talking to the HTTP API. This package is fully
-Python 3 compliant just as this backend is:
+The backend uses :pypi:`python-consul` for talking to the HTTP API.
+This package is fully Python 3 compliant just as this backend is:
 
 .. code-block:: console
 

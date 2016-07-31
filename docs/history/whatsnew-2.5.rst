@@ -18,14 +18,14 @@ While this version is backward compatible with previous versions
 it's important that you read the following section.
 
 If you use Celery in combination with Django you must also
-read the `django-celery changelog <djcelery:version-2.5.0>` and upgrade to `django-celery 2.5`_.
+read the `django-celery changelog <djcelery:version-2.5.0>` and upgrade
+to :pypi:`django-celery 2.5 <django-celery>`.
 
 This version is officially supported on CPython 2.5, 2.6, 2.7, 3.2 and 3.3,
 as well as PyPy and Jython.
 
 
 .. _`website`: http://celeryproject.org/
-.. _`django-celery 2.5`: http://pypi.python.org/pypi/django-celery/
 
 .. contents::
     :local:
@@ -115,14 +115,12 @@ Optimization
   optimized, meaning the worker is able to process a great deal
   more tasks/second compared to previous versions. As an example the solo
   pool can now process up to 15000 tasks/second on a 4 core MacBook Pro
-  when using the `pylibrabbitmq`_ transport, where it previously
+  when using the :pypi:`pylibrabbitmq` transport, where it previously
   could only do 5000 tasks/second.
 
 - The task error tracebacks are now much shorter.
 
 - Fixed a noticeable delay in task processing when rate limits are enabled.
-
-.. _`pylibrabbitmq`: http://pypi.python.org/pylibrabbitmq/
 
 .. _v250-deprecations:
 

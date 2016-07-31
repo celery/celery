@@ -82,7 +82,7 @@ the current list of dependencies are:
 celery
 ~~~~~~
 
-- `kombu`_
+- :pypi:`kombu`
 
 Kombu is part of the Celery ecosystem and is the library used
 to send and receive messages. It's also the library that enables
@@ -90,9 +90,7 @@ us to support many different message brokers. It's also used by the
 OpenStack project, and many others, validating the choice to separate
 it from the Celery code-base.
 
-.. _`kombu`: http://pypi.python.org/pypi/kombu
-
-- `billiard`_
+- :pypi:`billiard`
 
 Billiard is a fork of the Python multiprocessing module containing
 many performance and stability improvements. It's an eventual goal
@@ -101,13 +99,9 @@ that these improvements will be merged back into Python one day.
 It's also used for compatibility with older Python versions
 that don't come with the multiprocessing module.
 
-.. _`billiard`: http://pypi.python.org/pypi/billiard
-
-- `pytz`
+- :pypi:`pytz`
 
 The pytz module provides timezone definitions and related tools.
-
-.. _`pytz`: http://pypi.python.org/pypi/pytz
 
 ``django-celery``
 ~~~~~~~~~~~~~~~~~
@@ -122,12 +116,10 @@ kombu
 
 Kombu depends on the following packages:
 
-- `amqp`_
+- :pypi:`amqp`
 
 The underlying pure-Python amqp client implementation. AMQP being the default
 broker this is a natural dependency.
-
-.. _`amqp`: http://pypi.python.org/pypi/amqp
 
 .. note::
 

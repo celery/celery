@@ -219,15 +219,10 @@ Installation
 You can install Celery either via the Python Package Index (PyPI)
 or from source.
 
-To install using `pip`,:
+To install using ``pip``:
 ::
 
     $ pip install -U Celery
-
-To install using `easy_install`,:
-::
-
-    $ easy_install -U Celery
 
 .. _bundles:
 
@@ -322,7 +317,8 @@ Transports and Backends
 Downloading and installing from source
 --------------------------------------
 
-Download the latest version of Celery from
+Download the latest version of Celery from PyPI:
+
 http://pypi.python.org/pypi/celery/
 
 You can install it by doing the following,:

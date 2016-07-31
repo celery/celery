@@ -216,14 +216,12 @@ upgraded.
 Default: ``"UTC"``.
 
 Configure Celery to use a custom time zone.
-The timezone value can be any time zone supported by the `pytz`_
+The timezone value can be any time zone supported by the :pypi:`pytz`
 library.
 
 If not set the UTC timezone is used. For backwards compatibility
 there's also a :setting:`enable_utc` setting, and this is set
 to false the system local timezone is used instead.
-
-.. _`pytz`: http://pypi.python.org/pypi/pytz/
 
 .. _conf-tasks:
 
@@ -800,7 +798,7 @@ Cache backend settings
 
 .. note::
 
-    The cache backend supports the :pypi:`pylibmc` and `python-memcached`
+    The cache backend supports the :pypi:`pylibmc` and :pypi:`python-memcached`
     libraries. The latter is used only if :pypi:`pylibmc` isn't installed.
 
 Using a single Memcached server:
@@ -859,10 +857,9 @@ Configuring the backend URL
 
 .. note::
 
-    The Redis backend requires the :pypi:`redis` library:
-    http://pypi.python.org/pypi/redis/
+    The Redis backend requires the :pypi:`redis` library.
 
-    To install the redis package use `pip` or `easy_install`:
+    To install this package use :command:`pip`:
 
     .. code-block:: console
 
@@ -928,9 +925,8 @@ Cassandra backend settings
 .. note::
 
     This Cassandra backend driver requires :pypi:`cassandra-driver`.
-    https://pypi.python.org/pypi/cassandra-driver
 
-    To install, use `pip` or `easy_install`:
+    To install, use :command:`pip`:
 
     .. code-block:: console
 
@@ -1070,10 +1066,9 @@ Riak backend settings
 
 .. note::
 
-    The Riak backend requires the :pypi:`riak` library:
-    http://pypi.python.org/pypi/riak/
+    The Riak backend requires the :pypi:`riak` library.
 
-    To install the :pypi:`riak` package use `pip` or `easy_install`:
+    To install the this package use :command:`pip`:
 
     .. code-block:: console
 
@@ -1143,9 +1138,8 @@ IronCache backend settings
 .. note::
 
     The IronCache backend requires the :pypi:`iron_celery` library:
-    http://pypi.python.org/pypi/iron_celery
 
-    To install the iron_celery package use `pip` or `easy_install`:
+    To install this package use :command:`pip`:
 
     .. code-block:: console
 
@@ -1168,10 +1162,9 @@ Couchbase backend settings
 
 .. note::
 
-    The Couchbase backend requires the :pypi:`couchbase` library:
-    https://pypi.python.org/pypi/couchbase
+    The Couchbase backend requires the :pypi:`couchbase` library.
 
-    To install the :pypi:`couchbase` package use `pip` or `easy_install`:
+    To install this package use :command:`pip`:
 
     .. code-block:: console
 
@@ -1222,9 +1215,8 @@ CouchDB backend settings
 .. note::
 
     The CouchDB backend requires the :pypi:`pycouchdb` library:
-    https://pypi.python.org/pypi/pycouchdb
 
-    To install the Couchbase package use :command:`pip`, or :command:`easy_install`:
+    To install this Couchbase package use :command:`pip`:
 
     .. code-block:: console
 
@@ -1696,8 +1688,7 @@ Toggles SSL usage on broker connection and SSL settings.
 
 If ``True`` the connection will use SSL with default SSL settings.
 If set to a dict, will configure SSL connection according to the specified
-policy. The format used is python `ssl.wrap_socket()
-options <https://docs.python.org/3/library/ssl.html#ssl.wrap_socket>`_.
+policy. The format used is Python's :func:`ssl.wrap_socket` options.
 
 Note that SSL socket is generally served on a separate port by the broker.
 

@@ -50,8 +50,8 @@ Commands
   Also all known tasks will be automatically added to locals (unless the
   :option:`--without-tasks <celery shell --without-tasks>` flag is set).
 
-  Uses :pypi:`Ipython`, :pypi:`bpython`, or regular python in that order if
-  installed. You can force an implementation using
+  Uses :pypi:`Ipython`, :pypi:`bpython`, or regular :program:`python` in that
+  order if installed. You can force an implementation using
   :option:`--ipython <celery shell --ipython>`,
   :option:`--bpython <celery shell --bpython>`, or
   :option:`--python <celery shell --python>`.
@@ -123,7 +123,7 @@ Commands
 
     This will list all tasks that have been prefetched by the worker,
     and is currently waiting to be executed (doesn't include tasks
-    with an eta).
+    with an ETA value set).
 
 * **inspect revoked**: List history of revoked tasks
 

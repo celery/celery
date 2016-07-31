@@ -18,7 +18,7 @@ If you're looking for versions prior to 2.5 you should visit our
 
 2.5.5
 =====
-:release-date: 2012-06-06 04:00 P.M BST
+:release-date: 2012-06-06 04:00 p.m. BST
 :release-by: Ask Solem
 
 This is a dummy release performed for the following goals:
@@ -30,7 +30,7 @@ This is a dummy release performed for the following goals:
 
 2.5.3
 =====
-:release-date: 2012-04-16 07:00 P.M BST
+:release-date: 2012-04-16 07:00 p.m. BST
 :release-by: Ask Solem
 
 * A bug causes messages to be sent with UTC time-stamps even though
@@ -49,7 +49,7 @@ This is a dummy release performed for the following goals:
 
 2.5.2
 =====
-:release-date: 2012-04-13 04:30 P.M GMT
+:release-date: 2012-04-13 04:30 p.m. GMT
 :release-by: Ask Solem
 
 .. _v252-news:
@@ -172,7 +172,7 @@ Fixes
 
 2.5.1
 =====
-:release-date: 2012-03-01 01:00 P.M GMT
+:release-date: 2012-03-01 01:00 p.m. GMT
 :release-by: Ask Solem
 
 .. _v251-fixes:
@@ -205,7 +205,7 @@ Fixes
 
 2.5.0
 =====
-:release-date: 2012-02-24 04:00 P.M GMT
+:release-date: 2012-02-24 04:00 p.m. GMT
 :release-by: Ask Solem
 
 See :ref:`whatsnew-2.5`.

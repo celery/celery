@@ -128,7 +128,7 @@ class Request(object):
                 eta = maybe_iso8601(eta)
             except (AttributeError, ValueError, TypeError) as exc:
                 raise InvalidTaskError(
-                    'invalid eta value {0!r}: {1}'.format(eta, exc))
+                    'invalid ETA value {0!r}: {1}'.format(eta, exc))
             self.eta = maybe_make_aware(eta, self.tzlocal)
         else:
             self.eta = None
@@ -405,7 +405,7 @@ class Request(object):
     def __str__(self):
         return ' '.join([
             self.humaninfo(),
-            ' eta:[{0}]'.format(self.eta) if self.eta else '',
+            ' ETA:[{0}]'.format(self.eta) if self.eta else '',
             ' expires:[{0}]'.format(self.expires) if self.expires else '',
         ])
 

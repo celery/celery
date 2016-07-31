@@ -583,10 +583,10 @@ Installing the dependencies:
 
     $ pip install -U -r requirements/pkgutils.txt
 
-pyflakes & PEP8
-~~~~~~~~~~~~~~~
+pyflakes & PEP-8
+~~~~~~~~~~~~~~~~
 
-To ensure that your changes conform to PEP8 and to run pyflakes
+To ensure that your changes conform to ``8`` and to run pyflakes
 execute:
 ::
 
@@ -659,15 +659,12 @@ You should probably be able to pick up the coding style
 from surrounding code, but it is a good idea to be aware of the
 following conventions.
 
-* All Python code must follow the `PEP-8`_ guidelines.
+* All Python code must follow the ``8`` guidelines.
 
-`pep8.py`_ is an utility you can use to verify that your code
+``pep8`` is a utility you can use to verify that your code
 is following the conventions.
 
-.. _`PEP-8`: http://www.python.org/dev/peps/pep-0008/
-.. _`pep8.py`: http://pypi.python.org/pypi/pep8
-
-* Docstrings must follow the `PEP-257`_ conventions, and use the following
+* Docstrings must follow the ``257`` conventions, and use the following
   style.
 
     Do this:
@@ -694,8 +691,6 @@ is following the conventions.
             """
             Short description.
             """
-
-.. _`PEP-257`: http://www.python.org/dev/peps/pep-0257/
 
 * Lines shouldn't exceed 78 columns.
 
@@ -917,7 +912,7 @@ Packages
 :git: https://github.com/celery/celery
 :CI: http://travis-ci.org/#!/celery/celery
 :Windows-CI: https://ci.appveyor.com/project/ask/celery
-:PyPI: http://pypi.python.org/pypi/celery
+:PyPI: ``celery``
 :docs: http://docs.celeryproject.org
 
 ``kombu``
@@ -928,7 +923,7 @@ Messaging library.
 :git: https://github.com/celery/kombu
 :CI: http://travis-ci.org/#!/celery/kombu
 :Windows-CI: https://ci.appveyor.com/project/ask/kombu
-:PyPI: http://pypi.python.org/pypi/kombu
+:PyPI: ``kombu``
 :docs: https://kombu.readthedocs.io
 
 ``amqp``
@@ -939,7 +934,7 @@ Python AMQP 0.9.1 client.
 :git: https://github.com/celery/py-amqp
 :CI: http://travis-ci.org/#!/celery/py-amqp
 :Windows-CI: https://ci.appveyor.com/project/ask/py-amqp
-:PyPI: http://pypi.python.org/pypi/amqp
+:PyPI: ``amqp``
 :docs: https://amqp.readthedocs.io
 
 ``vine``
@@ -950,7 +945,7 @@ Promise/deferred implementation.
 :git: https://github.com/celery/vine/
 :CI: http://travis-ci.org/#!/celery/vine/
 :Windows-CI: https://ci.appveyor.com/project/ask/vine
-:PyPI: http://pypi.python.org/pypi/vine
+:PyPI: ``vine``
 :docs: https://vine.readthedocs.io
 
 ``billiard``
@@ -962,7 +957,7 @@ that'll eventually be merged into the Python stdlib.
 :git: https://github.com/celery/billiard
 :CI: http://travis-ci.org/#!/celery/billiard/
 :Windows-CI: https://ci.appveyor.com/project/ask/billiard
-:PyPI: http://pypi.python.org/pypi/billiard
+:PyPI: ``billiard``
 
 ``librabbitmq``
 ---------------
@@ -970,7 +965,7 @@ that'll eventually be merged into the Python stdlib.
 Very fast Python AMQP client written in C.
 
 :git: https://github.com/celery/librabbitmq
-:PyPI: http://pypi.python.org/pypi/librabbitmq
+:PyPI: ``librabbitmq``
 
 ``django-celery``
 -----------------
@@ -978,7 +973,7 @@ Very fast Python AMQP client written in C.
 Django <-> Celery Integration.
 
 :git: https://github.com/celery/django-celery
-:PyPI: http://pypi.python.org/pypi/django-celery
+:PyPI: ``django-celery``
 :docs: http://docs.celeryproject.org/en/latest/django
 
 ``cell``
@@ -987,7 +982,7 @@ Django <-> Celery Integration.
 Actor library.
 
 :git: https://github.com/celery/cell
-:PyPI: http://pypi.python.org/pypi/cell
+:PyPI: ``cell``
 
 ``cyme``
 --------
@@ -995,7 +990,7 @@ Actor library.
 Distributed Celery Instance manager.
 
 :git: https://github.com/celery/cyme
-:PyPI: http://pypi.python.org/pypi/cyme
+:PyPI: ``cyme``
 :docs: https://cyme.readthedocs.io/
 
 
@@ -1005,39 +1000,39 @@ Deprecated
 - ``Flask-Celery``
 
 :git: https://github.com/ask/Flask-Celery
-:PyPI: http://pypi.python.org/pypi/Flask-Celery
+:PyPI: ``Flask-Celery``
 
 - ``celerymon``
 
 :git: https://github.com/celery/celerymon
-:PyPI: http://pypi.python.org/pypi/celerymon
+:PyPI: ``celerymon``
 
 - ``carrot``
 
 :git: https://github.com/ask/carrot
-:PyPI: http://pypi.python.org/pypi/carrot
+:PyPI: ``carrot``
 
 - ``ghettoq``
 
 :git: https://github.com/ask/ghettoq
-:PyPI: http://pypi.python.org/pypi/ghettoq
+:PyPI: ``ghettoq``
 
 - ``kombu-sqlalchemy``
 
 :git: https://github.com/ask/kombu-sqlalchemy
-:PyPI: http://pypi.python.org/pypi/kombu-sqlalchemy
+:PyPI: ``kombu-sqlalchemy``
 
 - ``django-kombu``
 
 :git: https://github.com/ask/django-kombu
-:PyPI: http://pypi.python.org/pypi/django-kombu
+:PyPI: ``django-kombu``
 
 - ``pylibrabbitmq``
 
 Old name for ``librabbitmq``.
 
 :git: ``None``
-:PyPI: http://pypi.python.org/pypi/pylibrabbitmq
+:PyPI: ``pylibrabbitmq``
 
 .. _release-procedure:
 

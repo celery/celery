@@ -11,7 +11,7 @@
 
 2.0.3
 =====
-:release-date: 2010-08-27 12:00 P.M CEST
+:release-date: 2010-08-27 12:00 p.m. CEST
 :release-by: Ask Solem
 
 .. _v203-fixes:
@@ -152,7 +152,7 @@ Documentation
 
 2.0.2
 =====
-:release-date: 2010-07-22 11:31 A.M CEST
+:release-date: 2010-07-22 11:31 a.m. CEST
 :release-by: Ask Solem
 
 * Routes: When using the dict route syntax, the exchange for a task
@@ -242,7 +242,7 @@ Documentation
         # Get currently reserved tasks
         >>> i.reserved()
 
-        # Get the current eta schedule
+        # Get the current ETA schedule
         >>> i.scheduled()
 
         # Worker statistics and info
@@ -274,7 +274,7 @@ Documentation
 
 2.0.1
 =====
-:release-date: 2010-07-09 03:02 P.M CEST
+:release-date: 2010-07-09 03:02 p.m. CEST
 :release-by: Ask Solem
 
 * multiprocessing.pool: Now handles encoding errors, so that pickling errors
@@ -302,7 +302,7 @@ Documentation
     The scheduler sleeps between iterations so it doesn't consume too much CPU.
     It keeps a list of the scheduled items sorted by time, at each iteration
     it sleeps for the remaining time of the item with the nearest deadline.
-    If there are no eta tasks it will sleep for a minimum amount of time, one
+    If there are no ETA tasks it will sleep for a minimum amount of time, one
     second by default.
 
     A bug sneaked in here, making it sleep for one second for every task
@@ -412,7 +412,7 @@ Documentation
 
 2.0.0
 =====
-:release-date: 2010-07-02 02:30 P.M CEST
+:release-date: 2010-07-02 02:30 p.m. CEST
 :release-by: Ask Solem
 
 Foreword
@@ -421,7 +421,7 @@ Foreword
 Celery 2.0 contains backward incompatible changes, the most important
 being that the Django dependency has been removed so Celery no longer
 supports Django out of the box, but instead as an add-on package
-called `django-celery`_.
+called :pypi:`django-celery`.
 
 We're very sorry for breaking backwards compatibility, but there's
 also many new and exciting features to make up for the time you lose
@@ -438,9 +438,9 @@ Big thanks to all contributors, testers and users!
 Upgrading for Django-users
 --------------------------
 
-Django integration has been moved to a separate package: `django-celery`_.
+Django integration has been moved to a separate package: :pypi:`django-celery`.
 
-* To upgrade you need to install the `django-celery`_ module and change:
+* To upgrade you need to install the :pypi:`django-celery` module and change:
 
   .. code-block:: python
 
@@ -460,7 +460,7 @@ Django integration has been moved to a separate package: `django-celery`_.
         import os
         os.environ['CELERY_LOADER'] = 'django'
 
-* The following modules has been moved to `django-celery`_:
+* The following modules has been moved to :pypi:`django-celery`:
 
     =====================================  =====================================
     **Module name**                        **Replace with**
@@ -482,8 +482,6 @@ loader. It does this by setting the :envvar:`CELERY_LOADER` environment variable
 When the Django loader is used, the "database" and "cache" result backend
 aliases will point to the :mod:`djcelery` backends instead of the built-in backends,
 and configuration will be read from the Django settings.
-
-.. _`django-celery`: http://pypi.python.org/pypi/django-celery
 
 .. _v200-upgrade:
 
@@ -548,12 +546,9 @@ but it supports mostly the same configuration syntax:
 
         CELERY_CACHE_BACKEND = 'memcached://A.example.com:11211;B.example.com'
 
-To use the cache backend you must either have the `pylibmc`_ or
-`python-memcached`_ library installed, of which the former is regarded
+To use the cache backend you must either have the :pypi:`pylibmc` or
+:pypi:`python-memcached` library installed, of which the former is regarded
 as the best choice.
-
-.. _`pylibmc`: http://pypi.python.org/pypi/pylibmc
-.. _`python-memcached`: http://pypi.python.org/pypi/python-memcached
 
 The support backend types are `memcached://` and `memory://`,
 we haven't felt the need to support any of the other backends

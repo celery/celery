@@ -14,8 +14,7 @@ Introduction
 which are then executed by the worker nodes available in the cluster.
 
 By default the entries are taken from the :setting:`beat_schedule` setting,
-but custom stores can also be used, like storing the entries
-in an SQL database.
+but custom stores can also be used, like storing the entries in a SQL database.
 
 You have to ensure only a single scheduler is running for a schedule
 at a time, otherwise you'd end up with duplicate tasks. Using
@@ -90,7 +89,7 @@ beat schedule list.
         # Calls test('world') every 30 seconds
         sender.add_periodic_task(30.0, test.s('world'), expires=10)
 
-        # Executes every Monday morning at 7:30 A.M
+        # Executes every Monday morning at 7:30 a.m.
         sender.add_periodic_task(
             crontab(hour=7, minute=30, day_of_week=1),
             test.s('Happy Mondays!'),
@@ -202,7 +201,7 @@ the :class:`~celery.schedules.crontab` schedule type:
     from celery.schedules import crontab
 
     app.conf.beat_schedule = {
-        # Executes every Monday morning at 7:30 A.M
+        # Executes every Monday morning at 7:30 a.m.
         'add-every-monday-morning': {
             'task': 'tasks.add',
             'schedule': crontab(hour=7, minute=30, day_of_week=1),

@@ -190,10 +190,6 @@ To use this with your project you need to follow these four steps:
     add this directly into your settings module (without the
     ``app.conf.update`` part)
 
-
-
-.. _south: http://pypi.python.org/pypi/South/
-
 .. admonition:: Relative Imports
 
     You have to be consistent in how you import the task module, e.g. if

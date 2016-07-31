@@ -11,7 +11,7 @@
 
 2.1.4
 =====
-:release-date: 2010-12-03 12:00 P.M CEST
+:release-date: 2010-12-03 12:00 p.m. CEST
 :release-by: Ask Solem
 
 .. _v214-fixes:
@@ -69,7 +69,7 @@ Documentation
 
 2.1.3
 =====
-:release-date: 2010-11-09 05:00 P.M CEST
+:release-date: 2010-11-09 05:00 p.m. CEST
 :release-by: Ask Solem
 
 .. _v213-fixes:
@@ -88,7 +88,7 @@ Documentation
 * Fixed pickling errors when pickling :class:`AsyncResult` on older Python
   versions.
 
-* worker: prefetch count was decremented by eta tasks even if there
+* worker: prefetch count was decremented by ETA tasks even if there
   were no active prefetch limits.
 
 
@@ -117,7 +117,7 @@ Fixes
 
 2.1.1
 =====
-:release-date: 2010-10-14 02:00 P.M CEST
+:release-date: 2010-10-14 02:00 p.m. CEST
 :release-by: Ask Solem
 
 .. _v211-fixes:
@@ -131,7 +131,7 @@ Fixes
 
 * snapshots: Fixed race condition leading to loss of events.
 
-* worker: Reject tasks with an eta that cannot be converted to a time stamp.
+* worker: Reject tasks with an ETA that cannot be converted to a time stamp.
 
     See issue #209
 
@@ -257,7 +257,7 @@ News
 
 2.1.0
 =====
-:release-date: 2010-10-08 12:00 P.M CEST
+:release-date: 2010-10-08 12:00 p.m. CEST
 :release-by: Ask Solem
 
 .. _v210-important:

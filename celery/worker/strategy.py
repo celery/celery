@@ -114,7 +114,7 @@ def default(task, app, consumer,
                 else:
                     eta = to_timestamp(req.eta, timezone.local)
             except OverflowError as exc:
-                error("Couldn't convert eta %s to timestamp: %r. Task: %r",
+                error("Couldn't convert ETA %r to timestamp: %r. Task: %r",
                       req.eta, exc, req.info(safe=True), exc_info=True)
                 req.acknowledge()
             else:

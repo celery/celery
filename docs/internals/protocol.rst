@@ -42,7 +42,7 @@ Definition
         # optional
         'meth': string method_name,
         'shadow': string alias_name,
-        'eta':  iso8601 eta,
+        'eta':  iso8601 ETA,
         'expires'; iso8601 expires,
         'retries': int retries,
         'timelimit': (soft, hard),
@@ -129,7 +129,7 @@ Changes from version 1
 
 - Dispatches to actor based on ``task``, ``meth`` headers
 
-    ``meth`` is unused by python, but may be used in the future
+    ``meth`` is unused by Python, but may be used in the future
     to specify class+method pairs.
 
 - Chain gains a dedicated field.

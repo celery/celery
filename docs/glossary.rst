@@ -40,6 +40,11 @@ Glossary
     late ack
         Short for :term:`late acknowledgment`
 
+    ETA
+        "Estimated Time of Arrival", in Celery and Google Task Queue, etc.,
+        used as the term for a delayed message that should not be processed
+        until the specified ETA time.  See :ref:`calling-eta`.
+
     request
         Task messages are converted to *requests* within the worker.
         The request information is also available as the task's
