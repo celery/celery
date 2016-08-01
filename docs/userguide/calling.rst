@@ -304,7 +304,7 @@ Connection Error Handling
 =========================
 
 When you send a task and the message transport connection is lost, or
-the connection cannot be iniated, an :exc:`~kombu.exceptions.OperationalError`
+the connection cannot be initiated, an :exc:`~kombu.exceptions.OperationalError`
 error will be raised:
 
 .. code-block:: pycon
