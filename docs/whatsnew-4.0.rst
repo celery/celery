@@ -213,7 +213,7 @@ attempting to use them will raise an exception:
     persistent result backend for multi-consumer results.
 
 
-**Now to the good news...**
+**Now to the good news**...
 
 New Task Message Protocol
 -------------------------
