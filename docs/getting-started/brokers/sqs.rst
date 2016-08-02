@@ -135,7 +135,7 @@ Caveats
 - SQS doesn't yet support worker remote control commands.
 
 - SQS doesn't yet support events, and so cannot be used with
-  :program:`celery events`, :program:`celerymon` or the Django Admin
+  :program:`celery events`, :program:`celerymon`, or the Django Admin
   monitor.
 
 .. _sqs-results-configuration:

@@ -144,7 +144,7 @@ Variables in file paths
 =======================
 
 The file path arguments for :option:`--logfile <celery worker --logfile>`,
-:option:`--pidfile <celery worker --pidfile>` and
+:option:`--pidfile <celery worker --pidfile>`, and
 :option:`--statedb <celery worker --statedb>` can contain variables that the
 worker will expand:
 
@@ -262,13 +262,13 @@ to the number of destination hosts.
 
 .. _worker-broadcast-fun:
 
-The :meth:`~@control.broadcast` function.
+The :meth:`~@control.broadcast` function
 ----------------------------------------------------
 
 This is the client function used to send commands to the workers.
 Some remote control commands also have higher-level interfaces using
 :meth:`~@control.broadcast` in the background, like
-:meth:`~@control.rate_limit` and :meth:`~@control.ping`.
+:meth:`~@control.rate_limit`, and :meth:`~@control.ping`.
 
 Sending the :control:`rate_limit` command and keyword arguments:
 

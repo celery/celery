@@ -180,7 +180,7 @@ Available Fields
 * `relative`
 
     By default :class:`~datetime.timedelta` schedules are scheduled
-    "by the clock". This means the frequency is rounded to the nearest
+    "by the clock." This means the frequency is rounded to the nearest
     second, minute, hour or day depending on the period of the
     :class:`~datetime.timedelta`.
 
@@ -236,7 +236,7 @@ Some examples:
 |         ``day_of_week='sun')``          |                                            |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(minute='*/10',``              | Execute every ten minutes, but only        |
-|         ``hour='3,17,22',``             | between 3-4 am, 5-6 pm and 10-11 pm on     |
+|         ``hour='3,17,22',``             | between 3-4 am, 5-6 pm, and 10-11 pm on    |
 |         ``day_of_week='thu,fri')``      | Thursdays or Fridays.                      |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(minute=0, hour='*/2,*/3')``   | Execute every even hour, and every hour    |
@@ -365,9 +365,9 @@ when the sun doesn't rise. The one exception is ``solar_noon``, which is
 formally defined as the moment the sun transits the celestial meridian,
 and will occur every day even if the sun is below the horizon.
 
-Twilight is defined as the period between dawn and sunrise, and between
+Twilight is defined as the period between dawn and sunrise; and between
 sunset and dusk. You can schedule an event according to "twilight"
-depending on your definition of twilight (civil, nautical or astronomical),
+depending on your definition of twilight (civil, nautical, or astronomical),
 and whether you want the event to take place at the beginning or end
 of twilight, using the appropriate event from the list above.
 
@@ -426,5 +426,5 @@ the Django database:
 
     $ celery -A proj beat -S djcelery.schedulers.DatabaseScheduler
 
-Using :pypi:`django-celery`'s scheduler you can add, modify and remove periodic
-tasks from the Django Admin.
+Using :pypi:`django-celery`'s scheduler you can add, modify, and remove
+periodic tasks from the Django Admin.

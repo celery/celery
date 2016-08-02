@@ -131,7 +131,7 @@ With pip
 ~~~~~~~~
 
 The Celery development version also requires the development
-versions of :pypi:`kombu`, :pypi:`amqp`, :pypi:`billiard` and :pypi:`vine`.
+versions of :pypi:`kombu`, :pypi:`amqp`, :pypi:`billiard`, and :pypi:`vine`.
 
 You can install the latest snapshot of these using the following
 pip commands:

@@ -147,7 +147,7 @@ Is Celery dependent on pickle?
 **Answer:** No.
 
 Celery can support any serialization scheme and has built-in support for
-JSON, YAML, Pickle and msgpack. Also, as every task is associated with a
+JSON, YAML, Pickle, and msgpack. Also, as every task is associated with a
 content type, you can even send one task using pickle, and another using JSON.
 
 The default serialization format is pickle simply because it's

@@ -17,7 +17,7 @@ except (AttributeError, ImportError):
 
 E_UNSUPPORTED_PYTHON = """
 ----------------------------------------
- Celery 4.0 requires %s %s or later!
+ Celery 4.0 requires %s %s or later
 ----------------------------------------
 
 - For CPython 2.6, PyPy 1.x, Jython 2.6, CPython 3.2->3.3; use Celery 3.1:

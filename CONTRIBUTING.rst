@@ -42,8 +42,8 @@ the `Pylons Code of Conduct`_.
 .. _`Ubuntu Code of Conduct`: http://www.ubuntu.com/community/conduct
 .. _`Pylons Code of Conduct`: http://docs.pylonshq.com/community/conduct.html
 
-Be considerate.
----------------
+Be considerate
+--------------
 
 Your work will be used by other people, and you in turn will depend on the
 work of others. Any decision you take will affect users and colleagues, and
@@ -53,8 +53,8 @@ the work of others. For example, changes to code, infrastructure, policy,
 documentation and translations during a release may negatively impact
 others work.
 
-Be respectful.
---------------
+Be respectful
+-------------
 
 The Celery community and its members treat one another with respect. Everyone
 can make a valuable contribution to Celery. We may not always agree, but
@@ -66,8 +66,8 @@ expect members of the Celery community to be respectful when dealing with
 other contributors as well as with people outside the Celery project and with
 users of Celery.
 
-Be collaborative.
------------------
+Be collaborative
+----------------
 
 Collaboration is central to Celery and to the larger free software community.
 We should always be open to collaboration. Your work should be done
@@ -78,11 +78,11 @@ projects informed of your ideas and progress. It many not be possible to
 get consensus from upstream, or even from your colleagues about the correct
 implementation for an idea, so don't feel obliged to have that agreement
 before you begin, but at least keep the outside world informed of your work,
-and publish your work in a way that allows outsiders to test, discuss and
+and publish your work in a way that allows outsiders to test, discuss, and
 contribute to your efforts.
 
-When you disagree, consult others.
-----------------------------------
+When you disagree, consult others
+---------------------------------
 
 Disagreements, both political and technical, happen all the time and
 the Celery community is no exception. It's important that we resolve
@@ -92,8 +92,8 @@ way, then we encourage you to make a derivative distribution or alternate
 set of packages that still build on the work we've done to utilize as common
 of a core as possible.
 
-When you're unsure, ask for help.
----------------------------------
+When you're unsure, ask for help
+--------------------------------
 
 Nobody knows everything, and nobody is expected to be perfect. Asking
 questions avoids many problems down the road, and so questions are
@@ -101,8 +101,8 @@ encouraged. Those who are asked questions should be responsive and helpful.
 However, when asking a question, care must be taken to do so in an appropriate
 forum.
 
-Step down considerately.
-------------------------
+Step down considerately
+-----------------------
 
 Developers on every project come and go and Celery is no different. When you
 leave or disengage from the project, in whole or in part, we ask that you do
@@ -187,7 +187,7 @@ the developers fix the bug.
 
 A bug could be fixed by some other improvements and fixes - it might not have an
 existing report in the bug tracker. Make sure you're using the latest releases of
-celery, billiard, kombu, amqp and vine.
+celery, billiard, kombu, amqp, and vine.
 
 5) **Collect information about the bug**.
 
@@ -211,7 +211,7 @@ spelling or other errors on the website/docs/code.
          ``pdb`` session.
        * Collect tracing data using `strace`_(Linux),
          ``dtruss`` (macOS), and ``ktrace`` (BSD),
-         `ltrace`_ and `lsof`_.
+         `ltrace`_, and `lsof`_.
 
     D) Include the output from the ``celery report`` command:
         ::

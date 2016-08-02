@@ -126,7 +126,7 @@ Or you can call it directly in the current process:
     >>> add.s(2, 2)()
     4
 
-Specifying additional args, kwargs or options to ``apply_async``/``delay``
+Specifying additional args, kwargs, or options to ``apply_async``/``delay``
 creates partials:
 
 - Any arguments added will be prepended to the args in the signature:
@@ -169,7 +169,7 @@ Immutability
 
 .. versionadded:: 3.0
 
-Partials are meant to be used with callbacks, any tasks linked or chord
+Partials are meant to be used with callbacks, any tasks linked, or chord
 callbacks will be applied with the result of the parent task.
 Sometimes you want to specify a callback that doesn't take
 additional arguments, and in that case you can set the signature
@@ -764,7 +764,7 @@ Chords
 
     Tasks used within a chord must *not* ignore their results. If the result
     backend is disabled for *any* task (header or body) in your chord you
-    should read ":ref:`chord-important-notes`".
+    should read ":ref:`chord-important-notes`."
 
 
 A chord is a task that only executes after all of the tasks in a group have
@@ -1063,5 +1063,5 @@ of one:
 
     >>> group.skew(start=1, stop=10)()
 
-which means that the first task will have a countdown of 1, the second
-a countdown of 2 and so on.
+which means that the first task will have a countdown of one second, the second
+task a countdown of two seconds, and so on.

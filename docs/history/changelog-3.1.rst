@@ -1278,7 +1278,7 @@ Fixes
     that's set when a ``task-sent`` event is being received.
 
     Also, a clients logical clock isn't in sync with the cluster so
-    they live in a "time bubble". So for this reason monitors will no
+    they live in a "time bubble." So for this reason monitors will no
     longer attempt to merge with the clock of an event sent by a client,
     instead it will fake the value by using the current clock with
     a skew of -1.

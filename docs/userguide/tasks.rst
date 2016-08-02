@@ -343,7 +343,7 @@ Consider you have many tasks within many different modules::
                    /tasks.py
 
 Using the default automatic naming, each task will have a generated name
-like `moduleA.tasks.taskA`, `moduleA.tasks.taskB`, `moduleB.tasks.test`
+like `moduleA.tasks.taskA`, `moduleA.tasks.taskB`, `moduleB.tasks.test`,
 and so on. You may want to get rid of having `tasks` in all task names.
 As pointed above, you can explicitly give names for all tasks, or you
 can change the automatic naming behavior by overriding

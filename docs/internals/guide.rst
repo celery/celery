@@ -232,7 +232,7 @@ Module Overview
 - celery.loaders
 
     Every app must have a loader. The loader decides how configuration
-    is read, what happens when the worker starts, when a task starts and ends,
+    is read; what happens when the worker starts; when a task starts and ends;
     and so on.
 
     The loaders included are:
@@ -246,7 +246,7 @@ Module Overview
             "single-mode" uses this loader by default.
 
     Extension loaders also exist, like :pypi:`django-celery`,
-    :pypi:`celery-pylons` and so on.
+    :pypi:`celery-pylons`, and so on.
 
 - celery.worker
 

@@ -117,7 +117,7 @@ Celery is…
 
         Almost every part of *Celery* can be extended or used on its own,
         Custom pool implementations, serializers, compression schemes, logging,
-        schedulers, consumers, producers, broker transports and much more.
+        schedulers, consumers, producers, broker transports, and much more.
 
 
 .. topic:: It supports
@@ -128,7 +128,7 @@ Celery is…
         - **Brokers**
 
             - :ref:`RabbitMQ <broker-rabbitmq>`, :ref:`Redis <broker-redis>`,
-            - :ref:`Amazon SQS <broker-sqs>` and more…
+            - :ref:`Amazon SQS <broker-sqs>`, and more…
 
         - **Concurrency**
 
@@ -169,7 +169,7 @@ Features
 
             Simple and complex work-flows can be composed using
             a set of powerful primitives we call the "canvas",
-            including grouping, chaining, chunking and more.
+            including grouping, chaining, chunking, and more.
 
             :ref:`Read more… <guide-canvas>`.
 

@@ -265,7 +265,7 @@ This method is actually a star-argument shortcut to another method called
     >>> add.apply_async((2, 2))
 
 The latter enables you to specify execution options like the time to run
-(countdown), the queue it should be sent to and so on:
+(countdown), the queue it should be sent to, and so on:
 
 .. code-block:: pycon
 
@@ -652,7 +652,7 @@ power of AMQP routing, see the :ref:`Routing Guide <guide-routing>`.
 Remote Control
 ==============
 
-If you're using RabbitMQ (AMQP), Redis or Qpid as the broker then
+If you're using RabbitMQ (AMQP), Redis, or Qpid as the broker then
 you can control and inspect the worker at runtime.
 
 For example you can see what tasks the worker is currently working on:

@@ -168,7 +168,7 @@ General settings
 ``accept_content``
 ~~~~~~~~~~~~~~~~~~
 
-Default: ``{'json'}``  (set, list or tuple).
+Default: ``{'json'}``  (set, list, or tuple).
 
 A white-list of content-types/serializers to allow.
 
@@ -312,7 +312,7 @@ Protocol 2 is supported by 3.1.24 and 4.x+.
 Default: ``"json"`` (since 4.0, earlier: pickle).
 
 A string identifying the default serialization method to use. Can be
-`json` (default), `pickle`, `yaml`, `msgpack` or any custom serialization
+`json` (default), `pickle`, `yaml`, `msgpack`, or any custom serialization
 methods that have been registered with :mod:`kombu.serialization.registry`.
 
 .. seealso::
@@ -1264,7 +1264,7 @@ the backend.
 
 If you're trying Celery on a single system you can simply use the backend
 without any further configuration. For larger clusters you could use NFS,
-`GlusterFS`_, CIFS, `HDFS`_ (using FUSE) or any other file-system.
+`GlusterFS`_, CIFS, `HDFS`_ (using FUSE), or any other file-system.
 
 .. _`GlusterFS`: http://www.gluster.org/
 .. _`HDFS`: http://hadoop.apache.org/
@@ -2110,7 +2110,7 @@ Default: :const:`WARNING`.
 
 The log level output to `stdout` and `stderr` is logged as.
 Can be one of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
-:const:`ERROR` or :const:`CRITICAL`.
+:const:`ERROR`, or :const:`CRITICAL`.
 
 .. _conf-security:
 

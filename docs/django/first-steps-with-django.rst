@@ -139,8 +139,8 @@ concrete app instance:
     You can find the full source code for the Django example project at:
     https://github.com/celery/celery/tree/3.1/examples/django/
 
-Using the Django ORM/Cache as a result backend.
------------------------------------------------
+Using the Django ORM/Cache as a result backend
+----------------------------------------------
 
 The [``django-celery``](https://github.com/celery/django-celery) library defines
 result backends that uses the Django ORM and Django Cache frameworks.

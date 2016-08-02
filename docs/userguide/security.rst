@@ -65,7 +65,7 @@ Worker
 
 The default permissions of tasks running inside a worker are the same ones as
 the privileges of the worker itself. This applies to resources such as
-memory, file-systems and devices.
+memory, file-systems, and devices.
 
 An exception to this rule is when using the multiprocessing based task pool,
 which is currently the default. In this case, the task will have access to
@@ -77,7 +77,7 @@ Limiting access to memory contents can be done by launching every task
 in a subprocess (:func:`fork` + :func:`execve`).
 
 Limiting file-system and device access can be accomplished by using
-`chroot`_, `jail`_, `sandboxing`_, virtual machines or other
+`chroot`_, `jail`_, `sandboxing`_, virtual machines, or other
 mechanisms as enabled by the platform or additional software.
 
 Note also that any task executed in the worker will have the
@@ -153,7 +153,7 @@ setting to use the `auth` serializer.
 Also required is configuring the
 paths used to locate private keys and certificates on the file-system:
 the :setting:`security_key`,
-:setting:`security_certificate` and :setting:`security_cert_store`
+:setting:`security_certificate`, and :setting:`security_cert_store`
 settings respectively.
 With these configured it's also necessary to call the
 :func:`celery.setup_security` function. Note that this will also
@@ -220,7 +220,7 @@ open source implementations, used to keep
 cryptographic hashes of files in the file-system, so that administrators
 can be alerted when they change. This way when the damage is done and your
 system has been compromised you can tell exactly what files intruders
-have changed  (password files, logs, back-doors, root-kits and so on).
+have changed  (password files, logs, back-doors, root-kits, and so on).
 Often this is the only way you'll be able to detect an intrusion.
 
 Some open source implementations include:

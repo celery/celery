@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Custom maps, sets, sequences and other data structures."""
+"""Custom maps, sets, sequences, and other data structures."""
 from __future__ import absolute_import, unicode_literals
 
 import sys

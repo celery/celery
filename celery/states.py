@@ -48,8 +48,8 @@ ALL_STATES
 
 Set of all possible states.
 
-Misc.
------
+Misc
+----
 
 """
 from __future__ import absolute_import, unicode_literals

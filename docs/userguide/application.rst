@@ -12,7 +12,7 @@ The Celery library must be instantiated before use, this instance
 is called an application (or *app* for short).
 
 The application is thread-safe so that multiple Celery applications
-with different configurations, components and tasks can co-exist in the
+with different configurations, components, and tasks can co-exist in the
 same process space.
 
 Let's create one now:
@@ -357,7 +357,7 @@ Finalizing the object will:
 
 .. _default-app:
 
-.. topic:: The "default app".
+.. topic:: The "default app"
 
     Celery didn't always have applications, it used to be that
     there was only a module-based API, and for backwards compatibility
@@ -517,7 +517,7 @@ class: :class:`celery.Task`.
 
 The neutral base class is special because it's not bound to any specific app
 yet. Once a task is bound to an app it'll read configuration to set default
-values and so on.
+values, and so on.
 
 To realize a base class you need to create a task using the :meth:`@task`
 decorator:

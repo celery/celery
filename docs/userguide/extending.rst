@@ -581,7 +581,7 @@ It can be added both as a worker and consumer bootstep:
 
         def __init__(self, parent, **kwargs):
             # here we can prepare the Worker/Consumer object
-            # in any way we want, set attribute defaults and so on.
+            # in any way we want, set attribute defaults, and so on.
             print('{0!r} is in init'.format(parent))
 
         def start(self, parent):
@@ -695,7 +695,7 @@ Adding new command-line options
 Command-specific options
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can add additional command-line options to the ``worker``, ``beat`` and
+You can add additional command-line options to the ``worker``, ``beat``, and
 ``events`` commands by modifying the :attr:`~@user_options` attribute of the
 application instance.
 
@@ -837,8 +837,8 @@ Worker API
 ==========
 
 
-:class:`~kombu.async.Hub` - The workers async event loop.
----------------------------------------------------------
+:class:`~kombu.async.Hub` - The workers async event loop
+--------------------------------------------------------
 :supported transports: amqp, redis
 
 .. versionadded:: 3.0

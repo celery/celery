@@ -278,7 +278,7 @@ Configuration
 Celery, like a consumer appliance, doesn't need much to be operated.
 It has an input and an output, where you must connect the input to a broker and maybe
 the output to a result backend if so wanted. But if you look closely at the back
-there's a lid revealing loads of sliders, dials and buttons: this is the configuration.
+there's a lid revealing loads of sliders, dials, and buttons: this is the configuration.
 
 The default configuration should be good enough for most uses, but there are
 many things to tweak so Celery works just the way you want it to.
@@ -424,8 +424,8 @@ Worker doesn't start: Permission Error
     make sure that they point to a file/directory that's writable and
     readable by the user starting the worker.
 
-Result backend doesn't work or tasks are always in ``PENDING`` state.
----------------------------------------------------------------------
+Result backend doesn't work or tasks are always in ``PENDING`` state
+--------------------------------------------------------------------
 
 All tasks are :state:`PENDING` by default, so the state would've been
 better named "unknown". Celery doesn't update any state when a task

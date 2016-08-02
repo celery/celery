@@ -28,7 +28,7 @@ network.
 Bug tracker
 ===========
 
-If you have any suggestions, bug reports or annoyances please report them
+If you have any suggestions, bug reports, or annoyances please report them
 to our issue tracker at https://github.com/celery/celery/issues/
 
 .. _wiki:

@@ -273,8 +273,8 @@ This is an example task message represented as a Python dictionary:
 
 .. _amqp-producers-consumers-brokers:
 
-Producers, consumers and brokers
---------------------------------
+Producers, consumers, and brokers
+---------------------------------
 
 The client sending messages is typically called a *publisher*, or
 a *producer*, while the entity receiving messages is called
@@ -287,7 +287,7 @@ You're likely to see these terms used a lot in AMQP related material.
 
 .. _amqp-exchanges-queues-keys:
 
-Exchanges, queues and routing keys.
+Exchanges, queues, and routing keys
 -----------------------------------
 
 1. Messages are sent to exchanges.
@@ -308,7 +308,7 @@ Celery automatically creates the entities necessary for the queues in
 setting is set to :const:`False`).
 
 Here's an example queue configuration with three queues;
-One for video, one for images and one default queue for everything else:
+One for video, one for images, and one default queue for everything else:
 
 .. code-block:: python
 
@@ -354,9 +354,9 @@ Topic exchanges matches routing keys using dot-separated words, and the
 wild-card characters: ``*`` (matches a single word), and ``#`` (matches
 zero or more words).
 
-With routing keys like ``usa.news``, ``usa.weather``, ``norway.news`` and
+With routing keys like ``usa.news``, ``usa.weather``, ``norway.news``, and
 ``norway.weather``, bindings could be ``*.news`` (all news), ``usa.#`` (all
-items in the USA) or ``usa.weather`` (all USA weather items).
+items in the USA), or ``usa.weather`` (all USA weather items).
 
 .. _amqp-api:
 
@@ -528,7 +528,7 @@ Defining queues
 In Celery available queues are defined by the :setting:`task_queues` setting.
 
 Here's an example queue configuration with three queues;
-One for video, one for images and one default queue for everything else:
+One for video, one for images, and one default queue for everything else:
 
 .. code-block:: python
 
@@ -547,7 +547,7 @@ One for video, one for images and one default queue for everything else:
 Here, the :setting:`task_default_queue` will be used to route tasks that
 doesn't have an explicit route.
 
-The default exchange, exchange type and routing key will be used as the
+The default exchange, exchange type, and routing key will be used as the
 default routing values for tasks, and as the default values for entries
 in :setting:`task_queues`.
 

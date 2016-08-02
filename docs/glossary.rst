@@ -90,7 +90,7 @@ Glossary
 
     reentrant
         describes a function that can be interrupted in the middle of
-        execution (e.g. by hardware interrupt or signal) and then safely
+        execution (e.g. by hardware interrupt or signal), and then safely
         called again later. Reentrancy isn't the same as
         :term:`idempotence <idempotent>` as the return value doesn't have to
         be the same given the same inputs, and a reentrant function may have

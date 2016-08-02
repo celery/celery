@@ -4,7 +4,7 @@
  What's new in Celery 3.0 (Chiastic Slide)
 ===========================================
 
-Celery is a simple, flexible and reliable distributed system to
+Celery is a simple, flexible, and reliable distributed system to
 process vast amounts of messages, while providing operations with
 the tools required to maintain such a system.
 
@@ -144,8 +144,8 @@ Commands include:
 The old programs are still available (``celeryd``, ``celerybeat``, etc),
 but you're discouraged from using them.
 
-Now depends on :pypi:`billiard`.
---------------------------------
+Now depends on :pypi:`billiard`
+-------------------------------
 
 Billiard is a fork of the multiprocessing containing
 the no-execv patch by ``sbt`` (http://bugs.python.org/issue8713),
@@ -338,8 +338,8 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
     Returns a flattened list of all dependencies (recursively)
 
-Redis: Priority support.
-------------------------
+Redis: Priority support
+-----------------------
 
 The message's ``priority`` field is now respected by the Redis
 transport by having multiple lists for each named queue.
@@ -375,8 +375,8 @@ should be used to prove this.
 
 Contributed by Germán M. Bravo.
 
-Redis: Now cycles queues so that consuming is fair.
----------------------------------------------------
+Redis: Now cycles queues so that consuming is fair
+--------------------------------------------------
 
 This ensures that a very busy queue won't block messages
 from other queues, and ensures that all queues have
@@ -635,8 +635,8 @@ by setting the ``shared`` argument to the ``@task`` decorator:
         return x + y
 
 
-Abstract tasks are now lazily bound.
-------------------------------------
+Abstract tasks are now lazily bound
+-----------------------------------
 
 The :class:`~celery.task.Task` class is no longer bound to an app
 by default, it will first be bound (and configured) when

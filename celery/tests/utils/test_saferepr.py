@@ -159,7 +159,7 @@ class test_saferepr(Case):
         self.assertIn('Recursion on', res)
 
     def test_same_as_repr(self):
-        # Simple objects, small containers and classes that overwrite __repr__
+        # Simple objects, small containers, and classes that overwrite __repr__
         # For those the result should be the same as repr().
         # Ahem.  The docs don't say anything about that -- this appears to
         # be testing an implementation quirk.  Starting in Python 2.5, it's

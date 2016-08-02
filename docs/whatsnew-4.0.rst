@@ -12,7 +12,7 @@
     releases (0.0.x), while older series are archived under the :ref:`history`
     section.
 
-Celery is a simple, flexible and reliable distributed system to
+Celery is a simple, flexible, and reliable distributed system to
 process vast amounts of messages, while providing operations with
 the tools required to maintain such a system.
 
@@ -28,7 +28,7 @@ To read more about Celery you should go read the :ref:`introduction <intro>`.
 While this version is backward compatible with previous versions
 it's important that you read the following section.
 
-This version is officially supported on CPython 2.7, 3.4 and 3.5.
+This version is officially supported on CPython 2.7, 3.4, and 3.5.
 and also supported on PyPy.
 
 .. _`website`: http://celeryproject.org/
@@ -457,8 +457,8 @@ The Django integration :ref:`example in the documentation
 This also ensures comaptibility with the new, ehm, ``appconfig`` stuff
 introduced in recent Django versions.
 
-Worker direct queues no longer use auto-delete.
------------------------------------------------
+Worker direct queues no longer use auto-delete
+----------------------------------------------
 
 Workers/clients running 4.0 will no longer be able to send
 worker direct messages to workers running older versions, and vice versa.
@@ -624,8 +624,8 @@ log file can cause corruption.
 You're encouraged to upgrade your init-scripts and
 :program:`celery multi` arguments to use this new option.
 
-Configure broker URL for read/write separately.
------------------------------------------------
+Configure broker URL for read/write separately
+----------------------------------------------
 
 New :setting:`broker_read_url` and :setting:`broker_write_url` settings
 have been added so that separate broker URLs can be provided
@@ -718,8 +718,8 @@ to fix some long outstanding issues.
 - Fixed issue where ``group | task`` wasn't upgrading correctly
   to chord (Issue #2922).
 
-Amazon SQS transport now officially supported.
-----------------------------------------------
+Amazon SQS transport now officially supported
+---------------------------------------------
 
 The SQS broker transport has been rewritten to use async I/O and as such
 joins RabbitMQ and Redis as officially supported transports.
@@ -729,13 +729,13 @@ and closes several issues related to using SQS as a broker.
 
 This work was sponsored by Nextdoor.
 
-Apache QPid transport now officially supported.
------------------------------------------------
+Apache QPid transport now officially supported
+----------------------------------------------
 
 Contributed by **Brian Bouterse**.
 
-Schedule tasks based on sunrise, sunset, dawn and dusk.
--------------------------------------------------------
+Schedule tasks based on sunrise, sunset, dawn and dusk
+------------------------------------------------------
 
 See :ref:`beat-solar` for more information.
 
@@ -774,8 +774,8 @@ See :ref:`routing-options-rabbitmq-priorities` for more information.
 
 Contributed by **Gerald Manipon**.
 
-Prefork: Limit child process resident memory size.
---------------------------------------------------
+Prefork: Limit child process resident memory size
+-------------------------------------------------
 .. :sha:`5cae0e754128750a893524dcba4ae030c414de33`
 
 You can now limit the maximum amount of memory allocated per prefork
@@ -795,8 +795,8 @@ Contributed by **Dave Smith**.
 Redis: Result backend optimizations
 -----------------------------------
 
-RPC is now using pub/sub for streaming task results.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+RPC is now using pub/sub for streaming task results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Calling ``result.get()`` when using the Redis result backend
 used to be extremely expensive as it was using polling to wait
@@ -810,8 +810,8 @@ task round-trip times.
 
 Contributed by **Yaroslav Zhavoronkov** and **Ask Solem**.
 
-New optimized chord join implementation.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+New optimized chord join implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This was an experimental feature introduced in Celery 3.1,
 that could only be enabled by adding ``?new_join=1`` to the
@@ -823,22 +823,22 @@ to be considered stable and enabled by default.
 The new implementation greatly reduces the overhead of chords,
 and especially with larger chords the performance benefit can be massive.
 
-New Riak result backend Introduced.
------------------------------------
+New Riak result backend Introduced
+----------------------------------
 
 See :ref:`conf-riak-result-backend` for more information.
 
 Contributed by **Gilles Dartiguelongue**, **Alman One** and **NoKriK**.
 
-New CouchDB result backend introduced.
---------------------------------------
+New CouchDB result backend introduced
+-------------------------------------
 
 See :ref:`conf-couchdb-result-backend` for more information.
 
 Contributed by **Nathan Van Gheem**.
 
-New Consul result backend introduced.
--------------------------------------
+New Consul result backend introduced
+------------------------------------
 
 Add support for Consul as a backend using the Key/Value store of Consul.
 
@@ -866,8 +866,8 @@ That installs the required package to talk to Consul's HTTP API from Python.
 
 Contributed by **Wido den Hollander**.
 
-Brand new Cassandra result backend.
------------------------------------
+Brand new Cassandra result backend
+----------------------------------
 
 A brand new Cassandra backend utilizing the new :pypi:`cassandra-driver`
 library is replacing the old result backend which was using the older
@@ -877,15 +877,15 @@ See :ref:`conf-cassandra-result-backend` for more information.
 
 .. # XXX What changed?
 
-New Elasticsearch result backend introduced.
---------------------------------------------
+New Elasticsearch result backend introduced
+-------------------------------------------
 
 See :ref:`conf-elasticsearch-result-backend` for more information.
 
 Contributed by **Ahmet Demir**.
 
-New File-system result backend introduced.
-------------------------------------------
+New File-system result backend introduced
+-----------------------------------------
 
 See :ref:`conf-filesystem-result-backend` for more information.
 
@@ -914,8 +914,8 @@ in the following way:
 
 .. :sha:`03399b4d7c26fb593e61acf34f111b66b340ba4e`
 
-Task.replace
-------------
+``Task.replace``
+----------------
 
 Task.replace changed, removes Task.replace_in_chord.
 
@@ -978,8 +978,8 @@ eventlet/gevent drainers, promises, BLA BLA
 
 Closed issue #2529.
 
-RPC Result Backend matured.
----------------------------
+RPC Result Backend matured
+--------------------------
 
 Lots of bugs in the previously experimental RPC result backend have been fixed
 and we now consider it production ready.
@@ -1673,9 +1673,9 @@ Logging Settings
 ``CELERYD_LOG_FILE``                   :option:`celery worker --logfile`
 ``CELERYBEAT_LOG_LEVEL``               :option:`celery beat --loglevel`
 ``CELERYBEAT_LOG_FILE``                :option:`celery beat --loglevel`
-``CELERYMON_LOG_LEVEL``                celerymon is deprecated, use flower.
-``CELERYMON_LOG_FILE``                 celerymon is deprecated, use flower.
-``CELERYMON_LOG_FORMAT``               celerymon is deprecated, use flower.
+``CELERYMON_LOG_LEVEL``                celerymon is deprecated, use flower
+``CELERYMON_LOG_FILE``                 celerymon is deprecated, use flower
+``CELERYMON_LOG_FORMAT``               celerymon is deprecated, use flower
 =====================================  =====================================
 
 Task Settings

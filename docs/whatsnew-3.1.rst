@@ -12,7 +12,7 @@
     releases (0.0.x), while older series are archived under the :ref:`history`
     section.
 
-Celery is a simple, flexible and reliable distributed system to
+Celery is a simple, flexible, and reliable distributed system to
 process vast amounts of messages, while providing operations with
 the tools required to maintain such a system.
 
@@ -28,7 +28,7 @@ To read more about Celery you should go read the :ref:`introduction <intro>`.
 While this version is backward compatible with previous versions
 it's important that you read the following section.
 
-This version is officially supported on CPython 2.6, 2.7 and 3.3,
+This version is officially supported on CPython 2.6, 2.7, and 3.3,
 and also supported on PyPy.
 
 .. _`website`: http://celeryproject.org/

@@ -24,9 +24,9 @@ class no_install(install):
     def run(self, *args, **kwargs):
         import sys
         sys.stderr.write("""
-------------------------------------------------------
-The Celery functional test suite cannot be installed.
-------------------------------------------------------
+-----------------------------------------------------
+The Celery functional test suite cannot be installed
+-----------------------------------------------------
 
 
 But you can execute the tests by running the command:

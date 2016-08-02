@@ -103,7 +103,7 @@ Celery is...
     Celery is easy to use and maintain, and does *not need configuration files*.
 
     It has an active, friendly community you can talk to for support,
-    including a `mailing-list`_ and and an IRC channel.
+    like at our `mailing-list`_, or the IRC channel.
 
     Here's one of the simplest applications you can make::
 
@@ -119,7 +119,7 @@ Celery is...
 
     Workers and clients will automatically retry in the event
     of connection loss or failure, and some brokers support
-    HA in way of *Master/Master* or *Master/Slave* replication.
+    HA in way of *Primary/Primary* or *Primary/Replica* replication.
 
 - **Fast**
 
@@ -131,7 +131,7 @@ Celery is...
 
     Almost every part of *Celery* can be extended or used on its own,
     Custom pool implementations, serializers, compression schemes, logging,
-    schedulers, consumers, producers, broker transports and much more.
+    schedulers, consumers, producers, broker transports, and much more.
 
 It supports...
 ============
@@ -206,8 +206,8 @@ database connections at ``fork``.
 Documentation
 =============
 
-The `latest documentation`_ with user guides, tutorials and API reference
-is hosted at Read The Docs.
+The `latest documentation`_ is hosted at Read The Docs, containing user guides,
+tutorials, and an API reference.
 
 .. _`latest documentation`: http://docs.celeryproject.org/en/latest/
 
@@ -341,7 +341,7 @@ With pip
 ~~~~~~~~
 
 The Celery development version also requires the development
-versions of ``kombu``, ``amqp``, ``billiard`` and ``vine``.
+versions of ``kombu``, ``amqp``, ``billiard``, and ``vine``.
 
 You can install the latest snapshot of these using the following
 pip commands:
@@ -388,7 +388,7 @@ network.
 Bug tracker
 ===========
 
-If you have any suggestions, bug reports or annoyances please report them
+If you have any suggestions, bug reports, or annoyances please report them
 to our issue tracker at https://github.com/celery/celery/issues/
 
 .. _wiki:
