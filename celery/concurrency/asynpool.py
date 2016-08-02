@@ -331,7 +331,7 @@ class ResultHandler(_pool.ResultHandler):
             proc = process_index[fd]
         except KeyError:
             # process already found terminated
-            # which means its outqueue has already been processed
+            # this means its outqueue has already been processed
             # by the worker lost handler.
             return remove(fd)
 
@@ -1045,8 +1045,10 @@ class AsynPool(_pool.Pool):
 
     def on_process_alive(self, pid):
         """Handler called when the :const:`WORKER_UP` message is received
-        from a child process, which marks the process as ready
-        to receive work."""
+        from a child process.
+
+        Marks the process as ready to receive work.
+        """
         try:
             proc = next(w for w in self._pool if w.pid == pid)
         except StopIteration:
@@ -1142,7 +1144,7 @@ class AsynPool(_pool.Pool):
             raise ValueError(proc)
 
     def _setup_queues(self):
-        # this is only used by the original pool which uses a shared
+        # this is only used by the original pool that used a shared
         # queue for all processes.
 
         # these attributes makes no sense for us, but we'll still

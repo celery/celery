@@ -130,7 +130,7 @@ class Signature(dict):
 
     Signatures can also be created from tasks:
 
-    - Using the ``.signature()`` method which has the same signature
+    - Using the ``.signature()`` method that has the same signature
       as ``Task.apply_async``:
 
         .. code-block:: pycon
@@ -512,8 +512,8 @@ class chain(Signature):
 
     Note:
         If called with only one argument, then that argument must
-        be an iterable of tasks to chain, which means you can
-        use this with a generator expression.
+        be an iterable of tasks to chain: this allows us
+        to use generator expressions.
 
     Example:
         This is effectively :math:`((2 + 2) + 4)`:
@@ -853,8 +853,8 @@ class group(Signature):
 
     Note:
         If only one argument is passed, and that argument is an iterable
-        then that'll be used as the list of tasks instead, which
-        means you can use ``group`` with generator expressions.
+        then that'll be used as the list of tasks instead: this
+        allows us to use ``group`` with generator expressions.
 
     Example:
         >>> lazy_group = group([add.s(2, 2), add.s(4, 4)])

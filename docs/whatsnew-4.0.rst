@@ -118,8 +118,8 @@ version: ``celery==4.0.0``, or a range: ``celery>=4.0,<5.0``.
 
 Dropping support for Python 2 will enable us to remove massive
 amounts of compatibility code, and going with Python 3.6 allows
-us to take advantage of typing, async/await, asyncio, ++, for which
-there're no convenient alternatives in older versions.
+us to take advantage of typing, async/await, asyncio, and similar
+concepts there's no alternative for in older versions.
 
 Celery 4.x will continue to work on Python 2.7, 3.4, 3.5; just as Celery 3.x
 still works on Python 2.6.
@@ -606,9 +606,9 @@ Prefork: Tasks now log from the child process
 ---------------------------------------------
 
 Logging of task success/failure now happens from the child process
-actually executing the task, which means that logging utilities
-like Sentry can get full information about tasks that fail, including
-variables in the traceback.
+executing the task.  As a result logging utilities,
+like Sentry can get full information about tasks, including
+variables in the traceback stack.
 
 Prefork: One log-file per child process
 ---------------------------------------
@@ -870,7 +870,7 @@ Brand new Cassandra result backend
 ----------------------------------
 
 A brand new Cassandra backend utilizing the new :pypi:`cassandra-driver`
-library is replacing the old result backend which was using the older
+library is replacing the old result backend using the older
 :pypi:`pycassa` library.
 
 See :ref:`conf-cassandra-result-backend` for more information.
@@ -894,23 +894,24 @@ Contributed by **Môshe van der Sterre**.
 Event Batching
 --------------
 
-Events are now buffered in the worker and sent as a list which reduces
+Events are now buffered in the worker and sent as a list, reducing
 the overhead required to send monitoring events.
 
 For authors of custom event monitors there will be no action
 required as long as you're using the Python Celery
 helpers (:class:`~@events.Receiver`) to implement your monitor.
-However, if you're manually receiving event messages you must now account
-for batched event messages which differ from normal event messages
+
+However, if you're parsing raw event messages you must now account
+for batched event messages,  as they differ from normal event messages
 in the following way:
 
-    - The routing key for a batch of event messages will be set to
-      ``<event-group>.multi`` where the only batched event group
-      is currently ``task`` (giving a routing key of ``task.multi``).
+- The routing key for a batch of event messages will be set to
+  ``<event-group>.multi`` where the only batched event group
+  is currently ``task`` (giving a routing key of ``task.multi``).
 
-    - The message body will be a serialized list-of-dictionaries instead
-      of a dictionary. Each item in the list can be regarded
-      as a normal event message body.
+- The message body will be a serialized list-of-dictionaries instead
+  of a dictionary. Each item in the list can be regarded
+  as a normal event message body.
 
 .. :sha:`03399b4d7c26fb593e61acf34f111b66b340ba4e`
 
@@ -1180,7 +1181,7 @@ Programs
 - :program:`celery inspect registered`: now ignores built-in tasks.
 
 - :program:`celery purge` now takes ``-Q`` and ``-X`` options
-  used to specify which queues to include and exclude from the purge.
+  used to specify what queues to include and exclude from the purge.
 
 - New :program:`celery logtool`: Utility for filtering and parsing
   celery worker log-files

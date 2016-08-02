@@ -119,10 +119,11 @@ as a partial argument:
 
 .. sidebar:: What's ``s``?
 
-    The ``add.s`` call used here is called a signature, I talk
-    more about signatures in the :ref:`canvas guide <guide-canvas>`,
-    where you can also learn about :class:`~celery.chain`, which
-    is a simpler way to chain tasks together.
+    The ``add.s`` call used here is called a signature. If you
+    don't know what they are you should read about them in the
+    :ref:`canvas guide <guide-canvas>`.
+    There you can also learn about :class:`~celery.chain`:  a simpler
+    way to chain tasks together.
 
     In practice the ``link`` execution option is considered an internal
     primitive, and you'll probably not use it directly, but
@@ -269,8 +270,7 @@ and can contain the following keys:
 - `interval_start`
 
     Defines the number of seconds (float or integer) to wait between
-    retries. Default is 0, which means the first retry will be
-    instantaneous.
+    retries. Default is 0 (the first retry will be instantaneous).
 
 - `interval_step`
 
@@ -386,9 +386,9 @@ json -- JSON is supported in many programming languages, is now
     data types: strings, Unicode, floats, Boolean, dictionaries, and lists.
     Decimals and dates are notably missing.
 
-    Also, binary data will be transferred using Base64 encoding, which will
-    cause the transferred data to be around 34% larger than an encoding which
-    supports native binary types.
+    Binary data will be transferred using Base64 encoding,
+    increasing the size of the transferred data by 34% compared to an encoding
+    format where native binary types are supported.
 
     However, if your data fits inside the above constraints and you need
     cross-language support, the default setting of JSON is probably your
@@ -426,8 +426,8 @@ The encoding used is available as a message header, so the worker knows how to
 deserialize any task. If you use a custom serializer, this serializer must
 be available for the worker.
 
-The following order is used to decide which serializer
-to use when sending a task:
+The following order is used to decide the serializer
+used when sending a task:
 
     1. The `serializer` execution option.
     2. The :attr:`@-Task.serializer` attribute
@@ -449,8 +449,8 @@ Celery can compress the messages using either *gzip*, or *bzip2*.
 You can also create your own compression schemes and register
 them in the :func:`kombu compression registry <kombu.compression.register>`.
 
-The following order is used to decide which compression scheme
-to use when sending a task:
+The following order is used to decide the compression scheme
+used when sending a task:
 
     1. The `compression` execution option.
     2. The :attr:`@-Task.compression` attribute.

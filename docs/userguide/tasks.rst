@@ -18,7 +18,7 @@ until that message has been :term:`acknowledged` by a worker. A worker can reser
 many messages in advance and even if the worker is killed -- by power failure
 or some other reason -- the message will be redelivered to another worker.
 
-Ideally task functions should be :term:`idempotent`, which means
+Ideally task functions should be :term:`idempotent`: meaning
 the function won't cause unintended effects even if called
 multiple times with the same arguments.
 Since the worker cannot detect if your tasks are idempotent, the default
@@ -132,8 +132,8 @@ these can be specified as arguments to the decorator:
 
     When using multiple decorators in combination with the task
     decorator you must make sure that the `task`
-    decorator is applied last (which in Python oddly means that it must
-    be the first in the list):
+    decorator is applied last (oddly, in Python this means it must
+    be first in the list):
 
     .. code-block:: python
 
@@ -294,8 +294,8 @@ since the worker and the client imports the modules under different names:
     >>> mytask.name
     'myapp.tasks.mytask'
 
-So for this reason you must be consistent in how you
-import modules, which is also a Python best practice.
+For this reason you must be consistent in how you
+import modules, and that is also a Python best practice.
 
 Similarly, you shouldn't use old-style relative imports:
 
@@ -368,7 +368,7 @@ So each task will have a name like `moduleA.taskA`, `moduleA.taskB` and
 
 .. warning::
 
-    Make sure that your :meth:`@gen_task_name` is a pure function, which means
+    Make sure that your :meth:`@gen_task_name` is a pure function: meaning
     that for the same input it must always return the same output.
 
 .. _task-request-info:
@@ -497,8 +497,7 @@ for all of your tasks at the top of your module:
         return x + y
 
 Celery uses the standard Python logger library,
-for which documentation can be found in the :mod:`logging`
-module.
+and the documentation can be found :mod:`here <logging>`.
 
 You can also use :func:`print`, as anything written to standard
 out/-err will be redirected to the logging system (you can disable this,
@@ -786,8 +785,8 @@ General
 
 .. attribute:: Task.rate_limit
 
-    Set the rate limit for this task type which limits the number of tasks
-    that can be run in a given time frame. Tasks will still complete when
+    Set the rate limit for this task type (limits the number of tasks
+    that can be run in a given time frame). Tasks will still complete when
     a rate limit is in effect, but it may take some time before it's allowed to
     start.
 
@@ -801,8 +800,8 @@ General
     Example: `"100/m"` (hundred tasks a minute). This will enforce a minimum
     delay of 600ms between starting two tasks on the same worker instance.
 
-    Default is the :setting:`task_default_rate_limit` setting,
-    which if not specified means rate limiting for tasks is disabled by default.
+    Default is the :setting:`task_default_rate_limit` setting:
+    if not specified means rate limiting for tasks is disabled by default.
 
     Note that this is a *per worker instance* rate limit, and not a global
     rate limit. To enforce a global rate limit (e.g. for an API with a
@@ -853,18 +852,18 @@ General
 .. attribute:: Task.backend
 
     The result store backend to use for this task. An instance of one of the
-    backend classes in `celery.backends`. Defaults to `app.backend` which is
+    backend classes in `celery.backends`. Defaults to `app.backend`,
     defined by the :setting:`result_backend` setting.
 
 .. attribute:: Task.acks_late
 
     If set to :const:`True` messages for this task will be acknowledged
-    **after** the task has been executed, not *just before*, which is
-    the default behavior.
+    **after** the task has been executed, not *just before* (the default
+    behavior).
 
-    Note that this means the task may be executed twice if the worker
-    crashes in the middle of execution, which may be acceptable for some
-    applications.
+    Note: This means the task may be executed multiple times should the worker
+    crash in the middle of execution.  Make sure your tasks are
+    :term:`idempotent`.
 
     The global default can be overridden by the :setting:`task_acks_late`
     setting.
@@ -878,7 +877,7 @@ General
     The default value is :const:`False` as the normal behavior is to not
     report that level of granularity. Tasks are either pending, finished,
     or waiting to be retried. Having a "started" status can be useful for
-    when there are long running tasks and there's a need to report which
+    when there are long running tasks and there's a need to report what
     task is currently running.
 
     The host name and process id of the worker executing the task
@@ -967,10 +966,11 @@ limitations.
 * Some databases use a default transaction isolation level that
   isn't suitable for polling tables for changes.
 
-  In MySQL the default transaction isolation level is `REPEATABLE-READ`, which
-  means the transaction won't see changes by other transactions until the
-  transaction is committed. Changing that to the `READ-COMMITTED` isolation
-  level is recommended.
+  In MySQL the default transaction isolation level is `REPEATABLE-READ`:
+  meaning the transaction won't see changes made by other transactions until
+  the current transaction is committed.
+
+  Changing that to the `READ-COMMITTED` isolation level is recommended.
 
 .. _task-builtin-states:
 
@@ -1047,8 +1047,8 @@ Custom states
 
 You can easily define your own states, all you need is a unique name.
 The name of the state is usually an uppercase string. As an example
-you could have a look at :mod:`abortable tasks <~celery.contrib.abortable>`
-which defines its own custom :state:`ABORTED` state.
+you could have a look at the :mod:`abortable tasks <~celery.contrib.abortable>`
+which defines a custom :state:`ABORTED` state.
 
 Use :meth:`~@Task.update_state` to update a task's state:.
 
@@ -1062,7 +1062,7 @@ Use :meth:`~@Task.update_state` to update a task's state:.
                     meta={'current': i, 'total': len(filenames)})
 
 
-Here I created the state `"PROGRESS"`, which tells any application
+Here I created the state `"PROGRESS"`, telling any application
 aware of this state that the task is currently in progress, and also where
 it is in the process by having `current` and `total` counts as part of the
 state meta-data. This can then be used to create e.g. progress bars.
@@ -1130,7 +1130,7 @@ you have to pass them as regular args:
 Semipredicates
 ==============
 
-The worker wraps the task in a tracing function which records the final
+The worker wraps the task in a tracing function that records the final
 state of the task. There are a number of exceptions that can be used to
 signal this function to change how it treats the return of the task.
 
@@ -1592,7 +1592,7 @@ system, like `memcached`_.
 State
 -----
 
-Since celery is a distributed system, you can't know in which process, or
+Since celery is a distributed system, you can't know which process, or
 on what machine the task will be executed. You can't even know if the task will
 run in a timely manner.
 
@@ -1672,7 +1672,7 @@ Let's have a look at another example:
 
 This is a Django view creating an article object in the database,
 then passing the primary key to a task. It uses the `commit_on_success`
-decorator, which will commit the transaction when the view returns, or
+decorator, that will commit the transaction when the view returns, or
 roll back if the view raises an exception.
 
 There's a race condition if the task starts executing

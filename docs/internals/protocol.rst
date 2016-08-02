@@ -108,7 +108,7 @@ Changes from version 1
 
     This means that workers/intermediates can inspect the message
     and make decisions based on the headers without decoding
-    the payload (which may be language specific, e.g. serialized by the
+    the payload (that may be language specific, e.g. serialized by the
     Python specific pickle serializer).
 
 - Always UTC
@@ -182,8 +182,8 @@ Changes from version 1
 Version 1
 ---------
 
-In version 1 of the protocol all fields are stored in the message body,
-which means workers and intermediate consumers must deserialize the payload
+In version 1 of the protocol all fields are stored in the message body:
+meaning workers and intermediate consumers must deserialize the payload
 to read the fields.
 
 Message body

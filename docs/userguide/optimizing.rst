@@ -109,8 +109,8 @@ or by using :setting:`task_routes`:
 
 
 The ``delivery_mode`` changes how the messages to this queue are delivered.
-A value of 1 means that the message won't be written to disk, and a value
-of 2 (default) means that the message can be written to disk.
+A value of one means that the message won't be written to disk, and a value
+of two (default) means that the message can be written to disk.
 
 To direct a task to your new transient queue you can specify the queue
 argument (or use the :setting:`task_routes` setting):
@@ -145,7 +145,7 @@ The workers' default prefetch count is the
 of concurrency slots[*]_ (processes/threads/green-threads).
 
 If you have many tasks with a long duration you want
-the multiplier value to be 1, which means it'll only reserve one
+the multiplier value to be *one*: meaning it'll only reserve one
 task per worker process at a time.
 
 However -- If you have many short-running tasks, and throughput/round trip
@@ -167,7 +167,7 @@ The task message is only deleted from the queue after the task is
 it can be redelivered to another worker (or the same after recovery).
 
 When using the default of early acknowledgment, having a prefetch multiplier setting
-of 1, means the worker will reserve at most one extra task for every
+of *one*, means the worker will reserve at most one extra task for every
 worker process: or in other words, if the worker is started with
 :option:`-c 10 <celery worker -c>`, the worker may reserve at most 20
 tasks (10 unacknowledged tasks executing, and 10 unacknowledged reserved

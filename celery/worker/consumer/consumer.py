@@ -242,8 +242,8 @@ class Consumer(object):
 
         Note:
             Currently pool grow operations will end up with an offset
-            of +1 if the initial size of the pool was 0 (which could
-            be the case with old deprecated autoscale option, may consider
+            of +1 if the initial size of the pool was 0 (this could
+            be the case with the old deprecated autoscale option, may consider
             removing this now that it's no longer supported).
         """
         num_processes = self.pool.num_processes

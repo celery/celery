@@ -125,7 +125,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
     """Find tasks by filtering them and move the tasks to a new queue.
 
     Arguments:
-        predicate (Callable): Filter function used to decide which messages
+        predicate (Callable): Filter function used to decide the messages
             to move.  Must accept the standard signature of ``(body, message)``
             used by Kombu consumer callbacks.  If the predicate wants the
             message to be moved it must return either:
@@ -134,11 +134,11 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
 
                 2) a :class:`~kombu.entity.Queue` instance, or
 
-                3) any other true value which means the specified
+                3) any other true value means the specified
                     ``exchange`` and ``routing_key`` arguments will be used.
         connection (kombu.Connection): Custom connection to use.
         source: List[Union[str, kombu.Queue]]: Optional list of source
-            queues to use instead of the default (which is the queues
+            queues to use instead of the default (queues
             in :setting:`task_queues`).  This list can also contain
             :class:`~kombu.entity.Queue` instances.
         exchange (str, kombu.Exchange): Default destination exchange.

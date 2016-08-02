@@ -140,8 +140,8 @@ be `rabbit@myhost`, as verified by :command:`rabbitmqctl`:
     ...done.
 
 This is especially important if your DHCP server gives you a host name
-starting with an IP address, (e.g. `23.10.112.31.comcast.net`), because
-then RabbitMQ will try to use `rabbit@23`, which is an illegal host name.
+starting with an IP address, (e.g. `23.10.112.31.comcast.net`).  In this
+case RabbitMQ will try to use `rabbit@23`: an illegal host name.
 
 .. _rabbitmq-macOS-start-stop:
 

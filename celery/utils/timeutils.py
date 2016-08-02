@@ -172,7 +172,7 @@ def delta_resolution(dt, delta):
     :class:`~datetime.datetime` will be rounded to the nearest days,
     if the :class:`~datetime.timedelta` is in hours the
     :class:`~datetime.datetime` will be rounded to the nearest hour,
-    and so on until seconds which will just return the original
+    and so on until seconds, which will just return the original
     :class:`~datetime.datetime`.
     """
     delta = max(delta.total_seconds(), 0)

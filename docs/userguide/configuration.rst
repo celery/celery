@@ -265,7 +265,7 @@ You can change methods too, for example the ``on_failure`` handler:
     task_annotations = {'*': {'on_failure': my_on_failure}}
 
 If you need more flexibility then you can use objects
-instead of a dict to choose which tasks to annotate:
+instead of a dict to choose the tasks to annotate:
 
 .. code-block:: python
 
@@ -358,7 +358,7 @@ Default: Disabled.
 
 If this is :const:`True`, all tasks will be executed locally by blocking until
 the task returns. ``apply_async()`` and ``Task.delay()`` will return
-an :class:`~celery.result.EagerResult` instance, which emulates the API
+an :class:`~celery.result.EagerResult` instance, that emulates the API
 and behavior of :class:`~celery.result.AsyncResult`, except the result
 is already evaluated.
 
@@ -388,7 +388,7 @@ Default: Disabled.
 If enabled task results will include the workers stack when re-raising
 task errors.
 
-This requires the :pypi:`tblib` library, which can be installed using
+This requires the :pypi:`tblib` library, that can be installed using
 :command:`pip`:
 
 .. code-block:: console
@@ -428,7 +428,7 @@ task is executed by a worker. The default value is :const:`False` as
 the normal behavior is to not report that level of granularity. Tasks
 are either pending, finished, or waiting to be retried. Having a 'started'
 state can be useful for when there are long running tasks and there's a
-need to report which task is currently running.
+need to report what task is currently running.
 
 .. setting:: task_time_limit
 
@@ -474,7 +474,7 @@ Example:
 Default: Disabled.
 
 Late ack means the task messages will be acknowledged **after** the task
-has been executed, not *just before*, which is the default behavior.
+has been executed, not *just before* (the default behavior).
 
 .. seealso::
 
@@ -644,7 +644,9 @@ on backend specifications).
 
 Default: Disabled by default.
 
-Enables client caching of results, which can be useful for the old deprecated
+Enables client caching of results.
+
+This can be useful for the old deprecated
 'amqp' backend where the result is unavailable as soon as one result instance
 consumes it.
 
@@ -688,7 +690,7 @@ Examples::
 
 Please see `Supported Databases`_ for a table of supported databases,
 and `Connection String`_ for more information about connection
-strings (which is the part of the URI that comes after the ``db+`` prefix).
+strings (this is the part of the URI that comes after the ``db+`` prefix).
 
 .. _`Supported Databases`:
     http://www.sqlalchemy.org/docs/core/engines.html#supported-databases
@@ -874,7 +876,7 @@ For example::
 
     result_backend = 'redis://localhost/0'
 
-which is the same as::
+is the same as::
 
     result_backend = 'redis://'
 
@@ -1083,7 +1085,7 @@ For example::
 
     result_backend = 'riak://localhost/celery
 
-which is the same as::
+is the same as::
 
     result_backend = 'riak://'
 
@@ -1330,7 +1332,7 @@ A router can be specified as either:
 
 *  A function with the signature ``(name, args, kwargs,
    options, task=None, **kwargs)``
-*  A string which provides the path to a router function.
+*  A string providing the path to a router function.
 *  A dict containing router specification:
      Will be converted to a :class:`celery.routes.MapRoute` instance.
 * A list of ``(pattern, route)`` tuples:
@@ -1576,11 +1578,15 @@ Only the scheme part (``transport://``) is required, the rest
 is optional, and defaults to the specific transports default values.
 
 The transport part is the broker implementation to use, and the
-default is ``amqp``, which uses ``librabbitmq`` by default or falls back to
-``pyamqp`` if that's not installed. Also there are many other choices including
+default is ``amqp``, (uses ``librabbitmq`` if installed or falls back to
+``pyamqp``). There are also many other choices including:
 ``redis``, ``beanstalk``, ``sqlalchemy``, ``django``, ``mongodb``,
-``couchdb``.
-It can also be a fully qualified path to your own transport implementation.
+and ``couchdb``.
+
+The scheme can also be a fully qualified path to your own transport
+implementation::
+
+    broker_url = 'proj.transports.MyTransport://localhost'
 
 More than one broker URL, of the same transport, can also be specified.
 The broker URLs can be passed in as a single string that's semicolon delimited::
@@ -1658,9 +1664,9 @@ a connection was closed.
 
 If the heartbeat value is 10 seconds, then
 the heartbeat will be monitored at the interval specified
-by the :setting:`broker_heartbeat_checkrate` setting, which by default is
-double the rate of the heartbeat value
-(so for the default 10 seconds, the heartbeat is checked every 5 seconds).
+by the :setting:`broker_heartbeat_checkrate` setting (by default
+this is set to double the rate of the heartbeat value,
+so for the 10 seconds, the heartbeat is checked every 5 seconds).
 
 .. setting:: broker_heartbeat_checkrate
 

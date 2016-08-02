@@ -48,8 +48,10 @@ to match all tasks in the ``feed.tasks`` name-space:
 
     app.conf.task_routes = {'feed.tasks.*': {'queue': 'feeds'}}
 
-If the order in which the patterns are matched is important you should should
-specify a tuple as the task router instead::
+If the order of matching patterns is important you should
+specify the router in *items* format instead:
+
+.. code-block:: python
 
     task_routes = ([
         ('feed.tasks.*': {'queue': 'feeds'}),
@@ -469,8 +471,9 @@ using the ``basic.publish`` command:
     ok.
 
 Now that the message is sent you can retrieve it again. You can use the
-``basic.get``` command here, which polls for new messages on the queue
-(which is alright for maintenance tasks, for services you'd want to use
+``basic.get``` command here, that polls for new messages on the queue
+in a synchronous manner
+(this is OK for maintenance tasks, but for services you want to use
 ``basic.consume`` instead)
 
 Pop a message off the queue:

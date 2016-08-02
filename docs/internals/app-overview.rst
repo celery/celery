@@ -5,7 +5,7 @@
 The `app` branch is a work-in-progress to remove
 the use of a global configuration in Celery.
 
-Celery can now be instantiated, which means several
+Celery can now be instantiated and several
 instances of Celery may exist in the same process space.
 Also, large parts can be customized without resorting to monkey
 patching.

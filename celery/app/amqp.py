@@ -228,7 +228,7 @@ class AMQP(object):
 
     # Exchange class/function used when defining automatic queues.
     # E.g. you can use ``autoexchange = lambda n: None`` to use the
-    # AMQP default exchange, which is a shortcut to bypass routing
+    # AMQP default exchange: a shortcut to bypass routing
     # and instead send directly to the queue named in the routing key.
     autoexchange = None
 

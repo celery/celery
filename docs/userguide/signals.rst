@@ -37,7 +37,7 @@ Example connecting to the :signal:`after_task_publish` signal:
         ))
 
 
-Some signals also have a sender which you can filter by. For example the
+Some signals also have a sender you can filter by. For example the
 :signal:`after_task_publish` signal uses the task name as a sender, so by
 providing the ``sender`` argument to
 :class:`~celery.utils.dispatch.signal.Signal.connect` you can
@@ -303,7 +303,7 @@ Provides arguments:
     This is a :class:`~celery.worker.request.Request` instance, and not
     ``task.request``. When using the prefork pool this signal
     is dispatched in the parent process, so ``task.request`` isn't available
-    and shouldn't be used. Use this object instead, which should have many
+    and shouldn't be used. Use this object instead, as they share many
     of the same fields.
 
 * ``terminated``
@@ -739,8 +739,8 @@ It can be used to add additional command-line arguments to the
             enable_monitoring()
 
 
-Sender is the :class:`~celery.bin.base.Command` instance, which depends
-on what program was called (e.g. for the umbrella command it'll be
+Sender is the :class:`~celery.bin.base.Command` instance, and the value depends
+on the program that was called (e.g. for the umbrella command it'll be
 a :class:`~celery.bin.celery.CeleryCommand`) object).
 
 Provides arguments:

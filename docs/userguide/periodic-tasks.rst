@@ -10,8 +10,8 @@
 Introduction
 ============
 
-:program:`celery beat` is a scheduler. It kicks off tasks at regular intervals,
-which are then executed by the worker nodes available in the cluster.
+:program:`celery beat` is a scheduler; It kicks off tasks at regular intervals,
+that are then executed by available worker nodes in the cluster.
 
 By default the entries are taken from the :setting:`beat_schedule` setting,
 but custom stores can also be used, like storing the entries in a SQL database.
@@ -104,8 +104,8 @@ Setting these up from within the :data:`~@on_after_configure` handler means
 that we'll not evaluate the app at module level when using ``test.s()``.
 
 The :meth:`~@add_periodic_task` function will add the entry to the
-:setting:`beat_schedule` setting behind the scenes, which also
-can be used to set up periodic tasks manually:
+:setting:`beat_schedule` setting behind the scenes, and the same setting
+can also can be used to set up periodic tasks manually:
 
 Example: Run the `tasks.add` task every 30 seconds.
 
@@ -415,9 +415,9 @@ Using custom scheduler classes
 Custom scheduler classes can be specified on the command-line (the
 :option:`-S <celery beat -S>` argument).
 
-The default scheduler is :class:`celery.beat.PersistentScheduler`,
-which is simply keeping track of the last run times in a local database file
-(a :mod:`shelve`).
+The default scheduler is the :class:`celery.beat.PersistentScheduler`,
+that simply keeps track of the last run times in a local :mod:`shelve`
+database file.
 
 :pypi:`django-celery` also ships with a scheduler that stores the schedule in
 the Django database:

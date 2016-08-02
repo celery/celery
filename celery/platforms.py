@@ -79,7 +79,7 @@ User information: uid={uid} euid={euid} gid={gid} egid={egid}
 """
 
 ROOT_DISCOURAGED = """\
-You're running the worker with superuser privileges, which is
+You're running the worker with superuser privileges: this is
 absolutely not recommended!
 
 Please specify a different user using the -u option.
@@ -127,8 +127,8 @@ class Pidfile(object):
 
     See Also:
         Best practice is to not use this directly but rather use
-        the :func:`create_pidlock` function instead,
-        which is more convenient and also removes stale pidfiles (when
+        the :func:`create_pidlock` function instead:
+        more convenient and also removes stale pidfiles (when
         the process holding the lock is no longer running).
     """
 
@@ -481,7 +481,7 @@ def setgroups(groups):
 
 
 def initgroups(uid, gid):
-    """Compat version of :func:`os.initgroups` which was first
+    """Compat version of :func:`os.initgroups` that was first
     added to Python 2.7."""
     if not pwd:  # pragma: no cover
         return
@@ -725,7 +725,7 @@ def get_errno_name(n):
 def ignore_errno(*errnos, **kwargs):
     """Context manager to ignore specific POSIX error codes.
 
-    Takes a list of error codes to ignore, which can be either
+    Takes a list of error codes to ignore: this can be either
     the name of the code, or the code integer itself::
 
         >>> with ignore_errno('ENOENT'):

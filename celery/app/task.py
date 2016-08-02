@@ -213,7 +213,7 @@ class Task(object):
     #: finished, or waiting to be retried.
     #:
     #: Having a 'started' status can be useful for when there are long
-    #: running tasks and there's a need to report which task is currently
+    #: running tasks and there's a need to report what task is currently
     #: running.
     #:
     #: The application default can be overridden using the
@@ -221,12 +221,11 @@ class Task(object):
     track_started = None
 
     #: When enabled messages for this task will be acknowledged **after**
-    #: the task has been executed, and not *just before* which is the
-    #: default behavior.
+    #: the task has been executed, and not *just before* (the
+    #: default behavior).
     #:
     #: Please note that this means the task may be executed twice if the
-    #: worker crashes mid execution (which may be acceptable for some
-    #: applications).
+    #: worker crashes mid execution.
     #:
     #: The application default can be overridden with the
     #: :setting:`task_acks_late` setting.

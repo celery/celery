@@ -728,7 +728,7 @@ is following the conventions.
         set textwidth=78
 
   If adhering to this limit makes the code less readable, you have one more
-  character to go on, which means 78 is a soft limit, and 79 is the hard
+  character to go on. This means 78 is a soft limit, and 79 is the hard
   limit :)
 
 * Import order

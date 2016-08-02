@@ -105,7 +105,7 @@ class schedule(object):
         it does not need to be accurate but will influence the precision
         of your schedule.  You must also keep in mind
         the value of :setting:`beat_max_loop_interval`,
-        which decides the maximum number of seconds the scheduler can
+        that decides the maximum number of seconds the scheduler can
         sleep between re-checking the periodic task intervals.  So if you
         have a task that changes schedule at run-time then your next_run_at
         check will decide how long it will take before a change to the

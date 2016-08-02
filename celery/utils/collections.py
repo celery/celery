@@ -426,7 +426,7 @@ class LimitedSet(object):
     ``maxlen`` is enforced at all times, so if the limit is reached
     we'll also remove non-expired items.
 
-    You can also configure ``minlen``, which is the minimal residual size
+    You can also configure ``minlen``: this is the minimal residual size
     of the set.
 
     All arguments are optional, and no limits are enabled by default.

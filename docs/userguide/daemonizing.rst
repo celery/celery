@@ -35,10 +35,10 @@ tell it where to change
 directory to when it starts (to find the module containing your app, or your
 configuration module).
 
-The daemonization script is configured by the file :file:`/etc/default/celeryd`,
-which is a shell (:command:`sh`) script. You can add environment variables and the
-configuration options below to this file. To add environment variables you
-must also export them (e.g. :command:`export DISPLAY=":0"`)
+The daemonization script is configured by the file :file:`/etc/default/celeryd`.
+This is a shell (:command:`sh`) script where you can add environment variables like
+the configuration options below.  To add real environment variables affecting
+the worker you must also export them (e.g. :command:`export DISPLAY=":0"`)
 
 .. Admonition:: Superuser privileges required
 
@@ -344,8 +344,8 @@ and now you should be able to see the errors.
 Commonly such errors are caused by insufficient permissions
 to read from, or write to a file, and also by syntax errors
 in configuration modules, user modules, third-party libraries,
-or even from Celery itself (if you've found a bug, in which case
-you should :ref:`report it <reporting-bugs>`).
+or even from Celery itself (if you've found a bug you
+should :ref:`report it <reporting-bugs>`).
 
 
 .. _daemon-systemd-generic:
@@ -479,10 +479,11 @@ use the Environment in :file:`celery.service`.
 
 Running the worker with superuser privileges (root)
 ======================================================================
+
 Running the worker with superuser privileges is a very dangerous practice.
 There should always be a workaround to avoid running as root. Celery may
-run arbitrary code in messages serialized with pickle - which is dangerous,
-especially if run as root.
+run arbitrary code in messages serialized with pickle - this is dangerous,
+especially when run as root.
 
 By default Celery won't run workers as root. The associated error
 message may not be visible in the logs but may be seen if :envvar:`C_FAKEFORK`

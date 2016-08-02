@@ -78,8 +78,8 @@ Polling Interval
 
 The polling interval decides the number of seconds to sleep between
 unsuccessful polls. This value can be either an int or a float.
-By default the value is 1 second, which means that the worker will
-sleep for one second whenever there are no more messages to read.
+By default the value is *one second*: this means the worker will
+sleep for one second when there's no more messages to read.
 
 You must note that **more frequent polling is also more expensive, so increasing
 the polling interval can save you money**.
@@ -89,7 +89,7 @@ setting::
 
     broker_transport_options = {'polling_interval': 0.3}
 
-Very frequent polling intervals can cause *busy loops*, which results in the
+Very frequent polling intervals can cause *busy loops*, resulting in the
 worker using a lot of CPU time. If you need sub-millisecond precision you
 should consider using another transport, like `RabbitMQ <broker-amqp>`,
 or `Redis <broker-redis>`.

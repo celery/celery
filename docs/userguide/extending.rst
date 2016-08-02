@@ -16,7 +16,7 @@ Custom Message Consumers
 You may want to embed custom Kombu consumers to manually process your messages.
 
 For that purpose a special :class:`~celery.bootstep.ConsumerStep` bootstep class
-exists, where you only need to define the ``get_consumers`` method, which must
+exists, where you only need to define the ``get_consumers`` method, that must
 return a list of :class:`kombu.Consumer` objects to start
 whenever the connection is established:
 
@@ -62,12 +62,11 @@ whenever the connection is established:
 .. note::
 
     Kombu Consumers can take use of two different message callback dispatching
-    mechanisms. The first one is the ``callbacks`` argument which accepts
+    mechanisms. The first one is the ``callbacks`` argument that accepts
     a list of callbacks with a ``(body, message)`` signature,
-    the second one is the ``on_message`` argument which takes a single
+    the second one is the ``on_message`` argument that takes a single
     callback with a ``(message,)`` signature. The latter won't
-    automatically decode and deserialize the payload which is useful
-    in many cases:
+    automatically decode and deserialize the payload.
 
     .. code-block:: python
 
@@ -99,7 +98,7 @@ and the worker currently defines two blueprints: **Worker**, and **Consumer**
 **Figure A:** Bootsteps in the Worker and Consumer blueprints. Starting
               from the bottom up the first step in the worker blueprint
               is the Timer, and the last step is to start the Consumer blueprint,
-              which then establishes the broker connection and starts
+              that then establishes the broker connection and starts
               consuming messages.
 
 .. figure:: ../images/worker_graph_full.png
@@ -115,8 +114,8 @@ The Worker is the first blueprint to start, and with it starts major components 
 the event loop, processing pool, and the timer used for ETA tasks and other
 timed events.
 
-When the worker is fully started it'll continue to the Consumer blueprint,
-which sets up how tasks are to be executed, connects to the broker and starts
+When the worker is fully started it continues with the Consumer blueprint,
+that sets up how tasks are executed, connects to the broker and starts
 the message consumers.
 
 The :class:`~celery.worker.WorkController` is the core worker implementation,
@@ -624,8 +623,8 @@ the worker has been initialized, so the "is starting" lines are time-stamped.
 You may notice that this does no longer happen at shutdown, this is because
 the ``stop`` and ``shutdown`` methods are called inside a *signal handler*,
 and it's not safe to use logging inside such a handler.
-Logging with the Python logging module isn't :term:`reentrant`,
-which means that you cannot interrupt the function and
+Logging with the Python logging module isn't :term:`reentrant`:
+meaning you cannot interrupt the function then
 call it again later. It's important that the ``stop`` and ``shutdown`` methods
 you write is also :term:`reentrant`.
 
@@ -740,7 +739,7 @@ Preload options
 ~~~~~~~~~~~~~~~
 
 The :program:`celery` umbrella command supports the concept of 'preload
-options', which are special options passed to all sub-commands and parsed
+options'.  These are special options passed to all sub-commands and parsed
 outside of the main parsing step.
 
 The list of default preload options can be found in the API reference:

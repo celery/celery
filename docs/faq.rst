@@ -270,7 +270,7 @@ When using the RabbitMQ (AMQP) and Redis transports it should work
 out of the box.
 
 For other transports the compatibility prefork pool is
-used which requires a working POSIX semaphore implementation,
+used and requires a working POSIX semaphore implementation,
 this is enabled in FreeBSD by default since FreeBSD 8.x.
 For older version of FreeBSD, you have to enable
 POSIX semaphores in the kernel and manually recompile billiard.
@@ -445,7 +445,7 @@ setting to "json" or "yaml" instead of pickle.
 Similarly for task results you can set :setting:`result_serializer`.
 
 For more details of the formats used and the lookup order when
-checking which format to use for a task see :ref:`calling-serializers`
+checking what format to use for a task see :ref:`calling-serializers`
 
 Can messages be encrypted?
 --------------------------

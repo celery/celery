@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""This module defines the :class:`Request` class, which specifies
+"""This module defines the :class:`Request` class, that specifies
 how tasks are executed."""
 from __future__ import absolute_import, unicode_literals
 

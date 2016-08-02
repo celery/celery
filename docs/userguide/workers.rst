@@ -560,7 +560,7 @@ Queues
 
 A worker instance can consume from any number of queues.
 By default it will consume from all queues defined in the
-:setting:`task_queues` setting (which if not specified defaults to the
+:setting:`task_queues` setting (if not specified defaults to the
 queue named ``celery``).
 
 You can specify what queues to consume from at start-up, by giving a comma
@@ -680,7 +680,7 @@ the :control:`active_queues` control command:
 
 Like all other remote control commands this also supports the
 :option:`--destination <celery inspect --destination>` argument used
-to specify which workers should reply to the request:
+to specify the workers that should reply to the request:
 
 .. code-block:: console
 
@@ -964,11 +964,11 @@ The output will include the following fields:
 
     * ``majflt``
 
-        Number of page faults which were serviced by doing I/O.
+        Number of page faults that were serviced by doing I/O.
 
     * ``minflt``
 
-        Number of page faults which were serviced without doing I/O.
+        Number of page faults that were serviced without doing I/O.
 
     * ``msgrcv``
 
@@ -1034,7 +1034,7 @@ a custom timeout:
      {'worker3.example.com': 'pong'}]
 
 :meth:`~@control.ping` also supports the `destination` argument,
-so you can specify which workers to ping:
+so you can specify the workers to ping:
 
 .. code-block:: pycon
 

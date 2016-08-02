@@ -64,7 +64,7 @@ for the :program:`celery` command-line program:
 
 You don't need this line, but it saves you from always passing in the
 settings module to the ``celery`` program. It must always come before
-creating the app instances, which is what we do next:
+creating the app instances, as is what we do next:
 
 .. code-block:: python
 

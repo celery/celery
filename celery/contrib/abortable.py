@@ -111,7 +111,7 @@ class AbortableAsyncResult(AsyncResult):
     """Represents a abortable result.
 
     Specifically, this gives the `AsyncResult` a :meth:`abort()` method,
-    which sets the state of the underlying Task to `'ABORTED'`.
+    that sets the state of the underlying Task to `'ABORTED'`.
     """
 
     def is_aborted(self):

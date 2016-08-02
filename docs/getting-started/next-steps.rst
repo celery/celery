@@ -116,7 +116,7 @@ Eventlet, Gevent, and running in a single thread (see :ref:`concurrency`).
 -- *Events* is an option that when enabled causes Celery to send
 monitoring messages (events) for actions occurring in the worker.
 These can be used by monitor programs like ``celery events``,
-and Flower - the real-time Celery monitor, which you can read about in
+and Flower - the real-time Celery monitor, that you can read about in
 the :ref:`Monitoring and Management guide <guide-monitoring>`.
 
 -- *Queues* is the list of queues that the worker will consume
@@ -178,9 +178,10 @@ or stop it:
 
     $ celery multi stop w1 -A proj -l info
 
-The ``stop`` command is asynchronous so it'll not wait for the
+The ``stop`` command is asynchronous so it won't wait for the
 worker to shutdown. You'll probably want to use the ``stopwait`` command
-instead which will ensure all currently executing tasks is completed:
+instead,  this ensures all currently executing tasks is completed
+before exiting:
 
 .. code-block:: console
 
@@ -283,7 +284,7 @@ so that no message is sent:
     4
 
 These three methods - :meth:`delay`, :meth:`apply_async`, and applying
-(``__call__``), represents the Celery calling API, which are also used for
+(``__call__``), represents the Celery calling API, that's also used for
 signatures.
 
 A more detailed overview of the Calling API can be found in the
@@ -293,7 +294,7 @@ Every task invocation will be given a unique identifier (an UUID), this
 is the task id.
 
 The ``delay`` and ``apply_async`` methods return an :class:`~@AsyncResult`
-instance, which can be used to keep track of the tasks execution state.
+instance, that can be used to keep track of the tasks execution state.
 But for this you need to enable a :ref:`result backend <task-result-backends>` so that
 the state can be stored somewhere.
 
@@ -376,7 +377,7 @@ The started state is a special state that's only recorded if the
 ``@task(track_started=True)`` option is set for the task.
 
 The pending state is actually not a recorded state, but rather
-the default state for any task id that's unknown, which you can see
+the default state for any task id that's unknown: this you can see
 from this example:
 
 .. code-block:: pycon
@@ -430,7 +431,7 @@ There's also a shortcut using star arguments:
 And there's that calling API again…
 -----------------------------------
 
-Signature instances also supports the calling API, which means that they
+Signature instances also supports the calling API: meaning they
 have the ``delay`` and ``apply_async`` methods.
 
 But there's a difference in that the signature may already have
@@ -462,7 +463,7 @@ and this can be resolved when calling the signature:
     >>> res.get()
     10
 
-Here you added the argument 8, which was prepended to the existing argument 2
+Here you added the argument 8 that was prepended to the existing argument 2
 forming a complete signature of ``add(8, 2)``.
 
 Keyword arguments can also be added later, these are then merged with any
@@ -473,7 +474,7 @@ existing keyword arguments, but with new arguments taking precedence:
     >>> s3 = add.s(2, 2, debug=True)
     >>> s3.delay(debug=False)   # debug is now False.
 
-As stated signatures supports the calling API, which means that:
+As stated signatures supports the calling API: meaning that;
 
 - ``sig.apply_async(args=(), kwargs={}, **options)``
 
@@ -665,8 +666,8 @@ This is implemented by using broadcast messaging, so all remote
 control commands are received by every worker in the cluster.
 
 You can also specify one or more workers to act on the request
-using the :option:`--destination <celery inspect --destination>` option,
-which is a comma separated list of worker host names:
+using the :option:`--destination <celery inspect --destination>` option.
+This is a comma separated list of worker host names:
 
 .. code-block:: console
 
@@ -684,7 +685,7 @@ For a list of inspect commands you can execute:
 
     $ celery -A proj inspect --help
 
-Then there's the :program:`celery control` command, which contains
+Then there's the :program:`celery control` command, that contains
 commands that actually changes things in the worker at runtime:
 
 .. code-block:: console
@@ -752,8 +753,8 @@ If you have strict fair scheduling requirements, or want to optimize
 for throughput then you should read the :ref:`Optimizing Guide
 <guide-optimizing>`.
 
-If you're using RabbitMQ then you should install the :pypi:`librabbitmq`
-module, which is an AMQP client implemented in C:
+If you're using RabbitMQ then you can install the :pypi:`librabbitmq`
+module: this is an AMQP client implemented in C:
 
 .. code-block:: console
 

@@ -70,8 +70,8 @@ or even serialized and sent across the wire.
         >>> s.options
         {'countdown': 10}
 
-- It supports the "Calling API" which means it supports ``delay`` and
-  ``apply_async`` or being called directly.
+- It supports the "Calling API" of ``delay``,
+  ``apply_async``, etc., including being called directly (``__call__``).
 
     Calling the signature will execute the task inline in the current process:
 
@@ -343,7 +343,7 @@ Here's some examples:
 
         >>> add.signature((2, 2), immutable=True)
 
-    There's also a ``.si()`` shortcut for this, which is the preffered way of
+    There's also a ``.si()`` shortcut for this, and this is the preffered way of
     creating signatures:
 
     .. code-block:: pycon
@@ -377,9 +377,9 @@ Here's some examples:
 
 - Simple chord
 
-    The chord primitive enables us to add callback to be called when
-    all of the tasks in a group have finished executing, which is often
-    required for algorithms that aren't embarrassingly parallel:
+    The chord primitive enables us to add a callback to be called when
+    all of the tasks in a group have finished executing.  This is often
+    required for algorithms that aren't *embarrassingly parallel*:
 
     .. code-block:: pycon
 
@@ -400,7 +400,9 @@ Here's some examples:
         >>> chord((import_contact.s(c) for c in contacts),
         ...       notify_complete.si(import_id)).apply_async()
 
-    Note the use of ``.si`` above which creates an immutable signature.
+    Note the use of ``.si`` above; this creates an immutable signature,
+    meaning any new arguments passed (including to return value of the
+    previous task) will be ignored.
 
 - Blow your mind by combining
 
@@ -415,7 +417,7 @@ Here's some examples:
         >>> res.get()
         160
 
-    Which means that you can combine chains:
+    this means that you can combine chains:
 
     .. code-block:: pycon
 
@@ -481,8 +483,8 @@ Chains
 
 .. versionadded:: 3.0
 
-Tasks can be linked together, which in practice means adding
-a callback task:
+Tasks can be linked together: the linked task is called when the task
+returns successfully:
 
 .. code-block:: pycon
 
@@ -491,8 +493,8 @@ a callback task:
     4
 
 The linked task will be applied with the result of its parent
-task as the first argument, which in the above case will result
-in ``mul(4, 16)`` since the result is 4.
+task as the first argument. In the above case where the result was 4,
+this will result in ``mul(4, 16)``.
 
 The results will keep track of any subtasks called by the original task,
 and this can be accessed from the result instance:
@@ -541,7 +543,7 @@ You can also add *error callbacks* using the `on_error` method:
 
     >>> add.s(2, 2).on_error(log_error.s()).delay()
 
-Which will resut in the following ``.apply_async`` call when the signature
+This will result in the following ``.apply_async`` call when the signature
 is applied:
 
 .. code-block:: pycon
@@ -666,7 +668,7 @@ The :class:`~celery.group` function takes a list of signatures:
 
 If you **call** the group, the tasks will be applied
 one after another in the current process, and a :class:`~celery.result.GroupResult`
-instance is returned which can be used to keep track of the results,
+instance is returned that can be used to keep track of the results,
 or tell how many tasks are ready and so on:
 
 .. code-block:: pycon
@@ -749,9 +751,8 @@ It supports the following operations:
 
 * :meth:`~celery.result.GroupResult.join`
 
-    Gather the results for all of the subtasks
-    and return a list with them ordered by the order of which they
-    were called.
+    Gather the results of all subtasks
+    and return them in the same order as they were called (as a list).
 
 .. _canvas-chord:
 
@@ -857,8 +858,8 @@ to the :exc:`~@ChordError` exception:
     celery.exceptions.ChordError: Dependency 97de6f3f-ea67-4517-a21c-d867c61fcb47
         raised ValueError('something something',)
 
-While the traceback may be different depending on which result backend is
-being used, you can see the error description includes the id of the task that failed
+While the traceback may be different depending on the result backend used,
+you can see that the error description includes the id of the task that failed
 and a string representation of the original exception. You can also
 find the original traceback in ``result.traceback``.
 
@@ -926,11 +927,11 @@ Example implementation:
         raise self.retry(countdown=interval, max_retries=max_retries)
 
 
-This is used by all result backends except Redis and Memcached, which
-increment a counter after each task in the header, then applying the callback
+This is used by all result backends except Redis and Memcached: they
+increment a counter after each task in the header, then applies the callback
 when the counter exceeds the number of tasks in the set. *Note:* chords don't
 properly work with Redis before version 2.2; you'll need to upgrade to at
-least 2.2 to use them.
+least *redis-server* 2.2 to use them.
 
 The Redis and Memcached approach is a much better solution, but not easily
 implemented in other backends (suggestions welcome!).
@@ -1063,5 +1064,5 @@ of one:
 
     >>> group.skew(start=1, stop=10)()
 
-which means that the first task will have a countdown of one second, the second
+This means that the first task will have a countdown of one second, the second
 task a countdown of two seconds, and so on.

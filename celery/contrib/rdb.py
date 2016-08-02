@@ -29,8 +29,8 @@ Environment Variables
 ``CELERY_RDB_HOST``
 -------------------
 
-    Hostname to bind to.  Default is '127.0.01', which means the socket
-    will only be accessible from the local host.
+    Hostname to bind to.  Default is '127.0.01' (only accessable from
+    localhost).
 
 .. envvar:: CELERY_RDB_PORT
 

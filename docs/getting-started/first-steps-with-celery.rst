@@ -27,7 +27,7 @@ will get you started in no time. It's deliberately kept simple, so
 to not confuse you with advanced features.
 After you have finished this tutorial
 it's a good idea to browse the rest of the documentation,
-for example the :ref:`next-steps` tutorial, which will
+for example the :ref:`next-steps` tutorial will
 showcase Celery's capabilities.
 
 .. contents::
@@ -103,8 +103,8 @@ with standard Python tools like ``pip`` or ``easy_install``:
 Application
 ===========
 
-The first thing you need is a Celery instance, which is called the Celery
-application or just "app" for short. Since this instance is used as
+The first thing you need is a Celery instance.  We call this the *Celery
+application* or just *app* for short. As this instance is used as
 the entry-point for everything you want to do in Celery, like creating tasks and
 managing workers, it must be possible for other modules to import it.
 
@@ -125,14 +125,17 @@ Let's create the file :file:`tasks.py`:
         return x + y
 
 The first argument to :class:`~celery.app.Celery` is the name of the current module,
-this is needed so that names can be automatically generated, the second
-argument is the broker keyword argument which specifies the URL of the
-message broker you want to use, using RabbitMQ here, which is already the
-default option. See :ref:`celerytut-broker` above for more choices,
+this only needed so names can be automatically generated when the tasks are
+defined in the `__main__` module.
+
+The second argument is the broker keyword argument, specifying the URL of the
+message broker you want to use. Here using RabbitMQ (also the default option).
+
+See :ref:`celerytut-broker` above for more choices,
 e.g. for RabbitMQ you can use ``amqp://localhost``, or for Redis you can
 use ``redis://localhost``.
 
-You defined a single task, called ``add``, which returns the sum of two numbers.
+You defined a single task, called ``add``, returning the sum of two numbers.
 
 .. _celerytut-running-the-worker:
 
@@ -178,7 +181,7 @@ Calling the task
 To call our task you can use the :meth:`~@Task.delay` method.
 
 This is a handy shortcut to the :meth:`~@Task.apply_async`
-method which gives greater control of the task execution (see
+method that gives greater control of the task execution (see
 :ref:`guide-calling`)::
 
     >>> from tasks import add
@@ -187,11 +190,13 @@ method which gives greater control of the task execution (see
 The task has now been processed by the worker you started earlier,
 and you can verify that by looking at the workers console output.
 
-Calling a task returns an :class:`~@AsyncResult` instance,
-which can be used to check the state of the task, wait for the task to finish
+Calling a task returns an :class:`~@AsyncResult` instance:
+this can be used to check the state of the task, wait for the task to finish,
 or get its return value (or if the task failed, the exception and traceback).
-But this isn't enabled by default, and you have to configure Celery to
-use a result backend, which is detailed in the next section.
+
+Results aren't enabled by default, so if you want to do RPC or keep track
+of task results in a database you have to configure Celery to use a result
+backend.  This is described by the next section.
 
 .. _celerytut-keeping-results:
 
@@ -209,7 +214,7 @@ and -- or you can define your own.
 .. _`SQLAlchemy`: http://www.sqlalchemy.org/
 .. _`Django`: http://djangoproject.com
 
-For this example we use the `rpc` result backend, which sends states
+For this example we use the `rpc` result backend, that sends states
 back as transient messages. The backend is specified via the ``backend`` argument to
 :class:`@Celery`, (or via the :setting:`task_result_backend` setting if
 you choose to use a configuration module):

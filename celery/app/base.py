@@ -88,7 +88,7 @@ def _after_fork_cleanup_app(app):
 
 class PendingConfiguration(UserDict, AttributeDictMixin):
     # `app.conf` will be of this type before being explicitly configured,
-    # which means the app can keep any configuration set directly
+    # meaning the app can keep any configuration set directly
     # on `app.conf` before the `app.config_from_object` call.
     #
     # accessing any key will finalize the configuration,
@@ -216,7 +216,7 @@ class Celery(object):
             self._tasks = TaskRegistry(self._tasks or {})
 
         # If the class defines a custom __reduce_args__ we need to use
-        # the old way of pickling apps, which is pickling a list of
+        # the old way of pickling apps: pickling a list of
         # args instead of the new way that pickles a dict of keywords.
         self._using_v1_reduce = app_has_custom(self, '__reduce_args__')
 
@@ -284,8 +284,8 @@ class Celery(object):
     def close(self):
         """Clean up after the application.
 
-        Only necessary for dynamically created apps for which you can
-        use the :keyword:`with` statement instead
+        Only necessary for dynamically created apps, and you should
+        probably use the :keyword:`with` statement instead.
 
         Example:
             >>> with Celery(set_as_current=False) as app:
@@ -575,8 +575,8 @@ class Celery(object):
                 This argument may also be a callable, in which case the
                 value returned is used (for lazy evaluation).
             related_name (str): The name of the module to find.  Defaults
-                to "tasks", which means it look for "module.tasks" for every
-                module in ``packages``.
+                to "tasks": meaning "look for 'module.tasks' for every
+                module in ``packages``."
             force (bool): By default this call is lazy so that the actual
                 auto-discovery won't happen until an application imports
                 the default modules.  Forcing will cause the auto-discovery

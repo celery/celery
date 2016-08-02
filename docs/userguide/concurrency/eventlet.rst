@@ -18,7 +18,7 @@ change how you run your code, not how you write it.
     * `Coroutines`_ ensure that the developer uses a blocking style of
       programming that's similar to threading, but provide the benefits of
       non-blocking I/O.
-    * The event dispatch is implicit, which means you can easily use Eventlet
+    * The event dispatch is implicit: meaning you can easily use Eventlet
       from the Python interpreter, or as a small part of a larger application.
 
 Celery supports Eventlet as an alternative execution pool implementation.

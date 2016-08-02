@@ -18,8 +18,8 @@ A task queue's input is a unit of work called a task. Dedicated worker
 processes constantly monitor task queues for new work to perform.
 
 Celery communicates via messages, usually using a broker
-to mediate between clients and workers. To initiate a task, a client adds a
-message to the queue, which the broker then delivers to a worker.
+to mediate between clients and workers. To initiate a task the client adds a
+message to the queue, the broker then delivers that message to a worker.
 
 A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
@@ -213,7 +213,7 @@ Features
 Framework Integration
 =====================
 
-Celery is easy to integrate with web frameworks, some of which even have
+Celery is easy to integrate with web frameworks, some of them even have
 integration packages:
 
     +--------------------+------------------------+

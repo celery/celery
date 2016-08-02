@@ -46,7 +46,7 @@ Commands
 
 * **shell**: Drop into a Python shell.
 
-  The locals will include the ``celery`` variable, which is the current app.
+  The locals will include the ``celery`` variable: this is the current app.
   Also all known tasks will be automatically added to locals (unless the
   :option:`--without-tasks <celery shell --without-tasks>` flag is set).
 

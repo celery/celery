@@ -79,8 +79,8 @@ class Inspect(object):
 
     def active(self, safe=None):
         # safe is ignored since 4.0
-        # as we now have argsrepr/kwargsrepr which means no objects
-        # will need to be serialized.
+        # as no objects will need serialization now that we
+        # have argsrepr/kwargsrepr.
         return self._request('active')
 
     def scheduled(self, safe=None):
