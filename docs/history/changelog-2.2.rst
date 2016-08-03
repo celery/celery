@@ -696,7 +696,7 @@ Important Notes
     events will be gone as soon as the consumer stops. Also it means there
     can be multiple monitors running at the same time.
 
-    The routing key of an event is the type of event (e.g. `worker.started`,
+    The routing key of an event is the type of event (e.g., `worker.started`,
     `worker.heartbeat`, `task.succeeded`, etc. This means a consumer can
     filter on specific types, to only be alerted of the events it cares about.
 
@@ -898,9 +898,9 @@ News
 
 * The following fields have been added to all events in the worker class:
 
-    * `sw_ident`: Name of worker software (e.g. ``"py-celery"``).
-    * `sw_ver`: Software version (e.g. 2.2.0).
-    * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
+    * `sw_ident`: Name of worker software (e.g., ``"py-celery"``).
+    * `sw_ver`: Software version (e.g., 2.2.0).
+    * `sw_sys`: Operating System (e.g., Linux, Windows, Darwin).
 
 * For better accuracy the start time reported by the multiprocessing worker
   process is used when calculating task duration.
@@ -1005,7 +1005,7 @@ Experimental
 * PyPy: worker now runs on PyPy.
 
     It runs without any pool, so to get parallel execution you must start
-    multiple instances (e.g. using :program:`multi`).
+    multiple instances (e.g., using :program:`multi`).
 
     Sadly an initial benchmark seems to show a 30% performance decrease on
     ``pypy-1.4.1`` + JIT. We would like to find out why this is, so stay tuned.

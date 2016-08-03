@@ -6,7 +6,7 @@ while the worker program is in :mod:`celery.apps.worker`.
 
 The worker program is responsible for adding signal handlers,
 setting up logging, etc.  This is a bare-bones worker without
-global side-effects (i.e. except for the global state stored in
+global side-effects (i.e., except for the global state stored in
 :mod:`celery.worker.state`).
 
 The worker consists of several components, all managed by bootsteps

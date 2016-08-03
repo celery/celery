@@ -535,8 +535,8 @@ class Command(object):
         supports a pool argument, and used to monkey patch eventlet/gevent
         environments as early as possible.
 
-        E.g::
-              has_pool_option = (['-P'], ['--pool'])
+        Example:
+              >>> has_pool_option = (['-P'], ['--pool'])
         """
         pass
 

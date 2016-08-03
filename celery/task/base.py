@@ -152,7 +152,7 @@ class Task(BaseTask):
     )
 
     # In old Celery the @task decorator didn't exist, so one would create
-    # classes instead and use them directly (e.g. MyTask.apply_async()).
+    # classes instead and use them directly (e.g., MyTask.apply_async()).
     # the use of classmethods was a hack so that it was not necessary
     # to instantiate the class before using it, but it has only
     # given us pain (like all magic).

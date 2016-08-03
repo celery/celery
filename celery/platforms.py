@@ -715,7 +715,7 @@ else:
 
 
 def get_errno_name(n):
-    """Get errno for string, e.g. ``ENOENT``."""
+    """Get errno for string (e.g., ``ENOENT``)."""
     if isinstance(n, string_t):
         return getattr(errno, n)
     return n

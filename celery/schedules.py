@@ -115,7 +115,7 @@ class schedule(object):
         .. admonition:: Scheduler max interval variance
 
             The default max loop interval may vary for different schedulers.
-            For the default scheduler the value is 5 minutes, but for e.g.
+            For the default scheduler the value is 5 minutes, but for example
             the :pypi:`django-celery` database scheduler the value
             is 5 seconds.
         """
@@ -728,7 +728,7 @@ class solar(schedule):
 
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a
-        :class:`~datetime.timedelta`, or if it shouldn't run today (e.g.
+        :class:`~datetime.timedelta`, or if it shouldn't run today (e.g.,
         the sun does not rise today), returns the time when the next check
         should take place."""
         last_run_at = self.maybe_make_aware(last_run_at)

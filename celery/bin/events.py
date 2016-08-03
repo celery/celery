@@ -25,7 +25,7 @@
 
 .. cmdoption:: -r, --maxrate
 
-    Camera: Optional shutter rate limit (e.g. 10/m).
+    Camera: Optional shutter rate limit (e.g., 10/m).
 
 .. cmdoption:: -l, --loglevel
 

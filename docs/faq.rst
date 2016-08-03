@@ -403,7 +403,7 @@ as they're actually executed. After the worker has received a task, it will
 take some time until it's actually executed, especially if there are a lot
 of tasks already waiting for execution. Messages that aren't acknowledged are
 held on to by the worker until it closes the connection to the broker (AMQP
-server). When that connection is closed (e.g. because the worker was stopped)
+server). When that connection is closed (e.g., because the worker was stopped)
 the tasks will be re-sent by the broker to the next available worker (or the
 same worker when it has been restarted), so to properly purge the queue of
 waiting tasks you have to stop all the workers, and then purge the tasks

@@ -388,7 +388,7 @@ The request defines the following attributes:
 :chord: The unique id of the chord this task belongs to (if the task
         is part of the header).
 
-:correlation_id: Custom ID used for e.g. de-duplication.
+:correlation_id: Custom ID used for things like de-duplication.
 
 :args: Positional arguments.
 
@@ -414,13 +414,13 @@ The request defines the following attributes:
 
 :delivery_info: Additional message delivery information. This is a mapping
                 containing the exchange and routing key used to deliver this
-                task. Used by e.g. :meth:`Task.retry() <@Task.retry>`
+                task. Used by for example :meth:`Task.retry() <@Task.retry>`
                 to resend the task to the same destination queue.
                 Availability of keys in this dict depends on the
                 message broker used.
 
-:reply-to: Name of queue to send replies back to (used with e.g. RPC result
-           backend).
+:reply-to: Name of queue to send replies back to (used with RPC result
+           backend for example).
 
 :called_directly: This flag is set to true if the task wasn't
                   executed by the worker.
@@ -682,7 +682,7 @@ call, pass `retry_kwargs` argument to `~@Celery.task` decorator:
 
 This is provided as an alternative to manually handling the exceptions,
 and the example above will do the same as wrapping the task body
-in a :keyword:`try` ... :keyword:`except` statement, i.e.:
+in a :keyword:`try` ... :keyword:`except` statement:
 
 .. code-block:: python
 
@@ -799,7 +799,7 @@ General
     if not specified means rate limiting for tasks is disabled by default.
 
     Note that this is a *per worker instance* rate limit, and not a global
-    rate limit. To enforce a global rate limit (e.g. for an API with a
+    rate limit. To enforce a global rate limit (e.g., for an API with a
     maximum number of  requests per second), you must restrict to a given
     queue.
 
@@ -876,7 +876,7 @@ General
     task is currently running.
 
     The host name and process id of the worker executing the task
-    will be available in the state meta-data (e.g. `result.info['pid']`)
+    will be available in the state meta-data (e.g., `result.info['pid']`)
 
     The global default can be overridden by the
     :setting:`task_track_started` setting.
@@ -901,7 +901,7 @@ different strengths and weaknesses (see :ref:`task-result-backends`).
 During its lifetime a task will transition through several possible states,
 and each state may have arbitrary meta-data attached to it. When a task
 moves into a new state the previous state is
-forgotten about, but some transitions can be deducted, (e.g. a task now
+forgotten about, but some transitions can be deducted, (e.g., a task now
 in the :state:`FAILED` state, is implied to have been in the
 :state:`STARTED` state at some point).
 
@@ -1060,7 +1060,7 @@ Use :meth:`~@Task.update_state` to update a task's state:.
 Here I created the state `"PROGRESS"`, telling any application
 aware of this state that the task is currently in progress, and also where
 it is in the process by having `current` and `total` counts as part of the
-state meta-data. This can then be used to create e.g. progress bars.
+state meta-data. This can then be used to create progress bars for example.
 
 .. _pickling_exceptions:
 
@@ -1295,7 +1295,7 @@ And you route every request to the same process, then it
 will keep state between requests.
 
 This can also be useful to cache resources,
-e.g. a base Task class that caches a database connection:
+For example, a base Task class that caches a database connection:
 
 .. code-block:: python
 

@@ -273,7 +273,7 @@ The Primitives
 
         The map primitive works like the built-in ``map`` function, but creates
         a temporary task where a list of arguments is applied to the task.
-        E.g. ``task.map([1, 2])`` results in a single task
+        For example, ``task.map([1, 2])`` -- results in a single task
         being called, applying the arguments in order to the task function so
         that the result is:
 
@@ -293,7 +293,8 @@ The Primitives
 
     - ``chunks``
 
-        Chunking splits a long list of arguments into parts, e.g the operation:
+        Chunking splits a long list of arguments into parts, for example
+        the operation:
 
         .. code-block:: pycon
 
@@ -725,7 +726,7 @@ It supports the following operations:
 * :meth:`~celery.result.GroupResult.successful`
 
     Return :const:`True` if all of the subtasks finished
-    successfully (e.g. didn't raise an exception).
+    successfully (e.g., didn't raise an exception).
 
 * :meth:`~celery.result.GroupResult.failed`
 

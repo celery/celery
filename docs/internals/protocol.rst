@@ -108,7 +108,7 @@ Changes from version 1
 
     This means that workers/intermediates can inspect the message
     and make decisions based on the headers without decoding
-    the payload (that may be language specific, e.g. serialized by the
+    the payload (that may be language specific, for example serialized by the
     Python specific pickle serializer).
 
 - Always UTC
@@ -154,7 +154,8 @@ Changes from version 1
 - ``root_id`` and ``parent_id`` fields helps keep track of work-flows.
 
 - ``shadow`` lets you specify a different name for logs, monitors
-  can be used for e.g. meta tasks that calls any function:
+  can be used for concepts like tasks that calls a function
+  specified as argument:
 
     .. code-block:: python
 
@@ -335,7 +336,7 @@ Standard body fields
 - *string* ``type``
 
     The type of event. This is a string containing the *category* and
-    *action* separated by a dash delimiter (e.g. ``task-succeeded``).
+    *action* separated by a dash delimiter (e.g., ``task-succeeded``).
 
 - *string* ``hostname``
 
@@ -352,8 +353,8 @@ Standard body fields
 - *signed short* ``utcoffset``
 
     This field describes the timezone of the originating host, and is
-    specified as the number of hours ahead of/behind UTC. E.g. ``-2`` or
-    ``+1``.
+    specified as the number of hours ahead of/behind UTC (e.g., -2 or
+    +1).
 
 - *unsigned long long* ``pid``
 

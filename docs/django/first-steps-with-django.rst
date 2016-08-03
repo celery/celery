@@ -80,7 +80,7 @@ from the Django settings; but you can also separate them if wanted.
 
 The uppercase name-space means that all Celery configuration options
 must be specified in uppercase instead of lowercase, and start with
-``CELERY_``, so e.g. the :setting:`task_always_eager`` setting
+``CELERY_``, so for example the :setting:`task_always_eager`` setting
 becomes ``CELERY_TASK_ALWAYS_EAGER``, and the :setting:`broker_url`
 setting becomes ``CELERY_BROKER_URL``.
 
@@ -192,10 +192,10 @@ To use this with your project you need to follow these four steps:
 
 .. admonition:: Relative Imports
 
-    You have to be consistent in how you import the task module, e.g. if
-    you have ``project.app`` in ``INSTALLED_APPS`` then you also
-    need to import the tasks ``from project.app`` or else the names
-    of the tasks will be different.
+    You have to be consistent in how you import the task module.
+    For example, if you have ``project.app`` in ``INSTALLED_APPS``, then you
+    must also import the tasks ``from project.app`` or else the names
+    of the tasks will end up being different.
 
     See :ref:`task-naming-relative-imports`
 

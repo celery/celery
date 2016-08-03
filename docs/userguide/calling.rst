@@ -30,7 +30,7 @@ The API defines a standard set of execution options, as well as three methods:
 
     - *calling* (``__call__``)
 
-        Applying an object supporting the calling API (e.g. ``add(2, 2)``)
+        Applying an object supporting the calling API (e.g., ``add(2, 2)``)
         means that the task will not be executed by a worker, but in the current
         process instead (a message won't be sent).
 
@@ -295,8 +295,8 @@ For example, the default policy correlates to:
 
 the maximum time spent retrying will be 0.4 seconds. It's set relatively
 short by default because a connection failure could lead to a retry pile effect
-if the broker connection is down: e.g. many web server processes waiting
-to retry blocking other incoming requests.
+if the broker connection is down -- For example, many web server processes waiting
+to retry, blocking other incoming requests.
 
 .. _calling-connection-errors:
 

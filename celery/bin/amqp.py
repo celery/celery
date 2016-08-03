@@ -73,8 +73,7 @@ class Spec(object):
     def str_args_to_python(self, arglist):
         """Process list of string arguments to values according to spec.
 
-        e.g::
-
+        Example:
             >>> spec = Spec([('queue', str), ('if_unused', bool)])
             >>> spec.str_args_to_python('pobox', 'true')
             ('pobox', True)

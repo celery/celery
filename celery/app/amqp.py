@@ -227,7 +227,7 @@ class AMQP(object):
     _producer_pool = None
 
     # Exchange class/function used when defining automatic queues.
-    # E.g. you can use ``autoexchange = lambda n: None`` to use the
+    # For example, you can use ``autoexchange = lambda n: None`` to use the
     # AMQP default exchange: a shortcut to bypass routing
     # and instead send directly to the queue named in the routing key.
     autoexchange = None

@@ -131,8 +131,8 @@ defined in the `__main__` module.
 The second argument is the broker keyword argument, specifying the URL of the
 message broker you want to use. Here using RabbitMQ (also the default option).
 
-See :ref:`celerytut-broker` above for more choices,
-e.g. for RabbitMQ you can use ``amqp://localhost``, or for Redis you can
+See :ref:`celerytut-broker` above for more choices --
+for RabbitMQ you can use ``amqp://localhost``, or for Redis you can
 use ``redis://localhost``.
 
 You defined a single task, called ``add``, returning the sum of two numbers.

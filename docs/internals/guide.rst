@@ -62,7 +62,7 @@ Naming
     .. note::
 
         Sometimes it makes sense to have a class mask as a function,
-        and there's precedence for this in the Python standard library (e.g.
+        and there's precedence for this in the Python standard library (e.g.,
         :class:`~contextlib.contextmanager`). Celery examples include
         :class:`~celery.signature`, :class:`~celery.chord`,
         ``inspect``, :class:`~kombu.utils.functional.promise` and more..
@@ -327,7 +327,7 @@ Worker overview
    Responsibilities:
    * sets up logging and redirects standard outs
    * installs signal handlers (`TERM`/`HUP`/`STOP`/`USR1` (cry)/`USR2` (rdb))
-   * prints banner and warnings (e.g. pickle warning)
+   * prints banner and warnings (e.g., pickle warning)
    * handles the :option:`celery worker --purge` argument
 
 * `app.WorkController` -> `celery.worker.WorkController`

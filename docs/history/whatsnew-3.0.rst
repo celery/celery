@@ -364,7 +364,7 @@ priorities on the server side, which is why
 the feature is nicknamed "quasi-priorities";
 **Using routing is still the suggested way of ensuring
 quality of service**, as client implemented priorities
-fall short in a number of ways, e.g. if the worker
+fall short in a number of ways, for example if the worker
 is busy with long running tasks, has prefetched many messages,
 or the queues are congested.
 
@@ -694,7 +694,7 @@ The :option:`--app <celery --app>` option now 'auto-detects'
       to import a sub module named celery',
       and get the celery attribute from that module.
 
-E.g. if you have a project named ``proj`` where the
+For example, if you have a project named ``proj`` where the
 celery app is located in ``from proj.celery import app``,
 then the following will be equivalent:
 
@@ -718,7 +718,7 @@ In Other News
 - App instance factory methods have been converted to be cached
   descriptors that creates a new subclass on access.
 
-    This means that e.g. ``app.Worker`` is an actual class
+    For example, this means that ``app.Worker`` is an actual class
     and will work as expected when:
 
     .. code-block:: python
@@ -760,7 +760,7 @@ In Other News
 
 - Annotations now supports decorators if the key starts with '@'.
 
-    E.g.:
+    For example:
 
     .. code-block:: python
 
@@ -829,8 +829,8 @@ In Other News
 
 - ``group.skew(start=, stop=, step=)``
 
-    Skew will skew the countdown for the individual tasks in a group,
-    e.g. with a group:
+    Skew will skew the countdown for the individual tasks in a group -- for
+    example with this group:
 
     .. code-block:: pycon
 

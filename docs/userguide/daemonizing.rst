@@ -38,7 +38,7 @@ configuration module).
 The daemonization script is configured by the file :file:`/etc/default/celeryd`.
 This is a shell (:command:`sh`) script where you can add environment variables like
 the configuration options below.  To add real environment variables affecting
-the worker you must also export them (e.g. :command:`export DISPLAY=":0"`)
+the worker you must also export them (e.g., :command:`export DISPLAY=":0"`)
 
 .. Admonition:: Superuser privileges required
 
@@ -110,7 +110,7 @@ This is an example configuration for a Python project.
 
     # Workers should run as an unprivileged user.
     #   You need to create this user manually (or you can choose
-    #   a user/group combination that already exists, e.g. nobody).
+    #   a user/group combination that already exists (e.g., nobody).
     CELERYD_USER="celery"
     CELERYD_GROUP="celery"
 

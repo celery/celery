@@ -214,7 +214,7 @@ new in Celery 3.1.
 - **Results**: Redis result backend now allows for timeout to be set in the
   query portion of the result backend URL.
 
-    E.g. ``CELERY_RESULT_BACKEND = 'redis://?timeout=10'``
+    For example ``CELERY_RESULT_BACKEND = 'redis://?timeout=10'``
 
     Contributed by Justin Patrin.
 
@@ -834,7 +834,7 @@ News
     with workers and clients not using it, so be sure to enable
     the option in all clients and workers if you decide to use it.
 
-- **Multi**: With ``-opt:index`` (e.g. ``-c:1``) the index now always refers
+- **Multi**: With ``-opt:index`` (e.g., ``-c:1``) the index now always refers
   to the position of a node in the argument list.
 
     This means that referring to a number will work when specifying a list
@@ -1210,7 +1210,7 @@ Fixes
   not just by type (``all_active_count``).
 
 - Init-scripts:  Fixed problem with reading configuration file
-  when the init-script is symlinked to a runlevel (e.g. ``S02celeryd``).
+  when the init-script is symlinked to a runlevel (e.g., ``S02celeryd``).
   (Issue #1740).
 
     This also removed a rarely used feature where you can symlink the script
@@ -1493,7 +1493,7 @@ Fixes
 - Worker accidentally set a default socket timeout of 5 seconds.
 
 - Django: Fix-up now sets the default app so that threads will use
-  the same app instance (e.g. for :command:`manage.py runserver`).
+  the same app instance (e.g., for :command:`manage.py runserver`).
 
 - Worker: Fixed Unicode error crash at start-up experienced by some users.
 

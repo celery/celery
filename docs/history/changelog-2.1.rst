@@ -505,7 +505,9 @@ News
 * subtask: Merge additional keyword arguments to `subtask()` into task keyword
   arguments.
 
-    e.g.:
+    For example:
+
+    .. code-block:: pycon
 
         >>> s = subtask((1, 2), {'foo': 'bar'}, baz=1)
         >>> s.args

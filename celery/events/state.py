@@ -11,7 +11,7 @@ at the time of the last event.
 
 Snapshots (:mod:`celery.events.snapshot`) can be used to
 take "pictures" of this state at regular intervals
-to e.g. store that in a database.
+to for example, store that in a database.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -260,7 +260,7 @@ class Task(object):
         __slots__ = ('__dict__', '__weakref__')
 
     #: How to merge out of order events.
-    #: Disorder is detected by logical ordering (e.g. :event:`task-received`
+    #: Disorder is detected by logical ordering (e.g., :event:`task-received`
     #: must've happened before a :event:`task-failed` event).
     #:
     #: A merge rule consists of a state and a list of fields to keep from
@@ -304,7 +304,7 @@ class Task(object):
         # using .get is faster than catching KeyError in this case.
         state = task_event_to_state(type_)
         if state is not None:
-            # sets e.g. self.succeeded to the timestamp.
+            # sets, for example, self.succeeded to the timestamp.
             setattr(self, type_, timestamp)
         else:
             state = type_.upper()  # custom state

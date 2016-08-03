@@ -98,7 +98,7 @@ Finally, we can install RabbitMQ using :command:`brew`:
 
 After you've installed RabbitMQ with :command:`brew` you need to add the following to
 your path to be able to start and stop the broker: add it to the start-up file for your
-shell (e.g. :file:`.bash_profile` or :file:`.profile`).
+shell (e.g., :file:`.bash_profile` or :file:`.profile`).
 
 .. code-block:: bash
 
@@ -140,7 +140,7 @@ be `rabbit@myhost`, as verified by :command:`rabbitmqctl`:
     ...done.
 
 This is especially important if your DHCP server gives you a host name
-starting with an IP address, (e.g. `23.10.112.31.comcast.net`).  In this
+starting with an IP address, (e.g., `23.10.112.31.comcast.net`).  In this
 case RabbitMQ will try to use `rabbit@23`: an illegal host name.
 
 .. _rabbitmq-macOS-start-stop:

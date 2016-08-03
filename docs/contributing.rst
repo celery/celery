@@ -327,9 +327,10 @@ The master branch is where development of the next version happens.
 Maintenance branches
 --------------------
 
-Maintenance branches are named after the version, e.g. the maintenance branch
-for the 2.2.x series is named ``2.2``. Previously these were named
-``releaseXX-maint``.
+Maintenance branches are named after the version -- for example,
+the maintenance branch for the 2.2.x series is named ``2.2``.
+
+Previously these were named ``releaseXX-maint``.
 
 The versions we currently maintain is:
 
@@ -375,10 +376,13 @@ Feature branches are removed once they've been merged into a release branch.
 Tags
 ====
 
-Tags are used exclusively for tagging releases. A release tag is
-named with the format ``vX.Y.Z``, e.g. ``v2.3.1``.
-Experimental releases contain an additional identifier ``vX.Y.Z-id``, e.g.
-``v3.0.0-rc1``. Experimental tags may be removed after the official release.
+- Tags are used exclusively for tagging releases. A release tag is
+named with the format ``vX.Y.Z`` -- for example ``v2.3.1``.
+
+- Experimental releases contain an additional identifier ``vX.Y.Z-id`` --
+  for example ``v3.0.0-rc1``.
+
+- Experimental tags may be removed after the official release.
 
 .. _contributing-changes:
 
@@ -814,7 +818,7 @@ that require third-party libraries must be added.
 
 1) Add a new requirements file in `requirements/extras`
 
-    E.g. for the Cassandra backend this is
+    For the Cassandra backend this is
     :file:`requirements/extras/cassandra.txt`, and the file looks like this:
 
     .. code-block:: text
@@ -1123,7 +1127,7 @@ following:
 
 * Enter "Edit project"
 
-    Change default branch to the branch of this series, e.g. ``2.4``
-    for series 2.4.
+    Change default branch to the branch of this series, for example, use
+    the ``2.4`` branch for the 2.4 series.
 
 * Also add the previous version under the "versions" tab.

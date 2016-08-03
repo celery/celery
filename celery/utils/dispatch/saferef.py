@@ -64,7 +64,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
         deletion_methods (Sequence[Callable]): Callables taking
             single argument, a reference to this object which
             will be called when *either* the target object or
-            target function is garbage collected (i.e. when
+            target function is garbage collected (i.e., when
             this object becomes invalid).  These are specified
             as the on_delete parameters of :func:`safe_ref` calls.
 
@@ -122,7 +122,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
 
             on_delete (Callable): Optional callback which will be called
                 when this weak reference ceases to be valid
-                (i.e. either the object or the function is garbage
+                (i.e., either the object or the function is garbage
                 collected).  Should take a single argument,
                 which will be passed a pointer to this object.
         """
@@ -222,7 +222,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
             >>> A.bar = foo
 
         This shouldn't be a common use case.  So, on platforms where methods
-        aren't descriptors (e.g. Jython) this implementation has the
+        aren't descriptors (e.g., Jython) this implementation has the
         advantage of working in the most cases.
     """
     def __init__(self, target, on_delete=None):
@@ -239,7 +239,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
 
             on_delete (Callable): Optional callback which will be called
                 when this weak reference ceases to be valid
-                (i.e. either the object or the function is garbage
+                (i.e., either the object or the function is garbage
                 collected).  Should take a single argument,
                 which will be passed a pointer to this object.
         """

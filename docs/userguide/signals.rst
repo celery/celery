@@ -56,11 +56,11 @@ is published:
         ))
 
 Signals use the same implementation as :mod:`django.core.dispatch`. As a
-result other keyword parameters (e.g. signal) are passed to all signal
+result other keyword parameters (e.g., signal) are passed to all signal
 handlers by default.
 
 The best practice for signal handlers is to accept arbitrary keyword
-arguments (i.e. ``**kwargs``). That way new Celery versions can add additional
+arguments (i.e., ``**kwargs``). That way new Celery versions can add additional
 arguments without breaking user code.
 
 .. _signal-ref:
@@ -392,7 +392,7 @@ This signal is sent after the worker instance is set up, but before it
 calls run. This means that any queues from the :option:`celery worker -Q`
 option is enabled, logging has been set up and so on.
 
-It can be used to e.g. add custom queues that should always be consumed
+It can be used to add custom queues that should always be consumed
 from, disregarding the :option:`celery worker -Q` option. Here's an example
 that sets up a direct queue for each worker, these queues can then be
 used to route a task to any specific worker:
@@ -740,7 +740,7 @@ It can be used to add additional command-line arguments to the
 
 
 Sender is the :class:`~celery.bin.base.Command` instance, and the value depends
-on the program that was called (e.g. for the umbrella command it'll be
+on the program that was called (e.g., for the umbrella command it'll be
 a :class:`~celery.bin.celery.CeleryCommand`) object).
 
 Provides arguments:

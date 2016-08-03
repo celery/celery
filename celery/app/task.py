@@ -233,7 +233,7 @@ class Task(object):
 
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
-    #: exits or is signaled (e.g. :sig:`KILL`/:sig:`INT`, etc).
+    #: exits or is signaled (e.g., :sig:`KILL`/:sig:`INT`, etc).
     #:
     #: Setting this to true allows the message to be re-queued instead,
     #: so that the task will execute again by the same worker, or another

@@ -53,7 +53,7 @@ Client
 ------
 
 In Celery, "client" refers to anything that sends messages to the
-broker, e.g. web-servers that apply tasks.
+broker, for example web-servers that apply tasks.
 
 Having the broker properly secured doesn't matter if arbitrary messages
 can be sent through a client.

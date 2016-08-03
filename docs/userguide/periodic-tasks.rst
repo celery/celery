@@ -44,7 +44,7 @@ more information about configuration options.
 
 The default scheduler (storing the schedule in the :file:`celerybeat-schedule`
 file) will automatically detect that the time zone has changed, and so will
-reset the schedule itself, but other schedulers may not be so smart (e.g. the
+reset the schedule itself, but other schedulers may not be so smart (e.g., the
 Django database scheduler, see below) and in that case you'll have to reset the
 schedule manually.
 
@@ -174,8 +174,8 @@ Available Fields
     Execution options (:class:`dict`).
 
     This can be any argument supported by
-    :meth:`~celery.task.base.Task.apply_async`,
-    e.g. `exchange`, `routing_key`, `expires`, and so on.
+    :meth:`~celery.task.base.Task.apply_async` --
+    `exchange`, `routing_key`, `expires`, and so on.
 
 * `relative`
 
@@ -360,8 +360,8 @@ All solar events are calculated using UTC, and are therefore
 unaffected by your timezone setting.
 
 In polar regions, the sun may not rise or set every day. The scheduler
-is able to handle these cases, i.e. a ``sunrise`` event won't run on a day
-when the sun doesn't rise. The one exception is ``solar_noon``, which is
+is able to handle these cases (i.e., a ``sunrise`` event won't run on a day
+when the sun doesn't rise). The one exception is ``solar_noon``, which is
 formally defined as the moment the sun transits the celestial meridian,
 and will occur every day even if the sun is below the horizon.
 

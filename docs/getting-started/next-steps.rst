@@ -207,7 +207,7 @@ you're encouraged to put these in a dedicated directory:
 
 With the multi command you can start multiple workers, and there's a powerful
 command-line syntax to specify arguments for different workers too,
-e.g:
+for example:
 
 .. code-block:: console
 
@@ -242,8 +242,8 @@ If none of these are found it'll try a submodule named ``proj.celery``:
 6) Any attribute in the module ``proj.celery`` where the value is a Celery
    application.
 
-This scheme mimics the practices used in the documentation,
-i.e. ``proj:app`` for a single contained module, and ``proj.celery:app``
+This scheme mimics the practices used in the documentation -- that is,
+``proj:app`` for a single contained module, and ``proj.celery:app``
 for larger projects.
 
 
@@ -388,8 +388,10 @@ from this example:
     >>> res.state
     'PENDING'
 
-If the task is retried the stages can become even more complex,
-e.g, for a task that's retried two times the stages would be::
+If the task is retried the stages can become even more complex.
+To demonstrate, for a task that's retried two times the stages would be:
+
+.. code-block:: text
 
     PENDING -> STARTED -> RETRY -> STARTED -> RETRY -> STARTED -> SUCCESS
 
@@ -596,7 +598,9 @@ to a chord:
 
 
 Since these primitives are all of the signature type they
-can be combined almost however you want, e.g::
+can be combined almost however you want, for example:
+
+.. code-block:: pycon
 
     >>> upload_document.s(file) | group(apply_filter.s() for filter in filters)
 

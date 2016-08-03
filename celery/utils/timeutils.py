@@ -192,13 +192,13 @@ def remaining(start, ends_in, now=None, relative=False):
     """Calculate the remaining time for a start date and a
     :class:`~datetime.timedelta`.
 
-    e.g. "how many seconds left for 30 seconds after start?"
+    For example, "how many seconds left for 30 seconds after start?"
 
     Arguments:
         start (~datetime.datetime): Starting date.
         ends_in (~datetime.timedelta): The end delta.
         relative (bool): If enabled the end time will be calculated
-            using :func:`delta_resolution` (i.e. rounded to the
+            using :func:`delta_resolution` (i.e., rounded to the
             resolution of `ends_in`).
         now (Callable): Function returning the current time and date.
             Defaults to :func:`datetime.utcnow`.
@@ -244,12 +244,12 @@ def weekday(name):
 
 
 def humanize_seconds(secs, prefix='', sep='', now='now', microseconds=False):
-    """Show seconds in human form, e.g. 60 is "1 minute", 7200 is "2
-    hours".
+    """Show seconds in human form (e.g., 60 is "1 minute", 7200 is "2
+    hours").
 
     Arguments:
-        prefix (str): can be used to add a preposition to the output,
-            e.g. 'in' will give 'in 1 second', but add nothing to 'now'.
+        prefix (str): can be used to add a preposition to the output
+            (e.g., 'in' will give 'in 1 second', but add nothing to 'now').
         now (str): Literal 'now'.
         microseconds (bool): Include microseconds.
     """

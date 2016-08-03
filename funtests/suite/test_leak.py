@@ -50,8 +50,8 @@ class LeakFunCase(unittest.TestCase):
         return before, after
 
     def appx(self, s, r=1):
-        """r==1 (10e1): Keep up to hundred kB,
-        e.g. 16,268MB becomes 16,2MB."""
+        """r==1 (10e1): Keep up to hundred kB (e.g., 16,268MB
+        becomes 16,2MB)."""
         return int(s / 10.0 ** (r + 1)) / 10.0
 
     def assertFreed(self, n, fun, *args, **kwargs):

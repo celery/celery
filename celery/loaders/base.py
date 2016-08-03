@@ -142,12 +142,12 @@ class BaseLoader(object):
     def _smart_import(self, path, imp=None):
         imp = self.import_module if imp is None else imp
         if ':' in path:
-            # Path includes attribute so can just jump here.
-            # e.g. ``os.path:abspath``.
+            # Path includes attribute so can just jump
+            # here (e.g., ``os.path:abspath``).
             return symbol_by_name(path, imp=imp)
 
         # Not sure if path is just a module name or if it includes an
-        # attribute name (e.g. ``os.path``, vs, ``os.path.abspath``).
+        # attribute name (e.g., ``os.path``, vs, ``os.path.abspath``).
         try:
             return imp(path)
         except ImportError:

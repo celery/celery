@@ -35,7 +35,7 @@ origin_is_runlevel_dir () {
     echo $?
 }
 
-# Can be a runlevel symlink (e.g. S02celeryd)
+# Can be a runlevel symlink (e.g., S02celeryd)
 if [ $(origin_is_runlevel_dir) -eq 0 ]; then
     SCRIPT_FILE=$(readlink "$0")
 else

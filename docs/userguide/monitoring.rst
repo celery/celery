@@ -378,7 +378,7 @@ as manage users, virtual hosts and their permissions.
 
     The default virtual host (``"/"``) is used in these
     examples, if you use a custom virtual host you have to add
-    the ``-p`` argument to the command, e.g:
+    the ``-p`` argument to the command, for example:
     ``rabbitmqctl list_queues -p my_vhost …``
 
 .. _`rabbitmqctl(1)`: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
@@ -457,8 +457,8 @@ The default queue is named `celery`. To get all available queues, invoke:
     the database. The recommended way around this is to use a
     dedicated `DATABASE_NUMBER` for Celery, you can also use
     database numbers to separate Celery applications from each other (virtual
-    hosts), but this won't affect the monitoring events used by e.g. Flower
-    as Redis pub/sub commands are global rather than database based.
+    hosts), but this won't affect the monitoring events used by for example
+    Flower as Redis pub/sub commands are global rather than database based.
 
 .. _monitoring-munin:
 
@@ -782,9 +782,9 @@ The worker has connected to the broker and is online.
 - `hostname`: Nodename of the worker.
 - `timestamp`: Event time-stamp.
 - `freq`: Heartbeat frequency in seconds (float).
-- `sw_ident`: Name of worker software (e.g. ``py-celery``).
-- `sw_ver`: Software version (e.g. 2.2.0).
-- `sw_sys`: Operating System (e.g. Linux/Darwin).
+- `sw_ident`: Name of worker software (e.g., ``py-celery``).
+- `sw_ver`: Software version (e.g., 2.2.0).
+- `sw_sys`: Operating System (e.g., Linux/Darwin).
 
 .. event:: worker-heartbeat
 
@@ -800,9 +800,9 @@ it is considered to be offline.
 - `hostname`: Nodename of the worker.
 - `timestamp`: Event time-stamp.
 - `freq`: Heartbeat frequency in seconds (float).
-- `sw_ident`: Name of worker software (e.g. ``py-celery``).
-- `sw_ver`: Software version (e.g. 2.2.0).
-- `sw_sys`: Operating System (e.g. Linux/Darwin).
+- `sw_ident`: Name of worker software (e.g., ``py-celery``).
+- `sw_ver`: Software version (e.g., 2.2.0).
+- `sw_sys`: Operating System (e.g., Linux/Darwin).
 - `active`: Number of currently executing tasks.
 - `processed`: Total number of tasks processed by this worker.
 

@@ -144,7 +144,7 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
 
     Keyword Arguments:
         terminate (bool): Also terminate the process if the task is active.
-        signal (str): Name of signal to use for terminate.  E.g. ``KILL``.
+        signal (str): Name of signal to use for terminate (e.g., ``KILL``).
     """
     # supports list argument since 3.1
     task_ids, task_id = set(maybe_list(task_id) or []), None
@@ -183,7 +183,7 @@ def terminate(state, signal, task_id, **kwargs):
 
 @control_command(
     args=[('task_name', text_t), ('rate_limit', text_t)],
-    signature='<task_name> <rate_limit (e.g. 5/s | 5/m | 5/h)>',
+    signature='<task_name> <rate_limit (e.g., 5/s | 5/m | 5/h)>',
 )
 def rate_limit(state, task_name, rate_limit, **kwargs):
     """Tell worker(s) to modify the rate limit for a task by type.

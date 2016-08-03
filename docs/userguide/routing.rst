@@ -375,8 +375,8 @@ Related API commands
     :keyword passive: Passive means the exchange won't be created, but you
         can use this to check if the exchange already exists.
 
-    :keyword durable: Durable exchanges are persistent. I.e. they survive
-        a broker restart.
+    :keyword durable: Durable exchanges are persistent (i.e., they survive
+        a broker restart).
 
     :keyword auto_delete: This means the queue will be deleted by the broker
         when there are no more queues using it.

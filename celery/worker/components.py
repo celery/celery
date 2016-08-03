@@ -39,8 +39,8 @@ class Timer(bootsteps.Step):
             w.timer = _Timer(max_interval=10.0)
         else:
             if not w.timer_cls:
-                # Default Timer is set by the pool, as e.g. eventlet
-                # needs a custom implementation.
+                # Default Timer is set by the pool, as for example, the
+                # eventlet pool needs a custom timer implementation.
                 w.timer_cls = w.pool_cls.Timer
             w.timer = self.instantiate(w.timer_cls,
                                        max_interval=w.timer_precision,

@@ -217,7 +217,7 @@ def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
         info, left = _settings_info, set()
 
     # only raise error for keys that the user didn't provide two keys
-    # for (e.g. both ``result_expires`` and ``CELERY_TASK_RESULT_EXPIRES``).
+    # for (e.g., both ``result_expires`` and ``CELERY_TASK_RESULT_EXPIRES``).
     really_left = {key for key in left if info.convert[key] not in have}
     if really_left:
         # user is mixing old/new, or new/old settings, give renaming

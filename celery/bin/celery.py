@@ -13,7 +13,7 @@ and usually parsed before command-specific arguments.
 
 .. cmdoption:: -A, --app
 
-    app instance to use (e.g. ``module.attr_name``)
+    app instance to use (e.g., ``module.attr_name``)
 
 .. cmdoption:: -b, --broker
 
@@ -994,7 +994,7 @@ class upgrade(Command):
         return lines
 
     def _to_new_key(self, line, keyfilter=pass1, source=defaults._TO_NEW_KEY):
-        # sort by length to avoid e.g. broker_transport overriding
+        # sort by length to avoid, for example, broker_transport overriding
         # broker_transport_options.
         for old_key in reversed(sorted(source, key=lambda x: len(x))):
             new_line = line.replace(old_key, keyfilter(source[old_key]))

@@ -744,7 +744,7 @@ class AsynPool(_pool.Pool):
             # with many processes, and also leans more towards fairness
             # in write stats when used with many processes
             # [XXX On macOS, this may vary depending
-            # on event loop implementation (i.e select vs epoll), so
+            # on event loop implementation (i.e, select/poll vs epoll), so
             # have to test further]
             num_ready = len(ready_fds)
 

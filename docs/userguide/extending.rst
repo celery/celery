@@ -136,7 +136,7 @@ Attributes
 
 .. attribute:: hostname
 
-    The workers node name (e.g. `worker1@example.com`)
+    The workers node name (e.g., `worker1@example.com`)
 
 .. _extending-worker-blueprint:
 
@@ -306,7 +306,7 @@ Attributes
 
 .. attribute:: hostname
 
-    The workers node name (e.g. `worker1@example.com`)
+    The workers node name (e.g., `worker1@example.com`)
 
 .. _extending-consumer-blueprint:
 
@@ -504,7 +504,7 @@ Attributes
 .. attribute:: qos
 
     The :class:`~kombu.common.QoS` object can be used to change the
-    task channels current prefetch_count value, e.g:
+    task channels current prefetch_count value:
 
     .. code-block:: python
 
@@ -589,9 +589,9 @@ It can be added both as a worker and consumer bootstep:
             print('{0!r} is starting'.format(parent))
 
         def stop(self, parent):
-            # the Consumer calls stop every time the consumer is restarted
-            # (i.e. connection is lost) and also at shutdown. The Worker
-            # will call stop at shutdown only.
+            # the Consumer calls stop every time the consumer is
+            # restarted (i.e., connection is lost) and also at shutdown.
+            # The Worker will call stop at shutdown only.
             print('{0!r} is stopping'.format(parent))
 
         def shutdown(self, parent):
@@ -745,7 +745,8 @@ outside of the main parsing step.
 The list of default preload options can be found in the API reference:
 :mod:`celery.bin.base`.
 
-You can add new preload options too, e.g. to specify a configuration template:
+You can add new preload options too, for example to specify a configuration
+template:
 
 .. code-block:: python
 

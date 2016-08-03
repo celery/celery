@@ -20,9 +20,8 @@
 #
 #
 # To implement separate init-scripts, copy this script and give it a different
-# name:
-# I.e., if my new application, "little-worker" needs an init, I
-# should just use:
+# name.  That is, if your new application named "little-worker" needs an init,
+# you should use:
 #
 #   cp /etc/init.d/celeryd /etc/init.d/little-worker
 #
@@ -43,7 +42,7 @@ origin_is_runlevel_dir () {
     echo $?
 }
 
-# Can be a runlevel symlink (e.g. S02celeryd)
+# Can be a runlevel symlink (e.g., S02celeryd)
 if [ $(origin_is_runlevel_dir) -eq 0 ]; then
     SCRIPT_FILE=$(readlink "$0")
 else

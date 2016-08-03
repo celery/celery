@@ -450,10 +450,8 @@ Default: No soft time limit.
 Task soft time limit in seconds.
 
 The :exc:`~@SoftTimeLimitExceeded` exception will be
-raised when this is exceeded. The task can catch this to
-e.g. clean up before the hard time limit comes.
-
-Example:
+raised when this is exceeded. For example, the task can catch this to
+clean up before the hard time limit comes:
 
 .. code-block:: python
 
@@ -489,7 +487,7 @@ Default: Disabled.
 
 Even if :setting:`task_acks_late` is enabled, the worker will
 acknowledge tasks when the worker process executing them abruptly
-exits or is signaled (e.g. :sig:`KILL`/:sig:`INT`, etc).
+exits or is signaled (e.g., :sig:`KILL`/:sig:`INT`, etc).
 
 Setting this to true allows the message to be re-queued instead,
 so that the task will execute again by the same worker, or another
@@ -888,7 +886,7 @@ The fields of the URL are defined as follows:
 
 #. ``host``
 
-    Host name or IP address of the Redis server. e.g. `localhost`.
+    Host name or IP address of the Redis server (e.g., `localhost`).
 
 #. ``port``
 
@@ -943,7 +941,7 @@ This backend requires the following configuration directives to be set.
 
 Default: ``[]`` (empty list).
 
-List of ``host`` Cassandra servers. e.g.::
+List of ``host`` Cassandra servers. For example::
 
     cassandra_servers = ['localhost']
 
@@ -963,7 +961,7 @@ Port to contact the Cassandra servers on.
 
 Default: None.
 
-The key-space in which to store the results. e.g.::
+The key-space in which to store the results. For example::
 
     cassandra_keyspace = 'tasks_keyspace'
 
@@ -974,7 +972,7 @@ The key-space in which to store the results. e.g.::
 
 Default: None.
 
-The table (column family) in which to store the results. e.g.::
+The table (column family) in which to store the results. For example::
 
     cassandra_table = 'tasks'
 
@@ -1025,7 +1023,7 @@ AuthProvider class within ``cassandra.auth`` module to use. Values can be
 
 Default: ``{}`` (empty mapping).
 
-Named arguments to pass into the authentication provider. e.g.:
+Named arguments to pass into the authentication provider. For example::
 
 .. code-block:: python
 
@@ -1093,7 +1091,7 @@ The fields of the URL are defined as follows:
 
 #. ``host``
 
-    Host name or IP address of the Riak server. e.g. `'localhost'`.
+    Host name or IP address of the Riak server (e.g., `'localhost'`).
 
 #. ``port``
 
@@ -2274,7 +2272,7 @@ between checking the schedule.
 
 The default for this value is scheduler specific.
 For the default Celery beat scheduler the value is 300 (5 minutes),
-but for e.g. the :pypi:`django-celery` database scheduler it's 5 seconds
+but for example the :pypi:`django-celery` database scheduler it's 5 seconds
 because the schedule may be changed externally, and so it must take
 changes to the schedule into account.
 

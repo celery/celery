@@ -79,7 +79,7 @@ signal.
 If the worker won't shutdown after considerate time, for being
 stuck in an infinite-loop or similar, you can use the :sig:`KILL` signal to
 force terminate the worker: but be aware that currently executing tasks will
-be lost (i.e. unless the tasks have the :attr:`~@Task.acks_late`
+be lost (i.e., unless the tasks have the :attr:`~@Task.acks_late`
 option set).
 
 Also as processes can't override the :sig:`KILL` signal, the worker will
@@ -170,7 +170,7 @@ Node name replacements
 - ``%i``:  Prefork pool process index or 0 if MainProcess.
 - ``%I``:  Prefork pool process index with separator.
 
-E.g. if the current hostname is ``george@foo.example.com`` then
+For example, if the current hostname is ``george@foo.example.com`` then
 these will expand to:
 
 - ``--logfile-%p.log`` -> :file:`george@foo.example.com.log`
@@ -189,7 +189,7 @@ filename depending on the process that'll eventually need to open the file.
 This can be used to specify one log file per child process.
 
 Note that the numbers will stay within the process limit even if processes
-exit or if ``maxtasksperchild``/time limits are used. I.e. the number
+exit or if ``maxtasksperchild``/time limits are used. That is, the number
 is the *process index*, not the process count or pid.
 
 * ``%i`` - Pool process index or 0 if MainProcess.
@@ -864,7 +864,7 @@ The output will include the following fields:
 
     * ``transport``
 
-        Name of transport used (e.g. ``amqp`` or ``redis``)
+        Name of transport used (e.g., ``amqp`` or ``redis``)
 
     * ``transport_options``
 

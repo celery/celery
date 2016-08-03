@@ -125,7 +125,7 @@ def maybe_patch_concurrency(argv=sys.argv,
     """With short and long opt alternatives that specify the command line
     option to set the pool, this makes sure that anything that needs
     to be patched is completed as early as possible.
-    (e.g. eventlet/gevent monkey patches)."""
+    (e.g., eventlet/gevent monkey patches)."""
     try:
         pool = _find_option_with_arg(argv, short_opts, long_opts)
     except KeyError:

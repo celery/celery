@@ -38,7 +38,7 @@ def worker_direct(hostname):
 
     Arguments:
         hostname (str, ~kombu.Queue): The fully qualified node name of
-            a worker (e.g. ``w1@example.com``).  If passed a
+            a worker (e.g., ``w1@example.com``).  If passed a
             :class:`kombu.Queue` instance it will simply return
             that instead.
     """

@@ -106,7 +106,7 @@ def memdump(samples=10, file=None):  # pragma: no cover
 def sample(x, n, k=0):
     """Given a list `x` a sample of length ``n`` of that list is returned.
 
-    E.g. if `n` is 10, and `x` has 100 items, a list of every tenth.
+    For example, if `n` is 10, and `x` has 100 items, a list of every tenth.
     item is returned.
 
     ``k`` can be used as offset.
@@ -132,7 +132,7 @@ def hfloat(f, p=5):
 
 
 def humanbytes(s):
-    """Convert bytes to human-readable form (e.g. KB, MB)."""
+    """Convert bytes to human-readable form (e.g., KB, MB)."""
     return next(
         '{0}{1}'.format(hfloat(s / div if div else s), unit)
         for div, unit in UNITS if s >= div

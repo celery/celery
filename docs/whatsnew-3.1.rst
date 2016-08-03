@@ -267,7 +267,7 @@ Caveats
 
     This is very expensive if you have the
     :option:`--maxtasksperchild <celery worker --maxtasksperchild>` option
-    set to a low value (e.g. less than 10), so if you need to enable this option
+    set to a low value (e.g., less than 10), so if you need to enable this option
     you should also enable :option:`-Ofair <celery worker -O>` to turn off the
     prefetching behavior.
 
@@ -380,7 +380,7 @@ but starting with this version that field is also used to order them.
 Also, events now record timezone information
 by including a new ``utcoffset`` field in the event message.
 This is a signed integer telling the difference from UTC time in hours,
-so e.g. an event sent from the Europe/London timezone in daylight savings
+so for example, an event sent from the Europe/London timezone in daylight savings
 time will have an offset of 1.
 
 :class:`@events.Receiver` will automatically convert the time-stamps
@@ -807,7 +807,7 @@ In Other News
     to ensure that the patches are applied as early as possible.
 
     If you start the worker in a wrapper (like Django's :file:`manage.py`)
-    then you must apply the patches manually, e.g. by creating an alternative
+    then you must apply the patches manually, for example by creating an alternative
     wrapper that monkey patches at the start of the program before importing
     any other modules.
 
@@ -967,7 +967,7 @@ In Other News
 - Changed the way that app instances are pickled.
 
     Apps can now define a ``__reduce_keys__`` method that's used instead
-    of the old ``AppPickler`` attribute. E.g. if your app defines a custom
+    of the old ``AppPickler`` attribute. For example, if your app defines a custom
     'foo' attribute that needs to be preserved when pickling you can define
     a ``__reduce_keys__`` as such:
 

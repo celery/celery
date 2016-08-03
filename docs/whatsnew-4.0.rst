@@ -540,7 +540,7 @@ some long-requested features:
   task errors.
 
 - Worker calls callbacks/errbacks even when the result is sent by the
-  parent process (e.g. :exc:`WorkerLostError` when a child process
+  parent process (e.g., :exc:`WorkerLostError` when a child process
   terminates, deserialization errors, unregistered tasks).
 
 - A new ``origin`` header contains information about the process sending
@@ -614,7 +614,7 @@ Prefork: One log-file per child process
 ---------------------------------------
 
 Init-scrips and :program:`celery multi` now uses the `%I` log file format
-option (e.g. :file:`/var/log/celery/%n%I.log`).
+option (e.g., :file:`/var/log/celery/%n%I.log`).
 
 This change was necessary to ensure each child
 process has a separate log file after moving task logging

@@ -314,7 +314,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     now take less than a second).
 
 - Celery will now suggest alternatives if there's a typo in the
-  broker transport name (e.g. ``ampq`` -> ``amqp``).
+  broker transport name (e.g., ``ampq`` -> ``amqp``).
 
 - Worker: The auto-reloader would cause a crash if a monitored file
   was unlinked.
@@ -1116,7 +1116,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     cleans up after the app like closing pool connections.
 
     Note that this is only necessary when dynamically creating apps,
-    e.g. for "temporary" apps.
+    for example "temporary" apps.
 
 - Support for piping a subtask to a chain.
 
@@ -1503,7 +1503,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   (Issue #859).
 
 - Extension commands are now loaded after concurrency is set up
-  so that they don't interfere with e.g. eventlet patching.
+  so that they don't interfere with things like eventlet patching.
 
 - Fixed bug in the threaded pool (Issue #863)
 

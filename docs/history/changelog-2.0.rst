@@ -600,7 +600,7 @@ Backward incompatible changes
   (as scheduled by the :ref:`deprecation-timeline`):
 
     Assuming the implicit `Loader` class name is no longer supported,
-    if you use e.g.:
+    for example, if you use:
 
     .. code-block:: python
 
@@ -633,7 +633,7 @@ Backward incompatible changes
     cPickle is broken in Python <= 2.5.
 
     It unsafely and incorrectly uses relative instead of absolute imports,
-    so e.g.:
+    so for example:
 
     .. code-block:: python
 
@@ -803,7 +803,7 @@ News
 
         Soft time limit. The :exc:`~@SoftTimeLimitExceeded`
         exception will be raised when this is exceeded. The task can catch
-        this to e.g. clean up before the hard time limit comes.
+        this to, for example, clean up before the hard time limit comes.
 
     New command-line arguments to ``celeryd`` added:
     `--time-limit` and `--soft-time-limit`.

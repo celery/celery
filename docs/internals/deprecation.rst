@@ -219,7 +219,7 @@ Removals for version 2.0
 
 * :envvar:`CELERY_LOADER` definitions without class name.
 
-    E.g. `celery.loaders.default`, needs to include the class name:
+    For example,, `celery.loaders.default`, needs to include the class name:
     `celery.loaders.default.Loader`.
 
 * :meth:`TaskSet.run`. Use :meth:`celery.task.base.TaskSet.apply_async`

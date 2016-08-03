@@ -337,7 +337,7 @@ class Signature(dict):
 
         Returns:
             Signature: This is a chaining method call
-                (i.e. it will return ``self``).
+                (i.e., it will return ``self``).
         """
         if immutable is not None:
             self.set_immutable(immutable)

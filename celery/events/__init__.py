@@ -62,8 +62,7 @@ def Event(type, _fields=None, __dict__=dict, __now__=time.time, **fields):
 def group_from(type):
     """Get the group part of an event type name.
 
-    E.g.::
-
+    Example:
         >>> group_from('task-sent')
         'task'
 

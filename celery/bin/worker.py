@@ -22,7 +22,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: -n, --hostname
 
-    Set custom hostname, e.g. 'w1.%h'.  Expands: %h (hostname),
+    Set custom hostname (e.g., 'w1@%h').  Expands: %h (hostname),
     %n (name) and %d, (domain).
 
 .. cmdoption:: -B, --beat

@@ -126,7 +126,7 @@ class Celery(object):
         set_as_current (bool):  Make this the global current app.
         tasks (str, type): A task registry or the name of a registry class.
         include (List[str]): List of modules every worker should import.
-        fixups (List[str]): List of fix-up plug-ins (see e.g.
+        fixups (List[str]): List of fix-up plug-ins (e.g., see
             :mod:`celery.fixups.django`).
         autofinalize (bool): If set to False a :exc:`RuntimeError`
             will be raised if the task registry or tasks are used before
@@ -550,7 +550,7 @@ class Celery(object):
         """Try to auto-discover and import modules with a specific name (by
         default 'tasks').
 
-        If the name is empty, this will be delegated to fix-ups (e.g. Django).
+        If the name is empty, this will be delegated to fix-ups (e.g., Django).
 
         For example if you have an directory layout like this:
 
@@ -619,7 +619,7 @@ class Celery(object):
         Supports the same arguments as :meth:`@-Task.apply_async`.
 
         Arguments:
-            name (str): Name of task to call (e.g. `"tasks.add"`).
+            name (str): Name of task to call (e.g., `"tasks.add"`).
             result_cls (~@AsyncResult): Specify custom result class.
         """
         parent = have_parent = None
@@ -905,7 +905,7 @@ class Celery(object):
         to be this app instance.
 
         App-compatible means that the class has a class attribute that
-        provides the default app it should use, e.g.
+        provides the default app it should use, for example:
         ``class Foo: app = None``.
 
         Arguments:
@@ -914,7 +914,8 @@ class Celery(object):
             attribute (str): Name of the attribute holding the app,
                 Default is 'app'.
             reverse (str): Reverse path to this object used for pickling
-                purposes.  E.g. for ``app.AsyncResult`` use ``"AsyncResult"``.
+                purposes. For example, to get ``app.AsyncResult``,
+                use ``"AsyncResult"``.
             keep_reduce (bool): If enabled a custom ``__reduce__``
                 implementation won't be provided.
         """

@@ -276,8 +276,8 @@ Previously you'd've to type ``update_twitter_status.retry(…)``
 here, which can be annoying for long task names.
 
 .. note::
-    This won't work if the task function is called directly, i.e:
-    ``update_twitter_status(a, b)``. For that to work ``apply`` must
+    This won't work if the task function is called directly (i.e.,
+    ``update_twitter_status(a, b)``). For that to work ``apply`` must
     be used: ``update_twitter_status.apply((a, b))``.
 
 In Other News
@@ -315,7 +315,7 @@ In Other News
     Contributed by Steeve Morin.
 
 - The Crontab parser now matches Vixie Cron behavior when parsing ranges
-  with steps (e.g. 1-59/2).
+  with steps (e.g., 1-59/2).
 
     Contributed by Daniel Hepper.
 

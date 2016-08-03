@@ -55,7 +55,7 @@ else:
 
 def getappattr(path):
     """Gets attribute from the current_app recursively,
-    e.g. getappattr('amqp.get_task_consumer')``."""
+    (e.g., ``getappattr('amqp.get_task_consumer')``."""
     from celery import current_app
     return current_app._rgetattr(path)
 

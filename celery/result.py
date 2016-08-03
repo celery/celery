@@ -624,7 +624,7 @@ class ResultSet(ResultBase):
 
         Note:
             This can be an expensive operation for result store
-            backends that must resort to polling (e.g. database).
+            backends that must resort to polling (e.g., database).
 
             You should consider using :meth:`join_native` if your backend
             supports it.

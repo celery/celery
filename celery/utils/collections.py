@@ -109,10 +109,8 @@ class OrderedDict(_OrderedDict):
 
 
 class AttributeDictMixin(object):
-    """Augment classes with a Mapping interface by adding attribute access.
-
-    I.e. `d.key -> d[key]`.
-    """
+    """Augment classes with a Mapping interface by adding attribute
+    access (i.e., `d.key -> d[key]`)."""
 
     def __getattr__(self, k):
         """`d.key -> d[key]`"""

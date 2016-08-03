@@ -125,7 +125,7 @@ class Worker(WorkController):
         app = self.app
         WorkController.on_start(self)
 
-        # this signal can be used to e.g. change queues after
+        # this signal can be used to, for example, change queues after
         # the -Q option has been applied.
         signals.celeryd_after_setup.send(
             sender=self.hostname, instance=self, conf=app.conf,

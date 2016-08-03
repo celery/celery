@@ -200,7 +200,7 @@ News
 
         @periodic_task(run_every=crontab(minutes=30))
         def every_hour():
-            print('Runs every hour on the clock. e.g. 1:30, 2:30, 3:30 etc.')
+            print('Runs every hour on the clock (e.g., 1:30, 2:30, 3:30 etc.).')
 
     .. note::
         This a late addition. While we have unit tests, due to the
@@ -575,8 +575,8 @@ Fixes
 * The ETA scheduler now deletes any revoked tasks it might encounter.
 
     As revokes aren't yet persistent, this is done to make sure the task
-    is revoked even though it's currently being hold because its ETA is e.g.
-    a week into the future.
+    is revoked even though, for example, it's currently being hold because
+    its ETA is a week into the future.
 
 * The `task_id` argument is now respected even if the task is executed
   eagerly (either using apply, or :setting:`CELERY_ALWAYS_EAGER`).
@@ -611,7 +611,7 @@ Fixes
 * Added `Task.delivery_mode` and the :setting:`CELERY_DEFAULT_DELIVERY_MODE`
   setting.
 
-    These can be used to mark messages non-persistent (i.e. so they're
+    These can be used to mark messages non-persistent (i.e., so they're
     lost if the broker is restarted).
 
 * Now have our own `ImproperlyConfigured` exception, instead of using the
@@ -757,8 +757,8 @@ Backward incompatible changes
 * The :envvar:`CELERY_LOADER` environment variable now needs loader class name
   in addition to module name,
 
-    E.g. where you previously had: `"celery.loaders.default"`, you now need
-    `"celery.loaders.default.Loader"`, using the previous syntax will result
+    For example, where you previously had: `"celery.loaders.default"`, you now
+    need `"celery.loaders.default.Loader"`, using the previous syntax will result
     in a `DeprecationWarning`.
 
 * Detecting the loader is now lazy, and so isn't done when importing
@@ -844,16 +844,20 @@ News
 
 * Periodic tasks are now scheduled on the clock.
 
-    I.e. `timedelta(hours=1)` means every hour at :00 minutes, not every
+    That is, `timedelta(hours=1)` means every hour at :00 minutes, not every
     hour from the server starts. To revert to the previous behavior you
     can set `PeriodicTask.relative = True`.
 
-* Now supports passing execute options to a TaskSets list of args, e.g.:
+* Now supports passing execute options to a TaskSets list of args.
 
-    >>> ts = TaskSet(add, [([2, 2], {}, {'countdown': 1}),
-    ...                   ([4, 4], {}, {'countdown': 2}),
-    ...                   ([8, 8], {}, {'countdown': 3})])
-    >>> ts.run()
+    Example:
+
+    .. code-block:: pycon
+
+        >>> ts = TaskSet(add, [([2, 2], {}, {'countdown': 1}),
+        ...                    ([4, 4], {}, {'countdown': 2}),
+        ...                    ([8, 8], {}, {'countdown': 3})])
+        >>> ts.run()
 
 * Got a 3x performance gain by setting the prefetch count to four times the
   concurrency, (from an average task round-trip of 0.1s to 0.03s!).
@@ -1263,10 +1267,10 @@ Important changes
     goes away or stops responding, it is automatically replaced with
     a new one.
 
-* Task.name is now automatically generated out of class module+name, e.g.
-    `"djangotwitter.tasks.UpdateStatusesTask"`. Very convenient. No idea why
-    we didn't do this before. Some documentation is updated to not manually
-    specify a task name.
+* Task.name is now automatically generated out of class module+name, for
+  example `"djangotwitter.tasks.UpdateStatusesTask"`. Very convenient.
+  No idea why we didn't do this before. Some documentation is updated to not
+  manually specify a task name.
 
 .. _v060-news:
 
@@ -1399,7 +1403,7 @@ News
   by running `python manage.py celerystats`. See
   `celery.monitoring` for more information.
 
-* The Celery daemon can now be supervised (i.e. it is automatically
+* The Celery daemon can now be supervised (i.e., it is automatically
   restarted if it crashes). To use this start the worker with the
   --supervised` option (or alternatively `-S`).
 
@@ -1850,7 +1854,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
         http://mysite/celery/$task_id/done/
 
-  this will return a JSON dictionary like e.g:
+  this will return a JSON dictionary, for example:
 
   .. code-block:: json
 
