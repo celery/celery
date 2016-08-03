@@ -175,7 +175,7 @@ A white-list of content-types/serializers to allow.
 If a message is received that's not in this list then
 the message will be discarded with an error.
 
-By default any content type is enabled (including pickle and yaml)
+By default any content type is enabled, including pickle and yaml,
 so make sure untrusted parties don't have access to your broker.
 See :ref:`guide-security` for more.
 
@@ -1579,7 +1579,7 @@ is optional, and defaults to the specific transports default values.
 
 The transport part is the broker implementation to use, and the
 default is ``amqp``, (uses ``librabbitmq`` if installed or falls back to
-``pyamqp``). There are also many other choices including:
+``pyamqp``). There are also many other choices, including;
 ``redis``, ``beanstalk``, ``sqlalchemy``, ``django``, ``mongodb``,
 and ``couchdb``.
 

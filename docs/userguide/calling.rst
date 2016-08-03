@@ -31,8 +31,8 @@ The API defines a standard set of execution options, as well as three methods:
     - *calling* (``__call__``)
 
         Applying an object supporting the calling API (e.g. ``add(2, 2)``)
-        means that the task will be executed in the current process, and
-        not by a worker (a message won't be sent).
+        means that the task will not be executed by a worker, but in the current
+        process instead (a message won't be sent).
 
 .. _calling-cheat:
 
@@ -380,7 +380,7 @@ Each option has its advantages and disadvantages.
 
 json -- JSON is supported in many programming languages, is now
     a standard part of Python (since 2.6), and is fairly fast to decode
-    using the modern Python libraries such as :pypi:`simplejson`.
+    using the modern Python libraries, such as :pypi:`simplejson`.
 
     The primary disadvantage to JSON is that it limits you to the following
     data types: strings, Unicode, floats, Boolean, dictionaries, and lists.

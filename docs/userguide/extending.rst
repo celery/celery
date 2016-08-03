@@ -159,7 +159,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.components:Hub',)
+            requires = {'celery.worker.components:Hub'}
 
 .. _extending-worker-pool:
 
@@ -173,7 +173,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.components:Pool',)
+            requires = {'celery.worker.components:Pool'}
 
 .. _extending-worker-timer:
 
@@ -186,7 +186,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.components:Timer',)
+            requires = {'celery.worker.components:Timer'}
 
 .. _extending-worker-statedb:
 
@@ -202,7 +202,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.components:Statedb',)
+            requires = {'celery.worker.components:Statedb'}
 
 Example worker bootstep
 -----------------------
@@ -214,7 +214,7 @@ An example Worker bootstep could be:
     from celery import bootsteps
 
     class ExampleWorkerStep(bootsteps.StartStopStep):
-        requires = ('Pool',)
+        requires = {'celery.worker.components:Pool'}
 
         def __init__(self, worker, **kwargs):
             print('Called when the WorkController instance is constructed')
@@ -246,7 +246,7 @@ Another example could use the timer to wake up at regular intervals:
 
 
     class DeadlockDetection(bootsteps.StartStopStep):
-        requires = ('Timer',)
+        requires = {'celery.worker.components:Timer'}
 
         def __init__(self, worker, deadlock_timeout=3600):
             self.timeout = deadlock_timeout
@@ -266,7 +266,7 @@ Another example could use the timer to wake up at regular intervals:
 
         def detect(self, worker):
             # update active requests
-            for req in self.worker.active_requests:
+            for req in worker.active_requests:
                 if req.time_start and time() - req.time_start > self.timeout:
                     raise SystemExit()
 
@@ -329,7 +329,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker:Hub',)
+            requires = {'celery.worker.components:Hub'}
 
 .. _extending-consumer-connection:
 
@@ -343,7 +343,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Connection',)
+            requires = {'celery.worker.consumer.connection:Connection'}
 
 .. _extending-consumer-event_dispatcher:
 
@@ -356,14 +356,14 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Events',)
+            requires = {'celery.worker.consumer.events:Events'}
 
 .. _extending-consumer-gossip:
 
 .. attribute:: gossip
 
     Worker to worker broadcast communication
-    (:class:`~celery.worker.consumer.Gossip`).
+    (:class:`~celery.worker.consumer.gossip.Gossip`).
 
     A consumer bootstep must require the `Gossip` bootstep to use this.
 
@@ -372,7 +372,7 @@ Attributes
         class RatelimitStep(bootsteps.StartStopStep):
             """Rate limit tasks based on the number of workers in the
             cluster."""
-            requires = ('celery.worker.consumer:Gossip',)
+            requires = {'celery.worker.consumer.gossip:Gossip'}
 
             def start(self, c):
                 self.c = c
@@ -444,7 +444,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Heart',)
+            requires = {'celery.worker.consumer.heart:Heart'}
 
 .. _extending-consumer-task_consumer:
 
@@ -457,7 +457,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Tasks',)
+            requires = {'celery.worker.consumer.tasks:Tasks'}
 
 .. _extending-consumer-strategies:
 
@@ -481,7 +481,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Tasks',)
+            requires = {'celery.worker.consumer.tasks:Tasks'}
 
 .. _extending-consumer-task_buckets:
 

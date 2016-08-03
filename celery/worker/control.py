@@ -347,7 +347,7 @@ def _iter_schedule_requests(timer, Request=Request):
 
 @inspect_command(alias='dump_reserved')
 def reserved(state, **kwargs):
-    """List of currently reserved tasks (not including scheduled/active)."""
+    """List of currently reserved tasks, not including scheduled/active."""
     reserved_tasks = (
         state.tset(worker_state.reserved_requests) -
         state.tset(worker_state.active_requests)

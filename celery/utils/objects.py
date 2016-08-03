@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Object related utilities including introspection, etc."""
+"""Object related utilities, including introspection, etc."""
 from __future__ import absolute_import, unicode_literals
 
 __all__ = ['Bunch', 'FallbackContext', 'mro_lookup']

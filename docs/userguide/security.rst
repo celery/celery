@@ -64,7 +64,7 @@ Worker
 ------
 
 The default permissions of tasks running inside a worker are the same ones as
-the privileges of the worker itself. This applies to resources such as
+the privileges of the worker itself. This applies to resources, such as;
 memory, file-systems, and devices.
 
 An exception to this rule is when using the multiprocessing based task pool,
@@ -90,14 +90,18 @@ outbound traffic.
 .. _`sandboxing`:
     https://en.wikipedia.org/wiki/Sandbox_(computer_security)
 
+.. _security-serializers:
+
 Serializers
 ===========
 
-The default `pickle` serializer is convenient because it supports
-arbitrary Python objects, whereas other serializers only
-work with a restricted set of types.
+The default serializer is JSON since version 4.0, but since it has
+only support for a restricted set of types you may want to consider
+using pickle for serialization instead.
 
-But for the same reasons the `pickle` serializer is inherently insecure [*]_,
+The `pickle` serializer is convenient as it can serialize
+almost any Python object, even functions with some work,
+but for the same reasons `pickle` is inherently insecure [*]_,
 and should be avoided whenever clients are untrusted or
 unauthenticated.
 

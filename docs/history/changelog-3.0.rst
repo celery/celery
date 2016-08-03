@@ -671,7 +671,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Now depends on Kombu 2.5
 
     - :pypi:`amqp` has replaced :pypi:`amqplib` as the default transport,
-      gaining support for AMQP 0.9, and the RabbitMQ extensions
+      gaining support for AMQP 0.9, and the RabbitMQ extensions,
       including Consumer Cancel Notifications and heartbeats.
 
     - support for multiple connection URLs for failover.

@@ -6,7 +6,7 @@
 
 .. note::
 
-    Alternate routing concepts like topic and fanout may not be
+    Alternate routing concepts like topic and fanout is not
     available for all transports, please consult the
     :ref:`transport comparison table <kombu:transport-comparison>`.
 

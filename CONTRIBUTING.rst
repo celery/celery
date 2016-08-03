@@ -10,7 +10,7 @@ This document is fairly extensive and you aren't really expected
 to study this in detail for small contributions;
 
     The most important rule is that contributing must be easy
-    and that the community is friendly and not nitpicking on details
+    and that the community is friendly and not nitpicking on details,
     such as coding style.
 
 If you're reporting a bug you should read the Reporting bugs section
@@ -700,7 +700,7 @@ is following the conventions.
         set textwidth=78
 
   If adhering to this limit makes the code less readable, you have one more
-  character to go on, which means 78 is a soft limit, and 79 is the hard
+  character to go on. This means 78 is a soft limit, and 79 is the hard
   limit :)
 
 * Import order

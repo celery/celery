@@ -400,7 +400,7 @@ The request defines the following attributes:
           An integer starting at `0`.
 
 :is_eager: Set to :const:`True` if the task is executed locally in
-           the client, and not by a worker.
+           the client, not by a worker.
 
 :eta: The original ETA of the task (if any).
       This is in UTC time (depending on the :setting:`enable_utc`
@@ -659,11 +659,6 @@ Automatic retry for known exceptions
 Sometimes you just want to retry a task whenever a particular exception
 is raised.
 
-As this is such a common pattern we've built-in support for it
-with the
-This may not be acceptable all the time, since you may have a lot of such
-tasks.
-
 Fortunately, you can tell Celery to automatically retry a task using
 `autoretry_for` argument in `~@Celery.task` decorator:
 
@@ -811,12 +806,12 @@ General
 .. attribute:: Task.time_limit
 
     The hard time limit, in seconds, for this task.
-    If not set then the workers default will be used.
+    When not set the workers default is used.
 
 .. attribute:: Task.soft_time_limit
 
     The soft time limit for this task.
-    If not set then the workers default will be used.
+    When not set the workers default is used.
 
 .. attribute:: Task.ignore_result
 
@@ -961,7 +956,7 @@ web applications with a database already in place, but it also comes with
 limitations.
 
 * Polling the database for new states is expensive, and so you should
-  increase the polling intervals of operations such as `result.get()`.
+  increase the polling intervals of operations, such as `result.get()`.
 
 * Some databases use a default transaction isolation level that
   isn't suitable for polling tables for changes.
@@ -1451,21 +1446,8 @@ wastes time and resources.
 Results can even be disabled globally using the :setting:`task_ignore_result`
 setting.
 
-.. _task-disable-rate-limits:
-
-Disable rate limits if they're not used
----------------------------------------
-
-Disabling rate limits altogether is recommended if you don't have
-any tasks using them. This is because the rate limit subsystem introduces
-quite a lot of complexity.
-
-Set the :setting:`worker_disable_rate_limits` setting to globally disable
-rate limits:
-
-.. code-block:: python
-
-    worker_disable_rate_limits = True
+More optimization tips
+----------------------
 
 You find additional optimization tips in the
 :ref:`Optimizing Guide <guide-optimizing>`.
@@ -1548,8 +1530,8 @@ With smaller tasks you can process more tasks in parallel and the tasks
 won't run long enough to block the worker from processing other waiting tasks.
 
 However, executing a task does have overhead. A message needs to be sent, data
-may not be local, etc. So if the tasks are too fine-grained the additional
-overhead may not be worth it in the end.
+may not be local, etc. So if the tasks are too fine-grained the
+overhead added probably removes any benefit.
 
 .. seealso::
 

@@ -212,7 +212,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
         the same, instead of assuming that the function is a descriptor.
         This approach is equally fast, but not 100% reliable because
         functions can be stored on an attribute named differenty than the
-        function's name such as in::
+        function's name, such as in::
 
             >>> class A(object):
             ...     pass
@@ -222,7 +222,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
             >>> A.bar = foo
 
         This shouldn't be a common use case.  So, on platforms where methods
-        aren't descriptors (such as Jython) this implementation has the
+        aren't descriptors (e.g. Jython) this implementation has the
         advantage of working in the most cases.
     """
     def __init__(self, target, on_delete=None):

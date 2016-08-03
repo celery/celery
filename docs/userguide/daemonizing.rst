@@ -474,7 +474,7 @@ This is an example configuration for those using :pypi:`django-celery`:
     CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
     CELERYD_PID_FILE="/var/run/celery/%n.pid"
 
-To add an environment variable such as :envvar:`DJANGO_SETTINGS_MODULE`
+To add an environment variable, such as :envvar:`DJANGO_SETTINGS_MODULE`,
 use the Environment in :file:`celery.service`.
 
 Running the worker with superuser privileges (root)

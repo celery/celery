@@ -129,7 +129,7 @@ Example: Run the `tasks.add` task every 30 seconds.
     a separate module for configuration.
 
     If you want to use a single item tuple for `args`, don't forget
-    that the constructor is a comma and not a pair of parentheses.
+    that the constructor is a comma, and not a pair of parentheses.
 
 Using a :class:`~datetime.timedelta` for the schedule means the task will
 be sent in 30 second intervals (the first task will be sent 30 seconds

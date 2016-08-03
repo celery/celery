@@ -16,8 +16,8 @@ Starting the worker
 .. sidebar:: Daemonizing
 
     You probably want to use a daemonization tool to start
-    in the background. See :ref:`daemonizing` for help
-    detaching the worker using popular daemonization tools.
+    the worker in the background. See :ref:`daemonizing` for help
+    starting the worker as a daemon using popular service managers.
 
 You can start the worker in the foreground by executing the command:
 
@@ -32,30 +32,35 @@ For a full list of available command-line options see
 
     $ celery worker --help
 
-You can also start multiple workers on the same machine. If you do so
-be sure to give a unique name to each individual worker by specifying a
+You can start multiple workers on the same machine, but
+be sure to name each individual worker by specifying a
 node name with the :option:`--hostname <celery worker --hostname>` argument:
 
 .. code-block:: console
 
-    $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker1.%h
-    $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker2.%h
-    $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker3.%h
+    $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker1@%h
+    $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker2@%h
+    $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker3@%h
 
 The ``hostname`` argument can expand the following variables:
 
-    - ``%h``:  Hostname including domain name.
+    - ``%h``:  Hostname, including domain name.
     - ``%n``:  Hostname only.
     - ``%d``:  Domain name only.
 
-E.g. if the current hostname is ``george.example.com`` then
-these will expand to:
+If the current hostname is *george.example.com*, these will expand to:
 
-    - ``worker1.%h`` -> ``worker1.george.example.com``
-    - ``worker1.%n`` -> ``worker1.george``
-    - ``worker1.%d`` -> ``worker1.example.com``
++----------+----------------+------------------------------+
+| Variable | Template       | Result                       |
++----------+----------------+------------------------------+
+| ``%h``   | ``worker1@%h`` | *worker1@george.example.com* |
++----------+----------------+------------------------------+
+| ``%n``   | ``worker1@%n`` | *worker1@george*             |
++----------+----------------+------------------------------+
+| ``%d``   | ``worker1@%d`` | *worker1@example.com*        |
++----------+----------------+------------------------------+
 
-.. admonition:: Note for :pypi:`supervisor` users.
+.. admonition:: Note for :pypi:`supervisor` users
 
    The ``%`` sign must be escaped by adding a second one: `%%h`.
 
@@ -67,19 +72,26 @@ Stopping the worker
 Shutdown should be accomplished using the :sig:`TERM` signal.
 
 When shutdown is initiated the worker will finish all currently executing
-tasks before it actually terminates, so if these tasks are important you should
-wait for it to finish before doing anything drastic (like sending the :sig:`KILL`
-signal).
+tasks before it actually terminates. If these tasks are important, you should
+wait for it to finish before doing anything drastic, like sending the :sig:`KILL`
+signal.
 
-If the worker won't shutdown after considerate time, for example because
-of tasks stuck in an infinite-loop, you can use the :sig:`KILL` signal to
-force terminate the worker, but be aware that currently executing tasks will
-be lost (unless the tasks have the :attr:`~@Task.acks_late`
+If the worker won't shutdown after considerate time, for being
+stuck in an infinite-loop or similar, you can use the :sig:`KILL` signal to
+force terminate the worker: but be aware that currently executing tasks will
+be lost (i.e. unless the tasks have the :attr:`~@Task.acks_late`
 option set).
 
 Also as processes can't override the :sig:`KILL` signal, the worker will
-not be able to reap its children, so make sure to do so manually. This
+not be able to reap its children; make sure to do so manually. This
 command usually does the trick:
+
+.. code-block:: console
+
+    $ pkill -9 -f 'celery worker'
+
+If you don't have the :command:`pkill` command on your system, you can use the slightly
+longer version:
 
 .. code-block:: console
 
@@ -99,11 +111,11 @@ is by using `celery multi`:
     $ celery multi start 1 -A proj -l info -c4 --pidfile=/var/run/celery/%n.pid
     $ celery multi restart 1 --pidfile=/var/run/celery/%n.pid
 
-For production deployments you should be using init-scripts or other process
-supervision systems (see :ref:`daemonizing`).
+For production deployments you should be using init-scripts or a process
+supervision system (see :ref:`daemonizing`).
 
-Other than stopping then starting the worker to restart, you can also
-restart the worker using the :sig:`HUP` signal, but note that the worker
+Other than stopping, then starting the worker to restart, you can also
+restart the worker using the :sig:`HUP` signal. Note that the worker
 will be responsible for restarting itself so this is prone to problems and
 isn't recommended in production:
 
@@ -152,7 +164,7 @@ Node name replacements
 ----------------------
 
 - ``%p``:  Full node name.
-- ``%h``:  Hostname including domain name.
+- ``%h``:  Hostname, including domain name.
 - ``%n``:  Hostname only.
 - ``%d``:  Domain name only.
 - ``%i``:  Prefork pool process index or 0 if MainProcess.
@@ -178,7 +190,7 @@ This can be used to specify one log file per child process.
 
 Note that the numbers will stay within the process limit even if processes
 exit or if ``maxtasksperchild``/time limits are used. I.e. the number
-is the *process index* not the process count or pid.
+is the *process index*, not the process count or pid.
 
 * ``%i`` - Pool process index or 0 if MainProcess.
 
@@ -560,8 +572,8 @@ Queues
 
 A worker instance can consume from any number of queues.
 By default it will consume from all queues defined in the
-:setting:`task_queues` setting (if not specified defaults to the
-queue named ``celery``).
+:setting:`task_queues` setting (that if not specified falls back to the
+default queue named ``celery``).
 
 You can specify what queues to consume from at start-up, by giving a comma
 separated list of queues to the :option:`-Q <celery worker -Q>` option:

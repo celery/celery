@@ -904,7 +904,7 @@ In Other News
 
 - New signal: :signal:`task_revoked`
 
-- :mod:`celery.contrib.migrate`: Many improvements including
+- :mod:`celery.contrib.migrate`: Many improvements, including;
   filtering, queue migration, and support for acking messages on the broker
   migrating from.
 
