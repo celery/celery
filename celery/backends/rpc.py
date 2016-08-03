@@ -5,6 +5,8 @@ RPC-style result backend, using reply-to and one queue per client.
 """
 from __future__ import absolute_import, unicode_literals
 
+import time
+
 from kombu import Consumer, Exchange, Producer, Queue
 from kombu.common import maybe_declare
 from kombu.utils.compat import register_after_fork
@@ -55,7 +57,10 @@ class ResultConsumer(BaseResultConsumer):
         self._consumer.consume()
 
     def drain_events(self, timeout=None):
-        return self._connection.drain_events(timeout=timeout)
+        if self._connection:
+            return self._connection.drain_events(timeout=timeout)
+        elif timeout:
+            time.sleep(timeout)
 
     def stop(self):
         try:
