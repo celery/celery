@@ -139,7 +139,7 @@ performance.
 But please note that the default configuration isn't optimized for time nor
 space, see the :ref:`guide-optimizing` guide for more information.
 
-.. _faq-serializion-is-a-choice:
+.. _faq-serialization-is-a-choice:
 
 Is Celery dependent on pickle?
 ------------------------------
