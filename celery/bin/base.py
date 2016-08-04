@@ -23,10 +23,10 @@ from celery.five import (
     getfullargspec, items, python_2_unicode_compatible, string, string_t,
 )
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
+from celery.utils import imports
 from celery.utils import term
 from celery.utils import text
 from celery.utils.nodenames import node_format, host_format
-from celery.utils.imports import symbol_by_name, import_from_cwd
 
 try:
     input = raw_input
@@ -82,20 +82,8 @@ class Extensions(object):
         self.register(cls, name=name)
 
     def load(self):
-        try:
-            from pkg_resources import iter_entry_points
-        except ImportError:  # pragma: no cover
-            return
-
-        for ep in iter_entry_points(self.namespace):
-            sym = ':'.join([ep.module_name, ep.attrs[0]])
-            try:
-                cls = symbol_by_name(sym)
-            except (ImportError, SyntaxError) as exc:
-                warnings.warn(
-                    'Cannot load extension {0!r}: {1!r}'.format(sym, exc))
-            else:
-                self.add(cls, ep.name)
+        for cls, name in imports.load_extension_classes(self.namespace):
+            self.add(cls, name)
         return self.names
 
 
@@ -437,8 +425,8 @@ class Command(object):
         from celery.app.utils import find_app
         return find_app(app, symbol_by_name=self.symbol_by_name)
 
-    def symbol_by_name(self, name, imp=import_from_cwd):
-        return symbol_by_name(name, imp=imp)
+    def symbol_by_name(self, name, imp=imports.import_from_cwd):
+        return imports.symbol_by_name(name, imp=imp)
     get_cls_by_name = symbol_by_name  # XXX compat
 
     def process_cmdline_config(self, argv):

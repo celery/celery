@@ -6,6 +6,7 @@ import imp as _imp
 import importlib
 import os
 import sys
+import warnings
 
 from contextlib import contextmanager
 
@@ -135,3 +136,20 @@ def gen_task_name(app, name, module_name):
     if module_name == '__main__' and app.main:
         return '.'.join([app.main, name])
     return '.'.join(p for p in (module_name, name) if p)
+
+
+def load_extension_classes(namespace):
+    try:
+        from pkg_resources import iter_entry_points
+    except ImportError:  # pragma: no cover
+        return
+
+    for ep in iter_entry_points(namespace):
+        sym = ':'.join([ep.module_name, ep.attrs[0]])
+        try:
+            cls = symbol_by_name(sym)
+        except (ImportError, SyntaxError) as exc:
+            warnings.warn(
+                'Cannot load extension {0!r}: {1!r}'.format(sym, exc))
+        else:
+            yield cls, ep.name
