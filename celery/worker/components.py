@@ -44,8 +44,8 @@ class Timer(bootsteps.Step):
                 w.timer_cls = w.pool_cls.Timer
             w.timer = self.instantiate(w.timer_cls,
                                        max_interval=w.timer_precision,
-                                       on_timer_error=self.on_timer_error,
-                                       on_timer_tick=self.on_timer_tick)
+                                       on_error=self.on_timer_error,
+                                       on_tick=self.on_timer_tick)
 
     def on_timer_error(self, exc):
         logger.error('Timer error: %r', exc, exc_info=True)
