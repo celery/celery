@@ -138,7 +138,7 @@ class Command(object):
         Option('-b', '--broker', default=None),
         Option('--loader', default=None),
         Option('--config', default=None),
-        Option('--workdir', default=None, dest='working_directory'),
+        Option('--workdir', default=None),
         Option('--no-color', '-C', action='store_true', default=None),
         Option('--quiet', '-q', action='store_true'),
     )
@@ -382,7 +382,7 @@ class Command(object):
             self.no_color = preload_options['no_color']
         except KeyError:
             pass
-        workdir = preload_options.get('working_directory')
+        workdir = preload_options.get('workdir')
         if workdir:
             os.chdir(workdir)
         app = (preload_options.get('app') or

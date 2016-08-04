@@ -51,7 +51,7 @@ case "$words[1]" in
     '(-E --events)'{-E,--events}'[Send events that can be captured by monitors like celeryev, celerymon, and others.]' \
     '(--time-limit=)--time-limit=[nables a hard time limit (in seconds int/float) for tasks]' \
     '(--soft-time-limit=)--soft-time-limit=[Enables a soft time limit (in seconds int/float) for tasks]' \
-    '(--maxtasksperchild=)--maxtasksperchild=[Maximum number of tasks a pool worker can execute before it"s terminated and replaced by a new worker.]' \
+    '(--max-tasks-per-child=)--max-tasks-per-child=[Maximum number of tasks a pool worker can execute before it"s terminated and replaced by a new worker.]' \
     '(-Q --queues=)'{-Q,--queues=}'[List of queues to enable for this worker, separated by comma. By default all configured queues are enabled.]' \
     '(-I --include=)'{-I,--include=}'[Comma separated list of additional modules to import.]' \
     '(--pidfile=)--pidfile=[Optional file used to store the process pid.]' \

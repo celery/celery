@@ -74,7 +74,7 @@ _celery()
     worker)
         COMPREPLY=( $(compgen -W '--concurrency= --pool= --purge --logfile=
         --loglevel= --hostname= --beat --schedule= --scheduler= --statedb= --events
-        --time-limit= --soft-time-limit= --maxtasksperchild= --queues=
+        --time-limit= --soft-time-limit= --max-tasks-per-child= --queues=
         --include= --pidfile= $fargs' -- ${cur} ) )
         return 0
         ;;

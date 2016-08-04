@@ -75,6 +75,7 @@ BANNER = """\
 .> transport:   {conninfo}
 .> results:     {results}
 .> concurrency: {concurrency}
+.> task events: {events}
 
 [queues]
 {queues}
@@ -194,8 +195,8 @@ class Worker(WorkController):
             pool = pool.__module__
         concurrency += ' ({0})'.format(pool.split('.')[-1])
         events = 'ON'
-        if not self.send_events:
-            events = 'OFF (enable -E to monitor this worker)'
+        if not self.task_events:
+            events = 'OFF (enable -E to monitor tasks in this worker)'
 
         banner = BANNER.format(
             app=appr,

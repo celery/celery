@@ -71,7 +71,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
     Path to the state database.  The extension '.db' may
     be appended to the filename.  Default: {default}
 
-.. cmdoption:: -E, --events
+.. cmdoption:: -E, --task-events
 
     Send task-related events that can be captured by monitors like
     :program:`celery events`, `celerymon`, and others.
@@ -106,12 +106,12 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
     Enables a soft time limit (in seconds int/float) for tasks.
 
-.. cmdoption:: --maxtasksperchild
+.. cmdoption:: --max-tasks-per-child
 
     Maximum number of tasks a pool worker can execute before it's
     terminated and replaced by a new worker.
 
-.. cmdoption:: --maxmemperchild
+.. cmdoption:: --max-memory-per-child
 
     Maximum amount of resident memory, in KiB, that may be consumed by a
     child process before it will be replaced by a new one.  If a single
@@ -216,7 +216,7 @@ class worker(Command):
             raise SystemExit(0)
 
     def run(self, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
-            loglevel=None, logfile=None, pidfile=None, state_db=None,
+            loglevel=None, logfile=None, pidfile=None, statedb=None,
             **kwargs):
         maybe_drop_privileges(uid=uid, gid=gid)
         # Pools like eventlet/gevent needs to patch libs as early
@@ -239,7 +239,7 @@ class worker(Command):
             hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
             logfile=logfile,  # node format handled by celery.app.log.setup
             pidfile=self.node_format(pidfile, hostname),
-            state_db=self.node_format(state_db, hostname), **kwargs
+            statedb=self.node_format(statedb, hostname), **kwargs
         )
         worker.start()
         return worker.exitcode
@@ -257,14 +257,13 @@ class worker(Command):
         wopts.add_option('-D', '--detach', action='store_true')
         wopts.add_option(
             '-S', '--statedb',
-            default=conf.worker_state_db, dest='state_db',
+            default=conf.worker_state_db)
         )
         wopts.add_option('-l', '--loglevel', default='WARN')
         wopts.add_option('-O', dest='optimization')
         wopts.add_option(
             '--prefetch-multiplier',
-            dest='prefetch_multiplier', type='int',
-            default=conf.worker_prefetch_multiplier,
+            type='int', default=conf.worker_prefetch_multiplier,
         )
         parser.add_option_group(wopts)
 
@@ -275,32 +274,27 @@ class worker(Command):
         )
         topts.add_option(
             '-P', '--pool',
-            default=conf.worker_pool, dest='pool_cls',
+            default=conf.worker_pool,
         )
         topts.add_option(
-            '-E', '--events',
-            default=conf.worker_send_task_events,
-            action='store_true', dest='send_events',
+            '-E', '--task-events', '--events',
+            action='store_true', default=conf.worker_send_task_events,
         )
         topts.add_option(
             '--time-limit',
-            type='float', dest='task_time_limit',
-            default=conf.task_time_limit,
+            type='float', default=conf.task_time_limit,
         )
         topts.add_option(
             '--soft-time-limit',
-            dest='task_soft_time_limit', type='float',
-            default=conf.task_soft_time_limit,
+            type='float', default=conf.task_soft_time_limit,
         )
         topts.add_option(
-            '--maxtasksperchild',
-            dest='max_tasks_per_child', type='int',
-            default=conf.worker_max_tasks_per_child,
+            '--max-tasks-per-child', '--maxtasksperchild',
+            type='int', default=conf.worker_max_tasks_per_child,
         )
         topts.add_option(
-            '--maxmemperchild',
-            dest='max_memory_per_child', type='int',
-            default=conf.worker_max_memory_per_child,
+            '--max-memory-per-child', '--maxmemperchild',
+            type='int', default=conf.worker_max_memory_per_child,
         )
         parser.add_option_group(topts)
 
@@ -332,10 +326,10 @@ class worker(Command):
         bopts = OptionGroup(parser, 'Embedded Beat Options')
         bopts.add_option('-B', '--beat', action='store_true')
         bopts.add_option(
-            '-s', '--schedule', dest='schedule_filename',
+            '-s', '--schedule-filename', '--schedule',
             default=conf.beat_schedule_filename,
         )
-        bopts.add_option('--scheduler', dest='scheduler_cls')
+        bopts.add_option('--scheduler')
         parser.add_option_group(bopts)
 
         user_options = self.app.user_options['worker']

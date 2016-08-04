@@ -189,7 +189,7 @@ filename depending on the process that'll eventually need to open the file.
 This can be used to specify one log file per child process.
 
 Note that the numbers will stay within the process limit even if processes
-exit or if ``maxtasksperchild``/time limits are used. That is, the number
+exit or if ``max-tasks-per-child``/time limits are used. That is, the number
 is the *process index*, not the process count or pid.
 
 * ``%i`` - Pool process index or 0 if MainProcess.
@@ -527,7 +527,7 @@ list of workers you can include the ``destination`` argument:
     This won't affect workers with the
     :setting:`worker_disable_rate_limits` setting enabled.
 
-.. _worker-maxtasksperchild:
+.. _worker-max-tasks-per-child:
 
 Max tasks per child setting
 ===========================
@@ -543,10 +543,10 @@ This is useful if you have memory leaks you have no control over
 for example from closed source C extensions.
 
 The option can be set using the workers
-:option:`--maxtasksperchild <celery worker --maxtasksperchild>` argument
+:option:`--max-tasks-per-child <celery worker --max-tasks-per-child>` argument
 or using the :setting:`worker_max_tasks_per_child` setting.
 
-.. _worker-maxmemperchild:
+.. _worker-max-memory-per-child:
 
 Max memory per child setting
 ============================
@@ -562,7 +562,7 @@ This is useful if you have memory leaks you have no control over
 for example from closed source C extensions.
 
 The option can be set using the workers
-:option:`--maxmemperchild <celery worker --maxmemperchild>` argument
+:option:`--max-memory-per-child <celery worker --max-memory-per-child>` argument
 or using the :setting:`worker_max_memory_per_child` setting.
 
 .. _worker-queues:

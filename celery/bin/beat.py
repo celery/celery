@@ -93,10 +93,9 @@ class beat(Command):
     supports_args = False
 
     def run(self, detach=False, logfile=None, pidfile=None, uid=None,
-            gid=None, umask=None, working_directory=None, **kwargs):
+            gid=None, umask=None, workdir=None, **kwargs):
         if not detach:
             maybe_drop_privileges(uid=uid, gid=gid)
-        workdir = working_directory
         kwargs.pop('app', None)
         beat = partial(self.app.Beat,
                        logfile=logfile, pidfile=pidfile, **kwargs)
@@ -112,7 +111,7 @@ class beat(Command):
         parser.add_option('--detach', action='store_true')
         parser.add_option('-s', '--schedule', default=c.beat_schedule_filename)
         parser.add_option('--max-interval', type='float')
-        parser.add_option('-S', '--scheduler', dest='scheduler_cls')
+        parser.add_option('-S', '--scheduler')
         parser.add_option('-l', '--loglevel', default='WARN')
         daemon_options(parser, default_pidfile='celerybeat.pid')
         parser.add_options(self.app.user_options['beat'])

@@ -43,14 +43,17 @@ class Beat(object):
     def __init__(self, max_interval=None, app=None,
                  socket_timeout=30, pidfile=None, no_color=None,
                  loglevel='WARN', logfile=None, schedule=None,
-                 scheduler_cls=None, redirect_stdouts=None,
+                 scheduler=None,
+                 scheduler_cls=None,  # XXX use scheduler
+                 redirect_stdouts=None,
                  redirect_stdouts_level=None, **kwargs):
         self.app = app = app or self.app
         either = self.app.either
         self.loglevel = loglevel
         self.logfile = logfile
         self.schedule = either('beat_schedule_filename', schedule)
-        self.scheduler_cls = either('beat_scheduler', scheduler_cls)
+        self.scheduler_cls = either(
+            'beat_scheduler', scheduler, scheduler_cls)
         self.redirect_stdouts = either(
             'worker_redirect_stdouts', redirect_stdouts)
         self.redirect_stdouts_level = either(

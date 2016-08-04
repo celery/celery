@@ -104,7 +104,7 @@ class events(Command):
     def run(self, dump=False, camera=None, frequency=1.0, maxrate=None,
             loglevel='INFO', logfile=None, prog_name='celery events',
             pidfile=None, uid=None, gid=None, umask=None,
-            working_directory=None, detach=False, **kwargs):
+            workdir=None, detach=False, **kwargs):
         self.prog_name = prog_name
 
         if dump:
@@ -114,7 +114,7 @@ class events(Command):
                                   loglevel=loglevel, logfile=logfile,
                                   pidfile=pidfile, uid=uid, gid=gid,
                                   umask=umask,
-                                  working_directory=working_directory,
+                                  workdir=workdir,
                                   detach=detach)
         return self.run_evtop()
 
@@ -129,10 +129,9 @@ class events(Command):
         return evtop(app=self.app)
 
     def run_evcam(self, camera, logfile=None, pidfile=None, uid=None,
-                  gid=None, umask=None, working_directory=None,
+                  gid=None, umask=None, workdir=None,
                   detach=False, **kwargs):
         from celery.events.snapshot import evcam
-        workdir = working_directory
         self.set_process_status('cam')
         kwargs['app'] = self.app
         cam = partial(evcam, camera,

@@ -27,13 +27,13 @@ C_FAKEFORK = os.environ.get('C_FAKEFORK')
 
 
 def detach(path, argv, logfile=None, pidfile=None, uid=None,
-           gid=None, umask=None, working_directory=None, fake=False, app=None,
+           gid=None, umask=None, workdir=None, fake=False, app=None,
            executable=None, hostname=None):
     hostname = default_nodename(hostname)
     logfile = node_format(logfile, hostname)
     pidfile = node_format(pidfile, hostname)
     fake = 1 if C_FAKEFORK else fake
-    with detached(logfile, pidfile, uid, gid, umask, working_directory, fake,
+    with detached(logfile, pidfile, uid, gid, umask, workdir, fake,
                   after_forkers=False):
         try:
             if executable is not None:
@@ -160,11 +160,11 @@ class detached_celeryd(object):
 
     def prepare_arguments(self, parser):
         daemon_options(parser, default_pidfile='celeryd.pid')
-        parser.add_option('--workdir', default=None, dest='working_directory')
+        parser.add_option('--workdir', default=None)
         parser.add_option('-n', '--hostname')
         parser.add_option(
             '--fake',
-            default=False, action='store_true', dest='fake',
+            default=False, action='store_true',
             help="Don't fork (for debugging purposes)",
         )
 

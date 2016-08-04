@@ -107,11 +107,11 @@ class Pool(bootsteps.StartStopStep):
     """
     requires = (Hub,)
 
-    def __init__(self, w, optimization=None, **kwargs):
+    def __init__(self, w, **kwargs):
         w.pool = None
         w.max_concurrency = None
         w.min_concurrency = w.concurrency
-        self.optimization = optimization
+        self.optimization = w.optimization
 
     def close(self, w):
         if w.pool:
@@ -141,8 +141,8 @@ class Pool(bootsteps.StartStopStep):
             initargs=(w.app, w.hostname),
             maxtasksperchild=w.max_tasks_per_child,
             max_memory_per_child=w.max_memory_per_child,
-            timeout=w.task_time_limit,
-            soft_timeout=w.task_soft_time_limit,
+            timeout=w.time_limit,
+            soft_timeout=w.soft_time_limit,
             putlocks=w.pool_putlocks and threaded,
             lost_worker_timeout=w.worker_lost_wait,
             threads=threaded,
@@ -181,7 +181,7 @@ class Beat(bootsteps.StartStopStep):
             raise ImproperlyConfigured(ERR_B_GREEN)
         b = w.beat = EmbeddedService(w.app,
                                      schedule_filename=w.schedule_filename,
-                                     scheduler_cls=w.scheduler_cls)
+                                     scheduler_cls=w.scheduler)
         return b
 
 
@@ -189,11 +189,11 @@ class StateDB(bootsteps.Step):
     """This bootstep sets up the workers state db if enabled."""
 
     def __init__(self, w, **kwargs):
-        self.enabled = w.state_db
+        self.enabled = w.statedb
         w._persistence = None
 
     def create(self, w):
-        w._persistence = w.state.Persistent(w.state, w.state_db, w.app.clock)
+        w._persistence = w.state.Persistent(w.state, w.statedb, w.app.clock)
         atexit.register(w._persistence.save)
 
 
@@ -209,7 +209,7 @@ class Consumer(bootsteps.StartStopStep):
         c = w.consumer = self.instantiate(
             w.consumer_cls, w.process_task,
             hostname=w.hostname,
-            send_events=w.send_events,
+            task_events=w.task_events,
             init_callback=w.ready_callback,
             initial_prefetch_count=prefetch_count,
             pool=w.pool,

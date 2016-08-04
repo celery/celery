@@ -113,7 +113,7 @@ class test_Command(AppCase):
         detach.assert_called_with(
             path=x.execv_path, uid=None, gid=None,
             umask=None, fake=False, logfile='/var/log', pidfile='celeryd.pid',
-            working_directory=None, executable=None, hostname=None,
+            workdir=None, executable=None, hostname=None,
             argv=x.execv_argv + [
                 '-c', '1', '-lDEBUG',
                 '--logfile=/var/log', '--pidfile=celeryd.pid',

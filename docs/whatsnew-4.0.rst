@@ -780,7 +780,7 @@ Prefork: Limit child process resident memory size
 
 You can now limit the maximum amount of memory allocated per prefork
 pool child process by setting the worker
-:option:`--maxmemperchild <celery worker --maxmemperchild>` option,
+:option:`--max-memory-per-child <celery worker --max-memory-per-child>` option,
 or the :setting:`worker_max_memory_per_child` setting.
 
 The limit is for RSS/resident memory size and is specified in kilobytes.
@@ -788,7 +788,7 @@ The limit is for RSS/resident memory size and is specified in kilobytes.
 A child process having exceeded the limit will be terminated and replaced
 with a new process after the currently executing task returns.
 
-See :ref:`worker-maxmemperchild` for more information.
+See :ref:`worker-max-memory-per-child` for more information.
 
 Contributed by **Dave Smith**.
 

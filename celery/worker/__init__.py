@@ -350,12 +350,21 @@ class WorkController(object):
         return state
 
     def setup_defaults(self, concurrency=None, loglevel='WARN', logfile=None,
-                       send_events=None, pool_cls=None, consumer_cls=None,
+                       task_events=None, pool=None, consumer_cls=None,
                        timer_cls=None, timer_precision=None,
                        pool_putlocks=None, pool_restarts=None,
-                       state_db=None, schedule_filename=None,
-                       scheduler_cls=None, task_time_limit=None,
-                       task_soft_time_limit=None, max_tasks_per_child=None,
+                       optimization=None, O=None,  # O maps to -O=fair
+                       statedb=None,
+                       time_limit=None,
+                       soft_time_limit=None,
+                       scheduler=None,
+                       pool_cls=None,              # XXX use pool
+                       state_db=None,              # XXX use statedb
+                       task_time_limit=None,       # XXX use time_limit
+                       task_soft_time_limit=None,  # XXX use soft_time_limit
+                       scheduler_cls=None,         # XXX use scheduler
+                       schedule_filename=None,
+                       max_tasks_per_child=None,
                        prefetch_multiplier=None, disable_rate_limits=None,
                        worker_lost_wait=None,
                        max_memory_per_child=None, **_kw):
@@ -364,23 +373,25 @@ class WorkController(object):
         self.logfile = logfile
 
         self.concurrency = either('worker_concurrency', concurrency)
-        self.send_events = either('worker_send_task_events', send_events)
-        self.pool_cls = either('worker_pool', pool_cls)
+        self.task_events = either('worker_send_task_events', task_events)
+        self.pool_cls = either('worker_pool', pool, pool_cls)
         self.consumer_cls = either('worker_consumer', consumer_cls)
         self.timer_cls = either('worker_timer', timer_cls)
         self.timer_precision = either(
             'worker_timer_precision', timer_precision,
         )
+        self.optimization = optimization or O
         self.pool_putlocks = either('worker_pool_putlocks', pool_putlocks)
         self.pool_restarts = either('worker_pool_restarts', pool_restarts)
-        self.state_db = either('worker_state_db', state_db)
+        self.statedb = either('worker_state_db', statedb, state_db)
         self.schedule_filename = either(
             'beat_schedule_filename', schedule_filename,
         )
-        self.scheduler_cls = either('beat_scheduler', scheduler_cls)
-        self.task_time_limit = either('task_time_limit', task_time_limit)
-        self.task_soft_time_limit = either(
-            'task_soft_time_limit', task_soft_time_limit,
+        self.scheduler = either('beat_scheduler', scheduler, scheduler_cls)
+        self.time_limit = either(
+            'task_time_limit', time_limit, task_time_limit)
+        self.soft_time_limit = either(
+            'task_soft_time_limit', soft_time_limit, task_soft_time_limit,
         )
         self.max_tasks_per_child = either(
             'worker_max_tasks_per_child', max_tasks_per_child,

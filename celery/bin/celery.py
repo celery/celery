@@ -826,14 +826,11 @@ class shell(Command):  # pragma: no cover
 
     option_list = Command.option_list + (
         Option('--ipython', '-I',
-               action='store_true', dest='force_ipython',
-               help='force iPython.'),
+               action='store_true', help='force iPython.'),
         Option('--bpython', '-B',
-               action='store_true', dest='force_bpython',
-               help='force bpython.'),
+               action='store_true', help='force bpython.'),
         Option('--python', '-P',
-               action='store_true', dest='force_python',
-               help='force default Python shell.'),
+               action='store_true', help='force default Python shell.'),
         Option('--without-tasks', '-T', action='store_true',
                help="don't add tasks to locals."),
         Option('--eventlet', action='store_true',
@@ -841,8 +838,8 @@ class shell(Command):  # pragma: no cover
         Option('--gevent', action='store_true', help='use gevent.'),
     )
 
-    def run(self, force_ipython=False, force_bpython=False,
-            force_python=False, without_tasks=False, eventlet=False,
+    def run(self, ipython=False, bpython=False,
+            python=False, without_tasks=False, eventlet=False,
             gevent=False, **kwargs):
         sys.path.insert(0, os.getcwd())
         if eventlet:
@@ -872,11 +869,11 @@ class shell(Command):  # pragma: no cover
                 if not task.name.startswith('celery.')
             })
 
-        if force_python:
+        if python:
             return self.invoke_fallback_shell()
-        elif force_bpython:
+        elif bpython:
             return self.invoke_bpython_shell()
-        elif force_ipython:
+        elif ipython:
             return self.invoke_ipython_shell()
         return self.invoke_default_shell()
 

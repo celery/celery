@@ -274,7 +274,7 @@ class test_Consumer(AppCase):
         self.assertTrue(self.timer.empty())
 
     def test_start_channel_error(self):
-        c = self.NoopConsumer(send_events=False, pool=BasePool())
+        c = self.NoopConsumer(task_events=False, pool=BasePool())
         c.loop.on_nth_call_do_raise(KeyError('foo'), SyntaxError('bar'))
         c.channel_errors = (KeyError,)
         try:
@@ -284,7 +284,7 @@ class test_Consumer(AppCase):
             c.timer and c.timer.stop()
 
     def test_start_connection_error(self):
-        c = self.NoopConsumer(send_events=False, pool=BasePool())
+        c = self.NoopConsumer(task_events=False, pool=BasePool())
         c.loop.on_nth_call_do_raise(KeyError('foo'), SyntaxError('bar'))
         c.connection_errors = (KeyError,)
         try:
@@ -661,7 +661,7 @@ class test_Consumer(AppCase):
         self.assertEqual(c.qos.prev, c.qos.value)
 
         init_callback.reset_mock()
-        c = self.NoopConsumer(send_events=False, init_callback=init_callback)
+        c = self.NoopConsumer(task_events=False, init_callback=init_callback)
         c.qos = _QoS()
         c.connection = Connection()
         c.loop = Mock(side_effect=socket.error('foo'))
@@ -886,13 +886,13 @@ class test_WorkController(AppCase):
         worker2.start()
         self.assertTrue(sec.stop.call_count)
 
-    def test_state_db(self):
+    def test_statedb(self):
         from celery.worker import state
         Persistent = state.Persistent
 
         state.Persistent = Mock()
         try:
-            worker = self.create_worker(state_db='statefilename')
+            worker = self.create_worker(statedb='statefilename')
             self.assertTrue(worker._persistence)
         finally:
             state.Persistent = Persistent

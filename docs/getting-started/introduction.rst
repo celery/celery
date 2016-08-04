@@ -194,11 +194,11 @@ Features
 
         - **Resource Leak Protection**
 
-            The :option:`--maxtasksperchild <celery worker --maxtasksperchild>`
+            The :option:`--max-tasks-per-child <celery worker --max-tasks-per-child>`
             option is used for user tasks leaking resources, like memory or
             file descriptors, that are simply out of your control.
 
-            :ref:`Read more… <worker-maxtasksperchild>`.
+            :ref:`Read more… <worker-max-tasks-per-child>`.
 
         - **User Components**
 

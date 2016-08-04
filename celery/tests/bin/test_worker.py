@@ -166,7 +166,7 @@ class test_Worker(WorkerAppCase):
         self.assertTrue(worker.startup_info())
 
         self.app.loader = prev_loader
-        worker.send_events = True
+        worker.task_events = True
         self.assertTrue(worker.startup_info())
 
         # test when there are too few output lines
