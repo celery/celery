@@ -33,6 +33,12 @@ class Drainer(object):
     def __init__(self, result_consumer):
         self.result_consumer = result_consumer
 
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
     def drain_events_until(self, p, timeout=None, on_interval=None,
                            monotonic=monotonic, wait=None):
         wait = wait or self.result_consumer.drain_events

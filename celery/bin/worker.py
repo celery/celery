@@ -257,7 +257,7 @@ class worker(Command):
         wopts.add_option('-D', '--detach', action='store_true')
         wopts.add_option(
             '-S', '--statedb',
-            default=conf.worker_state_db)
+            default=conf.worker_state_db,
         )
         wopts.add_option('-l', '--loglevel', default='WARN')
         wopts.add_option('-O', dest='optimization')
