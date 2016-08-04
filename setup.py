@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 import os
 import re
@@ -198,7 +198,7 @@ setup(
     url=meta['homepage'],
     platforms=['any'],
     license='BSD',
-    packages=['celery'],
+    packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
     install_requires=install_requires,
