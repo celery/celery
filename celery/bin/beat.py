@@ -83,7 +83,10 @@ class beat(Command):
 
             $ celery beat -l info
             $ celery beat -s /var/run/celery/beat-schedule --detach
-            $ celery beat -S djcelery.schedulers.DatabaseScheduler
+            $ celery beat -S django
+
+    The last example requires the :pypi:`django-celery-beat` extension
+    package found on PyPI.
     """
     doc = __doc__
     enable_config_from_cmdline = True

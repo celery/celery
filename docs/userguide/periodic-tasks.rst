@@ -419,12 +419,38 @@ The default scheduler is the :class:`celery.beat.PersistentScheduler`,
 that simply keeps track of the last run times in a local :mod:`shelve`
 database file.
 
-:pypi:`django-celery` also ships with a scheduler that stores the schedule in
-the Django database:
+There's also the :pypi:`django-celery-beat` extension that stores the schedule
+in the Django database, and presents a convenient admin interface to manage
+periodic tasks at runtime.
 
-.. code-block:: console
+To install and use this extension:
 
-    $ celery -A proj beat -S djcelery.schedulers.DatabaseScheduler
+#. Use :command:`pip` to install the package:
 
-Using :pypi:`django-celery`'s scheduler you can add, modify, and remove
-periodic tasks from the Django Admin.
+    .. code-block:: console
+
+        $ pip install django-celery-beat
+
+#. Add the ``django_celery_beat`` module to ``INSTALLED_APPS`` in your
+   Django project' :file:`settings.py`::
+
+        INSTALLED_APPS = (
+            ...,
+            'django_celery_beat',
+        )
+
+    Note that there is no dash in the module name, only underscores.
+
+#. Apply Django database migrations so that the necessary tables are created:
+
+    .. code-block:: console
+
+        $ python manage.py migrate
+
+#. Start the :program:`celery beat` service using the ``django`` scheduler:
+
+    .. code-block:: console
+
+        $ celery -A proj beat -l info -S django
+
+#. Visit the Django-Admin interface to set up some periodic tasks.

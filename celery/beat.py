@@ -27,7 +27,7 @@ from .five import (
     items, monotonic, python_2_unicode_compatible, reraise, values,
 )
 from .schedules import maybe_schedule, crontab
-from .utils.imports import instantiate
+from .utils.imports import load_extension_class_names, symbol_by_name
 from .utils.timeutils import humanize_seconds
 from .utils.log import get_logger, iter_open_logger_fds
 
@@ -545,14 +545,15 @@ class Service(object):
         self._is_shutdown.set()
         wait and self._is_stopped.wait()  # block until shutdown done.
 
-    def get_scheduler(self, lazy=False):
+    def get_scheduler(self, lazy=False, extensions='celery.beat_schedulers'):
         filename = self.schedule_filename
-        scheduler = instantiate(self.scheduler_cls,
-                                app=self.app,
-                                schedule_filename=filename,
-                                max_interval=self.max_interval,
-                                lazy=lazy)
-        return scheduler
+        aliases = dict(load_extension_class_names(extensions) or {})
+        return symbol_by_name(self.scheduler_cls, aliases=aliases)(
+            app=self.app,
+            schedule_filename=filename,
+            max_interval=self.max_interval,
+            lazy=lazy,
+        )
 
     @cached_property
     def scheduler(self):

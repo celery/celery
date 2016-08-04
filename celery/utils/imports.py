@@ -138,18 +138,24 @@ def gen_task_name(app, name, module_name):
     return '.'.join(p for p in (module_name, name) if p)
 
 
-def load_extension_classes(namespace):
+def load_extension_class_names(namespace):
     try:
         from pkg_resources import iter_entry_points
     except ImportError:  # pragma: no cover
         return
 
     for ep in iter_entry_points(namespace):
-        sym = ':'.join([ep.module_name, ep.attrs[0]])
+        yield ep.name, ':'.join([ep.module_name, ep.attrs[0]])
+
+
+def load_extension_classes(namespace):
+    for name, class_name in load_extension_class_names(namespace):
         try:
-            cls = symbol_by_name(sym)
+            cls = symbol_by_name(class_name)
         except (ImportError, SyntaxError) as exc:
             warnings.warn(
-                'Cannot load extension {0!r}: {1!r}'.format(sym, exc))
+                'Cannot load {0} extension {1!r}: {2!r}'.format(
+                    namespace, class_name, exc))
         else:
-            yield ep.name, cls
+            yield name, cls
+
