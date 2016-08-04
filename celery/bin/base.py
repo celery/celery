@@ -82,7 +82,7 @@ class Extensions(object):
         self.register(cls, name=name)
 
     def load(self):
-        for cls, name in imports.load_extension_classes(self.namespace):
+        for name, cls in imports.load_extension_classes(self.namespace):
             self.add(cls, name)
         return self.names
 

@@ -152,4 +152,4 @@ def load_extension_classes(namespace):
             warnings.warn(
                 'Cannot load extension {0!r}: {1!r}'.format(sym, exc))
         else:
-            yield cls, ep.name
+            yield ep.name, cls
