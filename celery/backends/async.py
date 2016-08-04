@@ -54,6 +54,9 @@ class Drainer(object):
     def wait_for(self, p, wait, timeout=None):
         wait(timeout=timeout)
 
+    def start(self):
+        pass
+
 
 class greenletDrainer(Drainer):
     spawn = None

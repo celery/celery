@@ -37,7 +37,7 @@ class test_Extensions(AppCase):
 
     def test_load(self):
         with patch('pkg_resources.iter_entry_points') as iterep:
-            with patch('celery.bin.base.symbol_by_name') as symbyname:
+            with patch('celery.bin.base.imports.symbol_by_name') as symbyname:
                 ep = Mock()
                 ep.name = 'ep'
                 ep.module_name = 'foo'
@@ -50,13 +50,13 @@ class test_Extensions(AppCase):
                 symbyname.assert_called_with('foo:bar')
                 register.assert_called_with(cls, name='ep')
 
-            with patch('celery.bin.base.symbol_by_name') as symbyname:
+            with patch('celery.bin.base.imports.symbol_by_name') as symbyname:
                 symbyname.side_effect = SyntaxError()
                 with patch('warnings.warn') as warn:
                     e.load()
                     warn.assert_called()
 
-            with patch('celery.bin.base.symbol_by_name') as symbyname:
+            with patch('celery.bin.base.imports.symbol_by_name') as symbyname:
                 symbyname.side_effect = KeyError('foo')
                 with self.assertRaises(KeyError):
                     e.load()
@@ -351,7 +351,7 @@ class test_Command(AppCase):
 
     def test_find_app(self):
         cmd = MockCommand(app=self.app)
-        with patch('celery.bin.base.symbol_by_name') as sbn:
+        with patch('celery.bin.base.imports.symbol_by_name') as sbn:
             from types import ModuleType
             x = ModuleType(bytes_if_py2('proj'))
 
