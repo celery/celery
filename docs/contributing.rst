@@ -250,7 +250,8 @@ issue tracker.
 * :pypi:`amqp`: https://github.com/celery/py-amqp/issues
 * :pypi:`vine`: https://github.com/celery/vine/issues
 * :pypi:`librabbitmq`: https://github.com/celery/librabbitmq/issues
-* :pypi:`django-celery`: https://github.com/celery/django-celery/issues
+* :pypi:`django-celery-beat`: https://github.com/celery/django-celery-beat/issues
+* :pypi:`django-celery-results`: https://github.com/celery/django-celery-results/issues
 
 If you're unsure of the origin of the bug you can ask the
 :ref:`mailing-list`, or just use the Celery issue tracker.
@@ -996,6 +997,26 @@ that'll eventually be merged into the Python stdlib.
 :Windows-CI: https://ci.appveyor.com/project/ask/billiard
 :PyPI: :pypi:`billiard`
 
+``django-celery-beat``
+----------------------
+
+Database-backed Periodic Tasks with admin interface using the Django ORM.
+
+:git: https://github.com/celery/django-celery-beat
+:CI: http://travis-ci.org/#!/celery/django-celery-beat
+:Windows-CI: https://ci.appveyor.com/project/ask/django-celery-beat
+:PyPI: :pypi:`django-celery-beat`
+
+``django-celery-results``
+-------------------------
+
+Store task results in the Django ORM, or using the Django Cache Framework.
+
+:git: https://github.com/celery/django-celery-results
+:CI: http://travis-ci.org/#!/celery/django-celery-results
+:Windows-CI: https://ci.appveyor.com/project/ask/django-celery-results
+:PyPI: :pypi:`django-celery-results`
+
 ``librabbitmq``
 ---------------
 
@@ -1003,15 +1024,6 @@ Very fast Python AMQP client written in C.
 
 :git: https://github.com/celery/librabbitmq
 :PyPI: :pypi:`librabbitmq`
-
-``django-celery``
------------------
-
-Django <-> Celery Integration.
-
-:git: https://github.com/celery/django-celery
-:PyPI: :pypi:`django-celery`
-:docs: http://docs.celeryproject.org/en/latest/django
 
 ``cell``
 --------
@@ -1033,6 +1045,12 @@ Distributed Celery Instance manager.
 
 Deprecated
 ----------
+
+- ``django-celery``
+
+:git: https://github.com/celery/django-celery
+:PyPI: :pypi:`django-celery`
+:docs: http://docs.celeryproject.org/en/latest/django
 
 - ``Flask-Celery``
 

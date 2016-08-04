@@ -139,57 +139,6 @@ concrete app instance:
     You can find the full source code for the Django example project at:
     https://github.com/celery/celery/tree/3.1/examples/django/
 
-Using the Django ORM/Cache as a result backend
-----------------------------------------------
-
-The [``django-celery``](https://github.com/celery/django-celery) library defines
-result backends that uses the Django ORM and Django Cache frameworks.
-
-To use this with your project you need to follow these four steps:
-
-1. Install the :pypi:`django-celery` library:
-
-    .. code-block:: console
-
-        $ pip install django-celery
-
-2. Add ``djcelery`` to ``INSTALLED_APPS``.
-
-3. Create the Celery database tables.
-
-    This step will create the tables used to store results
-    when using the database result backend and the tables used
-    by the database periodic task scheduler. You can skip
-    this step if you don't use these.
-
-    Create the tables by migrating your database:
-
-    .. code-block:: console
-
-        $ python manage.py migrate djcelery
-
-4. Configure Celery to use the :pypi:`django-celery` backend.
-
-    For the database backend you must use:
-
-    .. code-block:: python
-
-        app.conf.update(
-            result_backend='djcelery.backends.database:DatabaseBackend',
-        )
-
-    For the cache backend you can use:
-
-    .. code-block:: python
-
-        app.conf.update(
-            result_backend='djcelery.backends.cache:CacheBackend',
-        )
-
-    If you have connected Celery to your Django settings then you can
-    add this directly into your settings module (without the
-    ``app.conf.update`` part)
-
 .. admonition:: Relative Imports
 
     You have to be consistent in how you import the task module.
@@ -198,6 +147,51 @@ To use this with your project you need to follow these four steps:
     of the tasks will end up being different.
 
     See :ref:`task-naming-relative-imports`
+
+Extensions
+==========
+
+``django-celery-results`` -- Using the Django ORM/Cache as a result backend
+---------------------------------------------------------------------------
+
+The :pypi:`django-celery-results` extension provides result backends
+using either the Django ORM, or the Django Cache framework.
+
+To use this with your project you need to follow these steps:
+
+#. Install the :pypi:`django-celery-results` library:
+
+    .. code-block:: console
+
+        $ pip install django-celery-results
+
+2. Add ``django_celery_results`` to ``INSTALLED_APPS``.
+
+    Note that there's no dashes in this name, only underscores.
+
+3. Create the Celery database tables by performing a database migrations:
+
+    .. code-block:: console
+
+        $ python manage.py migrate django_celery_results
+
+4. Configure Celery to use the :pypi:`django-celery-results` backend.
+
+    Assuming you are using Django's :file:`settings.py` to also configure
+    Celery, add the following settings:
+
+    .. code-block:: python
+
+        CELERY_RESULT_BACKEND = 'django_celery_results.backends:DatabaseBackend'
+
+    For the cache backend you can use:
+
+        CELERY_RESULT_BACKEND = 'django_celery_results.backends:CacheBackend'
+
+``django-celery-beat`` -- Database-backed Periodic Tasks with Admin interface.
+------------------------------------------------------------------------------
+
+See :ref:`beat-custom-schedulers` for more information.
 
 Starting the worker process
 ===========================

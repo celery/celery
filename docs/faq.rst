@@ -103,14 +103,6 @@ that don't come with the multiprocessing module.
 
 The pytz module provides timezone definitions and related tools.
 
-``django-celery``
-~~~~~~~~~~~~~~~~~
-
-If you use :pypi:`django-celery` then you don't have to install Celery
-separately, as it'll make sure that the required version is installed.
-
-:pypi:`django-celery` doesn't have any other dependencies.
-
 kombu
 ~~~~~
 
@@ -925,33 +917,23 @@ Can I run the worker in the background on [platform]?
 Django
 ======
 
-.. _faq-django-database-tables:
+.. _faq-django-beat-database-tables:
 
-What purpose does the database tables created by ``django-celery`` have?
-------------------------------------------------------------------------
+What purpose does the database tables created by ``django-celery-beat`` have?
+-----------------------------------------------------------------------------
 
-Several database tables are created by default, these relate to
+When the database-backed schedule is used the periodic task
+schedule is taken from the ``PeriodicTask`` model, there are
+also several other helper tables (``IntervalSchedule``,
+``CrontabSchedule``, ``PeriodicTasks``).
 
-* Monitoring
+.. _faq-django-result-database-tables:
 
-    When you use the django-admin monitor, the cluster state is written
-    to the ``TaskState`` and ``WorkerState`` models.
+What purpose does the database tables created by ``django-celery-results`` have?
+--------------------------------------------------------------------------------
 
-* Periodic tasks
-
-    When the database-backed schedule is used the periodic task
-    schedule is taken from the ``PeriodicTask`` model, there are
-    also several other helper tables (``IntervalSchedule``,
-    ``CrontabSchedule``, ``PeriodicTasks``).
-
-* Task results
-
-    The database result backend is enabled by default when using
-    :pypi:`django-celery` (this is for historical reasons, and thus for
-    backward compatibility).
-
-    The results are stored in the ``TaskMeta`` and ``TaskSetMeta`` models.
-    *these tables aren't created if another result backend is configured*.
+The Django database result backend extension requires
+two extra models: ``TaskResult`` and ``GroupResult``.
 
 .. _faq-windows:
 

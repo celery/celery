@@ -249,7 +249,8 @@ issue tracker.
 * ``amqp``: https://github.com/celery/py-amqp/issues
 * ``vine``: https://github.com/celery/vine/issues
 * ``librabbitmq``: https://github.com/celery/librabbitmq/issues
-* ``django-celery``: https://github.com/celery/django-celery/issues
+* ``django-celery-beat``: https://github.com/celery/django-celery-beat/issues
+* ``django-celery-results``: https://github.com/celery/django-celery-results/issues
 
 If you're unsure of the origin of the bug you can ask the
 `mailing-list`_, or just use the Celery issue tracker.
@@ -325,9 +326,10 @@ The master branch is where development of the next version happens.
 Maintenance branches
 --------------------
 
-Maintenance branches are named after the version, e.g. the maintenance branch
-for the 2.2.x series is named ``2.2``. Previously these were named
-``releaseXX-maint``.
+Maintenance branches are named after the version -- for example,
+the maintenance branch for the 2.2.x series is named ``2.2``.
+
+Previously these were named ``releaseXX-maint``.
 
 The versions we currently maintain is:
 
@@ -373,10 +375,13 @@ Feature branches are removed once they've been merged into a release branch.
 Tags
 ====
 
-Tags are used exclusively for tagging releases. A release tag is
-named with the format ``vX.Y.Z``, e.g. ``v2.3.1``.
-Experimental releases contain an additional identifier ``vX.Y.Z-id``, e.g.
-``v3.0.0-rc1``. Experimental tags may be removed after the official release.
+- Tags are used exclusively for tagging releases. A release tag is
+named with the format ``vX.Y.Z`` -- for example ``v2.3.1``.
+
+- Experimental releases contain an additional identifier ``vX.Y.Z-id`` --
+  for example ``v3.0.0-rc1``.
+
+- Experimental tags may be removed after the official release.
 
 .. _contributing-changes:
 
@@ -784,7 +789,7 @@ that require third-party libraries must be added.
 
 1) Add a new requirements file in `requirements/extras`
 
-    E.g. for the Cassandra backend this is
+    For the Cassandra backend this is
     ``requirements/extras/cassandra.txt``, and the file looks like this:
     ::
 
@@ -959,6 +964,26 @@ that'll eventually be merged into the Python stdlib.
 :Windows-CI: https://ci.appveyor.com/project/ask/billiard
 :PyPI: ``billiard``
 
+``django-celery-beat``
+----------------------
+
+Database-backed Periodic Tasks with admin interface using the Django ORM.
+
+:git: https://github.com/celery/django-celery-beat
+:CI: http://travis-ci.org/#!/celery/django-celery-beat
+:Windows-CI: https://ci.appveyor.com/project/ask/django-celery-beat
+:PyPI: ``django-celery-beat``
+
+``django-celery-results``
+-------------------------
+
+Store task results in the Django ORM, or using the Django Cache Framework.
+
+:git: https://github.com/celery/django-celery-results
+:CI: http://travis-ci.org/#!/celery/django-celery-results
+:Windows-CI: https://ci.appveyor.com/project/ask/django-celery-results
+:PyPI: ``django-celery-results``
+
 ``librabbitmq``
 ---------------
 
@@ -966,15 +991,6 @@ Very fast Python AMQP client written in C.
 
 :git: https://github.com/celery/librabbitmq
 :PyPI: ``librabbitmq``
-
-``django-celery``
------------------
-
-Django <-> Celery Integration.
-
-:git: https://github.com/celery/django-celery
-:PyPI: ``django-celery``
-:docs: http://docs.celeryproject.org/en/latest/django
 
 ``cell``
 --------
@@ -996,6 +1012,12 @@ Distributed Celery Instance manager.
 
 Deprecated
 ----------
+
+- ``django-celery``
+
+:git: https://github.com/celery/django-celery
+:PyPI: ``django-celery``
+:docs: http://docs.celeryproject.org/en/latest/django
 
 - ``Flask-Celery``
 
@@ -1086,8 +1108,8 @@ following:
 
 * Enter "Edit project"
 
-    Change default branch to the branch of this series, e.g. ``2.4``
-    for series 2.4.
+    Change default branch to the branch of this series, for example, use
+    the ``2.4`` branch for the 2.4 series.
 
 * Also add the previous version under the "versions" tab.
 

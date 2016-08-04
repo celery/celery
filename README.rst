@@ -195,7 +195,6 @@ database connections at ``fork``.
 .. _`Bottle`: http://bottlepy.org/
 .. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
 .. _`pyramid_celery`: http://pypi.python.org/pypi/pyramid_celery/
-.. _`django-celery`: http://pypi.python.org/pypi/django-celery
 .. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
 .. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/

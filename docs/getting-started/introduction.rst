@@ -217,8 +217,6 @@ Celery is easy to integrate with web frameworks, some of them even have
 integration packages:
 
     +--------------------+------------------------+
-    | `Django`_          | :pypi:`django-celery`  |
-    +--------------------+------------------------+
     | `Pyramid`_         | :pypi:`pyramid_celery` |
     +--------------------+------------------------+
     | `Pylons`_          | :pypi:`celery-pylons`  |
@@ -229,6 +227,8 @@ integration packages:
     +--------------------+------------------------+
     | `Tornado`_         | :pypi:`tornado-celery` |
     +--------------------+------------------------+
+
+For `Django`_ see :ref:`django-first-steps`.
 
 The integration packages aren't strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing

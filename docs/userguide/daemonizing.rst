@@ -149,8 +149,6 @@ Available options
 * ``CELERY_APP``
 
     App instance to use (value for :option:`--app <celery --app>` argument).
-    If you're still using the old API, or :pypi:`django-celery`, then you
-    can omit this setting.
 
 * ``CELERY_BIN``
 
@@ -444,38 +442,6 @@ This is an example configuration for a Python project:
     #   and is important when using the prefork pool to avoid race conditions.
     CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
     CELERYD_PID_FILE="/var/run/celery/%n.pid"
-
-.. _generic-systemd-celeryd-django-example:
-
-Example Django configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This is an example configuration for those using :pypi:`django-celery`:
-
-.. code-block:: bash
-
-    # Name of nodes to start
-    # here we have a single node
-    CELERYD_NODES="w1"
-    # or we could have three nodes:
-    #CELERYD_NODES="w1 w2 w3"
-
-    # Absolute path to "manage.py"
-    CELERY_BIN="/opt/Myproject/manage.py"
-
-    # How to call manage.py
-    CELERYD_MULTI="celery multi"
-
-    # Extra command-line arguments to the worker
-    CELERYD_OPTS="--time-limit=300 --concurrency=8"
-
-    # - %n will be replaced with the first part of the nodename.
-    # - %I will be replaced with the current child process index
-    CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
-    CELERYD_PID_FILE="/var/run/celery/%n.pid"
-
-To add an environment variable, such as :envvar:`DJANGO_SETTINGS_MODULE`,
-use the Environment in :file:`celery.service`.
 
 Running the worker with superuser privileges (root)
 ======================================================================

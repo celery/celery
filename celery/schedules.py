@@ -116,7 +116,7 @@ class schedule(object):
 
             The default max loop interval may vary for different schedulers.
             For the default scheduler the value is 5 minutes, but for example
-            the :pypi:`django-celery` database scheduler the value
+            the :pypi:`django-celery-beat` database scheduler the value
             is 5 seconds.
         """
         last_run_at = self.maybe_make_aware(last_run_at)

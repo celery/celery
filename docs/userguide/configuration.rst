@@ -2272,7 +2272,7 @@ between checking the schedule.
 
 The default for this value is scheduler specific.
 For the default Celery beat scheduler the value is 300 (5 minutes),
-but for example the :pypi:`django-celery` database scheduler it's 5 seconds
+but for the :pypi:`django-celery-beat` database scheduler it's 5 seconds
 because the schedule may be changed externally, and so it must take
 changes to the schedule into account.
 

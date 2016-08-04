@@ -245,8 +245,7 @@ Module Overview
 
             "single-mode" uses this loader by default.
 
-    Extension loaders also exist, like :pypi:`django-celery`,
-    :pypi:`celery-pylons`, and so on.
+    Extension loaders also exist, for example :pypi:`celery-pylons`.
 
 - celery.worker
 
