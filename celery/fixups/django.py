@@ -95,6 +95,7 @@ class DjangoFixup(object):
     def _now(self):
         return symbol_by_name('django.utils.timezone:now')
 
+
 class DjangoWorkerFixup(object):
     _db_recycles = 0
 

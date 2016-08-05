@@ -10,7 +10,6 @@ from celery.fixups.django import (
     DjangoFixup,
     DjangoWorkerFixup,
 )
-from celery.utils.objects import Bunch
 
 from celery.tests.case import AppCase, Mock, mock, patch
 
