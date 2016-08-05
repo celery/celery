@@ -236,8 +236,11 @@ class Backend(object):
         return result
 
     def encode(self, data):
-        _, _, payload = dumps(data, serializer=self.serializer)
+        _, _, payload = self._encode(data)
         return payload
+
+    def _encode(self, data):
+        return dumps(data, serializer=self.serializer)
 
     def meta_from_decoded(self, meta):
         if meta['status'] in self.EXCEPTION_STATES:
@@ -613,9 +616,11 @@ class BaseKeyValueStoreBackend(Backend):
 
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
-        meta = {'status': state, 'result': result, 'traceback': traceback,
-                'children': self.current_task_children(request),
-                'task_id': bytes_to_str(task_id)}
+        meta = {
+            'status': state, 'result': result, 'traceback': traceback,
+            'children': self.current_task_children(request),
+            'task_id': bytes_to_str(task_id),
+        }
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
 
