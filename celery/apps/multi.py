@@ -15,7 +15,7 @@ from kombu.utils.encoding import from_utf8
 from kombu.utils.objects import cached_property
 
 from celery.five import UserList, items
-from celery.platforms import IS_WINDOWS, Pidfile, signal_name, signals
+from celery.platforms import IS_WINDOWS, Pidfile, signal_name
 from celery.utils.nodenames import (
     gethostname, host_format, node_format, nodesplit,
 )
@@ -30,6 +30,48 @@ def celery_exe(*args):
     return ' '.join((CELERY_EXE,) + args)
 
 
+def build_nodename(name, prefix, suffix):
+    hostname = suffix
+    if '@' in name:
+        nodename = host_format(name)
+        shortname, hostname = nodesplit(nodename)
+        name = shortname
+    else:
+        shortname = '%s%s' % (prefix, name)
+        nodename = host_format(
+            '{0}@{1}'.format(shortname, hostname),
+        )
+    return name, nodename, hostname
+
+
+def build_expander(nodename, shortname, hostname):
+    return partial(
+        node_format,
+        nodename=nodename,
+        N=shortname,
+        d=hostname,
+        h=nodename,
+        i='%i',
+        I='%I',
+    )
+
+
+def format_opt(opt, value):
+    if not value:
+        return opt
+    if opt.startswith('--'):
+        return '{0}={1}'.format(opt, value)
+    return '{0} {1}'.format(opt, value)
+
+
+def _kwargs_to_command_line(kwargs):
+    return {
+        ('--{0}'.format(k.replace('_', '-'))
+         if len(k) > 1 else '-{0}'.format(k)): '{0}'.format(v)
+        for k, v in items(kwargs)
+    }
+
+
 class NamespacedOptionParser(object):
 
     def __init__(self, args):
@@ -38,8 +80,6 @@ class NamespacedOptionParser(object):
         self.values = []
         self.passthrough = ''
         self.namespaces = defaultdict(lambda: OrderedDict())
-
-        self.parse()
 
     def parse(self):
         rargs = list(self.args)
@@ -86,13 +126,48 @@ class NamespacedOptionParser(object):
 
 class Node(object):
 
-    def __init__(self, name, argv, expander, namespace, p):
-        self.p = p
+    def __init__(self, name,
+                 cmd=None, append=None, options=None, extra_args=None):
         self.name = name
-        self.argv = tuple(argv)
-        self.expander = expander
-        self.namespace = namespace
+        self.cmd = cmd or '-m {0}'.format(celery_exe('worker', '--detach'))
+        self.append = append
+        self.extra_args = extra_args or ''
+        self.options = self._annotate_with_default_opts(
+            options or OrderedDict())
+        self.expander = self._prepare_expander()
+        self.argv = self._prepare_argv()
         self._pid = None
+
+    def _annotate_with_default_opts(self, options):
+        options['-n'] = self.name
+        self._setdefaultopt(options, ['--pidfile', '-p'], '%n.pid')
+        self._setdefaultopt(options, ['--logfile', '-f'], '%n%I.log')
+        self._setdefaultopt(options, ['--executable'], sys.executable)
+        return options
+
+    def _setdefaultopt(self, d, alt, value):
+        for opt in alt[1:]:
+            try:
+                return d[opt]
+            except KeyError:
+                pass
+        return d.setdefault(alt[0], value)
+
+    def _prepare_expander(self):
+        shortname, hostname = self.name.split('@', 1)
+        return build_expander(
+            self.name, shortname, hostname)
+
+    def _prepare_argv(self):
+        argv = tuple(
+            [self.expander(self.cmd)] +
+            [format_opt(opt, self.expander(value))
+                for opt, value in items(self.options)] +
+            [self.extra_args]
+        )
+        if self.append:
+            argv += (self.expander(self.append),)
+        return argv
 
     def alive(self):
         return self.send(0)
@@ -138,21 +213,9 @@ class Node(object):
         return shlex.split(from_utf8(args), posix=not IS_WINDOWS)
 
     def getopt(self, *alt):
-        try:
-            return self._getnsopt(*alt)
-        except KeyError:
-            return self._getoptopt(*alt)
-
-    def _getnsopt(self, *alt):
-        return self._getopt(self.p.namespaces[self.namespace], list(alt))
-
-    def _getoptopt(self, *alt):
-        return self._getopt(self.p.options, list(alt))
-
-    def _getopt(self, d, alt):
         for opt in alt:
             try:
-                return d[opt]
+                return self.options[opt]
             except KeyError:
                 pass
         raise KeyError(alt[0])
@@ -183,11 +246,15 @@ class Node(object):
 
     @cached_property
     def executable(self):
-        return self.p.options['--executable']
+        return self.options['--executable']
 
     @cached_property
     def argv_with_executable(self):
         return (self.executable,) + self.argv
+
+    @classmethod
+    def from_kwargs(cls, name, **kwargs):
+        return cls(name, options=_kwargs_to_command_line(kwargs))
 
 
 def maybe_call(fun, *args, **kwargs):
@@ -212,11 +279,6 @@ class MultiParser(object):
         options = dict(p.options)
         ranges = len(names) == 1
         prefix = self.prefix
-        if ranges:
-            try:
-                names, prefix = self._get_ranges(names), self.range_prefix
-            except ValueError:
-                pass
         cmd = options.pop('--cmd', self.cmd)
         append = options.pop('--append', self.append)
         hostname = options.pop('--hostname', options.pop('-n', gethostname()))
@@ -224,12 +286,26 @@ class MultiParser(object):
         suffix = options.pop('--suffix', self.suffix) or hostname
         suffix = '' if suffix in ('""', "''") else suffix
 
+        if ranges:
+            try:
+                names, prefix = self._get_ranges(names), self.range_prefix
+            except ValueError:
+                pass
         self._update_ns_opts(p, names)
         self._update_ns_ranges(p, ranges)
+
         return (
-            self._args_for_node(p, name, prefix, suffix, cmd, append, options)
+            self._node_from_options(
+                p, name, prefix, suffix, cmd, append, options)
             for name in names
         )
+
+    def _node_from_options(self, p, name, prefix,
+                           suffix, cmd, append, options):
+        namespace, nodename, _ = build_nodename(name, prefix, suffix)
+        namespace = nodename if nodename in p.namespaces else namespace
+        return Node(nodename, cmd, append,
+                    p.optmerge(namespace, options), p.passthrough)
 
     def _get_ranges(self, names):
         noderange = int(names[0])
@@ -237,7 +313,7 @@ class MultiParser(object):
 
     def _update_ns_opts(self, p, names):
         # Numbers in args always refers to the index in the list of names.
-        # (e.g. `start foo bar baz -c:1` where 1 is foo, 2 is bar, and so on).
+        # (e.g., `start foo bar baz -c:1` where 1 is foo, 2 is bar, and so on).
         for ns_name, ns_opts in list(items(p.namespaces)):
             if ns_name.isdigit():
                 ns_index = int(ns_name) - 1
@@ -267,55 +343,10 @@ class MultiParser(object):
                 ret.append(space)
         return ret
 
-    def _args_for_node(self, p, name, prefix, suffix, cmd, append, options):
-        name, nodename, expand = self._get_nodename(
-            name, prefix, suffix, options)
-
-        if nodename in p.namespaces:
-            ns = nodename
-        else:
-            ns = name
-
-        argv = (
-            [expand(cmd)] +
-            [self.format_opt(opt, expand(value))
-                for opt, value in items(p.optmerge(ns, options))] +
-            [p.passthrough]
-        )
-        if append:
-            argv.append(expand(append))
-        return self.Node(nodename, argv, expand, name, p)
-
-    def _get_nodename(self, name, prefix, suffix, options):
-        hostname = suffix
-        if '@' in name:
-            nodename = options['-n'] = host_format(name)
-            shortname, hostname = nodesplit(nodename)
-            name = shortname
-        else:
-            shortname = '%s%s' % (prefix, name)
-            nodename = options['-n'] = host_format(
-                '{0}@{1}'.format(shortname, hostname),
-            )
-        expand = partial(
-            node_format, nodename=nodename, N=shortname, d=hostname,
-            h=nodename, i='%i', I='%I',
-        )
-        return name, nodename, expand
-
-    def format_opt(self, opt, value):
-        if not value:
-            return opt
-        if opt.startswith('--'):
-            return '{0}={1}'.format(opt, value)
-        return '{0} {1}'.format(opt, value)
-
 
 class Cluster(UserList):
-    MultiParser = MultiParser
-    OptionParser = NamespacedOptionParser
 
-    def __init__(self, argv, cmd=None, env=None,
+    def __init__(self, nodes, cmd=None, env=None,
                  on_stopping_preamble=None,
                  on_send_signal=None,
                  on_still_waiting_for=None,
@@ -331,11 +362,9 @@ class Cluster(UserList):
                  on_child_spawn=None,
                  on_child_signalled=None,
                  on_child_failure=None):
-        self.argv = argv
+        self.nodes = nodes
         self.cmd = cmd or celery_exe('worker')
         self.env = env
-        self.p = self.OptionParser(argv)
-        self.with_detacher_default_options(self.p)
 
         self.on_stopping_preamble = on_stopping_preamble
         self.on_send_signal = on_send_signal
@@ -378,7 +407,7 @@ class Cluster(UserList):
     def kill(self):
         return self.send_all(signal.SIGKILL)
 
-    def restart(self):
+    def restart(self, sig=signal.SIGTERM):
         retvals = []
 
         def restart_on_down(node):
@@ -387,39 +416,21 @@ class Cluster(UserList):
             maybe_call(self.on_node_status, node, retval)
             retvals.append(retval)
 
-        self._stop_nodes(retry=2, on_down=restart_on_down)
+        self._stop_nodes(retry=2, on_down=restart_on_down, sig=sig)
         return retvals
 
-    def stop(self, retry=None, callback=None):
-        return self._stop_nodes(retry=retry, on_down=callback)
+    def stop(self, retry=None, callback=None, sig=signal.SIGTERM):
+        return self._stop_nodes(retry=retry, on_down=callback, sig=sig)
 
-    def stopwait(self, retry=2, callback=None):
-        return self._stop_nodes(retry=retry, on_down=callback)
+    def stopwait(self, retry=2, callback=None, sig=signal.SIGTERM):
+        return self._stop_nodes(retry=retry, on_down=callback, sig=sig)
 
-    def _stop_nodes(self, retry=None, on_down=None):
+    def _stop_nodes(self, retry=None, on_down=None, sig=signal.SIGTERM):
         on_down = on_down if on_down is not None else self.on_node_down
-        restargs = self.p.args[len(self.p.values):]
         nodes = list(self.getpids(on_down=on_down))
         if nodes:
-            for node in self.shutdown_nodes(
-                    nodes,
-                    sig=self._find_sig_argument(restargs),
-                    retry=retry):
+            for node in self.shutdown_nodes(nodes, sig=sig, retry=retry):
                 maybe_call(on_down, node)
-
-    def _find_sig_argument(self, args, default=signal.SIGTERM):
-        for arg in reversed(args):
-            if len(arg) == 2 and arg[0] == '-':
-                try:
-                    return int(arg[1])
-                except ValueError:
-                    pass
-            if arg[0] == '-':
-                try:
-                    return signals.signum(arg[1:])
-                except (AttributeError, TypeError):
-                    pass
-        return default
 
     def shutdown_nodes(self, nodes, sig=signal.SIGTERM, retry=None):
         P = set(nodes)
@@ -456,23 +467,6 @@ class Cluster(UserList):
                 return node
         raise KeyError(name)
 
-    def with_detacher_default_options(self, p):
-        self._setdefaultopt(p.options, ['--pidfile', '-p'], '%n.pid')
-        self._setdefaultopt(p.options, ['--logfile', '-f'], '%n%I.log')
-        self._setdefaultopt(p.options, ['--executable'], sys.executable)
-        p.options.setdefault(
-            '--cmd',
-            '-m {0}'.format(celery_exe('worker', '--detach')),
-        )
-
-    def _setdefaultopt(self, d, alt, value):
-        for opt in alt[1:]:
-            try:
-                return d[opt]
-            except KeyError:
-                pass
-        return d.setdefault(alt[0], value)
-
     def getpids(self, on_down=None):
         for node in self:
             if node.pid:
@@ -486,6 +480,6 @@ class Cluster(UserList):
             name=type(self).__name__,
         )
 
-    @cached_property
+    @property
     def data(self):
-        return list(self.MultiParser(cmd=self.cmd).parse(self.p))
+        return self.nodes

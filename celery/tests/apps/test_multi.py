@@ -2,24 +2,16 @@ from __future__ import absolute_import, unicode_literals
 
 import errno
 import signal
+import sys
 
 from celery.apps.multi import (
-    Cluster, MultiParser, NamespacedOptionParser, Node,
+    Cluster, MultiParser, NamespacedOptionParser, Node, format_opt,
 )
 
 from celery.tests.case import AppCase, Mock, call, patch
 
 
 class test_functions(AppCase):
-
-    def test_findsig(self):
-        m = Cluster([])
-        self.assertEqual(m._find_sig_argument(['a', 'b', 'c', '-1']), 1)
-        self.assertEqual(m._find_sig_argument(['--foo=1', '-9']), 9)
-        self.assertEqual(m._find_sig_argument(['-INT']), signal.SIGINT)
-        self.assertEqual(m._find_sig_argument([]), signal.SIGTERM)
-        self.assertEqual(m._find_sig_argument(['-s']), signal.SIGTERM)
-        self.assertEqual(m._find_sig_argument(['-log']), signal.SIGTERM)
 
     def test_parse_ns_range(self):
         m = MultiParser()
@@ -31,22 +23,23 @@ class test_functions(AppCase):
         )
 
     def test_format_opt(self):
-        m = MultiParser()
-        self.assertEqual(m.format_opt('--foo', None), '--foo')
-        self.assertEqual(m.format_opt('-c', 1), '-c 1')
-        self.assertEqual(m.format_opt('--log', 'foo'), '--log=foo')
+        self.assertEqual(format_opt('--foo', None), '--foo')
+        self.assertEqual(format_opt('-c', 1), '-c 1')
+        self.assertEqual(format_opt('--log', 'foo'), '--log=foo')
 
 
 class test_NamespacedOptionParser(AppCase):
 
     def test_parse(self):
         x = NamespacedOptionParser(['-c:1,3', '4'])
+        x.parse()
         self.assertEqual(x.namespaces.get('1,3'), {'-c': '4'})
         x = NamespacedOptionParser(['-c:jerry,elaine', '5',
                                     '--loglevel:kramer=DEBUG',
                                     '--flag',
                                     '--logfile=foo', '-Q', 'bar', 'a', 'b',
                                     '--', '.disable_rate_limits=1'])
+        x.parse()
         self.assertEqual(x.options, {'--logfile': 'foo',
                                      '-Q': 'bar',
                                      '--flag': None})
@@ -73,6 +66,7 @@ class test_multi_args(AppCase):
             'elaine', 'kramer',
             '--', '.disable_rate_limits=1',
         ])
+        p.parse()
         it = multi_args(p, cmd='COMMAND', append='*AP*',
                         prefix='*P*', suffix='*S*')
         nodes = list(it)
@@ -113,18 +107,29 @@ class test_multi_args(AppCase):
         self.assertEqual(nodes2[0].argv[-1], '-- .disable_rate_limits=1')
 
         p2 = NamespacedOptionParser(['10', '-c:1', '5'])
+        p2.parse()
         nodes3 = list(multi_args(p2, cmd='COMMAND'))
+
+        def _args(name, *args):
+            return args + (
+                '--pidfile={0}.pid'.format(name),
+                '--logfile={0}%I.log'.format(name),
+                '--executable={0}'.format(sys.executable),
+                '',
+            )
+
         self.assertEqual(len(nodes3), 10)
         self.assertEqual(nodes3[0].name, 'celery1@example.com')
         self.assertTupleEqual(
             nodes3[0].argv,
-            ('COMMAND', '-n celery1@example.com', '-c 5', ''),
+            ('COMMAND', '-c 5', '-n celery1@example.com') + _args('celery1'),
         )
         for i, worker in enumerate(nodes3[1:]):
             self.assertEqual(worker.name, 'celery%s@example.com' % (i + 2))
             self.assertTupleEqual(
                 worker.argv,
-                ('COMMAND', '-n celery%s@example.com' % (i + 2), ''),
+                (('COMMAND', '-n celery%s@example.com' % (i + 2)) +
+                 _args('celery%s' % (i + 2))),
             )
 
         nodes4 = list(multi_args(p2, cmd='COMMAND', suffix='""'))
@@ -132,39 +137,44 @@ class test_multi_args(AppCase):
         self.assertEqual(nodes4[0].name, 'celery1@')
         self.assertTupleEqual(
             nodes4[0].argv,
-            ('COMMAND', '-n celery1@', '-c 5', ''),
+            ('COMMAND', '-c 5', '-n celery1@') + _args('celery1'),
         )
 
         p3 = NamespacedOptionParser(['foo@', '-c:foo', '5'])
+        p3.parse()
         nodes5 = list(multi_args(p3, cmd='COMMAND', suffix='""'))
         self.assertEqual(nodes5[0].name, 'foo@')
         self.assertTupleEqual(
             nodes5[0].argv,
-            ('COMMAND', '-n foo@', '-c 5', ''),
+            ('COMMAND', '-c 5', '-n foo@') + _args('foo'),
         )
 
         p4 = NamespacedOptionParser(['foo', '-Q:1', 'test'])
+        p4.parse()
         nodes6 = list(multi_args(p4, cmd='COMMAND', suffix='""'))
         self.assertEqual(nodes6[0].name, 'foo@')
         self.assertTupleEqual(
             nodes6[0].argv,
-            ('COMMAND', '-n foo@', '-Q test', ''),
+            ('COMMAND', '-Q test', '-n foo@') + _args('foo'),
         )
 
         p5 = NamespacedOptionParser(['foo@bar', '-Q:1', 'test'])
+        p5.parse()
         nodes7 = list(multi_args(p5, cmd='COMMAND', suffix='""'))
         self.assertEqual(nodes7[0].name, 'foo@bar')
         self.assertTupleEqual(
             nodes7[0].argv,
-            ('COMMAND', '-n foo@bar', '-Q test', ''),
+            ('COMMAND', '-Q test', '-n foo@bar') + _args('foo'),
         )
 
         p6 = NamespacedOptionParser(['foo@bar', '-Q:0', 'test'])
+        p6.parse()
         with self.assertRaises(KeyError):
             list(multi_args(p6))
 
     def test_optmerge(self):
         p = NamespacedOptionParser(['foo', 'test'])
+        p.parse()
         p.options = {'x': 'y'}
         r = p.optmerge('foo')
         self.assertEqual(r['x'], 'y')
@@ -179,11 +189,27 @@ class test_Node(AppCase):
             '--logfile': 'foo.log',
         }
         self.p.namespaces = {}
-        self.expander = Mock(name='expander')
-        self.node = Node(
-            'foo@bar.com', ['-A', 'proj'], self.expander, 'foo', self.p,
-        )
+        self.node = Node('foo@bar.com', options={'-A': 'proj'})
+        self.expander = self.node.expander = Mock(name='expander')
         self.node.pid = 303
+
+    def test_from_kwargs(self):
+        n = Node.from_kwargs(
+            'foo@bar.com',
+            max_tasks_per_child=30, A='foo', Q='q1,q2', O='fair',
+        )
+        self.assertTupleEqual(n.argv, (
+            '-m celery worker --detach',
+            '-A foo',
+            '--executable={0}'.format(n.executable),
+            '-O fair',
+            '-n foo@bar.com',
+            '--logfile=foo%I.log',
+            '-Q q1,q2',
+            '--max-tasks-per-child=30',
+            '--pidfile=foo.pid',
+            '',
+        ))
 
     @patch('os.kill')
     def test_send(self, kill):
@@ -267,7 +293,7 @@ class test_Node(AppCase):
 
     def test_logfile(self):
         self.assertEqual(self.node.logfile, self.expander.return_value)
-        self.expander.assert_called_with('foo.log')
+        self.expander.assert_called_with('%n%I.log')
 
 
 class test_Cluster(AppCase):
@@ -279,7 +305,9 @@ class test_Cluster(AppCase):
         self.gethostname.return_value = 'example.com'
         self.Pidfile = self.patch('celery.apps.multi.Pidfile')
         self.cluster = Cluster(
-            ['foo', 'bar', 'baz'],
+            [Node('foo@example.com'),
+             Node('bar@example.com'),
+             Node('baz@example.com')],
             on_stopping_preamble=Mock(name='on_stopping_preamble'),
             on_send_signal=Mock(name='on_send_signal'),
             on_still_waiting_for=Mock(name='on_still_waiting_for'),
@@ -358,7 +386,11 @@ class test_Cluster(AppCase):
         self.prepare_pidfile_for_getpids(self.Pidfile)
         callback = Mock()
 
-        p = Cluster(['foo', 'bar', 'baz'])
+        p = Cluster([
+            Node('foo@e.com'),
+            Node('bar@e.com'),
+            Node('baz@e.com'),
+        ])
         nodes = p.getpids(on_down=callback)
         node_0, node_1 = nodes
         self.assertEqual(node_0.name, 'foo@e.com')

@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+import signal
 import sys
 
 from celery.bin.multi import (
@@ -18,6 +19,8 @@ class test_MultiTool(AppCase):
         self.fh = WhateverIO()
         self.env = {}
         self.t = MultiTool(env=self.env, fh=self.fh)
+        self.t.cluster_from_argv = Mock(name='cluster_from_argv')
+        self.t._cluster_from_argv = Mock(name='cluster_from_argv')
         self.t.Cluster = Mock(name='Cluster')
         self.t.carp = Mock(name='.carp')
         self.t.usage = Mock(name='.usage')
@@ -25,6 +28,26 @@ class test_MultiTool(AppCase):
         self.t.say = Mock(name='.say')
         self.t.ok = Mock(name='.ok')
         self.cluster = self.t.Cluster.return_value
+
+        def _cluster_from_argv(argv):
+            p = self.t.OptionParser(argv)
+            p.parse()
+            return p, self.cluster
+        self.t.cluster_from_argv.return_value = self.cluster
+        self.t._cluster_from_argv.side_effect = _cluster_from_argv
+
+    def test_findsig(self):
+        self.assert_sig_argument(['a', 'b', 'c', '-1'], 1)
+        self.assert_sig_argument(['--foo=1', '-9'], 9)
+        self.assert_sig_argument(['-INT'], signal.SIGINT)
+        self.assert_sig_argument([], signal.SIGTERM)
+        self.assert_sig_argument(['-s'], signal.SIGTERM)
+        self.assert_sig_argument(['-log'], signal.SIGTERM)
+
+    def assert_sig_argument(self, args, expected):
+        p = self.t.OptionParser(args)
+        p.parse()
+        self.assertEqual(self.t._find_sig_argument(p), expected)
 
     def test_execute_from_commandline(self):
         self.t.call_command = Mock(name='call_command')
@@ -67,7 +90,7 @@ class test_MultiTool(AppCase):
         self.cluster.start.return_value = [0, 0, 1, 0]
         self.assertTrue(self.t.start('10', '-A', 'proj'))
         self.t.splash.assert_called_with()
-        self.t.Cluster.assert_called_with(('10', '-A', 'proj'))
+        self.t.cluster_from_argv.assert_called_with(('10', '-A', 'proj'))
         self.cluster.start.assert_called_with()
 
     def test_start__exitcodes(self):
@@ -81,26 +104,26 @@ class test_MultiTool(AppCase):
     def test_stop(self):
         self.t.stop('10', '-A', 'proj', retry=3)
         self.t.splash.assert_called_with()
-        self.t.Cluster.assert_called_with(('10', '-A', 'proj'))
-        self.cluster.stop.assert_called_with(retry=3)
+        self.t._cluster_from_argv.assert_called_with(('10', '-A', 'proj'))
+        self.cluster.stop.assert_called_with(retry=3, sig=signal.SIGTERM)
 
     def test_stopwait(self):
         self.t.stopwait('10', '-A', 'proj', retry=3)
         self.t.splash.assert_called_with()
-        self.t.Cluster.assert_called_with(('10', '-A', 'proj'))
-        self.cluster.stopwait.assert_called_with(retry=3)
+        self.t._cluster_from_argv.assert_called_with(('10', '-A', 'proj'))
+        self.cluster.stopwait.assert_called_with(retry=3, sig=signal.SIGTERM)
 
     def test_restart(self):
         self.cluster.restart.return_value = [0, 0, 1, 0]
         self.t.restart('10', '-A', 'proj')
         self.t.splash.assert_called_with()
-        self.t.Cluster.assert_called_with(('10', '-A', 'proj'))
-        self.cluster.restart.assert_called_with()
+        self.t._cluster_from_argv.assert_called_with(('10', '-A', 'proj'))
+        self.cluster.restart.assert_called_with(sig=signal.SIGTERM)
 
     def test_names(self):
-        self.t.Cluster.return_value = [Mock(), Mock()]
-        self.t.Cluster.return_value[0].name = 'x'
-        self.t.Cluster.return_value[1].name = 'y'
+        self.t.cluster_from_argv.return_value = [Mock(), Mock()]
+        self.t.cluster_from_argv.return_value[0].name = 'x'
+        self.t.cluster_from_argv.return_value[1].name = 'y'
         self.t.names('10', '-A', 'proj')
         self.t.say.assert_called()
 
@@ -112,7 +135,7 @@ class test_MultiTool(AppCase):
             self.t.ok.return_value,
         )
         self.cluster.find.assert_called_with('wanted')
-        self.t.Cluster.assert_called_with(('10', '-A', 'proj'))
+        self.t.cluster_from_argv.assert_called_with(('10', '-A', 'proj'))
         self.t.ok.assert_called_with(' '.join(node.argv))
 
     def test_get__KeyError(self):
@@ -120,7 +143,7 @@ class test_MultiTool(AppCase):
         self.assertTrue(self.t.get('wanted', '10', '-A', 'proj'))
 
     def test_show(self):
-        nodes = self.t.Cluster.return_value = [
+        nodes = self.t.cluster_from_argv.return_value = [
             Mock(name='n1'),
             Mock(name='n2'),
         ]
@@ -137,7 +160,7 @@ class test_MultiTool(AppCase):
     def test_kill(self):
         self.t.kill('10', '-A', 'proj')
         self.t.splash.assert_called_with()
-        self.t.Cluster.assert_called_with(('10', '-A', 'proj'))
+        self.t.cluster_from_argv.assert_called_with(('10', '-A', 'proj'))
         self.cluster.kill.assert_called_with()
 
     def test_expand(self):
@@ -145,9 +168,9 @@ class test_MultiTool(AppCase):
         node2 = Mock(name='n2')
         node1.expander.return_value = 'A'
         node2.expander.return_value = 'B'
-        nodes = self.t.Cluster.return_value = [node1, node2]
+        nodes = self.t.cluster_from_argv.return_value = [node1, node2]
         self.assertIs(self.t.expand('%p', '10'), self.t.ok.return_value)
-        self.t.Cluster.assert_called_with(('10',))
+        self.t.cluster_from_argv.assert_called_with(('10',))
         for node in nodes:
             node.expander.assert_called_with('%p')
         self.t.ok.assert_called_with('A\nB')
@@ -172,8 +195,7 @@ class test_MultiTool(AppCase):
 
     def test_Cluster(self):
         m = MultiTool()
-        c = m.Cluster(['A', 'B', 'C'])
-        self.assertListEqual(c.argv, ['A', 'B', 'C'])
+        c = m.cluster_from_argv(['A', 'B', 'C'])
         self.assertIs(c.env, m.env)
         self.assertEqual(c.cmd, 'celery worker')
         self.assertEqual(c.on_stopping_preamble, m.on_stopping_preamble)

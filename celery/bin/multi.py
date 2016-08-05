@@ -96,6 +96,7 @@ Examples
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
+import signal
 import sys
 
 from functools import wraps
@@ -103,8 +104,8 @@ from functools import wraps
 from kombu.utils.objects import cached_property
 
 from celery import VERSION_BANNER
-from celery.apps.multi import Cluster
-from celery.platforms import EX_FAILURE, EX_OK
+from celery.apps.multi import Cluster, MultiParser, NamespacedOptionParser
+from celery.platforms import EX_FAILURE, EX_OK, signals
 from celery.utils import term
 from celery.utils.text import pluralize
 
@@ -141,6 +142,24 @@ def splash(fun):
     def _inner(self, *args, **kwargs):
         self.splash()
         return fun(self, *args, **kwargs)
+    return _inner
+
+
+def using_cluster(fun):
+
+    @wraps(fun)
+    def _inner(self, *argv, **kwargs):
+        return fun(self, self.cluster_from_argv(argv), **kwargs)
+    return _inner
+
+
+def using_cluster_and_sig(fun):
+
+    @wraps(fun)
+    def _inner(self, *argv, **kwargs):
+        p, cluster = self._cluster_from_argv(argv)
+        sig = self._find_sig_argument(p)
+        return fun(self, cluster, sig, **kwargs)
     return _inner
 
 
@@ -201,6 +220,8 @@ class TermLogger(object):
 
 
 class MultiTool(TermLogger):
+    MultiParser = MultiParser
+    OptionParser = NamespacedOptionParser
 
     reserved_options = [
         ('--nosplash', 'nosplash'),
@@ -260,56 +281,93 @@ class MultiTool(TermLogger):
         return argv
 
     @splash
-    def start(self, *argv):
+    @using_cluster
+    def start(self, cluster):
         self.note('> Starting nodes...')
-        return int(any(self.Cluster(argv).start()))
+        return int(any(cluster.start()))
 
     @splash
-    def stop(self, *argv, **kwargs):
-        return self.Cluster(argv).stop(**kwargs)
+    @using_cluster_and_sig
+    def stop(self, cluster, sig, **kwargs):
+        return cluster.stop(sig=sig, **kwargs)
 
     @splash
-    def stopwait(self, *argv, **kwargs):
-        return self.Cluster(argv).stopwait(**kwargs)
+    @using_cluster_and_sig
+    def stopwait(self, cluster, sig, **kwargs):
+        return cluster.stopwait(sig=sig, **kwargs)
     stop_verify = stopwait  # compat
 
     @splash
-    def restart(self, *argv, **kwargs):
-        return int(any(self.Cluster(argv).restart(**kwargs)))
+    @using_cluster_and_sig
+    def restart(self, cluster, sig, **kwargs):
+        return int(any(cluster.restart(sig=sig, **kwargs)))
 
-    def names(self, *argv):
-        self.say('\n'.join(n.name for n in self.Cluster(argv)))
+    @using_cluster
+    def names(self, cluster):
+        self.say('\n'.join(n.name for n in cluster))
 
     def get(self, wanted, *argv):
         try:
-            node = self.Cluster(argv).find(wanted)
+            node = self.cluster_from_argv(argv).find(wanted)
         except KeyError:
             return EX_FAILURE
         else:
             return self.ok(' '.join(node.argv))
 
-    def show(self, *argv):
+    @using_cluster
+    def show(self, cluster):
         return self.ok('\n'.join(
             ' '.join(node.argv_with_executable)
-            for node in self.Cluster(argv)
+            for node in cluster
         ))
 
     @splash
-    def kill(self, *argv):
-        return self.Cluster(argv).kill()
+    @using_cluster
+    def kill(self, cluster):
+        return cluster.kill()
 
     def expand(self, template, *argv):
         return self.ok('\n'.join(
             node.expander(template)
-            for node in self.Cluster(argv)
+            for node in self.cluster_from_argv(argv)
         ))
 
     def help(self, *argv):
         self.say(__doc__)
 
-    def Cluster(self, argv, cmd=None):
+    def _find_sig_argument(self, p, default=signal.SIGTERM):
+        args = p.args[len(p.values):]
+        for arg in reversed(args):
+            if len(arg) == 2 and arg[0] == '-':
+                try:
+                    return int(arg[1])
+                except ValueError:
+                    pass
+            if arg[0] == '-':
+                try:
+                    return signals.signum(arg[1:])
+                except (AttributeError, TypeError):
+                    pass
+        return default
+
+    def _nodes_from_argv(self, argv, cmd=None):
+        cmd = cmd if cmd is not None else self.cmd
+        p = self.OptionParser(argv)
+        p.parse()
+        return p, self.MultiParser(cmd=cmd).parse(p)
+
+    def cluster_from_argv(self, argv, cmd=None):
+        _, cluster = self._cluster_from_argv(argv, cmd=cmd)
+        return cluster
+
+    def _cluster_from_argv(self, argv, cmd=None):
+        p, nodes = self._nodes_from_argv(argv, cmd=cmd)
+        return p, self.Cluster(list(nodes), cmd=cmd)
+
+    def Cluster(self, nodes, cmd=None):
         return Cluster(
-            argv, cmd if cmd is not None else self.cmd,
+            nodes,
+            cmd=cmd,
             env=self.env,
             on_stopping_preamble=self.on_stopping_preamble,
             on_send_signal=self.on_send_signal,

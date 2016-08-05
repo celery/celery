@@ -158,4 +158,3 @@ def load_extension_classes(namespace):
                     namespace, class_name, exc))
         else:
             yield name, cls
-
