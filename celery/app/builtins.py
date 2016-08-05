@@ -262,9 +262,8 @@ def add_chain_task(app):
                     if not res.parent:
                         res.parent = prev_res
 
-                if not isinstance(prev_task, chord):
-                    results.append(res)
-                    tasks.append(task)
+                results.append(res)
+                tasks.append(task)
                 prev_task, prev_res = task, res
 
             return tasks, results
