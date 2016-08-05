@@ -53,12 +53,6 @@ class test_DjangoFixup(FixupCase):
         f.on_import_modules()
         f.worker_fixup.validate_models.assert_called_with()
 
-    def test_autodiscover_tasks_pre17(self):
-        self.mask_modules('django.apps')
-        f = DjangoFixup(self.app)
-        f._settings = Mock(name='_settings')
-        self.assertIs(f.autodiscover_tasks(), f._settings.INSTALLED_APPS)
-
     def test_autodiscover_tasks(self):
         self.mock_modules('django.apps')
         from django.apps import apps
@@ -92,13 +86,6 @@ class test_DjangoFixup(FixupCase):
     def test_init(self):
         with self.fixup_context(self.app) as (f, importmod, sym):
             self.assertTrue(f)
-
-            def se(name):
-                if name == 'django.utils.timezone:now':
-                    raise ImportError()
-                return Mock()
-            sym.side_effect = se
-            self.assertTrue(self.Fixup(self.app)._now)
 
     def test_install(self):
         self.app.loader = Mock()
@@ -135,13 +122,6 @@ class test_DjangoWorkerFixup(FixupCase):
         with self.fixup_context(self.app) as (f, importmod, sym):
             self.assertTrue(f)
 
-            def se(name):
-                if name == 'django.db:close_old_connections':
-                    raise ImportError()
-                return Mock()
-            sym.side_effect = se
-            self.assertIsNone(self.Fixup(self.app)._close_old_connections)
-
     def test_install(self):
         self.app.conf = {'CELERY_DB_REUSE_MAX': None}
         self.app.loader = Mock()
@@ -172,13 +152,6 @@ class test_DjangoWorkerFixup(FixupCase):
                             mcf.assert_called_with(conns[1].connection)
                             f.close_cache.assert_called_with()
                             f._close_database.assert_called_with()
-
-                            mcf.reset_mock()
-                            _all.side_effect = AttributeError()
-                            f.on_worker_process_init()
-                            mcf.assert_called_with(f._db.connection.connection)
-                            f._db.connection = None
-                            f.on_worker_process_init()
 
                             f.validate_models = Mock(name='validate_models')
                             self.mock_environ('FORKED_BY_MULTIPROCESSING', '1')
@@ -218,10 +191,6 @@ class test_DjangoWorkerFixup(FixupCase):
 
     def test_close_database(self):
         with self.fixup_context(self.app) as (f, _, _):
-            f._close_old_connections = Mock()
-            f.close_database()
-            f._close_old_connections.assert_called_with()
-            f._close_old_connections = None
             with patch.object(f, '_close_database') as _close:
                 f.db_reuse_max = None
                 f.close_database()
@@ -240,18 +209,11 @@ class test_DjangoWorkerFixup(FixupCase):
                 _close.assert_called_with()
                 self.assertEqual(f._db_recycles, 1)
 
-    def test_close_database__django16(self):
-        with self.fixup_context(self.app) as (f, _, _):
-            f._db.connections = Mock(name='db.connections')
-            f._db.connections.all.side_effect = AttributeError()
-            f._close_database()
-            f._db.close_old_connections.assert_called_with()
-
     def test__close_database(self):
         with self.fixup_context(self.app) as (f, _, _):
             conns = [Mock(), Mock(), Mock()]
             conns[1].close.side_effect = KeyError('already closed')
-            f.database_errors = (KeyError,)
+            f.DatabaseError = KeyError
             f.interface_errors = ()
 
             f._db.connections = Mock()  # ConnectionHandler
@@ -265,11 +227,6 @@ class test_DjangoWorkerFixup(FixupCase):
             conns[1].close.side_effect = KeyError('omg')
             with self.assertRaises(KeyError):
                 f._close_database()
-
-            o = Bunch(close_connection=Mock())
-            f._db = o
-            f._close_database()
-            o.close_connection.assert_called_with()
 
     def test_close_cache(self):
         with self.fixup_context(self.app) as (f, _, _):
@@ -300,21 +257,6 @@ class test_DjangoWorkerFixup(FixupCase):
         with self.assertRaises(RuntimeError):
             f.validate_models()
 
-        self.mask_modules('django.core.management.validation')
-        f._validate_models_django17 = Mock('validate17')
-        f.validate_models()
-        f._validate_models_django17.assert_called_with()
-
-    def test_validate_models_django17(self):
-        self.patch('celery.fixups.django.symbol_by_name')
-        self.patch('celery.fixups.django.import_module')
-        self.mock_modules('django.core.management.base')
-        from django.core.management import base
-        f = self.Fixup(self.app)
-        f._validate_models_django17()
-        base.BaseCommand.assert_called_with()
-        base.BaseCommand().check.assert_called_with()
-
     def test_django_setup(self):
         self.patch('celery.fixups.django.symbol_by_name')
         self.patch('celery.fixups.django.import_module')
@@ -322,59 +264,3 @@ class test_DjangoWorkerFixup(FixupCase):
         f = self.Fixup(self.app)
         f.django_setup()
         django.setup.assert_called_with()
-
-    def test_mysql_errors(self):
-        with mock.module_exists('MySQLdb'):
-            import MySQLdb as mod
-            mod.DatabaseError = Mock()
-            mod.InterfaceError = Mock()
-            mod.OperationalError = Mock()
-            with self.fixup_context(self.app) as (f, _, _):
-                self.assertIn(mod.DatabaseError, f.database_errors)
-                self.assertIn(mod.InterfaceError, f.database_errors)
-                self.assertIn(mod.OperationalError, f.database_errors)
-        with mock.mask_modules('MySQLdb'):
-            with self.fixup_context(self.app):
-                pass
-
-    def test_pg_errors(self):
-        with mock.module_exists('psycopg2'):
-            import psycopg2 as mod
-            mod.DatabaseError = Mock()
-            mod.InterfaceError = Mock()
-            mod.OperationalError = Mock()
-            with self.fixup_context(self.app) as (f, _, _):
-                self.assertIn(mod.DatabaseError, f.database_errors)
-                self.assertIn(mod.InterfaceError, f.database_errors)
-                self.assertIn(mod.OperationalError, f.database_errors)
-        with mock.mask_modules('psycopg2'):
-            with self.fixup_context(self.app):
-                pass
-
-    def test_sqlite_errors(self):
-        with mock.module_exists('sqlite3'):
-            import sqlite3 as mod
-            mod.DatabaseError = Mock()
-            mod.InterfaceError = Mock()
-            mod.OperationalError = Mock()
-            with self.fixup_context(self.app) as (f, _, _):
-                self.assertIn(mod.DatabaseError, f.database_errors)
-                self.assertIn(mod.InterfaceError, f.database_errors)
-                self.assertIn(mod.OperationalError, f.database_errors)
-        with mock.mask_modules('sqlite3'):
-            with self.fixup_context(self.app):
-                pass
-
-    def test_oracle_errors(self):
-        with mock.module_exists('cx_Oracle'):
-            import cx_Oracle as mod
-            mod.DatabaseError = Mock()
-            mod.InterfaceError = Mock()
-            mod.OperationalError = Mock()
-            with self.fixup_context(self.app) as (f, _, _):
-                self.assertIn(mod.DatabaseError, f.database_errors)
-                self.assertIn(mod.InterfaceError, f.database_errors)
-                self.assertIn(mod.OperationalError, f.database_errors)
-        with mock.mask_modules('cx_Oracle'):
-            with self.fixup_context(self.app):
-                pass
