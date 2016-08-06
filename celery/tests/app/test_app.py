@@ -34,7 +34,6 @@ from celery.tests.case import (
     mock,
     patch,
 )
-from celery.utils.objects import Bunch
 
 THIS_IS_A_KEY = 'this is a value'
 

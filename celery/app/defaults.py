@@ -7,7 +7,7 @@ import sys
 from collections import deque, namedtuple
 from datetime import timedelta
 
-from celery.five import items, keys, python_2_unicode_compatible, values
+from celery.five import items, keys, python_2_unicode_compatible
 from celery.utils.functional import memoize
 from celery.utils.serialization import strtobool
 
