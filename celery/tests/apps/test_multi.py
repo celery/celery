@@ -198,7 +198,7 @@ class test_Node(AppCase):
             'foo@bar.com',
             max_tasks_per_child=30, A='foo', Q='q1,q2', O='fair',
         )
-        self.assertTupleEqual(n.argv, (
+        self.assertItemsEqual(n.argv, (
             '-m celery worker --detach',
             '-A foo',
             '--executable={0}'.format(n.executable),
