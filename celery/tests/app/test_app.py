@@ -19,8 +19,10 @@ from celery.exceptions import ImproperlyConfigured
 from celery.five import keys
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
+from celery.utils.collections import DictAttribute
 from celery.utils.serialization import pickle
 from celery.utils.timeutils import timezone
+from celery.utils.objects import Bunch
 
 from celery.tests.case import (
     CELERY_TEST_CONFIG,
@@ -288,6 +290,22 @@ class test_App(AppCase):
             with self.assertRaises(ImproperlyConfigured):
                 self.assertEqual(app.conf.task_always_eager, 4)
 
+    def test_pending_configuration__django_settings(self):
+        with self.Celery(broker='foo://bar', backend='foo') as app:
+            app.config_from_object(DictAttribute(Bunch(
+                CELERY_TASK_ALWAYS_EAGER=4,
+                CELERY_TASK_DEFAULT_DELIVERY_MODE=63,
+                CELERY_WORKER_AGENT='foo:Barz',
+                CELERY_RESULT_SERIALIZER='pickle',
+            )), namespace='CELERY')
+            self.assertEqual(app.conf.result_serializer, 'pickle')
+            self.assertEqual(app.conf.CELERY_RESULT_SERIALIZER, 'pickle')
+            self.assertEqual(app.conf.task_always_eager, 4)
+            self.assertEqual(app.conf.task_default_delivery_mode, 63)
+            self.assertEqual(app.conf.worker_agent, 'foo:Barz')
+            self.assertEqual(app.conf.broker_url, 'foo://bar')
+            self.assertEqual(app.conf.result_backend, 'foo')
+
     def test_pending_configuration__compat_settings_mixing_new(self):
         with self.Celery(broker='foo://bar', backend='foo') as app:
             app.conf.update(
@@ -551,7 +569,7 @@ class test_App(AppCase):
         self.assertEqual(self.app.conf.task_always_eager, 44)
         self.assertEqual(self.app.conf.CELERY_ALWAYS_EAGER, 44)
         self.assertFalse(self.app.conf.task_publish_retry)
-        self.assertEqual(self.app.conf.task_default_routing_key, 'celery')
+        self.assertEqual(self.app.conf.task_default_routing_key, 'testcelery')
 
     def test_config_from_object__supports_old_names(self):
 

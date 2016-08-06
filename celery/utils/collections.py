@@ -350,12 +350,12 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
             the default configuration.
     """
 
-    def __init__(self, changes, defaults=None, key_t=None, prefix=None):
+    def __init__(self, changes, defaults=None, keys=None, prefix=None):
         defaults = [] if defaults is None else defaults
-        super(ConfigurationView, self).__init__(
-            changes, *defaults, **{'key_t': key_t})
+        super(ConfigurationView, self).__init__(changes, *defaults)
         self.__dict__.update(
             prefix=prefix.rstrip('_') + '_' if prefix else prefix,
+            _keys=keys,
         )
 
     def _to_keys(self, key):
@@ -368,7 +368,8 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
     def __getitem__(self, key):
         keys = self._to_keys(key)
         getitem = super(ConfigurationView, self).__getitem__
-        for k in keys:
+        for k in keys + (
+                tuple(f(key) for f in self._keys) if self._keys else ()):
             try:
                 return getitem(k)
             except KeyError:

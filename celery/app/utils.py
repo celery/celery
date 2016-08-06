@@ -229,7 +229,11 @@ def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
 
     preconf = {info.convert.get(k, k): v for k, v in items(preconf)}
     defaults = dict(deepcopy(info.defaults), **preconf)
-    return Settings(preconf, [conf, defaults], info.key_t, prefix=prefix)
+    return Settings(
+        preconf, [conf, defaults],
+        (_old_key_to_new, _new_key_to_old),
+        prefix=prefix,
+    )
 
 
 class AppPickler(object):

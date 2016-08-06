@@ -46,7 +46,9 @@ from .defaults import find_deprecated_settings
 from .registry import TaskRegistry
 from .utils import (
     AppPickler, Settings,
-    bugreport, _unpickle_app, _unpickle_app_v2, appstr, detect_settings,
+    bugreport, _unpickle_app, _unpickle_app_v2,
+    _old_key_to_new, _new_key_to_old,
+    appstr, detect_settings,
 )
 
 # Load all builtin tasks
@@ -231,6 +233,7 @@ class Celery(object):
             PendingConfiguration(
                 self._preconf, self._get_from_conf_and_finalize),
             prefix=self.namespace,
+            keys=(_old_key_to_new, _new_key_to_old),
         )
 
         # - Apply fix-ups.
