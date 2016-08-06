@@ -182,11 +182,11 @@ To use this with your project you need to follow these steps:
 
     .. code-block:: python
 
-        CELERY_RESULT_BACKEND = 'django_celery_results.backends:DatabaseBackend'
+        CELERY_RESULT_BACKEND = 'django-db'
 
     For the cache backend you can use:
 
-        CELERY_RESULT_BACKEND = 'django_celery_results.backends:CacheBackend'
+        CELERY_RESULT_BACKEND = 'django-cache'
 
 ``django-celery-beat`` -- Database-backed Periodic Tasks with Admin interface.
 ------------------------------------------------------------------------------

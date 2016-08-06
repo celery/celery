@@ -9,7 +9,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.local import Proxy
 from celery._state import current_app
 from celery.five import reraise
-from celery.utils.imports import symbol_by_name
+from celery.utils.imports import load_extension_class_names, symbol_by_name
 
 __all__ = ['get_backend_cls', 'get_backend_by_url']
 
@@ -39,11 +39,14 @@ BACKEND_ALIASES = {
 default_backend = Proxy(lambda: current_app.backend)
 
 
-def get_backend_cls(backend=None, loader=None):
+def get_backend_cls(backend=None, loader=None,
+                    extension_namespace='celery.result_backends'):
     """Get backend class by name/alias"""
     backend = backend or 'disabled'
     loader = loader or current_app.loader
     aliases = dict(BACKEND_ALIASES, **loader.override_backends)
+    aliases.update(
+        load_extension_class_names(extension_namespace) or {})
     try:
         cls = symbol_by_name(backend, aliases)
     except ValueError as exc:

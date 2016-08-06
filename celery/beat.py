@@ -545,9 +545,11 @@ class Service(object):
         self._is_shutdown.set()
         wait and self._is_stopped.wait()  # block until shutdown done.
 
-    def get_scheduler(self, lazy=False, extensions='celery.beat_schedulers'):
+    def get_scheduler(self, lazy=False,
+                      extension_namespace='celery.beat_schedulers'):
         filename = self.schedule_filename
-        aliases = dict(load_extension_class_names(extensions) or {})
+        aliases = dict(
+            load_extension_class_names(extension_namespace) or {})
         return symbol_by_name(self.scheduler_cls, aliases=aliases)(
             app=self.app,
             schedule_filename=filename,
