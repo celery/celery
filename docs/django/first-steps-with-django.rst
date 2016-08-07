@@ -186,6 +186,8 @@ To use this with your project you need to follow these steps:
 
     For the cache backend you can use:
 
+    .. code-block:: python
+
         CELERY_RESULT_BACKEND = 'django-cache'
 
 ``django-celery-beat`` -- Database-backed Periodic Tasks with Admin interface.
