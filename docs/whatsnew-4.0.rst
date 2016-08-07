@@ -1343,7 +1343,7 @@ Deployment
 ~~~~~~~~~~
 
 - Generic init-scripts now support
-  :envvar:`CELERY_SU`` and :envvar:`CELERYD_SU_ARGS` environment variables
+  :envvar:`CELERY_SU` and :envvar:`CELERYD_SU_ARGS` environment variables
   to set the path and arguments for :command:`su` (:manpage:`su(1)`).
 
 - Generic init-scripts now better support FreBSD and other BSD
