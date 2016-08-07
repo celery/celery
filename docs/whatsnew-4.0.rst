@@ -584,8 +584,8 @@ some long-requested features:
     related messages together (like chains, groups, chords, complete
     work-flows, etc).
 
-- ``app.TaskProducer`` replaced by :meth:`@amqp.create_task_message`` and
-  :meth:`@amqp.send_task_message``.
+- ``app.TaskProducer`` replaced by :meth:`@amqp.create_task_message` and
+  :meth:`@amqp.send_task_message`.
 
     Dividing the responsibilities into creating and sending means that
     people who want to send messages using a Python AMQP client directly,
