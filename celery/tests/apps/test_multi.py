@@ -8,7 +8,7 @@ from celery.apps.multi import (
     Cluster, MultiParser, NamespacedOptionParser, Node, format_opt,
 )
 
-from celery.tests.case import AppCase, Mock, call, patch
+from celery.tests.case import AppCase, Mock, call, patch, skip
 
 
 class test_functions(AppCase):
@@ -376,6 +376,7 @@ class test_Cluster(AppCase):
         for node in nodes:
             node.send.assert_called_with(15, self.cluster.on_node_signal_dead)
 
+    @skip.if_win32()
     def test_kill(self):
         self.cluster.send_all = Mock(name='.send_all')
         self.cluster.kill()
