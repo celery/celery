@@ -111,9 +111,7 @@ of your installed apps, following the ``tasks.py`` convention::
 
 
 This way you don't have to manually add the individual modules
-to the :setting:`CELERY_IMPORTS <imports>` setting. The ``lambda`` so that the
-auto-discovery can happen only when needed, and so that importing your
-module won't evaluate the Django settings object.
+to the :setting:`CELERY_IMPORTS <imports>` setting.
 
 Finally, the ``debug_task`` example is a task that dumps
 its own request information. This is using the new ``bind=True`` task option
