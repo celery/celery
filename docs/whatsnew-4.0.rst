@@ -1398,7 +1398,7 @@ Result Backends
   with brain damaged MySQL unicode implementation (Issue #1748).
 
 - **General**: All Celery exceptions/warnings now inherit from common
-  :class:`~celery.exceptions.CeleryException`/:class:`~celery.exceptions.CeleryWarning`.
+  :class:`~celery.exceptions.CeleryError`/:class:`~celery.exceptions.CeleryWarning`.
   (Issue #2643).
 
 Documentation Improvements
