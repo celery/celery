@@ -454,7 +454,7 @@ and the Django handler will automatically find your installed apps:
 The Django integration :ref:`example in the documentation
 <django-first-steps>` has been updated to use the argument-less call.
 
-This also ensures comaptibility with the new, ehm, ``appconfig`` stuff
+This also ensures compatibility with the new, ehm, ``AppConfig`` stuff
 introduced in recent Django versions.
 
 Worker direct queues no longer use auto-delete
