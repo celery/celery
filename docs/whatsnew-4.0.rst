@@ -444,12 +444,12 @@ upgrade to 4.0:
 Django: Auto-discover now supports Django app configurations
 ------------------------------------------------------------
 
-The :meth:`@autodiscover` function can now be called without arguments,
+The ``autodiscover_tasks()`` function can now be called without arguments,
 and the Django handler will automatically find your installed apps:
 
 .. code-block:: python
 
-    app.autodiscover()
+    app.autodiscover_tasks()
 
 The Django integration :ref:`example in the documentation
 <django-first-steps>` has been updated to use the argument-less call.
