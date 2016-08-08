@@ -930,13 +930,15 @@ Example implementation:
 
 This is used by all result backends except Redis and Memcached: they
 increment a counter after each task in the header, then applies the callback
-when the counter exceeds the number of tasks in the set. *Note:* chords don't
-properly work with Redis before version 2.2; you'll need to upgrade to at
-least *redis-server* 2.2 to use them.
+when the counter exceeds the number of tasks in the set.
 
 The Redis and Memcached approach is a much better solution, but not easily
 implemented in other backends (suggestions welcome!).
 
+.. note::
+
+   Chords don't properly work with Redis before version 2.2; you'll need to
+   upgrade to at least redis-server 2.2 to use them.
 
 .. note::
 

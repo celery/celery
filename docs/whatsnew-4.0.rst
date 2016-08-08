@@ -104,7 +104,7 @@ and also drops support for Python 3.3 so supported versions are:
 - CPython 2.7
 - CPython 3.4
 - CPython 3.5
-- PyPy 4.0 (``pypy2``)
+- PyPy 5.3 (``pypy2``)
 - PyPy 2.4 (``pypy3``)
 
 Last major version to support Python 2
@@ -444,17 +444,17 @@ upgrade to 4.0:
 Django: Auto-discover now supports Django app configurations
 ------------------------------------------------------------
 
-The :meth:`@autodiscover` function can now be called without arguments,
+The ``autodiscover_tasks()`` function can now be called without arguments,
 and the Django handler will automatically find your installed apps:
 
 .. code-block:: python
 
-    app.autodiscover()
+    app.autodiscover_tasks()
 
 The Django integration :ref:`example in the documentation
 <django-first-steps>` has been updated to use the argument-less call.
 
-This also ensures comaptibility with the new, ehm, ``appconfig`` stuff
+This also ensures compatibility with the new, ehm, ``AppConfig`` stuff
 introduced in recent Django versions.
 
 Worker direct queues no longer use auto-delete
@@ -584,8 +584,8 @@ some long-requested features:
     related messages together (like chains, groups, chords, complete
     work-flows, etc).
 
-- ``app.TaskProducer`` replaced by :meth:`@amqp.create_task_message`` and
-  :meth:`@amqp.send_task_message``.
+- ``app.TaskProducer`` replaced by :meth:`@amqp.create_task_message` and
+  :meth:`@amqp.send_task_message`.
 
     Dividing the responsibilities into creating and sending means that
     people who want to send messages using a Python AMQP client directly,
@@ -1343,7 +1343,7 @@ Deployment
 ~~~~~~~~~~
 
 - Generic init-scripts now support
-  :envvar:`CELERY_SU`` and :envvar:`CELERYD_SU_ARGS` environment variables
+  :envvar:`CELERY_SU` and :envvar:`CELERYD_SU_ARGS` environment variables
   to set the path and arguments for :command:`su` (:manpage:`su(1)`).
 
 - Generic init-scripts now better support FreBSD and other BSD
@@ -1398,7 +1398,7 @@ Result Backends
   with brain damaged MySQL unicode implementation (Issue #1748).
 
 - **General**: All Celery exceptions/warnings now inherit from common
-  :class:`~celery.exceptions.CeleryException`/:class:`~celery.exceptions.CeleryWarning`.
+  :class:`~celery.exceptions.CeleryError`/:class:`~celery.exceptions.CeleryWarning`.
   (Issue #2643).
 
 Documentation Improvements

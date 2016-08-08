@@ -890,6 +890,12 @@ Ask Solem
 :github: https://github.com/ask
 :twitter: http://twitter.com/#!/asksol
 
+Asif Saif Uddin
+~~~~~~~~~~~~~~~
+
+:github: https://github.com/auvipy
+:twitter: https://twitter.com/#!/auvipy
+
 Dmitry Malinovsky
 ~~~~~~~~~~~~~~~~~
 
