@@ -11,7 +11,7 @@ from celery.app.task import _reprtask
 from celery.exceptions import Ignore, Retry
 from celery.five import items, range, string_t
 from celery.result import EagerResult
-from celery.utils.timeutils import parse_iso8601
+from celery.utils.time import parse_iso8601
 
 from celery.tests.case import (
     AppCase, ContextMock, MagicMock, Mock, depends_on_current_app, patch,

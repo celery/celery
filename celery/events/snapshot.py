@@ -17,7 +17,7 @@ from celery.utils.timer2 import Timer
 from celery.utils.dispatch import Signal
 from celery.utils.imports import instantiate
 from celery.utils.log import get_logger
-from celery.utils.timeutils import rate
+from celery.utils.time import rate
 
 __all__ = ['Polaroid', 'evcam']
 

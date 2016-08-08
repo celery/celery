@@ -10,7 +10,7 @@ from kombu.five import buffer_t
 from celery.exceptions import InvalidTaskError
 from celery.utils.log import get_logger
 from celery.utils.saferepr import saferepr
-from celery.utils.timeutils import timezone
+from celery.utils.time import timezone
 
 from .request import Request, create_request_cls
 from .state import task_reserved

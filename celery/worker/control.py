@@ -13,10 +13,10 @@ from kombu.utils.encoding import safe_repr
 from celery.exceptions import WorkerShutdown
 from celery.five import UserDict, items, string_t, text_t
 from celery.platforms import signals as _signals
-from celery.utils import timeutils
 from celery.utils.functional import maybe_list
 from celery.utils.log import get_logger
 from celery.utils.serialization import jsonify, strtobool
+from celery.utils.time import rate
 
 from . import state as worker_state
 from .request import Request
@@ -196,7 +196,7 @@ def rate_limit(state, task_name, rate_limit, **kwargs):
         rate_limit (int, str): New rate limit.
     """
     try:
-        timeutils.rate(rate_limit)
+        rate(rate_limit)
     except ValueError as exc:
         return nok('Invalid rate limit string: {0!r}'.format(exc))
 

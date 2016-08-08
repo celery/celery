@@ -8,7 +8,7 @@ from kombu.utils.limits import TokenBucket
 from celery.exceptions import InvalidTaskError
 from celery.worker import state
 from celery.worker.strategy import proto1_to_proto2
-from celery.utils.timeutils import rate
+from celery.utils.time import rate
 
 from celery.tests.case import (
     AppCase, Mock, TaskMessage, TaskMessage1, patch, task_message_from_sig,

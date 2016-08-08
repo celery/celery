@@ -5,7 +5,7 @@ import pytz
 from datetime import datetime, timedelta, tzinfo
 from pytz import AmbiguousTimeError
 
-from celery.utils.timeutils import (
+from celery.utils.time import (
     delta_resolution,
     humanize_seconds,
     maybe_iso8601,
@@ -27,7 +27,7 @@ from celery.tests.case import Case, Mock, patch
 class test_LocalTimezone(Case):
 
     def test_daylight(self):
-        with patch('celery.utils.timeutils._time') as time:
+        with patch('celery.utils.time._time') as time:
             time.timezone = 3600
             time.daylight = False
             x = LocalTimezone()
@@ -70,7 +70,7 @@ class test_iso8601(Case):
         self.assertEqual(d3.tzinfo, pytz.UTC)
 
 
-class test_timeutils(Case):
+class test_time_utils(Case):
 
     def test_delta_resolution(self):
         D = delta_resolution
@@ -246,7 +246,7 @@ class test_ffwd(Case):
 class test_utcoffset(Case):
 
     def test_utcoffset(self):
-        with patch('celery.utils.timeutils._time') as _time:
+        with patch('celery.utils.time._time') as _time:
             _time.daylight = True
             self.assertIsNotNone(utcoffset(time=_time))
             _time.daylight = False

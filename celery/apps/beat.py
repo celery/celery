@@ -17,7 +17,7 @@ from celery import VERSION_BANNER, platforms, beat
 from celery.five import text_t
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger
-from celery.utils.timeutils import humanize_seconds
+from celery.utils.time import humanize_seconds
 
 __all__ = ['Beat']
 

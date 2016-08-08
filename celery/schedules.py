@@ -14,7 +14,7 @@ from kombu.utils.objects import cached_property
 from . import current_app
 from .five import python_2_unicode_compatible, range, string_t
 from .utils.collections import AttributeDict
-from .utils.timeutils import (
+from .utils.time import (
     weekday, maybe_timedelta, remaining, humanize_seconds,
     timezone, maybe_make_aware, ffwd, localize
 )
@@ -431,7 +431,7 @@ class crontab(schedule):
 
     def _delta_to_next(self, last_run_at, next_hour, next_minute):
         """Takes a :class:`~datetime.datetime` of last run, next minute and hour,
-        and returns a :class:`~celery.utils.timeutils.ffwd` for the next
+        and returns a :class:`~celery.utils.time.ffwd` for the next
         scheduled day and time.
 
         Only called when ``day_of_month`` and/or ``month_of_year``

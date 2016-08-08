@@ -765,7 +765,7 @@ is following the conventions.
 
         from .platforms import Pidfile
         from .five import zip_longest, items, range
-        from .utils import timeutils
+        from .utils.time import maybe_timedelta
 
 * Wild-card imports must not be used (`from xxx import *`).
 

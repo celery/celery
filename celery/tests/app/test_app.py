@@ -21,7 +21,7 @@ from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
 from celery.utils.serialization import pickle
-from celery.utils.timeutils import timezone
+from celery.utils.time import timezone
 from celery.utils.objects import Bunch
 
 from celery.tests.case import (

@@ -56,7 +56,7 @@
     celery.utils.graph
     celery.utils.objects
     celery.utils.term
-    celery.utils.timeutils
+    celery.utils.time
     celery.utils.iso8601
     celery.utils.saferepr
     celery.utils.serialization

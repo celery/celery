@@ -1,11 +1,11 @@
 ==================================================
- ``celery.utils.timeutils``
+ ``celery.utils.time``
 ==================================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.utils.timeutils
+.. currentmodule:: celery.utils.time
 
-.. automodule:: celery.utils.timeutils
+.. automodule:: celery.utils.time
     :members:
     :undoc-members:

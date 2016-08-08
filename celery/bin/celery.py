@@ -274,7 +274,7 @@ from celery.utils import term
 from celery.utils import text
 from celery.utils.functional import pass1
 from celery.utils.text import str_to_list
-from celery.utils.timeutils import maybe_iso8601
+from celery.utils.time import maybe_iso8601
 
 # Cannot use relative imports here due to a Windows issue (#1111).
 from celery.bin.base import Command, Option, Extensions

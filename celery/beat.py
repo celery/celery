@@ -28,7 +28,7 @@ from .five import (
 )
 from .schedules import maybe_schedule, crontab
 from .utils.imports import load_extension_class_names, symbol_by_name
-from .utils.timeutils import humanize_seconds
+from .utils.time import humanize_seconds
 from .utils.log import get_logger, iter_open_logger_fds
 
 __all__ = [

@@ -7,7 +7,7 @@ from kombu import Exchange, Queue
 from celery import uuid
 from celery.app.amqp import Queues, utf8dict
 from celery.five import keys
-from celery.utils.timeutils import to_utc
+from celery.utils.time import to_utc
 
 from celery.tests.case import AppCase, Mock
 

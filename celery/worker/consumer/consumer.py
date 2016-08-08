@@ -32,7 +32,7 @@ from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import Bunch
 from celery.utils.text import truncate
-from celery.utils.timeutils import humanize_seconds, rate
+from celery.utils.time import humanize_seconds, rate
 
 from celery.worker import loops
 from celery.worker.state import (

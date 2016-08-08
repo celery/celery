@@ -1693,6 +1693,8 @@ Changes to internal API
 
 - Module ``celery.datastructures`` renamed to :mod:`celery.utils.collections`.
 
+- Module ``celery.utils.timeutils`` renamed to :mod:`celery.utils.time`.
+
 - ``celery.utils.datastructures.DependencyGraph`` moved to
   :mod:`celery.utils.graph`.
 

@@ -155,7 +155,7 @@ Aliases (Pending deprecation)
     * ``.inspect`` -> {``app.control.inspect``}
 
 * ``celery.utils.info``
-    * ``.humanize_seconds`` -> ``celery.utils.timeutils.humanize_seconds``
+    * ``.humanize_seconds`` -> ``celery.utils.time.humanize_seconds``
     * ``.textindent`` -> ``celery.utils.textindent``
     * ``.get_broker_info`` -> {``app.amqp.get_broker_info``}
     * ``.format_broker_info`` -> {``app.amqp.format_broker_info``}

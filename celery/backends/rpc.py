@@ -17,7 +17,7 @@ from celery import states
 from celery._state import task_join_will_block
 from celery.five import items, range
 from celery.utils.functional import dictfilter
-from celery.utils.timeutils import maybe_s_to_ms
+from celery.utils.time import maybe_s_to_ms
 
 from . import base
 from .async import AsyncBackendMixin, BaseResultConsumer
