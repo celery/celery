@@ -18,7 +18,7 @@ from celery.result import EagerResult
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
-from celery.utils.serialization import maybe_reraise
+from celery.utils.serialization import raise_with_context
 
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
@@ -606,8 +606,9 @@ class Task(object):
         # Not in worker or emulated by (apply/always_eager),
         # so just raise the original exception.
         if request.called_directly:
-            maybe_reraise()  # raise orig stack if PyErr_Occurred
-            raise exc or Retry('Task can be retried', None)
+            # raises orig stack if PyErr_Occurred,
+            # and augments with exc' if that argument is defined.
+            raise_with_context(exc or Retry('Task can be retried', None))
 
         if not eta and countdown is None:
             countdown = self.default_retry_delay
@@ -621,10 +622,9 @@ class Task(object):
 
         if max_retries is not None and retries > max_retries:
             if exc:
-                # first try to re-raise the original exception
-                maybe_reraise()
-                # or if not in an except block then raise the custom exc.
-                raise exc
+                # On Py3: will augment any current exception with
+                # the exc' argument provided (raise exc from orig)
+                raise_with_context(exc)
             raise self.MaxRetriesExceededError(
                 "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
                     self.name, request.id, S.args, S.kwargs))

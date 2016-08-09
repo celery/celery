@@ -24,6 +24,8 @@ try:
 except ImportError:
     import pickle  # noqa
 
+PY3 = sys.version_info[0] >= 3
+
 __all__ = [
     'UnpickleableExceptionWrapper', 'subclass_exception',
     'find_pickleable_exception', 'create_exception_cls',
@@ -239,13 +241,26 @@ def jsonify(obj,
         return unknown_type_filter(obj)
 
 
-def maybe_reraise():
-    """Re-raise if an exception is currently being handled, or return
-    otherwise."""
-    exc_info = sys.exc_info()
-    try:
-        if exc_info[2]:
-            reraise(exc_info[0], exc_info[1], exc_info[2])
-    finally:
-        # see http://docs.python.org/library/sys.html#sys.exc_info
-        del(exc_info)
+if PY3:
+    from vine.five import exec_
+    _raise_with_context = None  # for flake8
+    exec_("""def _raise_with_context(exc, ctx): raise exc from ctx""")
+
+    def raise_with_context(exc):
+        exc_info = sys.exc_info()
+        if not exc_info:
+            raise exc
+        elif exc_info[1] is exc:
+            raise
+        _raise_with_context(exc, exc_info[1])
+else:
+    def raise_with_context(exc):
+        exc_info = sys.exc_info()
+        if not exc_info:
+            raise exc
+        if exc_info[1] is exc:
+            raise
+        elif exc_info[2]:
+            reraise(type(exc), exc, exc_info[2])
+        raise exc
+
