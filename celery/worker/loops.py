@@ -25,19 +25,23 @@ def _quick_drain(connection, timeout=0.1):
             raise
 
 
+def _enable_amqheartbeats(timer, connection, rate=2.0):
+    tick = connection.heartbeat_check
+    heartbeat = connection.get_heartbeat_interval()  # negotiated
+    if heartbeat and connection.supports_heartbeats:
+        timer.call_repeatedly(heartbeat / rate, tick, rate)
+
+
 def asynloop(obj, connection, consumer, blueprint, hub, qos,
              heartbeat, clock, hbrate=2.0, RUN=RUN):
     """Non-blocking event loop consuming messages until connection is lost,
     or shutdown is requested."""
     update_qos = qos.update
-    hbtick = connection.heartbeat_check
     errors = connection.connection_errors
-    heartbeat = connection.get_heartbeat_interval()  # negotiated
 
     on_task_received = obj.create_task_handler()
 
-    if heartbeat and connection.supports_heartbeats:
-        hub.call_repeatedly(heartbeat / hbrate, hbtick, hbrate)
+    _enable_amqheartbeats(hub, connection, rate=hbrate)
 
     consumer.on_message = on_task_received
     consumer.consume()
@@ -98,6 +102,7 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
     """Fallback blocking event loop for transports that doesn't support AIO."""
 
     on_task_received = obj.create_task_handler()
+    #_enable_amqheartbeats(obj.timer, connection, rate=hbrate)
     perform_pending_operations = obj.perform_pending_operations
     consumer.on_message = on_task_received
     consumer.consume()

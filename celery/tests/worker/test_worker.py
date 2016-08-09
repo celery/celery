@@ -337,6 +337,10 @@ class test_Consumer(AppCase):
             def drain_events(self, **kwargs):
                 self.obj.connection = None
 
+            @property
+            def supports_heartbeats(self):
+                return False
+
         c = self.LoopConsumer()
         c.blueprint.state = RUN
         c.connection = Connection()
