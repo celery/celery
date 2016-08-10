@@ -158,13 +158,13 @@ class Consumer(object):
         name = 'Consumer'
         default_steps = [
             'celery.worker.consumer:Connection',
+            'celery.worker.consumer:Evloop',
             'celery.worker.consumer:Mingle',
             'celery.worker.consumer:Events',
             'celery.worker.consumer:Gossip',
             'celery.worker.consumer:Heart',
             'celery.worker.consumer:Control',
             'celery.worker.consumer:Tasks',
-            'celery.worker.consumer:Evloop',
             'celery.worker.consumer:Agent',
         ]
 
@@ -584,7 +584,10 @@ class Heart(bootsteps.StartStopStep):
     def __init__(self, c, without_heartbeat=False, heartbeat_interval=None,
                  **kwargs):
         self.enabled = not without_heartbeat
-        self.heartbeat_interval = heartbeat_interval
+        if heartbeat_interval is not None:
+            self.heartbeat_interval = heartbeat_interval
+        else:
+            self.heartbeat_interval = c.app.conf.BROKER_HEARTBEAT
         c.heart = None
 
     def start(self, c):
@@ -592,6 +595,8 @@ class Heart(bootsteps.StartStopStep):
             c.timer, c.event_dispatcher, self.heartbeat_interval,
         )
         c.heart.start()
+        sleep(1)
+        c.app.control.ping()
 
     def stop(self, c):
         c.heart = c.heart and c.heart.stop()

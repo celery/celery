@@ -374,7 +374,7 @@ class Celery(object):
             port or conf.BROKER_PORT,
             transport=transport or conf.BROKER_TRANSPORT,
             ssl=self.either('BROKER_USE_SSL', ssl),
-            heartbeat=heartbeat,
+            heartbeat=heartbeat or conf.BROKER_HEARTBEAT,
             login_method=login_method or conf.BROKER_LOGIN_METHOD,
             failover_strategy=(
                 failover_strategy or conf.BROKER_FAILOVER_STRATEGY
