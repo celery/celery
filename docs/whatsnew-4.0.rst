@@ -110,14 +110,14 @@ and also drops support for Python 3.3 so supported versions are:
 Last major version to support Python 2
 --------------------------------------
 
-Starting from Celery 5.0 only Python 3.6+ will be supported.
+Starting from Celery 5.0 only Python 3.5+ will be supported.
 
 To make sure you're not affected by this change you should pin
 the Celery version in your requirements file, either to a specific
 version: ``celery==4.0.0``, or a range: ``celery>=4.0,<5.0``.
 
 Dropping support for Python 2 will enable us to remove massive
-amounts of compatibility code, and going with Python 3.6 allows
+amounts of compatibility code, and going with Python 3.5 allows
 us to take advantage of typing, async/await, asyncio, and similar
 concepts there's no alternative for in older versions.
 

@@ -53,7 +53,7 @@ Celery version 4.0 runs on,
 
 
 This is the last version to support Python 2.7,
-and from the next version (Celery 5.x) Python 3.6 or newer is required.
+and from the next version (Celery 5.x) Python 3.5 or newer is required.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
