@@ -243,7 +243,7 @@ def jsonify(obj,
 
 # Since PyPy 3 targets Python 3.2, 'raise exc from None' will
 # raise a TypeError so we need to look for Python 3.3 or newer
-if PY33:
+if PY33:  # pragma: no cover
     from vine.five import exec_
     _raise_with_context = None  # for flake8
     exec_("""def _raise_with_context(exc, ctx): raise exc from ctx""")
