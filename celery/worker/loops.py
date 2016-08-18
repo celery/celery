@@ -102,7 +102,6 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
     """Fallback blocking event loop for transports that doesn't support AIO."""
 
     on_task_received = obj.create_task_handler()
-    #_enable_amqheartbeats(obj.timer, connection, rate=hbrate)
     perform_pending_operations = obj.perform_pending_operations
     consumer.on_message = on_task_received
     consumer.consume()

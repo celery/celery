@@ -142,7 +142,7 @@ or that the messages may not even fit in memory.
 
 The workers' default prefetch count is the
 :setting:`worker_prefetch_multiplier` setting multiplied by the number
-of concurrency slots[*]_ (processes/threads/green-threads).
+of concurrency slots [*]_ (processes/threads/green-threads).
 
 If you have many tasks with a long duration you want
 the multiplier value to be *one*: meaning it'll only reserve one

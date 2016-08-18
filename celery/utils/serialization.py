@@ -24,7 +24,7 @@ try:
 except ImportError:
     import pickle  # noqa
 
-PY3 = sys.version_info[0] >= 3
+PY33 = sys.version_info >= (3, 3)
 
 __all__ = [
     'UnpickleableExceptionWrapper', 'subclass_exception',
@@ -241,7 +241,9 @@ def jsonify(obj,
         return unknown_type_filter(obj)
 
 
-if PY3:
+# Since PyPy 3 targets Python 3.2, 'raise exc from None' will
+# raise a TypeError so we need to look for Python 3.3 or newer
+if PY33:  # pragma: no cover
     from vine.five import exec_
     _raise_with_context = None  # for flake8
     exec_("""def _raise_with_context(exc, ctx): raise exc from ctx""")
@@ -263,4 +265,3 @@ else:
         elif exc_info[2]:
             reraise(type(exc), exc, exc_info[2])
         raise exc
-

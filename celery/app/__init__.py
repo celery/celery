@@ -96,17 +96,18 @@ def shared_task(*args, **kwargs):
         current apps task registry.
 
     Example:
+
         >>> from celery import Celery, shared_task
         >>> @shared_task
         ... def add(x, y):
         ...     return x + y
-
+        ...
         >>> app1 = Celery(broker='amqp://')
         >>> add.app is app1
         True
-
         >>> app2 = Celery(broker='redis://')
         >>> add.app is app2
+        True
     """
 
     def create_shared_task(**options):
