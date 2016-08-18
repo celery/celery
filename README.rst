@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-|build-status| |coverage| |bitdeli|
+|build-status| |coverage| |license| |wheel| |pyversion| |pyimp|
 
 :Version: 4.0.0rc3 (0today8)
 :Web: http://celeryproject.org/
@@ -431,7 +431,19 @@ file in the top distribution directory for the full license text.
 .. |coverage| image:: https://codecov.io/github/celery/celery/coverage.svg?branch=master
     :target: https://codecov.io/github/celery/celery?branch=master
 
-.. |bitdeli| image:: https://d2weczhvl823v0.cloudfront.net/celery/celery/trend.png
-    :alt: Bitdeli badge
-    :target: https://bitdeli.com/free
+.. |license| image:: https://img.shields.io/pypi/l/celery.svg
+    :alt: BSD License
+    :target: https://opensource.org/licenses/BSD-3-Clause
+
+.. |wheel| image:: https://img.shields.io/pypi/wheel/celery.svg
+    :alt: Celery can be installed via wheel
+    :target: http://pypi.python.org/pypi/celery/
+
+.. |pyversion| image:: https://img.shields.io/pypi/pyversions/celery.svg
+    :alt: Supported Python versions.
+    :target: http://pypi.python.org/pypi/celery/
+
+.. |pyimp| image:: https://img.shields.io/pypi/implementation/celery.svg
+    :alt: Support Python implementations.
+    :target: http://pypi.python.org/pypi/celery/
 
