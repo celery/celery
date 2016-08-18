@@ -385,6 +385,13 @@ class test_Request(RequestCase):
         job.send_event('task-frobulated')
         job.eventer.send.assert_called_with('task-frobulated', uuid=job.id)
 
+    def test_send_events__disabled_at_task_level(self):
+        job = self.xRequest()
+        job.task.send_events = False
+        job.eventer = Mock(name='.eventer')
+        job.send_event('task-frobulated')
+        job.eventer.send.assert_not_called()
+
     def test_on_retry(self):
         job = self.get_request(self.mytask.s(1, f='x'))
         job.eventer = Mock(name='.eventer')

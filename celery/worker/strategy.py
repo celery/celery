@@ -58,11 +58,16 @@ def default(task, app, consumer,
             to_system_tz=timezone.to_system, bytes=bytes, buffer_t=buffer_t,
             proto1_to_proto2=proto1_to_proto2):
     hostname = consumer.hostname
-    eventer = consumer.event_dispatcher
     connection_errors = consumer.connection_errors
     _does_info = logger.isEnabledFor(logging.INFO)
+
+    # task event related
+    # (optimized to avoid calling request.send_event)
+    eventer = consumer.event_dispatcher
     events = eventer and eventer.enabled
     send_event = eventer.send
+    task_sends_events = events and task.send_events
+
     call_at = consumer.timer.call_at
     apply_eta_task = consumer.apply_eta_task
     rate_limits_enabled = not consumer.disable_rate_limits
@@ -96,7 +101,7 @@ def default(task, app, consumer,
         if (req.expires or req.id in revoked_tasks) and req.revoked():
             return
 
-        if events:
+        if task_sends_events:
             send_event(
                 'task-received',
                 uuid=req.id, name=req.name,
