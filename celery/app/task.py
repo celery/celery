@@ -262,6 +262,14 @@ class Task(object):
     #: (``result.children``).
     trail = True
 
+    #: If enabled the worker will send monitoring events related to
+    #: this task (but only if the worker is configured to send
+    #: task related events).
+    #: Note that this has no effect on the task-failure event case
+    #: where a task is not registered (as it will have no task class
+    #: to check this flag).
+    send_events = True
+
     #: When enabled errors will be stored even if the task is otherwise
     #: configured to ignore results.
     store_errors_even_if_ignored = None

@@ -349,6 +349,13 @@ class test_Request(AppCase):
         job.send_event('task-frobulated')
         self.assertIn('task-frobulated', job.eventer.sent)
 
+    def test_send_events__disabled_at_task_level(self):
+        job = self.xRequest()
+        job.task.send_events = False
+        job.eventer = Mock(name='.eventer')
+        job.send_event('task-frobulated')
+        job.eventer.send.assert_not_called()
+
     def test_on_retry(self):
         job = Request({
             'task': self.mytask.name,

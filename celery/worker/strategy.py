@@ -27,13 +27,18 @@ logger = get_logger(__name__)
 def default(task, app, consumer,
             info=logger.info, error=logger.error, task_reserved=task_reserved,
             to_system_tz=timezone.to_system):
-    hostname = consumer.hostname
-    eventer = consumer.event_dispatcher
     Req = Request
+    hostname = consumer.hostname
     connection_errors = consumer.connection_errors
     _does_info = logger.isEnabledFor(logging.INFO)
+
+    # task event related
+    # (optimized to avoid calling request.send_event)
+    eventer = consumer.event_dispatcher
     events = eventer and eventer.enabled
     send_event = eventer.send
+    task_sends_events = events and task.send_events
+
     call_at = consumer.timer.call_at
     apply_eta_task = consumer.apply_eta_task
     rate_limits_enabled = not consumer.disable_rate_limits
@@ -54,7 +59,7 @@ def default(task, app, consumer,
         if _does_info:
             info('Received task: %s', req)
 
-        if events:
+        if task_sends_events:
             send_event(
                 'task-received',
                 uuid=req.id, name=req.name,
