@@ -181,7 +181,7 @@ def extras(*p):
 features = set([
     'auth', 'cassandra', 'elasticsearch', 'memcache', 'pymemcache',
     'couchbase', 'eventlet', 'gevent', 'msgpack', 'yaml',
-    'redis', 'sqs', 'couchdb', 'riak', 'zookeeper',
+    'redis', 'sqs', 'couchdb', 'riak', 'zookeeper', 'solar',
     'sqlalchemy', 'librabbitmq', 'pyro', 'slmq', 'tblib', 'consul'
 ])
 extras_require = dict((x, extras(x + '.txt')) for x in features)
