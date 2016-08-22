@@ -1004,7 +1004,7 @@ Instead of using router classes you can now simply define a function:
             return {'queue': 'hipri'}
 
 If you don't need the arguments you can use start arguments, just make
-sure you always also accept star arguments so that we've the ability
+sure you always also accept star arguments so that we have the ability
 to add more features in the future:
 
 .. code-block:: python

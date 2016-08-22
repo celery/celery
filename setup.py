@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup, find_packages
-
+import codecs
 import os
 import re
 import sys
-import codecs
+
+import setuptools
+import setuptools.command.test
+
 
 try:
     import platform
@@ -14,6 +16,8 @@ try:
 except (AttributeError, ImportError):
     def _pyimp():
         return 'Python'
+
+NAME = 'celery'
 
 E_UNSUPPORTED_PYTHON = """
 ----------------------------------------
@@ -79,10 +83,6 @@ except:
     pass
 finally:
     sys.path[:] = orig_path
-
-NAME = 'celery'
-entrypoints = {}
-extra = {}
 
 # -*- Classifiers -*-
 
@@ -154,6 +154,10 @@ def _reqs(*f):
 def reqs(*f):
     return [req for subreq in _reqs(*f) for req in subreq]
 
+
+def extras(*p):
+    return reqs('extras', *p)
+
 install_requires = reqs('default.txt')
 if JYTHON:
     install_requires.extend(reqs('jython.txt'))
@@ -165,46 +169,46 @@ if os.path.exists('README.rst'):
 else:
     long_description = 'See http://pypi.python.org/pypi/celery'
 
-# -*- Entry Points -*- #
-
-console_scripts = entrypoints['console_scripts'] = [
-    'celery = celery.__main__:main',
-]
-
-# -*- Extras -*-
-
-
-def extras(*p):
-    return reqs('extras', *p)
-
-# Celery specific
-features = set([
-    'auth', 'cassandra', 'elasticsearch', 'memcache', 'pymemcache',
-    'couchbase', 'eventlet', 'gevent', 'msgpack', 'yaml',
-    'redis', 'sqs', 'couchdb', 'riak', 'zookeeper', 'solar',
-    'sqlalchemy', 'librabbitmq', 'pyro', 'slmq', 'tblib', 'consul'
-])
-extras_require = dict((x, extras(x + '.txt')) for x in features)
-extra['extras_require'] = extras_require
-
 # -*- %%% -*-
 
-setup(
+
+class pytest(setuptools.command.test.test):
+    user_options = [('pytest-args=', 'a', 'Arguments to pass to py.test')]
+
+    def initialize_options(self):
+        setuptools.command.test.test.initialize_options(self)
+        self.pytest_args = []
+
+    def run_tests(self):
+        import pytest
+        sys.exit(pytest.main(self.pytest_args))
+
+setuptools.setup(
     name=NAME,
+    packages=setuptools.find_packages(exclude=['t', 't.*']),
     version=meta['version'],
     description=meta['doc'],
+    long_description=long_description,
     author=meta['author'],
     author_email=meta['contact'],
-    url=meta['homepage'],
     platforms=['any'],
     license='BSD',
-    packages=find_packages(),
-    include_package_data=True,
-    zip_safe=False,
+    url=meta['homepage'],
     install_requires=install_requires,
     tests_require=reqs('test.txt'),
-    test_suite='nose.collector',
+    extras_require=dict((x, extras(x + '.txt')) for x in set([
+        'auth', 'cassandra', 'elasticsearch', 'memcache', 'pymemcache',
+        'couchbase', 'eventlet', 'gevent', 'msgpack', 'yaml',
+        'redis', 'sqs', 'couchdb', 'riak', 'zookeeper', 'solar',
+        'sqlalchemy', 'librabbitmq', 'pyro', 'slmq', 'tblib', 'consul'
+    ])),
     classifiers=classifiers,
-    entry_points=entrypoints,
-    long_description=long_description,
-    **extra)
+    entry_points={
+        'console_scripts': [
+            'celery = celery.__main__:main',
+        ]
+    },
+    cmdclass={'test': pytest},
+    include_package_data=True,
+    zip_safe=False,
+)

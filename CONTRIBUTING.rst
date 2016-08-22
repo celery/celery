@@ -464,12 +464,12 @@ dependencies, so install these next:
     $ pip install -U -r requirements/default.txt
 
 After installing the dependencies required, you can now execute
-the test suite by calling ``nosetests <nose>``:
+the test suite by calling ``py.test <pytest``:
 ::
 
-    $ nosetests
+    $ py.test
 
-Some useful options to ``nosetests`` are:
+Some useful options to ``py.test`` are:
 
 * ``-x``
 
@@ -479,10 +479,6 @@ Some useful options to ``nosetests`` are:
 
     Don't capture output
 
-* ``-nologcapture``
-
-    Don't capture log output.
-
 * ``-v``
 
     Run with verbose output.
@@ -491,7 +487,7 @@ If you want to run the tests for a single test file only
 you can do so like this:
 ::
 
-    $ nosetests celery.tests.test_worker.test_worker_job
+    $ py.test t/unit/worker/test_worker_job.py
 
 .. _contributing-pull-requests:
 
@@ -525,7 +521,7 @@ Installing the ``coverage`` module:
 Code coverage in HTML:
 ::
 
-    $ nosetests --with-coverage --cover-html
+    $ py.test --cov=celery --cov-report=html
 
 The coverage output will then be located at
 ``celery/tests/cover/index.html``.
@@ -533,7 +529,7 @@ The coverage output will then be located at
 Code coverage in XML (Cobertura-style):
 ::
 
-    $ nosetests --with-coverage --cover-xml --cover-xml-file=coverage.xml
+    $ py.test --cov=celery --cov-report=xml
 
 The coverage XML output will then be located at ``coverage.xml``
 
@@ -856,6 +852,12 @@ Ask Solem
 
 :github: https://github.com/ask
 :twitter: http://twitter.com/#!/asksol
+
+Asif Saif Uddin
+~~~~~~~~~~~~~~~
+
+:github: https://github.com/auvipy
+:twitter: https://twitter.com/#!/auvipy
 
 Dmitry Malinovsky
 ~~~~~~~~~~~~~~~~~

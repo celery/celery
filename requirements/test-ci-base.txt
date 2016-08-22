@@ -1,4 +1,5 @@
 coverage>=3.0
+pytest-cov
 codecov
 -r extras/redis.txt
 -r extras/sqlalchemy.txt

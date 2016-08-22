@@ -292,9 +292,9 @@ Module Overview
 
     single-mode interface to creating tasks, and controlling workers.
 
-- celery.tests
+- t.unit (int distribution)
 
-    The unittest suite.
+    The unit test suite.
 
 - celery.utils
 

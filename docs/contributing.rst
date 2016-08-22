@@ -471,13 +471,13 @@ dependencies, so install these next:
     $ pip install -U -r requirements/default.txt
 
 After installing the dependencies required, you can now execute
-the test suite by calling :pypi:`nosetests <nose>`:
+the test suite by calling :pypi:`py.test <pytest`:
 
 .. code-block:: console
 
-    $ nosetests
+    $ py.test
 
-Some useful options to :command:`nosetests` are:
+Some useful options to :command:`py.test` are:
 
 * ``-x``
 
@@ -486,10 +486,6 @@ Some useful options to :command:`nosetests` are:
 * ``-s``
 
     Don't capture output
-
-* ``-nologcapture``
-
-    Don't capture log output.
 
 * ``-v``
 
@@ -500,7 +496,7 @@ you can do so like this:
 
 .. code-block:: console
 
-    $ nosetests celery.tests.test_worker.test_worker_job
+    $ py.test t/unit/worker/test_worker_job.py
 
 .. _contributing-pull-requests:
 
@@ -536,16 +532,16 @@ Code coverage in HTML:
 
 .. code-block:: console
 
-    $ nosetests --with-coverage --cover-html
+    $ py.test --cov=celery --cov-report=html
 
 The coverage output will then be located at
-:file:`celery/tests/cover/index.html`.
+:file:`cover/index.html`.
 
 Code coverage in XML (Cobertura-style):
 
 .. code-block:: console
 
-    $ nosetests --with-coverage --cover-xml --cover-xml-file=coverage.xml
+    $ py.test --cov=celery --cov-report=xml
 
 The coverage XML output will then be located at :file:`coverage.xml`
 

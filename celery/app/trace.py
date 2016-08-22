@@ -418,13 +418,13 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     except EncodeError as exc:
                         I, R, state, retval = on_error(task_request, exc, uuid)
                     else:
+                        Rstr = saferepr(R, resultrepr_maxsize)
+                        T = monotonic() - time_start
                         if task_on_success:
                             task_on_success(retval, uuid, args, kwargs)
                         if success_receivers:
                             send_success(sender=task, result=retval)
                         if _does_info:
-                            T = monotonic() - time_start
-                            Rstr = saferepr(R, resultrepr_maxsize)
                             info(LOG_SUCCESS, {
                                 'id': uuid, 'name': name,
                                 'return_value': Rstr, 'runtime': T,

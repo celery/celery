@@ -5,10 +5,13 @@ import os
 import sys
 import shlex
 import subprocess
+import unittest
+
+from case import Case
+from case.skip import SkipTest
 
 from celery import current_app
 from celery.five import range
-from celery.tests.case import SkipTest, unittest
 
 import suite  # noqa
 
@@ -25,7 +28,7 @@ class Sizes(list):
         return sum(self) / len(self)
 
 
-class LeakFunCase(unittest.TestCase):
+class LeakFunCase(Case):
 
     def setUp(self):
         self.app = current_app

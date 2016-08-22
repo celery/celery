@@ -9,6 +9,8 @@ FLAKE8=flake8
 FLAKEPLUS=flakeplus
 SPHINX2RST=sphinx2rst
 
+TESTDIR=t
+
 SPHINX_DIR=docs/
 SPHINX_BUILDDIR="${SPHINX_DIR}/_build"
 README=README.rst
@@ -84,13 +86,13 @@ configcheck:
 
 flakecheck:
 	# the only way to enable all-1 errors is to ignore one of them.
-	$(FLAKE8) --ignore=X999 "$(PROJ)"
+	$(FLAKE8) --ignore=X999 "$(PROJ)" "$(TESTDIR)"
 
 flakediag:
 	-$(MAKE) flakecheck
 
 flakepluscheck:
-	$(FLAKEPLUS) --$(FLAKEPLUSTARGET) "$(PROJ)"
+	$(FLAKEPLUS) --$(FLAKEPLUSTARGET) "$(PROJ)" "$(TESTDIR)"
 
 flakeplusdiag:
 	-$(MAKE) flakepluscheck
@@ -138,7 +140,7 @@ test:
 	$(PYTHON) setup.py test
 
 cov:
-	$(NOSETESTS) -xv --with-coverage --cover-html --cover-branch
+	py.test -x --cov="$(PROJ)" --cov-report=html
 
 build:
 	$(PYTHON) setup.py sdist bdist_wheel
@@ -158,4 +160,3 @@ graph: clean-graph $(WORKER_GRAPH)
 
 authorcheck:
 	git shortlog -se | cut -f2 | extra/release/attribution.py
-
