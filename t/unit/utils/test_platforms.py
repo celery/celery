@@ -455,6 +455,7 @@ class test_detached:
 @skip.if_win32()
 class test_DaemonContext:
 
+    @patch('multiprocessing.util._run_after_forkers')
     @patch('os.fork')
     @patch('os.setsid')
     @patch('os._exit')
@@ -464,8 +465,9 @@ class test_DaemonContext:
     @patch('os.closerange')
     @patch('os.open')
     @patch('os.dup2')
-    def test_open(self, dup2, open, close, closer, umask, chdir,
-                  _exit, setsid, fork):
+    @patch('celery.platforms.close_open_fds')
+    def test_open(self, _close_fds, dup2, open, close, closer, umask, chdir,
+                  _exit, setsid, fork, run_after_forkers):
         x = DaemonContext(workdir='/opt/workdir', umask=0o22)
         x.stdfds = [0, 1, 2]
 
