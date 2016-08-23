@@ -64,7 +64,7 @@ CELERY_TEST_CONFIG = {
 
 
 @pytest.fixture(autouse=True, scope='session')
-def disable_multiprocessing(request):
+def AAA_disable_multiprocessing(request):
     # pytest-cov breaks if a multiprocessing.Process is started,
     # so disable them completely to make sure it doesn't happen.
     from case import patch
