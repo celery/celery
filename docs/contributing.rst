@@ -520,30 +520,39 @@ the steps outlined here: http://bit.ly/koJoso
 Calculating test coverage
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To calculate test coverage you must first install the :pypi:`coverage` module.
+To calculate test coverage you must first install the :pypi:`pytest-cov` module.
 
-Installing the :pypi:`coverage` module:
-
-.. code-block:: console
-
-    $ pip install -U coverage
-
-Code coverage in HTML:
+Installing the :pypi:`pytest-cov` module:
 
 .. code-block:: console
 
-    $ py.test --cov=celery --cov-report=html
+    $ pip install -U pytest-cov
 
-The coverage output will then be located at
-:file:`cover/index.html`.
+Code coverage in HTML format
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Code coverage in XML (Cobertura-style):
+#. Run :command:`py.test` with the ``--cov-report=html`` argument enabled:
+
+    .. code-block:: console
+
+        $ py.test --cov=celery --cov-report=html
+
+#. The coverage output will then be located in the :file:`htmlcov/` directory:
+
+    .. code-block:: console
+
+        $ open htmlcov/index.html
+
+Code coverage in XML (Cobertura-style)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+#. Run :command:`py.test` with the ``--cov-report=xml`` argument enabled:
 
 .. code-block:: console
 
     $ py.test --cov=celery --cov-report=xml
 
-The coverage XML output will then be located at :file:`coverage.xml`
+#. The coverage XML output will then be located in the :file:`coverage.xml` file.
 
 .. _contributing-tox:
 
