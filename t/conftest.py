@@ -63,6 +63,31 @@ CELERY_TEST_CONFIG = {
 }
 
 
+@pytest.fixture(autouse=True, scope='session')
+def disable_multiprocessing(request):
+    # pytest-cov breaks if a multiprocessing.Process is started,
+    # so disable them completely to make sure it doesn't happen.
+    from case import patch
+    stuff = [
+        'multiprocessing.Process',
+        'billiard.Process',
+        'billiard.context.Process',
+        'billiard.process.Process',
+        'billiard.process.BaseProcess',
+        'multiprocessing.Process',
+    ]
+    if sys.version_info[0] > 3:
+        stuff.append('multiprocessing.process.BaseProcess')
+    else:
+        stuff.append('multiprocessing.process.Process')
+    ctxs = [patch(s) for s in stuff]
+    [ctx.__enter__() for ctx in ctxs]
+
+    def fin():
+        [ctx.__exit__(*sys.exc_info()) for ctx in ctxs]
+    request.addfinalizer(fin)
+
+
 class Trap(object):
 
     def __getattr__(self, name):
