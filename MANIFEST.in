@@ -7,6 +7,7 @@ include TODO
 include setup.cfg
 include setup.py
 
+recursive-include t *.py
 recursive-include docs *
 recursive-include extra/bash-completion *
 recursive-include extra/centos *

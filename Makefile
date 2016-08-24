@@ -1,9 +1,9 @@
 PROJ=celery
 PGPIDENT="Celery Security Team"
 PYTHON=python
+PYTEST=py.test
 GIT=git
 TOX=tox
-NOSETESTS=nosetests
 ICONV=iconv
 FLAKE8=flake8
 FLAKEPLUS=flakeplus
@@ -140,7 +140,7 @@ test:
 	$(PYTHON) setup.py test
 
 cov:
-	py.test -x --cov="$(PROJ)" --cov-report=html
+	$(PYTEST) -x --cov="$(PROJ)" --cov-report=html
 
 build:
 	$(PYTHON) setup.py sdist bdist_wheel
