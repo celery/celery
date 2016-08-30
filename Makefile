@@ -8,6 +8,8 @@ ICONV=iconv
 FLAKE8=flake8
 FLAKEPLUS=flakeplus
 SPHINX2RST=sphinx2rst
+RST2HTML=rst2html.py
+DEVNULL=/dev/null
 
 TESTDIR=t
 
@@ -102,8 +104,13 @@ flakes: flakediag flakeplusdiag
 clean-readme:
 	-rm -f $(README)
 
-readmecheck:
+readmecheck-unicode:
 	$(ICONV) -f ascii -t ascii $(README) >/dev/null
+
+readmecheck-rst:
+	-$(RST2HTML) --strict $(README) >$(DEVNULL)
+
+readmecheck: readmecheck-unicode readmecheck-rst
 
 $(README):
 	$(SPHINX2RST) "$(README_SRC)" --ascii > $@
