@@ -384,7 +384,7 @@ To start the :program:`celery beat` service:
 
     $ celery -A proj beat
 
-You can also start embed `beat` inside the worker by enabling
+You can also embed `beat` inside the worker by enabling the
 workers :option:`-B <celery worker -B>` option, this is convenient if you'll
 never run more than one worker node, but it's not commonly used and for that
 reason isn't recommended for production use:
