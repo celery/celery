@@ -33,7 +33,7 @@ to store it in a database.
 
 Then you can ask for a click to be counted by doing::
 
-    >>> count_click.delay('http://example.com')
+    >>> count_click.delay(url='http://example.com')
 
 **Example returning results**
 
@@ -66,7 +66,7 @@ messages, and every 10 seconds.
             wot_api_target,
             params={'hosts': ('/').join(set(domains)) + '/'}
         )
-        return [response.json[domain] for domain in domains]
+        return [response.json()[domain] for domain in domains]
 
 Using the API is done as follows::
 
