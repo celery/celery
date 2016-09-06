@@ -27,9 +27,9 @@ before_install:
     uname -a
     lsb_release -a
 install:
-  - pip install -U pip
-  - pip install -U virtualenv
-  - pip install tox==2.2.1
+  - pip -q install -U pip
+  - pip -q install -U virtualenv
+  - pip -q install tox==2.2.1
 script:
   - tox -v -- -v
 after_success:
