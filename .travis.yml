@@ -23,7 +23,7 @@ before_install:
     lsb_release -a
 install:
   - pip install -U pip
-  - pip install tox==2.3.0 --no-binary=tox
+  - LANG="en_US.UTF-8" LANGUAGE="en_US.UTF-8" pip install tox==2.2.1
 script:
   - tox -v -- -v
 after_success:
