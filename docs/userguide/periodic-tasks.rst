@@ -179,12 +179,12 @@ Available Fields
 
 * `relative`
 
-    By default :class:`~datetime.timedelta` schedules are scheduled
+    If `relative` is true :class:`~datetime.timedelta` schedules are scheduled
     "by the clock." This means the frequency is rounded to the nearest
     second, minute, hour or day depending on the period of the
     :class:`~datetime.timedelta`.
 
-    If `relative` is true the frequency isn't rounded and will be
+    By default `relative` is false, the frequency isn't rounded and will be
     relative to the time when :program:`celery beat` was started.
 
 .. _beat-crontab:
