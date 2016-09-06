@@ -3,6 +3,11 @@ python: 2.7
 env:
   global:
     PYTHONUNBUFFERED=yes
+    LANGUAGE="en_US.UTF-8"
+    LANG="en_US.UTF-8"
+    LC_ALL="en_US.UTF-8"
+    TERM="xterm-256color"
+    LOCALE=C
   matrix:
     - TOXENV=2.6
     - TOXENV=2.7
@@ -23,7 +28,8 @@ before_install:
     lsb_release -a
 install:
   - pip install -U pip
-  - LANG="en_US.UTF-8" LANGUAGE="en_US.UTF-8" pip install tox==2.2.1
+  - pip install -U virtualenv
+  - pip install tox==2.2.1
 script:
   - tox -v -- -v
 after_success:
