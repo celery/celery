@@ -27,9 +27,9 @@ before_install:
     uname -a
     lsb_release -a
 install:
+  - # PyPy: we use -q here to avoid unicode errors in pip progress bar.
   - pip -q install -U pip
-  - pip -q install -U virtualenv
-  - pip -q install tox==2.2.1
+  - pip -q install -U tox
 script:
   - tox -v -- -v
 after_success:
