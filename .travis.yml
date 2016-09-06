@@ -22,6 +22,7 @@ before_install:
     uname -a
     lsb_release -a
 install:
+  - pip install -U pip
   - pip install tox
 script:
   - tox -v -- -v
