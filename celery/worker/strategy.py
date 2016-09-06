@@ -121,7 +121,7 @@ def default(task, app, consumer,
             except OverflowError as exc:
                 error("Couldn't convert ETA %r to timestamp: %r. Task: %r",
                       req.eta, exc, req.info(safe=True), exc_info=True)
-                req.acknowledge()
+                req.reject(requeue=False)
             else:
                 consumer.qos.increment_eventually()
                 call_at(eta, apply_eta_task, (req,), priority=6)
