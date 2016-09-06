@@ -23,7 +23,7 @@ before_install:
     lsb_release -a
 install:
   - pip install -U pip
-  - pip install tox --no-binary=tox
+  - pip install tox==2.3.0 --no-binary=tox
 script:
   - tox -v -- -v
 after_success:
