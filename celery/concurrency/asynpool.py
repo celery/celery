@@ -85,13 +85,16 @@ WORKER_UP = 15
 #: A process must've started before this timeout (in secs.) expires.
 PROC_ALIVE_TIMEOUT = 4.0
 
-SCHED_STRATEGY_PREFETCH = 1
+SCHED_STRATEGY_FCFS = 1
 SCHED_STRATEGY_FAIR = 4
 
 SCHED_STRATEGIES = {
-    None: SCHED_STRATEGY_PREFETCH,
+    None: SCHED_STRATEGY_FAIR,
+    'fast': SCHED_STRATEGY_FCFS,
+    'fcfs': SCHED_STRATEGY_FCFS,
     'fair': SCHED_STRATEGY_FAIR,
 }
+SCHED_STRATEGY_TO_NAME = {v: k for k, v in SCHED_STRATEGIES.items()}
 
 Ack = namedtuple('Ack', ('id', 'fd', 'payload'))
 
@@ -1091,6 +1094,7 @@ class AsynPool(_pool.Pool):
             'avg': per(total / len(self.write_stats) if total else 0, total),
             'all': ', '.join(per(v, total) for v in vals),
             'raw': ', '.join(map(str, vals)),
+            'strategy': SCHED_STRATEGY_TO_NAME[self.sched_strategy],
             'inqueues': {
                 'total': len(self._all_inqueues),
                 'active': len(self._active_writes),
