@@ -16,7 +16,7 @@ from celery.utils.pytest import (
     assert_signal_called, TaskMessage, TaskMessage1, task_message_from_sig,
 )
 from celery.utils.pytest import app  # noqa
-from celery.utils.pytest import reset_cache_backend_state # noqa
+from celery.utils.pytest import reset_cache_backend_state  # noqa
 from celery.utils.pytest import depends_on_current_app  # noqa
 
 __all__ = ['app', 'reset_cache_backend_state', 'depends_on_current_app']
