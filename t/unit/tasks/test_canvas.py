@@ -569,6 +569,43 @@ class test_group(CanvasCase):
         g = group([self.add.s(i, i) for i in range(10)])
         assert list(iter(g)) == g.tasks
 
+    @staticmethod
+    def helper_test_get_delay(result):
+        import time
+        t0 = time.time()
+        while not result.ready():
+            time.sleep(0.01)
+            if time.time() - t0 > 1:
+                return None
+        return result.get()
+
+    def test_kwargs_direct(self):
+        res = [self.add(x=1, y=1), self.add(x=1, y=1)]
+        assert res == [2, 2]
+
+    def test_kwargs_apply(self):
+        x = group([self.add.s(), self.add.s()])
+        res = x.apply(kwargs=dict(x=1, y=1)).get()
+        assert res == [2, 2]
+
+    def test_kwargs_apply_async(self):
+        self.app.conf.task_always_eager = True
+        x = group([self.add.s(), self.add.s()])
+        res = self.helper_test_get_delay(x.apply_async(kwargs=dict(x=1, y=1)))
+        assert res == [2, 2]
+
+    def test_kwargs_delay(self):
+        self.app.conf.task_always_eager = True
+        x = group([self.add.s(), self.add.s()])
+        res = self.helper_test_get_delay(x.delay(x=1, y=1))
+        assert res == [2, 2]
+
+    def test_kwargs_delay_partial(self):
+        self.app.conf.task_always_eager = True
+        x = group([self.add.s(1), self.add.s(x=1)])
+        res = self.helper_test_get_delay(x.delay(y=1))
+        assert res == [2, 2]
+
 
 class test_chord(CanvasCase):
 
