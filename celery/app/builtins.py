@@ -83,14 +83,11 @@ def add_unlock_chord_task(app):
         except Exception as exc:
             try:
                 culprit = next(deps._failed_join_report())
-                reason = 'Dependency {0.id} raised {1!r}'.format(
-                    culprit, exc,
-                )
+                reason = 'Dependency {0.id} raised {1!r}'.format(culprit, exc)
             except StopIteration:
                 reason = repr(exc)
             logger.error('Chord %r raised: %r', group_id, exc, exc_info=1)
-            app.backend.chord_error_from_stack(callback,
-                                               ChordError(reason))
+            app.backend.chord_error_from_stack(callback, ChordError(reason))
         else:
             try:
                 callback.delay(ret)
