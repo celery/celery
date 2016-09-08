@@ -73,7 +73,7 @@ class Retry(TaskPredicate):
         Exception.__init__(self, exc, when, **kwargs)
 
     def humanize(self):
-        if isinstance(self.when, numbers.Real):
+        if isinstance(self.when, numbers.Number):
             return 'in {0.when}s'.format(self)
         return 'at {0.when}'.format(self)
 
