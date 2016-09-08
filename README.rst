@@ -6,7 +6,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp|
 
-:Version: 4.0.0rc3 (0today8)
+:Version: 4.0.0rc4 (0today8)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: https://github.com/celery/celery/
@@ -219,7 +219,9 @@ You can install Celery either via the Python Package Index (PyPI)
 or from source.
 
 To install using ``pip``:
+
 ::
+
 
     $ pip install -U Celery
 
@@ -234,7 +236,9 @@ to install Celery and the dependencies for a given feature.
 You can specify these in your requirements or on the ``pip``
 command-line by using brackets. Multiple bundles can be specified by
 separating them by commas.
+
 ::
+
 
     $ pip install "celery[librabbitmq]"
 
@@ -321,7 +325,9 @@ Download the latest version of Celery from PyPI:
 http://pypi.python.org/pypi/celery/
 
 You can install it by doing the following,:
+
 ::
+
 
     $ tar xvfz celery-0.0.0.tar.gz
     $ cd celery-0.0.0
@@ -344,7 +350,9 @@ versions of ``kombu``, ``amqp``, ``billiard``, and ``vine``.
 
 You can install the latest snapshot of these using the following
 pip commands:
+
 ::
+
 
     $ pip install https://github.com/celery/celery/zipball/master#egg=celery
     $ pip install https://github.com/celery/billiard/zipball/master#egg=billiard

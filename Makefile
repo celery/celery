@@ -108,7 +108,7 @@ readmecheck-unicode:
 	$(ICONV) -f ascii -t ascii $(README) >/dev/null
 
 readmecheck-rst:
-	-$(RST2HTML) --strict $(README) >$(DEVNULL)
+	-$(RST2HTML) $(README) >$(DEVNULL)
 
 readmecheck: readmecheck-unicode readmecheck-rst
 

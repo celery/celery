@@ -8,6 +8,7 @@ or from source.
 
 To install using :command:`pip`:
 
+
 .. code-block:: console
 
     $ pip install -U Celery
@@ -23,6 +24,7 @@ to install Celery and the dependencies for a given feature.
 You can specify these in your requirements or on the :command:`pip`
 command-line by using brackets. Multiple bundles can be specified by
 separating them by commas.
+
 
 .. code-block:: console
 
@@ -112,6 +114,7 @@ http://pypi.python.org/pypi/celery/
 
 You can install it by doing the following,:
 
+
 .. code-block:: console
 
     $ tar xvfz celery-0.0.0.tar.gz
@@ -135,6 +138,7 @@ versions of :pypi:`kombu`, :pypi:`amqp`, :pypi:`billiard`, and :pypi:`vine`.
 
 You can install the latest snapshot of these using the following
 pip commands:
+
 
 .. code-block:: console
 
