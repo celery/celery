@@ -18,6 +18,7 @@ env:
     - TOXENV=flakeplus
     - TOXENV=apicheck
     - TOXENV=configcheck
+    - TOXENV=cov
 before_install:
     - |
           if [ "$TOXENV" = "pypy" ]; then
