@@ -214,6 +214,7 @@ spelling or other errors on the website/docs/code.
          `ltrace`_, and `lsof`_.
 
     D) Include the output from the ``celery report`` command:
+
         ::
 
             $ celery -A proj report
@@ -283,7 +284,7 @@ Branches
 
 Current active version branches:
 
-* master (https://github.com/celery/celery/tree/master)
+* dev (which git calls "master") (https://github.com/celery/celery/tree/master)
 * 3.1 (https://github.com/celery/celery/tree/3.1)
 * 3.0 (https://github.com/celery/celery/tree/3.0)
 
@@ -293,13 +294,14 @@ You can see the state of any branch by looking at the Changelog:
 
 If the branch is in active development the topmost version info should
 contain meta-data like:
+
 ::
 
     2.4.0
     ======
     :release-date: TBA
     :status: DEVELOPMENT
-    :branch: master
+    :branch: dev (git calls this master)
 
 The ``status`` field can be one of:
 
@@ -318,10 +320,11 @@ The ``status`` field can be one of:
     When a branch is frozen the focus is on testing the version as much
     as possible before it is released.
 
-``master`` branch
------------------
+dev branch
+----------
 
-The master branch is where development of the next version happens.
+The dev branch (called "master" by git), is where development of the next
+version happens.
 
 Maintenance branches
 --------------------
@@ -408,12 +411,14 @@ is in the GitHub Guide: `Fork a Repo`_.
 
 After you have cloned the repository you should checkout your copy
 to a directory on your machine:
+
 ::
 
     $ git clone git@github.com:username/celery.git
 
 When the repository is cloned enter the directory to set up easy access
 to upstream changes:
+
 ::
 
     $ cd celery
@@ -422,6 +427,7 @@ to upstream changes:
 
 If you need to pull in new changes from upstream you should
 always use the ``--rebase`` option to ``git pull``:
+
 ::
 
     git pull --rebase upstream master
@@ -431,7 +437,7 @@ commit notes. See `Rebasing merge commits in git`_.
 If you want to learn more about rebasing see the `Rebase`_
 section in the GitHub guides.
 
-If you need to work on a different branch than ``master`` you can
+If you need to work on a different branch than the one git calls ``master``, you can
 fetch and checkout a remote branch like this::
 
     git checkout --track -b 3.0-devel origin/3.0-devel
@@ -452,12 +458,14 @@ A complete list of the dependencies needed are located in
 
 If you're working on the development version, then you need to
 install the development requirements first:
+
 ::
 
     $ pip install -U -r requirements/dev.txt
 
 Both the stable and the development version have testing related
 dependencies, so install these next:
+
 ::
 
     $ pip install -U -r requirements/test.txt
@@ -465,6 +473,7 @@ dependencies, so install these next:
 
 After installing the dependencies required, you can now execute
 the test suite by calling ``py.test <pytest``:
+
 ::
 
     $ py.test
@@ -485,6 +494,7 @@ Some useful options to ``py.test`` are:
 
 If you want to run the tests for a single test file only
 you can do so like this:
+
 ::
 
     $ py.test t/unit/worker/test_worker_job.py
@@ -514,6 +524,7 @@ Calculating test coverage
 To calculate test coverage you must first install the ``pytest-cov`` module.
 
 Installing the ``pytest-cov`` module:
+
 ::
 
     $ pip install -U pytest-cov
@@ -522,11 +533,13 @@ Code coverage in HTML format
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #. Run ``py.test`` with the ``--cov-report=html`` argument enabled:
+
     ::
 
         $ py.test --cov=celery --cov-report=html
 
 #. The coverage output will then be located in the ``htmlcov/`` directory:
+
     ::
 
         $ open htmlcov/index.html
@@ -535,6 +548,7 @@ Code coverage in XML (Cobertura-style)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #. Run ``py.test`` with the ``--cov-report=xml`` argument enabled:
+
 ::
 
     $ py.test --cov=celery --cov-report=xml
@@ -550,11 +564,13 @@ There's a ``tox`` configuration file in the top directory of the
 distribution.
 
 To run the tests for all supported Python versions simply execute:
+
 ::
 
     $ tox
 
 Use the ``tox -e`` option if you only want to test specific Python versions:
+
 ::
 
     $ tox -e 2.7
@@ -564,12 +580,14 @@ Building the documentation
 
 To build the documentation you need to install the dependencies
 listed in ``requirements/docs.txt``:
+
 ::
 
     $ pip install -U -r requirements/docs.txt
 
 After these dependencies are installed you should be able to
 build the docs by running:
+
 ::
 
     $ cd docs
@@ -588,6 +606,7 @@ To use these tools you need to install a few dependencies. These dependencies
 can be found in ``requirements/pkgutils.txt``.
 
 Installing the dependencies:
+
 ::
 
     $ pip install -U -r requirements/pkgutils.txt
@@ -597,12 +616,14 @@ pyflakes & PEP-8
 
 To ensure that your changes conform to ``8`` and to run pyflakes
 execute:
+
 ::
 
     $ make flakecheck
 
 To not return a negative exit code when this command fails use
 the ``flakes`` target instead:
+
 ::
 
     $ make flakes§
@@ -612,6 +633,7 @@ API reference
 
 To make sure that all modules have a corresponding section in the API
 reference please execute:
+
 ::
 
     $ make apicheck
@@ -628,12 +650,14 @@ and this module is considered part of the public API, use the following steps:
 
 
 Use an existing file as a template:
+
 ::
 
     $ cd docs/reference/
     $ cp celery.schedules.rst celery.worker.awesome.rst
 
 Edit the file using your favorite editor:
+
 ::
 
     $ vim celery.worker.awesome.rst
@@ -643,6 +667,7 @@ Edit the file using your favorite editor:
 
 
 Edit the index using your favorite editor:
+
 ::
 
     $ vim index.rst
@@ -651,6 +676,7 @@ Edit the index using your favorite editor:
 
 
 Commit your changes:
+
 ::
 
     # Add the file to git
@@ -677,6 +703,7 @@ is following the conventions.
   style.
 
     Do this:
+
     ::
 
         def method(self, arg):
@@ -687,6 +714,7 @@ is following the conventions.
             """
 
     or:
+
     ::
 
         def method(self, arg):
@@ -694,6 +722,7 @@ is following the conventions.
 
 
     but not this:
+
     ::
 
         def method(self, arg):
@@ -704,6 +733,7 @@ is following the conventions.
 * Lines shouldn't exceed 78 columns.
 
   You can enforce this in ``vim`` by setting the ``textwidth`` option:
+
   ::
 
         set textwidth=78
@@ -730,6 +760,7 @@ is following the conventions.
     Within these sections the imports should be sorted by module name.
 
     Example:
+
     ::
 
         import threading
@@ -775,6 +806,7 @@ is following the conventions.
   doesn't support Python versions below 2.5
 
     This requires Python 2.5 or later:
+
     ::
 
         from . import submodule
@@ -795,6 +827,7 @@ that require third-party libraries must be added.
 
     For the Cassandra backend this is
     ``requirements/extras/cassandra.txt``, and the file looks like this:
+
     ::
 
         pycassa
@@ -802,6 +835,7 @@ that require third-party libraries must be added.
     These are pip requirement files so you can have version specifiers and
     multiple packages are separated by newline. A more complex example could
     be:
+
     ::
 
         # pycassa 2.0 breaks Foo
@@ -825,6 +859,7 @@ that require third-party libraries must be added.
 
     After you've made changes to this file you need to render
     the distro ``README`` file:
+
     ::
 
         $ pip install -U requirements/pkgutils.txt
@@ -1084,16 +1119,19 @@ After you have changed these files you must render
 the ``README`` files. There's a script to convert sphinx syntax
 to generic reStructured Text syntax, and the make target `readme`
 does this for you:
+
 ::
 
     $ make readme
 
 Now commit the changes:
+
 ::
 
     $ git commit -a -m "Bumps version to X.Y.Z"
 
 and make a new version tag:
+
 ::
 
     $ git tag vX.Y.Z
@@ -1103,6 +1141,7 @@ Releasing
 ---------
 
 Commands to make a new public stable release:
+
 ::
 
     $ make distcheck  # checks pep8, autodoc index, runs tests and more

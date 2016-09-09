@@ -284,7 +284,7 @@ Branches
 
 Current active version branches:
 
-* master (https://github.com/celery/celery/tree/master)
+* dev (which git calls "master") (https://github.com/celery/celery/tree/master)
 * 3.1 (https://github.com/celery/celery/tree/3.1)
 * 3.0 (https://github.com/celery/celery/tree/3.0)
 
@@ -301,7 +301,7 @@ contain meta-data like:
     ======
     :release-date: TBA
     :status: DEVELOPMENT
-    :branch: master
+    :branch: dev (git calls this master)
 
 The ``status`` field can be one of:
 
@@ -320,10 +320,11 @@ The ``status`` field can be one of:
     When a branch is frozen the focus is on testing the version as much
     as possible before it is released.
 
-``master`` branch
------------------
+dev branch
+----------
 
-The master branch is where development of the next version happens.
+The dev branch (called "master" by git), is where development of the next
+version happens.
 
 Maintenance branches
 --------------------
@@ -436,7 +437,7 @@ commit notes. See `Rebasing merge commits in git`_.
 If you want to learn more about rebasing see the `Rebase`_
 section in the GitHub guides.
 
-If you need to work on a different branch than ``master`` you can
+If you need to work on a different branch than the one git calls ``master``, you can
 fetch and checkout a remote branch like this::
 
     git checkout --track -b 3.0-devel origin/3.0-devel

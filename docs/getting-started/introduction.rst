@@ -105,7 +105,7 @@ Celery is…
 
         Workers and clients will automatically retry in the event
         of connection loss or failure, and some brokers support
-        HA in way of *Master/Master* or *Master/Slave* replication.
+        HA in way of *Primary/Primary* or *Primary/Replica* replication.
 
     - **Fast**
 
