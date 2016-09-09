@@ -238,9 +238,7 @@ class test_AsyncResult:
     @skip.unless_module('tblib')
     def test_raising_remote_tracebacks(self):
         withtb = self.app.AsyncResult(self.task5['id'])
-
-        old, self.app.conf.remote_tracebacks = (
-            self.app.conf.remote_tracebacks, True)
+        self.app.conf.task_remote_tracebacks = True
         try:
             withtb.get()
         except KeyError:
@@ -251,8 +249,6 @@ class test_AsyncResult:
             assert "'blue'" in tb
         else:
             raise AssertionError('Did not raise KeyError.')
-        finally:
-            self.app.conf.remote_tracebacks = old
 
     def test_str(self):
         ok_res = self.app.AsyncResult(self.task1['id'])
