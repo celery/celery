@@ -124,6 +124,11 @@ concepts there's no alternative for in older versions.
 Celery 4.x will continue to work on Python 2.7, 3.4, 3.5; just as Celery 3.x
 still works on Python 2.6.
 
+Django support
+--------------
+
+Celery now supports Django 1.8 and newer versions.
+
 Removed features
 ----------------
 

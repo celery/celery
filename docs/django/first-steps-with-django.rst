@@ -17,6 +17,11 @@ Using Celery with Django
     first and come back to this tutorial. When you have a working example you can
     continue to the :ref:`next-steps` guide.
 
+.. note::
+
+    Celery 4.0 supports Django 1.8 and newer versions. Please use Celery 3.1
+    for versions older than Django 1.8.
+
 To use Celery with your Django project you must first define
 an instance of the Celery library (called an "app")
 
@@ -135,7 +140,7 @@ concrete app instance:
 .. seealso::
 
     You can find the full source code for the Django example project at:
-    https://github.com/celery/celery/tree/3.1/examples/django/
+    https://github.com/celery/celery/tree/master/examples/django/
 
 .. admonition:: Relative Imports
 
