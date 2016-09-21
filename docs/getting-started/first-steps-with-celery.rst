@@ -216,7 +216,7 @@ and -- or you can define your own.
 
 For this example we use the `rpc` result backend, that sends states
 back as transient messages. The backend is specified via the ``backend`` argument to
-:class:`@Celery`, (or via the :setting:`task_result_backend` setting if
+:class:`@Celery`, (or via the :setting:`result_backend` setting if
 you choose to use a configuration module):
 
 .. code-block:: python
