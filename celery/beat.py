@@ -25,6 +25,7 @@ from . import platforms
 from . import signals
 from .five import (
     items, monotonic, python_2_unicode_compatible, reraise, values,
+    bytes_if_py2
 )
 from .schedules import maybe_schedule, crontab
 from .utils.imports import load_extension_class_names, symbol_by_name
@@ -433,55 +434,55 @@ class PersistentScheduler(Scheduler):
 
         for _ in (1, 2):
             try:
-                self._store[b'entries']
+                self._store[bytes_if_py2('entries')]
             except KeyError:
                 # new schedule db
                 try:
-                    self._store[b'entries'] = {}
+                    self._store[bytes_if_py2('entries')] = {}
                 except KeyError as exc:
                     self._store = self._destroy_open_corrupted_schedule(exc)
                     continue
             else:
-                if b'__version__' not in self._store:
+                if bytes_if_py2('__version__') not in self._store:
                     warning('DB Reset: Account for new __version__ field')
                     self._store.clear()   # remove schedule at 2.2.2 upgrade.
-                elif b'tz' not in self._store:
+                elif bytes_if_py2('tz') not in self._store:
                     warning('DB Reset: Account for new tz field')
                     self._store.clear()   # remove schedule at 3.0.8 upgrade
-                elif b'utc_enabled' not in self._store:
+                elif bytes_if_py2('utc_enabled') not in self._store:
                     warning('DB Reset: Account for new utc_enabled field')
                     self._store.clear()   # remove schedule at 3.0.9 upgrade
             break
 
         tz = self.app.conf.timezone
-        stored_tz = self._store.get(b'tz')
+        stored_tz = self._store.get(bytes_if_py2('tz'))
         if stored_tz is not None and stored_tz != tz:
             warning('Reset: Timezone changed from %r to %r', stored_tz, tz)
             self._store.clear()   # Timezone changed, reset db!
         utc = self.app.conf.enable_utc
-        stored_utc = self._store.get(b'utc_enabled')
+        stored_utc = self._store.get(bytes_if_py2('utc_enabled'))
         if stored_utc is not None and stored_utc != utc:
             choices = {True: 'enabled', False: 'disabled'}
             warning('Reset: UTC changed from %s to %s',
                     choices[stored_utc], choices[utc])
             self._store.clear()   # UTC setting changed, reset db!
-        entries = self._store.setdefault(b'entries', {})
+        entries = self._store.setdefault(bytes_if_py2('entries'), {})
         self.merge_inplace(self.app.conf.beat_schedule)
         self.install_default_entries(self.schedule)
         self._store.update({
-            b'__version__': __version__,
-            b'tz': tz,
-            b'utc_enabled': utc,
+            bytes_if_py2('__version__'): __version__,
+            bytes_if_py2('tz'): tz,
+            bytes_if_py2('utc_enabled'): utc,
         })
         self.sync()
         debug('Current schedule:\n' + '\n'.join(
             repr(entry) for entry in values(entries)))
 
     def get_schedule(self):
-        return self._store[b'entries']
+        return self._store[bytes_if_py2('entries')]
 
     def set_schedule(self, schedule):
-        self._store[b'entries'] = schedule
+        self._store[bytes_if_py2('entries')] = schedule
     schedule = property(get_schedule, set_schedule)
 
     def sync(self):
