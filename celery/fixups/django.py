@@ -106,13 +106,9 @@ class DjangoWorkerFixup(object):
         self._cache = import_module('django.core.cache')
         self._settings = symbol_by_name('django.conf:settings')
 
-        try:
-            self.interface_errors = (
-                symbol_by_name('django.db.utils.InterfaceError'),
-            )
-        except (ImportError, AttributeError):
-            self._interface_errors = ()
-
+        self.interface_errors = (
+            symbol_by_name('django.db.utils.InterfaceError'),
+        )
         self.DatabaseError = symbol_by_name('django.db:DatabaseError')
 
     def django_setup(self):
@@ -120,19 +116,9 @@ class DjangoWorkerFixup(object):
         django.setup()
 
     def validate_models(self):
+        from django.core.checks import run_checks
         self.django_setup()
-        try:
-            from django.core.checks import run_checks
-        except ImportError:  # django < 1.7
-            from django.core.management.validation import get_validation_errors
-            s = StringIO()
-            num_errors = get_validation_errors(s, None)
-            if num_errors:
-                raise RuntimeError(
-                    'One or more Django models did not validate:\n{0}'.format(
-                        s.getvalue()))
-        else:
-            run_checks()
+        run_checks()
 
     def install(self):
         signals.beat_embedded_init.connect(self.close_database)
