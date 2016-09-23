@@ -345,9 +345,7 @@ class multi(Command):
     def run_from_argv(self, prog_name, argv, command=None):
         from celery.bin.multi import MultiTool
         multi = MultiTool(quiet=self.quiet, no_color=self.no_color)
-        return multi.execute_from_commandline(
-            [command] + argv, prog_name,
-        )
+        return multi.execute_from_commandline([command] + argv)
 
 
 class list_(Command):
