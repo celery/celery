@@ -242,13 +242,16 @@ class test_DjangoWorkerFixup(FixupCase):
                 f.on_worker_ready()
 
     def test_validate_models(self, patching):
-        f = self.Fixup(self.app)
-        f.django_setup = Mock(name='django.setup')
-        patching.modules('django.core.checks')
-        from django.core.checks import run_checks
-        f.validate_models()
-        f.django_setup.assert_called_with()
-        run_checks.assert_called_with()
+        with mock.module('django', 'django.db', 'django.core',
+                         'django.core.cache', 'django.conf',
+                         'django.db.utils'):
+            f = self.Fixup(self.app)
+            f.django_setup = Mock(name='django.setup')
+            patching.modules('django.core.checks')
+            from django.core.checks import run_checks
+            f.validate_models()
+            f.django_setup.assert_called_with()
+            run_checks.assert_called_with()
 
     def test_django_setup(self, patching):
         patching('celery.fixups.django.symbol_by_name')
