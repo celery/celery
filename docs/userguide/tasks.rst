@@ -1631,7 +1631,7 @@ re-fetch the article in the task body:
 
 .. code-block:: pycon
 
-    >>> expand_abbreviations(article_id)
+    >>> expand_abbreviations.delay(article_id)
 
 There might even be performance benefits to this approach, as sending large
 messages may be expensive.
