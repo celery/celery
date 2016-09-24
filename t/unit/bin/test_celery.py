@@ -518,9 +518,7 @@ class test_multi:
         with patch('celery.bin.multi.MultiTool') as MultiTool:
             m = MultiTool.return_value = Mock()
             multi(self.app).run_from_argv('celery', ['arg'], command='multi')
-            m.execute_from_commandline.assert_called_with(
-                ['multi', 'arg'], 'celery',
-            )
+            m.execute_from_commandline.assert_called_with(['multi', 'arg'])
 
 
 class test_main:
