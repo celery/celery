@@ -428,9 +428,13 @@ class SyncBackendMixin(object):
         )
 
     def wait_for_pending(self, result, timeout=None, interval=0.5,
-                         no_ack=True, on_interval=None, callback=None,
-                         propagate=True):
+                         no_ack=True, on_message=None, on_interval=None,
+                         callback=None, propagate=True):
         self._ensure_not_eager()
+        if on_message is not None:
+            raise ImproperlyConfigured(
+                'Backend does not support on_message callback')
+
         meta = self.wait_for(
             result.id, timeout=timeout,
             interval=interval,
