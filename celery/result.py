@@ -134,8 +134,8 @@ class AsyncResult(ResultBase):
                                 reply=wait, timeout=timeout)
 
     def get(self, timeout=None, propagate=True, interval=0.5,
-            no_ack=True, follow_parents=True, callback=None, on_interval=None,
-            EXCEPTION_STATES=states.EXCEPTION_STATES,
+            no_ack=True, follow_parents=True, callback=None, on_message=None,
+            on_interval=None, EXCEPTION_STATES=states.EXCEPTION_STATES,
             PROPAGATE_STATES=states.PROPAGATE_STATES):
         """Wait until task is ready, and return its result.
 
@@ -185,6 +185,7 @@ class AsyncResult(ResultBase):
             no_ack=no_ack,
             propagate=propagate,
             callback=callback,
+            on_message=on_message,
         )
     wait = get  # deprecated alias to :meth:`get`.
 
