@@ -26,8 +26,8 @@ from kombu.utils.url import maybe_sanitize_url
 from celery import states
 from celery import current_app, group, maybe_signature
 from celery.app import current_task
-from celery.exceptions import ( ChordError, TimeoutError, TaskRevokedError,
-    ImproperlyConfigured,
+from celery.exceptions import (
+    ChordError, TimeoutError, TaskRevokedError, ImproperlyConfigured,
 )
 from celery.five import items
 from celery.result import (
