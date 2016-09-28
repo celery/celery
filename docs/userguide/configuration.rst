@@ -2035,6 +2035,45 @@ Message serialization format used when sending event messages.
 
     :ref:`calling-serializers`.
 
+
+.. _conf-control:
+
+Remote Control Commands
+-----------------------
+
+.. note::
+
+    To disable remote control commands see
+    the :setting:`worker_enable_remote_control` setting.
+
+.. setting:: control_queue_ttl
+
+``control_queue_ttl``
+~~~~~~~~~~~~~~~~~~~~~
+
+Default: 300.0
+
+Time in seconds, before a message in a remote control command queue
+will expire.
+
+If using the default of 300 seconds, this means that if a remote control
+command is sent and no worker picks it up within 300 seconds, the command
+is discarded.
+
+This setting also applies to remote control reply queues.
+
+.. setting:: control_queue_expires
+
+``control_queue_expires``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 10.0
+
+Time in seconds, before an unused remote control command queue is deleted
+from the broker.
+
+This setting also applies to remote control reply queues.
+
 .. _conf-logging:
 
 Logging

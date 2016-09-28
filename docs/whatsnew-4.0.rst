@@ -1289,6 +1289,20 @@ Worker
 
     Contributed by **David Pravec**.
 
+- New settings to control remote control command queues.
+
+    - :setting:`control_queue_expires`
+
+        Set queue expiry time for both remote control command queues,
+        and remote control reply queues.
+
+    - :setting:`control_queue_ttl`
+
+        Set message time-to-live for both remote control command queues,
+        and remote control reply queues.
+
+    Contributed by **Alan Justino**.
+
 - Worker now only starts the remote control command consumer if the
   broker transport used actually supports them.
 

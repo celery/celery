@@ -129,6 +129,10 @@ NAMESPACES = Namespace(
         auth_provider=Option(type='string'),
         auth_kwargs=Option(type='string'),
     ),
+    control=Namespace(
+        queue_ttl=Option(300.0, type='float'),
+        queue_expires=Option(10.0, type='float'),
+    ),
     couchbase=Namespace(
         __old__=old_ns('celery_couchbase'),
 

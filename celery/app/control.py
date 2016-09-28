@@ -150,6 +150,10 @@ class Control(object):
             type='fanout',
             accept=['json'],
             producer_pool=lazy(lambda: self.app.amqp.producer_pool),
+            queue_ttl=app.conf.control_queue_ttl,
+            reply_queue_ttl=app.conf.control_queue_ttl,
+            queue_expires=app.conf.control_queue_expires,
+            reply_queue_expires=app.conf.control_queue_expires,
         )
 
     @cached_property
