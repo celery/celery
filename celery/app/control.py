@@ -126,7 +126,13 @@ class Control(object):
 
     def __init__(self, app=None):
         self.app = app
-        self.mailbox = self.Mailbox('celery', type='fanout', accept=['json'])
+        self.mailbox = self.Mailbox(
+            'celery', type='fanout', accept=['json'],
+            queue_ttl=app.conf.MAILBOX_QUEUE_TTL,
+            queue_expires=app.conf.MAILBOX_QUEUE_EXPIRES,
+            reply_queue_ttl=app.conf.MAILBOX_QUEUE_TTL,
+            reply_queue_expires=app.conf.MAILBOX_QUEUE_EXPIRES,
+        )
 
     @cached_property
     def inspect(self):
