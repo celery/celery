@@ -14,12 +14,11 @@ from celery.utils.collections import LimitedSet
 
 
 @pytest.fixture
-def reset_state(request):
-    def fin():
-        state.active_requests.clear()
-        state.revoked.clear()
-        state.total_count.clear()
-    request.addfinalizer(fin)
+def reset_state():
+    yield
+    state.active_requests.clear()
+    state.revoked.clear()
+    state.total_count.clear()
 
 
 class MockShelve(dict):

@@ -22,8 +22,9 @@ from celery.worker import state
 
 
 @pytest.fixture(autouse=True)
-def reset_worker_optimizations(request):
-    request.addfinalizer(trace.reset_worker_optimizations)
+def reset_worker_optimizations():
+    yield
+    trace.reset_worker_optimizations()
 
 
 class Worker(cd.Worker):

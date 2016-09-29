@@ -93,16 +93,15 @@ def app(request):
     if is_not_contained:
         app.set_current()
 
-    def fin():
-        _state.set_default_app(prev_default_app)
-        _state._tls = prev_tls
-        _state._tls.current_app = prev_current_app
-        if app is not prev_current_app:
-            app.close()
-        _state._on_app_finalizers = prev_finalizers
-        _state._apps = prev_apps
-    request.addfinalizer(fin)
-    return app
+    yield app
+
+    _state.set_default_app(prev_default_app)
+    _state._tls = prev_tls
+    _state._tls.current_app = prev_current_app
+    if app is not prev_current_app:
+        app.close()
+    _state._on_app_finalizers = prev_finalizers
+    _state._apps = prev_apps
 
 
 @pytest.fixture()
@@ -111,15 +110,14 @@ def depends_on_current_app(app):
 
 
 @pytest.fixture(autouse=True)
-def reset_cache_backend_state(request, app):
-    def fin():
-        backend = app.__dict__.get('backend')
-        if backend is not None:
-            if isinstance(backend, CacheBackend):
-                if isinstance(backend.client, DummyClient):
-                    backend.client.cache.clear()
-                backend._cache.clear()
-    request.addfinalizer(fin)
+def reset_cache_backend_state(app):
+    yield
+    backend = app.__dict__.get('backend')
+    if backend is not None:
+        if isinstance(backend, CacheBackend):
+            if isinstance(backend.client, DummyClient):
+                backend.client.cache.clear()
+            backend._cache.clear()
 
 
 @decorator
