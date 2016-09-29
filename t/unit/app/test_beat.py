@@ -10,7 +10,7 @@ from case import Mock, call, patch, skip
 
 from celery import beat
 from celery import uuid
-from celery.five import keys, string_t
+from celery.five import keys, string_t, bytes_if_py2
 from celery.schedules import schedule
 from celery.utils.objects import Bunch
 
@@ -398,17 +398,17 @@ class test_PersistentScheduler:
         s.setup_schedule()
         s._remove_db.assert_called_with()
 
-        s._store = {b'__version__': 1}
+        s._store = {bytes_if_py2('__version__'): 1}
         s.setup_schedule()
 
         s._store.clear = Mock()
         op = s.persistence.open = Mock()
         op.return_value = s._store
-        s._store[b'tz'] = 'FUNKY'
+        s._store[bytes_if_py2('tz')] = 'FUNKY'
         s.setup_schedule()
         op.assert_called_with(s.schedule_filename, writeback=True)
         s._store.clear.assert_called_with()
-        s._store[b'utc_enabled'] = False
+        s._store[bytes_if_py2('utc_enabled')] = False
         s._store.clear = Mock()
         s.setup_schedule()
         s._store.clear.assert_called_with()
@@ -417,10 +417,10 @@ class test_PersistentScheduler:
         s = create_persistent_scheduler()[0](
             schedule_filename='schedule', app=self.app,
         )
-        s._store = {b'entries': {}}
+        s._store = {bytes_if_py2('entries'): {}}
         s.schedule = {'foo': 'bar'}
         assert s.schedule == {'foo': 'bar'}
-        assert s._store[b'entries'] == s.schedule
+        assert s._store[bytes_if_py2('entries')] == s.schedule
 
 
 class test_Service:
@@ -439,7 +439,7 @@ class test_Service:
         assert isinstance(schedule, dict)
         assert isinstance(s.scheduler, beat.Scheduler)
         scheduled = list(schedule.keys())
-        for task_name in keys(sh[b'entries']):
+        for task_name in keys(sh[bytes_if_py2('entries')]):
             assert task_name in scheduled
 
         s.sync()
