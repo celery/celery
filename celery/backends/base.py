@@ -26,7 +26,9 @@ from kombu.utils.url import maybe_sanitize_url
 from celery import states
 from celery import current_app, group, maybe_signature
 from celery.app import current_task
-from celery.exceptions import ChordError, TimeoutError, TaskRevokedError
+from celery.exceptions import (
+    ChordError, TimeoutError, TaskRevokedError, ImproperlyConfigured,
+)
 from celery.five import items
 from celery.result import (
     GroupResult, ResultBase, allow_join_result, result_from_tuple,
@@ -428,9 +430,13 @@ class SyncBackendMixin(object):
         )
 
     def wait_for_pending(self, result, timeout=None, interval=0.5,
-                         no_ack=True, on_interval=None, callback=None,
-                         propagate=True):
+                         no_ack=True, on_message=None, on_interval=None,
+                         callback=None, propagate=True):
         self._ensure_not_eager()
+        if on_message is not None:
+            raise ImproperlyConfigured(
+                'Backend does not support on_message callback')
+
         meta = self.wait_for(
             result.id, timeout=timeout,
             interval=interval,
