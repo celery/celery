@@ -73,10 +73,10 @@ Documentation:
 	(cd "$(SPHINX_DIR)"; $(MAKE) html)
 	mv "$(SPHINX_HTMLDIR)" $(DOCUMENTATION)
 
-docs: Documentation
+docs: clean-docs Documentation
 
 clean-docs:
-	-rm -rf "$(SPHINX_BUILDDIR)"
+	-rm -rf "$(SPHINX_BUILDDIR)" "$(DOCUMENTATION)"
 
 lint: flakecheck apicheck configcheck readmecheck
 
