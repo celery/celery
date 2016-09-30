@@ -343,6 +343,14 @@ class test_task_logger(test_default_logger):
     def get_logger(self, *args, **kwargs):
         return get_task_logger('test_task_logger')
 
+    def test_renaming_base_logger(self):
+        with pytest.raises(RuntimeError):
+            get_task_logger('celery')
+
+    def test_renaming_task_logger(self):
+        with pytest.raises(RuntimeError):
+            get_task_logger('celery.task')
+
 
 class MockLogger(logging.Logger):
     _records = None

@@ -31,6 +31,8 @@ PY3 = sys.version_info[0] == 3
 
 MP_LOG = os.environ.get('MP_LOG', False)
 
+RESERVED_LOGGER_NAMES = {'celery', 'celery.task'}
+
 # Sets up our logging hierarchy.
 #
 # Every logger in the celery package inherits from the "celery"
@@ -100,6 +102,8 @@ worker_logger = get_logger('celery.worker')
 
 
 def get_task_logger(name):
+    if name in RESERVED_LOGGER_NAMES:
+        raise RuntimeError('Logger name {0!r} is reserved!'.format(name))
     logger = get_logger(name)
     if not logger_isa(logger, task_logger):
         logger.parent = task_logger
