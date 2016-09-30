@@ -12,18 +12,18 @@ new in Celery 3.1.
 
 3.1.24
 ======
-:release-date: TBA
+:release-date: 2016-09-30 04:21 PM PDT
 :release-by: Ask Solem
 
 - **Requirements**
 
-    - Now depends on :ref:`Kombu 3.0.35 <kombu:version-3.0.35>`.
+    - Now depends on :ref:`Kombu 3.0.36 <kombu:version-3.0.36>`.
 
 - Now supports Task protocol 2 from the future 4.0 release.
 
     Workers running 3.1.24 are now able to process messages
     sent using the `new task message protocol`_ to be introduced
-    in Celery 4.0 (
+    in Celery 4.0.
 
     Users upgrading to Celery 4.0 when this is released are encouraged
     to upgrade to this version as an intermediate step, as this
