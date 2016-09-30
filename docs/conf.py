@@ -11,6 +11,7 @@ this = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(this, os.pardir))
 sys.path.append(os.path.join(this, '_ext'))
 import celery  # noqa
+import celery.task.http  # noqa
 
 # General configuration
 # ---------------------
