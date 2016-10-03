@@ -30,6 +30,11 @@ The :program:`celery worker` command (previously known as ``celeryd``)
     Also run the `celery beat` periodic task scheduler.  Please note that
     there must only be one instance of this service.
 
+    .. note::
+
+        ``-B`` is meant to be used for development purposes. For production
+        environment, you need to start :program:`celery beat` separately.
+
 .. cmdoption:: -Q, --queues
 
     List of queues to enable for this worker, separated by comma.
