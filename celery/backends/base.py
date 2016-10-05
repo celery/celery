@@ -677,7 +677,7 @@ class BaseKeyValueStoreBackend(Backend):
             deps = GroupResult.restore(gid, backend=self)
         except Exception as exc:
             callback = maybe_signature(request.chord, app=app)
-            logger.error('Chord %r raised: %r', gid, exc, exc_info=1)
+            logger.exception('Chord %r raised: %r', gid, exc)
             return self.chord_error_from_stack(
                 callback,
                 ChordError('Cannot restore group: {0!r}'.format(exc)),
@@ -687,8 +687,7 @@ class BaseKeyValueStoreBackend(Backend):
                 raise ValueError(gid)
             except ValueError as exc:
                 callback = maybe_signature(request.chord, app=app)
-                logger.error('Chord callback %r raised: %r', gid, exc,
-                             exc_info=1)
+                logger.exception('Chord callback %r raised: %r', gid, exc)
                 return self.chord_error_from_stack(
                     callback,
                     ChordError('GroupResult {0} no longer exists'.format(gid)),
@@ -713,13 +712,13 @@ class BaseKeyValueStoreBackend(Backend):
                 except StopIteration:
                     reason = repr(exc)
 
-                logger.error('Chord %r raised: %r', gid, reason, exc_info=1)
+                logger.exception('Chord %r raised: %r', gid, reason)
                 self.chord_error_from_stack(callback, ChordError(reason))
             else:
                 try:
                     callback.delay(ret)
                 except Exception as exc:
-                    logger.error('Chord %r raised: %r', gid, exc, exc_info=1)
+                    logger.exception('Chord %r raised: %r', gid, exc)
                     self.chord_error_from_stack(
                         callback,
                         ChordError('Callback error: {0!r}'.format(exc)),

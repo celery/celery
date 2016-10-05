@@ -775,7 +775,7 @@ class test_App:
             _appbase.register_after_fork = prev
 
     def test_canvas(self):
-        assert self.app.canvas.Signature
+        assert self.app._canvas.Signature
 
     def test_signature(self):
         sig = self.app.signature('foo', (1, 2))

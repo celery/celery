@@ -86,13 +86,13 @@ def add_unlock_chord_task(app):
                 reason = 'Dependency {0.id} raised {1!r}'.format(culprit, exc)
             except StopIteration:
                 reason = repr(exc)
-            logger.error('Chord %r raised: %r', group_id, exc, exc_info=1)
+            logger.exception('Chord %r raised: %r', group_id, exc)
             app.backend.chord_error_from_stack(callback, ChordError(reason))
         else:
             try:
                 callback.delay(ret)
             except Exception as exc:
-                logger.error('Chord %r raised: %r', group_id, exc, exc_info=1)
+                logger.exception('Chord %r raised: %r', group_id, exc)
                 app.backend.chord_error_from_stack(
                     callback,
                     exc=ChordError('Callback error: {0!r}'.format(exc)),

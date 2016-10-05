@@ -58,19 +58,31 @@ __all__ = ['Celery']
 
 logger = get_logger(__name__)
 
-USING_EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
 BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
 }
+USING_EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
 
-ERR_ENVVAR_NOT_SET = """\
+ERR_ENVVAR_NOT_SET = """
 The environment variable {0!r} is not set,
 and as such the configuration could not be loaded.
-Please set this variable and make it point to
-a configuration module."""
+
+Please set this variable and make sure it points to
+a valid configuration module.
+
+Example:
+    {0}="proj.celeryconfig"
+"""
 
 
 def app_has_custom(app, attr):
+    """Returns true if app has customized method `attr`.
+
+    Note:
+        This is used for optimizations in cases where we know
+        how the default behavior works, but need to account
+        for someone using inheritance to override a method/property.
+    """
     return mro_lookup(app.__class__, attr, stop={Celery, object},
                       monkey_patched=[__name__])
 
@@ -82,6 +94,8 @@ def _unpickle_appattr(reverse_name, args):
 
 
 def _after_fork_cleanup_app(app):
+    # This is used with multiprocessing.register_after_fork,
+    # so need to be at module level.
     try:
         app._after_fork()
     except Exception as exc:
@@ -115,27 +129,29 @@ class Celery(object):
         main (str): Name of the main module if running as `__main__`.
             This is used as the prefix for auto-generated task names.
 
+    Keyword Arguments:
         broker (str): URL of the default broker used.
-        loader (str, type): The loader class, or the name of the loader
-            class to use.  Default is :class:`celery.loaders.app.AppLoader`.
-        backend (str, type): The result store backend class, or the name of the
-            backend class to use.  Default is the value of the
-            :setting:`result_backend` setting.
-        amqp (str, type): AMQP object or class name.
-        events (str, type): Events object or class name.
-        log (str, type): Log object or class name.
-        control (str, type): Control object or class name.
-        set_as_current (bool):  Make this the global current app.
-        tasks (str, type): A task registry or the name of a registry class.
-        include (List[str]): List of modules every worker should import.
-        fixups (List[str]): List of fix-up plug-ins (e.g., see
-            :mod:`celery.fixups.django`).
+        backend (Union[str, type]): The result store backend class,
+            or the name of the backend class to use.
+
+            Default is the value of the :setting:`result_backend` setting.
         autofinalize (bool): If set to False a :exc:`RuntimeError`
             will be raised if the task registry or tasks are used before
             the app is finalized.
-        config_source (str, type): receives a class with class level attributes
-            that allows configurating Celery from a single object.
-            All attributes described in the documentation can be defined.
+        set_as_current (bool):  Make this the global current app.
+        include (List[str]): List of modules every worker should import.
+
+        amqp (Union[str, type]): AMQP object or class name.
+        events (Union[str, type]): Events object or class name.
+        log (Union[str, type]): Log object or class name.
+        control (Union[str, type]): Control object or class name.
+        tasks (Union[str, type]): A task registry, or the name of
+            a registry class.
+        fixups (List[str]): List of fix-up plug-ins (e.g., see
+            :mod:`celery.fixups.django`).
+        config_source (Union[str, type]): Take configuration from a class,
+            or object.  Attributes may include any setings described in
+            the documentation.
     """
     #: This is deprecated, use :meth:`reduce_keys` instead
     Pickler = AppPickler
@@ -277,12 +293,6 @@ class Celery(object):
             self._after_fork_registered = True
             if register_after_fork is not None:
                 register_after_fork(self, _after_fork_cleanup_app)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *exc_info):
-        self.close()
 
     def close(self):
         """Clean up after the application.
@@ -511,7 +521,7 @@ class Celery(object):
             if silent:
                 return False
             raise ImproperlyConfigured(
-                ERR_ENVVAR_NOT_SET.format(variable_name))
+                ERR_ENVVAR_NOT_SET.strip().format(variable_name))
         return self.config_from_object(module_name, silent=silent, force=force)
 
     def config_from_cmdline(self, argv, namespace='celery'):
@@ -555,7 +565,7 @@ class Celery(object):
 
         If the name is empty, this will be delegated to fix-ups (e.g., Django).
 
-        For example if you have an directory layout like this:
+        For example if you have a directory layout like this:
 
         .. code-block:: text
 
@@ -821,6 +831,18 @@ class Celery(object):
             self.loader)
         return backend(app=self, url=url)
 
+    def _get_from_conf_and_finalize(self, key):
+        """Get value for configuration key and finalize
+        loading the configuration.
+
+        Note:
+            This is used by PendingConfiguration:
+                as soon as you access a key the configuration
+                is read.
+        """
+        conf = self._conf = self._load_config()
+        return conf[key]
+
     def _load_config(self):
         if isinstance(self.on_configure, Signal):
             self.on_configure.send(sender=self)
@@ -866,7 +888,7 @@ class Celery(object):
     def signature(self, *args, **kwargs):
         """Return a new :class:`~celery.Signature` bound to this app."""
         kwargs['app'] = self
-        return self.canvas.signature(*args, **kwargs)
+        return self._canvas.signature(*args, **kwargs)
 
     def add_periodic_task(self, schedule, sig,
                           args=(), kwargs=(), name=None, **opts):
@@ -940,6 +962,12 @@ class Celery(object):
 
     def _rgetattr(self, path):
         return attrgetter(path)(self)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        self.close()
 
     def __repr__(self):
         return '<{0} {1}>'.format(type(self).__name__, appstr(self))
@@ -1093,10 +1121,6 @@ class Celery(object):
             self._conf = self._load_config()
         return self._conf
 
-    def _get_from_conf_and_finalize(self, key):
-        conf = self._conf = self._load_config()
-        return conf[key]
-
     @conf.setter
     def conf(self, d):  # noqa
         self._conf = d
@@ -1122,7 +1146,7 @@ class Celery(object):
         return instantiate(self.log_cls, app=self)
 
     @cached_property
-    def canvas(self):
+    def _canvas(self):
         from celery import canvas
         return canvas
 

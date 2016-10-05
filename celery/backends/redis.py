@@ -32,16 +32,14 @@ except ImportError:                 # pragma: no cover
 
 __all__ = ['RedisBackend']
 
-REDIS_MISSING = """\
+E_REDIS_MISSING = """
 You need to install the redis library in order to use \
-the Redis result store backend."""
-
-E_LOST = """\
-Connection to Redis lost: Retry (%s/%s) %s.\
+the Redis result store backend.
 """
 
+E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
+
 logger = get_logger(__name__)
-error = logger.error
 
 
 class ResultConsumer(async.BaseResultConsumer):
@@ -112,7 +110,7 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         super(RedisBackend, self).__init__(expires_type=int, **kwargs)
         _get = self.app.conf.get
         if self.redis is None:
-            raise ImproperlyConfigured(REDIS_MISSING)
+            raise ImproperlyConfigured(E_REDIS_MISSING.strip())
 
         if host and '://' in host:
             url, host = host, None
@@ -193,8 +191,9 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
 
     def on_connection_error(self, max_retries, exc, intervals, retries):
         tts = next(intervals)
-        error(E_LOST, retries, max_retries or 'Inf',
-              humanize_seconds(tts, 'in '))
+        logger.error(
+            E_LOST.strip(),
+            retries, max_retries or 'Inf', humanize_seconds(tts, 'in '))
         return tts
 
     def set(self, key, value, **retry_policy):
@@ -272,17 +271,17 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])
                 except Exception as exc:
-                    error('Chord callback for %r raised: %r',
-                          request.group, exc, exc_info=1)
+                    logger.exception(
+                        'Chord callback for %r raised: %r', request.group, exc)
                     return self.chord_error_from_stack(
                         callback,
                         ChordError('Callback error: {0!r}'.format(exc)),
                     )
         except ChordError as exc:
-            error('Chord %r raised: %r', request.group, exc, exc_info=1)
+            logger.exception('Chord %r raised: %r', request.group, exc)
             return self.chord_error_from_stack(callback, exc)
         except Exception as exc:
-            error('Chord %r raised: %r', request.group, exc, exc_info=1)
+            logger.exception('Chord %r raised: %r', request.group, exc)
             return self.chord_error_from_stack(
                 callback,
                 ChordError('Join error: {0!r}'.format(exc)),

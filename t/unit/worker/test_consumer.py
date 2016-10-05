@@ -376,9 +376,9 @@ class test_Gossip:
         signature.return_value.apply_async.assert_called_with()
 
         signature.return_value.apply_async.side_effect = MemoryError()
-        with patch('celery.worker.consumer.gossip.error') as error:
+        with patch('celery.worker.consumer.gossip.logger') as logger:
             g.call_task(task)
-            error.assert_called()
+            logger.exception.assert_called()
 
     def Event(self, id='id', clock=312,
               hostname='foo@example.com', pid=4312,
@@ -406,9 +406,9 @@ class test_Gossip:
         g.dispatcher.send.assert_called_with('worker-elect-ack', id='id1')
 
         event.pop('clock')
-        with patch('celery.worker.consumer.gossip.error') as error:
+        with patch('celery.worker.consumer.gossip.logger') as logger:
             g.on_elect(event)
-            error.assert_called()
+            logger.exception.assert_called()
 
     def Consumer(self, hostname='foo@x.com', pid=4312):
         c = Mock()
@@ -466,9 +466,9 @@ class test_Gossip:
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.election_handlers = {}
-        with patch('celery.worker.consumer.gossip.error') as error:
+        with patch('celery.worker.consumer.gossip.logger') as logger:
             self.setup_election(g, c)
-            error.assert_called()
+            logger.exception.assert_called()
 
     def test_on_node_join(self):
         c = self.Consumer()

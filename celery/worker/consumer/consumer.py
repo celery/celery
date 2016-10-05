@@ -223,7 +223,7 @@ class Consumer(object):
                 try:
                     self._pending_operations.pop()()
                 except Exception as exc:
-                    error('Pending callback raised: %r', exc, exc_info=1)
+                    logger.exception('Pending callback raised: %r', exc)
 
     def bucket_for_task(self, type):
         limit = rate(getattr(type, 'rate_limit', None))

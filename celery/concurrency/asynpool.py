@@ -818,8 +818,8 @@ class AsynPool(_pool.Pool):
         self._quick_put = send_job
 
         def on_not_recovering(proc, fd, job, exc):
-            error('Process inqueue damaged: %r %r: %r',
-                  proc, proc.exitcode, exc, exc_info=1)
+            logger.exception(
+                'Process inqueue damaged: %r %r: %r', proc, proc.exitcode, exc)
             if proc._is_alive():
                 proc.terminate()
             hub.remove(fd)

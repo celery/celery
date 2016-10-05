@@ -198,16 +198,17 @@ class test_RedisBackend:
         })
         self.Backend(app=self.app)
 
-    @patch('celery.backends.redis.error')
-    def test_on_connection_error(self, error):
+    @patch('celery.backends.redis.logger')
+    def test_on_connection_error(self, logger):
         intervals = iter([10, 20, 30])
         exc = KeyError()
         assert self.b.on_connection_error(None, exc, intervals, 1) == 10
-        error.assert_called_with(self.E_LOST, 1, 'Inf', 'in 10.00 seconds')
+        logger.error.assert_called_with(
+            self.E_LOST, 1, 'Inf', 'in 10.00 seconds')
         assert self.b.on_connection_error(10, exc, intervals, 2) == 20
-        error.assert_called_with(self.E_LOST, 2, 10, 'in 20.00 seconds')
+        logger.error.assert_called_with(self.E_LOST, 2, 10, 'in 20.00 seconds')
         assert self.b.on_connection_error(10, exc, intervals, 3) == 30
-        error.assert_called_with(self.E_LOST, 3, 10, 'in 30.00 seconds')
+        logger.error.assert_called_with(self.E_LOST, 3, 10, 'in 30.00 seconds')
 
     def test_incr(self):
         self.b.client = Mock(name='client')

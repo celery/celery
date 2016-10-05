@@ -1,7 +1,5 @@
 from __future__ import absolute_import, unicode_literals
-
 import pytest
-
 from celery.app.registry import _unpickle_task, _unpickle_task_v2
 
 

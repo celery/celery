@@ -13,7 +13,6 @@ from . import state
 __all__ = ['asynloop', 'synloop']
 
 logger = get_logger(__name__)
-error = logger.error
 
 
 def _quick_drain(connection, timeout=0.1):
@@ -92,9 +91,8 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
         try:
             hub.reset()
         except Exception as exc:
-            error(
-                'Error cleaning up after event loop: %r', exc, exc_info=1,
-            )
+            logger.exception(
+                'Error cleaning up after event loop: %r', exc)
 
 
 def synloop(obj, connection, consumer, blueprint, hub, qos,

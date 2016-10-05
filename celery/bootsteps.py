@@ -153,10 +153,8 @@ class Blueprint(object):
                     except Exception as exc:
                         if propagate:
                             raise
-                        logger.error(
-                            'Error on %s %s: %r',
-                            description, step.alias, exc, exc_info=1,
-                        )
+                        logger.exception(
+                            'Error on %s %s: %r', description, step.alias, exc)
 
     def stop(self, parent, close=True, terminate=False):
         what = 'terminating' if terminate else 'stopping'

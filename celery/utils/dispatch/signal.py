@@ -169,8 +169,8 @@ class Signal(object):  # pragma: no cover
             try:
                 response = receiver(signal=self, sender=sender, **named)
             except Exception as exc:
-                logger.error('Signal handler %r raised: %r',
-                             receiver, exc, exc_info=1)
+                logger.exception(
+                    'Signal handler %r raised: %r', receiver, exc)
             else:
                 responses.append((receiver, response))
         return responses

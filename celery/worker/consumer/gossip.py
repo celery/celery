@@ -18,7 +18,7 @@ from .mingle import Mingle
 
 __all__ = ['Gossip']
 logger = get_logger(__name__)
-debug, info, error = logger.debug, logger.info, logger.error
+debug, info = logger.debug, logger.info
 
 
 class Gossip(bootsteps.ConsumerStep):
@@ -84,14 +84,14 @@ class Gossip(bootsteps.ConsumerStep):
         try:
             self.app.signature(task).apply_async()
         except Exception as exc:
-            error('Could not call task: %r', exc, exc_info=1)
+            logger.exception('Could not call task: %r', exc)
 
     def on_elect(self, event):
         try:
             (id_, clock, hostname, pid,
              topic, action, _) = self._cons_stamp_fields(event)
         except KeyError as exc:
-            return error('election request missing field %s', exc, exc_info=1)
+            return logger.exception('election request missing field %s', exc)
         heappush(
             self.consensus_requests[id_],
             (clock, '%s.%s' % (hostname, pid), topic, action),
@@ -120,7 +120,7 @@ class Gossip(bootsteps.ConsumerStep):
                 try:
                     handler = self.election_handlers[topic]
                 except KeyError:
-                    error('Unknown election topic %r', topic, exc_info=1)
+                    logger.exception('Unknown election topic %r', topic)
                 else:
                     handler(action)
             else:
@@ -145,8 +145,8 @@ class Gossip(bootsteps.ConsumerStep):
             try:
                 handler(*args, **kwargs)
             except Exception as exc:
-                error('Ignored error from handler %r: %r',
-                      handler, exc, exc_info=1)
+                logger.exception(
+                    'Ignored error from handler %r: %r', handler, exc)
 
     def register_timer(self):
         if self._tref is not None:
