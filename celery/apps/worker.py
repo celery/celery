@@ -89,7 +89,8 @@ EXTRA_INFO_FMT = """
 
 class Worker(WorkController):
 
-    def on_before_init(self, **kwargs):
+    def on_before_init(self, quiet=False, **kwargs):
+        self.quiet = quiet
         trace.setup_worker_optimizations(self.app, self.hostname)
 
         # this signal can be used to set up configuration for
@@ -135,6 +136,15 @@ class Worker(WorkController):
         if self.purge:
             self.purge_messages()
 
+        if not self.quiet:
+            self.emit_banner()
+
+        self.set_process_status('-active-')
+        self.install_platform_tweaks(self)
+        if not self._custom_logging and self.redirect_stdouts:
+            app.log.redirect_stdouts(self.redirect_stdouts_level)
+
+    def emit_banner(self):
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
         use_image = term.supports_images()
@@ -145,10 +155,6 @@ class Worker(WorkController):
                 ' \n', self.startup_info(artlines=not use_image))),
             string(self.colored.reset(self.extra_info() or '')),
         ])), file=sys.__stdout__)
-        self.set_process_status('-active-')
-        self.install_platform_tweaks(self)
-        if not self._custom_logging and self.redirect_stdouts:
-            app.log.redirect_stdouts(self.redirect_stdouts_level)
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)

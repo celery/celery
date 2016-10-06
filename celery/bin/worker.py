@@ -244,8 +244,8 @@ class worker(Command):
             hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
             logfile=logfile,  # node format handled by celery.app.log.setup
             pidfile=self.node_format(pidfile, hostname),
-            statedb=self.node_format(statedb, hostname), **kwargs
-        )
+            statedb=self.node_format(statedb, hostname),
+            **kwargs)
         worker.start()
         return worker.exitcode
 
