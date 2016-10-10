@@ -189,6 +189,7 @@ setuptools.setup(
     version=meta['version'],
     description=meta['doc'],
     long_description=long_description,
+    keywords='task job queue distributed messaging actor',
     author=meta['author'],
     author_email=meta['contact'],
     platforms=['any'],
