@@ -32,7 +32,6 @@ class test_DjangoFixup(FixupCase):
 
     def test_setting_default_app(self):
         from celery import _state
-        from celery.fixups import django
         prev, _state.default_app = _state.default_app, None
         try:
             app = Mock(name='app')
