@@ -11,8 +11,8 @@ from kombu.utils.objects import cached_property
 from datetime import datetime
 from importlib import import_module
 
+from celery import _state
 from celery import signals
-from celery.app import default_app
 from celery.exceptions import FixupWarning
 
 __all__ = ['DjangoFixup', 'fixup']
@@ -46,7 +46,7 @@ class DjangoFixup(object):
 
     def __init__(self, app):
         self.app = app
-        if default_app is None:
+        if _state.default_app is None:
             self.app.set_default()
         self._worker_fixup = None
 

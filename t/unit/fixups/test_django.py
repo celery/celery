@@ -31,14 +31,15 @@ class test_DjangoFixup(FixupCase):
     Fixup = DjangoFixup
 
     def test_setting_default_app(self):
+        from celery import _state
         from celery.fixups import django
-        prev, django.default_app = django.default_app, None
+        prev, _state.default_app = _state.default_app, None
         try:
             app = Mock(name='app')
             DjangoFixup(app)
             app.set_default.assert_called_with()
         finally:
-            django.default_app = prev
+            _state.default_app = prev
 
     @patch('celery.fixups.django.DjangoWorkerFixup')
     def test_worker_fixup_property(self, DjangoWorkerFixup):
