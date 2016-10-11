@@ -143,7 +143,7 @@ class test_head_from_fun:
 
     def test_from_cls(self):
         class X(object):
-            def __call__(x, y, kwarg=1):
+            def __call__(x, y, kwarg=1):  # noqa
                 pass
 
         g = head_from_fun(X())

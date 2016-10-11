@@ -146,7 +146,7 @@ def maybe_patch_concurrency(argv=sys.argv,
         concurrency.get_implementation(pool)
 
 # Lazy loading
-from celery import local  # noqa
+from . import local  # noqa
 
 old_module, new_module = local.recreate_module(  # pragma: no cover
     __name__,

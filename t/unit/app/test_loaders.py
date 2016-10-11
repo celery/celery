@@ -173,11 +173,11 @@ class test_DefaultLoader:
         except ValueError:
             pass
         celery = sys.modules.pop('celery', None)
-        sys.modules.pop('celery.five', None)
+        sys.modules.pop('celery.local', None)
         try:
             assert l.import_from_cwd('celery')
             sys.modules.pop('celery', None)
-            sys.modules.pop('celery.five', None)
+            sys.modules.pop('celery.local', None)
             sys.path.insert(0, os.getcwd())
             assert l.import_from_cwd('celery')
         finally:

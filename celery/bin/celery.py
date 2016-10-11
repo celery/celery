@@ -1177,9 +1177,9 @@ class CeleryCommand(Command):
         colored = term.colored() if colored is None else colored
         white = colored.white
         ret = []
-        for cls, commands, color in command_classes:
+        for command_cls, commands, color in command_classes:
             ret.extend([
-                text.indent('+ {0}: '.format(white(cls)), indent),
+                text.indent('+ {0}: '.format(white(command_cls)), indent),
                 '\n'.join(
                     cls.get_command_info(
                         command, indent + 4, color, colored, app=app)

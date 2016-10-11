@@ -13,7 +13,7 @@ from kombu.utils.uuid import uuid
 
 from celery.five import Queue as FastQueue
 from celery.utils.timer2 import Timer
-from celery.worker import WorkController as _WC
+from celery.worker import WorkController as _WC  # noqa
 from celery.worker import consumer
 from celery.worker import control
 from celery.worker import state as worker_state

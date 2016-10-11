@@ -35,7 +35,7 @@ class Mingle(bootsteps.StartStopStep):
             return conn.transport.driver_type in self.compatible_transports
 
     def start(self, c):
-        self.sync()
+        self.sync(c)
 
     def sync(self, c):
         info('mingle: searching for neighbors')
