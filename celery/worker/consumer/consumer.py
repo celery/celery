@@ -138,6 +138,8 @@ class Consumer(object):
     restart_count = -1  # first start is the same as a restart
 
     class Blueprint(bootsteps.Blueprint):
+        """Consumer blueprint."""
+
         name = 'Consumer'
         default_steps = [
             'celery.worker.consumer.connection:Connection',

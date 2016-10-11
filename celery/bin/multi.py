@@ -235,7 +235,7 @@ class MultiTool(TermLogger):
 
     def __init__(self, env=None, cmd=None,
                  fh=None, stdout=None, stderr=None, **kwargs):
-        """fh is an old alias to stdout."""
+        # fh is an old alias to stdout.
         self.env = env
         self.cmd = cmd
         self.setup_terminal(stdout or fh, stderr, **kwargs)

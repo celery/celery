@@ -432,7 +432,7 @@ class AsyncResult(ResultBase):
 
     @property
     def task_id(self):
-        """compat alias to :attr:`id`."""
+        """Compat. alias to :attr:`id`."""
         return self.id
 
     @task_id.setter  # noqa

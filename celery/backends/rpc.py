@@ -269,6 +269,8 @@ class RPCBackend(BaseRPCBackend):
     persistent = False
 
     class Consumer(Consumer):
+        """Consumer that requires manual declaration of queues."""
+
         auto_declare = False
 
     def _create_exchange(self, name, type='direct', delivery_mode=2):

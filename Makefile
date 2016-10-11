@@ -6,7 +6,7 @@ GIT=git
 TOX=tox
 ICONV=iconv
 FLAKE8=flake8
-PEP257=pep257
+PYDOCSTYLE=pydocstyle
 PYROMA=pyroma
 FLAKEPLUS=flakeplus
 SPHINX2RST=sphinx2rst
@@ -94,7 +94,7 @@ flakecheck:
 	$(FLAKE8) --ignore=X999 "$(PROJ)" "$(TESTDIR)"
 
 pep257check:
-	$(PEP257) --ignore=D102,D104,D203,D105 "$(PROJ)"
+	$(PYDOCSTYLE) --ignore=D102,D104,D203,D105 "$(PROJ)"
 
 flakediag:
 	-$(MAKE) flakecheck

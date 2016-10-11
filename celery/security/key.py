@@ -17,6 +17,6 @@ class PrivateKey(object):
             self._key = crypto.load_privatekey(crypto.FILETYPE_PEM, key)
 
     def sign(self, data, digest):
-        """sign string containing data."""
+        """Sign string containing data."""
         with reraise_errors('Unable to sign data: {0!r}'):
             return crypto.sign(self._key, ensure_bytes(data), digest)
