@@ -90,8 +90,7 @@ configcheck:
 	(cd "$(SPHINX_DIR)"; $(MAKE) configcheck)
 
 flakecheck:
-	# the only way to enable all-1 errors is to ignore one of them.
-	$(FLAKE8) --ignore=X999 "$(PROJ)" "$(TESTDIR)"
+	$(FLAKE8) "$(PROJ)" "$(TESTDIR)"
 
 pep257check:
 	$(PYDOCSTYLE) --ignore=D102,D104,D203,D105 "$(PROJ)"
