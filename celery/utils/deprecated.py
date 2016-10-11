@@ -25,6 +25,7 @@ DEPRECATION_FMT = """
 
 def warn(description=None, deprecation=None,
          removal=None, alternative=None, stacklevel=2):
+    """Warn of (pending) deprecation."""
     ctx = {'description': description,
            'deprecation': deprecation, 'removal': removal,
            'alternative': alternative}
@@ -66,6 +67,7 @@ def Callable(deprecation=None, removal=None,
 
 def Property(deprecation=None, removal=None,
              alternative=None, description=None):
+    """Decorator for deprecated properties."""
     def _inner(fun):
         return _deprecated_property(
             fun, deprecation=deprecation, removal=removal,

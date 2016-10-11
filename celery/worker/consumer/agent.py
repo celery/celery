@@ -9,6 +9,7 @@ __all__ = ['Agent']
 
 
 class Agent(bootsteps.StartStopStep):
+    """Agent starts :pypi:`cell` actors."""
 
     conditional = True
     requires = (Connection,)

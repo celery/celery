@@ -109,6 +109,7 @@ body: {0}
 
 
 def dump_body(m, body):
+    """Format message body for debugging purposes."""
     # v2 protocol does not deserialize body
     body = m.body if body is None else body
     if isinstance(body, buffer_t):
@@ -119,6 +120,7 @@ def dump_body(m, body):
 
 @python_2_unicode_compatible
 class Consumer(object):
+    """Consumer blueprint."""
 
     Strategies = dict
 
@@ -358,8 +360,7 @@ class Consumer(object):
                 self.app.clock, self.amqheartbeat_rate)
 
     def on_decode_error(self, message, exc):
-        """Callback called if an error occurs while decoding
-        a message received.
+        """Callback called if an error occurs while decoding a message.
 
         Simply logs the error and acknowledges the message so it
         doesn't enter a loop.
@@ -456,8 +457,7 @@ class Consumer(object):
         self.task_consumer.cancel_by_queue(queue)
 
     def apply_eta_task(self, task):
-        """Method called by the timer to apply a task with an
-        ETA/countdown."""
+        """Method called by the timer to apply a task with an ETA/countdown."""
         task_reserved(task)
         self.on_task_request(task)
         self.qos.decrement_eventually()
@@ -561,12 +561,18 @@ class Consumer(object):
         return on_task_received
 
     def __repr__(self):
+        """``repr(self)``."""
         return '<Consumer: {self.hostname} ({state})>'.format(
             self=self, state=self.blueprint.human_state(),
         )
 
 
 class Evloop(bootsteps.StartStopStep):
+    """Event loop service.
+
+    Note:
+        This is always started last.
+    """
 
     label = 'event loop'
     last = True

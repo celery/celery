@@ -47,12 +47,18 @@ CELERY_TEST_CONFIG = {
 
 
 class Trap(object):
+    """Trap that pretends to be an app but raises an exception instead.
+
+    This to protect from code that does not properly pass app instances,
+    then falls back to the current_app.
+    """
 
     def __getattr__(self, name):
         raise RuntimeError('Test depends on current_app')
 
 
 class UnitLogging(symbol_by_name(Celery.log_cls)):
+    """Sets up logging for the test application."""
 
     def __init__(self, *args, **kwargs):
         super(UnitLogging, self).__init__(*args, **kwargs)
@@ -61,6 +67,7 @@ class UnitLogging(symbol_by_name(Celery.log_cls)):
 
 def TestApp(name=None, set_as_current=False, log=UnitLogging,
             broker='memory://', backend='cache+memory://', **kwargs):
+    """App used for testing."""
     app = Celery(name or 'celery.tests',
                  set_as_current=set_as_current,
                  log=log, broker=broker, backend=backend,
@@ -71,6 +78,7 @@ def TestApp(name=None, set_as_current=False, log=UnitLogging,
 
 @pytest.fixture(autouse=True)
 def app(request):
+    """Fixture creating a Celery application instance."""
     from celery import _state
     prev_current_app = current_app()
     prev_default_app = _state.default_app
@@ -106,11 +114,13 @@ def app(request):
 
 @pytest.fixture()
 def depends_on_current_app(app):
+    """Fixture that sets app as current."""
     app.set_current()
 
 
 @pytest.fixture(autouse=True)
 def reset_cache_backend_state(app):
+    """Fixture that resets the internal state of the cache result backend."""
     yield
     backend = app.__dict__.get('backend')
     if backend is not None:
@@ -122,6 +132,7 @@ def reset_cache_backend_state(app):
 
 @decorator
 def assert_signal_called(signal, **expected):
+    """Context that verifes signal is called before exiting."""
     handler = Mock()
     call_handler = partial(handler)
     signal.connect(call_handler)
@@ -134,6 +145,7 @@ def assert_signal_called(signal, **expected):
 
 def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
                 errbacks=None, chain=None, shadow=None, utc=None, **options):
+    """Create task message in protocol 2 format."""
     from celery import uuid
     from kombu.serialization import dumps
     id = id or uuid()
@@ -154,6 +166,7 @@ def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
 
 def TaskMessage1(name, id=None, args=(), kwargs={}, callbacks=None,
                  errbacks=None, chain=None, **options):
+    """Create task message in protocol 1 format."""
     from celery import uuid
     from kombu.serialization import dumps
     id = id or uuid()
@@ -175,6 +188,7 @@ def TaskMessage1(name, id=None, args=(), kwargs={}, callbacks=None,
 
 
 def task_message_from_sig(app, sig, utc=True, TaskMessage=TaskMessage):
+    """Create task message from :class:`celery.Signature`."""
     sig.freeze()
     callbacks = sig.options.pop('link', None)
     errbacks = sig.options.pop('link_error', None)

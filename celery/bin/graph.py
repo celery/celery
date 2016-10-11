@@ -16,6 +16,8 @@ __all__ = ['graph']
 
 
 class graph(Command):
+    """The ``celery graph`` command."""
+
     args = """<TYPE> [arguments]
             .....  bootsteps [worker] [consumer]
             .....  workers   [enumerate]

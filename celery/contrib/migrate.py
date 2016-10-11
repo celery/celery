@@ -29,11 +29,13 @@ Moving task {state.filtered}/{state.strtotal}: \
 
 
 class StopFiltering(Exception):
-    pass
+    """Semi-predicate used to signal filter stop."""
 
 
 @python_2_unicode_compatible
 class State(object):
+    """Migration progress state."""
+
     count = 0
     filtered = 0
     total_apx = 0
@@ -55,6 +57,7 @@ def republish(producer, message, exchange=None, routing_key=None,
                             'content_type',
                             'content_encoding',
                             'headers']):
+    """Republish message."""
     body = ensure_bytes(message.body)  # use raw message body.
     info, headers, props = (message.delivery_info,
                             message.headers, message.properties)
@@ -75,6 +78,7 @@ def republish(producer, message, exchange=None, routing_key=None,
 
 
 def migrate_task(producer, body_, message, queues=None):
+    """Migrate single task message."""
     info = message.delivery_info
     queues = {} if queues is None else queues
     republish(producer, message,
@@ -94,6 +98,7 @@ def filter_callback(callback, tasks):
 
 def migrate_tasks(source, dest, migrate=migrate_task, app=None,
                   queues=None, **kwargs):
+    """Migrate tasks from one broker to another."""
     app = app_or_default(app)
     queues = prepare_queues(queues)
     producer = app.amqp.Producer(dest)
@@ -219,10 +224,12 @@ def expand_dest(ret, exchange, routing_key):
 
 
 def task_id_eq(task_id, body, message):
+    """Return true if task id equals task_id'."""
     return body['id'] == task_id
 
 
 def task_id_in(ids, body, message):
+    """Return true if task id is member of set ids'."""
     return body['id'] in ids
 
 
@@ -241,6 +248,7 @@ def start_filter(app, conn, filter, limit=None, timeout=1.0,
                  ack_messages=False, tasks=None, queues=None,
                  callback=None, forever=False, on_declare_queue=None,
                  consume_from=None, state=None, accept=None, **kwargs):
+    """Filter tasks."""
     state = state or State()
     queues = prepare_queues(queues)
     consume_from = [_maybe_queue(app, q)
@@ -314,8 +322,9 @@ def move_task_by_id(task_id, dest, **kwargs):
 
 
 def move_by_idmap(map, **kwargs):
-    """Moves tasks by matching from a ``task_id: queue`` mapping,
-    where ``queue`` is a queue to move the task to.
+    """Move tasks by matching from a ``task_id: queue`` mapping.
+
+    Where ``queue`` is a queue to move the task to.
 
     Example:
         >>> move_by_idmap({
@@ -333,8 +342,9 @@ def move_by_idmap(map, **kwargs):
 
 
 def move_by_taskmap(map, **kwargs):
-    """Moves tasks by matching from a ``task_name: queue`` mapping,
-    where ``queue`` is the queue to move the task to.
+    """Move tasks by matching from a ``task_name: queue`` mapping.
+
+    ``queue`` is the queue to move the task to.
 
     Example:
         >>> move_by_taskmap({
@@ -342,7 +352,6 @@ def move_by_taskmap(map, **kwargs):
         ...     'tasks.mul': Queue('name'),
         ... })
     """
-
     def task_name_in_map(body, message):
         return map.get(body['task'])  # <- name of task
 

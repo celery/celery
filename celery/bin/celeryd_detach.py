@@ -29,6 +29,7 @@ C_FAKEFORK = os.environ.get('C_FAKEFORK')
 def detach(path, argv, logfile=None, pidfile=None, uid=None,
            gid=None, umask=None, workdir=None, fake=False, app=None,
            executable=None, hostname=None):
+    """Detach program by argv'."""
     hostname = default_nodename(hostname)
     logfile = node_format(logfile, hostname)
     pidfile = node_format(pidfile, hostname)
@@ -107,6 +108,8 @@ class PartialOptionParser(OptionParser):
 
 
 class detached_celeryd(object):
+    """Daemonize the celery worker process."""
+
     usage = '%prog [options] [celeryd options]'
     version = celery.VERSION_BANNER
     description = ('Detaches Celery worker nodes.  See `celery worker --help` '

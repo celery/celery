@@ -38,6 +38,7 @@ def humanize_type(type):
 
 
 class Dumper(object):
+    """Monitor events."""
 
     def __init__(self, out=sys.stdout):
         self.out = out
@@ -84,6 +85,7 @@ class Dumper(object):
 
 
 def evdump(app=None, out=sys.stdout):
+    """Start event dump."""
     app = app_or_default(app)
     dumper = Dumper(out=out)
     dumper.say('-> evdump: starting capture...')

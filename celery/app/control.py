@@ -27,6 +27,18 @@ the celery worker `-n` option.\
 
 
 def flatten_reply(reply):
+    """Flatten node replies.
+
+    Convert from a list of replies in this format::
+
+        [{'a@example.com': reply},
+         {'b@example.com': reply}]
+
+    into this format::
+
+        {'a@example.com': reply,
+         'b@example.com': reply}
+    """
     nodes, dupes = {}, set()
     for item in reply:
         [dupes.add(name) for name in item if name in nodes]
@@ -41,6 +53,8 @@ def flatten_reply(reply):
 
 
 class Inspect(object):
+    """API for app.control.inspect."""
+
     app = None
 
     def __init__(self, destination=None, timeout=1, callback=None,
@@ -125,6 +139,8 @@ class Inspect(object):
 
 
 class Control(object):
+    """Worker remote control client."""
+
     Mailbox = Mailbox
 
     def __init__(self, app=None):
@@ -198,8 +214,7 @@ class Control(object):
                               timeout=timeout, **kwargs)
 
     def rate_limit(self, task_name, rate_limit, destination=None, **kwargs):
-        """Tell all (or specific) workers to set a new rate limit
-        for task by type.
+        """Tell workers to set a new rate limit for task by type.
 
         Arguments:
             task_name (str): Name of task to change rate limit for.
@@ -259,8 +274,7 @@ class Control(object):
         )
 
     def time_limit(self, task_name, soft=None, hard=None, **kwargs):
-        """Tell all (or specific) workers to set time limits for
-        a task by type.
+        """Tell workers to set time limits for a task by type.
 
         Arguments:
             task_name (str): Name of task to change time limits for.

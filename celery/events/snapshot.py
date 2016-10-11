@@ -25,6 +25,7 @@ logger = get_logger('celery.evcam')
 
 
 class Polaroid(object):
+    """Record event snapshots."""
 
     timer = None
     shutter_signal = Signal(providing_args=('state',))
@@ -87,6 +88,7 @@ class Polaroid(object):
 
 def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
           logfile=None, pidfile=None, timer=None, app=None):
+    """Start snapshot recorder."""
     app = app_or_default(app)
 
     if pidfile:

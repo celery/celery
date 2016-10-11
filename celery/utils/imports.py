@@ -28,11 +28,12 @@ __all__ = [
 
 
 class NotAPackage(Exception):
-    pass
+    """Raised when importing a package, but it's not a package."""
 
 
 if sys.version_info > (3, 3):  # pragma: no cover
     def qualname(obj):
+        """Return object name."""
         if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
             obj = obj.__class__
         q = getattr(obj, '__qualname__', None)
@@ -41,6 +42,7 @@ if sys.version_info > (3, 3):  # pragma: no cover
         return q
 else:
     def qualname(obj):  # noqa
+        """Return object name."""
         if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
             obj = obj.__class__
         return '.'.join((obj.__module__, obj.__name__))
@@ -57,6 +59,7 @@ def instantiate(name, *args, **kwargs):
 
 @contextmanager
 def cwd_in_path():
+    """Context adding the current working directory to sys.path."""
     cwd = os.getcwd()
     if cwd in sys.path:
         yield
@@ -91,8 +94,7 @@ def find_module(module, path=None, imp=None):
 
 
 def import_from_cwd(module, imp=None, package=None):
-    """Import module, but make sure it finds modules
-    located in the current directory.
+    """Import module, temporarily including modules in the current directory.
 
     Modules located in the current directory has
     precedence over modules located in `sys.path`.
@@ -104,6 +106,7 @@ def import_from_cwd(module, imp=None, package=None):
 
 
 def reload_from_cwd(module, reloader=None):
+    """Reload module (ensuring that CWD is in sys.path)."""
     if reloader is None:
         reloader = reload
     with cwd_in_path():

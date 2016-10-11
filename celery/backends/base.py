@@ -119,7 +119,7 @@ class Backend(object):
         self.url = url
 
     def as_uri(self, include_password=False):
-        """Return the backend as an URI, sanitizing the password or not"""
+        """Return the backend as an URI, sanitizing the password or not."""
         # when using maybe_sanitize_url(), "/" is added
         # we're stripping it for consistency
         if include_password:
@@ -128,7 +128,7 @@ class Backend(object):
         return url[:-1] if url.endswith(':///') else url
 
     def mark_as_started(self, task_id, **meta):
-        """Mark a task as started"""
+        """Mark a task as started."""
         return self.store_result(task_id, meta, states.STARTED)
 
     def mark_as_done(self, task_id, result,
@@ -487,7 +487,7 @@ class SyncBackendMixin(object):
 
 
 class BaseBackend(Backend, SyncBackendMixin):
-    pass
+    """Base (synchronous) result backend."""
 BaseDictBackend = BaseBackend  # XXX compat
 
 
@@ -551,7 +551,7 @@ class BaseKeyValueStoreBackend(Backend):
         ])
 
     def _strip_prefix(self, key):
-        """Takes bytes, emits string."""
+        """Take bytes: emit string."""
         key = self.key_t(key)
         for prefix in self.task_keyprefix, self.group_keyprefix:
             if key.startswith(prefix):
@@ -731,10 +731,12 @@ class BaseKeyValueStoreBackend(Backend):
 
 
 class KeyValueStoreBackend(BaseKeyValueStoreBackend, SyncBackendMixin):
-    pass
+    """Result backend base class for key/value stores."""
 
 
 class DisabledBackend(BaseBackend):
+    """Dummy result backend."""
+
     _cache = {}   # need this attribute to reset cache in tests.
 
     def store_result(self, *args, **kwargs):

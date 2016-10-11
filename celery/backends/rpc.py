@@ -88,6 +88,7 @@ class ResultConsumer(BaseResultConsumer):
 
 
 class BaseRPCBackend(base.Backend, AsyncBackendMixin):
+    """Base class for the RPC result backend."""
 
     Exchange = Exchange
     Queue = NoCacheQueue
@@ -263,6 +264,8 @@ class BaseRPCBackend(base.Backend, AsyncBackendMixin):
 
 
 class RPCBackend(BaseRPCBackend):
+    """RPC result backend."""
+
     persistent = False
 
     class Consumer(Consumer):

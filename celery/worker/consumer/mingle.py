@@ -14,6 +14,14 @@ debug, info, exception = logger.debug, logger.info, logger.exception
 
 
 class Mingle(bootsteps.StartStopStep):
+    """Bootstep syncing state with neighbor workers.
+
+    At startup, or upon consumer restart, this will:
+
+    - Sync logical clocks.
+    - Sync revoked tasks.
+
+    """
 
     label = 'Mingle'
     requires = (Events,)

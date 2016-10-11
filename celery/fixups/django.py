@@ -32,6 +32,7 @@ def _maybe_close_fd(fh):
 
 
 def fixup(app, env='DJANGO_SETTINGS_MODULE'):
+    """Install Django fixup if settings module environment is set."""
     SETTINGS_MODULE = os.environ.get(env)
     if SETTINGS_MODULE and 'django' not in app.loader_cls.lower():
         try:
@@ -43,6 +44,7 @@ def fixup(app, env='DJANGO_SETTINGS_MODULE'):
 
 
 class DjangoFixup(object):
+    """Fixup installed when using Django."""
 
     def __init__(self, app):
         self.app = app

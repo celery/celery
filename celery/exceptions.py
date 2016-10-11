@@ -29,23 +29,19 @@ Task of kind {0} never registered, please make sure it's imported.\
 
 
 class CeleryError(Exception):
-    pass
+    """Base class for all Celery errors."""
 
 
 class CeleryWarning(UserWarning):
-    pass
+    """Base class for all Celery warnings."""
 
 
 class SecurityError(CeleryError):
-    """Security related exceptions.
-
-    Handle with care.
-    """
-    pass
+    """Security related exception."""
 
 
 class TaskPredicate(CeleryError):
-    pass
+    """Base class for task-related semi-predicates."""
 
 
 @python_2_unicode_compatible
@@ -152,7 +148,7 @@ class NotConfigured(CeleryWarning):
 
 
 class AlwaysEagerIgnored(CeleryWarning):
-    """send_task ignores :setting:`task_always_eager` option"""
+    """send_task ignores :setting:`task_always_eager` option."""
 
 
 class InvalidTaskError(CeleryError):
@@ -168,15 +164,15 @@ class ChordError(CeleryError):
 
 
 class CPendingDeprecationWarning(PendingDeprecationWarning):
-    pass
+    """Warning of pending deprecation."""
 
 
 class CDeprecationWarning(DeprecationWarning):
-    pass
+    """Warning of deprecation."""
 
 
 class FixupWarning(CeleryWarning):
-    pass
+    """Fixup related warning."""
 
 
 class DuplicateNodenameWarning(CeleryWarning):

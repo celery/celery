@@ -88,6 +88,7 @@ backends = {
 
 
 class CacheBackend(KeyValueStoreBackend):
+    """Cache result backend."""
 
     servers = None
     supports_autoexpire = True

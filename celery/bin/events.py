@@ -98,6 +98,7 @@ class events(Command):
             $ celery events -d
             $ celery events -c mod.attr -F 1.0 --detach --maxrate=100/m -l info
     """
+
     doc = __doc__
     supports_args = False
 

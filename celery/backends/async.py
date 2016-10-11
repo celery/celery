@@ -16,11 +16,16 @@ from celery.exceptions import TimeoutError
 from celery.five import Empty, monotonic
 from celery.utils.threads import THREAD_TIMEOUT_MAX
 
+__all__ = [
+    'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
+    'register_drainer',
+]
+
 drainers = {}
 
 
 def register_drainer(name):
-
+    """Decorator used to register a new result drainer type."""
     def _inner(cls):
         drainers[name] = cls
         return cls
@@ -29,6 +34,7 @@ def register_drainer(name):
 
 @register_drainer('default')
 class Drainer(object):
+    """Result draining service."""
 
     def __init__(self, result_consumer):
         self.result_consumer = result_consumer
@@ -114,6 +120,7 @@ class geventDrainer(greenletDrainer):
 
 
 class AsyncBackendMixin(object):
+    """Mixin for backends that enables the async API."""
 
     def _collect_into(self, result, bucket):
         self.result_consumer.buckets[result] = bucket
@@ -198,6 +205,7 @@ class AsyncBackendMixin(object):
 
 
 class BaseResultConsumer(object):
+    """Manager responsible for consuming result messages."""
 
     def __init__(self, backend, app, accept,
                  pending_results, pending_messages):

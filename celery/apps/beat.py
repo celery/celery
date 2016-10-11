@@ -36,6 +36,7 @@ logger = get_logger('celery.beat')
 
 
 class Beat(object):
+    """Beat as a service."""
 
     Service = beat.Service
     app = None
@@ -147,11 +148,8 @@ class Beat(object):
         )
 
     def install_sync_handler(self, service):
-        """Install a `SIGTERM` + `SIGINT` handler that saves
-        the beat schedule."""
-
+        """Install a `SIGTERM` + `SIGINT` handler saving the schedule."""
         def _sync(signum, frame):
             service.sync()
             raise SystemExit()
-
         platforms.signals.update(SIGTERM=_sync, SIGINT=_sync)

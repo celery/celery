@@ -66,7 +66,7 @@ else:
 
 
 class CassandraBackend(BaseBackend):
-    """Cassandra backend utilizing DataStax driver
+    """Cassandra backend utilizing DataStax driver.
 
     Raises:
         celery.exceptions.ImproperlyConfigured:
@@ -132,7 +132,7 @@ class CassandraBackend(BaseBackend):
         self._session = None
 
     def _get_connection(self, write=False):
-        """Prepare the connection for action
+        """Prepare the connection for action.
 
         Arguments:
             write (bool): are we a writer?

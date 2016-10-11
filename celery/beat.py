@@ -103,8 +103,7 @@ class ScheduleEntry(object):
         return self.schedule.now() if self.schedule else self.app.now()
 
     def _next_instance(self, last_run_at=None):
-        """Return a new instance of the same class, but with
-        its date and count fields updated."""
+        """Return new instance, with date and count fields updated."""
         return self.__class__(**dict(
             self,
             last_run_at=last_run_at or self._default_now(),
@@ -243,7 +242,6 @@ class Scheduler(object):
         Returns:
             float: preferred delay in seconds for next call.
         """
-
         def _when(entry, next_time_to_run):
             return (mktime(entry.schedule.now().timetuple()) +
                     (adjust(next_time_to_run) or 0))
@@ -396,6 +394,8 @@ class Scheduler(object):
 
 
 class PersistentScheduler(Scheduler):
+    """Scheduler backed by :mod:`shelve` database."""
+
     persistence = shelve
     known_suffixes = ('', '.db', '.dat', '.bak', '.dir')
 
@@ -498,6 +498,8 @@ class PersistentScheduler(Scheduler):
 
 
 class Service(object):
+    """Celery periodic task service."""
+
     scheduler_cls = PersistentScheduler
 
     def __init__(self, app, max_interval=None, schedule_filename=None,

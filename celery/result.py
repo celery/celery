@@ -55,7 +55,7 @@ def allow_join_result():
 
 
 class ResultBase(object):
-    """Base class for all results"""
+    """Base class for results."""
 
     #: Parent result (if part of a chain)
     parent = None
@@ -70,6 +70,7 @@ class AsyncResult(ResultBase):
         id (str): See :attr:`id`.
         backend (Backend): See :attr:`backend`.
     """
+
     app = None
 
     #: Error raised for timeouts.
@@ -200,7 +201,9 @@ class AsyncResult(ResultBase):
             node = node.parent
 
     def collect(self, intermediate=False, **kwargs):
-        """Iterator, like :meth:`get` will wait for the task to complete,
+        """Collect results as they return.
+
+        Iterator, like :meth:`get` will wait for the task to complete,
         but will also follow :class:`AsyncResult` and :class:`ResultSet`
         returned by the task, yielding ``(result, value)`` tuples for each
         result in the tree.
@@ -265,7 +268,7 @@ class AsyncResult(ResultBase):
                     raise IncompleteStream()
 
     def ready(self):
-        """Returns :const:`True` if the task has been executed.
+        """Return :const:`True` if the task started executing.
 
         If the task is still running, pending, or is waiting
         for retry then :const:`False` is returned.
@@ -273,11 +276,11 @@ class AsyncResult(ResultBase):
         return self.state in self.backend.READY_STATES
 
     def successful(self):
-        """Returns :const:`True` if the task executed successfully."""
+        """Return :const:`True` if the task executed successfully."""
         return self.state == states.SUCCESS
 
     def failed(self):
-        """Returns :const:`True` if the task failed."""
+        """Return :const:`True` if the task failed."""
         return self.state == states.FAILURE
 
     def throw(self, *args, **kwargs):
@@ -308,11 +311,11 @@ class AsyncResult(ResultBase):
         return graph
 
     def __str__(self):
-        """`str(self) -> self.id`"""
+        """`str(self) -> self.id`."""
         return str(self.id)
 
     def __hash__(self):
-        """`hash(self) -> hash(self.id)`"""
+        """`hash(self) -> hash(self.id)`."""
         return hash(self.id)
 
     def __repr__(self):
@@ -380,9 +383,13 @@ class AsyncResult(ResultBase):
 
     @property
     def result(self):
-        """When the task has been executed, this contains the return value.
-        If the task raised an exception, this will be the exception
-        instance."""
+        """Task return value.
+
+        Note:
+            When the task has been executed, this contains the return value.
+            If the task raised an exception, this will be the exception
+            instance.
+        """
         return self._get_task_meta()['result']
     info = result
 
@@ -425,7 +432,7 @@ class AsyncResult(ResultBase):
 
     @property
     def task_id(self):
-        """compat alias to :attr:`id`"""
+        """compat alias to :attr:`id`."""
         return self.id
 
     @task_id.setter  # noqa
@@ -436,11 +443,12 @@ class AsyncResult(ResultBase):
 @Thenable.register
 @python_2_unicode_compatible
 class ResultSet(ResultBase):
-    """Working with more than one result.
+    """A collection of results.
 
     Arguments:
         results (Sequence[AsyncResult]): List of result instances.
     """
+
     _app = None
 
     #: List of results in in the set.
@@ -485,16 +493,17 @@ class ResultSet(ResultBase):
             raise KeyError(result)
 
     def discard(self, result):
-        """Remove result from the set if it is a member,
-        or do nothing if it's not."""
+        """Remove result from the set if it is a member.
+
+        Does nothing if it's not a member.
+        """
         try:
             self.remove(result)
         except KeyError:
             pass
 
     def update(self, results):
-        """Update set with the union of itself and an iterable with
-        results."""
+        """Extend from iterable of results."""
         self.results.extend(r for r in results if r not in self.results)
 
     def clear(self):
@@ -502,7 +511,7 @@ class ResultSet(ResultBase):
         self.results[:] = []  # don't create new list.
 
     def successful(self):
-        """Was all of the tasks successful?
+        """Return true if all tasks successful.
 
         Returns:
             bool: true if all of the tasks finished
@@ -511,7 +520,7 @@ class ResultSet(ResultBase):
         return all(result.successful() for result in self.results)
 
     def failed(self):
-        """Did any of the tasks fail?
+        """Return true if any of the tasks failed.
 
         Returns:
             bool: true if one of the tasks failed.
@@ -524,7 +533,7 @@ class ResultSet(ResultBase):
             result.maybe_throw(callback=callback, propagate=propagate)
 
     def waiting(self):
-        """Are any of the tasks incomplete?
+        """Return true if any of the tasks are incomplate.
 
         Returns:
             bool: true if one of the tasks are still
@@ -576,7 +585,7 @@ class ResultSet(ResultBase):
         return iter(self.results)
 
     def __getitem__(self, index):
-        """`res[i] -> res.results[i]`"""
+        """`res[i] -> res.results[i]`."""
         return self.results[index]
 
     @deprecated.Callable('4.0', '5.0')
@@ -605,7 +614,7 @@ class ResultSet(ResultBase):
 
     def get(self, timeout=None, propagate=True, interval=0.5,
             callback=None, no_ack=True, on_message=None):
-        """See :meth:`join`
+        """See :meth:`join`.
 
         This is here for API compatibility with :class:`AsyncResult`,
         in addition it uses :meth:`join_native` if available for the
@@ -621,7 +630,7 @@ class ResultSet(ResultBase):
 
     def join(self, timeout=None, propagate=True, interval=0.5,
              callback=None, no_ack=True, on_message=None, on_interval=None):
-        """Gathers the results of all tasks as a list in order.
+        """Gather the results of all tasks as a list in order.
 
         Note:
             This can be an expensive operation for result store
@@ -924,7 +933,7 @@ class EagerResult(AsyncResult):
 
     @property
     def result(self):
-        """The tasks return value"""
+        """The tasks return value."""
         return self._result
 
     @property
@@ -944,6 +953,7 @@ class EagerResult(AsyncResult):
 
 
 def result_from_tuple(r, app=None):
+    """Deserialize result from tuple."""
     # earlier backends may just pickle, so check if
     # result is already prepared.
     app = app_or_default(app)

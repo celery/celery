@@ -45,6 +45,7 @@ REPR_LIMITED_SET = """\
 
 
 def force_mapping(m):
+    """Wrap object into supporting the mapping interface if necessary."""
     if isinstance(m, (LazyObject, LazySettings)):
         m = m._wrapped
     return DictAttribute(m) if not isinstance(m, Mapping) else m
@@ -61,6 +62,7 @@ def lpmerge(L, R):
 
 
 class OrderedDict(_OrderedDict):
+    """Dict where insertion order matters."""
 
     if PY3:  # pragma: no cover
         def _LRUkey(self):
@@ -109,11 +111,13 @@ class OrderedDict(_OrderedDict):
 
 
 class AttributeDictMixin(object):
-    """Augment classes with a Mapping interface by adding attribute
-    access (i.e., `d.key -> d[key]`)."""
+    """Mixin for Mapping interface that adds attribute access.
+
+    I.e., `d.key -> d[key]`).
+    """
 
     def __getattr__(self, k):
-        """`d.key -> d[key]`"""
+        """`d.key -> d[key]`."""
         try:
             return self[k]
         except KeyError:
@@ -122,13 +126,12 @@ class AttributeDictMixin(object):
                     type(self).__name__, k))
 
     def __setattr__(self, key, value):
-        """`d[key] = value -> d.key = value`"""
+        """`d[key] = value -> d.key = value`."""
         self[key] = value
 
 
 class AttributeDict(dict, AttributeDictMixin):
     """Dict subclass with attribute access."""
-    pass
 
 
 class DictAttribute(object):
@@ -137,6 +140,7 @@ class DictAttribute(object):
     `obj[k] -> obj.k`
     `obj[k] = val -> obj.k = val`
     """
+
     obj = None
 
     def __init__(self, obj):
@@ -205,6 +209,7 @@ MutableMapping.register(DictAttribute)
 
 
 class ChainMap(MutableMapping):
+    """Key lookup on a sequence of maps."""
 
     key_t = None
     changes = None
@@ -297,8 +302,6 @@ class ChainMap(MutableMapping):
         return cls(dict.fromkeys(iterable, *args))
 
     def copy(self):
-        """New ChainMap or subclass with a new copy of maps[0] and
-        refs to maps[1:]."""
         return self.__class__(self.maps[0].copy(), *self.maps[1:])
     __copy__ = copy  # Py2
 
@@ -633,6 +636,7 @@ MutableSet.register(LimitedSet)
 
 
 class Evictable(object):
+    """Mixin for classes supporting the ``evict`` method."""
 
     Empty = Empty
 
@@ -657,6 +661,7 @@ class Evictable(object):
 
 @python_2_unicode_compatible
 class Messagebuffer(Evictable):
+    """A buffer of pending messages."""
 
     Empty = Empty
 
@@ -719,6 +724,7 @@ Sequence.register(Messagebuffer)
 
 @python_2_unicode_compatible
 class BufferMap(OrderedDict, Evictable):
+    """Map of buffers."""
 
     Buffer = Messagebuffer
     Empty = Empty

@@ -32,33 +32,33 @@ class Certificate(object):
         return bytes_to_str(self._cert.get_serial_number())
 
     def get_issuer(self):
-        """Return issuer (CA) as a string"""
+        """Return issuer (CA) as a string."""
         return ' '.join(bytes_to_str(x[1]) for x in
                         self._cert.get_issuer().get_components())
 
     def get_id(self):
-        """Serial number/issuer pair uniquely identifies a certificate"""
+        """Serial number/issuer pair uniquely identifies a certificate."""
         return '{0} {1}'.format(self.get_issuer(), self.get_serial_number())
 
     def verify(self, data, signature, digest):
-        """Verifies the signature for string containing data."""
+        """Verify signature for string containing data."""
         with reraise_errors('Bad signature: {0!r}'):
             crypto.verify(self._cert, signature, data, digest)
 
 
 class CertStore(object):
-    """Base class for certificate stores"""
+    """Base class for certificate stores."""
 
     def __init__(self):
         self._certs = {}
 
     def itercerts(self):
-        """an iterator over the certificates"""
+        """Return certificate iterator."""
         for c in values(self._certs):
             yield c
 
     def __getitem__(self, id):
-        """get certificate by id"""
+        """Get certificate by id."""
         try:
             return self._certs[bytes_to_str(id)]
         except KeyError:
@@ -72,7 +72,7 @@ class CertStore(object):
 
 
 class FSCertStore(CertStore):
-    """File system certificate store"""
+    """File system certificate store."""
 
     def __init__(self, path):
         CertStore.__init__(self)

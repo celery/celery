@@ -76,7 +76,7 @@ Example:
 
 
 def app_has_custom(app, attr):
-    """Returns true if app has customized method `attr`.
+    """Return true if app has customized method `attr`.
 
     Note:
         This is used for optimizations in cases where we know
@@ -88,8 +88,9 @@ def app_has_custom(app, attr):
 
 
 def _unpickle_appattr(reverse_name, args):
-    """Given an attribute name and a list of args, gets
-    the attribute from the current app and calls it."""
+    """Unpickle app."""
+    # Given an attribute name and a list of args, gets
+    # the attribute from the current app and calls it.
     return get_current_app()._rgetattr(reverse_name)(*args)
 
 
@@ -153,6 +154,7 @@ class Celery(object):
             or object.  Attributes may include any setings described in
             the documentation.
     """
+
     #: This is deprecated, use :meth:`reduce_keys` instead
     Pickler = AppPickler
 
@@ -281,11 +283,11 @@ class Celery(object):
             self._preconf_set_by_auto.add(key)
 
     def set_current(self):
-        """Makes this the current app for this thread."""
+        """Make this the current app for this thread."""
         _set_current_app(self)
 
     def set_default(self):
-        """Makes this the default app for all threads."""
+        """Make this the default app for all threads."""
         set_default_app(self)
 
     def _ensure_after_fork(self):
@@ -441,8 +443,11 @@ class Celery(object):
         return gen_task_name(self, name, module)
 
     def finalize(self, auto=False):
-        """Finalizes the app by loading built-in tasks,
-        and evaluating pending task decorators."""
+        """Finalize the app.
+
+        This loads built-in tasks, evaluates pending task decorators,
+        reads configuration, etc.
+        """
         with self._finalize_mutex:
             if not self.finalized:
                 if auto and not self.autofinalize:
@@ -485,8 +490,9 @@ class Celery(object):
 
     def config_from_object(self, obj,
                            silent=False, force=False, namespace=None):
-        """Reads configuration from object, where object is either
-        an object or the name of a module to import.
+        """Read configuration from object.
+
+        Object is either an actual object or the name of a module to import.
 
         Example:
             >>> celery.config_from_object('myapp.celeryconfig')
@@ -560,8 +566,10 @@ class Celery(object):
 
     def autodiscover_tasks(self, packages=None,
                            related_name='tasks', force=False):
-        """Try to auto-discover and import modules with a specific name (by
-        default 'tasks').
+        """Auto-discover task modules.
+
+        Searches a list of packages for a "tasks.py" module (or use
+        related_name argument).
 
         If the name is empty, this will be delegated to fix-ups (e.g., Django).
 
@@ -775,7 +783,9 @@ class Celery(object):
         return self.connection_for_write()
 
     def connection_or_acquire(self, connection=None, pool=True, *_, **__):
-        """For use within a :keyword:`with` statement to get a connection
+        """Context used to acquire a connection from the pool.
+
+        For use within a :keyword:`with` statement to get a connection
         from the pool if one is not already provided.
 
         Arguments:
@@ -786,7 +796,9 @@ class Celery(object):
     default_connection = connection_or_acquire  # XXX compat
 
     def producer_or_acquire(self, producer=None):
-        """For use within a :keyword:`with` statement to get a producer
+        """Context used to acquire a producer from the pool.
+
+        For use within a :keyword:`with` statement to get a producer
         from the pool if one is not already provided
 
         Arguments:
@@ -803,25 +815,29 @@ class Celery(object):
         return find_deprecated_settings(c)
 
     def now(self):
-        """Return the current time and date as a
-        :class:`~datetime.datetime` object."""
+        """Return the current time and date as a datetime."""
         return self.loader.now(utc=self.conf.enable_utc)
 
     def select_queues(self, queues=None):
-        """Select a subset of queues, where queues must be a list of queue
-        names to keep."""
+        """Select subset of queues.
+
+        Arguments:
+            queues (Sequence[str]): a list of queue names to keep.
+        """
         return self.amqp.queues.select(queues)
 
     def either(self, default_key, *values):
-        """Fallback to the value of a configuration key if none of the
-        `*values` are true."""
+        """Get key from configuration or use default values.
+
+        Fallback to the value of a configuration key if none of the
+        `*values` are true.
+        """
         return first(None, [
             first(None, values), starpromise(self.conf.get, default_key),
         ])
 
     def bugreport(self):
-        """Return a string with information useful for the Celery core
-        developers when reporting a bug."""
+        """Return information useful in bug reports."""
         return bugreport(self)
 
     def _get_backend(self):
@@ -832,13 +848,11 @@ class Celery(object):
         return backend(app=self, url=url)
 
     def _get_from_conf_and_finalize(self, key):
-        """Get value for configuration key and finalize
-        loading the configuration.
+        """Get config value by key and finalize loading the configuration.
 
         Note:
             This is used by PendingConfiguration:
-                as soon as you access a key the configuration
-                is read.
+                as soon as you access a key the configuration is read.
         """
         conf = self._conf = self._load_config()
         return conf[key]
@@ -917,8 +931,7 @@ class Celery(object):
         self._conf.beat_schedule[key] = entry
 
     def create_task_cls(self):
-        """Creates a base task class using default configuration
-        taken from this app."""
+        """Create a base task class bound to this app."""
         return self.subclass_with_self(
             self.task_cls, name='Task', attribute='_app',
             keep_reduce=True, abstract=True,
@@ -926,8 +939,7 @@ class Celery(object):
 
     def subclass_with_self(self, Class, name=None, attribute='app',
                            reverse=None, keep_reduce=False, **kw):
-        """Subclass an app-compatible class by setting its app attribute
-        to be this app instance.
+        """Subclass an app-compatible class.
 
         App-compatible means that the class has a class attribute that
         provides the default app it should use, for example:
@@ -987,8 +999,7 @@ class Celery(object):
         )
 
     def __reduce_keys__(self):
-        """Return keyword arguments used to reconstruct the object
-        when unpickling."""
+        """Keyword arguments used to reconstruct the object when unpickling."""
         return {
             'main': self.main,
             'changes':
@@ -1086,8 +1097,7 @@ class Celery(object):
 
     @property
     def current_task(self):
-        """The instance of the task that's being executed, or
-        :const:`None`."""
+        """Instance of task being executed, or :const:`None`."""
         return _task_stack.top
 
     @property

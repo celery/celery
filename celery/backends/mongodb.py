@@ -258,8 +258,10 @@ class MongoBackend(BaseBackend):
 
     @cached_property
     def database(self):
-        """Get database from MongoDB connection and perform authentication
-        if necessary."""
+        """Get database from MongoDB connection.
+
+        performs authentication if necessary.
+        """
         return self._get_database()
 
     @cached_property

@@ -88,6 +88,7 @@ class beat(Command):
     The last example requires the :pypi:`django-celery-beat` extension
     package found on PyPI.
     """
+
     doc = __doc__
     enable_config_from_cmdline = True
     supports_args = False

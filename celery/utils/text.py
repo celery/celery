@@ -29,33 +29,40 @@ RE_FORMAT = re.compile(r'%(\w)')
 
 
 def str_to_list(s):
+    """Convert string to list."""
     if isinstance(s, string_t):
         return s.split(',')
     return s
 
 
 def dedent_initial(s, n=4):
+    """Remove identation from first line of text."""
     return s[n:] if s[:n] == ' ' * n else s
 
 
 def dedent(s, n=4, sep='\n'):
+    """Remove identation."""
     return sep.join(dedent_initial(l) for l in s.splitlines())
 
 
 def fill_paragraphs(s, width, sep='\n'):
+    """Fill paragraphs with newlines (or custom separator)."""
     return sep.join(fill(p, width) for p in s.split(sep))
 
 
 def join(l, sep='\n'):
+    """Concatenate list of strings."""
     return sep.join(v for v in l if v)
 
 
 def ensure_sep(sep, s, n=2):
+    """Ensure text s ends in separator sep'."""
     return s + sep * (n - s.count(sep))
 ensure_newlines = partial(ensure_sep, '\n')
 
 
 def abbr(S, max, ellipsis='...'):
+    """Abbreviate word."""
     if S is None:
         return '???'
     if len(S) > max:
@@ -64,6 +71,7 @@ def abbr(S, max, ellipsis='...'):
 
 
 def abbrtask(S, max):
+    """Abbreviate task name."""
     if S is None:
         return '???'
     if len(S) > max:
@@ -79,7 +87,7 @@ def indent(t, indent=0, sep='\n'):
 
 
 def truncate(s, maxlen=128, suffix='...'):
-    """Truncates text to a maximum number of characters."""
+    """Truncate text to a maximum number of characters."""
     if maxlen and len(s) >= maxlen:
         return s[:maxlen].rsplit(' ', 1)[0] + suffix
     return s
@@ -92,12 +100,14 @@ def truncate_bytes(s, maxlen=128, suffix=b'...'):
 
 
 def pluralize(n, text, suffix='s'):
+    """Pluralize term when n is greater than one."""
     if n != 1:
         return text + suffix
     return text
 
 
 def pretty(value, width=80, nl_width=80, sep='\n', **kw):
+    """Format value for printing to console."""
     if isinstance(value, dict):
         return '{{{0} {1}'.format(sep, pformat(value, 4, nl_width)[1:])
     elif isinstance(value, tuple):
@@ -113,6 +123,7 @@ def match_case(s, other):
 
 
 def simple_format(s, keys, pattern=RE_FORMAT, expand=r'\1'):
+    """Format string, expanding abbreviations in keys'."""
     if s:
         keys.setdefault('%', '%')
 

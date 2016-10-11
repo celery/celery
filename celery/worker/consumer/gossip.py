@@ -22,6 +22,10 @@ debug, info = logger.debug, logger.info
 
 
 class Gossip(bootsteps.ConsumerStep):
+    """Bootstep consuming events from other workers.
+
+    This keeps the logical clock value up to date.
+    """
 
     label = 'Gossip'
     requires = (Mingle,)

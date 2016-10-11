@@ -39,6 +39,7 @@ PY3 = sys.version_info[0] == 3
 
 @contextmanager
 def default_socket_timeout(timeout):
+    """Context temporarily setting the default socket timeout."""
     prev = socket.getdefaulttimeout()
     socket.setdefaulttimeout(timeout)
     yield
@@ -46,6 +47,7 @@ def default_socket_timeout(timeout):
 
 
 class bgThread(threading.Thread):
+    """Background service thread."""
 
     def __init__(self, name=None, **kwargs):
         super(bgThread, self).__init__()
@@ -94,7 +96,8 @@ class bgThread(threading.Thread):
 
 
 def release_local(local):
-    """Releases the contents of the local for the current context.
+    """Release the contents of the local for the current context.
+
     This makes it possible to use locals without a manager.
 
     With this function one can release :class:`Local` objects as well as
@@ -114,6 +117,8 @@ def release_local(local):
 
 
 class Local(object):
+    """Local object."""
+
     __slots__ = ('__storage__', '__ident_func__')
 
     def __init__(self):
@@ -152,7 +157,9 @@ class Local(object):
 
 
 class _LocalStack(object):
-    """This class works similar to a :class:`Local` but keeps a stack
+    """Local stack.
+
+    This class works similar to a :class:`Local` but keeps a stack
     of objects instead.  This is best explained with an example::
 
         >>> ls = LocalStack()
@@ -199,7 +206,7 @@ class _LocalStack(object):
         return Proxy(_lookup)
 
     def push(self, obj):
-        """Pushes a new item to the stack"""
+        """Push a new item to the stack."""
         rv = getattr(self._local, 'stack', None)
         if rv is None:
             self._local.stack = rv = []
@@ -207,8 +214,10 @@ class _LocalStack(object):
         return rv
 
     def pop(self):
-        """Remove the topmost item from the stack, will return the
-        old value or `None` if the stack was already empty.
+        """Remove the topmost item from the stack.
+
+        Note:
+            Will return the old value or `None` if the stack was already empty.
         """
         stack = getattr(self._local, 'stack', None)
         if stack is None:
@@ -225,8 +234,8 @@ class _LocalStack(object):
 
     @property
     def stack(self):
-        """get_current_worker_task uses this to find
-        the original task that was executed by the worker."""
+        # get_current_worker_task uses this to find
+        # the original task that was executed by the worker.
         stack = getattr(self._local, 'stack', None)
         if stack is not None:
             return stack
@@ -234,8 +243,10 @@ class _LocalStack(object):
 
     @property
     def top(self):
-        """The topmost item on the stack.  If the stack is empty,
-        `None` is returned.
+        """The topmost item on the stack.
+
+        Note:
+            If the stack is empty, :const:`None` is returned.
         """
         try:
             return self._local.stack[-1]
@@ -245,8 +256,10 @@ class _LocalStack(object):
 
 @python_2_unicode_compatible
 class LocalManager(object):
-    """Local objects cannot manage themselves.  For that you need a local
-    manager.  You can pass a local manager multiple locals or add them
+    """Local objects cannot manage themselves.
+
+    For that you need a local manager.
+    You can pass a local manager multiple locals or add them
     later by appending them to ``manager.locals``.  Every time the manager
     cleans up, it will clean up all the data left in the locals for this
     context.
@@ -270,10 +283,13 @@ class LocalManager(object):
             self.ident_func = get_ident
 
     def get_ident(self):
-        """Return the context identifier the local objects use internally
+        """Return context identifier.
+
+        This is the indentifer the local objects use internally
         for this context.  You cannot override this method to change the
         behavior but use it to link other context local objects (such as
-        SQLAlchemy's scoped sessions) to the Werkzeug locals."""
+        SQLAlchemy's scoped sessions) to the Werkzeug locals.
+        """
         return self.ident_func()
 
     def cleanup(self):

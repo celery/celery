@@ -197,7 +197,6 @@ class Signal(object):  # pragma: no cover
 
     def _remove_receiver(self, receiver):
         """Remove dead receivers from connections."""
-
         to_remove = []
         for key, connected_receiver in self.receivers:
             if connected_receiver == receiver:
@@ -208,7 +207,9 @@ class Signal(object):  # pragma: no cover
                     del self.receivers[idx]
 
     def __repr__(self):
+        """``repr(signal)``."""
         return '<Signal: {0}>'.format(type(self).__name__)
 
     def __str__(self):
+        """``str(signal)``."""
         return repr(self)

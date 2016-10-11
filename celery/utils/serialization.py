@@ -41,12 +41,15 @@ except NameError:  # pragma: no cover
 
 
 def subclass_exception(name, parent, module):  # noqa
+    """Create new exception class."""
     return type(bytes_if_py2(name), (parent,), {'__module__': module})
 
 
 def find_pickleable_exception(exc, loads=pickle.loads,
                               dumps=pickle.dumps):
-    """With an exception instance, iterate over its super classes (by MRO)
+    """Find first pickleable exception base class.
+
+    With an exception instance, iterate over its super classes (by MRO)
     and find the first super exception that's pickleable.  It does
     not go below :exc:`Exception` (i.e., it skips :exc:`Exception`,
     :class:`BaseException` and :class:`object`).  If that happens
@@ -157,6 +160,7 @@ def get_pickleable_exception(exc):
 
 
 def get_pickleable_etype(cls, loads=pickle.loads, dumps=pickle.dumps):
+    """Get pickleable exception type."""
     try:
         loads(dumps(cls))
     except:
@@ -166,8 +170,7 @@ def get_pickleable_etype(cls, loads=pickle.loads, dumps=pickle.dumps):
 
 
 def get_pickled_exception(exc):
-    """Get original exception from exception pickled using
-    :meth:`get_pickleable_exception`."""
+    """Reverse of :meth:`get_pickleable_exception`."""
     if isinstance(exc, UnpickleableExceptionWrapper):
         return exc.restore()
     return exc
@@ -184,8 +187,10 @@ def b64decode(s):
 def strtobool(term, table={'false': False, 'no': False, '0': False,
                            'true': True, 'yes': True, '1': True,
                            'on': True, 'off': False}):
-    """Convert common terms for true/false to bool
-    (true/false/yes/no/on/off/1/0)."""
+    """Convert common terms for true/false to bool.
+
+    Examples (true/false/yes/no/on/off/1/0).
+    """
     if isinstance(term, string_t):
         try:
             return table[term.lower()]
@@ -198,7 +203,7 @@ def jsonify(obj,
             builtin_types=(numbers.Real, string_t), key=None,
             keyfilter=None,
             unknown_type_filter=None):
-    """Transforms object making it suitable for json serialization"""
+    """Transform object making it suitable for json serialization."""
     from kombu.abstract import Object as KombuDictType
     _jsonify = partial(jsonify, builtin_types=builtin_types, key=key,
                        keyfilter=keyfilter,

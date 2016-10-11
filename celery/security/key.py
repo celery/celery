@@ -10,6 +10,7 @@ __all__ = ['PrivateKey']
 
 
 class PrivateKey(object):
+    """Represents a private key."""
 
     def __init__(self, key):
         with reraise_errors('Invalid private key: {0!r}'):

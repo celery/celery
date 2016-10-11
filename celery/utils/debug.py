@@ -46,8 +46,10 @@ def _on_blocking(signum, frame):
 
 @contextmanager
 def blockdetection(timeout):
-    """A timeout context using ``SIGALRM`` that can be used to detect blocking
-    functions."""
+    """Context that raises an exception if process is blocking.
+
+    Uses ``SIGALRM`` to detect blocking functions.
+    """
     if not timeout:
         yield
     else:
@@ -147,8 +149,11 @@ def mem_rss():
 
 
 def ps():  # pragma: no cover
-    """Return the global :class:`psutil.Process` instance,
-    or :const:`None` if :pypi:`psutil` is not installed."""
+    """Return the global :class:`psutil.Process` instance.
+
+    Note:
+        Returns :const:`None` if :pypi:`psutil` is not installed.
+    """
     global _process
     if _process is None and Process is not None:
         _process = Process(os.getpid())
@@ -163,8 +168,11 @@ def _process_memory_info(process):
 
 
 def cry(out=None, sepchr='=', seplen=49):  # pragma: no cover
-    """Return stack-trace of all active threads,
-    taken from https://gist.github.com/737056."""
+    """Return stack-trace of all active threads.
+
+    See Also:
+        Taken from https://gist.github.com/737056.
+    """
     import threading
 
     out = WhateverIO() if out is None else out

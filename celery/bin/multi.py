@@ -220,6 +220,8 @@ class TermLogger(object):
 
 
 class MultiTool(TermLogger):
+    """The ``celery multi`` program."""
+
     MultiParser = MultiParser
     OptionParser = NamespacedOptionParser
 

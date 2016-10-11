@@ -82,7 +82,7 @@ def process_initializer(app, hostname):
 
 
 def process_destructor(pid, exitcode):
-    """Pool child process destructor
+    """Pool child process destructor.
 
     Dispatch the :signal:`worker_process_shutdown` signal.
     """
@@ -93,6 +93,7 @@ def process_destructor(pid, exitcode):
 
 class TaskPool(BasePool):
     """Multiprocessing Pool implementation."""
+
     Pool = AsynPool
     BlockingPool = BlockingPool
 

@@ -49,7 +49,7 @@ class Task(ResultModelBase):
 
 @python_2_unicode_compatible
 class TaskSet(ResultModelBase):
-    """TaskSet result"""
+    """TaskSet result."""
 
     __tablename__ = 'celery_tasksetmeta'
     __table_args__ = {'sqlite_autoincrement': True}

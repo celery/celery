@@ -100,6 +100,7 @@ class EventDispatcher(object):
     Note:
         You need to :meth:`close` this after use.
     """
+
     DISABLED_TRANSPORTS = {'sql'}
 
     app = None
@@ -168,8 +169,7 @@ class EventDispatcher(object):
 
     def publish(self, type, fields, producer,
                 blind=False, Event=Event, **kwargs):
-        """Publish event using a custom :class:`~kombu.Producer`
-        instance.
+        """Publish event using custom :class:`~kombu.Producer`.
 
         Arguments:
             type (str): Event type name, with group separated by dash (`-`).
@@ -251,7 +251,7 @@ class EventDispatcher(object):
                                     retry_policy=retry_policy)
 
     def flush(self, errors=True, groups=True):
-        """Flushes the outbound buffer."""
+        """Flush the outbound buffer."""
         if errors:
             buf = list(self._outbound_buffer)
             try:
@@ -267,7 +267,7 @@ class EventDispatcher(object):
                     events[:] = []  # list.clear
 
     def extend_buffer(self, other):
-        """Copies the outbound buffer of another instance."""
+        """Copy the outbound buffer of another instance."""
         self._outbound_buffer.extend(other._outbound_buffer)
 
     def close(self):
@@ -293,6 +293,7 @@ class EventReceiver(ConsumerMixin):
             The special handler `"*"` captures all events that don't have a
             handler.
     """
+
     app = None
 
     def __init__(self, channel, handlers=None, routing_key='#',
@@ -334,8 +335,7 @@ class EventReceiver(ConsumerMixin):
         })
 
     def process(self, type, event):
-        """Process the received event by dispatching it to the appropriate
-        handler."""
+        """Process event by dispatching to configured handler."""
         handler = self.handlers.get(type) or self.handlers.get('*')
         handler and handler(event)
 
@@ -406,6 +406,7 @@ class EventReceiver(ConsumerMixin):
 
 
 class Events(object):
+    """Implements app.events."""
 
     def __init__(self, app=None):
         self.app = app

@@ -55,6 +55,8 @@ class Timer(bootsteps.Step):
 
 
 class Hub(bootsteps.StartStopStep):
+    """Worker starts the event loop."""
+
     requires = (Timer,)
 
     def __init__(self, w, **kwargs):
@@ -105,6 +107,7 @@ class Pool(bootsteps.StartStopStep):
         * max_concurrency
         * min_concurrency
     """
+
     requires = (Hub,)
 
     def __init__(self, w, **kwargs):
@@ -166,8 +169,9 @@ class Pool(bootsteps.StartStopStep):
 class Beat(bootsteps.StartStopStep):
     """Step used to embed a beat process.
 
-    This will only be enabled if the ``beat`` argument is set.
+    Enabled when the ``beat`` argument is set.
     """
+
     label = 'Beat'
     conditional = True
 
@@ -198,6 +202,7 @@ class StateDB(bootsteps.Step):
 
 
 class Consumer(bootsteps.StartStopStep):
+    """Bootstep starting the Consumer blueprint."""
 
     last = True
 

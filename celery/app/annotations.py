@@ -20,6 +20,7 @@ __all__ = ['MapAnnotation', 'prepare', 'resolve_all']
 
 
 class MapAnnotation(dict):
+    """Annotation map: task_name => attributes."""
 
     def annotate_any(self):
         try:
@@ -35,8 +36,7 @@ class MapAnnotation(dict):
 
 
 def prepare(annotations):
-    """Expands the :setting:`task_annotations` setting."""
-
+    """Expand the :setting:`task_annotations` setting."""
     def expand_annotation(annotation):
         if isinstance(annotation, dict):
             return MapAnnotation(annotation)
@@ -52,4 +52,5 @@ def prepare(annotations):
 
 
 def resolve_all(anno, task):
+    """Resolve all pending annotations."""
     return (x for x in (_first_match(anno, task), _first_match_any(anno)) if x)

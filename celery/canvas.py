@@ -121,7 +121,9 @@ def _upgrade(fields, sig):
 @abstract.CallableSignature.register
 @python_2_unicode_compatible
 class Signature(dict):
-    """Class that wraps the arguments and execution options
+    """Task Signature.
+
+    Class that wraps the arguments and execution options
     for a single task invocation.
 
     Used as the parts in a :class:`group` and other constructs,
@@ -226,8 +228,11 @@ class Signature(dict):
         return self.apply_async(partial_args, partial_kwargs)
 
     def apply(self, args=(), kwargs={}, **options):
-        """Same as :meth:`apply_async` but executed the task inline instead
-        of sending a task message."""
+        """Call task locally.
+
+        Same as :meth:`apply_async` but executed the task inline instead
+        of sending a task message.
+        """
         # For callbacks: extra args are prepended to the stored args.
         args, kwargs, options = self._merge(args, kwargs, options)
         return self.type.apply(args, kwargs, **options)
@@ -321,8 +326,10 @@ class Signature(dict):
 
     def replace(self, args=None, kwargs=None, options=None):
         """Replace the args, kwargs or options set for this signature.
+
         These are only replaced if the argument for the section is
-        not :const:`None`."""
+        not :const:`None`.
+        """
         s = self.clone()
         if args is not None:
             s.args = args
@@ -367,8 +374,7 @@ class Signature(dict):
         items.extend(maybe_list(value))
 
     def link(self, callback):
-        """Add a callback task to be applied if this task
-        executes successfully.
+        """Add callback task to be applied if this task succeeds.
 
         Returns:
             Signature: the argument passed, for chaining
@@ -377,8 +383,7 @@ class Signature(dict):
         return self.append_to_list_option('link', callback)
 
     def link_error(self, errback):
-        """Add a callback task to be applied if an error occurs
-        while executing this task.
+        """Add callback task to be applied on error in task execution.
 
         Returns:
             Signature: the argument passed, for chaining
@@ -400,8 +405,10 @@ class Signature(dict):
         return self
 
     def flatten_links(self):
-        """Return a recursive list of dependencies (unchain if you will,
-        but with links intact)."""
+        """Return a recursive list of dependencies.
+
+        "unchain" if you will, but with links intact.
+        """
         return list(_chain.from_iterable(_chain(
             [[self]],
             (link.flatten_links()
@@ -507,7 +514,9 @@ class Signature(dict):
 @Signature.register_type
 @python_2_unicode_compatible
 class chain(Signature):
-    """Chains tasks together, so that each tasks follows each other
+    """Chain tasks together.
+
+    Each tasks follows one another,
     by being applied as a callback of the previous task.
 
     Note:
@@ -551,6 +560,7 @@ class chain(Signature):
             task in the chain.  When that task succeeed the next task in the
             chain is applied, and so on.
     """
+
     tasks = _getitem_property('kwargs.tasks', 'Tasks in chain.')
 
     def __init__(self, *tasks, **options):
@@ -772,6 +782,13 @@ class _basemap(Signature):
 @Signature.register_type
 @python_2_unicode_compatible
 class xmap(_basemap):
+    """Map operation for tasks.
+
+    Note:
+        Tasks executed sequentially in process, this is not a
+        parallel operation like :class:`group`.
+    """
+
     _task_name = 'celery.map'
 
     def __repr__(self):
@@ -783,6 +800,8 @@ class xmap(_basemap):
 @Signature.register_type
 @python_2_unicode_compatible
 class xstarmap(_basemap):
+    """Map operation for tasks, using star arguments."""
+
     _task_name = 'celery.starmap'
 
     def __repr__(self):
@@ -793,6 +812,8 @@ class xstarmap(_basemap):
 
 @Signature.register_type
 class chunks(Signature):
+    """Partition of tasks in n chunks."""
+
     _unpack_args = itemgetter('task', 'it', 'n')
 
     def __init__(self, task, it, n, **options):
@@ -874,6 +895,7 @@ class group(Signature):
             tasks in the group (and return a :class:`GroupResult` instance
             that can be used to inspect the state of the group).
     """
+
     tasks = _getitem_property('kwargs.tasks', 'Tasks in group.')
 
     def __init__(self, *tasks, **options):
@@ -1072,7 +1094,7 @@ class group(Signature):
 @Signature.register_type
 @python_2_unicode_compatible
 class chord(Signature):
-    """Barrier synchronization primitive.
+    r"""Barrier synchronization primitive.
 
     A chord consists of a header and a body.
 
@@ -1097,6 +1119,7 @@ class chord(Signature):
             >>> res.get()
             12
     """
+
     def __init__(self, header, body=None, task='celery.chord',
                  args=(), kwargs={}, app=None, **options):
         Signature.__init__(
@@ -1247,7 +1270,7 @@ class chord(Signature):
 
 
 def signature(varies, *args, **kwargs):
-    """Create new signature
+    """Create new signature.
 
     - if the first argument is a signature already then it's cloned.
     - if the first argument is a dict, then a Signature version is returned.
@@ -1265,6 +1288,7 @@ subtask = signature   # XXX compat
 
 
 def maybe_signature(d, app=None):
+    """Ensure obj is a signature, or None."""
     if d is not None:
         if (isinstance(d, dict) and
                 not isinstance(d, abstract.CallableSignature)):

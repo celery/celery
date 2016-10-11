@@ -43,7 +43,9 @@ def mro_lookup(cls, attr, stop=set(), monkey_patched=[]):
 
 
 class FallbackContext(object):
-    """The built-in ``@contextmanager`` utility does not work well
+    """Context workaround.
+
+    The built-in ``@contextmanager`` utility does not work well
     when wrapping other contexts, as the traceback is wrong when
     the wrapped context raises.
 

@@ -6,6 +6,8 @@ GIT=git
 TOX=tox
 ICONV=iconv
 FLAKE8=flake8
+PEP257=pep257
+PYROMA=pyroma
 FLAKEPLUS=flakeplus
 SPHINX2RST=sphinx2rst
 RST2HTML=rst2html.py
@@ -40,6 +42,7 @@ help:
 	@echo "    flakes --------  - Check code for syntax and style errors."
 	@echo "      flakecheck     - Run flake8 on the source code."
 	@echo "      flakepluscheck - Run flakeplus on the source code."
+	@echo "      pep257check    - Run pep257 on the source code."
 	@echo "readme               - Regenerate README.rst file."
 	@echo "contrib              - Regenerate CONTRIBUTING.rst file"
 	@echo "clean-dist --------- - Clean all distribution build artifacts."
@@ -90,6 +93,9 @@ flakecheck:
 	# the only way to enable all-1 errors is to ignore one of them.
 	$(FLAKE8) --ignore=X999 "$(PROJ)" "$(TESTDIR)"
 
+pep257check:
+	$(PEP257) --ignore=D102,D104,D203,D105 "$(PROJ)"
+
 flakediag:
 	-$(MAKE) flakecheck
 
@@ -99,7 +105,7 @@ flakepluscheck:
 flakeplusdiag:
 	-$(MAKE) flakepluscheck
 
-flakes: flakediag flakeplusdiag
+flakes: flakediag flakeplusdiag pep257check
 
 clean-readme:
 	-rm -f $(README)

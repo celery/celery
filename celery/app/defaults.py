@@ -53,6 +53,8 @@ def old_ns(ns):
 
 @python_2_unicode_compatible
 class Option(object):
+    """Decribes a Celery configuration option."""
+
     alt = None
     deprecate_by = None
     remove_by = None
@@ -295,6 +297,7 @@ def _to_compat(ns, key, opt):
 
 
 def flatten(d, root='', keyfilter=_flatten_keys):
+    """Flatten settings."""
     stack = deque([(root, d)])
     while stack:
         ns, options = stack.popleft()
@@ -330,6 +333,7 @@ def find_deprecated_settings(source):  # pragma: no cover
 
 @memoize(maxsize=None)
 def find(name, namespace='celery'):
+    """Find setting by name."""
     # - Try specified name-space first.
     namespace = namespace.lower()
     try:

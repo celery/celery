@@ -13,7 +13,8 @@ from celery import states
 from celery._state import _task_stack
 from celery.canvas import signature
 from celery.exceptions import Ignore, MaxRetriesExceededError, Reject, Retry
-from celery.five import class_property, items, python_2_unicode_compatible
+from celery.five import items, python_2_unicode_compatible
+from celery.local import class_property
 from celery.result import EagerResult
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
@@ -62,6 +63,8 @@ def _reprtask(task, fmt=None, flags=None):
 
 @python_2_unicode_compatible
 class Context(object):
+    """Task request variables (Task.request)."""
+
     logfile = None
     loglevel = None
     hostname = None
@@ -140,10 +143,12 @@ class Context(object):
 class Task(object):
     """Task base class.
 
-    When called tasks apply the :meth:`run` method.  This method must
-    be defined by all tasks (that is unless the :meth:`__call__` method
-    is overridden).
+    Note:
+        When called tasks apply the :meth:`run` method.  This method must
+        be defined by all tasks (that is unless the :meth:`__call__` method
+        is overridden).
     """
+
     __trace__ = None
     __v2_compat__ = False  # set by old base in celery.task.base
 
@@ -319,8 +324,12 @@ class Task(object):
 
     @classmethod
     def on_bound(self, app):
-        """This method can be defined to do additional actions when the
-        task class is bound to an app."""
+        """Called when the task is bound to an app.
+
+        Note:
+            This class method can be defined to do additional actions when
+            the task class is bound to an app.
+        """
         pass
 
     @classmethod
@@ -720,33 +729,43 @@ class Task(object):
                                            task_name=self.name, **kwargs)
 
     def signature(self, args=None, *starargs, **starkwargs):
-        """Return :class:`~celery.signature` object for
-        this task, wrapping arguments and execution options
-        for a single task invocation."""
+        """Create signature.
+
+        Returns:
+            :class:`~celery.signature`:  object for
+                this task, wrapping arguments and execution options
+                for a single task invocation.
+        """
         starkwargs.setdefault('app', self.app)
         return signature(self, args, *starargs, **starkwargs)
     subtask = signature
 
     def s(self, *args, **kwargs):
-        """``.s(*a, **k) -> .signature(a, k)``"""
+        """Create signature.
+
+        Shortcut for ``.s(*a, **k) -> .signature(a, k)``.
+        """
         return self.signature(args, kwargs)
 
     def si(self, *args, **kwargs):
-        """``.si(*a, **k) -> .signature(a, k, immutable=True)``"""
+        """Create immutable signature.
+
+        Shortcut for ``.si(*a, **k) -> .signature(a, k, immutable=True)``.
+        """
         return self.signature(args, kwargs, immutable=True)
 
     def chunks(self, it, n):
-        """Creates a :class:`~celery.canvas.chunks` task for this task."""
+        """Create a :class:`~celery.canvas.chunks` task for this task."""
         from celery import chunks
         return chunks(self.s(), it, n, app=self.app)
 
     def map(self, it):
-        """Creates a :class:`~celery.canvas.xmap` task from ``it``."""
+        """Create a :class:`~celery.canvas.xmap` task from ``it``."""
         from celery import xmap
         return xmap(self.s(), it, app=self.app)
 
     def starmap(self, it):
-        """Creates a :class:`~celery.canvas.xstarmap` task from ``it``."""
+        """Create a :class:`~celery.canvas.xstarmap` task from ``it``."""
         from celery import xstarmap
         return xstarmap(self.s(), it, app=self.app)
 
@@ -756,8 +775,7 @@ class Task(object):
             return d.send(type_, uuid=req.id, **fields)
 
     def replace(self, sig):
-        """Replace the current task, with a new task inheriting the
-        same task id.
+        """Replace this task, with a new task inheriting the task id.
 
         .. versionadded:: 4.0
 
@@ -907,7 +925,7 @@ class Task(object):
         self.request_stack.pop()
 
     def __repr__(self):
-        """`repr(task)`"""
+        """``repr(task)``."""
         return _reprtask(self, R_SELF_TASK if self.__self__ else R_INSTANCE)
 
     def _get_request(self):

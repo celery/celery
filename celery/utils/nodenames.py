@@ -33,8 +33,7 @@ __all__ = [
 
 
 def worker_direct(hostname):
-    """Return :class:`kombu.Queue` that's a direct route to
-    a worker by hostname.
+    """Return the :class:`kombu.Queue` being a direct route to a worker.
 
     Arguments:
         hostname (str, ~kombu.Queue): The fully qualified node name of
@@ -57,6 +56,10 @@ def nodename(name, hostname):
 
 
 def anon_nodename(hostname=None, prefix='gen'):
+    """Return the nodename for this process (not a worker).
+
+    This is used for e.g. the origin task message field.
+    """
     return nodename(''.join([prefix, str(os.getpid())]),
                     hostname or gethostname())
 
@@ -70,11 +73,13 @@ def nodesplit(nodename):
 
 
 def default_nodename(hostname):
+    """Return the default nodename for this process."""
     name, host = nodesplit(hostname or '')
     return nodename(name or NODENAME_DEFAULT, host or gethostname())
 
 
 def node_format(s, nodename, **extra):
+    """Format worker node name (name@host.com)."""
     name, host = nodesplit(nodename)
     return host_format(
         s, host, name or NODENAME_DEFAULT, p=nodename, **extra)
@@ -88,6 +93,7 @@ _fmt_process_index_with_prefix = partial(_fmt_process_index, '-', '')
 
 
 def host_format(s, host=None, name=None, **extra):
+    """Format host %x abbreviations."""
     host = host or gethostname()
     hname, _, domain = host.partition('.')
     name = name or hname

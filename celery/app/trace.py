@@ -114,8 +114,7 @@ trace_ok_t = namedtuple('trace_ok_t', ('retval', 'info', 'runtime', 'retstr'))
 
 
 def task_has_custom(task, attr):
-    """Return true if the task or one of its bases
-    defines ``attr`` (excluding the one in BaseTask)."""
+    """Return true if the task overrides ``attr``."""
     return mro_lookup(task.__class__, attr, stop={BaseTask, object},
                       monkey_patched=['celery.app.task'])
 
@@ -134,6 +133,8 @@ def get_log_policy(task, einfo, exc):
 
 
 class TraceInfo(object):
+    """Information about task execution."""
+
     __slots__ = ('state', 'retval')
 
     def __init__(self, state, retval=None):
@@ -241,8 +242,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                  Info=TraceInfo, eager=False, propagate=False, app=None,
                  monotonic=monotonic, truncate=truncate,
                  trace_ok_t=trace_ok_t, IGNORE_STATES=IGNORE_STATES):
-    """Return a function that traces task execution; catches all
-    exceptions and updates result backend with the state and result
+    """Return a function that traces task execution.
+
+    Catches all exceptions and updates result backend with the
+    state and result.
 
     If the call was successful, it saves the result to the task result
     backend, and sets the task status to `"SUCCESS"`.
@@ -469,6 +472,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
 
 def trace_task(task, uuid, args, kwargs, request={}, **opts):
+    """Trace task execution."""
     try:
         if task.__trace__ is None:
             task.__trace__ = build_tracer(task.name, task, **opts)
@@ -535,6 +539,7 @@ def report_internal_error(task, exc):
 
 
 def setup_worker_optimizations(app, hostname=None):
+    """Setup worker related optimizations."""
     global trace_task_ret
 
     hostname = hostname or gethostname()
@@ -569,6 +574,7 @@ def setup_worker_optimizations(app, hostname=None):
 
 
 def reset_worker_optimizations():
+    """Reset previously configured optimizations."""
     global trace_task_ret
     trace_task_ret = _trace_task_ret
     try:

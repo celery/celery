@@ -26,8 +26,7 @@ class Loader(BaseLoader):
         return DictAttribute(settingsdict)
 
     def read_configuration(self, fail_silently=True):
-        """Read configuration from :file:`celeryconfig.py` and configure
-        celery and Django so it can be used by regular Python."""
+        """Read configuration from :file:`celeryconfig.py`."""
         configname = os.environ.get('CELERY_CONFIG_MODULE',
                                     DEFAULT_CONFIG_MODULE)
         try:

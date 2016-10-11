@@ -42,6 +42,7 @@ base_logger = logger = _get_logger('celery')
 
 
 def set_in_sighandler(value):
+    """Set flag signifiying that we're inside a signal handler."""
     global _in_sighandler
     _in_sighandler = value
 
@@ -65,6 +66,7 @@ def iter_open_logger_fds():
 
 @contextmanager
 def in_sighandler():
+    """Context that records that we are in a signal handler."""
     set_in_sighandler(True)
     try:
         yield
@@ -92,6 +94,7 @@ def logger_isa(l, p, max=1000):
 
 
 def get_logger(name):
+    """Get logger by name."""
     l = _get_logger(name)
     if logging.root not in (l, l.parent) and l is not base_logger:
         if not logger_isa(l, base_logger):  # pragma: no cover
@@ -102,6 +105,7 @@ worker_logger = get_logger('celery.worker')
 
 
 def get_task_logger(name):
+    """Get logger for task module by name."""
     if name in RESERVED_LOGGER_NAMES:
         raise RuntimeError('Logger name {0!r} is reserved!'.format(name))
     logger = get_logger(name)
@@ -111,12 +115,15 @@ def get_task_logger(name):
 
 
 def mlevel(level):
+    """Convert level name/int to log level."""
     if level and not isinstance(level, numbers.Integral):
         return LOG_LEVELS[level.upper()]
     return level
 
 
 class ColorFormatter(logging.Formatter):
+    """Logging formatter that adds colors based on severity."""
+
     #: Loglevel -> Color mapping.
     COLORS = colored().names
     colors = {
@@ -178,6 +185,7 @@ class LoggingProxy(object):
         logger (~logging.Logger): Logger instance to forward to.
         loglevel (int, str): Log level to use when logging messages.
     """
+
     mode = 'w'
     name = None
     closed = False
@@ -190,9 +198,9 @@ class LoggingProxy(object):
         self._safewrap_handlers()
 
     def _safewrap_handlers(self):
-        """Make the logger handlers dump internal errors to
-        :data:`sys.__stderr__` instead of :data:`sys.stderr` to circumvent
-        infinite loops."""
+        # Make the logger handlers dump internal errors to
+        # :data:`sys.__stderr__` instead of :data:`sys.stderr` to circumvent
+        # infinite loops.
 
         def wrap_handler(handler):                  # pragma: no cover
 
@@ -223,9 +231,8 @@ class LoggingProxy(object):
                 self._thread.recurse_protection = False
 
     def writelines(self, sequence):
-        """`writelines(sequence_of_strings) -> None`.
-
-        Write the strings to the file.
+        # type: (Sequence[str]) -> None
+        """Write list of strings to file.
 
         The sequence can be any iterable object producing strings.
         This is equivalent to calling :meth:`write` for each string.
@@ -234,21 +241,22 @@ class LoggingProxy(object):
             self.write(part)
 
     def flush(self):
-        """This object is not buffered so any :meth:`flush` requests
-        are ignored."""
+        # This object is not buffered so any :meth:`flush`
+        # requests are ignored.
         pass
 
     def close(self):
-        """When the object is closed, no write requests are forwarded to
-        the logging object anymore."""
+        # when the object is closed, no write requests are
+        # forwarded to the logging object anymore.
         self.closed = True
 
     def isatty(self):
-        """Always return :const:`False`.  Just here for file support."""
+        """Here for file support."""
         return False
 
 
 def get_multiprocessing_logger():
+    """Return the multiprocessing logger."""
     try:
         from billiard import util
     except ImportError:  # pragma: no cover
@@ -258,6 +266,7 @@ def get_multiprocessing_logger():
 
 
 def reset_multiprocessing_logger():
+    """Reset multiprocessing logging setup."""
     try:
         from billiard import util
     except ImportError:  # pragma: no cover

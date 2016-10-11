@@ -25,6 +25,11 @@ __all__ = ['Entry', 'Schedule', 'Timer', 'to_timestamp']
 
 
 class Timer(threading.Thread):
+    """Timer thread.
+
+    Note:
+        This is only used for transports not supporting AsyncIO.
+    """
 
     Entry = Entry
     Schedule = Schedule
@@ -139,6 +144,7 @@ class Timer(threading.Thread):
         return len(self.schedule)
 
     def __bool__(self):
+        """``bool(timer)``."""
         return True
     __nonzero__ = __bool__
 

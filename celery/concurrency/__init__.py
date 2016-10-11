@@ -19,4 +19,5 @@ ALIASES = {
 
 
 def get_implementation(cls):
+    """Return pool implementation by name."""
     return symbol_by_name(cls, ALIASES)

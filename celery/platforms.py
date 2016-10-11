@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Utilities dealing with platform specifics: signals, daemonization,
-users, groups, and so on."""
+"""Platforms.
+
+Utilities dealing with platform specifics: signals, daemonization,
+users, groups, and so on.
+"""
 from __future__ import absolute_import, print_function, unicode_literals
 
 import atexit
@@ -95,6 +98,7 @@ SIGMAP = {getattr(_signal, name): name for name in SIGNAMES}
 
 
 def isatty(fh):
+    """Return true if the process has a controlling terminal."""
     try:
         return fh.isatty()
     except AttributeError:
@@ -121,7 +125,7 @@ class LockFailed(Exception):
 
 
 class Pidfile(object):
-    """Pidfile
+    """Pidfile.
 
     This is the type returned by :func:`create_pidlock`.
 
@@ -178,7 +182,9 @@ class Pidfile(object):
 
     def remove_if_stale(self):
         """Remove the lock if the process isn't running.
-        (does not respond to signals)."""
+
+        I.e. process does not respons to signal.
+        """
         try:
             pid = self.read_pid()
         except ValueError as exc:
@@ -292,6 +298,7 @@ def fd_by_path(paths):
 
 
 class DaemonContext(object):
+    """Context manager daemonizing the process."""
 
     _is_open = False
 
@@ -445,9 +452,9 @@ def parse_gid(gid):
 
 
 def _setgroups_hack(groups):
-    """:fun:`setgroups` may have a platform-dependent limit,
-    and it's not always possible to know in advance what this limit
-    is, so we use this ugly hack stolen from glibc."""
+    # :fun:`setgroups` may have a platform-dependent limit,
+    # and it's not always possible to know in advance what this limit
+    # is, so we use this ugly hack stolen from glibc.
     groups = groups[:]
 
     while 1:
@@ -481,8 +488,11 @@ def setgroups(groups):
 
 
 def initgroups(uid, gid):
-    """Compat version of :func:`os.initgroups` that was first
-    added to Python 2.7."""
+    """Init process group permissions.
+
+    Compat version of :func:`os.initgroups` that was first
+    added to Python 2.7.
+    """
     if not pwd:  # pragma: no cover
         return
     username = pwd.getpwuid(uid)[0]
@@ -674,6 +684,7 @@ ignore_signal = signals.ignore                # compat
 
 
 def signal_name(signum):
+    """Return name of signal from signal number."""
     return SIGMAP[signum][3:]
 
 
@@ -699,12 +710,12 @@ def set_process_title(progname, info=None):
 if os.environ.get('NOSETPS'):  # pragma: no cover
 
     def set_mp_process_title(*a, **k):
+        """Disabled feature."""
         pass
 else:
 
     def set_mp_process_title(progname, info=None, hostname=None):  # noqa
-        """Set the :command:`ps` name using the :mod:`multiprocessing`
-        process name.
+        """Set the :command:`ps` name from the current process name.
 
         Only works if :pypi:`setproctitle` is installed.
         """

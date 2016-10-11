@@ -57,10 +57,12 @@ _local_timezone = None
 
 @python_2_unicode_compatible
 class LocalTimezone(tzinfo):
-    """Local time implementation taken from Python's docs.
+    """Local time implementation.
 
-    Used only when :setting:`enable_utc` is not enabled.
+    Note:
+        Used only when the :setting:`enable_utc` setting is disabled.
     """
+
     _offset_cache = {}
 
     def __init__(self):
@@ -157,16 +159,14 @@ timezone = _Zone()
 
 
 def maybe_timedelta(delta):
-    """Coerces integer to :class:`~datetime.timedelta` if argument
-    is an integer."""
+    """Convert integer to timedelta, if argument is an integer."""
     if isinstance(delta, numbers.Real):
         return timedelta(seconds=delta)
     return delta
 
 
 def delta_resolution(dt, delta):
-    """Round a :class:`~datetime.datetime` to the resolution of
-    a :class:`~datetime.timedelta`.
+    """Round a :class:`~datetime.datetime` to the resolution of timedelta.
 
     If the :class:`~datetime.timedelta` is in days, the
     :class:`~datetime.datetime` will be rounded to the nearest days,
@@ -189,8 +189,7 @@ def delta_resolution(dt, delta):
 
 
 def remaining(start, ends_in, now=None, relative=False):
-    """Calculate the remaining time for a start date and a
-    :class:`~datetime.timedelta`.
+    """Calculate the remaining time for a start date and a timedelta.
 
     For example, "how many seconds left for 30 seconds after start?"
 
@@ -218,8 +217,7 @@ def remaining(start, ends_in, now=None, relative=False):
 
 
 def rate(rate):
-    """Parse rate strings, such as `"100/m"`, `"2/h"` or `"0.5/s"`
-    and convert them to seconds."""
+    """Convert rate string (`"100/m"`, `"2/h"` or `"0.5/s"`) to seconds."""
     if rate:
         if isinstance(rate, string_t):
             ops, _, modifier = rate.partition('/')
@@ -229,7 +227,7 @@ def rate(rate):
 
 
 def weekday(name):
-    """Return the position of a weekday (0 - 7, where 0 is Sunday).
+    """Return the position of a weekday: 0 - 7, where 0 is Sunday.
 
     Example:
         >>> weekday('sunday'), weekday('sun'), weekday('mon')
@@ -244,8 +242,9 @@ def weekday(name):
 
 
 def humanize_seconds(secs, prefix='', sep='', now='now', microseconds=False):
-    """Show seconds in human form (e.g., 60 is "1 minute", 7200 is "2
-    hours").
+    """Show seconds in human form.
+
+    For example, 60 becomes "1 minute", and 7200 becomes "2 hours".
 
     Arguments:
         prefix (str): can be used to add a preposition to the output
@@ -265,7 +264,7 @@ def humanize_seconds(secs, prefix='', sep='', now='now', microseconds=False):
 
 
 def maybe_iso8601(dt):
-    """Either ``datetime | str -> datetime`` or ``None -> None``"""
+    """Either ``datetime | str -> datetime`` or ``None -> None``."""
     if not dt:
         return
     if isinstance(dt, datetime):
@@ -274,13 +273,15 @@ def maybe_iso8601(dt):
 
 
 def is_naive(dt):
-    """Return :const:`True` if the :class:`~datetime.datetime` is naive
-    (does not have timezone information)."""
+    """Return :const:`True` if :class:`~datetime.datetime` is naive*.
+
+    *does not have timezone information.
+    """
     return dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None
 
 
 def make_aware(dt, tz):
-    """Sets the timezone for a :class:`~datetime.datetime` object."""
+    """Set timezone for a :class:`~datetime.datetime` object."""
     try:
         _localize = tz.localize
     except AttributeError:
@@ -312,11 +313,12 @@ def localize(dt, tz):
 
 
 def to_utc(dt):
-    """Converts naive :class:`~datetime.datetime` to UTC"""
+    """Convert naive :class:`~datetime.datetime` to UTC."""
     return make_aware(dt, timezone.utc)
 
 
 def maybe_make_aware(dt, tz=None):
+    """Convert dt to aware datetime, do nothing if dt is already aware."""
     if is_naive(dt):
         dt = to_utc(dt)
     return localize(
@@ -368,14 +370,17 @@ class ffwd(object):
 
 
 def utcoffset(time=_time, localtime=_time.localtime):
+    """Return the current offset to UTC in hours."""
     if localtime().tm_isdst:
         return time.altzone // 3600
     return time.timezone // 3600
 
 
 def adjust_timestamp(ts, offset, here=utcoffset):
+    """Adjust timestamp based on provided utcoffset."""
     return ts - (offset - here()) * 3600
 
 
 def maybe_s_to_ms(v):
+    """Convert seconds to milliseconds, but return None for None."""
     return int(float(v) * 1000.0) if v is not None else v

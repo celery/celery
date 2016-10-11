@@ -40,6 +40,10 @@ class NoCacheQueue(Queue):
 
 
 class AMQPBackend(BaseBackend):
+    """The AMQP result backend.
+
+    Deprecated: Please use the RPC backend or a persistent backend.
+    """
 
     Exchange = Exchange
     Queue = NoCacheQueue

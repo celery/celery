@@ -54,8 +54,7 @@ TIMEZONE_REGEX = re.compile(
 
 
 def parse_iso8601(datestring):
-    """Parse and convert ISO-8601 string into a
-    :class:`~datetime.datetime` object"""
+    """Parse and convert ISO-8601 string to datetime."""
     m = ISO8601_REGEX.match(datestring)
     if not m:
         raise ValueError('unable to parse date string %r' % datestring)

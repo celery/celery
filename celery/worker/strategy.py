@@ -21,7 +21,7 @@ logger = get_logger(__name__)
 
 
 def proto1_to_proto2(message, body):
-    """Converts Task message protocol 1 arguments to protocol 2.
+    """Convert Task message protocol 1 arguments to protocol 2.
 
     Returns:
         Tuple: of ``(body, headers, already_decoded_status, utc)``
@@ -57,6 +57,12 @@ def default(task, app, consumer,
             info=logger.info, error=logger.error, task_reserved=task_reserved,
             to_system_tz=timezone.to_system, bytes=bytes, buffer_t=buffer_t,
             proto1_to_proto2=proto1_to_proto2):
+    """Default task execution strategy.
+
+    Note:
+        Strategies are here as an optimization, so sadly
+        it's not very easy to override.
+    """
     hostname = consumer.hostname
     connection_errors = consumer.connection_errors
     _does_info = logger.isEnabledFor(logging.INFO)

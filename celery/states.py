@@ -92,7 +92,9 @@ def precedence(state):
 
 
 class state(str):
-    """State is a subclass of :class:`str`, implementing comparison
+    """Task state.
+
+    State is a subclass of :class:`str`, implementing comparison
     methods adhering to state precedence rules::
 
         >>> from celery.states import state, PENDING, SUCCESS

@@ -37,6 +37,8 @@ events: {s.event_count} tasks:{s.task_count} workers:{w_alive}/{w_all}
 
 
 class CursesMonitor(object):  # pragma: no cover
+    """A curses based Celery task monitor."""
+
     keymap = {}
     win = None
     screen_width = None
@@ -517,6 +519,7 @@ def capture_events(app, state, display):  # pragma: no cover
 
 
 def evtop(app=None):  # pragma: no cover
+    """Start curses monitor."""
     app = app_or_default(app)
     state = app.events.State()
     display = CursesMonitor(state, app)

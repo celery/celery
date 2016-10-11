@@ -1,3 +1,4 @@
+"""Start/stop/manage workers."""
 from __future__ import absolute_import, unicode_literals
 
 import errno
@@ -125,6 +126,7 @@ class NamespacedOptionParser(object):
 
 
 class Node(object):
+    """Represents a node in a cluster."""
 
     def __init__(self, name,
                  cmd=None, append=None, options=None, extra_args=None):
@@ -345,6 +347,7 @@ class MultiParser(object):
 
 
 class Cluster(UserList):
+    """Represent a cluster of workers."""
 
     def __init__(self, nodes, cmd=None, env=None,
                  on_stopping_preamble=None,

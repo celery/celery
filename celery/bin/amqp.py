@@ -120,6 +120,7 @@ class AMQShell(cmd.Cmd):
         silent (bool): If enabled, the commands won't have annoying
             output not relevant when running in non-shell mode.
     """
+
     conn = None
     chan = None
     prompt_fmt = '{self.counter}> '
@@ -197,7 +198,9 @@ class AMQShell(cmd.Cmd):
         say(m, file=self.out)
 
     def get_amqp_api_command(self, cmd, arglist):
-        """With a command name and a list of arguments, convert the arguments
+        """Get AMQP command wrapper.
+
+        With a command name and a list of arguments, convert the arguments
         to Python values and find the corresponding method on the AMQP channel
         object.
 

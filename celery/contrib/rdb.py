@@ -88,6 +88,8 @@ SESSION_ENDED = '{self.ident}: Session with {self.remote_addr} ended.'
 
 
 class Rdb(Pdb):
+    """Remote debugger."""
+
     me = 'Remote Debugger'
     _prev_outs = None
     _sock = None
@@ -177,8 +179,7 @@ class Rdb(Pdb):
 
 
 def debugger():
-    """Return the current debugger instance (if any),
-    or creates a new one."""
+    """Return the current debugger instance, or create if none."""
     rdb = _current[0]
     if rdb is None or not rdb.active:
         rdb = _current[0] = Rdb()

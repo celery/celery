@@ -86,6 +86,7 @@ class Blueprint(object):
         on_stopped (Callable): Optional callback applied after
             blueprint stopped.
     """
+
     GraphFormatter = StepFormatter
 
     name = None
@@ -325,8 +326,11 @@ class Step(object):
         pass
 
     def include_if(self, parent):
-        """An optional predicate that decides whether this
-        step should be created."""
+        """Return true if bootstep should be included.
+
+        You can define this as an optional predicate that decides whether
+        this step should be created.
+        """
         return self.enabled
 
     def instantiate(self, name, *args, **kwargs):
@@ -356,6 +360,7 @@ class Step(object):
 
 
 class StartStopStep(Step):
+    """Bootstep that must be started and stopped in order."""
 
     #: Optional obj created by the :meth:`create` method.
     #: This is used by :class:`StartStopStep` to keep the
@@ -386,6 +391,8 @@ class StartStopStep(Step):
 
 
 class ConsumerStep(StartStopStep):
+    """Bootstep that starts a message consumer."""
+
     requires = ('celery.worker.consumer:Connection',)
     consumers = None
 

@@ -67,8 +67,7 @@ def noop(*args, **kwargs):
 
 
 def pass1(arg, *args, **kwargs):
-    """Take any number of arguments/keyword arguments and return
-    the first positional argument."""
+    """Return the first positional argument."""
     return arg
 
 
@@ -80,8 +79,7 @@ def evaluate_promises(it):
 
 
 def first(predicate, it):
-    """Return the first element in ``iterable`` that ``predicate`` gives a
-    :const:`True` value for.
+    """Return the first element in ``it`` that ``predicate`` accepts.
 
     If ``predicate`` is None it will return the first item that's not
     :const:`None`.
@@ -94,13 +92,14 @@ def first(predicate, it):
 
 
 def firstmethod(method, on_call=None):
-    """Return a function that with a list of instances,
+    """Multiple dispatch.
+
+    Return a function that with a list of instances,
     finds the first instance that gives a value for the given method.
 
     The list can also contain lazy instances
     (:class:`~kombu.utils.functional.lazy`.)
     """
-
     def _matcher(it, *args, **kwargs):
         for obj in it:
             try:
@@ -150,8 +149,11 @@ def padlist(container, size, default=None):
 
 
 def mattrgetter(*attrs):
-    """Like :func:`operator.itemgetter` but return :const:`None` on missing
-    attributes instead of raising :exc:`AttributeError`."""
+    """Get attributes, ignoring attribute errors.
+
+    Like :func:`operator.itemgetter` but return :const:`None` on missing
+    attributes instead of raising :exc:`AttributeError`.
+    """
     return lambda obj: {attr: getattr(obj, attr, None) for attr in attrs}
 
 
@@ -162,9 +164,12 @@ def uniq(it):
 
 
 def regen(it):
-    """``Regen`` takes any iterable, and if the object is an
+    """Convert iterator to an object that can be consumed multiple times.
+
+    ``Regen`` takes any iterable, and if the object is an
     generator it will cache the evaluated list on first access,
-    so that the generator can be "consumed" multiple times."""
+    so that the generator can be "consumed" multiple times.
+    """
     if isinstance(it, (list, tuple)):
         return it
     return _regen(it)
@@ -228,6 +233,7 @@ def _argsfromspec(spec, replace_defaults=True):
 
 
 def head_from_fun(fun, bound=False, debug=False):
+    """Generate signature function from actual function."""
     # we could use inspect.Signature here, but that implementation
     # is very slow since it implements the argument checking
     # in pure-Python.  Instead we use exec to create a new function
@@ -267,4 +273,5 @@ def fun_takes_argument(name, fun, position=None):
 
 
 def maybe(typ, val):
+    """Call typ on value if val is defined."""
     return typ(val) if val is not None else val

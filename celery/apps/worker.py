@@ -88,6 +88,7 @@ EXTRA_INFO_FMT = """
 
 
 class Worker(WorkController):
+    """Worker as a program."""
 
     def on_before_init(self, quiet=False, **kwargs):
         self.quiet = quiet
@@ -249,7 +250,7 @@ class Worker(WorkController):
         install_rdb_handler()
 
     def macOS_proxy_detection_workaround(self):
-        """See https://github.com/celery/celery/issues#issue/161"""
+        """See https://github.com/celery/celery/issues#issue/161."""
         os.environ.setdefault('celery_dummy_proxy', 'set_by_celeryd')
 
     def set_process_status(self, info):

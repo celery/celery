@@ -17,6 +17,8 @@ from celery.exceptions import ImproperlyConfigured
 
 from .base import KeyValueStoreBackend
 
+__all__ = ['RiakBackend']
+
 E_BUCKET_NAME = """\
 Riak bucket names must be composed of ASCII characters only, not: {0!r}\
 """

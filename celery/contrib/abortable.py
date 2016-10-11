@@ -135,13 +135,16 @@ class AbortableAsyncResult(AsyncResult):
 
 
 class AbortableTask(Task):
-    """A celery task that serves as a base class for all :class:`Task`'s
+    """Task that can be aborted.
+
+    This serves as a base class for all :class:`Task`'s
     that support aborting during execution.
 
     All subclasses of :class:`AbortableTask` must call the
     :meth:`is_aborted` method periodically and act accordingly when
     the call evaluates to :const:`True`.
     """
+
     abstract = True
 
     def AsyncResult(self, task_id):
@@ -149,7 +152,9 @@ class AbortableTask(Task):
         return AbortableAsyncResult(task_id, backend=self.backend)
 
     def is_aborted(self, **kwargs):
-        """Checks against the backend whether this
+        """Return true if task is aborted.
+
+        Checks against the backend whether this
         :class:`AbortableAsyncResult` is :const:`ABORTED`.
 
         Always return :const:`False` in case the `task_id` parameter

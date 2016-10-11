@@ -19,6 +19,7 @@ def _after_fork_cleanup_session(session):
 
 
 class SessionManager(object):
+    """Manage SQLAlchemy sessions."""
 
     def __init__(self):
         self._engines = {}

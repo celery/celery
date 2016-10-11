@@ -74,6 +74,7 @@ class schedule(object):
             (class:`~datetime.datetime`).
         app (~@Celery): Celery app instance.
     """
+
     relative = False
 
     def __init__(self, run_every=None, relative=False, nowfun=None, app=None):
@@ -92,14 +93,16 @@ class schedule(object):
         )
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items ``(is_due, next_time_to_check)``,
-        where next time to check is in seconds.
+        """Return tuple of ``(is_due, next_time_to_check)``.
 
-        * ``(True, 20)``, means the task should be run now, and the next
-            time to check is in 20 seconds.
+        Notes:
+            - next time to check is in seconds.
 
-        * ``(False, 12.3)``, means the task is not due, but that the scheduler
-          should check again in 12.3 seconds.
+            - ``(True, 20)``, means the task should be run now, and the next
+                time to check is in 20 seconds.
+
+            - ``(False, 12.3)``, means the task is not due, but that the
+              scheduler should check again in 12.3 seconds.
 
         The next time to check is used to save energy/CPU cycles,
         it does not need to be accurate but will influence the precision
@@ -174,7 +177,9 @@ class schedule(object):
 
 
 class crontab_parser(object):
-    """Parser for Crontab expressions.  Any expression of the form 'groups'
+    """Parser for Crontab expressions.
+
+    Any expression of the form 'groups'
     (see BNF grammar below) is accepted and expanded to a set of numbers.
     These numbers represent the units of time that the Crontab needs to
     run on:
@@ -218,6 +223,7 @@ class crontab_parser(object):
 
         :math:`max_ + min_ - 1`
     """
+
     ParseException = ParseException
 
     _range = r'(\w+?)-(\w+)'
@@ -296,7 +302,9 @@ class crontab_parser(object):
 
 @python_2_unicode_compatible
 class crontab(schedule):
-    """A Crontab can be used as the ``run_every`` value of a
+    """Crontab schedule.
+
+    A Crontab can be used as the ``run_every`` value of a
     periodic task entry to add :manpage:`crontab(5)`-like scheduling.
 
     Like a :manpage:`cron(5)`-job, you can specify units of time of when
@@ -388,7 +396,9 @@ class crontab(schedule):
 
     @staticmethod
     def _expand_cronspec(cronspec, max_, min_=0):
-        """Takes the given cronspec argument in one of the forms:
+        """Expand cron specification.
+
+        Takes the given cronspec argument in one of the forms:
 
         .. code-block:: text
 
@@ -430,7 +440,9 @@ class crontab(schedule):
         return result
 
     def _delta_to_next(self, last_run_at, next_hour, next_minute):
-        """Takes a :class:`~datetime.datetime` of last run, next minute and hour,
+        """Find next delta.
+
+        Takes a :class:`~datetime.datetime` of last run, next minute and hour,
         and returns a :class:`~celery.utils.time.ffwd` for the next
         scheduled day and time.
 
@@ -569,15 +581,21 @@ class crontab(schedule):
         return self.to_local(last_run_at), delta, self.to_local(now)
 
     def remaining_estimate(self, last_run_at, ffwd=ffwd):
-        """Returns when the periodic task should run next as a
-        :class:`~datetime.timedelta`."""
+        """Estimate of next run time.
+
+        Returns when the periodic task should run next as a
+        :class:`~datetime.timedelta`.
+        """
         return remaining(*self.remaining_delta(last_run_at, ffwd=ffwd))
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items ``(is_due, next_time_to_run)``,
-        where next time to run is in seconds.
+        """Return tuple of ``(is_due, next_time_to_run)``.
 
-        See :meth:`celery.schedules.schedule.is_due` for more information.
+        Note:
+            Next time to run is in seconds.
+
+        SeeAlso:
+            :meth:`celery.schedules.schedule.is_due` for more information.
         """
         rem_delta = self.remaining_estimate(last_run_at)
         rem = max(rem_delta.total_seconds(), 0)
@@ -606,6 +624,7 @@ class crontab(schedule):
 
 
 def maybe_schedule(s, relative=False, app=None):
+    """Return schedule from number, timedelta, or actual schedule."""
     if s is not None:
         if isinstance(s, numbers.Number):
             s = timedelta(seconds=s)
@@ -618,7 +637,9 @@ def maybe_schedule(s, relative=False, app=None):
 
 @python_2_unicode_compatible
 class solar(schedule):
-    """A solar event can be used as the ``run_every`` value of a
+    """Solar event.
+
+    A solar event can be used as the ``run_every`` value of a
     periodic task entry to schedule based on certain solar events.
 
     Notes:
@@ -727,10 +748,14 @@ class solar(schedule):
         )
 
     def remaining_estimate(self, last_run_at):
-        """Returns when the periodic task should run next as a
-        :class:`~datetime.timedelta`, or if it shouldn't run today (e.g.,
-        the sun does not rise today), returns the time when the next check
-        should take place."""
+        """Return estimate of next time to run.
+
+        Returns:
+            ~datetime.timedelta: when the periodic task should
+                run next, or if it shouldn't run today (e.g., the sun does
+                not rise today), returns the time when the next check
+                should take place.
+        """
         last_run_at = self.maybe_make_aware(last_run_at)
         last_run_at_utc = localize(last_run_at, timezone.utc)
         self.cal.date = last_run_at_utc
@@ -752,10 +777,13 @@ class solar(schedule):
         return delta
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items ``(is_due, next_time_to_run)``,
-        where next time to run is in seconds.
+        """Return tuple of ``(is_due, next_time_to_run)``.
 
-        See :meth:`celery.schedules.schedule.is_due` for more information.
+        Note:
+            next time to run is in seconds.
+
+        See Also:
+            :meth:`celery.schedules.schedule.is_due` for more information.
         """
         rem_delta = self.remaining_estimate(last_run_at)
         rem = max(rem_delta.total_seconds(), 0)

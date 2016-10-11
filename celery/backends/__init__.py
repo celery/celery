@@ -41,7 +41,7 @@ default_backend = Proxy(lambda: current_app.backend)
 
 def get_backend_cls(backend=None, loader=None,
                     extension_namespace='celery.result_backends'):
-    """Get backend class by name/alias"""
+    """Get backend class by name/alias."""
     backend = backend or 'disabled'
     loader = loader or current_app.loader
     aliases = dict(BACKEND_ALIASES, **loader.override_backends)
@@ -59,6 +59,7 @@ def get_backend_cls(backend=None, loader=None,
 
 
 def get_backend_by_url(backend=None, loader=None):
+    """Get backend class by URL."""
     url = None
     if backend and '://' in backend:
         url = backend

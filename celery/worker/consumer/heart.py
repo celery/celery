@@ -11,6 +11,13 @@ __all__ = ['Heart']
 
 
 class Heart(bootsteps.StartStopStep):
+    """Bootstep sending event heartbeats.
+
+    This service sends a ``worker-heartbeat`` message every n seconds.
+
+    Note:
+        Not to be confused with AMQP protocol level heartbeats.
+    """
 
     requires = (Events,)
 

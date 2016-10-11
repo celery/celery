@@ -12,11 +12,8 @@ from kombu import Exchange
 
 from celery import current_app
 from celery.app.task import Context, Task as BaseTask, _reprtask
-from celery.five import (
-    class_property, reclassmethod,
-    python_2_unicode_compatible, with_metaclass,
-)
-from celery.local import Proxy
+from celery.five import python_2_unicode_compatible, with_metaclass
+from celery.local import Proxy, class_property, reclassmethod
 from celery.schedules import maybe_schedule
 from celery.utils.log import get_task_logger
 
@@ -56,6 +53,7 @@ class TaskType(type):
     If no :attr:`Task.name` attribute is provided, then the name is generated
     from the module and class name.
     """
+
     _creation_count = {}  # used by old non-abstract task classes
 
     def __new__(cls, name, bases, attrs):
@@ -130,6 +128,7 @@ class Task(BaseTask):
 
     Modern applications should use :class:`celery.Task` instead.
     """
+
     abstract = True
     __bound__ = False
     __v2_compat__ = True
@@ -226,8 +225,9 @@ class Task(BaseTask):
 
     @classmethod
     def get_consumer(self, connection=None, queues=None, **kwargs):
-        """Deprecated method used to get consumer for the queue
-        this task is sent to.
+        """Get consumer for the queue this task is sent to.
+
+        Deprecated!
 
         Should be replaced by :class:`@amqp.TaskConsumer`.
         """
@@ -239,8 +239,8 @@ class Task(BaseTask):
 
 
 class PeriodicTask(Task):
-    """A periodic task is a task that adds itself to the
-    :setting:`beat_schedule` setting."""
+    """A task that adds itself to the :setting:`beat_schedule` setting."""
+
     abstract = True
     ignore_result = True
     relative = False

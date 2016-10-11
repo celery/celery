@@ -119,6 +119,8 @@ class Audit(object):
 
 
 class logtool(Command):
+    """The ``celery logtool`` command."""
+
     args = """<action> [arguments]
             .....  stats      [file1|- [file2 [...]]]
             .....  traces     [file1|- [file2 [...]]]

@@ -55,6 +55,8 @@ find_rst_decl = re.compile(r'^\s*\.\. .+?::.+$')
 
 @python_2_unicode_compatible
 class Error(Exception):
+    """Exception raised by commands."""
+
     status = EX_FAILURE
 
     def __init__(self, reason, status=None):
@@ -67,10 +69,13 @@ class Error(Exception):
 
 
 class UsageError(Error):
+    """Exception raised for malformed arguments."""
+
     status = EX_USAGE
 
 
 class Extensions(object):
+    """Loads extensions from setuptools entrypoints."""
 
     def __init__(self, namespace, register):
         self.names = []
@@ -88,6 +93,7 @@ class Extensions(object):
 
 
 class HelpFormatter(IndentedHelpFormatter):
+    """Custom help formatter."""
 
     def format_epilog(self, epilog):
         if epilog:
@@ -183,7 +189,6 @@ class Command(object):
             self.on_usage_error = on_usage_error
 
     def run(self, *args, **options):
-        """This is the body of the command called by :meth:`handle_argv`."""
         raise NotImplementedError('subclass responsibility')
 
     def on_error(self, exc):
@@ -293,8 +298,7 @@ class Command(object):
         return default
 
     def handle_argv(self, prog_name, argv, command=None):
-        """Parse command-line arguments from ``argv`` and dispatch
-        to :meth:`run`.
+        """Parse arguments from argv and dispatch to :meth:`run`.
 
         Warning:
             Exits with an error message if :attr:`supports_args` is disabled
@@ -519,7 +523,9 @@ class Command(object):
         )
 
     def with_pool_option(self, argv):
-        """Return tuple of ``(short_opts, long_opts)`` if the command
+        """Return tuple of ``(short_opts, long_opts)``.
+
+        Returns only if the command
         supports a pool argument, and used to monkey patch eventlet/gevent
         environments as early as possible.
 
@@ -608,6 +614,7 @@ class Command(object):
 
 
 def daemon_options(parser, default_pidfile=None, default_logfile=None):
+    """Add daemon options to optparse parser."""
     group = OptionGroup(parser, 'Daemonization Options')
     group.add_option('-f', '--logfile', default=default_logfile),
     group.add_option('--pidfile', default=default_pidfile),

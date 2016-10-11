@@ -109,6 +109,7 @@ def _warn_drift(hostname, drift, local_received, timestamp):
 def heartbeat_expires(timestamp, freq=60,
                       expire_window=HEARTBEAT_EXPIRE_WINDOW,
                       Decimal=Decimal, float=float, isinstance=isinstance):
+    """Return time when heartbeat expires."""
     # some json implementations returns decimal.Decimal objects,
     # which aren't compatible with float.
     freq = float(freq) if isinstance(freq, Decimal) else freq
@@ -148,6 +149,7 @@ def with_unique_field(attr):
 @python_2_unicode_compatible
 class Worker(object):
     """Worker State."""
+
     heartbeat_max = 4
     expire_window = HEARTBEAT_EXPIRE_WINDOW
 
@@ -241,6 +243,7 @@ class Worker(object):
 @python_2_unicode_compatible
 class Task(object):
     """Task State."""
+
     name = received = sent = started = succeeded = failed = retried = \
         revoked = rejected = args = kwargs = eta = expires = retries = \
         worker = result = exception = timestamp = runtime = traceback = \
@@ -376,6 +379,7 @@ class Task(object):
 
 class State(object):
     """Records clusters state."""
+
     Worker = Worker
     Task = Task
     event_count = 0
@@ -631,8 +635,11 @@ class State(object):
                 break
 
     def tasks_by_time(self, limit=None, reverse=True):
-        """Generator giving tasks ordered by time,
-        in ``(uuid, Task)`` tuples."""
+        """Generator yielding tasks ordered by time.
+
+        Yields:
+            Tuples of ``(uuid, Task)``.
+        """
         _heap = self._taskheap
         if reverse:
             _heap = reversed(_heap)

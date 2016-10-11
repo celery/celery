@@ -36,6 +36,7 @@ _task_join_will_block = False
 
 
 def connect_on_app_finalize(callback):
+    """Connect callback to be called when any app is finalized."""
     _on_app_finalizers.add(callback)
     return callback
 
@@ -66,6 +67,7 @@ _task_stack = LocalStack()
 
 
 def set_default_app(app):
+    """Set default app."""
     global default_app
     default_app = app
 
@@ -87,6 +89,7 @@ def _set_current_app(app):
 
 if os.environ.get('C_STRICT_APP'):  # pragma: no cover
     def get_current_app():
+        """Return the current app."""
         raise Exception('USES CURRENT APP')
         import traceback
         print('-- USES CURRENT_APP', file=sys.stderr)  # noqa+

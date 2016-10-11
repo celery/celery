@@ -13,6 +13,7 @@ info = logger.info
 
 
 class Connection(bootsteps.StartStopStep):
+    """Service managing the consumer broker connection."""
 
     def __init__(self, c, **kwargs):
         c.connection = None

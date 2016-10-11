@@ -14,6 +14,8 @@ __all__ = ['TaskRegistry']
 
 
 class TaskRegistry(dict):
+    """Map of registered tasks."""
+
     NotRegistered = NotRegistered
 
     def __missing__(self, key):

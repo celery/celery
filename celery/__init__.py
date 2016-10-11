@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Distributed Task Queue"""
+"""Distributed Task Queue."""
 # :copyright: (c) 2015-2016 Ask Solem.  All rights reserved.
 # :copyright: (c) 2012-2014 GoPivotal, Inc., All rights reserved.
 # :copyright: (c) 2009 - 2012 Ask Solem and individual contributors,
@@ -122,10 +122,13 @@ def maybe_patch_concurrency(argv=sys.argv,
                             short_opts=['-P'], long_opts=['--pool'],
                             patches={'eventlet': _patch_eventlet,
                                      'gevent': _patch_gevent}):
-    """With short and long opt alternatives that specify the command line
+    """Apply eventlet/gevent monkeypatches.
+
+    With short and long opt alternatives that specify the command line
     option to set the pool, this makes sure that anything that needs
     to be patched is completed as early as possible.
-    (e.g., eventlet/gevent monkey patches)."""
+    (e.g., eventlet/gevent monkey patches).
+    """
     try:
         pool = _find_option_with_arg(argv, short_opts, long_opts)
     except KeyError:
@@ -143,9 +146,9 @@ def maybe_patch_concurrency(argv=sys.argv,
         concurrency.get_implementation(pool)
 
 # Lazy loading
-from celery import five  # noqa
+from celery import local  # noqa
 
-old_module, new_module = five.recreate_module(  # pragma: no cover
+old_module, new_module = local.recreate_module(  # pragma: no cover
     __name__,
     by_module={
         'celery.app': ['Celery', 'bugreport', 'shared_task'],
@@ -162,7 +165,7 @@ old_module, new_module = five.recreate_module(  # pragma: no cover
     __package__='celery', __file__=__file__,
     __path__=__path__, __doc__=__doc__, __version__=__version__,
     __author__=__author__, __contact__=__contact__,
-    __homepage__=__homepage__, __docformat__=__docformat__, five=five,
+    __homepage__=__homepage__, __docformat__=__docformat__, local=local,
     VERSION=VERSION, SERIES=SERIES, VERSION_BANNER=VERSION_BANNER,
     version_info_t=version_info_t,
     version_info=version_info,

@@ -201,7 +201,6 @@ class WorkController(object):
         signals.worker_shutdown.send(sender=self)
 
     def start(self):
-        """Starts the workers main loop."""
         try:
             self.blueprint.start(self)
         except WorkerTerminate:
@@ -337,12 +336,14 @@ class WorkController(object):
         return info
 
     def __repr__(self):
+        """``repr(worker)``."""
         return '<Worker: {self.hostname} ({state})>'.format(
             self=self,
             state=self.blueprint.human_state() if self.blueprint else 'INIT',
         )
 
     def __str__(self):
+        """``str(worker) == worker.hostname``."""
         return self.hostname
 
     @property

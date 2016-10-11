@@ -64,6 +64,7 @@ def retry(fun):
 
 class DatabaseBackend(BaseBackend):
     """The database result backend."""
+
     # ResultSet.iterate should sleep this much between each pool,
     # to not bombard the database with queries.
     subpolling_interval = 0.5

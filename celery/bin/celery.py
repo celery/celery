@@ -320,6 +320,7 @@ def determine_exit_status(ret):
 
 
 def main(argv=None):
+    """Start celery umbrella command."""
     # Fix for setuptools generated scripts, so that it will
     # work with multiprocessing fork emulation.
     # (see multiprocessing.forking.get_preparation_data())
@@ -337,6 +338,7 @@ def main(argv=None):
 
 class multi(Command):
     """Start multiple worker instances."""
+
     respects_app_option = False
 
     def get_options(self):
@@ -1030,6 +1032,7 @@ class report(Command):
 
 
 class CeleryCommand(Command):
+    """Base class for commands."""
 
     commands = {
         'amqp': amqp,
@@ -1202,8 +1205,8 @@ class CeleryCommand(Command):
 
 
 def command(*args, **kwargs):
-    """Deprecated: Use classmethod :meth:`CeleryCommand.register_command`
-    instead."""
+    # Deprecated: Use classmethod
+    #             :meth:`CeleryCommand.register_command` instead.
     _register = CeleryCommand.register_command
     return _register(args[0]) if args else _register
 

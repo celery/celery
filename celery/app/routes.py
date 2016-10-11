@@ -57,6 +57,7 @@ class MapRoute(object):
 
 
 class Router(object):
+    """Route tasks based on the :setting:`task_routes` setting."""
 
     def __init__(self, routes=None, queues=None,
                  create_missing=False, app=None):
@@ -121,8 +122,7 @@ def expand_router_string(router):
 
 
 def prepare(routes):
-    """Expands the :setting:`task_routes` setting."""
-
+    """Expand the :setting:`task_routes` setting."""
     def expand_route(route):
         if isinstance(route, (Mapping, list, tuple)):
             return MapRoute(route)

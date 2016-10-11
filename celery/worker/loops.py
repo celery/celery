@@ -33,8 +33,7 @@ def _enable_amqheartbeats(timer, connection, rate=2.0):
 
 def asynloop(obj, connection, consumer, blueprint, hub, qos,
              heartbeat, clock, hbrate=2.0, RUN=RUN):
-    """Non-blocking event loop consuming messages until connection is lost,
-    or shutdown is requested."""
+    """Non-blocking event loop."""
     update_qos = qos.update
     errors = connection.connection_errors
 
@@ -98,7 +97,6 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
 def synloop(obj, connection, consumer, blueprint, hub, qos,
             heartbeat, clock, hbrate=2.0, **kwargs):
     """Fallback blocking event loop for transports that doesn't support AIO."""
-
     on_task_received = obj.create_task_handler()
     perform_pending_operations = obj.perform_pending_operations
     consumer.on_message = on_task_received

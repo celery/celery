@@ -73,6 +73,8 @@ class Timer(_timer.Timer):
 
 
 class TaskPool(BasePool):
+    """GEvent Pool."""
+
     Timer = Timer
 
     signal_safe = False

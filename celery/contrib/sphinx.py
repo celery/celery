@@ -40,6 +40,8 @@ from celery.five import getfullargspec
 
 
 class TaskDocumenter(FunctionDocumenter):
+    """Document task definitions."""
+
     objtype = 'task'
     member_order = 11
 
@@ -61,12 +63,14 @@ class TaskDocumenter(FunctionDocumenter):
 
 
 class TaskDirective(PyModulelevel):
+    """Sphinx task directive."""
 
     def get_signature_prefix(self, sig):
         return self.env.config.celery_task_prefix
 
 
 def setup(app):
+    """Setup Sphinx extension."""
     app.add_autodocumenter(TaskDocumenter)
     app.domains['py'].directives['task'] = TaskDirective
     app.add_config_value('celery_task_prefix', '(task)', True)

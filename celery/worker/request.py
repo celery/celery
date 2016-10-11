@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-"""This module defines the :class:`Request` class, that specifies
-how tasks are executed."""
+"""Task request.
+
+This module defines the :class:`Request` class, that specifies
+how tasks are executed.
+"""
 from __future__ import absolute_import, unicode_literals
 
 import logging
@@ -61,6 +64,7 @@ revoked_tasks = state.revoked
 @python_2_unicode_compatible
 class Request(object):
     """A request for task execution."""
+
     acknowledged = False
     time_start = None
     worker_pid = None
@@ -402,17 +406,19 @@ class Request(object):
             'worker_pid': self.worker_pid,
         }
 
+    def humaninfo(self):
+        return '{0.name}[{0.id}]'.format(self)
+
     def __str__(self):
+        """``str(self)``."""
         return ' '.join([
             self.humaninfo(),
             ' ETA:[{0}]'.format(self.eta) if self.eta else '',
             ' expires:[{0}]'.format(self.expires) if self.expires else '',
         ])
 
-    def humaninfo(self):
-        return '{0.name}[{0.id}]'.format(self)
-
     def __repr__(self):
+        """``repr(self)``."""
         return '<{0}: {1} {2} {3}>'.format(
             type(self).__name__, self.humaninfo(),
             self.argsrepr, self.kwargsrepr,

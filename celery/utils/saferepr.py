@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Streaming, truncating, non-recursive version of :func:`repr`.
 
-
 Differences from regular :func:`repr`:
 
 - Sets are represented the Python 3 way: ``{1, 2}`` vs ``set([1, 2])``.
@@ -61,6 +60,13 @@ LIT_TUPLE_END_SV = _literal(',)', False, -1)
 
 
 def saferepr(o, maxlen=None, maxlevels=3, seen=None):
+    """Safe version of :func:`repr`.
+
+    Warning:
+        Make sure you set the maxlen argument, or it will be very slow
+        for recursive objects.  With the maxlen set, it's often faster
+        than built-in repr.
+    """
     return ''.join(_saferepr(
         o, maxlen=maxlen, maxlevels=maxlevels, seen=seen
     ))
@@ -132,6 +138,7 @@ def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
 
 
 def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
+    """Streaming repr, yielding tokens."""
     seen = seen or set()
     append = stack.append
     popleft = stack.popleft

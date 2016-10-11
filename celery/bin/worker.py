@@ -197,6 +197,7 @@ class worker(Command):
             $ celery worker -A proj --concurrency=4
             $ celery worker -A proj --concurrency=1000 -P eventlet
     """
+
     doc = __MODULE_DOC__  # parse help from this too
     namespace = 'worker'
     enable_config_from_cmdline = True
@@ -345,6 +346,7 @@ class worker(Command):
 
 
 def main(app=None):
+    """Start worker."""
     # Fix for setuptools generated scripts, so that it will
     # work with multiprocessing fork emulation.
     # (see multiprocessing.forking.get_preparation_data())

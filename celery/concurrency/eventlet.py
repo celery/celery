@@ -38,6 +38,7 @@ def apply_target(target, args=(), kwargs={}, callback=None,
 
 
 class Timer(_timer.Timer):
+    """Eventlet Timer."""
 
     def __init__(self, *args, **kwargs):
         from eventlet.greenthread import spawn_after
@@ -89,6 +90,8 @@ class Timer(_timer.Timer):
 
 
 class TaskPool(base.BasePool):
+    """Eventlet Task Pool."""
+
     Timer = Timer
 
     signal_safe = False

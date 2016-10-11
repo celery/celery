@@ -18,7 +18,7 @@ PY3 = sys.version_info[0] == 3
 
 
 def safe_ref(target, on_delete=None):  # pragma: no cover
-    """Return a *safe* weak reference to a callable target
+    """Return a *safe* weak reference to a callable target.
 
     Arguments:
         target (Any): The object to be weakly referenced, if it's a
@@ -85,7 +85,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
     _all_instances = weakref.WeakValueDictionary()
 
     def __new__(cls, target, on_delete=None, *arguments, **named):
-        """Create new instance or return current instance
+        """Create new instance or return current instance.
 
         Note:
             Basically this method of construction allows us to
@@ -127,7 +127,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
                 which will be passed a pointer to this object.
         """
         def remove(weak, self=self):
-            """Set self.is_dead to true when method or instance is destroyed"""
+            """Set is_dead to true when method or instance is destroyed."""
             methods = self.deletion_methods[:]
             del(self.deletion_methods[:])
             try:
@@ -153,7 +153,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
         self.fun_name = str(target.__func__.__name__)
 
     def calculate_key(cls, target):
-        """Calculate the reference key for this reference
+        """Calculate the reference key for this reference.
 
         Returns:
             Tuple[int, int]: Currently this is a two-tuple of
@@ -174,19 +174,19 @@ class BoundMethodWeakref(object):  # pragma: no cover
         return str(self)
 
     def __bool__(self):
-        """Whether we're still a valid reference"""
+        """Whether we're still a valid reference."""
         return self() is not None
     __nonzero__ = __bool__  # py2
 
     if not PY3:
         def __cmp__(self, other):
-            """Compare with another reference"""
+            """Compare with another reference."""
             if not isinstance(other, self.__class__):
                 return cmp(self.__class__, type(other))  # noqa
             return cmp(self.key, other.key)              # noqa
 
     def __call__(self):
-        """Return a strong reference to the bound method
+        """Return a strong reference to the bound method.
 
         If the target cannot be retrieved, then will
         return None, otherwise return a bound instance
@@ -204,8 +204,9 @@ class BoundMethodWeakref(object):  # pragma: no cover
 
 
 class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
-    """A specialized :class:`BoundMethodWeakref`, for platforms where
-    instance methods are not descriptors.
+    """A specialized :class:`BoundMethodWeakref`.
+
+    For platforms where instance methods are not descriptors.
 
     Warning:
         It assumes that the function name and the target attribute name are
@@ -225,6 +226,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
         aren't descriptors (e.g., Jython) this implementation has the
         advantage of working in the most cases.
     """
+
     def __init__(self, target, on_delete=None):
         """Return a weak-reference-like instance for a bound method.
 
@@ -248,14 +250,13 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
                                                               on_delete)
 
     def __call__(self):
-        """Return a strong reference to the bound method
+        """Return a strong reference to the bound method.
 
         If the target cannot be retrieved, then will
         return None, otherwise return a bound instance
         method for our object and function.
 
         Note:
-
             You may call this method any number of times,
             as it does not invalidate the reference.
         """
@@ -273,8 +274,11 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
 
 
 def get_bound_method_weakref(target, on_delete):  # pragma: no cover
-    """Instantiates the appropiate :class:`BoundMethodWeakRef`, depending
-    on the details of the underlying class method implementation."""
+    """Instantiate the appropiate :class:`BoundMethodWeakRef`.
+
+    Depending on the details of the underlying class method
+    implementation.
+    """
     if hasattr(target, '__get__'):
         # target method is a descriptor, so the default implementation works:
         return BoundMethodWeakref(target=target, on_delete=on_delete)

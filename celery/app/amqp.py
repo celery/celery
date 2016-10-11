@@ -61,6 +61,7 @@ class Queues(dict):
         ha_policy (Sequence, str): Default HA policy for queues with none set.
         max_priority (int): Default x-max-priority for queues with none set.
     """
+
     #: If set, this is a subset of queues to consume from.
     #: The rest of the queues are then used for routing only.
     _consume_from = None
@@ -163,17 +164,18 @@ class Queues(dict):
         return info[0] + '\n' + textindent('\n'.join(info[1:]), indent)
 
     def select_add(self, queue, **kwargs):
-        """Add new task queue that'll be consumed from even when
-        a subset has been selected using the
-        :option:`celery worker -Q` option."""
+        """Add new task queue that'll be consumed from.
+
+        The queue will be active even when a subset has been selected
+        using the :option:`celery worker -Q` option.
+        """
         q = self.add(queue, **kwargs)
         if self._consume_from is not None:
             self._consume_from[q.name] = q
         return q
 
     def select(self, include):
-        """Sets :attr:`consume_from` by selecting a subset of the
-        currently defined queues.
+        """Select a subset of currently defined queues to consume from.
 
         Arguments:
             include (Sequence[str], str): Names of queues to consume from.
@@ -210,6 +212,8 @@ class Queues(dict):
 
 
 class AMQP(object):
+    """App AMQP API: app.amqp."""
+
     Connection = Connection
     Consumer = Consumer
     Producer = Producer
@@ -256,8 +260,8 @@ class AMQP(object):
 
     def Queues(self, queues, create_missing=None, ha_policy=None,
                autoexchange=None, max_priority=None):
-        """Create new :class:`Queues` instance, using queue defaults
-        from the current configuration."""
+        # Create new :class:`Queues` instance, using queue defaults
+        # from the current configuration.
         conf = self.app.conf
         if create_missing is None:
             create_missing = conf.task_create_missing_queues

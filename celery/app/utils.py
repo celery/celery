@@ -136,7 +136,7 @@ class Settings(ConfigurationView):
         return find(name, namespace)
 
     def find_value_for_key(self, name, namespace='celery'):
-        """Shortcut to ``get_by_parts(*find_option(name)[:-1])``"""
+        """Shortcut to ``get_by_parts(*find_option(name)[:-1])``."""
         return self.get_by_parts(*self.find_option(name, namespace)[:-1])
 
     def get_by_parts(self, *parts):
@@ -158,8 +158,7 @@ class Settings(ConfigurationView):
         })
 
     def humanize(self, with_defaults=False, censored=True):
-        """Return a human readable string showing changes to the
-        configuration."""
+        """Return a human readable text showing configuration changes."""
         return '\n'.join(
             '{0}: {1}'.format(key, pretty(value, width=50))
             for key, value in items(self.table(with_defaults, censored)))
@@ -264,18 +263,18 @@ class AppPickler(object):
 
 
 def _unpickle_app(cls, pickler, *args):
-    """Rebuild app for versions 2.5+"""
+    """Rebuild app for versions 2.5+."""
     return pickler()(cls, *args)
 
 
 def _unpickle_app_v2(cls, kwargs):
-    """Rebuild app for versions 3.1+"""
+    """Rebuild app for versions 3.1+."""
     kwargs['set_as_current'] = False
     return cls(**kwargs)
 
 
 def filter_hidden_settings(conf):
-
+    """Filter sensitive settings."""
     def maybe_censor(key, value, mask='*' * 8):
         if isinstance(value, Mapping):
             return filter_hidden_settings(value)
@@ -324,6 +323,7 @@ def bugreport(app):
 
 
 def find_app(app, symbol_by_name=symbol_by_name, imp=import_from_cwd):
+    """Find app by name."""
     from .base import Celery
 
     try:

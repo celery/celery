@@ -14,6 +14,7 @@ __all__ = ['Events']
 
 
 class Events(bootsteps.StartStopStep):
+    """Service used for sending monitoring events."""
 
     requires = (Connection,)
 

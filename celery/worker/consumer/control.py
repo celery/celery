@@ -19,6 +19,7 @@ logger = get_logger(__name__)
 
 
 class Control(bootsteps.StartStopStep):
+    """Remote control command service."""
 
     requires = (Tasks,)
 

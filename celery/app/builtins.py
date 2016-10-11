@@ -15,8 +15,7 @@ logger = get_logger(__name__)
 
 @connect_on_app_finalize
 def add_backend_cleanup_task(app):
-    """The backend cleanup task can be used to clean up the default result
-    backend.
+    """Task used to clean up expired results.
 
     If the configured backend requires periodic cleanup this task is also
     automatically configured to run every day at 4am (requires
@@ -30,8 +29,7 @@ def add_backend_cleanup_task(app):
 
 @connect_on_app_finalize
 def add_accumulate_task(app):
-    """This task is used by Task.replace when replacing a task with
-    a group, to "collect" results."""
+    """Task used by Task.replace when replacing task with group."""
     @app.task(bind=True, name='celery.accumulate', shared=False, lazy=False)
     def accumulate(self, *args, **kwargs):
         index = kwargs.get('index')
@@ -40,9 +38,10 @@ def add_accumulate_task(app):
 
 @connect_on_app_finalize
 def add_unlock_chord_task(app):
-    """This task is used by result backends without native chord support.
+    """Task used by result backends without native chord support.
 
-    It joins chords by creating a task chain polling the header for completion.
+    Will joins chord by creating a task chain polling the header
+    for completion.
     """
     from celery.canvas import maybe_signature
     from celery.exceptions import ChordError
@@ -158,7 +157,6 @@ def add_group_task(app):
 @connect_on_app_finalize
 def add_chain_task(app):
     """No longer used, but here for backwards compatibility."""
-
     @app.task(name='celery.chain', shared=False, lazy=False)
     def chain(*args, **kwargs):
         raise NotImplementedError('chain is not a real task')
