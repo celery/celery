@@ -67,9 +67,7 @@ class LRUCache(UserDict):
                 for _ in range(len(data) - limit):
                     data.popitem(last=False)
 
-    def popitem(self, last=True, _needs_lock=IS_PYPY):
-        if not _needs_lock:
-            return self.data.popitem(last)
+    def popitem(self, last=True):
         with self.mutex:
             return self.data.popitem(last)
 
