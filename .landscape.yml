@@ -2,8 +2,7 @@ doc-warnings: false
 test-warnings: false
 max-line-length: 79
 uses:
-    - kombu
-    - amqp
+    - celery
 autodetect: true
 requirements:
     - requirements/default.txt
