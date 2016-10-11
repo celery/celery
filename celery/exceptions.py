@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""This module contains all exceptions used by the Celery API."""
+"""Celery error types."""
 from __future__ import absolute_import, unicode_literals
 
 import numbers

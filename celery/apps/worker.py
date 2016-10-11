@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-"""This module is the 'program-version' of :mod:`celery.worker`.
+"""Worker command-line program.
+
+This module is the 'program-version' of :mod:`celery.worker`.
 
 It does everything necessary to run that module
 as an actual application, like installing signal handlers,

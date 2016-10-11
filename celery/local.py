@@ -307,7 +307,7 @@ class Proxy(object):
 
 
 class PromiseProxy(Proxy):
-    """This is a proxy to an object that hasn't yet been evaulated.
+    """Proxy that evaluates object once.
 
     :class:`Proxy` will evaluate the object each time, while the
     promise will only evaluate it once.

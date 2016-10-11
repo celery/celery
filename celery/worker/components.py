@@ -31,7 +31,7 @@ as early as possible.
 
 
 class Timer(bootsteps.Step):
-    """This step initializes the internal timer used by the worker."""
+    """Timer bootstep."""
 
     def create(self, w):
         if w.use_eventloop:
@@ -190,7 +190,7 @@ class Beat(bootsteps.StartStopStep):
 
 
 class StateDB(bootsteps.Step):
-    """This bootstep sets up the workers state db if enabled."""
+    """Bootstep that sets up between-restart state database file."""
 
     def __init__(self, w, **kwargs):
         self.enabled = w.statedb
