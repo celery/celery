@@ -1,0 +1,17 @@
+doc-warnings: true
+test-warnings: false
+strictness: medium
+max-line-length: 79
+uses:
+    - kombu
+    - amqp
+autodetect: true
+requirements:
+    - requirements/default.txt
+    - requirements/test.txt
+ignore-paths:
+    - docs
+    - t
+python-targets:
+    - 2
+    - 3
