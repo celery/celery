@@ -19,11 +19,11 @@ many messages in advance and even if the worker is killed -- caused by power fai
 or otherwise -- the message will be redelivered to another worker.
 
 Ideally task functions should be :term:`idempotent`, which means that
-the function will not cause unintented effects even if called
+the function will not cause unintended effects even if called
 multiple times with the same arguments.
 Since the worker cannot detect if your tasks are idempotent, the default
 behavior is to acknowledge the message in advance, before it's executed,
-so that a task that has already been started is never executed again..
+so that a task that has already been started is never executed again.
 
 If your task is idempotent you can set the :attr:`acks_late` option
 to have the worker acknowledge the message *after* the task returns
