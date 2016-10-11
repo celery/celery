@@ -29,3 +29,11 @@ pylint:
         - too-many-arguments
         - too-many-locals
         - redefined-builtin
+        - not-callable
+        - cyclic-import
+        - expression-not-assigned
+        - lost-exception
+        - dangerous-default-value
+        - unused-argument
+    options:
+        exclude-protected: _reader, _writer, _popen, _sentinel_poll, _job, _is_alive, _write_to, _scheduled_for, _terminated, _accepted, _set_terminated, _payload, _cancel
