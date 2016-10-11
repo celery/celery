@@ -1,6 +1,6 @@
 doc-warnings: true
 test-warnings: false
-strictness: medium
+strictness: low
 max-line-length: 79
 uses:
     - kombu
