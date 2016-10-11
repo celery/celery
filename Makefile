@@ -93,7 +93,7 @@ flakecheck:
 	$(FLAKE8) "$(PROJ)" "$(TESTDIR)"
 
 pep257check:
-	$(PYDOCSTYLE) --ignore=D102,D104,D203,D105 "$(PROJ)"
+	$(PYDOCSTYLE) "$(PROJ)"
 
 flakediag:
 	-$(MAKE) flakecheck
