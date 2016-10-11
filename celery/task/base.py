@@ -117,8 +117,8 @@ class TaskType(type):
         instance.bind(app)
         return instance.__class__
 
-    def __repr__(cls):
-        return _reprtask(cls)
+    def __repr__(self):
+        return _reprtask(self)
 
 
 @with_metaclass(TaskType)
@@ -159,25 +159,25 @@ class Task(BaseTask):
         locals()[name] = reclassmethod(getattr(BaseTask, name))
 
     @class_property
-    def request(cls):
-        return cls._get_request()
+    def request(self):
+        return self._get_request()
 
     @class_property
-    def backend(cls):
-        if cls._backend is None:
-            return cls.app.backend
-        return cls._backend
+    def backend(self):
+        if self._backend is None:
+            return self.app.backend
+        return self._backend
 
     @backend.setter
     def backend(cls, value):  # noqa
         cls._backend = value
 
     @classmethod
-    def get_logger(self, **kwargs):
-        return get_task_logger(self.name)
+    def get_logger(cls, **kwargs):
+        return get_task_logger(cls.name)
 
     @classmethod
-    def establish_connection(self):
+    def establish_connection(cls):
         """Deprecated method used to get a broker connection.
 
         Should be replaced with :meth:`@Celery.connection`
@@ -192,7 +192,7 @@ class Task(BaseTask):
             >>> with celery.connection_for_write() as conn:
             ...     pass
         """
-        return self._get_app().connection_for_write()
+        return cls._get_app().connection_for_write()
 
     def get_publisher(self, connection=None, exchange=None,
                       exchange_type=None, **options):
@@ -224,17 +224,17 @@ class Task(BaseTask):
         )
 
     @classmethod
-    def get_consumer(self, connection=None, queues=None, **kwargs):
+    def get_consumer(cls, connection=None, queues=None, **kwargs):
         """Get consumer for the queue this task is sent to.
 
         Deprecated!
 
         Should be replaced by :class:`@amqp.TaskConsumer`.
         """
-        Q = self._get_app().amqp
-        connection = connection or self.establish_connection()
+        Q = cls._get_app().amqp
+        connection = connection or cls.establish_connection()
         if queues is None:
-            queues = Q.queues[self.queue] if self.queue else Q.default_queue
+            queues = Q.queues[cls.queue] if cls.queue else Q.default_queue
         return Q.TaskConsumer(connection, queues, **kwargs)
 
 

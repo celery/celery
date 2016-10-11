@@ -564,11 +564,11 @@ class _RemoteControl(Command):
         super(_RemoteControl, self).__init__(*args, **kwargs)
 
     @classmethod
-    def get_command_info(self, command,
+    def get_command_info(cls, command,
                          indent=0, prefix='', color=None,
                          help=False, app=None, choices=None):
         if choices is None:
-            choices = self._choices_by_group(app)
+            choices = cls._choices_by_group(app)
         meta = choices[command]
         if help:
             help = '|' + text.indent(meta.help, indent + 4)
@@ -581,14 +581,14 @@ class _RemoteControl(Command):
         ])
 
     @classmethod
-    def list_commands(self, indent=0, prefix='',
+    def list_commands(cls, indent=0, prefix='',
                       color=None, help=False, app=None):
-        choices = self._choices_by_group(app)
+        choices = cls._choices_by_group(app)
         color = color if color else lambda x: x
         prefix = prefix + ' ' if prefix else ''
         return '\n'.join(
-            self.get_command_info(c, indent, prefix, color, help,
-                                  app=app, choices=choices)
+            cls.get_command_info(c, indent, prefix, color, help,
+                                 app=app, choices=choices)
             for c in sorted(choices))
 
     def usage(self, command):
@@ -676,14 +676,14 @@ class _RemoteControl(Command):
             args[:] = args[i:]
 
     @classmethod
-    def _choices_by_group(self, app):
+    def _choices_by_group(cls, app):
         from celery.worker.control import Panel
         # need to import task modules for custom user-remote control commands.
         app.loader.import_default_modules()
 
         return {
             name: info for name, info in items(Panel.meta)
-            if info.type == self.control_group and info.visible
+            if info.type == cls.control_group and info.visible
         }
 
     @cached_property
@@ -1157,11 +1157,11 @@ class CeleryCommand(Command):
             sys.exit(EX_FAILURE)
 
     @classmethod
-    def get_command_info(self, command, indent=0,
+    def get_command_info(cls, command, indent=0,
                          color=None, colored=None, app=None):
         colored = term.colored() if colored is None else colored
         colored = colored.names[color] if color else lambda x: x
-        obj = self.commands[command]
+        obj = cls.commands[command]
         cmd = 'celery {0}'.format(colored(command))
         if obj.leaf:
             return '|' + text.indent(cmd, indent)
@@ -1173,7 +1173,7 @@ class CeleryCommand(Command):
         ])
 
     @classmethod
-    def list_commands(self, indent=0, colored=None, app=None):
+    def list_commands(cls, indent=0, colored=None, app=None):
         colored = term.colored() if colored is None else colored
         white = colored.white
         ret = []
@@ -1181,8 +1181,8 @@ class CeleryCommand(Command):
             ret.extend([
                 text.indent('+ {0}: '.format(white(cls)), indent),
                 '\n'.join(
-                    self.get_command_info(command, indent + 4, color, colored,
-                                          app=app)
+                    cls.get_command_info(
+                        command, indent + 4, color, colored, app=app)
                     for command in commands),
                 ''
             ])

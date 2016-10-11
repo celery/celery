@@ -731,7 +731,7 @@ class chain(Signature):
         return last
 
     @classmethod
-    def from_dict(self, d, app=None):
+    def from_dict(cls, d, app=None):
         tasks = d['kwargs']['tasks']
         if tasks:
             if isinstance(tasks, tuple):  # aaaargh
@@ -824,9 +824,9 @@ class chunks(Signature):
         )
 
     @classmethod
-    def from_dict(self, d, app=None):
+    def from_dict(cls, d, app=None):
         return _upgrade(
-            d, chunks(*self._unpack_args(
+            d, chunks(*cls._unpack_args(
                 d['kwargs']), app=app, **d['options']),
         )
 
@@ -911,7 +911,7 @@ class group(Signature):
         self.subtask_type = 'group'
 
     @classmethod
-    def from_dict(self, d, app=None):
+    def from_dict(cls, d, app=None):
         return _upgrade(
             d, group(d['kwargs']['tasks'], app=app, **d['options']),
         )
@@ -1149,9 +1149,9 @@ class chord(Signature):
         self.parent_id = parent_id
 
     @classmethod
-    def from_dict(self, d, app=None):
-        args, d['kwargs'] = self._unpack_args(**d['kwargs'])
-        return _upgrade(d, self(*args, app=app, **d))
+    def from_dict(cls, d, app=None):
+        args, d['kwargs'] = cls._unpack_args(**d['kwargs'])
+        return _upgrade(d, cls(*args, app=app, **d))
 
     @staticmethod
     def _unpack_args(header=None, body=None, **kwargs):

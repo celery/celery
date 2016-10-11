@@ -35,11 +35,11 @@ class Mingle(bootsteps.StartStopStep):
             return conn.transport.driver_type in self.compatible_transports
 
     def start(self, c):
+        self.sync()
+
+    def sync(self, c):
         info('mingle: searching for neighbors')
-        I = c.app.control.inspect(timeout=1.0, connection=c.connection)
-        our_revoked = c.controller.state.revoked
-        replies = I.hello(c.hostname, our_revoked._data) or {}
-        replies.pop(c.hostname, None)  # delete my own response
+        replies = self.send_hello(c)
         if replies:
             info('mingle: sync with %s nodes',
                  len([reply for reply, value in items(replies) if value]))
@@ -48,6 +48,13 @@ class Mingle(bootsteps.StartStopStep):
             info('mingle: sync complete')
         else:
             info('mingle: all alone')
+
+    def send_hello(self, c):
+        inspect = c.app.control.inspect(timeout=1.0, connection=c.connection)
+        our_revoked = c.controller.state.revoked
+        replies = inspect.hello(c.hostname, our_revoked._data) or {}
+        replies.pop(c.hostname, None)  # delete my own response
+        return replies
 
     def on_node_reply(self, c, nodename, reply):
         debug('mingle: processing reply from %s', nodename)

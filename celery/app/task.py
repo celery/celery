@@ -300,30 +300,30 @@ class Task(object):
     # - until the task is actually used
 
     @classmethod
-    def bind(self, app):
-        was_bound, self.__bound__ = self.__bound__, True
-        self._app = app
+    def bind(cls, app):
+        was_bound, cls.__bound__ = cls.__bound__, True
+        cls._app = app
         conf = app.conf
-        self._exec_options = None  # clear option cache
+        cls._exec_options = None  # clear option cache
 
-        for attr_name, config_name in self.from_config:
-            if getattr(self, attr_name, None) is None:
-                setattr(self, attr_name, conf[config_name])
+        for attr_name, config_name in cls.from_config:
+            if getattr(cls, attr_name, None) is None:
+                setattr(cls, attr_name, conf[config_name])
 
         # decorate with annotations from config.
         if not was_bound:
-            self.annotate()
+            cls.annotate()
 
             from celery.utils.threads import LocalStack
-            self.request_stack = LocalStack()
+            cls.request_stack = LocalStack()
 
         # PeriodicTask uses this to add itself to the PeriodicTask schedule.
-        self.on_bound(app)
+        cls.on_bound(app)
 
         return app
 
     @classmethod
-    def on_bound(self, app):
+    def on_bound(cls, app):
         """Called when the task is bound to an app.
 
         Note:
@@ -333,33 +333,33 @@ class Task(object):
         pass
 
     @classmethod
-    def _get_app(self):
-        if self._app is None:
-            self._app = current_app
-        if not self.__bound__:
+    def _get_app(cls):
+        if cls._app is None:
+            cls._app = current_app
+        if not cls.__bound__:
             # The app property's __set__  method is not called
             # if Task.app is set (on the class), so must bind on use.
-            self.bind(self._app)
-        return self._app
+            cls.bind(cls._app)
+        return cls._app
     app = class_property(_get_app, bind)
 
     @classmethod
-    def annotate(self):
-        for d in resolve_all_annotations(self.app.annotations, self):
+    def annotate(cls):
+        for d in resolve_all_annotations(cls.app.annotations, cls):
             for key, value in items(d):
                 if key.startswith('@'):
-                    self.add_around(key[1:], value)
+                    cls.add_around(key[1:], value)
                 else:
-                    setattr(self, key, value)
+                    setattr(cls, key, value)
 
     @classmethod
-    def add_around(self, attr, around):
-        orig = getattr(self, attr)
+    def add_around(cls, attr, around):
+        orig = getattr(cls, attr)
         if getattr(orig, '__wrapped__', None):
             orig = orig.__wrapped__
         meth = around(orig)
         meth.__wrapped__ = orig
-        setattr(self, attr, meth)
+        setattr(cls, attr, meth)
 
     def __call__(self, *args, **kwargs):
         _task_stack.push(self)

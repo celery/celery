@@ -248,9 +248,9 @@ class Logging(object):
         return get_logger(name)
 
     @class_property
-    def already_setup(cls):
-        return cls._setup
+    def already_setup(self):
+        return self._setup
 
     @already_setup.setter  # noqa
-    def already_setup(cls, was_setup):
-        cls._setup = was_setup
+    def already_setup(self, was_setup):
+        self._setup = was_setup

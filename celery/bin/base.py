@@ -11,9 +11,8 @@ import json
 
 from collections import defaultdict
 from heapq import heappush
-from optparse import (
-    OptionParser, OptionGroup, IndentedHelpFormatter, make_option as Option,
-)
+from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
+from optparse import make_option as Option  # noqa
 from pprint import pformat
 
 from celery import VERSION_BANNER, Celery, maybe_patch_concurrency
