@@ -68,7 +68,7 @@ def find_pickleable_exception(exc, loads=pickle.loads,
         try:
             superexc = supercls(*exc_args)
             loads(dumps(superexc))
-        except:
+        except Exception:
             pass
         else:
             return superexc
@@ -163,7 +163,7 @@ def get_pickleable_etype(cls, loads=pickle.loads, dumps=pickle.dumps):
     """Get pickleable exception type."""
     try:
         loads(dumps(cls))
-    except:
+    except Exception:
         return Exception
     else:
         return cls

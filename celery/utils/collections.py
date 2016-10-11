@@ -104,10 +104,10 @@ class OrderedDict(_OrderedDict):
                     link[1] = root
                     last[1] = root[0] = link
                 else:
-                    first = root[1]
+                    first_node = root[1]
                     link[0] = root
-                    link[1] = first
-                    root[1] = first[0] = link
+                    link[1] = first_node
+                    root[1] = first_node[0] = link
 
 
 class AttributeDictMixin(object):
