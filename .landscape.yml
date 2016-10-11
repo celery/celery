@@ -1,6 +1,8 @@
 doc-warnings: false
 test-warnings: false
 max-line-length: 79
+inherits:
+    - strictness_veryhigh
 uses:
     - celery
 autodetect: true
@@ -34,5 +36,6 @@ pylint:
         - lost-exception
         - dangerous-default-value
         - unused-argument
+        - protected-access
     options:
         exclude-protected: _reader, _writer, _popen, _sentinel_poll, _job, _is_alive, _write_to, _scheduled_for, _terminated, _accepted, _set_terminated, _payload, _cancel

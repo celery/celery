@@ -251,7 +251,6 @@ class Command(object):
         pool_option = self.with_pool_option(argv)
         if pool_option:
             maybe_patch_concurrency(argv, *pool_option)
-            short_opts, long_opts = pool_option
 
     def usage(self, command):
         return '%prog {0} [options] {self.args}'.format(command, self=self)

@@ -218,7 +218,7 @@ class BaseResultConsumer(object):
         self.buckets = WeakKeyDictionary()
         self.drainer = drainers[detect_environment()](self)
 
-    def start(self):
+    def start(self, initial_task_id):
         raise NotImplementedError()
 
     def stop(self):

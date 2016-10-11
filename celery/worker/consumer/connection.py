@@ -29,7 +29,8 @@ class Connection(bootsteps.StartStopStep):
         if connection:
             ignore_errors(connection, connection.close)
 
-    def info(self, c, params='N/A'):
+    def info(self, c):
+        params = 'N/A'
         if c.connection:
             params = c.connection.info()
             params.pop('password', None)  # don't send password.

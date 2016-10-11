@@ -23,11 +23,9 @@ from . import base
 
 try:
     import redis
-    from redis.exceptions import ConnectionError
     from kombu.transport.redis import get_redis_error_classes
 except ImportError:                 # pragma: no cover
     redis = None                    # noqa
-    ConnectionError = None          # noqa
     get_redis_error_classes = None  # noqa
 
 __all__ = ['RedisBackend']
@@ -142,7 +140,7 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         )
 
     def _params_from_url(self, url, defaults):
-        scheme, host, port, user, password, path, query = _parse_url(url)
+        scheme, host, port, _, password, path, query = _parse_url(url)
         connparams = dict(
             defaults, **dictfilter({
                 'host': host, 'port': port, 'password': password,
@@ -236,7 +234,8 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         options['task_id'] = group_id
         return header(*partial_args, **options or {})
 
-    def on_chord_part_return(self, request, state, result, propagate=None):
+    def on_chord_part_return(self, request, state, result,
+                             propagate=None, **kwargs):
         app = self.app
         tid, gid = request.id, request.group
         if not gid or not tid:

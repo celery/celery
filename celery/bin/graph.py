@@ -114,16 +114,24 @@ class graph(Command):
             pass
 
         class Backend(Node):
-            scheme = {'shape': 'folder', 'width': 2,
-                      'height': 1, 'color': 'black',
-                      'fillcolor': 'peachpuff3', 'color': 'peachpuff4'}
+            scheme = {
+                'shape': 'folder',
+                'width': 2,
+                'height': 1,
+                'color': 'black',
+                'fillcolor': 'peachpuff3',
+            }
 
             def label(self):
                 return generic_label(self) if generic else self._label
 
         class Broker(Node):
-            scheme = {'shape': 'circle', 'fillcolor': 'cadetblue3',
-                      'color': 'cadetblue4', 'height': 1}
+            scheme = {
+                'shape': 'circle',
+                'fillcolor': 'cadetblue3',
+                'color': 'cadetblue4',
+                'height': 1,
+            }
 
             def label(self):
                 return generic_label(self) if generic else self._label

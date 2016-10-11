@@ -490,8 +490,7 @@ class Request(object):
 
 def create_request_cls(base, task, pool, hostname, eventer,
                        ref=ref, revoked_tasks=revoked_tasks,
-                       task_ready=task_ready):
-    from celery.app.trace import trace_task_ret as trace
+                       task_ready=task_ready, trace=trace_task_ret):
     default_time_limit = task.time_limit
     default_soft_time_limit = task.soft_time_limit
     apply_async = pool.apply_async

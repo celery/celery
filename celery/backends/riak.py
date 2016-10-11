@@ -66,7 +66,7 @@ class RiakBackend(KeyValueStoreBackend):
     #: default Riak server port (8087)
     port = 8087
 
-    # supports_autoexpire = False
+    _bucket = None
 
     def __init__(self, host=None, port=None, bucket_name=None, protocol=None,
                  url=None, *args, **kwargs):
@@ -78,9 +78,9 @@ class RiakBackend(KeyValueStoreBackend):
                 'You need to install the riak library to use the '
                 'Riak backend.')
 
-        uhost = uport = uname = upass = ubucket = None
+        uhost = uport = upass = ubucket = None
         if url:
-            uprot, uhost, uport, uname, upass, ubucket, _ = _parse_url(url)
+            _, uhost, uport, _, upass, ubucket, _ = _parse_url(url)
             if ubucket:
                 ubucket = ubucket.strip('/')
 
