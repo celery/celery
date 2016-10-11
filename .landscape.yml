@@ -1,6 +1,5 @@
-doc-warnings: true
+doc-warnings: false
 test-warnings: false
-strictness: low
 max-line-length: 79
 uses:
     - kombu
@@ -15,3 +14,18 @@ ignore-paths:
 python-targets:
     - 2
     - 3
+pep8:
+    full: true
+    disable:
+        - N806
+        - N802
+        - N801
+        - N803
+pyroma:
+    run: true
+pylint:
+    disable:
+        - missing-docstring
+        - too-many-arguments
+        - too-many-locals
+        - redefined-builtin
