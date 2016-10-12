@@ -222,7 +222,7 @@ class Worker(WorkController):
 
         # integrate the ASCII art.
         if artlines:
-            for i, x in enumerate(banner):
+            for i, _ in enumerate(banner):
                 try:
                     banner[i] = ' '.join([ARTLINES[i], banner[i]])
                 except IndexError:

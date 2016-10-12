@@ -50,7 +50,7 @@ class ResultConsumer(async.BaseResultConsumer):
         self._decode_result = self.backend.decode_result
         self.subscribed_to = set()
 
-    def start(self, initial_task_id):
+    def start(self, initial_task_id, **kwargs):
         self._pubsub = self.backend.client.pubsub(
             ignore_subscribe_messages=True,
         )
@@ -230,7 +230,11 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
 
     def apply_chord(self, header, partial_args, group_id, body,
                     result=None, options={}, **kwargs):
-        # avoids saving the group in the redis db.
+        # Overrides this to avoid calling GroupResult.save
+        # pylint: disable=method-hidden
+        # Note that KeyValueStoreBackend.__init__ sets self.apply_chord
+        # if the implements_incr attr is set.  Redis backend doesn't set
+        # this flag.
         options['task_id'] = group_id
         return header(*partial_args, **options or {})
 

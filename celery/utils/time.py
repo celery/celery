@@ -334,10 +334,11 @@ class ffwd(object):
     def __init__(self, year=None, month=None, weeks=0, weekday=None, day=None,
                  hour=None, minute=None, second=None, microsecond=None,
                  **kwargs):
+        # pylint: disable=redefined-outer-name
+        # weekday is also a function in outer scope.
         self.year = year
         self.month = month
         self.weeks = weeks
-        # pylint: disable=redefined-outer-name
         self.weekday = weekday
         self.day = day
         self.hour = hour

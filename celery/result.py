@@ -696,7 +696,7 @@ class ResultSet(ResultBase):
                 results.append(value)
         return results
 
-    def then(self, callback, on_error=None):
+    def then(self, callback, on_error=None, weak=False):
         return self.on_ready.then(callback, on_error)
 
     def iter_native(self, timeout=None, interval=0.5, no_ack=True,
@@ -878,6 +878,8 @@ class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 
     def __init__(self, id, ret_value, state, traceback=None):
+        # pylint: disable=super-init-not-called
+        # XXX should really not be inheriting from AsyncResult
         self.id = id
         self._result = ret_value
         self._state = state
@@ -885,7 +887,7 @@ class EagerResult(AsyncResult):
         self.on_ready = promise(args=(self,))
         self.on_ready()
 
-    def then(self, callback, on_error=None):
+    def then(self, callback, on_error=None, weak=False):
         return self.on_ready.then(callback, on_error)
 
     def _get_task_meta(self):

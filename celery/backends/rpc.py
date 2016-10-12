@@ -47,7 +47,7 @@ class ResultConsumer(BaseResultConsumer):
         super(ResultConsumer, self).__init__(*args, **kwargs)
         self._create_binding = self.backend._create_binding
 
-    def start(self, initial_task_id, no_ack=True):
+    def start(self, initial_task_id, no_ack=True, **kwargs):
         self._connection = self.app.connection()
         initial_queue = self._create_binding(initial_task_id)
         self._consumer = self.Consumer(

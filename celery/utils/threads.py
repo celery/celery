@@ -313,6 +313,7 @@ class _FastLocalStack(threading.local):
         self.stack = []
         self.push = self.stack.append
         self.pop = self.stack.pop
+        super(_FastLocalStack, self).__init__()
 
     @property
     def top(self):

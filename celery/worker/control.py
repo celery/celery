@@ -340,7 +340,7 @@ def scheduled(state, **kwargs):
     return list(_iter_schedule_requests(state.consumer.timer))
 
 
-def _iter_schedule_requests(timer, Request=Request):
+def _iter_schedule_requests(timer):
     for waiting in timer.schedule.queue:
         try:
             arg0 = waiting.entry.args[0]
