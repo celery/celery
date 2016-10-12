@@ -93,7 +93,7 @@ class Logging(object):
             return
         if logfile and hostname:
             logfile = node_format(logfile, hostname)
-        self.already_setup = True
+        Logging._setup = True
         loglevel = mlevel(loglevel or self.loglevel)
         format = format or self.format
         colorize = self.supports_color(colorize, logfile)

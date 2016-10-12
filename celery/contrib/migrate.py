@@ -14,6 +14,7 @@ from kombu.utils.encoding import ensure_bytes
 from celery.app import app_or_default
 from celery.five import python_2_unicode_compatible, string, string_t
 from celery.utils.nodenames import worker_direct
+from celery.utils.text import str_to_list
 
 __all__ = [
     'StopFiltering', 'State', 'republish', 'migrate_task',
@@ -244,69 +245,115 @@ def prepare_queues(queues):
     return queues
 
 
+class Filterer(object):
+
+    def __init__(self, app, conn, filter,
+                 limit=None, timeout=1.0,
+                 ack_messages=False, tasks=None, queues=None,
+                 callback=None, forever=False, on_declare_queue=None,
+                 consume_from=None, state=None, accept=None, **kwargs):
+        self.app = app
+        self.conn = conn
+        self.filter = filter
+        self.limit = limit
+        self.timeout = timeout
+        self.ack_messages = ack_messages
+        self.tasks = set(str_to_list(tasks) or [])
+        self.queues = prepare_queues(queues)
+        self.callback = callback
+        self.forever = forever
+        self.on_declare_queue = on_declare_queue
+        self.consume_from = [
+            _maybe_queue(self.app, q)
+            for q in consume_from or list(self.queues)
+        ]
+        self.state = state or State()
+        self.accept = accept
+
+    def start(self):
+        # start migrating messages.
+        with self.prepare_consumer(self.create_consumer()):
+            try:
+                for _ in eventloop(self.conn,  # pragma: no cover
+                                   timeout=self.timeout,
+                                   ignore_timeouts=self.forever):
+                    pass
+            except socket.timeout:
+                pass
+            except StopFiltering:
+                pass
+        return self.state
+
+    def update_state(self, body, message):
+        self.state.count += 1
+        if self.limit and self.state.count >= self.limit:
+            raise StopFiltering()
+
+    def ack_message(self, body, message):
+        message.ack()
+
+    def create_consumer(self):
+        return self.app.amqp.TaskConsumer(
+            self.conn,
+            queues=self.consume_from,
+            accept=self.accept,
+        )
+
+    def prepare_consumer(self, consumer):
+        filter = self.filter
+        update_state = self.update_state
+        ack_message = self.ack_message
+        if self.tasks:
+            filter = filter_callback(filter, self.tasks)
+            update_state = filter_callback(update_state, self.tasks)
+            ack_message = filter_callback(ack_message, self.tasks)
+        consumer.register_callback(filter)
+        consumer.register_callback(update_state)
+        if self.ack_messages:
+            consumer.register_callback(self.ack_message)
+        if self.callback is not None:
+            callback = partial(self.callback, self.state)
+            if self.tasks:
+                callback = filter_callback(callback, self.tasks)
+            consumer.register_callback(callback)
+        self.declare_queues(consumer)
+        return consumer
+
+    def declare_queues(self, consumer):
+        # declare all queues on the new broker.
+        for queue in consumer.queues:
+            if self.queues and queue.name not in self.queues:
+                continue
+            if self.on_declare_queue is not None:
+                self.on_declare_queue(queue)
+            try:
+                _, mcount, _ = queue(
+                    consumer.channel).queue_declare(passive=True)
+                if mcount:
+                    self.state.total_apx += mcount
+            except self.conn.channel_errors:
+                pass
+
+
 def start_filter(app, conn, filter, limit=None, timeout=1.0,
                  ack_messages=False, tasks=None, queues=None,
                  callback=None, forever=False, on_declare_queue=None,
                  consume_from=None, state=None, accept=None, **kwargs):
     """Filter tasks."""
-    state = state or State()
-    queues = prepare_queues(queues)
-    consume_from = [_maybe_queue(app, q)
-                    for q in consume_from or list(queues)]
-    if isinstance(tasks, string_t):
-        tasks = set(tasks.split(','))
-    if tasks is None:
-        tasks = set()
-
-    def update_state(body, message):
-        state.count += 1
-        if limit and state.count >= limit:
-            raise StopFiltering()
-
-    def ack_message(body, message):
-        message.ack()
-
-    consumer = app.amqp.TaskConsumer(conn, queues=consume_from, accept=accept)
-
-    if tasks:
-        filter = filter_callback(filter, tasks)
-        update_state = filter_callback(update_state, tasks)
-        ack_message = filter_callback(ack_message, tasks)
-
-    consumer.register_callback(filter)
-    consumer.register_callback(update_state)
-    if ack_messages:
-        consumer.register_callback(ack_message)
-    if callback is not None:
-        callback = partial(callback, state)
-        if tasks:
-            callback = filter_callback(callback, tasks)
-        consumer.register_callback(callback)
-
-    # declare all queues on the new broker.
-    for queue in consumer.queues:
-        if queues and queue.name not in queues:
-            continue
-        if on_declare_queue is not None:
-            on_declare_queue(queue)
-        try:
-            _, mcount, _ = queue(consumer.channel).queue_declare(passive=True)
-            if mcount:
-                state.total_apx += mcount
-        except conn.channel_errors:
-            pass
-
-    # start migrating messages.
-    with consumer:
-        try:
-            for _ in eventloop(conn,  # pragma: no cover
-                               timeout=timeout, ignore_timeouts=forever):
-                pass
-        except socket.timeout:
-            pass
-        except StopFiltering:
-            pass
-    return state
+    return Filterer(
+        app, conn, filter,
+        limit=limit,
+        timeout=timeout,
+        ack_messages=ack_messages,
+        tasks=tasks,
+        queues=queues,
+        callback=callback,
+        forever=forever,
+        on_declare_queue=on_declare_queue,
+        consume_from=consume_from,
+        state=state,
+        accept=accept,
+        **kwargs).start()
 
 
 def move_task_by_id(task_id, dest, **kwargs):

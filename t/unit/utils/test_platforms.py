@@ -302,7 +302,7 @@ class test_maybe_drop_privileges:
         setuid.assert_has_calls([call(5001), call(0)])
 
         setuid.side_effect = None
-        with pytest.raises(RuntimeError):
+        with pytest.raises(SecurityError):
             maybe_drop_privileges(uid='user', gid='group')
         setuid.side_effect = OSError()
         setuid.side_effect.errno = errno.EINVAL

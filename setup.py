@@ -116,15 +116,15 @@ def parse_dist_meta():
     pats = {re_meta: add_default, re_doc: add_doc}
     here = os.path.abspath(os.path.dirname(__file__))
     with open(os.path.join(here, 'celery', '__init__.py')) as meta_fh:
-        meta = {}
+        distmeta = {}
         for line in meta_fh:
             if line.strip() == '# -eof meta-':
                 break
             for pattern, handler in pats.items():
                 m = pattern.match(line.strip())
                 if m:
-                    meta.update(handler(m))
-        return meta
+                    distmeta.update(handler(m))
+        return distmeta
 
 # -*- Installation Requires -*-
 

@@ -564,8 +564,6 @@ def recreate_module(name, compat_modules=(), by_module={}, direct={},
 
 
 def get_compat_module(pkg, name):
-    from .local import Proxy
-
     def prepare(attr):
         if isinstance(attr, string_t):
             return Proxy(getappattr, (attr,))

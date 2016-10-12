@@ -270,6 +270,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         :keyword request: Request dict.
 
     """
+    # noqa: C901
+    # pylint: disable=too-many-statements
+
     # If the task doesn't define a custom __call__ method
     # we optimize it away by simply calling the run method directly,
     # saving the extra method call and a line less in the stack trace.

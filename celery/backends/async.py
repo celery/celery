@@ -45,8 +45,7 @@ class Drainer(object):
     def stop(self):
         pass
 
-    def drain_events_until(self, p, timeout=None, on_interval=None,
-                           monotonic=monotonic, wait=None):
+    def drain_events_until(self, p, timeout=None, on_interval=None, wait=None):
         wait = wait or self.result_consumer.drain_events
         time_start = monotonic()
 

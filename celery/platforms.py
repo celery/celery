@@ -534,31 +534,7 @@ def maybe_drop_privileges(uid=None, gid=None):
     gid = gid and parse_gid(gid)
 
     if uid:
-        # If GID isn't defined, get the primary GID of the user.
-        if not gid and pwd:
-            gid = pwd.getpwuid(uid).pw_gid
-        # Must set the GID before initgroups(), as setgid()
-        # is known to zap the group list on some platforms.
-
-        # setgid must happen before setuid (otherwise the setgid operation
-        # may fail because of insufficient privileges and possibly stay
-        # in a privileged group).
-        setgid(gid)
-        initgroups(uid, gid)
-
-        # at last:
-        setuid(uid)
-        # ... and make sure privileges cannot be restored:
-        try:
-            setuid(0)
-        except OSError as exc:
-            if exc.errno != errno.EPERM:
-                raise
-            # we should get here: cannot restore privileges,
-            # everything was fine.
-        else:
-            raise RuntimeError(
-                'non-root user able to restore privileges after setuid.')
+        _setuid(uid, gid)
     else:
         gid and setgid(gid)
 
@@ -566,6 +542,34 @@ def maybe_drop_privileges(uid=None, gid=None):
         raise SecurityError('Still root uid after drop privileges!')
     if gid and not os.getgid() and not os.getegid():
         raise SecurityError('Still root gid after drop privileges!')
+
+
+def _setuid(uid, gid):
+    # If GID isn't defined, get the primary GID of the user.
+    if not gid and pwd:
+        gid = pwd.getpwuid(uid).pw_gid
+    # Must set the GID before initgroups(), as setgid()
+    # is known to zap the group list on some platforms.
+
+    # setgid must happen before setuid (otherwise the setgid operation
+    # may fail because of insufficient privileges and possibly stay
+    # in a privileged group).
+    setgid(gid)
+    initgroups(uid, gid)
+
+    # at last:
+    setuid(uid)
+    # ... and make sure privileges cannot be restored:
+    try:
+        setuid(0)
+    except OSError as exc:
+        if exc.errno != errno.EPERM:
+            raise
+        # we should get here: cannot restore privileges,
+        # everything was fine.
+    else:
+        raise SecurityError(
+            'non-root user able to restore privileges after setuid.')
 
 
 class Signals(object):

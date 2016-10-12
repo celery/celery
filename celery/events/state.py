@@ -509,6 +509,9 @@ class State(object):
         return self._event(dict(fields, type='-'.join(['worker', type_])))[0]
 
     def _create_dispatcher(self):
+        # noqa: C901
+        # pylint: disable=too-many-statements
+        # This code is highly optimized, but not for reusability.
         get_handler = self.handlers.__getitem__
         event_callback = self.event_callback
         wfields = itemgetter('hostname', 'timestamp', 'local_received')
