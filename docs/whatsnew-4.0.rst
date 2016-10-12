@@ -1344,6 +1344,10 @@ Canvas
 - ``Signature.link`` now works when argument is scalar (not a list)
     (Issue #2019).
 
+- ``group()`` now properly forwards keyword arguments (Issue #3426).
+
+    Fix contributed by **Samuel Giffard**.
+
 Deployment
 ~~~~~~~~~~
 
