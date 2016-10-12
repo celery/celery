@@ -720,7 +720,7 @@ class Evictable(object):
         """Force evict until maxsize is enforced."""
         self._evict(range=count)
 
-    def _evict(self, limit=100):
+    def _evict(self, limit=100, range=range):
         # type: (int) -> None
         try:
             [self._evict1() for _ in range(limit)]
