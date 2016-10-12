@@ -192,7 +192,7 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=['t', 't.*']),
     version=meta['version'],
     description=meta['doc'],
-    long_description=long_description,
+    long_description=long_description(),
     keywords=meta['keywords'],
     author=meta['author'],
     author_email=meta['contact'],
