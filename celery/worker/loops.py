@@ -21,7 +21,7 @@ logger = get_logger(__name__)
 def _quick_drain(connection, timeout=0.1):
     try:
         connection.drain_events(timeout=timeout)
-    except Exception as exc:  # pylint: ignore=broad-except
+    except Exception as exc:  # pylint: disable=broad-except
         exc_errno = getattr(exc, 'errno', None)
         if exc_errno is not None and exc_errno != errno.EAGAIN:
             raise
@@ -93,7 +93,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     finally:
         try:
             hub.reset()
-        except Exception as exc:  # pylint: ignore=broad-except
+        except Exception as exc:  # pylint: disable=broad-except
             logger.exception(
                 'Error cleaning up after event loop: %r', exc)
 

@@ -68,7 +68,7 @@ def find_pickleable_exception(exc, loads=pickle.loads,
         try:
             superexc = supercls(*exc_args)
             loads(dumps(superexc))
-        except Exception:  # pylint: ignore=broad-except
+        except Exception:  # pylint: disable=broad-except
             pass
         else:
             return superexc
@@ -122,7 +122,7 @@ class UnpickleableExceptionWrapper(Exception):
             try:
                 pickle.dumps(arg)
                 safe_exc_args.append(arg)
-            except Exception:  # pylint: ignore=broad-except
+            except Exception:  # pylint: disable=broad-except
                 safe_exc_args.append(safe_repr(arg))
         self.exc_module = exc_module
         self.exc_cls_name = exc_cls_name
@@ -149,7 +149,7 @@ def get_pickleable_exception(exc):
     """Make sure exception is pickleable."""
     try:
         pickle.loads(pickle.dumps(exc))
-    except Exception:  # pylint: ignore=broad-except
+    except Exception:  # pylint: disable=broad-except
         pass
     else:
         return exc
@@ -163,7 +163,7 @@ def get_pickleable_etype(cls, loads=pickle.loads, dumps=pickle.dumps):
     """Get pickleable exception type."""
     try:
         loads(dumps(cls))
-    except Exception:  # pylint: ignore=broad-except
+    except Exception:  # pylint: disable=broad-except
         return Exception
     else:
         return cls

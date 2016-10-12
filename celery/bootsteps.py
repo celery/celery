@@ -151,7 +151,7 @@ class Blueprint(object):
                                 description.capitalize(), step.alias)
                     try:
                         fun(parent, *args)
-                    except Exception as exc:  # pylint: ignore=broad-except
+                    except Exception as exc:  # pylint: disable=broad-except
                         if propagate:
                             raise
                         logger.exception(
