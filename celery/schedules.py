@@ -392,7 +392,7 @@ class crontab(BaseSchedule):
     """
 
     def __init__(self, minute='*', hour='*', day_of_week='*',
-                 day_of_month='*', month_of_year='*', nowfun=None, app=None):
+                 day_of_month='*', month_of_year='*', **kwargs):
         self._orig_minute = cronfield(minute)
         self._orig_hour = cronfield(hour)
         self._orig_day_of_week = cronfield(day_of_week)
@@ -403,8 +403,7 @@ class crontab(BaseSchedule):
         self.day_of_week = self._expand_cronspec(day_of_week, 7)
         self.day_of_month = self._expand_cronspec(day_of_month, 31, 1)
         self.month_of_year = self._expand_cronspec(month_of_year, 12, 1)
-        self.nowfun = nowfun
-        self._app = app
+        super(crontab, self).__init__(**kwargs)
 
     @staticmethod
     def _expand_cronspec(cronspec, max_, min_=0):
@@ -533,6 +532,8 @@ class crontab(BaseSchedule):
                                  self._orig_month_of_year), None)
 
     def remaining_delta(self, last_run_at, tz=None, ffwd=ffwd):
+        # pylint: disable=redefined-outer-name
+        # caching global ffwd
         tz = tz or self.tz
         last_run_at = self.maybe_make_aware(last_run_at)
         now = self.maybe_make_aware(self.now())
@@ -595,6 +596,8 @@ class crontab(BaseSchedule):
         Returns when the periodic task should run next as a
         :class:`~datetime.timedelta`.
         """
+        # pylint: disable=redefined-outer-name
+        # caching global ffwd
         return remaining(*self.remaining_delta(last_run_at, ffwd=ffwd))
 
     def is_due(self, last_run_at):
@@ -645,7 +648,7 @@ def maybe_schedule(s, relative=False, app=None):
 
 
 @python_2_unicode_compatible
-class solar(schedule):
+class solar(BaseSchedule):
     """Solar event.
 
     A solar event can be used as the ``run_every`` value of a
@@ -720,13 +723,12 @@ class solar(schedule):
         'dusk_astronomical': True,
     }
 
-    def __init__(self, event, lat, lon, nowfun=None, app=None):
+    def __init__(self, event, lat, lon, **kwargs):
         self.ephem = __import__('ephem')
         self.event = event
         self.lat = lat
         self.lon = lon
-        self.nowfun = nowfun
-        self._app = app
+        super(solar, self).__init__(**kwargs)
 
         if event not in self._all_events:
             raise ValueError(SOLAR_INVALID_EVENT.format(

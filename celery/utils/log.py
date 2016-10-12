@@ -93,9 +93,9 @@ def logger_isa(l, p, max=1000):
     return False
 
 
-def _using_logger_parent(base_logger, logger_):
-    if not logger_isa(logger_, base_logger):
-        logger_.parent = base_logger
+def _using_logger_parent(parent_logger, logger_):
+    if not logger_isa(logger_, parent_logger):
+        logger_.parent = parent_logger
     return logger_
 
 
@@ -166,7 +166,7 @@ class ColorFormatter(logging.Formatter):
                     return safe_str(color(msg))
                 except UnicodeDecodeError:  # pragma: no cover
                     return safe_str(msg)  # skip colors
-            except Exception as exc:  # pylint: disable=broad-exc
+            except Exception as exc:  # pylint: disable=broad-except
                 prev_msg, record.exc_info, record.msg = (
                     record.msg, 1, '<Unrepresentable {0!r}: {1!r}>'.format(
                         type(msg), exc

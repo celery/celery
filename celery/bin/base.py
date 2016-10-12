@@ -191,9 +191,13 @@ class Command(object):
         raise NotImplementedError('subclass responsibility')
 
     def on_error(self, exc):
+        # pylint: disable=method-hidden
+        #   on_error argument to __init__ may override this method.
         self.error(self.colored.red('Error: {0}'.format(exc)))
 
     def on_usage_error(self, exc):
+        # pylint: disable=method-hidden
+        #   on_usage_error argument to __init__ may override this method.
         self.handle_error(exc)
 
     def on_concurrency_setup(self):

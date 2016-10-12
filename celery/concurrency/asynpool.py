@@ -301,7 +301,9 @@ class ResultHandler(_pool.ResultHandler):
     def register_with_event_loop(self, hub):
         self.handle_event = self._make_process_result(hub)
 
-    def handle_event(self, fileno):
+    def handle_event(self, *args):
+        # pylint: disable=method-hidden
+        #   register_with_event_loop overrides this
         raise RuntimeError('Not registered with event loop')
 
     def on_stop_not_started(self):
@@ -500,7 +502,7 @@ class AsynPool(_pool.Pool):
             try:
                 tref = trefs.pop(job)
                 tref.cancel()
-                del(tref)
+                del tref
             except (KeyError, AttributeError):
                 pass  # out of scope
         self._discard_tref = _discard_tref
@@ -842,7 +844,7 @@ class AsynPool(_pool.Pool):
                 while Hw < 4:
                     try:
                         Hw += send(header, Hw)
-                    except Exception as exc:
+                    except Exception as exc:  # pylint: disable=broad-except
                         if getattr(exc, 'errno', None) not in UNAVAIL:
                             raise
                         # suspend until more data
@@ -858,7 +860,7 @@ class AsynPool(_pool.Pool):
                 while Bw < body_size:
                     try:
                         Bw += send(body, Bw)
-                    except Exception as exc:
+                    except Exception as exc:  # pylint: disable=broad-except
                         if getattr(exc, 'errno', None) not in UNAVAIL:
                             raise
                         # suspend until more data
@@ -907,7 +909,7 @@ class AsynPool(_pool.Pool):
                 while Hw < 4:
                     try:
                         Hw += send(header, Hw)
-                    except Exception as exc:
+                    except Exception as exc:  # pylint: disable=broad-except
                         if getattr(exc, 'errno', None) not in UNAVAIL:
                             raise
                         yield
@@ -916,7 +918,7 @@ class AsynPool(_pool.Pool):
                 while Bw < body_size:
                     try:
                         Bw += send(body, Bw)
-                    except Exception as exc:
+                    except Exception as exc:  # pylint: disable=broad-except
                         if getattr(exc, 'errno', None) not in UNAVAIL:
                             raise
                         # suspend until more data
@@ -1202,7 +1204,7 @@ class AsynPool(_pool.Pool):
         writer = _get_job_writer(job)
         if writer:
             self._active_writers.discard(writer)
-            del(writer)
+            del writer
 
         if not proc.dead:
             proc.dead = True
@@ -1262,6 +1264,7 @@ class AsynPool(_pool.Pool):
 
     @classmethod
     def _help_stuff_finish(cls, pool):
+        # pylint: disable=arguments-differ
         debug(
             'removing tasks from inqueue until task handler finished',
         )

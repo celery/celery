@@ -217,6 +217,8 @@ class Request(object):
             self.acknowledge()
 
         request = self.request_dict
+        # pylint: disable=unpacking-non-sequence
+        #    payload is a property, so pylint doesn't think it's a tuple.
         args, kwargs, embed = self._payload
         request.update({'loglevel': loglevel, 'logfile': logfile,
                         'hostname': self.hostname, 'is_eager': False,
@@ -474,6 +476,8 @@ class Request(object):
     def chord(self):
         # used by backend.mark_as_failure when failure is reported
         # by parent process
+        # pylint: disable=unpacking-non-sequence
+        #    payload is a property, so pylint doesn't think it's a tuple.
         _, _, embed = self._payload
         return embed.get('chord')
 
@@ -481,6 +485,8 @@ class Request(object):
     def errbacks(self):
         # used by backend.mark_as_failure when failure is reported
         # by parent process
+        # pylint: disable=unpacking-non-sequence
+        #    payload is a property, so pylint doesn't think it's a tuple.
         _, _, embed = self._payload
         return embed.get('errbacks')
 

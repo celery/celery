@@ -5,7 +5,7 @@
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
-import cmd
+import cmd as _cmd
 import sys
 import shlex
 import pprint
@@ -111,7 +111,7 @@ def format_declare_queue(ret):
     return 'ok. queue:{0} messages:{1} consumers:{2}.'.format(*ret)
 
 
-class AMQShell(cmd.Cmd):
+class AMQShell(_cmd.Cmd):
     """AMQP API Shell.
 
     Arguments:
@@ -124,7 +124,7 @@ class AMQShell(cmd.Cmd):
     conn = None
     chan = None
     prompt_fmt = '{self.counter}> '
-    identchars = cmd.IDENTCHARS = '.'
+    identchars = _cmd.IDENTCHARS = '.'
     needs_reconnect = False
     counter = 1
     inc_counter = count(2)
@@ -186,7 +186,7 @@ class AMQShell(cmd.Cmd):
         self.connect = kwargs.pop('connect')
         self.silent = kwargs.pop('silent', False)
         self.out = kwargs.pop('out', sys.stderr)
-        cmd.Cmd.__init__(self, *args, **kwargs)
+        _cmd.Cmd.__init__(self, *args, **kwargs)
         self._reconnect()
 
     def note(self, m):
@@ -284,7 +284,7 @@ class AMQShell(cmd.Cmd):
             self.respond(self.dispatch(cmd, arg))
         except (AttributeError, KeyError) as exc:
             self.default(line)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             self.say(exc)
             self.needs_reconnect = True
 
@@ -336,7 +336,6 @@ class AMQPAdmin(object):
             return shell.cmdloop()
         except KeyboardInterrupt:
             self.note('(bibi)')
-            pass
 
     def note(self, m):
         if not self.silent:
