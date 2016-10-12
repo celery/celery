@@ -51,6 +51,33 @@ if PY26_OR_LESS:
 elif PY33_OR_LESS and not PYPY24_ATLEAST:
     raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '3.4'))
 
+# -*- Extras -*-
+
+EXTENSIONS = {
+    'auth',
+    'cassandra',
+    'elasticsearch',
+    'memcache',
+    'pymemcache',
+    'couchbase',
+    'eventlet',
+    'gevent',
+    'msgpack',
+    'yaml',
+    'redis',
+    'sqs',
+    'couchdb',
+    'riak',
+    'zookeeper',
+    'solar',
+    'sqlalchemy',
+    'librabbitmq',
+    'pyro',
+    'slmq',
+    'tblib',
+    'consul'
+}
+
 # -*- Classifiers -*-
 
 classes = """
@@ -84,17 +111,20 @@ def add_default(m):
 def add_doc(m):
     return (('doc', m.groups()[0]),)
 
-pats = {re_meta: add_default, re_doc: add_doc}
-here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, 'celery/__init__.py')) as meta_fh:
-    meta = {}
-    for line in meta_fh:
-        if line.strip() == '# -eof meta-':
-            break
-        for pattern, handler in pats.items():
-            m = pattern.match(line.strip())
-            if m:
-                meta.update(handler(m))
+
+def parse_dist_meta():
+    pats = {re_meta: add_default, re_doc: add_doc}
+    here = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(here, 'celery', '__init__.py')) as meta_fh:
+        meta = {}
+        for line in meta_fh:
+            if line.strip() == '# -eof meta-':
+                break
+            for pattern, handler in pats.items():
+                m = pattern.match(line.strip())
+                if m:
+                    meta.update(handler(m))
+        return meta
 
 # -*- Installation Requires -*-
 
@@ -125,18 +155,22 @@ def reqs(*f):
 def extras(*p):
     return reqs('extras', *p)
 
-install_requires = reqs('default.txt')
-if JYTHON:
-    install_requires.extend(reqs('jython.txt'))
 
-# -*- Long Description -*-
+def install_requires():
+    if JYTHON:
+        return reqs('default.txt') + reqs('jython.txt')
+    return reqs('default.txt')
 
-if os.path.exists('README.rst'):
-    long_description = codecs.open('README.rst', 'r', 'utf-8').read()
-else:
-    long_description = 'See http://pypi.python.org/pypi/celery'
 
-# -*- %%% -*-
+def extras_require():
+    return {x: extras(x + '.txt') for x in EXTENSIONS}
+
+
+def long_description():
+    try:
+        return codecs.open('README.rst', 'r', 'utf-8').read()
+    except IOError:
+        return 'Long description error: Missing README.rst file'
 
 
 class pytest(setuptools.command.test.test):
@@ -147,36 +181,34 @@ class pytest(setuptools.command.test.test):
         self.pytest_args = []
 
     def run_tests(self):
-        import pytest
-        sys.exit(pytest.main(self.pytest_args))
+        import pytest as _pytest
+        sys.exit(_pytest.main(self.pytest_args))
 
+# -*- %%% -*-
+
+meta = parse_dist_meta()
 setuptools.setup(
     name=NAME,
     packages=setuptools.find_packages(exclude=['t', 't.*']),
     version=meta['version'],
     description=meta['doc'],
     long_description=long_description,
-    keywords='task job queue distributed messaging actor',
+    keywords=meta['keywords'],
     author=meta['author'],
     author_email=meta['contact'],
-    platforms=['any'],
-    license='BSD',
     url=meta['homepage'],
-    install_requires=install_requires,
+    license='BSD',
+    platforms=['any'],
+    install_requires=install_requires(),
     tests_require=reqs('test.txt'),
-    extras_require=dict((x, extras(x + '.txt')) for x in set([
-        'auth', 'cassandra', 'elasticsearch', 'memcache', 'pymemcache',
-        'couchbase', 'eventlet', 'gevent', 'msgpack', 'yaml',
-        'redis', 'sqs', 'couchdb', 'riak', 'zookeeper', 'solar',
-        'sqlalchemy', 'librabbitmq', 'pyro', 'slmq', 'tblib', 'consul'
-    ])),
+    extras_require=extras_require(),
     classifiers=classifiers,
+    cmdclass={'test': pytest},
+    include_package_data=True,
+    zip_safe=False,
     entry_points={
         'console_scripts': [
             'celery = celery.__main__:main',
         ]
     },
-    cmdclass={'test': pytest},
-    include_package_data=True,
-    zip_safe=False,
 )

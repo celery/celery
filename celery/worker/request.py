@@ -35,6 +35,9 @@ from . import state
 
 __all__ = ['Request']
 
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
+
 IS_PYPY = hasattr(sys, 'pypy_version_info')
 
 logger = get_logger(__name__)
@@ -518,6 +521,7 @@ def create_request_cls(base, task, pool, hostname, eventer,
                 correlation_id=task_id,
             )
             # cannot create weakref to None
+            # pylint: disable=attribute-defined-outside-init
             self._apply_result = maybe(ref, result)
             return result
 

@@ -41,5 +41,11 @@ pylint:
         - too-many-instance-attributes
         - bad-builtin
         - abstract-method
+        - global-statement
+        - too-many-public-methods
+        - no-self-use
+        - unnecessary-lambda
+        - too-few-public-methods
+        - attribute-defined-outside-init
     options:
         exclude-protected: _reader, _writer, _popen, _sentinel_poll, _job, _is_alive, _write_to, _scheduled_for, _terminated, _accepted, _set_terminated, _payload, _cancel

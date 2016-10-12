@@ -2,7 +2,6 @@
 """Gevent execution pool."""
 from __future__ import absolute_import, unicode_literals
 
-
 try:
     from gevent import Timeout
 except ImportError:  # pragma: no cover
@@ -14,6 +13,9 @@ from kombu.five import monotonic
 from . import base
 
 __all__ = ['TaskPool']
+
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
 
 
 def apply_timeout(target, args=(), kwargs={}, callback=None,
@@ -101,7 +103,7 @@ class TaskPool(base.BasePool):
 
     def on_apply(self, target, args=None, kwargs=None, callback=None,
                  accept_callback=None, timeout=None,
-                 timeout_callback=None, **_):
+                 timeout_callback=None, apply_target=base.apply_target, **_):
         timeout = self.timeout if timeout is None else timeout
         return self._quick_put(apply_timeout if timeout else apply_target,
                                target, args, kwargs, callback, accept_callback,

@@ -21,6 +21,7 @@ __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://celeryproject.org'
 __docformat__ = 'restructuredtext'
+__keywords__ = 'task job queue distributed messaging actor'
 
 # -eof meta-
 

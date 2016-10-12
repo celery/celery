@@ -19,6 +19,9 @@ __all__ = ['default']
 
 logger = get_logger(__name__)
 
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
+
 
 def proto1_to_proto2(message, body):
     """Convert Task message protocol 1 arguments to protocol 2.
@@ -28,7 +31,7 @@ def proto1_to_proto2(message, body):
     """
     try:
         args, kwargs = body['args'], body['kwargs']
-        kwargs.items
+        kwargs.items  # pylint: disable=pointless-statement
     except KeyError:
         raise InvalidTaskError('Message does not have args/kwargs')
     except AttributeError:

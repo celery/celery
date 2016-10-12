@@ -346,8 +346,8 @@ class multi(Command):
 
     def run_from_argv(self, prog_name, argv, command=None):
         from celery.bin.multi import MultiTool
-        multi = MultiTool(quiet=self.quiet, no_color=self.no_color)
-        return multi.execute_from_commandline([command] + argv)
+        cmd = MultiTool(quiet=self.quiet, no_color=self.no_color)
+        return cmd.execute_from_commandline([command] + argv)
 
 
 class list_(Command):
@@ -535,11 +535,11 @@ class result(Command):
 
         if task:
             result_cls = self.app.tasks[task].AsyncResult
-        result = result_cls(task_id)
+        task_result = result_cls(task_id)
         if traceback:
-            value = result.traceback
+            value = task_result.traceback
         else:
-            value = result.get()
+            value = task_result.get()
         self.out(self.pretty(value)[1])
 
 
@@ -849,6 +849,8 @@ class shell(Command):  # pragma: no cover
         import celery
         import celery.task.base
         self.app.loader.import_default_modules()
+
+        # pylint: disable=attribute-defined-outside-init
         self.locals = {
             'app': self.app,
             'celery': self.app,
@@ -1136,7 +1138,7 @@ class CeleryCommand(Command):
             return sys.modules['__main__'].__file__
         return name
 
-    def handle_argv(self, prog_name, argv):
+    def handle_argv(self, prog_name, argv, **kwargs):
         self.prog_name = self.prepare_prog_name(prog_name)
         argv = self._relocate_args_from_start(argv)
         _, argv = self.prepare_args(None, argv)
@@ -1202,13 +1204,6 @@ class CeleryCommand(Command):
                            self.register_command).load()
         if names:
             command_classes.append(('Extensions', names, 'magenta'))
-
-
-def command(*args, **kwargs):
-    # Deprecated: Use classmethod
-    #             :meth:`CeleryCommand.register_command` instead.
-    _register = CeleryCommand.register_command
-    return _register(args[0]) if args else _register
 
 
 if __name__ == '__main__':          # pragma: no cover

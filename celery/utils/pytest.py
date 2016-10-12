@@ -19,6 +19,10 @@ from celery import Celery
 from celery.app import current_app
 from celery.backends.cache import CacheBackend, DummyClient
 
+# pylint: disable=redefined-outer-name
+# Well, they're called fixtures....
+
+
 CELERY_TEST_CONFIG = {
     #: Don't want log output when running suite.
     'worker_hijack_root_logger': False,
@@ -68,12 +72,12 @@ class UnitLogging(symbol_by_name(Celery.log_cls)):
 def TestApp(name=None, set_as_current=False, log=UnitLogging,
             broker='memory://', backend='cache+memory://', **kwargs):
     """App used for testing."""
-    app = Celery(name or 'celery.tests',
-                 set_as_current=set_as_current,
-                 log=log, broker=broker, backend=backend,
-                 **kwargs)
-    app.add_defaults(deepcopy(CELERY_TEST_CONFIG))
-    return app
+    test_app = Celery(
+        name or 'celery.tests',
+        set_as_current=set_as_current,
+        log=log, broker=broker, backend=backend, **kwargs)
+    test_app.add_defaults(deepcopy(CELERY_TEST_CONFIG))
+    return test_app
 
 
 @pytest.fixture(autouse=True)
@@ -92,22 +96,22 @@ def app(request):
         current_app = trap
     _state._tls = NonTLS()
 
-    app = TestApp(set_as_current=False)
+    test_app = TestApp(set_as_current=False)
     is_not_contained = any([
         not getattr(request.module, 'app_contained', True),
         not getattr(request.cls, 'app_contained', True),
         not getattr(request.function, 'app_contained', True)
     ])
     if is_not_contained:
-        app.set_current()
+        test_app.set_current()
 
-    yield app
+    yield test_app
 
     _state.set_default_app(prev_default_app)
     _state._tls = prev_tls
     _state._tls.current_app = prev_current_app
-    if app is not prev_current_app:
-        app.close()
+    if test_app is not prev_current_app:
+        test_app.close()
     _state._on_app_finalizers = prev_finalizers
     _state._apps = prev_apps
 

@@ -151,7 +151,7 @@ class Blueprint(object):
                                 description.capitalize(), step.alias)
                     try:
                         fun(parent, *args)
-                    except Exception as exc:
+                    except Exception as exc:  # pylint: ignore=broad-except
                         if propagate:
                             raise
                         logger.exception(
@@ -273,6 +273,9 @@ class Blueprint(object):
 
 class StepType(type):
     """Meta-class for steps."""
+
+    name = None
+    requires = None
 
     def __new__(cls, name, bases, attrs):
         module = attrs.get('__module__')

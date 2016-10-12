@@ -46,6 +46,9 @@ from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.worker import state as worker_state
 
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
+
 try:
     from _billiard import read as __read__
     from struct import unpack_from as _unpack_from

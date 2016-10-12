@@ -29,6 +29,9 @@ from .text import truncate, truncate_bytes
 
 __all__ = ['saferepr', 'reprstream']
 
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
+
 IS_PY3 = sys.version_info[0] == 3
 
 if IS_PY3:  # pragma: no cover

@@ -30,6 +30,9 @@ from celery.utils.time import adjust_timestamp, utcoffset, maybe_s_to_ms
 
 __all__ = ['Events', 'Event', 'EventDispatcher', 'EventReceiver']
 
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
+
 event_exchange = Exchange('celeryev', type='topic')
 
 _TZGETTER = itemgetter('utcoffset', 'timestamp')
@@ -208,7 +211,7 @@ class EventDispatcher(object):
                 headers=self.headers,
                 delivery_mode=self.delivery_mode,
             )
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             if not self.buffer_while_offline:
                 raise
             self._outbound_buffer.append((event, routing_key, exc))
@@ -430,6 +433,8 @@ class Events(object):
     def default_dispatcher(self, hostname=None, enabled=True,
                            buffer_while_offline=False):
         with self.app.amqp.producer_pool.acquire(block=True) as prod:
+            # pylint: disable=too-many-function-args
+            # This is a property pylint...
             with self.Dispatcher(prod.connection, hostname, enabled,
                                  prod.channel, buffer_while_offline) as d:
                 yield d

@@ -37,15 +37,21 @@ from celery.utils.log import get_logger
 
 __all__ = ['Worker', 'Task', 'State', 'heartbeat_expires']
 
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
+# pylint: disable=too-many-function-args
+# For some reason pylint thinks ._event is a method, when it's a property.
+
+#: Set if running PyPy
 PYPY = hasattr(sys, 'pypy_version_info')
 
-# The window (in percentage) is added to the workers heartbeat
-# frequency.  If the time between updates exceeds this window,
-# then the worker is considered to be offline.
+#: The window (in percentage) is added to the workers heartbeat
+#: frequency.  If the time between updates exceeds this window,
+#: then the worker is considered to be offline.
 HEARTBEAT_EXPIRE_WINDOW = 200
 
-# Max drift between event timestamp and time of event received
-# before we alert that clocks may be unsynchronized.
+#: Max drift between event timestamp and time of event received
+#: before we alert that clocks may be unsynchronized.
 HEARTBEAT_DRIFT_MAX = 16
 
 DRIFT_WARNING = """\

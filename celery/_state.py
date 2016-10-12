@@ -90,7 +90,9 @@ def _set_current_app(app):
 if os.environ.get('C_STRICT_APP'):  # pragma: no cover
     def get_current_app():
         """Return the current app."""
-        raise Exception('USES CURRENT APP')
+        raise RuntimeError('USES CURRENT APP')
+elif os.environ.get('C_WARN_APP'):  # pragma: no cover
+    def get_current_app():  # noqa
         import traceback
         print('-- USES CURRENT_APP', file=sys.stderr)  # noqa+
         traceback.print_stack(file=sys.stderr)

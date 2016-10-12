@@ -28,7 +28,6 @@ from celery.bin.celery import (
     multi,
     main as mainfun,
     _RemoteControl,
-    command,
 )
 from celery.five import WhateverIO
 from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
@@ -535,13 +534,3 @@ class test_main:
         cmd.execute_from_commandline.side_effect = KeyboardInterrupt()
         mainfun()
         cmd.execute_from_commandline.assert_called_with(None)
-
-
-class test_compat:
-
-    def test_compat_command_decorator(self):
-        with patch('celery.bin.celery.CeleryCommand') as CC:
-            assert command() == CC.register_command
-            fun = Mock(name='fun')
-            command(fun)
-            CC.register_command.assert_called_with(fun)

@@ -73,6 +73,8 @@ class Gossip(bootsteps.ConsumerStep):
             'task': self.call_task
         }
 
+        super(Gossip, self).__init__(c, **kwargs)
+
     def compatible_transport(self, app):
         with app.connection_for_read() as conn:
             return conn.transport.driver_type in self.compatible_transports
@@ -87,7 +89,7 @@ class Gossip(bootsteps.ConsumerStep):
     def call_task(self, task):
         try:
             self.app.signature(task).apply_async()
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             logger.exception('Could not call task: %r', exc)
 
     def on_elect(self, event):
@@ -148,7 +150,7 @@ class Gossip(bootsteps.ConsumerStep):
         for handler in handlers:
             try:
                 handler(*args, **kwargs)
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-except
                 logger.exception(
                     'Ignored error from handler %r: %r', handler, exc)
 
@@ -191,10 +193,11 @@ class Gossip(bootsteps.ConsumerStep):
         else:
             return handler(message.payload)
 
+        # proto2: hostname in header; proto1: in body
         hostname = (message.headers.get('hostname') or
                     message.payload['hostname'])
         if hostname != self.hostname:
-            type, event = prepare(message.payload)
+            _, event = prepare(message.payload)
             self.update_state(event)
         else:
             self.clock.forward()

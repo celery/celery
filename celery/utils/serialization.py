@@ -68,7 +68,7 @@ def find_pickleable_exception(exc, loads=pickle.loads,
         try:
             superexc = supercls(*exc_args)
             loads(dumps(superexc))
-        except Exception:
+        except Exception:  # pylint: ignore=broad-except
             pass
         else:
             return superexc
@@ -122,7 +122,7 @@ class UnpickleableExceptionWrapper(Exception):
             try:
                 pickle.dumps(arg)
                 safe_exc_args.append(arg)
-            except Exception:
+            except Exception:  # pylint: ignore=broad-except
                 safe_exc_args.append(safe_repr(arg))
         self.exc_module = exc_module
         self.exc_cls_name = exc_cls_name
@@ -149,7 +149,7 @@ def get_pickleable_exception(exc):
     """Make sure exception is pickleable."""
     try:
         pickle.loads(pickle.dumps(exc))
-    except Exception:
+    except Exception:  # pylint: ignore=broad-except
         pass
     else:
         return exc
@@ -163,7 +163,7 @@ def get_pickleable_etype(cls, loads=pickle.loads, dumps=pickle.dumps):
     """Get pickleable exception type."""
     try:
         loads(dumps(cls))
-    except Exception:
+    except Exception:  # pylint: ignore=broad-except
         return Exception
     else:
         return cls
@@ -199,6 +199,24 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
     return term
 
 
+def _datetime_to_json(dt):
+    # See "Date Time String Format" in the ECMA-262 specification.
+    if isinstance(dt, datetime.datetime):
+        r = dt.isoformat()
+        if dt.microsecond:
+            r = r[:23] + r[26:]
+        if r.endswith('+00:00'):
+            r = r[:-6] + 'Z'
+        return r
+    elif isinstance(dt, datetime.time):
+        r = dt.isoformat()
+        if dt.microsecond:
+            r = r[:12]
+        return r
+    else:
+        return dt.isoformat()
+
+
 def jsonify(obj,
             builtin_types=(numbers.Real, string_t), key=None,
             keyfilter=None,
@@ -221,21 +239,8 @@ def jsonify(obj,
             k: _jsonify(v, key=k) for k, v in items(obj)
             if (keyfilter(k) if keyfilter else 1)
         }
-    elif isinstance(obj, datetime.datetime):
-        # See "Date Time String Format" in the ECMA-262 specification.
-        r = obj.isoformat()
-        if obj.microsecond:
-            r = r[:23] + r[26:]
-        if r.endswith('+00:00'):
-            r = r[:-6] + 'Z'
-        return r
-    elif isinstance(obj, datetime.date):
-        return obj.isoformat()
-    elif isinstance(obj, datetime.time):
-        r = obj.isoformat()
-        if obj.microsecond:
-            r = r[:12]
-        return r
+    elif isinstance(obj, (datetime.date, datetime.time)):
+        return _datetime_to_json(obj)
     elif isinstance(obj, datetime.timedelta):
         return str(obj)
     else:

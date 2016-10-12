@@ -12,6 +12,11 @@ from __future__ import absolute_import, unicode_literals
 # but in the end it only resulted in bad performance and horrible tracebacks,
 # so instead we now use one closure per task class.
 
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
+# pylint: disable=broad-except
+# We know what we're doing...
+
 import logging
 import os
 import sys
@@ -181,7 +186,7 @@ class TraceInfo(object):
             })
             return einfo
         finally:
-            del(tb)
+            del tb
 
     def handle_failure(self, task, req, store_errors=True, call_errbacks=True):
         """Handle exception."""
@@ -208,7 +213,7 @@ class TraceInfo(object):
             self._log_error(task, req, einfo)
             return einfo
         finally:
-            del(tb)
+            del tb
 
     def _log_error(self, task, req, einfo):
         eobj = einfo.exception = get_pickled_exception(einfo.exception)
@@ -535,7 +540,7 @@ def report_internal_error(task, exc):
                 exc, exc_info.traceback)))
         return exc_info
     finally:
-        del(_tb)
+        del _tb
 
 
 def setup_worker_optimizations(app, hostname=None):
