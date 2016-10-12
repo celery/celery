@@ -226,7 +226,7 @@ class Consumer(object):
             while self._pending_operations:
                 try:
                     self._pending_operations.pop()()
-                except Exception as exc:
+                except Exception as exc:  # pylint: disable=broad-except
                     logger.exception('Pending callback raised: %r', exc)
 
     def bucket_for_task(self, type):
@@ -336,7 +336,7 @@ class Consumer(object):
         warn(CONNECTION_RETRY, exc_info=True)
         try:
             self.connection.collect()
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             pass
 
     def register_with_event_loop(self, hub):
@@ -534,7 +534,7 @@ class Consumer(object):
             except KeyError:
                 try:
                     payload = message.decode()
-                except Exception as exc:
+                except Exception as exc:  # pylint: disable=broad-except
                     return self.on_decode_error(message, exc)
                 try:
                     type_, payload = payload['task'], payload  # protocol v1
@@ -556,7 +556,7 @@ class Consumer(object):
                     return on_invalid_task(payload, message, exc)
                 except MemoryError:
                     raise
-                except Exception as exc:
+                except Exception as exc:  # pylint: disable=broad-except
                     # XXX handle as internal error?
                     return on_invalid_task(payload, message, exc)
 

@@ -117,6 +117,7 @@ class LocalTimezone(tzinfo):
 class _Zone(object):
 
     def tz_or_local(self, tzinfo=None):
+        # pylint: disable=redefined-outer-name
         if tzinfo is None:
             return self.local
         return self.get_timezone(tzinfo)
@@ -216,13 +217,13 @@ def remaining(start, ends_in, now=None, relative=False):
     return ret
 
 
-def rate(rate):
+def rate(r):
     """Convert rate string (`"100/m"`, `"2/h"` or `"0.5/s"`) to seconds."""
-    if rate:
-        if isinstance(rate, string_t):
-            ops, _, modifier = rate.partition('/')
+    if r:
+        if isinstance(r, string_t):
+            ops, _, modifier = r.partition('/')
             return RATE_MODIFIER_MAP[modifier or 's'](float(ops)) or 0
-        return rate or 0
+        return r or 0
     return 0
 
 
@@ -336,6 +337,7 @@ class ffwd(object):
         self.year = year
         self.month = month
         self.weeks = weeks
+        # pylint: disable=redefined-outer-name
         self.weekday = weekday
         self.day = day
         self.hour = hour

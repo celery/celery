@@ -11,6 +11,7 @@ from case import Mock, call, mock, patch, skip
 
 from celery import _find_option_with_arg
 from celery import platforms
+from celery.exceptions import SecurityError
 from celery.five import WhateverIO
 from celery.platforms import (
     get_fdmax,
@@ -256,7 +257,7 @@ class test_maybe_drop_privileges:
             mock.side_effect = on_first_call
         to_root_on_second_call(geteuid, 10)
         to_root_on_second_call(getuid, 10)
-        with pytest.raises(AssertionError):
+        with pytest.raises(SecurityError):
             maybe_drop_privileges(uid='user')
 
         getuid.return_value = getuid.side_effect = None
@@ -264,7 +265,7 @@ class test_maybe_drop_privileges:
         getegid.return_value = 0
         getgid.return_value = 0
         setuid.side_effect = raise_on_second_call
-        with pytest.raises(AssertionError):
+        with pytest.raises(SecurityError):
             maybe_drop_privileges(gid='group')
 
         getuid.reset_mock()
@@ -824,7 +825,7 @@ def test_check_privileges():
         fchown = 13
     prev, platforms.os = platforms.os, Obj()
     try:
-        with pytest.raises(AssertionError):
+        with pytest.raises(SecurityError):
             check_privileges({'pickle'})
     finally:
         platforms.os = prev

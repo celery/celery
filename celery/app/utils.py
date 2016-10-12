@@ -303,7 +303,7 @@ def bugreport(app):
         driver_v = '{0}:{1}'.format(conn.transport.driver_name,
                                     conn.transport.driver_version())
         transport = conn.transport_cls
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         transport = driver_v = ''
 
     return BUGREPORT_INFO.format(

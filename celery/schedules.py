@@ -62,8 +62,48 @@ class ParseException(Exception):
     """Raised by :class:`crontab_parser` when the input can't be parsed."""
 
 
+class BaseSchedule(object):
+
+    def __init__(self, nowfun=None, app=None):
+        self.nowfun = nowfun
+        self._app = app
+
+    def now(self):
+        return (self.nowfun or self.app.now)()
+
+    def remaining_estimate(self, last_run_at):
+        raise NotImplementedError()
+
+    def is_due(self, last_run_at):
+        raise NotImplementedError()
+
+    def maybe_make_aware(self, dt):
+        return maybe_make_aware(dt, self.tz)
+
+    @property
+    def app(self):
+        return self._app or current_app._get_current_object()
+
+    @app.setter  # noqa
+    def app(self, app):
+        self._app = app
+
+    @cached_property
+    def tz(self):
+        return self.app.timezone
+
+    @cached_property
+    def utc_enabled(self):
+        return self.app.conf.enable_utc
+
+    def to_local(self, dt):
+        if not self.utc_enabled:
+            return timezone.to_local_fallback(dt)
+        return dt
+
+
 @python_2_unicode_compatible
-class schedule(object):
+class schedule(BaseSchedule):
     """Schedule for periodic task.
 
     Arguments:
@@ -80,11 +120,7 @@ class schedule(object):
     def __init__(self, run_every=None, relative=False, nowfun=None, app=None):
         self.run_every = maybe_timedelta(run_every)
         self.relative = relative
-        self.nowfun = nowfun
-        self._app = app
-
-    def now(self):
-        return (self.nowfun or self.app.now)()
+        super(schedule, self).__init__(nowfun=nowfun, app=app)
 
     def remaining_estimate(self, last_run_at):
         return remaining(
@@ -129,9 +165,6 @@ class schedule(object):
             return schedstate(is_due=True, next=self.seconds)
         return schedstate(is_due=False, next=remaining_s)
 
-    def maybe_make_aware(self, dt):
-        return maybe_make_aware(dt, self.tz)
-
     def __repr__(self):
         return '<freq: {0.human_seconds}>'.format(self)
 
@@ -153,27 +186,6 @@ class schedule(object):
     @property
     def human_seconds(self):
         return humanize_seconds(self.seconds)
-
-    @property
-    def app(self):
-        return self._app or current_app._get_current_object()
-
-    @app.setter  # noqa
-    def app(self, app):
-        self._app = app
-
-    @cached_property
-    def tz(self):
-        return self.app.timezone
-
-    @cached_property
-    def utc_enabled(self):
-        return self.app.conf.enable_utc
-
-    def to_local(self, dt):
-        if not self.utc_enabled:
-            return timezone.to_local_fallback(dt)
-        return dt
 
 
 class crontab_parser(object):
@@ -301,7 +313,7 @@ class crontab_parser(object):
 
 
 @python_2_unicode_compatible
-class crontab(schedule):
+class crontab(BaseSchedule):
     """Crontab schedule.
 
     A Crontab can be used as the ``run_every`` value of a
@@ -509,9 +521,6 @@ class crontab(schedule):
                     minute=next_minute,
                     second=0,
                     microsecond=0)
-
-    def now(self):
-        return (self.nowfun or self.app.now)()
 
     def __repr__(self):
         return CRON_REPR.format(self)

@@ -24,6 +24,7 @@ from kombu.utils.compat import maybe_fileno
 from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 
+from .exceptions import SecurityError
 from .local import try_import
 from .five import items, reraise, string_t
 
@@ -475,7 +476,7 @@ def setgroups(groups):
     max_groups = None
     try:
         max_groups = os.sysconf('SC_NGROUPS_MAX')
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         pass
     try:
         return _setgroups_hack(groups[:max_groups])
@@ -528,7 +529,7 @@ def maybe_drop_privileges(uid=None, gid=None):
     if os.geteuid():
         # no point trying to setuid unless we're root.
         if not os.getuid():
-            raise AssertionError('contact support')
+            raise SecurityError('contact support')
     uid = uid and parse_uid(uid)
     gid = gid and parse_gid(gid)
 
@@ -553,17 +554,18 @@ def maybe_drop_privileges(uid=None, gid=None):
         except OSError as exc:
             if exc.errno != errno.EPERM:
                 raise
-            pass  # Good: cannot restore privileges.
+            # we should get here: cannot restore privileges,
+            # everything was fine.
         else:
             raise RuntimeError(
                 'non-root user able to restore privileges after setuid.')
     else:
         gid and setgid(gid)
 
-    if uid and (not os.getuid()) and not (os.geteuid()):
-        raise AssertionError('Still root uid after drop privileges!')
-    if gid and (not os.getgid()) and not (os.getegid()):
-        raise AssertionError('Still root gid after drop privileges!')
+    if uid and not os.getuid() and not os.geteuid():
+        raise SecurityError('Still root uid after drop privileges!')
+    if gid and not os.getgid() and not os.getegid():
+        raise SecurityError('Still root gid after drop privileges!')
 
 
 class Signals(object):
@@ -623,23 +625,23 @@ class Signals(object):
     def reset_alarm(self):
         return _signal.alarm(0)
 
-    def supported(self, signal_name):
-        """Return true value if ``signal_name`` exists on this platform."""
+    def supported(self, name):
+        """Return true value if signal by ``name`` exists on this platform."""
         try:
-            return self.signum(signal_name)
+            return self.signum(name)
         except AttributeError:
             pass
 
-    def signum(self, signal_name):
-        """Get signal number from signal name."""
-        if isinstance(signal_name, numbers.Integral):
-            return signal_name
-        if not isinstance(signal_name, string_t) \
-                or not signal_name.isupper():
+    def signum(self, name):
+        """Get signal number by name."""
+        if isinstance(name, numbers.Integral):
+            return name
+        if not isinstance(name, string_t) \
+                or not name.isupper():
             raise TypeError('signal name must be uppercase string.')
-        if not signal_name.startswith('SIG'):
-            signal_name = 'SIG' + signal_name
-        return getattr(_signal, signal_name)
+        if not name.startswith('SIG'):
+            name = 'SIG' + name
+        return getattr(_signal, name)
 
     def reset(self, *signal_names):
         """Reset signals to the default signal handler.
@@ -649,32 +651,32 @@ class Signals(object):
         """
         self.update((sig, self.default) for sig in signal_names)
 
-    def ignore(self, *signal_names):
+    def ignore(self, *names):
         """Ignore signal using :const:`SIG_IGN`.
 
         Does nothing if the platform has no support for signals,
         or the specified signal in particular.
         """
-        self.update((sig, self.ignored) for sig in signal_names)
+        self.update((sig, self.ignored) for sig in names)
 
-    def __getitem__(self, signal_name):
-        return _signal.getsignal(self.signum(signal_name))
+    def __getitem__(self, name):
+        return _signal.getsignal(self.signum(name))
 
-    def __setitem__(self, signal_name, handler):
+    def __setitem__(self, name, handler):
         """Install signal handler.
 
         Does nothing if the current platform has no support for signals,
         or the specified signal in particular.
         """
         try:
-            _signal.signal(self.signum(signal_name), handler)
+            _signal.signal(self.signum(name), handler)
         except (AttributeError, ValueError):
             pass
 
     def update(self, _d_=None, **sigmap):
         """Set signal handlers from a mapping."""
-        for signal_name, handler in items(dict(_d_ or {}, **sigmap)):
-            self[signal_name] = handler
+        for name, handler in items(dict(_d_ or {}, **sigmap)):
+            self[name] = handler
 
 signals = Signals()
 get_signal = signals.signum                   # compat
@@ -770,7 +772,7 @@ def check_privileges(accept_content):
     if hasattr(os, 'fchown'):
         if not all(hasattr(os, attr)
                    for attr in ['getuid', 'getgid', 'geteuid', 'getegid']):
-            raise AssertionError('suspicious platform, contact support')
+            raise SecurityError('suspicious platform, contact support')
 
     if not uid or not gid or not euid or not egid:
         if ('pickle' in accept_content or

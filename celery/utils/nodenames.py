@@ -64,9 +64,9 @@ def anon_nodename(hostname=None, prefix='gen'):
                     hostname or gethostname())
 
 
-def nodesplit(nodename):
+def nodesplit(name):
     """Split node name into tuple of name/hostname."""
-    parts = nodename.split(NODENAME_SEP, 1)
+    parts = name.split(NODENAME_SEP, 1)
     if len(parts) == 1:
         return None, parts[0]
     return parts
@@ -78,11 +78,11 @@ def default_nodename(hostname):
     return nodename(name or NODENAME_DEFAULT, host or gethostname())
 
 
-def node_format(s, nodename, **extra):
+def node_format(s, name, **extra):
     """Format worker node name (name@host.com)."""
-    name, host = nodesplit(nodename)
+    shortname, host = nodesplit(name)
     return host_format(
-        s, host, name or NODENAME_DEFAULT, p=nodename, **extra)
+        s, host, shortname or NODENAME_DEFAULT, p=name, **extra)
 
 
 def _fmt_process_index(prefix='', default='0'):

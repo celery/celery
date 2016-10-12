@@ -190,7 +190,8 @@ class Backend(object):
                                  traceback=traceback, request=request)
 
     def chord_error_from_stack(self, callback, exc=None):
-        from celery import group
+        # need below import for test for some crazy reason
+        from celery import group  # pylint: disable
         app = self.app
         backend = app._tasks[callback.task].backend
         try:
@@ -199,7 +200,7 @@ class Backend(object):
                  for errback in callback.options.get('link_error') or []],
                 app=app,
             ).apply_async((callback.id,))
-        except Exception as eb_exc:
+        except Exception as eb_exc:  # pylint: disable=broad-except
             return backend.fail_from_current_stack(callback.id, exc=eb_exc)
         else:
             return backend.fail_from_current_stack(callback.id, exc=exc)
@@ -212,7 +213,7 @@ class Backend(object):
             self.mark_as_failure(task_id, exc, ei.traceback)
             return ei
         finally:
-            del(tb)
+            del tb
 
     def prepare_exception(self, exc, serializer=None):
         """Prepare exception for serialization."""
@@ -675,7 +676,7 @@ class BaseKeyValueStoreBackend(Backend):
         key = self.get_key_for_chord(gid)
         try:
             deps = GroupResult.restore(gid, backend=self)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             callback = maybe_signature(request.chord, app=app)
             logger.exception('Chord %r raised: %r', gid, exc)
             return self.chord_error_from_stack(
@@ -703,7 +704,7 @@ class BaseKeyValueStoreBackend(Backend):
             try:
                 with allow_join_result():
                     ret = j(timeout=3.0, propagate=True)
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-except
                 try:
                     culprit = next(deps._failed_join_report())
                     reason = 'Dependency {0.id} raised {1!r}'.format(
@@ -717,7 +718,7 @@ class BaseKeyValueStoreBackend(Backend):
             else:
                 try:
                     callback.delay(ret)
-                except Exception as exc:
+                except Exception as exc:  # pylint: disable=broad-except
                     logger.exception('Chord %r raised: %r', gid, exc)
                     self.chord_error_from_stack(
                         callback,

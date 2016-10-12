@@ -29,7 +29,7 @@ __all__ = [
     'Celery', 'bugreport', 'shared_task', 'task',
     'current_app', 'current_task', 'maybe_signature',
     'chain', 'chord', 'chunks', 'group', 'signature',
-    'xmap', 'xstarmap', 'uuid', 'version', '__version__',
+    'xmap', 'xstarmap', 'uuid',
 ]
 
 VERSION_BANNER = '{0} ({1})'.format(__version__, SERIES)
@@ -44,8 +44,8 @@ _temp = re.match(
     r'(\d+)\.(\d+).(\d+)(.+)?', __version__).groups()
 VERSION = version_info = version_info_t(
     int(_temp[0]), int(_temp[1]), int(_temp[2]), _temp[3] or '', '')
-del(_temp)
-del(re)
+del _temp
+del re
 
 if os.environ.get('C_IMPDEBUG'):  # pragma: no cover
     from .five import builtins
@@ -109,14 +109,15 @@ def _patch_eventlet():
 
 
 def _patch_gevent():
-    from gevent import monkey, signal as gsignal, version_info
+    import gevent
+    from gevent import monkey, signal as gevent_signal
 
     monkey.patch_all()
-    if version_info[0] == 0:  # pragma: no cover
+    if gevent.version_info[0] == 0:  # pragma: no cover
         # Signals aren't working in gevent versions <1.0,
         # and aren't monkey patched by patch_all()
         _signal = __import__('signal')
-        _signal.signal = gsignal
+        _signal.signal = gevent_signal
 
 
 def maybe_patch_concurrency(argv=sys.argv,

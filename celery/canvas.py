@@ -200,23 +200,25 @@ class Signature(dict):
         init = dict.__init__
 
         if isinstance(task, dict):
-            return init(self, task)  # works like dict(d)
-
-        # Also supports using task class/instance instead of string name.
-        try:
-            task_name = task.name
-        except AttributeError:
-            task_name = task
+            init(self, task)  # works like dict(d)
         else:
-            self._type = task
+            # Also supports using task class/instance instead of string name.
+            try:
+                task_name = task.name
+            except AttributeError:
+                task_name = task
+            else:
+                self._type = task
 
-        init(self,
-             task=task_name, args=tuple(args or ()),
-             kwargs=kwargs or {},
-             options=dict(options or {}, **ex),
-             subtask_type=subtask_type,
-             immutable=immutable,
-             chord_size=None)
+            init(
+                self,
+                task=task_name, args=tuple(args or ()),
+                kwargs=kwargs or {},
+                options=dict(options or {}, **ex),
+                subtask_type=subtask_type,
+                immutable=immutable,
+                chord_size=None,
+            )
 
     def __call__(self, *partial_args, **partial_kwargs):
         """Call the task directly (in the current process)."""

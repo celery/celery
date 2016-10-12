@@ -51,9 +51,9 @@ def iter_open_logger_fds():
     seen = set()
     loggers = (list(values(logging.Logger.manager.loggerDict)) +
                [logging.getLogger(None)])
-    for logger in loggers:
+    for l in loggers:
         try:
-            for handler in logger.handlers:
+            for handler in l.handlers:
                 try:
                     if handler not in seen:  # pragma: no cover
                         yield handler.stream
@@ -93,12 +93,17 @@ def logger_isa(l, p, max=1000):
     return False
 
 
+def _using_logger_parent(base_logger, logger_):
+    if not logger_isa(logger_, base_logger):
+        logger_.parent = base_logger
+    return logger_
+
+
 def get_logger(name):
     """Get logger by name."""
     l = _get_logger(name)
     if logging.root not in (l, l.parent) and l is not base_logger:
-        if not logger_isa(l, base_logger):  # pragma: no cover
-            l.parent = base_logger
+        l = _using_logger_parent(base_logger, l)
     return l
 task_logger = get_logger('celery.task')
 worker_logger = get_logger('celery.worker')
@@ -108,10 +113,7 @@ def get_task_logger(name):
     """Get logger for task module by name."""
     if name in RESERVED_LOGGER_NAMES:
         raise RuntimeError('Logger name {0!r} is reserved!'.format(name))
-    logger = get_logger(name)
-    if not logger_isa(logger, task_logger):
-        logger.parent = task_logger
-    return logger
+    return _using_logger_parent(task_logger, get_logger(name))
 
 
 def mlevel(level):
@@ -164,7 +166,7 @@ class ColorFormatter(logging.Formatter):
                     return safe_str(color(msg))
                 except UnicodeDecodeError:  # pragma: no cover
                     return safe_str(msg)  # skip colors
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-exc
                 prev_msg, record.exc_info, record.msg = (
                     record.msg, 1, '<Unrepresentable {0!r}: {1!r}>'.format(
                         type(msg), exc
@@ -193,6 +195,8 @@ class LoggingProxy(object):
     _thread = threading.local()
 
     def __init__(self, logger, loglevel=None):
+        # pylint: disable=redefined-outer-name
+        # Note that the logger global is redefined here, be careful changing.
         self.logger = logger
         self.loglevel = mlevel(loglevel or self.logger.level or self.loglevel)
         self._safewrap_handlers()
@@ -260,7 +264,7 @@ def get_multiprocessing_logger():
     try:
         from billiard import util
     except ImportError:  # pragma: no cover
-            pass
+        pass
     else:
         return util.get_logger()
 

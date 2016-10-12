@@ -218,7 +218,7 @@ class Scheduler(object):
         info('Scheduler: Sending due task %s (%s)', entry.name, entry.task)
         try:
             result = self.apply_async(entry, producer=producer, advance=False)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             error('Message Error: %s\n%s',
                   exc, traceback.format_stack(), exc_info=True)
         else:
@@ -242,6 +242,8 @@ class Scheduler(object):
         Returns:
             float: preferred delay in seconds for next call.
         """
+        # pylint disable=redefined-outer-name
+
         def _when(entry, next_time_to_run):
             return (mktime(entry.schedule.now().timetuple()) +
                     (adjust(next_time_to_run) or 0))
@@ -300,7 +302,7 @@ class Scheduler(object):
                 return self.send_task(entry.task, entry.args, entry.kwargs,
                                       producer=producer,
                                       **entry.options)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             reraise(SchedulingError, SchedulingError(
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
                     entry, exc=exc)), sys.exc_info()[2])
@@ -428,7 +430,7 @@ class PersistentScheduler(Scheduler):
             # successfully opened but the error will be raised on first key
             # retrieving.
             self._store.keys()
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             self._store = self._destroy_open_corrupted_schedule(exc)
 
         for _ in (1, 2):

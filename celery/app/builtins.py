@@ -34,6 +34,7 @@ def add_accumulate_task(app):
     def accumulate(self, *args, **kwargs):
         index = kwargs.get('index')
         return args[index] if index is not None else args
+    return accumulate
 
 
 @connect_on_app_finalize
@@ -79,7 +80,7 @@ def add_unlock_chord_task(app):
         try:
             with allow_join_result():
                 ret = j(timeout=3.0, propagate=True)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             try:
                 culprit = next(deps._failed_join_report())
                 reason = 'Dependency {0.id} raised {1!r}'.format(culprit, exc)
@@ -90,7 +91,7 @@ def add_unlock_chord_task(app):
         else:
             try:
                 callback.delay(ret)
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-except
                 logger.exception('Chord %r raised: %r', group_id, exc)
                 app.backend.chord_error_from_stack(
                     callback,

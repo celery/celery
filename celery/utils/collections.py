@@ -158,7 +158,7 @@ class DictAttribute(object):
         except KeyError:
             return default
 
-    def setdefault(self, key, default):
+    def setdefault(self, key, default=None):
         if key not in self:
             self[key] = default
 
@@ -284,7 +284,7 @@ class ChainMap(MutableMapping):
         return any(self.maps)
     __nonzero__ = __bool__  # Py2
 
-    def setdefault(self, key, default):
+    def setdefault(self, key, default=None):
         key = self._key(key)
         if key not in self:
             self[key] = default
@@ -308,6 +308,8 @@ class ChainMap(MutableMapping):
     def _iter(self, op):
         # defaults must be first in the stream, so values in
         # changes take precedence.
+        # pylint: disable=bad-reversed-sequence
+        #   Someone should teach pylint about properties.
         return chain(*[op(d) for d in reversed(self.maps)])
 
     def _iterate_keys(self):
@@ -481,10 +483,6 @@ class LimitedSet(object):
         self.expires = 0 if expires is None else expires
         self._data = {}
         self._heap = []
-
-        # make shortcuts
-        self.__len__ = self._data.__len__
-        self.__contains__ = self._data.__contains__
 
         if data:
             # import items from data
@@ -787,7 +785,7 @@ class BufferMap(OrderedDict, Evictable):
         return self[self._LRUkey()].take(*default)
 
     def _pop_to_evict(self):
-        for i in range(100):
+        for _ in range(100):
             key = self._LRUkey()
             buf = self[key]
             try:

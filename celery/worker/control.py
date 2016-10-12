@@ -147,6 +147,9 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
         terminate (bool): Also terminate the process if the task is active.
         signal (str): Name of signal to use for terminate (e.g., ``KILL``).
     """
+    # pylint: disable=redefined-outer-name
+    # XXX Note that this redefines `terminate`:
+    #     Outside of this scope that is a function.
     # supports list argument since 3.1
     task_ids, task_id = set(maybe_list(task_id) or []), None
     size = len(task_ids)
@@ -196,6 +199,9 @@ def rate_limit(state, task_name, rate_limit, **kwargs):
         task_name (str): Type of task to set rate limit for.
         rate_limit (int, str): New rate limit.
     """
+    # pylint: disable=redefined-outer-name
+    # XXX Note that this redefines `terminate`:
+    #     Outside of this scope that is a function.
     try:
         rate(rate_limit)
     except ValueError as exc:
@@ -303,6 +309,9 @@ def heartbeat(state):
 @inspect_command(visible=False)
 def hello(state, from_node, revoked=None, **kwargs):
     """Request mingle sync-data."""
+    # pylint: disable=redefined-outer-name
+    # XXX Note that this redefines `revoked`:
+    #     Outside of this scope that is a function.
     if from_node != state.hostname:
         logger.info('sync with %s', from_node)
         if revoked:
@@ -419,14 +428,14 @@ def objgraph(state, num=200, max_depth=10, type='Request'):  # pragma: no cover
         type (str): Name of object to graph.  Default is ``"Request"``.
     """
     try:
-        import objgraph
+        import objgraph as _objgraph
     except ImportError:
         raise ImportError('Requires the objgraph library')
     logger.info('Dumping graph for type %r', type)
     with tempfile.NamedTemporaryFile(prefix='cobjg',
                                      suffix='.png', delete=False) as fh:
-        objects = objgraph.by_type(type)[:num]
-        objgraph.show_backrefs(
+        objects = _objgraph.by_type(type)[:num]
+        _objgraph.show_backrefs(
             objects,
             max_depth=max_depth, highlight=lambda v: v in objects,
             filename=fh.name,
@@ -447,9 +456,9 @@ def memsample(state, **kwargs):
 )
 def memdump(state, samples=10, **kwargs):  # pragma: no cover
     """Dump statistics of previous memsample requests."""
-    from celery.utils.debug import memdump
+    from celery.utils import debug
     out = io.StringIO()
-    memdump(file=out)
+    debug.memdump(file=out)
     return out.getvalue()
 
 # -- Pool

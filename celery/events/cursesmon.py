@@ -41,7 +41,6 @@ class CursesMonitor(object):  # pragma: no cover
 
     keymap = {}
     win = None
-    screen_width = None
     screen_delay = 10
     selected_task = None
     selected_position = 0
@@ -152,7 +151,7 @@ class CursesMonitor(object):  # pragma: no cover
     def handle_keypress(self):
         try:
             key = self.win.getkey().upper()
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             return
         key = self.keyalias.get(key) or key
         handler = self.keymap.get(key)
@@ -174,7 +173,7 @@ class CursesMonitor(object):  # pragma: no cover
         while 1:
             try:
                 return self.win.getkey().upper()
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 pass
 
     def selection_rate_limit(self):

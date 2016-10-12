@@ -40,7 +40,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
             if executable is not None:
                 path = executable
             os.execv(path, [path] + argv)
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             if app is None:
                 from celery import current_app
                 app = current_app
@@ -154,7 +154,7 @@ class detached_celeryd(object):
                     seen_cargs = 1
                     config.append(arg)
         prog_name = os.path.basename(argv[0])
-        options, values, leftovers = self.parse_options(prog_name, argv[1:])
+        options, _, leftovers = self.parse_options(prog_name, argv[1:])
         sys.exit(detach(
             app=self.app, path=self.execv_path,
             argv=self.execv_argv + leftovers + config,

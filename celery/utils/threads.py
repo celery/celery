@@ -70,7 +70,7 @@ class bgThread(threading.Thread):
             while not shutdown_set():
                 try:
                     body()
-                except Exception as exc:
+                except Exception as exc:  # pylint: disable=broad-except
                     try:
                         self.on_crash('{0!r} crashed: {1!r}', self.name, exc)
                         self._set_stopped()
@@ -209,6 +209,8 @@ class _LocalStack(object):
         """Push a new item to the stack."""
         rv = getattr(self._local, 'stack', None)
         if rv is None:
+            # pylint: disable=assigning-non-slot
+            # This attribute is defined now.
             self._local.stack = rv = []
         rv.append(obj)
         return rv

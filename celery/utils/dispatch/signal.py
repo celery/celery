@@ -168,7 +168,7 @@ class Signal(object):  # pragma: no cover
         for receiver in self._live_receivers(_make_id(sender)):
             try:
                 response = receiver(signal=self, sender=sender, **named)
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-except
                 logger.exception(
                     'Signal handler %r raised: %r', receiver, exc)
             else:
@@ -184,7 +184,7 @@ class Signal(object):  # pragma: no cover
         none_senderkey = _make_id(None)
         receivers = []
 
-        for (receiverkey, r_senderkey), receiver in self.receivers:
+        for (_, r_senderkey), receiver in self.receivers:
             if r_senderkey == none_senderkey or r_senderkey == senderkey:
                 if isinstance(receiver, WEAKREF_TYPES):
                     # Dereference the weak reference.

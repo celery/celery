@@ -99,7 +99,7 @@ def _after_fork_cleanup_app(app):
     # so need to be at module level.
     try:
         app._after_fork()
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-except
         logger.info('after forker raised exception: %r', exc, exc_info=1)
 
 
@@ -826,14 +826,14 @@ class Celery(object):
         """
         return self.amqp.queues.select(queues)
 
-    def either(self, default_key, *values):
+    def either(self, default_key, *defaults):
         """Get key from configuration or use default values.
 
         Fallback to the value of a configuration key if none of the
         `*values` are true.
         """
         return first(None, [
-            first(None, values), starpromise(self.conf.get, default_key),
+            first(None, defaults), starpromise(self.conf.get, default_key),
         ])
 
     def bugreport(self):

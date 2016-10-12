@@ -54,7 +54,7 @@ def crawl(url, seen=None):
     with Timeout(5, False):
         try:
             response = requests.get(url)
-        except Exception:
+        except requests.exception.RequestError:
             return
 
     location = domain(url)

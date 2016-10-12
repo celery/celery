@@ -128,8 +128,8 @@ def chunks(it, n):
         >>> list(x)
         [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10]]
     """
-    for first in it:
-        yield [first] + list(islice(it, n - 1))
+    for item in it:
+        yield [item] + list(islice(it, n - 1))
 
 
 def padlist(container, size, default=None):
@@ -179,6 +179,9 @@ class _regen(UserList, list):
     # must be subclass of list so that json can encode.
 
     def __init__(self, it):
+        # pylint: disable=super-init-not-called
+        # UserList creates a new list and sets .data, so we don't
+        # want to call init here.
         self.__it = it
         self.__index = 0
         self.__consumed = []
@@ -199,7 +202,7 @@ class _regen(UserList, list):
             return self.__consumed[index]
         except IndexError:
             try:
-                for i in range(self.__index, index + 1):
+                for _ in range(self.__index, index + 1):
                     self.__consumed.append(next(self.__it))
             except StopIteration:
                 raise IndexError(index)
@@ -251,6 +254,8 @@ def head_from_fun(fun, bound=False, debug=False):
     if debug:  # pragma: no cover
         print(definition, file=sys.stderr)
     namespace = {'__name__': fun.__module__}
+    # pylint: disable=use-of-exec
+    # Tasks are rarely, if ever, created at runtime - exec here is fine.
     exec(definition, namespace)
     result = namespace[name]
     result._source = definition

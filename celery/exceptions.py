@@ -66,7 +66,7 @@ class Retry(TaskPredicate):
         else:
             self.exc, self.excs = exc, safe_repr(exc) if exc else None
         self.when = when
-        Exception.__init__(self, exc, when, **kwargs)
+        super(Retry, self).__init__(self, exc, when, **kwargs)
 
     def humanize(self):
         if isinstance(self.when, numbers.Number):

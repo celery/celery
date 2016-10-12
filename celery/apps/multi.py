@@ -48,7 +48,7 @@ def build_nodename(name, prefix, suffix):
 def build_expander(nodename, shortname, hostname):
     return partial(
         node_format,
-        nodename=nodename,
+        name=nodename,
         N=shortname,
         d=hostname,
         h=nodename,
