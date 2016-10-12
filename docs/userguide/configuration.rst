@@ -1902,11 +1902,18 @@ it's replaced with a new one. Default is no limit.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: No limit.
+Type: int (kilobytes)
 
-Maximum amount of resident memory that may be consumed by a
+Maximum amount of resident memory, in kilobytes, that may be consumed by a
 worker before it will be replaced by a new worker. If a single
 task causes a worker to exceed this limit, the task will be
 completed, and the worker will be replaced afterwards.
+
+Example:
+
+.. code-block:: python
+
+    worker_max_memory_per_child = 12000  # 12MB
 
 .. setting:: worker_disable_rate_limits
 
