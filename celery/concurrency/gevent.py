@@ -11,7 +11,7 @@ except ImportError:  # pragma: no cover
 from kombu.async import timer as _timer
 from kombu.five import monotonic
 
-from .base import apply_target, BasePool
+from . import base
 
 __all__ = ['TaskPool']
 
@@ -19,7 +19,7 @@ __all__ = ['TaskPool']
 def apply_timeout(target, args=(), kwargs={}, callback=None,
                   accept_callback=None, pid=None, timeout=None,
                   timeout_callback=None, Timeout=Timeout,
-                  apply_target=apply_target, **rest):
+                  apply_target=base.apply_target, **rest):
     try:
         with Timeout(timeout):
             return apply_target(target, args, kwargs, callback,
@@ -42,7 +42,7 @@ class Timer(_timer.Timer):
         super(Timer, self).__init__(*args, **kwargs)
         self._queue = set()
 
-    def _enter(self, eta, priority, entry):
+    def _enter(self, eta, priority, entry, **kwargs):
         secs = max(eta - monotonic(), 0)
         g = self._Greenlet.spawn_later(secs, entry)
         self._queue.add(g)
@@ -72,7 +72,7 @@ class Timer(_timer.Timer):
         return self._queue
 
 
-class TaskPool(BasePool):
+class TaskPool(base.BasePool):
     """GEvent Pool."""
 
     Timer = Timer
@@ -80,6 +80,8 @@ class TaskPool(BasePool):
     signal_safe = False
     is_green = True
     task_join_will_block = False
+    _pool = None
+    _quick_put = None
 
     def __init__(self, *args, **kwargs):
         from gevent import spawn_raw

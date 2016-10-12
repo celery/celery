@@ -49,7 +49,7 @@ class Timer(_timer.Timer):
         self._spawn_after = spawn_after
         self._queue = set()
 
-    def _enter(self, eta, priority, entry):
+    def _enter(self, eta, priority, entry, **kwargs):
         secs = max(eta - monotonic(), 0)
         g = self._spawn_after(secs, entry)
         self._queue.add(g)
@@ -97,6 +97,8 @@ class TaskPool(base.BasePool):
     signal_safe = False
     is_green = True
     task_join_will_block = False
+    _pool = None
+    _quick_put = None
 
     def __init__(self, *args, **kwargs):
         from eventlet import greenthread

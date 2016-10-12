@@ -37,5 +37,9 @@ pylint:
         - dangerous-default-value
         - unused-argument
         - protected-access
+        - invalid-name
+        - too-many-instance-attributes
+        - bad-builtin
+        - abstract-method
     options:
         exclude-protected: _reader, _writer, _popen, _sentinel_poll, _job, _is_alive, _write_to, _scheduled_for, _terminated, _accepted, _set_terminated, _payload, _cancel
