@@ -205,11 +205,11 @@ NAMESPACES = Namespace(
         compression=Option(type='string', old={'celery_message_compression'}),
         create_missing_queues=Option(True, type='bool'),
         default_delivery_mode=Option(2, type='string'),
-        default_exchange=Option('celery'),
-        default_exchange_type=Option('direct'),
         default_queue=Option('celery'),
+        default_exchange=Option(None, type='string'),  # taken from queue
+        default_exchange_type=Option('direct'),
+        default_routing_key=Option(None, type='string'),  # taken from queue
         default_rate_limit=Option(type='string'),
-        default_routing_key=Option('celery'),
         eager_propagates=Option(
             False, type='bool', old={'celery_eager_propagates_exceptions'},
         ),

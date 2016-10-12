@@ -106,6 +106,20 @@ class Settings(ConfigurationView):
         )
 
     @property
+    def task_default_exchange(self):
+        return self.first(
+            'task_default_exchange',
+            'task_default_queue',
+        )
+
+    @property
+    def task_default_routing_key(self):
+        return self.first(
+            'task_default_routing_key',
+            'task_default_queue',
+        )
+
+    @property
     def timezone(self):
         # this way we also support django's time zone.
         return self.first('timezone', 'time_zone')

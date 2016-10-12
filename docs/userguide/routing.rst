@@ -89,12 +89,7 @@ configuration:
 
 .. code-block:: python
 
-    from kombu import Exchange, Queue
-
     app.conf.task_default_queue = 'default'
-    app.conf.task_queues = (
-        Queue('default', Exchange('default'), routing_key='default'),
-    )
 
 .. _routing-autoqueue-details:
 
