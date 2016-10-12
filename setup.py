@@ -51,39 +51,6 @@ if PY26_OR_LESS:
 elif PY33_OR_LESS and not PYPY24_ATLEAST:
     raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '3.4'))
 
-# -*- Upgrading from older versions -*-
-
-downgrade_packages = [
-    'celery.app.task',
-]
-orig_path = sys.path[:]
-for path in (os.path.curdir, os.getcwd()):
-    if path in sys.path:
-        sys.path.remove(path)
-try:
-    import imp
-    import shutil
-    for pkg in downgrade_packages:
-        try:
-            parent, module = pkg.rsplit('.', 1)
-            print('- Trying to upgrade %r in %r' % (module, parent))
-            parent_mod = __import__(parent, None, None, [parent])
-            _, mod_path, _ = imp.find_module(module, parent_mod.__path__)
-            if mod_path.endswith('/' + module):
-                print('- force upgrading previous installation')
-                print('  - removing {0!r} package...'.format(mod_path))
-                try:
-                    shutil.rmtree(os.path.abspath(mod_path))
-                except Exception:
-                    sys.stderr.write('Could not remove {0!r}: {1!r}\n'.format(
-                        mod_path, sys.exc_info[1]))
-        except ImportError:
-            print('- upgrade %s: no old version found.' % module)
-except:
-    pass
-finally:
-    sys.path[:] = orig_path
-
 # -*- Classifiers -*-
 
 classes = """
