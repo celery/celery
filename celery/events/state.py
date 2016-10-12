@@ -300,6 +300,8 @@ class Task(object):
         )
         self._serializer_handlers = {
             'children': self._serializable_children,
+            'root': self._serializable_root,
+            'parent': self._serializable_parent,
         }
         if kwargs:
             self.__dict__.update(kwargs)
@@ -358,6 +360,12 @@ class Task(object):
 
     def _serializable_children(self, value):
         return [task.id for task in self.children]
+
+    def _serializable_root(self, value):
+        return self.root_id
+
+    def _serializable_parent(self, value):
+        return self.parent_id
 
     def __reduce__(self):
         return _depickle_task, (self.__class__, self.as_dict())
