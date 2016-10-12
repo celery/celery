@@ -482,7 +482,8 @@ class Consumer(object):
             id_, name = message.headers['id'], message.headers['task']
             root_id = message.headers.get('root_id')
         except KeyError:  # proto1
-            id_, name = body['id'], body['task']
+            payload = message.payload
+            id_, name = payload['id'], payload['task']
             root_id = None
         request = Bunch(
             name=name, chord=None, root_id=root_id,
