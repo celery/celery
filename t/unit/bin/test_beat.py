@@ -144,4 +144,4 @@ class test_div:
         cmd = beat_bin.beat()
         cmd.app = self.app
         options, args = cmd.parse_options('celery beat', ['-s', 'foo'])
-        assert options.schedule == 'foo'
+        assert options['schedule'] == 'foo'

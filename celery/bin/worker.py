@@ -22,8 +22,8 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: -n, --hostname
 
-    Set custom hostname (e.g., 'w1@%h').  Expands: %h (hostname),
-    %n (name) and %d, (domain).
+    Set custom hostname (e.g., 'w1@%%h').  Expands: %%h (hostname),
+    %%n (name) and %%d, (domain).
 
 .. cmdoption:: -B, --beat
 
@@ -170,8 +170,6 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 
-from optparse import OptionGroup
-
 from celery import concurrency
 from celery.bin.base import Command, daemon_options
 from celery.bin.celeryd_detach import detached_celeryd
@@ -182,7 +180,7 @@ from celery.utils.nodenames import default_nodename
 
 __all__ = ['worker', 'main']
 
-__MODULE_DOC__ = __doc__
+HELP = __doc__
 
 
 class worker(Command):
@@ -198,7 +196,7 @@ class worker(Command):
             $ celery worker -A proj --concurrency=1000 -P eventlet
     """
 
-    doc = __MODULE_DOC__  # parse help from this too
+    doc = HELP  # parse help from this too
     namespace = 'worker'
     enable_config_from_cmdline = True
     supports_args = False
@@ -255,94 +253,88 @@ class worker(Command):
         # that may have to be loaded as early as possible.
         return (['-P'], ['--pool'])
 
-    def prepare_arguments(self, parser):
+    def add_arguments(self, parser):
         conf = self.app.conf
 
-        wopts = OptionGroup(parser, 'Worker Options')
-        wopts.add_option('-n', '--hostname')
-        wopts.add_option('-D', '--detach', action='store_true')
-        wopts.add_option(
+        wopts = parser.add_argument_group('Worker Options')
+        wopts.add_argument('-n', '--hostname')
+        wopts.add_argument('-D', '--detach', action='store_true')
+        wopts.add_argument(
             '-S', '--statedb',
             default=conf.worker_state_db,
         )
-        wopts.add_option('-l', '--loglevel', default='WARN')
-        wopts.add_option('-O', dest='optimization')
-        wopts.add_option(
+        wopts.add_argument('-l', '--loglevel', default='WARN')
+        wopts.add_argument('-O', dest='optimization')
+        wopts.add_argument(
             '--prefetch-multiplier',
-            type='int', default=conf.worker_prefetch_multiplier,
+            type=int, default=conf.worker_prefetch_multiplier,
         )
-        parser.add_option_group(wopts)
 
-        topts = OptionGroup(parser, 'Pool Options')
-        topts.add_option(
+        topts = parser.add_argument_group('Pool Options')
+        topts.add_argument(
             '-c', '--concurrency',
-            default=conf.worker_concurrency, type='int',
+            default=conf.worker_concurrency, type=int,
         )
-        topts.add_option(
+        topts.add_argument(
             '-P', '--pool',
             default=conf.worker_pool,
         )
-        topts.add_option(
+        topts.add_argument(
             '-E', '--task-events', '--events',
             action='store_true', default=conf.worker_send_task_events,
         )
-        topts.add_option(
+        topts.add_argument(
             '--time-limit',
-            type='float', default=conf.task_time_limit,
+            type=float, default=conf.task_time_limit,
         )
-        topts.add_option(
+        topts.add_argument(
             '--soft-time-limit',
-            type='float', default=conf.task_soft_time_limit,
+            type=float, default=conf.task_soft_time_limit,
         )
-        topts.add_option(
+        topts.add_argument(
             '--max-tasks-per-child', '--maxtasksperchild',
-            type='int', default=conf.worker_max_tasks_per_child,
+            type=int, default=conf.worker_max_tasks_per_child,
         )
-        topts.add_option(
+        topts.add_argument(
             '--max-memory-per-child', '--maxmemperchild',
-            type='int', default=conf.worker_max_memory_per_child,
+            type=int, default=conf.worker_max_memory_per_child,
         )
-        parser.add_option_group(topts)
 
-        qopts = OptionGroup(parser, 'Queue Options')
-        qopts.add_option(
+        qopts = parser.add_argument_group('Queue Options')
+        qopts.add_argument(
             '--purge', '--discard',
             default=False, action='store_true',
         )
-        qopts.add_option('--queues', '-Q', default=[])
-        qopts.add_option('--exclude-queues', '-X', default=[])
-        qopts.add_option('--include', '-I', default=[])
-        parser.add_option_group(qopts)
+        qopts.add_argument('--queues', '-Q', default=[])
+        qopts.add_argument('--exclude-queues', '-X', default=[])
+        qopts.add_argument('--include', '-I', default=[])
 
-        fopts = OptionGroup(parser, 'Features')
-        fopts.add_option(
+        fopts = parser.add_argument_group('Features')
+        fopts.add_argument(
             '--without-gossip', action='store_true', default=False,
         )
-        fopts.add_option(
+        fopts.add_argument(
             '--without-mingle', action='store_true', default=False,
         )
-        fopts.add_option(
+        fopts.add_argument(
             '--without-heartbeat', action='store_true', default=False,
         )
-        fopts.add_option('--heartbeat-interval', type='int')
-        parser.add_option_group(fopts)
+        fopts.add_argument('--heartbeat-interval', type=int)
 
         daemon_options(parser)
 
-        bopts = OptionGroup(parser, 'Embedded Beat Options')
-        bopts.add_option('-B', '--beat', action='store_true')
-        bopts.add_option(
+        bopts = parser.add_argument_group('Embedded Beat Options')
+        bopts.add_argument('-B', '--beat', action='store_true')
+        bopts.add_argument(
             '-s', '--schedule-filename', '--schedule',
             default=conf.beat_schedule_filename,
         )
-        bopts.add_option('--scheduler')
-        parser.add_option_group(bopts)
+        bopts.add_argument('--scheduler')
 
         user_options = self.app.user_options['worker']
         if user_options:
-            uopts = OptionGroup(parser, 'User Options')
-            uopts.option_list.extend(user_options)
-            parser.add_option_group(uopts)
+            uopts = parser.add_argument_group('User Options')
+            self.add_compat_options(uopts, user_options)
 
 
 def main(app=None):

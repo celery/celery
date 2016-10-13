@@ -698,24 +698,25 @@ You can add additional command-line options to the ``worker``, ``beat``, and
 ``events`` commands by modifying the :attr:`~@user_options` attribute of the
 application instance.
 
-Celery commands uses the :mod:`optparse` module to parse command-line
-arguments, and so you have to use :mod:`optparse` specific option instances created
-using :func:`optparse.make_option`. Please see the :mod:`optparse`
-documentation to read about the fields supported.
+Celery commands uses the :mod:`argparse` module to parse command-line
+arguments, and so to add custom arguments you need to specify a callback
+that takes a :class:`argparse.ArgumentParser` instance - and adds arguments.
+Please see the :mod:`argparse` documentation to read about the fields supported.
 
 Example adding a custom option to the :program:`celery worker` command:
 
 .. code-block:: python
 
     from celery import Celery
-    from celery.bin import Option  # <-- alias to optparse.make_option
 
     app = Celery(broker='amqp://')
 
-    app.user_options['worker'].add(
-        Option('--enable-my-option', action='store_true', default=False,
-               help='Enable custom option.'),
-    )
+    def add_worker_arguments(parser):
+        parser.add_argument(
+            '--enable-my-option', action='store_true', default=False,
+            help='Enable custom option.',
+        ),
+    app.user_options['worker'].add(add_worker_arguments)
 
 
 All bootsteps will now receive this argument as a keyword argument to
@@ -755,10 +756,13 @@ template:
     from celery.bin import Option
 
     app = Celery()
-    app.user_options['preload'].add(
-        Option('-Z', '--template', default='default',
-               help='Configuration template to use.'),
-    )
+
+    def add_preload_options(parser):
+        parser.add_argument(
+            '-Z', '--template', default='default',
+            help='Configuration template to use.',
+        )
+    app.user_options['preload'].add(add_preload_options)
 
     @signals.user_preload_options.connect
     def on_preload_parsed(options, **kwargs):
@@ -816,17 +820,18 @@ something like this:
 
 .. code-block:: python
 
-    from celery.bin.base import Command, Option
+    from celery.bin.base import Command
 
 
     class FlowerCommand(Command):
 
-        def get_options(self):
-            return (
-                Option('--port', default=8888, type='int',
-                    help='Webserver port',
-                ),
-                Option('--debug', action='store_true'),
+        def add_arguments(self, parser):
+            parser.add_argument(
+                '--port', default=8888, type='int',
+                help='Webserver port',
+            ),
+            parser.add_argument(
+                '--debug', action='store_true',
             )
 
         def run(self, port=None, debug=False, **kwargs):

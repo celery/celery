@@ -76,6 +76,8 @@ from celery.bin.base import Command, daemon_options
 
 __all__ = ['events']
 
+HELP = __doc__
+
 
 class events(Command):
     """Event-stream utilities.
@@ -99,7 +101,7 @@ class events(Command):
             $ celery events -c mod.attr -F 1.0 --detach --maxrate=100/m -l info
     """
 
-    doc = __doc__
+    doc = HELP
     supports_args = False
 
     def run(self, dump=False, camera=None, frequency=1.0, maxrate=None,
@@ -149,16 +151,25 @@ class events(Command):
         info = '{0} {1}'.format(info, strargv(sys.argv))
         return set_process_title(prog, info=info)
 
-    def prepare_arguments(self, parser):
-        parser.add_option('-d', '--dump', action='store_true')
-        parser.add_option('-c', '--camera')
-        parser.add_option('--detach', action='store_true')
-        parser.add_option('-F', '--frequency', '--freq',
-                          type='float', default=1.0)
-        parser.add_option('-r', '--maxrate')
-        parser.add_option('-l', '--loglevel', default='INFO')
+    def add_arguments(self, parser):
+        dopts = parser.add_argument_group('Dumper')
+        dopts.add_argument('-d', '--dump', action='store_true')
+
+        copts = parser.add_argument_group('Snapshot')
+        copts.add_argument('-c', '--camera')
+        copts.add_argument('--detach', action='store_true')
+        copts.add_argument('-F', '--frequency', '--freq',
+                           type=float, default=1.0)
+        copts.add_argument('-r', '--maxrate')
+        copts.add_argument('-l', '--loglevel', default='INFO')
+
         daemon_options(parser, default_pidfile='celeryev.pid')
-        parser.add_options(self.app.user_options['events'])
+
+        user_options = self.app.user_options['events']
+        if user_options:
+            self.add_compat_options(
+                parser.add_argument_group('User Options'),
+                user_options)
 
 
 def main():

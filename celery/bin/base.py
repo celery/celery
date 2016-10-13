@@ -2,6 +2,7 @@
 """Base command-line interface."""
 from __future__ import absolute_import, print_function, unicode_literals
 
+import argparse
 import os
 import random
 import re
@@ -11,21 +12,30 @@ import json
 
 from collections import defaultdict
 from heapq import heappush
-from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
-from optparse import make_option as Option  # noqa
 from pprint import pformat
 
 from celery import VERSION_BANNER, Celery, maybe_patch_concurrency
 from celery import signals
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.five import (
-    getfullargspec, items, python_2_unicode_compatible, string, string_t,
+    getfullargspec, items, python_2_unicode_compatible,
+    string, string_t, text_t, long_t,
 )
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
 from celery.utils import imports
 from celery.utils import term
 from celery.utils import text
+from celery.utils.functional import dictfilter
 from celery.utils.nodenames import node_format, host_format
+from celery.utils.objects import Bunch
+
+
+# Option is here for backwards compatiblity, as third-party commands
+# may import it from here.
+try:
+    from optparse import Option  # pylint: disable=deprecated-module
+except ImportError:  # pragma: no cover
+    Option = None  # noqa
 
 try:
     input = raw_input
@@ -33,8 +43,7 @@ except NameError:  # pragma: no cover
     pass
 
 __all__ = [
-    'Error', 'UsageError', 'Extensions',
-    'HelpFormatter', 'Command', 'Option', 'daemon_options',
+    'Error', 'UsageError', 'Extensions', 'Command', 'Option', 'daemon_options',
 ]
 
 # always enable DeprecationWarnings, so our users can see them.
@@ -50,6 +59,48 @@ Try --help?
 find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
 find_rst_ref = re.compile(r':\w+:`(.+?)`')
 find_rst_decl = re.compile(r'^\s*\.\. .+?::.+$')
+
+
+def _optparse_callback_to_type(option, callback):
+    parser = Bunch(values=Bunch())
+
+    def _on_arg(value):
+        callback(option, None, value, parser)
+        return getattr(parser.values, option.dest)
+    return _on_arg
+
+
+def _add_optparse_argument(parser, opt, typemap={
+        'string': text_t,
+        'int': int,
+        'long': long_t,
+        'float': float,
+        'complex': complex,
+        'choice': None}):
+    if opt.callback:
+        opt.type = _optparse_callback_to_type(opt, opt.type)
+    # argparse checks for existence of this kwarg
+    if opt.action == 'callback':
+        opt.action = None
+    parser.add_argument(
+        *opt._long_opts + opt._short_opts,
+        **dictfilter(dict(
+            action=opt.action,
+            type=typemap.get(opt.type, opt.type),
+            dest=opt.dest,
+            nargs=opt.nargs,
+            choices=opt.choices,
+            help=opt.help,
+            metavar=opt.metavar,
+            default=opt.default)))
+
+
+def _add_compat_options(parser, options):
+    for option in options or ():
+        if callable(option):
+            option(parser)
+        else:
+            _add_optparse_argument(parser, option)
 
 
 @python_2_unicode_compatible
@@ -91,19 +142,6 @@ class Extensions(object):
         return self.names
 
 
-class HelpFormatter(IndentedHelpFormatter):
-    """Custom help formatter."""
-
-    def format_epilog(self, epilog):
-        if epilog:
-            return '\n{0}\n\n'.format(epilog)
-        return ''
-
-    def format_description(self, description):
-        return text.ensure_newlines(
-            text.fill_paragraphs(text.dedent(description), self.width))
-
-
 class Command(object):
     """Base class for command-line applications.
 
@@ -115,7 +153,7 @@ class Command(object):
 
     Error = Error
     UsageError = UsageError
-    Parser = OptionParser
+    Parser = argparse.ArgumentParser
 
     #: Arg list used in help.
     args = ''
@@ -128,7 +166,7 @@ class Command(object):
     supports_args = True
 
     #: List of options (without preload options).
-    option_list = ()
+    option_list = None
 
     # module Rst documentation to parse help from (if any)
     doc = None
@@ -136,17 +174,6 @@ class Command(object):
     # Some programs (multi) does not want to load the app specified
     # (Issue #1008).
     respects_app_option = True
-
-    #: List of options to parse before parsing other options.
-    preload_options = (
-        Option('-A', '--app', default=None),
-        Option('-b', '--broker', default=None),
-        Option('--loader', default=None),
-        Option('--config', default=None),
-        Option('--workdir', default=None),
-        Option('--no-color', '-C', action='store_true', default=None),
-        Option('--quiet', '-q', action='store_true'),
-    )
 
     #: Enable if the application should support config from the cmdline.
     enable_config_from_cmdline = False
@@ -257,11 +284,25 @@ class Command(object):
             maybe_patch_concurrency(argv, *pool_option)
 
     def usage(self, command):
-        return '%prog {0} [options] {self.args}'.format(command, self=self)
+        return '%(prog)s {0} [options] {self.args}'.format(command, self=self)
+
+    def add_arguments(self, parser):
+        pass
 
     def get_options(self):
-        """Get supported command-line options."""
+        # This is for optparse options, please use add_arguments.
         return self.option_list
+
+    def add_preload_options(self, parser):
+        group = parser.add_argument_group('Global Options')
+        group.add_argument('-A', '--app', default=None)
+        group.add_argument('-b', '--broker', default=None)
+        group.add_argument('--loader', default=None)
+        group.add_argument('--config', default=None)
+        group.add_argument('--workdir', default=None)
+        group.add_argument(
+            '--no-color', '-C', action='store_true', default=None)
+        group.add_argument('--quiet', '-q', action='store_true')
 
     def prepare_arguments(self, parser):
         pass
@@ -318,7 +359,7 @@ class Command(object):
         if options:
             options = {
                 k: self.expanduser(v)
-                for k, v in items(vars(options)) if not k.startswith('_')
+                for k, v in items(options) if not k.startswith('_')
             }
         args = [self.expanduser(arg) for arg in args]
         self.check_args(args)
@@ -348,33 +389,50 @@ class Command(object):
         # Don't want to load configuration to just print the version,
         # so we handle --version manually here.
         self.parser = self.create_parser(prog_name, command)
-        return self.parser.parse_args(arguments)
+        options = vars(self.parser.parse_args(arguments))
+        return options, options.pop('args', None) or []
 
     def create_parser(self, prog_name, command=None):
+        usage = self.usage(command)
+        # for compatibility with optparse usage.
+        usage.replace('%prog', '%(prog)s')
         parser = self.Parser(
             prog=prog_name,
             usage=self.usage(command),
             version=self.version,
-            epilog=self.epilog,
-            formatter=HelpFormatter(),
-            description=self.description,
+            epilog=self._format_epilog(self.epilog),
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            description=self._format_description(self.description),
         )
-        parser.add_options(self.preload_options)
-        for typ_ in reversed(type(self).mro()):
-            try:
-                prepare_arguments = typ_.prepare_arguments
-            except AttributeError:
-                continue
-            prepare_arguments(self, parser)
-        parser.add_options(self.get_options() or ())
-        parser.add_options(self.app.user_options['preload'])
+        self.add_preload_options(parser)
+        self.add_arguments(parser)
+        self.add_compat_options(parser, self.get_options())
+        self.add_compat_options(parser, self.app.user_options['preload'])
+
+        if self.supports_args:
+            # for backward compatibility with optparse, we automatically
+            # add arbitrary positional args.
+            parser.add_argument('args', nargs='*')
         return self.prepare_parser(parser)
+
+    def _format_epilog(self, epilog):
+        if epilog:
+            return '\n{0}\n\n'.format(epilog)
+        return ''
+
+    def _format_description(self, description):
+        width = argparse.HelpFormatter('prog')._width
+        return text.ensure_newlines(
+            text.fill_paragraphs(text.dedent(description), width))
+
+    def add_compat_options(self, parser, options):
+        _add_compat_options(parser, options)
 
     def prepare_parser(self, parser):
         docs = [self.parse_doc(doc) for doc in (self.doc, __doc__) if doc]
         for doc in docs:
             for long_opt, help in items(doc):
-                option = parser.get_option(long_opt)
+                option = parser._option_string_actions[long_opt]
                 if option is not None:
                     option.help = ' '.join(help).format(default=option.default)
         return parser
@@ -417,15 +475,17 @@ class Command(object):
         else:
             self.app = Celery(fixups=[])
 
+        self._handle_user_preload_options(argv)
+
+        return argv
+
+    def _handle_user_preload_options(self, argv):
         user_preload = tuple(self.app.user_options['preload'] or ())
         if user_preload:
-            user_options = self.preparse_options(argv, user_preload)
-            for user_option in user_preload:
-                user_options.setdefault(user_option.dest, user_option.default)
+            user_options = self._parse_preload_options(argv, user_preload)
             signals.user_preload_options.send(
                 sender=self, app=self.app, options=user_options,
             )
-        return argv
 
     def find_app(self, app):
         from celery.app.utils import find_app
@@ -445,7 +505,14 @@ class Command(object):
         return argv
 
     def parse_preload_options(self, args):
-        return self.preparse_options(args, self.preload_options)
+        return self._parse_preload_options(args, [self.add_preload_options])
+
+    def _parse_preload_options(self, args, options):
+        args = [arg for arg in args if arg not in ('-h', '--help')]
+        parser = argparse.ArgumentParser()
+        self.add_compat_options(parser, options)
+        namespace, _ = parser.parse_known_args(args)
+        return vars(namespace)
 
     def add_append_opt(self, acc, opt, value):
         default = opt.default or []
@@ -454,53 +521,6 @@ class Command(object):
             acc[opt.dest] = default
 
         acc[opt.dest].append(value)
-
-    def preparse_options(self, args, options):
-        acc = {}
-        opts = {}
-        for opt in options:
-            for t in (opt._long_opts, opt._short_opts):
-                opts.update(dict(zip(t, [opt] * len(t))))
-        index = 0
-        length = len(args)
-        while index < length:
-            arg = args[index]
-            if arg.startswith('--'):
-                if '=' in arg:
-                    key, value = arg.split('=', 1)
-                    opt = opts.get(key)
-                    if opt:
-                        if opt.action == 'append':
-                            self.add_append_opt(acc, opt, value)
-                        else:
-                            acc[opt.dest] = value
-                else:
-                    opt = opts.get(arg)
-                    if opt and opt.takes_value():
-                        # optparse also supports ['--opt', 'value']
-                        # (Issue #1668)
-                        if opt.action == 'append':
-                            self.add_append_opt(acc, opt, args[index + 1])
-                        else:
-                            acc[opt.dest] = args[index + 1]
-                        index += 1
-                    elif opt and opt.action == 'store_true':
-                        acc[opt.dest] = True
-            elif arg.startswith('-'):
-                opt = opts.get(arg)
-                if opt:
-                    if opt.takes_value():
-                        try:
-                            acc[opt.dest] = args[index + 1]
-                        except IndexError:
-                            raise ValueError(
-                                'Missing required argument for {0}'.format(
-                                    arg))
-                        index += 1
-                    elif opt.action == 'store_true':
-                        acc[opt.dest] = True
-            index += 1
-        return acc
 
     def parse_doc(self, doc):
         options, in_option = defaultdict(list), None
@@ -616,12 +636,11 @@ class Command(object):
 
 
 def daemon_options(parser, default_pidfile=None, default_logfile=None):
-    """Add daemon options to optparse parser."""
-    group = OptionGroup(parser, 'Daemonization Options')
-    group.add_option('-f', '--logfile', default=default_logfile),
-    group.add_option('--pidfile', default=default_pidfile),
-    group.add_option('--uid', default=None),
-    group.add_option('--gid', default=None),
-    group.add_option('--umask', default=None),
-    group.add_option('--executable', default=None),
-    parser.add_option_group(group)
+    """Add daemon options to argparse parser."""
+    group = parser.add_argument_group('Daemonization Options')
+    group.add_argument('-f', '--logfile', default=default_logfile),
+    group.add_argument('--pidfile', default=default_pidfile),
+    group.add_argument('--uid', default=None),
+    group.add_argument('--gid', default=None),
+    group.add_argument('--umask', default=None),
+    group.add_argument('--executable', default=None),

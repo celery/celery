@@ -9,10 +9,8 @@ from celery.bin.base import (
     Command,
     Option,
     Extensions,
-    HelpFormatter,
 )
 from celery.five import bytes_if_py2
-from celery.utils.objects import Bunch
 
 
 class MyApp(object):
@@ -25,7 +23,7 @@ class MockCommand(Command):
     mock_args = ('arg1', 'arg2', 'arg3')
 
     def parse_options(self, prog_name, arguments, command=None):
-        options = Bunch(foo='bar', prog_name=prog_name)
+        options = dict(foo='bar', prog_name=prog_name)
         return options, self.mock_args
 
     def run(self, *args, **kwargs):
@@ -61,18 +59,6 @@ class test_Extensions:
                     e.load()
 
 
-class test_HelpFormatter:
-
-    def test_format_epilog(self):
-        f = HelpFormatter()
-        assert f.format_epilog('hello')
-        assert not f.format_epilog('')
-
-    def test_format_description(self):
-        f = HelpFormatter()
-        assert f.format_description('hello')
-
-
 class test_Command:
 
     def test_get_options(self):
@@ -87,6 +73,13 @@ class test_Command:
 
         c = C()
         assert c.description == 'foo'
+
+    def test_format_epilog(self):
+        assert Command()._format_epilog('hello')
+        assert not Command()._format_epilog('')
+
+    def test_format_description(self):
+        assert Command()._format_description('hello')
 
     def test_register_callbacks(self):
         c = Command(on_error=8, on_usage_error=9)
@@ -304,22 +297,6 @@ class test_Command:
             '.prefetch_multiplier=100'])
         assert cmd.app is cmd.get_app()
 
-    def test_preparse_options__required_short(self, app):
-        cmd = MockCommand(app=app)
-        with pytest.raises(ValueError):
-            cmd.preparse_options(
-                ['a', '-f'], [Option('-f', action='store')])
-
-    def test_preparse_options__longopt_whitespace(self, app):
-        cmd = MockCommand(app=app)
-        cmd.preparse_options(
-            ['a', '--foo', 'val'], [Option('--foo', action='store')])
-
-    def test_preparse_options__shortopt_store_true(self, app):
-        cmd = MockCommand(app=app)
-        cmd.preparse_options(
-            ['a', '--foo'], [Option('--foo', action='store_true')])
-
     def test_get_default_app(self, app, patching):
         patching('celery._state.get_current_app')
         cmd = MockCommand(app=app)
@@ -357,15 +334,22 @@ class test_Command:
             assert cmd.find_app('proj') == 'quick brown fox'
 
     def test_parse_preload_options_shortopt(self):
-        cmd = Command()
-        cmd.preload_options = (Option('-s', action='store', dest='silent'),)
+
+        class TestCommand(Command):
+
+            def add_preload_options(self, parser):
+                parser.add_argument('-s', action='store', dest='silent')
+        cmd = TestCommand()
         acc = cmd.parse_preload_options(['-s', 'yes'])
         assert acc.get('silent') == 'yes'
 
     def test_parse_preload_options_with_equals_and_append(self):
+
+        class TestCommand(Command):
+
+            def add_preload_options(self, parser):
+                parser.add_argument('--zoom', action='append', default=[])
         cmd = Command()
-        opt = Option('--zoom', action='append', default=[])
-        cmd.preload_options = (opt,)
         acc = cmd.parse_preload_options(['--zoom=1', '--zoom=2'])
 
         assert acc, {'zoom': ['1' == '2']}

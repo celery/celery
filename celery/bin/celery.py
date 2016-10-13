@@ -277,7 +277,7 @@ from celery.utils.text import str_to_list
 from celery.utils.time import maybe_iso8601
 
 # Cannot use relative imports here due to a Windows issue (#1111).
-from celery.bin.base import Command, Option, Extensions
+from celery.bin.base import Command, Extensions
 
 # Import commands from other modules
 from celery.bin.amqp import amqp
@@ -341,9 +341,6 @@ class multi(Command):
 
     respects_app_option = False
 
-    def get_options(self):
-        pass
-
     def run_from_argv(self, prog_name, argv, command=None):
         from celery.bin.multi import MultiTool
         cmd = MultiTool(quiet=self.quiet, no_color=self.no_color)
@@ -382,7 +379,7 @@ class list_(Command):
         available = ', '.join(topics)
         if not what:
             raise self.UsageError(
-                'You must specify one of {0}'.format(available))
+                'Missing argument, specify one of: {0}'.format(available))
         if what not in topics:
             raise self.UsageError(
                 'unknown topic {0!r} (choose one of: {1})'.format(
@@ -404,18 +401,30 @@ class call(Command):
 
     args = '<task_name>'
 
-    option_list = Command.option_list + (
-        Option('--args', '-a', help='positional arguments (json).'),
-        Option('--kwargs', '-k', help='keyword arguments (json).'),
-        Option('--eta', help='scheduled time (ISO-8601).'),
-        Option('--countdown', type='float',
-               help='eta in seconds from now (float/int).'),
-        Option('--expires', help='expiry time (ISO-8601/float/int).'),
-        Option('--serializer', default='json', help='defaults to json.'),
-        Option('--queue', help='custom queue name.'),
-        Option('--exchange', help='custom exchange name.'),
-        Option('--routing-key', help='custom routing key.'),
-    )
+    def add_arguments(self, parser):
+        group = parser.add_argument_group('Calling Options')
+        group.add_argument('--args', '-a',
+                           help='positional arguments (json).')
+        group.add_argument('--kwargs', '-k',
+                           help='keyword arguments (json).')
+        group.add_argument('--eta',
+                           help='scheduled time (ISO-8601).')
+        group.add_argument(
+            '--countdown', type=float,
+            help='eta in seconds from now (float/int).',
+        )
+        group.add_argument(
+            '--expires',
+            help='expiry time (ISO-8601/float/int).',
+        ),
+        group.add_argument(
+            '--serializer', default='json',
+            help='defaults to json.'),
+
+        ropts = parser.add_argument_group('Routing Options')
+        ropts.add_argument('--queue', help='custom queue name.')
+        ropts.add_argument('--exchange', help='custom exchange name.')
+        ropts.add_argument('--routing-key', help='custom routing key.')
 
     def run(self, name, *_, **kwargs):
         self._send_task(name, **kwargs)
@@ -423,7 +432,7 @@ class call(Command):
     def _send_task(self, name, args=None, kwargs=None,
                    countdown=None, serializer=None,
                    queue=None, exchange=None, routing_key=None,
-                   eta=None, expires=None):
+                   eta=None, expires=None, **_):
         # arguments
         args = loads(args) if isinstance(args, string_t) else args
         kwargs = loads(kwargs) if isinstance(kwargs, string_t) else kwargs
@@ -469,14 +478,20 @@ class purge(Command):
     fmt_purged = 'Purged {mnum} {messages} from {qnum} known task {queues}.'
     fmt_empty = 'No messages purged from {qnum} {queues}'
 
-    option_list = Command.option_list + (
-        Option('--force', '-f', action='store_true',
-               help="Don't prompt for verification"),
-        Option('--queues', '-Q', default=[],
-               help='Comma separated list of queue names to purge.'),
-        Option('--exclude-queues', '-X', default=[],
-               help='Comma separated list of queues names not to purge.')
-    )
+    def add_arguments(self, parser):
+        group = parser.add_argument_group('Purging Options')
+        group.add_argument(
+            '--force', '-f', action='store_true',
+            help="Don't prompt for verification",
+        )
+        group.add_argument(
+            '--queues', '-Q', default=[],
+            help='Comma separated list of queue names to purge.',
+        )
+        group.add_argument(
+            '--exclude-queues', '-X', default=[],
+            help='Comma separated list of queues names not to purge.',
+        )
 
     def run(self, force=False, queues=None, exclude_queues=None, **kwargs):
         queues = set(str_to_list(queues or []))
@@ -522,11 +537,15 @@ class result(Command):
 
     args = '<task_id>'
 
-    option_list = Command.option_list + (
-        Option('--task', '-t', help='name of task (if custom backend)'),
-        Option('--traceback', action='store_true',
-               help='show traceback instead'),
-    )
+    def add_arguments(self, parser):
+        group = parser.add_argument_group('Result Options')
+        group.add_argument(
+            '--task', '-t', help='name of task (if custom backend)',
+        )
+        group.add_argument(
+            '--traceback', action='store_true',
+            help='show traceback instead',
+        )
 
     def run(self, task_id, *args, **kwargs):
         result_cls = self.app.AsyncResult
@@ -549,19 +568,24 @@ class _RemoteControl(Command):
     leaf = False
     control_group = None
 
-    option_list = Command.option_list + (
-        Option('--timeout', '-t', type='float',
-               help='Timeout in seconds (float) waiting for reply'),
-        Option('--destination', '-d',
-               help='Comma separated list of destination node names.'),
-        Option('--json', '-j', action='store_true',
-               help='Use json as output format.'),
-    )
-
     def __init__(self, *args, **kwargs):
         self.show_body = kwargs.pop('show_body', True)
         self.show_reply = kwargs.pop('show_reply', True)
         super(_RemoteControl, self).__init__(*args, **kwargs)
+
+    def add_arguments(self, parser):
+        group = parser.add_argument_group('Remote Control Options')
+        group.add_argument(
+            '--timeout', '-t', type=float,
+            help='Timeout in seconds (float) waiting for reply',
+        )
+        group.add_argument(
+            '--destination', '-d',
+            help='Comma separated list of destination node names.')
+        group.add_argument(
+            '--json', '-j', action='store_true',
+            help='Use json as output format.',
+        )
 
     @classmethod
     def get_command_info(cls, command,
@@ -592,7 +616,7 @@ class _RemoteControl(Command):
             for c in sorted(choices))
 
     def usage(self, command):
-        return '%prog {0} [options] {1} <command> [arg1 .. argN]'.format(
+        return '%(prog)s {0} [options] {1} <command> [arg1 .. argN]'.format(
             command, self.args)
 
     def call(self, *args, **kwargs):
@@ -782,23 +806,34 @@ class migrate(Command):
     """
 
     args = '<source_url> <dest_url>'
-
-    option_list = Command.option_list + (
-        Option('--limit', '-n', type='int',
-               help='Number of tasks to consume (int)'),
-        Option('--timeout', '-t', type='float', default=1.0,
-               help='Timeout in seconds (float) waiting for tasks'),
-        Option('--ack-messages', '-a', action='store_true',
-               help='Ack messages from source broker.'),
-        Option('--tasks', '-T',
-               help='List of task names to filter on.'),
-        Option('--queues', '-Q',
-               help='List of queues to migrate.'),
-        Option('--forever', '-F', action='store_true',
-               help='Continually migrate tasks until killed.'),
-    )
-
     progress_fmt = MIGRATE_PROGRESS_FMT
+
+    def add_arguments(self, parser):
+        group = parser.add_argument_group('Migration Options')
+        group.add_argument(
+            '--limit', '-n', type=int,
+            help='Number of tasks to consume (int)',
+        )
+        group.add_argument(
+            '--timeout', '-t', type=float, default=1.0,
+            help='Timeout in seconds (float) waiting for tasks',
+        )
+        group.add_argument(
+            '--ack-messages', '-a', action='store_true',
+            help='Ack messages from source broker.',
+        )
+        group.add_argument(
+            '--tasks', '-T',
+            help='List of task names to filter on.',
+        )
+        group.add_argument(
+            '--queues', '-Q',
+            help='List of queues to migrate.',
+        )
+        group.add_argument(
+            '--forever', '-F', action='store_true',
+            help='Continually migrate tasks until killed.',
+        )
 
     def on_migrate_task(self, state, body, message):
         self.out(self.progress_fmt.format(state=state, body=body))
@@ -824,19 +859,31 @@ class shell(Command):  # pragma: no cover
         - all registered tasks.
     """
 
-    option_list = Command.option_list + (
-        Option('--ipython', '-I',
-               action='store_true', help='force iPython.'),
-        Option('--bpython', '-B',
-               action='store_true', help='force bpython.'),
-        Option('--python', '-P',
-               action='store_true', help='force default Python shell.'),
-        Option('--without-tasks', '-T', action='store_true',
-               help="don't add tasks to locals."),
-        Option('--eventlet', action='store_true',
-               help='use eventlet.'),
-        Option('--gevent', action='store_true', help='use gevent.'),
-    )
+    def add_arguments(self, parser):
+        group = parser.add_argument_group('Shell Options')
+        group.add_argument(
+            '--ipython', '-I',
+            action='store_true', help='force iPython.',
+        )
+        group.add_argument(
+            '--bpython', '-B',
+            action='store_true', help='force bpython.',
+        )
+        group.add_argument(
+            '--python',
+            action='store_true', help='force default Python shell.',
+        )
+        group.add_argument(
+            '--without-tasks', '-T',
+            action='store_true', help="don't add tasks to locals.",
+        )
+        group.add_argument(
+            '--eventlet',
+            action='store_true', help='use eventlet.',
+        )
+        group.add_argument(
+            '--gevent', action='store_true', help='use gevent.',
+        )
 
     def run(self, *args, **kwargs):
         if args:
@@ -950,19 +997,25 @@ class shell(Command):  # pragma: no cover
 class upgrade(Command):
     """Perform upgrade between versions."""
 
-    option_list = Command.option_list + (
-        Option('--django', action='store_true',
-               help='Upgrade Django project'),
-        Option('--compat', action='store_true',
-               help='Maintain backwards compatibility'),
-        Option('--no-backup', action='store_true',
-               help='Dont backup original files'),
-    )
-
     choices = {'settings'}
 
+    def add_arguments(self, parser):
+        group = parser.add_argument_group('Upgrading Options')
+        group.add_argument(
+            '--django', action='store_true',
+            help='Upgrade Django project',
+        )
+        group.add_argument(
+            '--compat', action='store_true',
+            help='Maintain backwards compatibility',
+        )
+        group.add_argument(
+            '--no-backup', action='store_true',
+            help='Dont backup original files',
+        )
+
     def usage(self, command):
-        return '%prog <command> settings [filename] [options]'
+        return '%(prog)s <command> settings [filename] [options]'
 
     def run(self, *args, **kwargs):
         try:
@@ -1018,7 +1071,7 @@ class help(Command):
     """Show help screen and exit."""
 
     def usage(self, command):
-        return '%prog <command> [options] {0.args}'.format(self)
+        return '%(prog)s <command> [options] {0.args}'.format(self)
 
     def run(self, *args, **kwargs):
         self.parser.print_help()

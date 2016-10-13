@@ -64,14 +64,13 @@ class test_PartialOptionParser:
     def test_parser(self):
         x = detached_celeryd(self.app)
         p = x.create_parser('celeryd_detach')
-        options, values = p.parse_args([
+        options, leftovers = p.parse_known_args([
             '--logfile=foo', '--fake', '--enable',
             'a', 'b', '-c1', '-d', '2',
         ])
         assert options.logfile == 'foo'
-        assert values, ['a' == 'b']
-        assert p.leftovers, ['--enable', '-c1', '-d' == '2']
-        options, values = p.parse_args([
+        assert leftovers, ['--enable', '-c1', '-d' == '2']
+        options, leftovers = p.parse_known_args([
             '--fake', '--enable',
             '--pidfile=/var/pid/foo.pid',
             'a', 'b', '-c1', '-d', '2',
@@ -81,15 +80,14 @@ class test_PartialOptionParser:
         with mock.stdouts():
             with pytest.raises(SystemExit):
                 p.parse_args(['--logfile'])
-            p.get_option('--logfile').nargs = 2
+            p._option_string_actions['--logfile'].nargs = 2
             with pytest.raises(SystemExit):
                 p.parse_args(['--logfile=a'])
             with pytest.raises(SystemExit):
                 p.parse_args(['--fake=abc'])
 
-        assert p.get_option('--logfile').nargs == 2
-        p.parse_args(['--logfile=a', 'b'])
-        p.get_option('--logfile').nargs = 1
+        assert p._option_string_actions['--logfile'].nargs == 2
+        p.parse_args(['--logfile', 'a', 'b'])
 
 
 class test_Command:
@@ -101,7 +99,8 @@ class test_Command:
 
     def test_parse_options(self):
         x = detached_celeryd(app=self.app)
-        o, v, l = x.parse_options('cd', self.argv)
+        _, argv = x._split_command_line_config(self.argv)
+        o, l = x.parse_options('cd', argv)
         assert o.logfile == '/var/log'
         assert l == [
             '--foobar=10,2', '-c', '1',
