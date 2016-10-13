@@ -180,7 +180,7 @@ class Celery(object):
     amqp_cls = 'celery.app.amqp:AMQP'
     backend_cls = None
     events_cls = 'celery.events:Events'
-    loader_cls = 'celery.loaders.app:AppLoader'
+    loader_cls = None
     log_cls = 'celery.app.log:Logging'
     control_cls = 'celery.app.control:Control'
     task_cls = 'celery.app.task:Task'
@@ -212,7 +212,7 @@ class Celery(object):
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
         self.events_cls = events or self.events_cls
-        self.loader_cls = loader or self.loader_cls
+        self.loader_cls = loader or self._get_default_loader()
         self.log_cls = log or self.log_cls
         self.control_cls = control or self.control_cls
         self.task_cls = task_cls or self.task_cls
@@ -272,6 +272,14 @@ class Celery(object):
 
         self.on_init()
         _register_app(self)
+
+    def _get_default_loader(self):
+        # the --loader command-line argument sets the environment variable.
+        return (
+            os.environ.get('CELERY_LOADER') or
+            self.loader_cls or
+            'celery.loaders.app:AppLoader'
+        )
 
     def on_init(self):
         """Optional callback called at init."""

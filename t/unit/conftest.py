@@ -93,6 +93,12 @@ def threads_not_lingering(request):
 
 
 @pytest.fixture(autouse=True)
+def AAA_reset_CELERY_LOADER_env():
+    yield
+    assert not os.environ.get('CELERY_LOADER')
+
+
+@pytest.fixture(autouse=True)
 def test_cases_shortcuts(request, app, patching):
     if request.instance:
         @app.task

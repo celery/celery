@@ -209,6 +209,8 @@ class test_Command:
         finally:
             if prev is not None:
                 os.environ['CELERY_LOADER'] = prev
+            else:
+                del(os.environ['CELERY_LOADER'])
 
     def test_setup_app_no_respect(self, app):
         cmd = MockCommand(app=app)
