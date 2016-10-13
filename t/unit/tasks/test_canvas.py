@@ -17,6 +17,7 @@ from celery.canvas import (
     _maybe_group,
     maybe_signature,
     maybe_unroll_group,
+    _seq_concat_seq,
 )
 from celery.result import EagerResult
 
@@ -39,6 +40,18 @@ class test_maybe_unroll_group:
         assert maybe_unroll_group(g) is g
         g.tasks.__length_hint__.side_effect = AttributeError()
         assert maybe_unroll_group(g) is g
+
+
+@pytest.mark.parametrize('a,b,expected', [
+    ((1, 2, 3), [4, 5], (1, 2, 3, 4, 5)),
+    ((1, 2), [3, 4, 5], [1, 2, 3, 4, 5]),
+    ([1, 2, 3], (4, 5), [1, 2, 3, 4, 5]),
+    ([1, 2], (3, 4, 5), (1, 2, 3, 4, 5)),
+])
+def test_seq_concat_seq(a, b, expected):
+    res = _seq_concat_seq(a, b)
+    assert type(res) is type(expected)  # noqa
+    assert res == expected
 
 
 class CanvasCase:
@@ -349,11 +362,20 @@ class test_chain(CanvasCase):
         tasks2, _ = c2.prepare_steps((), c2.tasks)
         assert isinstance(tasks2[0], group)
 
-    def test_group_to_chord__protocol_2(self):
+    def test_group_to_chord__protocol_2__or(self):
         c = (
             group([self.add.s(i, i) for i in range(5)], app=self.app) |
             self.add.s(10) |
             self.add.s(20) |
+            self.add.s(30)
+        )
+        assert isinstance(c, chord)
+
+    def test_group_to_chord__protocol_2(self):
+        c = chain(
+            group([self.add.s(i, i) for i in range(5)], app=self.app),
+            self.add.s(10),
+            self.add.s(20),
             self.add.s(30)
         )
         c._use_link = False
