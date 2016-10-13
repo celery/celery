@@ -232,6 +232,12 @@ class test_chunks(CanvasCase):
 
 class test_chain(CanvasCase):
 
+    def test_clone_preserves_state(self):
+        x = chain(self.add.s(i, i) for i in range(10))
+        assert x.clone().tasks == x.tasks
+        assert x.clone().kwargs == x.kwargs
+        assert x.clone().args == x.args
+
     def test_repr(self):
         x = self.add.s(2, 2) | self.add.s(2)
         assert repr(x) == '%s(2, 2) | %s(2)' % (self.add.name, self.add.name)
