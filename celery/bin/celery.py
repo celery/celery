@@ -838,7 +838,13 @@ class shell(Command):  # pragma: no cover
         Option('--gevent', action='store_true', help='use gevent.'),
     )
 
-    def run(self, ipython=False, bpython=False,
+    def run(self, *args, **kwargs):
+        if args:
+            raise self.UsageError(
+                'shell command does not take arguments: {0}'.format(args))
+        return self._run(**kwargs)
+
+    def _run(self, ipython=False, bpython=False,
             python=False, without_tasks=False, eventlet=False,
             gevent=False, **kwargs):
         sys.path.insert(0, os.getcwd())
