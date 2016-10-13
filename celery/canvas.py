@@ -424,18 +424,29 @@ class Signature(dict):
     def __or__(self, other):
         if isinstance(self, group):
             if isinstance(other, group):
+                # group() | group() -> single group
                 return group(_chain(self.tasks, other.tasks), app=self.app)
+            # group() | task -> chord
             return chord(self, body=other, app=self._app)
         elif isinstance(other, group):
+            # task | group() -> unroll group with one member
             other = maybe_unroll_group(other)
-
+            return chain(self, other, app=self._app)
         if not isinstance(self, chain) and isinstance(other, chain):
+            # task | chain -> chain
             return chain((self,) + other.tasks, app=self._app)
         elif isinstance(other, chain):
+            # chain | chain -> chain
             return chain(*self.tasks + other.tasks, app=self._app)
+        elif isinstance(self, chord):
+            sig = self.clone()
+            sig.body = sig.body | other
+            return sig
         elif isinstance(other, Signature):
             if isinstance(self, chain):
+                # chain | task -> chain
                 return chain(*self.tasks + (other,), app=self._app)
+            # task | task -> chain
             return chain(self, other, app=self._app)
         return NotImplemented
 
