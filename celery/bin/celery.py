@@ -845,8 +845,8 @@ class shell(Command):  # pragma: no cover
         return self._run(**kwargs)
 
     def _run(self, ipython=False, bpython=False,
-            python=False, without_tasks=False, eventlet=False,
-            gevent=False, **kwargs):
+             python=False, without_tasks=False, eventlet=False,
+             gevent=False, **kwargs):
         sys.path.insert(0, os.getcwd())
         if eventlet:
             import_module('celery.concurrency.eventlet')
