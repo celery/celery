@@ -631,8 +631,11 @@ class chain(Signature):
             if link:
                 tasks[0].extend_list_option('link', link)
             first_task = tasks.pop()
-            first_task.apply_async(
-                chain=tasks if not use_link else None, **options)
+            # chain option may already be set, resulting in
+            # "multiple values for keyword argument 'chain'" error.
+            # Issue #3379.
+            options['chain'] = tasks if not use_link else None
+            first_task.apply_async(**options)
             return results[0]
 
     def freeze(self, _id=None, group_id=None, chord=None,
