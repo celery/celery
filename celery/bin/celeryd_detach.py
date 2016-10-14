@@ -100,7 +100,7 @@ class detached_celeryd(object):
         config = list(self._extract_command_line_config(argv))
         try:
             argv = argv[:argv.index('--')]
-        except IndexError:
+        except ValueError:
             pass
         return config, argv
 
