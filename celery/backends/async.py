@@ -161,9 +161,9 @@ class AsyncBackendMixin(object):
         result._maybe_set_cache(self._pending_messages.take(result.id))
 
     def _add_pending_result(self, task_id, result, weak=False):
-        weak, concrete = self._pending_results
-        if task_id not in weak and result.id not in concrete:
-            (weak if weak else concrete)[task_id] = result
+        concrete, weak_ = self._pending_results
+        if task_id not in weak_ and result.id not in concrete:
+            (weak_ if weak else concrete)[task_id] = result
             self.result_consumer.consume_from(task_id)
 
     def add_pending_results(self, results, weak=False):
