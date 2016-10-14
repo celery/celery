@@ -781,6 +781,13 @@ class test_WorkController(ConsumerCase):
         assert worker.beat
         assert worker.beat in [w.obj for w in worker.steps]
 
+    def test_with_autoscaler(self):
+        worker = self.create_worker(
+            autoscale=[10, 3], send_events=False,
+            timer_cls='celery.utils.timer2.Timer',
+        )
+        assert worker.autoscaler
+
     def test_dont_stop_or_terminate(self):
         worker = self.app.WorkController(concurrency=1, loglevel=0)
         worker.stop()

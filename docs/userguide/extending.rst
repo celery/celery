@@ -204,6 +204,38 @@ Attributes
         class WorkerStep(bootsteps.StartStopStep):
             requires = {'celery.worker.components:Statedb'}
 
+.. _extending-worker-autoscaler:
+
+.. attribute:: autoscaler
+
+    :class:`~celery.worker.autoscaler.Autoscaler` used to automatically grow
+    and shrink the number of processes in the pool.
+
+    This is only defined if the ``autoscale`` argument is enabled.
+
+    Your worker bootstep must require the `Autoscaler` bootstep to use this:
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.autoscaler:Autoscaler',)
+
+.. _extending-worker-autoreloader:
+
+.. attribute:: autoreloader
+
+    :class:`~celery.worker.autoreloder.Autoreloader` used to automatically
+    reload use code when the file-system changes.
+
+    This is only defined if the ``autoreload`` argument is enabled.
+    Your worker bootstep must require the `Autoreloader` bootstep to use this;
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.autoreloader:Autoreloader',)
+>>>>>>> parent of 8e0ab0f... Removes autoscale option completely
+
 Example worker bootstep
 -----------------------
 
@@ -637,7 +669,7 @@ will show us more information about the boot process:
     [2013-05-29 16:18:20,511: DEBUG/MainProcess] | Worker: Building graph...
     <celery.apps.worker.Worker object at 0x101ad8410> is in init
     [2013-05-29 16:18:20,511: DEBUG/MainProcess] | Worker: New boot order:
-        {Hub, Pool, Timer, StateDB, InfoStep, Beat, Consumer}
+        {Hub, Pool, Timer, StateDB, Autoscaler, InfoStep, Beat, Consumer}
     [2013-05-29 16:18:20,514: DEBUG/MainProcess] | Consumer: Preparing bootsteps.
     [2013-05-29 16:18:20,514: DEBUG/MainProcess] | Consumer: Building graph...
     <celery.worker.consumer.Consumer object at 0x101c2d8d0> is in init

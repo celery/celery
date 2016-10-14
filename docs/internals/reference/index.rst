@@ -13,6 +13,7 @@
     celery.worker.heartbeat
     celery.worker.control
     celery.worker.pidbox
+    celery.worker.autoscale
     celery.concurrency
     celery.concurrency.solo
     celery.concurrency.prefork

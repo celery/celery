@@ -247,6 +247,7 @@ NAMESPACES = Namespace(
     worker=Namespace(
         __old__=OLD_NS_WORKER,
         agent=Option(None, type='string'),
+        autoscaler=Option('celery.worker.autoscale:Autoscaler'),
         concurrency=Option(0, type='int'),
         consumer=Option('celery.worker.consumer:Consumer', type='string'),
         direct=Option(False, type='bool', old={'celery_worker_direct'}),

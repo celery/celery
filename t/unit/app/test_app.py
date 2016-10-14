@@ -298,7 +298,7 @@ class test_App:
                 task_default_delivery_mode=63,
                 worker_agent='foo:Barz',
                 CELERYD_CONSUMER='foo:Fooz',
-                CELERYD_POOL='foo:Xuzzy',
+                CELERYD_AUTOSCALER='foo:Xuzzy',
             )
             with pytest.raises(ImproperlyConfigured):
                 assert app.conf.worker_consumer == 'foo:Fooz'
@@ -311,11 +311,9 @@ class test_App:
                 worker_agent='foo:Barz',
                 CELERYD_CONSUMER='foo:Fooz',
                 worker_consumer='foo:Fooz',
-                CELERYD_POOL='foo:Xuzzy',
-                worker_pool='foo:Xuzzy'
+                CELERYD_AUTOSCALER='foo:Xuzzy',
+                worker_autoscaler='foo:Xuzzy'
             )
-            assert app.conf.task_always_eager == 4
-            assert app.conf.worker_pool == 'foo:Xuzzy'
 
     def test_pending_configuration__setdefault(self):
         with self.Celery(broker='foo://bar') as app:

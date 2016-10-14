@@ -75,7 +75,7 @@ _celery()
         COMPREPLY=( $(compgen -W '--concurrency= --pool= --purge --logfile=
         --loglevel= --hostname= --beat --schedule= --scheduler= --statedb= --events
         --time-limit= --soft-time-limit= --max-tasks-per-child= --queues=
-        --include= --pidfile= $fargs' -- ${cur} ) )
+        --include= --pidfile= --autoscale $fargs' -- ${cur} ) )
         return 0
         ;;
     inspect)
@@ -84,7 +84,7 @@ _celery()
         return 0
         ;;
     control)
-        COMPREPLY=( $(compgen -W 'add_consumer cancel_consumer
+        COMPREPLY=( $(compgen -W 'add_consumer autoscale cancel_consumer
         disable_events enable_events pool_grow pool_shrink
         rate_limit time_limit --help $controlargs $fargs' -- ${cur}) )
         return 0

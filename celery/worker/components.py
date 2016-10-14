@@ -12,6 +12,7 @@ from kombu.async.timer import Timer as _Timer
 from celery import bootsteps
 from celery._state import _set_task_join_will_block
 from celery.exceptions import ImproperlyConfigured
+from celery.five import string_t
 from celery.platforms import IS_WINDOWS
 from celery.utils.log import worker_logger as logger
 
@@ -105,6 +106,7 @@ class Pool(bootsteps.StartStopStep):
 
     Adds attributes:
 
+        * autoscale
         * pool
         * max_concurrency
         * min_concurrency
@@ -112,11 +114,17 @@ class Pool(bootsteps.StartStopStep):
 
     requires = (Hub,)
 
-    def __init__(self, w, **kwargs):
+    def __init__(self, w, autoscale=None, **kwargs):
         w.pool = None
         w.max_concurrency = None
         w.min_concurrency = w.concurrency
         self.optimization = w.optimization
+        if isinstance(autoscale, string_t):
+            max_c, _, min_c = autoscale.partition(',')
+            autoscale = [int(max_c), min_c and int(min_c) or 0]
+        w.autoscale = autoscale
+        if w.autoscale:
+            w.max_concurrency, w.min_concurrency = w.autoscale
         super(Pool, self).__init__(w, **kwargs)
 
     def close(self, w):

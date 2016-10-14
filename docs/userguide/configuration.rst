@@ -132,6 +132,7 @@ rush in moving to the new settings format.
 ``CELERYD_TASK_TIME_LIMIT``            :setting:`task_time_limit`
 ``CELERY_TRACK_STARTED``               :setting:`task_track_started`
 ``CELERYD_AGENT``                      :setting:`worker_agent`
+``CELERYD_AUTOSCALER``                 :setting:`worker_autoscaler`
 ``CELERYD_CONCURRENCY``                :setting:`worker_concurrency`
 ``CELERYD_CONSUMER``                   :setting:`worker_consumer`
 ``CELERY_WORKER_DIRECT``               :setting:`worker_direct`
@@ -2195,6 +2196,17 @@ Default: Disabled by default.
 
 If enabled the worker pool can be restarted using the
 :control:`pool_restart` remote control command.
+
+.. setting:: worker_autoscaler
+
+``worker_autoscaler``
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.2
+
+Default: ``"celery.worker.autoscale:Autoscaler"``.
+
+Name of the autoscaler class to use.
 
 .. setting:: worker_consumer
 

@@ -146,6 +146,8 @@ class test_Worker:
             assert worker.startup_info()
             worker.loglevel = logging.INFO
             assert worker.startup_info()
+            worker.autoscale = 13, 10
+            assert worker.startup_info()
 
             prev_loader = self.app.loader
             worker = self.Worker(
@@ -221,6 +223,13 @@ class test_Worker:
                 'image', Exchange('image'),
                 routing_key='image',
             )
+
+    def test_autoscale_argument(self):
+        with mock.stdouts():
+            worker1 = self.Worker(app=self.app, autoscale='10,3')
+            assert worker1.autoscale == [10, 3]
+            worker2 = self.Worker(app=self.app, autoscale='10')
+            assert worker2.autoscale == [10, 0]
 
     def test_include_argument(self):
         worker1 = self.Worker(app=self.app, include='os')
