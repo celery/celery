@@ -193,7 +193,10 @@ class Backend(object):
         # need below import for test for some crazy reason
         from celery import group  # pylint: disable
         app = self.app
-        backend = app._tasks[callback.task].backend
+        try:
+            backend = app._tasks[callback.task].backend
+        except KeyError:
+            backend = self
         try:
             group(
                 [app.signature(errback)
