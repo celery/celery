@@ -1,6 +1,5 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
 import sys
 
 from case import Mock, mock, patch
