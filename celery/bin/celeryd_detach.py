@@ -65,14 +65,19 @@ class detached_celeryd(object):
         self.app = app
 
     def create_parser(self, prog_name):
-        p = argparse.ArgumentParser(
+        parser = argparse.ArgumentParser(
             prog=prog_name,
             usage=self.usage,
             description=self.description,
-            version=self.version,
         )
-        self.add_arguments(p)
-        return p
+        self._add_version_argument(parser)
+        self.add_arguments(parser)
+        return parser
+
+    def _add_version_argument(self, parser):
+        parser.add_argument(
+            '--version', action='version', version=self.version,
+        )
 
     def parse_options(self, prog_name, argv):
         parser = self.create_parser(prog_name)
