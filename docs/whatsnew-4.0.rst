@@ -980,9 +980,60 @@ Contributed by **Ionel Cristian Mărieș**.
 Async Result API
 ----------------
 
-eventlet/gevent drainers, promises, BLA BLA
+Gevent/Eventlet: Dedicated thread for consuming results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Closed issue #2529.
+When using :pypi:`gevent`, or :pypi:`eventlet` there is now a single
+thread responsible for consuming events.
+
+This means that if you have many calls retrieving results, there will be
+a dedicated thread for consuming them:
+
+.. code-block:: python
+
+
+    result = add.delay(2, 2)
+
+    # this call will delegate to the result consumer thread:
+    #   once the consumer thread has received the result this greenlet can
+    # continue.
+    value = result.get(timeout=3)
+
+This makes performing RPC calls when using gevent/eventlet perform much
+better.
+
+``AsyncResult.then(on_success, on_error)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The AsyncResult API has been extended to support the :class:`~vine.promise` protocol.
+
+This currently only works with the RPC (amqp) and Redis result backends, but
+lets you attach callbacks to when tasks finish:
+
+.. code-block:: python
+
+    import gevent.monkey
+    monkey.patch_all()
+
+    import time
+    from celery import Celery
+
+    app = Celery(broker='amqp://', backend='rpc')
+
+    @app.task
+    def add(x, y):
+        return x + y
+
+    def on_result_ready(result):
+        print('Received result for id %r: %r' % (result.id, result.result,))
+
+    add.delay(2, 2).then(on_result_ready)
+
+    time.sleep(3)  # run gevent event loop for a while.
+
+Demonstrated using gevent here, but really this is an API that's more useful
+in callback-based event loops like :pypi:`twisted`, or :pypi:`tornado`.
+
 
 RPC Result Backend matured
 --------------------------
