@@ -87,7 +87,6 @@ def app(request):
     from celery import _state
     mark = request.node.get_marker('celery')
     mark = mark and mark.kwargs or {}
-    print('MARK: %r' % (mark,))
 
     prev_current_app = current_app()
     prev_default_app = _state.default_app
