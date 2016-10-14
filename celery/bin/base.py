@@ -21,7 +21,7 @@ from celery.five import (
     getfullargspec, items, python_2_unicode_compatible,
     string, string_t, text_t, long_t,
 )
-from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
+from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE, isatty
 from celery.utils import imports
 from celery.utils import term
 from celery.utils import text
@@ -617,7 +617,8 @@ class Command(object):
     @property
     def colored(self):
         if self._colored is None:
-            self._colored = term.colored(enabled=not self.no_color)
+            self._colored = term.colored(
+                enabled=isatty(self.stdout) and not self.no_color)
         return self._colored
 
     @colored.setter
