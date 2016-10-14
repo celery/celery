@@ -379,7 +379,7 @@ Tags
 ====
 
 - Tags are used exclusively for tagging releases. A release tag is
-named with the format ``vX.Y.Z`` -- for example ``v2.3.1``.
+  named with the format ``vX.Y.Z`` -- for example ``v2.3.1``.
 
 - Experimental releases contain an additional identifier ``vX.Y.Z-id`` --
   for example ``v3.0.0-rc1``.

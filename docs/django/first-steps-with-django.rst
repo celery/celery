@@ -123,7 +123,7 @@ its own request information. This is using the new ``bind=True`` task option
 introduced in Celery 3.1 to easily refer to the current task instance.
 
 Using the ``@shared_task`` decorator
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------
 
 The tasks you write will probably live in reusable apps, and reusable
 apps cannot depend on the project itself, so you also cannot import your app
@@ -154,8 +154,8 @@ concrete app instance:
 Extensions
 ==========
 
-``django-celery-results`` -- Using the Django ORM/Cache as a result backend
----------------------------------------------------------------------------
+``django-celery-results`` - Using the Django ORM/Cache as a result backend
+--------------------------------------------------------------------------
 
 The :pypi:`django-celery-results` extension provides result backends
 using either the Django ORM, or the Django Cache framework.
@@ -193,8 +193,8 @@ To use this with your project you need to follow these steps:
 
         CELERY_RESULT_BACKEND = 'django-cache'
 
-``django-celery-beat`` -- Database-backed Periodic Tasks with Admin interface.
-------------------------------------------------------------------------------
+``django-celery-beat`` - Database-backed Periodic Tasks with Admin interface.
+-----------------------------------------------------------------------------
 
 See :ref:`beat-custom-schedulers` for more information.
 

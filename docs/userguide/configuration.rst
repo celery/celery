@@ -1023,7 +1023,7 @@ AuthProvider class within ``cassandra.auth`` module to use. Values can be
 
 Default: ``{}`` (empty mapping).
 
-Named arguments to pass into the authentication provider. For example::
+Named arguments to pass into the authentication provider. For example:
 
 .. code-block:: python
 

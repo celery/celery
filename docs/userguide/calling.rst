@@ -175,7 +175,7 @@ as a partial argument.
 .. _calling-on-message:
 
 On message
-============================
+==========
 
 Celery supports catching all states changes by setting on_message callback.
 
@@ -202,11 +202,23 @@ For example for long-running tasks to send task progress you can do something li
 
 Will generate output like this:
 
-.. code-block:: 
+.. code-block:: text
 
-    {'task_id': '5660d3a3-92b8-40df-8ccc-33a5d1d680d7', 'result': {'progress': 50}, 'children': [], 'status': 'PROGRESS', 'traceback': None}
-    {'task_id': '5660d3a3-92b8-40df-8ccc-33a5d1d680d7', 'result': {'progress': 90}, 'children': [], 'status': 'PROGRESS', 'traceback': None}
-    {'task_id': '5660d3a3-92b8-40df-8ccc-33a5d1d680d7', 'result': 'hello world: 10', 'children': [], 'status': 'SUCCESS', 'traceback': None}
+    {'task_id': '5660d3a3-92b8-40df-8ccc-33a5d1d680d7',
+     'result': {'progress': 50},
+     'children': [],
+     'status': 'PROGRESS',
+     'traceback': None}
+    {'task_id': '5660d3a3-92b8-40df-8ccc-33a5d1d680d7',
+     'result': {'progress': 90},
+     'children': [],
+     'status': 'PROGRESS',
+     'traceback': None}
+    {'task_id': '5660d3a3-92b8-40df-8ccc-33a5d1d680d7',
+     'result': 'hello world: 10',
+     'children': [],
+     'status': 'SUCCESS',
+     'traceback': None}
     hello world: 10
 
 
