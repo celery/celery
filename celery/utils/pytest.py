@@ -84,6 +84,9 @@ def TestApp(name=None, set_as_current=False, log=UnitLogging,
 def app(request):
     """Fixture creating a Celery application instance."""
     from celery import _state
+    mark = request.node.get_marker('celery')
+    mark = mark and mark.kwargs or {}
+
     prev_current_app = current_app()
     prev_default_app = _state.default_app
     prev_finalizers = set(_state._on_app_finalizers)
@@ -96,7 +99,7 @@ def app(request):
         current_app = trap
     _state._tls = NonTLS()
 
-    test_app = TestApp(set_as_current=False)
+    test_app = TestApp(set_as_current=False, backend=mark.get('backend'))
     is_not_contained = any([
         not getattr(request.module, 'app_contained', True),
         not getattr(request.cls, 'app_contained', True),

@@ -55,6 +55,20 @@ pending_results_t = namedtuple('pending_results_t', (
     'concrete', 'weak',
 ))
 
+E_NO_BACKEND = """
+No result backend is configured.
+Please see the documentation for more information.
+"""
+
+E_CHORD_NO_BACKEND = """
+Starting chords requires a result backend to be configured.
+
+Note that a group chained with a task is also upgraded to be a chord,
+as this pattern requires synchronization.
+
+Result backends that supports chords: Redis, Database, Memcached, and more.
+"""
+
 
 def unpickle_backend(cls, args, kwargs):
     """Return an unpickled backend."""
@@ -746,10 +760,11 @@ class DisabledBackend(BaseBackend):
     def store_result(self, *args, **kwargs):
         pass
 
+    def apply_chord(self, *args, **kwargs):
+        raise NotImplementedError(E_CHORD_NO_BACKEND.strip())
+
     def _is_disabled(self, *args, **kwargs):
-        raise NotImplementedError(
-            'No result backend configured.  '
-            'Please see the documentation for more information.')
+        raise NotImplementedError(E_NO_BACKEND.strip())
 
     def as_uri(self, *args, **kwargs):
         return 'disabled://'
