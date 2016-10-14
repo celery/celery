@@ -293,7 +293,7 @@ class Command(object):
         # This is for optparse options, please use add_arguments.
         return self.option_list
 
-    def add_preload_options(self, parser):
+    def add_preload_arguments(self, parser):
         group = parser.add_argument_group('Global Options')
         group.add_argument('-A', '--app', default=None)
         group.add_argument('-b', '--broker', default=None)
@@ -303,6 +303,11 @@ class Command(object):
         group.add_argument(
             '--no-color', '-C', action='store_true', default=None)
         group.add_argument('--quiet', '-q', action='store_true')
+
+    def _add_version_argument(self, parser):
+        parser.add_argument(
+            '--version', action='version', version=self.version,
+        )
 
     def prepare_arguments(self, parser):
         pass
@@ -399,12 +404,12 @@ class Command(object):
         parser = self.Parser(
             prog=prog_name,
             usage=self.usage(command),
-            version=self.version,
             epilog=self._format_epilog(self.epilog),
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=self._format_description(self.description),
         )
-        self.add_preload_options(parser)
+        self._add_version_argument(parser)
+        self.add_preload_arguments(parser)
         self.add_arguments(parser)
         self.add_compat_options(parser, self.get_options())
         self.add_compat_options(parser, self.app.user_options['preload'])
@@ -505,7 +510,7 @@ class Command(object):
         return argv
 
     def parse_preload_options(self, args):
-        return self._parse_preload_options(args, [self.add_preload_options])
+        return self._parse_preload_options(args, [self.add_preload_arguments])
 
     def _parse_preload_options(self, args, options):
         args = [arg for arg in args if arg not in ('-h', '--help')]

@@ -337,7 +337,7 @@ class test_Command:
 
         class TestCommand(Command):
 
-            def add_preload_options(self, parser):
+            def add_preload_arguments(self, parser):
                 parser.add_argument('-s', action='store', dest='silent')
         cmd = TestCommand()
         acc = cmd.parse_preload_options(['-s', 'yes'])
@@ -347,7 +347,7 @@ class test_Command:
 
         class TestCommand(Command):
 
-            def add_preload_options(self, parser):
+            def add_preload_arguments(self, parser):
                 parser.add_argument('--zoom', action='append', default=[])
         cmd = Command()
         acc = cmd.parse_preload_options(['--zoom=1', '--zoom=2'])
