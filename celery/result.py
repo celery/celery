@@ -360,7 +360,10 @@ class AsyncResult(ResultBase):
             state = meta['status']
             if state in states.READY_STATES:
                 d = self._set_cache(self.backend.meta_from_decoded(meta))
-                self.on_ready(self)
+                if state in states.EXCEPTION_STATES:
+                    self.throw(self.result, propagate=False)
+                else:
+                    self.on_ready(self)
                 return d
         return meta
 
