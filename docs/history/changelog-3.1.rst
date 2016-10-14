@@ -315,7 +315,7 @@ new in Celery 3.1.
 - **Canvas**: Fixed crash in chord unlock fallback task (Issue #2404).
 
 - **Worker**: Fixed rare crash occurring with
-  ``--autoscale`` enabled (Issue #2411).
+  :option:`--autoscale <celery worker --autoscale>` enabled (Issue #2411).
 
 - **Django**: Properly recycle worker Django database connections when the
   Django ``CONN_MAX_AGE`` setting is enabled (Issue #2453).

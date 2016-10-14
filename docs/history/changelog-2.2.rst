@@ -613,7 +613,7 @@ Important Notes
 
 * worker: Now supports Autoscaling of child worker processes.
 
-    The ``--autoscale`` option can be used
+    The :option:`--autoscale <celery worker --autoscale>` option can be used
     to configure the minimum and maximum number of child worker processes:
 
     .. code-block:: text
