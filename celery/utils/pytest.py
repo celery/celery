@@ -70,12 +70,13 @@ class UnitLogging(symbol_by_name(Celery.log_cls)):
 
 
 def TestApp(name=None, set_as_current=False, log=UnitLogging,
-            broker='memory://', backend='cache+memory://', **kwargs):
+            broker='memory://', backend=None, **kwargs):
     """App used for testing."""
     test_app = Celery(
         name or 'celery.tests',
         set_as_current=set_as_current,
-        log=log, broker=broker, backend=backend, **kwargs)
+        log=log, broker=broker,
+        backend=backend or 'cache+memory://', **kwargs)
     test_app.add_defaults(deepcopy(CELERY_TEST_CONFIG))
     return test_app
 
@@ -86,6 +87,7 @@ def app(request):
     from celery import _state
     mark = request.node.get_marker('celery')
     mark = mark and mark.kwargs or {}
+    print('MARK: %r' % (mark,))
 
     prev_current_app = current_app()
     prev_default_app = _state.default_app

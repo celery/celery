@@ -514,7 +514,7 @@ class Command(object):
 
     def _parse_preload_options(self, args, options):
         args = [arg for arg in args if arg not in ('-h', '--help')]
-        parser = argparse.ArgumentParser()
+        parser = self.Parser()
         self.add_compat_options(parser, options)
         namespace, _ = parser.parse_known_args(args)
         return vars(namespace)

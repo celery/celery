@@ -770,4 +770,4 @@ class DisabledBackend(BaseBackend):
         return 'disabled://'
 
     get_state = get_status = get_result = get_traceback = _is_disabled
-    wait_for = get_many = _is_disabled
+    get_task_meta_for = wait_for = get_many = _is_disabled
