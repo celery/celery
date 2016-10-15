@@ -24,9 +24,9 @@ from .text import pluralize
 __all__ = [
     'LocalTimezone', 'timezone', 'maybe_timedelta',
     'delta_resolution', 'remaining', 'rate', 'weekday',
-    'humanize_seconds', 'maybe_iso8601', 'is_naive', 'make_aware',
-    'localize', 'to_utc', 'maybe_make_aware', 'ffwd', 'utcoffset',
-    'adjust_timestamp', 'maybe_s_to_ms',
+    'humanize_seconds', 'maybe_iso8601', 'is_naive',
+    'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
+    'ffwd', 'utcoffset', 'adjust_timestamp',
 ]
 
 PY3 = sys.version_info[0] == 3
@@ -379,8 +379,3 @@ def utcoffset(time=_time, localtime=_time.localtime):
 def adjust_timestamp(ts, offset, here=utcoffset):
     """Adjust timestamp based on provided utcoffset."""
     return ts - (offset - here()) * 3600
-
-
-def maybe_s_to_ms(v):
-    """Convert seconds to milliseconds, but return None for None."""
-    return int(float(v) * 1000.0) if v is not None else v

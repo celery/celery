@@ -13,9 +13,7 @@ from celery import states
 from celery.exceptions import TimeoutError
 from celery.five import range, monotonic
 from celery.utils import deprecated
-from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
-from celery.utils.time import maybe_s_to_ms
 
 from .base import BaseBackend
 
@@ -80,9 +78,6 @@ class AMQPBackend(BaseBackend):
         )
         self.serializer = serializer or conf.result_serializer
         self.auto_delete = auto_delete
-        self.queue_arguments = dictfilter({
-            'x-expires': maybe_s_to_ms(self.expires),
-        })
 
     def _create_exchange(self, name, type='direct', delivery_mode=2):
         return self.Exchange(name=name,
@@ -93,12 +88,14 @@ class AMQPBackend(BaseBackend):
 
     def _create_binding(self, task_id):
         name = self.rkey(task_id)
-        return self.Queue(name=name,
-                          exchange=self.exchange,
-                          routing_key=name,
-                          durable=self.persistent,
-                          auto_delete=self.auto_delete,
-                          queue_arguments=self.queue_arguments)
+        return self.Queue(
+            name=name,
+            exchange=self.exchange,
+            routing_key=name,
+            durable=self.persistent,
+            auto_delete=self.auto_delete,
+            expires=self.expires,
+        )
 
     def revive(self, channel):
         pass

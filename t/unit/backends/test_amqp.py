@@ -99,15 +99,18 @@ class test_AMQPBackend:
 
     def test_expires_is_int(self):
         b = self.create_backend(expires=48)
-        assert b.queue_arguments.get('x-expires') == 48 * 1000.0
+        q = b._create_binding('x1y2z3')
+        assert q.expires == 48
 
     def test_expires_is_float(self):
         b = self.create_backend(expires=48.3)
-        assert b.queue_arguments.get('x-expires') == 48.3 * 1000.0
+        q = b._create_binding('x1y2z3')
+        assert q.expires == 48.3
 
     def test_expires_is_timedelta(self):
         b = self.create_backend(expires=timedelta(minutes=1))
-        assert b.queue_arguments.get('x-expires') == 60 * 1000.0
+        q = b._create_binding('x1y2z3')
+        assert q.expires == 60
 
     @mock.sleepdeprived()
     def test_store_result_retries(self):
@@ -246,8 +249,8 @@ class test_AMQPBackend:
         app = self.app
         app.conf.result_expires = None
         b = self.create_backend(expires=None)
-        with pytest.raises(KeyError):
-            b.queue_arguments['x-expires']
+        q = b._create_binding('foo')
+        assert q.expires is None
 
     def test_process_cleanup(self):
         self.create_backend().process_cleanup()

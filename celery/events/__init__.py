@@ -24,9 +24,8 @@ from kombu.utils.objects import cached_property
 from celery import uuid
 from celery.app import app_or_default
 from celery.five import items
-from celery.utils.functional import dictfilter
 from celery.utils.nodenames import anon_nodename
-from celery.utils.time import adjust_timestamp, utcoffset, maybe_s_to_ms
+from celery.utils.time import adjust_timestamp, utcoffset
 
 __all__ = ['Events', 'Event', 'EventDispatcher', 'EventReceiver']
 
@@ -310,14 +309,17 @@ class EventReceiver(ConsumerMixin):
         self.queue_prefix = queue_prefix or self.app.conf.event_queue_prefix
         self.exchange = get_exchange(
             self.connection or self.app.connection_for_write())
+        if queue_ttl is None:
+            queue_ttl = self.app.conf.event_queue_ttl
+        if queue_expires is None:
+            queue_expires = self.app.conf.event_queue_expires
         self.queue = Queue(
             '.'.join([self.queue_prefix, self.node_id]),
             exchange=self.exchange,
             routing_key=self.routing_key,
             auto_delete=True, durable=False,
-            queue_arguments=self._get_queue_arguments(
-                ttl=queue_ttl, expires=queue_expires,
-            ),
+            message_ttl=queue_ttl,
+            expires=queue_expires,
         )
         self.clock = self.app.clock
         self.adjust_clock = self.clock.adjust
@@ -325,17 +327,6 @@ class EventReceiver(ConsumerMixin):
         if accept is None:
             accept = {self.app.conf.event_serializer, 'json'}
         self.accept = accept
-
-    def _get_queue_arguments(self, ttl=None, expires=None):
-        conf = self.app.conf
-        return dictfilter({
-            'x-message-ttl': maybe_s_to_ms(
-                ttl if ttl is not None else conf.event_queue_ttl,
-            ),
-            'x-expires': maybe_s_to_ms(
-                expires if expires is not None else conf.event_queue_expires,
-            ),
-        })
 
     def process(self, type, event):
         """Process event by dispatching to configured handler."""

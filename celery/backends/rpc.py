@@ -16,8 +16,6 @@ from celery import current_task
 from celery import states
 from celery._state import task_join_will_block
 from celery.five import items, range
-from celery.utils.functional import dictfilter
-from celery.utils.time import maybe_s_to_ms
 
 from . import base
 from .async import AsyncBackendMixin, BaseResultConsumer
@@ -124,9 +122,6 @@ class BaseRPCBackend(base.Backend, AsyncBackendMixin):
         )
         self.serializer = serializer or conf.result_serializer
         self.auto_delete = auto_delete
-        self.queue_arguments = dictfilter({
-            'x-expires': maybe_s_to_ms(self.expires),
-        })
         self.result_consumer = self.ResultConsumer(
             self, self.app, self.accept,
             self._pending_results, self._pending_messages,
@@ -310,7 +305,9 @@ class RPCBackend(BaseRPCBackend):
     def binding(self):
         return self.Queue(
             self.oid, self.exchange, self.oid,
-            durable=False, auto_delete=True
+            durable=False,
+            auto_delete=True,
+            expires=self.expires,
         )
 
     @cached_property
