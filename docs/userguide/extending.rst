@@ -234,7 +234,6 @@ Attributes
 
         class WorkerStep(bootsteps.StartStopStep):
             requires = ('celery.worker.autoreloader:Autoreloader',)
->>>>>>> parent of 8e0ab0f... Removes autoscale option completely
 
 Example worker bootstep
 -----------------------
