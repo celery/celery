@@ -42,6 +42,7 @@ from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
 
 from .annotations import prepare as prepare_annotations
+from .backends import get_backend_by_url
 from .defaults import find_deprecated_settings
 from .registry import TaskRegistry
 from .utils import (
@@ -849,7 +850,6 @@ class Celery(object):
         return bugreport(self)
 
     def _get_backend(self):
-        from celery.backends import get_backend_by_url
         backend, url = get_backend_by_url(
             self.backend_cls or self.conf.result_backend,
             self.loader)

@@ -17,6 +17,7 @@
     celery.app.defaults
     celery.app.control
     celery.app.registry
+    celery.app.backends
     celery.app.builtins
     celery.app.log
     celery.app.utils
