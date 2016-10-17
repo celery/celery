@@ -268,7 +268,10 @@ class worker(Command):
 
         wopts = parser.add_argument_group('Worker Options')
         wopts.add_argument('-n', '--hostname')
-        wopts.add_argument('-D', '--detach', action='store_true')
+        wopts.add_argument(
+            '-D', '--detach',
+            action='store_true', default=False,
+        )
         wopts.add_argument(
             '-S', '--statedb',
             default=conf.worker_state_db,
@@ -313,7 +316,7 @@ class worker(Command):
         qopts = parser.add_argument_group('Queue Options')
         qopts.add_argument(
             '--purge', '--discard',
-            default=False, action='store_true',
+            action='store_true', default=False,
         )
         qopts.add_argument('--queues', '-Q', default=[])
         qopts.add_argument('--exclude-queues', '-X', default=[])
@@ -335,7 +338,7 @@ class worker(Command):
         daemon_options(parser)
 
         bopts = parser.add_argument_group('Embedded Beat Options')
-        bopts.add_argument('-B', '--beat', action='store_true')
+        bopts.add_argument('-B', '--beat', action='store_true', default=False)
         bopts.add_argument(
             '-s', '--schedule-filename', '--schedule',
             default=conf.beat_schedule_filename,

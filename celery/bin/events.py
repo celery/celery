@@ -153,11 +153,11 @@ class events(Command):
 
     def add_arguments(self, parser):
         dopts = parser.add_argument_group('Dumper')
-        dopts.add_argument('-d', '--dump', action='store_true')
+        dopts.add_argument('-d', '--dump', action='store_true', default=False)
 
         copts = parser.add_argument_group('Snapshot')
         copts.add_argument('-c', '--camera')
-        copts.add_argument('--detach', action='store_true')
+        copts.add_argument('--detach', action='store_true', default=False)
         copts.add_argument('-F', '--frequency', '--freq',
                            type=float, default=1.0)
         copts.add_argument('-r', '--maxrate')

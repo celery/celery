@@ -128,7 +128,7 @@ class detached_celeryd(object):
         parser.add_argument('-n', '--hostname')
         parser.add_argument(
             '--fake',
-            default=False, action='store_true',
+            action='store_true', default=False,
             help="Don't fork (for debugging purposes)",
         )
 

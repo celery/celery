@@ -481,7 +481,7 @@ class purge(Command):
     def add_arguments(self, parser):
         group = parser.add_argument_group('Purging Options')
         group.add_argument(
-            '--force', '-f', action='store_true',
+            '--force', '-f', action='store_true', default=False,
             help="Don't prompt for verification",
         )
         group.add_argument(
@@ -543,7 +543,7 @@ class result(Command):
             '--task', '-t', help='name of task (if custom backend)',
         )
         group.add_argument(
-            '--traceback', action='store_true',
+            '--traceback', action='store_true', default=False,
             help='show traceback instead',
         )
 
@@ -583,7 +583,7 @@ class _RemoteControl(Command):
             '--destination', '-d',
             help='Comma separated list of destination node names.')
         group.add_argument(
-            '--json', '-j', action='store_true',
+            '--json', '-j', action='store_true', default=False,
             help='Use json as output format.',
         )
 
@@ -819,7 +819,7 @@ class migrate(Command):
             help='Timeout in seconds (float) waiting for tasks',
         )
         group.add_argument(
-            '--ack-messages', '-a', action='store_true',
+            '--ack-messages', '-a', action='store_true', default=False,
             help='Ack messages from source broker.',
         )
         group.add_argument(
@@ -831,7 +831,7 @@ class migrate(Command):
             help='List of queues to migrate.',
         )
         group.add_argument(
-            '--forever', '-F', action='store_true',
+            '--forever', '-F', action='store_true', default=False,
             help='Continually migrate tasks until killed.',
         )
 
@@ -863,26 +863,30 @@ class shell(Command):  # pragma: no cover
         group = parser.add_argument_group('Shell Options')
         group.add_argument(
             '--ipython', '-I',
-            action='store_true', help='force iPython.',
+            action='store_true', help='force iPython.', default=False,
         )
         group.add_argument(
             '--bpython', '-B',
-            action='store_true', help='force bpython.',
+            action='store_true', help='force bpython.', default=False,
         )
         group.add_argument(
             '--python',
-            action='store_true', help='force default Python shell.',
+            action='store_true', default=False,
+            help='force default Python shell.',
         )
         group.add_argument(
             '--without-tasks', '-T',
-            action='store_true', help="don't add tasks to locals.",
+            action='store_true', default=False,
+            help="don't add tasks to locals.",
         )
         group.add_argument(
             '--eventlet',
-            action='store_true', help='use eventlet.',
+            action='store_true', default=False,
+            help='use eventlet.',
         )
         group.add_argument(
-            '--gevent', action='store_true', help='use gevent.',
+            '--gevent', action='store_true', default=False,
+            help='use gevent.',
         )
 
     def run(self, *args, **kwargs):
@@ -1002,15 +1006,15 @@ class upgrade(Command):
     def add_arguments(self, parser):
         group = parser.add_argument_group('Upgrading Options')
         group.add_argument(
-            '--django', action='store_true',
+            '--django', action='store_true', default=False,
             help='Upgrade Django project',
         )
         group.add_argument(
-            '--compat', action='store_true',
+            '--compat', action='store_true', default=False,
             help='Maintain backwards compatibility',
         )
         group.add_argument(
-            '--no-backup', action='store_true',
+            '--no-backup', action='store_true', default=False,
             help='Dont backup original files',
         )
 

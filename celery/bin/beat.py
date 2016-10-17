@@ -112,7 +112,7 @@ class beat(Command):
     def add_arguments(self, parser):
         c = self.app.conf
         bopts = parser.add_argument_group('Beat Options')
-        bopts.add_argument('--detach', action='store_true')
+        bopts.add_argument('--detach', action='store_true', default=False)
         bopts.add_argument(
             '-s', '--schedule', default=c.beat_schedule_filename)
         bopts.add_argument('--max-interval', type=float)
