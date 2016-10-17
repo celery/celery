@@ -150,6 +150,9 @@ def maybe_patch_concurrency(argv=sys.argv,
 # Lazy loading
 from . import local  # noqa
 
+
+# this just creates a new module, that imports stuff on first attribute
+# access.  This makes the library faster to use.
 old_module, new_module = local.recreate_module(  # pragma: no cover
     __name__,
     by_module={

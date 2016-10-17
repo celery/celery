@@ -462,6 +462,9 @@ COMPAT_MODULES = {
     }
 }
 
+#: We exclude these from dir(celery)
+DEPRECATED_ATTRS = set(COMPAT_MODULES['celery'].keys()) | {'subtask'}
+
 
 class class_property(object):
 
@@ -515,7 +518,10 @@ class LazyModule(ModuleType):
         return ModuleType.__getattribute__(self, name)
 
     def __dir__(self):
-        return list(set(self.__all__) | DEFAULT_ATTRS)
+        return [
+            attr for attr in set(self.__all__) | DEFAULT_ATTRS
+            if attr not in DEPRECATED_ATTRS
+        ]
 
     def __reduce__(self):
         return import_module, (self.__name__,)
@@ -574,7 +580,7 @@ def get_compat_module(pkg, name):
         fqdn = '.'.join([pkg.__name__, name])
         module = sys.modules[fqdn] = import_module(attrs)
         return module
-    attrs['__all__'] = list(attrs)
+    attrs[bytes_if_py2('__all__')] = list(attrs)
     return create_module(name, dict(attrs), pkg=pkg, prepare_attr=prepare)
 
 
