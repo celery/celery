@@ -1521,6 +1521,14 @@ Incompatible changes
 
 - Backends: ``backend.get_status()`` renamed to ``backend.get_state()``.
 
+- Backends: ``backend.maybe_reraise()`` renamed to ``.maybe_throw()``
+
+    The promise API uses .throw(), so this change was made to make it more
+    consistent.
+
+    There's an alias available, so you can still use maybe_reraise until
+    Celery 5.0.
+
 .. _v400-unscheduled-removals:
 
 Unscheduled Removals

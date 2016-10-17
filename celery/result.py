@@ -295,6 +295,7 @@ class AsyncResult(ResultBase):
         if callback is not None:
             callback(self.id, value)
         return value
+    maybe_reraise = maybe_throw   # XXX compat alias
 
     def _to_remote_traceback(self, tb):
         if tb and tblib is not None and self.app.conf.task_remote_tracebacks:
@@ -531,6 +532,7 @@ class ResultSet(ResultBase):
     def maybe_throw(self, callback=None, propagate=True):
         for result in self.results:
             result.maybe_throw(callback=callback, propagate=propagate)
+    maybe_reraise = maybe_throw  # XXX compat alias.
 
     def waiting(self):
         """Return true if any of the tasks are incomplate.
