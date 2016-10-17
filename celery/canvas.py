@@ -988,7 +988,12 @@ class group(Signature):
         return self
 
     def apply_async(self, args=(), kwargs=None, add_to_parent=True,
-                    producer=None, **options):
+                    producer=None, link=None, link_error=None, **options):
+        if link is not None:
+            raise TypeError('Cannot add link to group: use a chord')
+        if link_error is not None:
+            raise TypeError(
+                'Cannot add link to group: do that on individual tasks')
         app = self.app
         if app.conf.task_always_eager:
             return self.apply(args, kwargs, **options)

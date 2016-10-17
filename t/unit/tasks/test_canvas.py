@@ -504,6 +504,16 @@ class test_group(CanvasCase):
         assert isinstance(signature(x), group)
         assert isinstance(signature(dict(x)), group)
 
+    def test_cannot_link_on_group(self):
+        x = group([self.add.s(2, 2), self.add.s(4, 4)])
+        with pytest.raises(TypeError):
+            x.apply_async(link=self.add.s(2, 2))
+
+    def test_cannot_link_error_on_group(self):
+        x = group([self.add.s(2, 2), self.add.s(4, 4)])
+        with pytest.raises(TypeError):
+            x.apply_async(link_error=self.add.s(2, 2))
+
     def test_group_with_group_argument(self):
         g1 = group(self.add.s(2, 2), self.add.s(4, 4), app=self.app)
         g2 = group(g1, app=self.app)
