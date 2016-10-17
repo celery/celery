@@ -398,12 +398,11 @@ class Command(object):
         return options, options.pop('args', None) or []
 
     def create_parser(self, prog_name, command=None):
-        usage = self.usage(command)
         # for compatibility with optparse usage.
-        usage.replace('%prog', '%(prog)s')
+        usage = self.usage(command).replace('%prog', '%(prog)s')
         parser = self.Parser(
             prog=prog_name,
-            usage=self.usage(command),
+            usage=usage,
             epilog=self._format_epilog(self.epilog),
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=self._format_description(self.description),
