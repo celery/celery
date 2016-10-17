@@ -1,15 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-import socket
-import sys
 
-from itertools import count
-
-from celery.exceptions import TimeoutError
-from celery.utils.text import truncate
 from cyanide.suite import ManagerMixin
-from cyanide.tasks import marker
 
 
 def _celerymark(app, redis_results=None, **kwargs):

@@ -15,4 +15,3 @@ class test_tasks:
             group(print_unicode.s() for _ in range(5))(),
             timeout=1, propagate=True,
         )
-
