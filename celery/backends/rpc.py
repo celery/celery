@@ -141,10 +141,7 @@ class BaseRPCBackend(base.Backend, AsyncBackendMixin):
             return
         with self.app.amqp.producer_pool.acquire(block=True) as producer:
             producer.publish(
-                {'task_id': task_id, 'status': state,
-                 'result': self.encode_result(result, state),
-                 'traceback': traceback,
-                 'children': self.current_task_children(request)},
+                self._to_result(task_id, state, result, traceback, request),
                 exchange=self.exchange,
                 routing_key=routing_key,
                 correlation_id=correlation_id,
@@ -154,6 +151,15 @@ class BaseRPCBackend(base.Backend, AsyncBackendMixin):
                 delivery_mode=self.delivery_mode,
             )
         return result
+
+    def _to_result(self, task_id, state, result, traceback, request):
+        return {
+            'task_id': task_id,
+            'status': state,
+            'result': self.encode_result(result, state),
+            'traceback': traceback,
+            'children': self.current_task_children(request),
+        }
 
     def on_out_of_band_result(self, task_id, message):
         if self.result_consumer:
