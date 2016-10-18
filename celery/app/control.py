@@ -205,6 +205,18 @@ class Control(object):
                                          'terminate': terminate,
                                          'signal': signal}, **kwargs)
 
+    def terminate(self, task_id,
+                  destination=None, signal=TERM_SIGNAME, **kwargs):
+        """Tell all (or specific) workers to terminate a task by id.
+
+        See Also:
+            This is just a shortcut to :meth:`revoke` with the terminate
+            argument enabled.
+        """
+        return self.revoke(
+            task_id,
+            destination=destination, terminate=True, signal=signal, **kwargs)
+
     def ping(self, destination=None, timeout=1, **kwargs):
         """Ping all (or specific) workers.
 
@@ -326,11 +338,47 @@ class Control(object):
     def autoscale(self, max, min, destination=None, **kwargs):
         """Change worker(s) autoscale setting.
 
-        Supports the same arguments as :meth:`broadcast`.
-
+        See Also:
+            Supports the same arguments as :meth:`broadcast`.
         """
         return self.broadcast(
             'autoscale', {'max': max, 'min': min}, destination, **kwargs)
+
+    def shutdown(self, destination=None, **kwargs):
+        """Shutdown worker(s).
+
+        See Also:
+            Supports the same arguments as :meth:`broadcast`
+        """
+        return self.broadcast(
+            'shutdown', {}, destination, **kwargs)
+
+    def pool_restart(self, modules=None, reload=False, reloader=None,
+                     destination=None, **kwargs):
+        """Restart the execution pools of all or specific workers.
+
+        Keyword Arguments:
+            modules (Sequence[str]): List of modules to reload.
+            reload (bool): Flag to enable module reloading.  Default is False.
+            reloader (Any):  Function to reload a module.
+            destination (Sequence[str]): List of worker names to send this
+                command to.
+
+        See Also:
+            Supports the same arguments as :meth:`broadcast`
+        """
+        return self.broadcast(
+            'pool_restart',
+            {'modules': modules, 'reload': reload, 'reloader': reloader},
+            destination, **kwargs)
+
+    def heartbeat(self, destination=None, **kwargs):
+        """Tell worker(s) to send a heartbeat immediately.
+
+        See Also:
+            Supports the same arguments as :meth:`broadcast`
+        """
+        return self.broadcast('heartbeat', {}, destination, **kwargs)
 
     def broadcast(self, command, arguments=None, destination=None,
                   connection=None, reply=False, timeout=1, limit=None,

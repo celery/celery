@@ -8,6 +8,32 @@ from vine.utils import wraps
 from celery import uuid
 from celery.app import control
 from celery.exceptions import DuplicateNodenameWarning
+from celery.five import items
+
+
+def _info_for_commandclass(type_):
+    from celery.worker.control import Panel
+    return [
+        (name, info)
+        for name, info in items(Panel.meta)
+        if info.type == type_
+    ]
+
+
+def test_client_implements_all_commands(app):
+    commands = _info_for_commandclass('control')
+    assert commands
+    for name, info in commands:
+        assert getattr(app.control, name)
+
+
+def test_inspect_implements_all_commands(app):
+    inspect = app.control.inspect()
+    commands = _info_for_commandclass('inspect')
+    assert commands
+    for name, info in commands:
+        if info.type == 'inspect':
+            assert getattr(inspect, name)
 
 
 class MockMailbox(Mailbox):
@@ -203,6 +229,26 @@ class test_Broadcast:
     def test_cancel_consumer(self):
         self.control.cancel_consumer('foo')
         assert 'cancel_consumer' in MockMailbox.sent
+
+    @with_mock_broadcast
+    def test_shutdown(self):
+        self.control.shutdown()
+        assert 'shutdown' in MockMailbox.sent
+
+    @with_mock_broadcast
+    def test_heartbeat(self):
+        self.control.heartbeat()
+        assert 'heartbeat' in MockMailbox.sent
+
+    @with_mock_broadcast
+    def test_pool_restart(self):
+        self.control.pool_restart()
+        assert 'pool_restart' in MockMailbox.sent
+
+    @with_mock_broadcast
+    def test_terminate(self):
+        self.control.terminate('124')
+        assert 'revoke' in MockMailbox.sent
 
     @with_mock_broadcast
     def test_enable_events(self):

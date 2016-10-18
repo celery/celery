@@ -43,9 +43,8 @@ def nok(value):
 class Panel(UserDict):
     """Global registry of remote control commands."""
 
-    data = dict()  # global dict.
-    meta = dict()
-    by_alias = dict()
+    data = {}      # global dict.
+    meta = {}      # -"-
 
     @classmethod
     def register(cls, *args, **kwargs):
