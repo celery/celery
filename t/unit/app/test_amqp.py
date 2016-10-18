@@ -85,6 +85,14 @@ class test_Queues:
         assert isinstance(q['foo'], Queue)
         assert q['foo'].routing_key == 'rk'
 
+    def test_setitem_adds_default_exchange(self):
+        q = Queues(default_exchange=Exchange('bar'))
+        assert q.default_exchange
+        queue = Queue('foo', exchange=None)
+        queue.exchange = None
+        q['foo'] = queue
+        assert q['foo'].exchange == q.default_exchange
+
     @pytest.mark.parametrize('ha_policy,qname,q,qargs,expected', [
         (None, 'xyz', 'xyz', None, None),
         (None, 'xyz', 'xyz', {'x-foo': 'bar'}, {'x-foo': 'bar'}),
@@ -181,12 +189,43 @@ class test_default_queues:
         assert queue.routing_key == rkey or name
 
 
+class test_AMQP_proto1:
+
+    def test_kwargs_must_be_mapping(self):
+        with pytest.raises(TypeError):
+            self.app.amqp.as_task_v1(uuid(), 'foo', kwargs=[1, 2])
+
+    def test_args_must_be_list(self):
+        with pytest.raises(TypeError):
+            self.app.amqp.as_task_v1(uuid(), 'foo', args='abc')
+
+    def test_countdown_negative(self):
+        with pytest.raises(ValueError):
+            self.app.amqp.as_task_v1(uuid(), 'foo', countdown=-1232132323123)
+
+    def test_as_task_message_without_utc(self):
+        self.app.amqp.utc = False
+        self.app.amqp.as_task_v1(uuid(), 'foo', countdown=30, expires=40)
+
+
 class test_AMQP:
 
     def setup(self):
         self.simple_message = self.app.amqp.as_task_v2(
             uuid(), 'foo', create_sent_event=True,
         )
+
+    def test_kwargs_must_be_mapping(self):
+        with pytest.raises(TypeError):
+            self.app.amqp.as_task_v2(uuid(), 'foo', kwargs=[1, 2])
+
+    def test_args_must_be_list(self):
+        with pytest.raises(TypeError):
+            self.app.amqp.as_task_v2(uuid(), 'foo', args='abc')
+
+    def test_countdown_negative(self):
+        with pytest.raises(ValueError):
+            self.app.amqp.as_task_v2(uuid(), 'foo', countdown=-1232132323123)
 
     def test_Queues__with_ha_policy(self):
         x = self.app.amqp.Queues({}, ha_policy='all')

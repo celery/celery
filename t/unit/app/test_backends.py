@@ -35,3 +35,7 @@ class test_backends:
             sbn.side_effect = ValueError()
             with pytest.raises(ImproperlyConfigured):
                 backends.by_name('xxx.xxx:foo', app.loader)
+
+    def test_backend_can_not_be_module(self, app):
+        with pytest.raises(ImproperlyConfigured):
+            backends.by_name(pytest, app.loader)

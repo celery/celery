@@ -394,9 +394,9 @@ class AMQP(object):
         kwargs = kwargs or {}
         utc = self.utc
         if not isinstance(args, (list, tuple)):
-            raise ValueError('task args must be a list or tuple')
+            raise TypeError('task args must be a list or tuple')
         if not isinstance(kwargs, Mapping):
-            raise ValueError('task keyword arguments must be a mapping')
+            raise TypeError('task keyword arguments must be a mapping')
         if countdown:  # convert countdown to ETA
             self._verify_seconds(countdown, 'countdown')
             now = now or self.app.now()

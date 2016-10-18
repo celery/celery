@@ -72,6 +72,19 @@ class test_App:
     def setup(self):
         self.app.add_defaults(deepcopy(self.CELERY_TEST_CONFIG))
 
+    @patch('celery.app.base.set_default_app')
+    def test_set_default(self, set_default_app):
+        self.app.set_default()
+        set_default_app.assert_called_with(self.app)
+
+    @patch('celery.security.setup_security')
+    def test_setup_security(self, setup_security):
+        self.app.setup_security(
+            {'json'}, 'key', 'cert', 'store', 'digest', 'serializer')
+        setup_security.assert_called_with(
+            {'json'}, 'key', 'cert', 'store', 'digest', 'serializer',
+            app=self.app)
+
     def test_task_autofinalize_disabled(self):
         with self.Celery('xyzibari', autofinalize=False) as app:
             @app.task
@@ -881,6 +894,11 @@ class test_App:
         self.app.amqp = Mock(name='amqp')
         self.app.select_queues({'foo', 'bar'})
         self.app.amqp.queues.select.assert_called_with({'foo', 'bar'})
+
+    def test_Beat(self):
+        from celery.apps.beat import Beat
+        beat = self.app.Beat()
+        assert isinstance(beat, Beat)
 
 
 class test_defaults:

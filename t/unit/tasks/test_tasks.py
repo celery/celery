@@ -334,7 +334,7 @@ class test_tasks(TasksCase):
             self.increment_counter.apply_async([], 'str')
 
     def test_task_args_must_be_list(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             self.increment_counter.apply_async('s', {})
 
     def test_regular_task(self):
