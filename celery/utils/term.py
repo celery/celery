@@ -54,14 +54,16 @@ class colored(object):
         self.s = s
         self.enabled = not IS_WINDOWS and kwargs.get('enabled', True)
         self.op = kwargs.get('op', '')
-        self.names = {'black': self.black,
-                      'red': self.red,
-                      'green': self.green,
-                      'yellow': self.yellow,
-                      'blue': self.blue,
-                      'magenta': self.magenta,
-                      'cyan': self.cyan,
-                      'white': self.white}
+        self.names = {
+            'black': self.black,
+            'red': self.red,
+            'green': self.green,
+            'yellow': self.yellow,
+            'blue': self.blue,
+            'magenta': self.magenta,
+            'cyan': self.cyan,
+            'white': self.white,
+        }
 
     def _add(self, a, b):
         return string(a) + string(b)

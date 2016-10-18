@@ -14,18 +14,18 @@ from kombu.five import monotonic  # noqa
 
 DEFAULT_ITS = 40000
 
-BROKER_TRANSPORT = os.environ.get('BROKER', 'librabbitmq')
+BROKER_TRANSPORT = os.environ.get('BROKER', 'librabbitmq://')
 if hasattr(sys, 'pypy_version_info'):
-    BROKER_TRANSPORT = 'pyamqp'
+    BROKER_TRANSPORT = 'pyamqp://'
 
 app = Celery('bench_worker')
 app.conf.update(
-    broker_transport=BROKER_TRANSPORT,
+    broker_url=BROKER_TRANSPORT,
     broker_pool_limit=10,
-    celeryd_pool='solo',
-    celeryd_prefetch_multiplier=0,
-    default_delivery_mode=1,
-    queues={
+    worker_pool='solo',
+    worker_prefetch_multiplier=0,
+    task_default_delivery_mode=1,
+    task_queues={
         'bench.worker': {
             'exchange': 'bench.worker',
             'routing_key': 'bench.worker',
@@ -36,7 +36,7 @@ app.conf.update(
         }
     },
     task_serializer='json',
-    default_queue='bench.worker',
+    task_default_queue='bench.worker',
     result_backend=None,
 ),
 

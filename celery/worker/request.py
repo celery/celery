@@ -220,9 +220,14 @@ class Request(object):
         # pylint: disable=unpacking-non-sequence
         #    payload is a property, so pylint doesn't think it's a tuple.
         args, kwargs, embed = self._payload
-        request.update({'loglevel': loglevel, 'logfile': logfile,
-                        'hostname': self.hostname, 'is_eager': False,
-                        'args': args, 'kwargs': kwargs}, **embed or {})
+        request.update({
+            'loglevel': loglevel,
+            'logfile': logfile,
+            'hostname': self.hostname,
+            'is_eager': False,
+            'args': args,
+            'kwargs': kwargs
+        }, **embed or {})
         retval = trace_task(self.task, self.id, args, kwargs, request,
                             hostname=self.hostname, loader=self.app.loader,
                             app=self.app)[0]
