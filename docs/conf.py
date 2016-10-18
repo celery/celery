@@ -47,20 +47,35 @@ globals().update(conf.build_config(
 
 settings = {}
 ignored_settings = {
-    'worker_agent',
-    'worker_pool_putlocks',
+    # Deprecated broker settings (replaced by broker_url)
     'broker_host',
     'broker_user',
     'broker_password',
     'broker_vhost',
     'broker_port',
     'broker_transport',
+
+    # deprecated task settings.
     'chord_propagates',
+
+    # MongoDB settings replaced by URL config.,
     'mongodb_backend_settings',
+
+    # Redis settings replaced by URL config.
     'redis_host',
     'redis_port',
     'redis_db',
     'redis_password',
+
+    # Old deprecated AMQP result backend.
+    'result_exchange',
+    'result_exchange_type',
+
+    # Experimental
+    'worker_agent',
+
+    # Deprecated worker settings.
+    'worker_pool_putlocks',
 }
 
 

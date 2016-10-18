@@ -756,24 +756,6 @@ you to customize the table names:
 RPC backend settings
 --------------------
 
-.. setting:: result_exchange
-
-``result_exchange``
-~~~~~~~~~~~~~~~~~~~
-
-Default: ``"celeryresults"``
-
-Name of the exchange to publish results in.
-
-.. setting:: result_exchange_type
-
-``result_exchange_type``
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Default: ``"direct"``
-
-The exchange type of the result exchange.
-
 .. setting:: result_persistent
 
 ``result_persistent``
