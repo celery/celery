@@ -139,7 +139,7 @@ class DependencyGraph(object):
         """Perform Tarjan's algorithm to find strongly connected components.
 
         See Also:
-            http://bit.ly/vIMv3h.
+            :wikipedia:`Tarjan%27s_strongly_connected_components_algorithm`
         """
         result, stack, low = [], [], {}
 

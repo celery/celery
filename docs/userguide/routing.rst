@@ -203,13 +203,13 @@ If you're confused about these terms, you should read up on AMQP.
 
     In addition to the :ref:`amqp-primer` below, there's
     `Rabbits and Warrens`_, an excellent blog post describing queues and
-    exchanges. There's also AMQP in 10 minutes*: `Flexible Routing Model`_,
-    and `Standard Exchange Types`_. For users of RabbitMQ the `RabbitMQ FAQ`_
+    exchanges. There's also The `CloudAMQP tutorial`,
+    For users of RabbitMQ the `RabbitMQ FAQ`_
     could be useful as a source of information.
 
 .. _`Rabbits and Warrens`: http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/
-.. _`Flexible Routing Model`: http://bit.ly/95XFO1
-.. _`Standard Exchange Types`: http://bit.ly/EEWca
+.. _`CloudAMQP tutorial`: amqp in 10 minutes part 3
+    https://www.cloudamqp.com/blog/2015-09-03-part4-rabbitmq-for-beginners-exchanges-routing-keys-bindings.html
 .. _`RabbitMQ FAQ`: http://www.rabbitmq.com/faq.html
 
 .. _routing-special_options:

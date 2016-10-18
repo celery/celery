@@ -77,7 +77,10 @@ The message has been ignored and discarded.
 
 Did you remember to import the module containing this task?
 Or maybe you're using relative imports?
-Please see http://bit.ly/gLye1c for more information.
+
+Please see
+http://docs.celeryq.org/en/latest/internals/protocol.html
+for more information.
 
 The full contents of the message body was:
 %s
@@ -89,7 +92,8 @@ Received invalid task message: %s
 The message has been ignored and discarded.
 
 Please ensure your message conforms to the task
-message protocol as described here: http://bit.ly/hYj41y
+message protocol as described here:
+http://docs.celeryq.org/en/latest/internals/protocol.html
 
 The full contents of the message body was:
 %s
