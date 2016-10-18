@@ -32,5 +32,5 @@ def test_all_reqs_enabled_in_tests():
     defined = ci_default | ci_base
     all_extras = _get_all_extras()
     diff = all_extras - defined
-    print('MISSING FROM CI REQS:\n%s' % (pprint.pformat(diff),))
+    print('Missing CI reqs:\n{0}'.format(pprint.pformat(diff)))
     assert not diff
