@@ -7,10 +7,10 @@ from kombu.utils.encoding import str_t
 
 from case import MagicMock, Mock, patch, sentinel, skip
 
+from celery.app import backends
 from celery.backends import couchbase as module
 from celery.backends.couchbase import CouchbaseBackend
 from celery.exceptions import ImproperlyConfigured
-from celery import backends
 
 try:
     import couchbase
@@ -97,7 +97,7 @@ class test_CouchbaseBackend:
 
     def test_backend_by_url(self, url='couchbase://myhost/mycoolbucket'):
         from celery.backends.couchbase import CouchbaseBackend
-        backend, url_ = backends.get_backend_by_url(url, self.app.loader)
+        backend, url_ = backends.by_url(url, self.app.loader)
         assert backend is CouchbaseBackend
         assert url_ == url
 

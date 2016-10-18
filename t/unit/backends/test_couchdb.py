@@ -4,10 +4,10 @@ import pytest
 
 from case import MagicMock, Mock, sentinel, skip
 
+from celery.app import backends
 from celery.backends import couchdb as module
 from celery.backends.couchdb import CouchBackend
 from celery.exceptions import ImproperlyConfigured
-from celery import backends
 
 try:
     import pycouchdb
@@ -72,7 +72,7 @@ class test_CouchBackend:
 
     def test_backend_by_url(self, url='couchdb://myhost/mycoolcontainer'):
         from celery.backends.couchdb import CouchBackend
-        backend, url_ = backends.get_backend_by_url(url, self.app.loader)
+        backend, url_ = backends.by_url(url)
         assert backend is CouchBackend
         assert url_ == url
 

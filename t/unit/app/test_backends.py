@@ -17,16 +17,16 @@ class test_backends:
         ('cache+memory://', CacheBackend),
     ])
     def test_get_backend_aliases(self, url, expect_cls, app):
-        backend, url = backends.get_backend_by_url(url, app.loader)
+        backend, url = backends.by_url(url)
         assert isinstance(backend(app=app, url=url), expect_cls)
 
     def test_unknown_backend(self, app):
         with pytest.raises(ImportError):
-            backends.get_backend_cls('fasodaopjeqijwqe', app.loader)
+            backends.by_name('fasodaopjeqijwqe')
 
     def test_backend_by_url(self, app, url='redis://localhost/1'):
         from celery.backends.redis import RedisBackend
-        backend, url_ = backends.get_backend_by_url(url, app.loader)
+        backend, url_ = backends.by_url(url)
         assert backend is RedisBackend
         assert url_ == url
 
@@ -34,4 +34,4 @@ class test_backends:
         with patch('celery.app.backends.symbol_by_name') as sbn:
             sbn.side_effect = ValueError()
             with pytest.raises(ImproperlyConfigured):
-                backends.get_backend_cls('xxx.xxx:foo', app.loader)
+                backends.by_name('xxx.xxx:foo')

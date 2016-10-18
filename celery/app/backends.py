@@ -10,7 +10,7 @@ from celery._state import current_app
 from celery.five import reraise
 from celery.utils.imports import load_extension_class_names, symbol_by_name
 
-__all__ = ['get_backend_cls', 'get_backend_by_url']
+__all__ = ['by_name', 'by_url']
 
 UNKNOWN_BACKEND = """
 Unknown result backend: {0!r}.  Did you spell that correctly? ({1!r})
@@ -35,7 +35,7 @@ BACKEND_ALIASES = {
 }
 
 
-def get_backend_cls(backend=None, loader=None,
+def by_name(backend=None, loader=None,
                     extension_namespace='celery.result_backends'):
     """Get backend class by name/alias."""
     backend = backend or 'disabled'
@@ -54,7 +54,7 @@ def get_backend_cls(backend=None, loader=None,
     return cls
 
 
-def get_backend_by_url(backend=None, loader=None):
+def by_url(backend=None, loader=None):
     """Get backend class by URL."""
     url = None
     if backend and '://' in backend:
@@ -64,4 +64,4 @@ def get_backend_by_url(backend=None, loader=None):
             backend, url = url.split('+', 1)
         else:
             backend = scheme
-    return get_backend_cls(backend, loader), url
+    return by_name(backend, loader), url

@@ -88,9 +88,9 @@ class test_RiakBackend:
         assert self.backend.port == 1234
 
     def test_backend_by_url(self, url='riak://myhost/mycoolbucket'):
-        from celery import backends
+        from celery.app import backends
         from celery.backends.riak import RiakBackend
-        backend, url_ = backends.get_backend_by_url(url, self.app.loader)
+        backend, url_ = backends.by_url(url)
         assert backend is RiakBackend
         assert url_ == url
 

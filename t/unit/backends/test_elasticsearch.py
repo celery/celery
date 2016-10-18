@@ -4,7 +4,7 @@ import pytest
 
 from case import Mock, sentinel, skip
 
-from celery import backends
+from celery.app import backends
 from celery.backends import elasticsearch as module
 from celery.backends.elasticsearch import ElasticsearchBackend
 from celery.exceptions import ImproperlyConfigured
@@ -68,7 +68,7 @@ class test_ElasticsearchBackend:
         )
 
     def test_backend_by_url(self, url='elasticsearch://localhost:9200/index'):
-        backend, url_ = backends.get_backend_by_url(url, self.app.loader)
+        backend, url_ = backends.by_url(url)
 
         assert backend is ElasticsearchBackend
         assert url_ == url
