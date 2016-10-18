@@ -91,7 +91,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
     #: Exception raised when there are too many messages for a task id.
     BacklogLimitExceeded = BacklogLimitExceeded
 
-    persistent = True
+    persistent = False
     supports_autoexpire = True
     supports_native_join = True
 
