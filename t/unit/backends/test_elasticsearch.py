@@ -68,7 +68,7 @@ class test_ElasticsearchBackend:
         )
 
     def test_backend_by_url(self, url='elasticsearch://localhost:9200/index'):
-        backend, url_ = backends.by_url(url)
+        backend, url_ = backends.by_url(url, self.app.loader)
 
         assert backend is ElasticsearchBackend
         assert url_ == url

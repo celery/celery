@@ -90,7 +90,7 @@ class test_RiakBackend:
     def test_backend_by_url(self, url='riak://myhost/mycoolbucket'):
         from celery.app import backends
         from celery.backends.riak import RiakBackend
-        backend, url_ = backends.by_url(url)
+        backend, url_ = backends.by_url(url, self.app.loader)
         assert backend is RiakBackend
         assert url_ == url
 

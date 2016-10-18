@@ -72,7 +72,7 @@ class test_CouchBackend:
 
     def test_backend_by_url(self, url='couchdb://myhost/mycoolcontainer'):
         from celery.backends.couchdb import CouchBackend
-        backend, url_ = backends.by_url(url)
+        backend, url_ = backends.by_url(url, self.app.loader)
         assert backend is CouchBackend
         assert url_ == url
 
