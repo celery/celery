@@ -26,7 +26,7 @@ from celery.exceptions import (
 )
 from celery.five import Empty, range, Queue as FastQueue
 from celery.platforms import EX_FAILURE
-from celery import worker as worker_module
+from celery.worker import worker as worker_module
 from celery.worker import components
 from celery.worker import consumer
 from celery.worker import state
@@ -758,7 +758,7 @@ class test_WorkController(ConsumerCase):
         self.worker.blueprint = None
         self.worker._shutdown()
 
-    @patch('celery.worker.create_pidlock')
+    @patch('celery.worker.worker.create_pidlock')
     def test_use_pidfile(self, create_pidlock):
         create_pidlock.return_value = Mock()
         worker = self.create_worker(pidfile='pidfilelockfilepid')
@@ -929,7 +929,7 @@ class test_WorkController(ConsumerCase):
         worker.signal_consumer_close()
 
     def test_rusage__no_resource(self):
-        from celery import worker
+        from celery.worker import worker
         prev, worker.resource = worker.resource, None
         try:
             self.worker.pool = Mock(name='pool')

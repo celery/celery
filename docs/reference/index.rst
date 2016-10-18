@@ -61,6 +61,7 @@
     celery.worker.consumer.heart
     celery.worker.consumer.mingle
     celery.worker.consumer.tasks
+    celery.worker.worker
     celery.bin.base
     celery.bin.celery
     celery.bin.worker
@@ -68,5 +69,3 @@
     celery.bin.events
     celery.bin.logtool
     celery.bin.amqp
-    celery.bin.multi
-    celery.bin.graph

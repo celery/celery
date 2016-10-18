@@ -45,7 +45,7 @@ class test_Worker:
 
     def test_cpu_count(self):
         with mock.stdouts():
-            with patch('celery.worker.cpu_count') as cpu_count:
+            with patch('celery.worker.worker.cpu_count') as cpu_count:
                 cpu_count.side_effect = NotImplementedError()
                 w = self.app.Worker(concurrency=None)
                 assert w.concurrency == 2

@@ -595,7 +595,7 @@ class test_ControlPanel:
         consumer.controller.consumer = None
         panel.handle('pool_restart', {'reloader': _reload})
 
-    @patch('celery.worker.logger.debug')
+    @patch('celery.worker.worker.logger.debug')
     def test_pool_restart_import_modules(self, _debug):
         consumer = Consumer(self.app)
         consumer.controller = _WC(app=self.app)
