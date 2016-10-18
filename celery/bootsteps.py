@@ -80,7 +80,6 @@ class Blueprint(object):
     Arguments:
         steps Sequence[Union[str, Step]]: List of steps.
         name (str): Set explicit name for this blueprint.
-        app (~@Celery): Set the Celery app for this blueprint.
         on_start (Callable): Optional callback applied after blueprint start.
         on_close (Callable): Optional callback applied before blueprint close.
         on_stopped (Callable): Optional callback applied after
@@ -100,9 +99,8 @@ class Blueprint(object):
         TERMINATE: 'terminating',
     }
 
-    def __init__(self, steps=None, name=None, app=None,
+    def __init__(self, steps=None, name=None,
                  on_start=None, on_close=None, on_stopped=None):
-        self.app = app
         self.name = name or self.name or qualname(type(self))
         self.types = set(steps or []) | set(self.default_steps)
         self.on_start = on_start
@@ -254,10 +252,7 @@ class Blueprint(object):
             raise KeyError('unknown bootstep: %s' % exc)
 
     def claim_steps(self):
-        return dict(self.load_step(step) for step in self._all_steps())
-
-    def _all_steps(self):
-        return self.types | self.app.steps[self.name.lower()]
+        return dict(self.load_step(step) for step in self.types)
 
     def load_step(self, step):
         step = symbol_by_name(step)

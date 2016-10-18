@@ -135,10 +135,12 @@ class WorkController(object):
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
         self.steps = []
         self.on_init_blueprint()
-        self.blueprint = self.Blueprint(app=self.app,
-                                        on_start=self.on_start,
-                                        on_close=self.on_close,
-                                        on_stopped=self.on_stopped)
+        self.blueprint = self.Blueprint(
+            steps=self.app.steps['worker'],
+            on_start=self.on_start,
+            on_close=self.on_close,
+            on_stopped=self.on_stopped,
+        )
         self.blueprint.apply(self, **kwargs)
 
     def on_init_blueprint(self):

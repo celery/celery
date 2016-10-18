@@ -210,7 +210,8 @@ class Consumer(object):
 
         self.steps = []
         self.blueprint = self.Blueprint(
-            app=self.app, on_close=self.on_close,
+            steps=self.app.steps['consumer'],
+            on_close=self.on_close,
         )
         self.blueprint.apply(self, **dict(worker_options or {}, **kwargs))
 
