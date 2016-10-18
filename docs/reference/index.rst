@@ -19,6 +19,7 @@
     celery.app.registry
     celery.app.backends
     celery.app.builtins
+    celery.app.events
     celery.app.log
     celery.app.utils
     celery.bootsteps
@@ -39,6 +40,9 @@
     celery.contrib.sphinx
     celery.contrib.rdb
     celery.events
+    celery.events.receiver
+    celery.events.dispatcher
+    celery.events.event
     celery.events.state
     celery.beat
     celery.apps.worker

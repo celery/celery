@@ -180,7 +180,7 @@ class Celery(object):
 
     amqp_cls = 'celery.app.amqp:AMQP'
     backend_cls = None
-    events_cls = 'celery.events:Events'
+    events_cls = 'celery.app.events:Events'
     loader_cls = None
     log_cls = 'celery.app.log:Logging'
     control_cls = 'celery.app.control:Control'

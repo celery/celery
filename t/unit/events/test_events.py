@@ -5,7 +5,8 @@ import socket
 
 from case import Mock, call
 
-from celery.events import CLIENT_CLOCK_SKEW, Event
+from celery.events import Event
+from celery.events.receiver import CLIENT_CLOCK_SKEW
 
 
 class MockProducer(object):
