@@ -36,7 +36,7 @@ BACKEND_ALIASES = {
 
 
 def by_name(backend=None, loader=None,
-                    extension_namespace='celery.result_backends'):
+            extension_namespace='celery.result_backends'):
     """Get backend class by name/alias."""
     backend = backend or 'disabled'
     loader = loader or current_app.loader
