@@ -23,7 +23,6 @@ except ImportError:  # pragma: no cover
     resource = None  # noqa
 
 from billiard import cpu_count
-from billiard.util import Finalize
 from kombu.utils.compat import detect_environment
 
 from celery import bootsteps
@@ -99,9 +98,6 @@ class WorkController(object):
         self.on_after_init(**kwargs)
 
         self.setup_instance(**self.prepare_args(**kwargs))
-        self._finalize = [
-            Finalize(self, self._send_worker_shutdown, exitpriority=10),
-        ]
 
     def setup_instance(self, queues=None, ready_callback=None, pidfile=None,
                        include=None, use_eventloop=None, exclude_queues=None,
@@ -257,6 +253,7 @@ class WorkController(object):
             self.signal_consumer_close()
             if not in_sighandler or self.pool.signal_safe:
                 self._shutdown(warm=True)
+        self._send_worker_shutdown()
 
     def terminate(self, in_sighandler=False):
         """Not so graceful shutdown of the worker server."""
