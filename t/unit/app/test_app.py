@@ -152,7 +152,7 @@ class test_App:
 
     def test_add_defaults(self):
         assert not self.app.configured
-        _conf = {'FOO': 300}
+        _conf = {'foo': 300}
 
         def conf():
             return _conf
@@ -160,19 +160,19 @@ class test_App:
         self.app.add_defaults(conf)
         assert conf in self.app._pending_defaults
         assert not self.app.configured
-        assert self.app.conf.FOO == 300
+        assert self.app.conf.foo == 300
         assert self.app.configured
         assert not self.app._pending_defaults
 
         # defaults not pickled
         appr = loads(dumps(self.app))
         with pytest.raises(AttributeError):
-            appr.conf.FOO
+            appr.conf.foo
 
         # add more defaults after configured
-        conf2 = {'FOO': 'BAR'}
+        conf2 = {'foo': 'BAR'}
         self.app.add_defaults(conf2)
-        assert self.app.conf.FOO == 'BAR'
+        assert self.app.conf.foo == 'BAR'
 
         assert _conf in self.app.conf.defaults
         assert conf2 in self.app.conf.defaults
@@ -330,6 +330,7 @@ class test_App:
 
     def test_pending_configuration__setdefault(self):
         with self.Celery(broker='foo://bar') as app:
+            assert not app.configured
             app.conf.setdefault('worker_agent', 'foo:Bar')
             assert not app.configured
 
@@ -338,11 +339,9 @@ class test_App:
             app.conf.worker_agent = 'foo:Bar'
             assert not app.configured
             assert list(keys(app.conf))
-            assert not app.configured
-            assert 'worker_agent' in app.conf
-            assert not app.configured
-            assert dict(app.conf)
             assert app.configured
+            assert 'worker_agent' in app.conf
+            assert dict(app.conf)
 
     def test_pending_configuration__raises_ImproperlyConfigured(self):
         with self.Celery(set_as_current=False) as app:

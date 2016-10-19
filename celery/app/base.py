@@ -113,14 +113,39 @@ class PendingConfiguration(UserDict, AttributeDictMixin):
     # replacing `app.conf` with a concrete settings object.
 
     callback = None
-    data = None
+    _data = None
 
     def __init__(self, conf, callback):
-        object.__setattr__(self, 'data', conf)
+        object.__setattr__(self, '_data', conf)
         object.__setattr__(self, 'callback', callback)
 
-    def __getitem__(self, key):
-        return self.callback(key)
+    def __setitem__(self, key, value):
+        self._data[key] = value
+
+    def clear(self):
+        self._data.clear()
+
+    def update(self, *args, **kwargs):
+        self._data.update(*args, **kwargs)
+
+    def setdefault(self, *args, **kwargs):
+        return self._data.setdefault(*args, **kwargs)
+
+    def __contains__(self, key):
+        # XXX will not show finalized configuration
+        # setdefault will cause `key in d` to happen,
+        # so for setdefault to be lazy, so does contains.
+        return key in self._data
+
+    def __len__(self):
+        return len(self.data)
+
+    def __repr__(self):
+        return repr(self.data)
+
+    @cached_property
+    def data(self):
+        return self.callback()
 
 
 @python_2_unicode_compatible
@@ -250,7 +275,7 @@ class Celery(object):
         self.__autoset('include', include)
         self._conf = Settings(
             PendingConfiguration(
-                self._preconf, self._get_from_conf_and_finalize),
+                self._preconf, self._finalize_pending_conf),
             prefix=self.namespace,
             keys=(_old_key_to_new, _new_key_to_old),
         )
@@ -855,7 +880,7 @@ class Celery(object):
             self.loader)
         return backend(app=self, url=url)
 
-    def _get_from_conf_and_finalize(self, key):
+    def _finalize_pending_conf(self):
         """Get config value by key and finalize loading the configuration.
 
         Note:
@@ -863,7 +888,7 @@ class Celery(object):
                 as soon as you access a key the configuration is read.
         """
         conf = self._conf = self._load_config()
-        return conf[key]
+        return conf
 
     def _load_config(self):
         if isinstance(self.on_configure, Signal):
