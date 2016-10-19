@@ -63,7 +63,7 @@ class test_group:
 
 class xxx_chord:
 
-    @pytest.mark.celery(redis_results=1)
+    @pytest.mark.celery(result_backend='redis://')
     def test_parent_ids(self, manager):
         self.assert_parentids_chord()
         self.assert_parentids_chord(uuid(), uuid())

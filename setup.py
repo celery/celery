@@ -209,6 +209,9 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'celery = celery.__main__:main',
-        ]
+        ],
+        'pytest11': [
+            'celery = celery.contrib.pytest',
+        ],
     },
 )

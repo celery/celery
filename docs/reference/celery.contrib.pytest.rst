@@ -8,9 +8,9 @@
 API Reference
 =============
 
-.. currentmodule:: celery.utils.pytest
+.. currentmodule:: celery.contrib.pytest
 
-.. automodule:: celery.utils.pytest
+.. automodule:: celery.contrib.pytest
     :members:
     :undoc-members:
 

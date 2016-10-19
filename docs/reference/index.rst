@@ -28,7 +28,6 @@
     celery.signals
     celery.security
     celery.utils.debug
-    celery.utils.pytest
     celery.exceptions
     celery.loaders
     celery.loaders.app
@@ -37,6 +36,7 @@
     celery.states
     celery.contrib.abortable
     celery.contrib.migrate
+    celery.contrib.pytest
     celery.contrib.sphinx
     celery.contrib.rdb
     celery.events

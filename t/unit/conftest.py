@@ -7,17 +7,20 @@ import sys
 import threading
 import warnings
 
+from functools import partial
 from importlib import import_module
 
 from case import Mock
+from case.utils import decorator
+from kombu import Queue
 
-from celery.utils.pytest import (
-    CELERY_TEST_CONFIG, Trap, TestApp,
-    assert_signal_called, TaskMessage, TaskMessage1, task_message_from_sig,
+from celery.contrib.testing.app import Trap, TestApp
+from celery.contrib.testing.mocks import (
+    TaskMessage, TaskMessage1, task_message_from_sig,
 )
-from celery.utils.pytest import app  # noqa
-from celery.utils.pytest import reset_cache_backend_state  # noqa
-from celery.utils.pytest import depends_on_current_app  # noqa
+from celery.contrib.pytest import celery_app  # noqa
+from celery.contrib.pytest import reset_cache_backend_state  # noqa
+from celery.contrib.pytest import depends_on_current_app  # noqa
 
 __all__ = ['app', 'reset_cache_backend_state', 'depends_on_current_app']
 
@@ -33,6 +36,52 @@ PYPY3 = getattr(sys, 'pypy_version_info', None) and sys.version_info[0] > 3
 CASE_LOG_REDIRECT_EFFECT = 'Test {0} didn\'t disable LoggingProxy for {1}'
 CASE_LOG_LEVEL_EFFECT = 'Test {0} modified the level of the root logger'
 CASE_LOG_HANDLER_EFFECT = 'Test {0} modified handlers for the root logger'
+
+
+@pytest.fixture
+def celery_config():
+    return {
+        #: Don't want log output when running suite.
+        'task_default_queue': 'testcelery',
+        'task_default_exchange': 'testcelery',
+        'task_default_routing_key': 'testcelery',
+        'task_queues': (
+            Queue('testcelery', routing_key='testcelery'),
+        ),
+        'accept_content': ('json', 'pickle'),
+
+        # Mongo results tests (only executed if installed and running)
+        'mongodb_backend_settings': {
+            'host': os.environ.get('MONGO_HOST') or 'localhost',
+            'port': os.environ.get('MONGO_PORT') or 27017,
+            'database': os.environ.get('MONGO_DB') or 'celery_unittests',
+            'taskmeta_collection': (
+                os.environ.get('MONGO_TASKMETA_COLLECTION') or
+                'taskmeta_collection'
+            ),
+            'user': os.environ.get('MONGO_USER'),
+            'password': os.environ.get('MONGO_PASSWORD'),
+        }
+    }
+
+
+
+@decorator
+def assert_signal_called(signal, **expected):
+    """Context that verifes signal is called before exiting."""
+    handler = Mock()
+    call_handler = partial(handler)
+    signal.connect(call_handler)
+    try:
+        yield handler
+    finally:
+        signal.disconnect(call_handler)
+    handler.assert_called_with(signal=signal, **expected)
+
+
+@pytest.fixture
+def app(celery_app):
+    yield celery_app
 
 
 @pytest.fixture(autouse=True, scope='session')
@@ -99,7 +148,7 @@ def AAA_reset_CELERY_LOADER_env():
 
 
 @pytest.fixture(autouse=True)
-def test_cases_shortcuts(request, app, patching):
+def test_cases_shortcuts(request, app, patching, celery_config):
     if request.instance:
         @app.task
         def add(x, y):
@@ -112,7 +161,7 @@ def test_cases_shortcuts(request, app, patching):
         request.instance.task_message_from_sig = task_message_from_sig
         request.instance.TaskMessage = TaskMessage
         request.instance.TaskMessage1 = TaskMessage1
-        request.instance.CELERY_TEST_CONFIG = dict(CELERY_TEST_CONFIG)
+        request.instance.CELERY_TEST_CONFIG = celery_config
         request.instance.add = add
         request.instance.patching = patching
     yield

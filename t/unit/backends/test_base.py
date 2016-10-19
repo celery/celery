@@ -588,7 +588,7 @@ class test_DisabledBackend:
     def test_as_uri(self):
         assert DisabledBackend(self.app).as_uri() == 'disabled://'
 
-    @pytest.mark.celery(backend='disabled')
+    @pytest.mark.celery(result_backend='disabled')
     def test_chord_raises_error(self):
         from celery import chord
         with pytest.raises(NotImplementedError):
