@@ -24,7 +24,7 @@ class test_chain:
         c = chain(ids.si(i) for i in range(num))
         c.freeze()
         res = c()
-        res.get(timeout=5)
+        res.get(timeout=30)
         self.assert_ids(res, num - 1)
 
     def assert_ids(self, res, size):
@@ -33,7 +33,7 @@ class test_chain:
             root = root.parent
         node = res
         while node:
-            root_id, parent_id, value = node.get(timeout=5)
+            root_id, parent_id, value = node.get(timeout=30)
             assert value == i
             assert root_id == root.id
             if node.parent:
@@ -49,7 +49,7 @@ class test_group:
         res = g()
         expected_root_id = res.parent.parent.id
         expected_parent_id = res.parent.id
-        values = res.get(timeout=5)
+        values = res.get(timeout=30)
 
         for i, r in enumerate(values):
             root_id, parent_id, value = r
@@ -77,12 +77,12 @@ class xxx_chord:
         res = g.apply_async(root_id=base_root, parent_id=base_parent)
         expected_root_id = base_root or res.parent.parent.parent.id
 
-        root_id, parent_id, value = res.get(timeout=5)
+        root_id, parent_id, value = res.get(timeout=30)
         assert value == 51
         assert root_id == expected_root_id
         assert parent_id == res.parent.id
 
-        prev, (root_id, parent_id, value) = res.parent.get(timeout=5)
+        prev, (root_id, parent_id, value) = res.parent.get(timeout=30)
         assert value == 50
         assert root_id == expected_root_id
         assert parent_id == res.parent.parent.id
@@ -92,12 +92,12 @@ class xxx_chord:
             assert root_id == expected_root_id
             assert parent_id == res.parent.parent.id
 
-        root_id, parent_id, value = res.parent.parent.get(timeout=5)
+        root_id, parent_id, value = res.parent.parent.get(timeout=30)
         assert value == 2
         assert parent_id == res.parent.parent.parent.id
         assert root_id == expected_root_id
 
-        root_id, parent_id, value = res.parent.parent.parent.get(timeout=5)
+        root_id, parent_id, value = res.parent.parent.parent.get(timeout=30)
         assert value == 1
         assert root_id == expected_root_id
         assert parent_id == base_parent

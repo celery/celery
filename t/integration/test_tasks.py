@@ -13,5 +13,5 @@ class test_tasks:
     def test_unicode_task(self, manager):
         manager.join(
             group(print_unicode.s() for _ in range(5))(),
-            timeout=1, propagate=True,
+            timeout=10, propagate=True,
         )
