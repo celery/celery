@@ -66,6 +66,7 @@ class Logging(object):
 
     def setup(self, loglevel=None, logfile=None, redirect_stdouts=False,
               redirect_level='WARNING', colorize=None, hostname=None):
+        loglevel = mlevel(loglevel)
         handled = self.setup_logging_subsystem(
             loglevel, logfile, colorize=colorize, hostname=hostname,
         )

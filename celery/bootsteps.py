@@ -30,7 +30,6 @@ TERMINATE = 0x3
 
 logger = get_logger(__name__)
 
-
 def _pre(ns, fmt):
     return '| {0}: {1}'.format(ns.alias, fmt)
 

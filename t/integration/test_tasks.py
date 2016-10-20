@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 from celery import group
-from cyanide.tasks import print_unicode, sleeping
+from .tasks import print_unicode, sleeping
 
 
 class test_tasks:

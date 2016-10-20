@@ -30,15 +30,15 @@ def humanize_seconds(secs, prefix='', sep='', now='now', **kwargs):
 
 
 class ManagerMixin(object):
-    ResultMissingError = AssertionError
 
-    def _init_manager(self, app,
-                      block_timeout=30 * 60, stdout=None, stderr=None):
+    def _init_manager(self,
+                      block_timeout=30 * 60, no_join=False,
+                      stdout=None, stderr=None):
         self.stdout = sys.stdout if stdout is None else stdout
         self.stderr = sys.stderr if stderr is None else stderr
         self.connerrors = self.app.connection().recoverable_connection_errors
         self.block_timeout = block_timeout
-        self.progress = None
+        self.no_join = no_join
 
     def remark(self, s, sep='-'):
         print('{0}{1}'.format(sep, s), file=self.stdout)
@@ -108,13 +108,15 @@ class ManagerMixin(object):
                 )
             except self.connerrors as exc:
                 self.remark('join: connection lost: {0!r}'.format(exc), '!')
-        raise self.TaskPredicate('Test failed: Missing task results')
+        raise AssertionError('Test failed: Missing task results')
 
     def inspect(self, timeout=1):
         return self.app.control.inspect(timeout=timeout)
 
     def query_tasks(self, ids, timeout=0.5):
-        for reply in items(self.inspect(timeout).query_task(ids) or []):
+        print('BROKER: %r' % (self.app.connection().as_uri(),))
+        for reply in items(self.inspect(timeout).query_task(*ids) or {}):
+            print('REPLY: %r' %( reply,))
             yield reply
 
     def query_task_states(self, ids, timeout=0.5):
@@ -161,3 +163,10 @@ class ManagerMixin(object):
         if not res:
             raise Sentinel()
         return res
+
+
+class Manager(ManagerMixin):
+
+    def __init__(self, app, **kwargs):
+        self.app = app
+        self._init_manager(**kwargs)

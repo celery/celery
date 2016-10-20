@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from celery.backends.cache import CacheBackend, DummyClient
 
 from .testing import worker
-from .testing.app import TestApp, setup_default_app_trap
+from .testing.app import TestApp, setup_default_app
 
 NO_WORKER = os.environ.get('NO_WORKER')
 
@@ -18,62 +18,128 @@ NO_WORKER = os.environ.get('NO_WORKER')
 
 
 @contextmanager
-def _create_app(request, **config):
-    test_app = TestApp(set_as_current=False, config=config)
-    with setup_default_app_trap(test_app):
+def _create_app(request, enable_logging=False, use_trap=False, **config):
+    # type: (Any, **Any) -> Celery
+    """Utility context used to setup Celery app for pytest fixtures."""
+    test_app = TestApp(
+        set_as_current=False,
+        enable_logging=enable_logging,
+        config=config,
+    )
+    # request.module is not defined for session
+    _module = getattr(request, 'module', None)
+    _cls = getattr(request, 'cls', None)
+    _function = getattr(request, 'function', None)
+    with setup_default_app(test_app, use_trap=use_trap):
         is_not_contained = any([
-            not getattr(request.module, 'app_contained', True),
-            not getattr(request.cls, 'app_contained', True),
-            not getattr(request.function, 'app_contained', True)
+            not getattr(_module, 'app_contained', True),
+            not getattr(_cls, 'app_contained', True),
+            not getattr(_function, 'app_contained', True)
         ])
         if is_not_contained:
             test_app.set_current()
         yield test_app
 
+@pytest.fixture(scope='session')
+def use_celery_app_trap():
+    return False
+
 
 @pytest.fixture(scope='session')
-def celery_session_app(request):
-    with _create_app(request) as app:
+def celery_session_app(request,
+                       celery_config,
+                       celery_enable_logging,
+                       use_celery_app_trap):
+    # type: (Any) -> Celery
+    """Session Fixture: Return app for session fixtures."""
+    mark = request.node.get_marker('celery')
+    config = dict(celery_config, **mark.kwargs if mark else {})
+    with _create_app(request,
+                     enable_logging=celery_enable_logging,
+                     use_trap=use_celery_app_trap,
+                     **config) as app:
+        if not use_celery_app_trap:
+            app.set_default()
+            app.set_current()
         yield app
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
+def celery_session_worker(request, celery_session_app,
+                          celery_includes, celery_worker_pool):
+    # type: (Any, Celery, Sequence[str], str) -> WorkController
+    """Session Fixture: Start worker that lives throughout test suite."""
+    if not NO_WORKER:
+        for module in celery_includes:
+            celery_session_app.loader.import_task_module(module)
+        with worker.start_worker(celery_session_app,
+                                 pool=celery_worker_pool) as w:
+            yield w
+
+
+@pytest.fixture(scope='session')
+def celery_enable_logging():
+    return False
+
+
+@pytest.fixture(scope='session')
+def celery_includes():
+    return ()
+
+
+@pytest.fixture(scope='session')
+def celery_worker_pool():
+    return 'solo'
+
+
+@pytest.fixture(scope='session')
 def celery_config():
+    # type: () -> Mapping[str, Any]
+    """Redefine this fixture to configure the test Celery app.
+
+    The config returned by your fixture will then be used
+    to configure the :func:`celery_app` fixture.
+    """
     return {}
 
 
 @pytest.fixture()
-def celery_app(request, celery_config):
+def celery_app(request,
+               celery_config,
+               celery_enable_logging,
+               use_celery_app_trap):
     """Fixture creating a Celery application instance."""
     mark = request.node.get_marker('celery')
     config = dict(celery_config, **mark.kwargs if mark else {})
-    with _create_app(request, **config) as app:
+    with _create_app(request,
+                     enable_logging=celery_enable_logging,
+                     use_trap=use_celery_app_trap,
+                     **config) as app:
         yield app
 
 
 @pytest.fixture()
-def celery_worker(request, celery_app):
+def celery_worker(request, celery_app, celery_includes, celery_worker_pool):
+    # type: (Any, Celery, Sequence[str], str) -> WorkController
+    """Fixture: Start worker in a thread, stop it when the test returns."""
     if not NO_WORKER:
-        worker.start_worker(celery_app)
-
-
-@pytest.fixture(scope='session')
-def celery_session_worker(request, celery_session_app):
-    if not NO_WORKER:
-        worker.start_worker(celery_session_app)
+        for module in celery_includes:
+            celery_app.loader.import_task_module(module)
+        with worker.start_worker(celery_app, pool=celery_worker_pool) as w:
+            yield w
 
 
 @pytest.fixture()
-def depends_on_current_app(app):
+def depends_on_current_app(celery_app):
     """Fixture that sets app as current."""
-    app.set_current()
+    celery_app.set_current()
 
 
 @pytest.fixture(autouse=True)
-def reset_cache_backend_state(app):
+def reset_cache_backend_state(celery_app):
     """Fixture that resets the internal state of the cache result backend."""
     yield
-    backend = app.__dict__.get('backend')
+    backend = celery_app.__dict__.get('backend')
     if backend is not None:
         if isinstance(backend, CacheBackend):
             if isinstance(backend.client, DummyClient):

@@ -1,12 +1,10 @@
 from __future__ import absolute_import, unicode_literals
 
-import os
 import weakref
 
 from contextlib import contextmanager
 from copy import deepcopy
 
-from kombu import Queue
 from kombu.utils.imports import symbol_by_name
 
 from celery import Celery
@@ -15,13 +13,12 @@ from celery import _state
 DEFAULT_TEST_CONFIG = {
     'worker_hijack_root_logger': False,
     'worker_log_color': False,
-    'accept_content': 'json',
+    'accept_content': {'json'},
     'enable_utc': True,
     'timezone': 'UTC',
     'broker_url': 'memory://',
     'result_backend': 'cache+memory://'
 }
-
 
 
 class Trap(object):
@@ -43,7 +40,7 @@ class UnitLogging(symbol_by_name(Celery.log_cls)):
         self.already_setup = True
 
 
-def TestApp(name=None, config=None, set_as_current=False,
+def TestApp(name=None, config=None, enable_logging=False, set_as_current=False,
             log=UnitLogging, backend=None, broker=None, **kwargs):
     """App used for testing."""
     from . import tasks  # noqa
@@ -52,6 +49,7 @@ def TestApp(name=None, config=None, set_as_current=False,
         config.pop('broker_url', None)
     if backend is not None:
         config.pop('result_backend', None)
+    log = None if enable_logging else log
     test_app = Celery(
         name or 'celery.tests',
         set_as_current=set_as_current,
@@ -64,11 +62,7 @@ def TestApp(name=None, config=None, set_as_current=False,
 
 
 @contextmanager
-def setup_default_app_trap(app):
-    prev_current_app = _state.get_current_app()
-    prev_default_app = _state.default_app
-    prev_finalizers = set(_state._on_app_finalizers)
-    prev_apps = weakref.WeakSet(_state._apps)
+def set_trap(app):
     trap = Trap()
     prev_tls = _state._tls
     _state.set_default_app(trap)
@@ -78,8 +72,23 @@ def setup_default_app_trap(app):
     _state._tls = NonTLS()
 
     yield
-    _state.set_default_app(prev_default_app)
     _state._tls = prev_tls
+
+
+@contextmanager
+def setup_default_app(app, use_trap=False):
+    prev_current_app = _state.get_current_app()
+    prev_default_app = _state.default_app
+    prev_finalizers = set(_state._on_app_finalizers)
+    prev_apps = weakref.WeakSet(_state._apps)
+
+    if use_trap:
+        with set_trap(app):
+            yield
+    else:
+        yield
+
+    _state.set_default_app(prev_default_app)
     _state._tls.current_app = prev_current_app
     if app is not prev_current_app:
         app.close()

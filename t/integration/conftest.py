@@ -2,46 +2,42 @@ from __future__ import absolute_import, unicode_literals
 
 import pytest
 
-from cyanide.suite import ManagerMixin
+from celery.contrib.testing.manager import Manager
+
+@pytest.fixture(scope='session')
+def celery_config():
+    return {
+        'broker_url': 'pyamqp://',
+        'result_backend': 'redis://',
+    }
 
 
-def _celerymark(app, redis_results=None, **kwargs):
-    if redis_results and not app.conf.result_backend.startswith('redis'):
-        pytest.skip('Test needs Redis result backend.')
+@pytest.fixture(scope='session')
+def celery_enable_logging():
+    return True
+
+
+@pytest.fixture(scope='session')
+def celery_worker_pool():
+    return 'prefork'
+
+
+@pytest.fixture(scope='session')
+def celery_includes():
+    return {'t.integration.tasks'}
 
 
 @pytest.fixture
-def app(request):
-    from .app import app
-    app.finalize()
+def app(celery_app):
+    yield celery_app
+
+
+@pytest.fixture
+def manager(app, celery_session_worker):
+    return Manager(app)
+
+
+@pytest.fixture(autouse=True)
+def ZZZZ_set_app_current(app):
     app.set_current()
-    mark = request.node.get_marker('celery')
-    mark = mark and mark.kwargs or {}
-    _celerymark(app, **mark)
-    yield app
-
-
-@pytest.fixture
-def manager(app):
-    with CeleryManager(app) as manager:
-        yield manager
-
-
-class CeleryManager(ManagerMixin):
-
-    # we don't stop full suite when a task result is missing.
-    TaskPredicate = AssertionError
-
-    def __init__(self, app, no_join=False, **kwargs):
-        self.app = app
-        self.no_join = no_join
-        self._init_manager(app, **kwargs)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *exc_info):
-        self.close()
-
-    def close(self):
-        pass
+    app.set_default()

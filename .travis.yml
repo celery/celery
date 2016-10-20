@@ -1,5 +1,5 @@
 language: python
-sudo: false
+sudo: required
 cache: false
 python:
     - '3.5'
@@ -41,3 +41,6 @@ notifications:
       - "chat.freenode.net#celery"
     on_success: change
     on_failure: change
+services:
+    - rabbitmq
+    - redis

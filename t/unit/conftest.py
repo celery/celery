@@ -18,7 +18,6 @@ from celery.contrib.testing.app import Trap, TestApp
 from celery.contrib.testing.mocks import (
     TaskMessage, TaskMessage1, task_message_from_sig,
 )
-from celery.contrib.pytest import celery_app  # noqa
 from celery.contrib.pytest import reset_cache_backend_state  # noqa
 from celery.contrib.pytest import depends_on_current_app  # noqa
 
@@ -38,7 +37,7 @@ CASE_LOG_LEVEL_EFFECT = 'Test {0} modified the level of the root logger'
 CASE_LOG_HANDLER_EFFECT = 'Test {0} modified handlers for the root logger'
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def celery_config():
     return {
         #: Don't want log output when running suite.
@@ -64,6 +63,10 @@ def celery_config():
         }
     }
 
+
+@pytest.fixture(scope='session')
+def use_celery_app_trap():
+    return True
 
 
 @decorator

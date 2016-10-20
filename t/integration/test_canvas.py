@@ -1,10 +1,7 @@
 from __future__ import absolute_import, unicode_literals
-
 import pytest
-
 from celery import chain, group, uuid
-
-from cyanide.tasks import add, collect_ids, ids
+from .tasks import add, collect_ids, ids
 
 
 class test_chain:

@@ -110,6 +110,7 @@ def _wanted_config_key(key):
 )
 def query_task(state, ids, **kwargs):
     """Query for task information by id."""
+    print('GET IDS: %r' % (ids,))
     return {
         req.id: (_state_of_task(req), req.info())
         for req in _find_requests_by_id(maybe_list(ids))
