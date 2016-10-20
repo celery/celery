@@ -92,6 +92,35 @@ Celery is also a :pypi:`pytest` plugin that adds fixtures that you can
 use in your integration (or unit) test suites.
 
 
+Marks
+-----
+
+``celery`` - Set test app configuration.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``celery`` mark enables you to override the configuration
+used for a single test case:
+
+.. code-block:: python
+
+    @pytest.mark.celery(result_backend='redis://')
+    def test_something():
+        ...
+
+
+or for all the test cases in a class:
+
+.. code-block:: python
+
+    @pytest.mark.celery(result_backend='redis://')
+    class test_something:
+
+        def test_one(self):
+            ...
+
+        def test_two(self):
+            ...
+
 Fixtures
 --------
 
@@ -135,6 +164,13 @@ Example:
 
     def test_add(celery_worker):
         mytask.delay()
+
+
+    # If you wish to override some setting in one test cases
+    # only - you can use the ``celery`` mark:
+    @pytest.mark.celery(result_backend='rpc')
+    def test_other(celery_worker):
+        ...
 
 Session scope
 ~~~~~~~~~~~~~
