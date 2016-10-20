@@ -19,7 +19,7 @@ from celery.canvas import (
     maybe_unroll_group,
     _seq_concat_seq,
 )
-from celery.result import EagerResult
+from celery.result import AsyncResult, GroupResult, EagerResult
 
 SIG = Signature({
     'task': 'TASK',
@@ -491,6 +491,30 @@ class test_chain(CanvasCase):
         x = chain(self.add.s(i) for i in range(10))
         assert x.tasks[0].type, self.add
         assert x.type
+
+    def test_chord_sets_result_parent(self):
+        g = (self.add.s(0, 0) |
+             group(self.add.s(i, i) for i in range(1, 10)) |
+             self.add.s(2, 2) |
+             self.add.s(4, 4))
+        res = g.freeze()
+
+        assert isinstance(res, AsyncResult)
+        assert not isinstance(res, GroupResult)
+        assert isinstance(res.parent, AsyncResult)
+        assert not isinstance(res.parent, GroupResult)
+        assert isinstance(res.parent.parent, GroupResult)
+        assert isinstance(res.parent.parent.parent, AsyncResult)
+        assert not isinstance(res.parent.parent.parent, GroupResult)
+        assert res.parent.parent.parent.parent is None
+
+        seen = set()
+        node = res
+        while node:
+            assert node.id not in seen
+            seen.add(node.id)
+            node = node.parent
+
 
 
 class test_group(CanvasCase):
