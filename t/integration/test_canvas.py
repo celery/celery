@@ -3,7 +3,7 @@ import pytest
 from celery import chain, group, uuid
 from .tasks import add, collect_ids, ids
 
-TIMEOUT = 30
+TIMEOUT = 120
 
 
 class test_chain:
@@ -27,7 +27,13 @@ class test_chain:
         c = chain(ids.si(i) for i in range(num))
         c.freeze()
         res = c()
-        res.get(timeout=TIMEOUT)
+        try:
+            res.get(timeout=TIMEOUT)
+        except TimeoutError:
+            print(manager.inspect.active())
+            print(manager.inspect.reserved())
+            print(manager.inspect.stats())
+            raise
         self.assert_ids(res, num - 1)
 
     def assert_ids(self, res, size):
@@ -62,11 +68,13 @@ class test_group:
             assert value == i + 2
 
 
+@pytest.mark.celery(result_backend='redis://')
 class xxx_chord:
 
-    @pytest.mark.celery(result_backend='redis://')
     def test_parent_ids(self, manager):
         self.assert_parentids_chord()
+
+    def test_parent_ids__already_set(self, manager):
         self.assert_parentids_chord(uuid(), uuid())
 
     def assert_parentids_chord(self, base_root=None, base_parent=None):
