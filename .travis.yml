@@ -16,7 +16,9 @@ env:
     - TOXENV=3.5-unit
     - TOXENV=3.5-integration
     - TOXENV=pypy-unit PYPY_VERSION="5.3"
+    - TOXENV=pypy-integration PYPY_VERSION="5.3"
     - TOXENV=pypy3-unit
+    - TOXENV=pypy3-integration
     - TOXENV=flake8
     - TOXENV=flakeplus
     - TOXENV=apicheck
