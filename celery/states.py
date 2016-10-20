@@ -79,6 +79,10 @@ PRECEDENCE = [
 PRECEDENCE_LOOKUP = dict(zip(PRECEDENCE, range(0, len(PRECEDENCE))))
 NONE_PRECEDENCE = PRECEDENCE_LOOKUP[None]
 
+#: Hash lookup of PRECEDENCE to index
+PRECEDENCE_LOOKUP = dict(zip(PRECEDENCE, range(0, len(PRECEDENCE))))
+NONE_PRECEDENCE = PRECEDENCE_LOOKUP[None]
+
 
 def precedence(state):
     """Get the precedence index for state.
