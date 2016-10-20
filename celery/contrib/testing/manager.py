@@ -12,6 +12,7 @@ from kombu.utils.functional import retry_over_time
 
 from celery.exceptions import TimeoutError
 from celery.five import items
+from celery.result import ResultSet
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds as _humanize_seconds
 
@@ -105,6 +106,8 @@ class ManagerMixin(object):
     def join(self, r, propagate=False, max_retries=10, **kwargs):
         if self.no_join:
             return
+        if not isinstance(r, ResultSet):
+            r = self.app.ResultSet([r])
         received = []
 
         def on_result(task_id, value):
@@ -125,7 +128,7 @@ class ManagerMixin(object):
                 self.remark('join: connection lost: {0!r}'.format(exc), '!')
         raise AssertionError('Test failed: Missing task results')
 
-    def inspect(self, timeout=1):
+    def inspect(self, timeout=3.0):
         return self.app.control.inspect(timeout=timeout)
 
     def query_tasks(self, ids, timeout=0.5):

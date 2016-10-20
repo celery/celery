@@ -3,12 +3,14 @@ import pytest
 from celery import chain, group, uuid
 from .tasks import add, collect_ids, ids
 
+TIMEOUT = 30
+
 
 class test_chain:
 
     def test_simple_chain(self, manager):
         c = add.s(4, 4) | add.s(8) | add.s(16)
-        assert manager.join(c()) == 32
+        assert c().get(timeout=TIMEOUT) == 32
 
     def test_complex_chain(self, manager):
         c = (
@@ -18,13 +20,14 @@ class test_chain:
             group(add.s(i) for i in range(4))
         )
         res = c()
-        assert res.get() == [32, 33, 34, 35]
+        assert res.get(timeout=TIMEOUT) == [32, 33, 34, 35]
 
     def test_parent_ids(self, manager, num=10):
+        assert manager.inspect().ping()
         c = chain(ids.si(i) for i in range(num))
         c.freeze()
         res = c()
-        res.get(timeout=30)
+        res.get(timeout=TIMEOUT)
         self.assert_ids(res, num - 1)
 
     def assert_ids(self, res, size):
@@ -44,12 +47,13 @@ class test_chain:
 
 class test_group:
 
-    def test_parent_ids(self):
+    def test_parent_ids(self, manager):
+        assert manager.inspect().ping()
         g = ids.si(1) | ids.si(2) | group(ids.si(i) for i in range(2, 50))
         res = g()
         expected_root_id = res.parent.parent.id
         expected_parent_id = res.parent.id
-        values = res.get(timeout=30)
+        values = res.get(timeout=TIMEOUT)
 
         for i, r in enumerate(values):
             root_id, parent_id, value = r
