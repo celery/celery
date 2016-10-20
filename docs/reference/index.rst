@@ -38,6 +38,10 @@
     celery.contrib.migrate
     celery.contrib.pytest
     celery.contrib.sphinx
+    celery.contrib.testing.worker
+    celery.contrib.testing.app
+    celery.contrib.testing.manager
+    celery.contrib.testing.mocks
     celery.contrib.rdb
     celery.events
     celery.events.receiver
@@ -69,3 +73,5 @@
     celery.bin.events
     celery.bin.logtool
     celery.bin.amqp
+    celery.bin.graph
+    celery.bin.multi

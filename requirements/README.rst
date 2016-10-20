@@ -31,6 +31,10 @@ Index
 
     Extra test requirements required for Python 2.7 by the CI suite (Tox).
 
+* :file:`requirements/test-integration.txt`
+
+    Extra requirements needed when running the integration test suite.
+
 * :file:`requirements/doc.txt`
 
     Extra requirements required to build the Sphinx documentation.

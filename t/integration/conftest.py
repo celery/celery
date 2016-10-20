@@ -4,6 +4,7 @@ import pytest
 
 from celery.contrib.testing.manager import Manager
 
+
 @pytest.fixture(scope='session')
 def celery_config():
     return {

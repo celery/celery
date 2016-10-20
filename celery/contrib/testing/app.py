@@ -1,3 +1,4 @@
+"""Create Celery app instances used for testing."""
 from __future__ import absolute_import, unicode_literals
 
 import weakref
@@ -10,6 +11,7 @@ from kombu.utils.imports import symbol_by_name
 from celery import Celery
 from celery import _state
 
+#: Contains the default configuration values for the test app.
 DEFAULT_TEST_CONFIG = {
     'worker_hijack_root_logger': False,
     'worker_log_color': False,
@@ -63,6 +65,11 @@ def TestApp(name=None, config=None, enable_logging=False, set_as_current=False,
 
 @contextmanager
 def set_trap(app):
+    """Contextmanager that installs the trap app.
+
+    The trap means that anything trying to use the current or default app
+    will raise an exception.
+    """
     trap = Trap()
     prev_tls = _state._tls
     _state.set_default_app(trap)
@@ -77,6 +84,10 @@ def set_trap(app):
 
 @contextmanager
 def setup_default_app(app, use_trap=False):
+    """Setup default app for testing.
+
+    Ensures state is clean after the test returns.
+    """
     prev_current_app = _state.get_current_app()
     prev_default_app = _state.default_app
     prev_finalizers = set(_state._on_app_finalizers)

@@ -1,3 +1,4 @@
+"""Integration testing utilities."""
 from __future__ import absolute_import, print_function, unicode_literals
 
 import socket
@@ -18,10 +19,12 @@ E_STILL_WAITING = 'Still waiting for {0}.  Trying again {when}: {exc!r}'
 
 
 class Sentinel(Exception):
-    pass
+    """Signifies the end of something."""
 
 
 def humanize_seconds(secs, prefix='', sep='', now='now', **kwargs):
+    # type: (float, str, str, str, **Any) -> str
+    """Represent seconds in a human readable way."""
     s = _humanize_seconds(secs, prefix, sep, now, **kwargs)
     if s == now and secs > 0:
         return '{prefix}{sep}{0:.2f} seconds'.format(
@@ -30,10 +33,12 @@ def humanize_seconds(secs, prefix='', sep='', now='now', **kwargs):
 
 
 class ManagerMixin(object):
+    """Mixin that adds :class:`Manager` capabilities."""
 
     def _init_manager(self,
-                      block_timeout=30 * 60, no_join=False,
+                      block_timeout=30 * 60.0, no_join=False,
                       stdout=None, stderr=None):
+        # type: (float, bool, TextIO, TextIO) -> None
         self.stdout = sys.stdout if stdout is None else stdout
         self.stderr = sys.stderr if stderr is None else stderr
         self.connerrors = self.app.connection().recoverable_connection_errors
@@ -41,15 +46,24 @@ class ManagerMixin(object):
         self.no_join = no_join
 
     def remark(self, s, sep='-'):
+        # type: (str, str) -> None
         print('{0}{1}'.format(sep, s), file=self.stdout)
 
     def missing_results(self, r):
+        # type: (Sequence[AsyncResult]) -> Sequence[str]
         return [res.id for res in r if res.id not in res.backend._cache]
 
     def wait_for(self, fun, catch,
                  desc='thing', args=(), kwargs={}, errback=None,
                  max_retries=10, interval_start=0.1, interval_step=0.5,
                  interval_max=5.0, emit_warning=False, **options):
+        # type: (Callable, Sequence[Any], str, Tuple, Dict, Callable,
+        #        int, float, float, float, bool, **Any) -> Any
+        """Wait for event to happen.
+
+        The `catch` argument specifies the exception that means the event
+        has not happened yet.
+        """
         def on_error(exc, intervals, retries):
             interval = next(intervals)
             if emit_warning:
@@ -73,6 +87,7 @@ class ManagerMixin(object):
                                interval_start=0.1, interval_step=0.02,
                                interval_max=1.0, emit_warning=False,
                                **options):
+        """Make sure something does not happen (at least for a while)."""
         try:
             return self.wait_for(
                 fun, catch, desc=desc, max_retries=max_retries,
@@ -114,9 +129,7 @@ class ManagerMixin(object):
         return self.app.control.inspect(timeout=timeout)
 
     def query_tasks(self, ids, timeout=0.5):
-        print('BROKER: %r' % (self.app.connection().as_uri(),))
         for reply in items(self.inspect(timeout).query_task(*ids) or {}):
-            print('REPLY: %r' %( reply,))
             yield reply
 
     def query_task_states(self, ids, timeout=0.5):
@@ -166,6 +179,7 @@ class ManagerMixin(object):
 
 
 class Manager(ManagerMixin):
+    """Test helpers for task integration tests."""
 
     def __init__(self, app, **kwargs):
         self.app = app

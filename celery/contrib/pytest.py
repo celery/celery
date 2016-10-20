@@ -40,8 +40,15 @@ def _create_app(request, enable_logging=False, use_trap=False, **config):
             test_app.set_current()
         yield test_app
 
+
 @pytest.fixture(scope='session')
 def use_celery_app_trap():
+    # type: () -> bool
+    """You can override this fixture to enable the app trap.
+
+    The app trap raises an exception whenever something attempts
+    to use the current or default apps.
+    """
     return False
 
 
@@ -79,16 +86,30 @@ def celery_session_worker(request, celery_session_app,
 
 @pytest.fixture(scope='session')
 def celery_enable_logging():
+    # type: () -> bool
+    """You can override this fixture to enable logging."""
     return False
 
 
 @pytest.fixture(scope='session')
 def celery_includes():
+    # type: () -> Sequence[str]
+    """You can override this include modules when a worker start.
+
+    You can have this return a list of module names to import,
+    these can be task modules, modules registering signals, and so on.
+    """
     return ()
 
 
 @pytest.fixture(scope='session')
 def celery_worker_pool():
+    # type: () -> Union[str, Any]
+    """You can override this fixture to set the worker pool.
+
+    The "solo" pool is used by default, but you can set this to
+    return e.g. "prefork".
+    """
     return 'solo'
 
 

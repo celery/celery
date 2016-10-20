@@ -9,11 +9,14 @@ env:
   global:
     PYTHONUNBUFFERED=yes
   matrix:
-    - TOXENV=2.7
-    - TOXENV=3.4
-    - TOXENV=3.5
-    - TOXENV=pypy PYPY_VERSION="5.3"
-    - TOXENV=pypy3
+    - TOXENV=2.7-unit
+    - TOXENV=2.7-integration
+    - TOXENV=3.4-unit
+    - TOXENV=3.4-integration
+    - TOXENV=3.5-unit
+    - TOXENV=3.5-integration
+    - TOXENV=pypy-unit PYPY_VERSION="5.3"
+    - TOXENV=pypy3-unit
     - TOXENV=flake8
     - TOXENV=flakeplus
     - TOXENV=apicheck

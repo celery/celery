@@ -30,6 +30,8 @@ globals().update(conf.build_config(
         'celery.five',
         'celery.__main__',
         'celery.task',
+        'celery.contrib.testing',
+        'celery.contrib.testing.tasks',
         'celery.task.base',
         'celery.bin',
         'celery.bin.celeryd_detach',

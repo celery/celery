@@ -1,5 +1,5 @@
 ====================================
- ``celery.contrib.pytest``
+ ``celery.contrib.testing.worker``
 ====================================
 
 .. contents::
@@ -8,9 +8,9 @@
 API Reference
 =============
 
-.. currentmodule:: celery.contrib.pytest
+.. currentmodule:: celery.contrib.testing.worker
 
-.. automodule:: celery.contrib.pytest
+.. automodule:: celery.contrib.testing.worker
     :members:
     :undoc-members:
 

@@ -1,3 +1,4 @@
+"""Useful mocks for unit testing."""
 from __future__ import absolute_import, unicode_literals
 
 import numbers
@@ -15,6 +16,9 @@ except ImportError:
 
 def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
                 errbacks=None, chain=None, shadow=None, utc=None, **options):
+    # type: (str, str, Sequence, Mapping, Sequence[Signature],
+    #        Sequence[Signature], Sequence[Signature],
+    #        str, bool, **Any) -> Any
     """Create task message in protocol 2 format."""
     from celery import uuid
     from kombu.serialization import dumps
@@ -36,6 +40,8 @@ def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
 
 def TaskMessage1(name, id=None, args=(), kwargs={}, callbacks=None,
                  errbacks=None, chain=None, **options):
+    # type: (str, str, Sequence, Mapping, Sequence[Signature],
+    #        Sequence[Signature], Sequence[Signature]) -> Any
     """Create task message in protocol 1 format."""
     from celery import uuid
     from kombu.serialization import dumps
@@ -58,7 +64,13 @@ def TaskMessage1(name, id=None, args=(), kwargs={}, callbacks=None,
 
 
 def task_message_from_sig(app, sig, utc=True, TaskMessage=TaskMessage):
-    """Create task message from :class:`celery.Signature`."""
+    # type: (Celery, Signature, bool, Any) -> Any
+    """Create task message from :class:`celery.Signature`.
+
+    Example:
+        >>> m = task_message_from_sig(app, add.s(2, 2))
+        >>> amqp_client.basic_publish(m, exchange='ex', routing_key='rkey')
+    """
     sig.freeze()
     callbacks = sig.options.pop('link', None)
     errbacks = sig.options.pop('link_error', None)
