@@ -9,7 +9,7 @@ from celery.contrib.testing.manager import Manager
 def celery_config():
     return {
         'broker_url': 'pyamqp://',
-        'result_backend': 'redis://',
+        'result_backend': 'rpc',
     }
 
 
