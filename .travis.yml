@@ -35,9 +35,6 @@ before_install:
           fi
 install: travis_retry pip install -U tox
 script: tox -v -- -v
-after_success:
-  - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml
-  - .tox/$TRAVIS_PYTHON_VERSION/bin/codecov -e TOXENV
 notifications:
   irc:
     channels:
