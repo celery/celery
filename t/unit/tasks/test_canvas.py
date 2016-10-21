@@ -516,7 +516,6 @@ class test_chain(CanvasCase):
             node = node.parent
 
 
-
 class test_group(CanvasCase):
 
     def test_repr(self):

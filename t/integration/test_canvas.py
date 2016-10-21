@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 import pytest
 from celery import chain, group, uuid
+from celery.exceptions import TimeoutError
 from .tasks import add, collect_ids, ids
 
 TIMEOUT = 120

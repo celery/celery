@@ -747,7 +747,6 @@ class chain(Signature):
                 )
                 prev_res = prev_prev_res
 
-
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
                 # in the chain.  If the chord is part of a chord/group
