@@ -1,6 +1,5 @@
 import pytest
 from case import Mock
-from celery.five import bytes_if_py2
 from celery.utils.imports import (
     NotAPackage,
     qualname,
@@ -21,9 +20,7 @@ def test_find_module():
 
 
 def test_qualname():
-    Class = type(bytes_if_py2('Fox'), (object,), {
-        '__module__': 'quick.brown',
-    })
+    Class = type('Fox', (object,), {'__module__': 'quick.brown'})
     assert qualname(Class) == 'quick.brown.Fox'
     assert qualname(Class()) == 'quick.brown.Fox'
 

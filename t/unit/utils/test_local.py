@@ -1,7 +1,6 @@
 import pytest
 import sys
 from case import Mock, skip
-from celery.five import python_2_unicode_compatible, string, long_t
 from celery.local import (
     Proxy,
     PromiseProxy,
@@ -82,7 +81,6 @@ class test_Proxy:
     @skip.if_python3()
     def test_unicode(self):
 
-        @python_2_unicode_compatible
         class X(object):
 
             def __unicode__(self):
@@ -93,10 +91,10 @@ class test_Proxy:
                 return 'REPR'
 
         x = Proxy(lambda: X())
-        assert string(x) == 'UNICODE'
+        assert str(x) == 'UNICODE'
         del(X.__unicode__)
         del(X.__str__)
-        assert string(x) == 'REPR'
+        assert str(x) == 'REPR'
 
     def test_dir(self):
 
@@ -267,8 +265,6 @@ class test_Proxy:
         x = Proxy(lambda: 10)
         assert type(x.__float__()) == float
         assert type(x.__int__()) == int
-        if not PY3:
-            assert type(x.__long__()) == long_t
         assert hex(x)
         assert oct(x)
 

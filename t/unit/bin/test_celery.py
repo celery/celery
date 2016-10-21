@@ -1,3 +1,4 @@
+import io
 import pytest
 import sys
 
@@ -27,7 +28,6 @@ from celery.bin.celery import (
     main as mainfun,
     _RemoteControl,
 )
-from celery.five import WhateverIO
 from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
 
 
@@ -61,8 +61,8 @@ class test_Command:
         assert str(x)
 
     def setup(self):
-        self.out = WhateverIO()
-        self.err = WhateverIO()
+        self.out = io.StringIO()
+        self.err = io.StringIO()
         self.cmd = Command(self.app, stdout=self.out, stderr=self.err)
 
     def test_error(self):

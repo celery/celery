@@ -1,19 +1,16 @@
+import io
 from time import time
-
 from case import Mock, patch
-
 from celery.events.dumper import (
     humanize_type,
     Dumper,
     evdump,
 )
-from celery.five import WhateverIO
-
 
 class test_Dumper:
 
     def setup(self):
-        self.out = WhateverIO()
+        self.out = io.StringIO()
         self.dumper = Dumper(out=self.out)
 
     def test_humanize_type(self):

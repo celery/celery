@@ -1,4 +1,5 @@
 import errno
+import io
 import os
 import pytest
 import sys
@@ -10,7 +11,6 @@ from case import Mock, call, mock, patch, skip
 from celery import _find_option_with_arg
 from celery import platforms
 from celery.exceptions import SecurityError
-from celery.five import WhateverIO
 from celery.platforms import (
     get_fdmax,
     ignore_errno,
@@ -691,9 +691,9 @@ class test_Pidfile:
     def test_write_pid(self, open_, fdopen, osopen, getpid, fsync):
         getpid.return_value = 1816
         osopen.return_value = 13
-        w = fdopen.return_value = WhateverIO()
+        w = fdopen.return_value = io.StringIO()
         w.close = Mock()
-        r = open_.return_value = WhateverIO()
+        r = open_.return_value = io.StringIO()
         r.write('1816\n')
         r.seek(0)
 
@@ -719,9 +719,9 @@ class test_Pidfile:
                                 osopen, getpid, fsync):
         getpid.return_value = 1816
         osopen.return_value = 13
-        w = fdopen.return_value = WhateverIO()
+        w = fdopen.return_value = io.StringIO()
         w.close = Mock()
-        r = open_.return_value = WhateverIO()
+        r = open_.return_value = io.StringIO()
         r.write('11816\n')
         r.seek(0)
 

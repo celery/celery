@@ -1,6 +1,5 @@
 import pytest
 from kombu.utils.functional import lazy
-from celery.five import range, nextfun
 from celery.utils.functional import (
     DummyContext,
     fun_takes_argument,
@@ -80,7 +79,7 @@ def test_maybe_list():
 
 def test_mlazy():
     it = iter(range(20, 30))
-    p = mlazy(nextfun(it))
+    p = mlazy(it.__next__)
     assert p() == 20
     assert p.evaluated
     assert p() == 20

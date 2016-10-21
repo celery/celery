@@ -1,15 +1,15 @@
+import io
 import pytest
 import signal
 import sys
 from case import Mock, patch
 from celery.bin.multi import main, MultiTool, __doc__ as doc
-from celery.five import WhateverIO
 
 
 class test_MultiTool:
 
     def setup(self):
-        self.fh = WhateverIO()
+        self.fh = io.StringIO()
         self.env = {}
         self.t = MultiTool(env=self.env, fh=self.fh)
         self.t.cluster_from_argv = Mock(name='cluster_from_argv')
@@ -256,7 +256,7 @@ class test_MultiTool:
 class test_MultiTool_functional:
 
     def setup(self):
-        self.fh = WhateverIO()
+        self.fh = io.StringIO()
         self.env = {}
         self.t = MultiTool(env=self.env, fh=self.fh)
 

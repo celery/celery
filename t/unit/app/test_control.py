@@ -3,7 +3,6 @@ from case import Mock
 from celery import uuid
 from celery.app import control
 from celery.exceptions import DuplicateNodenameWarning
-from celery.five import items
 from celery.utils.collections import LimitedSet
 
 
@@ -11,7 +10,7 @@ def _info_for_commandclass(type_):
     from celery.worker.control import Panel
     return [
         (name, info)
-        for name, info in items(Panel.meta)
+        for name, info in Panel.meta.items()
         if info.type == type_
     ]
 

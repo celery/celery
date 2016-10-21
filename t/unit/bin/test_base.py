@@ -6,7 +6,6 @@ from celery.bin.base import (
     Option,
     Extensions,
 )
-from celery.five import bytes_if_py2
 
 
 class MyApp(object):
@@ -315,7 +314,7 @@ class test_Command:
         cmd = MockCommand(app=app)
         with patch('celery.utils.imports.symbol_by_name') as sbn:
             from types import ModuleType
-            x = ModuleType(bytes_if_py2('proj'))
+            x = ModuleType('proj')
 
             def on_sbn(*args, **kwargs):
 
