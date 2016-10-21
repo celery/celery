@@ -103,6 +103,20 @@ class Settings(ConfigurationView):
         )
 
     @property
+    def task_default_exchange(self):
+        return self.first(
+            'task_default_exchange',
+            'task_default_queue',
+        )
+
+    @property
+    def task_default_routing_key(self):
+        return self.first(
+            'task_default_routing_key',
+            'task_default_queue',
+        )
+
+    @property
     def timezone(self):
         # this way we also support django's time zone.
         return self.first('timezone', 'time_zone')
@@ -133,7 +147,7 @@ class Settings(ConfigurationView):
         return find(name, namespace)
 
     def find_value_for_key(self, name, namespace='celery'):
-        """Shortcut to ``get_by_parts(*find_option(name)[:-1])``"""
+        """Shortcut to ``get_by_parts(*find_option(name)[:-1])``."""
         return self.get_by_parts(*self.find_option(name, namespace)[:-1])
 
     def get_by_parts(self, *parts):
@@ -155,8 +169,7 @@ class Settings(ConfigurationView):
         })
 
     def humanize(self, with_defaults=False, censored=True):
-        """Return a human readable string showing changes to the
-        configuration."""
+        """Return a human readable text showing configuration changes."""
         return '\n'.join(
             '{0}: {1}'.format(key, pretty(value, width=50))
             for key, value in self.table(with_defaults, censored).items())
@@ -213,8 +226,8 @@ def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
         # always use new format if prefix is used.
         info, left = _settings_info, set()
 
-    # only raise error for keys that the user did not provide two keys
-    # for (e.g. both ``result_expires`` and ``CELERY_TASK_RESULT_EXPIRES``).
+    # only raise error for keys that the user didn't provide two keys
+    # for (e.g., both ``result_expires`` and ``CELERY_TASK_RESULT_EXPIRES``).
     really_left = {key for key in left if info.convert[key] not in have}
     if really_left:
         # user is mixing old/new, or new/old settings, give renaming
@@ -226,7 +239,11 @@ def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
 
     preconf = {info.convert.get(k, k): v for k, v in preconf.items()}
     defaults = dict(deepcopy(info.defaults), **preconf)
-    return Settings(preconf, [conf, defaults], info.key_t, prefix=prefix)
+    return Settings(
+        preconf, [conf, defaults],
+        (_old_key_to_new, _new_key_to_old),
+        prefix=prefix,
+    )
 
 
 class AppPickler:
@@ -257,18 +274,18 @@ class AppPickler:
 
 
 def _unpickle_app(cls, pickler, *args):
-    """Rebuild app for versions 2.5+"""
+    """Rebuild app for versions 2.5+."""
     return pickler()(cls, *args)
 
 
 def _unpickle_app_v2(cls, kwargs):
-    """Rebuild app for versions 3.1+"""
+    """Rebuild app for versions 3.1+."""
     kwargs['set_as_current'] = False
     return cls(**kwargs)
 
 
 def filter_hidden_settings(conf):
-
+    """Filter sensitive settings."""
     def maybe_censor(key, value, mask='*' * 8):
         if isinstance(value, Mapping):
             return filter_hidden_settings(value)
@@ -297,7 +314,7 @@ def bugreport(app):
         driver_v = '{0}:{1}'.format(conn.transport.driver_name,
                                     conn.transport.driver_version())
         transport = conn.transport_cls
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         transport = driver_v = ''
 
     return BUGREPORT_INFO.format(
@@ -317,6 +334,7 @@ def bugreport(app):
 
 
 def find_app(app, symbol_by_name=symbol_by_name, imp=import_from_cwd):
+    """Find app by name."""
     from .base import Celery
 
     try:

@@ -3,12 +3,11 @@
 import logging
 
 from kombu.async.timer import to_timestamp
-from kombu.five import buffer_t
 
 from celery.exceptions import InvalidTaskError
 from celery.utils.log import get_logger
 from celery.utils.saferepr import saferepr
-from celery.utils.timeutils import timezone
+from celery.utils.time import timezone
 
 from .request import Request, create_request_cls
 from .state import task_reserved
@@ -17,16 +16,19 @@ __all__ = ['default']
 
 logger = get_logger(__name__)
 
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
+
 
 def proto1_to_proto2(message, body):
-    """Converts Task message protocol 1 arguments to protocol 2.
+    """Convert Task message protocol 1 arguments to protocol 2.
 
     Returns:
         Tuple: of ``(body, headers, already_decoded_status, utc)``
     """
     try:
         args, kwargs = body['args'], body['kwargs']
-        kwargs.items
+        kwargs.items  # pylint: disable=pointless-statement
     except KeyError:
         raise InvalidTaskError('Message does not have args/kwargs')
     except AttributeError:
@@ -53,21 +55,31 @@ def proto1_to_proto2(message, body):
 
 def default(task, app, consumer,
             info=logger.info, error=logger.error, task_reserved=task_reserved,
-            to_system_tz=timezone.to_system, bytes=bytes, buffer_t=buffer_t,
+            to_system_tz=timezone.to_system, bytes=bytes,
             proto1_to_proto2=proto1_to_proto2):
+    """Default task execution strategy.
+
+    Note:
+        Strategies are here as an optimization, so sadly
+        it's not very easy to override.
+    """
     hostname = consumer.hostname
-    eventer = consumer.event_dispatcher
     connection_errors = consumer.connection_errors
     _does_info = logger.isEnabledFor(logging.INFO)
+
+    # task event related
+    # (optimized to avoid calling request.send_event)
+    eventer = consumer.event_dispatcher
     events = eventer and eventer.enabled
     send_event = eventer.send
+    task_sends_events = events and task.send_events
+
     call_at = consumer.timer.call_at
     apply_eta_task = consumer.apply_eta_task
     rate_limits_enabled = not consumer.disable_rate_limits
     get_bucket = consumer.task_buckets.__getitem__
     handle = consumer.on_task_request
     limit_task = consumer._limit_task
-    body_can_be_buffer = consumer.pool.body_can_be_buffer
     Req = create_request_cls(Request, task, consumer.pool, hostname, eventer)
 
     revoked_tasks = consumer.controller.state.revoked
@@ -78,8 +90,6 @@ def default(task, app, consumer,
             body, headers, decoded, utc = (
                 message.body, message.headers, False, True,
             )
-            if not body_can_be_buffer:
-                body = bytes(body) if isinstance(body, buffer_t) else body
         else:
             body, headers, decoded, utc = proto1_to_proto2(message, body)
 
@@ -94,7 +104,7 @@ def default(task, app, consumer,
         if (req.expires or req.id in revoked_tasks) and req.revoked():
             return
 
-        if events:
+        if task_sends_events:
             send_event(
                 'task-received',
                 uuid=req.id, name=req.name,
@@ -111,10 +121,10 @@ def default(task, app, consumer,
                     eta = to_timestamp(to_system_tz(req.eta))
                 else:
                     eta = to_timestamp(req.eta, timezone.local)
-            except OverflowError as exc:
-                error("Couldn't convert eta %s to timestamp: %r. Task: %r",
+            except (OverflowError, ValueError) as exc:
+                error("Couldn't convert ETA %r to timestamp: %r. Task: %r",
                       req.eta, exc, req.info(safe=True), exc_info=True)
-                req.acknowledge()
+                req.reject(requeue=False)
             else:
                 consumer.qos.increment_eventually()
                 call_at(eta, apply_eta_task, (req,), priority=6)

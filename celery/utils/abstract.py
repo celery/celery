@@ -110,6 +110,8 @@ class AbstractResult(_AbstractClass):  # pragma: no cover
 
 
 class CallableTask(_AbstractClass, Callable):  # pragma: no cover
+    """Task interface."""
+
     __required_attributes__ = frozenset({
         'delay', 'apply_async', 'apply',
     })
@@ -132,6 +134,8 @@ class CallableTask(_AbstractClass, Callable):  # pragma: no cover
 
 
 class CallableSignature(CallableTask):  # pragma: no cover
+    """Celery Signature interface."""
+
     __required_attributes__ = frozenset({
         'clone', 'freeze', 'set', 'link', 'link_error', '__or__',
     })

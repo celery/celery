@@ -16,7 +16,7 @@ from celery import signals
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
-from celery.utils.timeutils import maybe_make_aware, to_utc
+from celery.utils.time import maybe_make_aware, to_utc
 
 from . import routes as _routes
 
@@ -51,6 +51,7 @@ class Queues(dict):
         ha_policy (Sequence, str): Default HA policy for queues with none set.
         max_priority (int): Default x-max-priority for queues with none set.
     """
+
     #: If set, this is a subset of queues to consume from.
     #: The rest of the queues are then used for routing only.
     _consume_from = None
@@ -153,17 +154,18 @@ class Queues(dict):
         return info[0] + '\n' + textindent('\n'.join(info[1:]), indent)
 
     def select_add(self, queue, **kwargs):
-        """Add new task queue that will be consumed from even when
-        a subset has been selected using the
-        :option:`celery worker -Q` option."""
+        """Add new task queue that'll be consumed from.
+
+        The queue will be active even when a subset has been selected
+        using the :option:`celery worker -Q` option.
+        """
         q = self.add(queue, **kwargs)
         if self._consume_from is not None:
             self._consume_from[q.name] = q
         return q
 
     def select(self, include):
-        """Sets :attr:`consume_from` by selecting a subset of the
-        currently defined queues.
+        """Select a subset of currently defined queues to consume from.
 
         Arguments:
             include (Sequence[str], str): Names of queues to consume from.
@@ -174,7 +176,7 @@ class Queues(dict):
             }
 
     def deselect(self, exclude):
-        """Deselect queues so that they will not be consumed from.
+        """Deselect queues so that they won't be consumed from.
 
         Arguments:
             exclude (Sequence[str], str): Names of queues to avoid
@@ -200,6 +202,8 @@ class Queues(dict):
 
 
 class AMQP:
+    """App AMQP API: app.amqp."""
+
     Connection = Connection
     Consumer = Consumer
     Producer = Producer
@@ -217,8 +221,8 @@ class AMQP:
     _producer_pool = None
 
     # Exchange class/function used when defining automatic queues.
-    # E.g. you can use ``autoexchange = lambda n: None`` to use the
-    # AMQP default exchange, which is a shortcut to bypass routing
+    # For example, you can use ``autoexchange = lambda n: None`` to use the
+    # AMQP default exchange: a shortcut to bypass routing
     # and instead send directly to the queue named in the routing key.
     autoexchange = None
 
@@ -246,8 +250,8 @@ class AMQP:
 
     def Queues(self, queues, create_missing=None, ha_policy=None,
                autoexchange=None, max_priority=None):
-        """Create new :class:`Queues` instance, using queue defaults
-        from the current configuration."""
+        # Create new :class:`Queues` instance, using queue defaults
+        # from the current configuration.
         conf = self.app.conf
         if create_missing is None:
             create_missing = conf.task_create_missing_queues
@@ -372,9 +376,9 @@ class AMQP:
         kwargs = kwargs or {}
         utc = self.utc
         if not isinstance(args, (list, tuple)):
-            raise ValueError('task args must be a list or tuple')
+            raise TypeError('task args must be a list or tuple')
         if not isinstance(kwargs, Mapping):
-            raise ValueError('task keyword arguments must be a mapping')
+            raise TypeError('task keyword arguments must be a mapping')
         if countdown:  # convert countdown to ETA
             self._verify_seconds(countdown, 'countdown')
             now = now or self.app.now()
@@ -484,10 +488,12 @@ class AMQP:
                 except AttributeError:
                     exchange_type = 'direct'
 
-            if not exchange and not routing_key and exchange_type == 'direct':
-                exchange, routing_key = '', qname
-            else:
-                exchange = exchange or queue.exchange.name or default_exchange
+            # convert to anon-exchange, when exchange not set and direct ex.
+            if not exchange or not routing_key and exchange_type == 'direct':
+                    exchange, routing_key = '', qname
+            elif exchange is None:
+                # not topic exchange, and exchange not undefined
+                exchange = queue.exchange.name or default_exchange
                 routing_key = routing_key or queue.routing_key or default_rkey
             if declare is None and queue and not isinstance(queue, Broadcast):
                 declare = [queue]

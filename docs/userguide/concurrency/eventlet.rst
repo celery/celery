@@ -16,23 +16,23 @@ change how you run your code, not how you write it.
     * It uses `epoll(4)`_ or `libevent`_ for
       `highly scalable non-blocking I/O`_.
     * `Coroutines`_ ensure that the developer uses a blocking style of
-      programming that is similar to threading, but provide the benefits of
+      programming that's similar to threading, but provide the benefits of
       non-blocking I/O.
-    * The event dispatch is implicit, which means you can easily use Eventlet
+    * The event dispatch is implicit: meaning you can easily use Eventlet
       from the Python interpreter, or as a small part of a larger application.
 
 Celery supports Eventlet as an alternative execution pool implementation.
-It is in some cases superior to prefork, but you need to ensure
-your tasks do not perform blocking calls, as this will halt all
+It's in some cases superior to prefork, but you need to ensure
+your tasks don't perform blocking calls, as this will halt all
 other operations in the worker until the blocking call returns.
 
 The prefork pool can take use of multiple processes, but how many is
-often limited to a few processes per CPU.  With Eventlet you can efficiently
-spawn hundreds, or thousands of green threads.  In an informal test with a
+often limited to a few processes per CPU. With Eventlet you can efficiently
+spawn hundreds, or thousands of green threads. In an informal test with a
 feed hub system the Eventlet pool could fetch and process hundreds of feeds
 every second, while the prefork pool spent 14 seconds processing 100
-feeds.  Note that this is one of the applications async I/O is especially good
-at (asynchronous HTTP requests).  You may want a mix of both Eventlet and
+feeds. Note that this is one of the applications async I/O is especially good
+at (asynchronous HTTP requests). You may want a mix of both Eventlet and
 prefork workers, and route tasks according to compatibility or
 what works best.
 

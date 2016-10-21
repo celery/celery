@@ -35,17 +35,17 @@ tell it where to change
 directory to when it starts (to find the module containing your app, or your
 configuration module).
 
-The daemonization script is configured by the file :file:`/etc/default/celeryd`,
-which is a shell (:command:`sh`) script.  You can add environment variables and the
-configuration options below to this file.  To add environment variables you
-must also export them (e.g. :command:`export DISPLAY=":0"`)
+The daemonization script is configured by the file :file:`/etc/default/celeryd`.
+This is a shell (:command:`sh`) script where you can add environment variables like
+the configuration options below.  To add real environment variables affecting
+the worker you must also export them (e.g., :command:`export DISPLAY=":0"`)
 
 .. Admonition:: Superuser privileges required
 
     The init-scripts can only be used by root,
     and the shell configuration file must also be owned by root.
 
-    Unprivileged users do not need to use the init-script,
+    Unprivileged users don't need to use the init-script,
     instead they can use the :program:`celery multi` utility (or
     :program:`celery worker --detach`):
 
@@ -110,7 +110,7 @@ This is an example configuration for a Python project.
 
     # Workers should run as an unprivileged user.
     #   You need to create this user manually (or you can choose
-    #   a user/group combination that already exists, e.g. nobody).
+    #   a user/group combination that already exists (e.g., nobody).
     CELERYD_USER="celery"
     CELERYD_GROUP="celery"
 
@@ -128,7 +128,7 @@ shell:
 
     CELERYD_SU_ARGS="-l"
 
-Note that this is not recommended, and that you should only use this option
+Note that this isn't recommended, and that you should only use this option
 when absolutely necessary.
 
 .. _generic-initd-celeryd-django-example:
@@ -149,8 +149,6 @@ Available options
 * ``CELERY_APP``
 
     App instance to use (value for :option:`--app <celery --app>` argument).
-    If you're still using the old API, or :pypi:`django-celery`, then you
-    can omit this setting.
 
 * ``CELERY_BIN``
 
@@ -169,7 +167,7 @@ Available options
 * ``CELERYD_OPTS``
 
     Additional command-line arguments for the worker, see
-    `celery worker --help` for a list.  This also supports the extended
+    `celery worker --help` for a list. This also supports the extended
     syntax used by `multi` to configure settings for individual nodes.
     See `celery multi --help` for some multi-node configuration examples.
 
@@ -207,12 +205,12 @@ Available options
 
 * ``CELERY_CREATE_RUNDIR``
 
-    Always create pidfile directory.  By default only enabled when no custom
+    Always create pidfile directory. By default only enabled when no custom
     pidfile location set.
 
 * ``CELERY_CREATE_LOGDIR``
 
-    Always create logfile directory.  By default only enable when no custom
+    Always create logfile directory. By default only enable when no custom
     logfile location set.
 
 .. _generic-initd-celerybeat:
@@ -288,7 +286,7 @@ Available options
 
 * ``CELERYBEAT_LOG_LEVEL``
 
-    Log level to use.  Default is ``INFO``.
+    Log level to use. Default is ``INFO``.
 
 * ``CELERYBEAT_USER``
 
@@ -305,12 +303,12 @@ Available options
 
 * ``CELERY_CREATE_RUNDIR``
 
-    Always create pidfile directory.  By default only enabled when no custom
+    Always create pidfile directory. By default only enabled when no custom
     pidfile location set.
 
 * ``CELERY_CREATE_LOGDIR``
 
-    Always create logfile directory.  By default only enable when no custom
+    Always create logfile directory. By default only enable when no custom
     logfile location set.
 
 .. _generic-initd-troubleshooting:
@@ -328,9 +326,9 @@ them in *verbose mode*:
 This can reveal hints as to why the service won't start.
 
 If the worker starts with *"OK"* but exits almost immediately afterwards
-and there is nothing in the log file, then there is probably an error
+and there's no evidence in the log file, then there's probably an error
 but as the daemons standard outputs are already closed you'll
-not be able to see them anywhere.  For this situation you can use
+not be able to see them anywhere. For this situation you can use
 the :envvar:`C_FAKEFORK` environment variable to skip the
 daemonization step:
 
@@ -344,8 +342,8 @@ and now you should be able to see the errors.
 Commonly such errors are caused by insufficient permissions
 to read from, or write to a file, and also by syntax errors
 in configuration modules, user modules, third-party libraries,
-or even from Celery itself (if you've found a bug, in which case
-you should :ref:`report it <reporting-bugs>`).
+or even from Celery itself (if you've found a bug you
+should :ref:`report it <reporting-bugs>`).
 
 
 .. _daemon-systemd-generic:
@@ -445,46 +443,15 @@ This is an example configuration for a Python project:
     CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
     CELERYD_PID_FILE="/var/run/celery/%n.pid"
 
-.. _generic-systemd-celeryd-django-example:
-
-Example Django configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This is an example configuration for those using :pypi:`django-celery`:
-
-.. code-block:: bash
-
-    # Name of nodes to start
-    # here we have a single node
-    CELERYD_NODES="w1"
-    # or we could have three nodes:
-    #CELERYD_NODES="w1 w2 w3"
-
-    # Absolute path to "manage.py"
-    CELERY_BIN="/opt/Myproject/manage.py"
-
-    # How to call manage.py
-    CELERYD_MULTI="celery multi"
-
-    # Extra command-line arguments to the worker
-    CELERYD_OPTS="--time-limit=300 --concurrency=8"
-
-    # - %n will be replaced with the first part of the nodename.
-    # - %I will be replaced with the current child process index
-    CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
-    CELERYD_PID_FILE="/var/run/celery/%n.pid"
-
-To add an environment variable such as :envvar:`DJANGO_SETTINGS_MODULE`
-use the Environment in :file:`celery.service`.
-
 Running the worker with superuser privileges (root)
 ======================================================================
-Running the worker with superuser privileges is a very dangerous practice.
-There should always be a workaround to avoid running as root.  Celery may
-run arbitrary code in messages serialized with pickle - which is dangerous,
-especially if run as root.
 
-By default Celery will not run workers as root. The associated error
+Running the worker with superuser privileges is a very dangerous practice.
+There should always be a workaround to avoid running as root. Celery may
+run arbitrary code in messages serialized with pickle - this is dangerous,
+especially when run as root.
+
+By default Celery won't run workers as root. The associated error
 message may not be visible in the logs but may be seen if :envvar:`C_FAKEFORK`
 is used.
 

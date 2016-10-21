@@ -3,6 +3,7 @@
 import sys
 
 from billiard.einfo import ExceptionInfo
+from kombu.exceptions import OperationalError
 from kombu.utils.uuid import uuid
 
 from celery import current_app, group
@@ -10,12 +11,12 @@ from celery import states
 from celery._state import _task_stack
 from celery.canvas import signature
 from celery.exceptions import Ignore, MaxRetriesExceededError, Reject, Retry
-from celery.five import class_property
+from celery.local import class_property
 from celery.result import EagerResult
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
-from celery.utils.serialization import maybe_reraise
+from celery.utils.serialization import raise_with_context
 
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
@@ -57,6 +58,8 @@ def _reprtask(task, fmt=None, flags=None):
 
 
 class Context:
+    """Task request variables (Task.request)."""
+
     logfile = None
     loglevel = None
     hostname = None
@@ -134,14 +137,17 @@ class Context:
 class Task:
     """Task base class.
 
-    When called tasks apply the :meth:`run` method.  This method must
-    be defined by all tasks (that is unless the :meth:`__call__` method
-    is overridden).
+    Note:
+        When called tasks apply the :meth:`run` method.  This method must
+        be defined by all tasks (that is unless the :meth:`__call__` method
+        is overridden).
     """
+
     __trace__ = None
     __v2_compat__ = False  # set by old base in celery.task.base
 
     MaxRetriesExceededError = MaxRetriesExceededError
+    OperationalError = OperationalError
 
     #: Execution strategy used, or the qualified name of one.
     Strategy = 'celery.worker.strategy:default'
@@ -168,7 +174,7 @@ class Task:
     #: a minute),`'100/h'` (hundred tasks an hour)
     rate_limit = None
 
-    #: If enabled the worker will not store task state and return values
+    #: If enabled the worker won't store task state and return values
     #: for this task.  Defaults to the :setting:`task_ignore_result`
     #: setting.
     ignore_result = None
@@ -177,6 +183,14 @@ class Task:
     #: this task, and this information will be sent with the result
     #: (``result.children``).
     trail = True
+
+    #: If enabled the worker will send monitoring events related to
+    #: this task (but only if the worker is configured to send
+    #: task related events).
+    #: Note that this has no effect on the task-failure event case
+    #: where a task is not registered (as it will have no task class
+    #: to check this flag).
+    send_events = True
 
     #: When enabled errors will be stored even if the task is otherwise
     #: configured to ignore results.
@@ -206,7 +220,7 @@ class Task:
     #: finished, or waiting to be retried.
     #:
     #: Having a 'started' status can be useful for when there are long
-    #: running tasks and there is a need to report which task is currently
+    #: running tasks and there's a need to report what task is currently
     #: running.
     #:
     #: The application default can be overridden using the
@@ -214,12 +228,11 @@ class Task:
     track_started = None
 
     #: When enabled messages for this task will be acknowledged **after**
-    #: the task has been executed, and not *just before* which is the
-    #: default behavior.
+    #: the task has been executed, and not *just before* (the
+    #: default behavior).
     #:
     #: Please note that this means the task may be executed twice if the
-    #: worker crashes mid execution (which may be acceptable for some
-    #: applications).
+    #: worker crashes mid execution.
     #:
     #: The application default can be overridden with the
     #: :setting:`task_acks_late` setting.
@@ -227,7 +240,7 @@ class Task:
 
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
-    #: exits or is signaled (e.g. :sig:`KILL`/:sig:`INT`, etc).
+    #: exits or is signaled (e.g., :sig:`KILL`/:sig:`INT`, etc).
     #:
     #: Setting this to true allows the message to be re-queued instead,
     #: so that the task will execute again by the same worker, or another
@@ -240,9 +253,9 @@ class Task:
     #: Tuple of expected exceptions.
     #:
     #: These are errors that are expected in normal operation
-    #: and that should not be regarded as a real error by the worker.
+    #: and that shouldn't be regarded as a real error by the worker.
     #: Currently this means that the state will be updated to an error
-    #: state, but the worker will not log the event as an error.
+    #: state, but the worker won't log the event as an error.
     throws = ()
 
     #: Default task expiry time.
@@ -254,7 +267,7 @@ class Task:
     #: Task request stack, the current request will be the topmost.
     request_stack = None
 
-    #: Some may expect a request to exist even if the task has not been
+    #: Some may expect a request to exist even if the task hasn't been
     #: called.  This should probably be deprecated.
     _default_request = None
 
@@ -281,62 +294,66 @@ class Task:
     # - until the task is actually used
 
     @classmethod
-    def bind(self, app):
-        was_bound, self.__bound__ = self.__bound__, True
-        self._app = app
+    def bind(cls, app):
+        was_bound, cls.__bound__ = cls.__bound__, True
+        cls._app = app
         conf = app.conf
-        self._exec_options = None  # clear option cache
+        cls._exec_options = None  # clear option cache
 
-        for attr_name, config_name in self.from_config:
-            if getattr(self, attr_name, None) is None:
-                setattr(self, attr_name, conf[config_name])
+        for attr_name, config_name in cls.from_config:
+            if getattr(cls, attr_name, None) is None:
+                setattr(cls, attr_name, conf[config_name])
 
         # decorate with annotations from config.
         if not was_bound:
-            self.annotate()
+            cls.annotate()
 
             from celery.utils.threads import LocalStack
-            self.request_stack = LocalStack()
+            cls.request_stack = LocalStack()
 
         # PeriodicTask uses this to add itself to the PeriodicTask schedule.
-        self.on_bound(app)
+        cls.on_bound(app)
 
         return app
 
     @classmethod
-    def on_bound(self, app):
-        """This method can be defined to do additional actions when the
-        task class is bound to an app."""
+    def on_bound(cls, app):
+        """Called when the task is bound to an app.
+
+        Note:
+            This class method can be defined to do additional actions when
+            the task class is bound to an app.
+        """
         pass
 
     @classmethod
-    def _get_app(self):
-        if self._app is None:
-            self._app = current_app
-        if not self.__bound__:
+    def _get_app(cls):
+        if cls._app is None:
+            cls._app = current_app
+        if not cls.__bound__:
             # The app property's __set__  method is not called
             # if Task.app is set (on the class), so must bind on use.
-            self.bind(self._app)
-        return self._app
+            cls.bind(cls._app)
+        return cls._app
     app = class_property(_get_app, bind)
 
     @classmethod
-    def annotate(self):
-        for d in resolve_all_annotations(self.app.annotations, self):
+    def annotate(cls):
+        for d in resolve_all_annotations(cls.app.annotations, cls):
             for key, value in d.items():
                 if key.startswith('@'):
-                    self.add_around(key[1:], value)
+                    cls.add_around(key[1:], value)
                 else:
-                    setattr(self, key, value)
+                    setattr(cls, key, value)
 
     @classmethod
-    def add_around(self, attr, around):
-        orig = getattr(self, attr)
+    def add_around(cls, attr, around):
+        orig = getattr(cls, attr)
         if getattr(orig, '__wrapped__', None):
             orig = orig.__wrapped__
         meth = around(orig)
         meth.__wrapped__ = orig
-        setattr(self, attr, meth)
+        setattr(cls, attr, meth)
 
     def __call__(self, *args, **kwargs):
         _task_stack.push(self)
@@ -355,7 +372,7 @@ class Task:
         # - simply grabs it from the local registry.
         # - in later versions the module of the task is also included,
         # - and the receiving side tries to import that module so that
-        # - it will work even if the task has not been registered.
+        # - it will work even if the task hasn't been registered.
         mod = type(self).__module__
         mod = mod if mod and mod in sys.modules else None
         return (_unpickle_task_v2, (self.name, mod), None)
@@ -398,7 +415,7 @@ class Task:
 
             expires (float, ~datetime.datetime): Datetime or
                 seconds in the future for the task should expire.
-                The task will not be executed after the expiration time.
+                The task won't be executed after the expiration time.
 
             shadow (str): Override task name used in logs/monitoring.
                 Default is retrieved from :meth:`shadow_name`.
@@ -426,7 +443,7 @@ class Task:
                 argument.
 
             routing_key (str): Custom routing key used to route the task to a
-                worker server. If in combination with a ``queue`` argument
+                worker server.  If in combination with a ``queue`` argument
                 only used to specify custom routing keys to topic exchanges.
 
             priority (int): The task priority, a number between 0 and 9.
@@ -434,15 +451,15 @@ class Task:
 
             serializer (str): Serialization method to use.
                 Can be `pickle`, `json`, `yaml`, `msgpack` or any custom
-                serialization method that has been registered
+                serialization method that's been registered
                 with :mod:`kombu.serialization.registry`.
                 Defaults to the :attr:`serializer` attribute.
 
             compression (str): Optional compression method
                 to use.  Can be one of ``zlib``, ``bzip2``,
                 or any custom compression methods registered with
-                :func:`kombu.compression.register`. Defaults to
-                the :setting:`task_compression` setting.
+                :func:`kombu.compression.register`.
+                Defaults to the :setting:`task_compression` setting.
 
             link (~@Signature): A single, or a list of tasks signatures
                 to apply if the task returns successfully.
@@ -550,7 +567,7 @@ class Task:
         Note:
             Although the task will never return above as `retry` raises an
             exception to notify the worker, we use `raise` in front of the
-            retry to convey that the rest of the block will not be executed.
+            retry to convey that the rest of the block won't be executed.
 
         Arguments:
             args (Tuple): Positional arguments to retry with.
@@ -569,15 +586,15 @@ class Task:
             eta (~datetime.dateime): Explicit time and date to run the
                 retry at.
             max_retries (int): If set, overrides the default retry limit for
-                this execution. Changes to this parameter do not propagate to
-                subsequent task retry attempts. A value of :const:`None`, means
-                "use the default", so if you want infinite retries you would
+                this execution.  Changes to this parameter don't propagate to
+                subsequent task retry attempts.  A value of :const:`None`,
+                means "use the default", so if you want infinite retries you'd
                 have to set the :attr:`max_retries` attribute of the task to
                 :const:`None` first.
             time_limit (int): If set, overrides the default time limit.
             soft_time_limit (int): If set, overrides the default soft
                 time limit.
-            throw (bool): If this is :const:`False`, do not raise the
+            throw (bool): If this is :const:`False`, don't raise the
                 :exc:`~@Retry` exception, that tells the worker to mark
                 the task as being retried.  Note that this means the task
                 will be marked as failed if the task raises an exception,
@@ -598,8 +615,9 @@ class Task:
         # Not in worker or emulated by (apply/always_eager),
         # so just raise the original exception.
         if request.called_directly:
-            maybe_reraise()  # raise orig stack if PyErr_Occurred
-            raise exc or Retry('Task can be retried', None)
+            # raises orig stack if PyErr_Occurred,
+            # and augments with exc' if that argument is defined.
+            raise_with_context(exc or Retry('Task can be retried', None))
 
         if not eta and countdown is None:
             countdown = self.default_retry_delay
@@ -613,10 +631,9 @@ class Task:
 
         if max_retries is not None and retries > max_retries:
             if exc:
-                # first try to re-raise the original exception
-                maybe_reraise()
-                # or if not in an except block then raise the custom exc.
-                raise exc
+                # On Py3: will augment any current exception with
+                # the exc' argument provided (raise exc from orig)
+                raise_with_context(exc)
             raise self.MaxRetriesExceededError(
                 "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
                     self.name, request.id, S.args, S.kwargs))
@@ -704,44 +721,74 @@ class Task:
             task_id, backend=self.backend, **kwargs)
 
     def signature(self, args=None, *starargs, **starkwargs):
-        """Return :class:`~celery.signature` object for
-        this task, wrapping arguments and execution options
-        for a single task invocation."""
+        """Create signature.
+
+        Returns:
+            :class:`~celery.signature`:  object for
+                this task, wrapping arguments and execution options
+                for a single task invocation.
+        """
         starkwargs.setdefault('app', self.app)
         return signature(self, args, *starargs, **starkwargs)
     subtask = signature
 
     def s(self, *args, **kwargs):
-        """``.s(*a, **k) -> .signature(a, k)``"""
+        """Create signature.
+
+        Shortcut for ``.s(*a, **k) -> .signature(a, k)``.
+        """
         return self.signature(args, kwargs)
 
     def si(self, *args, **kwargs):
-        """``.si(*a, **k) -> .signature(a, k, immutable=True)``"""
+        """Create immutable signature.
+
+        Shortcut for ``.si(*a, **k) -> .signature(a, k, immutable=True)``.
+        """
         return self.signature(args, kwargs, immutable=True)
 
     def chunks(self, it, n):
-        """Creates a :class:`~celery.canvas.chunks` task for this task."""
+        """Create a :class:`~celery.canvas.chunks` task for this task."""
         from celery import chunks
         return chunks(self.s(), it, n, app=self.app)
 
     def map(self, it):
-        """Creates a :class:`~celery.canvas.xmap` task from ``it``."""
+        """Create a :class:`~celery.canvas.xmap` task from ``it``."""
         from celery import xmap
         return xmap(self.s(), it, app=self.app)
 
     def starmap(self, it):
-        """Creates a :class:`~celery.canvas.xstarmap` task from ``it``."""
+        """Create a :class:`~celery.canvas.xstarmap` task from ``it``."""
         from celery import xstarmap
         return xstarmap(self.s(), it, app=self.app)
 
-    def send_event(self, type_, **fields):
+    def send_event(self, type_, retry=True, retry_policy=None, **fields):
+        """Send monitoring event message.
+
+        This can be used to add custom event types in :pypi:`Flower`
+        and other monitors.
+
+        Arguments:
+            type_ (str):  Type of event, e.g. ``"task-failed"``.
+
+        Keyword Arguments:
+            retry (bool):  Retry sending the message
+                if the connection is lost.  Default is taken from the
+                :setting:`task_publish_retry` setting.
+            retry_policy (Mapping): Retry settings.  Default is taken
+                from the :setting:`task_publish_retry_policy` setting.
+            **fields (**Any): Map containing information about the event.
+                Must be JSON serializable.
+        """
         req = self.request
+        if retry_policy is None:
+            retry_policy = self.app.conf.task_publish_retry_policy
         with self.app.events.default_dispatcher(hostname=req.hostname) as d:
-            return d.send(type_, uuid=req.id, **fields)
+            return d.send(
+                type_,
+                uuid=req.id, retry=retry, retry_policy=retry_policy, **fields)
 
     def replace(self, sig):
-        """Replace the current task, with a new task inheriting the
-        same task id.
+        """Replace this task, with a new task inheriting the task id.
 
         .. versionadded:: 4.0
 
@@ -751,7 +798,7 @@ class Task:
         Raises:
             ~@Ignore: This is always raised, so the best practice
             is to always use ``raise self.replace(...)`` to convey
-            to the reader that the task will not continue after being replaced.
+            to the reader that the task won't continue after being replaced.
         """
         chord = self.request.chord
         if 'chord' in sig.options:
@@ -789,7 +836,7 @@ class Task:
 
         Arguments:
             sig (~@Signature): Signature to extend chord with.
-            lazy (bool): If enabled the new task will not actually be called,
+            lazy (bool): If enabled the new task won't actually be called,
                 and ``sig.delay()`` must be called manually.
         """
         if not self.request.chord:
@@ -891,7 +938,7 @@ class Task:
         self.request_stack.pop()
 
     def __repr__(self):
-        """`repr(task)`"""
+        """``repr(task)``."""
         return _reprtask(self, R_SELF_TASK if self.__self__ else R_INSTANCE)
 
     def _get_request(self):

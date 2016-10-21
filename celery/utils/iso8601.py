@@ -34,9 +34,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import re
 
-from typing import Optional
-
-from datetime import datetime, tzinfo
+from datetime import datetime
 from pytz import FixedOffset
 
 __all__ = ['parse_iso8601']
@@ -45,17 +43,17 @@ __all__ = ['parse_iso8601']
 ISO8601_REGEX = re.compile(
     r'(?P<year>[0-9]{4})(-(?P<month>[0-9]{1,2})(-(?P<day>[0-9]{1,2})'
     r'((?P<separator>.)(?P<hour>[0-9]{2}):(?P<minute>[0-9]{2})'
-    '(:(?P<second>[0-9]{2})(\.(?P<fraction>[0-9]+))?)?'
+    r'(:(?P<second>[0-9]{2})(\.(?P<fraction>[0-9]+))?)?'
     r'(?P<timezone>Z|(([-+])([0-9]{2}):([0-9]{2})))?)?)?)?'
 )
 TIMEZONE_REGEX = re.compile(
-    '(?P<prefix>[+-])(?P<hours>[0-9]{2}).(?P<minutes>[0-9]{2})'
+    r'(?P<prefix>[+-])(?P<hours>[0-9]{2}).(?P<minutes>[0-9]{2})'
 )
 
 
-def parse_iso8601(datestring: str, tz: Optional[tzinfo]=None) -> datetime:
-    """Parse and convert ISO-8601 string into a
-    :class:`~datetime.datetime` object"""
+def parse_iso8601(datestring: str) -> datetime:
+    """Parse and convert ISO-8601 string to datetime."""
+    tz = None
     m = ISO8601_REGEX.match(datestring)
     if not m:
         raise ValueError('unable to parse date string %r' % datestring)

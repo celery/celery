@@ -28,6 +28,7 @@ def warn(description: Optional[str]=None,
          removal: Optional[str]=None,
          alternative: Optional[str]=None,
          stacklevel: int=2) -> None:
+    """Warn of (pending) deprecation."""
     ctx = {'description': description,
            'deprecation': deprecation, 'removal': removal,
            'alternative': alternative}
@@ -48,11 +49,11 @@ def Callable(deprecation: Optional[str]=None,
 
     Arguments:
         deprecation (str): Version that marks first deprecation, if this
-            argument is not set a ``PendingDeprecationWarning`` will be
+            argument isn't set a ``PendingDeprecationWarning`` will be
             emitted instead.
         removal (str): Future version when this feature will be removed.
         alternative (str): Instructions for an alternative solution (if any).
-        description (str): Description of what is being deprecated.
+        description (str): Description of what's being deprecated.
     """
     def _inner(fun):
 
@@ -74,6 +75,7 @@ def Property(deprecation: Optional[str]=None,
              alternative: Optional[str]=None,
              description: Optional[str]=None) -> Callable:
     def _inner(fun: Callable) -> Any:
+        """Decorator for deprecated properties."""
         return _deprecated_property(
             fun, deprecation=deprecation, removal=removal,
             alternative=alternative, description=description or fun.__name__)

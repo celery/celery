@@ -8,8 +8,8 @@
     :local:
     :depth: 1
 
-What is a Task Queue?
-=====================
+What's a Task Queue?
+====================
 
 Task queues are used as a mechanism to distribute work across threads or
 machines.
@@ -18,14 +18,14 @@ A task queue's input is a unit of work called a task. Dedicated worker
 processes constantly monitor task queues for new work to perform.
 
 Celery communicates via messages, usually using a broker
-to mediate between clients and workers.  To initiate a task, a client adds a
-message to the queue, which the broker then delivers to a worker.
+to mediate between clients and workers. To initiate a task the client adds a
+message to the queue, the broker then delivers that message to a worker.
 
 A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
-language.  In addition to Python there's node-celery_ for Node.js,
+language. In addition to Python there's node-celery_ for Node.js,
 and a `PHP client`_.
 
 Language interoperability can also be achieved
@@ -42,7 +42,10 @@ What do I need?
 
     - Python ❨3.6❩
 
-    If you are running an older version of Python, you need to be running
+    This is the last version to support Python 2.7,
+    and from the next version (Celery 5.x) Python 3.5 or newer is required.
+
+    If you're running an older version of Python, you need to be running
     an older version of Celery:
 
     - Python 3.5: Celery series 4.0 or ealirer.
@@ -53,12 +56,13 @@ What do I need?
     - Python 2.4 was Celery series 2.2 or earlier.
 
     Celery is a project with minimal funding,
-    so we do not support Microsoft Windows.
-    Please do not open any issues related to that platform.
+    so we don't support Microsoft Windows.
+    Please don't open any issues related to that platform.
 
 *Celery* requires a message transport to send and receive messages.
-The RabbitMQ broker transport is feature complete,
-but there's also support for SQS and Apache Qpid.
+The RabbitMQ and Redis broker transports are feature complete,
+but there's also support for a myriad of other experimental solutions, including
+using SQLite for local development.
 
 *Celery* can run on a single machine, on multiple machines, or even
 across data centers.
@@ -103,7 +107,7 @@ Celery is…
 
         Workers and clients will automatically retry in the event
         of connection loss or failure, and some brokers support
-        HA in way of *Master/Master* or *Master/Slave* replication.
+        HA in way of *Primary/Primary* or *Primary/Replica* replication.
 
     - **Fast**
 
@@ -115,7 +119,7 @@ Celery is…
 
         Almost every part of *Celery* can be extended or used on its own,
         Custom pool implementations, serializers, compression schemes, logging,
-        schedulers, consumers, producers, broker transports and much more.
+        schedulers, consumers, producers, broker transports, and much more.
 
 
 .. topic:: It supports
@@ -125,8 +129,8 @@ Celery is…
 
         - **Brokers**
 
-            - :ref:`RabbitMQ <broker-rabbitmq>`
-            - :ref:`Amazon SQS <broker-sqs>` and more…
+            - :ref:`RabbitMQ <broker-rabbitmq>`, :ref:`Redis <broker-redis>`,
+            - :ref:`Amazon SQS <broker-sqs>`, and more…
 
         - **Concurrency**
 
@@ -167,7 +171,7 @@ Features
 
             Simple and complex work-flows can be composed using
             a set of powerful primitives we call the "canvas",
-            including grouping, chaining, chunking and more.
+            including grouping, chaining, chunking, and more.
 
             :ref:`Read more… <guide-canvas>`.
 
@@ -192,16 +196,16 @@ Features
 
         - **Resource Leak Protection**
 
-            The :option:`--maxtasksperchild <celery worker --maxtasksperchild>`
+            The :option:`--max-tasks-per-child <celery worker --max-tasks-per-child>`
             option is used for user tasks leaking resources, like memory or
             file descriptors, that are simply out of your control.
 
-            :ref:`Read more… <worker-maxtasksperchild>`.
+            :ref:`Read more… <worker-max-tasks-per-child>`.
 
         - **User Components**
 
             Each worker component can be customized, and additional components
-            can be defined by the user.  The worker is built up using "bootsteps" — a
+            can be defined by the user. The worker is built up using "bootsteps" — a
             dependency graph enabling fine grained control of the worker's
             internals.
 
@@ -211,24 +215,24 @@ Features
 Framework Integration
 =====================
 
-Celery is easy to integrate with web frameworks, some of which even have
+Celery is easy to integrate with web frameworks, some of them even have
 integration packages:
 
     +--------------------+------------------------+
-    | `Django`_          | `django-celery`_       |
+    | `Pyramid`_         | :pypi:`pyramid_celery` |
     +--------------------+------------------------+
-    | `Pyramid`_         | `pyramid_celery`_      |
-    +--------------------+------------------------+
-    | `Pylons`_          | `celery-pylons`_       |
+    | `Pylons`_          | :pypi:`celery-pylons`  |
     +--------------------+------------------------+
     | `Flask`_           | not needed             |
     +--------------------+------------------------+
-    | `web2py`_          | `web2py-celery`_       |
+    | `web2py`_          | :pypi:`web2py-celery`  |
     +--------------------+------------------------+
-    | `Tornado`_         | `tornado-celery`_      |
+    | `Tornado`_         | :pypi:`tornado-celery` |
     +--------------------+------------------------+
 
-The integration packages are not strictly necessary, but they can make
+For `Django`_ see :ref:`django-first-steps`.
+
+The integration packages aren't strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
 database connections at :manpage:`fork(2)`.
 
@@ -238,10 +242,6 @@ database connections at :manpage:`fork(2)`.
 .. _`web2py`: http://web2py.com/
 .. _`Bottle`: http://bottlepy.org/
 .. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
-.. _`pyramid_celery`: http://pypi.python.org/pypi/pyramid_celery/
-.. _`django-celery`: http://pypi.python.org/pypi/django-celery
-.. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
-.. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
 

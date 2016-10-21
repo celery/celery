@@ -10,6 +10,11 @@ errors are recorded, handlers are applied and so on.
 # but in the end it only resulted in bad performance and horrible tracebacks,
 # so instead we now use one closure per task class.
 
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
+# pylint: disable=broad-except
+# We know what we're doing...
+
 import logging
 import os
 import sys
@@ -112,8 +117,7 @@ trace_ok_t = namedtuple('trace_ok_t', ('retval', 'info', 'runtime', 'retstr'))
 
 
 def task_has_custom(task, attr):
-    """Return true if the task or one of its bases
-    defines ``attr`` (excluding the one in BaseTask)."""
+    """Return true if the task overrides ``attr``."""
     return mro_lookup(task.__class__, attr, stop={BaseTask, object},
                       monkey_patched=['celery.app.task'])
 
@@ -132,6 +136,8 @@ def get_log_policy(task, einfo, exc):
 
 
 class TraceInfo:
+    """Information about task execution."""
+
     __slots__ = ('state', 'retval')
 
     def __init__(self, state, retval=None):
@@ -172,12 +178,13 @@ class TraceInfo:
             signals.task_retry.send(sender=task, request=req,
                                     reason=reason, einfo=einfo)
             info(LOG_RETRY, {
-                'id': req.id, 'name': task.name,
-                'exc': safe_repr(reason.exc),
+                'id': req.id,
+                'name': task.name,
+                'exc': str(reason),
             })
             return einfo
         finally:
-            del(tb)
+            del tb
 
     def handle_failure(self, task, req, store_errors=True, call_errbacks=True):
         """Handle exception."""
@@ -204,7 +211,7 @@ class TraceInfo:
             self._log_error(task, req, einfo)
             return einfo
         finally:
-            del(tb)
+            del tb
 
     def _log_error(self, task, req, einfo):
         eobj = einfo.exception = get_pickled_exception(einfo.exception)
@@ -238,8 +245,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                  Info=TraceInfo, eager=False, propagate=False, app=None,
                  monotonic=monotonic, truncate=truncate,
                  trace_ok_t=trace_ok_t, IGNORE_STATES=IGNORE_STATES):
-    """Return a function that traces task execution; catches all
-    exceptions and updates result backend with the state and result
+    """Return a function that traces task execution.
+
+    Catches all exceptions and updates result backend with the
+    state and result.
 
     If the call was successful, it saves the result to the task result
     backend, and sets the task status to `"SUCCESS"`.
@@ -259,6 +268,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         :keyword request: Request dict.
 
     """
+    # noqa: C901
+    # pylint: disable=too-many-statements
+
     # If the task doesn't define a custom __call__ method
     # we optimize it away by simply calling the run method directly,
     # saving the extra method call and a line less in the stack trace.
@@ -320,7 +332,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         # retval - is the always unmodified return value.
         # state  - is the resulting task state.
 
-        # This function is very long because we have unrolled all the calls
+        # This function is very long because we've unrolled all the calls
         # for performance reasons, and because the function is so long
         # we want the main variables (I, and R) to stand out visually from the
         # the rest of the variables, so breaking PEP8 is worth it ;)
@@ -416,13 +428,13 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     except EncodeError as exc:
                         I, R, state, retval = on_error(task_request, exc, uuid)
                     else:
+                        Rstr = saferepr(R, resultrepr_maxsize)
+                        T = monotonic() - time_start
                         if task_on_success:
                             task_on_success(retval, uuid, args, kwargs)
                         if success_receivers:
                             send_success(sender=task, result=retval)
                         if _does_info:
-                            T = monotonic() - time_start
-                            Rstr = saferepr(R, resultrepr_maxsize)
                             info(LOG_SUCCESS, {
                                 'id': uuid, 'name': name,
                                 'return_value': Rstr, 'runtime': T,
@@ -466,6 +478,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
 
 def trace_task(task, uuid, args, kwargs, request={}, **opts):
+    """Trace task execution."""
     try:
         if task.__trace__ is None:
             task.__trace__ = build_tracer(task.name, task, **opts)
@@ -528,16 +541,17 @@ def report_internal_error(task, exc):
                 exc, exc_info.traceback)))
         return exc_info
     finally:
-        del(_tb)
+        del _tb
 
 
 def setup_worker_optimizations(app, hostname=None):
+    """Setup worker related optimizations."""
     global trace_task_ret
 
     hostname = hostname or gethostname()
 
     # make sure custom Task.__call__ methods that calls super
-    # will not mess up the request/task stack.
+    # won't mess up the request/task stack.
     _install_stack_protection()
 
     # all new threads start without a current app, so if an app is not
@@ -566,6 +580,7 @@ def setup_worker_optimizations(app, hostname=None):
 
 
 def reset_worker_optimizations():
+    """Reset previously configured optimizations."""
     global trace_task_ret
     trace_task_ret = _trace_task_ret
     try:
@@ -591,7 +606,7 @@ def _install_stack_protection():
     #   they work when tasks are called directly.
     #
     # The worker only optimizes away __call__ in the case
-    # where it has not been overridden, so the request/task stack
+    # where it hasn't been overridden, so the request/task stack
     # will blow if a custom task class defines __call__ and also
     # calls super().
     if not getattr(BaseTask, '_stackprotected', False):

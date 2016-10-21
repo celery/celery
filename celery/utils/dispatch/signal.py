@@ -53,7 +53,7 @@ class Signal:  # pragma: no cover
 
         Arguments:
             receiver (Callable): A function or an instance method which is to
-                receive signals. Receivers must be hashable objects.
+                receive signals.  Receivers must be hashable objects.
 
                 if weak is :const:`True`, then receiver must be
                 weak-referenceable (more precisely :func:`saferef.safe_ref()`
@@ -71,11 +71,11 @@ class Signal:  # pragma: no cover
 
             weak (bool): Whether to use weak references to the receiver.
                 By default, the module will attempt to use weak references to
-                the receiver objects. If this parameter is false, then strong
+                the receiver objects.  If this parameter is false, then strong
                 references will be used.
 
             dispatch_uid (Hashable): An identifier used to uniquely identify a
-                particular instance of a receiver. This will usually be a
+                particular instance of a receiver.  This will usually be a
                 string, though it may be anything hashable.
         """
         def _handle_options(sender=None, weak=True, dispatch_uid=None):
@@ -117,12 +117,12 @@ class Signal:  # pragma: no cover
                    dispatch_uid=None):
         """Disconnect receiver from sender for signal.
 
-        If weak references are used, disconnect need not be called. The
-        receiver will be removed from dispatch automatically.
+        If weak references are used, disconnect needn't be called.
+        The receiver will be removed from dispatch automatically.
 
         Arguments:
-            receiver (Callable): The registered receiver to disconnect. May be
-                none if `dispatch_uid` is specified.
+            receiver (Callable): The registered receiver to disconnect.
+                May be none if `dispatch_uid` is specified.
 
             sender (Any): The registered sender to disconnect.
 
@@ -150,8 +150,8 @@ class Signal:  # pragma: no cover
         have all receivers called if a raises an error.
 
         Arguments:
-            sender (Any): The sender of the signal. Either a specific
-                object or :const:`None`.
+            sender (Any): The sender of the signal.
+                Either a specific object or :const:`None`.
             **named (Any): Named arguments which will be passed to receivers.
 
         Returns:
@@ -164,9 +164,9 @@ class Signal:  # pragma: no cover
         for receiver in self._live_receivers(_make_id(sender)):
             try:
                 response = receiver(signal=self, sender=sender, **named)
-            except Exception as exc:
-                logger.error('Signal handler %r raised: %r',
-                             receiver, exc, exc_info=1)
+            except Exception as exc:  # pylint: disable=broad-except
+                logger.exception(
+                    'Signal handler %r raised: %r', receiver, exc)
             else:
                 responses.append((receiver, response))
         return responses
@@ -180,7 +180,7 @@ class Signal:  # pragma: no cover
         none_senderkey = _make_id(None)
         receivers = []
 
-        for (receiverkey, r_senderkey), receiver in self.receivers:
+        for (_, r_senderkey), receiver in self.receivers:
             if r_senderkey == none_senderkey or r_senderkey == senderkey:
                 if isinstance(receiver, WEAKREF_TYPES):
                     # Dereference the weak reference.
@@ -193,7 +193,6 @@ class Signal:  # pragma: no cover
 
     def _remove_receiver(self, receiver):
         """Remove dead receivers from connections."""
-
         to_remove = []
         for key, connected_receiver in self.receivers:
             if connected_receiver == receiver:
@@ -204,7 +203,9 @@ class Signal:  # pragma: no cover
                     del self.receivers[idx]
 
     def __repr__(self):
+        """``repr(signal)``."""
         return '<Signal: {0}>'.format(type(self).__name__)
 
     def __str__(self):
+        """``str(signal)``."""
         return repr(self)

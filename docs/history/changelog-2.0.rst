@@ -11,7 +11,7 @@
 
 2.0.3
 =====
-:release-date: 2010-08-27 12:00 P.M CEST
+:release-date: 2010-08-27 12:00 p.m. CEST
 :release-by: Ask Solem
 
 .. _v203-fixes:
@@ -61,7 +61,7 @@ Fixes
          'routing_key': 'tasks.add',
          'serializer': 'json'}
 
-    This was not the case before: the values
+    This wasn't the case before: the values
     in :setting:`CELERY_QUEUES` would take precedence.
 
 * Worker crashed if the value of :setting:`CELERY_TASK_ERROR_WHITELIST` was
@@ -73,7 +73,7 @@ Fixes
 * `AsyncResult.traceback`: Now returns :const:`None`, instead of raising
   :exc:`KeyError` if traceback is missing.
 
-* :class:`~celery.task.control.inspect`: Replies did not work correctly
+* :class:`~celery.task.control.inspect`: Replies didn't work correctly
   if no destination was specified.
 
 * Can now store result/meta-data for custom states.
@@ -86,8 +86,8 @@ Fixes
 
     See issue #160.
 
-* Worker: On macOS it is not possible to run `os.exec*` in a process
-  that is threaded.
+* Worker: On macOS it isn't possible to run `os.exec*` in a process
+  that's threaded.
 
       This breaks the SIGHUP restart handler,
       and is now disabled on macOS, emitting a warning instead.
@@ -105,7 +105,7 @@ Fixes
     This is now fixed by using a workaround.
     See issue #143.
 
-* Debian init-scripts: Commands should not run in a sub shell
+* Debian init-scripts: Commands shouldn't run in a sub shell
 
     See issue #163.
 
@@ -152,7 +152,7 @@ Documentation
 
 2.0.2
 =====
-:release-date: 2010-07-22 11:31 A.M CEST
+:release-date: 2010-07-22 11:31 a.m. CEST
 :release-by: Ask Solem
 
 * Routes: When using the dict route syntax, the exchange for a task
@@ -185,7 +185,7 @@ Documentation
     this would make each child process start a new worker instance when
     the terminal window was closed :/
 
-* Worker: Do not install SIGHUP handler if running from a terminal.
+* Worker: Don't install SIGHUP handler if running from a terminal.
 
     This fixes the problem where the worker is launched in the background
     when closing the terminal.
@@ -242,7 +242,7 @@ Documentation
         # Get currently reserved tasks
         >>> i.reserved()
 
-        # Get the current eta schedule
+        # Get the current ETA schedule
         >>> i.scheduled()
 
         # Worker statistics and info
@@ -274,13 +274,13 @@ Documentation
 
 2.0.1
 =====
-:release-date: 2010-07-09 03:02 P.M CEST
+:release-date: 2010-07-09 03:02 p.m. CEST
 :release-by: Ask Solem
 
 * multiprocessing.pool: Now handles encoding errors, so that pickling errors
   doesn't crash the worker processes.
 
-* The remote control command replies was not working with RabbitMQ 1.8.0's
+* The remote control command replies wasn't working with RabbitMQ 1.8.0's
   stricter equivalence checks.
 
     If you've already hit this problem you may have to delete the
@@ -302,7 +302,7 @@ Documentation
     The scheduler sleeps between iterations so it doesn't consume too much CPU.
     It keeps a list of the scheduled items sorted by time, at each iteration
     it sleeps for the remaining time of the item with the nearest deadline.
-    If there are no eta tasks it will sleep for a minimum amount of time, one
+    If there are no ETA tasks it will sleep for a minimum amount of time, one
     second by default.
 
     A bug sneaked in here, making it sleep for one second for every task
@@ -316,7 +316,7 @@ Documentation
     is met, it will take at most 0.8 seconds for the task to be moved to the
     ready queue.
 
-* Pool: Supervisor did not release the semaphore.
+* Pool: Supervisor didn't release the semaphore.
 
     This would lead to a deadlock if all workers terminated prematurely.
 
@@ -351,7 +351,7 @@ Documentation
 
         CELERY_ROUTES = {'feed.tasks.import_feed': 'feeds'}
 
-* `CREATE_MISSING_QUEUES` was not honored by apply_async.
+* `CREATE_MISSING_QUEUES` wasn't honored by apply_async.
 
 * New remote control command: `stats`
 
@@ -374,7 +374,7 @@ Documentation
 
     Gives a list of tasks currently being executed by the worker.
     By default arguments are passed through repr in case there
-    are arguments that is not JSON encodable. If you know
+    are arguments that's not JSON encodable. If you know
     the arguments are JSON safe, you can pass the argument `safe=True`.
 
     Example reply:
@@ -412,7 +412,7 @@ Documentation
 
 2.0.0
 =====
-:release-date: 2010-07-02 02:30 P.M CEST
+:release-date: 2010-07-02 02:30 p.m. CEST
 :release-by: Ask Solem
 
 Foreword
@@ -421,7 +421,7 @@ Foreword
 Celery 2.0 contains backward incompatible changes, the most important
 being that the Django dependency has been removed so Celery no longer
 supports Django out of the box, but instead as an add-on package
-called `django-celery`_.
+called :pypi:`django-celery`.
 
 We're very sorry for breaking backwards compatibility, but there's
 also many new and exciting features to make up for the time you lose
@@ -438,9 +438,9 @@ Big thanks to all contributors, testers and users!
 Upgrading for Django-users
 --------------------------
 
-Django integration has been moved to a separate package: `django-celery`_.
+Django integration has been moved to a separate package: :pypi:`django-celery`.
 
-* To upgrade you need to install the `django-celery`_ module and change:
+* To upgrade you need to install the :pypi:`django-celery` module and change:
 
   .. code-block:: python
 
@@ -460,7 +460,7 @@ Django integration has been moved to a separate package: `django-celery`_.
         import os
         os.environ['CELERY_LOADER'] = 'django'
 
-* The following modules has been moved to `django-celery`_:
+* The following modules has been moved to :pypi:`django-celery`:
 
     =====================================  =====================================
     **Module name**                        **Replace with**
@@ -476,14 +476,12 @@ Django integration has been moved to a separate package: `django-celery`_.
     =====================================  =====================================
 
 Importing :mod:`djcelery` will automatically setup Celery to use Django loader.
-loader.  It does this by setting the :envvar:`CELERY_LOADER` environment variable to
-`"django"` (it won't change it if a loader is already set.)
+loader. It does this by setting the :envvar:`CELERY_LOADER` environment variable to
+`"django"` (it won't change it if a loader is already set).
 
 When the Django loader is used, the "database" and "cache" result backend
 aliases will point to the :mod:`djcelery` backends instead of the built-in backends,
 and configuration will be read from the Django settings.
-
-.. _`django-celery`: http://pypi.python.org/pypi/django-celery
 
 .. _v200-upgrade:
 
@@ -548,12 +546,9 @@ but it supports mostly the same configuration syntax:
 
         CELERY_CACHE_BACKEND = 'memcached://A.example.com:11211;B.example.com'
 
-To use the cache backend you must either have the `pylibmc`_ or
-`python-memcached`_ library installed, of which the former is regarded
+To use the cache backend you must either have the :pypi:`pylibmc` or
+:pypi:`python-memcached` library installed, of which the former is regarded
 as the best choice.
-
-.. _`pylibmc`: http://pypi.python.org/pypi/pylibmc
-.. _`python-memcached`: http://pypi.python.org/pypi/python-memcached
 
 The support backend types are `memcached://` and `memory://`,
 we haven't felt the need to support any of the other backends
@@ -568,10 +563,10 @@ Backward incompatible changes
   instead of raising :exc:`ImportError`.
 
     The worker raises :exc:`~@ImproperlyConfigured` if the configuration
-    is not set up. This makes it possible to use `--help` etc., without having a
+    isn't set up. This makes it possible to use `--help` etc., without having a
     working configuration.
 
-    Also this makes it possible to use the client side of celery without being
+    Also this makes it possible to use the client side of Celery without being
     configured:
 
     .. code-block:: pycon
@@ -605,7 +600,7 @@ Backward incompatible changes
   (as scheduled by the :ref:`deprecation-timeline`):
 
     Assuming the implicit `Loader` class name is no longer supported,
-    if you use e.g.:
+    for example, if you use:
 
     .. code-block:: python
 
@@ -626,7 +621,7 @@ Backward incompatible changes
     This bug became visible with RabbitMQ 1.8.0, which no longer
     allows conflicting declarations for the auto_delete and durable settings.
 
-    If you've already used celery with this backend chances are you
+    If you've already used Celery with this backend chances are you
     have to delete the previous declaration:
 
     .. code-block:: console
@@ -638,7 +633,7 @@ Backward incompatible changes
     cPickle is broken in Python <= 2.5.
 
     It unsafely and incorrectly uses relative instead of absolute imports,
-    so e.g.:
+    so for example:
 
     .. code-block:: python
 
@@ -700,7 +695,7 @@ News
 
 * Worker: Standard out/error is now being redirected to the log file.
 
-* :pypi:`billiard` has been moved back to the celery repository.
+* :pypi:`billiard` has been moved back to the Celery repository.
 
     =====================================  =====================================
     **Module name**                        **celery equivalent**
@@ -807,8 +802,8 @@ News
     * :setting:`CELERYD_TASK_SOFT_TIME_LIMIT`
 
         Soft time limit. The :exc:`~@SoftTimeLimitExceeded`
-        exception will be raised when this is exceeded.  The task can catch
-        this to e.g. clean up before the hard time limit comes.
+        exception will be raised when this is exceeded. The task can catch
+        this to, for example, clean up before the hard time limit comes.
 
     New command-line arguments to ``celeryd`` added:
     `--time-limit` and `--soft-time-limit`.

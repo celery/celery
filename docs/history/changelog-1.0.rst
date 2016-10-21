@@ -11,7 +11,7 @@
 
 1.0.6
 =====
-:release-date: 2010-06-30 09:57 A.M CEST
+:release-date: 2010-06-30 09:57 a.m. CEST
 :release-by: Ask Solem
 
 * RabbitMQ 1.8.0 has extended their exchange equivalence tests to
@@ -34,7 +34,7 @@
 
 1.0.5
 =====
-:release-date: 2010-06-01 02:36 P.M CEST
+:release-date: 2010-06-01 02:36 p.m. CEST
 :release-by: Ask Solem
 
 .. _v105-critical:
@@ -47,7 +47,7 @@ Critical
 
     Fixed by making the pool worker processes ignore :const:`SIGINT`.
 
-* Should not close the consumers before the pool is terminated, just cancel
+* Shouldn't close the consumers before the pool is terminated, just cancel
   the consumers.
 
     See issue #122.
@@ -96,7 +96,7 @@ Changes
 
 1.0.4
 =====
-:release-date: 2010-05-31 09:54 A.M CEST
+:release-date: 2010-05-31 09:54 a.m. CEST
 :release-by: Ask Solem
 
 * Changelog merged with 1.0.5 as the release was never announced.
@@ -105,7 +105,7 @@ Changes
 
 1.0.3
 =====
-:release-date: 2010-05-15 03:00 P.M CEST
+:release-date: 2010-05-15 03:00 p.m. CEST
 :release-by: Ask Solem
 
 .. _v103-important:
@@ -117,7 +117,7 @@ Important notes
 
     This is the behavior we've wanted all along, but couldn't have because of
     limitations in the multiprocessing module.
-    The previous behavior was not good, and the situation worsened with the
+    The previous behavior wasn't good, and the situation worsened with the
     release of 1.0.1, so this change will definitely improve
     reliability, performance and operations in general.
 
@@ -129,7 +129,7 @@ Important notes
 
     See: http://bit.ly/d5OwMr
 
-    This means those who created their celery tables (via ``syncdb`` or
+    This means those who created their Celery tables (via ``syncdb`` or
     ``celeryinit``) with :pypi:`django-picklefield``
     versions >= 0.1.5 has to alter their tables to
     allow the result field to be `NULL` manually.
@@ -146,7 +146,7 @@ Important notes
 
         ALTER TABLE celery_taskmeta ALTER COLUMN result DROP NOT NULL
 
-* Removed `Task.rate_limit_queue_type`, as it was not really useful
+* Removed `Task.rate_limit_queue_type`, as it wasn't really useful
   and made it harder to refactor some parts.
 
 * Now depends on carrot >= 0.10.4
@@ -175,7 +175,7 @@ News
 * Added Crontab-like scheduling to periodic tasks.
 
     Like a cronjob, you can specify units of time of when
-    you would like the task to execute. While not a full implementation
+    you'd like the task to execute. While not a full implementation
     of :command:`cron`'s features, it should provide a fair degree of common scheduling
     needs.
 
@@ -200,7 +200,7 @@ News
 
         @periodic_task(run_every=crontab(minutes=30))
         def every_hour():
-            print('Runs every hour on the clock. e.g. 1:30, 2:30, 3:30 etc.')
+            print('Runs every hour on the clock (e.g., 1:30, 2:30, 3:30 etc.).')
 
     .. note::
         This a late addition. While we have unit tests, due to the
@@ -209,8 +209,8 @@ News
 
 * `TaskPool.apply_async`: Now supports the `accept_callback` argument.
 
-* `apply_async`: Now raises :exc:`ValueError` if task args is not a list,
-  or kwargs is not a tuple (Issue #95).
+* `apply_async`: Now raises :exc:`ValueError` if task args isn't a list,
+  or kwargs isn't a tuple (Issue #95).
 
 * `Task.max_retries` can now be `None`, which means it will retry forever.
 
@@ -228,7 +228,7 @@ News
     The default value is `False` as the normal behavior is to not
     report that level of granularity. Tasks are either pending, finished,
     or waiting to be retried. Having a "started" status can be useful for
-    when there are long running tasks and there is a need to report which
+    when there are long running tasks and there's a need to report which
     task is currently running.
 
     The global default can be overridden by the :setting:`CELERY_TRACK_STARTED`
@@ -358,7 +358,7 @@ Fixes
     the mediator thread could block shutdown (and potentially block other
     jobs from coming in).
 
-* Remote rate limits was not properly applied (Issue #98).
+* Remote rate limits wasn't properly applied (Issue #98).
 
 * Now handles exceptions with Unicode messages correctly in
   `TaskRequest.on_failure`.
@@ -370,7 +370,7 @@ Fixes
 
 1.0.2
 =====
-:release-date: 2010-03-31 12:50 P.M CET
+:release-date: 2010-03-31 12:50 p.m. CET
 :release-by: Ask Solem
 
 * Deprecated: :setting:`CELERY_BACKEND`, please use
@@ -401,8 +401,8 @@ Fixes
   tasks to reuse the same database connection)
 
     The default is to use a new connection for every task.
-    We would very much like to reuse the connection, but a safe number of
-    reuses is not known, and we don't have any way to handle the errors
+    We'd very much like to reuse the connection, but a safe number of
+    reuses isn't known, and we don't have any way to handle the errors
     that might happen, which may even be database dependent.
 
     See: http://bit.ly/94fwdd
@@ -432,13 +432,13 @@ Fixes
 * Debian init-scripts: Now always preserves `$CELERYD_OPTS` from the
   `/etc/default/celeryd` and `/etc/default/celerybeat`.
 
-* celery.beat.Scheduler: Fixed a bug where the schedule was not properly
-  flushed to disk if the schedule had not been properly initialized.
+* celery.beat.Scheduler: Fixed a bug where the schedule wasn't properly
+  flushed to disk if the schedule hadn't been properly initialized.
 
 * ``celerybeat``: Now syncs the schedule to disk when receiving the :sig:`SIGTERM`
   and :sig:`SIGINT` signals.
 
-* Control commands: Make sure keywords arguments are not in Unicode.
+* Control commands: Make sure keywords arguments aren't in Unicode.
 
 * ETA scheduler: Was missing a logger object, so the scheduler crashed
   when trying to log that a task had been revoked.
@@ -446,11 +446,11 @@ Fixes
 * ``management.commands.camqadm``: Fixed typo `camqpadm` -> `camqadm`
   (Issue #83).
 
-* PeriodicTask.delta_resolution: Was not working for days and hours, now fixed
+* PeriodicTask.delta_resolution: wasn't working for days and hours, now fixed
   by rounding to the nearest day/hour.
 
 * Fixed a potential infinite loop in `BaseAsyncResult.__eq__`, although
-  there is no evidence that it has ever been triggered.
+  there's no evidence that it has ever been triggered.
 
 * worker: Now handles messages with encoding problems by acking them and
   emitting an error message.
@@ -459,20 +459,20 @@ Fixes
 
 1.0.1
 =====
-:release-date: 2010-02-24 07:05 P.M CET
+:release-date: 2010-02-24 07:05 p.m. CET
 :release-by: Ask Solem
 
 * Tasks are now acknowledged early instead of late.
 
     This is done because messages can only be acknowledged within the same
-    connection channel, so if the connection is lost we would have to
+    connection channel, so if the connection is lost we'd've to
     re-fetch the message again to acknowledge it.
 
     This might or might not affect you, but mostly those running tasks with a
-    really long execution time are affected, as all tasks that has made it
+    really long execution time are affected, as all tasks that's made it
     all the way into the pool needs to be executed before the worker can
     safely terminate (this is at most the number of pool workers, multiplied
-    by the :setting:`CELERYD_PREFETCH_MULTIPLIER` setting.)
+    by the :setting:`CELERYD_PREFETCH_MULTIPLIER` setting).
 
     We multiply the prefetch count by default to increase the performance at
     times with bursts of tasks with a short execution time. If this doesn't
@@ -518,14 +518,14 @@ Fixes
 * Execution: `.messaging.TaskPublisher.send_task` now
   incorporates all the functionality apply_async previously did.
 
-    Like converting countdowns to eta, so :func:`celery.execute.apply_async` is
+    Like converting countdowns to ETA, so :func:`celery.execute.apply_async` is
     now simply a convenient front-end to
     :meth:`celery.messaging.TaskPublisher.send_task`, using
     the task classes default options.
 
     Also :func:`celery.execute.send_task` has been
     introduced, which can apply tasks using just the task name (useful
-    if the client does not have the destination task in its task registry).
+    if the client doesn't have the destination task in its task registry).
 
     Example:
 
@@ -574,9 +574,9 @@ Fixes
 
 * The ETA scheduler now deletes any revoked tasks it might encounter.
 
-    As revokes are not yet persistent, this is done to make sure the task
-    is revoked even though it's currently being hold because its eta is e.g.
-    a week into the future.
+    As revokes aren't yet persistent, this is done to make sure the task
+    is revoked even though, for example, it's currently being hold because
+    its ETA is a week into the future.
 
 * The `task_id` argument is now respected even if the task is executed
   eagerly (either using apply, or :setting:`CELERY_ALWAYS_EAGER`).
@@ -588,7 +588,7 @@ Fixes
     Used by retry() to resend the task to its original destination using the same
     exchange/routing_key.
 
-* Events: Fields was not passed by `.send()` (fixes the UUID key errors
+* Events: Fields wasn't passed by `.send()` (fixes the UUID key errors
   in celerymon)
 
 * Added `--schedule`/`-s` option to the worker, so it is possible to
@@ -611,21 +611,21 @@ Fixes
 * Added `Task.delivery_mode` and the :setting:`CELERY_DEFAULT_DELIVERY_MODE`
   setting.
 
-    These can be used to mark messages non-persistent (i.e. so they are
+    These can be used to mark messages non-persistent (i.e., so they're
     lost if the broker is restarted).
 
 * Now have our own `ImproperlyConfigured` exception, instead of using the
   Django one.
 
 * Improvements to the Debian init-scripts: Shows an error if the program is
-  not executable.  Does not modify `CELERYD` when using django with
+  not executable. Does not modify `CELERYD` when using django with
   virtualenv.
 
 .. _version-1.0.0:
 
 1.0.0
 =====
-:release-date: 2010-02-10 04:00 P.M CET
+:release-date: 2010-02-10 04:00 p.m. CET
 :release-by: Ask Solem
 
 .. _v100-incompatible:
@@ -633,7 +633,7 @@ Fixes
 Backward incompatible changes
 -----------------------------
 
-* Celery does not support detaching anymore, so you have to use the tools
+* Celery doesn't support detaching anymore, so you have to use the tools
   available on your platform, or something like :pypi:`supervisor` to make
   ``celeryd``/``celerybeat``/``celerymon`` into background processes.
 
@@ -757,11 +757,11 @@ Backward incompatible changes
 * The :envvar:`CELERY_LOADER` environment variable now needs loader class name
   in addition to module name,
 
-    E.g. where you previously had: `"celery.loaders.default"`, you now need
-    `"celery.loaders.default.Loader"`, using the previous syntax will result
+    For example, where you previously had: `"celery.loaders.default"`, you now
+    need `"celery.loaders.default.Loader"`, using the previous syntax will result
     in a `DeprecationWarning`.
 
-* Detecting the loader is now lazy, and so is not done when importing
+* Detecting the loader is now lazy, and so isn't done when importing
   `celery.loaders`.
 
     To make this happen `celery.loaders.settings` has
@@ -830,7 +830,7 @@ News
     task-[received/succeeded/failed/retried],
     :event:`worker-online`, :event:`worker-offline`.
 
-* You can now delete (revoke) tasks that has already been applied.
+* You can now delete (revoke) tasks that's already been applied.
 
 * You can now set the hostname the worker identifies as using the `--hostname`
   argument.
@@ -844,16 +844,20 @@ News
 
 * Periodic tasks are now scheduled on the clock.
 
-    I.e. `timedelta(hours=1)` means every hour at :00 minutes, not every
-    hour from the server starts.  To revert to the previous behavior you
+    That is, `timedelta(hours=1)` means every hour at :00 minutes, not every
+    hour from the server starts. To revert to the previous behavior you
     can set `PeriodicTask.relative = True`.
 
-* Now supports passing execute options to a TaskSets list of args, e.g.:
+* Now supports passing execute options to a TaskSets list of args.
 
-    >>> ts = TaskSet(add, [([2, 2], {}, {'countdown': 1}),
-    ...                   ([4, 4], {}, {'countdown': 2}),
-    ...                   ([8, 8], {}, {'countdown': 3})])
-    >>> ts.run()
+    Example:
+
+    .. code-block:: pycon
+
+        >>> ts = TaskSet(add, [([2, 2], {}, {'countdown': 1}),
+        ...                    ([4, 4], {}, {'countdown': 2}),
+        ...                    ([8, 8], {}, {'countdown': 3})])
+        >>> ts.run()
 
 * Got a 3x performance gain by setting the prefetch count to four times the
   concurrency, (from an average task round-trip of 0.1s to 0.03s!).
@@ -901,7 +905,7 @@ Changes
 
 * Now using a proper scheduler for the tasks with an ETA.
 
-    This means waiting eta tasks are sorted by time, so we don't have
+    This means waiting ETA tasks are sorted by time, so we don't have
     to poll the whole list all the time.
 
 * Now also imports modules listed in :setting:`CELERY_IMPORTS` when running
@@ -961,11 +965,11 @@ Documentation
 
 0.8.4
 =====
-:release-date: 2010-02-05 01:52 P.M CEST
+:release-date: 2010-02-05 01:52 p.m. CEST
 :release-by: Ask Solem
 
 * Now emits a warning if the --detach argument is used.
-  --detach should not be used anymore, as it has several not easily fixed
+  --detach shouldn't be used anymore, as it has several not easily fixed
   bugs related to it. Instead, use something like start-stop-daemon,
   :pypi:`supervisor` or :command:`launchd` (macOS).
 
@@ -979,7 +983,7 @@ Documentation
 
 0.8.3
 =====
-:release-date: 2009-12-22 09:43 A.M CEST
+:release-date: 2009-12-22 09:43 a.m. CEST
 :release-by: Ask Solem
 
 * Fixed a possible race condition that could happen when storing/querying
@@ -993,10 +997,10 @@ Documentation
 
 0.8.2
 =====
-:release-date: 2009-11-20 03:40 P.M CEST
+:release-date: 2009-11-20 03:40 p.m. CEST
 :release-by: Ask Solem
 
-* QOS Prefetch count was not applied properly, as it was set for every message
+* QOS Prefetch count wasn't applied properly, as it was set for every message
   received (which apparently behaves like, "receive one more"), instead of only
   set when our wanted value changed.
 
@@ -1004,7 +1008,7 @@ Documentation
 
 0.8.1
 =================================
-:release-date: 2009-11-16 05:21 P.M CEST
+:release-date: 2009-11-16 05:21 p.m. CEST
 :release-by: Ask Solem
 
 .. _v081-very-important:
@@ -1098,7 +1102,7 @@ Changes
 
 0.8.0
 =====
-:release-date: 2009-09-22 03:06 P.M CEST
+:release-date: 2009-09-22 03:06 p.m. CEST
 :release-by: Ask Solem
 
 .. _v080-incompatible:
@@ -1135,7 +1139,7 @@ Important changes
 
 * Celery can now be used in pure Python (outside of a Django project).
 
-    This means celery is no longer Django specific.
+    This means Celery is no longer Django specific.
 
     For more information see the FAQ entry
     :ref:`faq-is-celery-for-django-only`.
@@ -1169,8 +1173,8 @@ Important changes
     http://bugs.python.org/issue4607
 
 * You can now customize what happens at worker start, at process init, etc.,
-    by creating your own loaders. (see :mod:`celery.loaders.default`,
-    :mod:`celery.loaders.djangoapp`, :mod:`celery.loaders`.)
+    by creating your own loaders (see :mod:`celery.loaders.default`,
+    :mod:`celery.loaders.djangoapp`, :mod:`celery.loaders`).
 
 * Support for multiple AMQP exchanges and queues.
 
@@ -1210,7 +1214,7 @@ News
     `task_postrun`, see :mod:`celery.signals` for more information.
 
 * `TaskSetResult.join` caused `TypeError` when `timeout=None`.
-    Thanks Jerzy Kozera.  Closes #31
+    Thanks Jerzy Kozera. Closes #31
 
 * `views.apply` should return `HttpResponse` instance.
     Thanks to Jerzy Kozera. Closes #32
@@ -1244,7 +1248,7 @@ News
 
 0.6.0
 =====
-:release-date: 2009-08-07 06:54 A.M CET
+:release-date: 2009-08-07 06:54 a.m. CET
 :release-by: Ask Solem
 
 .. _v060-important:
@@ -1263,10 +1267,10 @@ Important changes
     goes away or stops responding, it is automatically replaced with
     a new one.
 
-* Task.name is now automatically generated out of class module+name, e.g.
-    `"djangotwitter.tasks.UpdateStatusesTask"`. Very convenient. No idea why
-    we didn't do this before. Some documentation is updated to not manually
-    specify a task name.
+* Task.name is now automatically generated out of class module+name, for
+  example `"djangotwitter.tasks.UpdateStatusesTask"`. Very convenient.
+  No idea why we didn't do this before. Some documentation is updated to not
+  manually specify a task name.
 
 .. _v060-news:
 
@@ -1275,7 +1279,7 @@ News
 
 * Tested with Django 1.1
 
-* New Tutorial: Creating a click counter using carrot and celery
+* New Tutorial: Creating a click counter using Carrot and Celery
 
 * Database entries for periodic tasks are now created at the workers
     start-up instead of for each check (which has been a forgotten TODO/XXX
@@ -1290,7 +1294,7 @@ News
     has been launched.
 
 * The periodic task table is now locked for reading while getting
-    periodic task status. (MySQL only so far, seeking patches for other
+    periodic task status (MySQL only so far, seeking patches for other
     engines)
 
 * A lot more debugging information is now available by turning on the
@@ -1309,7 +1313,7 @@ News
     includes the ETA for the task (if any).
 
 * Acknowledgment now happens in the pool callback. Can't do ack in the job
-    target, as it's not pickleable (can't share AMQP connection, etc.)).
+    target, as it's not pickleable (can't share AMQP connection, etc.).
 
 * Added note about .delay hanging in README
 
@@ -1326,7 +1330,7 @@ News
 
 0.4.1
 =====
-:release-date: 2009-07-02 01:42 P.M CET
+:release-date: 2009-07-02 01:42 p.m. CET
 :release-by: Ask Solem
 
 * Fixed a bug with parsing the message options (`mandatory`,
@@ -1336,24 +1340,24 @@ News
 
 0.4.0
 =====
-:release-date: 2009-07-01 07:29 P.M CET
+:release-date: 2009-07-01 07:29 p.m. CET
 :release-by: Ask Solem
 
 * Adds eager execution. `celery.execute.apply`|`Task.apply` executes the
   function blocking until the task is done, for API compatibility it
-  returns an `celery.result.EagerResult` instance. You can configure
-  celery to always run tasks locally by setting the
+  returns a `celery.result.EagerResult` instance. You can configure
+  Celery to always run tasks locally by setting the
   :setting:`CELERY_ALWAYS_EAGER` setting to `True`.
 
 * Now depends on `anyjson`.
 
-* 99% coverage using python `coverage` 3.0.
+* 99% coverage using Python `coverage` 3.0.
 
 .. _version-0.3.20:
 
 0.3.20
 ======
-:release-date: 2009-06-25 08:42 P.M CET
+:release-date: 2009-06-25 08:42 p.m. CET
 :release-by: Ask Solem
 
 * New arguments to `apply_async` (the advanced version of
@@ -1391,7 +1395,7 @@ News
 
 * Should now work on Windows (although running in the background won't
   work, so using the `--detach` argument results in an exception
-  being raised.)
+  being raised).
 
 * Added support for statistics for profiling and monitoring.
   To start sending statistics start the worker with the
@@ -1399,7 +1403,7 @@ News
   by running `python manage.py celerystats`. See
   `celery.monitoring` for more information.
 
-* The celery daemon can now be supervised (i.e. it is automatically
+* The Celery daemon can now be supervised (i.e., it is automatically
   restarted if it crashes). To use this start the worker with the
   --supervised` option (or alternatively `-S`).
 
@@ -1414,7 +1418,7 @@ News
 
     .. warning::
 
-        Use with caution! Do not expose this URL to the public
+        Use with caution! Don't expose this URL to the public
         without first ensuring that your code is safe!
 
 * Refactored `celery.task`. It's now split into three modules:
@@ -1438,7 +1442,7 @@ News
 
 0.3.7
 =====
-:release-date: 2008-06-16 11:41 P.M CET
+:release-date: 2008-06-16 11:41 p.m. CET
 :release-by: Ask Solem
 
 * **IMPORTANT** Now uses AMQP`s `basic.consume` instead of
@@ -1489,7 +1493,7 @@ News
   it's the term used in the documentation from now on.
 
 * Make sure the pool and periodic task worker thread is terminated
-  properly at exit. (So :kbd:`Control-c` works again).
+  properly at exit (so :kbd:`Control-c` works again).
 
 * Now depends on `python-daemon`.
 
@@ -1505,7 +1509,7 @@ News
 
 0.3.3
 =====
-:release-date: 2009-06-08 01:07 P.M CET
+:release-date: 2009-06-08 01:07 p.m. CET
 :release-by: Ask Solem
 
 * The `PeriodicWorkController` now sleeps for 1 second between checking
@@ -1515,19 +1519,19 @@ News
 
 0.3.2
 =====
-:release-date: 2009-06-08 01:07 P.M CET
+:release-date: 2009-06-08 01:07 p.m. CET
 :release-by: Ask Solem
 
 * worker: Added option `--discard`: Discard (delete!) all waiting
   messages in the queue.
 
-* Worker: The `--wakeup-after` option was not handled as a float.
+* Worker: The `--wakeup-after` option wasn't handled as a float.
 
 .. _version-0.3.1:
 
 0.3.1
 =====
-:release-date: 2009-06-08 01:07 P.M CET
+:release-date: 2009-06-08 01:07 p.m. CET
 :release-by: Ask Solem
 
 * The `PeriodicTask` worker is now running in its own thread instead
@@ -1539,7 +1543,7 @@ News
 
 0.3.0
 =====
-:release-date: 2009-06-08 12:41 P.M CET
+:release-date: 2009-06-08 12:41 p.m. CET
 :release-by: Ask Solem
 
 .. warning::
@@ -1556,11 +1560,11 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * **IMPORTANT** Celery now depends on carrot >= 0.4.1.
 
-* The celery daemon now sends task errors to the registered admin emails.
+* The Celery daemon now sends task errors to the registered admin emails.
   To turn off this feature, set `SEND_CELERY_TASK_ERROR_EMAILS` to
   `False` in your `settings.py`. Thanks to Grégoire Cachet.
 
-* You can now run the celery daemon by using `manage.py`:
+* You can now run the Celery daemon by using `manage.py`:
 
   .. code-block:: console
 
@@ -1569,7 +1573,7 @@ arguments, so be sure to flush your task queue before you upgrade.
   Thanks to Grégoire Cachet.
 
 * Added support for message priorities, topic exchanges, custom routing
-  keys for tasks. This means we have introduced
+  keys for tasks. This means we've introduced
   `celery.task.apply_async`, a new way of executing tasks.
 
   You can use `celery.task.delay` and `celery.Task.delay` like usual, but
@@ -1596,7 +1600,7 @@ arguments, so be sure to flush your task queue before you upgrade.
   Thanks to Vitaly Babiy and Jirka Vejrazka.
 
 * **IMPORTANT** Now using pickle to encode task arguments. This means you
-  now can pass complex python objects to tasks as arguments.
+  now can pass complex Python objects to tasks as arguments.
 
 * Removed dependency to `yadayada`.
 
@@ -1617,7 +1621,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 0.2.0
 =====
-:release-date: 2009-05-20 05:14 P.M CET
+:release-date: 2009-05-20 05:14 p.m. CET
 :release-by: Ask Solem
 
 * Final release of 0.2.0
@@ -1631,7 +1635,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 0.2.0-pre3
 ==========
-:release-date: 2009-05-20 05:14 P.M CET
+:release-date: 2009-05-20 05:14 p.m. CET
 :release-by: Ask Solem
 
 * *Internal release*. Improved handling of unpickleable exceptions,
@@ -1642,7 +1646,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 0.2.0-pre2
 ==========
-:release-date: 2009-05-20 01:56 P.M CET
+:release-date: 2009-05-20 01:56 p.m. CET
 :release-by: Ask Solem
 
 * Now handles unpickleable exceptions (like the dynamically generated
@@ -1652,7 +1656,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 0.2.0-pre1
 ==========
-:release-date: 2009-05-20 12:33 P.M CET
+:release-date: 2009-05-20 12:33 p.m. CET
 :release-by: Ask Solem
 
 * It's getting quite stable, with a lot of new features, so bump
@@ -1666,10 +1670,10 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 0.1.15
 ======
-:release-date: 2009-05-19 04:13 P.M CET
+:release-date: 2009-05-19 04:13 p.m. CET
 :release-by: Ask Solem
 
-* The celery daemon was leaking AMQP connections, this should be fixed,
+* The Celery daemon was leaking AMQP connections, this should be fixed,
   if you have any problems with too many files open (like `emfile`
   errors in `rabbit.log`, please contact us!
 
@@ -1677,17 +1681,17 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 0.1.14
 ======
-:release-date: 2009-05-19 01:08 P.M CET
+:release-date: 2009-05-19 01:08 p.m. CET
 :release-by: Ask Solem
 
-* Fixed a syntax error in the `TaskSet` class.  (No such variable
+* Fixed a syntax error in the `TaskSet` class (no such variable
   `TimeOutError`).
 
 .. _version-0.1.13:
 
 0.1.13
 ======
-:release-date: 2009-05-19 12:36 P.M CET
+:release-date: 2009-05-19 12:36 p.m. CET
 :release-by: Ask Solem
 
 * Forgot to add `yadayada` to install requirements.
@@ -1714,17 +1718,17 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 0.1.12
 ======
-:release-date: 2009-05-18 04:38 P.M CET
+:release-date: 2009-05-18 04:38 p.m. CET
 :release-by: Ask Solem
 
 * `delay_task()` etc. now returns `celery.task.AsyncResult` object,
-  which lets you check the result and any failure that might have
-  happened.  It kind of works like the `multiprocessing.AsyncResult`
+  which lets you check the result and any failure that might've
+  happened. It kind of works like the `multiprocessing.AsyncResult`
   class returned by `multiprocessing.Pool.map_async`.
 
 * Added ``dmap()`` and ``dmap_async()``. This works like the
-  `multiprocessing.Pool` versions except they are tasks
-  distributed to the celery server. Example:
+  `multiprocessing.Pool` versions except they're tasks
+  distributed to the Celery server. Example:
 
     .. code-block:: pycon
 
@@ -1762,17 +1766,17 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 0.1.11
 ======
-:release-date: 2009-05-12 02:08 P.M CET
+:release-date: 2009-05-12 02:08 p.m. CET
 :release-by: Ask Solem
 
 * The logging system was leaking file descriptors, resulting in
-  servers stopping with the EMFILES (too many open files) error. (fixed)
+  servers stopping with the EMFILES (too many open files) error (fixed).
 
 .. _version-0.1.10:
 
 0.1.10
 ======
-:release-date: 2009-05-11 12:46 P.M CET
+:release-date: 2009-05-11 12:46 p.m. CET
 :release-by: Ask Solem
 
 * Tasks now supports both positional arguments and keyword arguments.
@@ -1785,7 +1789,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 0.1.8
 =====
-:release-date: 2009-05-07 12:27 P.M CET
+:release-date: 2009-05-07 12:27 p.m. CET
 :release-by: Ask Solem
 
 * Better test coverage
@@ -1797,7 +1801,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 0.1.7
 =====
-:release-date: 2009-04-30 01:50 P.M CET
+:release-date: 2009-04-30 01:50 p.m. CET
 :release-by: Ask Solem
 
 * Added some unit tests
@@ -1816,7 +1820,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 0.1.6
 =====
-:release-date: 2009-04-28 02:13 P.M CET
+:release-date: 2009-04-28 02:13 p.m. CET
 :release-by: Ask Solem
 
 * Introducing `TaskSet`. A set of subtasks is executed and you can
@@ -1840,7 +1844,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * Can now check if a task has been executed or not via HTTP.
 
-* You can do this by including the celery `urls.py` into your project,
+* You can do this by including the Celery `urls.py` into your project,
 
         >>> url(r'^celery/$', include('celery.urls'))
 
@@ -1850,7 +1854,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
         http://mysite/celery/$task_id/done/
 
-  this will return a JSON dictionary like e.g:
+  this will return a JSON dictionary, for example:
 
   .. code-block:: json
 
@@ -1867,7 +1871,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 0.1.0
 =====
-:release-date: 2009-04-24 11:28 A.M CET
+:release-date: 2009-04-24 11:28 a.m. CET
 :release-by: Ask Solem
 
 * Initial release

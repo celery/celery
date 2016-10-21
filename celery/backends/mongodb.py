@@ -93,7 +93,7 @@ class MongoBackend(BaseBackend):
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(
                     'MongoDB backend settings should be grouped in a dict')
-            config = dict(config)  # do not modify original
+            config = dict(config)  # don't modify original
 
             if 'host' in config or 'port' in config:
                 # these should take over uri conf
@@ -131,7 +131,7 @@ class MongoBackend(BaseBackend):
             if not host:
                 # The first pymongo.Connection() argument (host) can be
                 # a list of ['host:port'] elements or a mongodb connection
-                # URI. If this is the case, don't use self.port
+                # URI.  If this is the case, don't use self.port
                 # but let pymongo get the port(s) from the URI instead.
                 # This enables the use of replica sets and sharding.
                 # See pymongo.Connection() for more info.
@@ -255,8 +255,10 @@ class MongoBackend(BaseBackend):
 
     @cached_property
     def database(self):
-        """Get database from MongoDB connection and perform authentication
-        if necessary."""
+        """Get database from MongoDB connection.
+
+        performs authentication if necessary.
+        """
         return self._get_database()
 
     @cached_property
@@ -265,7 +267,7 @@ class MongoBackend(BaseBackend):
         collection = self.database[self.taskmeta_collection]
 
         # Ensure an index on date_done is there, if not process the index
-        # in the background. Once completed cleanup will be much faster
+        # in the background.  Once completed cleanup will be much faster
         collection.ensure_index('date_done', background='true')
         return collection
 
@@ -275,7 +277,7 @@ class MongoBackend(BaseBackend):
         collection = self.database[self.groupmeta_collection]
 
         # Ensure an index on date_done is there, if not process the index
-        # in the background. Once completed cleanup will be much faster
+        # in the background.  Once completed cleanup will be much faster
         collection.ensure_index('date_done', background='true')
         return collection
 

@@ -27,6 +27,8 @@ _in_sighandler = False
 
 MP_LOG = os.environ.get('MP_LOG', False)
 
+RESERVED_LOGGER_NAMES = {'celery', 'celery.task'}
+
 # Sets up our logging hierarchy.
 #
 # Every logger in the celery package inherits from the "celery"
@@ -36,6 +38,7 @@ base_logger = logger = _get_logger('celery')  # type: logging.Logger
 
 
 def set_in_sighandler(value: bool) -> None:
+    """Set flag signifiying that we're inside a signal handler."""
     global _in_sighandler
     _in_sighandler = value
 
@@ -44,9 +47,9 @@ def iter_open_logger_fds() -> Iterable[Any]:
     seen = set()
     loggers = (list(logging.Logger.manager.loggerDict.values()) +
                [logging.getLogger(None)])
-    for logger in loggers:
+    for l in loggers:
         try:
-            for handler in logger.handlers:
+            for handler in l.handlers:
                 try:
                     if handler not in seen:  # pragma: no cover
                         yield handler.stream
@@ -59,6 +62,7 @@ def iter_open_logger_fds() -> Iterable[Any]:
 
 @contextmanager
 def in_sighandler() -> Iterator:
+    """Context that records that we are in a signal handler."""
     set_in_sighandler(True)
     try:
         yield
@@ -85,30 +89,39 @@ def logger_isa(l: logging.Logger, p: logging.Logger, max: int=1000) -> bool:
     return False
 
 
+def _using_logger_parent(parent_logger, logger_):
+    if not logger_isa(logger_, parent_logger):
+        logger_.parent = parent_logger
+    return logger_
+
+
 def get_logger(name: Union[str, logging.Logger]) -> logging.Logger:
+    """Get logger by name."""
     l = _get_logger(name)
     if logging.root not in (l, l.parent) and l is not base_logger:
-        if not logger_isa(l, base_logger):  # pragma: no cover
-            l.parent = base_logger
+        l = _using_logger_parent(base_logger, l)
     return l
 task_logger = get_logger('celery.task')
 worker_logger = get_logger('celery.worker')
 
 
 def get_task_logger(name: Union[str, logging.Logger]) -> logging.Logger:
-    logger = get_logger(name)
-    if not logger_isa(logger, task_logger):
-        logger.parent = task_logger
-    return logger
+    """Get logger for task module by name."""
+    if name in RESERVED_LOGGER_NAMES:
+        raise RuntimeError('Logger name {0!r} is reserved!'.format(name))
+    return _using_logger_parent(task_logger, get_logger(name))
 
 
 def mlevel(level: Union[int, str]) -> int:
+    """Convert level name/int to log level."""
     if level and not isinstance(level, numbers.Integral):
         return LOG_LEVELS[level.upper()]
     return level
 
 
 class ColorFormatter(logging.Formatter):
+    """Logging formatter that adds colors based on severity."""
+
     #: Loglevel -> Color mapping.
     COLORS = colored().names
     colors = {
@@ -146,7 +159,7 @@ class ColorFormatter(logging.Formatter):
                     return safe_str(color(msg))
                 except UnicodeDecodeError:  # pragma: no cover
                     return safe_str(msg)  # skip colors
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-except
                 prev_msg, record.exc_info, record.msg = (
                     record.msg, 1, '<Unrepresentable {0!r}: {1!r}>'.format(
                         type(msg), exc
@@ -167,6 +180,7 @@ class LoggingProxy:
         logger (~logging.Logger): Logger instance to forward to.
         loglevel (int, str): Log level to use when logging messages.
     """
+
     mode = 'w'
     name = None
     closed = False
@@ -175,14 +189,16 @@ class LoggingProxy:
 
     def __init__(self, logger: logging.Logger,
                  loglevel: Optional[Union[int, str]]=None) -> None:
+        # pylint: disable=redefined-outer-name
+        # Note that the logger global is redefined here, be careful changing.
         self.logger = logger
         self.loglevel = mlevel(loglevel or self.logger.level or self.loglevel)
         self._safewrap_handlers()
 
     def _safewrap_handlers(self):
-        """Make the logger handlers dump internal errors to
-        :data:`sys.__stderr__` instead of :data:`sys.stderr` to circumvent
-        infinite loops."""
+        # Make the logger handlers dump internal errors to
+        # :data:`sys.__stderr__` instead of :data:`sys.stderr` to circumvent
+        # infinite loops.
 
         def wrap_handler(handler):                  # pragma: no cover
 
@@ -213,9 +229,7 @@ class LoggingProxy:
                 self._thread.recurse_protection = False
 
     def writelines(self, sequence: Iterable[str]) -> None:
-        """`writelines(sequence_of_strings) -> None`.
-
-        Write the strings to the file.
+        """Write list of strings to file.
 
         The sequence can be any iterable object producing strings.
         This is equivalent to calling :meth:`write` for each string.
@@ -224,30 +238,32 @@ class LoggingProxy:
             self.write(part)
 
     def flush(self) -> None:
-        """This object is not buffered so any :meth:`flush` requests
-        are ignored."""
-        pass
+        # This object is not buffered so any :meth:`flush`
+        # requests are ignored.
+        ...
 
     def close(self) -> None:
-        """When the object is closed, no write requests are forwarded to
-        the logging object anymore."""
+        # when the object is closed, no write requests are
+        # forwarded to the logging object anymore.
         self.closed = True
 
     def isatty(self) -> bool:
-        """Always return :const:`False`. Just here for file support."""
+        """Here for file support."""
         return False
 
 
 def get_multiprocessing_logger() -> logging.Logger:
+    """Return the multiprocessing logger."""
     try:
         from billiard import util
     except ImportError:  # pragma: no cover
-            pass
+        pass
     else:
         return util.get_logger()
 
 
 def reset_multiprocessing_logger() -> None:
+    """Reset multiprocessing logging setup."""
     try:
         from billiard import util
     except ImportError:  # pragma: no cover

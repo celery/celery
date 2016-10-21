@@ -16,7 +16,7 @@ Custom Message Consumers
 You may want to embed custom Kombu consumers to manually process your messages.
 
 For that purpose a special :class:`~celery.bootstep.ConsumerStep` bootstep class
-exists, where you only need to define the ``get_consumers`` method, which must
+exists, where you only need to define the ``get_consumers`` method, that must
 return a list of :class:`kombu.Consumer` objects to start
 whenever the connection is established:
 
@@ -62,12 +62,11 @@ whenever the connection is established:
 .. note::
 
     Kombu Consumers can take use of two different message callback dispatching
-    mechanisms.  The first one is the ``callbacks`` argument which accepts
+    mechanisms. The first one is the ``callbacks`` argument that accepts
     a list of callbacks with a ``(body, message)`` signature,
-    the second one is the ``on_message`` argument which takes a single
-    callback with a ``(message,)`` signature.  The latter will not
-    automatically decode and deserialize the payload which is useful
-    in many cases:
+    the second one is the ``on_message`` argument that takes a single
+    callback with a ``(message,)`` signature. The latter won't
+    automatically decode and deserialize the payload.
 
     .. code-block:: python
 
@@ -91,15 +90,15 @@ Blueprints
 
 Bootsteps is a technique to add functionality to the workers.
 A bootstep is a custom class that defines hooks to do custom actions
-at different stages in the worker.   Every bootstep belongs to a blueprint,
+at different stages in the worker. Every bootstep belongs to a blueprint,
 and the worker currently defines two blueprints: **Worker**, and **Consumer**
 
 ----------------------------------------------------------
 
-**Figure A:** Bootsteps in the Worker and Consumer blueprints.  Starting
+**Figure A:** Bootsteps in the Worker and Consumer blueprints. Starting
               from the bottom up the first step in the worker blueprint
               is the Timer, and the last step is to start the Consumer blueprint,
-              which then establishes the broker connection and starts
+              that then establishes the broker connection and starts
               consuming messages.
 
 .. figure:: ../images/worker_graph_full.png
@@ -115,8 +114,8 @@ The Worker is the first blueprint to start, and with it starts major components 
 the event loop, processing pool, and the timer used for ETA tasks and other
 timed events.
 
-When the worker is fully started it will continue to the Consumer blueprint,
-which sets up how tasks are to be executed, connects to the broker and starts
+When the worker is fully started it continues with the Consumer blueprint,
+that sets up how tasks are executed, connects to the broker and starts
 the message consumers.
 
 The :class:`~celery.worker.WorkController` is the core worker implementation,
@@ -137,7 +136,7 @@ Attributes
 
 .. attribute:: hostname
 
-    The workers node name (e.g. `worker1@example.com`)
+    The workers node name (e.g., `worker1@example.com`)
 
 .. _extending-worker-blueprint:
 
@@ -149,7 +148,7 @@ Attributes
 
 .. attribute:: hub
 
-    Event loop object (:class:`~kombu.async.Hub`).  You can use
+    Event loop object (:class:`~kombu.async.Hub`). You can use
     this to register callbacks in the event loop.
 
     This is only supported by async I/O enabled transports (amqp, redis),
@@ -160,7 +159,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.components:Hub',)
+            requires = {'celery.worker.components:Hub'}
 
 .. _extending-worker-pool:
 
@@ -174,7 +173,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.components:Pool',)
+            requires = {'celery.worker.components:Pool'}
 
 .. _extending-worker-timer:
 
@@ -187,7 +186,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.components:Timer',)
+            requires = {'celery.worker.components:Timer'}
 
 .. _extending-worker-statedb:
 
@@ -203,7 +202,38 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.components:Statedb',)
+            requires = {'celery.worker.components:Statedb'}
+
+.. _extending-worker-autoscaler:
+
+.. attribute:: autoscaler
+
+    :class:`~celery.worker.autoscaler.Autoscaler` used to automatically grow
+    and shrink the number of processes in the pool.
+
+    This is only defined if the ``autoscale`` argument is enabled.
+
+    Your worker bootstep must require the `Autoscaler` bootstep to use this:
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.autoscaler:Autoscaler',)
+
+.. _extending-worker-autoreloader:
+
+.. attribute:: autoreloader
+
+    :class:`~celery.worker.autoreloder.Autoreloader` used to automatically
+    reload use code when the file-system changes.
+
+    This is only defined if the ``autoreload`` argument is enabled.
+    Your worker bootstep must require the `Autoreloader` bootstep to use this;
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.autoreloader:Autoreloader',)
 
 Example worker bootstep
 -----------------------
@@ -215,7 +245,7 @@ An example Worker bootstep could be:
     from celery import bootsteps
 
     class ExampleWorkerStep(bootsteps.StartStopStep):
-        requires = ('Pool',)
+        requires = {'celery.worker.components:Pool'}
 
         def __init__(self, worker, **kwargs):
             print('Called when the WorkController instance is constructed')
@@ -247,7 +277,7 @@ Another example could use the timer to wake up at regular intervals:
 
 
     class DeadlockDetection(bootsteps.StartStopStep):
-        requires = ('Timer',)
+        requires = {'celery.worker.components:Timer'}
 
         def __init__(self, worker, deadlock_timeout=3600):
             self.timeout = deadlock_timeout
@@ -267,7 +297,7 @@ Another example could use the timer to wake up at regular intervals:
 
         def detect(self, worker):
             # update active requests
-            for req in self.worker.active_requests:
+            for req in worker.active_requests:
                 if req.time_start and time() - req.time_start > self.timeout:
                     raise SystemExit()
 
@@ -277,12 +307,12 @@ Consumer
 ========
 
 The Consumer blueprint establishes a connection to the broker, and
-is restarted every time this connection is lost.   Consumer bootsteps
+is restarted every time this connection is lost. Consumer bootsteps
 include the worker heartbeat, the remote control command consumer, and
 importantly, the task consumer.
 
 When you create consumer bootsteps you must take into account that it must
-be possible to restart your blueprint.  An additional 'shutdown' method is
+be possible to restart your blueprint. An additional 'shutdown' method is
 defined for consumer bootsteps, this method is called when the worker is
 shutdown.
 
@@ -307,7 +337,7 @@ Attributes
 
 .. attribute:: hostname
 
-    The workers node name (e.g. `worker1@example.com`)
+    The workers node name (e.g., `worker1@example.com`)
 
 .. _extending-consumer-blueprint:
 
@@ -319,7 +349,7 @@ Attributes
 
 .. attribute:: hub
 
-    Event loop object (:class:`~kombu.async.Hub`).  You can use
+    Event loop object (:class:`~kombu.async.Hub`). You can use
     this to register callbacks in the event loop.
 
     This is only supported by async I/O enabled transports (amqp, redis),
@@ -330,7 +360,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker:Hub',)
+            requires = {'celery.worker.components:Hub'}
 
 .. _extending-consumer-connection:
 
@@ -344,7 +374,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Connection',)
+            requires = {'celery.worker.consumer.connection:Connection'}
 
 .. _extending-consumer-event_dispatcher:
 
@@ -357,14 +387,14 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Events',)
+            requires = {'celery.worker.consumer.events:Events'}
 
 .. _extending-consumer-gossip:
 
 .. attribute:: gossip
 
     Worker to worker broadcast communication
-    (:class:`~celery.worker.consumer.Gossip`).
+    (:class:`~celery.worker.consumer.gossip.Gossip`).
 
     A consumer bootstep must require the `Gossip` bootstep to use this.
 
@@ -373,7 +403,7 @@ Attributes
         class RatelimitStep(bootsteps.StartStopStep):
             """Rate limit tasks based on the number of workers in the
             cluster."""
-            requires = ('celery.worker.consumer:Gossip',)
+            requires = {'celery.worker.consumer.gossip:Gossip'}
 
             def start(self, c):
                 self.c = c
@@ -417,8 +447,8 @@ Attributes
         cluster (heartbeat not received or processed in time),
         providing a :class:`~celery.events.state.Worker` instance.
 
-        This does not necessarily mean the worker is actually offline, so use a time
-        out mechanism if the default heartbeat timeout is not sufficient.
+        This doesn't necessarily mean the worker is actually offline, so use a time
+        out mechanism if the default heartbeat timeout isn't sufficient.
 
 .. _extending-consumer-pool:
 
@@ -445,7 +475,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Heart',)
+            requires = {'celery.worker.consumer.heart:Heart'}
 
 .. _extending-consumer-task_consumer:
 
@@ -458,7 +488,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Tasks',)
+            requires = {'celery.worker.consumer.tasks:Tasks'}
 
 .. _extending-consumer-strategies:
 
@@ -466,7 +496,7 @@ Attributes
 
     Every registered task type has an entry in this mapping,
     where the value is used to execute an incoming message of this task type
-    (the task execution strategy).  This mapping is generated by the Tasks
+    (the task execution strategy). This mapping is generated by the Tasks
     bootstep when the consumer starts:
 
     .. code-block:: python
@@ -482,7 +512,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Tasks',)
+            requires = {'celery.worker.consumer.tasks:Tasks'}
 
 .. _extending-consumer-task_buckets:
 
@@ -505,7 +535,7 @@ Attributes
 .. attribute:: qos
 
     The :class:`~kombu.common.QoS` object can be used to change the
-    task channels current prefetch_count value, e.g:
+    task channels current prefetch_count value:
 
     .. code-block:: python
 
@@ -531,16 +561,16 @@ Methods
 .. method:: consumer.add_task_queue(name, exchange=None, exchange_type=None,
                                     routing_key=None, \*\*options):
 
-    Adds new queue to consume from.  This will persist on connection restart.
+    Adds new queue to consume from. This will persist on connection restart.
 
 .. method:: consumer.cancel_task_queue(name)
 
-    Stop consuming from queue by name.  This will persist on connection
+    Stop consuming from queue by name. This will persist on connection
     restart.
 
 .. method:: apply_eta_task(request)
 
-    Schedule eta task to execute based on the ``request.eta`` attribute.
+    Schedule ETA task to execute based on the ``request.eta`` attribute.
     (:class:`~celery.worker.request.Request`)
 
 
@@ -556,7 +586,7 @@ to add new bootsteps:
 .. code-block:: pycon
 
     >>> app = Celery()
-    >>> app.steps['worker'].add(MyWorkerStep)  # < add class, do not instantiate
+    >>> app.steps['worker'].add(MyWorkerStep)  # < add class, don't instantiate
     >>> app.steps['consumer'].add(MyConsumerStep)
 
     >>> app.steps['consumer'].update([StepA, StepB])
@@ -564,7 +594,7 @@ to add new bootsteps:
     >>> app.steps['consumer']
     {step:proj.StepB{()}, step:proj.MyConsumerStep{()}, step:proj.StepA{()}
 
-The order of steps is not important here as the order is decided by the
+The order of steps isn't important here as the order is decided by the
 resulting dependency graph (``Step.requires``).
 
 To illustrate how you can install bootsteps and how they work, this is an example step that
@@ -581,7 +611,7 @@ It can be added both as a worker and consumer bootstep:
 
         def __init__(self, parent, **kwargs):
             # here we can prepare the Worker/Consumer object
-            # in any way we want, set attribute defaults and so on.
+            # in any way we want, set attribute defaults, and so on.
             print('{0!r} is in init'.format(parent))
 
         def start(self, parent):
@@ -590,9 +620,9 @@ It can be added both as a worker and consumer bootstep:
             print('{0!r} is starting'.format(parent))
 
         def stop(self, parent):
-            # the Consumer calls stop every time the consumer is restarted
-            # (i.e. connection is lost) and also at shutdown.  The Worker
-            # will call stop at shutdown only.
+            # the Consumer calls stop every time the consumer is
+            # restarted (i.e., connection is lost) and also at shutdown.
+            # The Worker will call stop at shutdown only.
             print('{0!r} is stopping'.format(parent))
 
         def shutdown(self, parent):
@@ -624,9 +654,9 @@ the worker has been initialized, so the "is starting" lines are time-stamped.
 You may notice that this does no longer happen at shutdown, this is because
 the ``stop`` and ``shutdown`` methods are called inside a *signal handler*,
 and it's not safe to use logging inside such a handler.
-Logging with the Python logging module is not :term:`reentrant`,
-which means that you cannot interrupt the function and
-call it again later.  It's important that the ``stop`` and ``shutdown`` methods
+Logging with the Python logging module isn't :term:`reentrant`:
+meaning you cannot interrupt the function then
+call it again later. It's important that the ``stop`` and ``shutdown`` methods
 you write is also :term:`reentrant`.
 
 Starting the worker with :option:`--loglevel=debug <celery worker --loglevel>`
@@ -638,7 +668,7 @@ will show us more information about the boot process:
     [2013-05-29 16:18:20,511: DEBUG/MainProcess] | Worker: Building graph...
     <celery.apps.worker.Worker object at 0x101ad8410> is in init
     [2013-05-29 16:18:20,511: DEBUG/MainProcess] | Worker: New boot order:
-        {Hub, Pool, Timer, StateDB, InfoStep, Beat, Consumer}
+        {Hub, Pool, Timer, StateDB, Autoscaler, InfoStep, Beat, Consumer}
     [2013-05-29 16:18:20,514: DEBUG/MainProcess] | Consumer: Preparing bootsteps.
     [2013-05-29 16:18:20,514: DEBUG/MainProcess] | Consumer: Building graph...
     <celery.worker.consumer.Consumer object at 0x101c2d8d0> is in init
@@ -695,28 +725,29 @@ Adding new command-line options
 Command-specific options
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can add additional command-line options to the ``worker``, ``beat`` and
+You can add additional command-line options to the ``worker``, ``beat``, and
 ``events`` commands by modifying the :attr:`~@user_options` attribute of the
 application instance.
 
-Celery commands uses the :mod:`optparse` module to parse command-line
-arguments, and so you have to use :mod:`optparse` specific option instances created
-using :func:`optparse.make_option`.  Please see the :mod:`optparse`
-documentation to read about the fields supported.
+Celery commands uses the :mod:`argparse` module to parse command-line
+arguments, and so to add custom arguments you need to specify a callback
+that takes a :class:`argparse.ArgumentParser` instance - and adds arguments.
+Please see the :mod:`argparse` documentation to read about the fields supported.
 
 Example adding a custom option to the :program:`celery worker` command:
 
 .. code-block:: python
 
     from celery import Celery
-    from celery.bin import Option  # <-- alias to optparse.make_option
 
     app = Celery(broker='amqp://')
 
-    app.user_options['worker'].add(
-        Option('--enable-my-option', action='store_true', default=False,
-               help='Enable custom option.'),
-    )
+    def add_worker_arguments(parser):
+        parser.add_argument(
+            '--enable-my-option', action='store_true', default=False,
+            help='Enable custom option.',
+        ),
+    app.user_options['worker'].add(add_worker_arguments)
 
 
 All bootsteps will now receive this argument as a keyword argument to
@@ -740,13 +771,14 @@ Preload options
 ~~~~~~~~~~~~~~~
 
 The :program:`celery` umbrella command supports the concept of 'preload
-options', which are special options passed to all sub-commands and parsed
+options'.  These are special options passed to all sub-commands and parsed
 outside of the main parsing step.
 
 The list of default preload options can be found in the API reference:
 :mod:`celery.bin.base`.
 
-You can add new preload options too, e.g. to specify a configuration template:
+You can add new preload options too, for example to specify a configuration
+template:
 
 .. code-block:: python
 
@@ -755,10 +787,13 @@ You can add new preload options too, e.g. to specify a configuration template:
     from celery.bin import Option
 
     app = Celery()
-    app.user_options['preload'].add(
-        Option('-Z', '--template', default='default',
-               help='Configuration template to use.'),
-    )
+
+    def add_preload_options(parser):
+        parser.add_argument(
+            '-Z', '--template', default='default',
+            help='Configuration template to use.',
+        )
+    app.user_options['preload'].add(add_preload_options)
 
     @signals.user_preload_options.connect
     def on_preload_parsed(options, **kwargs):
@@ -781,11 +816,11 @@ and then after installation, read from the system using the :mod:`pkg_resources`
 
 Celery recognizes ``celery.commands`` entry-points to install additional
 sub-commands, where the value of the entry-point must point to a valid subclass
-of :class:`celery.bin.base.Command`.  There is limited documentation,
+of :class:`celery.bin.base.Command`. There's limited documentation,
 unfortunately, but you can find inspiration from the various commands in the
 :mod:`celery.bin` package.
 
-This is how the Flower_ monitoring extension adds the :program:`celery flower` command,
+This is how the :pypi:`Flower` monitoring extension adds the :program:`celery flower` command,
 by adding an entry-point in :file:`setup.py`:
 
 .. code-block:: python
@@ -798,9 +833,6 @@ by adding an entry-point in :file:`setup.py`:
             ],
         }
     )
-
-
-.. _Flower: http://pypi.python.org/pypi/flower
 
 The command definition is in two parts separated by the equal sign, where the
 first part is the name of the sub-command (flower), then the second part is
@@ -819,17 +851,18 @@ something like this:
 
 .. code-block:: python
 
-    from celery.bin.base import Command, Option
+    from celery.bin.base import Command
 
 
     class FlowerCommand(Command):
 
-        def get_options(self):
-            return (
-                Option('--port', default=8888, type='int',
-                    help='Webserver port',
-                ),
-                Option('--debug', action='store_true'),
+        def add_arguments(self, parser):
+            parser.add_argument(
+                '--port', default=8888, type='int',
+                help='Webserver port',
+            ),
+            parser.add_argument(
+                '--debug', action='store_true',
             )
 
         def run(self, port=None, debug=False, **kwargs):
@@ -840,14 +873,14 @@ Worker API
 ==========
 
 
-:class:`~kombu.async.Hub` - The workers async event loop.
----------------------------------------------------------
+:class:`~kombu.async.Hub` - The workers async event loop
+--------------------------------------------------------
 :supported transports: amqp, redis
 
 .. versionadded:: 3.0
 
 The worker uses asynchronous I/O when the amqp or redis broker transports are
-used.  The eventual goal is for all transports to use the event-loop, but that
+used. The eventual goal is for all transports to use the event-loop, but that
 will take some time so other transports still use a threading-based solution.
 
 .. method:: hub.add(fd, callback, flags)

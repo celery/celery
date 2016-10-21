@@ -12,7 +12,7 @@ new in Celery 3.1.
 
 3.1.21
 ======
-:release-date: 2016-03-04 11:16 A.M PST
+:release-date: 2016-03-04 11:16 a.m. PST
 :release-by: Ask Solem
 
 - **Requirements**
@@ -47,7 +47,7 @@ new in Celery 3.1.
     Contributed by Sebastian Kalinowski.
 
 - **Utils**: The ``.discard(item)`` method of
-  :class:`~celery.utils.collections.LimitedSet` did not actually remove the item
+  :class:`~celery.utils.collections.LimitedSet` didn't actually remove the item
   (Issue #3087).
 
     Fix contributed by Dave Smith.
@@ -71,7 +71,7 @@ new in Celery 3.1.
 
 3.1.20
 ======
-:release-date: 2016-01-22 06:50 P.M UTC
+:release-date: 2016-01-22 06:50 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**
@@ -100,7 +100,7 @@ new in Celery 3.1.
 - **Results**: Database backend now properly supports JSON exceptions
   (Issue #2441).
 
-- **Results**: Redis ``new_join`` did not properly call task errbacks on chord
+- **Results**: Redis ``new_join`` didn't properly call task errbacks on chord
   error (Issue #2796).
 
 - **Results**: Restores Redis compatibility with Python :pypi:`redis` < 2.10.0
@@ -128,11 +128,11 @@ new in Celery 3.1.
 
     Contributed by Dennis Brakhane.
 
-    Python 3.5's ``OrderedDict`` does not allow mutation while it is being
+    Python 3.5's ``OrderedDict`` doesn't allow mutation while it is being
     iterated over. This breaks "update" if it is called with a dict
     larger than the maximum size.
 
-    This commit changes the code to a version that does not iterate over
+    This commit changes the code to a version that doesn't iterate over
     the dict, and should also be a little bit faster.
 
 - **Init-scripts**: The beat init-script now properly reports service as down
@@ -184,7 +184,7 @@ new in Celery 3.1.
 
 3.1.19
 ======
-:release-date: 2015-10-26 01:00 P.M UTC
+:release-date: 2015-10-26 01:00 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**
@@ -214,7 +214,7 @@ new in Celery 3.1.
 - **Results**: Redis result backend now allows for timeout to be set in the
   query portion of the result backend URL.
 
-    E.g. ``CELERY_RESULT_BACKEND = 'redis://?timeout=10'``
+    For example ``CELERY_RESULT_BACKEND = 'redis://?timeout=10'``
 
     Contributed by Justin Patrin.
 
@@ -233,7 +233,7 @@ new in Celery 3.1.
 
     Fix contributed by Sukrit Khera.
 
-- **Results**: RPC/AMQP backends did not deserialize exceptions properly
+- **Results**: RPC/AMQP backends didn't deserialize exceptions properly
   (Issue #2691).
 
     Fix contributed by Sukrit Khera.
@@ -265,7 +265,7 @@ new in Celery 3.1.
 
 3.1.18
 ======
-:release-date: 2015-04-22 05:30 P.M UTC
+:release-date: 2015-04-22 05:30 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**
@@ -315,7 +315,7 @@ new in Celery 3.1.
 - **Canvas**: Fixed crash in chord unlock fallback task (Issue #2404).
 
 - **Worker**: Fixed rare crash occurring with
-  ``--autoscale`` enabled (Issue #2411).
+  :option:`--autoscale <celery worker --autoscale>` enabled (Issue #2411).
 
 - **Django**: Properly recycle worker Django database connections when the
   Django ``CONN_MAX_AGE`` setting is enabled (Issue #2453).
@@ -326,10 +326,10 @@ new in Celery 3.1.
 
 3.1.17
 ======
-:release-date: 2014-11-19 03:30 P.M UTC
+:release-date: 2014-11-19 03:30 p.m. UTC
 :release-by: Ask Solem
 
-.. admonition:: Do not enable the `CELERYD_FORCE_EXECV` setting!
+.. admonition:: Don't enable the `CELERYD_FORCE_EXECV` setting!
 
     Please review your configuration and disable this option if you're using the
     RabbitMQ or Redis transport.
@@ -359,7 +359,7 @@ new in Celery 3.1.
 
     Fix contributed by Thomas French.
 
-- **Task**: Callbacks was not called properly if ``link`` was a list of
+- **Task**: Callbacks wasn't called properly if ``link`` was a list of
   signatures (Issue #2350).
 
 - **Canvas**: chain and group now handles json serialized signatures
@@ -397,7 +397,7 @@ new in Celery 3.1.
 
     Fix contributed by Sukrit Khera.
 
-- **Task**: Exception info was not properly set for tasks raising
+- **Task**: Exception info wasn't properly set for tasks raising
   :exc:`~celery.exceptions.Reject` (Issue #2043).
 
 - **Worker**: Duplicates are now removed when loading the set of revoked tasks
@@ -424,7 +424,7 @@ new in Celery 3.1.
 
 3.1.16
 ======
-:release-date: 2014-10-03 06:00 P.M UTC
+:release-date: 2014-10-03 06:00 p.m. UTC
 :release-by: Ask Solem
 
 - **Worker**: 3.1.15 broke :option:`-Ofair <celery worker -O>`
@@ -436,7 +436,7 @@ new in Celery 3.1.
 - **Canvas**: ``celery.signature`` now properly forwards app argument
   in all cases.
 
-- **Task**: ``.retry()`` did not raise the exception correctly
+- **Task**: ``.retry()`` didn't raise the exception correctly
   when called without a current exception.
 
     Fix contributed by Andrea Rabbaglietti.
@@ -459,7 +459,7 @@ new in Celery 3.1.
 
 3.1.15
 ======
-:release-date: 2014-09-14 11:00 P.M UTC
+:release-date: 2014-09-14 11:00 p.m. UTC
 :release-by: Ask Solem
 
 - **Django**: Now makes sure ``django.setup()`` is called
@@ -473,7 +473,7 @@ new in Celery 3.1.
 
 3.1.14
 ======
-:release-date: 2014-09-08 03:00 P.M UTC
+:release-date: 2014-09-08 03:00 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**
@@ -555,7 +555,7 @@ News
 - **Beat**: Accounts for standard 1ms drift by always waking up 0.010s
   earlier.
 
-    This will adjust the latency so that the periodic tasks will not move
+    This will adjust the latency so that the periodic tasks won't move
     1ms after every invocation.
 
 - Documentation fixes
@@ -571,14 +571,14 @@ News
 
 3.1.12
 ======
-:release-date: 2014-06-09 10:12 P.M UTC
+:release-date: 2014-06-09 10:12 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**
 
     Now depends on :ref:`Kombu 3.0.19 <kombu:version-3.0.19>`.
 
-- **App**: Connections were not being closed after fork due to an error in the
+- **App**: Connections weren't being closed after fork due to an error in the
   after fork handler (Issue #2055).
 
     This could manifest itself by causing framing errors when using RabbitMQ.
@@ -590,7 +590,7 @@ News
 - **Django**: Fixed problems with event timezones when using Django
   (``Substantial drift``).
 
-    Celery did not take into account that Django modifies the
+    Celery didn't take into account that Django modifies the
     ``time.timeone`` attributes and friends.
 
 - **Canvas**: ``Signature.link`` now works when the link option is a scalar
@@ -619,7 +619,7 @@ News
 - **Programs**: The default working directory for :program:`celery worker
   --detach` is now the current working directory, not ``/``.
 
-- **Canvas**: ``signature(s, app=app)`` did not upgrade serialized signatures
+- **Canvas**: ``signature(s, app=app)`` didn't upgrade serialized signatures
   to their original class (``subtask_type``) when the ``app`` keyword argument
   was used.
 
@@ -644,7 +644,7 @@ News
 
     Fix contributed by Luke Pomfrey.
 
-- **Other**: The ``inspect conf`` command did not handle non-string keys well.
+- **Other**: The ``inspect conf`` command didn't handle non-string keys well.
 
     Fix contributed by Jay Farrimond.
 
@@ -653,13 +653,13 @@ News
 
     Fix contributed by Dmitry Malinovsky.
 
-- **Programs**: :program:`celery worker --detach` did not forward working
+- **Programs**: :program:`celery worker --detach` didn't forward working
   directory option (Issue #2003).
 
 - **Programs**: :program:`celery inspect registered` no longer includes
   the list of built-in tasks.
 
-- **Worker**: The ``requires`` attribute for boot steps were not being handled
+- **Worker**: The ``requires`` attribute for boot steps weren't being handled
   correctly (Issue #2002).
 
 - **Eventlet**: The eventlet pool now supports the ``pool_grow`` and
@@ -684,7 +684,7 @@ News
 
     Fix contributed by Ian Dees.
 
-- **Init-scripts**: The CentOS init-scripts did not quote
+- **Init-scripts**: The CentOS init-scripts didn't quote
   :envvar:`CELERY_CHDIR`.
 
     Fix contributed by :github_user:`ffeast`.
@@ -693,7 +693,7 @@ News
 
 3.1.11
 ======
-:release-date: 2014-04-16 11:00 P.M UTC
+:release-date: 2014-04-16 11:00 p.m. UTC
 :release-by: Ask Solem
 
 - **Now compatible with RabbitMQ 3.3.0**
@@ -768,7 +768,7 @@ News
 
 3.1.10
 ======
-:release-date: 2014-03-22 09:40 P.M UTC
+:release-date: 2014-03-22 09:40 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**:
@@ -783,15 +783,15 @@ News
 
 - **Redis:** Important note about events (Issue #1882).
 
-    There is a new transport option for Redis that enables monitors
-    to filter out unwanted events.  Enabling this option in the workers
+    There's a new transport option for Redis that enables monitors
+    to filter out unwanted events. Enabling this option in the workers
     will increase performance considerably:
 
     .. code-block:: python
 
         BROKER_TRANSPORT_OPTIONS = {'fanout_patterns': True}
 
-    Enabling this option means that your workers will not be able to see
+    Enabling this option means that your workers won't be able to see
     workers with the option disabled (or is running an older version of
     Celery), so if you do enable it then make sure you do so on all
     nodes.
@@ -805,7 +805,7 @@ News
 
     This means that the global result cache can finally be disabled,
     and you can do so by setting :setting:`CELERY_MAX_CACHED_RESULTS` to
-    :const:`-1`.  The lifetime of the cache will then be bound to the
+    :const:`-1`. The lifetime of the cache will then be bound to the
     lifetime of the result object, which will be the default behavior
     in Celery 3.2.
 
@@ -816,7 +816,7 @@ News
   prefork pool.
 
     This can be enabled by using the new ``%i`` and ``%I`` format specifiers
-    for the log file name.  See :ref:`worker-files-process-index`.
+    for the log file name. See :ref:`worker-files-process-index`.
 
 - **Redis**: New experimental chord join implementation.
 
@@ -834,7 +834,7 @@ News
     with workers and clients not using it, so be sure to enable
     the option in all clients and workers if you decide to use it.
 
-- **Multi**: With ``-opt:index`` (e.g. ``-c:1``) the index now always refers
+- **Multi**: With ``-opt:index`` (e.g., ``-c:1``) the index now always refers
   to the position of a node in the argument list.
 
     This means that referring to a number will work when specifying a list
@@ -901,7 +901,7 @@ News
     Contributed by Chris Clark.
 
 - **Commands**: :program:`celery inspect memdump` no longer crashes
-  if the :mod:`psutil` module is not installed (Issue #1914).
+  if the :mod:`psutil` module isn't installed (Issue #1914).
 
 - **Worker**: Remote control commands now always accepts json serialized
   messages (Issue #1870).
@@ -914,7 +914,7 @@ News
 
 3.1.9
 =====
-:release-date: 2014-02-10 06:43 P.M UTC
+:release-date: 2014-02-10 06:43 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**:
@@ -949,7 +949,7 @@ News
 - **Generic init-scripts**: Fixed compatibility with the minimal
   :program:`dash` shell (Issue #1815).
 
-- **Commands**: The :program:`celery amqp basic.publish` command was not
+- **Commands**: The :program:`celery amqp basic.publish` command wasn't
   working properly.
 
     Fix contributed by Andrey Voronov.
@@ -960,7 +960,7 @@ News
 - **Commands**: Better error message for missing arguments to preload
   options (Issue #1860).
 
-- **Commands**: :program:`celery -h` did not work because of a bug in the
+- **Commands**: :program:`celery -h` didn't work because of a bug in the
   argument parser (Issue #1849).
 
 - **Worker**: Improved error message for message decoding errors.
@@ -988,7 +988,7 @@ News
 
 3.1.8
 =====
-:release-date: 2014-01-17 10:45 P.M UTC
+:release-date: 2014-01-17 10:45 p.m. UTC
 :release-by: Ask Solem
 
 - **Requirements**:
@@ -1000,7 +1000,7 @@ News
 .. _`billiard 3.3.0.14`:
     https://github.com/celery/billiard/blob/master/CHANGES.txt
 
-- **Worker**: The event loop was not properly reinitialized at consumer restart
+- **Worker**: The event loop wasn't properly reinitialized at consumer restart
   which would force the worker to continue with a closed ``epoll`` instance on
   Linux, resulting in a crash.
 
@@ -1036,15 +1036,15 @@ News
 
 - **Generic init-scripts:** Now runs a check at start-up to verify
   that any configuration scripts are owned by root and that they
-  are not world/group writable.
+  aren't world/group writable.
 
     The init-script configuration is a shell script executed by root,
-    so this is a preventive measure to ensure that users do not
+    so this is a preventive measure to ensure that users don't
     leave this file vulnerable to changes by unprivileged users.
 
     .. note::
 
-        Note that upgrading celery will not update the init-scripts,
+        Note that upgrading Celery won't update the init-scripts,
         instead you need to manually copy the improved versions from the
         source distribution:
         https://github.com/celery/celery/tree/3.1/extra/generic-init.d
@@ -1055,10 +1055,10 @@ News
     A new :option:`-f <celery purge -f>` was added that can be used to disable
     interactive mode.
 
-- **Task**: ``.retry()`` did not raise the value provided in the ``exc`` argument
+- **Task**: ``.retry()`` didn't raise the value provided in the ``exc`` argument
   when called outside of an error context (*Issue #1755*).
 
-- **Commands:** The :program:`celery multi` command did not forward command
+- **Commands:** The :program:`celery multi` command didn't forward command
   line configuration to the target workers.
 
     The change means that multi will forward the special ``--`` argument and
@@ -1108,7 +1108,7 @@ News
 - **App:** Fixed rare bug with ``autodiscover_tasks()`` (*Issue #1797*).
 
 - **Distribution:** The sphinx docs will now always add the parent directory
-  to path so that the current celery source code is used as a basis for
+  to path so that the current Celery source code is used as a basis for
   API documentation (*Issue #1782*).
 
 - **Documentation:** :pypi:`supervisor` examples contained an
@@ -1121,7 +1121,7 @@ News
 
 3.1.7
 =====
-:release-date: 2013-12-17 06:00 P.M UTC
+:release-date: 2013-12-17 06:00 p.m. UTC
 :release-by: Ask Solem
 
 .. _v317-important:
@@ -1134,10 +1134,10 @@ Init-script security improvements
 
 Where the generic init-scripts (for ``celeryd``, and ``celerybeat``) before
 delegated the responsibility of dropping privileges to the target application,
-it will now use ``su`` instead, so that the Python program is not trusted
+it will now use ``su`` instead, so that the Python program isn't trusted
 with superuser privileges.
 
-This is not in reaction to any known exploit, but it will
+This isn't in reaction to any known exploit, but it will
 limit the possibility of a privilege escalation bug being abused in the
 future.
 
@@ -1151,7 +1151,7 @@ The 3.1 release accidentally left the amqp backend configured to be
 non-persistent by default.
 
 Upgrading from 3.0 would give a "not equivalent" error when attempting to
-set or retrieve results for a task.  That is unless you manually set the
+set or retrieve results for a task. That's unless you manually set the
 persistence setting::
 
     CELERY_RESULT_PERSISTENT = True
@@ -1172,7 +1172,7 @@ It's not legal for tasks to block by waiting for subtasks
 as this is likely to lead to resource starvation and eventually
 deadlock when using the prefork pool (see also :ref:`task-synchronous-subtasks`).
 
-If you really know what you are doing you can avoid the warning (and
+If you really know what you're doing you can avoid the warning (and
 the future exception being raised) by moving the operation in a
 white-list block:
 
@@ -1210,11 +1210,11 @@ Fixes
   not just by type (``all_active_count``).
 
 - Init-scripts:  Fixed problem with reading configuration file
-  when the init-script is symlinked to a runlevel (e.g. ``S02celeryd``).
+  when the init-script is symlinked to a runlevel (e.g., ``S02celeryd``).
   (Issue #1740).
 
     This also removed a rarely used feature where you can symlink the script
-    to provide alternative configurations.  You instead copy the script
+    to provide alternative configurations. You instead copy the script
     and give it a new name, but perhaps a better solution is to provide
     arguments to ``CELERYD_OPTS`` to separate them:
 
@@ -1226,7 +1226,7 @@ Fixes
 - Fallback chord unlock task is now always called after the chord header
   (Issue #1700).
 
-    This means that the unlock task will not be started if there's
+    This means that the unlock task won't be started if there's
     an error sending the header.
 
 - Celery command: Fixed problem with arguments for some control commands.
@@ -1242,7 +1242,7 @@ Fixes
 
     Fix contributed by Ionel Cristian Mărieș.
 
-- Worker with :option:`-B <celery worker -B>` argument did not properly
+- Worker with :option:`-B <celery worker -B>` argument didn't properly
   shut down the beat instance.
 
 - Worker: The ``%n`` and ``%h`` formats are now also supported by the
@@ -1275,16 +1275,16 @@ Fixes
   (Issue #1714).
 
     For ``events.State`` the tasks now have a ``Task.client`` attribute
-    that is set when a ``task-sent`` event is being received.
+    that's set when a ``task-sent`` event is being received.
 
-    Also, a clients logical clock is not in sync with the cluster so
-    they live in a "time bubble".  So for this reason monitors will no
+    Also, a clients logical clock isn't in sync with the cluster so
+    they live in a "time bubble." So for this reason monitors will no
     longer attempt to merge with the clock of an event sent by a client,
     instead it will fake the value by using the current clock with
     a skew of -1.
 
 - Prefork pool: The method used to find terminated processes was flawed
-  in that it did not also take into account missing ``popen`` objects.
+  in that it didn't also take into account missing ``popen`` objects.
 
 - Canvas: ``group`` and ``chord`` now works with anon signatures as long
   as the group/chord object is associated with an app instance (Issue #1744).
@@ -1295,7 +1295,7 @@ Fixes
 
 3.1.6
 =====
-:release-date: 2013-12-02 06:00 P.M UTC
+:release-date: 2013-12-02 06:00 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on :mod:`billiard` 3.3.0.10.
@@ -1332,7 +1332,7 @@ Fixes
 
     Fix contributed by Jonathan Jordan.
 
-- Events: Fixed problem when task name is not defined (Issue #1710).
+- Events: Fixed problem when task name isn't defined (Issue #1710).
 
     Fix contributed by Mher Movsisyan.
 
@@ -1342,7 +1342,7 @@ Fixes
 
 - Canvas: Now unrolls groups with only one task (optimization) (Issue #1656).
 
-- Task: Fixed problem with eta and timezones.
+- Task: Fixed problem with ETA and timezones.
 
     Fix contributed by Alexander Koval.
 
@@ -1369,7 +1369,7 @@ Fixes
 
 3.1.5
 =====
-:release-date: 2013-11-21 06:20 P.M UTC
+:release-date: 2013-11-21 06:20 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on :ref:`Kombu 3.0.6 <kombu:version-3.0.6>`.
@@ -1385,7 +1385,7 @@ Fixes
 
         app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
-    this ensures that the settings object is not prepared
+    this ensures that the settings object isn't prepared
     prematurely.
 
 - Fixed regression for :option:`--app <celery --app>` argument
@@ -1393,11 +1393,11 @@ Fixes
 
 - Worker: Now respects the :option:`--uid <celery worker --uid>` and
   :option:`--gid <celery worker --gid>` arguments even if
-  :option:`--detach <celery worker --detach>` is not enabled.
+  :option:`--detach <celery worker --detach>` isn't enabled.
 
 - Beat: Now respects the :option:`--uid <celery beat --uid>` and
   :option:`--gid <celery beat --gid>` arguments even if
-  :option:`--detach <celery beat --detach>` is not enabled.
+  :option:`--detach <celery beat --detach>` isn't enabled.
 
 - Python 3: Fixed unorderable error occurring with the worker
   :option:`-B <celery worker -B>` argument enabled.
@@ -1450,7 +1450,7 @@ Fixes
         tasks = app.tasks
         add.delay(2, 2)
 
-- The worker did not send monitoring events during shutdown.
+- The worker didn't send monitoring events during shutdown.
 
 - Worker: Mingle and gossip is now automatically disabled when
   used with an unsupported transport (Issue #1664).
@@ -1483,7 +1483,7 @@ Fixes
 
 3.1.4
 =====
-:release-date: 2013-11-15 11:40 P.M UTC
+:release-date: 2013-11-15 11:40 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on :ref:`Kombu 3.0.5 <kombu:version-3.0.5>`.
@@ -1493,7 +1493,7 @@ Fixes
 - Worker accidentally set a default socket timeout of 5 seconds.
 
 - Django: Fix-up now sets the default app so that threads will use
-  the same app instance (e.g. for :command:`manage.py runserver`).
+  the same app instance (e.g., for :command:`manage.py runserver`).
 
 - Worker: Fixed Unicode error crash at start-up experienced by some users.
 
@@ -1515,7 +1515,7 @@ Fixes
 
 3.1.3
 =====
-:release-date: 2013-11-13 00:55 A.M UTC
+:release-date: 2013-11-13 00:55 a.m. UTC
 :release-by: Ask Solem
 
 - Fixed compatibility problem with Python 2.7.0 - 2.7.5 (Issue #1637)
@@ -1532,7 +1532,7 @@ Fixes
 
 3.1.2
 =====
-:release-date: 2013-11-12 08:00 P.M UTC
+:release-date: 2013-11-12 08:00 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on :mod:`billiard` 3.3.0.6
@@ -1557,7 +1557,7 @@ Fixes
 
 3.1.1
 =====
-:release-date: 2013-11-11 06:30 P.M UTC
+:release-date: 2013-11-11 06:30 p.m. UTC
 :release-by: Ask Solem
 
 - Now depends on :mod:`billiard` 3.3.0.4.
@@ -1565,7 +1565,7 @@ Fixes
 - Python 3: Fixed compatibility issues.
 
 - Windows:  Accidentally showed warning that the billiard C extension
-  was not installed (Issue #1630).
+  wasn't installed (Issue #1630).
 
 - Django: Tutorial updated with a solution that sets a default
   :envvar:`DJANGO_SETTINGS_MODULE` so that it doesn't have to be typed
@@ -1578,7 +1578,7 @@ Fixes
 
 - Django: Fixed a problem when using the Django settings in Django 1.6.
 
-- Django: Fix-up should not be applied if the django loader is active.
+- Django: Fix-up shouldn't be applied if the django loader is active.
 
 - Worker:  Fixed attribute error for ``human_write_stats`` when using the
   compatibility prefork pool implementation.
@@ -1587,13 +1587,13 @@ Fixes
 
 - Inspect.conf: Now supports a ``with_defaults`` argument.
 
-- Group.restore: The backend argument was not respected.
+- Group.restore: The backend argument wasn't respected.
 
 .. _version-3.1.0:
 
 3.1.0
 =======
-:release-date: 2013-11-09 11:00 P.M UTC
+:release-date: 2013-11-09 11:00 p.m. UTC
 :release-by: Ask Solem
 
 See :ref:`whatsnew-3.1`.

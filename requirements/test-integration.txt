@@ -1,0 +1,3 @@
+simplejson
+cyanide>=1.3
+-r extras/redis.txt

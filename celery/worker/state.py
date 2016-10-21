@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Internal worker state (global)
+"""Internal worker state (global).
 
 This includes the currently active and reserved tasks,
 statistics, and revoked tasks.
@@ -72,6 +72,7 @@ def reset_state():
 
 
 def maybe_shutdown():
+    """Shutdown if flags have been set."""
     if should_stop is not None and should_stop is not False:
         raise WorkerShutdown(should_stop)
     elif should_terminate is not None and should_terminate is not False:
@@ -90,7 +91,7 @@ def task_accepted(request,
                   _all_total_count=all_total_count,
                   add_active_request=active_requests.add,
                   add_to_total_count=total_count.update):
-    """Updates global state when a task has been accepted."""
+    """Update global state when a task has been accepted."""
     add_active_request(request)
     add_to_total_count({request.name: 1})
     all_total_count[0] += 1
@@ -100,7 +101,7 @@ def task_ready(request,
                remove_request=requests.pop,
                discard_active_request=active_requests.discard,
                discard_reserved_request=reserved_requests.discard):
-    """Updates global state when a task is ready."""
+    """Update global state when a task is ready."""
     remove_request(request.id, None)
     discard_active_request(request)
     discard_reserved_request(request)
@@ -137,6 +138,7 @@ if C_BENCH:  # pragma: no cover
                 memdump()
 
     def task_reserved(request):  # noqa
+        """Called when a task is reserved by the worker."""
         global bench_start
         global bench_first
         now = None
@@ -148,6 +150,7 @@ if C_BENCH:  # pragma: no cover
         return __reserved(request)
 
     def task_ready(request):  # noqa
+        """Called when a task is completed."""
         global all_count
         global bench_start
         global bench_last
@@ -165,11 +168,14 @@ if C_BENCH:  # pragma: no cover
 
 
 class Persistent:
-    """This is the persistent data stored by the worker when
+    """Stores worker state between restarts.
+
+    This is the persistent data stored by the worker when
     :option:`celery worker --statedb` is enabled.
 
     Currently only stores revoked task id's.
     """
+
     storage = shelve
     protocol = pickle_protocol
     compress = zlib.compress

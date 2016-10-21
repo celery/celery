@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 """Configuration introspection and defaults."""
 import sys
-
 from collections import deque, namedtuple
 from datetime import timedelta
-
 from celery.utils.functional import memoize
 from celery.utils.serialization import strtobool
 
@@ -38,9 +36,9 @@ searchresult = namedtuple('searchresult', ('namespace', 'key', 'type'))
 
 def Namespace(__old__=None, **options):
     if __old__ is not None:
-        for opt in options.values():
+        for key, opt in options.items():
             if not opt.old:
-                opt.old = __old__
+                opt.old = {o.format(key) for o in __old__}
     return options
 
 
@@ -49,6 +47,8 @@ def old_ns(ns):
 
 
 class Option:
+    """Decribes a Celery configuration option."""
+
     alt = None
     deprecate_by = None
     remove_by = None
@@ -123,6 +123,10 @@ NAMESPACES = Namespace(
         auth_provider=Option(type='string'),
         auth_kwargs=Option(type='string'),
     ),
+    control=Namespace(
+        queue_ttl=Option(300.0, type='float'),
+        queue_expires=Option(10.0, type='float'),
+    ),
     couchbase=Namespace(
         __old__=old_ns('celery_couchbase'),
 
@@ -149,7 +153,7 @@ NAMESPACES = Namespace(
         max_connections=Option(type='int'),
         password=Option(type='string'),
         port=Option(type='int'),
-        socket_timeout=Option(5.0, type='float'),
+        socket_timeout=Option(120.0, type='float'),
     ),
     result=Namespace(
         __old__=old_ns('celery_result'),
@@ -199,16 +203,16 @@ NAMESPACES = Namespace(
         compression=Option(type='string', old={'celery_message_compression'}),
         create_missing_queues=Option(True, type='bool'),
         default_delivery_mode=Option(2, type='string'),
-        default_exchange=Option('celery'),
-        default_exchange_type=Option('direct'),
         default_queue=Option('celery'),
+        default_exchange=Option(None, type='string'),  # taken from queue
+        default_exchange_type=Option('direct'),
+        default_routing_key=Option(None, type='string'),  # taken from queue
         default_rate_limit=Option(type='string'),
-        default_routing_key=Option('celery'),
         eager_propagates=Option(
             False, type='bool', old={'celery_eager_propagates_exceptions'},
         ),
         ignore_result=Option(False, type='bool'),
-        protocol=Option(1, type='int', old={'celery_task_protocol'}),
+        protocol=Option(2, type='int', old={'celery_task_protocol'}),
         publish_retry=Option(
             True, type='bool', old={'celery_task_publish_retry'},
         ),
@@ -241,6 +245,7 @@ NAMESPACES = Namespace(
     worker=Namespace(
         __old__=OLD_NS_WORKER,
         agent=Option(None, type='string'),
+        autoscaler=Option('celery.worker.autoscale:Autoscaler'),
         concurrency=Option(0, type='int'),
         consumer=Option('celery.worker.consumer:Consumer', type='string'),
         direct=Option(False, type='bool', old={'celery_worker_direct'}),
@@ -291,6 +296,7 @@ def _to_compat(ns, key, opt):
 
 
 def flatten(d, root='', keyfilter=_flatten_keys):
+    """Flatten settings."""
     stack = deque([(root, d)])
     while stack:
         ns, options = stack.popleft()
@@ -326,6 +332,7 @@ def find_deprecated_settings(source):  # pragma: no cover
 
 @memoize(maxsize=None)
 def find(name, namespace='celery'):
+    """Find setting by name."""
     # - Try specified name-space first.
     namespace = namespace.lower()
     try:

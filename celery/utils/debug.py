@@ -14,7 +14,6 @@ from typing import (
 )
 from typing import MutableSequence  # noqa
 
-from celery.five import WhateverIO
 from celery.platforms import signals
 
 from .typing import Timeout
@@ -53,8 +52,10 @@ def _on_blocking(signum: int, frame: Any) -> None:
 
 @contextmanager
 def blockdetection(timeout: Timeout) -> Generator:
-    """A timeout context using ``SIGALRM`` that can be used to detect blocking
-    functions."""
+    """Context that raises an exception if process is blocking.
+
+    Uses ``SIGALRM`` to detect blocking functions.
+    """
     if not timeout:
         yield
     else:
@@ -113,7 +114,7 @@ def memdump(samples: int=10, file: IO=None) -> None:  # pragma: no cover
 def sample(x: Sequence, n: int, k: int=0) -> Iterator[Any]:
     """Given a list `x` a sample of length ``n`` of that list is returned.
 
-    E.g. if `n` is 10, and `x` has 100 items, a list of every tenth.
+    For example, if `n` is 10, and `x` has 100 items, a list of every tenth.
     item is returned.
 
     ``k`` can be used as offset.
@@ -139,7 +140,7 @@ def hfloat(f: Union[SupportsInt, AnyStr], p: int=5) -> str:
 
 
 def humanbytes(s: Union[float, int]) -> str:
-    """Convert bytes to human-readable form (e.g. KB, MB)."""
+    """Convert bytes to human-readable form (e.g., KB, MB)."""
     return next(
         '{0}{1}'.format(hfloat(s / div if div else s), unit)
         for div, unit in UNITS if s >= div
@@ -154,8 +155,11 @@ def mem_rss() -> str:
 
 
 def ps() -> Process:  # pragma: no cover
-    """Return the global :class:`psutil.Process` instance,
-    or :const:`None` if :pypi:`psutil` is not installed."""
+    """Return the global :class:`psutil.Process` instance.
+
+    Note:
+        Returns :const:`None` if :pypi:`psutil` is not installed.
+    """
     global _process
     if _process is None and Process is not None:
         _process = Process(os.getpid())
@@ -171,11 +175,14 @@ def _process_memory_info(process: Process) -> Any:
 
 def cry(out: Optional[StringIO]=None,
         sepchr: str='=', seplen: int=49) -> None:  # pragma: no cover
-    """Return stack-trace of all active threads,
-    taken from https://gist.github.com/737056."""
+    """Return stack-trace of all active threads.
+
+    See Also:
+        Taken from https://gist.github.com/737056.
+    """
     import threading
 
-    out = WhateverIO() if out is None else out
+    out = StringIO() if out is None else out
     P = partial(print, file=out)
 
     # get a map of threads by their ID so we can print their names

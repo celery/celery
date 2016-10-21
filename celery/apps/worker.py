@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-"""This module is the 'program-version' of :mod:`celery.worker`.
+"""Worker command-line program.
+
+This module is the 'program-version' of :mod:`celery.worker`.
 
 It does everything necessary to run that module
 as an actual application, like installing signal handlers,
@@ -16,11 +18,15 @@ from functools import partial
 from billiard.process import current_process
 from kombu.utils.encoding import safe_str
 
-from celery import VERSION_BANNER, platforms, signals
+from celery import VERSION_BANNER
+from celery import platforms
+from celery import signals
 from celery.app import trace
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.loaders.app import AppLoader
 from celery.platforms import EX_FAILURE, EX_OK, check_privileges, isatty
+from celery.utils import static
+from celery.utils import term
 from celery.utils.debug import cry
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
@@ -68,6 +74,7 @@ BANNER = """\
 .> transport:   {conninfo}
 .> results:     {results}
 .> concurrency: {concurrency}
+.> task events: {events}
 
 [queues]
 {queues}
@@ -80,8 +87,10 @@ EXTRA_INFO_FMT = """
 
 
 class Worker(WorkController):
+    """Worker as a program."""
 
-    def on_before_init(self, **kwargs):
+    def on_before_init(self, quiet=False, **kwargs):
+        self.quiet = quiet
         trace.setup_worker_optimizations(self.app, self.hostname)
 
         # this signal can be used to set up configuration for
@@ -116,12 +125,9 @@ class Worker(WorkController):
 
     def on_start(self):
         app = self.app
-        if not self._custom_logging and self.redirect_stdouts:
-            app.log.redirect_stdouts(self.redirect_stdouts_level)
-
         WorkController.on_start(self)
 
-        # this signal can be used to e.g. change queues after
+        # this signal can be used to, for example, change queues after
         # the -Q option has been applied.
         signals.celeryd_after_setup.send(
             sender=self.hostname, instance=self, conf=app.conf,
@@ -130,18 +136,29 @@ class Worker(WorkController):
         if self.purge:
             self.purge_messages()
 
-        # Dump configuration to screen so we have some basic information
-        # for when users sends bug reports.
-        print(safe_str(''.join([
-            str(self.colored.cyan(' \n', self.startup_info())),
-            str(self.colored.reset(self.extra_info() or '')),
-        ])), file=sys.__stdout__)
+        if not self.quiet:
+            self.emit_banner()
+
         self.set_process_status('-active-')
         self.install_platform_tweaks(self)
+        if not self._custom_logging and self.redirect_stdouts:
+            app.log.redirect_stdouts(self.redirect_stdouts_level)
+
+    def emit_banner(self):
+        # Dump configuration to screen so we have some basic information
+        # for when users sends bug reports.
+        use_image = term.supports_images()
+        if use_image:
+            print(term.imgcat(static.logo()))
+        print(safe_str(''.join([
+            str(self.colored.cyan(
+                ' \n', self.startup_info(artlines=not use_image))),
+            str(self.colored.reset(self.extra_info() or '')),
+        ])), file=sys.__stdout__)
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
-        print('{0} ready.'.format(safe_str(self.hostname),))
+        logger.info('%s ready.', safe_str(self.hostname))
 
     def setup_logging(self, colorize=None):
         if colorize is None and self.no_color is not None:
@@ -170,7 +187,7 @@ class Worker(WorkController):
             tasklist = self.tasklist(include_builtins=include_builtins)
             return EXTRA_INFO_FMT.format(tasks=tasklist)
 
-    def startup_info(self):
+    def startup_info(self, artlines=True):
         app = self.app
         concurrency = str(self.concurrency)
         appr = '{0}:{1:#x}'.format(app.main or '__main__', id(app))
@@ -179,13 +196,16 @@ class Worker(WorkController):
             if loader.startswith('celery.loaders'):  # pragma: no cover
                 loader = loader[14:]
             appr += ' ({0})'.format(loader)
+        if self.autoscale:
+            max, min = self.autoscale
+            concurrency = '{{min={0}, max={1}}}'.format(min, max)
         pool = self.pool_cls
         if not isinstance(pool, str):
             pool = pool.__module__
         concurrency += ' ({0})'.format(pool.split('.')[-1])
         events = 'ON'
-        if not self.send_events:
-            events = 'OFF (enable -E to monitor this worker)'
+        if not self.task_events:
+            events = 'OFF (enable -E to monitor tasks in this worker)'
 
         banner = BANNER.format(
             app=appr,
@@ -201,11 +221,12 @@ class Worker(WorkController):
         ).splitlines()
 
         # integrate the ASCII art.
-        for i, x in enumerate(banner):
-            try:
-                banner[i] = ' '.join([ARTLINES[i], banner[i]])
-            except IndexError:
-                banner[i] = ' ' * 16 + banner[i]
+        if artlines:
+            for i, _ in enumerate(banner):
+                try:
+                    banner[i] = ' '.join([ARTLINES[i], banner[i]])
+                except IndexError:
+                    banner[i] = ' ' * 16 + banner[i]
         return '\n'.join(banner) + '\n'
 
     def install_platform_tweaks(self, worker):
@@ -231,7 +252,7 @@ class Worker(WorkController):
         install_rdb_handler()
 
     def macOS_proxy_detection_workaround(self):
-        """See https://github.com/celery/celery/issues#issue/161"""
+        """See https://github.com/celery/celery/issues#issue/161."""
         os.environ.setdefault('celery_dummy_proxy', 'set_by_celeryd')
 
     def set_process_status(self, info):

@@ -16,6 +16,7 @@ __all__ = ['reraise_errors']
 
 @contextmanager
 def reraise_errors(msg='{0!r}', errors=None):
+    """Context reraising crypto errors as :exc:`SecurityError`."""
     assert crypto is not None
     errors = (crypto.Error,) if errors is None else errors
     try:

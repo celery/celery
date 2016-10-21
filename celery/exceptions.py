@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""This module contains all exceptions used by the Celery API."""
+"""Celery Exceptions."""
 import numbers
 
 from billiard.exceptions import (  # noqa
@@ -20,28 +20,24 @@ __all__ = [
 ]
 
 UNREGISTERED_FMT = """\
-Task of kind {0} is not registered, please make sure it's imported.\
+Task of kind {0} never registered, please make sure it's imported.\
 """
 
 
 class CeleryError(Exception):
-    pass
+    """Base class for all Celery errors."""
 
 
 class CeleryWarning(UserWarning):
-    pass
+    """Base class for all Celery warnings."""
 
 
 class SecurityError(CeleryError):
-    """Security related exceptions.
-
-    Handle with care.
-    """
-    pass
+    """Security related exception."""
 
 
 class TaskPredicate(CeleryError):
-    pass
+    """Base class for task-related semi-predicates."""
 
 
 class Retry(TaskPredicate):
@@ -65,10 +61,10 @@ class Retry(TaskPredicate):
         else:
             self.exc, self.excs = exc, safe_repr(exc) if exc else None
         self.when = when
-        Exception.__init__(self, exc, when, **kwargs)
+        super(Retry, self).__init__(self, exc, when, **kwargs)
 
     def humanize(self):
-        if isinstance(self.when, numbers.Real):
+        if isinstance(self.when, numbers.Number):
             return 'in {0.when}s'.format(self)
         return 'at {0.when}'.format(self)
 
@@ -116,7 +112,7 @@ class ImproperlyConfigured(ImportError):
 
 
 class NotRegistered(KeyError, CeleryError):
-    """The task is not registered."""
+    """The task ain't registered."""
 
     def __repr__(self):
         return UNREGISTERED_FMT.format(self)
@@ -139,19 +135,19 @@ class TaskRevokedError(CeleryError):
 
 
 class NotConfigured(CeleryWarning):
-    """Celery has not been configured, as no config module has been found."""
+    """Celery hasn't been configured, as no config module has been found."""
 
 
 class AlwaysEagerIgnored(CeleryWarning):
-    """send_task ignores :setting:`task_always_eager` option"""
+    """send_task ignores :setting:`task_always_eager` option."""
 
 
 class InvalidTaskError(CeleryError):
-    """The task has invalid data or is not properly constructed."""
+    """The task has invalid data or ain't properly constructed."""
 
 
 class IncompleteStream(CeleryError):
-    """Found the end of a stream of data, but the data is not yet complete."""
+    """Found the end of a stream of data, but the data isn't complete."""
 
 
 class ChordError(CeleryError):
@@ -159,15 +155,15 @@ class ChordError(CeleryError):
 
 
 class CPendingDeprecationWarning(PendingDeprecationWarning):
-    pass
+    """Warning of pending deprecation."""
 
 
 class CDeprecationWarning(DeprecationWarning):
-    pass
+    """Warning of deprecation."""
 
 
 class FixupWarning(CeleryWarning):
-    pass
+    """Fixup related warning."""
 
 
 class DuplicateNodenameWarning(CeleryWarning):

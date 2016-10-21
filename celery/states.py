@@ -25,7 +25,7 @@ Set of states meaning the task result is ready (has been executed).
 UNREADY_STATES
 ~~~~~~~~~~~~~~
 
-Set of states meaning the task result is not ready (has not been executed).
+Set of states meaning the task result is not ready (hasn't been executed).
 
 .. state:: EXCEPTION_STATES
 
@@ -48,8 +48,8 @@ ALL_STATES
 
 Set of all possible states.
 
-Misc.
------
+Misc
+----
 
 """
 from typing import Any, Optional
@@ -92,7 +92,9 @@ def precedence(state: Optional[str]) -> int:
 
 
 class state(str):
-    """State is a subclass of :class:`str`, implementing comparison
+    """Task state.
+
+    State is a subclass of :class:`str`, implementing comparison
     methods adhering to state precedence rules::
 
         >>> from celery.states import state, PENDING, SUCCESS

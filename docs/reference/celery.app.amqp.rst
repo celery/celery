@@ -12,20 +12,19 @@
 
         .. attribute:: Connection
 
-            Broker connection class used.  Default is
-            :class:`kombu.Connection`.
+            Broker connection class used. Default is :class:`kombu.Connection`.
 
         .. attribute:: Consumer
 
-            Base Consumer class used.  Default is :class:`kombu.Consumer`.
+            Base Consumer class used. Default is :class:`kombu.Consumer`.
 
         .. attribute:: Producer
 
-            Base Producer class used.  Default is :class:`kombu.Producer`.
+            Base Producer class used. Default is :class:`kombu.Producer`.
 
         .. attribute:: queues
 
-            All currently defined task queues. (A :class:`Queues` instance).
+            All currently defined task queues (a :class:`Queues` instance).
 
         .. automethod:: Queues
         .. automethod:: Router

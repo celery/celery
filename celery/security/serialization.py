@@ -13,6 +13,7 @@ __all__ = ['SecureSerializer', 'register_auth']
 
 
 class SecureSerializer:
+    """Signed serializer."""
 
     def __init__(self, key=None, cert=None, cert_store=None,
                  digest='sha1', serializer='json'):
@@ -23,7 +24,7 @@ class SecureSerializer:
         self._serializer = serializer
 
     def serialize(self, data):
-        """serialize data structure into string"""
+        """Serialize data structure into string."""
         assert self._key is not None
         assert self._cert is not None
         with reraise_errors('Unable to serialize: {0!r}', (Exception,)):
@@ -39,7 +40,7 @@ class SecureSerializer:
                               signer=self._cert.get_id())
 
     def deserialize(self, data):
-        """deserialize data structure from string"""
+        """Deserialize data structure from string."""
         assert self._cert_store is not None
         with reraise_errors('Unable to deserialize: {0!r}', (Exception,)):
             payload = self._unpack(data)
@@ -84,7 +85,7 @@ class SecureSerializer:
 
 def register_auth(key=None, cert=None, store=None, digest='sha1',
                   serializer='json'):
-    """register security serializer"""
+    """Register security serializer."""
     s = SecureSerializer(key and PrivateKey(key),
                          cert and Certificate(cert),
                          store and FSCertStore(store),

@@ -46,12 +46,12 @@ Commands
 
 * **shell**: Drop into a Python shell.
 
-  The locals will include the ``celery`` variable, which is the current app.
+  The locals will include the ``celery`` variable: this is the current app.
   Also all known tasks will be automatically added to locals (unless the
   :option:`--without-tasks <celery shell --without-tasks>` flag is set).
 
-  Uses :pypi:`Ipython`, :pypi:`bpython`, or regular python in that order if
-  installed.  You can force an implementation using
+  Uses :pypi:`Ipython`, :pypi:`bpython`, or regular :program:`python` in that
+  order if installed. You can force an implementation using
   :option:`--ipython <celery shell --ipython>`,
   :option:`--bpython <celery shell --bpython>`, or
   :option:`--python <celery shell --python>`.
@@ -77,7 +77,8 @@ Commands
     the :setting:`CELERY_QUEUES` setting:
 
     .. warning::
-        There is no undo for this operation, and messages will
+
+        There's no undo for this operation, and messages will
         be permanently deleted!
 
     .. code-block:: console
@@ -111,7 +112,7 @@ Commands
 
         $ celery -A proj inspect scheduled
 
-    These are tasks reserved by the worker because they have the
+    These are tasks reserved by the worker when they have an
     `eta` or `countdown` argument set.
 
 * **inspect reserved**: List reserved tasks
@@ -121,8 +122,8 @@ Commands
         $ celery -A proj inspect reserved
 
     This will list all tasks that have been prefetched by the worker,
-    and is currently waiting to be executed (does not include tasks
-    with an eta).
+    and is currently waiting to be executed (doesn't include tasks
+    with an ETA value set).
 
 * **inspect revoked**: List history of revoked tasks
 
@@ -173,7 +174,7 @@ Commands
 
     .. code-block:: console
 
-        $ celery -A proj migrate amqp://A.example.com amqp://B.example.cmo
+        $ celery -A proj migrate redis://localhost amqp://localhost
 
   This command will migrate all the tasks on one broker to another.
   As this command is new and experimental you should be sure to have
@@ -209,7 +210,7 @@ Flower: Real-time Celery web-monitor
 ------------------------------------
 
 Flower is a real-time web based monitor and administration tool for Celery.
-It is under active development, but is already an essential tool.
+It's under active development, but is already an essential tool.
 Being the recommended monitor for Celery, it obsoletes the Django-Admin
 monitor, ``celerymon`` and the ``ncurses`` based monitor.
 
@@ -229,7 +230,7 @@ Features
 
     - View worker status and statistics
     - Shutdown and restart worker instances
-    - Control worker pool size
+    - Control worker pool size and autoscale settings
     - View and modify the queues a worker instance consumes from
     - View currently running tasks
     - View scheduled tasks (ETA/countdown)
@@ -245,6 +246,7 @@ Features
     - Restart worker’s pool
     - Grow worker’s pool
     - Shrink worker’s pool
+    - Autoscale worker pool
     - Start consuming from a queue
     - Stop consuming from a queue
     - List tasks
@@ -299,6 +301,8 @@ Broker URL can also be passed through the
 .. code-block:: console
 
     $ celery flower --broker=amqp://guest:guest@localhost:5672//
+    or
+    $ celery flower --broker=redis://guest:guest@localhost:6379/0
 
 Then, you can visit flower in your web browser :
 
@@ -321,9 +325,9 @@ celery events: Curses Monitor
 .. versionadded:: 2.0
 
 `celery events` is a simple curses monitor displaying
-task and worker history.  You can inspect the result and traceback of tasks,
+task and worker history. You can inspect the result and traceback of tasks,
 and it also supports some management commands like rate limiting and shutting
-down workers.  This monitor was started as a proof of concept, and you
+down workers. This monitor was started as a proof of concept, and you
 probably want to use Flower instead.
 
 Starting:
@@ -375,7 +379,7 @@ as manage users, virtual hosts and their permissions.
 
     The default virtual host (``"/"``) is used in these
     examples, if you use a custom virtual host you have to add
-    the ``-p`` argument to the command, e.g:
+    the ``-p`` argument to the command, for example:
     ``rabbitmqctl list_queues -p my_vhost …``
 
 .. _`rabbitmqctl(1)`: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
@@ -395,7 +399,7 @@ Finding the number of tasks in a queue:
 
 Here `messages_ready` is the number of messages ready
 for delivery (sent but not received), `messages_unacknowledged`
-is the number of messages that has been received by a worker but
+is the number of messages that's been received by a worker but
 not acknowledged yet (meaning it is in progress, or has been reserved).
 `messages` is the sum of ready and unacknowledged messages.
 
@@ -414,6 +418,48 @@ Finding the amount of memory allocated to a queue:
 
 :Tip: Adding the ``-q`` option to `rabbitmqctl(1)`_ makes the output
       easier to parse.
+
+
+.. _monitoring-redis:
+
+Redis
+=====
+
+If you're using Redis as the broker, you can monitor the Celery cluster using
+the `redis-cli(1)` command to list lengths of queues.
+
+.. _monitoring-redis-queues:
+
+Inspecting queues
+-----------------
+
+Finding the number of tasks in a queue:
+
+.. code-block:: console
+
+    $ redis-cli -h HOST -p PORT -n DATABASE_NUMBER llen QUEUE_NAME
+
+The default queue is named `celery`. To get all available queues, invoke:
+
+.. code-block:: console
+
+    $ redis-cli -h HOST -p PORT -n DATABASE_NUMBER keys \*
+
+.. note::
+
+    Queue keys only exists when there are tasks in them, so if a key
+    doesn't exist it simply means there are no messages in that queue.
+    This is because in Redis a list with no elements in it is automatically
+    removed, and hence it won't show up in the `keys` command output,
+    and `llen` for that list returns 0.
+
+    Also, if you're using Redis for other purposes, the
+    output of the `keys` command will include unrelated values stored in
+    the database. The recommended way around this is to use a
+    dedicated `DATABASE_NUMBER` for Celery, you can also use
+    database numbers to separate Celery applications from each other (virtual
+    hosts), but this won't affect the monitoring events used by for example
+    Flower as Redis pub/sub commands are global rather than database based.
 
 .. _monitoring-munin:
 
@@ -443,7 +489,7 @@ Events
 ======
 
 The worker has the ability to send a message whenever some event
-happens.  These events are then captured by tools like Flower,
+happens. These events are then captured by tools like Flower,
 and :program:`celery events` to monitor the cluster.
 
 .. _monitoring-snapshots:
@@ -480,7 +526,7 @@ Custom Camera
 ~~~~~~~~~~~~~
 
 Cameras can be useful if you need to capture events and do something
-with those events at an interval.  For real-time event processing
+with those events at an interval. For real-time event processing
 you should use :class:`@events.Receiver` directly, like in
 :ref:`event-real-time-example`.
 
@@ -549,7 +595,7 @@ To process events in real-time you need the following
 - State (optional)
 
   :class:`@events.State` is a convenient in-memory representation
-  of tasks and workers in the cluster that is updated as events come in.
+  of tasks and workers in the cluster that's updated as events come in.
 
   It encapsulates solutions for many common things, like checking if a
   worker is still alive (by verifying heartbeats), merging event fields
@@ -590,7 +636,7 @@ Combining these you can easily process events in real-time:
 .. note::
 
     The ``wakeup`` argument to ``capture`` sends a signal to all workers
-    to force them to send a heartbeat.  This way you can immediately see
+    to force them to send a heartbeat. This way you can immediately see
     workers when the monitor starts.
 
 
@@ -737,9 +783,9 @@ The worker has connected to the broker and is online.
 - `hostname`: Nodename of the worker.
 - `timestamp`: Event time-stamp.
 - `freq`: Heartbeat frequency in seconds (float).
-- `sw_ident`: Name of worker software (e.g. ``py-celery``).
-- `sw_ver`: Software version (e.g. 2.2.0).
-- `sw_sys`: Operating System (e.g. Linux/Darwin).
+- `sw_ident`: Name of worker software (e.g., ``py-celery``).
+- `sw_ver`: Software version (e.g., 2.2.0).
+- `sw_sys`: Operating System (e.g., Linux/Darwin).
 
 .. event:: worker-heartbeat
 
@@ -749,15 +795,15 @@ worker-heartbeat
 :signature: ``worker-heartbeat(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys,
               active, processed)``
 
-Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
+Sent every minute, if the worker hasn't sent a heartbeat in 2 minutes,
 it is considered to be offline.
 
 - `hostname`: Nodename of the worker.
 - `timestamp`: Event time-stamp.
 - `freq`: Heartbeat frequency in seconds (float).
-- `sw_ident`: Name of worker software (e.g. ``py-celery``).
-- `sw_ver`: Software version (e.g. 2.2.0).
-- `sw_sys`: Operating System (e.g. Linux/Darwin).
+- `sw_ident`: Name of worker software (e.g., ``py-celery``).
+- `sw_ver`: Software version (e.g., 2.2.0).
+- `sw_sys`: Operating System (e.g., Linux/Darwin).
 - `active`: Number of currently executing tasks.
 - `processed`: Total number of tasks processed by this worker.
 

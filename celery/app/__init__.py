@@ -40,6 +40,7 @@ pop_current_task = _task_stack.pop
 
 
 def bugreport(app=None):
+    """Return information useful in bug reports."""
     return (app or current_app()).bugreport()
 
 
@@ -69,11 +70,13 @@ def _app_or_default_trace(app=None):  # pragma: no cover
 
 
 def enable_trace():
+    """Enable tracing of app instances."""
     global app_or_default
     app_or_default = _app_or_default_trace
 
 
 def disable_trace():
+    """Disable tracing of app instances."""
     global app_or_default
     app_or_default = _app_or_default
 
@@ -84,9 +87,9 @@ else:
 
 
 def shared_task(*args, **kwargs):
-    """Create shared tasks (decorator).
+    """Create shared task (decorator).
 
-    This can be used by library authors to create tasks that will work
+    This can be used by library authors to create tasks that'll work
     for any app environment.
 
     Returns:
@@ -94,19 +97,19 @@ def shared_task(*args, **kwargs):
         current apps task registry.
 
     Example:
+
         >>> from celery import Celery, shared_task
         >>> @shared_task
         ... def add(x, y):
         ...     return x + y
-
-        >>> app1 = Celery(broker='amqp://A.example.com')
+        ...
+        >>> app1 = Celery(broker='amqp://')
         >>> add.app is app1
         True
-
-        >>> app2 = Celery(broker='amqp://B.example.com')
+        >>> app2 = Celery(broker='redis://')
         >>> add.app is app2
+        True
     """
-
     def create_shared_task(**options):
 
         def __inner(fun):

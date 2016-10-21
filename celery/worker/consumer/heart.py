@@ -9,6 +9,13 @@ __all__ = ['Heart']
 
 
 class Heart(bootsteps.StartStopStep):
+    """Bootstep sending event heartbeats.
+
+    This service sends a ``worker-heartbeat`` message every n seconds.
+
+    Note:
+        Not to be confused with AMQP protocol level heartbeats.
+    """
 
     requires = (Events,)
 
@@ -17,6 +24,7 @@ class Heart(bootsteps.StartStopStep):
         self.enabled = not without_heartbeat
         self.heartbeat_interval = heartbeat_interval
         c.heart = None
+        super(Heart, self).__init__(c, **kwargs)
 
     def start(self, c):
         c.heart = heartbeat.Heart(

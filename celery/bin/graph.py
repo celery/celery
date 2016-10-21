@@ -13,6 +13,8 @@ __all__ = ['graph']
 
 
 class graph(Command):
+    """The ``celery graph`` command."""
+
     args = """<TYPE> [arguments]
             .....  bootsteps [worker] [consumer]
             .....  workers   [enumerate]
@@ -30,12 +32,12 @@ class graph(Command):
         worker = self.app.WorkController()
         include = {arg.lower() for arg in args or ['worker', 'consumer']}
         if 'worker' in include:
-            graph = worker.blueprint.graph
+            worker_graph = worker.blueprint.graph
             if 'consumer' in include:
                 worker.blueprint.connect_with(worker.consumer.blueprint)
         else:
-            graph = worker.consumer.blueprint.graph
-        graph.to_dot(self.stdout)
+            worker_graph = worker.consumer.blueprint.graph
+        worker_graph.to_dot(self.stdout)
 
     def workers(self, *args, **kwargs):
 
@@ -67,14 +69,21 @@ class graph(Command):
                 return self.label()
 
         class Thread(Node):
-            scheme = {'fillcolor': 'lightcyan4', 'fontcolor': 'yellow',
-                      'shape': 'oval', 'fontsize': 10, 'width': 0.3,
-                      'color': 'black'}
+            scheme = {
+                'fillcolor': 'lightcyan4',
+                'fontcolor': 'yellow',
+                'shape': 'oval',
+                'fontsize': 10,
+                'width': 0.3,
+                'color': 'black',
+            }
 
             def __init__(self, label, **kwargs):
-                self._label = 'thr-{0}'.format(next(tids))
                 self.real_label = label
-                self.pos = 0
+                super(Thread, self).__init__(
+                    label='thr-{0}'.format(next(tids)),
+                    pos=0,
+                )
 
         class Formatter(GraphFormatter):
 
@@ -108,16 +117,24 @@ class graph(Command):
             pass
 
         class Backend(Node):
-            scheme = {'shape': 'folder', 'width': 2,
-                      'height': 1, 'color': 'black',
-                      'fillcolor': 'peachpuff3', 'color': 'peachpuff4'}
+            scheme = {
+                'shape': 'folder',
+                'width': 2,
+                'height': 1,
+                'color': 'black',
+                'fillcolor': 'peachpuff3',
+            }
 
             def label(self):
                 return generic_label(self) if generic else self._label
 
         class Broker(Node):
-            scheme = {'shape': 'circle', 'fillcolor': 'cadetblue3',
-                      'color': 'cadetblue4', 'height': 1}
+            scheme = {
+                'shape': 'circle',
+                'fillcolor': 'cadetblue3',
+                'color': 'cadetblue4',
+                'height': 1,
+            }
 
             def label(self):
                 return generic_label(self) if generic else self._label
@@ -163,24 +180,24 @@ class graph(Command):
         broker = Broker(args.get(
             'broker', self.app.connection_for_read().as_uri()))
         backend = Backend(backend) if backend else None
-        graph = DependencyGraph(formatter=Formatter())
-        graph.add_arc(broker)
+        deps = DependencyGraph(formatter=Formatter())
+        deps.add_arc(broker)
         if backend:
-            graph.add_arc(backend)
+            deps.add_arc(backend)
         curworker = [0]
         for i, worker in enumerate(workers):
             worker = Worker(worker, pos=i)
-            graph.add_arc(worker)
-            graph.add_edge(worker, broker)
+            deps.add_arc(worker)
+            deps.add_edge(worker, broker)
             if backend:
-                graph.add_edge(worker, backend)
+                deps.add_edge(worker, backend)
             threads = threads_for.get(worker._label)
             if threads:
                 for thread in threads:
                     thread = Thread(thread)
-                    graph.add_arc(thread)
-                    graph.add_edge(thread, worker)
+                    deps.add_arc(thread)
+                    deps.add_edge(thread, worker)
 
             curworker[0] += 1
 
-        graph.to_dot(self.stdout)
+        deps.to_dot(self.stdout)

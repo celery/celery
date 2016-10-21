@@ -37,7 +37,7 @@ Example connecting to the :signal:`after_task_publish` signal:
         ))
 
 
-Some signals also have a sender which you can filter by. For example the
+Some signals also have a sender you can filter by. For example the
 :signal:`after_task_publish` signal uses the task name as a sender, so by
 providing the ``sender`` argument to
 :class:`~celery.utils.dispatch.signal.Signal.connect` you can
@@ -55,12 +55,12 @@ is published:
             info=info,
         ))
 
-Signals use the same implementation as :mod:`django.core.dispatch`.  As a
-result other keyword parameters (e.g. signal) are passed to all signal
+Signals use the same implementation as :mod:`django.core.dispatch`. As a
+result other keyword parameters (e.g., signal) are passed to all signal
 handlers by default.
 
 The best practice for signal handlers is to accept arbitrary keyword
-arguments (i.e. ``**kwargs``).  That way new celery versions can add additional
+arguments (i.e., ``**kwargs``). That way new Celery versions can add additional
 arguments without breaking user code.
 
 .. _signal-ref:
@@ -110,12 +110,12 @@ Provides arguments:
 * ``declare``
 
     List of entities (:class:`~kombu.Exchange`,
-    :class:`~kombu.Queue` or :class:`~kombu.binding` to declare before
-    publishing the message.  Can be modified.
+    :class:`~kombu.Queue`, or :class:`~kombu.binding` to declare before
+    publishing the message. Can be modified.
 
 * ``retry_policy``
 
-    Mapping of retry options.  Can be any argument to
+    Mapping of retry options. Can be any argument to
     :meth:`kombu.Connection.ensure` and can be modified.
 
 .. signal:: after_task_publish
@@ -301,9 +301,9 @@ Provides arguments:
 * ``request``
 
     This is a :class:`~celery.worker.request.Request` instance, and not
-    ``task.request``.   When using the prefork pool this signal
-    is dispatched in the parent process, so ``task.request`` is not available
-    and should not be used.  Use this object instead, which should have many
+    ``task.request``. When using the prefork pool this signal
+    is dispatched in the parent process, so ``task.request`` isn't available
+    and shouldn't be used. Use this object instead, as they share many
     of the same fields.
 
 * ``terminated``
@@ -324,7 +324,7 @@ Provides arguments:
 ``task_unknown``
 ~~~~~~~~~~~~~~~~
 
-Dispatched when a worker receives a message for a task that is not registered.
+Dispatched when a worker receives a message for a task that's not registered.
 
 Sender is the worker :class:`~celery.worker.consumer.Consumer`.
 
@@ -389,11 +389,11 @@ Worker Signals
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 This signal is sent after the worker instance is set up, but before it
-calls run.  This means that any queues from the :option:`celery worker -Q`
+calls run. This means that any queues from the :option:`celery worker -Q`
 option is enabled, logging has been set up and so on.
 
-It can be used to e.g. add custom queues that should always be consumed
-from, disregarding the :option:`celery worker -Q` option.  Here's an example
+It can be used to add custom queues that should always be consumed
+from, disregarding the :option:`celery worker -Q` option. Here's an example
 that sets up a direct queue for each worker, these queues can then be
 used to route a task to any specific worker:
 
@@ -416,7 +416,7 @@ Provides arguments:
 
     This is the :class:`celery.apps.worker.Worker` instance to be initialized.
     Note that only the :attr:`app` and :attr:`hostname` (nodename) attributes have been
-    set so far, and the rest of ``__init__`` has not been executed.
+    set so far, and the rest of ``__init__`` hasn't been executed.
 
 * ``conf``
 
@@ -463,7 +463,7 @@ Provides arguments:
 
     This is the :class:`celery.apps.worker.Worker` instance to be initialized.
     Note that only the :attr:`app` and :attr:`hostname` (nodename) attributes have been
-    set so far, and the rest of ``__init__`` has not been executed.
+    set so far, and the rest of ``__init__`` hasn't been executed.
 
 * ``conf``
 
@@ -493,8 +493,9 @@ Dispatched when the worker is ready to accept work.
 ``heartbeat_sent``
 ~~~~~~~~~~~~~~~~~~
 
-Dispatched when Celery sends a worker heartbeat.  Sender is the
-:class:`celery.worker.heartbeat.Heart` instance.
+Dispatched when Celery sends a worker heartbeat.
+
+Sender is the :class:`celery.worker.heartbeat.Heart` instance.
 
 .. signal:: worker_process_init
 
@@ -503,7 +504,7 @@ Dispatched when Celery sends a worker heartbeat.  Sender is the
 
 Dispatched in all pool child processes when they start.
 
-Note that handlers attached to this signal must not be blocking
+Note that handlers attached to this signal mustn't be blocking
 for more than 4 seconds, or the process will be killed assuming
 it failed to start.
 
@@ -514,7 +515,7 @@ it failed to start.
 
 Dispatched in all pool child processes just before they exit.
 
-Note: There is no guarantee that this signal will be dispatched,
+Note: There's no guarantee that this signal will be dispatched,
 similarly to :keyword:`finally` blocks it's impossible to guarantee that
 handlers will be called at shutdown, and if called it may be
 interrupted during.
@@ -523,11 +524,11 @@ Provides arguments:
 
 * ``pid``
 
-    The pid of the child process that is about to shutdown.
+    The pid of the child process that's about to shutdown.
 
 * ``exitcode``
 
-    The exitcode that will be used when the child process exits.
+    The exitcode that'll be used when the child process exits.
 
 .. signal:: worker_shutdown
 
@@ -545,6 +546,7 @@ Beat Signals
 ~~~~~~~~~~~~~
 
 Dispatched when :program:`celery beat` starts (either standalone or embedded).
+
 Sender is the :class:`celery.beat.Service` instance.
 
 .. signal:: beat_embedded_init
@@ -553,8 +555,9 @@ Sender is the :class:`celery.beat.Service` instance.
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Dispatched in addition to the :signal:`beat_init` signal when :program:`celery
-beat` is started as an embedded process.  Sender is the
-:class:`celery.beat.Service` instance.
+beat` is started as an embedded process.
+
+Sender is the :class:`celery.beat.Service` instance.
 
 Eventlet Signals
 ----------------
@@ -622,7 +625,7 @@ Celery won't configure the loggers if this signal is connected,
 so you can use this to completely override the logging configuration
 with your own.
 
-If you would like to augment the logging configuration setup by
+If you'd like to augment the logging configuration setup by
 Celery then you can use the :signal:`after_setup_logger` and
 :signal:`after_setup_task_logger` signals.
 
@@ -736,8 +739,8 @@ It can be used to add additional command-line arguments to the
             enable_monitoring()
 
 
-Sender is the :class:`~celery.bin.base.Command` instance, which depends
-on what program was called (e.g. for the umbrella command it will be
+Sender is the :class:`~celery.bin.base.Command` instance, and the value depends
+on the program that was called (e.g., for the umbrella command it'll be
 a :class:`~celery.bin.celery.CeleryCommand`) object).
 
 Provides arguments:

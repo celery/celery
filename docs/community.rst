@@ -4,7 +4,7 @@
 Community Resources
 =======================
 
-This is a list of external blog posts, tutorials and slides related
+This is a list of external blog posts, tutorials, and slides related
 to Celery. If you have a link that's missing from this list, please
 contact the mailing-list or submit a patch.
 

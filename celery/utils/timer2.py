@@ -22,6 +22,11 @@ __all__ = ['Entry', 'Schedule', 'Timer', 'to_timestamp']
 
 
 class Timer(threading.Thread):
+    """Timer thread.
+
+    Note:
+        This is only used for transports not supporting AsyncIO.
+    """
 
     Entry = Entry
     Schedule = Schedule

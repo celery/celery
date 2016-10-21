@@ -55,7 +55,7 @@ USE_I18N = True
 MEDIA_ROOT = ''
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
-# trailing slash if there is a path component (optional in other cases).
+# trailing slash if there's a path component (optional in other cases).
 # Examples: 'http://media.lawrence.com', 'http://example.com/media/'
 MEDIA_URL = ''
 
@@ -65,7 +65,8 @@ MEDIA_URL = ''
 ADMIN_MEDIA_PREFIX = '/media/'
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = '#1i=edpk55k3781$z-p%b#dbn&n+-rtt83pgz2o9o)v8g7(owq'
+# XXX TODO FIXME Set this secret key to anything you want, just change it!
+SECRET_KEY = 'This is not a secret, be sure to change this.'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (

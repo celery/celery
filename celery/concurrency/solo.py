@@ -9,6 +9,7 @@ __all__ = ['TaskPool']
 
 class TaskPool(BasePool):
     """Solo task pool (blocking, inline, fast)."""
+
     body_can_be_buffer = True
 
     def __init__(self, *args, **kwargs):
@@ -17,8 +18,10 @@ class TaskPool(BasePool):
         self.limit = 1
 
     def _get_info(self):
-        return {'max-concurrency': 1,
-                'processes': [os.getpid()],
-                'max-tasks-per-child': None,
-                'put-guarded-by-semaphore': True,
-                'timeouts': ()}
+        return {
+            'max-concurrency': 1,
+            'processes': [os.getpid()],
+            'max-tasks-per-child': None,
+            'put-guarded-by-semaphore': True,
+            'timeouts': (),
+        }

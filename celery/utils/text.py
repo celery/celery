@@ -26,33 +26,40 @@ RE_FORMAT = re.compile(r'%(\w)')
 
 
 def str_to_list(s: Union[str, Sequence[str]]) -> Sequence[str]:
+    """Parse comma separated string into list."""
     if isinstance(s, str):
         return s.split(',')
     return s
 
 
 def dedent_initial(s: str, n: int=4) -> str:
+    """Remove identation from first line of text."""
     return s[n:] if s[:n] == ' ' * n else s
 
 
 def dedent(s: str, n: int=4, sep: str='\n') -> str:
+    """Remove identation."""
     return sep.join(dedent_initial(l) for l in s.splitlines())
 
 
 def fill_paragraphs(s: str, width: int, sep: str='\n') -> str:
+    """Fill paragraphs with newlines (or custom separator)."""
     return sep.join(fill(p, width) for p in s.split(sep))
 
 
 def join(l: Sequence[str], sep: str='\n') -> str:
+    """Concatenate list of strings."""
     return sep.join(v for v in l if v)
 
 
 def ensure_sep(sep: str, s: str, n: int=2) -> str:
+    """Ensure text s ends in separator sep'."""
     return s + sep * (n - s.count(sep))
 ensure_newlines = partial(ensure_sep, '\n')
 
 
 def abbr(S: str, max: int, ellipsis: str='...') -> str:
+    """Abbreviate word."""
     if S is None:
         return '???'
     if len(S) > max:
@@ -61,6 +68,7 @@ def abbr(S: str, max: int, ellipsis: str='...') -> str:
 
 
 def abbrtask(S: str, max: int) -> str:
+    """Abbreviate task name."""
     if S is None:
         return '???'
     if len(S) > max:
@@ -76,7 +84,7 @@ def indent(t: str, indent: int=0, sep: str='\n') -> str:
 
 
 def truncate(s: str, maxlen: int=128, suffix: str='...') -> str:
-    """Truncates text to a maximum number of characters."""
+    """Truncate text to a maximum number of characters."""
     if maxlen and len(s) >= maxlen:
         return s[:maxlen].rsplit(' ', 1)[0] + suffix
     return s
@@ -90,6 +98,7 @@ def truncate_bytes(s: ByteString,
 
 
 def pluralize(n: int, text: str, suffix: str='s') -> str:
+    """Pluralize term when n is greater than one."""
     if n != 1:
         return text + suffix
     return text
@@ -97,6 +106,7 @@ def pluralize(n: int, text: str, suffix: str='s') -> str:
 
 def pretty(value: Any,
            width: int=80, nl_width: int=80, sep: str='\n', **kw) -> str:
+    """Format value for printing to console."""
     if isinstance(value, dict):
         return '{{{0} {1}'.format(sep, pformat(value, 4, nl_width)[1:])
     elif isinstance(value, tuple):
@@ -113,6 +123,7 @@ def match_case(s: str, other: str) -> str:
 
 def simple_format(s: str, keys: Mapping[str, Any],
                   pattern: Pattern=RE_FORMAT, expand: Pattern=r'\1') -> str:
+    """Format string, expanding abbreviations in keys'."""
     if s:
         keys.setdefault('%', '%')
 

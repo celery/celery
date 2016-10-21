@@ -11,7 +11,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: -c, --concurrency
 
-    Number of child processes processing the queue. The default
+    Number of child processes processing the queue.  The default
     is the number of CPUs available on your system.
 
 .. cmdoption:: -P, --pool
@@ -22,13 +22,18 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: -n, --hostname
 
-    Set custom hostname, e.g. 'w1.%h'. Expands: %h (hostname),
-    %n (name) and %d, (domain).
+    Set custom hostname (e.g., 'w1@%%h').  Expands: %%h (hostname),
+    %%n (name) and %%d, (domain).
 
 .. cmdoption:: -B, --beat
 
-    Also run the `celery beat` periodic task scheduler. Please note that
+    Also run the `celery beat` periodic task scheduler.  Please note that
     there must only be one instance of this service.
+
+    .. note::
+
+        ``-B`` is meant to be used for development purposes. For production
+        environment, you need to start :program:`celery beat` separately.
 
 .. cmdoption:: -Q, --queues
 
@@ -50,7 +55,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 .. cmdoption:: -s, --schedule
 
     Path to the schedule database if running with the `-B` option.
-    Defaults to `celerybeat-schedule`. The extension ".db" may be
+    Defaults to `celerybeat-schedule`.  The extension ".db" may be
     appended to the filename.
 
 .. cmdoption:: -O
@@ -63,30 +68,30 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: --scheduler
 
-    Scheduler class to use. Default is
+    Scheduler class to use.  Default is
     :class:`celery.beat.PersistentScheduler`
 
 .. cmdoption:: -S, --statedb
 
-    Path to the state database. The extension '.db' may
-    be appended to the filename. Default: {default}
+    Path to the state database.  The extension '.db' may
+    be appended to the filename.  Default: {default}
 
-.. cmdoption:: -E, --events
+.. cmdoption:: -E, --task-events
 
     Send task-related events that can be captured by monitors like
     :program:`celery events`, :pypi:`flower` and others.
 
 .. cmdoption:: --without-gossip
 
-    Do not subscribe to other workers events.
+    Don't subscribe to other workers events.
 
 .. cmdoption:: --without-mingle
 
-    Do not synchronize with other workers at start-up.
+    Don't synchronize with other workers at start-up.
 
 .. cmdoption:: --without-heartbeat
 
-    Do not send event heartbeats.
+    Don't send event heartbeats.
 
 .. cmdoption:: --heartbeat-interval
 
@@ -106,18 +111,27 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
     Enables a soft time limit (in seconds int/float) for tasks.
 
-.. cmdoption:: --maxtasksperchild
+.. cmdoption:: --max-tasks-per-child
 
     Maximum number of tasks a pool worker can execute before it's
     terminated and replaced by a new worker.
 
-.. cmdoption:: --maxmemperchild
+.. cmdoption:: --max-memory-per-child
 
     Maximum amount of resident memory, in KiB, that may be consumed by a
-    child process before it will be replaced by a new one. If a single
+    child process before it will be replaced by a new one.  If a single
     task causes a child process to exceed this limit, the task will be
     completed and the child process will be replaced afterwards.
     Default: no limit.
+
+.. cmdoption:: --autoscale
+
+    Enable autoscaling by providing
+    max_concurrency, min_concurrency. Example::
+
+        --autoscale=10,3
+
+    (always keep 3 processes, but grow to 10 if necessary)
 
 .. cmdoption:: --detach
 
@@ -125,7 +139,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: -f, --logfile
 
-    Path to log file. If no logfile is specified, `stderr` is used.
+    Path to log file.  If no logfile is specified, `stderr` is used.
 
 .. cmdoption:: -l, --loglevel
 
@@ -136,7 +150,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
     Optional file used to store the process pid.
 
-    The program will not start if this file already exists
+    The program won't start if this file already exists
     and the pid is still alive.
 
 .. cmdoption:: --uid
@@ -163,8 +177,6 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 """
 import sys
 
-from optparse import OptionGroup
-
 from celery import concurrency
 from celery.bin.base import Command, daemon_options
 from celery.bin.celeryd_detach import detached_celeryd
@@ -174,7 +186,7 @@ from celery.utils.nodenames import default_nodename
 
 __all__ = ['worker', 'main']
 
-__MODULE_DOC__ = __doc__
+HELP = __doc__
 
 
 class worker(Command):
@@ -188,13 +200,17 @@ class worker(Command):
 
             $ celery worker -A proj --concurrency=4
             $ celery worker -A proj --concurrency=1000 -P eventlet
+            $ celery worker --autoscale=10,0
     """
-    doc = __MODULE_DOC__  # parse help from this too
+
+    doc = HELP  # parse help from this too
     namespace = 'worker'
     enable_config_from_cmdline = True
     supports_args = False
+    removed_flags = {'--no-execv', '--force-execv'}
 
     def run_from_argv(self, prog_name, argv=None, command=None):
+        argv = [x for x in argv if x not in self.removed_flags]
         command = sys.argv[0] if command is None else command
         argv = sys.argv[1:] if argv is None else argv
         # parse options before detaching so errors can be handled.
@@ -211,7 +227,7 @@ class worker(Command):
             raise SystemExit(0)
 
     def run(self, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
-            loglevel=None, logfile=None, pidfile=None, state_db=None,
+            loglevel=None, logfile=None, pidfile=None, statedb=None,
             **kwargs):
         maybe_drop_privileges(uid=uid, gid=gid)
         # Pools like eventlet/gevent needs to patch libs as early
@@ -226,7 +242,7 @@ class worker(Command):
             try:
                 loglevel = mlevel(loglevel)
             except KeyError:  # pragma: no cover
-                self.die('Unknown level {0!r}. Please use one of {1}.'.format(
+                self.die('Unknown level {0!r}.  Please use one of {1}.'.format(
                     loglevel, '|'.join(
                         l for l in LOG_LEVELS if isinstance(l, str))))
 
@@ -234,8 +250,8 @@ class worker(Command):
             hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
             logfile=logfile,  # node format handled by celery.app.log.setup
             pidfile=self.node_format(pidfile, hostname),
-            state_db=self.node_format(state_db, hostname), **kwargs
-        )
+            statedb=self.node_format(statedb, hostname),
+            **kwargs)
         worker.start()
         return worker.exitcode
 
@@ -244,103 +260,96 @@ class worker(Command):
         # that may have to be loaded as early as possible.
         return (['-P'], ['--pool'])
 
-    def prepare_arguments(self, parser):
+    def add_arguments(self, parser):
         conf = self.app.conf
 
-        wopts = OptionGroup(parser, 'Worker Options')
-        wopts.add_option('-n', '--hostname')
-        wopts.add_option('-D', '--detach', action='store_true')
-        wopts.add_option(
+        wopts = parser.add_argument_group('Worker Options')
+        wopts.add_argument('-n', '--hostname')
+        wopts.add_argument(
+            '-D', '--detach',
+            action='store_true', default=False,
+        )
+        wopts.add_argument(
             '-S', '--statedb',
-            default=conf.worker_state_db, dest='state_db',
+            default=conf.worker_state_db,
         )
-        wopts.add_option('-l', '--loglevel', default='WARN')
-        wopts.add_option('-O', dest='optimization')
-        wopts.add_option(
+        wopts.add_argument('-l', '--loglevel', default='WARN')
+        wopts.add_argument('-O', dest='optimization')
+        wopts.add_argument(
             '--prefetch-multiplier',
-            dest='prefetch_multiplier', type='int',
-            default=conf.worker_prefetch_multiplier,
+            type=int, default=conf.worker_prefetch_multiplier,
         )
-        parser.add_option_group(wopts)
 
-        topts = OptionGroup(parser, 'Pool Options')
-        topts.add_option(
+        topts = parser.add_argument_group('Pool Options')
+        topts.add_argument(
             '-c', '--concurrency',
-            default=conf.worker_concurrency, type='int',
+            default=conf.worker_concurrency, type=int,
         )
-        topts.add_option(
+        topts.add_argument(
             '-P', '--pool',
-            default=conf.worker_pool, dest='pool_cls',
+            default=conf.worker_pool,
         )
-        topts.add_option(
-            '-E', '--events',
-            default=conf.worker_send_task_events,
-            action='store_true', dest='send_events',
+        topts.add_argument(
+            '-E', '--task-events', '--events',
+            action='store_true', default=conf.worker_send_task_events,
         )
-        topts.add_option(
+        topts.add_argument(
             '--time-limit',
-            type='float', dest='task_time_limit',
-            default=conf.task_time_limit,
+            type=float, default=conf.task_time_limit,
         )
-        topts.add_option(
+        topts.add_argument(
             '--soft-time-limit',
-            dest='task_soft_time_limit', type='float',
-            default=conf.task_soft_time_limit,
+            type=float, default=conf.task_soft_time_limit,
         )
-        topts.add_option(
-            '--maxtasksperchild',
-            dest='max_tasks_per_child', type='int',
-            default=conf.worker_max_tasks_per_child,
+        topts.add_argument(
+            '--max-tasks-per-child', '--maxtasksperchild',
+            type=int, default=conf.worker_max_tasks_per_child,
         )
-        topts.add_option(
-            '--maxmemperchild',
-            dest='max_memory_per_child', type='int',
-            default=conf.worker_max_memory_per_child,
+        topts.add_argument(
+            '--max-memory-per-child', '--maxmemperchild',
+            type=int, default=conf.worker_max_memory_per_child,
         )
-        parser.add_option_group(topts)
 
-        qopts = OptionGroup(parser, 'Queue Options')
-        qopts.add_option(
+        qopts = parser.add_argument_group('Queue Options')
+        qopts.add_argument(
             '--purge', '--discard',
-            default=False, action='store_true',
+            action='store_true', default=False,
         )
-        qopts.add_option('--queues', '-Q', default=[])
-        qopts.add_option('--exclude-queues', '-X', default=[])
-        qopts.add_option('--include', '-I', default=[])
-        parser.add_option_group(qopts)
+        qopts.add_argument('--queues', '-Q', default=[])
+        qopts.add_argument('--exclude-queues', '-X', default=[])
+        qopts.add_argument('--include', '-I', default=[])
 
-        fopts = OptionGroup(parser, 'Features')
-        fopts.add_option(
+        fopts = parser.add_argument_group('Features')
+        fopts.add_argument(
             '--without-gossip', action='store_true', default=False,
         )
-        fopts.add_option(
+        fopts.add_argument(
             '--without-mingle', action='store_true', default=False,
         )
-        fopts.add_option(
+        fopts.add_argument(
             '--without-heartbeat', action='store_true', default=False,
         )
-        fopts.add_option('--heartbeat-interval', type='int')
-        parser.add_option_group(fopts)
+        fopts.add_argument('--heartbeat-interval', type=int)
+        fopts.add_argument('--autoscale')
 
         daemon_options(parser)
 
-        bopts = OptionGroup(parser, 'Embedded Beat Options')
-        bopts.add_option('-B', '--beat', action='store_true')
-        bopts.add_option(
-            '-s', '--schedule', dest='schedule_filename',
+        bopts = parser.add_argument_group('Embedded Beat Options')
+        bopts.add_argument('-B', '--beat', action='store_true', default=False)
+        bopts.add_argument(
+            '-s', '--schedule-filename', '--schedule',
             default=conf.beat_schedule_filename,
         )
-        bopts.add_option('--scheduler', dest='scheduler_cls')
-        parser.add_option_group(bopts)
+        bopts.add_argument('--scheduler')
 
         user_options = self.app.user_options['worker']
         if user_options:
-            uopts = OptionGroup(parser, 'User Options')
-            uopts.option_list.extend(user_options)
-            parser.add_option_group(uopts)
+            uopts = parser.add_argument_group('User Options')
+            self.add_compat_options(uopts, user_options)
 
 
 def main(app=None):
+    """Start worker."""
     # Fix for setuptools generated scripts, so that it will
     # work with multiprocessing fork emulation.
     # (see multiprocessing.forking.get_preparation_data())

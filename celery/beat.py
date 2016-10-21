@@ -23,8 +23,8 @@ from . import __version__
 from . import platforms
 from . import signals
 from .schedules import maybe_schedule, crontab
-from .utils.imports import instantiate
-from .utils.timeutils import humanize_seconds
+from .utils.imports import load_extension_class_names, symbol_by_name
+from .utils.time import humanize_seconds
 from .utils.log import get_logger, iter_open_logger_fds
 
 __all__ = [
@@ -98,8 +98,7 @@ class ScheduleEntry:
         return self.schedule.now() if self.schedule else self.app.now()
 
     def _next_instance(self, last_run_at=None):
-        """Return a new instance of the same class, but with
-        its date and count fields updated."""
+        """Return new instance, with date and count fields updated."""
         return self.__class__(**dict(
             self,
             last_run_at=last_run_at or self._default_now(),
@@ -145,7 +144,7 @@ class ScheduleEntry:
             # in the scheduler heap, the order is decided by the
             # preceding members of the tuple ``(time, priority, entry)``.
             #
-            # If all that is left to order on is the entry then it can
+            # If all that's left to order on is the entry then it can
             # just as well be random.
             return id(self) < id(other)
         return NotImplemented
@@ -156,13 +155,13 @@ class Scheduler:
 
     The :program:`celery beat` program may instantiate this class
     multiple times for introspection purposes, but then with the
-    ``lazy`` argument set.  It is important for subclasses to
+    ``lazy`` argument set.  It's important for subclasses to
     be idempotent when this argument is set.
 
     Arguments:
         schedule (~celery.schedules.schedule): see :attr:`schedule`.
         max_interval (int): see :attr:`max_interval`.
-        lazy (bool): Do not set up the schedule.
+        lazy (bool): Don't set up the schedule.
     """
 
     Entry = ScheduleEntry
@@ -214,7 +213,7 @@ class Scheduler:
         info('Scheduler: Sending due task %s (%s)', entry.name, entry.task)
         try:
             result = self.apply_async(entry, producer=producer, advance=False)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             error('Message Error: %s\n%s',
                   exc, traceback.format_stack(), exc_info=True)
         else:
@@ -228,17 +227,17 @@ class Scheduler:
     def is_due(self, entry):
         return entry.is_due()
 
+    # pylint disable=redefined-outer-name
     def tick(self, event_t=event_t, min=min,
              heappop=heapq.heappop, heappush=heapq.heappush,
              heapify=heapq.heapify, mktime=time.mktime):
-        """Run a tick, that is one iteration of the scheduler.
+        """Run a tick - one iteration of the scheduler.
 
         Executes one due task per call.
 
         Returns:
             float: preferred delay in seconds for next call.
         """
-
         def _when(entry, next_time_to_run):
             return (mktime(entry.schedule.now().timetuple()) +
                     (adjust(next_time_to_run) or 0))
@@ -297,7 +296,7 @@ class Scheduler:
                 return self.send_task(entry.task, entry.args, entry.kwargs,
                                       producer=producer,
                                       **entry.options)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             raise SchedulingError(
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
                     entry, exc=exc)).with_traceback(sys.exc_info()[2])
@@ -391,6 +390,8 @@ class Scheduler:
 
 
 class PersistentScheduler(Scheduler):
+    """Scheduler backed by :mod:`shelve` database."""
+
     persistence = shelve
     known_suffixes = ('', '.db', '.dat', '.bak', '.dir')
 
@@ -418,61 +419,68 @@ class PersistentScheduler(Scheduler):
         try:
             self._store = self._open_schedule()
             # In some cases there may be different errors from a storage
-            # backend for corrupted files. Example - DBPageNotFoundError
-            # exception from bsddb. In such case the file will be
+            # backend for corrupted files.  Example - DBPageNotFoundError
+            # exception from bsddb.  In such case the file will be
             # successfully opened but the error will be raised on first key
             # retrieving.
             self._store.keys()
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             self._store = self._destroy_open_corrupted_schedule(exc)
 
-        for _ in (1, 2):
-            try:
-                self._store['entries']
-            except KeyError:
-                # new schedule db
-                try:
-                    self._store['entries'] = {}
-                except KeyError as exc:
-                    self._store = self._destroy_open_corrupted_schedule(exc)
-                    continue
-            else:
-                if '__version__' not in self._store:
-                    warning('DB Reset: Account for new __version__ field')
-                    self._store.clear()   # remove schedule at 2.2.2 upgrade.
-                elif 'tz' not in self._store:
-                    warning('DB Reset: Account for new tz field')
-                    self._store.clear()   # remove schedule at 3.0.8 upgrade
-                elif 'utc_enabled' not in self._store:
-                    warning('DB Reset: Account for new utc_enabled field')
-                    self._store.clear()   # remove schedule at 3.0.9 upgrade
-            break
+        self._create_schedule()
 
         tz = self.app.conf.timezone
-        stored_tz = self._store.get('tz')
+        stored_tz = self._store.get(str(b'tz'))
         if stored_tz is not None and stored_tz != tz:
             warning('Reset: Timezone changed from %r to %r', stored_tz, tz)
             self._store.clear()   # Timezone changed, reset db!
         utc = self.app.conf.enable_utc
-        stored_utc = self._store.get('utc_enabled')
+        stored_utc = self._store.get(str(b'utc_enabled'))
         if stored_utc is not None and stored_utc != utc:
             choices = {True: 'enabled', False: 'disabled'}
             warning('Reset: UTC changed from %s to %s',
                     choices[stored_utc], choices[utc])
             self._store.clear()   # UTC setting changed, reset db!
-        entries = self._store.setdefault('entries', {})
+        entries = self._store.setdefault(str(b'entries'), {})
         self.merge_inplace(self.app.conf.beat_schedule)
         self.install_default_entries(self.schedule)
-        self._store.update(__version__=__version__, tz=tz, utc_enabled=utc)
+        self._store.update({
+            str(b'__version__'): __version__,
+            str(b'tz'): tz,
+            str(b'utc_enabled'): utc,
+        })
         self.sync()
         debug('Current schedule:\n' + '\n'.join(
             repr(entry) for entry in entries.values()))
 
+    def _create_schedule(self):
+        for _ in (1, 2):
+            try:
+                self._store[str(b'entries')]
+            except KeyError:
+                # new schedule db
+                try:
+                    self._store[str(b'entries')] = {}
+                except KeyError as exc:
+                    self._store = self._destroy_open_corrupted_schedule(exc)
+                    continue
+            else:
+                if str(b'__version__') not in self._store:
+                    warning('DB Reset: Account for new __version__ field')
+                    self._store.clear()   # remove schedule at 2.2.2 upgrade.
+                elif str(b'tz') not in self._store:
+                    warning('DB Reset: Account for new tz field')
+                    self._store.clear()   # remove schedule at 3.0.8 upgrade
+                elif str(b'utc_enabled') not in self._store:
+                    warning('DB Reset: Account for new utc_enabled field')
+                    self._store.clear()   # remove schedule at 3.0.9 upgrade
+            break
+
     def get_schedule(self):
-        return self._store['entries']
+        return self._store[str(b'entries')]
 
     def set_schedule(self, schedule):
-        self._store['entries'] = schedule
+        self._store[str(b'entries')] = schedule
     schedule = property(get_schedule, set_schedule)
 
     def sync(self):
@@ -489,6 +497,8 @@ class PersistentScheduler(Scheduler):
 
 
 class Service:
+    """Celery periodic task service."""
+
     scheduler_cls = PersistentScheduler
 
     def __init__(self, app, max_interval=None, schedule_filename=None,
@@ -540,14 +550,17 @@ class Service:
         self._is_shutdown.set()
         wait and self._is_stopped.wait()  # block until shutdown done.
 
-    def get_scheduler(self, lazy=False):
+    def get_scheduler(self, lazy=False,
+                      extension_namespace='celery.beat_schedulers'):
         filename = self.schedule_filename
-        scheduler = instantiate(self.scheduler_cls,
-                                app=self.app,
-                                schedule_filename=filename,
-                                max_interval=self.max_interval,
-                                lazy=lazy)
-        return scheduler
+        aliases = dict(
+            load_extension_class_names(extension_namespace) or {})
+        return symbol_by_name(self.scheduler_cls, aliases=aliases)(
+            app=self.app,
+            schedule_filename=filename,
+            max_interval=self.max_interval,
+            lazy=lazy,
+        )
 
     @cached_property
     def scheduler(self):

@@ -26,9 +26,9 @@ Areas of Concern
 Broker
 ------
 
-It is imperative that the broker is guarded from unwanted access, especially
+It's imperative that the broker is guarded from unwanted access, especially
 if accessible to the public.
-By default, workers trust that the data they get from the broker has not
+By default, workers trust that the data they get from the broker hasn't
 been tampered with. See `Message Signing`_ for information on how to make
 the broker connection more trustworthy.
 
@@ -37,10 +37,10 @@ allowing only white-listed machines to access it.
 
 Keep in mind that both firewall misconfiguration, and temporarily disabling
 the firewall, is common in the real world. Solid security policy includes
-monitoring of firewall equipment to detect if they have been disabled, be it
+monitoring of firewall equipment to detect if they've been disabled, be it
 accidentally or on purpose.
 
-In other words, one should not blindly trust the firewall either.
+In other words, one shouldn't blindly trust the firewall either.
 
 If your broker supports fine-grained access control, like RabbitMQ,
 this is something you should look at enabling. See for example
@@ -53,7 +53,7 @@ Client
 ------
 
 In Celery, "client" refers to anything that sends messages to the
-broker, e.g. web-servers that apply tasks.
+broker, for example web-servers that apply tasks.
 
 Having the broker properly secured doesn't matter if arbitrary messages
 can be sent through a client.
@@ -64,8 +64,8 @@ Worker
 ------
 
 The default permissions of tasks running inside a worker are the same ones as
-the privileges of the worker itself. This applies to resources such as
-memory, file-systems and devices.
+the privileges of the worker itself. This applies to resources, such as;
+memory, file-systems, and devices.
 
 An exception to this rule is when using the multiprocessing based task pool,
 which is currently the default. In this case, the task will have access to
@@ -77,7 +77,7 @@ Limiting access to memory contents can be done by launching every task
 in a subprocess (:func:`fork` + :func:`execve`).
 
 Limiting file-system and device access can be accomplished by using
-`chroot`_, `jail`_, `sandboxing`_, virtual machines or other
+`chroot`_, `jail`_, `sandboxing`_, virtual machines, or other
 mechanisms as enabled by the platform or additional software.
 
 Note also that any task executed in the worker will have the
@@ -90,14 +90,18 @@ outbound traffic.
 .. _`sandboxing`:
     https://en.wikipedia.org/wiki/Sandbox_(computer_security)
 
+.. _security-serializers:
+
 Serializers
 ===========
 
-The default `pickle` serializer is convenient because it supports
-arbitrary Python objects, whereas other serializers only
-work with a restricted set of types.
+The default serializer is JSON since version 4.0, but since it has
+only support for a restricted set of types you may want to consider
+using pickle for serialization instead.
 
-But for the same reasons the `pickle` serializer is inherently insecure [*]_,
+The `pickle` serializer is convenient as it can serialize
+almost any Python object, even functions with some work,
+but for the same reasons `pickle` is inherently insecure [*]_,
 and should be avoided whenever clients are untrusted or
 unauthenticated.
 
@@ -132,7 +136,6 @@ Using `Public-key cryptography` the `auth` serializer can verify the
 authenticity of senders, to enable this read :ref:`message-signing`
 for more information.
 
-.. _`pickle`: http://docs.python.org/library/pickle.html
 .. _`Public-key cryptography`:
     https://en.wikipedia.org/wiki/Public-key_cryptography
 
@@ -141,7 +144,7 @@ for more information.
 Message Signing
 ===============
 
-Celery can use the `pyOpenSSL`_ library to sign message using
+Celery can use the :pypi:`pyOpenSSL` library to sign message using
 `Public-key cryptography`, where
 messages sent by clients are signed using a private key
 and then later verified by the worker using a public certificate.
@@ -154,10 +157,10 @@ setting to use the `auth` serializer.
 Also required is configuring the
 paths used to locate private keys and certificates on the file-system:
 the :setting:`security_key`,
-:setting:`security_certificate` and :setting:`security_cert_store`
+:setting:`security_certificate`, and :setting:`security_cert_store`
 settings respectively.
-With these configured it is also necessary to call the
-:func:`celery.setup_security` function.  Note that this will also
+With these configured it's also necessary to call the
+:func:`celery.setup_security` function. Note that this will also
 disable all insecure serializers so that the worker won't accept
 messages with untrusted content types.
 
@@ -176,13 +179,12 @@ with the private key and certificate files located in `/etc/ssl`.
 
 .. note::
 
-    While relative paths are not disallowed, using absolute paths
+    While relative paths aren't disallowed, using absolute paths
     is recommended for these files.
 
     Also note that the `auth` serializer won't encrypt the contents of
     a message, so if needed this will have to be enabled separately.
 
-.. _`pyOpenSSL`: http://pypi.python.org/pypi/pyOpenSSL
 .. _`X.509`: https://en.wikipedia.org/wiki/X.509
 .. _`Certificate Authority`:
     https://en.wikipedia.org/wiki/Certificate_authority
@@ -197,7 +199,7 @@ Logs
 ----
 
 Logs are usually the first place to look for evidence
-of security breaches, but they are useless if they can be tampered with.
+of security breaches, but they're useless if they can be tampered with.
 
 A good solution is to set up centralized logging with a dedicated logging
 server. Access to it should be restricted.
@@ -205,7 +207,7 @@ In addition to having all of the logs in a single place, if configured
 correctly, it can make it harder for intruders to tamper with your logs.
 
 This should be fairly easy to setup using syslog (see also `syslog-ng`_ and
-`rsyslog`_.).  Celery uses the :mod:`logging` library, and already has
+`rsyslog`_). Celery uses the :mod:`logging` library, and already has
 support for using syslog.
 
 A tip for the paranoid is to send logs using UDP and cut the
@@ -222,8 +224,8 @@ open source implementations, used to keep
 cryptographic hashes of files in the file-system, so that administrators
 can be alerted when they change. This way when the damage is done and your
 system has been compromised you can tell exactly what files intruders
-have changed  (password files, logs, back-doors, root-kits and so on).
-Often this is the only way you will be able to detect an intrusion.
+have changed  (password files, logs, back-doors, root-kits, and so on).
+Often this is the only way you'll be able to detect an intrusion.
 
 Some open source implementations include:
 

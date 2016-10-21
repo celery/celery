@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Utilities dealing with platform specifics: signals, daemonization,
-users, groups, and so on."""
+"""Platforms.
+
+Utilities dealing with platform specifics: signals, daemonization,
+users, groups, and so on.
+"""
 import atexit
 import errno
 import math
@@ -19,6 +22,7 @@ from kombu.utils.compat import maybe_fileno
 from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 
+from .exceptions import SecurityError
 from .local import try_import
 
 try:
@@ -34,13 +38,12 @@ mputil = try_import('multiprocessing.util')
 
 __all__ = [
     'EX_OK', 'EX_FAILURE', 'EX_UNAVAILABLE', 'EX_USAGE', 'SYSTEM',
-    'IS_macOS', 'IS_WINDOWS', 'pyimplementation', 'LockFailed',
-    'get_fdmax', 'Pidfile', 'create_pidlock',
-    'close_open_fds', 'DaemonContext', 'detached', 'parse_uid',
-    'parse_gid', 'setgroups', 'initgroups', 'setgid', 'setuid',
-    'maybe_drop_privileges', 'signals', 'set_process_title',
-    'set_mp_process_title', 'get_errno_name', 'ignore_errno',
-    'fd_by_path', 'isatty',
+    'IS_macOS', 'IS_WINDOWS', 'SIGMAP', 'pyimplementation', 'LockFailed',
+    'get_fdmax', 'Pidfile', 'create_pidlock', 'close_open_fds',
+    'DaemonContext', 'detached', 'parse_uid', 'parse_gid', 'setgroups',
+    'initgroups', 'setgid', 'setuid', 'maybe_drop_privileges', 'signals',
+    'signal_name', 'set_process_title', 'set_mp_process_title',
+    'get_errno_name', 'ignore_errno', 'fd_by_path', 'isatty',
 ]
 
 # exitcodes
@@ -77,7 +80,7 @@ User information: uid={uid} euid={euid} gid={gid} egid={egid}
 """
 
 ROOT_DISCOURAGED = """\
-You are running the worker with superuser privileges, which is
+You're running the worker with superuser privileges: this is
 absolutely not recommended!
 
 Please specify a different user using the -u option.
@@ -85,8 +88,15 @@ Please specify a different user using the -u option.
 User information: uid={uid} euid={euid} gid={gid} egid={egid}
 """
 
+SIGNAMES = {
+    sig for sig in dir(_signal)
+    if sig.startswith('SIG') and '_' not in sig
+}
+SIGMAP = {getattr(_signal, name): name for name in SIGNAMES}
+
 
 def isatty(fh):
+    """Return true if the process has a controlling terminal."""
     try:
         return fh.isatty()
     except AttributeError:
@@ -113,14 +123,14 @@ class LockFailed(Exception):
 
 
 class Pidfile:
-    """Pidfile
+    """Pidfile.
 
     This is the type returned by :func:`create_pidlock`.
 
     See Also:
         Best practice is to not use this directly but rather use
-        the :func:`create_pidlock` function instead,
-        which is more convenient and also removes stale pidfiles (when
+        the :func:`create_pidlock` function instead:
+        more convenient and also removes stale pidfiles (when
         the process holding the lock is no longer running).
     """
 
@@ -169,12 +179,14 @@ class Pidfile:
             os.unlink(self.path)
 
     def remove_if_stale(self):
-        """Remove the lock if the process is not running.
-        (does not respond to signals)."""
+        """Remove the lock if the process isn't running.
+
+        I.e. process does not respons to signal.
+        """
         try:
             pid = self.read_pid()
         except ValueError as exc:
-            print('Broken pidfile found. Removing it.', file=sys.stderr)
+            print('Broken pidfile found - Removing it.', file=sys.stderr)
             self.remove()
             return True
         if not pid:
@@ -185,7 +197,7 @@ class Pidfile:
             os.kill(pid, 0)
         except os.error as exc:
             if exc.errno == errno.ESRCH:
-                print('Stale pidfile exists. Removing it.', file=sys.stderr)
+                print('Stale pidfile exists - Removing it.', file=sys.stderr)
                 self.remove()
                 return True
         return False
@@ -221,7 +233,7 @@ def create_pidlock(pidfile):
     """Create and verify pidfile.
 
     If the pidfile already exists the program exits with an error message,
-    however if the process it refers to is not running anymore, the pidfile
+    however if the process it refers to isn't running anymore, the pidfile
     is deleted and the program continues.
 
     This function will automatically install an :mod:`atexit` handler
@@ -284,6 +296,7 @@ def fd_by_path(paths):
 
 
 class DaemonContext:
+    """Context manager daemonizing the process."""
 
     _is_open = False
 
@@ -355,14 +368,14 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
             The ability to write to this file
             will be verified before the process is detached.
         pidfile (str): Optional pid file.
-            The pidfile will not be created,
+            The pidfile won't be created,
             as this is the responsibility of the child.  But the process will
             exit if the pid lock exists and the pid written is still running.
         uid (int, str): Optional user id or user name to change
             effective privileges to.
         gid (int, str): Optional group id or group name to change
             effective privileges to.
-        umask (str, int): Optional umask that will be effective in
+        umask (str, int): Optional umask that'll be effective in
             the child process.
         workdir (str): Optional new working directory.
         fake (bool): Don't actually detach, intended for debugging purposes.
@@ -376,7 +389,7 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
         ...           uid='nobody'):
         ... # Now in detached child process with effective user set to nobody,
         ... # and we know that our logfile can be written to, and that
-        ... # the pidfile is not locked.
+        ... # the pidfile isn't locked.
         ... pidlock = create_pidlock('/var/run/app.pid')
         ...
         ... # Run the program
@@ -437,9 +450,9 @@ def parse_gid(gid):
 
 
 def _setgroups_hack(groups):
-    """:fun:`setgroups` may have a platform-dependent limit,
-    and it is not always possible to know in advance what this limit
-    is, so we use this ugly hack stolen from glibc."""
+    # :fun:`setgroups` may have a platform-dependent limit,
+    # and it's not always possible to know in advance what this limit
+    # is, so we use this ugly hack stolen from glibc.
     groups = groups[:]
 
     while 1:
@@ -460,7 +473,7 @@ def setgroups(groups):
     max_groups = None
     try:
         max_groups = os.sysconf('SC_NGROUPS_MAX')
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         pass
     try:
         return _setgroups_hack(groups[:max_groups])
@@ -471,8 +484,11 @@ def setgroups(groups):
 
 
 def initgroups(uid, gid):
-    """Compat version of :func:`os.initgroups` which was first
-    added to Python 2.7."""
+    """Init process group permissions.
+
+    Compat version of :func:`os.initgroups` that was first
+    added to Python 2.7.
+    """
     if not pwd:  # pragma: no cover
         return
     username = pwd.getpwuid(uid)[0]
@@ -508,46 +524,52 @@ def maybe_drop_privileges(uid=None, gid=None):
     if os.geteuid():
         # no point trying to setuid unless we're root.
         if not os.getuid():
-            raise AssertionError('contact support')
+            raise SecurityError('contact support')
     uid = uid and parse_uid(uid)
     gid = gid and parse_gid(gid)
 
     if uid:
-        # If GID isn't defined, get the primary GID of the user.
-        if not gid and pwd:
-            gid = pwd.getpwuid(uid).pw_gid
-        # Must set the GID before initgroups(), as setgid()
-        # is known to zap the group list on some platforms.
-
-        # setgid must happen before setuid (otherwise the setgid operation
-        # may fail because of insufficient privileges and possibly stay
-        # in a privileged group).
-        setgid(gid)
-        initgroups(uid, gid)
-
-        # at last:
-        setuid(uid)
-        # ... and make sure privileges cannot be restored:
-        try:
-            setuid(0)
-        except PermissionError:
-            pass  # Good: cannot restore privileges.
-        else:
-            raise RuntimeError(
-                'non-root user able to restore privileges after setuid.')
+        _setuid(uid, gid)
     else:
         gid and setgid(gid)
 
-    if uid and (not os.getuid()) and not (os.geteuid()):
-        raise AssertionError('Still root uid after drop privileges!')
-    if gid and (not os.getgid()) and not (os.getegid()):
-        raise AssertionError('Still root gid after drop privileges!')
+    if uid and not os.getuid() and not os.geteuid():
+        raise SecurityError('Still root uid after drop privileges!')
+    if gid and not os.getgid() and not os.getegid():
+        raise SecurityError('Still root gid after drop privileges!')
+
+
+def _setuid(uid, gid):
+    # If GID isn't defined, get the primary GID of the user.
+    if not gid and pwd:
+        gid = pwd.getpwuid(uid).pw_gid
+    # Must set the GID before initgroups(), as setgid()
+    # is known to zap the group list on some platforms.
+
+    # setgid must happen before setuid (otherwise the setgid operation
+    # may fail because of insufficient privileges and possibly stay
+    # in a privileged group).
+    setgid(gid)
+    initgroups(uid, gid)
+
+    # at last:
+    setuid(uid)
+    # ... and make sure privileges cannot be restored:
+    try:
+        setuid(0)
+    except PermissionError:
+        # we should get here: cannot restore privileges,
+        # everything was fine.
+        pass
+    else:
+        raise SecurityError(
+            'non-root user able to restore privileges after setuid.')
 
 
 class Signals:
     """Convenience interface to :mod:`signals`.
 
-    If the requested signal is not supported on the current platform,
+    If the requested signal isn't supported on the current platform,
     the operation will be ignored.
 
     Example:
@@ -601,23 +623,22 @@ class Signals:
     def reset_alarm(self):
         return _signal.alarm(0)
 
-    def supported(self, signal_name):
-        """Return true value if ``signal_name`` exists on this platform."""
+    def supported(self, name):
+        """Return true value if signal by ``name`` exists on this platform."""
         try:
-            return self.signum(signal_name)
+            return self.signum(name)
         except AttributeError:
             pass
 
-    def signum(self, signal_name):
-        """Get signal number from signal name."""
-        if isinstance(signal_name, numbers.Integral):
-            return signal_name
-        if (not isinstance(signal_name, str) or
-                not signal_name.isupper()):
+    def signum(self, name):
+        """Get signal number by name."""
+        if isinstance(name, numbers.Integral):
+            return name
+        if not isinstance(name, str) or not name.isupper():
             raise TypeError('signal name must be uppercase string.')
-        if not signal_name.startswith('SIG'):
-            signal_name = 'SIG' + signal_name
-        return getattr(_signal, signal_name)
+        if not name.startswith('SIG'):
+            name = 'SIG' + name
+        return getattr(_signal, name)
 
     def reset(self, *signal_names):
         """Reset signals to the default signal handler.
@@ -627,38 +648,43 @@ class Signals:
         """
         self.update((sig, self.default) for sig in signal_names)
 
-    def ignore(self, *signal_names):
+    def ignore(self, *names):
         """Ignore signal using :const:`SIG_IGN`.
 
         Does nothing if the platform has no support for signals,
         or the specified signal in particular.
         """
-        self.update((sig, self.ignored) for sig in signal_names)
+        self.update((sig, self.ignored) for sig in names)
 
-    def __getitem__(self, signal_name):
-        return _signal.getsignal(self.signum(signal_name))
+    def __getitem__(self, name):
+        return _signal.getsignal(self.signum(name))
 
-    def __setitem__(self, signal_name, handler):
+    def __setitem__(self, name, handler):
         """Install signal handler.
 
         Does nothing if the current platform has no support for signals,
         or the specified signal in particular.
         """
         try:
-            _signal.signal(self.signum(signal_name), handler)
+            _signal.signal(self.signum(name), handler)
         except (AttributeError, ValueError):
             pass
 
     def update(self, _d_=None, **sigmap):
         """Set signal handlers from a mapping."""
-        for signal_name, handler in dict(_d_ or {}, **sigmap).items():
-            self[signal_name] = handler
+        for name, handler in dict(_d_ or {}, **sigmap).items():
+            self[name] = handler
 
 signals = Signals()
 get_signal = signals.signum                   # compat
 install_signal_handler = signals.__setitem__  # compat
 reset_signal = signals.reset                  # compat
 ignore_signal = signals.ignore                # compat
+
+
+def signal_name(signum):
+    """Return name of signal from signal number."""
+    return SIGMAP[signum][3:]
 
 
 def strargv(argv):
@@ -683,12 +709,12 @@ def set_process_title(progname, info=None):
 if os.environ.get('NOSETPS'):  # pragma: no cover
 
     def set_mp_process_title(*a, **k):
+        """Disabled feature."""
         pass
 else:
 
     def set_mp_process_title(progname, info=None, hostname=None):  # noqa
-        """Set the :command:`ps` name using the :mod:`multiprocessing`
-        process name.
+        """Set the :command:`ps` name from the current process name.
 
         Only works if :pypi:`setproctitle` is installed.
         """
@@ -699,7 +725,7 @@ else:
 
 
 def get_errno_name(n):
-    """Get errno for string, e.g. ``ENOENT``."""
+    """Get errno for string (e.g., ``ENOENT``)."""
     if isinstance(n, str):
         return getattr(errno, n)
     return n
@@ -709,7 +735,7 @@ def get_errno_name(n):
 def ignore_errno(*errnos, **kwargs):
     """Context manager to ignore specific POSIX error codes.
 
-    Takes a list of error codes to ignore, which can be either
+    Takes a list of error codes to ignore: this can be either
     the name of the code, or the code integer itself::
 
         >>> with ignore_errno('ENOENT'):
@@ -743,7 +769,7 @@ def check_privileges(accept_content):
     if hasattr(os, 'fchown'):
         if not all(hasattr(os, attr)
                    for attr in ['getuid', 'getgid', 'geteuid', 'getegid']):
-            raise AssertionError('suspicious platform, contact support')
+            raise SecurityError('suspicious platform, contact support')
 
     if not uid or not gid or not euid or not egid:
         if ('pickle' in accept_content or

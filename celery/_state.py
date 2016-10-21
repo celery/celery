@@ -23,18 +23,18 @@ __all__ = [
 #: Global default app used when no current app.
 default_app = None
 
-#: List of all app instances (weakrefs), must not be used directly.
+#: List of all app instances (weakrefs), mustn't be used directly.
 _apps = weakref.WeakSet()
 
-#: global set of functions to call whenever a new app is finalized
-#: E.g. Shared tasks, and built-in tasks are created
-#: by adding callbacks here.
+#: Global set of functions to call whenever a new app is finalized.
+#: Shared tasks, and built-in tasks are created by adding callbacks here.
 _on_app_finalizers = set()
 
 _task_join_will_block = False
 
 
 def connect_on_app_finalize(callback):
+    """Connect callback to be called when any app is finalized."""
     _on_app_finalizers.add(callback)
     return callback
 
@@ -65,6 +65,7 @@ _task_stack = LocalStack()
 
 
 def set_default_app(app):
+    """Set default app."""
     global default_app
     default_app = app
 
@@ -86,7 +87,10 @@ def _set_current_app(app):
 
 if os.environ.get('C_STRICT_APP'):  # pragma: no cover
     def get_current_app():
-        raise Exception('USES CURRENT APP')
+        """Return the current app."""
+        raise RuntimeError('USES CURRENT APP')
+elif os.environ.get('C_WARN_APP'):  # pragma: no cover
+    def get_current_app():  # noqa
         import traceback
         print('-- USES CURRENT_APP', file=sys.stderr)  # noqa+
         traceback.print_stack(file=sys.stderr)

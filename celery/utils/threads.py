@@ -37,6 +37,7 @@ USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
 
 @contextmanager
 def default_socket_timeout(timeout: Timeout) -> Iterator:
+    """Context temporarily setting the default socket timeout."""
     prev = socket.getdefaulttimeout()
     socket.setdefaulttimeout(timeout)
     yield
@@ -44,6 +45,7 @@ def default_socket_timeout(timeout: Timeout) -> Iterator:
 
 
 class bgThread(threading.Thread):
+    """Background service thread."""
 
     def __init__(self, name: Optional[str]=None, **kwargs) -> None:
         super().__init__()
@@ -66,7 +68,7 @@ class bgThread(threading.Thread):
             while not shutdown_set():
                 try:
                     body()
-                except Exception as exc:
+                except Exception as exc:  # pylint: disable=broad-except
                     try:
                         self.on_crash('{0!r} crashed: {1!r}', self.name, exc)
                         self._set_stopped()
@@ -92,7 +94,8 @@ class bgThread(threading.Thread):
 
 
 def release_local(local: 'Local') -> None:
-    """Releases the contents of the local for the current context.
+    """Release the contents of the local for the current context.
+
     This makes it possible to use locals without a manager.
 
     With this function one can release :class:`Local` objects as well as
@@ -112,6 +115,8 @@ def release_local(local: 'Local') -> None:
 
 
 class Local:
+    """Local object."""
+
     __slots__ = ('__storage__', '__ident_func__')
 
     def __init__(self) -> None:
@@ -150,7 +155,9 @@ class Local:
 
 
 class _LocalStack:
-    """This class works similar to a :class:`Local` but keeps a stack
+    """Local stack.
+
+    This class works similar to a :class:`Local` but keeps a stack
     of objects instead.  This is best explained with an example::
 
         >>> ls = LocalStack()
@@ -197,16 +204,20 @@ class _LocalStack:
         return Proxy(_lookup)
 
     def push(self, obj: Any) -> Any:
-        """Pushes a new item to the stack"""
+        """Push a new item to the stack."""
         rv = getattr(self._local, 'stack', None)
         if rv is None:
+            # pylint: disable=assigning-non-slot
+            # This attribute is defined now.
             self._local.stack = rv = []
         rv.append(obj)
         return rv
 
     def pop(self) -> Any:
-        """Remove the topmost item from the stack, will return the
-        old value or `None` if the stack was already empty.
+        """Remove the topmost item from the stack.
+
+        Note:
+            Will return the old value or `None` if the stack was already empty.
         """
         stack = getattr(self._local, 'stack', None)
         if stack is None:
@@ -223,8 +234,8 @@ class _LocalStack:
 
     @property
     def stack(self) -> List:
-        """get_current_worker_task uses this to find
-        the original task that was executed by the worker."""
+        # get_current_worker_task uses this to find
+        # the original task that was executed by the worker.
         stack = getattr(self._local, 'stack', None)
         if stack is not None:
             return stack
@@ -232,8 +243,10 @@ class _LocalStack:
 
     @property
     def top(self) -> Any:
-        """The topmost item on the stack.  If the stack is empty,
-        `None` is returned.
+        """The topmost item on the stack.
+
+        Note:
+            If the stack is empty, :const:`None` is returned.
         """
         try:
             return self._local.stack[-1]
@@ -242,8 +255,10 @@ class _LocalStack:
 
 
 class LocalManager:
-    """Local objects cannot manage themselves. For that you need a local
-    manager.  You can pass a local manager multiple locals or add them
+    """Local objects cannot manage themselves.
+
+    For that you need a local manager.
+    You can pass a local manager multiple locals or add them
     later by appending them to ``manager.locals``.  Every time the manager
     cleans up, it will clean up all the data left in the locals for this
     context.
@@ -268,10 +283,13 @@ class LocalManager:
             self.ident_func = get_ident
 
     def get_ident(self) -> Any:
-        """Return the context identifier the local objects use internally
+        """Return context identifier.
+
+        This is the indentifer the local objects use internally
         for this context.  You cannot override this method to change the
         behavior but use it to link other context local objects (such as
-        SQLAlchemy's scoped sessions) to the Werkzeug locals."""
+        SQLAlchemy's scoped sessions) to the Werkzeug locals.
+        """
         return self.ident_func()
 
     def cleanup(self) -> None:
@@ -290,9 +308,10 @@ class LocalManager:
 class _FastLocalStack(threading.local):
 
     def __init__(self):
-        self.stack = []                 # type: List[Any]
-        self.push = self.stack.append   # type: Callable[[Any], None]
-        self.pop = self.stack.pop       # type: Callable[[], Any]
+        self.stack = []
+        self.push = self.stack.append
+        self.pop = self.stack.pop
+        super().__init__()
 
     @property
     def top(self) -> Any:
@@ -309,6 +328,6 @@ if USE_FAST_LOCALS:  # pragma: no cover
 else:
     # - See #706
     # since each thread has its own greenlet we can just use those as
-    # identifiers for the context.  If greenlets are not available we
+    # identifiers for the context.  If greenlets aren't available we
     # fall back to the  current thread ident.
     LocalStack = _LocalStack  # noqa

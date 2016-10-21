@@ -25,7 +25,7 @@
 
 .. cmdoption:: -r, --maxrate
 
-    Camera: Optional shutter rate limit (e.g. 10/m).
+    Camera: Optional shutter rate limit (e.g., 10/m).
 
 .. cmdoption:: -l, --loglevel
 
@@ -34,13 +34,13 @@
 
 .. cmdoption:: -f, --logfile
 
-    Path to log file. If no logfile is specified, `stderr` is used.
+    Path to log file.  If no logfile is specified, `stderr` is used.
 
 .. cmdoption:: --pidfile
 
     Optional file used to store the process pid.
 
-    The program will not start if this file already exists
+    The program won't start if this file already exists
     and the pid is still alive.
 
 .. cmdoption:: --uid
@@ -74,6 +74,8 @@ from celery.bin.base import Command, daemon_options
 
 __all__ = ['events']
 
+HELP = __doc__
+
 
 class events(Command):
     """Event-stream utilities.
@@ -96,13 +98,14 @@ class events(Command):
             $ celery events -d
             $ celery events -c mod.attr -F 1.0 --detach --maxrate=100/m -l info
     """
-    doc = __doc__
+
+    doc = HELP
     supports_args = False
 
     def run(self, dump=False, camera=None, frequency=1.0, maxrate=None,
             loglevel='INFO', logfile=None, prog_name='celery events',
             pidfile=None, uid=None, gid=None, umask=None,
-            working_directory=None, detach=False, **kwargs):
+            workdir=None, detach=False, **kwargs):
         self.prog_name = prog_name
 
         if dump:
@@ -112,7 +115,7 @@ class events(Command):
                                   loglevel=loglevel, logfile=logfile,
                                   pidfile=pidfile, uid=uid, gid=gid,
                                   umask=umask,
-                                  working_directory=working_directory,
+                                  workdir=workdir,
                                   detach=detach)
         return self.run_evtop()
 
@@ -127,10 +130,9 @@ class events(Command):
         return evtop(app=self.app)
 
     def run_evcam(self, camera, logfile=None, pidfile=None, uid=None,
-                  gid=None, umask=None, working_directory=None,
+                  gid=None, umask=None, workdir=None,
                   detach=False, **kwargs):
         from celery.events.snapshot import evcam
-        workdir = working_directory
         self.set_process_status('cam')
         kwargs['app'] = self.app
         cam = partial(evcam, camera,
@@ -147,16 +149,25 @@ class events(Command):
         info = '{0} {1}'.format(info, strargv(sys.argv))
         return set_process_title(prog, info=info)
 
-    def prepare_arguments(self, parser):
-        parser.add_option('-d', '--dump', action='store_true')
-        parser.add_option('-c', '--camera')
-        parser.add_option('--detach', action='store_true')
-        parser.add_option('-F', '--frequency', '--freq',
-                          type='float', default=1.0)
-        parser.add_option('-r', '--maxrate')
-        parser.add_option('-l', '--loglevel', default='INFO')
+    def add_arguments(self, parser):
+        dopts = parser.add_argument_group('Dumper')
+        dopts.add_argument('-d', '--dump', action='store_true', default=False)
+
+        copts = parser.add_argument_group('Snapshot')
+        copts.add_argument('-c', '--camera')
+        copts.add_argument('--detach', action='store_true', default=False)
+        copts.add_argument('-F', '--frequency', '--freq',
+                           type=float, default=1.0)
+        copts.add_argument('-r', '--maxrate')
+        copts.add_argument('-l', '--loglevel', default='INFO')
+
         daemon_options(parser, default_pidfile='celeryev.pid')
-        parser.add_options(self.app.user_options['events'])
+
+        user_options = self.app.user_options['events']
+        if user_options:
+            self.add_compat_options(
+                parser.add_argument_group('User Options'),
+                user_options)
 
 
 def main():

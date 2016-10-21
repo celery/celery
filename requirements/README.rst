@@ -31,6 +31,10 @@ Index
 
     Extra test requirements required for Python 2.7 by the CI suite (Tox).
 
+* :file:`requirements/test-integration.txt`
+
+    Extra requirements needed when running the integration test suite.
+
 * :file:`requirements/doc.txt`
 
     Extra requirements required to build the Sphinx documentation.
@@ -41,7 +45,8 @@ Index
 
 * :file:`requirements/dev.txt`
 
-    Requirement file installing the current master branch of Celery and deps.
+    Requirement file installing the current dev branch of Celery and
+    dependencies.
 
 Examples
 ========

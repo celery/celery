@@ -18,6 +18,7 @@ debug, error, info = logger.debug, logger.error, logger.info
 
 
 class Pidbox:
+    """Worker mailbox."""
 
     consumer = None
 
@@ -60,7 +61,6 @@ class Pidbox:
         self.consumer = self._close_channel(c)
 
     def reset(self):
-        """Sets up the process mailbox."""
         self.stop(self.c)
         self.start(self.c)
 
@@ -77,6 +77,8 @@ class Pidbox:
 
 
 class gPidbox(Pidbox):
+    """Worker pidbox (greenlet)."""
+
     _node_shutdown = None
     _node_stopped = None
     _resets = 0

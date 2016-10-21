@@ -25,6 +25,18 @@ the celery worker `-n` option.\
 
 
 def flatten_reply(reply):
+    """Flatten node replies.
+
+    Convert from a list of replies in this format::
+
+        [{'a@example.com': reply},
+         {'b@example.com': reply}]
+
+    into this format::
+
+        {'a@example.com': reply,
+         'b@example.com': reply}
+    """
     nodes, dupes = {}, set()
     for item in reply:
         [dupes.add(name) for name in item if name in nodes]
@@ -39,9 +51,11 @@ def flatten_reply(reply):
 
 
 class Inspect:
+    """API for app.control.inspect."""
+
     app = None
 
-    def __init__(self, destination=None, timeout=1, callback=None,
+    def __init__(self, destination=None, timeout=1.0, callback=None,
                  connection=None, app=None, limit=None):
         self.app = app or self.app
         self.destination = destination
@@ -75,36 +89,43 @@ class Inspect:
     def clock(self):
         return self._request('clock')
 
-    def active(self, safe=False):
-        return self._request('dump_active', safe=safe)
+    def active(self, safe=None):
+        # safe is ignored since 4.0
+        # as no objects will need serialization now that we
+        # have argsrepr/kwargsrepr.
+        return self._request('active')
 
-    def scheduled(self, safe=False):
-        return self._request('dump_schedule', safe=safe)
+    def scheduled(self, safe=None):
+        return self._request('scheduled')
 
-    def reserved(self, safe=False):
-        return self._request('dump_reserved', safe=safe)
+    def reserved(self, safe=None):
+        return self._request('reserved')
 
     def stats(self):
         return self._request('stats')
 
     def revoked(self):
-        return self._request('dump_revoked')
+        return self._request('revoked')
 
     def registered(self, *taskinfoitems):
-        return self._request('dump_tasks', taskinfoitems=taskinfoitems)
+        return self._request('registered', taskinfoitems=taskinfoitems)
     registered_tasks = registered
 
-    def ping(self):
+    def ping(self, destination=None):
         return self._request('ping')
 
     def active_queues(self):
         return self._request('active_queues')
 
-    def query_task(self, ids):
+    def query_task(self, *ids):
+        # signature used be unary: query_task(ids=[id1, id2])
+        # we need this to preserve backward compatibility.
+        if len(ids) == 1 and isinstance(ids[0], (list, tuple)):
+            ids = ids[0]
         return self._request('query_task', ids=ids)
 
     def conf(self, with_defaults=False):
-        return self._request('dump_conf', with_defaults=with_defaults)
+        return self._request('conf', with_defaults=with_defaults)
 
     def hello(self, from_node, revoked=None):
         return self._request('hello', from_node=from_node, revoked=revoked)
@@ -120,6 +141,8 @@ class Inspect:
 
 
 class Control:
+    """Worker remote control client."""
+
     Mailbox = Mailbox
 
     def __init__(self, app=None):
@@ -129,6 +152,10 @@ class Control:
             type='fanout',
             accept=['json'],
             producer_pool=lazy(lambda: self.app.amqp.producer_pool),
+            queue_ttl=app.conf.control_queue_ttl,
+            reply_queue_ttl=app.conf.control_queue_ttl,
+            queue_expires=app.conf.control_queue_expires,
+            reply_queue_expires=app.conf.control_queue_expires,
         )
 
     @cached_property
@@ -154,9 +181,12 @@ class Control:
     discard_all = purge
 
     def election(self, id, topic, action=None, connection=None):
-        self.broadcast('election', connection=connection, arguments={
-            'id': id, 'topic': topic, 'action': action,
-        })
+        self.broadcast(
+            'election', connection=connection, destination=None,
+            arguments={
+                'id': id, 'topic': topic, 'action': action,
+            },
+        )
 
     def revoke(self, task_id, destination=None, terminate=False,
                signal=TERM_SIGNAME, **kwargs):
@@ -175,12 +205,25 @@ class Control:
         See Also:
             :meth:`broadcast` for supported keyword arguments.
         """
-        return self.broadcast('revoke', destination=destination,
-                              arguments={'task_id': task_id,
-                                         'terminate': terminate,
-                                         'signal': signal}, **kwargs)
+        return self.broadcast('revoke', destination=destination, arguments={
+            'task_id': task_id,
+            'terminate': terminate,
+            'signal': signal,
+        }, **kwargs)
 
-    def ping(self, destination=None, timeout=1, **kwargs):
+    def terminate(self, task_id,
+                  destination=None, signal=TERM_SIGNAME, **kwargs):
+        """Tell all (or specific) workers to terminate a task by id.
+
+        See Also:
+            This is just a shortcut to :meth:`revoke` with the terminate
+            argument enabled.
+        """
+        return self.revoke(
+            task_id,
+            destination=destination, terminate=True, signal=signal, **kwargs)
+
+    def ping(self, destination=None, timeout=1.0, **kwargs):
         """Ping all (or specific) workers.
 
         Returns:
@@ -189,12 +232,12 @@ class Control:
         See Also:
             :meth:`broadcast` for supported keyword arguments.
         """
-        return self.broadcast('ping', reply=True, destination=destination,
-                              timeout=timeout, **kwargs)
+        return self.broadcast(
+            'ping', reply=True, arguments={}, destination=destination,
+            timeout=timeout, **kwargs)
 
     def rate_limit(self, task_name, rate_limit, destination=None, **kwargs):
-        """Tell all (or specific) workers to set a new rate limit
-        for task by type.
+        """Tell workers to set a new rate limit for task by type.
 
         Arguments:
             task_name (str): Name of task to change rate limit for.
@@ -206,13 +249,18 @@ class Control:
         See Also:
             :meth:`broadcast` for supported keyword arguments.
         """
-        return self.broadcast('rate_limit', destination=destination,
-                              arguments={'task_name': task_name,
-                                         'rate_limit': rate_limit},
-                              **kwargs)
+        return self.broadcast(
+            'rate_limit',
+            destination=destination,
+            arguments={
+                'task_name': task_name,
+                'rate_limit': rate_limit,
+            },
+            **kwargs)
 
-    def add_consumer(self, queue, exchange=None, exchange_type='direct',
-                     routing_key=None, options=None, **kwargs):
+    def add_consumer(self, queue,
+                     exchange=None, exchange_type='direct', routing_key=None,
+                     options=None, destination=None, **kwargs):
         """Tell all (or specific) workers to start consuming from a new queue.
 
         Only the queue name is required as if only the queue is specified
@@ -237,25 +285,29 @@ class Control:
         """
         return self.broadcast(
             'add_consumer',
-            arguments=dict({'queue': queue, 'exchange': exchange,
-                            'exchange_type': exchange_type,
-                            'routing_key': routing_key}, **options or {}),
+            destination=destination,
+            arguments=dict({
+                'queue': queue,
+                'exchange': exchange,
+                'exchange_type': exchange_type,
+                'routing_key': routing_key,
+            }, **options or {}),
             **kwargs
         )
 
-    def cancel_consumer(self, queue, **kwargs):
+    def cancel_consumer(self, queue, destination=None, **kwargs):
         """Tell all (or specific) workers to stop consuming from ``queue``.
 
         See Also:
             Supports the same arguments as :meth:`broadcast`.
         """
         return self.broadcast(
-            'cancel_consumer', arguments={'queue': queue}, **kwargs
-        )
+            'cancel_consumer', destination=destination,
+            arguments={'queue': queue}, **kwargs)
 
-    def time_limit(self, task_name, soft=None, hard=None, **kwargs):
-        """Tell all (or specific) workers to set time limits for
-        a task by type.
+    def time_limit(self, task_name, soft=None, hard=None,
+                   destination=None, **kwargs):
+        """Tell workers to set time limits for a task by type.
 
         Arguments:
             task_name (str): Name of task to change time limits for.
@@ -265,8 +317,13 @@ class Control:
         """
         return self.broadcast(
             'time_limit',
-            arguments={'task_name': task_name,
-                       'hard': hard, 'soft': soft}, **kwargs)
+            arguments={
+                'task_name': task_name,
+                'hard': hard,
+                'soft': soft,
+            },
+            destination=destination,
+            **kwargs)
 
     def enable_events(self, destination=None, **kwargs):
         """Tell all (or specific) workers to enable events.
@@ -274,7 +331,8 @@ class Control:
         See Also:
             Supports the same arguments as :meth:`broadcast`.
         """
-        return self.broadcast('enable_events', {}, destination, **kwargs)
+        return self.broadcast(
+            'enable_events', arguments={}, destination=destination, **kwargs)
 
     def disable_events(self, destination=None, **kwargs):
         """Tell all (or specific) workers to disable events.
@@ -282,7 +340,8 @@ class Control:
         See Also:
             Supports the same arguments as :meth:`broadcast`.
         """
-        return self.broadcast('disable_events', {}, destination, **kwargs)
+        return self.broadcast(
+            'disable_events', arguments={}, destination=destination, **kwargs)
 
     def pool_grow(self, n=1, destination=None, **kwargs):
         """Tell all (or specific) workers to grow the pool by ``n``.
@@ -290,7 +349,8 @@ class Control:
         See Also:
             Supports the same arguments as :meth:`broadcast`.
         """
-        return self.broadcast('pool_grow', {'n': n}, destination, **kwargs)
+        return self.broadcast(
+            'pool_grow', arguments={'n': n}, destination=destination, **kwargs)
 
     def pool_shrink(self, n=1, destination=None, **kwargs):
         """Tell all (or specific) workers to shrink the pool by ``n``.
@@ -298,10 +358,63 @@ class Control:
         See Also:
             Supports the same arguments as :meth:`broadcast`.
         """
-        return self.broadcast('pool_shrink', {'n': n}, destination, **kwargs)
+        return self.broadcast(
+            'pool_shrink', arguments={'n': n},
+            destination=destination, **kwargs)
+
+    def autoscale(self, max, min, destination=None, **kwargs):
+        """Change worker(s) autoscale setting.
+
+        See Also:
+            Supports the same arguments as :meth:`broadcast`.
+        """
+        return self.broadcast(
+            'autoscale', arguments={'max': max, 'min': min},
+            destination=destination, **kwargs)
+
+    def shutdown(self, destination=None, **kwargs):
+        """Shutdown worker(s).
+
+        See Also:
+            Supports the same arguments as :meth:`broadcast`
+        """
+        return self.broadcast(
+            'shutdown', arguments={}, destination=destination, **kwargs)
+
+    def pool_restart(self, modules=None, reload=False, reloader=None,
+                     destination=None, **kwargs):
+        """Restart the execution pools of all or specific workers.
+
+        Keyword Arguments:
+            modules (Sequence[str]): List of modules to reload.
+            reload (bool): Flag to enable module reloading.  Default is False.
+            reloader (Any): Function to reload a module.
+            destination (Sequence[str]): List of worker names to send this
+                command to.
+
+        See Also:
+            Supports the same arguments as :meth:`broadcast`
+        """
+        return self.broadcast(
+            'pool_restart',
+            arguments={
+                'modules': modules,
+                'reload': reload,
+                'reloader': reloader,
+            },
+            destination=destination, **kwargs)
+
+    def heartbeat(self, destination=None, **kwargs):
+        """Tell worker(s) to send a heartbeat immediately.
+
+        See Also:
+            Supports the same arguments as :meth:`broadcast`
+        """
+        return self.broadcast(
+            'heartbeat', arguments={}, destination=destination, **kwargs)
 
     def broadcast(self, command, arguments=None, destination=None,
-                  connection=None, reply=False, timeout=1, limit=None,
+                  connection=None, reply=False, timeout=1.0, limit=None,
                   callback=None, channel=None, **extra_kwargs):
         """Broadcast a control command to the celery workers.
 

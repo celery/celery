@@ -2,7 +2,7 @@
 """Utility to dump events to screen.
 
 This is a simple program that dumps events to the console
-as they happen. Think of it like a `tcpdump` for Celery events.
+as they happen.  Think of it like a `tcpdump` for Celery events.
 """
 import sys
 
@@ -10,7 +10,7 @@ from datetime import datetime
 
 from celery.app import app_or_default
 from celery.utils.functional import LRUCache
-from celery.utils.timeutils import humanize_seconds
+from celery.utils.time import humanize_seconds
 
 __all__ = ['Dumper', 'evdump']
 
@@ -36,6 +36,7 @@ def humanize_type(type):
 
 
 class Dumper:
+    """Monitor events."""
 
     def __init__(self, out=sys.stdout):
         self.out = out
@@ -82,6 +83,7 @@ class Dumper:
 
 
 def evdump(app=None, out=sys.stdout):
+    """Start event dump."""
     app = app_or_default(app)
     dumper = Dumper(out=out)
     dumper.say('-> evdump: starting capture...')

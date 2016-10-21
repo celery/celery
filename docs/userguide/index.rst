@@ -24,5 +24,6 @@
     debugging
     concurrency/index
     signals
+    testing
     extending
     configuration

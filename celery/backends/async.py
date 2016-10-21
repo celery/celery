@@ -1,22 +1,29 @@
 """Async I/O backend support utilities."""
 import socket
+import threading
 
 from collections import deque
 from time import monotonic, sleep
 from weakref import WeakKeyDictionary
 from queue import Empty
 
-from kombu.syn import detect_environment
+from kombu.utils.compat import detect_environment
 from kombu.utils.objects import cached_property
 
 from celery import states
 from celery.exceptions import TimeoutError
+from celery.utils.threads import THREAD_TIMEOUT_MAX
+
+__all__ = [
+    'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
+    'register_drainer',
+]
 
 drainers = {}
 
 
 def register_drainer(name):
-
+    """Decorator used to register a new result drainer type."""
     def _inner(cls):
         drainers[name] = cls
         return cls
@@ -25,12 +32,18 @@ def register_drainer(name):
 
 @register_drainer('default')
 class Drainer:
+    """Result draining service."""
 
     def __init__(self, result_consumer):
         self.result_consumer = result_consumer
 
-    def drain_events_until(self, p, timeout=None, on_interval=None,
-                           monotonic=monotonic, wait=None):
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def drain_events_until(self, p, timeout=None, on_interval=None, wait=None):
         wait = wait or self.result_consumer.drain_events
         time_start = monotonic()
 
@@ -54,25 +67,33 @@ class Drainer:
 class greenletDrainer(Drainer):
     spawn = None
     _g = None
-    _stopped = False
+
+    def __init__(self, *args, **kwargs):
+        super(greenletDrainer, self).__init__(*args, **kwargs)
+        self._started = threading.Event()
+        self._stopped = threading.Event()
+        self._shutdown = threading.Event()
 
     def run(self):
-        while not self._stopped:
+        self._started.set()
+        while not self._stopped.is_set():
             try:
                 self.result_consumer.drain_events(timeout=1)
             except socket.timeout:
                 pass
+        self._shutdown.set()
 
     def start(self):
-        if self._g is None:
+        if not self._started.is_set():
             self._g = self.spawn(self.run)
+            self._started.wait()
 
     def stop(self):
-        self._stopped = True
+        self._stopped.set()
+        self._shutdown.wait(THREAD_TIMEOUT_MAX)
 
     def wait_for(self, p, wait, timeout=None):
-        if self._g is None:
-            self.start()
+        self.start()
         if not p.ready:
             sleep(0)
 
@@ -96,6 +117,7 @@ class geventDrainer(greenletDrainer):
 
 
 class AsyncBackendMixin:
+    """Mixin for backends that enables the async API."""
 
     def _collect_into(self, result, bucket):
         self.result_consumer.buckets[result] = bucket
@@ -107,6 +129,8 @@ class AsyncBackendMixin:
         if not results:
             raise StopIteration()
 
+        # we tell the result consumer to put consumed results
+        # into these buckets.
         bucket = deque()
         for node in results:
             if node._cache:
@@ -122,7 +146,9 @@ class AsyncBackendMixin:
             node = bucket.popleft()
             yield node.id, node._cache
 
-    def add_pending_result(self, result, weak=False):
+    def add_pending_result(self, result, weak=False, start_drainer=True):
+        if start_drainer:
+            self.result_consumer.drainer.start()
         try:
             self._maybe_resolve_from_buffer(result)
         except Empty:
@@ -133,13 +159,14 @@ class AsyncBackendMixin:
         result._maybe_set_cache(self._pending_messages.take(result.id))
 
     def _add_pending_result(self, task_id, result, weak=False):
-        weak, concrete = self._pending_results
-        if task_id not in weak and result.id not in concrete:
-            (weak if weak else concrete)[task_id] = result
+        concrete, weak_ = self._pending_results
+        if task_id not in weak_ and result.id not in concrete:
+            (weak_ if weak else concrete)[task_id] = result
             self.result_consumer.consume_from(task_id)
 
     def add_pending_results(self, results, weak=False):
-        return [self.add_pending_result(result, weak=weak)
+        self.result_consumer.drainer.start()
+        return [self.add_pending_result(result, weak=weak, start_drainer=False)
                 for result in results]
 
     def remove_pending_result(self, result):
@@ -175,6 +202,7 @@ class AsyncBackendMixin:
 
 
 class BaseResultConsumer:
+    """Manager responsible for consuming result messages."""
 
     def __init__(self, backend, app, accept,
                  pending_results, pending_messages):
@@ -187,7 +215,7 @@ class BaseResultConsumer:
         self.buckets = WeakKeyDictionary()
         self.drainer = drainers[detect_environment()](self)
 
-    def start(self):
+    def start(self, initial_task_id, **kwargs):
         raise NotImplementedError()
 
     def stop(self):
@@ -260,7 +288,11 @@ class BaseResultConsumer:
                 result._maybe_set_cache(meta)
                 buckets = self.buckets
                 try:
-                    buckets.pop(result)
+                    # remove bucket for this result, since it's fulfilled
+                    bucket = buckets.pop(result)
                 except KeyError:
                     pass
+                else:
+                    # send to waiter via bucket
+                    bucket.append(result)
         sleep(0)

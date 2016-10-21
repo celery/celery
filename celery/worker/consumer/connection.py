@@ -11,9 +11,11 @@ info = logger.info
 
 
 class Connection(bootsteps.StartStopStep):
+    """Service managing the consumer broker connection."""
 
     def __init__(self, c, **kwargs):
         c.connection = None
+        super(Connection, self).__init__(c, **kwargs)
 
     def start(self, c):
         c.connection = c.connect()
@@ -26,7 +28,8 @@ class Connection(bootsteps.StartStopStep):
         if connection:
             ignore_errors(connection, connection.close)
 
-    def info(self, c, params='N/A'):
+    def info(self, c):
+        params = 'N/A'
         if c.connection:
             params = c.connection.info()
             params.pop('password', None)  # don't send password.

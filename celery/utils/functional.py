@@ -24,6 +24,7 @@ __all__ = [
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
     'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
     'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun',
+    'maybe',
 ]
 
 FUNHEAD_TEMPLATE = """
@@ -67,8 +68,7 @@ def noop(*args: Tuple, **kwargs: Mapping) -> Any:
 
 
 def pass1(arg: Any, *args: Tuple, **kwargs: Mapping) -> Any:
-    """Take any number of arguments/keyword arguments and return
-    the first positional argument."""
+    """Return the first positional argument."""
     return arg
 
 
@@ -80,10 +80,9 @@ def evaluate_promises(it: Iterable) -> Iterator[Any]:
 
 
 def first(predicate: Callable[[Any], Any], it: Iterable) -> Any:
-    """Return the first element in ``iterable`` that ``predicate`` gives a
-    :const:`True` value for.
+    """Return the first element in ``it`` that ``predicate`` accepts.
 
-    If ``predicate`` is None it will return the first item that is not
+    If ``predicate`` is None it will return the first item that's not
     :const:`None`.
     """
     return next(
@@ -94,13 +93,14 @@ def first(predicate: Callable[[Any], Any], it: Iterable) -> Any:
 
 
 def firstmethod(method: str, on_call: Optional[Callable]=None) -> Any:
-    """Return a function that with a list of instances,
+    """Multiple dispatch.
+
+    Return a function that with a list of instances,
     finds the first instance that gives a value for the given method.
 
     The list can also contain lazy instances
     (:class:`~kombu.utils.functional.lazy`.)
     """
-
     def _matcher(it, *args, **kwargs):
         for obj in it:
             try:
@@ -129,8 +129,8 @@ def chunks(it: Iterable, n: int) -> Iterable:
         >>> list(x)
         [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10]]
     """
-    for first in it:
-        yield [first] + list(islice(it, n - 1))
+    for item in it:
+        yield [item] + list(islice(it, n - 1))
 
 
 def padlist(container: Sequence, size: int,
@@ -151,8 +151,11 @@ def padlist(container: Sequence, size: int,
 
 
 def mattrgetter(*attrs: str) -> Callable[[Any], Mapping[str, Any]]:
-    """Like :func:`operator.itemgetter` but return :const:`None` on missing
-    attributes instead of raising :exc:`AttributeError`."""
+    """Get attributes, ignoring attribute errors.
+
+    Like :func:`operator.itemgetter` but return :const:`None` on missing
+    attributes instead of raising :exc:`AttributeError`.
+    """
     return lambda obj: {attr: getattr(obj, attr, None) for attr in attrs}
 
 
@@ -163,9 +166,12 @@ def uniq(it: Iterable) -> Iterable[Any]:
 
 
 def regen(it: Iterable) -> Union[list, tuple, '_regen']:
-    """``Regen`` takes any iterable, and if the object is an
+    """Convert iterator to an object that can be consumed multiple times.
+
+    ``Regen`` takes any iterable, and if the object is an
     generator it will cache the evaluated list on first access,
-    so that the generator can be "consumed" multiple times."""
+    so that the generator can be "consumed" multiple times.
+    """
     if isinstance(it, (list, tuple)):
         return it
     return _regen(it)
@@ -175,9 +181,12 @@ class _regen(UserList, list):
     # must be subclass of list so that json can encode.
 
     def __init__(self, it: Iterable) -> None:
-        self.__it = it        # type: Iterator
-        self.__index = 0      # type: int
-        self.__consumed = []  # type: MutableSequence[Any]
+        # pylint: disable=super-init-not-called
+        # UserList creates a new list and sets .data, so we don't
+        # want to call init here.
+        self.__it = it
+        self.__index = 0
+        self.__consumed = []
 
     def __reduce__(self) -> Any:
         return list, (self.data,)
@@ -195,7 +204,7 @@ class _regen(UserList, list):
             return self.__consumed[index]
         except IndexError:
             try:
-                for i in range(self.__index, index + 1):
+                for _ in range(self.__index, index + 1):
                     self.__consumed.append(next(self.__it))
             except StopIteration:
                 raise IndexError(index)
@@ -230,6 +239,7 @@ def _argsfromspec(spec: FullArgSpec, replace_defaults: bool=True) -> str:
 
 def head_from_fun(fun: Callable,
                   bound: bool=False, debug: bool=False) -> partial:
+    """Generate signature function from actual function."""
     # we could use inspect.Signature here, but that implementation
     # is very slow since it implements the argument checking
     # in pure-Python.  Instead we use exec to create a new function
@@ -247,6 +257,8 @@ def head_from_fun(fun: Callable,
     if debug:  # pragma: no cover
         print(definition, file=sys.stderr)
     namespace = {'__name__': fun.__module__}
+    # pylint: disable=exec-used
+    # Tasks are rarely, if ever, created at runtime - exec here is fine.
     exec(definition, namespace)
     result = namespace[name]  # type: Any
     result._source = definition
@@ -267,3 +279,8 @@ def fun_takes_argument(name: str, fun: Callable,
         spec.varkw or spec.varargs or
         (len(spec.args) >= position if position else name in spec.args)
     )
+
+
+def maybe(typ, val):
+    """Call typ on value if val is defined."""
+    return typ(val) if val is not None else val

@@ -48,7 +48,7 @@ class FilesystemBackend(KeyValueStoreBackend):
         self.open = open
         self.unlink = unlink
 
-        # Lets verify that we have everything setup right
+        # Lets verify that we've everything setup right
         self._do_directory_test(b'.fs-backend-' + uuid().encode(encoding))
 
     def _find_path(self, url):

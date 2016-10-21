@@ -11,7 +11,7 @@ from kombu.utils.objects import cached_property
 
 from . import current_app
 from .utils.collections import AttributeDict
-from .utils.timeutils import (
+from .utils.time import (
     weekday, maybe_timedelta, remaining, humanize_seconds,
     timezone, maybe_make_aware, ffwd, localize
 )
@@ -24,7 +24,7 @@ __all__ = [
 schedstate = namedtuple('schedstate', ('is_due', 'next'))
 
 CRON_PATTERN_INVALID = """\
-Invalid crontab pattern. Valid range is {min}-{max}. \
+Invalid crontab pattern.  Valid range is {min}-{max}. \
 '{value}' was found.\
 """
 
@@ -59,22 +59,9 @@ class ParseException(Exception):
     """Raised by :class:`crontab_parser` when the input can't be parsed."""
 
 
-class schedule:
-    """Schedule for periodic task.
+class BaseSchedule(object):
 
-    Arguments:
-        run_every (float, ~datetime.timedelta): Time interval.
-        relative (bool):  If set to True the run time will be rounded to the
-            resolution of the interval.
-        nowfun (Callable): Function returning the current date and time
-            (class:`~datetime.datetime`).
-        app (~@Celery): Celery app instance.
-    """
-    relative = False
-
-    def __init__(self, run_every=None, relative=False, nowfun=None, app=None):
-        self.run_every = maybe_timedelta(run_every)
-        self.relative = relative
+    def __init__(self, nowfun=None, app=None):
         self.nowfun = nowfun
         self._app = app
 
@@ -82,70 +69,13 @@ class schedule:
         return (self.nowfun or self.app.now)()
 
     def remaining_estimate(self, last_run_at):
-        return remaining(
-            self.maybe_make_aware(last_run_at), self.run_every,
-            self.maybe_make_aware(self.now()), self.relative,
-        )
+        raise NotImplementedError()
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items ``(is_due, next_time_to_check)``,
-        where next time to check is in seconds.
-
-        * ``(True, 20)``, means the task should be run now, and the next
-            time to check is in 20 seconds.
-
-        * ``(False, 12.3)``, means the task is not due, but that the scheduler
-          should check again in 12.3 seconds.
-
-        The next time to check is used to save energy/CPU cycles,
-        it does not need to be accurate but will influence the precision
-        of your schedule.  You must also keep in mind
-        the value of :setting:`beat_max_loop_interval`,
-        which decides the maximum number of seconds the scheduler can
-        sleep between re-checking the periodic task intervals.  So if you
-        have a task that changes schedule at run-time then your next_run_at
-        check will decide how long it will take before a change to the
-        schedule takes effect.  The max loop interval takes precedence
-        over the next check at value returned.
-
-        .. admonition:: Scheduler max interval variance
-
-            The default max loop interval may vary for different schedulers.
-            For the default scheduler the value is 5 minutes, but for e.g.
-            the :pypi:`django-celery` database scheduler the value
-            is 5 seconds.
-        """
-        last_run_at = self.maybe_make_aware(last_run_at)
-        rem_delta = self.remaining_estimate(last_run_at)
-        remaining_s = max(rem_delta.total_seconds(), 0)
-        if remaining_s == 0:
-            return schedstate(is_due=True, next=self.seconds)
-        return schedstate(is_due=False, next=remaining_s)
+        raise NotImplementedError()
 
     def maybe_make_aware(self, dt):
         return maybe_make_aware(dt, self.tz)
-
-    def __repr__(self):
-        return '<freq: {0.human_seconds}>'.format(self)
-
-    def __eq__(self, other):
-        if isinstance(other, schedule):
-            return self.run_every == other.run_every
-        return self.run_every == other
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __reduce__(self):
-        return self.__class__, (self.run_every, self.relative, self.nowfun)
-
-    @property
-    def seconds(self):
-        return max(self.run_every.total_seconds(), 0)
-
-    @property
-    def human_seconds(self):
-        return humanize_seconds(self.seconds)
 
     @property
     def app(self):
@@ -169,8 +99,95 @@ class schedule:
         return dt
 
 
+class schedule(BaseSchedule):
+    """Schedule for periodic task.
+
+    Arguments:
+        run_every (float, ~datetime.timedelta): Time interval.
+        relative (bool):  If set to True the run time will be rounded to the
+            resolution of the interval.
+        nowfun (Callable): Function returning the current date and time
+            (class:`~datetime.datetime`).
+        app (~@Celery): Celery app instance.
+    """
+
+    relative = False
+
+    def __init__(self, run_every=None, relative=False, nowfun=None, app=None):
+        self.run_every = maybe_timedelta(run_every)
+        self.relative = relative
+        super(schedule, self).__init__(nowfun=nowfun, app=app)
+
+    def remaining_estimate(self, last_run_at):
+        return remaining(
+            self.maybe_make_aware(last_run_at), self.run_every,
+            self.maybe_make_aware(self.now()), self.relative,
+        )
+
+    def is_due(self, last_run_at):
+        """Return tuple of ``(is_due, next_time_to_check)``.
+
+        Notes:
+            - next time to check is in seconds.
+
+            - ``(True, 20)``, means the task should be run now, and the next
+                time to check is in 20 seconds.
+
+            - ``(False, 12.3)``, means the task is not due, but that the
+              scheduler should check again in 12.3 seconds.
+
+        The next time to check is used to save energy/CPU cycles,
+        it does not need to be accurate but will influence the precision
+        of your schedule.  You must also keep in mind
+        the value of :setting:`beat_max_loop_interval`,
+        that decides the maximum number of seconds the scheduler can
+        sleep between re-checking the periodic task intervals.  So if you
+        have a task that changes schedule at run-time then your next_run_at
+        check will decide how long it will take before a change to the
+        schedule takes effect.  The max loop interval takes precedence
+        over the next check at value returned.
+
+        .. admonition:: Scheduler max interval variance
+
+            The default max loop interval may vary for different schedulers.
+            For the default scheduler the value is 5 minutes, but for example
+            the :pypi:`django-celery-beat` database scheduler the value
+            is 5 seconds.
+        """
+        last_run_at = self.maybe_make_aware(last_run_at)
+        rem_delta = self.remaining_estimate(last_run_at)
+        remaining_s = max(rem_delta.total_seconds(), 0)
+        if remaining_s == 0:
+            return schedstate(is_due=True, next=self.seconds)
+        return schedstate(is_due=False, next=remaining_s)
+
+    def __repr__(self):
+        return '<freq: {0.human_seconds}>'.format(self)
+
+    def __eq__(self, other):
+        if isinstance(other, schedule):
+            return self.run_every == other.run_every
+        return self.run_every == other
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __reduce__(self):
+        return self.__class__, (self.run_every, self.relative, self.nowfun)
+
+    @property
+    def seconds(self):
+        return max(self.run_every.total_seconds(), 0)
+
+    @property
+    def human_seconds(self):
+        return humanize_seconds(self.seconds)
+
+
 class crontab_parser:
-    """Parser for Crontab expressions. Any expression of the form 'groups'
+    """Parser for Crontab expressions.
+
+    Any expression of the form 'groups'
     (see BNF grammar below) is accepted and expanded to a set of numbers.
     These numbers represent the units of time that the Crontab needs to
     run on:
@@ -214,6 +231,7 @@ class crontab_parser:
 
         :math:`max_ + min_ - 1`
     """
+
     ParseException = ParseException
 
     _range = r'(\w+?)-(\w+)'
@@ -290,12 +308,14 @@ class crontab_parser:
         return i
 
 
-class crontab(schedule):
-    """A Crontab can be used as the ``run_every`` value of a
+class crontab(BaseSchedule):
+    """Crontab schedule.
+
+    A Crontab can be used as the ``run_every`` value of a
     periodic task entry to add :manpage:`crontab(5)`-like scheduling.
 
     Like a :manpage:`cron(5)`-job, you can specify units of time of when
-    you would like the task to execute. It is a reasonably complete
+    you'd like the task to execute.  It's a reasonably complete
     implementation of :command:`cron`'s features, so it should provide a fair
     degree of scheduling needs.
 
@@ -356,7 +376,7 @@ class crontab(schedule):
 
         The Celery app instance.
 
-    It is important to realize that any day on which execution should
+    It's important to realize that any day on which execution should
     occur must be represented by entries in all three of the day and
     month attributes.  For example, if ``day_of_week`` is 0 and
     ``day_of_month`` is every seventh day, only months that begin
@@ -367,7 +387,7 @@ class crontab(schedule):
     """
 
     def __init__(self, minute='*', hour='*', day_of_week='*',
-                 day_of_month='*', month_of_year='*', nowfun=None, app=None):
+                 day_of_month='*', month_of_year='*', **kwargs):
         self._orig_minute = cronfield(minute)
         self._orig_hour = cronfield(hour)
         self._orig_day_of_week = cronfield(day_of_week)
@@ -378,12 +398,13 @@ class crontab(schedule):
         self.day_of_week = self._expand_cronspec(day_of_week, 7)
         self.day_of_month = self._expand_cronspec(day_of_month, 31, 1)
         self.month_of_year = self._expand_cronspec(month_of_year, 12, 1)
-        self.nowfun = nowfun
-        self._app = app
+        super(crontab, self).__init__(**kwargs)
 
     @staticmethod
     def _expand_cronspec(cronspec, max_, min_=0):
-        """Takes the given cronspec argument in one of the forms:
+        """Expand cron specification.
+
+        Takes the given cronspec argument in one of the forms:
 
         .. code-block:: text
 
@@ -394,8 +415,8 @@ class crontab(schedule):
 
         And convert it to an (expanded) set representing all time unit
         values on which the Crontab triggers.  Only in case of the base
-        type being :class:`str`, parsing occurs.  (It is fast and
-        happens only once for each Crontab instance, so there is no
+        type being :class:`str`, parsing occurs.  (It's fast and
+        happens only once for each Crontab instance, so there's no
         significant performance overhead involved.)
 
         For the other base types, merely Python type conversions happen.
@@ -425,8 +446,10 @@ class crontab(schedule):
         return result
 
     def _delta_to_next(self, last_run_at, next_hour, next_minute):
-        """Takes a :class:`~datetime.datetime` of last run, next minute and hour,
-        and returns a :class:`~celery.utils.timeutils.ffwd` for the next
+        """Find next delta.
+
+        Takes a :class:`~datetime.datetime` of last run, next minute and hour,
+        and returns a :class:`~celery.utils.time.ffwd` for the next
         scheduled day and time.
 
         Only called when ``day_of_month`` and/or ``month_of_year``
@@ -493,9 +516,6 @@ class crontab(schedule):
                     second=0,
                     microsecond=0)
 
-    def now(self):
-        return (self.nowfun or self.app.now)()
-
     def __repr__(self):
         return CRON_REPR.format(self)
 
@@ -507,6 +527,8 @@ class crontab(schedule):
                                  self._orig_month_of_year), None)
 
     def remaining_delta(self, last_run_at, tz=None, ffwd=ffwd):
+        # pylint: disable=redefined-outer-name
+        # caching global ffwd
         tz = tz or self.tz
         last_run_at = self.maybe_make_aware(last_run_at)
         now = self.maybe_make_aware(self.now())
@@ -564,15 +586,23 @@ class crontab(schedule):
         return self.to_local(last_run_at), delta, self.to_local(now)
 
     def remaining_estimate(self, last_run_at, ffwd=ffwd):
-        """Returns when the periodic task should run next as a
-        :class:`~datetime.timedelta`."""
+        """Estimate of next run time.
+
+        Returns when the periodic task should run next as a
+        :class:`~datetime.timedelta`.
+        """
+        # pylint: disable=redefined-outer-name
+        # caching global ffwd
         return remaining(*self.remaining_delta(last_run_at, ffwd=ffwd))
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items ``(is_due, next_time_to_run)``,
-        where next time to run is in seconds.
+        """Return tuple of ``(is_due, next_time_to_run)``.
 
-        See :meth:`celery.schedules.schedule.is_due` for more information.
+        Note:
+            Next time to run is in seconds.
+
+        SeeAlso:
+            :meth:`celery.schedules.schedule.is_due` for more information.
         """
         rem_delta = self.remaining_estimate(last_run_at)
         rem = max(rem_delta.total_seconds(), 0)
@@ -601,6 +631,7 @@ class crontab(schedule):
 
 
 def maybe_schedule(s, relative=False, app=None):
+    """Return schedule from number, timedelta, or actual schedule."""
     if s is not None:
         if isinstance(s, numbers.Number):
             s = timedelta(seconds=s)
@@ -611,8 +642,10 @@ def maybe_schedule(s, relative=False, app=None):
     return s
 
 
-class solar(schedule):
-    """A solar event can be used as the ``run_every`` value of a
+class solar(BaseSchedule):
+    """Solar event.
+
+    A solar event can be used as the ``run_every`` value of a
     periodic task entry to schedule based on certain solar events.
 
     Notes:
@@ -684,13 +717,12 @@ class solar(schedule):
         'dusk_astronomical': True,
     }
 
-    def __init__(self, event, lat, lon, nowfun=None, app=None):
+    def __init__(self, event, lat, lon, **kwargs):
         self.ephem = __import__('ephem')
         self.event = event
         self.lat = lat
         self.lon = lon
-        self.nowfun = nowfun
-        self._app = app
+        super(solar, self).__init__(**kwargs)
 
         if event not in self._all_events:
             raise ValueError(SOLAR_INVALID_EVENT.format(
@@ -721,10 +753,14 @@ class solar(schedule):
         )
 
     def remaining_estimate(self, last_run_at):
-        """Returns when the periodic task should run next as a
-        :class:`~datetime.timedelta`, or if it shouldn't run today (e.g.
-        the sun does not rise today), returns the time when the next check
-        should take place."""
+        """Return estimate of next time to run.
+
+        Returns:
+            ~datetime.timedelta: when the periodic task should
+                run next, or if it shouldn't run today (e.g., the sun does
+                not rise today), returns the time when the next check
+                should take place.
+        """
         last_run_at = self.maybe_make_aware(last_run_at)
         last_run_at_utc = localize(last_run_at, timezone.utc)
         self.cal.date = last_run_at_utc
@@ -734,7 +770,7 @@ class solar(schedule):
                 start=last_run_at_utc, use_center=self.use_center,
             )
         except self.ephem.CircumpolarError:  # pragma: no cover
-            # Sun will not rise/set today. Check again tomorrow
+            # Sun won't rise/set today.  Check again tomorrow
             # (specifically, after the next anti-transit).
             next_utc = (
                 self.cal.next_antitransit(self.ephem.Sun()) +
@@ -746,10 +782,13 @@ class solar(schedule):
         return delta
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items ``(is_due, next_time_to_run)``,
-        where next time to run is in seconds.
+        """Return tuple of ``(is_due, next_time_to_run)``.
 
-        See :meth:`celery.schedules.schedule.is_due` for more information.
+        Note:
+            next time to run is in seconds.
+
+        See Also:
+            :meth:`celery.schedules.schedule.is_due` for more information.
         """
         rem_delta = self.remaining_estimate(last_run_at)
         rem = max(rem_delta.total_seconds(), 0)

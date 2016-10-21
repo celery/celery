@@ -12,11 +12,11 @@ from .base import Command
 
 __all__ = ['logtool']
 
-RE_LOG_START = re.compile('^\[\d\d\d\d\-\d\d-\d\d ')
-RE_TASK_RECEIVED = re.compile('.+?\] Received')
-RE_TASK_READY = re.compile('.+?\] Task')
-RE_TASK_INFO = re.compile('.+?([\w\.]+)\[(.+?)\].+')
-RE_TASK_RESULT = re.compile('.+?[\w\.]+\[.+?\] (.+)')
+RE_LOG_START = re.compile(r'^\[\d\d\d\d\-\d\d-\d\d ')
+RE_TASK_RECEIVED = re.compile(r'.+?\] Received')
+RE_TASK_READY = re.compile(r'.+?\] Task')
+RE_TASK_INFO = re.compile(r'.+?([\w\.]+)\[(.+?)\].+')
+RE_TASK_RESULT = re.compile(r'.+?[\w\.]+\[.+?\] (.+)')
 
 REPORT_FORMAT = """
 Report
@@ -116,6 +116,8 @@ class Audit:
 
 
 class logtool(Command):
+    """The ``celery logtool`` command."""
+
     args = """<action> [arguments]
             .....  stats      [file1|- [file2 [...]]]
             .....  traces     [file1|- [file2 [...]]]

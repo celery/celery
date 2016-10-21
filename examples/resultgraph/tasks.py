@@ -13,7 +13,7 @@
 #
 # Joining the graph asynchronously with a callback
 # (Note: only two levels, the deps are considered final
-#        when the second task is ready.)
+#        when the second task is ready).
 #
 #    >>> unlock_graph.apply_async((A.apply_async(),
 #    ...                           A_callback.s()), countdown=1)

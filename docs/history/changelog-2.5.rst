@@ -18,7 +18,7 @@ If you're looking for versions prior to 2.5 you should visit our
 
 2.5.5
 =====
-:release-date: 2012-06-06 04:00 P.M BST
+:release-date: 2012-06-06 04:00 p.m. BST
 :release-by: Ask Solem
 
 This is a dummy release performed for the following goals:
@@ -30,26 +30,26 @@ This is a dummy release performed for the following goals:
 
 2.5.3
 =====
-:release-date: 2012-04-16 07:00 P.M BST
+:release-date: 2012-04-16 07:00 p.m. BST
 :release-by: Ask Solem
 
 * A bug causes messages to be sent with UTC time-stamps even though
-  :setting:`CELERY_ENABLE_UTC` was not enabled (Issue #636).
+  :setting:`CELERY_ENABLE_UTC` wasn't enabled (Issue #636).
 
 * ``celerybeat``: No longer crashes if an entry's args is set to None
   (Issue #657).
 
-* Auto-reload did not work if a module's ``__file__`` attribute
+* Auto-reload didn't work if a module's ``__file__`` attribute
   was set to the modules ``.pyc`` file.  (Issue #647).
 
-* Fixes early 2.5 compatibility where ``__package__`` does not exist
+* Fixes early 2.5 compatibility where ``__package__`` doesn't exist
   (Issue #638).
 
 .. _version-2.5.2:
 
 2.5.2
 =====
-:release-date: 2012-04-13 04:30 P.M GMT
+:release-date: 2012-04-13 04:30 p.m. GMT
 :release-by: Ask Solem
 
 .. _v252-news:
@@ -144,7 +144,7 @@ Fixes
 
 - [celery control|inspect] can now be configured on the command-line.
 
-    Like with the worker it is now possible to configure celery settings
+    Like with the worker it is now possible to configure Celery settings
     on the command-line for celery control|inspect
 
     .. code-block:: console
@@ -172,7 +172,7 @@ Fixes
 
 2.5.1
 =====
-:release-date: 2012-03-01 01:00 P.M GMT
+:release-date: 2012-03-01 01:00 p.m. GMT
 :release-by: Ask Solem
 
 .. _v251-fixes:
@@ -181,7 +181,7 @@ Fixes
 -----
 
 * Eventlet/Gevent: A small typo caused the worker to hang when eventlet/gevent
-  was used, this was because the environment was not monkey patched
+  was used, this was because the environment wasn't monkey patched
   early enough.
 
 * Eventlet/Gevent: Another small typo caused the mediator to be started
@@ -205,7 +205,7 @@ Fixes
 
 2.5.0
 =====
-:release-date: 2012-02-24 04:00 P.M GMT
+:release-date: 2012-02-24 04:00 p.m. GMT
 :release-by: Ask Solem
 
 See :ref:`whatsnew-2.5`.

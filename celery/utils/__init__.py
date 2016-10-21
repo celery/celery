@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility functions.
 
-Do not import from here directly anymore, as these are only
+Don't import from here directly anymore, as these are only
 here for backwards compatibility.
 """
 from .functional import memoize
@@ -18,4 +18,4 @@ from .imports import (          # noqa
 )
 from .functional import chunks, noop                    # noqa
 from kombu.utils.objects import cached_property         # noqa
-from kombu.utils.uuid import uuid                       # noqa
+from kombu.utils.uuid import uuid   # noqa

@@ -1,12 +1,12 @@
 =================================
- celery - Distributed Task Queue
+ Celery - Distributed Task Queue
 =================================
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-|build-status| |coverage| |bitdeli|
+|build-status| |coverage| |license| |wheel| |pyversion| |pyimp|
 
-:Version: 4.0.0rc3 (0today8)
+:Version: 4.0.0rc5 (0today8)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: https://github.com/celery/celery/
@@ -15,8 +15,8 @@
 
 --
 
-What is a Task Queue?
-=====================
+What's a Task Queue?
+====================
 
 Task queues are used as a mechanism to distribute work across threads or
 machines.
@@ -25,14 +25,14 @@ A task queue's input is a unit of work, called a task, dedicated worker
 processes then constantly monitor the queue for new work to perform.
 
 Celery communicates via messages, usually using a broker
-to mediate between clients and workers.  To initiate a task a client puts a
+to mediate between clients and workers. To initiate a task a client puts a
 message on the queue, the broker then delivers the message to a worker.
 
 A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
-language.  In addition to Python there's node-celery_ for Node.js,
+language. In addition to Python there's node-celery_ for Node.js,
 and a `PHP client`_.
 
 Language interoperability can also be achieved
@@ -52,9 +52,9 @@ Celery version 5.0 runs on,
 
 
 This is the last version to support Python 2.7,
-and from the next version (Celery 5.x) Python 3.6 or newer is required.
+and from the next version (Celery 5.x) Python 3.5 or newer is required.
 
-If you are running an older version of Python, you need to be running
+If you're running an older version of Python, you need to be running
 an older version of Celery:
 
 - Python 2.6: Celery series 3.1 or earlier.
@@ -62,12 +62,13 @@ an older version of Celery:
 - Python 2.4 was Celery series 2.2 or earlier.
 
 Celery is a project with minimal funding,
-so we do not support Microsoft Windows.
-Please do not open any issues related to that platform.
+so we don't support Microsoft Windows.
+Please don't open any issues related to that platform.
 
 *Celery* is usually used with a message broker to send and receive messages.
-The RabbitMQ transports is feature complete, but there's also Qpid and Amazon
-SQS broker support.
+The RabbitMQ, Redis transports are feature complete,
+but there's also experimental support for a myriad of other solutions, including
+using SQLite for local development.
 
 *Celery* can run on a single machine, on multiple machines, or even
 across datacenters.
@@ -75,7 +76,7 @@ across datacenters.
 Get Started
 ===========
 
-If this is the first time you're trying to use Celery, or you are
+If this is the first time you're trying to use Celery, or you're
 new to Celery 4.0 coming from previous versions then you should read our
 getting started tutorials:
 
@@ -94,14 +95,14 @@ getting started tutorials:
     http://docs.celeryproject.org/en/latest/getting-started/next-steps.html
 
 Celery is...
-==========
+=============
 
 - **Simple**
 
     Celery is easy to use and maintain, and does *not need configuration files*.
 
     It has an active, friendly community you can talk to for support,
-    including a `mailing-list`_ and and an IRC channel.
+    like at our `mailing-list`_, or the IRC channel.
 
     Here's one of the simplest applications you can make::
 
@@ -117,7 +118,7 @@ Celery is...
 
     Workers and clients will automatically retry in the event
     of connection loss or failure, and some brokers support
-    HA in way of *Master/Master* or *Master/Slave* replication.
+    HA in way of *Primary/Primary* or *Primary/Replica* replication.
 
 - **Fast**
 
@@ -129,14 +130,14 @@ Celery is...
 
     Almost every part of *Celery* can be extended or used on its own,
     Custom pool implementations, serializers, compression schemes, logging,
-    schedulers, consumers, producers, broker transports and much more.
+    schedulers, consumers, producers, broker transports, and much more.
 
 It supports...
-============
+================
 
     - **Message Transports**
 
-        - RabbitMQ_, Amazon SQS
+        - RabbitMQ_, Redis_, Amazon SQS
 
     - **Concurrency**
 
@@ -182,7 +183,7 @@ integration packages:
     | `Tornado`_         | `tornado-celery`_      |
     +--------------------+------------------------+
 
-The integration packages are not strictly necessary, but they can make
+The integration packages aren't strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
 database connections at ``fork``.
 
@@ -193,7 +194,6 @@ database connections at ``fork``.
 .. _`Bottle`: http://bottlepy.org/
 .. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
 .. _`pyramid_celery`: http://pypi.python.org/pypi/pyramid_celery/
-.. _`django-celery`: http://pypi.python.org/pypi/django-celery
 .. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
 .. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
@@ -204,8 +204,8 @@ database connections at ``fork``.
 Documentation
 =============
 
-The `latest documentation`_ with user guides, tutorials and API reference
-is hosted at Read The Docs.
+The `latest documentation`_ is hosted at Read The Docs, containing user guides,
+tutorials, and an API reference.
 
 .. _`latest documentation`: http://docs.celeryproject.org/en/latest/
 
@@ -217,15 +217,12 @@ Installation
 You can install Celery either via the Python Package Index (PyPI)
 or from source.
 
-To install using `pip`,:
+To install using ``pip``:
+
 ::
+
 
     $ pip install -U Celery
-
-To install using `easy_install`,:
-::
-
-    $ easy_install -U Celery
 
 .. _bundles:
 
@@ -236,13 +233,15 @@ Celery also defines a group of bundles that can be used
 to install Celery and the dependencies for a given feature.
 
 You can specify these in your requirements or on the ``pip``
-command-line by using brackets.  Multiple bundles can be specified by
+command-line by using brackets. Multiple bundles can be specified by
 separating them by commas.
+
 ::
+
 
     $ pip install "celery[librabbitmq]"
 
-    $ pip install "celery[librabbitmq,auth,msgpack]"
+    $ pip install "celery[librabbitmq,redis,auth,msgpack]"
 
 The following bundles are available:
 
@@ -272,6 +271,9 @@ Transports and Backends
 
 :``celery[librabbitmq]``:
     for using the librabbitmq C library.
+
+:``celery[redis]``:
+    for using Redis as a message transport or as a result backend.
 
 :``celery[sqs]``:
     for using Amazon SQS as a message transport (*experimental*).
@@ -317,11 +319,14 @@ Transports and Backends
 Downloading and installing from source
 --------------------------------------
 
-Download the latest version of Celery from
+Download the latest version of Celery from PyPI:
+
 http://pypi.python.org/pypi/celery/
 
 You can install it by doing the following,:
+
 ::
+
 
     $ tar xvfz celery-0.0.0.tar.gz
     $ cd celery-0.0.0
@@ -329,7 +334,7 @@ You can install it by doing the following,:
     # python setup.py install
 
 The last command must be executed as a privileged user if
-you are not currently using a virtualenv.
+you aren't currently using a virtualenv.
 
 .. _celery-installing-from-git:
 
@@ -340,11 +345,13 @@ With pip
 ~~~~~~~~
 
 The Celery development version also requires the development
-versions of ``kombu``, ``amqp``, ``billiard`` and ``vine``.
+versions of ``kombu``, ``amqp``, ``billiard``, and ``vine``.
 
 You can install the latest snapshot of these using the following
 pip commands:
+
 ::
+
 
     $ pip install https://github.com/celery/celery/zipball/master#egg=celery
     $ pip install https://github.com/celery/billiard/zipball/master#egg=billiard
@@ -367,7 +374,7 @@ Getting Help
 Mailing list
 ------------
 
-For discussions about the usage, development, and future of celery,
+For discussions about the usage, development, and future of Celery,
 please join the `celery-users`_ mailing list.
 
 .. _`celery-users`: http://groups.google.com/group/celery-users/
@@ -387,7 +394,7 @@ network.
 Bug tracker
 ===========
 
-If you have any suggestions, bug reports or annoyances please report them
+If you have any suggestions, bug reports, or annoyances please report them
 to our issue tracker at https://github.com/celery/celery/issues/
 
 .. _wiki:
@@ -404,7 +411,7 @@ Contributing
 
 Development of `celery` happens at GitHub: https://github.com/celery/celery
 
-You are highly encouraged to participate in the development
+You're highly encouraged to participate in the development
 of `celery`. If you don't like GitHub (for some reason) you're welcome
 to send regular patches.
 
@@ -431,7 +438,19 @@ file in the top distribution directory for the full license text.
 .. |coverage| image:: https://codecov.io/github/celery/celery/coverage.svg?branch=master
     :target: https://codecov.io/github/celery/celery?branch=master
 
-.. |bitdeli| image:: https://d2weczhvl823v0.cloudfront.net/celery/celery/trend.png
-    :alt: Bitdeli badge
-    :target: https://bitdeli.com/free
+.. |license| image:: https://img.shields.io/pypi/l/celery.svg
+    :alt: BSD License
+    :target: https://opensource.org/licenses/BSD-3-Clause
+
+.. |wheel| image:: https://img.shields.io/pypi/wheel/celery.svg
+    :alt: Celery can be installed via wheel
+    :target: http://pypi.python.org/pypi/celery/
+
+.. |pyversion| image:: https://img.shields.io/pypi/pyversions/celery.svg
+    :alt: Supported Python versions.
+    :target: http://pypi.python.org/pypi/celery/
+
+.. |pyimp| image:: https://img.shields.io/pypi/implementation/celery.svg
+    :alt: Support Python implementations.
+    :target: http://pypi.python.org/pypi/celery/
 

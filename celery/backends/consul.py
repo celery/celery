@@ -26,6 +26,7 @@ the Consul result store backend."""
 
 class ConsulBackend(KeyValueStoreBackend):
     """Consul.io K/V store backend for Celery."""
+
     consul = consul
 
     supports_autoexpire = True
@@ -67,7 +68,7 @@ class ConsulBackend(KeyValueStoreBackend):
             yield self.get(key)
 
     def set(self, key, value):
-        """Set a key in Consul
+        """Set a key in Consul.
 
         Before creating the key it will create a session inside Consul
         where it creates a session with a TTL

@@ -34,7 +34,7 @@ unconfigured = object()
 
 
 class BaseLoader:
-    """The base class for loaders.
+    """Base class for loaders.
 
     Loaders handles,
 
@@ -51,6 +51,7 @@ class BaseLoader:
 
         * What modules are imported to find tasks?
     """
+
     builtin_modules = frozenset()
     configured = False
     override_backends = {}
@@ -68,25 +69,23 @@ class BaseLoader:
         return datetime.now()
 
     def on_task_init(self, task_id, task):
-        """This method is called before a task is executed."""
+        """Called before a task is executed."""
         pass
 
     def on_process_cleanup(self):
-        """This method is called after a task is executed."""
+        """Called after a task is executed."""
         pass
 
     def on_worker_init(self):
-        """This method is called when the worker (:program:`celery worker`)
-        starts."""
+        """Called when the worker (:program:`celery worker`) starts."""
         pass
 
     def on_worker_shutdown(self):
-        """This method is called when the worker (:program:`celery worker`)
-        shuts down."""
+        """Called when the worker (:program:`celery worker`) shuts down."""
         pass
 
     def on_worker_process_init(self):
-        """This method is called when a child process starts."""
+        """Called when a child process starts."""
         pass
 
     def import_task_module(self, module):
@@ -139,12 +138,12 @@ class BaseLoader:
     def _smart_import(self, path, imp=None):
         imp = self.import_module if imp is None else imp
         if ':' in path:
-            # Path includes attribute so can just jump here.
-            # e.g. ``os.path:abspath``.
+            # Path includes attribute so can just jump
+            # here (e.g., ``os.path:abspath``).
             return symbol_by_name(path, imp=imp)
 
         # Not sure if path is just a module name or if it includes an
-        # attribute name (e.g. ``os.path``, vs, ``os.path.abspath``).
+        # attribute name (e.g., ``os.path``, vs, ``os.path.abspath``).
         try:
             return imp(path)
         except ImportError:
@@ -179,9 +178,7 @@ class BaseLoader:
         typemap = dict(Option.typemap, **extra_types)
 
         def getarg(arg):
-            """Parse a single configuration definition from
-            the command-line."""
-
+            """Parse single configuration from command-line."""
             # ## find key/value
             # ns.key=value|ns_key=value (case insensitive)
             key, value = arg.split('=', 1)
@@ -249,9 +246,7 @@ def autodiscover_tasks(packages, related_name='tasks'):
 
 
 def find_related_module(package, related_name):
-    """Given a package name and a module name, tries to find that
-    module."""
-
+    """Find module in package."""
     # Django 1.7 allows for speciying a class name in INSTALLED_APPS.
     # (Issue #2248).
     try:

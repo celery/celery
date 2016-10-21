@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup, find_packages
-
+import codecs
 import os
 import re
 import sys
-import codecs
+
+import setuptools
+import setuptools.command.test
+
 
 try:
     import platform
@@ -14,6 +16,8 @@ try:
 except (AttributeError, ImportError):
     def _pyimp():
         return 'Python'
+
+NAME = 'celery'
 
 E_UNSUPPORTED_PYTHON = """
 ----------------------------------------
@@ -48,42 +52,32 @@ PYPY24_ATLEAST = PYPY_VERSION and PYPY_VERSION >= (2, 4)
 if PY35_OR_LESS:
     raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '3.6'))
 
-# -*- Upgrading from older versions -*-
+# -*- Extras -*-
 
-downgrade_packages = [
-    'celery.app.task',
-]
-orig_path = sys.path[:]
-for path in (os.path.curdir, os.getcwd()):
-    if path in sys.path:
-        sys.path.remove(path)
-try:
-    import imp
-    import shutil
-    for pkg in downgrade_packages:
-        try:
-            parent, module = pkg.rsplit('.', 1)
-            print('- Trying to upgrade %r in %r' % (module, parent))
-            parent_mod = __import__(parent, None, None, [parent])
-            _, mod_path, _ = imp.find_module(module, parent_mod.__path__)
-            if mod_path.endswith('/' + module):
-                print('- force upgrading previous installation')
-                print('  - removing {0!r} package...'.format(mod_path))
-                try:
-                    shutil.rmtree(os.path.abspath(mod_path))
-                except Exception:
-                    sys.stderr.write('Could not remove {0!r}: {1!r}\n'.format(
-                        mod_path, sys.exc_info[1]))
-        except ImportError:
-            print('- upgrade %s: no old version found.' % module)
-except:
-    pass
-finally:
-    sys.path[:] = orig_path
-
-NAME = 'celery'
-entrypoints = {}
-extra = {}
+EXTENSIONS = {
+    'auth',
+    'cassandra',
+    'elasticsearch',
+    'memcache',
+    'pymemcache',
+    'couchbase',
+    'eventlet',
+    'gevent',
+    'msgpack',
+    'yaml',
+    'redis',
+    'sqs',
+    'couchdb',
+    'riak',
+    'zookeeper',
+    'solar',
+    'sqlalchemy',
+    'librabbitmq',
+    'pyro',
+    'slmq',
+    'tblib',
+    'consul'
+}
 
 # -*- Classifiers -*-
 
@@ -115,17 +109,20 @@ def add_default(m):
 def add_doc(m):
     return (('doc', m.groups()[0]),)
 
-pats = {re_meta: add_default, re_doc: add_doc}
-here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, 'celery/__init__.py')) as meta_fh:
-    meta = {}
-    for line in meta_fh:
-        if line.strip() == '# -eof meta-':
-            break
-        for pattern, handler in pats.items():
-            m = pattern.match(line.strip())
-            if m:
-                meta.update(handler(m))
+
+def parse_dist_meta():
+    pats = {re_meta: add_default, re_doc: add_doc}
+    here = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(here, 'celery', '__init__.py')) as meta_fh:
+        distmeta = {}
+        for line in meta_fh:
+            if line.strip() == '# -eof meta-':
+                break
+            for pattern, handler in pats.items():
+                m = pattern.match(line.strip())
+                if m:
+                    distmeta.update(handler(m))
+        return distmeta
 
 # -*- Installation Requires -*-
 
@@ -152,57 +149,67 @@ def _reqs(*f):
 def reqs(*f):
     return [req for subreq in _reqs(*f) for req in subreq]
 
-install_requires = reqs('default.txt')
-if JYTHON:
-    install_requires.extend(reqs('jython.txt'))
-
-# -*- Long Description -*-
-
-if os.path.exists('README.rst'):
-    long_description = codecs.open('README.rst', 'r', 'utf-8').read()
-else:
-    long_description = 'See http://pypi.python.org/pypi/celery'
-
-# -*- Entry Points -*- #
-
-console_scripts = entrypoints['console_scripts'] = [
-    'celery = celery.__main__:main',
-]
-
-# -*- Extras -*-
-
 
 def extras(*p):
     return reqs('extras', *p)
 
-# Celery specific
-features = set([
-    'auth', 'cassandra', 'elasticsearch', 'memcache', 'pymemcache',
-    'couchbase', 'eventlet', 'gevent', 'msgpack', 'yaml',
-    'redis', 'sqs', 'couchdb', 'riak', 'zookeeper',
-    'sqlalchemy', 'librabbitmq', 'pyro', 'slmq', 'tblib', 'consul'
-])
-extras_require = dict((x, extras(x + '.txt')) for x in features)
-extra['extras_require'] = extras_require
+
+def install_requires():
+    if JYTHON:
+        return reqs('default.txt') + reqs('jython.txt')
+    return reqs('default.txt')
+
+
+def extras_require():
+    return {x: extras(x + '.txt') for x in EXTENSIONS}
+
+
+def long_description():
+    try:
+        return codecs.open('README.rst', 'r', 'utf-8').read()
+    except IOError:
+        return 'Long description error: Missing README.rst file'
+
+
+class pytest(setuptools.command.test.test):
+    user_options = [('pytest-args=', 'a', 'Arguments to pass to py.test')]
+
+    def initialize_options(self):
+        setuptools.command.test.test.initialize_options(self)
+        self.pytest_args = []
+
+    def run_tests(self):
+        import pytest as _pytest
+        sys.exit(_pytest.main(self.pytest_args))
 
 # -*- %%% -*-
 
-setup(
+meta = parse_dist_meta()
+setuptools.setup(
     name=NAME,
+    packages=setuptools.find_packages(exclude=['t', 't.*']),
     version=meta['version'],
     description=meta['doc'],
+    long_description=long_description(),
+    keywords=meta['keywords'],
     author=meta['author'],
     author_email=meta['contact'],
     url=meta['homepage'],
-    platforms=['any'],
     license='BSD',
-    packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
-    include_package_data=False,
-    zip_safe=False,
-    install_requires=install_requires,
+    platforms=['any'],
+    install_requires=install_requires(),
     tests_require=reqs('test.txt'),
-    test_suite='nose.collector',
+    extras_require=extras_require(),
     classifiers=classifiers,
-    entry_points=entrypoints,
-    long_description=long_description,
-    **extra)
+    cmdclass={'test': pytest},
+    include_package_data=True,
+    zip_safe=False,
+    entry_points={
+        'console_scripts': [
+            'celery = celery.__main__:main',
+        ],
+        'pytest11': [
+            'celery = celery.contrib.pytest',
+        ],
+    },
+)

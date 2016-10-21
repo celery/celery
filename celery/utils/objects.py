@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Object related utilities including introspection, etc."""
+"""Object related utilities, including introspection, etc."""
 from typing import Any, Callable, Set, Sequence
 
 __all__ = ['Bunch', 'FallbackContext', 'mro_lookup']
@@ -22,7 +22,7 @@ def mro_lookup(cls: Any, attr: str,
         stop (Set[Any]): A set of types that if reached will stop
             the search.
         monkey_patched (Sequence): Use one of the stop classes
-            if the attributes module origin is not in this list.
+            if the attributes module origin isn't in this list.
             Used to detect monkey patched attributes.
 
     Returns:
@@ -44,7 +44,9 @@ def mro_lookup(cls: Any, attr: str,
 
 
 class FallbackContext:
-    """The built-in ``@contextmanager`` utility does not work well
+    """Context workaround.
+
+    The built-in ``@contextmanager`` utility does not work well
     when wrapping other contexts, as the traceback is wrong when
     the wrapped context raises.
 
@@ -54,11 +56,11 @@ class FallbackContext:
         @contextmanager
         def connection_or_default_connection(connection=None):
             if connection:
-                # user already has a connection, should not close
+                # user already has a connection, shouldn't close
                 # after use
                 yield connection
             else:
-                # must have new connection, and also close the connection
+                # must've new connection, and also close the connection
                 # after the block returns
                 with create_new_connection() as connection:
                     yield connection

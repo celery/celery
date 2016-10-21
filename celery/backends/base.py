@@ -24,7 +24,9 @@ from kombu.utils.url import maybe_sanitize_url
 from celery import states
 from celery import current_app, group, maybe_signature
 from celery.app import current_task
-from celery.exceptions import ChordError, TimeoutError, TaskRevokedError
+from celery.exceptions import (
+    ChordError, TimeoutError, TaskRevokedError, ImproperlyConfigured,
+)
 from celery.result import (
     GroupResult, ResultBase, allow_join_result, result_from_tuple,
 )
@@ -48,6 +50,20 @@ MESSAGE_BUFFER_MAX = 8192
 pending_results_t = namedtuple('pending_results_t', (
     'concrete', 'weak',
 ))
+
+E_NO_BACKEND = """
+No result backend is configured.
+Please see the documentation for more information.
+"""
+
+E_CHORD_NO_BACKEND = """
+Starting chords requires a result backend to be configured.
+
+Note that a group chained with a task is also upgraded to be a chord,
+as this pattern requires synchronization.
+
+Result backends that supports chords: Redis, Database, Memcached, and more.
+"""
 
 
 def unpickle_backend(cls, args, kwargs):
@@ -79,7 +95,7 @@ class Backend:
     supports_native_join = False
 
     #: If true the backend must automatically expire results.
-    #: The daily backend_cleanup periodic task will not be triggered
+    #: The daily backend_cleanup periodic task won't be triggered
     #: in this case.
     supports_autoexpire = False
 
@@ -113,7 +129,7 @@ class Backend:
         self.url = url
 
     def as_uri(self, include_password=False):
-        """Return the backend as an URI, sanitizing the password or not"""
+        """Return the backend as an URI, sanitizing the password or not."""
         # when using maybe_sanitize_url(), "/" is added
         # we're stripping it for consistency
         if include_password:
@@ -122,7 +138,7 @@ class Backend:
         return url[:-1] if url.endswith(':///') else url
 
     def mark_as_started(self, task_id, **meta):
-        """Mark a task as started"""
+        """Mark a task as started."""
         return self.store_result(task_id, meta, states.STARTED)
 
     def mark_as_done(self, task_id, result,
@@ -137,7 +153,7 @@ class Backend:
                         traceback=None, request=None,
                         store_result=True, call_errbacks=True,
                         state=states.FAILURE):
-        """Mark task as executed with failure. Stores the exception."""
+        """Mark task as executed with failure."""
         if store_result:
             self.store_result(task_id, exc, state,
                               traceback=traceback, request=request)
@@ -175,22 +191,29 @@ class Backend:
 
     def mark_as_retry(self, task_id, exc, traceback=None,
                       request=None, store_result=True, state=states.RETRY):
-        """Mark task as being retries. Stores the current
-        exception (if any)."""
+        """Mark task as being retries.
+
+        Note:
+            Stores the current exception (if any).
+        """
         return self.store_result(task_id, exc, state,
                                  traceback=traceback, request=request)
 
     def chord_error_from_stack(self, callback, exc=None):
-        from celery import group
+        # need below import for test for some crazy reason
+        from celery import group  # pylint: disable
         app = self.app
-        backend = app._tasks[callback.task].backend
+        try:
+            backend = app._tasks[callback.task].backend
+        except KeyError:
+            backend = self
         try:
             group(
                 [app.signature(errback)
                  for errback in callback.options.get('link_error') or []],
                 app=app,
             ).apply_async((callback.id,))
-        except Exception as eb_exc:
+        except Exception as eb_exc:  # pylint: disable=broad-except
             return backend.fail_from_current_stack(callback.id, exc=eb_exc)
         else:
             return backend.fail_from_current_stack(callback.id, exc=exc)
@@ -203,7 +226,7 @@ class Backend:
             self.mark_as_failure(task_id, exc, ei.traceback)
             return ei
         finally:
-            del(tb)
+            del tb
 
     def prepare_exception(self, exc, serializer=None):
         """Prepare exception for serialization."""
@@ -229,8 +252,11 @@ class Backend:
         return result
 
     def encode(self, data):
-        _, _, payload = dumps(data, serializer=self.serializer)
+        _, _, payload = self._encode(data)
         return payload
+
+    def _encode(self, data):
+        return dumps(data, serializer=self.serializer)
 
     def meta_from_decoded(self, meta):
         if meta['status'] in self.EXCEPTION_STATES:
@@ -358,8 +384,11 @@ class Backend:
         return self._delete_group(group_id)
 
     def cleanup(self):
-        """Backend cleanup. Is run by
-        :class:`celery.task.DeleteExpiredTaskMetaTask`."""
+        """Backend cleanup.
+
+        Note:
+            This is run by :class:`celery.task.DeleteExpiredTaskMetaTask`.
+        """
         pass
 
     def process_cleanup(self):
@@ -413,9 +442,13 @@ class SyncBackendMixin:
         )
 
     def wait_for_pending(self, result, timeout=None, interval=0.5,
-                         no_ack=True, on_interval=None, callback=None,
-                         propagate=True):
+                         no_ack=True, on_message=None, on_interval=None,
+                         callback=None, propagate=True):
         self._ensure_not_eager()
+        if on_message is not None:
+            raise ImproperlyConfigured(
+                'Backend does not support on_message callback')
+
         meta = self.wait_for(
             result.id, timeout=timeout,
             interval=interval,
@@ -466,7 +499,8 @@ class SyncBackendMixin:
 
 
 class BaseBackend(Backend, SyncBackendMixin):
-    pass
+    """Base (synchronous) result backend."""
+BaseDictBackend = BaseBackend  # XXX compat
 
 
 class BaseKeyValueStoreBackend(Backend):
@@ -529,7 +563,7 @@ class BaseKeyValueStoreBackend(Backend):
         ])
 
     def _strip_prefix(self, key):
-        """Takes bytes, emits string."""
+        """Take bytes: emit string."""
         key = self.key_t(key)
         for prefix in self.task_keyprefix, self.group_keyprefix:
             if key.startswith(prefix):
@@ -600,9 +634,11 @@ class BaseKeyValueStoreBackend(Backend):
 
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
-        meta = {'status': state, 'result': result, 'traceback': traceback,
-                'children': self.current_task_children(request),
-                'task_id': bytes_to_str(task_id)}
+        meta = {
+            'status': state, 'result': result, 'traceback': traceback,
+            'children': self.current_task_children(request),
+            'task_id': bytes_to_str(task_id),
+        }
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
 
@@ -651,9 +687,9 @@ class BaseKeyValueStoreBackend(Backend):
         key = self.get_key_for_chord(gid)
         try:
             deps = GroupResult.restore(gid, backend=self)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             callback = maybe_signature(request.chord, app=app)
-            logger.error('Chord %r raised: %r', gid, exc, exc_info=1)
+            logger.exception('Chord %r raised: %r', gid, exc)
             return self.chord_error_from_stack(
                 callback,
                 ChordError('Cannot restore group: {0!r}'.format(exc)),
@@ -663,8 +699,7 @@ class BaseKeyValueStoreBackend(Backend):
                 raise ValueError(gid)
             except ValueError as exc:
                 callback = maybe_signature(request.chord, app=app)
-                logger.error('Chord callback %r raised: %r', gid, exc,
-                             exc_info=1)
+                logger.exception('Chord callback %r raised: %r', gid, exc)
                 return self.chord_error_from_stack(
                     callback,
                     ChordError('GroupResult {0} no longer exists'.format(gid)),
@@ -680,7 +715,7 @@ class BaseKeyValueStoreBackend(Backend):
             try:
                 with allow_join_result():
                     ret = j(timeout=3.0, propagate=True)
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-except
                 try:
                     culprit = next(deps._failed_join_report())
                     reason = 'Dependency {0.id} raised {1!r}'.format(
@@ -689,13 +724,13 @@ class BaseKeyValueStoreBackend(Backend):
                 except StopIteration:
                     reason = repr(exc)
 
-                logger.error('Chord %r raised: %r', gid, reason, exc_info=1)
+                logger.exception('Chord %r raised: %r', gid, reason)
                 self.chord_error_from_stack(callback, ChordError(reason))
             else:
                 try:
                     callback.delay(ret)
-                except Exception as exc:
-                    logger.error('Chord %r raised: %r', gid, exc, exc_info=1)
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.exception('Chord %r raised: %r', gid, exc)
                     self.chord_error_from_stack(
                         callback,
                         ChordError('Callback error: {0!r}'.format(exc)),
@@ -708,22 +743,25 @@ class BaseKeyValueStoreBackend(Backend):
 
 
 class KeyValueStoreBackend(BaseKeyValueStoreBackend, SyncBackendMixin):
-    pass
+    """Result backend base class for key/value stores."""
 
 
 class DisabledBackend(BaseBackend):
+    """Dummy result backend."""
+
     _cache = {}   # need this attribute to reset cache in tests.
 
     def store_result(self, *args, **kwargs):
         pass
 
+    def apply_chord(self, *args, **kwargs):
+        raise NotImplementedError(E_CHORD_NO_BACKEND.strip())
+
     def _is_disabled(self, *args, **kwargs):
-        raise NotImplementedError(
-            'No result backend configured.  '
-            'Please see the documentation for more information.')
+        raise NotImplementedError(E_NO_BACKEND.strip())
 
     def as_uri(self, *args, **kwargs):
         return 'disabled://'
 
     get_state = get_result = get_traceback = _is_disabled
-    wait_for = get_many = _is_disabled
+    get_task_meta_for = wait_for = get_many = _is_disabled

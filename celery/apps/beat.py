@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-"""This module is the 'program-version' of :mod:`celery.beat`.
+"""Beat command-line program.
+
+This module is the 'program-version' of :mod:`celery.beat`.
 
 It does everything necessary to run that module
 as an actual application, like installing signal handlers
@@ -14,7 +16,7 @@ from datetime import datetime
 from celery import VERSION_BANNER, platforms, beat
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger
-from celery.utils.timeutils import humanize_seconds
+from celery.utils.time import humanize_seconds
 
 __all__ = ['Beat']
 
@@ -33,6 +35,8 @@ logger = get_logger('celery.beat')
 
 
 class Beat:
+    """Beat as a service."""
+
     Service = beat.Service
 
     app = None
@@ -40,14 +44,17 @@ class Beat:
     def __init__(self, max_interval=None, app=None,
                  socket_timeout=30, pidfile=None, no_color=None,
                  loglevel='WARN', logfile=None, schedule=None,
-                 scheduler_cls=None, redirect_stdouts=None,
+                 scheduler=None,
+                 scheduler_cls=None,  # XXX use scheduler
+                 redirect_stdouts=None,
                  redirect_stdouts_level=None, **kwargs):
         self.app = app = app or self.app
         either = self.app.either
         self.loglevel = loglevel
         self.logfile = logfile
         self.schedule = either('beat_schedule_filename', schedule)
-        self.scheduler_cls = either('beat_scheduler', scheduler_cls)
+        self.scheduler_cls = either(
+            'beat_scheduler', scheduler, scheduler_cls)
         self.redirect_stdouts = either(
             'worker_redirect_stdouts', redirect_stdouts)
         self.redirect_stdouts_level = either(
@@ -130,8 +137,8 @@ class Beat:
             loader=qualname(self.app.loader),
             scheduler=qualname(scheduler),
             scheduler_info=scheduler.info,
-            hmax_interval=humanize_seconds(service.max_interval),
-            max_interval=service.max_interval,
+            hmax_interval=humanize_seconds(scheduler.max_interval),
+            max_interval=scheduler.max_interval,
         )
 
     def set_process_title(self):
@@ -141,11 +148,8 @@ class Beat:
         )
 
     def install_sync_handler(self, service):
-        """Install a `SIGTERM` + `SIGINT` handler that saves
-        the beat schedule."""
-
+        """Install a `SIGTERM` + `SIGINT` handler saving the schedule."""
         def _sync(signum, frame):
             service.sync()
             raise SystemExit()
-
         platforms.signals.update(SIGTERM=_sync, SIGINT=_sync)

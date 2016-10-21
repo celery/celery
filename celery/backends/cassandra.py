@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 
 E_NO_CASSANDRA = """
 You need to install the cassandra-driver library to
-use the Cassandra backend. See https://github.com/datastax/python-driver
+use the Cassandra backend.  See https://github.com/datastax/python-driver
 """
 
 E_NO_SUCH_CASSANDRA_AUTH_PROVIDER = """
@@ -62,7 +62,7 @@ def buf_t(x):
 
 
 class CassandraBackend(BaseBackend):
-    """Cassandra backend utilizing DataStax driver
+    """Cassandra backend utilizing DataStax driver.
 
     Raises:
         celery.exceptions.ImproperlyConfigured:
@@ -128,7 +128,7 @@ class CassandraBackend(BaseBackend):
         self._session = None
 
     def _get_connection(self, write=False):
-        """Prepare the connection for action
+        """Prepare the connection for action.
 
         Arguments:
             write (bool): are we a writer?
@@ -141,8 +141,8 @@ class CassandraBackend(BaseBackend):
                 auth_provider=self.auth_provider)
             self._session = self._connection.connect(self.keyspace)
 
-            # We are forced to do concatenation below, as formatting would
-            # blow up on superficial %s that will be processed by Cassandra
+            # We're forced to do concatenation below, as formatting would
+            # blow up on superficial %s that'll be processed by Cassandra
             self._write_stmt = cassandra.query.SimpleStatement(
                 Q_INSERT_RESULT.format(
                     table=self.table, expires=self.cqlexpires),
@@ -156,7 +156,7 @@ class CassandraBackend(BaseBackend):
 
             if write:
                 # Only possible writers "workers" are allowed to issue
-                # CREATE TABLE. This is to prevent conflicting situations
+                # CREATE TABLE.  This is to prevent conflicting situations
                 # where both task-creator and task-executor would issue it
                 # at the same time.
 

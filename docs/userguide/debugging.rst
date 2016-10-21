@@ -13,7 +13,7 @@ Basics
 ------
 
 :mod:`celery.contrib.rdb` is an extended version of :mod:`pdb` that
-enables remote debugging of processes that does not have terminal
+enables remote debugging of processes that doesn't have terminal
 access.
 
 Example usage:
@@ -44,7 +44,7 @@ By default the debugger will only be available from the local host,
 to enable access from the outside you have to set the environment
 variable :envvar:`CELERY_RDB_HOST`.
 
-When the worker encounters your break-point it will log the following
+When the worker encounters your break-point it'll log the following
 information:
 
 .. code-block:: text
@@ -56,7 +56,7 @@ information:
     [2011-01-18 14:25:44,119: WARNING/PoolWorker-1] Remote Debugger:6900:
         Waiting for client...
 
-If you telnet the port specified you will be presented
+If you telnet the port specified you'll be presented
 with a `pdb` shell:
 
 .. code-block:: console
@@ -72,7 +72,7 @@ Enter ``help`` to get a list of available commands,
 It may be a good idea to read the `Python Debugger Manual`_ if
 you have never used `pdb` before.
 
-To demonstrate, we will read the value of the ``result`` variable,
+To demonstrate, we'll read the value of the ``result`` variable,
 change it and continue execution of the task:
 
 .. code-block:: text

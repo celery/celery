@@ -4,7 +4,7 @@
  What's new in Celery 3.0 (Chiastic Slide)
 ===========================================
 
-Celery is a simple, flexible and reliable distributed system to
+Celery is a simple, flexible, and reliable distributed system to
 process vast amounts of messages, while providing operations with
 the tools required to maintain such a system.
 
@@ -21,7 +21,8 @@ While this version is backward compatible with previous versions
 it's important that you read the following section.
 
 If you use Celery in combination with Django you must also
-read the `django-celery changelog`_ and upgrade to `django-celery 3.0`_.
+read the `django-celery changelog`_ and upgrade
+to :pypi:`django-celery 3.0 <django-celery>`.
 
 This version is officially supported on CPython 2.5, 2.6, 2.7, 3.2 and 3.3,
 as well as PyPy and Jython.
@@ -31,10 +32,10 @@ Highlights
 
 .. topic:: Overview
 
-    - A new and improved API, that is both simpler and more powerful.
+    - A new and improved API, that's both simpler and more powerful.
 
         Everyone must read the new :ref:`first-steps` tutorial,
-        and the new :ref:`next-steps` tutorial.  Oh, and
+        and the new :ref:`next-steps` tutorial. Oh, and
         why not reread the user guide while you're at it :)
 
         There are no current plans to deprecate the old API,
@@ -75,7 +76,6 @@ Highlights
 .. _`website`: http://celeryproject.org/
 .. _`django-celery changelog`:
     https://github.com/celery/django-celery/tree/master/Changelog
-.. _`django-celery 3.0`: http://pypi.python.org/pypi/django-celery/
 
 .. contents::
     :local:
@@ -119,7 +119,7 @@ Hopefully this can be extended to include additional broker transports
 in the future.
 
 For increased reliability the :setting:`CELERY_FORCE_EXECV` setting is enabled
-by default if the event-loop is not used.
+by default if the event-loop isn't used.
 
 New ``celery`` umbrella command
 -------------------------------
@@ -142,10 +142,10 @@ Commands include:
 - ``celery amqp``    (previously ``camqadm``).
 
 The old programs are still available (``celeryd``, ``celerybeat``, etc),
-but you are discouraged from using them.
+but you're discouraged from using them.
 
-Now depends on :pypi:`billiard`.
---------------------------------
+Now depends on :pypi:`billiard`
+-------------------------------
 
 Billiard is a fork of the multiprocessing containing
 the no-execv patch by ``sbt`` (http://bugs.python.org/issue8713),
@@ -167,7 +167,7 @@ The :mod:`celery.app.task` module is now a module instead of a package.
 
 The :file:`setup.py` install script will try to remove the old package,
 but if that doesn't work for some reason you have to remove
-it manually.  This command helps:
+it manually. This command helps:
 
 .. code-block:: console
 
@@ -186,14 +186,14 @@ With several other distributions taking the step to discontinue
 Python 2.5 support, we feel that it is time too.
 
 Python 2.6 should be widely available at this point, and we urge
-you to upgrade, but if that is not possible you still have the option
+you to upgrade, but if that's not possible you still have the option
 to continue using the Celery 3.0, and important bug fixes
 introduced in Celery 3.1 will be back-ported to Celery 3.0 upon request.
 
 UTC timezone is now used
 ------------------------
 
-This means that ETA/countdown in messages are not compatible with Celery
+This means that ETA/countdown in messages aren't compatible with Celery
 versions prior to 2.5.
 
 You can disable UTC and revert back to old local time by setting
@@ -205,7 +205,7 @@ Redis: Ack emulation improvements
     Reducing the possibility of data loss.
 
     Acks are now implemented by storing a copy of the message when the message
-    is consumed.  The copy is not removed until the consumer acknowledges
+    is consumed. The copy isn't removed until the consumer acknowledges
     or rejects it.
 
     This means that unacknowledged messages will be redelivered either
@@ -214,7 +214,7 @@ Redis: Ack emulation improvements
     - Visibility timeout
 
         This is a timeout for acks, so that if the consumer
-        does not ack the message within this time limit, the message
+        doesn't ack the message within this time limit, the message
         is redelivered to another consumer.
 
         The timeout is set to one hour by default, but
@@ -225,14 +225,14 @@ Redis: Ack emulation improvements
 
     .. note::
 
-        Messages that have not been acked will be redelivered
+        Messages that haven't been acked will be redelivered
         if the visibility timeout is exceeded, for Celery users
         this means that ETA/countdown tasks that are scheduled to execute
         with a time that exceeds the visibility timeout will be executed
-        twice (or more).  If you plan on using long ETA/countdowns you
+        twice (or more). If you plan on using long ETA/countdowns you
         should tweak the visibility timeout accordingly.
 
-    Setting a long timeout means that it will take a long time
+    Setting a long timeout means that it'll take a long time
     for messages to be redelivered in the event of a power failure,
     but if so happens you could temporarily set the visibility timeout lower
     to flush out messages when you start up the systems again.
@@ -259,9 +259,9 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
     - ``errbacks``
 
         Applied if an error occurred while executing the task,
-        with the uuid of the task as an argument.  Since it may not be possible
+        with the uuid of the task as an argument. Since it may not be possible
         to serialize the exception instance, it passes the uuid of the task
-        instead.  The uuid can then be used to retrieve the exception and
+        instead. The uuid can then be used to retrieve the exception and
         traceback of the task from the result backend.
 
     - ``link`` and ``link_error`` keyword arguments has been added
@@ -289,12 +289,12 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
             yielding `(parent, node)` tuples.
 
             Raises IncompleteStream if any of the dependencies
-            has not returned yet.
+            hasn't returned yet.
 
        - AsyncResult.graph
 
             A :class:`~celery.utils.graph.DependencyGraph` of the tasks
-            dependencies.  With this you can also convert to dot format:
+            dependencies. With this you can also convert to dot format:
 
             .. code-block:: python
 
@@ -326,7 +326,7 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 - Adds :meth:`AsyncResult.get_leaf`
 
     Waits and returns the result of the leaf subtask.
-    That is the last node found when traversing the graph,
+    That's the last node found when traversing the graph,
     but this means that the graph can be 1-dimensional only (in effect
     a list).
 
@@ -338,8 +338,8 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
     Returns a flattened list of all dependencies (recursively)
 
-Redis: Priority support.
-------------------------
+Redis: Priority support
+-----------------------
 
 The message's ``priority`` field is now respected by the Redis
 transport by having multiple lists for each named queue.
@@ -359,24 +359,24 @@ transport option, which must be a list of numbers in **sorted order**:
     ...     'priority_steps': [0, 2, 4, 6, 8, 9],
     ... }
 
-Priorities implemented in this way is not as reliable as
+Priorities implemented in this way isn't as reliable as
 priorities on the server side, which is why
 the feature is nicknamed "quasi-priorities";
 **Using routing is still the suggested way of ensuring
 quality of service**, as client implemented priorities
-fall short in a number of ways, e.g. if the worker
+fall short in a number of ways, for example if the worker
 is busy with long running tasks, has prefetched many messages,
 or the queues are congested.
 
 Still, it is possible that using priorities in combination
 with routing can be more beneficial than using routing
-or priorities alone.  Experimentation and monitoring
+or priorities alone. Experimentation and monitoring
 should be used to prove this.
 
 Contributed by Germán M. Bravo.
 
-Redis: Now cycles queues so that consuming is fair.
----------------------------------------------------
+Redis: Now cycles queues so that consuming is fair
+--------------------------------------------------
 
 This ensures that a very busy queue won't block messages
 from other queues, and ensures that all queues have
@@ -464,13 +464,13 @@ accidentally changed while switching to using blocking pop.
 New remote control commands
 ---------------------------
 
-These commands were previously experimental, but they have proven
+These commands were previously experimental, but they've proven
 stable and is now documented as part of the official API.
 
 - :control:`add_consumer`/:control:`cancel_consumer`
 
     Tells workers to consume from a new queue, or cancel consuming from a
-    queue.  This command has also been changed so that the worker remembers
+    queue. This command has also been changed so that the worker remembers
     the queues added, so that the change will persist even if
     the connection is re-connected.
 
@@ -496,12 +496,12 @@ stable and is now documented as part of the official API.
         Remember that a control command without *destination* will be
         sent to **all workers**.
 
-- ``autoscale``
+- :control:`autoscale`
 
     Tells workers with ``--autoscale`` enabled to change autoscale
     max/min concurrency settings.
 
-    This command is available programmatically as ``control.autoscale``:
+    This command is available programmatically as :meth:`@control.autoscale`:
 
     .. code-block:: pycon
 
@@ -547,13 +547,13 @@ Immutable subtasks
 ------------------
 
 ``subtask``'s can now be immutable, which means that the arguments
-will not be modified when calling callbacks:
+won't be modified when calling callbacks:
 
 .. code-block:: pycon
 
     >>> chain(add.s(2, 2), clear_static_electricity.si())
 
-means it will not receive the argument of the parent task,
+means it'll not receive the argument of the parent task,
 and ``.si()`` is a shortcut to:
 
 .. code-block:: pycon
@@ -570,15 +570,15 @@ Logging support now conforms better with best practices.
   level, and adds a NullHandler.
 
 - Loggers are no longer passed around, instead every module using logging
-  defines a module global logger that is used throughout.
+  defines a module global logger that's used throughout.
 
 - All loggers inherit from a common logger called "celery".
 
 - Before ``task.get_logger`` would setup a new logger for every task,
-  and even set the log level.  This is no longer the case.
+  and even set the log level. This is no longer the case.
 
     - Instead all task loggers now inherit from a common "celery.task" logger
-      that is set up when programs call `setup_logging_subsystem`.
+      that's set up when programs call `setup_logging_subsystem`.
 
     - Instead of using LoggerAdapter to augment the formatter with
       the task_id and task_name field, the task base logger now use
@@ -635,8 +635,8 @@ by setting the ``shared`` argument to the ``@task`` decorator:
         return x + y
 
 
-Abstract tasks are now lazily bound.
-------------------------------------
+Abstract tasks are now lazily bound
+-----------------------------------
 
 The :class:`~celery.task.Task` class is no longer bound to an app
 by default, it will first be bound (and configured) when
@@ -675,7 +675,7 @@ The ``@task`` decorator is now lazy when used with custom apps.
 
 That is, if ``accept_magic_kwargs`` is enabled (her by called "compat mode"), the task
 decorator executes inline like before, however for custom apps the @task
-decorator now returns a special PromiseProxy object that is only evaluated
+decorator now returns a special PromiseProxy object that's only evaluated
 on access.
 
 All promises will be evaluated when :meth:`@finalize` is called, or implicitly
@@ -694,7 +694,7 @@ The :option:`--app <celery --app>` option now 'auto-detects'
       to import a sub module named celery',
       and get the celery attribute from that module.
 
-E.g. if you have a project named ``proj`` where the
+For example, if you have a project named ``proj`` where the
 celery app is located in ``from proj.celery import app``,
 then the following will be equivalent:
 
@@ -709,7 +709,7 @@ In Other News
 
 - New :setting:`CELERYD_WORKER_LOST_WAIT` to control the timeout in
   seconds before :exc:`billiard.WorkerLostError` is raised
-  when a worker can not be signaled (Issue #595).
+  when a worker can't be signaled (Issue #595).
 
     Contributed by Brendon Crawford.
 
@@ -718,7 +718,7 @@ In Other News
 - App instance factory methods have been converted to be cached
   descriptors that creates a new subclass on access.
 
-    This means that e.g. ``app.Worker`` is an actual class
+    For example, this means that ``app.Worker`` is an actual class
     and will work as expected when:
 
     .. code-block:: python
@@ -739,7 +739,7 @@ In Other News
 
 - Result backends can now be set using a URL
 
-    Currently only supported by redis.  Example use:
+    Currently only supported by redis. Example use:
 
     .. code-block:: python
 
@@ -760,7 +760,7 @@ In Other News
 
 - Annotations now supports decorators if the key starts with '@'.
 
-    E.g.:
+    For example:
 
     .. code-block:: python
 
@@ -829,8 +829,8 @@ In Other News
 
 - ``group.skew(start=, stop=, step=)``
 
-    Skew will skew the countdown for the individual tasks in a group,
-    e.g. with a group:
+    Skew will skew the countdown for the individual tasks in a group -- for
+    example with this group:
 
     .. code-block:: pycon
 
@@ -876,7 +876,7 @@ In Other News
 
 - Now uses :func:`~kombu.common.maybe_declare` to cache queue declarations.
 
-- There is no longer a global default for the
+- There's no longer a global default for the
   :setting:`CELERYBEAT_MAX_LOOP_INTERVAL` setting, it is instead
   set by individual schedulers.
 
@@ -904,7 +904,7 @@ In Other News
 
 - New signal: :signal:`task_revoked`
 
-- :mod:`celery.contrib.migrate`: Many improvements including
+- :mod:`celery.contrib.migrate`: Many improvements, including;
   filtering, queue migration, and support for acking messages on the broker
   migrating from.
 
@@ -1012,7 +1012,7 @@ See the :ref:`deprecation-timeline`.
     - ``control.inspect.enable_events`` -> :meth:`@control.enable_events`.
     - ``control.inspect.disable_events`` -> :meth:`@control.disable_events`.
 
-    This way ``inspect()`` is only used for commands that do not
+    This way ``inspect()`` is only used for commands that don't
     modify anything, while idempotent control commands that make changes
     are on the control objects.
 
@@ -1022,11 +1022,11 @@ Fixes
 - Retry SQLAlchemy backend operations on DatabaseError/OperationalError
   (Issue #634)
 
-- Tasks that called ``retry`` was not acknowledged if acks late was enabled
+- Tasks that called ``retry`` wasn't acknowledged if acks late was enabled
 
     Fix contributed by David Markey.
 
-- The message priority argument was not properly propagated to Kombu
+- The message priority argument wasn't properly propagated to Kombu
   (Issue #708).
 
     Fix contributed by Eran Rundstein

@@ -20,9 +20,8 @@
 #
 #
 # To implement separate init-scripts, copy this script and give it a different
-# name:
-# I.e., if my new application, "little-worker" needs an init, I
-# should just use:
+# name.  That is, if your new application named "little-worker" needs an init,
+# you should use:
 #
 #   cp /etc/init.d/celeryd /etc/init.d/little-worker
 #
@@ -43,7 +42,7 @@ origin_is_runlevel_dir () {
     echo $?
 }
 
-# Can be a runlevel symlink (e.g. S02celeryd)
+# Can be a runlevel symlink (e.g., S02celeryd)
 if [ $(origin_is_runlevel_dir) -eq 0 ]; then
     SCRIPT_FILE=$(readlink "$0")
 else
@@ -77,7 +76,7 @@ _config_sanity() {
         echo "Error: Config script '$path' must be owned by root!"
         echo
         echo "Resolution:"
-        echo "Review the file carefully and make sure it has not been "
+        echo "Review the file carefully, and make sure it hasn't been "
         echo "modified with mailicious intent.  When sure the "
         echo "script is safe to execute with superuser privileges "
         echo "you can change ownership of the script:"
@@ -89,7 +88,7 @@ _config_sanity() {
         echo "Error: Config script '$path' cannot be writable by others!"
         echo
         echo "Resolution:"
-        echo "Review the file carefully and make sure it has not been "
+        echo "Review the file carefully, and make sure it hasn't been "
         echo "modified with malicious intent.  When sure the "
         echo "script is safe to execute with superuser privileges "
         echo "you can change the scripts permissions:"
@@ -100,7 +99,7 @@ _config_sanity() {
         echo "Error: Config script '$path' cannot be writable by group!"
         echo
         echo "Resolution:"
-        echo "Review the file carefully and make sure it has not been "
+        echo "Review the file carefully, and make sure it hasn't been "
         echo "modified with malicious intent.  When sure the "
         echo "script is safe to execute with superuser privileges "
         echo "you can change the scripts permissions:"

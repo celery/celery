@@ -6,4 +6,4 @@ __all__ = ['AppLoader']
 
 
 class AppLoader(BaseLoader):
-    pass
+    """Default loader used when an app is specified."""

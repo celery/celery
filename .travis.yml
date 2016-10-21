@@ -1,5 +1,5 @@
 language: python
-sudo: false
+sudo: required
 cache: false
 python:
     - '3.5'
@@ -9,15 +9,22 @@ env:
   global:
     PYTHONUNBUFFERED=yes
   matrix:
-    - TOXENV=2.7
-    - TOXENV=3.4
-    - TOXENV=3.5
-    - TOXENV=pypy PYPY_VERSION="5.3"
-    - TOXENV=pypy3
+    - TOXENV=2.7-unit
+    - TOXENV=2.7-integration
+    - TOXENV=3.4-unit
+    - TOXENV=3.4-integration
+    - TOXENV=3.5-unit
+    - TOXENV=3.5-integration
+    - TOXENV=pypy-unit PYPY_VERSION="5.3"
+    - TOXENV=pypy-integration PYPY_VERSION="5.3"
+    - TOXENV=pypy3-unit
+    - TOXENV=pypy3-integration
     - TOXENV=flake8
     - TOXENV=flakeplus
     - TOXENV=apicheck
     - TOXENV=configcheck
+    - TOXENV=pydocstyle
+    - TOXENV=cov
 before_install:
     - |
           if [ "$TOXENV" = "pypy" ]; then
@@ -33,12 +40,12 @@ before_install:
           fi
 install: travis_retry pip install -U tox
 script: tox -v -- -v
-after_success:
-  - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml
-  - .tox/$TRAVIS_PYTHON_VERSION/bin/codecov -e TOXENV
 notifications:
   irc:
     channels:
       - "chat.freenode.net#celery"
     on_success: change
     on_failure: change
+services:
+    - rabbitmq
+    - redis

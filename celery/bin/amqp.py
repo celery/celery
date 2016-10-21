@@ -3,7 +3,7 @@
 
 .. program:: celery amqp
 """
-import cmd
+import cmd as _cmd
 import sys
 import shlex
 import pprint
@@ -70,8 +70,7 @@ class Spec:
     def str_args_to_python(self, arglist):
         """Process list of string arguments to values according to spec.
 
-        e.g::
-
+        Example:
             >>> spec = Spec([('queue', str), ('if_unused', bool)])
             >>> spec.str_args_to_python('pobox', 'true')
             ('pobox', True)
@@ -109,7 +108,7 @@ def format_declare_queue(ret):
     return 'ok. queue:{0} messages:{1} consumers:{2}.'.format(*ret)
 
 
-class AMQShell(cmd.Cmd):
+class AMQShell(_cmd.Cmd):
     """AMQP API Shell.
 
     Arguments:
@@ -118,10 +117,11 @@ class AMQShell(cmd.Cmd):
         silent (bool): If enabled, the commands won't have annoying
             output not relevant when running in non-shell mode.
     """
+
     conn = None
     chan = None
     prompt_fmt = '{self.counter}> '
-    identchars = cmd.IDENTCHARS = '.'
+    identchars = _cmd.IDENTCHARS = '.'
     needs_reconnect = False
     counter = 1
     inc_counter = count(2)
@@ -183,11 +183,11 @@ class AMQShell(cmd.Cmd):
         self.connect = kwargs.pop('connect')
         self.silent = kwargs.pop('silent', False)
         self.out = kwargs.pop('out', sys.stderr)
-        cmd.Cmd.__init__(self, *args, **kwargs)
+        _cmd.Cmd.__init__(self, *args, **kwargs)
         self._reconnect()
 
     def note(self, m):
-        """Say something to the user. Disabled if :attr:`silent`."""
+        """Say something to the user.  Disabled if :attr:`silent`."""
         if not self.silent:
             say(m, file=self.out)
 
@@ -195,7 +195,9 @@ class AMQShell(cmd.Cmd):
         say(m, file=self.out)
 
     def get_amqp_api_command(self, cmd, arglist):
-        """With a command name and a list of arguments, convert the arguments
+        """Get AMQP command wrapper.
+
+        With a command name and a list of arguments, convert the arguments
         to Python values and find the corresponding method on the AMQP channel
         object.
 
@@ -279,7 +281,7 @@ class AMQShell(cmd.Cmd):
             self.respond(self.dispatch(cmd, arg))
         except (AttributeError, KeyError) as exc:
             self.default(line)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             self.say(exc)
             self.needs_reconnect = True
 
@@ -331,7 +333,6 @@ class AMQPAdmin:
             return shell.cmdloop()
         except KeyboardInterrupt:
             self.note('(bibi)')
-            pass
 
     def note(self, m):
         if not self.silent:

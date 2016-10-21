@@ -42,7 +42,7 @@ Definition
         # optional
         'meth': string method_name,
         'shadow': string alias_name,
-        'eta':  iso8601 eta,
+        'eta':  iso8601 ETA,
         'expires'; iso8601 expires,
         'retries': int retries,
         'timelimit': (soft, hard),
@@ -108,7 +108,7 @@ Changes from version 1
 
     This means that workers/intermediates can inspect the message
     and make decisions based on the headers without decoding
-    the payload (which may be language specific, e.g. serialized by the
+    the payload (that may be language specific, for example serialized by the
     Python specific pickle serializer).
 
 - Always UTC
@@ -129,7 +129,7 @@ Changes from version 1
 
 - Dispatches to actor based on ``task``, ``meth`` headers
 
-    ``meth`` is unused by python, but may be used in the future
+    ``meth`` is unused by Python, but may be used in the future
     to specify class+method pairs.
 
 - Chain gains a dedicated field.
@@ -154,7 +154,8 @@ Changes from version 1
 - ``root_id`` and ``parent_id`` fields helps keep track of work-flows.
 
 - ``shadow`` lets you specify a different name for logs, monitors
-  can be used for e.g. meta tasks that calls any function:
+  can be used for concepts like tasks that calls a function
+  specified as argument:
 
     .. code-block:: python
 
@@ -182,8 +183,8 @@ Changes from version 1
 Version 1
 ---------
 
-In version 1 of the protocol all fields are stored in the message body,
-which means workers and intermediate consumers must deserialize the payload
+In version 1 of the protocol all fields are stored in the message body:
+meaning workers and intermediate consumers must deserialize the payload
 to read the fields.
 
 Message body
@@ -220,7 +221,7 @@ Message body
     :`string` (ISO 8601):
 
     Estimated time of arrival. This is the date and time in ISO 8601
-    format. If not provided the message is not scheduled, but will be
+    format. If not provided the message isn't scheduled, but will be
     executed asap.
 
 * ``expires``
@@ -243,7 +244,7 @@ Message body
 
     .. versionadded:: 2.3
 
-    Signifies that this task is one of the header parts of a chord.  The value
+    Signifies that this task is one of the header parts of a chord. The value
     of this key is the body of the cord that should be executed when all of
     the tasks in the header has returned.
 
@@ -334,8 +335,8 @@ Standard body fields
 
 - *string* ``type``
 
-    The type of event.  This is a string containing the *category* and
-    *action* separated by a dash delimiter (e.g. ``task-succeeded``).
+    The type of event. This is a string containing the *category* and
+    *action* separated by a dash delimiter (e.g., ``task-succeeded``).
 
 - *string* ``hostname``
 
@@ -352,8 +353,8 @@ Standard body fields
 - *signed short* ``utcoffset``
 
     This field describes the timezone of the originating host, and is
-    specified as the number of hours ahead of/behind UTC.  E.g. ``-2`` or
-    ``+1``.
+    specified as the number of hours ahead of/behind UTC (e.g., -2 or
+    +1).
 
 - *unsigned long long* ``pid``
 

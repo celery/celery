@@ -15,7 +15,7 @@ from time import sleep
 from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.async.semaphore import DummyLock
-from kombu.syn import _detect_environment
+from kombu.utils.compat import _detect_environment
 from kombu.utils.encoding import safe_repr, bytes_t
 from kombu.utils.limits import TokenBucket
 from vine import ppartial, promise
@@ -24,13 +24,12 @@ from celery import bootsteps
 from celery import signals
 from celery.app.trace import build_tracer
 from celery.exceptions import InvalidTaskError, NotRegistered
-from celery.five import buffer_t
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import Bunch
 from celery.utils.text import truncate
-from celery.utils.timeutils import humanize_seconds, rate
+from celery.utils.time import humanize_seconds, rate
 
 from celery.worker import loops
 from celery.worker.state import (
@@ -63,7 +62,7 @@ Will retry using next failover.\
 """
 
 UNKNOWN_FORMAT = """\
-Received and deleted unknown message. Wrong destination?!?
+Received and deleted unknown message.  Wrong destination?!?
 
 The full contents of the message body was: %s
 """
@@ -74,8 +73,11 @@ Received unregistered task of type %s.
 The message has been ignored and discarded.
 
 Did you remember to import the module containing this task?
-Or maybe you are using relative imports?
-Please see http://bit.ly/gLye1c for more information.
+Or maybe you're using relative imports?
+
+Please see
+http://docs.celeryq.org/en/latest/internals/protocol.html
+for more information.
 
 The full contents of the message body was:
 %s
@@ -87,7 +89,8 @@ Received invalid task message: %s
 The message has been ignored and discarded.
 
 Please ensure your message conforms to the task
-message protocol as described here: http://bit.ly/hYj41y
+message protocol as described here:
+http://docs.celeryq.org/en/latest/internals/protocol.html
 
 The full contents of the message body was:
 %s
@@ -107,15 +110,15 @@ body: {0}
 
 
 def dump_body(m, body):
+    """Format message body for debugging purposes."""
     # v2 protocol does not deserialize body
     body = m.body if body is None else body
-    if isinstance(body, buffer_t):
-        body = bytes_t(body)
     return '{0} ({1}b)'.format(
         truncate(safe_repr(body), 1024), len(m.body))
 
 
 class Consumer:
+    """Consumer blueprint."""
 
     Strategies = dict
 
@@ -133,6 +136,8 @@ class Consumer:
     restart_count = -1  # first start is the same as a restart
 
     class Blueprint(bootsteps.Blueprint):
+        """Consumer blueprint."""
+
         name = 'Consumer'
         default_steps = [
             'celery.worker.consumer.connection:Connection',
@@ -203,7 +208,8 @@ class Consumer:
 
         self.steps = []
         self.blueprint = self.Blueprint(
-            app=self.app, on_close=self.on_close,
+            steps=self.app.steps['consumer'],
+            on_close=self.on_close,
         )
         self.blueprint.apply(self, **dict(worker_options or {}, **kwargs))
 
@@ -219,8 +225,8 @@ class Consumer:
             while self._pending_operations:
                 try:
                     self._pending_operations.pop()()
-                except Exception as exc:
-                    error('Pending callback raised: %r', exc, exc_info=1)
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.exception('Pending callback raised: %r', exc)
 
     def bucket_for_task(self, type):
         limit = rate(getattr(type, 'rate_limit', None))
@@ -239,9 +245,8 @@ class Consumer:
 
         Note:
             Currently pool grow operations will end up with an offset
-            of +1 if the initial size of the pool was 0 (which could
-            be the case with old deprecated autoscale option, may consider
-            removing this now that it's no longer supported).
+            of +1 if the initial size of the pool was 0 (e.g.
+            :option:`--autoscale=1,0 <celery worker --autoscale>`).
         """
         num_processes = self.pool.num_processes
         if not self.initial_prefetch_count or not num_processes:
@@ -329,7 +334,7 @@ class Consumer:
         warn(CONNECTION_RETRY, exc_info=True)
         try:
             self.connection.collect()
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             pass
 
     def register_with_event_loop(self, hub):
@@ -355,8 +360,7 @@ class Consumer:
                 self.app.clock, self.amqheartbeat_rate)
 
     def on_decode_error(self, message, exc):
-        """Callback called if an error occurs while decoding
-        a message received.
+        """Callback called if an error occurs while decoding a message.
 
         Simply logs the error and acknowledges the message so it
         doesn't enter a loop.
@@ -453,8 +457,7 @@ class Consumer:
         self.task_consumer.cancel_by_queue(queue)
 
     def apply_eta_task(self, task):
-        """Method called by the timer to apply a task with an
-        ETA/countdown."""
+        """Method called by the timer to apply a task with an ETA/countdown."""
         task_reserved(task)
         self.on_task_request(task)
         self.qos.decrement_eventually()
@@ -477,7 +480,8 @@ class Consumer:
             id_, name = message.headers['id'], message.headers['task']
             root_id = message.headers.get('root_id')
         except KeyError:  # proto1
-            id_, name = body['id'], body['task']
+            payload = message.payload
+            id_, name = payload['id'], payload['task']
             root_id = None
         request = Bunch(
             name=name, chord=None, root_id=root_id,
@@ -529,7 +533,7 @@ class Consumer:
             except KeyError:
                 try:
                     payload = message.decode()
-                except Exception as exc:
+                except Exception as exc:  # pylint: disable=broad-except
                     return self.on_decode_error(message, exc)
                 try:
                     type_, payload = payload['task'], payload  # protocol v1
@@ -551,19 +555,25 @@ class Consumer:
                     return on_invalid_task(payload, message, exc)
                 except MemoryError:
                     raise
-                except Exception as exc:
+                except Exception as exc:  # pylint: disable=broad-except
                     # XXX handle as internal error?
                     return on_invalid_task(payload, message, exc)
 
         return on_task_received
 
     def __repr__(self):
+        """``repr(self)``."""
         return '<Consumer: {self.hostname} ({state})>'.format(
             self=self, state=self.blueprint.human_state(),
         )
 
 
 class Evloop(bootsteps.StartStopStep):
+    """Event loop service.
+
+    Note:
+        This is always started last.
+    """
 
     label = 'event loop'
     last = True

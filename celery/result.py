@@ -48,7 +48,7 @@ def allow_join_result():
 
 
 class ResultBase:
-    """Base class for all results"""
+    """Base class for results."""
 
     #: Parent result (if part of a chain)
     parent = None
@@ -63,6 +63,7 @@ class AsyncResult(ResultBase):
         id (str): See :attr:`id`.
         backend (Backend): See :attr:`backend`.
     """
+
     app = None
 
     #: Error raised for timeouts.
@@ -84,7 +85,7 @@ class AsyncResult(ResultBase):
         self.id = id
         self.backend = backend or self.app.backend
         self.parent = parent
-        self.on_ready = promise(self._on_fulfilled)
+        self.on_ready = promise(self._on_fulfilled, weak=True)
         self._cache = None
 
     def then(self, callback, on_error=None, weak=False):
@@ -127,8 +128,8 @@ class AsyncResult(ResultBase):
                                 reply=wait, timeout=timeout)
 
     def get(self, timeout=None, propagate=True, interval=0.5,
-            no_ack=True, follow_parents=True, callback=None, on_interval=None,
-            EXCEPTION_STATES=states.EXCEPTION_STATES,
+            no_ack=True, follow_parents=True, callback=None, on_message=None,
+            on_interval=None, EXCEPTION_STATES=states.EXCEPTION_STATES,
             PROPAGATE_STATES=states.PROPAGATE_STATES):
         """Wait until task is ready, and return its result.
 
@@ -142,7 +143,7 @@ class AsyncResult(ResultBase):
             propagate (bool): Re-raise exception if the task failed.
             interval (float): Time to wait (in seconds) before retrying to
                 retrieve the result.  Note that this does not have any effect
-                when using the RPC/redis result store backends, as they do not
+                when using the RPC/redis result store backends, as they don't
                 use polling.
             no_ack (bool): Enable amqp no ack (automatically acknowledge
                 message).  If this is :const:`False` then the message will
@@ -151,7 +152,7 @@ class AsyncResult(ResultBase):
                 parent tasks.
 
         Raises:
-            celery.exceptions.TimeoutError: if `timeout` is not
+            celery.exceptions.TimeoutError: if `timeout` isn't
                 :const:`None` and the result does not arrive within
                 `timeout` seconds.
             Exception: If the remote call raised an exception then that
@@ -160,7 +161,7 @@ class AsyncResult(ResultBase):
         assert_will_not_block()
         _on_interval = promise()
         if follow_parents and propagate and self.parent:
-            on_interval = promise(self._maybe_reraise_parent_error)
+            on_interval = promise(self._maybe_reraise_parent_error, weak=True)
             self._maybe_reraise_parent_error()
         if on_interval:
             _on_interval.then(on_interval)
@@ -178,6 +179,7 @@ class AsyncResult(ResultBase):
             no_ack=no_ack,
             propagate=propagate,
             callback=callback,
+            on_message=on_message,
         )
 
     def _maybe_reraise_parent_error(self):
@@ -191,7 +193,9 @@ class AsyncResult(ResultBase):
             node = node.parent
 
     def collect(self, intermediate=False, **kwargs):
-        """Iterator, like :meth:`get` will wait for the task to complete,
+        """Collect results as they return.
+
+        Iterator, like :meth:`get` will wait for the task to complete,
         but will also follow :class:`AsyncResult` and :class:`ResultSet`
         returned by the task, yielding ``(result, value)`` tuples for each
         result in the tree.
@@ -256,7 +260,7 @@ class AsyncResult(ResultBase):
                     raise IncompleteStream()
 
     def ready(self):
-        """Returns :const:`True` if the task has been executed.
+        """Return :const:`True` if the task started executing.
 
         If the task is still running, pending, or is waiting
         for retry then :const:`False` is returned.
@@ -264,11 +268,11 @@ class AsyncResult(ResultBase):
         return self.state in self.backend.READY_STATES
 
     def successful(self):
-        """Returns :const:`True` if the task executed successfully."""
+        """Return :const:`True` if the task executed successfully."""
         return self.state == states.SUCCESS
 
     def failed(self):
-        """Returns :const:`True` if the task failed."""
+        """Return :const:`True` if the task failed."""
         return self.state == states.FAILURE
 
     def throw(self, *args, **kwargs):
@@ -283,6 +287,7 @@ class AsyncResult(ResultBase):
         if callback is not None:
             callback(self.id, value)
         return value
+    maybe_reraise = maybe_throw   # XXX compat alias
 
     def _to_remote_traceback(self, tb):
         if tb and tblib is not None and self.app.conf.task_remote_tracebacks:
@@ -299,11 +304,11 @@ class AsyncResult(ResultBase):
         return graph
 
     def __str__(self):
-        """`str(self) -> self.id`"""
+        """`str(self) -> self.id`."""
         return str(self.id)
 
     def __hash__(self):
-        """`hash(self) -> hash(self.id)`"""
+        """`hash(self) -> hash(self.id)`."""
         return hash(self.id)
 
     def __repr__(self):
@@ -371,9 +376,13 @@ class AsyncResult(ResultBase):
 
     @property
     def result(self):
-        """When the task has been executed, this contains the return value.
-        If the task raised an exception, this will be the exception
-        instance."""
+        """Task return value.
+
+        Note:
+            When the task has been executed, this contains the return value.
+            If the task raised an exception, this will be the exception
+            instance.
+        """
         return self._get_task_meta()['result']
     info = result
 
@@ -408,7 +417,7 @@ class AsyncResult(ResultBase):
 
             *SUCCESS*
 
-                The task executed successfully. The :attr:`result` attribute
+                The task executed successfully.  The :attr:`result` attribute
                 then contains the tasks return value.
         """
         return self._get_task_meta()['status']
@@ -417,11 +426,12 @@ class AsyncResult(ResultBase):
 @Thenable.register
 @AbstractResult.register
 class ResultSet(ResultBase):
-    """Working with more than one result.
+    """A collection of results.
 
     Arguments:
         results (Sequence[AsyncResult]): List of result instances.
     """
+
     _app = None
 
     #: List of results in in the set.
@@ -434,7 +444,7 @@ class ResultSet(ResultBase):
         self.on_ready = promise(args=(self,))
         self._on_full = ready_barrier or barrier(results)
         if self._on_full:
-            self._on_full.then(promise(self.on_ready))
+            self._on_full.then(promise(self.on_ready, weak=True))
 
     def add(self, result):
         """Add :class:`AsyncResult` as a new member of the set.
@@ -456,7 +466,7 @@ class ResultSet(ResultBase):
         """Remove result from the set; it must be a member.
 
         Raises:
-            KeyError: if the result is not a member.
+            KeyError: if the result isn't a member.
         """
         if isinstance(result, str):
             result = self.app.AsyncResult(result)
@@ -466,16 +476,17 @@ class ResultSet(ResultBase):
             raise KeyError(result)
 
     def discard(self, result):
-        """Remove result from the set if it is a member,
-        or do nothing if it's not."""
+        """Remove result from the set if it is a member.
+
+        Does nothing if it's not a member.
+        """
         try:
             self.remove(result)
         except KeyError:
             pass
 
     def update(self, results):
-        """Update set with the union of itself and an iterable with
-        results."""
+        """Extend from iterable of results."""
         self.results.extend(r for r in results if r not in self.results)
 
     def clear(self):
@@ -483,16 +494,16 @@ class ResultSet(ResultBase):
         self.results[:] = []  # don't create new list.
 
     def successful(self):
-        """Was all of the tasks successful?
+        """Return true if all tasks successful.
 
         Returns:
             bool: true if all of the tasks finished
-                successfully (i.e. did not raise an exception).
+                successfully (i.e. didn't raise an exception).
         """
         return all(result.successful() for result in self.results)
 
     def failed(self):
-        """Did any of the tasks fail?
+        """Return true if any of the tasks failed.
 
         Returns:
             bool: true if one of the tasks failed.
@@ -503,9 +514,10 @@ class ResultSet(ResultBase):
     def maybe_throw(self, callback=None, propagate=True):
         for result in self.results:
             result.maybe_throw(callback=callback, propagate=propagate)
+    maybe_reraise = maybe_throw  # XXX compat alias.
 
     def waiting(self):
-        """Are any of the tasks incomplete?
+        """Return true if any of the tasks are incomplate.
 
         Returns:
             bool: true if one of the tasks are still
@@ -557,12 +569,12 @@ class ResultSet(ResultBase):
         return iter(self.results)
 
     def __getitem__(self, index):
-        """`res[i] -> res.results[i]`"""
+        """`res[i] -> res.results[i]`."""
         return self.results[index]
 
     def get(self, timeout=None, propagate=True, interval=0.5,
             callback=None, no_ack=True, on_message=None):
-        """See :meth:`join`
+        """See :meth:`join`.
 
         This is here for API compatibility with :class:`AsyncResult`,
         in addition it uses :meth:`join_native` if available for the
@@ -578,11 +590,11 @@ class ResultSet(ResultBase):
 
     def join(self, timeout=None, propagate=True, interval=0.5,
              callback=None, no_ack=True, on_message=None, on_interval=None):
-        """Gathers the results of all tasks as a list in order.
+        """Gather the results of all tasks as a list in order.
 
         Note:
             This can be an expensive operation for result store
-            backends that must resort to polling (e.g. database).
+            backends that must resort to polling (e.g., database).
 
             You should consider using :meth:`join_native` if your backend
             supports it.
@@ -605,7 +617,7 @@ class ResultSet(ResultBase):
                 No results will be returned by this function if a callback
                 is specified.  The order of results is also arbitrary when a
                 callback is used.  To get access to the result object for
-                a particular id you will have to generate an index first:
+                a particular id you'll have to generate an index first:
                 ``index = {r.id: r for r in gres.results.values()}``
                 Or you can create new result objects on the fly:
                 ``result = app.AsyncResult(task_id)`` (both will
@@ -615,7 +627,7 @@ class ResultSet(ResultBase):
                 *will not be acknowledged*).
 
         Raises:
-            celery.exceptions.TimeoutError: if ``timeout`` is not
+            celery.exceptions.TimeoutError: if ``timeout`` isn't
                 :const:`None` and the operation takes longer than ``timeout``
                 seconds.
         """
@@ -644,7 +656,7 @@ class ResultSet(ResultBase):
                 results.append(value)
         return results
 
-    def then(self, callback, on_error=None):
+    def then(self, callback, on_error=None, weak=False):
         return self.on_ready.then(callback, on_error)
 
     def iter_native(self, timeout=None, interval=0.5, no_ack=True,
@@ -812,10 +824,10 @@ class GroupResult(ResultSet):
         return self.results
 
     @classmethod
-    def restore(self, id, backend=None):
+    def restore(cls, id, backend=None):
         """Restore previously saved group result."""
         return (
-            backend or (self.app.backend if self.app else current_app.backend)
+            backend or (cls.app.backend if cls.app else current_app.backend)
         ).restore_group(id)
 
 
@@ -825,14 +837,16 @@ class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 
     def __init__(self, id, ret_value, state, traceback=None):
+        # pylint: disable=super-init-not-called
+        # XXX should really not be inheriting from AsyncResult
         self.id = id
         self._result = ret_value
         self._state = state
         self._traceback = traceback
-        self.on_ready = promise(args=(self,))
-        self.on_ready()
+        self.on_ready = promise()
+        self.on_ready(self)
 
-    def then(self, callback, on_error=None):
+    def then(self, callback, on_error=None, weak=False):
         return self.on_ready.then(callback, on_error)
 
     def _get_task_meta(self):
@@ -879,7 +893,7 @@ class EagerResult(AsyncResult):
 
     @property
     def result(self):
-        """The tasks return value"""
+        """The tasks return value."""
         return self._result
 
     @property
@@ -899,6 +913,7 @@ class EagerResult(AsyncResult):
 
 
 def result_from_tuple(r, app=None):
+    """Deserialize result from tuple."""
     # earlier backends may just pickle, so check if
     # result is already prepared.
     app = app_or_default(app)
@@ -909,7 +924,7 @@ def result_from_tuple(r, app=None):
             return app.GroupResult(
                 res, [result_from_tuple(child, app) for child in nodes],
             )
-        # previously did not include parent
+        # previously didn't include parent
         id, parent = res if isinstance(res, (list, tuple)) else (res, None)
         if parent:
             parent = result_from_tuple(parent, app)

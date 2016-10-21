@@ -8,7 +8,7 @@ def urlopen(url):
     print('Opening: {0}'.format(url))
     try:
         requests.get(url)
-    except Exception as exc:
+    except requests.exceptions.RequestException as exc:
         print('Exception for {0}: {1!r}'.format(url, exc))
         return url, 0
     print('Done with: {0}'.format(url))

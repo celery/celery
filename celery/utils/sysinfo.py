@@ -21,17 +21,23 @@ def _avg(f: float) -> float:
 
 if hasattr(os, 'getloadavg'):
 
-    def load_average() -> load_average_t:
+    def _load_average() -> load_average_t:
         min_1, min_5, min_15 = os.getloadavg()
         return load_average_t(_avg(min_1), _avg(min_5), _avg(min_15))
 
 else:  # pragma: no cover
     # Windows doesn't have getloadavg
-    def load_average() -> load_average_t:  # noqa
+    def _load_average() -> load_average_t:  # noqa
         return load_average_t(0.0, 0.0, 0.0)
 
 
+def load_average() -> load_average_t:
+    """Return system load average as a triple."""
+    return _load_average()
+
+
 class df:
+    """Disk information."""
 
     def __init__(self, path: str) -> None:
         self.path = path

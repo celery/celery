@@ -18,6 +18,7 @@ Broker Instructions
     :maxdepth: 1
 
     rabbitmq
+    redis
     sqs
 
 .. _broker-overview:
@@ -34,17 +35,19 @@ individual transport (see :ref:`broker_toc`).
 +---------------+--------------+----------------+--------------------+
 | *RabbitMQ*    | Stable       | Yes            | Yes                |
 +---------------+--------------+----------------+--------------------+
+| *Redis*       | Stable       | Yes            | Yes                |
++---------------+--------------+----------------+--------------------+
 | *Amazon SQS*  | Stable       | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 | *Zookeeper*   | Experimental | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 
-Experimental brokers may be functional but they do not have
+Experimental brokers may be functional but they don't have
 dedicated maintainers.
 
-Missing monitor support means that the transport does not
+Missing monitor support means that the transport doesn't
 implement events, and as such Flower, `celery events`, `celerymon`
-and other event-based monitoring tools will not work.
+and other event-based monitoring tools won't work.
 
 Remote control means the ability to inspect and manage workers
 at runtime using the `celery inspect` and `celery control` commands

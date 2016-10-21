@@ -10,16 +10,15 @@
 Introduction
 ============
 
-:program:`celery beat` is a scheduler.  It kicks off tasks at regular intervals,
-which are then executed by the worker nodes available in the cluster.
+:program:`celery beat` is a scheduler; It kicks off tasks at regular intervals,
+that are then executed by available worker nodes in the cluster.
 
 By default the entries are taken from the :setting:`beat_schedule` setting,
-but custom stores can also be used, like storing the entries
-in an SQL database.
+but custom stores can also be used, like storing the entries in a SQL database.
 
 You have to ensure only a single scheduler is running for a schedule
-at a time, otherwise you would end up with duplicate tasks.  Using
-a centralized approach means the schedule does not have to be synchronized,
+at a time, otherwise you'd end up with duplicate tasks. Using
+a centralized approach means the schedule doesn't have to be synchronized,
 and the service can operate without using locks.
 
 .. _beat-timezones:
@@ -40,13 +39,13 @@ An example time zone could be `Europe/London`:
 This setting must be added to your app, either by configuration it directly
 using (``app.conf.timezone = 'Europe/London'``), or by adding
 it to your configuration module if you have set one up using
-``app.config_from_object``.  See :ref:`celerytut-configuration` for
+``app.config_from_object``. See :ref:`celerytut-configuration` for
 more information about configuration options.
 
 The default scheduler (storing the schedule in the :file:`celerybeat-schedule`
 file) will automatically detect that the time zone has changed, and so will
-reset the schedule itself, but other schedulers may not be so smart (e.g. the
-Django database scheduler, see below) and in that case you will have to reset the
+reset the schedule itself, but other schedulers may not be so smart (e.g., the
+Django database scheduler, see below) and in that case you'll have to reset the
 schedule manually.
 
 .. admonition:: Django Users
@@ -58,7 +57,7 @@ schedule manually.
     will be used, or you can specify a custom time zone for Celery alone
     by using the :setting:`timezone` setting.
 
-    The database scheduler will not reset when timezone related settings
+    The database scheduler won't reset when timezone related settings
     change, so you must do this manually:
 
     .. code-block:: console
@@ -90,7 +89,7 @@ beat schedule list.
         # Calls test('world') every 30 seconds
         sender.add_periodic_task(30.0, test.s('world'), expires=10)
 
-        # Executes every Monday morning at 7:30 A.M
+        # Executes every Monday morning at 7:30 a.m.
         sender.add_periodic_task(
             crontab(hour=7, minute=30, day_of_week=1),
             test.s('Happy Mondays!'),
@@ -102,11 +101,11 @@ beat schedule list.
 
 
 Setting these up from within the :data:`~@on_after_configure` handler means
-that we will not evaluate the app at module level when using ``test.s()``.
+that we'll not evaluate the app at module level when using ``test.s()``.
 
 The :meth:`~@add_periodic_task` function will add the entry to the
-:setting:`beat_schedule` setting behind the scenes, which also
-can be used to set up periodic tasks manually:
+:setting:`beat_schedule` setting behind the scenes, and the same setting
+can also can be used to set up periodic tasks manually:
 
 Example: Run the `tasks.add` task every 30 seconds.
 
@@ -124,13 +123,13 @@ Example: Run the `tasks.add` task every 30 seconds.
 
 .. note::
 
-    If you are wondering where these settings should go then
-    please see :ref:`celerytut-configuration`.  You can either
+    If you're wondering where these settings should go then
+    please see :ref:`celerytut-configuration`. You can either
     set these options on your app directly or you can keep
     a separate module for configuration.
 
     If you want to use a single item tuple for `args`, don't forget
-    that the constructor is a comma and not a pair of parentheses.
+    that the constructor is a comma, and not a pair of parentheses.
 
 Using a :class:`~datetime.timedelta` for the schedule means the task will
 be sent in 30 second intervals (the first task will be sent 30 seconds
@@ -139,8 +138,8 @@ after the last run).
 
 A Crontab like schedule also exists, see the section on `Crontab schedules`_.
 
-Like with :command:`cron`, the tasks may overlap if the first task does not complete
-before the next.  If that is a concern you should use a locking
+Like with :command:`cron`, the tasks may overlap if the first task doesn't complete
+before the next. If that's a concern you should use a locking
 strategy to ensure only one instance can run at a time (see for example
 :ref:`cookbook-task-serial`).
 
@@ -175,17 +174,17 @@ Available Fields
     Execution options (:class:`dict`).
 
     This can be any argument supported by
-    :meth:`~celery.task.base.Task.apply_async`,
-    e.g. `exchange`, `routing_key`, `expires`, and so on.
+    :meth:`~celery.task.base.Task.apply_async` --
+    `exchange`, `routing_key`, `expires`, and so on.
 
 * `relative`
 
-    By default :class:`~datetime.timedelta` schedules are scheduled
-    "by the clock". This means the frequency is rounded to the nearest
+    If `relative` is true :class:`~datetime.timedelta` schedules are scheduled
+    "by the clock." This means the frequency is rounded to the nearest
     second, minute, hour or day depending on the period of the
     :class:`~datetime.timedelta`.
 
-    If `relative` is true the frequency is not rounded and will be
+    By default `relative` is false, the frequency isn't rounded and will be
     relative to the time when :program:`celery beat` was started.
 
 .. _beat-crontab:
@@ -202,7 +201,7 @@ the :class:`~celery.schedules.crontab` schedule type:
     from celery.schedules import crontab
 
     app.conf.beat_schedule = {
-        # Executes every Monday morning at 7:30 A.M
+        # Executes every Monday morning at 7:30 a.m.
         'add-every-monday-morning': {
             'task': 'tasks.add',
             'schedule': crontab(hour=7, minute=30, day_of_week=1),
@@ -210,7 +209,9 @@ the :class:`~celery.schedules.crontab` schedule type:
         },
     }
 
-The syntax of these Crontab expressions are very flexible.  Some examples:
+The syntax of these Crontab expressions are very flexible.
+
+Some examples:
 
 +-----------------------------------------+--------------------------------------------+
 | **Example**                             | **Meaning**                                |
@@ -235,7 +236,7 @@ The syntax of these Crontab expressions are very flexible.  Some examples:
 |         ``day_of_week='sun')``          |                                            |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(minute='*/10',``              | Execute every ten minutes, but only        |
-|         ``hour='3,17,22',``             | between 3-4 am, 5-6 pm and 10-11 pm on     |
+|         ``hour='3,17,22',``             | between 3-4 am, 5-6 pm, and 10-11 pm on    |
 |         ``day_of_week='thu,fri')``      | Thursdays or Fridays.                      |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(minute=0, hour='*/2,*/3')``   | Execute every even hour, and every hour    |
@@ -317,12 +318,12 @@ Possible event types are:
 |                                         | is no longer completely dark. This is when |
 |                                         | the sun is 18 degrees below the horizon.   |
 +-----------------------------------------+--------------------------------------------+
-| ``dawn_nautical``                       | Execute when there is enough sunlight for  |
+| ``dawn_nautical``                       | Execute when there's enough sunlight for   |
 |                                         | the horizon and some objects to be         |
 |                                         | distinguishable; formally, when the sun is |
 |                                         | 12 degrees below the horizon.              |
 +-----------------------------------------+--------------------------------------------+
-| ``dawn_civil``                          | Execute when there is enough light for     |
+| ``dawn_civil``                          | Execute when there's enough light for      |
 |                                         | objects to be distinguishable so that      |
 |                                         | outdoor activities can commence;           |
 |                                         | formally, when the Sun is 6 degrees below  |
@@ -359,14 +360,14 @@ All solar events are calculated using UTC, and are therefore
 unaffected by your timezone setting.
 
 In polar regions, the sun may not rise or set every day. The scheduler
-is able to handle these cases, i.e. a ``sunrise`` event won't run on a day
-when the sun doesn't rise. The one exception is ``solar_noon``, which is
+is able to handle these cases (i.e., a ``sunrise`` event won't run on a day
+when the sun doesn't rise). The one exception is ``solar_noon``, which is
 formally defined as the moment the sun transits the celestial meridian,
 and will occur every day even if the sun is below the horizon.
 
-Twilight is defined as the period between dawn and sunrise, and between
+Twilight is defined as the period between dawn and sunrise; and between
 sunset and dusk. You can schedule an event according to "twilight"
-depending on your definition of twilight (civil, nautical or astronomical),
+depending on your definition of twilight (civil, nautical, or astronomical),
 and whether you want the event to take place at the beginning or end
 of twilight, using the appropriate event from the list above.
 
@@ -383,10 +384,10 @@ To start the :program:`celery beat` service:
 
     $ celery -A proj beat
 
-You can also start embed `beat` inside the worker by enabling
+You can also embed `beat` inside the worker by enabling the
 workers :option:`-B <celery worker -B>` option, this is convenient if you'll
 never run more than one worker node, but it's not commonly used and for that
-reason is not recommended for production use:
+reason isn't recommended for production use:
 
 .. code-block:: console
 
@@ -414,16 +415,42 @@ Using custom scheduler classes
 Custom scheduler classes can be specified on the command-line (the
 :option:`-S <celery beat -S>` argument).
 
-The default scheduler is :class:`celery.beat.PersistentScheduler`,
-which is simply keeping track of the last run times in a local database file
-(a :mod:`shelve`).
+The default scheduler is the :class:`celery.beat.PersistentScheduler`,
+that simply keeps track of the last run times in a local :mod:`shelve`
+database file.
 
-:pypi:`django-celery` also ships with a scheduler that stores the schedule in
-the Django database:
+There's also the :pypi:`django-celery-beat` extension that stores the schedule
+in the Django database, and presents a convenient admin interface to manage
+periodic tasks at runtime.
 
-.. code-block:: console
+To install and use this extension:
 
-    $ celery -A proj beat -S djcelery.schedulers.DatabaseScheduler
+#. Use :command:`pip` to install the package:
 
-Using :pypi:`django-celery`'s scheduler you can add, modify and remove periodic
-tasks from the Django Admin.
+    .. code-block:: console
+
+        $ pip install django-celery-beat
+
+#. Add the ``django_celery_beat`` module to ``INSTALLED_APPS`` in your
+   Django project' :file:`settings.py`::
+
+        INSTALLED_APPS = (
+            ...,
+            'django_celery_beat',
+        )
+
+    Note that there is no dash in the module name, only underscores.
+
+#. Apply Django database migrations so that the necessary tables are created:
+
+    .. code-block:: console
+
+        $ python manage.py migrate
+
+#. Start the :program:`celery beat` service using the ``django`` scheduler:
+
+    .. code-block:: console
+
+        $ celery -A proj beat -l info -S django
+
+#. Visit the Django-Admin interface to set up some periodic tasks.

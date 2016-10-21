@@ -34,9 +34,10 @@ events: {s.event_count} tasks:{s.task_count} workers:{w_alive}/{w_all}
 
 
 class CursesMonitor:  # pragma: no cover
+    """A curses based Celery task monitor."""
+
     keymap = {}
     win = None
-    screen_width = None
     screen_delay = 10
     selected_task = None
     selected_position = 0
@@ -147,7 +148,7 @@ class CursesMonitor:  # pragma: no cover
     def handle_keypress(self):
         try:
             key = self.win.getkey().upper()
-        except:
+        except Exception:  # pylint: disable=broad-except
             return
         key = self.keyalias.get(key) or key
         handler = self.keymap.get(key)
@@ -169,7 +170,7 @@ class CursesMonitor:  # pragma: no cover
         while 1:
             try:
                 return self.win.getkey().upper()
-            except:
+            except Exception:  # pylint: disable=broad-except
                 pass
 
     def selection_rate_limit(self):
@@ -498,7 +499,7 @@ class DisplayThread(threading.Thread):  # pragma: no cover
 def capture_events(app, state, display):  # pragma: no cover
 
     def on_connection_error(exc, interval):
-        print('Connection Error: {0!r}. Retry in {1}s.'.format(
+        print('Connection Error: {0!r}.  Retry in {1}s.'.format(
             exc, interval), file=sys.stderr)
 
     while 1:
@@ -516,6 +517,7 @@ def capture_events(app, state, display):  # pragma: no cover
 
 
 def evtop(app=None):  # pragma: no cover
+    """Start curses monitor."""
     app = app_or_default(app)
     state = app.events.State()
     display = CursesMonitor(state, app)

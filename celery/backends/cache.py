@@ -38,6 +38,8 @@ def import_best_memcache():
 
 
 def get_best_memcache(*args, **kwargs):
+    # pylint: disable=unpacking-non-sequence
+    #   This is most definitely a sequence, but pylint thinks it's not.
     is_pylibmc, memcache, key_t = import_best_memcache()
     Client = _Client = memcache.Client
 
@@ -80,6 +82,7 @@ backends = {
 
 
 class CacheBackend(KeyValueStoreBackend):
+    """Cache result backend."""
 
     servers = None
     supports_autoexpire = True

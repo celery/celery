@@ -2,7 +2,7 @@
 import errno
 import socket
 
-from celery.bootsteps import RUN
+from celery import bootsteps
 from celery.exceptions import WorkerShutdown, WorkerTerminate, WorkerLostError
 from celery.utils.log import get_logger
 
@@ -10,32 +10,38 @@ from . import state
 
 __all__ = ['asynloop', 'synloop']
 
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
+
 logger = get_logger(__name__)
-error = logger.error
 
 
 def _quick_drain(connection, timeout=0.1):
     try:
         connection.drain_events(timeout=timeout)
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-except
         exc_errno = getattr(exc, 'errno', None)
         if exc_errno is not None and exc_errno != errno.EAGAIN:
             raise
 
 
-def asynloop(obj, connection, consumer, blueprint, hub, qos,
-             heartbeat, clock, hbrate=2.0, RUN=RUN):
-    """Non-blocking event loop consuming messages until connection is lost,
-    or shutdown is requested."""
-    update_qos = qos.update
-    hbtick = connection.heartbeat_check
-    errors = connection.connection_errors
+def _enable_amqheartbeats(timer, connection, rate=2.0):
+    tick = connection.heartbeat_check
     heartbeat = connection.get_heartbeat_interval()  # negotiated
+    if heartbeat and connection.supports_heartbeats:
+        timer.call_repeatedly(heartbeat / rate, tick, rate)
+
+
+def asynloop(obj, connection, consumer, blueprint, hub, qos,
+             heartbeat, clock, hbrate=2.0):
+    """Non-blocking event loop."""
+    RUN = bootsteps.RUN
+    update_qos = qos.update
+    errors = connection.connection_errors
 
     on_task_received = obj.create_task_handler()
 
-    if heartbeat and connection.supports_heartbeats:
-        hub.call_repeatedly(heartbeat / hbrate, hbtick, hbrate)
+    _enable_amqheartbeats(hub, connection, rate=hbrate)
 
     consumer.on_message = on_task_received
     consumer.consume()
@@ -50,7 +56,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
         raise WorkerLostError('Could not start worker processes')
 
     # consumer.consume() may have prefetched up to our
-    # limit - drain an event so we are in a clean state
+    # limit - drain an event so we're in a clean state
     # prior to starting our event loop.
     if connection.transport.driver_type == 'amqp':
         hub.call_soon(_quick_drain, connection)
@@ -72,7 +78,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
             elif should_terminate is not None and should_stop is not False:
                 raise WorkerTerminate(should_terminate)
 
-            # We only update QoS when there is no more messages to read.
+            # We only update QoS when there's no more messages to read.
             # This groups together qos calls, and makes sure that remote
             # control commands will be prioritized over task messages.
             if qos.prev != qos.value:
@@ -85,16 +91,15 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     finally:
         try:
             hub.reset()
-        except Exception as exc:
-            error(
-                'Error cleaning up after event loop: %r', exc, exc_info=1,
-            )
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.exception(
+                'Error cleaning up after event loop: %r', exc)
 
 
 def synloop(obj, connection, consumer, blueprint, hub, qos,
             heartbeat, clock, hbrate=2.0, **kwargs):
     """Fallback blocking event loop for transports that doesn't support AIO."""
-
+    RUN = bootsteps.RUN
     on_task_received = obj.create_task_handler()
     perform_pending_operations = obj.perform_pending_operations
     consumer.on_message = on_task_received

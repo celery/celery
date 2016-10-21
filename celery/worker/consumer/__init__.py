@@ -1,5 +1,5 @@
+"""Worker consumer."""
 from .consumer import Consumer
-
 from .agent import Agent
 from .connection import Connection
 from .control import Control

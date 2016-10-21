@@ -25,14 +25,14 @@ The API defines a standard set of execution options, as well as three methods:
 
     - ``delay(*args, **kwargs)``
 
-        Shortcut to send a task message, but does not support execution
+        Shortcut to send a task message, but doesn't support execution
         options.
 
     - *calling* (``__call__``)
 
-        Applying an object supporting the calling API (e.g. ``add(2, 2)``)
-        means that the task will be executed in the current process, and
-        not by a worker (a message will not be sent).
+        Applying an object supporting the calling API (e.g., ``add(2, 2)``)
+        means that the task will not be executed by a worker, but in the current
+        process instead (a message won't be sent).
 
 .. _calling-cheat:
 
@@ -75,7 +75,7 @@ Using :meth:`~@Task.apply_async` instead you have to write:
 
 .. sidebar:: Tip
 
-    If the task is not registered in the current process
+    If the task isn't registered in the current process
     you can use :meth:`~@send_task` to call the task by name instead.
 
 
@@ -83,7 +83,7 @@ So `delay` is clearly convenient, but if you want to set additional execution
 options you have to use ``apply_async``.
 
 The rest of this document will go into the task execution
-options in detail.  All examples use a task
+options in detail. All examples use a task
 called `add`, returning the sum of two arguments:
 
 .. code-block:: python
@@ -95,7 +95,7 @@ called `add`, returning the sum of two arguments:
 
 .. topic:: There's another way…
 
-    You will learn more about this later while reading about the :ref:`Canvas
+    You'll learn more about this later while reading about the :ref:`Canvas
     <guide-canvas>`, but :class:`~celery.signature`'s are objects used to pass around
     the signature of a task invocation, (for example to send it over the
     network), and they also support the Calling API:
@@ -117,16 +117,17 @@ as a partial argument:
 
     add.apply_async((2, 2), link=add.s(16))
 
-.. sidebar:: What is ``s``?
+.. sidebar:: What's ``s``?
 
-    The ``add.s`` call used here is called a signature, I talk
-    more about signatures in the :ref:`canvas guide <guide-canvas>`,
-    where you can also learn about :class:`~celery.chain`, which
-    is a simpler way to chain tasks together.
+    The ``add.s`` call used here is called a signature. If you
+    don't know what they are you should read about them in the
+    :ref:`canvas guide <guide-canvas>`.
+    There you can also learn about :class:`~celery.chain`:  a simpler
+    way to chain tasks together.
 
     In practice the ``link`` execution option is considered an internal
-    primitive, and you will probably not use it directly, but
-    rather use chains instead.
+    primitive, and you'll probably not use it directly, but
+    use chains instead.
 
 Here the result of the first task (4) will be sent to a new
 task that adds 16 to the previous result, forming the expression
@@ -171,14 +172,64 @@ The callbacks/errbacks will then be called in order, and all
 callbacks will be called with the return value of the parent task
 as a partial argument.
 
+.. _calling-on-message:
+
+On message
+==========
+
+Celery supports catching all states changes by setting on_message callback.
+
+For example for long-running tasks to send task progress you can do something like this:
+
+.. code-block:: python
+
+    @app.task(bind=True)
+    def hello(self, a, b):
+        time.sleep(1)
+        self.update_state(state="PROGRESS", meta={'progress': 50})
+        time.sleep(1)
+        self.update_state(state="PROGRESS", meta={'progress': 90})
+        time.sleep(1)
+        return 'hello world: %i' % (a+b)
+
+.. code-block:: python
+
+    def on_raw_message(body):
+        print(body)
+
+    r = hello.apply_async()
+    print(r.get(on_message=on_raw_message, propagate=False))
+
+Will generate output like this:
+
+.. code-block:: text
+
+    {'task_id': '5660d3a3-92b8-40df-8ccc-33a5d1d680d7',
+     'result': {'progress': 50},
+     'children': [],
+     'status': 'PROGRESS',
+     'traceback': None}
+    {'task_id': '5660d3a3-92b8-40df-8ccc-33a5d1d680d7',
+     'result': {'progress': 90},
+     'children': [],
+     'status': 'PROGRESS',
+     'traceback': None}
+    {'task_id': '5660d3a3-92b8-40df-8ccc-33a5d1d680d7',
+     'result': 'hello world: 10',
+     'children': [],
+     'status': 'SUCCESS',
+     'traceback': None}
+    hello world: 10
+
+
 .. _calling-eta:
 
-ETA and countdown
+ETA and Countdown
 =================
 
 The ETA (estimated time of arrival) lets you set a specific date and time that
-is the earliest time at which your task will be executed.  `countdown` is
-a shortcut to set eta by seconds into the future.
+is the earliest time at which your task will be executed. `countdown` is
+a shortcut to set ETA by seconds into the future.
 
 .. code-block:: pycon
 
@@ -189,10 +240,10 @@ a shortcut to set eta by seconds into the future.
 The task is guaranteed to be executed at some time *after* the
 specified date and time, but not necessarily at that exact time.
 Possible reasons for broken deadlines may include many items waiting
-in the queue, or heavy network latency.  To make sure your tasks
+in the queue, or heavy network latency. To make sure your tasks
 are executed in a timely manner you should monitor the queue for congestion. Use
 Munin, or similar tools, to receive alerts, so appropriate action can be
-taken to ease the workload.  See :ref:`monitoring-munin`.
+taken to ease the workload. See :ref:`monitoring-munin`.
 
 While `countdown` is an integer, `eta` must be a :class:`~datetime.datetime`
 object, specifying an exact date and time (including millisecond precision,
@@ -269,18 +320,17 @@ and can contain the following keys:
 - `interval_start`
 
     Defines the number of seconds (float or integer) to wait between
-    retries.  Default is 0, which means the first retry will be
-    instantaneous.
+    retries. Default is 0 (the first retry will be instantaneous).
 
 - `interval_step`
 
     On each consecutive retry this number will be added to the retry
-    delay (float or integer).  Default is 0.2.
+    delay (float or integer). Default is 0.2.
 
 - `interval_max`
 
     Maximum number of seconds (float or integer) to wait between
-    retries.  Default is 0.2.
+    retries. Default is 0.2.
 
 For example, the default policy correlates to:
 
@@ -293,10 +343,58 @@ For example, the default policy correlates to:
         'interval_max': 0.2,
     })
 
-the maximum time spent retrying will be 0.4 seconds.  It is set relatively
+the maximum time spent retrying will be 0.4 seconds. It's set relatively
 short by default because a connection failure could lead to a retry pile effect
-if the broker connection is down: e.g. many web server processes waiting
-to retry blocking other incoming requests.
+if the broker connection is down -- For example, many web server processes waiting
+to retry, blocking other incoming requests.
+
+.. _calling-connection-errors:
+
+Connection Error Handling
+=========================
+
+When you send a task and the message transport connection is lost, or
+the connection cannot be initiated, an :exc:`~kombu.exceptions.OperationalError`
+error will be raised:
+
+.. code-block:: pycon
+
+    >>> from proj.tasks import add
+    >>> add.delay(2, 2)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "celery/app/task.py", line 388, in delay
+            return self.apply_async(args, kwargs)
+      File "celery/app/task.py", line 503, in apply_async
+        **options
+      File "celery/app/base.py", line 662, in send_task
+        amqp.send_task_message(P, name, message, **options)
+      File "celery/backends/rpc.py", line 275, in on_task_call
+        maybe_declare(self.binding(producer.channel), retry=True)
+      File "/opt/celery/kombu/kombu/messaging.py", line 204, in _get_channel
+        channel = self._channel = channel()
+      File "/opt/celery/py-amqp/amqp/connection.py", line 272, in connect
+        self.transport.connect()
+      File "/opt/celery/py-amqp/amqp/transport.py", line 100, in connect
+        self._connect(self.host, self.port, self.connect_timeout)
+      File "/opt/celery/py-amqp/amqp/transport.py", line 141, in _connect
+        self.sock.connect(sa)
+      kombu.exceptions.OperationalError: [Errno 61] Connection refused
+
+If you have :ref:`retries <calling-retry>` enabled this will only happen after
+retries are exhausted, or when disabled immediately.
+
+You can handle this error too:
+
+.. code-block:: pycon
+
+    >>> from celery.utils.log import get_logger
+    >>> logger = get_logger(__name__)
+
+    >>> try:
+    ...     add.delay(2, 2)
+    ... except add.OperationalError as exc:
+    ...     logger.exception('Sending task raised: %r', exc)
 
 .. _calling-serializers:
 
@@ -332,15 +430,15 @@ Each option has its advantages and disadvantages.
 
 json -- JSON is supported in many programming languages, is now
     a standard part of Python (since 2.6), and is fairly fast to decode
-    using the modern Python libraries such as :pypi:`simplejson`.
+    using the modern Python libraries, such as :pypi:`simplejson`.
 
     The primary disadvantage to JSON is that it limits you to the following
     data types: strings, Unicode, floats, Boolean, dictionaries, and lists.
     Decimals and dates are notably missing.
 
-    Also, binary data will be transferred using Base64 encoding, which will
-    cause the transferred data to be around 34% larger than an encoding which
-    supports native binary types.
+    Binary data will be transferred using Base64 encoding,
+    increasing the size of the transferred data by 34% compared to an encoding
+    format where native binary types are supported.
 
     However, if your data fits inside the above constraints and you need
     cross-language support, the default setting of JSON is probably your
@@ -354,11 +452,11 @@ pickle -- If you have no desire to support any language other than
     messages when sending binary files, and a slight speedup over JSON
     processing.
 
-    See http://docs.python.org/library/pickle.html for more information.
+    See :mod:`pickle` for more information.
 
 yaml -- YAML has many of the same characteristics as json,
     except that it natively supports more data types (including dates,
-    recursive references, etc.)
+    recursive references, etc.).
 
     However, the Python libraries for YAML are a good bit slower than the
     libraries for JSON.
@@ -368,18 +466,18 @@ yaml -- YAML has many of the same characteristics as json,
 
     See http://yaml.org/ for more information.
 
-msgpack -- msgpack is a binary serialization format that is closer to JSON
-    in features.  It is very young however, and support should be considered
+msgpack -- msgpack is a binary serialization format that's closer to JSON
+    in features. It's very young however, and support should be considered
     experimental at this point.
 
     See http://msgpack.org/ for more information.
 
 The encoding used is available as a message header, so the worker knows how to
-deserialize any task.  If you use a custom serializer, this serializer must
+deserialize any task. If you use a custom serializer, this serializer must
 be available for the worker.
 
-The following order is used to decide which serializer
-to use when sending a task:
+The following order is used to decide the serializer
+used when sending a task:
 
     1. The `serializer` execution option.
     2. The :attr:`@-Task.serializer` attribute
@@ -401,8 +499,8 @@ Celery can compress the messages using either *gzip*, or *bzip2*.
 You can also create your own compression schemes and register
 them in the :func:`kombu compression registry <kombu.compression.register>`.
 
-The following order is used to decide which compression scheme
-to use when sending a task:
+The following order is used to decide the compression scheme
+used when sending a task:
 
     1. The `compression` execution option.
     2. The :attr:`@-Task.compression` attribute.
@@ -419,7 +517,7 @@ Connections
 
 .. sidebar:: Automatic Pool Support
 
-    Since version 2.3 there is support for automatic connection pools,
+    Since version 2.3 there's support for automatic connection pools,
     so you don't have to manually handle connections and producers
     to reuse connections.
 
@@ -473,7 +571,7 @@ the workers :option:`-Q <celery worker -Q>` argument:
 
 .. seealso::
 
-    Hard-coding queue names in code is not recommended, the best practice
+    Hard-coding queue names in code isn't recommended, the best practice
     is to use configuration routers (:setting:`task_routes`).
 
     To find out more about routing, please see :ref:`guide-routing`.
@@ -498,4 +596,4 @@ AMQP's full routing capabilities. Interested parties may read the
 
     A number between `0` and `255`, where `255` is the highest priority.
 
-    Supported by: RabbitMQ
+    Supported by: RabbitMQ, Redis (priority reversed, 0 is highest).

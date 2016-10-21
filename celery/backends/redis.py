@@ -12,32 +12,28 @@ from celery.canvas import maybe_signature
 from celery.exceptions import ChordError, ImproperlyConfigured
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
-from celery.utils.timeutils import humanize_seconds
+from celery.utils.time import humanize_seconds
 
 from . import async
 from . import base
 
 try:
     import redis
-    from redis.exceptions import ConnectionError
     from kombu.transport.redis import get_redis_error_classes
 except ImportError:                 # pragma: no cover
     redis = None                    # noqa
-    ConnectionError = None          # noqa
     get_redis_error_classes = None  # noqa
 
 __all__ = ['RedisBackend']
 
-REDIS_MISSING = """\
+E_REDIS_MISSING = """
 You need to install the redis library in order to use \
-the Redis result store backend."""
-
-E_LOST = """\
-Connection to Redis lost: Retry (%s/%s) %s.\
+the Redis result store backend.
 """
 
+E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
+
 logger = get_logger(__name__)
-error = logger.error
 
 
 class ResultConsumer(async.BaseResultConsumer):
@@ -50,7 +46,7 @@ class ResultConsumer(async.BaseResultConsumer):
         self._decode_result = self.backend.decode_result
         self.subscribed_to = set()
 
-    def start(self, initial_task_id):
+    def start(self, initial_task_id, **kwargs):
         self._pubsub = self.backend.client.pubsub(
             ignore_subscribe_messages=True,
         )
@@ -108,7 +104,7 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         super().__init__(expires_type=int, **kwargs)
         _get = self.app.conf.get
         if self.redis is None:
-            raise ImproperlyConfigured(REDIS_MISSING)
+            raise ImproperlyConfigured(E_REDIS_MISSING.strip())
 
         if host and '://' in host:
             url, host = host, None
@@ -140,7 +136,7 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         )
 
     def _params_from_url(self, url, defaults):
-        scheme, host, port, user, password, path, query = _parse_url(url)
+        scheme, host, port, _, password, path, query = _parse_url(url)
         connparams = dict(
             defaults, **dictfilter({
                 'host': host, 'port': port, 'password': password,
@@ -189,8 +185,9 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
 
     def on_connection_error(self, max_retries, exc, intervals, retries):
         tts = next(intervals)
-        error(E_LOST, retries, max_retries or 'Inf',
-              humanize_seconds(tts, 'in '))
+        logger.error(
+            E_LOST.strip(),
+            retries, max_retries or 'Inf', humanize_seconds(tts, 'in '))
         return tts
 
     def set(self, key, value, **retry_policy):
@@ -229,11 +226,16 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
 
     def apply_chord(self, header, partial_args, group_id, body,
                     result=None, options={}, **kwargs):
-        # avoids saving the group in the redis db.
+        # Overrides this to avoid calling GroupResult.save
+        # pylint: disable=method-hidden
+        # Note that KeyValueStoreBackend.__init__ sets self.apply_chord
+        # if the implements_incr attr is set.  Redis backend doesn't set
+        # this flag.
         options['task_id'] = group_id
         return header(*partial_args, **options or {})
 
-    def on_chord_part_return(self, request, state, result, propagate=None):
+    def on_chord_part_return(self, request, state, result,
+                             propagate=None, **kwargs):
         app = self.app
         tid, gid = request.id, request.group
         if not gid or not tid:
@@ -267,18 +269,18 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
                         .execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])
-                except Exception as exc:
-                    error('Chord callback for %r raised: %r',
-                          request.group, exc, exc_info=1)
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.exception(
+                        'Chord callback for %r raised: %r', request.group, exc)
                     return self.chord_error_from_stack(
                         callback,
                         ChordError('Callback error: {0!r}'.format(exc)),
                     )
         except ChordError as exc:
-            error('Chord %r raised: %r', request.group, exc, exc_info=1)
+            logger.exception('Chord %r raised: %r', request.group, exc)
             return self.chord_error_from_stack(callback, exc)
-        except Exception as exc:
-            error('Chord %r raised: %r', request.group, exc, exc_info=1)
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.exception('Chord %r raised: %r', request.group, exc)
             return self.chord_error_from_stack(
                 callback,
                 ChordError('Join error: {0!r}'.format(exc)),

@@ -50,7 +50,7 @@ def retry(fun):
                 return fun(*args, **kwargs)
             except (DatabaseError, InvalidRequestError, StaleDataError):
                 logger.warning(
-                    'Failed operation %s. Retrying %s more times.',
+                    'Failed operation %s.  Retrying %s more times.',
                     fun.__name__, max_retries - retries - 1,
                     exc_info=True)
                 if retries + 1 >= max_retries:
@@ -61,6 +61,7 @@ def retry(fun):
 
 class DatabaseBackend(BaseBackend):
     """The database result backend."""
+
     # ResultSet.iterate should sleep this much between each pool,
     # to not bombard the database with queries.
     subpolling_interval = 0.5

@@ -8,11 +8,11 @@ Glossary
 
     acknowledged
         Workers acknowledge messages to signify that a message has been
-        handled.  Failing to acknowledge a message
-        will cause the message to be redelivered.   Exactly when a
-        transaction is considered a failure varies by transport.  In AMQP the
+        handled. Failing to acknowledge a message
+        will cause the message to be redelivered. Exactly when a
+        transaction is considered a failure varies by transport. In AMQP the
         transaction fails when the connection/channel is closed (or lost),
-        but in SQS the transaction times out after a configurable amount
+        but in Redis/SQS the transaction times out after a configurable amount
         of time (the ``visibility_timeout``).
 
     ack
@@ -20,7 +20,7 @@ Glossary
 
     early acknowledgment
         Task is :term:`acknowledged` just-in-time before being executed,
-        meaning the task will not be redelivered to another worker if the
+        meaning the task won't be redelivered to another worker if the
         machine loses power, or the worker instance is abruptly killed,
         mid-execution.
 
@@ -39,6 +39,11 @@ Glossary
 
     late ack
         Short for :term:`late acknowledgment`
+
+    ETA
+        "Estimated Time of Arrival", in Celery and Google Task Queue, etc.,
+        used as the term for a delayed message that should not be processed
+        until the specified ETA time.  See :ref:`calling-eta`.
 
     request
         Task messages are converted to *requests* within the worker.
@@ -79,15 +84,15 @@ Glossary
         Further reading: https://en.wikipedia.org/wiki/Idempotent
 
     nullipotent
-        describes a function that will have the same effect, and give the same
+        describes a function that'll have the same effect, and give the same
         result, even if called zero or multiple times (side-effect free).
         A stronger version of :term:`idempotent`.
 
     reentrant
         describes a function that can be interrupted in the middle of
-        execution (e.g. by hardware interrupt or signal) and then safely
-        called again later.  Reentrancy is not the same as
-        :term:`idempotence <idempotent>` as the return value does not have to
+        execution (e.g., by hardware interrupt or signal), and then safely
+        called again later. Reentrancy isn't the same as
+        :term:`idempotence <idempotent>` as the return value doesn't have to
         be the same given the same inputs, and a reentrant function may have
         side effects as long as it can be interrupted;  An idempotent function
         is always reentrant, but the reverse may not be true.
@@ -103,8 +108,8 @@ Glossary
 
     `prefetch count`
         Maximum number of unacknowledged messages a consumer can hold and if
-        exceeded the transport should not deliver any more messages to that
-        consumer.  See :ref:`optimizing-prefetch-limit`.
+        exceeded the transport shouldn't deliver any more messages to that
+        consumer. See :ref:`optimizing-prefetch-limit`.
 
     pidbox
         A process mailbox, used to implement remote control commands.

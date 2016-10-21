@@ -5,7 +5,7 @@
 The `app` branch is a work-in-progress to remove
 the use of a global configuration in Celery.
 
-Celery can now be instantiated, which means several
+Celery can now be instantiated and several
 instances of Celery may exist in the same process space.
 Also, large parts can be customized without resorting to monkey
 patching.
@@ -155,7 +155,7 @@ Aliases (Pending deprecation)
     * ``.inspect`` -> {``app.control.inspect``}
 
 * ``celery.utils.info``
-    * ``.humanize_seconds`` -> ``celery.utils.timeutils.humanize_seconds``
+    * ``.humanize_seconds`` -> ``celery.utils.time.humanize_seconds``
     * ``.textindent`` -> ``celery.utils.textindent``
     * ``.get_broker_info`` -> {``app.amqp.get_broker_info``}
     * ``.format_broker_info`` -> {``app.amqp.format_broker_info``}
@@ -181,7 +181,7 @@ is missing.
         def __init__(self, app=None):
             self.app = app_or_default(app)
 
-The problem with this approach is that there is a chance
+The problem with this approach is that there's a chance
 that the app instance is lost along the way, and everything
 seems to be working normally. Testing app instance leaks
 is hard. The environment variable :envvar:`CELERY_TRACE_APP`

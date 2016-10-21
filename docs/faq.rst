@@ -18,7 +18,7 @@ What kinds of things should I use Celery for?
 ---------------------------------------------
 
 **Answer:** `Queue everything and delight everyone`_ is a good article
-describing why you would use a queue in a web context.
+describing why you'd use a queue in a web context.
 
 .. _`Queue everything and delight everyone`:
     http://decafbad.com/blog/2008/07/04/queue-everything-and-delight-everyone
@@ -62,8 +62,8 @@ The numbers as of this writing are:
     - tests: 14,209 lines.
     - backends, contrib, compat utilities: 9,032 lines.
 
-Lines of code is not a useful metric, so
-even if Celery did consist of 50k lines of code you would not
+Lines of code isn't a useful metric, so
+even if Celery did consist of 50k lines of code you wouldn't
 be able to draw any conclusions from such a number.
 
 Does Celery have many dependencies?
@@ -82,52 +82,36 @@ the current list of dependencies are:
 celery
 ~~~~~~
 
-- `kombu`_
+- :pypi:`kombu`
 
 Kombu is part of the Celery ecosystem and is the library used
-to send and receive messages.  It is also the library that enables
-us to support many different message brokers.  It is also used by the
+to send and receive messages. It's also the library that enables
+us to support many different message brokers. It's also used by the
 OpenStack project, and many others, validating the choice to separate
 it from the Celery code-base.
 
-.. _`kombu`: http://pypi.python.org/pypi/kombu
-
-- `billiard`_
+- :pypi:`billiard`
 
 Billiard is a fork of the Python multiprocessing module containing
-many performance and stability improvements.  It is an eventual goal
+many performance and stability improvements. It's an eventual goal
 that these improvements will be merged back into Python one day.
 
-It is also used for compatibility with older Python versions
+It's also used for compatibility with older Python versions
 that don't come with the multiprocessing module.
 
-.. _`billiard`: http://pypi.python.org/pypi/billiard
-
-- `pytz`
+- :pypi:`pytz`
 
 The pytz module provides timezone definitions and related tools.
-
-.. _`pytz`: http://pypi.python.org/pypi/pytz
-
-``django-celery``
-~~~~~~~~~~~~~~~~~
-
-If you use :pypi:`django-celery` then you don't have to install Celery
-separately, as it will make sure that the required version is installed.
-
-:pypi:`django-celery` does not have any other dependencies.
 
 kombu
 ~~~~~
 
 Kombu depends on the following packages:
 
-- `amqp`_
+- :pypi:`amqp`
 
-The underlying pure-Python amqp client implementation.  AMQP being the default
+The underlying pure-Python amqp client implementation. AMQP being the default
 broker this is a natural dependency.
-
-.. _`amqp`: http://pypi.python.org/pypi/amqp
 
 .. note::
 
@@ -144,25 +128,28 @@ Is Celery heavy-weight?
 Celery poses very little overhead both in memory footprint and
 performance.
 
-But please note that the default configuration is not optimized for time nor
+But please note that the default configuration isn't optimized for time nor
 space, see the :ref:`guide-optimizing` guide for more information.
 
-.. _faq-serializion-is-a-choice:
+.. _faq-serialization-is-a-choice:
 
 Is Celery dependent on pickle?
 ------------------------------
 
-**Answer:** No.
+**Answer:** No, Celery can support any serialization scheme.
 
-Celery can support any serialization scheme and has built-in support for
-JSON, YAML, Pickle and msgpack. Also, as every task is associated with a
-content type, you can even send one task using pickle, and another using JSON.
+We have built-in support for JSON, YAML, Pickle, and msgpack.
+Every task is associated with a content type, so you can even send one task using pickle,
+another using JSON.
 
-The default serialization format is pickle simply because it is
-convenient (it supports sending complex Python objects as task arguments).
+The default serialization support used to be pickle, but since 4.0 the default
+is now JSON.  If you require sending complex Python objects as task arguments,
+you can use pickle as the serialization format, but see notes in
+:ref:`security-serializers`.
 
-If you need to communicate with other languages you should change
-to a serialization format that is suitable for that.
+If you need to communicate with other languages you should use
+a serialization format suited to that task, which pretty much means any
+serializer that's not pickle.
 
 You can set a global default serializer, the default serializer for a
 particular Task, or even what serializer to use when sending a single task
@@ -173,19 +160,28 @@ instance.
 Is Celery for Django only?
 --------------------------
 
-**Answer:** No.
-
-You can use Celery with any framework, web or otherwise.
+**Answer:** No, you can use Celery with any framework, web or otherwise.
 
 .. _faq-is-celery-for-rabbitmq-only:
 
 Do I have to use AMQP/RabbitMQ?
 -------------------------------
 
-**Answer**: No.
+**Answer**: No, although using RabbitMQ is recommended you can also
+use Redis, SQS, or Qpid.
 
-Although using RabbitMQ is recommended you can also use SQS or Qpid.
 See :ref:`brokers` for more information.
+
+Redis as a broker won't perform as well as
+an AMQP broker, but the combination RabbitMQ as broker and Redis as a result
+store is commonly used. If you have strict reliability requirements you're
+encouraged to use RabbitMQ or another AMQP broker. Some transports also uses
+polling, so they're likely to consume more resources. However, if you for
+some reason aren't able to use AMQP, feel free to use these alternatives.
+They will probably work fine for most use cases, and note that the above
+points are not specific to Celery; If using Redis/database as a queue worked
+fine for you before, it probably will now. You can always upgrade later
+if you need to.
 
 .. _faq-is-celery-multilingual:
 
@@ -196,10 +192,10 @@ Is Celery multilingual?
 
 :mod:`~celery.bin.worker` is an implementation of Celery in Python. If the
 language has an AMQP client, there shouldn't be much work to create a worker
-in your language.  A Celery worker is just a program connecting to the broker
+in your language. A Celery worker is just a program connecting to the broker
 to process messages.
 
-Also, there's another way to be language independent, and that is to use REST
+Also, there's another way to be language independent, and that's to use REST
 tasks, instead of your tasks being functions, they're URLs. With this
 information you can even create simple web servers that enable preloading of
 code. Simply expose an endpoint that performs an operation, and create a task
@@ -231,8 +227,8 @@ Transaction Model and Locking`_ in the MySQL user manual.
 
 .. _faq-worker-hanging:
 
-The worker is not doing anything, just hanging
-----------------------------------------------
+The worker isn't doing anything, just hanging
+---------------------------------------------
 
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
             or `Why is Task.delay/apply\* just hanging?`.
@@ -250,10 +246,10 @@ using MySQL, see `MySQL is throwing deadlock errors, what can I do?`_.
 Why is Task.delay/apply\*/the worker just hanging?
 --------------------------------------------------
 
-**Answer:** There is a bug in some AMQP clients that will make it hang if
+**Answer:** There's a bug in some AMQP clients that'll make it hang if
 it's not able to authenticate the current user, the password doesn't match or
-the user does not have access to the virtual host specified. Be sure to check
-your broker logs (for RabbitMQ that is :file:`/var/log/rabbitmq/rabbit.log` on
+the user doesn't have access to the virtual host specified. Be sure to check
+your broker logs (for RabbitMQ that's :file:`/var/log/rabbitmq/rabbit.log` on
 most systems), it usually contains a message describing the reason.
 
 .. _faq-worker-on-freebsd:
@@ -261,12 +257,13 @@ most systems), it usually contains a message describing the reason.
 Does it work on FreeBSD?
 ------------------------
 
-**Answer:** Depends
+**Answer:** Depends;
 
-When using the RabbitMQ (AMQP) it should work out of the box.
+When using the RabbitMQ (AMQP) and Redis transports it should work
+out of the box.
 
 For other transports the compatibility prefork pool is
-used which requires a working POSIX semaphore implementation,
+used and requires a working POSIX semaphore implementation,
 this is enabled in FreeBSD by default since FreeBSD 8.x.
 For older version of FreeBSD, you have to enable
 POSIX semaphores in the kernel and manually recompile billiard.
@@ -305,20 +302,30 @@ worker process taking the messages hostage. This could happen if the worker
 wasn't properly shut down.
 
 When a message is received by a worker the broker waits for it to be
-acknowledged before marking the message as processed. The broker will not
+acknowledged before marking the message as processed. The broker won't
 re-send that message to another consumer until the consumer is shut down
 properly.
 
 If you hit this problem you have to kill all workers manually and restart
-them::
+them:
 
-    ps auxww | grep celeryd | awk '{print $2}' | xargs kill
+.. code-block:: console
 
-You might have to wait a while until all workers have finished the work they're
-doing. If it's still hanging after a long time you can kill them by force
-with::
+    $ pkill 'celery worker'
 
-    ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9
+    $ # - If you don't have pkill use:
+    $ # ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill
+
+You may have to wait a while until all workers have finished executing
+tasks. If it's still hanging after a long time you can kill them by force
+with:
+
+.. code-block:: console
+
+    $ pkill -9 'celery worker'
+
+    $ # - If you don't have pkill use:
+    $ # ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill -9
 
 .. _faq-task-does-not-run:
 
@@ -329,6 +336,8 @@ Why won't my Task run?
 
 You can find out if Celery is able to run the task by executing the
 task manually:
+
+.. code-block:: python
 
     >>> from myapp.tasks import MyPeriodicTask
     >>> MyPeriodicTask.delay()
@@ -382,11 +391,11 @@ I've purged messages, but there are still messages left in the queue?
 ---------------------------------------------------------------------
 
 **Answer:** Tasks are acknowledged (removed from the queue) as soon
-as they are actually executed. After the worker has received a task, it will
-take some time until it is actually executed, especially if there are a lot
-of tasks already waiting for execution. Messages that are not acknowledged are
+as they're actually executed. After the worker has received a task, it will
+take some time until it's actually executed, especially if there are a lot
+of tasks already waiting for execution. Messages that aren't acknowledged are
 held on to by the worker until it closes the connection to the broker (AMQP
-server). When that connection is closed (e.g. because the worker was stopped)
+server). When that connection is closed (e.g., because the worker was stopped)
 the tasks will be re-sent by the broker to the next available worker (or the
 same worker when it has been restarted), so to properly purge the queue of
 waiting tasks you have to stop all the workers, and then purge the tasks
@@ -402,7 +411,9 @@ Results
 How do I get the result of a task if I have the ID that points there?
 ----------------------------------------------------------------------
 
-**Answer**: Use `task.AsyncResult`::
+**Answer**: Use `task.AsyncResult`:
+
+.. code-block:: pycon
 
     >>> result = my_task.AsyncResult(task_id)
     >>> result.get()
@@ -413,6 +424,8 @@ using the tasks current result backend.
 If you need to specify a custom result backend, or you want to use
 the current application's default backend you can use
 :class:`@AsyncResult`:
+
+.. code-block:: pycon
 
     >>> result = app.AsyncResult(task_id)
     >>> result.get()
@@ -425,14 +438,14 @@ Security
 Isn't using `pickle` a security concern?
 ----------------------------------------
 
-**Answer**: Yes, indeed it is.
+**Answer**: Indeed, since Celery 4.0 the default serializer is now JSON
+to make sure people are choosing serializers consciously and aware of this concern.
 
-You are right to have a security concern, as this can indeed be a real issue.
-It is essential that you protect against unauthorized
+It's essential that you protect against unauthorized
 access to your broker, databases and other services transmitting pickled
 data.
 
-Note that this is not just something you should be aware of with Celery, for
+Note that this isn't just something you should be aware of with Celery, for
 example also Django uses pickle for its cache client.
 
 For the task messages you can set the :setting:`task_serializer`
@@ -441,7 +454,7 @@ setting to "json" or "yaml" instead of pickle.
 Similarly for task results you can set :setting:`result_serializer`.
 
 For more details of the formats used and the lookup order when
-checking which format to use for a task see :ref:`calling-serializers`
+checking what format to use for a task see :ref:`calling-serializers`
 
 Can messages be encrypted?
 --------------------------
@@ -449,7 +462,7 @@ Can messages be encrypted?
 **Answer**: Some AMQP brokers supports using SSL (including RabbitMQ).
 You can enable this using the :setting:`broker_use_ssl` setting.
 
-It is also possible to add additional encryption and security to messages,
+It's also possible to add additional encryption and security to messages,
 if you have a need for this then you should contact the :ref:`mailing-list`.
 
 Is it safe to run :program:`celery worker` as root?
@@ -477,7 +490,7 @@ http://www.rabbitmq.com/faq.html#node-runs-out-of-memory
 .. note::
 
     This is no longer the case, RabbitMQ versions 2.0 and above
-    includes a new persister, that is tolerant to out of memory
+    includes a new persister, that's tolerant to out of memory
     errors. RabbitMQ 2.1 or higher is recommended for Celery.
 
     If you're still running an older version of RabbitMQ and experience
@@ -485,8 +498,8 @@ http://www.rabbitmq.com/faq.html#node-runs-out-of-memory
 
 Misconfiguration of Celery can eventually lead to a crash
 on older version of RabbitMQ. Even if it doesn't crash, this
-can still consume a lot of resources, so it is very
-important that you are aware of the common pitfalls.
+can still consume a lot of resources, so it's
+important that you're aware of the common pitfalls.
 
 * Events.
 
@@ -502,11 +515,11 @@ When running with the AMQP result backend, every task result will be sent
 as a message. If you don't collect these results, they will build up and
 RabbitMQ will eventually run out of memory.
 
-This result backend is now deprecated so you should not be using it.
+This result backend is now deprecated so you shouldn't be using it.
 Use either the RPC backend for rpc-style calls, or a persistent backend
 if you need multi-consumer access to results.
 
-Results expire after 1 day by default.  It may be a good idea
+Results expire after 1 day by default. It may be a good idea
 to lower this value by configuring the :setting:`result_expires`
 setting.
 
@@ -527,22 +540,23 @@ If you don't use the results for a task, make sure you set the
 Can I use Celery with ActiveMQ/STOMP?
 -------------------------------------
 
-**Answer**: No.  It used to be supported by Carrot,
-but is not currently supported in Kombu.
+**Answer**: No. It used to be supported by :pypi:`Carrot` (our old messaging library)
+but isn't currently supported in :pypi:`Kombu` (our new messaging library).
 
 .. _faq-non-amqp-missing-features:
 
-What features are not supported when not using an AMQP broker?
---------------------------------------------------------------
+What features aren't supported when not using an AMQP broker?
+-------------------------------------------------------------
 
 This is an incomplete list of features not available when
 using the virtual transports:
 
-    * Remote control commands.
+    * Remote control commands (supported only by Redis).
 
     * Monitoring with events may not work in all virtual transports.
 
     * The `header` and `fanout` exchange types
+        (`fanout` is supported by Redis).
 
 .. _faq-tasks:
 
@@ -562,7 +576,7 @@ The connection pool is enabled by default since version 2.5.
 :command:`sudo` in a :mod:`subprocess` returns :const:`None`
 ------------------------------------------------------------
 
-There is a :command:`sudo` configuration option that makes it illegal
+There's a :command:`sudo` configuration option that makes it illegal
 for process without a tty to run :command:`sudo`:
 
 .. code-block:: text
@@ -570,22 +584,22 @@ for process without a tty to run :command:`sudo`:
     Defaults requiretty
 
 If you have this configuration in your :file:`/etc/sudoers` file then
-tasks will not be able to call :command:`sudo` when the worker is
-running as a daemon.  If you want to enable that, then you need to remove
+tasks won't be able to call :command:`sudo` when the worker is
+running as a daemon. If you want to enable that, then you need to remove
 the line from :file:`/etc/sudoers`.
 
 See: http://timelordz.com/wiki/Apache_Sudo_Commands
 
 .. _faq-deletes-unknown-tasks:
 
-Why do workers delete tasks from the queue if they are unable to process them?
-------------------------------------------------------------------------------
+Why do workers delete tasks from the queue if they're unable to process them?
+-----------------------------------------------------------------------------
 **Answer**:
 
 The worker rejects unknown tasks, messages with encoding errors and messages
 that don't contain the proper fields (as per the task message protocol).
 
-If it did not reject them they could be redelivered again and again,
+If it didn't reject them they could be redelivered again and again,
 causing a loop.
 
 Recent versions of RabbitMQ has the ability to configure a dead-letter
@@ -596,19 +610,22 @@ queue for exchange, so that rejected messages is moved there.
 Can I call a task by name?
 -----------------------------
 
-**Answer**: Yes. Use :meth:`@send_task`.
-You can also call a task by name from any language
-that has an AMQP client.
+**Answer**: Yes, use :meth:`@send_task`.
+
+You can also call a task by name, from any language,
+using an AMQP client:
+
+.. code-block:: python
 
     >>> app.send_task('tasks.add', args=[2, 2], kwargs={})
     <AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d>
 
 .. _faq-get-current-task-id:
 
-How can I get the task id of the current task?
+Can I get the task id of the current task?
 ----------------------------------------------
 
-**Answer**: The current id and more is available in the task request::
+**Answer**: Yes, the current id and more is available in the task request::
 
     @app.task(bind=True)
     def mytask(self):
@@ -616,12 +633,36 @@ How can I get the task id of the current task?
 
 For more information see :ref:`task-request-info`.
 
+If you don't have a reference to the task instance you can use
+:attr:`app.current_task <@current_task>`:
+
+.. code-block:: python
+
+    >>> app.current_task.request.id
+
+But note that this will be any task, be it one executed by the worker, or a
+task called directly by that task, or a task called eagerly.
+
+To get the current task being worked on specifically, use
+:attr:`app.current_worker_task <@current_worker_task>`:
+
+.. code-block:: python
+
+    >>> app.current_worker_task.request.id
+
+.. note::
+
+    Both :attr:`~@current_task`, and :attr:`~@current_worker_task` can be
+    :const:`None`.
+
 .. _faq-custom-task-ids:
 
 Can I specify a custom task_id?
 -------------------------------
 
-**Answer**: Yes.  Use the `task_id` argument to :meth:`Task.apply_async`::
+**Answer**: Yes, use the `task_id` argument to :meth:`Task.apply_async`:
+
+.. code-block:: pycon
 
     >>> task.apply_async(args, kwargs, task_id='…')
 
@@ -629,26 +670,27 @@ Can I specify a custom task_id?
 Can I use decorators with tasks?
 --------------------------------
 
-**Answer**: Yes.  But please see note in the sidebar at :ref:`task-basics`.
+**Answer**: Yes, but please see note in the sidebar at :ref:`task-basics`.
 
 .. _faq-natural-task-ids:
 
 Can I use natural task ids?
 ---------------------------
 
-**Answer**: Yes, but make sure it is unique, as the behavior
+**Answer**: Yes, but make sure it's unique, as the behavior
 for two tasks existing with the same id is undefined.
 
-The world will probably not explode, but at the worst
-they can overwrite each others results.
+The world will probably not explode, but they can
+definitely overwrite each others results.
 
 .. _faq-task-callbacks:
 
-How can I run a task once another task has finished?
-----------------------------------------------------
+Can I run a task once another task has finished?
+------------------------------------------------
 
-**Answer**: You can safely launch a task inside a task.
-Also, a common pattern is to add callbacks to tasks:
+**Answer**: Yes, you can safely launch a task inside a task.
+
+A common pattern is to add callbacks to tasks:
 
 .. code-block:: python
 
@@ -664,7 +706,9 @@ Also, a common pattern is to add callbacks to tasks:
     def log_result(result):
         logger.info("log_result got: %r", result)
 
-Invocation::
+Invocation:
+
+.. code-block:: pycon
 
     >>> (add.s(2, 2) | log_result.s()).delay()
 
@@ -674,15 +718,22 @@ See :doc:`userguide/canvas` for more information.
 
 Can I cancel the execution of a task?
 -------------------------------------
-**Answer**: Yes. Use `result.revoke`::
+**Answer**: Yes, Use :meth:`result.revoke() <celery.result.AsyncResult.revoke>`:
+
+.. code-block:: pycon
 
     >>> result = add.apply_async(args=[2, 2], countdown=120)
     >>> result.revoke()
 
-or if you only have the task id::
+or if you only have the task id:
+
+.. code-block:: pycon
 
     >>> from proj.celery import app
     >>> app.control.revoke(task_id)
+
+
+The latter also support passing a list of task-ids as argument.
 
 .. _faq-node-not-receiving-broadcast-commands:
 
@@ -690,8 +741,9 @@ Why aren't my remote control commands received by all workers?
 --------------------------------------------------------------
 
 **Answer**: To receive broadcast remote control commands, every worker node
-uses its host name to create a unique queue name to listen to,
-so if you have more than one worker with the same host name, the
+creates a unique queue name, based on the nodename of the worker.
+
+If you have more than one worker with the same host name, the
 control commands will be received in round-robin between them.
 
 To work around this you can explicitly set the nodename for every worker
@@ -703,15 +755,16 @@ using the :option:`-n <celery worker -n>` argument to
     $ celery -A proj worker -n worker1@%h
     $ celery -A proj worker -n worker2@%h
 
-where ``%h`` is automatically expanded into the current hostname.
+where ``%h`` expands into the current hostname.
 
 .. _faq-task-routing:
 
 Can I send some tasks to only some servers?
 --------------------------------------------
 
-**Answer:** Yes. You can route tasks to an arbitrary server using AMQP,
-and a worker can bind to as many queues as it wants.
+**Answer:** Yes, you can route tasks to one or more workers,
+using different message routing topologies, and a worker instance
+can bind to multiple queues.
 
 See :doc:`userguide/routing` for more information.
 
@@ -720,8 +773,8 @@ See :doc:`userguide/routing` for more information.
 Can I disable prefetching of tasks?
 -----------------------------------
 
-**Answer**: The term prefetch must have confused you, as as in Celery it's only used
-to describe the task prefetching *limits*.
+**Answer**: Maybe! The AMQP term "prefetch" is confusing, as it's only used
+to describe the task prefetching *limit*.  There's no actual prefetching involved.
 
 Disabling the prefetch limits is possible, but that means the worker will
 consume as many tasks as it can, as fast as possible.
@@ -735,14 +788,13 @@ that only reserves one task at a time is found here:
 Can I change the interval of a periodic task at runtime?
 --------------------------------------------------------
 
-**Answer**: Yes. You can use the Django database scheduler, or you can
+**Answer**: Yes, you can use the Django database scheduler, or you can
 create a new schedule subclass and override
 :meth:`~celery.schedules.schedule.is_due`:
 
 .. code-block:: python
 
     from celery.schedules import schedule
-
 
     class my_schedule(schedule):
 
@@ -751,17 +803,16 @@ create a new schedule subclass and override
 
 .. _faq-task-priorities:
 
-Does celery support task priorities?
+Does Celery support task priorities?
 ------------------------------------
 
-**Answer**: Yes.
-
-RabbitMQ supports priorities since version 3.5.0.
+**Answer**: Yes, RabbitMQ supports priorities since version 3.5.0,
+and the Redis transport emulates priority support.
 
 You can also prioritize work by routing high priority tasks
-to different workers.  In the real world this may actually work better
-than per message priorities.  You can use this in combination with rate
-limiting to achieve a responsive system.
+to different workers. In the real world this usually works better
+than per message priorities. You can use this in combination with rate
+limiting, and per message priorities to achieve a responsive system.
 
 .. _faq-acks_late-vs-retry:
 
@@ -772,16 +823,16 @@ Should I use retry or acks_late?
 to use both.
 
 `Task.retry` is used to retry tasks, notably for expected errors that
-is catch-able with the :keyword:`try` block. The AMQP transaction is not used
-for these errors: **if the task raises an exception it is still acknowledged!**
+is catch-able with the :keyword:`try` block. The AMQP transaction isn't used
+for these errors: **if the task raises an exception it's still acknowledged!**
 
 The `acks_late` setting would be used when you need the task to be
 executed again if the worker (for some reason) crashes mid-execution.
-It's important to note that the worker is not known to crash, and if
-it does it is usually an unrecoverable error that requires human
+It's important to note that the worker isn't known to crash, and if
+it does it's usually an unrecoverable error that requires human
 intervention (bug in the worker, or task code).
 
-In an ideal world you could safely retry any task that has failed, but
+In an ideal world you could safely retry any task that's failed, but
 this is rarely the case. Imagine the following task:
 
 .. code-block:: python
@@ -794,7 +845,7 @@ this is rarely the case. Imagine the following task:
         copy_file_to_destination(filename, tmpfile)
 
 If this crashed in the middle of copying the file to its destination
-the world would contain incomplete state. This is not a critical
+the world would contain incomplete state. This isn't a critical
 scenario of course, but you can probably imagine something far more
 sinister. So for ease of programming we have less reliability;
 It's a good default, users who require it and know what they
@@ -813,7 +864,7 @@ is required.
 Can I schedule tasks to execute at a specific time?
 ---------------------------------------------------
 
-.. module:: celery.task.base
+.. module:: celery.app.task
 
 **Answer**: Yes. You can use the `eta` argument of :meth:`Task.apply_async`.
 
@@ -822,21 +873,24 @@ See also :ref:`guide-beat`.
 
 .. _faq-safe-worker-shutdown:
 
-How can I safely shut down the worker?
---------------------------------------
+Can I safely shut down the worker?
+----------------------------------
 
-**Answer**: Use the :sig:`TERM` signal, and the worker will finish all currently
-executing jobs and shut down as soon as possible. No tasks should be lost.
+**Answer**: Yes, use the :sig:`TERM` signal.
+
+This will tell the worker to finish all currently
+executing jobs and shut down as soon as possible. No tasks should be lost
+even with experimental transports as long as the shutdown completes.
 
 You should never stop :mod:`~celery.bin.worker` with the :sig:`KILL` signal
 (``kill -9``), unless you've tried :sig:`TERM` a few times and waited a few
 minutes to let it get a chance to shut down.
 
-Also make sure you kill the main worker process, not its child processes.
-You can direct a kill signal to a specific child process if you know the
-process is currently executing a task the worker shutdown is depending on,
-but this also means that a ``WorkerLostError`` state will be set for the
-task so the task will not run again.
+Also make sure you kill the main worker process only, not any of its child
+processes.  You can direct a kill signal to a specific child process if
+you know the process is currently executing a task the worker shutdown
+is depending on, but this also means that a ``WorkerLostError`` state will
+be set for the task so the task won't run again.
 
 Identifying the type of process is easier if you have installed the
 :pypi:`setproctitle` module:
@@ -845,7 +899,7 @@ Identifying the type of process is easier if you have installed the
 
     $ pip install setproctitle
 
-With this library installed you will be able to see the type of process in
+With this library installed you'll be able to see the type of process in
 :command:`ps` listings, but the worker must be restarted for this to take effect.
 
 .. seealso::
@@ -854,42 +908,32 @@ With this library installed you will be able to see the type of process in
 
 .. _faq-daemonizing:
 
-How do I run the worker in the background on [platform]?
---------------------------------------------------------
-**Answer**: Please see :ref:`daemonizing`.
+Can I run the worker in the background on [platform]?
+-----------------------------------------------------
+**Answer**: Yes, please see :ref:`daemonizing`.
 
 .. _faq-django:
 
 Django
 ======
 
-.. _faq-django-database-tables:
+.. _faq-django-beat-database-tables:
 
-What purpose does the database tables created by ``django-celery`` have?
-------------------------------------------------------------------------
+What purpose does the database tables created by ``django-celery-beat`` have?
+-----------------------------------------------------------------------------
 
-Several database tables are created by default, these relate to
+When the database-backed schedule is used the periodic task
+schedule is taken from the ``PeriodicTask`` model, there are
+also several other helper tables (``IntervalSchedule``,
+``CrontabSchedule``, ``PeriodicTasks``).
 
-* Monitoring
+.. _faq-django-result-database-tables:
 
-    When you use the django-admin monitor, the cluster state is written
-    to the ``TaskState`` and ``WorkerState`` models.
+What purpose does the database tables created by ``django-celery-results`` have?
+--------------------------------------------------------------------------------
 
-* Periodic tasks
-
-    When the database-backed schedule is used the periodic task
-    schedule is taken from the ``PeriodicTask`` model, there are
-    also several other helper tables (``IntervalSchedule``,
-    ``CrontabSchedule``, ``PeriodicTasks``).
-
-* Task results
-
-    The database result backend is enabled by default when using
-    :pypi:`django-celery` (this is for historical reasons, and thus for
-    backward compatibility).
-
-    The results are stored in the ``TaskMeta`` and ``TaskSetMeta`` models.
-    *these tables are not created if another result backend is configured*.
+The Django database result backend extension requires
+two extra models: ``TaskResult`` and ``GroupResult``.
 
 .. _faq-windows:
 
@@ -903,3 +947,5 @@ Does Celery support Windows?
 **Answer**: No.
 
 Since Celery 4.x, Windows is no longer supported due to lack of resources.
+
+But it may still work and we are happy to accept patches.

@@ -47,7 +47,7 @@ def process_initializer(app, hostname):
     platforms.signals.ignore(*WORKER_SIGIGNORE)
     platforms.set_mp_process_title('celeryd', hostname=hostname)
     # This is for Windows and other platforms not supporting
-    # fork(). Note that init_worker makes sure it's only
+    # fork().  Note that init_worker makes sure it's only
     # run once per process.
     app.loader.init_worker()
     app.loader.init_worker_process()
@@ -79,7 +79,7 @@ def process_initializer(app, hostname):
 
 
 def process_destructor(pid, exitcode):
-    """Pool child process destructor
+    """Pool child process destructor.
 
     Dispatch the :signal:`worker_process_shutdown` signal.
     """
@@ -90,6 +90,7 @@ def process_destructor(pid, exitcode):
 
 class TaskPool(BasePool):
     """Multiprocessing Pool implementation."""
+
     Pool = AsynPool
     BlockingPool = BlockingPool
 

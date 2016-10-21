@@ -9,7 +9,7 @@ by Ask Solem
 
 Copyright |copy| 2009-2016, Ask Solem.
 
-All rights reserved.  This material may be copied or distributed only
+All rights reserved. This material may be copied or distributed only
 subject to the terms and conditions set forth in the `Creative Commons
 Attribution-ShareAlike 4.0 International`
 <http://creativecommons.org/licenses/by-sa/4.0/legalcode>`_ license.

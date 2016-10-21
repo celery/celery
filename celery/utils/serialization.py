@@ -19,6 +19,8 @@ try:
 except ImportError:
     import pickle  # noqa
 
+PY33 = sys.version_info >= (3, 3)
+
 __all__ = [
     'UnpickleableExceptionWrapper', 'subclass_exception',
     'find_pickleable_exception', 'create_exception_cls',
@@ -34,6 +36,7 @@ except NameError:  # pragma: no cover
 
 
 def subclass_exception(name: str, parent: Any, module: str) -> Any:  # noqa
+    """Create new exception class."""
     return type(name, (parent,), {'__module__': module})
 
 
@@ -41,9 +44,11 @@ def find_pickleable_exception(
         exc: Exception,
         loads: Callable[[AnyStr], Any]=pickle.loads,
         dumps: Callable[[Any], AnyStr]=pickle.dumps) -> Optional[Exception]:
-    """With an exception instance, iterate over its super classes (by MRO)
-    and find the first super exception that is pickleable.  It does
-    not go below :exc:`Exception` (i.e. it skips :exc:`Exception`,
+    """Find first pickleable exception base class.
+
+    With an exception instance, iterate over its super classes (by MRO)
+    and find the first super exception that's pickleable.  It does
+    not go below :exc:`Exception` (i.e., it skips :exc:`Exception`,
     :class:`BaseException` and :class:`object`).  If that happens
     you should use :exc:`UnpickleableException` instead.
 
@@ -60,7 +65,7 @@ def find_pickleable_exception(
         try:
             superexc = supercls(*exc_args)
             loads(dumps(superexc))
-        except:
+        except Exception:  # pylint: disable=broad-except
             pass
         else:
             return superexc
@@ -115,7 +120,7 @@ class UnpickleableExceptionWrapper(Exception):
             try:
                 pickle.dumps(arg)
                 safe_exc_args.append(arg)
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 safe_exc_args.append(safe_repr(arg))
         self.exc_module = exc_module
         self.exc_cls_name = exc_cls_name
@@ -142,7 +147,7 @@ def get_pickleable_exception(exc: Exception) -> Exception:
     """Make sure exception is pickleable."""
     try:
         pickle.loads(pickle.dumps(exc))
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         pass
     else:
         return exc
@@ -156,17 +161,17 @@ def get_pickleable_etype(
         cls: Any,
         loads: Callable[[AnyStr], Any]=pickle.loads,
         dumps: Callable[[Any], AnyStr]=pickle.dumps) -> Exception:
+    """Get pickleable exception type."""
     try:
         loads(dumps(cls))
-    except:
+    except Exception:  # pylint: disable=broad-except
         return Exception
     else:
         return cls
 
 
 def get_pickled_exception(exc: Exception) -> Exception:
-    """Get original exception from exception pickled using
-    :meth:`get_pickleable_exception`."""
+    """Reverse of :meth:`get_pickleable_exception`."""
     if isinstance(exc, UnpickleableExceptionWrapper):
         return exc.restore()
     return exc
@@ -184,8 +189,10 @@ def strtobool(term: Union[str, bool],
               table={'false': False, 'no': False, '0': False,
                      'true': True, 'yes': True, '1': True,
                      'on': True, 'off': False}) -> bool:
-    """Convert common terms for true/false to bool
-    (true/false/yes/no/on/off/1/0)."""
+    """Convert common terms for true/false to bool.
+
+    Examples (true/false/yes/no/on/off/1/0).
+    """
     if isinstance(term, str):
         try:
             return table[term.lower()]
@@ -194,11 +201,29 @@ def strtobool(term: Union[str, bool],
     return term
 
 
+def _datetime_to_json(dt):
+    # See "Date Time String Format" in the ECMA-262 specification.
+    if isinstance(dt, datetime.datetime):
+        r = dt.isoformat()
+        if dt.microsecond:
+            r = r[:23] + r[26:]
+        if r.endswith('+00:00'):
+            r = r[:-6] + 'Z'
+        return r
+    elif isinstance(dt, datetime.time):
+        r = dt.isoformat()
+        if dt.microsecond:
+            r = r[:12]
+        return r
+    else:
+        return dt.isoformat()
+
+
 def jsonify(obj: Any,
             builtin_types=(numbers.Real, str), key: Optional[str]=None,
             keyfilter: Optional[Callable[[str], Any]]=None,
             unknown_type_filter: Optional[Callable[[Any], Any]]=None) -> Any:
-    """Transforms object making it suitable for json serialization"""
+    """Transform object making it suitable for json serialization."""
     from kombu.abstract import Object as KombuDictType
     _jsonify = partial(jsonify, builtin_types=builtin_types, key=key,
                        keyfilter=keyfilter,
@@ -216,21 +241,8 @@ def jsonify(obj: Any,
             k: _jsonify(v, key=k) for k, v in obj.items()
             if (keyfilter(k) if keyfilter else 1)
         }
-    elif isinstance(obj, datetime.datetime):
-        # See "Date Time String Format" in the ECMA-262 specification.
-        r = obj.isoformat()
-        if obj.microsecond:
-            r = r[:23] + r[26:]
-        if r.endswith('+00:00'):
-            r = r[:-6] + 'Z'
-        return r
-    elif isinstance(obj, datetime.date):
-        return obj.isoformat()
-    elif isinstance(obj, datetime.time):
-        r = obj.isoformat()
-        if obj.microsecond:
-            r = r[:12]
-        return r
+    elif isinstance(obj, (datetime.date, datetime.time)):
+        return _datetime_to_json(obj)
     elif isinstance(obj, datetime.timedelta):
         return str(obj)
     else:

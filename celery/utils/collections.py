@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Custom maps, sets, sequences and other data structures."""
+"""Custom maps, sets, sequences, and other data structures."""
 import time
 
 from collections import (
@@ -10,7 +10,7 @@ from heapq import heapify, heappush, heappop
 from itertools import chain, count
 from queue import Empty
 from typing import (
-    Any, Callable, Dict, Iterable, Iterator, Tuple, Optional, Union,
+    Any, Callable, Dict, Iterable, Iterator, List, Tuple, Optional, Union,
 )
 
 from .functional import first, uniq
@@ -46,6 +46,7 @@ KeyCallback = Callable[[str], str]
 
 
 def force_mapping(m: Any) -> Mapping:
+    """Wrap object into supporting the mapping interface if necessary."""
     if isinstance(m, (LazyObject, LazySettings)):
         m = m._wrapped
     return DictAttribute(m) if not isinstance(m, Mapping) else m
@@ -62,6 +63,7 @@ def lpmerge(L: Mapping, R: Mapping) -> Mapping:
 
 
 class OrderedDict(_OrderedDict):
+    """Dict where insertion order matters."""
 
     def _LRUkey(self) -> Any:
         # return value of od.keys does not support __next__,
@@ -70,13 +72,13 @@ class OrderedDict(_OrderedDict):
 
 
 class AttributeDictMixin:
-    """Augment classes with a Mapping interface by adding attribute access.
+    """Mixin for Mapping interface that adds attribute access.
 
-    I.e. `d.key -> d[key]`.
+    I.e., `d.key -> d[key]`).
     """
 
     def __getattr__(self, k: str) -> Any:
-        """`d.key -> d[key]`"""
+        """`d.key -> d[key]`."""
         try:
             return self[k]
         except KeyError:
@@ -85,13 +87,12 @@ class AttributeDictMixin:
                     type(self).__name__, k))
 
     def __setattr__(self, key: str, value: Any) -> None:
-        """`d[key] = value -> d.key = value`"""
+        """`d[key] = value -> d.key = value`."""
         self[key] = value
 
 
 class AttributeDict(dict, AttributeDictMixin):
     """Dict subclass with attribute access."""
-    pass
 
 
 class DictAttribute:
@@ -151,6 +152,7 @@ MutableMapping.register(DictAttribute)
 
 
 class ChainMap(MutableMapping):
+    """Key lookup on a sequence of maps."""
 
     key_t = None      # type: Optional[KeyCallback]
     changes = None    # type: Mapping
@@ -251,6 +253,8 @@ class ChainMap(MutableMapping):
     def _iter(self, op: Callable[[Mapping], Iterator]) -> Iterator:
         # defaults must be first in the stream, so values in
         # changes take precedence.
+        # pylint: disable=bad-reversed-sequence
+        #   Someone should teach pylint about properties.
         return chain(*[op(d) for d in reversed(self.maps)])
 
     def keys(self) -> Iterator[str]:
@@ -279,12 +283,13 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
 
     def __init__(self, changes: Optional[Mapping],
                  defaults: Sequence[Mapping] = None,
-                 key_t: KeyCallback = None,
+                 keys: List[str] = None,
                  prefix: str = None) -> None:
         defaults = [] if defaults is None else defaults
-        super().__init__(changes, *defaults, **{'key_t': key_t})
+        super().__init__(changes, *defaults)
         self.__dict__.update(
             prefix=prefix.rstrip('_') + '_' if prefix else prefix,
+            _keys=keys,
         )
 
     def _to_keys(self, key: str) -> Tuple[str]:
@@ -295,9 +300,11 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
         return key,
 
     def __getitem__(self, key: str) -> Any:
+        # type: (str) -> Any
         keys = self._to_keys(key)
-        getitem = super().__getitem__
-        for k in keys:
+        getitem = super(ConfigurationView, self).__getitem__
+        for k in keys + (
+                tuple(f(key) for f in self._keys) if self._keys else ()):
             try:
                 return getitem(k)
             except KeyError:
@@ -350,9 +357,9 @@ class LimitedSet:
     but the set should not grow unbounded.
 
     ``maxlen`` is enforced at all times, so if the limit is reached
-    we will also remove non-expired items.
+    we'll also remove non-expired items.
 
-    You can also configure ``minlen``, which is the minimal residual size
+    You can also configure ``minlen``: this is the minimal residual size
     of the set.
 
     All arguments are optional, and no limits are enabled by default.
@@ -401,9 +408,9 @@ class LimitedSet:
 
     def __init__(self,
                  maxlen: Optional[int]=0,
-                 minlen: Optional[int]=0,
                  expires: Optional[int]=0,
-                 data: Optional[DictArgument]=None) -> None:
+                 data: Optional[DictArgument]=None,
+                 minlen: Optional[int]=0) -> None:
         self.maxlen = 0 if maxlen is None else maxlen
         self.minlen = 0 if minlen is None else minlen
         self.expires = 0 if expires is None else expires
@@ -425,7 +432,7 @@ class LimitedSet:
             raise ValueError('expires cannot be negative!')
 
     def _refresh_heap(self) -> None:
-        """Time consuming recreating of heap. Do not run this too often."""
+        """Time consuming recreating of heap. Don't run this too often."""
         self._heap[:] = [entry for entry in self._data.values()]
         heapify(self._heap)
 
@@ -498,7 +505,7 @@ class LimitedSet:
             while len(self._data) > self.minlen >= 0:
                 inserted_time, _ = self._heap[0]
                 if inserted_time + self.expires > now:
-                    break  # oldest item has not expired yet
+                    break  # oldest item hasn't expired yet
                 self.pop()
 
     def pop(self, default: Optional[Any]=None) -> None:
@@ -563,6 +570,7 @@ MutableSet.register(LimitedSet)
 
 
 class Evictable:
+    """Mixin for classes supporting the ``evict`` method."""
 
     Empty = Empty  # type: Exception
 
@@ -570,7 +578,7 @@ class Evictable:
         """Force evict until maxsize is enforced."""
         self._evict(range=count)
 
-    def _evict(self, limit: int=100, range: Callable=range) -> None:
+    def _evict(self, limit=100, range=range):
         try:
             [self._evict1() for _ in range(limit)]
         except IndexError:
@@ -586,6 +594,9 @@ class Evictable:
 
 
 class Messagebuffer(Evictable):
+    """A buffer of pending messages."""
+
+    Empty = Empty
 
     def __init__(self,
                  maxsize: Optional[int],
@@ -648,6 +659,7 @@ Sequence.register(Messagebuffer)
 
 
 class BufferMap(OrderedDict, Evictable):
+    """Map of buffers."""
 
     Buffer = Messagebuffer
 

@@ -6,17 +6,12 @@ Installation
 You can install Celery either via the Python Package Index (PyPI)
 or from source.
 
-To install using `pip`,:
+To install using :command:`pip`:
+
 
 .. code-block:: console
 
     $ pip install -U Celery
-
-To install using `easy_install`,:
-
-.. code-block:: console
-
-    $ easy_install -U Celery
 
 .. _bundles:
 
@@ -27,14 +22,15 @@ Celery also defines a group of bundles that can be used
 to install Celery and the dependencies for a given feature.
 
 You can specify these in your requirements or on the :command:`pip`
-command-line by using brackets.  Multiple bundles can be specified by
+command-line by using brackets. Multiple bundles can be specified by
 separating them by commas.
+
 
 .. code-block:: console
 
     $ pip install "celery[librabbitmq]"
 
-    $ pip install "celery[librabbitmq,auth,msgpack]"
+    $ pip install "celery[librabbitmq,redis,auth,msgpack]"
 
 The following bundles are available:
 
@@ -64,6 +60,9 @@ Transports and Backends
 
 :``celery[librabbitmq]``:
     for using the librabbitmq C library.
+
+:``celery[redis]``:
+    for using Redis as a message transport or as a result backend.
 
 :``celery[sqs]``:
     for using Amazon SQS as a message transport (*experimental*).
@@ -109,10 +108,12 @@ Transports and Backends
 Downloading and installing from source
 --------------------------------------
 
-Download the latest version of Celery from
+Download the latest version of Celery from PyPI:
+
 http://pypi.python.org/pypi/celery/
 
 You can install it by doing the following,:
+
 
 .. code-block:: console
 
@@ -122,7 +123,7 @@ You can install it by doing the following,:
     # python setup.py install
 
 The last command must be executed as a privileged user if
-you are not currently using a virtualenv.
+you aren't currently using a virtualenv.
 
 .. _celery-installing-from-git:
 
@@ -133,10 +134,11 @@ With pip
 ~~~~~~~~
 
 The Celery development version also requires the development
-versions of :pypi:`kombu`, :pypi:`amqp`, :pypi:`billiard` and :pypi:`vine`.
+versions of :pypi:`kombu`, :pypi:`amqp`, :pypi:`billiard`, and :pypi:`vine`.
 
 You can install the latest snapshot of these using the following
 pip commands:
+
 
 .. code-block:: console
 

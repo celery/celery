@@ -15,10 +15,14 @@ from .mingle import Mingle
 
 __all__ = ['Gossip']
 logger = get_logger(__name__)
-debug, info, error = logger.debug, logger.info, logger.error
+debug, info = logger.debug, logger.info
 
 
 class Gossip(bootsteps.ConsumerStep):
+    """Bootstep consuming events from other workers.
+
+    This keeps the logical clock value up to date.
+    """
 
     label = 'Gossip'
     requires = (Mingle,)
@@ -66,6 +70,8 @@ class Gossip(bootsteps.ConsumerStep):
             'task': self.call_task
         }
 
+        super(Gossip, self).__init__(c, **kwargs)
+
     def compatible_transport(self, app):
         with app.connection_for_read() as conn:
             return conn.transport.driver_type in self.compatible_transports
@@ -80,15 +86,15 @@ class Gossip(bootsteps.ConsumerStep):
     def call_task(self, task):
         try:
             self.app.signature(task).apply_async()
-        except Exception as exc:
-            error('Could not call task: %r', exc, exc_info=1)
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.exception('Could not call task: %r', exc)
 
     def on_elect(self, event):
         try:
             (id_, clock, hostname, pid,
              topic, action, _) = self._cons_stamp_fields(event)
         except KeyError as exc:
-            return error('election request missing field %s', exc, exc_info=1)
+            return logger.exception('election request missing field %s', exc)
         heappush(
             self.consensus_requests[id_],
             (clock, '%s.%s' % (hostname, pid), topic, action),
@@ -117,7 +123,7 @@ class Gossip(bootsteps.ConsumerStep):
                 try:
                     handler = self.election_handlers[topic]
                 except KeyError:
-                    error('Unknown election topic %r', topic, exc_info=1)
+                    logger.exception('Unknown election topic %r', topic)
                 else:
                     handler(action)
             else:
@@ -141,9 +147,9 @@ class Gossip(bootsteps.ConsumerStep):
         for handler in handlers:
             try:
                 handler(*args, **kwargs)
-            except Exception as exc:
-                error('Ignored error from handler %r: %r',
-                      handler, exc, exc_info=1)
+            except Exception as exc:  # pylint: disable=broad-except
+                logger.exception(
+                    'Ignored error from handler %r: %r', handler, exc)
 
     def register_timer(self):
         if self._tref is not None:
@@ -184,10 +190,11 @@ class Gossip(bootsteps.ConsumerStep):
         else:
             return handler(message.payload)
 
+        # proto2: hostname in header; proto1: in body
         hostname = (message.headers.get('hostname') or
                     message.payload['hostname'])
         if hostname != self.hostname:
-            type, event = prepare(message.payload)
+            _, event = prepare(message.payload)
             self.update_state(event)
         else:
             self.clock.forward()

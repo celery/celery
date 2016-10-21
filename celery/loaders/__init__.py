@@ -16,5 +16,5 @@ LOADER_ALIASES = {
 
 
 def get_loader_cls(loader):
-    """Get loader class by name/alias"""
+    """Get loader class by name/alias."""
     return symbol_by_name(loader, LOADER_ALIASES, imp=import_from_cwd)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Base Execution Pool"""
+"""Base Execution Pool."""
 import logging
 import os
 import sys
@@ -23,6 +23,7 @@ logger = get_logger('celery.pool')
 def apply_target(target, args=(), kwargs={}, callback=None,
                  accept_callback=None, pid=None, getpid=os.getpid,
                  propagate=(), monotonic=monotonic, **_):
+    """Apply function within pool context."""
     if accept_callback:
         accept_callback(pid or getpid(), monotonic())
     try:
@@ -43,6 +44,8 @@ def apply_target(target, args=(), kwargs={}, callback=None,
 
 
 class BasePool:
+    """Task pool."""
+
     RUN = 0x1
     CLOSE = 0x2
     TERMINATE = 0x3

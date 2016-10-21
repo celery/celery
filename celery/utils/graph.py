@@ -13,6 +13,8 @@ __all__ = ['DOT', 'CycleError', 'DependencyGraph', 'GraphFormatter']
 
 
 class DOT:
+    """Constants related to the dot format."""
+
     HEAD = dedent("""
         {IN}{type} {id} {{
         {INp}graph [{attrs}]
@@ -54,8 +56,10 @@ class DependencyGraph(Iterable):
         self.adjacent.setdefault(obj, [])
 
     def add_edge(self, A: Any, B: Any) -> None:
-        """Add an edge from object ``A`` to object ``B``
-        (``A`` depends on ``B``)."""
+        """Add an edge from object ``A`` to object ``B``.
+
+        I.e. ``A`` depends on ``B``.
+        """
         self[A].append(B)
 
     def connect(self, graph: 'DependencyGraph') -> None:
@@ -95,8 +99,7 @@ class DependencyGraph(Iterable):
         return sum(l)
 
     def update(self, it: Iterable) -> None:
-        """Update the graph with data from a list
-        of ``(obj, dependencies)`` tuples."""
+        """Update graph with data from a list of ``(obj, deps)`` tuples."""
         tups = list(it)
         for obj, _ in tups:
             self.add_arc(obj)
@@ -109,7 +112,7 @@ class DependencyGraph(Iterable):
         return (obj for obj, adj in self.items() if adj)
 
     def _khan62(self) -> Sequence[Any]:
-        """Khans simple topological sort algorithm from '62
+        """Perform Khan's simple topological sort algorithm from '62.
 
         See https://en.wikipedia.org/wiki/Topological_sorting
         """
@@ -133,10 +136,10 @@ class DependencyGraph(Iterable):
         return result
 
     def _tarjan72(self) -> Sequence[Any]:
-        """Tarjan's algorithm to find strongly connected components.
+        """Perform Tarjan's algorithm to find strongly connected components.
 
         See Also:
-            http://bit.ly/vIMv3h.
+            :wikipedia:`Tarjan%27s_strongly_connected_components_algorithm`
         """
         result = []  # type: MutableSequence[Any]
         stack = []   # type: MutableSequence[Any]
@@ -227,6 +230,8 @@ class DependencyGraph(Iterable):
 
 
 class GraphFormatter:
+    """Format dependency graphs."""
+
     _attr = DOT.ATTR.strip()
     _node = DOT.NODE.strip()
     _edge = DOT.EDGE.strip()

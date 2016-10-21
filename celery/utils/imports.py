@@ -4,6 +4,7 @@ import imp as _imp
 import importlib
 import os
 import sys
+import warnings
 
 from contextlib import contextmanager
 from imp import reload
@@ -26,10 +27,11 @@ __all__ = [
 
 
 class NotAPackage(Exception):
-    pass
+    """Raised when importing a package, but it's not a package."""
 
 
 def qualname(obj: Any) -> str:
+    """Return object name."""
     if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
         obj = obj.__class__
     q = getattr(obj, '__qualname__', None)
@@ -49,6 +51,7 @@ def instantiate(name: Any, *args, **kwargs) -> Any:
 
 @contextmanager
 def cwd_in_path() -> Iterator:
+    """Context adding the current working directory to sys.path."""
     cwd = os.getcwd()
     if cwd in sys.path:
         yield
@@ -87,8 +90,7 @@ def find_module(module: str,
 def import_from_cwd(module: str,
                     imp: Optional[Callable]=None,
                     package: Optional[str]=None) -> ModuleType:
-    """Import module, but make sure it finds modules
-    located in the current directory.
+    """Import module, temporarily including modules in the current directory.
 
     Modules located in the current directory has
     precedence over modules located in `sys.path`.
@@ -101,6 +103,7 @@ def import_from_cwd(module: str,
 
 def reload_from_cwd(module: ModuleType,
                     reloader: Optional[Callable]=None) -> Any:
+    """Reload module (ensuring that CWD is in sys.path)."""
     if reloader is None:
         reloader = reload
     with cwd_in_path():
@@ -133,3 +136,25 @@ def gen_task_name(app: Any, name: str, module_name: str) -> str:
     if module_name == '__main__' and app.main:
         return '.'.join([app.main, name])
     return '.'.join(p for p in (module_name, name) if p)
+
+
+def load_extension_class_names(namespace):
+    try:
+        from pkg_resources import iter_entry_points
+    except ImportError:  # pragma: no cover
+        return
+
+    for ep in iter_entry_points(namespace):
+        yield ep.name, ':'.join([ep.module_name, ep.attrs[0]])
+
+
+def load_extension_classes(namespace):
+    for name, class_name in load_extension_class_names(namespace):
+        try:
+            cls = symbol_by_name(class_name)
+        except (ImportError, SyntaxError) as exc:
+            warnings.warn(
+                'Cannot load {0} extension {1!r}: {2!r}'.format(
+                    namespace, class_name, exc))
+        else:
+            yield name, cls

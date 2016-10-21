@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
 """Terminals and colors."""
+import codecs
+import base64
+import os
 import platform
+import sys
 
 from functools import reduce
 from typing import Any, Tuple
 from typing import Callable, Mapping  # noqa
+
+from celery.platforms import isatty
 
 __all__ = ['colored']
 
@@ -14,6 +20,16 @@ RESET_SEQ = '\033[0m'
 COLOR_SEQ = '\033[1;%dm'
 
 IS_WINDOWS = platform.system() == 'Windows'
+
+ITERM_PROFILE = os.environ.get('ITERM_PROFILE')
+TERM = os.environ.get('TERM')
+TERM_IS_SCREEN = TERM and TERM.startswith('screen')
+
+# tmux requires unrecognized OSC sequences to be wrapped with DCS tmux;
+# <sequence> ST, and for all ESCs in <sequence> to be replaced with ESC ESC.
+# It only accepts ESC backslash for ST.
+_IMG_PRE = '\033Ptmux;\033\033]' if TERM_IS_SCREEN else '\033]'
+_IMG_POST = '\a\033\\' if TERM_IS_SCREEN else '\a'
 
 
 def fg(s: int) -> str:
@@ -36,8 +52,6 @@ class colored:
         self.s = s
         self.enabled = not IS_WINDOWS and enabled
         self.op = op
-
-        # type: Mapping[str, Callable]
         self.names = {
             'black': self.black,
             'red': self.red,
@@ -152,3 +166,18 @@ class colored:
         if self.enabled:
             suffix = RESET_SEQ
         return str(''.join((self.embed(), str(suffix))))
+
+
+def supports_images():
+    return isatty(sys.stdin) and ITERM_PROFILE
+
+
+def _read_as_base64(path):
+    with codecs.open(path, mode='rb') as fh:
+        return base64.b64encode(fh.read())
+
+
+def imgcat(path, inline=1, preserve_aspect_ratio=0, **kwargs):
+    return '\n%s1337;File=inline=%d;preserveAspectRatio=%d:%s%s' % (
+        _IMG_PRE, inline, preserve_aspect_ratio,
+        _read_as_base64(path), _IMG_POST)

@@ -32,12 +32,11 @@ __all__ = [
 
 
 def worker_direct(hostname: str) -> Queue:
-    """Return :class:`kombu.Queue` that is a direct route to
-    a worker by hostname.
+    """Return the :class:`kombu.Queue` being a direct route to a worker.
 
     Arguments:
         hostname (str, ~kombu.Queue): The fully qualified node name of
-            a worker (e.g. ``w1@example.com``).  If passed a
+            a worker (e.g., ``w1@example.com``).  If passed a
             :class:`kombu.Queue` instance it will simply return
             that instead.
     """
@@ -56,27 +55,33 @@ def nodename(name: str, hostname: str) -> str:
 
 
 def anon_nodename(hostname: Optional[str]=None, prefix: str='gen') -> str:
+    """Return the nodename for this process (not a worker).
+
+    This is used for e.g. the origin task message field.
+    """
     return nodename(''.join([prefix, str(os.getpid())]),
                     hostname or gethostname())
 
 
-def nodesplit(nodename: str) -> Tuple[str]:
+def nodesplit(name: str) -> Tuple[str]:
     """Split node name into tuple of name/hostname."""
-    parts = nodename.split(NODENAME_SEP, 1)
+    parts = name.split(NODENAME_SEP, 1)
     if len(parts) == 1:
         return None, parts[0]
     return parts
 
 
 def default_nodename(hostname: str) -> str:
+    """Return the default nodename for this process."""
     name, host = nodesplit(hostname or '')
     return nodename(name or NODENAME_DEFAULT, host or gethostname())
 
 
-def node_format(s: str, nodename: str, **extra: Dict[str, str]) -> str:
-    name, host = nodesplit(nodename)
+def node_format(s: str, name: str, **extra: Dict[str, str]) -> str:
+    """Format worker node name (name@host.com)."""
+    shortname, host = nodesplit(name)
     return host_format(
-        s, host, name or NODENAME_DEFAULT, p=nodename, **extra)
+        s, host, shortname or NODENAME_DEFAULT, p=name, **extra)
 
 
 def _fmt_process_index(prefix: str='', default: str='0') -> str:
@@ -89,6 +94,7 @@ _fmt_process_index_with_prefix = partial(_fmt_process_index, '-', '')
 def host_format(s: str,
                 host: Optional[str]=None, name: Optional[str]=None,
                 **extra: Dict[str, str]) -> str:
+    """Format host %x abbreviations."""
     host = host or gethostname()
     hname, _, domain = host.partition('.')
     name = name or hname

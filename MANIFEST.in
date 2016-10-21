@@ -7,6 +7,7 @@ include TODO
 include setup.cfg
 include setup.py
 
+recursive-include t *.py
 recursive-include docs *
 recursive-include extra/bash-completion *
 recursive-include extra/centos *
@@ -17,7 +18,9 @@ recursive-include extra/systemd *
 recursive-include extra/zsh-completion *
 recursive-include examples *
 recursive-include requirements *.txt *.rst
+recursive-include celery/utils/static *.png
 
+recursive-exclude docs/_build *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 recursive-exclude * .*.sw[a-z]

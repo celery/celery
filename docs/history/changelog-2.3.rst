@@ -11,7 +11,7 @@
 
 2.3.4
 =====
-:release-date: 2011-11-25 04:00 P.M GMT
+:release-date: 2011-11-25 04:00 p.m. GMT
 :release-by: Ask Solem
 
 .. _v234-security-fixes:
@@ -37,7 +37,7 @@ Fixes
 
 * Backported fix for #455 from 2.4 to 2.3.
 
-* StateDB was not saved at shutdown.
+* StateDB wasn't saved at shutdown.
 
 * Fixes worker sometimes hanging when hard time limit exceeded.
 
@@ -46,14 +46,14 @@ Fixes
 
 2.3.3
 =====
-:release-date: 2011-16-09 05:00 P.M BST
+:release-date: 2011-16-09 05:00 p.m. BST
 :release-by: Mher Movsisyan
 
 * Monkey patching :attr:`sys.stdout` could result in the worker
-  crashing if the replacing object did not define :meth:`isatty`
+  crashing if the replacing object didn't define :meth:`isatty`
   (Issue #477).
 
-* ``CELERYD`` option in :file:`/etc/default/celeryd` should not
+* ``CELERYD`` option in :file:`/etc/default/celeryd` shouldn't
   be used with generic init-scripts.
 
 
@@ -61,7 +61,7 @@ Fixes
 
 2.3.2
 =====
-:release-date: 2011-10-07 05:00 P.M BST
+:release-date: 2011-10-07 05:00 p.m. BST
 :release-by: Ask Solem
 
 .. _v232-news:
@@ -74,7 +74,7 @@ News
     If you'd like to contribute to Celery you should read the
     :ref:`Contributing Gudie <contributing>`.
 
-    We are looking for contributors at all skill levels, so don't
+    We're looking for contributors at all skill levels, so don't
     hesitate!
 
 * Now depends on Kombu 1.3.1
@@ -83,7 +83,7 @@ News
 
     Available as ``task.request.hostname``.
 
-* It is now easier for app subclasses to extend how they are pickled.
+* It's now easier for app subclasses to extend how they're pickled.
     (see :class:`celery.app.AppPickler`).
 
 .. _v232-fixes:
@@ -91,13 +91,13 @@ News
 Fixes
 -----
 
-* `purge/discard_all` was not working correctly (Issue #455).
+* `purge/discard_all` wasn't working correctly (Issue #455).
 
 * The coloring of log messages didn't handle non-ASCII data well
   (Issue #427).
 
 * [Windows] the multiprocessing pool tried to import ``os.kill``
-  even though this is not available there (Issue #450).
+  even though this isn't available there (Issue #450).
 
 * Fixes case where the worker could become unresponsive because of tasks
   exceeding the hard time limit.
@@ -106,7 +106,7 @@ Fixes
 
 * ``ResultSet.iterate`` now returns results as they finish (Issue #459).
 
-    This was not the case previously, even though the documentation
+    This wasn't the case previously, even though the documentation
     states this was the expected behavior.
 
 * Retries will no longer be performed when tasks are called directly
@@ -125,13 +125,13 @@ Fixes
 
 2.3.1
 =====
-:release-date: 2011-08-07 08:00 P.M BST
+:release-date: 2011-08-07 08:00 p.m. BST
 :release-by: Ask Solem
 
 Fixes
 -----
 
-* The :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting did not work,
+* The :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting didn't work,
   resulting in an AMQP related error about not being able to serialize
   floats while trying to publish task states (Issue #446).
 
@@ -139,7 +139,7 @@ Fixes
 
 2.3.0
 =====
-:release-date: 2011-08-05 12:00 P.M BST
+:release-date: 2011-08-05 12:00 p.m. BST
 :tested: CPython: 2.5, 2.6, 2.7; PyPy: 1.5; Jython: 2.5.2
 :release-by: Ask Solem
 
@@ -152,10 +152,10 @@ Important Notes
 
 * Results are now disabled by default.
 
-    The AMQP backend was not a good default because often the users were
+    The AMQP backend wasn't a good default because often the users were
     not consuming the results, resulting in thousands of queues.
 
-    While the queues can be configured to expire if left unused, it was not
+    While the queues can be configured to expire if left unused, it wasn't
     possible to enable this by default because this was only available in
     recent RabbitMQ versions (2.1.1+)
 
@@ -164,7 +164,7 @@ Important Notes
     of any common pitfalls with the particular backend.
 
     The default backend is now a dummy backend
-    (:class:`celery.backends.base.DisabledBackend`).  Saving state is simply an
+    (:class:`celery.backends.base.DisabledBackend`). Saving state is simply an
     no-op, and AsyncResult.wait(), .result, .state, etc. will raise
     a :exc:`NotImplementedError` telling the user to configure the result backend.
 
@@ -193,7 +193,7 @@ News
 
 * Automatic connection pool support.
 
-    The pool is used by everything that requires a broker connection.  For
+    The pool is used by everything that requires a broker connection, for
     example calling tasks, sending broadcast commands, retrieving results
     with the AMQP result backend, and so on.
 
@@ -215,7 +215,7 @@ News
 * Introducing Chords (taskset callbacks).
 
     A chord is a task that only executes after all of the tasks in a taskset
-    has finished executing.  It's a fancy term for "taskset callbacks"
+    has finished executing. It's a fancy term for "taskset callbacks"
     adopted from
     `Cω  <http://research.microsoft.com/en-us/um/cambridge/projects/comega/>`_).
 
@@ -260,7 +260,7 @@ News
     .. note::
 
         Soft time limits will still not work on Windows or other platforms
-        that do not have the ``SIGUSR1`` signal.
+        that don't have the ``SIGUSR1`` signal.
 
 * Redis backend configuration directive names changed to include the
    ``CELERY_`` prefix.
@@ -282,7 +282,7 @@ News
 
 * multi: now supports "pass through" options.
 
-    Pass through options makes it easier to use celery without a
+    Pass through options makes it easier to use Celery without a
     configuration file, or just add last-minute options on the command
     line.
 
@@ -315,7 +315,7 @@ News
 * ``events.default_dispatcher()``: Context manager to easily obtain
   an event dispatcher instance using the connection pool.
 
-* Import errors in the configuration module will not be silenced anymore.
+* Import errors in the configuration module won't be silenced anymore.
 
 * ResultSet.iterate:  Now supports the ``timeout``, ``propagate`` and
   ``interval`` arguments.

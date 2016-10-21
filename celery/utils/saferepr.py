@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 """Streaming, truncating, non-recursive version of :func:`repr`.
 
-
 Differences from regular :func:`repr`:
 
 - Sets are represented the Python 3 way: ``{1, 2}`` vs ``set([1, 2])``.
 - Unicode strings does not have the ``u'`` prefix, even on Python 2.
 - Empty set formatted as ``set()`` (Python 3), not ``set([])`` (Python 2).
-- Longs do not have the ``L`` suffix.
+- Longs don't have the ``L`` suffix.
 
 Very slow with no limits, super quick with limits.
 """
@@ -26,6 +25,9 @@ from kombu.utils.encoding import bytes_to_str
 from .text import truncate, truncate_bytes
 
 __all__ = ['saferepr', 'reprstream']
+
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
 
 _literal = namedtuple('_literal', ('value', 'truncate', 'direction'))
 _key = namedtuple('_key', ('value',))
@@ -51,6 +53,13 @@ LIT_TUPLE_END_SV = _literal(',)', False, -1)
 
 def saferepr(o: Any, maxlen: Optional[int]=None,
              maxlevels: int=3, seen: Optional[Set]=None) -> str:
+    """Safe version of :func:`repr`.
+
+    Warning:
+        Make sure you set the maxlen argument, or it will be very slow
+        for recursive objects.  With the maxlen set, it's often faster
+        than built-in repr.
+    """
     return ''.join(_saferepr(
         o, maxlen=maxlen, maxlevels=maxlevels, seen=seen
     ))
@@ -124,6 +133,7 @@ def _reprseq(val: Any, lit_start: str, lit_end: str, builtin_type: Any,
 def reprstream(stack: MutableSequence, seen: Optional[Set]=None,
                maxlevels: int=3, level: int=0,
                isinstance: Callable=isinstance) -> Iterator[Any]:
+    """Streaming repr, yielding tokens."""
     seen = seen or set()
     append = stack.append
     popleft = stack.popleft

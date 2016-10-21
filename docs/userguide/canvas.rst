@@ -44,7 +44,7 @@ or even serialized and sent across the wire.
         >>> add.signature((2, 2), countdown=10)
         tasks.add(2, 2)
 
-- There is also a shortcut using star arguments:
+- There's also a shortcut using star arguments:
 
     .. code-block:: pycon
 
@@ -70,8 +70,8 @@ or even serialized and sent across the wire.
         >>> s.options
         {'countdown': 10}
 
-- It supports the "Calling API" which means it supports ``delay`` and
-  ``apply_async`` or being called directly.
+- It supports the "Calling API" of ``delay``,
+  ``apply_async``, etc., including being called directly (``__call__``).
 
     Calling the signature will execute the task inline in the current process:
 
@@ -126,7 +126,7 @@ Or you can call it directly in the current process:
     >>> add.s(2, 2)()
     4
 
-Specifying additional args, kwargs or options to ``apply_async``/``delay``
+Specifying additional args, kwargs, or options to ``apply_async``/``delay``
 creates partials:
 
 - Any arguments added will be prepended to the args in the signature:
@@ -169,9 +169,9 @@ Immutability
 
 .. versionadded:: 3.0
 
-Partials are meant to be used with callbacks, any tasks linked or chord
+Partials are meant to be used with callbacks, any tasks linked, or chord
 callbacks will be applied with the result of the parent task.
-Sometimes you want to specify a callback that does not take
+Sometimes you want to specify a callback that doesn't take
 additional arguments, and in that case you can set the signature
 to be immutable:
 
@@ -265,7 +265,7 @@ The Primitives
 
     - ``chord``
 
-        A chord is just like a group but with a callback.  A chord consists
+        A chord is just like a group but with a callback. A chord consists
         of a header group and a body,  where the body is a task that should execute
         after all of the tasks in the header are complete.
 
@@ -273,7 +273,7 @@ The Primitives
 
         The map primitive works like the built-in ``map`` function, but creates
         a temporary task where a list of arguments is applied to the task.
-        E.g. ``task.map([1, 2])`` results in a single task
+        For example, ``task.map([1, 2])`` -- results in a single task
         being called, applying the arguments in order to the task function so
         that the result is:
 
@@ -293,7 +293,8 @@ The Primitives
 
     - ``chunks``
 
-        Chunking splits a long list of arguments into parts, e.g the operation:
+        Chunking splits a long list of arguments into parts, for example
+        the operation:
 
         .. code-block:: pycon
 
@@ -343,7 +344,8 @@ Here's some examples:
 
         >>> add.signature((2, 2), immutable=True)
 
-    There's also an ``.si`` shortcut for this:
+    There's also a ``.si()`` shortcut for this, and this is the preffered way of
+    creating signatures:
 
     .. code-block:: pycon
 
@@ -376,9 +378,9 @@ Here's some examples:
 
 - Simple chord
 
-    The chord primitive enables us to add callback to be called when
-    all of the tasks in a group have finished executing, which is often
-    required for algorithms that aren't embarrassingly parallel:
+    The chord primitive enables us to add a callback to be called when
+    all of the tasks in a group have finished executing.  This is often
+    required for algorithms that aren't *embarrassingly parallel*:
 
     .. code-block:: pycon
 
@@ -392,14 +394,16 @@ Here's some examples:
     into a list and sent to the ``xsum`` task.
 
     The body of a chord can also be immutable, so that the return value
-    of the group is not passed on to the callback:
+    of the group isn't passed on to the callback:
 
     .. code-block:: pycon
 
         >>> chord((import_contact.s(c) for c in contacts),
         ...       notify_complete.si(import_id)).apply_async()
 
-    Note the use of ``.si`` above which creates an immutable signature.
+    Note the use of ``.si`` above; this creates an immutable signature,
+    meaning any new arguments passed (including to return value of the
+    previous task) will be ignored.
 
 - Blow your mind by combining
 
@@ -414,7 +418,7 @@ Here's some examples:
         >>> res.get()
         160
 
-    Which means that you can combine chains:
+    this means that you can combine chains:
 
     .. code-block:: pycon
 
@@ -480,8 +484,8 @@ Chains
 
 .. versionadded:: 3.0
 
-Tasks can be linked together, which in practice means adding
-a callback task:
+Tasks can be linked together: the linked task is called when the task
+returns successfully:
 
 .. code-block:: pycon
 
@@ -490,8 +494,8 @@ a callback task:
     4
 
 The linked task will be applied with the result of its parent
-task as the first argument, which in the above case will result
-in ``mul(4, 16)`` since the result is 4.
+task as the first argument. In the above case where the result was 4,
+this will result in ``mul(4, 16)``.
 
 The results will keep track of any subtasks called by the original task,
 and this can be accessed from the result instance:
@@ -515,8 +519,8 @@ the results:
      (<AsyncResult: 8c350acf-519d-4553-8a53-4ad3a5c5aeb4>, 64)]
 
 By default :meth:`~@AsyncResult.collect` will raise an
-:exc:`~@IncompleteStream` exception if the graph is not fully
-formed (one of the tasks has not completed yet),
+:exc:`~@IncompleteStream` exception if the graph isn't fully
+formed (one of the tasks hasn't completed yet),
 but you can get an intermediate representation of the graph
 too:
 
@@ -540,14 +544,14 @@ You can also add *error callbacks* using the `on_error` method:
 
     >>> add.s(2, 2).on_error(log_error.s()).delay()
 
-Which will resut in the following ``.apply_async`` call when the signature
+This will result in the following ``.apply_async`` call when the signature
 is applied:
 
 .. code-block:: pycon
 
     >>> add.apply_async((2, 2), link_error=log_error.s())
 
-The worker will not actually call the errback as a task, but will
+The worker won't actually call the errback as a task, but will
 instead call the errback function directly so that the raw request, exception
 and traceback objects can be passed to it.
 
@@ -565,7 +569,7 @@ Here's an example errback:
             print('--\n\n{0} {1} {2}'.format(
                 task_id, exc, traceback), file=fh)
 
-To make it even easier to link tasks together there is
+To make it even easier to link tasks together there's
 a special signature called :class:`~celery.chain` that lets
 you chain tasks together:
 
@@ -663,7 +667,7 @@ The :class:`~celery.group` function takes a list of signatures:
 
 If you **call** the group, the tasks will be applied
 one after another in the current process, and a :class:`~celery.result.GroupResult`
-instance is returned which can be used to keep track of the results,
+instance is returned that can be used to keep track of the results,
 or tell how many tasks are ready and so on:
 
 .. code-block:: pycon
@@ -720,7 +724,7 @@ It supports the following operations:
 * :meth:`~celery.result.GroupResult.successful`
 
     Return :const:`True` if all of the subtasks finished
-    successfully (e.g. did not raise an exception).
+    successfully (e.g., didn't raise an exception).
 
 * :meth:`~celery.result.GroupResult.failed`
 
@@ -729,7 +733,7 @@ It supports the following operations:
 * :meth:`~celery.result.GroupResult.waiting`
 
     Return :const:`True` if any of the subtasks
-    is not ready yet.
+    isn't ready yet.
 
 * :meth:`~celery.result.GroupResult.ready`
 
@@ -746,9 +750,8 @@ It supports the following operations:
 
 * :meth:`~celery.result.GroupResult.join`
 
-    Gather the results for all of the subtasks
-    and return a list with them ordered by the order of which they
-    were called.
+    Gather the results of all subtasks
+    and return them in the same order as they were called (as a list).
 
 .. _canvas-chord:
 
@@ -761,7 +764,7 @@ Chords
 
     Tasks used within a chord must *not* ignore their results. If the result
     backend is disabled for *any* task (header or body) in your chord you
-    should read ":ref:`chord-important-notes`".
+    should read ":ref:`chord-important-notes`."
 
 
 A chord is a task that only executes after all of the tasks in a group have
@@ -820,9 +823,9 @@ Let's break the chord expression down:
     9900
 
 Remember, the callback can only be executed after all of the tasks in the
-header have returned.  Each step in the header is executed as a task, in
-parallel, possibly on different nodes.  The callback is then applied with
-the return value of each task in the header.  The task id returned by
+header have returned. Each step in the header is executed as a task, in
+parallel, possibly on different nodes. The callback is then applied with
+the return value of each task in the header. The task id returned by
 :meth:`chord` is the id of the callback, so you can wait for it to complete
 and get the final return value (but remember to :ref:`never have a task wait
 for other tasks <task-synchronous-subtasks>`)
@@ -854,15 +857,15 @@ to the :exc:`~@ChordError` exception:
     celery.exceptions.ChordError: Dependency 97de6f3f-ea67-4517-a21c-d867c61fcb47
         raised ValueError('something something',)
 
-While the traceback may be different depending on which result backend is
-being used, you can see the error description includes the id of the task that failed
-and a string representation of the original exception.  You can also
+While the traceback may be different depending on the result backend used,
+you can see that the error description includes the id of the task that failed
+and a string representation of the original exception. You can also
 find the original traceback in ``result.traceback``.
 
 Note that the rest of the tasks will still execute, so the third task
 (``add.s(8, 8)``) is still executed even though the middle task failed.
 Also the :exc:`~@ChordError` only shows the task that failed
-first (in time): it does not respect the ordering of the header group.
+first (in time): it doesn't respect the ordering of the header group.
 
 To perform an action when a chord fails you can therefore attach
 an errback to the chord callback:
@@ -923,21 +926,23 @@ Example implementation:
         raise self.retry(countdown=interval, max_retries=max_retries)
 
 
-This is used by all result backends except Redis and Memcached, which
-increment a counter after each task in the header, then applying the callback
-when the counter exceeds the number of tasks in the set. *Note:* chords do not
-properly work with Redis before version 2.2; you will need to upgrade to at
-least 2.2 to use them.
+This is used by all result backends except Redis and Memcached: they
+increment a counter after each task in the header, then applies the callback
+when the counter exceeds the number of tasks in the set.
 
 The Redis and Memcached approach is a much better solution, but not easily
 implemented in other backends (suggestions welcome!).
 
+.. note::
+
+   Chords don't properly work with Redis before version 2.2; you'll need to
+   upgrade to at least redis-server 2.2 to use them.
 
 .. note::
 
-    If you are using chords with the Redis result backend and also overriding
+    If you're using chords with the Redis result backend and also overriding
     the :meth:`Task.after_return` method, you need to make sure to call the
-    super method or else the chord callback will not be applied.
+    super method or else the chord callback won't be applied.
 
     .. code-block:: python
 
@@ -1010,7 +1015,7 @@ thousand objects each.
 
 Some may worry that chunking your tasks results in a degradation
 of parallelism, but this is rarely true for a busy cluster
-and in practice since you are avoiding the overhead  of messaging
+and in practice since you're avoiding the overhead  of messaging
 it may considerably increase performance.
 
 To create a chunks signature you can use :meth:`@Task.chunks`:
@@ -1060,5 +1065,5 @@ of one:
 
     >>> group.skew(start=1, stop=10)()
 
-which means that the first task will have a countdown of 1, the second
-a countdown of 2 and so on.
+This means that the first task will have a countdown of one second, the second
+task a countdown of two seconds, and so on.

@@ -5,7 +5,7 @@ Abortable tasks overview
 =========================
 
 For long-running :class:`Task`'s, it can be desirable to support
-aborting during execution. Of course, these tasks should be built to
+aborting during execution.  Of course, these tasks should be built to
 support abortion specifically.
 
 The :class:`AbortableTask` serves as a base class for all :class:`Task`
@@ -16,7 +16,7 @@ objects that should support abortion by producers.
 
 * Consumers (workers) should periodically check (and honor!) the
   :meth:`is_aborted` method at controlled points in their task's
-  :meth:`run` method. The more often, the better.
+  :meth:`run` method.  The more often, the better.
 
 The necessary intermediate communication is dealt with by the
 :class:`AbortableTask` implementation.
@@ -67,9 +67,9 @@ In the producer:
         time.sleep(10)
         result.abort()
 
-After the `result.abort()` call, the task execution is not
-aborted immediately. In fact, it is not guaranteed to abort at all. Keep
-checking `result.state` status, or call `result.get(timeout=)` to
+After the `result.abort()` call, the task execution isn't
+aborted immediately.  In fact, it's not guaranteed to abort at all.
+Keep checking `result.state` status, or call `result.get(timeout=)` to
 have it block until the task is finished.
 
 .. note::
@@ -105,7 +105,7 @@ class AbortableAsyncResult(AsyncResult):
     """Represents a abortable result.
 
     Specifically, this gives the `AsyncResult` a :meth:`abort()` method,
-    which sets the state of the underlying Task to `'ABORTED'`.
+    that sets the state of the underlying Task to `'ABORTED'`.
     """
 
     def is_aborted(self):
@@ -129,13 +129,16 @@ class AbortableAsyncResult(AsyncResult):
 
 
 class AbortableTask(Task):
-    """A celery task that serves as a base class for all :class:`Task`'s
+    """Task that can be aborted.
+
+    This serves as a base class for all :class:`Task`'s
     that support aborting during execution.
 
     All subclasses of :class:`AbortableTask` must call the
     :meth:`is_aborted` method periodically and act accordingly when
     the call evaluates to :const:`True`.
     """
+
     abstract = True
 
     def AsyncResult(self, task_id):
@@ -143,7 +146,9 @@ class AbortableTask(Task):
         return AbortableAsyncResult(task_id, backend=self.backend)
 
     def is_aborted(self, **kwargs):
-        """Checks against the backend whether this
+        """Return true if task is aborted.
+
+        Checks against the backend whether this
         :class:`AbortableAsyncResult` is :const:`ABORTED`.
 
         Always return :const:`False` in case the `task_id` parameter

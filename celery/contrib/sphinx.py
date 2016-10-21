@@ -14,7 +14,7 @@ Add the extension to your :file:`docs/conf.py` configuration module:
     extensions = (...,
                   'celery.contrib.sphinx')
 
-If you would like to change the prefix for tasks in reference documentation
+If you'd like to change the prefix for tasks in reference documentation
 then you can change the ``celery_task_prefix`` configuration value:
 
 .. code-block:: python
@@ -37,6 +37,8 @@ from celery.app.task import BaseTask
 
 
 class TaskDocumenter(FunctionDocumenter):
+    """Document task definitions."""
+
     objtype = 'task'
     member_order = 11
 
@@ -45,7 +47,7 @@ class TaskDocumenter(FunctionDocumenter):
         return isinstance(member, BaseTask) and getattr(member, '__wrapped__')
 
     def format_args(self):
-        wrapped = getattr(self.object, '__wrapped__')
+        wrapped = getattr(self.object, '__wrapped__', None)
         if wrapped is not None:
             argspec = getfullargspec(wrapped)
             fmt = formatargspec(*argspec)
@@ -58,12 +60,14 @@ class TaskDocumenter(FunctionDocumenter):
 
 
 class TaskDirective(PyModulelevel):
+    """Sphinx task directive."""
 
     def get_signature_prefix(self, sig):
         return self.env.config.celery_task_prefix
 
 
 def setup(app):
+    """Setup Sphinx extension."""
     app.add_autodocumenter(TaskDocumenter)
     app.domains['py'].directives['task'] = TaskDirective
     app.add_config_value('celery_task_prefix', '(task)', True)

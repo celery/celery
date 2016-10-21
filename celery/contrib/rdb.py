@@ -29,8 +29,8 @@ Environment Variables
 ``CELERY_RDB_HOST``
 -------------------
 
-    Hostname to bind to.  Default is '127.0.01', which means the socket
-    will only be accessible from the local host.
+    Hostname to bind to.  Default is '127.0.01' (only accessable from
+    localhost).
 
 .. envvar:: CELERY_RDB_PORT
 
@@ -84,6 +84,8 @@ SESSION_ENDED = '{self.ident}: Session with {self.remote_addr} ended.'
 
 
 class Rdb(Pdb):
+    """Remote debugger."""
+
     me = 'Remote Debugger'
     _prev_outs = None
     _sock = None
@@ -168,13 +170,12 @@ class Rdb(Pdb):
     do_q = do_exit = do_quit
 
     def set_quit(self):
-        # this raises a BdbQuit exception that we are unable to catch.
+        # this raises a BdbQuit exception that we're unable to catch.
         sys.settrace(None)
 
 
 def debugger():
-    """Return the current debugger instance (if any),
-    or creates a new one."""
+    """Return the current debugger instance, or create if none."""
     rdb = _current[0]
     if rdb is None or not rdb.active:
         rdb = _current[0] = Rdb()

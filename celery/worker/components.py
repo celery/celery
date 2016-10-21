@@ -13,8 +13,9 @@ from celery.exceptions import ImproperlyConfigured
 from celery.platforms import IS_WINDOWS
 from celery.utils.log import worker_logger as logger
 
-
 __all__ = ['Timer', 'Hub', 'Pool', 'Beat', 'StateDB', 'Consumer']
+
+GREEN_POOLS = {'eventlet', 'gevent'}
 
 ERR_B_GREEN = """\
 -B option doesn't work with eventlet/gevent pools: \
@@ -22,14 +23,14 @@ use standalone beat instead.\
 """
 
 W_POOL_SETTING = """
-The worker_pool setting should not be used to select the eventlet/gevent
+The worker_pool setting shouldn't be used to select the eventlet/gevent
 pools, instead you *must use the -P* argument so that patches are applied
 as early as possible.
 """
 
 
 class Timer(bootsteps.Step):
-    """This step initializes the internal timer used by the worker."""
+    """Timer bootstep."""
 
     def create(self, w):
         if w.use_eventloop:
@@ -37,26 +38,29 @@ class Timer(bootsteps.Step):
             w.timer = _Timer(max_interval=10.0)
         else:
             if not w.timer_cls:
-                # Default Timer is set by the pool, as e.g. eventlet
-                # needs a custom implementation.
+                # Default Timer is set by the pool, as for example, the
+                # eventlet pool needs a custom timer implementation.
                 w.timer_cls = w.pool_cls.Timer
             w.timer = self.instantiate(w.timer_cls,
                                        max_interval=w.timer_precision,
-                                       on_timer_error=self.on_timer_error,
-                                       on_timer_tick=self.on_timer_tick)
+                                       on_error=self.on_timer_error,
+                                       on_tick=self.on_timer_tick)
 
     def on_timer_error(self, exc):
         logger.error('Timer error: %r', exc, exc_info=True)
 
     def on_timer_tick(self, delay):
-        logger.debug('Timer wake-up! Next eta %s secs.', delay)
+        logger.debug('Timer wake-up! Next ETA %s secs.', delay)
 
 
 class Hub(bootsteps.StartStopStep):
+    """Worker starts the event loop."""
+
     requires = (Timer,)
 
     def __init__(self, w, **kwargs):
         w.hub = None
+        super(Hub, self).__init__(w, **kwargs)
 
     def include_if(self, w):
         return w.use_eventloop
@@ -99,17 +103,26 @@ class Pool(bootsteps.StartStopStep):
 
     Adds attributes:
 
+        * autoscale
         * pool
         * max_concurrency
         * min_concurrency
     """
+
     requires = (Hub,)
 
-    def __init__(self, w, optimization=None, **kwargs):
+    def __init__(self, w, autoscale=None, **kwargs):
         w.pool = None
         w.max_concurrency = None
         w.min_concurrency = w.concurrency
-        self.optimization = optimization
+        self.optimization = w.optimization
+        if isinstance(autoscale, str):
+            max_c, _, min_c = autoscale.partition(',')
+            autoscale = [int(max_c), min_c and int(min_c) or 0]
+        w.autoscale = autoscale
+        if w.autoscale:
+            w.max_concurrency, w.min_concurrency = w.autoscale
+        super(Pool, self).__init__(w, **kwargs)
 
     def close(self, w):
         if w.pool:
@@ -119,9 +132,10 @@ class Pool(bootsteps.StartStopStep):
         if w.pool:
             w.pool.terminate()
 
-    def create(self, w, semaphore=None, max_restarts=None,
-               green_pools={'eventlet', 'gevent'}):
-        if w.app.conf.worker_pool in green_pools:  # pragma: no cover
+    def create(self, w):
+        semaphore = None
+        max_restarts = None
+        if w.app.conf.worker_pool in GREEN_POOLS:  # pragma: no cover
             warnings.warn(UserWarning(W_POOL_SETTING))
         threaded = not w.use_eventloop or IS_WINDOWS
         procs = w.min_concurrency
@@ -139,8 +153,8 @@ class Pool(bootsteps.StartStopStep):
             initargs=(w.app, w.hostname),
             maxtasksperchild=w.max_tasks_per_child,
             max_memory_per_child=w.max_memory_per_child,
-            timeout=w.task_time_limit,
-            soft_timeout=w.task_soft_time_limit,
+            timeout=w.time_limit,
+            soft_timeout=w.soft_time_limit,
             putlocks=w.pool_putlocks and threaded,
             lost_worker_timeout=w.worker_lost_wait,
             threads=threaded,
@@ -164,14 +178,16 @@ class Pool(bootsteps.StartStopStep):
 class Beat(bootsteps.StartStopStep):
     """Step used to embed a beat process.
 
-    This will only be enabled if the ``beat`` argument is set.
+    Enabled when the ``beat`` argument is set.
     """
+
     label = 'Beat'
     conditional = True
 
     def __init__(self, w, beat=False, **kwargs):
         self.enabled = w.beat = beat
         w.beat = None
+        super(Beat, self).__init__(w, beat=beat, **kwargs)
 
     def create(self, w):
         from celery.beat import EmbeddedService
@@ -179,23 +195,25 @@ class Beat(bootsteps.StartStopStep):
             raise ImproperlyConfigured(ERR_B_GREEN)
         b = w.beat = EmbeddedService(w.app,
                                      schedule_filename=w.schedule_filename,
-                                     scheduler_cls=w.scheduler_cls)
+                                     scheduler_cls=w.scheduler)
         return b
 
 
 class StateDB(bootsteps.Step):
-    """This bootstep sets up the workers state db if enabled."""
+    """Bootstep that sets up between-restart state database file."""
 
     def __init__(self, w, **kwargs):
-        self.enabled = w.state_db
+        self.enabled = w.statedb
         w._persistence = None
+        super(StateDB, self).__init__(w, **kwargs)
 
     def create(self, w):
-        w._persistence = w.state.Persistent(w.state, w.state_db, w.app.clock)
+        w._persistence = w.state.Persistent(w.state, w.statedb, w.app.clock)
         atexit.register(w._persistence.save)
 
 
 class Consumer(bootsteps.StartStopStep):
+    """Bootstep starting the Consumer blueprint."""
 
     last = True
 
@@ -207,7 +225,7 @@ class Consumer(bootsteps.StartStopStep):
         c = w.consumer = self.instantiate(
             w.consumer_cls, w.process_task,
             hostname=w.hostname,
-            send_events=w.send_events,
+            task_events=w.task_events,
             init_callback=w.ready_callback,
             initial_prefetch_count=prefetch_count,
             pool=w.pool,

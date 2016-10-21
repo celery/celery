@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """Eventlet execution pool."""
 import sys
-
-from time import time
+from time import monotonic
 
 __all__ = ['TaskPool']
 
@@ -36,6 +35,7 @@ def apply_target(target, args=(), kwargs={}, callback=None,
 
 
 class Timer(_timer.Timer):
+    """Eventlet Timer."""
 
     def __init__(self, *args, **kwargs):
         from eventlet.greenthread import spawn_after
@@ -46,8 +46,8 @@ class Timer(_timer.Timer):
         self._spawn_after = spawn_after
         self._queue = set()
 
-    def _enter(self, eta, priority, entry):
-        secs = max(eta - time(), 0)
+    def _enter(self, eta, priority, entry, **kwargs):
+        secs = max(eta - monotonic(), 0)
         g = self._spawn_after(secs, entry)
         self._queue.add(g)
         g.link(self._entry_exit, entry)
@@ -87,11 +87,15 @@ class Timer(_timer.Timer):
 
 
 class TaskPool(base.BasePool):
+    """Eventlet Task Pool."""
+
     Timer = Timer
 
     signal_safe = False
     is_green = True
     task_join_will_block = False
+    _pool = None
+    _quick_put = None
 
     def __init__(self, *args, **kwargs):
         from eventlet import greenthread

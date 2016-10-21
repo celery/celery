@@ -11,6 +11,14 @@ debug, info, exception = logger.debug, logger.info, logger.exception
 
 
 class Mingle(bootsteps.StartStopStep):
+    """Bootstep syncing state with neighbor workers.
+
+    At startup, or upon consumer restart, this will:
+
+    - Sync logical clocks.
+    - Sync revoked tasks.
+
+    """
 
     label = 'Mingle'
     requires = (Events,)
@@ -18,17 +26,19 @@ class Mingle(bootsteps.StartStopStep):
 
     def __init__(self, c, without_mingle=False, **kwargs):
         self.enabled = not without_mingle and self.compatible_transport(c.app)
+        super(Mingle, self).__init__(
+            c, without_mingle=without_mingle, **kwargs)
 
     def compatible_transport(self, app):
         with app.connection_for_read() as conn:
             return conn.transport.driver_type in self.compatible_transports
 
     def start(self, c):
+        self.sync(c)
+
+    def sync(self, c):
         info('mingle: searching for neighbors')
-        I = c.app.control.inspect(timeout=1.0, connection=c.connection)
-        our_revoked = c.controller.state.revoked
-        replies = I.hello(c.hostname, our_revoked._data) or {}
-        replies.pop(c.hostname, None)  # delete my own response
+        replies = self.send_hello(c)
         if replies:
             info('mingle: sync with %s nodes',
                  len([reply for reply, value in replies.items() if value]))
@@ -38,13 +48,20 @@ class Mingle(bootsteps.StartStopStep):
         else:
             info('mingle: all alone')
 
+    def send_hello(self, c):
+        inspect = c.app.control.inspect(timeout=1.0, connection=c.connection)
+        our_revoked = c.controller.state.revoked
+        replies = inspect.hello(c.hostname, our_revoked._data) or {}
+        replies.pop(c.hostname, None)  # delete my own response
+        return replies
+
     def on_node_reply(self, c, nodename, reply):
         debug('mingle: processing reply from %s', nodename)
         try:
             self.sync_with_node(c, **reply)
         except MemoryError:
             raise
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             exception('mingle: sync with %s failed: %r', nodename, exc)
 
     def sync_with_node(self, c, clock=None, revoked=None, **kwargs):

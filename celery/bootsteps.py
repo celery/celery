@@ -2,12 +2,11 @@
 """A directed acyclic graph of reusable components."""
 from collections import deque
 from threading import Event
-from typing import Any, Callable, Mapping, Optional, Set, Sequence, Tuple
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple
 
 from kombu.common import ignore_errors
 from kombu.utils.imports import symbol_by_name
 
-from .utils.abstract import AbstractApp
 from .utils.graph import DependencyGraph, GraphFormatter
 from .utils.imports import instantiate, qualname
 from .utils.log import get_logger
@@ -222,12 +221,12 @@ class Blueprint:
     Arguments:
         steps Sequence[Union[str, Step]]: List of steps.
         name (str): Set explicit name for this blueprint.
-        app (~@Celery): Set the Celery app for this blueprint.
         on_start (Callable): Optional callback applied after blueprint start.
         on_close (Callable): Optional callback applied before blueprint close.
         on_stopped (Callable): Optional callback applied after
             blueprint stopped.
     """
+
     GraphFormatter = StepFormatter
 
     name = None                        # type: Optional[str]
@@ -243,11 +242,9 @@ class Blueprint:
 
     def __init__(self, steps: Optional[Sequence]=None,
                  name: Optional[str]=None,
-                 app: Optional[AbstractApp]=None,
                  on_start: Optional[Callable[[], None]]=None,
                  on_close: Optional[Callable[[], None]]=None,
                  on_stopped: Optional[Callable[[], None]]=None) -> None:
-        self.app = app
         self.name = name or self.name or qualname(type(self))
         self.types = set(steps or []) | set(self.default_steps)
         self.on_start = on_start
@@ -298,13 +295,11 @@ class Blueprint:
                                 description.capitalize(), step.alias)
                     try:
                         fun(parent, *args)
-                    except Exception as exc:
+                    except Exception as exc:  # pylint: disable=broad-except
                         if propagate:
                             raise
-                        logger.error(
-                            'Error on %s %s: %r',
-                            description, step.alias, exc, exc_info=1,
-                        )
+                        logger.exception(
+                            'Error on %s %s: %r', description, step.alias, exc)
 
     def stop(self, parent: Any,
              close: bool=True, terminate: bool=False) -> None:
@@ -404,10 +399,7 @@ class Blueprint:
             raise KeyError('unknown bootstep: %s' % exc)
 
     def claim_steps(self) -> Mapping[str, Step]:
-        return dict(self.load_step(step) for step in self._all_steps())
-
-    def _all_steps(self) -> Set:
-        return self.types | self.app.steps[self.name.lower()]
+        return dict(self.load_step(step) for step in self.types)
 
     def load_step(self, step: Step) -> Tuple[str, Step]:
         step = symbol_by_name(step)

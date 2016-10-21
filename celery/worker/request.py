@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-"""This module defines the :class:`Request` class, which specifies
-how tasks are executed."""
+"""Task request.
+
+This module defines the :class:`Request` class, that specifies
+how tasks are executed.
+"""
 import logging
 import sys
 
@@ -19,15 +22,18 @@ from celery.exceptions import (
     WorkerLostError, Terminated, Retry, Reject,
 )
 from celery.platforms import signals as _signals
-from celery.utils.functional import noop
+from celery.utils.functional import maybe, noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
-from celery.utils.timeutils import maybe_iso8601, timezone, maybe_make_aware
+from celery.utils.time import maybe_iso8601, timezone, maybe_make_aware
 from celery.utils.serialization import get_pickled_exception
 
 from . import state
 
 __all__ = ['Request']
+
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
 
 IS_PYPY = hasattr(sys, 'pypy_version_info')
 
@@ -57,6 +63,7 @@ revoked_tasks = state.revoked
 
 class Request:
     """A request for task execution."""
+
     acknowledged = False
     time_start = None
     worker_pid = None
@@ -124,7 +131,7 @@ class Request:
                 eta = maybe_iso8601(eta)
             except (AttributeError, ValueError, TypeError) as exc:
                 raise InvalidTaskError(
-                    'invalid eta value {0!r}: {1}'.format(eta, exc))
+                    'invalid ETA value {0!r}: {1}'.format(eta, exc))
             self.eta = maybe_make_aware(eta, self.tzlocal)
         else:
             self.eta = None
@@ -188,7 +195,7 @@ class Request:
             correlation_id=task_id,
         )
         # cannot create weakref to None
-        self._apply_result = ref(result) if result is not None else result
+        self._apply_result = maybe(ref, result)
         return result
 
     def execute(self, loglevel=None, logfile=None):
@@ -206,10 +213,17 @@ class Request:
             self.acknowledge()
 
         request = self.request_dict
+        # pylint: disable=unpacking-non-sequence
+        #    payload is a property, so pylint doesn't think it's a tuple.
         args, kwargs, embed = self._payload
-        request.update({'loglevel': loglevel, 'logfile': logfile,
-                        'hostname': self.hostname, 'is_eager': False,
-                        'args': args, 'kwargs': kwargs}, **embed or {})
+        request.update({
+            'loglevel': loglevel,
+            'logfile': logfile,
+            'hostname': self.hostname,
+            'is_eager': False,
+            'args': args,
+            'kwargs': kwargs
+        }, **embed or {})
         retval = trace_task(self.task, self.id, args, kwargs, request,
                             hostname=self.hostname, loader=self.app.loader,
                             app=self.app)[0]
@@ -264,7 +278,7 @@ class Request:
         return False
 
     def send_event(self, type, **fields):
-        if self.eventer and self.eventer.enabled:
+        if self.eventer and self.eventer.enabled and self.task.send_events:
             self.eventer.send(type, uuid=self.id, **fields)
 
     def on_accepted(self, pid, time_accepted):
@@ -337,7 +351,7 @@ class Request:
         if isinstance(exc, Retry):
             return self.on_retry(exc_info)
 
-        # These are special cases where the process would not have had
+        # These are special cases where the process wouldn't've had
         # time to write the result.
         if isinstance(exc, Terminated):
             self._announce_revoked(
@@ -398,17 +412,19 @@ class Request:
             'worker_pid': self.worker_pid,
         }
 
-    def __str__(self):
-        return ' '.join([
-            self.humaninfo(),
-            ' eta:[{0}]'.format(self.eta) if self.eta else '',
-            ' expires:[{0}]'.format(self.expires) if self.expires else '',
-        ])
-
     def humaninfo(self):
         return '{0.name}[{0.id}]'.format(self)
 
+    def __str__(self):
+        """``str(self)``."""
+        return ' '.join([
+            self.humaninfo(),
+            ' ETA:[{0}]'.format(self.eta) if self.eta else '',
+            ' expires:[{0}]'.format(self.expires) if self.expires else '',
+        ])
+
     def __repr__(self):
+        """``repr(self)``."""
         return '<{0}: {1} {2} {3}>'.format(
             type(self).__name__, self.humaninfo(),
             self.argsrepr, self.kwargsrepr,
@@ -443,6 +459,8 @@ class Request:
     def chord(self):
         # used by backend.mark_as_failure when failure is reported
         # by parent process
+        # pylint: disable=unpacking-non-sequence
+        #    payload is a property, so pylint doesn't think it's a tuple.
         _, _, embed = self._payload
         return embed.get('chord')
 
@@ -450,6 +468,8 @@ class Request:
     def errbacks(self):
         # used by backend.mark_as_failure when failure is reported
         # by parent process
+        # pylint: disable=unpacking-non-sequence
+        #    payload is a property, so pylint doesn't think it's a tuple.
         _, _, embed = self._payload
         return embed.get('errbacks')
 
@@ -462,8 +482,7 @@ class Request:
 
 def create_request_cls(base, task, pool, hostname, eventer,
                        ref=ref, revoked_tasks=revoked_tasks,
-                       task_ready=task_ready):
-    from celery.app.trace import trace_task_ret as trace
+                       task_ready=task_ready, trace=trace_task_ret):
     default_time_limit = task.time_limit
     default_soft_time_limit = task.soft_time_limit
     apply_async = pool.apply_async
@@ -491,7 +510,8 @@ def create_request_cls(base, task, pool, hostname, eventer,
                 correlation_id=task_id,
             )
             # cannot create weakref to None
-            self._apply_result = ref(result) if result is not None else result
+            # pylint: disable=attribute-defined-outside-init
+            self._apply_result = maybe(ref, result)
             return result
 
         def on_success(self, failed__retval__runtime, **kwargs):

@@ -17,7 +17,7 @@ from kombu.utils.encoding import set_default_encoding_file
 
 from celery import signals
 from celery._state import get_current_task
-from celery.five import class_property
+from celery.local import class_property
 from celery.platforms import isatty
 from celery.utils.log import (
     get_logger, mlevel,
@@ -33,6 +33,7 @@ MP_LOG = os.environ.get('MP_LOG', False)
 
 
 class TaskFormatter(ColorFormatter):
+    """Formatter for tasks, adding the task name and id."""
 
     def format(self, record):
         task = get_current_task()
@@ -46,6 +47,8 @@ class TaskFormatter(ColorFormatter):
 
 
 class Logging:
+    """Application logging setup (app.log)."""
+
     #: The logging subsystem is only configured once per process.
     #: setup_logging_subsystem sets this flag, and subsequent calls
     #: will do nothing.
@@ -60,6 +63,7 @@ class Logging:
 
     def setup(self, loglevel=None, logfile=None, redirect_stdouts=False,
               redirect_level='WARNING', colorize=None, hostname=None):
+        loglevel = mlevel(loglevel)
         handled = self.setup_logging_subsystem(
             loglevel, logfile, colorize=colorize, hostname=hostname,
         )
@@ -87,7 +91,7 @@ class Logging:
             return
         if logfile and hostname:
             logfile = node_format(logfile, hostname)
-        self.already_setup = True
+        Logging._setup = True
         loglevel = mlevel(loglevel or self.loglevel)
         format = format or self.format
         colorize = self.supports_color(colorize, logfile)
@@ -179,8 +183,7 @@ class Logging:
 
     def redirect_stdouts_to_logger(self, logger, loglevel=None,
                                    stdout=True, stderr=True):
-        """Redirect :class:`sys.stdout` and :class:`sys.stderr` to a
-        logging instance.
+        """Redirect :class:`sys.stdout` and :class:`sys.stderr` to logger.
 
         Arguments:
             logger (logging.Logger): Logger instance to redirect to.
@@ -200,7 +203,7 @@ class Logging:
             # Windows does not support ANSI color codes.
             return False
         if colorize or colorize is None:
-            # Only use color if there is no active log file
+            # Only use color if there's no active log file
             # and stderr is an actual terminal.
             return logfile is None and isatty(sys.stderr)
         return colorize
@@ -218,8 +221,7 @@ class Logging:
         return logger
 
     def _detect_handler(self, logfile=None):
-        """Create log handler with either a filename, an open stream
-        or :const:`None` (stderr)."""
+        """Create handler from filename, an open stream or `None` (stderr)."""
         logfile = sys.__stderr__ if logfile is None else logfile
         if hasattr(logfile, 'write'):
             return logging.StreamHandler(logfile)
@@ -239,9 +241,9 @@ class Logging:
         return get_logger(name)
 
     @class_property
-    def already_setup(cls):
-        return cls._setup
+    def already_setup(self):
+        return self._setup
 
     @already_setup.setter  # noqa
-    def already_setup(cls, was_setup):
-        cls._setup = was_setup
+    def already_setup(self, was_setup):
+        self._setup = was_setup

@@ -8,17 +8,16 @@ from kombu.utils.objects import cached_property
 
 from datetime import datetime
 from importlib import import_module
-from io import StringIO
 
+from celery import _state
 from celery import signals
-from celery.app import default_app
 from celery.exceptions import FixupWarning
 
 __all__ = ['DjangoFixup', 'fixup']
 
 ERR_NOT_INSTALLED = """\
 Environment variable DJANGO_SETTINGS_MODULE is defined
-but Django is not installed.  Will not apply Django fix-ups!
+but Django isn't installed.  Won't apply Django fix-ups!
 """
 
 
@@ -31,6 +30,7 @@ def _maybe_close_fd(fh):
 
 
 def fixup(app, env='DJANGO_SETTINGS_MODULE'):
+    """Install Django fixup if settings module environment is set."""
     SETTINGS_MODULE = os.environ.get(env)
     if SETTINGS_MODULE and 'django' not in app.loader_cls.lower():
         try:
@@ -42,10 +42,11 @@ def fixup(app, env='DJANGO_SETTINGS_MODULE'):
 
 
 class DjangoFixup:
+    """Fixup installed when using Django."""
 
     def __init__(self, app):
         self.app = app
-        if default_app is None:
+        if _state.default_app is None:
             self.app.set_default()
         self._worker_fixup = None
 
@@ -81,19 +82,12 @@ class DjangoFixup:
         return datetime.utcnow() if utc else self._now()
 
     def autodiscover_tasks(self):
-        try:
-            from django.apps import apps
-        except ImportError:
-            return self._settings.INSTALLED_APPS
-        else:
-            return [config.name for config in apps.get_app_configs()]
+        from django.apps import apps
+        return [config.name for config in apps.get_app_configs()]
 
     @cached_property
     def _now(self):
-        try:
-            return symbol_by_name('django.utils.timezone:now')
-        except (AttributeError, ImportError):  # pre django-1.4
-            return datetime.now
+        return symbol_by_name('django.utils.timezone:now')
 
 
 class DjangoWorkerFixup:
@@ -106,91 +100,19 @@ class DjangoWorkerFixup:
         self._cache = import_module('django.core.cache')
         self._settings = symbol_by_name('django.conf:settings')
 
-        try:
-            self.interface_errors = (
-                symbol_by_name('django.db.utils.InterfaceError'),
-            )
-        except (ImportError, AttributeError):
-            self._interface_errors = ()
-
-        # Database-related exceptions.
-        DatabaseError = symbol_by_name('django.db:DatabaseError')
-        try:
-            import MySQLdb as mysql
-            _my_database_errors = (mysql.DatabaseError,
-                                   mysql.InterfaceError,
-                                   mysql.OperationalError)
-        except ImportError:
-            _my_database_errors = ()      # noqa
-        try:
-            import psycopg2 as pg
-            _pg_database_errors = (pg.DatabaseError,
-                                   pg.InterfaceError,
-                                   pg.OperationalError)
-        except ImportError:
-            _pg_database_errors = ()      # noqa
-        try:
-            import sqlite3
-            _lite_database_errors = (sqlite3.DatabaseError,
-                                     sqlite3.InterfaceError,
-                                     sqlite3.OperationalError)
-        except ImportError:
-            _lite_database_errors = ()    # noqa
-        try:
-            import cx_Oracle as oracle
-            _oracle_database_errors = (oracle.DatabaseError,
-                                       oracle.InterfaceError,
-                                       oracle.OperationalError)
-        except ImportError:
-            _oracle_database_errors = ()  # noqa
-
-        try:
-            self._close_old_connections = symbol_by_name(
-                'django.db:close_old_connections',
-            )
-        except (ImportError, AttributeError):
-            self._close_old_connections = None
-        self.database_errors = (
-            (DatabaseError,) +
-            _my_database_errors +
-            _pg_database_errors +
-            _lite_database_errors +
-            _oracle_database_errors
+        self.interface_errors = (
+            symbol_by_name('django.db.utils.InterfaceError'),
         )
+        self.DatabaseError = symbol_by_name('django.db:DatabaseError')
 
     def django_setup(self):
         import django
-        try:
-            django_setup = django.setup
-        except AttributeError:  # pragma: no cover
-            pass
-        else:
-            django_setup()
+        django.setup()
 
     def validate_models(self):
+        from django.core.checks import run_checks
         self.django_setup()
-        try:
-            from django.core.management.validation import get_validation_errors
-        except ImportError:
-            self._validate_models_django17()
-        else:
-            s = StringIO()
-            num_errors = get_validation_errors(s, None)
-            if num_errors:
-                raise RuntimeError(
-                    'One or more Django models did not validate:\n{0}'.format(
-                        s.getvalue()))
-
-    def _validate_models_django17(self):
-        from django.core.management import base
-        print(base)
-        cmd = base.BaseCommand()
-        try:
-            cmd.stdout = base.OutputWrapper(sys.stdout)
-            cmd.stderr = base.OutputWrapper(sys.stderr)
-        except ImportError:  # before django 1.5
-            cmd.stdout, cmd.stderr = sys.stdout, sys.stderr
-        cmd.check()
+        run_checks()
 
     def install(self):
         signals.beat_embedded_init.connect(self.close_database)
@@ -216,13 +138,9 @@ class DjangoWorkerFixup:
         # the inherited DB conn to also get broken in the parent
         # process so we need to remove it without triggering any
         # network IO that close() might cause.
-        try:
-            for c in self._db.connections.all():
-                if c and c.connection:
-                    self._maybe_close_db_fd(c.connection)
-        except AttributeError:
-            if self._db.connection and self._db.connection.connection:
-                self._maybe_close_db_fd(self._db.connection.connection)
+        for c in self._db.connections.all():
+            if c and c.connection:
+                self._maybe_close_db_fd(c.connection)
 
         # use the _ version to avoid DB_REUSE preventing the conn.close() call
         self._close_database()
@@ -247,8 +165,6 @@ class DjangoWorkerFixup:
             self.close_cache()
 
     def close_database(self, **kwargs):
-        if self._close_old_connections:
-            return self._close_old_connections()  # Django 1.6
         if not self.db_reuse_max:
             return self._close_database()
         if self._db_recycles >= self.db_reuse_max * 2:
@@ -257,21 +173,12 @@ class DjangoWorkerFixup:
         self._db_recycles += 1
 
     def _close_database(self):
-        try:
-            funs = [conn.close for conn in self._db.connections.all()]
-        except AttributeError:
-            if hasattr(self._db, 'close_old_connections'):  # django 1.6
-                funs = [self._db.close_old_connections]
-            else:
-                # pre multidb, pending deprication in django 1.6
-                funs = [self._db.close_connection]
-
-        for close in funs:
+        for conn in self._db.connections.all():
             try:
-                close()
+                conn.close()
             except self.interface_errors:
                 pass
-            except self.database_errors as exc:
+            except self.DatabaseError as exc:
                 str_exc = str(exc)
                 if 'closed' not in str_exc and 'not connected' not in str_exc:
                     raise

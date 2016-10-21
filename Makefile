@@ -1,13 +1,19 @@
 PROJ=celery
 PGPIDENT="Celery Security Team"
 PYTHON=python
+PYTEST=py.test
 GIT=git
 TOX=tox
-NOSETESTS=nosetests
 ICONV=iconv
 FLAKE8=flake8
+PYDOCSTYLE=pydocstyle
+PYROMA=pyroma
 FLAKEPLUS=flakeplus
 SPHINX2RST=sphinx2rst
+RST2HTML=rst2html.py
+DEVNULL=/dev/null
+
+TESTDIR=t
 
 SPHINX_DIR=docs/
 SPHINX_BUILDDIR="${SPHINX_DIR}/_build"
@@ -36,6 +42,7 @@ help:
 	@echo "    flakes --------  - Check code for syntax and style errors."
 	@echo "      flakecheck     - Run flake8 on the source code."
 	@echo "      flakepluscheck - Run flakeplus on the source code."
+	@echo "      pep257check    - Run pep257 on the source code."
 	@echo "readme               - Regenerate README.rst file."
 	@echo "contrib              - Regenerate CONTRIBUTING.rst file"
 	@echo "clean-dist --------- - Clean all distribution build artifacts."
@@ -69,10 +76,10 @@ Documentation:
 	(cd "$(SPHINX_DIR)"; $(MAKE) html)
 	mv "$(SPHINX_HTMLDIR)" $(DOCUMENTATION)
 
-docs: Documentation
+docs: clean-docs Documentation
 
 clean-docs:
-	-rm -rf "$(SPHINX_BUILDDIR)"
+	-rm -rf "$(SPHINX_BUILDDIR)" "$(DOCUMENTATION)"
 
 lint: flakecheck apicheck configcheck readmecheck
 
@@ -83,25 +90,32 @@ configcheck:
 	(cd "$(SPHINX_DIR)"; $(MAKE) configcheck)
 
 flakecheck:
-	# the only way to enable all-1 errors is to ignore one of them.
-	$(FLAKE8) --ignore=X999 "$(PROJ)"
+	$(FLAKE8) "$(PROJ)" "$(TESTDIR)"
+
+pep257check:
+	$(PYDOCSTYLE) "$(PROJ)"
 
 flakediag:
 	-$(MAKE) flakecheck
 
 flakepluscheck:
-	$(FLAKEPLUS) --$(FLAKEPLUSTARGET) "$(PROJ)"
+	$(FLAKEPLUS) --$(FLAKEPLUSTARGET) "$(PROJ)" "$(TESTDIR)"
 
 flakeplusdiag:
 	-$(MAKE) flakepluscheck
 
-flakes: flakediag flakeplusdiag
+flakes: flakediag flakeplusdiag pep257check
 
 clean-readme:
 	-rm -f $(README)
 
-readmecheck:
+readmecheck-unicode:
 	$(ICONV) -f ascii -t ascii $(README) >/dev/null
+
+readmecheck-rst:
+	-$(RST2HTML) $(README) >$(DEVNULL)
+
+readmecheck: readmecheck-unicode readmecheck-rst
 
 $(README):
 	$(SPHINX2RST) "$(README_SRC)" --ascii > $@
@@ -138,7 +152,7 @@ test:
 	$(PYTHON) setup.py test
 
 cov:
-	$(NOSETESTS) -xv --with-coverage --cover-html --cover-branch
+	$(PYTEST) -x --cov="$(PROJ)" --cov-report=html
 
 build:
 	$(PYTHON) setup.py sdist bdist_wheel
@@ -158,4 +172,3 @@ graph: clean-graph $(WORKER_GRAPH)
 
 authorcheck:
 	git shortlog -se | cut -f2 | extra/release/attribution.py
-

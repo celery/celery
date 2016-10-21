@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Distributed Task Queue"""
+"""Distributed Task Queue."""
 # :copyright: (c) 2015-2016 Ask Solem.  All rights reserved.
 # :copyright: (c) 2012-2014 GoPivotal, Inc., All rights reserved.
 # :copyright: (c) 2009 - 2012 Ask Solem and individual contributors,
@@ -13,11 +13,12 @@ from collections import namedtuple
 
 SERIES = '0today8'
 
-__version__ = '4.0.0rc3'
+__version__ = '4.0.0rc5'
 __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://celeryproject.org'
 __docformat__ = 'restructuredtext'
+__keywords__ = 'task job queue distributed messaging actor'
 
 # -eof meta-
 
@@ -25,7 +26,7 @@ __all__ = [
     'Celery', 'bugreport', 'shared_task', 'task',
     'current_app', 'current_task', 'maybe_signature',
     'chain', 'chord', 'chunks', 'group', 'signature',
-    'xmap', 'xstarmap', 'uuid', 'version', '__version__',
+    'xmap', 'xstarmap', 'uuid',
 ]
 
 VERSION_BANNER = '{0} ({1})'.format(__version__, SERIES)
@@ -40,8 +41,8 @@ _temp = re.match(
     r'(\d+)\.(\d+).(\d+)(.+)?', __version__).groups()
 VERSION = version_info = version_info_t(
     int(_temp[0]), int(_temp[1]), int(_temp[2]), _temp[3] or '', '')
-del(_temp)
-del(re)
+del _temp
+del re
 
 if os.environ.get('C_IMPDEBUG'):  # pragma: no cover
     import builtins
@@ -105,24 +106,28 @@ def _patch_eventlet():
 
 
 def _patch_gevent():
-    from gevent import monkey, signal as gsignal, version_info
+    import gevent
+    from gevent import monkey, signal as gevent_signal
 
     monkey.patch_all()
-    if version_info[0] == 0:  # pragma: no cover
+    if gevent.version_info[0] == 0:  # pragma: no cover
         # Signals aren't working in gevent versions <1.0,
-        # and are not monkey patched by patch_all()
+        # and aren't monkey patched by patch_all()
         _signal = __import__('signal')
-        _signal.signal = gsignal
+        _signal.signal = gevent_signal
 
 
 def maybe_patch_concurrency(argv=sys.argv,
                             short_opts=['-P'], long_opts=['--pool'],
                             patches={'eventlet': _patch_eventlet,
                                      'gevent': _patch_gevent}):
-    """With short and long opt alternatives that specify the command line
+    """Apply eventlet/gevent monkeypatches.
+
+    With short and long opt alternatives that specify the command line
     option to set the pool, this makes sure that anything that needs
     to be patched is completed as early as possible.
-    (e.g. eventlet/gevent monkey patches)."""
+    (e.g., eventlet/gevent monkey patches).
+    """
     try:
         pool = _find_option_with_arg(argv, short_opts, long_opts)
     except KeyError:
@@ -140,9 +145,12 @@ def maybe_patch_concurrency(argv=sys.argv,
         concurrency.get_implementation(pool)
 
 # Lazy loading
-from celery import five  # noqa
+from . import local  # noqa
 
-old_module, new_module = five.recreate_module(  # pragma: no cover
+
+# this just creates a new module, that imports stuff on first attribute
+# access.  This makes the library faster to use.
+old_module, new_module = local.recreate_module(  # pragma: no cover
     __name__,
     by_module={
         'celery.app': ['Celery', 'bugreport', 'shared_task'],
@@ -159,7 +167,7 @@ old_module, new_module = five.recreate_module(  # pragma: no cover
     __package__='celery', __file__=__file__,
     __path__=__path__, __doc__=__doc__, __version__=__version__,
     __author__=__author__, __contact__=__contact__,
-    __homepage__=__homepage__, __docformat__=__docformat__, five=five,
+    __homepage__=__homepage__, __docformat__=__docformat__, local=local,
     VERSION=VERSION, SERIES=SERIES, VERSION_BANNER=VERSION_BANNER,
     version_info_t=version_info_t,
     version_info=version_info,

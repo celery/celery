@@ -12,7 +12,7 @@
     releases (0.0.x), while older series are archived under the :ref:`history`
     section.
 
-Celery is a simple, flexible and reliable distributed system to
+Celery is a simple, flexible, and reliable distributed system to
 process vast amounts of messages, while providing operations with
 the tools required to maintain such a system.
 
@@ -28,7 +28,7 @@ To read more about Celery you should go read the :ref:`introduction <intro>`.
 While this version is backward compatible with previous versions
 it's important that you read the following section.
 
-This version is officially supported on CPython 2.7, 3.4 and 3.5.
+This version is officially supported on CPython 2.7, 3.4, and 3.5.
 and also supported on PyPy.
 
 .. _`website`: http://celeryproject.org/
@@ -44,9 +44,13 @@ and also supported on PyPy.
 Preface
 =======
 
+XXX To be written
+
 
 Wall of Contributors
 --------------------
+
+XXX Needs update
 
 Aaron McMillin, Adam Renberg, Adrien Guinet, Ahmet Demir, Aitor Gómez-Goiri,
 Albert Wang, Alex Koshelev, Alex Rattray, Alex Williams, Alexander Koshelev,
@@ -100,50 +104,30 @@ and also drops support for Python 3.3 so supported versions are:
 - CPython 2.7
 - CPython 3.4
 - CPython 3.5
-- PyPy 4.0 (``pypy2``)
+- PyPy 5.3 (``pypy2``)
 - PyPy 2.4 (``pypy3``)
 
 Last major version to support Python 2
 --------------------------------------
 
-Starting from Celery 5.0 only Python 3.6+ will be supported.
+Starting from Celery 5.0 only Python 3.5+ will be supported.
 
 To make sure you're not affected by this change you should pin
 the Celery version in your requirements file, either to a specific
 version: ``celery==4.0.0``, or a range: ``celery>=4.0,<5.0``.
 
 Dropping support for Python 2 will enable us to remove massive
-amounts of compatibility code, and going with Python 3.6 allows
-us to take advantage of typing, async/await, asyncio, ++, for which
-there are no convenient alternatives in older versions.
+amounts of compatibility code, and going with Python 3.5 allows
+us to take advantage of typing, async/await, asyncio, and similar
+concepts there's no alternative for in older versions.
 
 Celery 4.x will continue to work on Python 2.7, 3.4, 3.5; just as Celery 3.x
 still works on Python 2.6.
 
-Support for Redis as a broker is deprecated
--------------------------------------------
+Django support
+--------------
 
-The Redis transport will no longer be supported going forward.
-
-It is with a heavy heart, and the decision was not taken lightly but
-there are several open issues related to this transport and as a project
-without a budget we don't have the resources to resolve them.
-
-The issues have been open for a very long time, and we are doing our
-users a disservice by keeping them open with no resolution in sight.
-
-As Redis is such a huge part of Celery development
-time, this is time we can spend on moving the project
-forward into the asyncio era of Python 3.6.
-
-The transport is still active, so you can still use it, but it has been
-undocumented so that new users will not find it.  Unless the situation
-changes the transport will be removed completely starting with Celery 5.0.
-
-.. note::
-
-    Using Redis as a result backend is still supported, and has some
-    really nice improvements in this version.  Read on for the good news :-)
+Celery now supports Django 1.8 and newer versions.
 
 Removed features
 ----------------
@@ -152,11 +136,40 @@ Removed features
 
 - Jython is no longer supported.
 
+Features removed for simplicity
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 - Webhook task machinery (``celery.task.http``) has been removed.
 
-    Nowadays it's so easy to use the :pypi:`requests` module to write
-    webhook tasks manually, so there's no real reason to keep this
-    legacy implementation anymore.
+    Nowadays it's easy to use the :pypi:`requests` module to write
+    webhook tasks manually. We would love to use requests but we
+    are simply unable to as there's a very vocal 'anti-dependency'
+    mob in the Python community
+
+    If you need backwards compatibility
+    you can simply copy + paste the 3.1 version of the module and make sure
+    it's imported by the worker:
+    https://github.com/celery/celery/blob/3.1/celery/task/http.py
+
+- Task no longer sends error emails.
+
+    This also removes support for ``app.mail_admins``, and any functionality
+    related to sending emails.
+
+- ``celery.contrib.batches`` has been removed.
+
+    This was an experimental feature, so not covered by our deprecation
+    timeline guarantee.
+
+Features removed for lack of funding
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We announced with the 3.1 release that some transports were
+moved to experimental status, and that there'd be no official
+support for the transports, citing a lack of resources.
+
+As this subtle hint for the need of funding failed
+we've removed them completely, breaking backwards compatibility.
 
 - Using MongoDB as a broker is no longer supported.
 
@@ -170,19 +183,33 @@ Removed features
 
 - Using Beanstalk as a broker is no longer supported.
 
-
-- Task no longer sends error emails.
-
-    This also removes support for ``app.mail_admins``, and any functionality
-    related to sending emails.
-
-- ``celery.contrib.batches`` has been removed.
+In addition some features have been removed completely so that
+attempting to use them will raise an exception:
 
 - The ``--autoreload`` feature has been removed.
 
+  This was an experimental feature, and not covered by our deprecation
+  timeline guarantee. The flag is removed completely so the worker
+  will crash at startup when present. Luckily this
+  flag isn't used in production systems.
+
 - The ``--autoscale`` feature has been removed.
 
-- The ``threads`` pool is no longer supported and has been removed.
+    This flag is only used by companies to save money, but had
+    bugs either nobody cared to work on, or sponsor a few hours of work to get it fixed.
+
+    The flag has been removed completely, so you must remove this command-line
+    argument or your workers will crash.
+
+- The experimental ``threads`` pool is no longer supported and has been removed.
+
+- The force_execv feature is no longer supported.
+
+    The ``celery worker`` command now ignores the ``--no-execv``,
+    ``--force-execv``, and the ``CELERYD_FORCE_EXECV`` setting.
+
+    This flag will be removed completely in 5.0 and the worker
+    will raise an error.
 
 - The old legacy "amqp" result backend has been deprecated, and will
   be removed in Celery 5.0.
@@ -190,27 +217,43 @@ Removed features
     Please use the ``rpc`` result backend for RPC-style calls, and a
     persistent result backend for multi-consumer results.
 
-    The old "amqp" result backends has been discouraged in use for a long time
-    now, as it creates on queue per task it does not scale well and easily
-    leads to trouble.
 
-- The force_execv feature is no longer supported.
+**Now to the good news**...
 
-    Enabling this usually only caused more problems.
+New Task Message Protocol
+-------------------------
+.. :sha:`e71652d384b1b5df2a4e6145df9f0efb456bc71c`
 
-    The ``celery worker`` command no longer suports the ``--no-execv`` and
-    ``--force-execv`` options, and the ``CELERYD_FORCE_EXECV`` setting is
-    ignored.
+This version introduces a brand new task message protocol,
+the first major change to the protocol since the beginning of the project.
+
+The new protocol is enabled by default in this version and since the new
+version isn't backwards compatible you have to be careful when upgrading.
+
+The 3.1.24 version was released to add compatibility with the new protocol
+so the easiest way to upgrade is to upgrade to that version first, then
+upgrade to 4.0 in a second deployment.
+
+If you wish to keep using the old protocol you may also configure
+the protocol version number used:
+
+.. code-block:: python
+
+    app = Celery()
+    app.conf.task_protocol = 1
+
+Read more about the features available in the new protocol in the news
+section found later in this document.
 
 Lowercase setting names
 -----------------------
 
-In the pursuit of beauty all settings have been renamed to be in all
-lowercase, and some setting names have been renamed for naming consistency.
+In the pursuit of beauty all settings are now renamed to be in all
+lowercase and some setting names have been renamed for consistency.
 
 This change is fully backwards compatible so you can still use the uppercase
 setting names, but we would like you to upgrade as soon as possible and
-you can even do so automatically using the :program:`celery upgrade settings`
+you can this automatically using the :program:`celery upgrade settings`
 command:
 
 .. code-block:: console
@@ -218,18 +261,18 @@ command:
     $ celery upgrade settings proj/settings.py
 
 This command will modify your module in-place to use the new lower-case
-names (if you want uppercase with a celery prefix see block below),
+names (if you want uppercase with a "``CELERY``" prefix see block below),
 and save a backup in :file:`proj/settings.py.orig`.
 
 .. admonition:: For Django users and others who want to keep uppercase names
 
     If you're loading Celery configuration from the Django settings module
-    then you will want to keep using the uppercase names.
+    then you'll want to keep using the uppercase names.
 
-    You will also want to use a ``CELERY_`` prefix so that no Celery settings
+    You also want to use a ``CELERY_`` prefix so that no Celery settings
     collide with Django settings used by other apps.
 
-    To do this, you will first need to convert your settings file
+    To do this, you'll first need to convert your settings file
     to use the new consistent naming scheme, and add the prefix to all
     Celery related settings:
 
@@ -244,7 +287,7 @@ and save a backup in :file:`proj/settings.py.orig`.
 
         app.config_from_object('django.conf:settings', namespace='CELERY')
 
-    You can find the most up to date Django celery integration example
+    You can find the most up to date Django Celery integration example
     here: :ref:`django-first-steps`.
 
     Note that this will also add a prefix to settings that didn't previously
@@ -255,8 +298,8 @@ and save a backup in :file:`proj/settings.py.orig`.
     right thing.
 
 The loader will try to detect if your configuration is using the new format,
-and act accordingly, but this also means that you are not allowed to mix and
-match new and old setting names, that is unless you provide a value for both
+and act accordingly, but this also means you're not allowed to mix and
+match new and old setting names, that's unless you provide a value for both
 alternatives.
 
 The major difference between previous versions, apart from the lower case
@@ -361,7 +404,7 @@ no longer has any effect.
 Task argument checking
 ----------------------
 
-The arguments of the task is now verified when calling the task,
+The arguments of the task are now verified when calling the task,
 even asynchronously:
 
 .. code-block:: pycon
@@ -382,24 +425,48 @@ even asynchronously:
         check_arguments(*(args or ()), **(kwargs or {}))
     TypeError: add() takes exactly 2 arguments (1 given)
 
+Redis Events not backward compatible
+------------------------------------
+
+The Redis ``fanout_patterns`` and ``fanout_prefix`` transport
+options are now enabled by default.
+
+Workers/monitors without these flags enabled won't be able to
+see workers with this flag disabled. They can still execute tasks,
+but they cannot receive each others monitoring messages.
+
+You can upgrade in a backward compatible manner by first configuring
+your 3.1 workers and monitors to enable the settings, before the final
+upgrade to 4.0:
+
+.. code-block:: python
+
+    BROKER_TRANSPORT_OPTIONS = {
+        'fanout_patterns': True,
+        'fanout_prefix': True,
+    }
+
 Django: Auto-discover now supports Django app configurations
 ------------------------------------------------------------
 
-The :meth:`@autodiscover` function can now be called without arguments,
+The ``autodiscover_tasks()`` function can now be called without arguments,
 and the Django handler will automatically find your installed apps:
 
 .. code-block:: python
 
-    app.autodiscover()
+    app.autodiscover_tasks()
 
 The Django integration :ref:`example in the documentation
 <django-first-steps>` has been updated to use the argument-less call.
 
-Worker direct queues no longer use auto-delete.
------------------------------------------------
+This also ensures compatibility with the new, ehm, ``AppConfig`` stuff
+introduced in recent Django versions.
+
+Worker direct queues no longer use auto-delete
+----------------------------------------------
 
 Workers/clients running 4.0 will no longer be able to send
-worker direct messages to worker running older versions, and vice versa.
+worker direct messages to workers running older versions, and vice versa.
 
 If you're relying on worker direct messages you should upgrade
 your 3.x workers and clients to use the new routing settings first,
@@ -418,7 +485,7 @@ by replacing :func:`celery.utils.worker_direct` with this implementation:
             routing_key=hostname,
         )
 
-(This feature closed Issue #2492.)
+This feature closed Issue #2492.
 
 
 Old command-line programs removed
@@ -446,28 +513,8 @@ to use the new umbrella command:
 News
 ====
 
-New Task Message Protocol
--------------------------
-.. :sha:`e71652d384b1b5df2a4e6145df9f0efb456bc71c`
-
-This version introduces a brand new task message protocol,
-the first major change to the protocol since the beginning of the project.
-
-The new protocol is backwards incompatible, so you need to set
-the :setting:`task_protocol` configuration option to ``2`` to take advantage:
-
-.. code-block:: python
-
-    app = Celery()
-    app.conf.task_protocol = 2
-
-Using the new protocol is recommended for everybody who don't
-need backwards compatibility.
-
-Once enabled task messages sent is unreadable to older versions of Celery.
-
 New protocol highlights
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 The new protocol fixes many problems with the old one, and enables
 some long-requested features:
@@ -477,13 +524,13 @@ some long-requested features:
 
     In version 1 of the protocol the worker always had to deserialize
     the message to be able to read task meta-data like the task id,
-    name, etc.  This also meant that the worker was forced to double-decode
+    name, etc. This also meant that the worker was forced to double-decode
     the data, first deserializing the message on receipt, serializing
     the message again to send to child process, then finally the child process
     deserializes the message again.
 
     Keeping the meta-data fields in the message headers means the worker
-    does not actually have to decode the payload before delivering
+    doesn't actually have to decode the payload before delivering
     the task to the child process, and also that it's now possible
     for the worker to reroute a task written in a language different
     from Python to a different worker.
@@ -498,7 +545,7 @@ some long-requested features:
   task errors.
 
 - Worker calls callbacks/errbacks even when the result is sent by the
-  parent process (e.g. :exc:`WorkerLostError` when a child process
+  parent process (e.g., :exc:`WorkerLostError` when a child process
   terminates, deserialization errors, unregistered tasks).
 
 - A new ``origin`` header contains information about the process sending
@@ -526,7 +573,7 @@ some long-requested features:
 - New ``argsrepr`` and ``kwargsrepr`` fields contain textual representations
   of the task arguments (possibly truncated) for use in logs, monitors, etc.
 
-    This means the worker does not have to deserialize the message payload
+    This means the worker doesn't have to deserialize the message payload
     to display the task arguments for informational purposes.
 
 - Chains now use a dedicated ``chain`` field enabling support for chains
@@ -542,12 +589,12 @@ some long-requested features:
     related messages together (like chains, groups, chords, complete
     work-flows, etc).
 
-- ``app.TaskProducer`` replaced by :meth:`@amqp.create_task_message`` and
-  :meth:`@amqp.send_task_message``.
+- ``app.TaskProducer`` replaced by :meth:`@amqp.create_task_message` and
+  :meth:`@amqp.send_task_message`.
 
     Dividing the responsibilities into creating and sending means that
     people who want to send messages using a Python AMQP client directly,
-    does not have to implement the protocol.
+    doesn't have to implement the protocol.
 
     The :meth:`@amqp.create_task_message` method calls either
     :meth:`@amqp.as_task_v2`, or :meth:`@amqp.as_task_v1` depending
@@ -564,26 +611,26 @@ Prefork: Tasks now log from the child process
 ---------------------------------------------
 
 Logging of task success/failure now happens from the child process
-actually executing the task, which means that logging utilities
-like Sentry can get full information about tasks that fail, including
-variables in the traceback.
+executing the task.  As a result logging utilities,
+like Sentry can get full information about tasks, including
+variables in the traceback stack.
 
 Prefork: One log-file per child process
 ---------------------------------------
 
 Init-scrips and :program:`celery multi` now uses the `%I` log file format
-option (e.g. :file:`/var/log/celery/%n%I.log`).
+option (e.g., :file:`/var/log/celery/%n%I.log`).
 
 This change was necessary to ensure each child
 process has a separate log file after moving task logging
 to the child process, as multiple processes writing to the same
 log file can cause corruption.
 
-You are encouraged to upgrade your init-scripts and
+You're encouraged to upgrade your init-scripts and
 :program:`celery multi` arguments to use this new option.
 
-Configure broker URL for read/write separately.
------------------------------------------------
+Configure broker URL for read/write separately
+----------------------------------------------
 
 New :setting:`broker_read_url` and :setting:`broker_write_url` settings
 have been added so that separate broker URLs can be provided
@@ -601,7 +648,7 @@ the intent of the required connection.
 .. note::
 
     Two connection pools are available: ``app.pool`` (read), and
-    ``app.producer_pool`` (write).  The latter does not actually give connections
+    ``app.producer_pool`` (write). The latter doesn't actually give connections
     but full :class:`kombu.Producer` instances.
 
     .. code-block:: python
@@ -647,12 +694,12 @@ to fix some long outstanding issues.
 - Now unrolls groups within groups into a single group (Issue #1509).
 - chunks/map/starmap tasks now routes based on the target task
 - chords and chains can now be immutable.
-- Fixed bug where serialized signatures were not converted back into
+- Fixed bug where serialized signatures weren't converted back into
   signatures (Issue #2078)
 
     Fix contributed by **Ross Deane**.
 
-- Fixed problem where chains and groups did not work when using JSON
+- Fixed problem where chains and groups didn't work when using JSON
   serialization (Issue #2076).
 
     Fix contributed by **Ross Deane**.
@@ -673,27 +720,27 @@ to fix some long outstanding issues.
 
 - ``group | group`` is now flattened into a single group (Issue #2573).
 
-- Fixed issue where ``group | task`` was not upgrading correctly
+- Fixed issue where ``group | task`` wasn't upgrading correctly
   to chord (Issue #2922).
 
-Amazon SQS transport now officially supported.
-----------------------------------------------
+Amazon SQS transport now officially supported
+---------------------------------------------
 
 The SQS broker transport has been rewritten to use async I/O and as such
-joins RabbitMQ and Qpid as officially supported transports.
+joins RabbitMQ and Redis as officially supported transports.
 
 The new implementation also takes advantage of long polling,
 and closes several issues related to using SQS as a broker.
 
 This work was sponsored by Nextdoor.
 
-Apache QPid transport now officially supported.
------------------------------------------------
+Apache QPid transport now officially supported
+----------------------------------------------
 
 Contributed by **Brian Bouterse**.
 
-Schedule tasks based on sunrise, sunset, dawn and dusk.
--------------------------------------------------------
+Schedule tasks based on sunrise, sunset, dawn and dusk
+------------------------------------------------------
 
 See :ref:`beat-solar` for more information.
 
@@ -710,20 +757,35 @@ An example of the new API is :ref:`here <beat-entries>`.
 .. :sha:`bc18d0859c1570f5eb59f5a969d1d32c63af764b`
 .. :sha:`132d8d94d38f4050db876f56a841d5a5e487b25b`
 
-RabbitMQ Priority queue support
+Handling task connection errors
+-------------------------------
+
+Connection related errors occuring while sending a task is now re-raised
+as a :exc:`kombu.exceptions.OperationalError` error:
+
+.. code-block:: pycon
+
+    >>> try:
+    ...     add.delay(2, 2)
+    ... except add.OperationalError as exc:
+    ...     print('Could not send task %r: %r' % (add, exc))
+
+See :ref:`calling-connection-errors` for more information.
+
+RabbitMQ priority queue support
 -------------------------------
 
 See :ref:`routing-options-rabbitmq-priorities` for more information.
 
 Contributed by **Gerald Manipon**.
 
-Prefork: Limit child process resident memory size.
---------------------------------------------------
+Prefork: Limit child process resident memory size
+-------------------------------------------------
 .. :sha:`5cae0e754128750a893524dcba4ae030c414de33`
 
 You can now limit the maximum amount of memory allocated per prefork
 pool child process by setting the worker
-:option:`--maxmemperchild <celery worker --maxmemperchild>` option,
+:option:`--max-memory-per-child <celery worker --max-memory-per-child>` option,
 or the :setting:`worker_max_memory_per_child` setting.
 
 The limit is for RSS/resident memory size and is specified in kilobytes.
@@ -731,20 +793,20 @@ The limit is for RSS/resident memory size and is specified in kilobytes.
 A child process having exceeded the limit will be terminated and replaced
 with a new process after the currently executing task returns.
 
-See :ref:`worker-maxmemperchild` for more information.
+See :ref:`worker-max-memory-per-child` for more information.
 
 Contributed by **Dave Smith**.
 
 Redis: Result backend optimizations
 -----------------------------------
 
-RPC is now using pub/sub for streaming task results.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+RPC is now using pub/sub for streaming task results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Calling ``result.get()`` when using the Redis result backend
 used to be extremely expensive as it was using polling to wait
 for the result to become available. A default polling
-interval of 0.5 seconds did not help performance, but was
+interval of 0.5 seconds didn't help performance, but was
 necessary to avoid a spin loop.
 
 The new implementation is using Redis Pub/Sub mechanisms to
@@ -753,8 +815,8 @@ task round-trip times.
 
 Contributed by **Yaroslav Zhavoronkov** and **Ask Solem**.
 
-New optimized chord join implementation.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+New optimized chord join implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This was an experimental feature introduced in Celery 3.1,
 that could only be enabled by adding ``?new_join=1`` to the
@@ -766,26 +828,26 @@ to be considered stable and enabled by default.
 The new implementation greatly reduces the overhead of chords,
 and especially with larger chords the performance benefit can be massive.
 
-New Riak result backend Introduced.
------------------------------------
+New Riak result backend Introduced
+----------------------------------
 
 See :ref:`conf-riak-result-backend` for more information.
 
 Contributed by **Gilles Dartiguelongue**, **Alman One** and **NoKriK**.
 
-New CouchDB result backend introduced.
---------------------------------------
+New CouchDB result backend introduced
+-------------------------------------
 
 See :ref:`conf-couchdb-result-backend` for more information.
 
 Contributed by **Nathan Van Gheem**.
 
-New Consul result backend introduced.
--------------------------------------
+New Consul result backend introduced
+------------------------------------
 
 Add support for Consul as a backend using the Key/Value store of Consul.
 
-Consul has a HTTP API where through you can store keys with their values.
+Consul has an HTTP API where through you can store keys with their values.
 
 The backend extends KeyValueStoreBackend and implements most of the methods.
 
@@ -798,8 +860,8 @@ the backend supports auto expiry of Task results.
 
 For more information on Consul visit http://consul.io/
 
-The backend uses python-consul for talking to the HTTP API. This package is fully
-Python 3 compliant just as this backend is:
+The backend uses :pypi:`python-consul` for talking to the HTTP API.
+This package is fully Python 3 compliant just as this backend is:
 
 .. code-block:: console
 
@@ -809,26 +871,26 @@ That installs the required package to talk to Consul's HTTP API from Python.
 
 Contributed by **Wido den Hollander**.
 
-Brand new Cassandra result backend.
------------------------------------
+Brand new Cassandra result backend
+----------------------------------
 
 A brand new Cassandra backend utilizing the new :pypi:`cassandra-driver`
-library is replacing the old result backend which was using the older
+library is replacing the old result backend using the older
 :pypi:`pycassa` library.
 
 See :ref:`conf-cassandra-result-backend` for more information.
 
 .. # XXX What changed?
 
-New Elasticsearch result backend introduced.
---------------------------------------------
+New Elasticsearch result backend introduced
+-------------------------------------------
 
 See :ref:`conf-elasticsearch-result-backend` for more information.
 
 Contributed by **Ahmet Demir**.
 
-New File-system result backend introduced.
-------------------------------------------
+New File-system result backend introduced
+-----------------------------------------
 
 See :ref:`conf-filesystem-result-backend` for more information.
 
@@ -837,28 +899,29 @@ Contributed by **Môshe van der Sterre**.
 Event Batching
 --------------
 
-Events are now buffered in the worker and sent as a list which reduces
+Events are now buffered in the worker and sent as a list, reducing
 the overhead required to send monitoring events.
 
 For authors of custom event monitors there will be no action
-required as long as you're using the Python celery
+required as long as you're using the Python Celery
 helpers (:class:`~@events.Receiver`) to implement your monitor.
-However, if you're manually receiving event messages you must now account
-for batched event messages which differ from normal event messages
+
+However, if you're parsing raw event messages you must now account
+for batched event messages,  as they differ from normal event messages
 in the following way:
 
-    - The routing key for a batch of event messages will be set to
-      ``<event-group>.multi`` where the only batched event group
-      is currently ``task`` (giving a routing key of ``task.multi``).
+- The routing key for a batch of event messages will be set to
+  ``<event-group>.multi`` where the only batched event group
+  is currently ``task`` (giving a routing key of ``task.multi``).
 
-    - The message body will be a serialized list-of-dictionaries instead
-      of a dictionary.  Each item in the list can be regarded
-      as a normal event message body.
+- The message body will be a serialized list-of-dictionaries instead
+  of a dictionary. Each item in the list can be regarded
+  as a normal event message body.
 
 .. :sha:`03399b4d7c26fb593e61acf34f111b66b340ba4e`
 
-Task.replace
-------------
+``Task.replace``
+----------------
 
 Task.replace changed, removes Task.replace_in_chord.
 
@@ -866,7 +929,7 @@ The two methods had almost the same functionality, but the old
 ``Task.replace`` would force the new task to inherit the
 callbacks/errbacks of the existing task.
 
-If you replace a node in a tree, then you would not expect the new node to
+If you replace a node in a tree, then you wouldn't expect the new node to
 inherit the children of the old node, so this seems like unexpected
 behavior.
 
@@ -917,12 +980,63 @@ Contributed by **Ionel Cristian Mărieș**.
 Async Result API
 ----------------
 
-eventlet/gevent drainers, promises, BLA BLA
+Gevent/Eventlet: Dedicated thread for consuming results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Closed issue #2529.
+When using :pypi:`gevent`, or :pypi:`eventlet` there is now a single
+thread responsible for consuming events.
 
-RPC Result Backend matured.
----------------------------
+This means that if you have many calls retrieving results, there will be
+a dedicated thread for consuming them:
+
+.. code-block:: python
+
+
+    result = add.delay(2, 2)
+
+    # this call will delegate to the result consumer thread:
+    #   once the consumer thread has received the result this greenlet can
+    # continue.
+    value = result.get(timeout=3)
+
+This makes performing RPC calls when using gevent/eventlet perform much
+better.
+
+``AsyncResult.then(on_success, on_error)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The AsyncResult API has been extended to support the :class:`~vine.promise` protocol.
+
+This currently only works with the RPC (amqp) and Redis result backends, but
+lets you attach callbacks to when tasks finish:
+
+.. code-block:: python
+
+    import gevent.monkey
+    monkey.patch_all()
+
+    import time
+    from celery import Celery
+
+    app = Celery(broker='amqp://', backend='rpc')
+
+    @app.task
+    def add(x, y):
+        return x + y
+
+    def on_result_ready(result):
+        print('Received result for id %r: %r' % (result.id, result.result,))
+
+    add.delay(2, 2).then(on_result_ready)
+
+    time.sleep(3)  # run gevent event loop for a while.
+
+Demonstrated using gevent here, but really this is an API that's more useful
+in callback-based event loops like :pypi:`twisted`, or :pypi:`tornado`.
+
+
+RPC Result Backend matured
+--------------------------
 
 Lots of bugs in the previously experimental RPC result backend have been fixed
 and we now consider it production ready.
@@ -960,7 +1074,7 @@ Both the ``options`` argument and the new ``task`` keyword argument
 are new to the function-style routers, and will make it easier to write
 routers based on execution options, or properties of the task.
 
-The optional ``task`` keyword argument will not be set if a task is called
+The optional ``task`` keyword argument won't be set if a task is called
 by name using :meth:`@send_task`.
 
 For more examples, including using glob/regexes in routers please see
@@ -976,7 +1090,7 @@ Requirements
 
 - Now depends on :pypi:`billiard` version 3.5.
 
-- No longer depends on :pypi:`anyjson` :(
+- No longer depends on :pypi:`anyjson`. Good-bye old friend :(
 
 
 Tasks
@@ -984,7 +1098,8 @@ Tasks
 
 - The "anon-exchange" is now used for simple name-name direct routing.
 
-  This increases performance as it completely bypasses the routing table.
+  This increases performance as it completely bypasses the routing table,
+  in addition it also improves reliability for the Redis broker transport.
 
 - An empty ResultSet now evaluates to True.
 
@@ -1016,7 +1131,7 @@ Tasks
 - ``AsyncResult`` now raises :exc:`ValueError` if task_id is None.
   (Issue #1996).
 
-- Retried tasks did not forward expires setting (Issue #3297).
+- Retried tasks didn't forward expires setting (Issue #3297).
 
 - ``result.get()`` now supports an ``on_message`` argument to set a
   callback to be called for every message received.
@@ -1037,7 +1152,7 @@ Tasks
 
 - ``Task.replace``: Append to chain/chord (Closes #3232)
 
-    Fixed issue #3232, adding the signature to the chain (if there is any).
+    Fixed issue #3232, adding the signature to the chain (if there's any).
     Fixed the chord suppress if the given signature contains one.
 
     Fix contributed by :github_user:`honux`.
@@ -1084,7 +1199,7 @@ App
     Contributed by **Dmitry Malinovsky**.
 
 - App has new ``app.current_worker_task`` property that
-  returns the task that is currently being worked on (or :const:`None`).
+  returns the task that's currently being worked on (or :const:`None`).
   (Issue #2100).
 
 Execution Pools
@@ -1104,6 +1219,11 @@ Execution Pools
 
     Contributed by **Alexander Oblovatniy**.
 
+Transports
+~~~~~~~~~~
+
+- **Redis Transport**: The Redis transport now supports the
+  :setting:`broker_use_ssl` option.
 
 Programs
 ~~~~~~~~
@@ -1117,7 +1237,7 @@ Programs
 - :program:`celery inspect registered`: now ignores built-in tasks.
 
 - :program:`celery purge` now takes ``-Q`` and ``-X`` options
-  used to specify which queues to include and exclude from the purge.
+  used to specify what queues to include and exclude from the purge.
 
 - New :program:`celery logtool`: Utility for filtering and parsing
   celery worker log-files
@@ -1147,27 +1267,41 @@ Worker
 
     Getting rid of leaking memory + adding ``minlen`` size of the set:
     the minimal residual size of the set after operating for some time.
-    ``minlen`` items are kept, even if they should have been expired.
+    ``minlen`` items are kept, even if they should've been expired.
 
     Problems with older and even more old code:
 
     #. Heap would tend to grow in some scenarios
        (like adding an item multiple times).
 
-    #. Adding many items fast would not clean them soon enough (if ever).
+    #. Adding many items fast wouldn't clean them soon enough (if ever).
 
     #. When talking to other workers, revoked._data was sent, but
        it was processed on the other side as iterable.
        That means giving those keys new (current)
        time-stamp. By doing this workers could recycle
        items forever. Combined with 1) and 2), this means that in
-       large set of workers, you are getting out of memory soon.
+       large set of workers, you're getting out of memory soon.
 
     All those problems should be fixed now.
 
     This should fix issues #3095, #3086.
 
     Contributed by **David Pravec**.
+
+- New settings to control remote control command queues.
+
+    - :setting:`control_queue_expires`
+
+        Set queue expiry time for both remote control command queues,
+        and remote control reply queues.
+
+    - :setting:`control_queue_ttl`
+
+        Set message time-to-live for both remote control command queues,
+        and remote control reply queues.
+
+    Contributed by **Alan Justino**.
 
 - Worker now only starts the remote control command consumer if the
   broker transport used actually supports them.
@@ -1201,7 +1335,7 @@ Worker
 - New :data:`celery.worker.state.requests` enables O(1) loookup
   of active/reserved tasks by id.
 
-- Auto-scale did not always update keep-alive when scaling down.
+- Auto-scale didn't always update keep-alive when scaling down.
 
     Fix contributed by **Philip Garnero**.
 
@@ -1255,7 +1389,7 @@ Events
     The queues will now expire after 60 seconds after the monitor stops
     consuming from it.
 
-- Fixed a bug where a None value was not handled properly.
+- Fixed a bug where a None value wasn't handled properly.
 
     Fix contributed by **Dongweiming**.
 
@@ -1275,11 +1409,15 @@ Canvas
 - ``Signature.link`` now works when argument is scalar (not a list)
     (Issue #2019).
 
+- ``group()`` now properly forwards keyword arguments (Issue #3426).
+
+    Fix contributed by **Samuel Giffard**.
+
 Deployment
 ~~~~~~~~~~
 
 - Generic init-scripts now support
-  :envvar:`CELERY_SU`` and :envvar:`CELERYD_SU_ARGS` environment variables
+  :envvar:`CELERY_SU` and :envvar:`CELERYD_SU_ARGS` environment variables
   to set the path and arguments for :command:`su` (:manpage:`su(1)`).
 
 - Generic init-scripts now better support FreBSD and other BSD
@@ -1288,7 +1426,7 @@ Deployment
     Contributed by **Taha Jahangir**.
 
 - Generic init-script: Fixed strange bug for ``celerybeat`` where
-  restart did not always work (Issue #3018).
+  restart didn't always work (Issue #3018).
 
 - The systemd init script now uses a shell when executing
   services.
@@ -1308,7 +1446,7 @@ Result Backends
 - RPC Backend result queues are now auto delete by default (Issue #2001).
 
 - RPC Backend: Fixed problem where exception
-  was not deserialized properly with the json serializer (Issue #2518).
+  wasn't deserialized properly with the json serializer (Issue #2518).
 
     Fix contributed by **Allard Hoeve**.
 
@@ -1334,7 +1472,7 @@ Result Backends
   with brain damaged MySQL unicode implementation (Issue #1748).
 
 - **General**: All Celery exceptions/warnings now inherit from common
-  :class:`~celery.exceptions.CeleryException`/:class:`~celery.exceptions.CeleryWarning`.
+  :class:`~celery.exceptions.CeleryError`/:class:`~celery.exceptions.CeleryWarning`.
   (Issue #2643).
 
 Documentation Improvements
@@ -1383,6 +1521,14 @@ Incompatible changes
 
 - Backends: ``backend.get_status()`` renamed to ``backend.get_state()``.
 
+- Backends: ``backend.maybe_reraise()`` renamed to ``.maybe_throw()``
+
+    The promise API uses .throw(), so this change was made to make it more
+    consistent.
+
+    There's an alias available, so you can still use maybe_reraise until
+    Celery 5.0.
+
 .. _v400-unscheduled-removals:
 
 Unscheduled Removals
@@ -1393,8 +1539,8 @@ Unscheduled Removals
 
 - The CentOS init-scripts have been removed.
 
-    These did not really add any features over the generic init-scripts,
-    so you are encouraged to use them instead, or something like
+    These didn't really add any features over the generic init-scripts,
+    so you're encouraged to use them instead, or something like
     :pypi:`supervisor`.
 
 
@@ -1403,11 +1549,11 @@ Unscheduled Removals
 Reorganization Deprecations
 ---------------------------
 
-These symbols have been renamed, and while there is an alias available in this
+These symbols have been renamed, and while there's an alias available in this
 version for backward compatibility, they will be removed in Celery 5.0, so
 make sure you rename these ASAP to make sure it won't break for that release.
 
-Chances are that you will only use the first in this list, but you never
+Chances are that you'll only use the first in this list, but you never
 know:
 
 - ``celery.utils.worker_direct`` ->
@@ -1437,11 +1583,11 @@ Modules
 
 - Module ``celery.worker.job`` has been renamed to :mod:`celery.worker.request`.
 
-    This was an internal module so should not have any effect.
-    It is now part of the public API so should not change again.
+    This was an internal module so shouldn't have any effect.
+    It's now part of the public API so must not change again.
 
 - Module ``celery.task.trace`` has been renamed to ``celery.app.trace``
-  as the ``celery.task`` package is being phased out.  The module
+  as the ``celery.task`` package is being phased out. The module
   will be removed in version 5.0 so please change any import from::
 
     from celery.task.trace import X
@@ -1524,8 +1670,6 @@ Events
 
         Use ``Worker.event('heartbeat', timestamp, received, fields)``
 
-
-
 - Removals for class :class:`celery.events.state.Task`:
 
     - ``Task._defaults`` attribute.
@@ -1578,7 +1722,7 @@ Magic keyword arguments
 Support for the very old magic keyword arguments accepted by tasks is
 finally removed in this version.
 
-If you are still using these you have to rewrite any task still
+If you're still using these you have to rewrite any task still
 using the old ``celery.decorators`` module and depending
 on keyword arguments being passed to the task,
 for example::
@@ -1612,9 +1756,9 @@ Logging Settings
 ``CELERYD_LOG_FILE``                   :option:`celery worker --logfile`
 ``CELERYBEAT_LOG_LEVEL``               :option:`celery beat --loglevel`
 ``CELERYBEAT_LOG_FILE``                :option:`celery beat --loglevel`
-``CELERYMON_LOG_LEVEL``                celerymon is deprecated, use flower.
-``CELERYMON_LOG_FILE``                 celerymon is deprecated, use flower.
-``CELERYMON_LOG_FORMAT``               celerymon is deprecated, use flower.
+``CELERYMON_LOG_LEVEL``                celerymon is deprecated, use flower
+``CELERYMON_LOG_FILE``                 celerymon is deprecated, use flower
+``CELERYMON_LOG_FORMAT``               celerymon is deprecated, use flower
 =====================================  =====================================
 
 Task Settings
@@ -1630,6 +1774,8 @@ Changes to internal API
 -----------------------
 
 - Module ``celery.datastructures`` renamed to :mod:`celery.utils.collections`.
+
+- Module ``celery.utils.timeutils`` renamed to :mod:`celery.utils.time`.
 
 - ``celery.utils.datastructures.DependencyGraph`` moved to
   :mod:`celery.utils.graph`.

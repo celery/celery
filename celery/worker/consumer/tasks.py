@@ -13,13 +13,16 @@ debug = logger.debug
 
 
 class Tasks(bootsteps.StartStopStep):
+    """Bootstep starting the task message consumer."""
 
     requires = (Mingle,)
 
     def __init__(self, c, **kwargs):
         c.task_consumer = c.qos = None
+        super(Tasks, self).__init__(c, **kwargs)
 
     def start(self, c):
+        """Start task consumer."""
         c.update_strategies()
 
         # - RabbitMQ 3.3 completely redefines how basic_qos works..
@@ -44,11 +47,13 @@ class Tasks(bootsteps.StartStopStep):
         c.qos = QoS(set_prefetch_count, c.initial_prefetch_count)
 
     def stop(self, c):
+        """Stop task consumer."""
         if c.task_consumer:
             debug('Canceling task consumer...')
             ignore_errors(c, c.task_consumer.cancel)
 
     def shutdown(self, c):
+        """Shutdown task consumer."""
         if c.task_consumer:
             self.stop(c)
             debug('Closing consumer channel...')
@@ -56,4 +61,5 @@ class Tasks(bootsteps.StartStopStep):
             c.task_consumer = None
 
     def info(self, c):
+        """Return task consumer info."""
         return {'prefetch_count': c.qos.value if c.qos else 'N/A'}

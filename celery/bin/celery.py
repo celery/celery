@@ -13,7 +13,7 @@ and usually parsed before command-specific arguments.
 
 .. cmdoption:: -A, --app
 
-    app instance to use (e.g. ``module.attr_name``)
+    app instance to use (e.g., ``module.attr_name``)
 
 .. cmdoption:: -b, --broker
 
@@ -50,13 +50,13 @@ in any command that also has a `--detach` option.
 
 .. cmdoption:: -f, --logfile
 
-    Path to log file. If no logfile is specified, `stderr` is used.
+    Path to log file.  If no logfile is specified, `stderr` is used.
 
 .. cmdoption:: --pidfile
 
     Optional file used to store the process pid.
 
-    The program will not start if this file already exists
+    The program won't start if this file already exists
     and the pid is still alive.
 
 .. cmdoption:: --uid
@@ -262,7 +262,8 @@ import sys
 from functools import partial
 from importlib import import_module
 
-from kombu.utils import json
+from kombu.utils.json import dumps, loads
+from kombu.utils.objects import cached_property
 
 from celery.app import defaults
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
@@ -270,10 +271,10 @@ from celery.utils import term
 from celery.utils import text
 from celery.utils.functional import pass1
 from celery.utils.text import str_to_list
-from celery.utils.timeutils import maybe_iso8601
+from celery.utils.time import maybe_iso8601
 
 # Cannot use relative imports here due to a Windows issue (#1111).
-from celery.bin.base import Command, Option, Extensions
+from celery.bin.base import Command, Extensions
 
 # Import commands from other modules
 from celery.bin.amqp import amqp
@@ -316,6 +317,7 @@ def determine_exit_status(ret):
 
 
 def main(argv=None):
+    """Start celery umbrella command."""
     # Fix for setuptools generated scripts, so that it will
     # work with multiprocessing fork emulation.
     # (see multiprocessing.forking.get_preparation_data())
@@ -336,15 +338,10 @@ class multi(Command):
     fake_app = True
     requires_app = False
 
-    def get_options(self):
-        pass
-
     def run_from_argv(self, prog_name, argv, command=None):
         from celery.bin.multi import MultiTool
-        multi = MultiTool(quiet=self.quiet, no_color=self.no_color)
-        return multi.execute_from_commandline(
-            [command] + argv, prog_name,
-        )
+        cmd = MultiTool(quiet=self.quiet, no_color=self.no_color)
+        return cmd.execute_from_commandline([command] + argv)
 
 
 class list_(Command):
@@ -379,7 +376,7 @@ class list_(Command):
         available = ', '.join(topics)
         if not what:
             raise self.UsageError(
-                'You must specify one of {0}'.format(available))
+                'Missing argument, specify one of: {0}'.format(available))
         if what not in topics:
             raise self.UsageError(
                 'unknown topic {0!r} (choose one of: {1})'.format(
@@ -401,18 +398,30 @@ class call(Command):
 
     args = '<task_name>'
 
-    option_list = Command.option_list + (
-        Option('--args', '-a', help='positional arguments (json).'),
-        Option('--kwargs', '-k', help='keyword arguments (json).'),
-        Option('--eta', help='scheduled time (ISO-8601).'),
-        Option('--countdown', type='float',
-               help='eta in seconds from now (float/int).'),
-        Option('--expires', help='expiry time (ISO-8601/float/int).'),
-        Option('--serializer', default='json', help='defaults to json.'),
-        Option('--queue', help='custom queue name.'),
-        Option('--exchange', help='custom exchange name.'),
-        Option('--routing-key', help='custom routing key.'),
-    )
+    def add_arguments(self, parser):
+        group = parser.add_argument_group('Calling Options')
+        group.add_argument('--args', '-a',
+                           help='positional arguments (json).')
+        group.add_argument('--kwargs', '-k',
+                           help='keyword arguments (json).')
+        group.add_argument('--eta',
+                           help='scheduled time (ISO-8601).')
+        group.add_argument(
+            '--countdown', type=float,
+            help='eta in seconds from now (float/int).',
+        )
+        group.add_argument(
+            '--expires',
+            help='expiry time (ISO-8601/float/int).',
+        ),
+        group.add_argument(
+            '--serializer', default='json',
+            help='defaults to json.'),
+
+        ropts = parser.add_argument_group('Routing Options')
+        ropts.add_argument('--queue', help='custom queue name.')
+        ropts.add_argument('--exchange', help='custom exchange name.')
+        ropts.add_argument('--routing-key', help='custom routing key.')
 
     def run(self, name, *_, **kwargs):
         self._send_task(name, **kwargs)
@@ -420,10 +429,10 @@ class call(Command):
     def _send_task(self, name, args=None, kwargs=None,
                    countdown=None, serializer=None,
                    queue=None, exchange=None, routing_key=None,
-                   eta=None, expires=None):
+                   eta=None, expires=None, **_):
         # arguments
-        args = json.loads(args) if isinstance(args, str) else args
-        kwargs = json.loads(kwargs) if isinstance(kwargs, str) else kwargs
+        args = loads(args) if isinstance(args, str) else args
+        kwargs = loads(kwargs) if isinstance(kwargs, str) else kwargs
 
         # expires can be int/float.
         try:
@@ -466,14 +475,20 @@ class purge(Command):
     fmt_purged = 'Purged {mnum} {messages} from {qnum} known task {queues}.'
     fmt_empty = 'No messages purged from {qnum} {queues}'
 
-    option_list = Command.option_list + (
-        Option('--force', '-f', action='store_true',
-               help='Do not prompt for verification'),
-        Option('--queues', '-Q', default=[],
-               help='Comma separated list of queue names to purge.'),
-        Option('--exclude-queues', '-X', default=[],
-               help='Comma separated list of queues names not to purge.')
-    )
+    def add_arguments(self, parser):
+        group = parser.add_argument_group('Purging Options')
+        group.add_argument(
+            '--force', '-f', action='store_true', default=False,
+            help="Don't prompt for verification",
+        )
+        group.add_argument(
+            '--queues', '-Q', default=[],
+            help='Comma separated list of queue names to purge.',
+        )
+        group.add_argument(
+            '--exclude-queues', '-X', default=[],
+            help='Comma separated list of queues names not to purge.',
+        )
 
     def run(self, force=False, queues=None, exclude_queues=None, **kwargs):
         queues = set(str_to_list(queues or []))
@@ -519,11 +534,15 @@ class result(Command):
 
     args = '<task_id>'
 
-    option_list = Command.option_list + (
-        Option('--task', '-t', help='name of task (if custom backend)'),
-        Option('--traceback', action='store_true',
-               help='show traceback instead'),
-    )
+    def add_arguments(self, parser):
+        group = parser.add_argument_group('Result Options')
+        group.add_argument(
+            '--task', '-t', help='name of task (if custom backend)',
+        )
+        group.add_argument(
+            '--traceback', action='store_true', default=False,
+            help='show traceback instead',
+        )
 
     def run(self, task_id, *args, **kwargs):
         result_cls = self.app.AsyncResult
@@ -532,71 +551,69 @@ class result(Command):
 
         if task:
             result_cls = self.app.tasks[task].AsyncResult
-        result = result_cls(task_id)
+        task_result = result_cls(task_id)
         if traceback:
-            value = result.traceback
+            value = task_result.traceback
         else:
-            value = result.get()
+            value = task_result.get()
         self.out(self.pretty(value)[1])
 
 
 class _RemoteControl(Command):
 
     name = None
-    choices = None
     leaf = False
-
-    option_list = Command.option_list + (
-        Option('--timeout', '-t', type='float',
-               help='Timeout in seconds (float) waiting for reply'),
-        Option('--destination', '-d',
-               help='Comma separated list of destination node names.'),
-        Option('--json', '-j', action='store_true',
-               help='Use json as output format.'),
-    )
+    control_group = None
 
     def __init__(self, *args, **kwargs):
         self.show_body = kwargs.pop('show_body', True)
         self.show_reply = kwargs.pop('show_reply', True)
         super().__init__(*args, **kwargs)
 
+    def add_arguments(self, parser):
+        group = parser.add_argument_group('Remote Control Options')
+        group.add_argument(
+            '--timeout', '-t', type=float,
+            help='Timeout in seconds (float) waiting for reply',
+        )
+        group.add_argument(
+            '--destination', '-d',
+            help='Comma separated list of destination node names.')
+        group.add_argument(
+            '--json', '-j', action='store_true', default=False,
+            help='Use json as output format.',
+        )
+
     @classmethod
-    def get_command_info(self, command,
-                         indent=0, prefix='', color=None, help=False):
+    def get_command_info(cls, command,
+                         indent=0, prefix='', color=None,
+                         help=False, app=None, choices=None):
+        if choices is None:
+            choices = cls._choices_by_group(app)
+        meta = choices[command]
         if help:
-            help = '|' + text.indent(self.choices[command][1], indent + 4)
+            help = '|' + text.indent(meta.help, indent + 4)
         else:
             help = None
-        try:
-            # see if it uses args.
-            meth = getattr(self, command)
-            return text.join([
-                '|' + text.indent('{0}{1} {2}'.format(
-                    prefix, color(command), meth.__doc__), indent),
-                help,
-            ])
-
-        except AttributeError:
-            return text.join([
-                '|' + text.indent(prefix + str(color(command)), indent), help,
-            ])
-
-    @classmethod
-    def list_commands(self, indent=0, prefix='', color=None, help=False):
-        color = color if color else lambda x: x
-        prefix = prefix + ' ' if prefix else ''
-        return '\n'.join(self.get_command_info(c, indent, prefix, color, help)
-                         for c in sorted(self.choices))
-
-    @property
-    def epilog(self):
-        return '\n'.join([
-            '[Commands]',
-            self.list_commands(indent=4, help=True)
+        return text.join([
+            '|' + text.indent('{0}{1} {2}'.format(
+                prefix, color(command), meta.signature or ''), indent),
+            help,
         ])
 
+    @classmethod
+    def list_commands(cls, indent=0, prefix='',
+                      color=None, help=False, app=None):
+        choices = cls._choices_by_group(app)
+        color = color if color else lambda x: x
+        prefix = prefix + ' ' if prefix else ''
+        return '\n'.join(
+            cls.get_command_info(c, indent, prefix, color, help,
+                                 app=app, choices=choices)
+            for c in sorted(choices))
+
     def usage(self, command):
-        return '%prog {0} [options] {1} <command> [arg1 .. argN]'.format(
+        return '%(prog)s {0} [options] {1} <command> [arg1 .. argN]'.format(
             command, self.args)
 
     def call(self, *args, **kwargs):
@@ -605,45 +622,107 @@ class _RemoteControl(Command):
     def run(self, *args, **kwargs):
         if not args:
             raise self.UsageError(
-                'Missing {0.name} method. See --help'.format(self))
+                'Missing {0.name} method.  See --help'.format(self))
         return self.do_call_method(args, **kwargs)
 
-    def do_call_method(self, args, **kwargs):
+    def _ensure_fanout_supported(self):
+        with self.app.connection_for_write() as conn:
+            if not conn.supports_exchange_type('fanout'):
+                raise self.Error(
+                    'Broadcast not supported by transport {0!r}'.format(
+                        conn.info()['transport']))
+
+    def do_call_method(self, args,
+                       timeout=None, destination=None, json=False, **kwargs):
         method = args[0]
         if method == 'help':
             raise self.Error("Did you mean '{0.name} --help'?".format(self))
-        if method not in self.choices:
+        try:
+            meta = self.choices[method]
+        except KeyError:
             raise self.UsageError(
                 'Unknown {0.name} method {1}'.format(self, method))
 
-        if self.app.connection_for_write().transport.driver_type == 'sql':
-            raise self.Error('Broadcast not supported by SQL broker transport')
+        self._ensure_fanout_supported()
 
-        output_json = kwargs.get('json')
-        destination = kwargs.get('destination')
-        timeout = kwargs.get('timeout') or self.choices[method][0]
+        timeout = timeout or meta.default_timeout
         if destination and isinstance(destination, str):
             destination = [dest.strip() for dest in destination.split(',')]
 
-        handler = getattr(self, method, self.call)
-
-        callback = None if output_json else self.say_remote_command_reply
-
-        replies = handler(method, *args[1:], timeout=timeout,
-                          destination=destination,
-                          callback=callback)
+        replies = self.call(
+            method,
+            arguments=self.compile_arguments(meta, method, args[1:]),
+            timeout=timeout,
+            destination=destination,
+            callback=None if json else self.say_remote_command_reply,
+        )
         if not replies:
             raise self.Error('No nodes replied within time constraint.',
                              status=EX_UNAVAILABLE)
-        if output_json:
-            self.out(json.dumps(replies))
+        if json:
+            self.out(dumps(replies))
         return replies
+
+    def compile_arguments(self, meta, method, args):
+        args = list(args)
+        kw = {}
+        if meta.args:
+            kw.update({
+                k: v for k, v in self._consume_args(meta, method, args)
+            })
+        if meta.variadic:
+            kw.update({meta.variadic: args})
+        if not kw and args:
+            raise self.Error(
+                'Command {0!r} takes no arguments.'.format(method),
+                status=EX_USAGE)
+        return kw or {}
+
+    def _consume_args(self, meta, method, args):
+        i = 0
+        try:
+            for i, arg in enumerate(args):
+                try:
+                    name, typ = meta.args[i]
+                except IndexError:
+                    if meta.variadic:
+                        break
+                    raise self.Error(
+                        'Command {0!r} takes arguments: {1}'.format(
+                            method, meta.signature),
+                        status=EX_USAGE)
+                else:
+                    yield name, typ(arg) if typ is not None else arg
+        finally:
+            args[:] = args[i:]
+
+    @classmethod
+    def _choices_by_group(cls, app):
+        from celery.worker.control import Panel
+        # need to import task modules for custom user-remote control commands.
+        app.loader.import_default_modules()
+
+        return {
+            name: info for name, info in Panel.meta.items()
+            if info.type == cls.control_group and info.visible
+        }
+
+    @cached_property
+    def choices(self):
+        return self._choices_by_group(self.app)
+
+    @property
+    def epilog(self):
+        return '\n'.join([
+            '[Commands]',
+            self.list_commands(indent=4, help=True, app=self.app)
+        ])
 
 
 class inspect(_RemoteControl):
     """Inspect the worker at runtime.
 
-    Availability: RabbitMQ (AMQP) transport.
+    Availability: RabbitMQ (AMQP) and Redis transports.
 
     Examples:
         .. code-block:: console
@@ -654,43 +733,17 @@ class inspect(_RemoteControl):
     """
 
     name = 'inspect'
+    control_group = 'inspect'
 
-    choices = {
-        'active': (1.0, 'dump active tasks (being processed)'),
-        'active_queues': (1.0, 'dump queues being consumed from'),
-        'clock': (1.0, 'get value of logical clock'),
-        'conf': (1.0, 'dump worker configuration'),
-        'memdump': (1.0, 'dump memory samples (requires psutil)'),
-        'memsample': (1.0, 'sample memory (requires psutil)'),
-        'objgraph': (60.0, 'create object graph (requires objgraph)'),
-        'ping': (0.2, 'ping worker(s)'),
-        'query_task': (1.0, 'query for task information by id'),
-        'reserved': (1.0, 'dump reserved tasks (waiting to be processed)'),
-        'scheduled': (1.0, 'dump scheduled tasks (eta/countdown/retry)'),
-        'stats': (1.0, 'dump worker statistics'),
-        'registered': (1.0, 'dump of registered tasks'),
-        'report': (1.0, 'get bugreport info'),
-        'revoked': (1.0, 'dump of revoked task ids'),
-    }
-
-    def call(self, method, *args, **options):
-        i = self.app.control.inspect(**options)
-        return getattr(i, method)(*args)
-
-    def objgraph(self, type_='Request', *args, **kwargs):
-        return self.call('objgraph', type_, **kwargs)
-
-    def conf(self, with_defaults=False, *args, **kwargs):
-        return self.call('conf', with_defaults, **kwargs)
-
-    def query_task(self, *ids, **options):
-        return self.call('query_task', ids, **options)
+    def call(self, method, arguments, **options):
+        return self.app.control.inspect(**options)._request(
+            method, **arguments)
 
 
 class control(_RemoteControl):
     """Workers remote control.
 
-    Availability: RabbitMQ (AMQP) transport.
+    Availability: RabbitMQ (AMQP), Redis, and MongoDB transports.
 
     Examples:
         .. code-block:: console
@@ -706,49 +759,11 @@ class control(_RemoteControl):
     """
 
     name = 'control'
+    control_group = 'control'
 
-    choices = {
-        'enable_events': (1.0, 'tell worker(s) to enable events'),
-        'disable_events': (1.0, 'tell worker(s) to disable events'),
-        'add_consumer': (1.0, 'tell worker(s) to start consuming a queue'),
-        'cancel_consumer': (1.0, 'tell worker(s) to stop consuming a queue'),
-        'rate_limit': (
-            1.0, 'tell worker(s) to modify the rate limit for a task type'),
-        'time_limit': (
-            1.0, 'tell worker(s) to modify the time limit for a task type.'),
-        'pool_grow': (1.0, 'start more pool processes'),
-        'pool_shrink': (1.0, 'use less pool processes'),
-    }
-
-    def call(self, method, *args, **options):
-        return getattr(self.app.control, method)(*args, reply=True, **options)
-
-    def pool_grow(self, method, n=1, **kwargs):
-        """[N=1]"""
-        return self.call(method, int(n), **kwargs)
-
-    def pool_shrink(self, method, n=1, **kwargs):
-        """[N=1]"""
-        return self.call(method, int(n), **kwargs)
-
-    def rate_limit(self, method, task_name, rate_limit, **kwargs):
-        """<task_name> <rate_limit> (e.g. 5/s | 5/m | 5/h)>"""
-        return self.call(method, task_name, rate_limit, **kwargs)
-
-    def time_limit(self, method, task_name, soft, hard=None, **kwargs):
-        """<task_name> <soft_secs> [hard_secs]"""
-        return self.call(method, task_name,
-                         float(soft), float(hard), **kwargs)
-
-    def add_consumer(self, method, queue, exchange=None,
-                     exchange_type='direct', routing_key=None, **kwargs):
-        """<queue> [exchange [type [routing_key]]]"""
-        return self.call(method, queue, exchange,
-                         exchange_type, routing_key, **kwargs)
-
-    def cancel_consumer(self, method, queue, **kwargs):
-        """<queue>"""
-        return self.call(method, queue, **kwargs)
+    def call(self, method, arguments, **options):
+        return self.app.control.broadcast(
+            method, arguments=arguments, reply=True, **options)
 
 
 class status(Command):
@@ -784,26 +799,38 @@ class migrate(Command):
         .. code-block:: console
 
             $ celery migrate amqp://A.example.com amqp://guest@B.example.com//
+            $ celery migrate redis://localhost amqp://guest@localhost//
     """
 
     args = '<source_url> <dest_url>'
-
-    option_list = Command.option_list + (
-        Option('--limit', '-n', type='int',
-               help='Number of tasks to consume (int)'),
-        Option('--timeout', '-t', type='float', default=1.0,
-               help='Timeout in seconds (float) waiting for tasks'),
-        Option('--ack-messages', '-a', action='store_true',
-               help='Ack messages from source broker.'),
-        Option('--tasks', '-T',
-               help='List of task names to filter on.'),
-        Option('--queues', '-Q',
-               help='List of queues to migrate.'),
-        Option('--forever', '-F', action='store_true',
-               help='Continually migrate tasks until killed.'),
-    )
-
     progress_fmt = MIGRATE_PROGRESS_FMT
+
+    def add_arguments(self, parser):
+        group = parser.add_argument_group('Migration Options')
+        group.add_argument(
+            '--limit', '-n', type=int,
+            help='Number of tasks to consume (int)',
+        )
+        group.add_argument(
+            '--timeout', '-t', type=float, default=1.0,
+            help='Timeout in seconds (float) waiting for tasks',
+        )
+        group.add_argument(
+            '--ack-messages', '-a', action='store_true', default=False,
+            help='Ack messages from source broker.',
+        )
+        group.add_argument(
+            '--tasks', '-T',
+            help='List of task names to filter on.',
+        )
+        group.add_argument(
+            '--queues', '-Q',
+            help='List of queues to migrate.',
+        )
+        group.add_argument(
+            '--forever', '-F', action='store_true', default=False,
+            help='Continually migrate tasks until killed.',
+        )
 
     def on_migrate_task(self, state, body, message):
         self.out(self.progress_fmt.format(state=state, body=body))
@@ -829,26 +856,45 @@ class shell(Command):  # pragma: no cover
         - all registered tasks.
     """
 
-    option_list = Command.option_list + (
-        Option('--ipython', '-I',
-               action='store_true', dest='force_ipython',
-               help='force iPython.'),
-        Option('--bpython', '-B',
-               action='store_true', dest='force_bpython',
-               help='force bpython.'),
-        Option('--python', '-P',
-               action='store_true', dest='force_python',
-               help='force default Python shell.'),
-        Option('--without-tasks', '-T', action='store_true',
-               help="don't add tasks to locals."),
-        Option('--eventlet', action='store_true',
-               help='use eventlet.'),
-        Option('--gevent', action='store_true', help='use gevent.'),
-    )
+    def add_arguments(self, parser):
+        group = parser.add_argument_group('Shell Options')
+        group.add_argument(
+            '--ipython', '-I',
+            action='store_true', help='force iPython.', default=False,
+        )
+        group.add_argument(
+            '--bpython', '-B',
+            action='store_true', help='force bpython.', default=False,
+        )
+        group.add_argument(
+            '--python',
+            action='store_true', default=False,
+            help='force default Python shell.',
+        )
+        group.add_argument(
+            '--without-tasks', '-T',
+            action='store_true', default=False,
+            help="don't add tasks to locals.",
+        )
+        group.add_argument(
+            '--eventlet',
+            action='store_true', default=False,
+            help='use eventlet.',
+        )
+        group.add_argument(
+            '--gevent', action='store_true', default=False,
+            help='use gevent.',
+        )
 
-    def run(self, force_ipython=False, force_bpython=False,
-            force_python=False, without_tasks=False, eventlet=False,
-            gevent=False, **kwargs):
+    def run(self, *args, **kwargs):
+        if args:
+            raise self.UsageError(
+                'shell command does not take arguments: {0}'.format(args))
+        return self._run(**kwargs)
+
+    def _run(self, ipython=False, bpython=False,
+             python=False, without_tasks=False, eventlet=False,
+             gevent=False, **kwargs):
         sys.path.insert(0, os.getcwd())
         if eventlet:
             import_module('celery.concurrency.eventlet')
@@ -857,6 +903,8 @@ class shell(Command):  # pragma: no cover
         import celery
         import celery.task.base
         self.app.loader.import_default_modules()
+
+        # pylint: disable=attribute-defined-outside-init
         self.locals = {
             'app': self.app,
             'celery': self.app,
@@ -877,11 +925,11 @@ class shell(Command):  # pragma: no cover
                 if not task.name.startswith('celery.')
             })
 
-        if force_python:
+        if python:
             return self.invoke_fallback_shell()
-        elif force_bpython:
+        elif bpython:
             return self.invoke_bpython_shell()
-        elif force_ipython:
+        elif ipython:
             return self.invoke_ipython_shell()
         return self.invoke_default_shell()
 
@@ -950,19 +998,25 @@ class shell(Command):  # pragma: no cover
 class upgrade(Command):
     """Perform upgrade between versions."""
 
-    option_list = Command.option_list + (
-        Option('--django', action='store_true',
-               help='Upgrade Django project'),
-        Option('--compat', action='store_true',
-               help='Maintain backwards compatibility'),
-        Option('--no-backup', action='store_true',
-               help='Dont backup original files'),
-    )
-
     choices = {'settings'}
 
+    def add_arguments(self, parser):
+        group = parser.add_argument_group('Upgrading Options')
+        group.add_argument(
+            '--django', action='store_true', default=False,
+            help='Upgrade Django project',
+        )
+        group.add_argument(
+            '--compat', action='store_true', default=False,
+            help='Maintain backwards compatibility',
+        )
+        group.add_argument(
+            '--no-backup', action='store_true', default=False,
+            help='Dont backup original files',
+        )
+
     def usage(self, command):
-        return '%prog <command> settings [filename] [options]'
+        return '%(prog)s <command> settings [filename] [options]'
 
     def run(self, *args, **kwargs):
         try:
@@ -999,7 +1053,7 @@ class upgrade(Command):
         return lines
 
     def _to_new_key(self, line, keyfilter=pass1, source=defaults._TO_NEW_KEY):
-        # sort by length to avoid e.g. broker_transport overriding
+        # sort by length to avoid, for example, broker_transport overriding
         # broker_transport_options.
         for old_key in reversed(sorted(source, key=lambda x: len(x))):
             new_line = line.replace(old_key, keyfilter(source[old_key]))
@@ -1018,13 +1072,14 @@ class help(Command):
     """Show help screen and exit."""
 
     def usage(self, command):
-        return '%prog <command> [options] {0.args}'.format(self)
+        return '%(prog)s <command> [options] {0.args}'.format(self)
 
     def run(self, *args, **kwargs):
         self.parser.print_help()
         self.out(HELP.format(
             prog_name=self.prog_name,
-            commands=CeleryCommand.list_commands(colored=self.colored),
+            commands=CeleryCommand.list_commands(
+                colored=self.colored, app=self.app),
         ))
 
         return EX_USAGE
@@ -1039,6 +1094,7 @@ class report(Command):
 
 
 class CeleryCommand(Command):
+    """Base class for commands."""
 
     commands = {
         'amqp': amqp,
@@ -1110,7 +1166,7 @@ class CeleryCommand(Command):
                 elif value.startswith('-'):
                     # we eat the next argument even though we don't know
                     # if this option takes an argument or not.
-                    # instead we will assume what is the command name in the
+                    # instead we'll assume what's the command name in the
                     # return statements below.
                     try:
                         nxt = argv[index + 1]
@@ -1142,7 +1198,7 @@ class CeleryCommand(Command):
             return sys.modules['__main__'].__file__
         return name
 
-    def handle_argv(self, prog_name, argv):
+    def handle_argv(self, prog_name, argv, **kwargs):
         self.prog_name = self.prepare_prog_name(prog_name)
         argv = self._relocate_args_from_start(argv)
         _, argv = self.prepare_args(None, argv)
@@ -1164,29 +1220,32 @@ class CeleryCommand(Command):
             sys.exit(EX_FAILURE)
 
     @classmethod
-    def get_command_info(self, command, indent=0, color=None, colored=None):
+    def get_command_info(cls, command, indent=0,
+                         color=None, colored=None, app=None):
         colored = term.colored() if colored is None else colored
         colored = colored.names[color] if color else lambda x: x
-        obj = self.commands[command]
+        obj = cls.commands[command]
         cmd = 'celery {0}'.format(colored(command))
         if obj.leaf:
             return '|' + text.indent(cmd, indent)
         return text.join([
             ' ',
             '|' + text.indent('{0} --help'.format(cmd), indent),
-            obj.list_commands(indent, 'celery {0}'.format(command), colored),
+            obj.list_commands(indent, 'celery {0}'.format(command), colored,
+                              app=app),
         ])
 
     @classmethod
-    def list_commands(self, indent=0, colored=None):
+    def list_commands(cls, indent=0, colored=None, app=None):
         colored = term.colored() if colored is None else colored
         white = colored.white
         ret = []
-        for cls, commands, color in command_classes:
+        for command_cls, commands, color in command_classes:
             ret.extend([
-                text.indent('+ {0}: '.format(white(cls)), indent),
+                text.indent('+ {0}: '.format(white(command_cls)), indent),
                 '\n'.join(
-                    self.get_command_info(command, indent + 4, color, colored)
+                    cls.get_command_info(
+                        command, indent + 4, color, colored, app=app)
                     for command in commands),
                 ''
             ])

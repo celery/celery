@@ -2,7 +2,7 @@
 """Pool implementation abstract factory, and alias definitions."""
 # Import from kombu directly as it's used
 # early in the import stage, where celery.utils loads
-# too much (e.g. for eventlet patching)
+# too much (e.g., for eventlet patching)
 from kombu.utils.imports import symbol_by_name
 
 __all__ = ['get_implementation']
@@ -17,4 +17,5 @@ ALIASES = {
 
 
 def get_implementation(cls):
+    """Return pool implementation by name."""
     return symbol_by_name(cls, ALIASES)

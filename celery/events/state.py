@@ -11,7 +11,7 @@ at the time of the last event.
 
 Snapshots (:mod:`celery.events.snapshot`) can be used to
 take "pictures" of this state at regular intervals
-to e.g. store that in a database.
+to for example, store that in a database.
 """
 import bisect
 import sys
@@ -34,15 +34,21 @@ from celery.utils.log import get_logger
 
 __all__ = ['Worker', 'Task', 'State', 'heartbeat_expires']
 
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
+# pylint: disable=too-many-function-args
+# For some reason pylint thinks ._event is a method, when it's a property.
+
+#: Set if running PyPy
 PYPY = hasattr(sys, 'pypy_version_info')
 
-# The window (in percentage) is added to the workers heartbeat
-# frequency.  If the time between updates exceeds this window,
-# then the worker is considered to be offline.
+#: The window (in percentage) is added to the workers heartbeat
+#: frequency.  If the time between updates exceeds this window,
+#: then the worker is considered to be offline.
 HEARTBEAT_EXPIRE_WINDOW = 200
 
-# Max drift between event timestamp and time of event received
-# before we alert that clocks may be unsynchronized.
+#: Max drift between event timestamp and time of event received
+#: before we alert that clocks may be unsynchronized.
 HEARTBEAT_DRIFT_MAX = 16
 
 DRIFT_WARNING = """\
@@ -106,8 +112,9 @@ def _warn_drift(hostname, drift, local_received, timestamp):
 def heartbeat_expires(timestamp, freq=60,
                       expire_window=HEARTBEAT_EXPIRE_WINDOW,
                       Decimal=Decimal, float=float, isinstance=isinstance):
+    """Return time when heartbeat expires."""
     # some json implementations returns decimal.Decimal objects,
-    # which are not compatible with float.
+    # which aren't compatible with float.
     freq = float(freq) if isinstance(freq, Decimal) else freq
     if isinstance(timestamp, Decimal):
         timestamp = float(timestamp)
@@ -144,6 +151,7 @@ def with_unique_field(attr):
 @with_unique_field('hostname')
 class Worker:
     """Worker State."""
+
     heartbeat_max = 4
     expire_window = HEARTBEAT_EXPIRE_WINDOW
 
@@ -236,6 +244,7 @@ class Worker:
 @with_unique_field('uuid')
 class Task:
     """Task State."""
+
     name = received = sent = started = succeeded = failed = retried = \
         revoked = rejected = args = kwargs = eta = expires = retries = \
         worker = result = exception = timestamp = runtime = traceback = \
@@ -255,8 +264,8 @@ class Task:
         __slots__ = ('__dict__', '__weakref__')
 
     #: How to merge out of order events.
-    #: Disorder is detected by logical ordering (e.g. :event:`task-received`
-    #: must have happened before a :event:`task-failed` event).
+    #: Disorder is detected by logical ordering (e.g., :event:`task-received`
+    #: must've happened before a :event:`task-failed` event).
     #:
     #: A merge rule consists of a state and a list of fields to keep from
     #: that state. ``(RECEIVED, ('name', 'args')``, means the name and args
@@ -286,6 +295,8 @@ class Task:
         )
         self._serializer_handlers = {
             'children': self._serializable_children,
+            'root': self._serializable_root,
+            'parent': self._serializable_parent,
         }
         if kwargs:
             self.__dict__.update(kwargs)
@@ -299,7 +310,7 @@ class Task:
         # using .get is faster than catching KeyError in this case.
         state = task_event_to_state(type_)
         if state is not None:
-            # sets e.g. self.succeeded to the timestamp.
+            # sets, for example, self.succeeded to the timestamp.
             setattr(self, type_, timestamp)
         else:
             state = type_.upper()  # custom state
@@ -345,6 +356,12 @@ class Task:
     def _serializable_children(self, value):
         return [task.id for task in self.children]
 
+    def _serializable_root(self, value):
+        return self.root_id
+
+    def _serializable_parent(self, value):
+        return self.parent_id
+
     def __reduce__(self):
         return _depickle_task, (self.__class__, self.as_dict())
 
@@ -371,6 +388,7 @@ class Task:
 
 class State:
     """Records clusters state."""
+
     Worker = Worker
     Task = Task
     event_count = 0
@@ -478,6 +496,9 @@ class State:
             return self._event(event)
 
     def _create_dispatcher(self):
+        # noqa: C901
+        # pylint: disable=too-many-statements
+        # This code is highly optimized, but not for reusability.
         get_handler = self.handlers.__getitem__
         event_callback = self.event_callback
         wfields = itemgetter('hostname', 'timestamp', 'local_received')
@@ -618,8 +639,11 @@ class State:
                 break
 
     def tasks_by_time(self, limit=None, reverse=True):
-        """Generator giving tasks ordered by time,
-        in ``(uuid, Task)`` tuples."""
+        """Generator yielding tasks ordered by time.
+
+        Yields:
+            Tuples of ``(uuid, Task)``.
+        """
         _heap = self._taskheap
         if reverse:
             _heap = reversed(_heap)

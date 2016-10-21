@@ -13,7 +13,7 @@
 
 .. cmdoption:: -s, --schedule
 
-    Path to the schedule database. Defaults to `celerybeat-schedule`.
+    Path to the schedule database.  Defaults to `celerybeat-schedule`.
     The extension '.db' may be appended to the filename.
     Default is {default}.
 
@@ -28,7 +28,7 @@
 
 .. cmdoption:: -f, --logfile
 
-    Path to log file. If no logfile is specified, `stderr` is used.
+    Path to log file.  If no logfile is specified, `stderr` is used.
 
 .. cmdoption:: -l, --loglevel
 
@@ -39,7 +39,7 @@
 
     Optional file used to store the process pid.
 
-    The program will not start if this file already exists
+    The program won't start if this file already exists
     and the pid is still alive.
 
 .. cmdoption:: --uid
@@ -72,6 +72,8 @@ from celery.bin.base import Command, daemon_options
 
 __all__ = ['beat']
 
+HELP = __doc__
+
 
 class beat(Command):
     """Start the beat periodic task scheduler.
@@ -81,17 +83,20 @@ class beat(Command):
 
             $ celery beat -l info
             $ celery beat -s /var/run/celery/beat-schedule --detach
-            $ celery beat -S djcelery.schedulers.DatabaseScheduler
+            $ celery beat -S django
+
+    The last example requires the :pypi:`django-celery-beat` extension
+    package found on PyPI.
     """
-    doc = __doc__
+
+    doc = HELP
     enable_config_from_cmdline = True
     supports_args = False
 
     def run(self, detach=False, logfile=None, pidfile=None, uid=None,
-            gid=None, umask=None, working_directory=None, **kwargs):
+            gid=None, umask=None, workdir=None, **kwargs):
         if not detach:
             maybe_drop_privileges(uid=uid, gid=gid)
-        workdir = working_directory
         kwargs.pop('app', None)
         beat = partial(self.app.Beat,
                        logfile=logfile, pidfile=pidfile, **kwargs)
@@ -102,15 +107,22 @@ class beat(Command):
         else:
             return beat().run()
 
-    def prepare_arguments(self, parser):
+    def add_arguments(self, parser):
         c = self.app.conf
-        parser.add_option('--detach', action='store_true')
-        parser.add_option('-s', '--schedule', default=c.beat_schedule_filename)
-        parser.add_option('--max-interval', type='float')
-        parser.add_option('-S', '--scheduler', dest='scheduler_cls')
-        parser.add_option('-l', '--loglevel', default='WARN')
+        bopts = parser.add_argument_group('Beat Options')
+        bopts.add_argument('--detach', action='store_true', default=False)
+        bopts.add_argument(
+            '-s', '--schedule', default=c.beat_schedule_filename)
+        bopts.add_argument('--max-interval', type=float)
+        bopts.add_argument('-S', '--scheduler')
+        bopts.add_argument('-l', '--loglevel', default='WARN')
+
         daemon_options(parser, default_pidfile='celerybeat.pid')
-        parser.add_options(self.app.user_options['beat'])
+
+        user_options = self.app.user_options['beat']
+        if user_options:
+            uopts = parser.add_argument_group('User Options')
+            self.add_compat_options(uopts, user_options)
 
 
 def main(app=None):

@@ -44,7 +44,7 @@ class Task(ResultModelBase):
 
 
 class TaskSet(ResultModelBase):
-    """TaskSet result"""
+    """TaskSet result."""
 
     __tablename__ = 'celery_tasksetmeta'
     __table_args__ = {'sqlite_autoincrement': True}

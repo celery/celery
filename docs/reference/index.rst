@@ -17,7 +17,9 @@
     celery.app.defaults
     celery.app.control
     celery.app.registry
+    celery.app.backends
     celery.app.builtins
+    celery.app.events
     celery.app.log
     celery.app.utils
     celery.bootsteps
@@ -34,9 +36,17 @@
     celery.states
     celery.contrib.abortable
     celery.contrib.migrate
+    celery.contrib.pytest
     celery.contrib.sphinx
+    celery.contrib.testing.worker
+    celery.contrib.testing.app
+    celery.contrib.testing.manager
+    celery.contrib.testing.mocks
     celery.contrib.rdb
     celery.events
+    celery.events.receiver
+    celery.events.dispatcher
+    celery.events.event
     celery.events.state
     celery.beat
     celery.apps.worker
@@ -55,6 +65,7 @@
     celery.worker.consumer.heart
     celery.worker.consumer.mingle
     celery.worker.consumer.tasks
+    celery.worker.worker
     celery.bin.base
     celery.bin.celery
     celery.bin.worker
@@ -62,5 +73,5 @@
     celery.bin.events
     celery.bin.logtool
     celery.bin.amqp
-    celery.bin.multi
     celery.bin.graph
+    celery.bin.multi

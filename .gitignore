@@ -25,3 +25,7 @@ celery/tests/cover/
 .ve*
 cover/
 .vagrant/
+.cache/
+htmlcov/
+coverage.xml
+test.db
