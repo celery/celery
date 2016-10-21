@@ -417,6 +417,7 @@ class test_tasks(TasksCase):
         with pytest.raises(Ignore):
             self.mytask.replace(sig1)
 
+    @pytest.mark.usefixtures('depends_on_current_app')
     def test_replace_callback(self):
         c = group([self.mytask.s()], app=self.app)
         c.freeze = Mock(name='freeze')
