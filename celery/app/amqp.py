@@ -324,6 +324,9 @@ class AMQP:
         if kwargsrepr is None:
             kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize)
 
+        if not root_id:  # empty root_id defaults to task_id
+            root_id = task_id
+
         return task_message(
             headers={
                 'lang': 'py',

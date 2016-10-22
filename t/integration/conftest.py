@@ -1,12 +1,16 @@
+import os
 import pytest
 from celery.contrib.testing.manager import Manager
+
+TEST_BROKER = os.environ.get('TEST_BROKER', 'pyamqp://')
+TEST_BACKEND = os.environ.get('TEST_BACKEND', 'redis://')
 
 
 @pytest.fixture(scope='session')
 def celery_config():
     return {
-        'broker_url': 'pyamqp://',
-        'result_backend': 'rpc',
+        'broker_url': TEST_BROKER,
+        'result_backend': TEST_BACKEND
     }
 
 

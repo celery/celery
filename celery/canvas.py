@@ -30,6 +30,39 @@ __all__ = [
 ]
 
 
+def _shorten_names(task_name, s):
+    # type: (str, str) -> str
+    """Remove repeating module names from string.
+
+    Arguments:
+        task_name (str): Task name (full path including module),
+            to use as the basis for removing module names.
+        s (str): The string we want to work on.
+
+    Example:
+
+        >>> _shorten_names(
+        ...    'x.tasks.add',
+        ...    'x.tasks.add(2, 2) | x.tasks.add(4) | x.tasks.mul(8)',
+        ... )
+        'x.tasks.add(2, 2) | add(4) | mul(8)'
+    """
+    # This is used by repr(), to remove repeating module names.
+
+    # extract the module part of the task name
+    module = task_name.rpartition('.')[0] + '.'
+    # find the first occurance of the module name in the string.
+    index = s.find(module)
+    if index >= 0:
+        s = ''.join([
+            # leave the first occurance of the module name untouched.
+            s[:index + len(module)],
+            # strip seen module name from the rest of the string.
+            s[index + len(module):].replace(module, ''),
+        ])
+    return s
+
+
 class _getitem_property:
     """Attribute -> dict key descriptor.
 
@@ -376,9 +409,6 @@ class Signature(dict):
     def set_immutable(self, immutable):
         self.immutable = immutable
 
-    def set_parent_id(self, parent_id):
-        self.parent_id = parent_id
-
     def _with_list_option(self, key):
         items = self.options.setdefault(key, [])
         if not isinstance(items, MutableSequence):
@@ -445,26 +475,48 @@ class Signature(dict):
             # group() | task -> chord
             return chord(self, body=other, app=self._app)
         elif isinstance(other, group):
-            # task | group() -> unroll group with one member
+            # unroll group with one member
             other = maybe_unroll_group(other)
-            return chain(self, other, app=self._app)
+            if isinstance(self, chain):
+                # chain | group() -> chain
+                sig = self.clone()
+                sig.tasks.append(other)
+                return sig
+            # task | group() -> chain
+            return chain(self, other, app=self.app)
         if not isinstance(self, chain) and isinstance(other, chain):
             # task | chain -> chain
             return chain(
                 _seq_concat_seq((self,), other.tasks), app=self._app)
         elif isinstance(other, chain):
             # chain | chain -> chain
-            return chain(
-                _seq_concat_seq(self.tasks, other.tasks), app=self._app)
+            sig = self.clone()
+            if isinstance(sig.tasks, tuple):
+                sig.tasks = list(sig.tasks)
+            sig.tasks.extend(other.tasks)
+            return sig
         elif isinstance(self, chord):
+            # chord | task ->  attach to body
             sig = self.clone()
             sig.body = sig.body | other
             return sig
         elif isinstance(other, Signature):
             if isinstance(self, chain):
-                # chain | task -> chain
-                return chain(
-                    _seq_concat_item(self.tasks, other), app=self._app)
+                if isinstance(self.tasks[-1], group):
+                    # CHAIN [last item is group] | TASK -> chord
+                    sig = self.clone()
+                    sig.tasks[-1] = chord(
+                        sig.tasks[-1], other, app=self._app)
+                    return sig
+                elif isinstance(self.tasks[-1], chord):
+                    # CHAIN [last item is chord] -> chain with chord body.
+                    sig = self.clone()
+                    sig.tasks[-1].body = sig.tasks[-1].body | other
+                    return sig
+                else:
+                    # chain | task -> chain
+                    return chain(
+                        _seq_concat_item(self.tasks, other), app=self._app)
             # task | task -> chain
             return chain(self, other, app=self._app)
         return NotImplemented
@@ -694,7 +746,7 @@ class chain(Signature):
         steps_extend = steps.extend
 
         prev_task = None
-        prev_res = prev_prev_res = None
+        prev_res = None
         tasks, results = [], []
         i = 0
         while steps:
@@ -727,7 +779,6 @@ class chain(Signature):
                     task, body=prev_task,
                     task_id=prev_res.id, root_id=root_id, app=app,
                 )
-                prev_res = prev_prev_res
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
@@ -745,27 +796,12 @@ class chain(Signature):
             i += 1
 
             if prev_task:
-                prev_task.set_parent_id(task.id)
-
                 if use_link:
                     # link previous task to this task.
                     task.link(prev_task)
 
-                if prev_res:
-                    if isinstance(prev_task, chord):
-                        # If previous task was a chord,
-                        # the freeze above would have set a parent for
-                        # us, but we'd be overwriting it here.
-
-                        # so fix this relationship so it's:
-                        #     chord body -> group -> THIS RES
-                        assert isinstance(prev_res.parent, GroupResult)
-                        prev_res.parent.parent = res
-                    else:
-                        prev_res.parent = res
-
-            if is_first_task and parent_id is not None:
-                task.set_parent_id(parent_id)
+                if prev_res and not prev_res.parent:
+                    prev_res.parent = res
 
             if link_error:
                 for errback in maybe_list(link_error):
@@ -774,14 +810,18 @@ class chain(Signature):
             tasks.append(task)
             results.append(res)
 
-            prev_task, prev_prev_res, prev_res = (
-                task, prev_res, res,
-            )
+            prev_task, prev_res = task, res
+            if isinstance(task, chord):
+                # If the task is a chord, and the body is a chain
+                # the chain has already been prepared, and res is
+                # set to the last task in the callback chain.
 
-        if root_id is None and tasks:
-            root_id = tasks[-1].id
-            for task in reversed(tasks):
-                task.options['root_id'] = root_id
+                # We need to change that so that it points to the
+                # group result object.
+                node = res
+                while node.parent:
+                    node = node.parent
+                prev_res = node
         return tasks, results
 
     def apply(self, args=(), kwargs={}, **options):
@@ -806,7 +846,9 @@ class chain(Signature):
         if not self.tasks:
             return '<{0}@{1:#x}: empty>'.format(
                 type(self).__name__, id(self))
-        return ' | '.join(repr(t) for t in self.tasks)
+        return _shorten_names(
+            self.tasks[0]['task'],
+            ' | '.join(repr(t) for t in self.tasks))
 
 
 class _basemap(Signature):
@@ -1091,10 +1133,6 @@ class group(Signature):
             options.pop('task_id', uuid()))
         return options, group_id, options.get('root_id')
 
-    def set_parent_id(self, parent_id):
-        for task in self.tasks:
-            task.set_parent_id(parent_id)
-
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None):
         # pylint: disable=redefined-outer-name
@@ -1141,7 +1179,11 @@ class group(Signature):
         return iter(self.tasks)
 
     def __repr__(self):
-        return 'group({0.tasks!r})'.format(self)
+        if self.tasks:
+            return _shorten_names(
+                self.tasks[0]['task'],
+                'group({0.tasks!r})'.format(self))
+        return 'group(<empty>)'
 
     def __len__(self):
         return len(self.tasks)
@@ -1216,20 +1258,18 @@ class chord(Signature):
             self.tasks = group(self.tasks, app=self.app)
         header_result = self.tasks.freeze(
             parent_id=parent_id, root_id=root_id, chord=self.body)
-        bodyres = self.body.freeze(
-            _id, parent_id=header_result.id, root_id=root_id)
-        bodyres.parent = header_result
+        bodyres = self.body.freeze(_id, root_id=root_id)
+        # we need to link the body result back to the group result,
+        # but the body may actually be a chain,
+        # so find the first result without a parent
+        node = bodyres
+        while node:
+            if not node.parent:
+                node.parent = header_result
+                break
+            node = node.parent
         self.id = self.tasks.id
-        self.body.set_parent_id(self.id)
         return bodyres
-
-    def set_parent_id(self, parent_id):
-        tasks = self.tasks
-        if isinstance(tasks, group):
-            tasks = tasks.tasks
-        for task in tasks:
-            task.set_parent_id(parent_id)
-        self.parent_id = parent_id
 
     def apply_async(self, args=(), kwargs={}, task_id=None,
                     producer=None, connection=None,
@@ -1282,7 +1322,6 @@ class chord(Signature):
 
         results = header.freeze(
             group_id=group_id, chord=body, root_id=root_id).results
-        body.set_parent_id(group_id)
         bodyres = body.freeze(task_id, root_id=root_id)
 
         parent = app.backend.apply_chord(
@@ -1317,7 +1356,16 @@ class chord(Signature):
 
     def __repr__(self):
         if self.body:
-            return self.body.reprcall(self.tasks)
+            if isinstance(self.body, chain):
+                return _shorten_names(
+                    self.body.tasks[0]['task'],
+                    '({0} | {1!r})'.format(
+                        self.body.tasks[0].reprcall(self.tasks),
+                        chain(self.body.tasks[1:], app=self._app),
+                    ),
+                )
+            return _shorten_names(
+                self.body['task'], self.body.reprcall(self.tasks))
         return '<chord without body: {0.tasks!r}>'.format(self)
 
     @cached_property
