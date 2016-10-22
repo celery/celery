@@ -819,7 +819,7 @@ class test_setgroups:
 
 
 def test_check_privileges():
-    class Obj(object):
+    class Obj:
         fchown = 13
     prev, platforms.os = platforms.os, Obj()
     try:

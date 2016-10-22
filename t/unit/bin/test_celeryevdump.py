@@ -7,6 +7,7 @@ from celery.events.dumper import (
     evdump,
 )
 
+
 class test_Dumper:
 
     def setup(self):

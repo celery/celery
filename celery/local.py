@@ -445,7 +445,7 @@ COMPAT_MODULES = {
 DEPRECATED_ATTRS = set(COMPAT_MODULES['celery'].keys()) | {'subtask'}
 
 
-class class_property(object):
+class class_property:
 
     def __init__(self, getter=None, setter=None):
         if getter is not None and not isinstance(getter, classmethod):

@@ -108,14 +108,14 @@ class test_Command:
 class test_list:
 
     def test_list_bindings_no_support(self):
-        l = list_(app=self.app, stderr=WhateverIO())
+        l = list_(app=self.app, stderr=io.StringIO())
         management = Mock()
         management.get_bindings.side_effect = NotImplementedError()
         with pytest.raises(Error):
             l.list_bindings(management)
 
     def test_run(self):
-        l = list_(app=self.app, stderr=WhateverIO())
+        l = list_(app=self.app, stderr=io.StringIO())
         l.run('bindings')
 
         with pytest.raises(Error):
@@ -136,7 +136,7 @@ class test_call:
 
     @patch('celery.app.base.Celery.send_task')
     def test_run(self, send_task):
-        a = call(app=self.app, stderr=WhateverIO(), stdout=WhateverIO())
+        a = call(app=self.app, stderr=io.StringIO(), stdout=io.StringIO())
         a.run(self.add.name)
         send_task.assert_called()
 
@@ -161,7 +161,7 @@ class test_call:
 class test_purge:
 
     def test_run(self):
-        out = WhateverIO()
+        out = io.StringIO()
         a = purge(app=self.app, stdout=out)
         a._purge = Mock(name='_purge')
         a._purge.return_value = 0
@@ -191,7 +191,7 @@ class test_result:
 
     def test_run(self):
         with patch('celery.result.AsyncResult.get') as get:
-            out = WhateverIO()
+            out = io.StringIO()
             r = result(app=self.app, stdout=out)
             get.return_value = 'Jerry'
             r.run('id')
@@ -210,7 +210,7 @@ class test_status:
 
     @patch('celery.bin.celery.inspect')
     def test_run(self, inspect_):
-        out, err = WhateverIO(), WhateverIO()
+        out, err = io.StringIO(), io.StringIO()
         ins = inspect_.return_value = Mock()
         ins.run.return_value = []
         s = status(self.app, stdout=out, stderr=err)
@@ -227,8 +227,8 @@ class test_migrate:
 
     @patch('celery.contrib.migrate.migrate_tasks')
     def test_run(self, migrate_tasks):
-        out = WhateverIO()
-        m = migrate(app=self.app, stdout=out, stderr=WhateverIO())
+        out = io.StringIO()
+        m = migrate(app=self.app, stdout=out, stderr=io.StringIO())
         with pytest.raises(TypeError):
             m.run()
         migrate_tasks.assert_not_called()
@@ -246,7 +246,7 @@ class test_migrate:
 class test_report:
 
     def test_run(self):
-        out = WhateverIO()
+        out = io.StringIO()
         r = report(app=self.app, stdout=out)
         assert r.run() == EX_OK
         assert out.getvalue()
@@ -255,7 +255,7 @@ class test_report:
 class test_help:
 
     def test_run(self):
-        out = WhateverIO()
+        out = io.StringIO()
         h = help(app=self.app, stdout=out)
         h.parser = Mock()
         assert h.run() == EX_USAGE
@@ -459,7 +459,7 @@ class test_inspect:
 
     @patch('celery.app.control.Control.inspect')
     def test_run(self, real):
-        out = WhateverIO()
+        out = io.StringIO()
         i = inspect(app=self.app, stdout=out)
         with pytest.raises(Error):
             i.run()

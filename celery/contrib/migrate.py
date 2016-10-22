@@ -241,7 +241,7 @@ def prepare_queues(queues):
     return queues
 
 
-class Filterer(object):
+class Filterer:
 
     def __init__(self, app, conn, filter,
                  limit=None, timeout=1.0,

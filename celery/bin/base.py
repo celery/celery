@@ -16,7 +16,7 @@ from pprint import pformat
 from celery import VERSION_BANNER, Celery, maybe_patch_concurrency
 from celery import signals
 from celery.exceptions import (
-    CDeprecationWarning, CPendingDeprecationWarninga, ImproperlyConfigured,
+    CDeprecationWarning, CPendingDeprecationWarning, ImproperlyConfigured,
 )
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE, isatty
 from celery.utils import imports
@@ -473,7 +473,7 @@ class Command:
         if config:
             os.environ['CELERY_CONFIG_MODULE'] = config
 
-        self.initialize_app(app, loader)
+        argv = self.initialize_app(app, loader, argv)
 
         self._handle_user_preload_options(argv)
 
@@ -487,7 +487,7 @@ class Command:
                 sender=self, app=self.app, options=user_options,
             )
 
-    def initialize_app(self, app=None, loader=None):
+    def initialize_app(self, app=None, loader=None, argv=None):
         if self.requires_app:
             if app:
                 self.app = self.find_app(app)
@@ -500,6 +500,7 @@ class Command:
                 self.app = Celery(fixups=[])
             else:
                 self.app = self.get_default_app(app, loader)
+        return argv
 
     def get_default_app(self, app=None, loader=None):
         if self.get_app is not None:

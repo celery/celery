@@ -59,7 +59,7 @@ defined in the `task_queues` setting.
 """
 
 
-class WorkController(object):
+class WorkController:
     """Unmanaged worker instance."""
 
     app = None

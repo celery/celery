@@ -59,7 +59,7 @@ class ParseException(Exception):
     """Raised by :class:`crontab_parser` when the input can't be parsed."""
 
 
-class BaseSchedule(object):
+class BaseSchedule:
 
     def __init__(self, nowfun=None, app=None):
         self.nowfun = nowfun

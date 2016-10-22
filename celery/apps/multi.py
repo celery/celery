@@ -1,5 +1,4 @@
 """Start/stop/manage workers."""
-import errno
 import os
 import shlex
 import signal
@@ -70,7 +69,7 @@ def _kwargs_to_command_line(kwargs):
     }
 
 
-class NamespacedOptionParser(object):
+class NamespacedOptionParser:
 
     def __init__(self, args):
         self.args = args
@@ -122,7 +121,7 @@ class NamespacedOptionParser(object):
         dest[prefix + name] = value
 
 
-class Node(object):
+class Node:
     """Represents a node in a cluster."""
 
     def __init__(self, name,
@@ -259,7 +258,7 @@ def maybe_call(fun, *args, **kwargs):
         fun(*args, **kwargs)
 
 
-class MultiParser(object):
+class MultiParser:
     Node = Node
 
     def __init__(self, cmd='celery worker',

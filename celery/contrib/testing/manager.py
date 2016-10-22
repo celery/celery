@@ -30,7 +30,7 @@ def humanize_seconds(secs, prefix='', sep='', now='now', **kwargs):
     return s
 
 
-class ManagerMixin(object):
+class ManagerMixin:
     """Mixin that adds :class:`Manager` capabilities."""
 
     def _init_manager(self,

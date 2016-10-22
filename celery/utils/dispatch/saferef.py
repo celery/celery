@@ -200,7 +200,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
         functions can be stored on an attribute named differenty than the
         function's name, such as in::
 
-            >>> class A(object):
+            >>> class A:
             ...     pass
 
             >>> def foo(self):
