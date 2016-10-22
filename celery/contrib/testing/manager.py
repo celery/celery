@@ -18,19 +18,11 @@ from celery.utils.time import humanize_seconds as _humanize_seconds
 
 E_STILL_WAITING = 'Still waiting for {0}.  Trying again {when}: {exc!r}'
 
+humanize_seconds = partial(_humanize_seconds, microseconds=True)
+
 
 class Sentinel(Exception):
     """Signifies the end of something."""
-
-
-def humanize_seconds(secs, prefix='', sep='', now='now', **kwargs):
-    # type: (float, str, str, str, **Any) -> str
-    """Represent seconds in a human readable way."""
-    s = _humanize_seconds(secs, prefix, sep, now, **kwargs)
-    if s == now and secs > 0:
-        return '{prefix}{sep}{0:.2f} seconds'.format(
-            float(secs), prefix=prefix, sep=sep)
-    return s
 
 
 class ManagerMixin(object):

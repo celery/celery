@@ -10,15 +10,20 @@ env:
     PYTHONUNBUFFERED=yes
   matrix:
     - TOXENV=2.7-unit
-    - TOXENV=2.7-integration
+    - TOXENV=2.7-integration-rabbitmq
+    - TOXENV=2.7-integration-redis
     - TOXENV=3.4-unit
-    - TOXENV=3.4-integration
+    - TOXENV=3.4-integration-rabbitmq
+    - TOXENV=3.4-integration-redis
     - TOXENV=3.5-unit
-    - TOXENV=3.5-integration
+    - TOXENV=3.5-integration-rabbitmq
+    - TOXENV=3.5-integration-redis
     - TOXENV=pypy-unit PYPY_VERSION="5.3"
-    - TOXENV=pypy-integration PYPY_VERSION="5.3"
+    - TOXENV=pypy-integration-rabbitmq PYPY_VERSION="5.3"
+    - TOXENV=pypy-integration-redis PYPY_VERSION="5.3"
     - TOXENV=pypy3-unit
-    - TOXENV=pypy3-integration
+    - TOXENV=pypy3-integration-rabbitmq
+    - TOXENV=pypy3-integration-redis
     - TOXENV=flake8
     - TOXENV=flakeplus
     - TOXENV=apicheck

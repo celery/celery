@@ -81,10 +81,11 @@ def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
     assert parent_id == expected_parent_id
 
 
-@pytest.mark.celery(result_backend='redis://')
 class test_chord:
 
     def test_parent_ids(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
         root = ids.si(i=1)
         expected_root_id = root.freeze().id
         g = chain(
@@ -97,6 +98,8 @@ class test_chord:
         self.assert_parentids_chord(g(), expected_root_id)
 
     def test_parent_ids__OR(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
         root = ids.si(i=1)
         expected_root_id = root.freeze().id
         g = (
