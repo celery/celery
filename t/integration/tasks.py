@@ -41,4 +41,4 @@ def collect_ids(self, res, i):
         (previous_result, (root_id, parent_id, i))
 
     """
-    return res, ids(i)
+    return res, (self.request.root_id, self.request.parent_id, i)

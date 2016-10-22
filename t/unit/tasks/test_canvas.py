@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import pytest
 
-from case import ContextMock, MagicMock, Mock
+from case import MagicMock, Mock
 
 from celery._state import _task_stack
 from celery.canvas import (
