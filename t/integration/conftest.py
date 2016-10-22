@@ -8,7 +8,6 @@ TEST_BACKEND = os.environ.get('TEST_BACKEND', 'redis://')
 
 @pytest.fixture(scope='session')
 def celery_config():
-    assert TEST_BACKEND == 'rpc'
     return {
         'broker_url': TEST_BROKER,
         'result_backend': TEST_BACKEND
