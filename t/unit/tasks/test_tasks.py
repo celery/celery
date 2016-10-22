@@ -433,6 +433,7 @@ class test_tasks(TasksCase):
 
             def __json__(self):
                 return 'whatever'
+
             def reprcall(self, *args, **kwargs):
                 return 'whatever2'
 
