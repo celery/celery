@@ -1,3 +1,4 @@
+from __future__ import absolute_import, unicode_literals
 import os
 import pytest
 from celery.contrib.testing.manager import Manager
