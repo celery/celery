@@ -342,6 +342,9 @@ class AMQP(object):
             if chord:
                 chord = utf8dict(chord)
 
+        if not root_id:  # empty root_id defaults to task_id
+            root_id = task_id
+
         return task_message(
             headers={
                 'lang': 'py',

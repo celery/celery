@@ -253,7 +253,7 @@ class test_chain(CanvasCase):
 
     def test_repr(self):
         x = self.add.s(2, 2) | self.add.s(2)
-        assert repr(x) == '%s(2, 2) | %s(2)' % (self.add.name, self.add.name)
+        assert repr(x) == '%s(2, 2) | add(2)' % (self.add.name,)
 
     def test_apply_async(self):
         c = self.add.s(2, 2) | self.add.s(4) | self.add.s(8)
@@ -261,43 +261,6 @@ class test_chain(CanvasCase):
         assert result.parent
         assert result.parent.parent
         assert result.parent.parent.parent is None
-
-    def test_group_to_chord__freeze_parent_id(self):
-        def using_freeze(c):
-            c.freeze(parent_id='foo', root_id='root')
-            return c._frozen[0]
-        self.assert_group_to_chord_parent_ids(using_freeze)
-
-    def assert_group_to_chord_parent_ids(self, freezefun):
-        c = (
-            self.add.s(5, 5) |
-            group([self.add.s(i, i) for i in range(5)], app=self.app) |
-            self.add.si(10, 10) |
-            self.add.si(20, 20) |
-            self.add.si(30, 30)
-        )
-        tasks = freezefun(c)
-        assert tasks[-1].parent_id == 'foo'
-        assert tasks[-1].root_id == 'root'
-        assert tasks[-2].parent_id == tasks[-1].id
-        assert tasks[-2].root_id == 'root'
-        assert tasks[-2].body.parent_id == tasks[-2].tasks.id
-        assert tasks[-2].body.parent_id == tasks[-2].id
-        assert tasks[-2].body.root_id == 'root'
-        assert tasks[-2].tasks.tasks[0].parent_id == tasks[-1].id
-        assert tasks[-2].tasks.tasks[0].root_id == 'root'
-        assert tasks[-2].tasks.tasks[1].parent_id == tasks[-1].id
-        assert tasks[-2].tasks.tasks[1].root_id == 'root'
-        assert tasks[-2].tasks.tasks[2].parent_id == tasks[-1].id
-        assert tasks[-2].tasks.tasks[2].root_id == 'root'
-        assert tasks[-2].tasks.tasks[3].parent_id == tasks[-1].id
-        assert tasks[-2].tasks.tasks[3].root_id == 'root'
-        assert tasks[-2].tasks.tasks[4].parent_id == tasks[-1].id
-        assert tasks[-2].tasks.tasks[4].root_id == 'root'
-        assert tasks[-3].parent_id == tasks[-2].body.id
-        assert tasks[-3].root_id == 'root'
-        assert tasks[-4].parent_id == tasks[-3].id
-        assert tasks[-4].root_id == 'root'
 
     def test_splices_chains(self):
         c = chain(
@@ -341,21 +304,12 @@ class test_chain(CanvasCase):
         assert tasks[-1].args[0] == 5
         assert isinstance(tasks[-2], chord)
         assert len(tasks[-2].tasks) == 5
-        assert tasks[-2].parent_id == tasks[-1].id
-        assert tasks[-2].root_id == tasks[-1].id
-        assert tasks[-2].body.args[0] == 10
-        assert tasks[-2].body.parent_id == tasks[-2].id
 
-        assert tasks[-3].args[0] == 20
-        assert tasks[-3].root_id == tasks[-1].id
-        assert tasks[-3].parent_id == tasks[-2].body.id
-
-        assert tasks[-4].args[0] == 30
-        assert tasks[-4].parent_id == tasks[-3].id
-        assert tasks[-4].root_id == tasks[-1].id
-
-        assert tasks[-2].body.options['link']
-        assert tasks[-2].body.options['link'][0].options['link']
+        body = tasks[-2].body
+        assert len(body.tasks) == 3
+        assert body.tasks[0].args[0] == 10
+        assert body.tasks[1].args[0] == 20
+        assert body.tasks[2].args[0] == 30
 
         c2 = self.add.s(2, 2) | group(self.add.s(i, i) for i in range(10))
         c2._use_link = True
@@ -436,39 +390,6 @@ class test_chain(CanvasCase):
     def test_empty_chain_returns_none(self):
         assert chain(app=self.app)() is None
         assert chain(app=self.app).apply_async() is None
-
-    def test_root_id_parent_id(self):
-        self.app.conf.task_protocol = 2
-        c = chain(self.add.si(i, i) for i in range(4))
-        c.freeze()
-        tasks, _ = c._frozen
-        for i, task in enumerate(tasks):
-            assert task.root_id == tasks[-1].id
-            try:
-                assert task.parent_id == tasks[i + 1].id
-            except IndexError:
-                assert i == len(tasks) - 1
-            else:
-                valid_parents = i
-        assert valid_parents == len(tasks) - 2
-
-        self.assert_sent_with_ids(tasks[-1], tasks[-1].id, 'foo',
-                                  parent_id='foo')
-        assert tasks[-2].options['parent_id']
-        self.assert_sent_with_ids(tasks[-2], tasks[-1].id, tasks[-1].id)
-        self.assert_sent_with_ids(tasks[-3], tasks[-1].id, tasks[-2].id)
-        self.assert_sent_with_ids(tasks[-4], tasks[-1].id, tasks[-3].id)
-
-    def assert_sent_with_ids(self, task, rid, pid, **options):
-        self.app.amqp.send_task_message = Mock(name='send_task_message')
-        self.app.backend = Mock()
-        self.app.producer_or_acquire = ContextMock()
-
-        task.apply_async(**options)
-        self.app.amqp.send_task_message.assert_called()
-        message = self.app.amqp.send_task_message.call_args[0][2]
-        assert message.headers['parent_id'] == pid
-        assert message.headers['root_id'] == rid
 
     def test_call_no_tasks(self):
         x = chain()
@@ -686,11 +607,6 @@ class test_chord(CanvasCase):
     def test_argument_is_group(self):
         x = chord(group(self.add.s(2, 2), self.add.s(4, 4), app=self.app))
         assert x.tasks
-
-    def test_set_parent_id(self):
-        x = chord(group(self.add.s(2, 2)))
-        x.tasks = [self.add.s(2, 2)]
-        x.set_parent_id('pid')
 
     def test_app_when_app(self):
         app = Mock(name='app')

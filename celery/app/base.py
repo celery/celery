@@ -690,15 +690,13 @@ class Celery(object):
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
 
-        if root_id is None:
-            parent, have_parent = self.current_worker_task, True
+        if not root_id or not parent_id:
+            parent = self.current_worker_task
             if parent:
-                root_id = parent.request.root_id or parent.request.id
-        if parent_id is None:
-            if not have_parent:
-                parent, have_parent = self.current_worker_task, True
-            if parent:
-                parent_id = parent.request.id
+                if not root_id:
+                    root_id = parent.request.root_id or parent.request.id
+                if not parent_id:
+                    parent_id = parent.request.id
 
         message = amqp.create_task_message(
             task_id, name, args, kwargs, countdown, eta, group_id,
