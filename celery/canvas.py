@@ -61,7 +61,7 @@ def _shorten_names(task_name, s):
     # This is used by repr(), to remove repeating module names.
 
     # extract the module part of the task name
-    module = task_name.rpartition('.')[0] + '.'
+    module = str(task_name).rpartition('.')[0] + '.'
     # find the first occurance of the module name in the string.
     index = s.find(module)
     if index >= 0:
@@ -1285,8 +1285,12 @@ class chord(Signature):
         # but the body may actually be a chain,
         # so find the first result without a parent
         node = bodyres
+        seen = set()
         while node:
-            if not node.parent:
+            if node.id in seen:
+                raise RuntimeError('Recursive result parents')
+            seen.add(node.id)
+            if node.parent is None:
                 node.parent = header_result
                 break
             node = node.parent

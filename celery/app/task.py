@@ -825,7 +825,7 @@ class Task(object):
 
         if self.request.chain:
             for t in self.request.chain:
-                sig |= signature(t)
+                sig |= signature(t, app=self.app)
 
         sig.freeze(self.request.id,
                    group_id=self.request.group,

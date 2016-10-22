@@ -429,8 +429,12 @@ class test_tasks(TasksCase):
         self.mytask.request.errbacks = 'errbacks'
 
         class JsonMagicMock(MagicMock):
+            parent = None
+
             def __json__(self):
                 return 'whatever'
+            def reprcall(self, *args, **kwargs):
+                return 'whatever2'
 
         mocked_signature = JsonMagicMock(name='s')
         accumulate_mock = JsonMagicMock(name='accumulate', s=mocked_signature)
