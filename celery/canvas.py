@@ -41,6 +41,39 @@ PY3 = sys.version_info[0] == 3
 JSON_NEEDS_UNICODE_KEYS = PY3 and not try_import('simplejson')
 
 
+def _shorten_names(task_name, s):
+    # type: (str, str) -> str
+    """Remove repeating module names from string.
+
+    Arguments:
+        task_name (str): Task name (full path including module),
+            to use as the basis for removing module names.
+        s (str): The string we want to work on.
+
+    Example:
+
+        >>> _shorten_names(
+        ...    'x.tasks.add',
+        ...    'x.tasks.add(2, 2) | x.tasks.add(4) | x.tasks.mul(8)',
+        ... )
+        'x.tasks.add(2, 2) | add(4) | mul(8)'
+    """
+    # This is used by repr(), to remove repeating module names.
+
+    # extract the module part of the task name
+    module = task_name.rpartition('.')[0] + '.'
+    # find the first occurance of the module name in the string.
+    index = s.find(module)
+    if index >= 0:
+        s = ''.join([
+            # leave the first occurance of the module name untouched.
+            s[:index + len(module)],
+            # strip seen module name from the rest of the string.
+            s[index + len(module):].replace(module, ''),
+        ])
+    return s
+
+
 class _getitem_property(object):
     """Attribute -> dict key descriptor.
 
@@ -831,7 +864,9 @@ class chain(Signature):
         if not self.tasks:
             return '<{0}@{1:#x}: empty>'.format(
                 type(self).__name__, id(self))
-        return ' | '.join(repr(t) for t in self.tasks)
+        return _shorten_names(
+            self.tasks[0]['task'],
+            ' | '.join(repr(t) for t in self.tasks))
 
 
 class _basemap(Signature):
@@ -1165,7 +1200,11 @@ class group(Signature):
         return iter(self.tasks)
 
     def __repr__(self):
-        return 'group({0.tasks!r})'.format(self)
+        if self.tasks:
+            return _shorten_names(
+                self.tasks[0]['task'],
+                'group({0.tasks!r})'.format(self))
+        return 'group(<empty>)'
 
     def __len__(self):
         return len(self.tasks)
@@ -1339,7 +1378,16 @@ class chord(Signature):
 
     def __repr__(self):
         if self.body:
-            return self.body.reprcall(self.tasks)
+            if isinstance(self.body, chain):
+                return _shorten_names(
+                    self.body.tasks[0]['task'],
+                    '({0} | {1!r})'.format(
+                        self.body.tasks[0].reprcall(self.tasks),
+                        chain(self.body.tasks[1:], app=self._app),
+                    ),
+                )
+            return _shorten_names(
+                self.body['task'], self.body.reprcall(self.tasks))
         return '<chord without body: {0.tasks!r}>'.format(self)
 
     @cached_property
