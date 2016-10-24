@@ -269,6 +269,30 @@ class test_tasks(TasksCase):
     def now(self):
         return self.app.now()
 
+    def test_typing(self):
+        @self.app.task()
+        def add(x, y, kw=1):
+            pass
+
+        with pytest.raises(TypeError):
+            add.delay(1)
+
+        with pytest.raises(TypeError):
+            add.delay(1, kw=2)
+
+        with pytest.raises(TypeError):
+            add.delay(1, 2, foobar=3)
+
+        add.delay(2, 2)
+
+    def test_typing__disabled(self):
+        @self.app.task(typing=False)
+        def add(x, y, kw=1):
+            pass
+        add.delay(1)
+        add.delay(1, kw=2)
+        add.delay(1, 2, foobar=3)
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_unpickle_task(self):
         import pickle

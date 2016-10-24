@@ -167,6 +167,11 @@ class Task(object):
     #: Name of the task.
     name = None
 
+    #: Enable argument checking.
+    #: You can set this to false if you don't want the signature to be
+    #: checked when calling the task.
+    typing = True
+
     #: Maximum number of retries before giving up.  If set to :const:`None`,
     #: it will **never** stop retrying.
     max_retries = 3
@@ -487,18 +492,26 @@ class Task(object):
             headers (Dict): Message headers to be included in the message.
 
         Returns:
-            ~@AsyncResult: Future promise.
+            ~@AsyncResult: Promise of future evaluation.
+
+        Raises:
+            TypeError: If not enough arguments are passed, or too many
+                arguments are passed.  Note that signature checks may
+                be disabled by specifying ``@task(typing=False)``.
+            kombu.exceptions.OperationalError: If a connection to the
+               transport cannot be made, or if the connection is lost.
 
         Note:
             Also supports all keyword arguments supported by
             :meth:`kombu.Producer.publish`.
         """
-        try:
-            check_arguments = self.__header__
-        except AttributeError:  # pragma: no cover
-            pass
-        else:
-            check_arguments(*(args or ()), **(kwargs or {}))
+        if self.typing:
+            try:
+                check_arguments = self.__header__
+            except AttributeError:  # pragma: no cover
+                pass
+            else:
+                check_arguments(*(args or ()), **(kwargs or {}))
 
         app = self._get_app()
         if app.conf.task_always_eager:

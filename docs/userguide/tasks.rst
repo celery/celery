@@ -457,6 +457,9 @@ The request defines the following attributes:
         current task.  If using version one of the task protocol the chain
         tasks will be in ``request.callbacks`` instead.
 
+Example
+-------
+
 An example task accessing information in the context is:
 
 .. code-block:: python
@@ -528,6 +531,48 @@ see :setting:`worker_redirect_stdouts`).
             finally:
                 sys.stdout, sys.stderr = old_outs
 
+.. _task-argument-checking:
+
+Argument checking
+-----------------
+
+.. versionadded:: 4.0
+
+Celery will verify the arguments passed when you call the task, just
+like Python does when calling a normal function:
+
+.. code-block:: pycon
+
+    >>> @app.task
+    ... def add(x, y):
+    ...     return x + y
+
+    # Calling the task with two arguments works:
+    >>> add.delay(8, 8)
+    <AsyncResult: f59d71ca-1549-43e0-be41-4e8821a83c0c>
+
+    # Calling the task with only one argument fails:
+    >>> add.delay(8)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "celery/app/task.py", line 376, in delay
+        return self.apply_async(args, kwargs)
+      File "celery/app/task.py", line 485, in apply_async
+        check_arguments(*(args or ()), **(kwargs or {}))
+    TypeError: add() takes exactly 2 arguments (1 given)
+
+You can disable the argument checking for any task by setting its
+:attr:`~@Task.typing` attribute to :const:`False`:
+
+.. code-block:: pycon
+
+    >>> @app.task(typing=False)
+    ... def add(x, y):
+    ...     return x + y
+
+    # Works locally, but the worker reciving the task will raise an error.
+    >>> add.delay(8)
+    <AsyncResult: f59d71ca-1549-43e0-be41-4e8821a83c0c>
 
 Hiding sensitive information in arguments
 -----------------------------------------
