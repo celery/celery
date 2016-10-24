@@ -1,5 +1,52 @@
 # -*- coding: utf-8 -*-
-"""Celery error types."""
+"""Celery error types.
+
+Error Hierarchy
+===============
+
+- :exc:`Exception`
+    - :exc:`celery.exceptions.CeleryError`
+        - :exc:`~celery.exceptions.ImproperlyConfigured`
+        - :exc:`~celery.exceptions.SecurityError`
+        - :exc:`~celery.exceptions.TaskPredicate`
+            - :exc:`~celery.exceptions.Ignore`
+            - :exc:`~celery.exceptions.Reject`
+            - :exc:`~celery.exceptions.Retry`
+        - :exc:`~celery.exceptions.TaskError`
+            - :exc:`~celery.exceptions.QueueNotFound`
+            - :exc:`~celery.exceptions.IncompleteStream`
+            - :exc:`~celery.exceptions.NotRegistered`
+            - :exc:`~celery.exceptions.AlreadyRegistered`
+            - :exc:`~celery.exceptions.TimeoutError`
+            - :exc:`~celery.exceptions.MaxRetriesExceededError`
+            - :exc:`~celery.exceptions.TaskRevokedError`
+            - :exc:`~celery.exceptions.InvalidTaskError`
+            - :exc:`~celery.exceptions.ChordError`
+    - :class:`kombu.exceptions.KombuError`
+        - :exc:`~celery.exceptions.OperationalError`
+
+            Raised when a transport connection error occurs while
+            sending a message (be it a task, remote control command error).
+
+            .. note::
+                This exception does not inherit from
+                :exc:`~celery.exceptions.CeleryError`.
+    - **billiard errors (prefork pool)
+        - :exc:`~celery.exceptions.SoftTimeLimitExceeded`
+        - :exc:`~celery.exceptions.TimeLimitExceeded`
+        - :exc:`~celery.exceptions.WorkerLostError`
+        - :exc:`~celery.exceptions.Terminated`
+- :class:`UserWarning`
+    - :class:`~celery.exceptions.CeleryWarning`
+        - :class:`~celery.exceptions.AlwaysEagerIgnored`
+        - :class:`~celery.exceptions.DuplicateNodenameWarning`
+        - :class:`~celery.exceptions.FixupWarning`
+        - :class:`~celery.exceptions.NotConfigured`
+- :exc:`BaseException`
+    - :exc:`SystemExit`
+        - :exc:`~celery.exceptions.WorkerTerminate`
+        - :exc:`~celery.exceptions.WorkerShutdown`
+"""
 from __future__ import absolute_import, unicode_literals
 
 import numbers
@@ -9,18 +56,39 @@ from .five import python_2_unicode_compatible, string_t
 from billiard.exceptions import (  # noqa
     SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError, Terminated,
 )
+from kombu.exceptions import OperationalError
 
 __all__ = [
-    'CeleryError', 'CeleryWarning', 'TaskPredicate',
-    'SecurityError', 'Ignore', 'QueueNotFound',
+    # Warnings
+    'CeleryWarning',
+    'AlwaysEagerIgnored', 'DuplicateNodenameWarning',
+    'FixupWarning', 'NotConfigured',
+
+    # Core errors
+    'CeleryError',
+    'ImproperlyConfigured', 'SecurityError',
+
+    # Kombu (messaging) errors.
+    'OperationalError',
+
+    # Task semi-predicates
+    'TaskPredicate', 'Ignore', 'Reject', 'Retry',
+
+    # Task related errors.
+    'TaskError', 'QueueNotFound', 'IncompleteStream',
+    'NotRegistered', 'AlreadyRegistered', 'TimeoutError',
+    'MaxRetriesExceededError', 'TaskRevokedError',
+    'InvalidTaskError', 'ChordError',
+
+    # Billiard task errors.
+    'SoftTimeLimitExceeded', 'TimeLimitExceeded',
+    'WorkerLostError', 'Terminated',
+
+    # Deprecation warnings (forcing Python to emit them).
+    'CPendingDeprecationWarning', 'CDeprecationWarning',
+
+    # Worker shutdown semi-predicates (inherits from SystemExit).
     'WorkerShutdown', 'WorkerTerminate',
-    'ImproperlyConfigured', 'NotRegistered', 'AlreadyRegistered',
-    'TimeoutError', 'MaxRetriesExceededError', 'Retry', 'Reject',
-    'TaskRevokedError', 'NotConfigured', 'AlwaysEagerIgnored',
-    'InvalidTaskError', 'ChordError', 'CPendingDeprecationWarning',
-    'CDeprecationWarning', 'FixupWarning', 'DuplicateNodenameWarning',
-    'SoftTimeLimitExceeded', 'TimeLimitExceeded', 'WorkerLostError',
-    'Terminated', 'IncompleteStream'
 ]
 
 UNREGISTERED_FMT = """\
@@ -28,16 +96,28 @@ Task of kind {0} never registered, please make sure it's imported.\
 """
 
 
-class CeleryError(Exception):
-    """Base class for all Celery errors."""
-
-
 class CeleryWarning(UserWarning):
     """Base class for all Celery warnings."""
 
 
-class SecurityError(CeleryError):
-    """Security related exception."""
+class AlwaysEagerIgnored(CeleryWarning):
+    """send_task ignores :setting:`task_always_eager` option."""
+
+
+class DuplicateNodenameWarning(CeleryWarning):
+    """Multiple workers are using the same nodename."""
+
+
+class FixupWarning(CeleryWarning):
+    """Fixup related warning."""
+
+
+class NotConfigured(CeleryWarning):
+    """Celery hasn't been configured, as no config module has been found."""
+
+
+class CeleryError(Exception):
+    """Base class for all Celery errors."""
 
 
 class TaskPredicate(CeleryError):
@@ -102,64 +182,56 @@ class Reject(TaskPredicate):
         return 'reject requeue=%s: %s' % (self.requeue, self.reason)
 
 
-class WorkerTerminate(SystemExit):
-    """Signals that the worker should terminate immediately."""
-SystemTerminate = WorkerTerminate  # XXX compat
-
-
-class WorkerShutdown(SystemExit):
-    """Signals that the worker should perform a warm shutdown."""
-
-
-class QueueNotFound(KeyError):
-    """Task routed to a queue not in ``conf.queues``."""
-
-
-class ImproperlyConfigured(ImportError):
+class ImproperlyConfigured(CeleryError):
     """Celery is somehow improperly configured."""
 
 
+class SecurityError(CeleryError):
+    """Security related exception."""
+
+
+class TaskError(CeleryError):
+    """Task related errors."""
+
+
+class QueueNotFound(KeyError, TaskError):
+    """Task routed to a queue not in ``conf.queues``."""
+
+
+class IncompleteStream(TaskError):
+    """Found the end of a stream of data, but the data isn't complete."""
+
+
 @python_2_unicode_compatible
-class NotRegistered(KeyError, CeleryError):
+class NotRegistered(KeyError, TaskError):
     """The task ain't registered."""
 
     def __repr__(self):
         return UNREGISTERED_FMT.format(self)
 
 
-class AlreadyRegistered(CeleryError):
+class AlreadyRegistered(TaskError):
     """The task is already registered."""
+    # XXX Unused
 
 
-class TimeoutError(CeleryError):
+class TimeoutError(TaskError):
     """The operation timed out."""
 
 
-class MaxRetriesExceededError(CeleryError):
+class MaxRetriesExceededError(TaskError):
     """The tasks max restart limit has been exceeded."""
 
 
-class TaskRevokedError(CeleryError):
+class TaskRevokedError(TaskError):
     """The task has been revoked, so no result available."""
 
 
-class NotConfigured(CeleryWarning):
-    """Celery hasn't been configured, as no config module has been found."""
-
-
-class AlwaysEagerIgnored(CeleryWarning):
-    """send_task ignores :setting:`task_always_eager` option."""
-
-
-class InvalidTaskError(CeleryError):
+class InvalidTaskError(TaskError):
     """The task has invalid data or ain't properly constructed."""
 
 
-class IncompleteStream(CeleryError):
-    """Found the end of a stream of data, but the data isn't complete."""
-
-
-class ChordError(CeleryError):
+class ChordError(TaskError):
     """A task part of the chord raised an exception."""
 
 
@@ -171,9 +243,10 @@ class CDeprecationWarning(DeprecationWarning):
     """Warning of deprecation."""
 
 
-class FixupWarning(CeleryWarning):
-    """Fixup related warning."""
+class WorkerTerminate(SystemExit):
+    """Signals that the worker should terminate immediately."""
+SystemTerminate = WorkerTerminate  # XXX compat
 
 
-class DuplicateNodenameWarning(CeleryWarning):
-    """Multiple workers are using the same nodename."""
+class WorkerShutdown(SystemExit):
+    """Signals that the worker should perform a warm shutdown."""
