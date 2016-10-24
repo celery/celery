@@ -56,6 +56,7 @@ elif PY33_OR_LESS and not PYPY24_ATLEAST:
 EXTENSIONS = {
     'auth',
     'cassandra',
+    'django',
     'elasticsearch',
     'memcache',
     'pymemcache',
