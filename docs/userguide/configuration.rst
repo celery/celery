@@ -1636,7 +1636,10 @@ Example::
 ~~~~~~~~~~~~~~~~~~~~
 :transports supported: ``pyamqp``
 
-Default: Disabled by default.
+Default: ``120.0`` (negotiated by server).
+
+Note: This value is only used by the worker, clients do not use
+a heartbeat at the moment.
 
 It's not always possible to detect connection loss in a timely
 manner using TCP/IP alone, so AMQP defines something called heartbeats
