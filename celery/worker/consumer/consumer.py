@@ -194,7 +194,7 @@ class Consumer(object):
         self.reset_rate_limits()
 
         self.hub = hub
-        if self.hub:
+        if self.hub or getattr(self.pool, 'is_green', False):
             self.amqheartbeat = amqheartbeat
             if self.amqheartbeat is None:
                 self.amqheartbeat = self.app.conf.broker_heartbeat

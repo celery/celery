@@ -28,10 +28,11 @@ def _quick_drain(connection, timeout=0.1):
 
 
 def _enable_amqheartbeats(timer, connection, rate=2.0):
-    tick = connection.heartbeat_check
-    heartbeat = connection.get_heartbeat_interval()  # negotiated
-    if heartbeat and connection.supports_heartbeats:
-        timer.call_repeatedly(heartbeat / rate, tick, rate)
+    if connection:
+        tick = connection.heartbeat_check
+        heartbeat = connection.get_heartbeat_interval()  # negotiated
+        if heartbeat and connection.supports_heartbeats:
+            timer.call_repeatedly(heartbeat / rate, tick, (rate,))
 
 
 def asynloop(obj, connection, consumer, blueprint, hub, qos,
@@ -43,7 +44,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
 
     on_task_received = obj.create_task_handler()
 
-    _enable_amqheartbeats(hub, connection, rate=hbrate)
+    _enable_amqheartbeats(hub.timer, connection, rate=hbrate)
 
     consumer.on_message = on_task_received
     consumer.consume()
@@ -104,6 +105,8 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
     RUN = bootsteps.RUN
     on_task_received = obj.create_task_handler()
     perform_pending_operations = obj.perform_pending_operations
+    if getattr(obj.pool, 'is_green', False):
+        _enable_amqheartbeats(obj.timer, connection, rate=hbrate)
     consumer.on_message = on_task_received
     consumer.consume()
 
