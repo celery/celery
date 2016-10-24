@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 import pytest
+from flaky import flaky
 from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
@@ -8,6 +9,7 @@ from .tasks import add, collect_ids, ids
 TIMEOUT = 120
 
 
+@flaky
 class test_chain:
 
     def test_simple_chain(self, manager):
@@ -53,6 +55,7 @@ class test_chain:
             i -= 1
 
 
+@flaky
 class test_group:
 
     def test_parent_ids(self, manager):
@@ -81,6 +84,7 @@ def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
     assert parent_id == expected_parent_id
 
 
+@flaky
 class test_chord:
 
     def test_parent_ids(self, manager):
