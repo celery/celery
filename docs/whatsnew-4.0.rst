@@ -104,8 +104,8 @@ and also drops support for Python 3.3 so supported versions are:
 - CPython 2.7
 - CPython 3.4
 - CPython 3.5
-- PyPy 5.3 (``pypy2``)
-- PyPy 2.4 (``pypy3``)
+- PyPy 5.4 (``pypy2``)
+- PyPy 5.5-alpha (``pypy3``)
 
 Last major version to support Python 2
 --------------------------------------
@@ -134,6 +134,10 @@ Removed features
 
 - Microsoft Windows is no longer supported.
 
+  The test suite is passing, and Celery seems to be working with Windows,
+  but we make no guarantees as we are unable to diagnose issues on this
+  platform.
+
 - Jython is no longer supported.
 
 Features removed for simplicity
@@ -161,6 +165,9 @@ Features removed for simplicity
     This was an experimental feature, so not covered by our deprecation
     timeline guarantee.
 
+    You can copy and pase the existing batches code for use within your projects:
+    https://github.com/celery/celery/blob/3.1/celery/contrib/batches.py
+
 Features removed for lack of funding
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -170,8 +177,6 @@ support for the transports, citing a lack of resources.
 
 As this subtle hint for the need of funding failed
 we've removed them completely, breaking backwards compatibility.
-
-- Using MongoDB as a broker is no longer supported.
 
 - Using the Django ORM as a broker is no longer supported.
 
@@ -193,14 +198,6 @@ attempting to use them will raise an exception:
   will crash at startup when present. Luckily this
   flag isn't used in production systems.
 
-- The ``--autoscale`` feature has been removed.
-
-    This flag is only used by companies to save money, but had
-    bugs either nobody cared to work on, or sponsor a few hours of work to get it fixed.
-
-    The flag has been removed completely, so you must remove this command-line
-    argument or your workers will crash.
-
 - The experimental ``threads`` pool is no longer supported and has been removed.
 
 - The force_execv feature is no longer supported.
@@ -216,7 +213,6 @@ attempting to use them will raise an exception:
 
     Please use the ``rpc`` result backend for RPC-style calls, and a
     persistent result backend for multi-consumer results.
-
 
 **Now to the good news**...
 
@@ -352,7 +348,7 @@ a few special ones:
 
 You can see a full table of the changes in :ref:`conf-old-settings-map`.
 
-JSON is now the default serializer
+Json is now the default serializer
 ----------------------------------
 
 The time has finally come to end the reign of :mod:`pickle` as the default
@@ -370,6 +366,41 @@ then you have to configure your app before upgrading to 4.0:
     task_serializer = 'pickle'
     result_serializer = 'pickle'
     accept_content = {'pickle'}
+
+
+The Json serializer now also supports some additional types:
+
+- :class:`~datetime.datetime`, :class:`~datetime.time`, :class:`~datetime.date`
+
+    Converted to json text, in ISO-8601 format.
+
+- :class:`~decimal.Decimal`
+
+    Converted to json text.
+
+- :class:`django.utils.functional.Promise`
+
+    Django only: Lazy strings used for translation etc., are evaluated
+    and conversion to a json type is attempted.
+
+- :class:`uuid.UUID`
+
+    Converted to json text.
+
+You can also define a ``__json__`` method on your custom classes to support
+JSON serialization (must return a json compatible type):
+
+    class Person:
+        first_name = None
+        last_name = None
+        address = None
+
+        def __json__(self):
+            return {
+                'first_name': self.first_name,
+                'last_name': self.last_name,
+                'address': self.address,
+            }
 
 The Task base class no longer automatically register tasks
 ----------------------------------------------------------
@@ -398,7 +429,7 @@ general behavior, and then using the task decorator to realize the task:
     def custom(self):
         print('running')
 
-This change also means the ``abstract`` attribute of the task
+This change also means that the ``abstract`` attribute of the task
 no longer has any effect.
 
 Task argument checking
@@ -424,6 +455,15 @@ even asynchronously:
       File "celery/app/task.py", line 485, in apply_async
         check_arguments(*(args or ()), **(kwargs or {}))
     TypeError: add() takes exactly 2 arguments (1 given)
+
+You can disable the argument checking for any task by setting its
+:attr:`~@Task.typing` attribute to :const:`False`:
+
+.. code-block:: pycon
+
+    >>> @app.task(typing=False)
+    ... def add(x, y):
+    ...     return x + y
 
 Redis Events not backward compatible
 ------------------------------------
@@ -495,7 +535,7 @@ Installing Celery will no longer install the ``celeryd``,
 ``celerybeat`` and ``celeryd-multi`` programs.
 
 This was announced with the release of Celery 3.1, but you may still
-have scripts pointing to the old names so make sure you update these
+have scripts pointing to the old names, so make sure you update these
 to use the new umbrella command:
 
 +-------------------+--------------+-------------------------------------+
@@ -723,6 +763,8 @@ to fix some long outstanding issues.
 - Fixed issue where ``group | task`` wasn't upgrading correctly
   to chord (Issue #2922).
 
+- Chords now properly sets ``result.parent`` links.
+
 Amazon SQS transport now officially supported
 ---------------------------------------------
 
@@ -828,22 +870,25 @@ to be considered stable and enabled by default.
 The new implementation greatly reduces the overhead of chords,
 and especially with larger chords the performance benefit can be massive.
 
-New Riak result backend Introduced
-----------------------------------
+New Result backends
+-------------------
+
+New Riak result backend introduced
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 See :ref:`conf-riak-result-backend` for more information.
 
 Contributed by **Gilles Dartiguelongue**, **Alman One** and **NoKriK**.
 
 New CouchDB result backend introduced
--------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 See :ref:`conf-couchdb-result-backend` for more information.
 
 Contributed by **Nathan Van Gheem**.
 
 New Consul result backend introduced
-------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Add support for Consul as a backend using the Key/Value store of Consul.
 
@@ -872,7 +917,7 @@ That installs the required package to talk to Consul's HTTP API from Python.
 Contributed by **Wido den Hollander**.
 
 Brand new Cassandra result backend
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A brand new Cassandra backend utilizing the new :pypi:`cassandra-driver`
 library is replacing the old result backend using the older
@@ -883,14 +928,14 @@ See :ref:`conf-cassandra-result-backend` for more information.
 .. # XXX What changed?
 
 New Elasticsearch result backend introduced
--------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 See :ref:`conf-elasticsearch-result-backend` for more information.
 
 Contributed by **Ahmet Demir**.
 
 New File-system result backend introduced
------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 See :ref:`conf-filesystem-result-backend` for more information.
 
