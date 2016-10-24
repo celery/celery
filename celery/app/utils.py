@@ -165,10 +165,12 @@ class Settings(ConfigurationView):
 
     def table(self, with_defaults=False, censored=True):
         filt = filter_hidden_settings if censored else lambda v: v
+        dict_members = dir(dict)
         return filt({
             k: v for k, v in items(
                 self if with_defaults else self.without_defaults())
             if not k.startswith('_')
+            and k not in dict_members
         })
 
     def humanize(self, with_defaults=False, censored=True):
