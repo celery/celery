@@ -152,13 +152,13 @@ class test_asynloop:
 
     def test_setup_heartbeat(self):
         x = X(self.app, heartbeat=10)
-        x.hub.call_repeatedly = Mock(name='x.hub.call_repeatedly()')
+        x.hub.timer.call_repeatedly = Mock(name='x.hub.call_repeatedly()')
         x.blueprint.state = CLOSE
         asynloop(*x.args)
         x.consumer.consume.assert_called_with()
         x.obj.on_ready.assert_called_with()
-        x.hub.call_repeatedly.assert_called_with(
-            10 / 2.0, x.connection.heartbeat_check, 2.0,
+        x.hub.timer.call_repeatedly.assert_called_with(
+            10 / 2.0, x.connection.heartbeat_check, (2.0,),
         )
 
     def task_context(self, sig, **kwargs):
