@@ -372,7 +372,7 @@ class Consumer(object):
         doesn't enter a loop.
 
         Arguments:
-            message (Message): The message received.
+            message (kombu.Message): The message received.
             exc (Exception): The exception being handled.
         """
         crit(MESSAGE_DECODE_ERROR,

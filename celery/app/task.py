@@ -797,7 +797,7 @@ class Task(object):
                 :setting:`task_publish_retry` setting.
             retry_policy (Mapping): Retry settings.  Default is taken
                 from the :setting:`task_publish_retry_policy` setting.
-            **fields (**Any): Map containing information about the event.
+            **fields (Any): Map containing information about the event.
                 Must be JSON serializable.
         """
         req = self.request

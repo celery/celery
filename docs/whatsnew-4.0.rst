@@ -390,6 +390,8 @@ The Json serializer now also supports some additional types:
 You can also define a ``__json__`` method on your custom classes to support
 JSON serialization (must return a json compatible type):
 
+.. code-block:: python
+
     class Person:
         first_name = None
         last_name = None

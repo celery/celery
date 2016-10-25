@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import sys
+import typing
 
 from docutils import nodes
 
@@ -100,6 +101,13 @@ def get_abbr(pre, rest, type, orig=None):
 
 
 def resolve(S, type):
+    if '.' not in S:
+        try:
+            getattr(typing, S)
+        except AttributeError:
+            pass
+        else:
+            return 'typing.{0}'.format(S), None
     orig = S
     if S.startswith('@'):
         S = S.lstrip('@-')

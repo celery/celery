@@ -125,10 +125,10 @@ Fixtures
 --------
 
 Function scope
-~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^
 
 ``celery_app`` - Celery app used for testing.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This fixture returns a Celery app you can use for testing.
 
@@ -144,7 +144,7 @@ Example:
         assert mul.delay(4, 4).get(timeout=10) == 16
 
 ``celery_worker`` - Embed live worker.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This fixture starts a Celery worker instance that you can use
 for integration tests.  The worker will be started in a *separate thread*
@@ -173,10 +173,10 @@ Example:
         ...
 
 Session scope
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 ``celery_config`` - Override to setup Celery test app configuration.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 You can redefine this fixture to configure the test Celery app.
 
 The config returned by your fixture will then be used
@@ -194,7 +194,7 @@ Example:
         }
 
 ``celery_enable_logging`` - Override to enable logging in embedded workers.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is a fixture you can override to enable logging in embedded workers.
 
@@ -207,7 +207,7 @@ Example:
         return True
 
 ``celery_includes`` - Add additional imports for embedded workers.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 You can override fixture to include modules when an embedded worker starts.
 
 You can have this return a list of module names to import,
@@ -225,7 +225,7 @@ Example:
         ]
 
 ``celery_worker_pool`` - Override the pool used for embedded workers.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 You can override fixture to configure the execution pool used for embedded
 workers.
 
@@ -243,7 +243,7 @@ Example:
     suite is running with the monkeypatches enabled.
 
 ``celery_session_worker`` - Embedded worker that lives throughout the session.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This fixture starts a worker that lives throughout the testing session
 (it won't be started/stopped for every test).
@@ -269,13 +269,13 @@ Example:
     It's probably a bad idea to mix session and ephemeral workers...
 
 ``celery_session_app`` - Celery app used for testing (session scope).
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This can be used by other session scoped fixtures when they need to refer
 to a Celery app instance.
 
 ``use_celery_app_trap`` - Raise exception on falling back to default app.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is a fixture you can override in your ``conftest.py``, to enable the "app trap":
 if something tries to access the default or current_app, an exception
@@ -293,7 +293,7 @@ Example:
 If a test wants to access the default app, you would have to mark it using
 the ``depends_on_current_app`` fixture:
 
-.. code-block::
+.. code-block:: python
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_something():

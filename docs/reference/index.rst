@@ -51,6 +51,7 @@
     celery.beat
     celery.apps.worker
     celery.apps.beat
+    celery.apps.multi
     celery.worker
     celery.worker.request
     celery.worker.state

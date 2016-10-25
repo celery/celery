@@ -908,7 +908,7 @@ News
    :meth:`~celery.task.base.Task.on_failure` as ``einfo`` keyword argument.
 
 * Worker: Added :setting:`CELERYD_MAX_TASKS_PER_CHILD` /
-  :option:`celery worker --maxtasksperchild`
+  ``celery worker --maxtasksperchild``.
 
     Defines the maximum number of tasks a pool worker can process before
     the process is terminated and replaced by a new one.

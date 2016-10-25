@@ -31,7 +31,7 @@ Error Hierarchy
             .. note::
                 This exception does not inherit from
                 :exc:`~celery.exceptions.CeleryError`.
-    - **billiard errors (prefork pool)
+    - **billiard errors** (prefork pool)
         - :exc:`~celery.exceptions.SoftTimeLimitExceeded`
         - :exc:`~celery.exceptions.TimeLimitExceeded`
         - :exc:`~celery.exceptions.WorkerLostError`
