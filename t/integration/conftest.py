@@ -14,7 +14,7 @@ def flaky(fun):
         for i in reversed(range(3)):
             try:
                 return fun(*args, **kwargs)
-            except Exception as exc:
+            except Exception:
                 if not i:
                     raise
     _inner.__wrapped__ = fun

@@ -169,8 +169,7 @@ class Settings(ConfigurationView):
         return filt({
             k: v for k, v in items(
                 self if with_defaults else self.without_defaults())
-            if not k.startswith('_')
-            and k not in dict_members
+            if not k.startswith('_') and k not in dict_members
         })
 
     def humanize(self, with_defaults=False, censored=True):
