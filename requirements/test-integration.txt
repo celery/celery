@@ -1,3 +1,2 @@
 simplejson
-flaky>=3.3
 -r extras/redis.txt

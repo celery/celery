@@ -1,10 +1,24 @@
 from __future__ import absolute_import, unicode_literals
 import os
 import pytest
+from functools import wraps
 from celery.contrib.testing.manager import Manager
 
 TEST_BROKER = os.environ.get('TEST_BROKER', 'pyamqp://')
 TEST_BACKEND = os.environ.get('TEST_BACKEND', 'redis://')
+
+
+def flaky(fun):
+    @wraps(fun)
+    def _inner(*args, **kwargs):
+        for i in reversed(range(3)):
+            try:
+                return fun(*args, **kwargs)
+            except Exception as exc:
+                if not i:
+                    raise
+    _inner.__wrapped__ = fun
+    return _inner
 
 
 @pytest.fixture(scope='session')
