@@ -61,7 +61,8 @@ def find_step(obj, typ):
 
 def create_message(channel, **data):
     data.setdefault('id', uuid())
-    m = Message(channel, body=pickle.dumps(dict(**data)),
+    m = Message(body=pickle.dumps(dict(**data)),
+                channel=channel,
                 content_type='application/x-python-serialize',
                 content_encoding='binary',
                 delivery_info={'consumer_tag': 'mock'})
@@ -306,7 +307,7 @@ class test_Consumer(ConsumerCase):
                 raise socket.timeout(10)
 
         c = self.NoopConsumer()
-        c.connection = Connection()
+        c.connection = Connection(self.app.conf.broker_url)
         c.connection.obj = c
         c.qos = QoS(c.task_consumer.qos, 10)
         c.loop(*c.loop_args())
@@ -322,7 +323,7 @@ class test_Consumer(ConsumerCase):
 
         c = self.LoopConsumer()
         c.blueprint.state = RUN
-        conn = c.connection = Connection()
+        conn = c.connection = Connection(self.app.conf.broker_url)
         c.connection.obj = c
         c.qos = QoS(c.task_consumer.qos, 10)
         with pytest.raises(socket.error):
@@ -346,8 +347,9 @@ class test_Consumer(ConsumerCase):
 
         c = self.LoopConsumer()
         c.blueprint.state = RUN
-        c.connection = Connection()
+        c.connection = Connection(self.app.conf.broker_url)
         c.connection.obj = c
+        c.connection.get_heartbeat_interval = Mock(return_value=None)
         c.qos = QoS(c.task_consumer.qos, 10)
 
         c.loop(*c.loop_args())
@@ -651,7 +653,8 @@ class test_Consumer(ConsumerCase):
         init_callback = Mock(name='init_callback')
         c = self.NoopConsumer(init_callback=init_callback)
         c.qos = _QoS()
-        c.connection = Connection()
+        c.connection = Connection(self.app.conf.broker_url)
+        c.connection.get_heartbeat_interval = Mock(return_value=None)
         c.iterations = 0
 
         def raises_KeyError(*args, **kwargs):
@@ -670,7 +673,8 @@ class test_Consumer(ConsumerCase):
         init_callback.reset_mock()
         c = self.NoopConsumer(task_events=False, init_callback=init_callback)
         c.qos = _QoS()
-        c.connection = Connection()
+        c.connection = Connection(self.app.conf.broker_url)
+        c.connection.get_heartbeat_interval = Mock(return_value=None)
         c.loop = Mock(side_effect=socket.error('foo'))
         with pytest.raises(socket.error):
             c.start()

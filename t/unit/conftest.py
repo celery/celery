@@ -14,14 +14,11 @@ from case import Mock
 from case.utils import decorator
 from kombu import Queue
 
+from celery.backends.cache import CacheBackend, DummyClient
 from celery.contrib.testing.app import Trap, TestApp
 from celery.contrib.testing.mocks import (
     TaskMessage, TaskMessage1, task_message_from_sig,
 )
-from celery.contrib.pytest import reset_cache_backend_state  # noqa
-from celery.contrib.pytest import depends_on_current_app  # noqa
-
-__all__ = ['app', 'reset_cache_backend_state', 'depends_on_current_app']
 
 try:
     WindowsError = WindowsError  # noqa
@@ -40,7 +37,9 @@ CASE_LOG_HANDLER_EFFECT = 'Test {0} modified handlers for the root logger'
 @pytest.fixture(scope='session')
 def celery_config():
     return {
-        #: Don't want log output when running suite.
+        'broker_url': 'memory://',
+        'result_backend': 'cache+memory://',
+
         'task_default_queue': 'testcelery',
         'task_default_exchange': 'testcelery',
         'task_default_routing_key': 'testcelery',
@@ -67,6 +66,18 @@ def celery_config():
 @pytest.fixture(scope='session')
 def use_celery_app_trap():
     return True
+
+
+@pytest.fixture(autouse=True)
+def reset_cache_backend_state(celery_app):
+    """Fixture that resets the internal state of the cache result backend."""
+    yield
+    backend = celery_app.__dict__.get('backend')
+    if backend is not None:
+        if isinstance(backend, CacheBackend):
+            if isinstance(backend.client, DummyClient):
+                backend.client.cache.clear()
+            backend._cache.clear()
 
 
 @decorator
@@ -170,21 +181,6 @@ def test_cases_shortcuts(request, app, patching, celery_config):
     yield
     if request.instance:
         request.instance.app = None
-
-
-@pytest.fixture(autouse=True)
-def zzzz_test_cases_calls_setup_teardown(request):
-    if request.instance:
-        # we set the .patching attribute for every test class.
-        setup = getattr(request.instance, 'setup', None)
-        # we also call .setup() and .teardown() after every test method.
-        setup and setup()
-
-    yield
-
-    if request.instance:
-        teardown = getattr(request.instance, 'teardown', None)
-        teardown and teardown()
 
 
 @pytest.fixture(autouse=True)
