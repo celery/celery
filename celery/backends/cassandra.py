@@ -1,8 +1,11 @@
 # -* coding: utf-8 -*-
 """Apache Cassandra result store backend using the DataStax driver."""
 from __future__ import absolute_import, unicode_literals
-
 import sys
+from celery import states
+from celery.exceptions import ImproperlyConfigured
+from celery.utils.log import get_logger
+from .base import BaseBackend
 try:  # pragma: no cover
     import cassandra
     import cassandra.auth
@@ -10,10 +13,6 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     cassandra = None   # noqa
 
-from celery import states
-from celery.exceptions import ImproperlyConfigured
-from celery.utils.log import get_logger
-from .base import BaseBackend
 
 __all__ = ['CassandraBackend']
 

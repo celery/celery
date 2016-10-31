@@ -1,10 +1,7 @@
 from __future__ import absolute_import, unicode_literals
-
 import time
 import itertools
-
 from case import skip
-
 from billiard.einfo import ExceptionInfo
 
 

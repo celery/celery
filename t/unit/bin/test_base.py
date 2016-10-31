@@ -1,16 +1,13 @@
 from __future__ import absolute_import, unicode_literals
-
 import os
 import pytest
-
 from case import Mock, mock, patch
-
+from celery.five import bytes_if_py2
 from celery.bin.base import (
     Command,
     Option,
     Extensions,
 )
-from celery.five import bytes_if_py2
 
 
 class MyApp(object):

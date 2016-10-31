@@ -65,11 +65,8 @@
     Executable to use for the detached process.
 """
 from __future__ import absolute_import, unicode_literals
-
 from functools import partial
-
 from celery.platforms import detached, maybe_drop_privileges
-
 from celery.bin.base import Command, daemon_options
 
 __all__ = ['beat']

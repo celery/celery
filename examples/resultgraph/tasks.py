@@ -17,8 +17,7 @@
 #
 #    >>> unlock_graph.apply_async((A.apply_async(),
 #    ...                           A_callback.s()), countdown=1)
-from __future__ import absolute_import, unicode_literals
-
+from __future__ import absolute_import, print_function, unicode_literals
 from celery import chord, group, task, signature, uuid
 from celery.result import AsyncResult, ResultSet, allow_join_result
 from collections import deque

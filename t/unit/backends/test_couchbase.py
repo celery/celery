@@ -1,12 +1,8 @@
 """Tests for the CouchbaseBackend."""
 from __future__ import absolute_import, unicode_literals
-
 import pytest
-
 from kombu.utils.encoding import str_t
-
 from case import MagicMock, Mock, patch, sentinel, skip
-
 from celery.app import backends
 from celery.backends import couchbase as module
 from celery.backends.couchbase import CouchbaseBackend

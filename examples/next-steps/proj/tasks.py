@@ -1,6 +1,5 @@
 from __future__ import absolute_import, unicode_literals
-
-from proj.celery import app
+from . import app
 
 
 @app.task

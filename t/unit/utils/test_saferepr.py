@@ -1,15 +1,11 @@
 from __future__ import absolute_import, unicode_literals
-
 import pytest
 import re
-
 from decimal import Decimal
 from pprint import pprint
-
 from celery.five import (
     items, long_t, python_2_unicode_compatible, text_t, values,
 )
-
 from celery.utils.saferepr import saferepr
 
 D_NUMBERS = {

@@ -5,13 +5,10 @@
     in the key-value store of Consul.
 """
 from __future__ import absolute_import, unicode_literals
-
 from kombu.utils.url import parse_url
-
 from celery.exceptions import ImproperlyConfigured
 from celery.backends.base import KeyValueStoreBackend, PY3
 from celery.utils.log import get_logger
-
 try:
     import consul
 except ImportError:

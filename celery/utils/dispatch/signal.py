@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 """Implementation of the Observer pattern."""
 from __future__ import absolute_import, unicode_literals
-
 import weakref
-
 from celery.five import python_2_unicode_compatible, range, text_t
 from celery.local import PromiseProxy, Proxy
 from celery.utils.log import get_logger
-
 from . import saferef
 
 __all__ = ['Signal']

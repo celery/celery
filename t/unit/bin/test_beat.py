@@ -1,11 +1,8 @@
 from __future__ import absolute_import, unicode_literals
-
 import logging
 import pytest
 import sys
-
 from case import Mock, mock, patch
-
 from celery import beat
 from celery import platforms
 from celery.bin import beat as beat_bin

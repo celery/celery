@@ -1,11 +1,10 @@
 from __future__ import absolute_import, unicode_literals
-
 import pytest
 import sys
-
 from case import Mock, patch
-
 from celery import __main__
+from celery.five import WhateverIO
+from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
 from celery.bin.base import Error
 from celery.bin import celery as mod
 from celery.bin.celery import (
@@ -17,8 +16,6 @@ from celery.bin.celery import (
     multi,
     main as mainfun,
 )
-from celery.five import WhateverIO
-from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
 
 
 class test__main__:

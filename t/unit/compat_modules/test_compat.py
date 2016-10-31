@@ -1,9 +1,6 @@
 from __future__ import absolute_import, unicode_literals
-
 import pytest
-
 from datetime import timedelta
-
 from celery.five import bytes_if_py2
 from celery.schedules import schedule
 from celery.task import (

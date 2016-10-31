@@ -1,10 +1,7 @@
 from __future__ import absolute_import, unicode_literals
-
 import pytest
 import sys
-
 from case import Mock, patch, skip
-
 from celery.concurrency.eventlet import (
     apply_target,
     Timer,

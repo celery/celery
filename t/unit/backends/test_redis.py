@@ -1,14 +1,9 @@
 from __future__ import absolute_import, unicode_literals
-
 import pytest
-
 from datetime import timedelta
-
 from contextlib import contextmanager
 from pickle import loads, dumps
-
 from case import ANY, ContextMock, Mock, mock, call, patch, skip
-
 from celery import signature
 from celery import states
 from celery import uuid

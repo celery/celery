@@ -28,7 +28,6 @@ name using the fully qualified form::
 
 """
 from __future__ import absolute_import, unicode_literals, print_function
-
 from celery import Celery
 
 app = Celery(

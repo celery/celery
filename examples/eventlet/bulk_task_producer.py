@@ -1,5 +1,4 @@
 from __future__ import absolute_import, unicode_literals
-
 from eventlet import spawn_n, monkey_patch, Timeout
 from eventlet.queue import LightQueue
 from eventlet.event import Event

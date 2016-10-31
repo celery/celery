@@ -1,9 +1,7 @@
 from __future__ import absolute_import, unicode_literals
-
 import pytest
-
 from case import Mock, patch
-
+from celery.five import WhateverIO
 from celery.bin.amqp import (
     AMQPAdmin,
     AMQShell,
@@ -11,7 +9,6 @@ from celery.bin.amqp import (
     amqp,
     main,
 )
-from celery.five import WhateverIO
 
 
 class test_AMQShell:

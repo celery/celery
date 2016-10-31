@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
 """Terminals and colors."""
 from __future__ import absolute_import, unicode_literals
-
 import base64
 import codecs
 import os
 import sys
-
 import platform
-
 from functools import reduce
-
 from celery.five import python_2_unicode_compatible, string
 from celery.platforms import isatty
 

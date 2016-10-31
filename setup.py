@@ -1,23 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import codecs
 import os
 import re
 import sys
-
 import setuptools
 import setuptools.command.test
-
-
 try:
-    import platform
-    _pyimp = platform.python_implementation
+    from platform import python_implementation as _pyimp
 except (AttributeError, ImportError):
     def _pyimp():
-        return 'Python'
+        return 'Python (unknown)'
 
 NAME = 'celery'
+
+# -*- Python Versions -*-
 
 E_UNSUPPORTED_PYTHON = """
 ----------------------------------------
@@ -96,7 +93,6 @@ classes = """
     Programming Language :: Python :: Implementation :: PyPy
     Operating System :: OS Independent
 """
-classifiers = [s.strip() for s in classes.split('\n') if s]
 
 # -*- Distribution Meta -*-
 
@@ -104,19 +100,20 @@ re_meta = re.compile(r'__(\w+?)__\s*=\s*(.*)')
 re_doc = re.compile(r'^"""(.+?)"""')
 
 
-def add_default(m):
+def _add_default(m):
     attr_name, attr_value = m.groups()
     return ((attr_name, attr_value.strip("\"'")),)
 
 
-def add_doc(m):
+def _add_doc(m):
     return (('doc', m.groups()[0]),)
 
 
 def parse_dist_meta():
-    pats = {re_meta: add_default, re_doc: add_doc}
+    """Extract metadata information from ``$dist/__init__.py``."""
+    pats = {re_meta: _add_default, re_doc: _add_doc}
     here = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(here, 'celery', '__init__.py')) as meta_fh:
+    with open(os.path.join(here, NAME, '__init__.py')) as meta_fh:
         distmeta = {}
         for line in meta_fh:
             if line.strip() == '# -eof meta-':
@@ -127,10 +124,10 @@ def parse_dist_meta():
                     distmeta.update(handler(m))
         return distmeta
 
-# -*- Installation Requires -*-
+# -*- Requirements -*-
 
 
-def strip_comments(l):
+def _strip_comments(l):
     return l.split('#', 1)[0].strip()
 
 
@@ -144,28 +141,40 @@ def _pip_requirement(req):
 def _reqs(*f):
     return [
         _pip_requirement(r) for r in (
-            strip_comments(l) for l in open(
+            _strip_comments(l) for l in open(
                 os.path.join(os.getcwd(), 'requirements', *f)).readlines()
         ) if r]
 
 
 def reqs(*f):
+    """Parse requirement file.
+
+    Example:
+        reqs('default.txt')          # requirements/default.txt
+        reqs('extras', 'redis.txt')  # requirements/extras/redis.txt
+    Returns:
+        List[str]: list of requirements specified in the file.
+    """
     return [req for subreq in _reqs(*f) for req in subreq]
 
 
 def extras(*p):
+    """Parse requirement in the requirements/extras/ directory."""
     return reqs('extras', *p)
 
 
 def install_requires():
+    """Get list of requirements required for installation."""
     if JYTHON:
         return reqs('default.txt') + reqs('jython.txt')
     return reqs('default.txt')
 
 
 def extras_require():
+    """Get map of all extra requirements."""
     return {x: extras(x + '.txt') for x in EXTENSIONS}
 
+# -*- Long Description -*-
 
 def long_description():
     try:
@@ -173,6 +182,7 @@ def long_description():
     except IOError:
         return 'Long description error: Missing README.rst file'
 
+# -*- Command: setup.py test -*-
 
 class pytest(setuptools.command.test.test):
     user_options = [('pytest-args=', 'a', 'Arguments to pass to py.test')]
@@ -203,7 +213,7 @@ setuptools.setup(
     install_requires=install_requires(),
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
-    classifiers=classifiers,
+    classifiers=[s.strip() for s in classes.split('\n') if s],
     cmdclass={'test': pytest},
     include_package_data=True,
     zip_safe=False,

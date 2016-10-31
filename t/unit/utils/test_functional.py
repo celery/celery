@@ -1,9 +1,6 @@
 from __future__ import absolute_import, unicode_literals
-
 import pytest
-
 from kombu.utils.functional import lazy
-
 from celery.five import range, nextfun
 from celery.utils.functional import (
     DummyContext,

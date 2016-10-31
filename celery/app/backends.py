@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 """Backend selection."""
 from __future__ import absolute_import, unicode_literals
-
 import sys
 import types
-
 from celery.exceptions import ImproperlyConfigured
 from celery._state import current_app
 from celery.five import reraise

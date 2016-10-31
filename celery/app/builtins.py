@@ -4,12 +4,10 @@
 The built-in tasks are always available in all app instances.
 """
 from __future__ import absolute_import, unicode_literals
-
 from celery._state import connect_on_app_finalize
 from celery.utils.log import get_logger
 
 __all__ = []
-
 logger = get_logger(__name__)
 
 

@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
 """Worker name utilities."""
 from __future__ import absolute_import, unicode_literals
-
 import os
 import socket
-
 from functools import partial
-
 from kombu.entity import Exchange, Queue
-
 from .functional import memoize
 from .text import simple_format
 

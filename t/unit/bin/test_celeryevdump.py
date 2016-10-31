@@ -1,15 +1,12 @@
 from __future__ import absolute_import, unicode_literals
-
 from time import time
-
 from case import Mock, patch
-
+from celery.five import WhateverIO
 from celery.events.dumper import (
     humanize_type,
     Dumper,
     evdump,
 )
-from celery.five import WhateverIO
 
 
 class test_Dumper:

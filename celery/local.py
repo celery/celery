@@ -7,14 +7,11 @@ soon as possible, and that shall not load any third party modules.
 Parts of this module is Copyright by Werkzeug Team.
 """
 from __future__ import absolute_import, unicode_literals
-
 import operator
 import sys
-
 from functools import reduce
 from importlib import import_module
 from types import ModuleType
-
 from .five import bytes_if_py2, items, string, string_t
 
 __all__ = ['Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate']

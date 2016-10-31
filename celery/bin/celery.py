@@ -190,7 +190,6 @@ in any command that also has a `--detach` option.
 
     Use :pypi:`gevent` monkey patches.
 
-
 ``celery result``
 -----------------
 

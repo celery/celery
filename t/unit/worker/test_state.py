@@ -1,12 +1,8 @@
 from __future__ import absolute_import, unicode_literals
-
 import pickle
 import pytest
-
 from time import time
-
 from case import Mock, patch
-
 from celery import uuid
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.worker import state

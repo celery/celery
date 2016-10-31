@@ -19,21 +19,16 @@ We don't have to do compression manually, just set the tasks compression
 to "zlib", and the serializer to "pickle".
 
 """
-from __future__ import absolute_import, unicode_literals
-
+from __future__ import absolute_import, print_function, unicode_literals
 import re
-
+import requests
+from celery import task, group
+from eventlet import Timeout
+from pybloom import BloomFilter
 try:
     from urllib.parse import urlsplit
 except ImportError:
     from urlparse import urlsplit  # noqa
-
-import requests
-
-from celery import task, group
-from eventlet import Timeout
-
-from pybloom import BloomFilter
 
 # http://daringfireball.net/2009/11/liberal_regex_for_matching_urls
 url_regex = re.compile(
@@ -67,4 +62,4 @@ def crawl(url, seen=None):
             seen.add(url)
 
     subtasks = group(crawl.s(url, seen) for url in wanted_urls)
-    subtasks()
+    subtasks.delay()

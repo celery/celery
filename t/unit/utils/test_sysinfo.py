@@ -1,7 +1,5 @@
 from __future__ import absolute_import, unicode_literals
-
 from case import skip
-
 from celery.utils.sysinfo import load_average, df
 
 

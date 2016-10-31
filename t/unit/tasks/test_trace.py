@@ -1,10 +1,7 @@
 from __future__ import absolute_import, unicode_literals
-
 import pytest
-
 from case import Mock, patch
 from kombu.exceptions import EncodeError
-
 from celery import group, uuid
 from celery import signals
 from celery import states

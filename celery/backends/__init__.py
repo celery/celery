@@ -1,6 +1,5 @@
 """Result Backends."""
 from __future__ import absolute_import, unicode_literals
-
 from celery.app import backends as _backends
 from celery.utils import deprecated
 

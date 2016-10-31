@@ -1,11 +1,7 @@
 from __future__ import absolute_import, unicode_literals
-
 import importlib
-
 from functools import wraps
-
 from case import patch, skip
-
 from celery.bin import events
 
 

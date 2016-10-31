@@ -8,13 +8,10 @@ as an actual application, like installing signal handlers
 and so on.
 """
 from __future__ import absolute_import, print_function, unicode_literals
-
 import numbers
 import socket
 import sys
-
 from datetime import datetime
-
 from celery import VERSION_BANNER, platforms, beat
 from celery.five import text_t
 from celery.utils.imports import qualname

@@ -1,10 +1,7 @@
 from __future__ import absolute_import, unicode_literals
-
 import pytest
 import sys
-
 from case import Mock, skip
-
 from celery.five import python_2_unicode_compatible, string, long_t
 from celery.local import (
     Proxy,

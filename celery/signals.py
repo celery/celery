@@ -12,7 +12,6 @@ functions are called whenever a signal is called.
     :ref:`signals` for more information.
 """
 from __future__ import absolute_import, unicode_literals
-
 from .utils.dispatch import Signal
 
 __all__ = [

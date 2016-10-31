@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
-
 import pytest
-
 from case import skip
-
 from celery.utils import term
 from celery.utils.term import colored, fg
 from celery.five import text_t

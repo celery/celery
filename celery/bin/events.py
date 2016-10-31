@@ -66,11 +66,8 @@
     Executable to use for the detached process.
 """
 from __future__ import absolute_import, unicode_literals
-
 import sys
-
 from functools import partial
-
 from celery.platforms import detached, set_process_title, strargv
 from celery.bin.base import Command, daemon_options
 

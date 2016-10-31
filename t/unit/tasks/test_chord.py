@@ -1,11 +1,7 @@
 from __future__ import absolute_import, unicode_literals
-
 import pytest
-
 from contextlib import contextmanager
-
 from case import Mock
-
 from celery import group, uuid
 from celery import canvas
 from celery import result

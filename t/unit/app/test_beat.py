@@ -1,13 +1,9 @@
 from __future__ import absolute_import, unicode_literals
-
 import errno
 import pytest
-
 from datetime import datetime, timedelta
 from pickle import dumps, loads
-
 from case import Mock, call, patch, skip
-
 from celery import beat
 from celery import uuid
 from celery.five import keys, string_t
