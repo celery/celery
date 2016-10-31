@@ -226,7 +226,7 @@ the first major change to the protocol since the beginning of the project.
 The new protocol is enabled by default in this version and since the new
 version isn't backwards compatible you have to be careful when upgrading.
 
-The 3.1.24 version was released to add compatibility with the new protocol
+The 3.1.25 version was released to add compatibility with the new protocol
 so the easiest way to upgrade is to upgrade to that version first, then
 upgrade to 4.0 in a second deployment.
 
