@@ -1025,19 +1025,32 @@ class upgrade(Command):
         try:
             command = args[0]
         except IndexError:
-            raise self.UsageError('missing upgrade type')
+            raise self.UsageError(
+                'missing upgrade type: try `celery upgrade settings` ?')
         if command not in self.choices:
             raise self.UsageError('unknown upgrade type: {0}'.format(command))
         return getattr(self, command)(*args, **kwargs)
 
     def settings(self, command, filename,
                  no_backup=False, django=False, compat=False, **kwargs):
-        lines = self._slurp(filename) if no_backup else self._backup(filename)
+        lines = self._slurp(filename)
         keyfilter = self._compat_key if django or compat else pass1
         print('processing {0}...'.format(filename), file=self.stderr)
-        with codecs.open(filename, 'w', 'utf-8') as write_fh:
-            for line in lines:
-                write_fh.write(self._to_new_key(line, keyfilter))
+        # gives list of tuples: ``(did_change, line_contents)``
+        new_lines = [
+            self._to_new_key(line, keyfilter) for line in lines
+        ]
+        if any(n[0] for n in new_lines):  # did have changes
+            if not no_backup:
+                self._backup(filename)
+            with codecs.open(filename, 'w', 'utf-8') as write_fh:
+                for _, line in new_lines:
+                    write_fh.write(line)
+            print('Changes to your setting have been made!',
+                  file=self.stdout)
+        else:
+            print('Does not seem to require any changes :-)',
+                  file=self.stdout)
 
     def _slurp(self, filename):
         with codecs.open(filename, 'r', 'utf-8') as read_fh:
@@ -1060,9 +1073,9 @@ class upgrade(Command):
         # broker_transport_options.
         for old_key in reversed(sorted(source, key=lambda x: len(x))):
             new_line = line.replace(old_key, keyfilter(source[old_key]))
-            if line != new_line:
-                return new_line  # only one match per line.
-        return line
+            if line != new_line and not 'CELERY_CELERY' in new_line:
+                return 1, new_line  # only one match per line.
+        return 0, line
 
     def _compat_key(self, key, namespace='CELERY'):
         key = key.upper()
