@@ -1,1 +1,0 @@
-https://github.com/celery/kombu/zipball/master

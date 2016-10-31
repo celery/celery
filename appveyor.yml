@@ -37,7 +37,6 @@ init:
 install:
   - "powershell extra\\appveyor\\install.ps1"
   - "%PYTHON%/Scripts/pip.exe install -U setuptools"
-  - "%PYTHON%/Scripts/pip.exe install -r requirements/dev.txt"
 
 build: off
 

@@ -1,4 +1,3 @@
 sphinx_celery>=1.3
 typing
 -r extras/sqlalchemy.txt
--r dev.txt
