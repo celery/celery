@@ -271,7 +271,8 @@ from celery.bin.base import Command, Extensions
 from celery.bin.amqp import amqp
 from celery.bin.beat import beat
 from celery.bin.call import call
-from celery.bin.control import _RemoteControl, control, inspect, status
+from celery.bin.control import _RemoteControl  # noqa
+from celery.bin.control import control, inspect, status
 from celery.bin.events import events
 from celery.bin.graph import graph
 from celery.bin.list import list_
