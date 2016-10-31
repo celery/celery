@@ -117,6 +117,13 @@ def firstmethod(method, on_call=None):
 def chunks(it, n):
     """Split an iterator into chunks with `n` elements each.
 
+    Warning:
+        ``it`` must be an actual iterator, if you pass this a
+        concrete sequence will get you repeating elements.
+
+        So ``chunks(iter(range(1000)), 10)`` is fine, but
+        ``chunks(range(1000), 10)`` is not.
+
     Example:
         # n == 2
         >>> x = chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 2)
