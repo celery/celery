@@ -32,7 +32,6 @@ from kombu.utils.encoding import safe_repr, safe_str
 from celery import current_app, group
 from celery import states, signals
 from celery._state import _task_stack
-from celery.app import set_default_app
 from celery.app.task import Task as BaseTask, Context
 from celery.exceptions import Ignore, Reject, Retry, InvalidTaskError
 from celery.five import monotonic, text_t
@@ -563,7 +562,7 @@ def setup_worker_optimizations(app, hostname=None):
     # and means that only a single app can be used for workers
     # running in the same process.
     app.set_current()
-    set_default_app(app)
+    app.set_default()
 
     # evaluate all task classes by finalizing the app.
     app.finalize()

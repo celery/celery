@@ -25,7 +25,7 @@ from kombu.utils.url import maybe_sanitize_url
 
 from celery import states
 from celery import current_app, group, maybe_signature
-from celery.app import current_task
+from celery._state import get_current_task
 from celery.exceptions import (
     ChordError, TimeoutError, TaskRevokedError, ImproperlyConfigured,
 )
@@ -425,7 +425,7 @@ class Backend(object):
         return result
 
     def current_task_children(self, request=None):
-        request = request or getattr(current_task(), 'request', None)
+        request = request or getattr(get_current_task(), 'request', None)
         if request:
             return [r.as_tuple() for r in getattr(request, 'children', [])]
 

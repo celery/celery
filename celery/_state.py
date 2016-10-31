@@ -23,6 +23,13 @@ __all__ = [
 #: Global default app used when no current app.
 default_app = None
 
+#: Function returning the app provided or the default app if none.
+#:
+#: The environment variable :envvar:`CELERY_TRACE_APP` is used to
+#: trace app leaks.  When enabled an exception is raised if there
+#: is no active app.
+app_or_default = None
+
 #: List of all app instances (weakrefs), mustn't be used directly.
 _apps = weakref.WeakSet()
 
@@ -64,6 +71,16 @@ _tls = _TLS()
 _task_stack = LocalStack()
 
 
+#: Function used to push a task to the thread local stack
+#: keeping track of the currently executing task.
+#: You must remember to pop the task after.
+push_current_task = _task_stack.push
+
+#: Function used to pop a task from the thread local stack
+#: keeping track of the currently executing task.
+pop_current_task = _task_stack.pop
+
+
 def set_default_app(app):
     """Set default app."""
     global default_app
@@ -73,7 +90,7 @@ def set_default_app(app):
 def _get_current_app():
     if default_app is None:
         #: creates the global fallback app instance.
-        from celery.app import Celery
+        from celery.app.base import Celery
         set_default_app(Celery(
             'default', fixups=[], set_as_current=False,
             loader=os.environ.get('CELERY_LOADER') or 'default',
@@ -133,3 +150,45 @@ def _deregister_app(app):
 
 def _get_active_apps():
     return _apps
+
+
+def _app_or_default(app=None):
+    if app is None:
+        return get_current_app()
+    return app
+
+
+def _app_or_default_trace(app=None):  # pragma: no cover
+    from traceback import print_stack
+    try:
+        from billiard.process import current_process
+    except ImportError:
+        current_process = None
+    if app is None:
+        if getattr(_tls, 'current_app', None):
+            print('-- RETURNING TO CURRENT APP --')  # noqa+
+            print_stack()
+            return _tls.current_app
+        if not current_process or current_process()._name == 'MainProcess':
+            raise Exception('DEFAULT APP')
+        print('-- RETURNING TO DEFAULT APP --')      # noqa+
+        print_stack()
+        return default_app
+    return app
+
+
+def enable_trace():
+    """Enable tracing of app instances."""
+    global app_or_default
+    app_or_default = _app_or_default_trace
+
+
+def disable_trace():
+    """Disable tracing of app instances."""
+    global app_or_default
+    app_or_default = _app_or_default
+
+if os.environ.get('CELERY_TRACE_APP'):  # pragma: no cover
+    enable_trace()
+else:
+    disable_trace()

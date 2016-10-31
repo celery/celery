@@ -916,9 +916,9 @@ class test_debugging_utils:
     def test_enable_disable_trace(self):
         try:
             _app.enable_trace()
-            assert _app.app_or_default == _app._app_or_default_trace
+            assert _state.app_or_default == _state._app_or_default_trace
             _app.disable_trace()
-            assert _app.app_or_default == _app._app_or_default
+            assert _state.app_or_default == _state._app_or_default
         finally:
             _app.disable_trace()
 
