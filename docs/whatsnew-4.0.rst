@@ -90,6 +90,48 @@ Zoran Pavlovic, 許邱翔, :github_user:`allenling`, :github_user:`bee-keeper`,
 :github_user:`orlo666`, :github_user:`raducc`, :github_user:`wanglei`,
 :github_user:`worldexception`.
 
+.. _v400-upgrading:
+
+Upgrading from Celery 3.1
+=========================
+
+Step 1: Upgrade to Celery 3.1.25
+--------------------------------
+
+If you haven't already, the first step is to upgrade to Celery 3.1.25.
+
+This version adds foreward compatibility to the new message protocol,
+so that you can incrementally upgrade from 3.1 to 4.0.
+
+Deploy the workers first by upgrading to 3.1.25, this means these
+workers can process messages sent by clients using both 3.1 and 4.0.
+
+After the workers are upgraded you can upgrade the clients (e.g. web servers).
+
+Step 2: Update your configuration with the new setting names
+------------------------------------------------------------
+
+This version radically changes the configuration setting names,
+to be more consistent.
+
+The changes are fully backwards compatible, so you have the option to wait
+until the old setting names are deprecated, but to ease the transition
+we have included a command-line utility that rewrites your settings
+automatically.
+
+See :ref:`v400-upgrade-settings` for more information.
+
+Step 3: Read the important notes in this document
+-------------------------------------------------
+
+Make sure you are not affected by any of the important upgrade notes
+mentioned in the following section.
+
+Step 4: Upgrade to Celery 4.0
+-----------------------------
+
+At this point you can upgrade your workers and clients with the new version.
+
 .. _v400-important:
 
 Important Notes
@@ -240,6 +282,8 @@ the protocol version number used:
 
 Read more about the features available in the new protocol in the news
 section found later in this document.
+
+.. _v400-upgrade-settings:
 
 Lowercase setting names
 -----------------------
@@ -656,6 +700,44 @@ Logging of task success/failure now happens from the child process
 executing the task.  As a result logging utilities,
 like Sentry can get full information about tasks, including
 variables in the traceback stack.
+
+Prefork: ``-Ofair`` is now the default scheduling strategy
+----------------------------------------------------------
+
+To re-enable the default behavior in 3.1 use the ``-Ofast`` command-line
+option.
+
+There's been lots of confusion about what the ``-Ofair`` command-line option
+does, and using the term "prefetch" in explanations have probably not helped
+given how confusing this terminology is in AMQP.
+
+When a Celery worker using the prefork pool receives a task, it needs to
+delegate that task to a child process for execution.
+
+The prefork pool has a configurable number of child processes
+(``--concurrency``) that can be used to execute tasks, and each child process
+uses pipes/sockets to communicate with the parent process:
+
+- inqueue (pipe/socket): parent sends task to the child process
+- outqueue (pipe/socket): child sends result/return value to the parent.
+
+In Celery 3.1 the default scheduling mechanism was simply to send
+the task to the first ``inqueue`` that was writable, with some heuristics
+to make sure we round-robin between them to ensure each child process
+would receive the same amount of tasks.
+
+This means that in the default scheduling strategy, a worker may send
+tasks to the same child process that is already executing a task.  If that
+task is long running, it may block the waiting task for a long time.  Even
+worse, hundreds of short-running tasks may be stuck behind a long running task
+even when there are child processes free to do work.
+
+The ``-Ofair`` scheduling strategy was added to avoid this situation,
+and when enabled it adds the rule that no task should be sent to the a child
+process that is already executing a task.
+
+The fair scheduling strategy may perform slightly worse if you have only
+short running tasks.
 
 Prefork: One log-file per child process
 ---------------------------------------
