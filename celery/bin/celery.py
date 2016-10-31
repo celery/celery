@@ -1073,7 +1073,7 @@ class upgrade(Command):
         # broker_transport_options.
         for old_key in reversed(sorted(source, key=lambda x: len(x))):
             new_line = line.replace(old_key, keyfilter(source[old_key]))
-            if line != new_line and not 'CELERY_CELERY' in new_line:
+            if line != new_line and 'CELERY_CELERY' not in new_line:
                 return 1, new_line  # only one match per line.
         return 0, line
 
