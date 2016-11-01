@@ -549,6 +549,23 @@ The default exchange, exchange type, and routing key will be used as the
 default routing values for tasks, and as the default values for entries
 in :setting:`task_queues`.
 
+Multiple bindings to a single queue are also supported.  Here's an example
+of two routing keys that are both bound to the same queue:
+
+.. code-block:: python
+
+    from kombu import Exchange, Queue, binding
+
+    media_exchange = Exchange('media', type='direct')
+
+    CELERY_QUEUES = (
+        Queue('media', [
+            binding(media_exchange, routing_key='media.video'),
+            binding(media_exchange, routing_key='media.image'),
+        ]),
+    )
+
+
 .. _routing-task-destination:
 
 Specifying task destination
