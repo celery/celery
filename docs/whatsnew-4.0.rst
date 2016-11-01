@@ -39,7 +39,7 @@ and also supported on PyPy.
 
 .. contents::
     :local:
-    :depth: 2
+    :depth: 3
 
 Preface
 =======
@@ -169,7 +169,34 @@ still works on Python 2.6.
 Django support
 --------------
 
-Celery now supports Django 1.8 and newer versions.
+Celery 4.x requires Django 1.8 or later, but we really recommend
+using at least Django 1.9 for the new ``transaction.on_commit`` feature.
+
+A common problem when calling tasks from Django is when the task is related
+to a model change, and you wish to cancel the task if the transaction is
+rolled back, or ensure the task is only executed after the changes have been
+written to the database.
+
+``transaction.on_commit`` enables you to solve this problem by adding
+the task as a callback to be called only when the transaction is committed.
+
+Example usage:
+
+.. code-block:: python
+
+    from functools import partial
+    from django.db import transaction
+
+    from .models import Article, Log
+    from .tasks import send_article_created_notification
+
+    def create_article(request):
+        with transaction.atomic():
+            article = Article.objects.create(**request.POST)
+            # send this task only if the rest of the transaction succeeds.
+            transaction.on_commit(partial(
+                send_article_created_notification.delay, article_id=article.pk)
+            Log.objects.create(type=Log.ARTICLE_CREATED, object_pk=article.pk)
 
 Removed features
 ----------------
@@ -693,16 +720,19 @@ some long-requested features:
     The new task protocol is documented in full here:
     :ref:`message-protocol-task-v2`.
 
-Prefork: Tasks now log from the child process
----------------------------------------------
+Prefork Pool Improvements
+-------------------------
+
+Tasks now log from the child process
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Logging of task success/failure now happens from the child process
 executing the task.  As a result logging utilities,
 like Sentry can get full information about tasks, including
 variables in the traceback stack.
 
-Prefork: ``-Ofair`` is now the default scheduling strategy
-----------------------------------------------------------
+``-Ofair`` is now the default scheduling strategy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To re-enable the default behavior in 3.1 use the ``-Ofast`` command-line
 option.
@@ -739,8 +769,27 @@ process that is already executing a task.
 The fair scheduling strategy may perform slightly worse if you have only
 short running tasks.
 
-Prefork: One log-file per child process
----------------------------------------
+Limit child process resident memory size
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. :sha:`5cae0e754128750a893524dcba4ae030c414de33`
+
+You can now limit the maximum amount of memory allocated per prefork
+pool child process by setting the worker
+:option:`--max-memory-per-child <celery worker --max-memory-per-child>` option,
+or the :setting:`worker_max_memory_per_child` setting.
+
+The limit is for RSS/resident memory size and is specified in kilobytes.
+
+A child process having exceeded the limit will be terminated and replaced
+with a new process after the currently executing task returns.
+
+See :ref:`worker-max-memory-per-child` for more information.
+
+Contributed by **Dave Smith**.
+
+One log-file per child process
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Init-scrips and :program:`celery multi` now uses the `%I` log file format
 option (e.g., :file:`/var/log/celery/%n%I.log`).
@@ -753,8 +802,18 @@ log file can cause corruption.
 You're encouraged to upgrade your init-scripts and
 :program:`celery multi` arguments to use this new option.
 
+Transports
+----------
+
+RabbitMQ priority queue support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See :ref:`routing-options-rabbitmq-priorities` for more information.
+
+Contributed by **Gerald Manipon**.
+
 Configure broker URL for read/write separately
-----------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 New :setting:`broker_read_url` and :setting:`broker_write_url` settings
 have been added so that separate broker URLs can be provided
@@ -785,8 +844,184 @@ the intent of the required connection.
             with app.connection_or_acquire(connection) as connection:
                 ...
 
+Amazon SQS transport now officially supported
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The SQS broker transport has been rewritten to use async I/O and as such
+joins RabbitMQ and Redis as officially supported transports.
+
+The new implementation also takes advantage of long polling,
+and closes several issues related to using SQS as a broker.
+
+This work was sponsored by Nextdoor.
+
+Apache QPid transport now officially supported
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributed by **Brian Bouterse**.
+
+Tasks
+-----
+
+Task Auto-retry Decorator
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Writing custom retry handling for exception events is so common
+that we now have built-in support for it.
+
+For this a new ``autoretry_for`` argument is now supported by
+the task decorators, where you can specify a tuple of exceptions
+to automatically retry for.
+
+See :ref:`task-autoretry` for more information.
+
+Contributed by **Dmitry Malinovsky**.
+
+.. :sha:`75246714dd11e6c463b9dc67f4311690643bff24`
+
+``Task.replace``
+~~~~~~~~~~~~~~~~
+
+Task.replace changed, removes Task.replace_in_chord.
+
+The two methods had almost the same functionality, but the old
+``Task.replace`` would force the new task to inherit the
+callbacks/errbacks of the existing task.
+
+If you replace a node in a tree, then you wouldn't expect the new node to
+inherit the children of the old node, so this seems like unexpected
+behavior.
+
+So ``self.replace(sig)`` now works for any task, in addition ``sig`` can now
+be a group.
+
+Groups are automatically converted to a chord, where the callback
+will "accumulate" the results of the group tasks.
+
+A new built-in task (`celery.accumulate` was added for this purpose)
+
+Contributed by **Steeve Morin**, and **Ask Solem**.
+
+Closes #817
+
+Remote Task Tracebacks
+~~~~~~~~~~~~~~~~~~~~~~
+
+The new :setting:`task_remote_tracebacks` will make task tracebacks more
+useful by injecting the stack of the remote worker.
+
+This feature requires the additional :pypi:`tblib` library.
+
+Contributed by **Ionel Cristian Mărieș**.
+
+Handling task connection errors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Connection related errors occuring while sending a task is now re-raised
+as a :exc:`kombu.exceptions.OperationalError` error:
+
+.. code-block:: pycon
+
+    >>> try:
+    ...     add.delay(2, 2)
+    ... except add.OperationalError as exc:
+    ...     print('Could not send task %r: %r' % (add, exc))
+
+See :ref:`calling-connection-errors` for more information.
+
+Gevent/Eventlet: Dedicated thread for consuming results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When using :pypi:`gevent`, or :pypi:`eventlet` there is now a single
+thread responsible for consuming events.
+
+This means that if you have many calls retrieving results, there will be
+a dedicated thread for consuming them:
+
+.. code-block:: python
+
+
+    result = add.delay(2, 2)
+
+    # this call will delegate to the result consumer thread:
+    #   once the consumer thread has received the result this greenlet can
+    # continue.
+    value = result.get(timeout=3)
+
+This makes performing RPC calls when using gevent/eventlet perform much
+better.
+
+``AsyncResult.then(on_success, on_error)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The AsyncResult API has been extended to support the :class:`~vine.promise` protocol.
+
+This currently only works with the RPC (amqp) and Redis result backends, but
+lets you attach callbacks to when tasks finish:
+
+.. code-block:: python
+
+    import gevent.monkey
+    monkey.patch_all()
+
+    import time
+    from celery import Celery
+
+    app = Celery(broker='amqp://', backend='rpc')
+
+    @app.task
+    def add(x, y):
+        return x + y
+
+    def on_result_ready(result):
+        print('Received result for id %r: %r' % (result.id, result.result,))
+
+    add.delay(2, 2).then(on_result_ready)
+
+    time.sleep(3)  # run gevent event loop for a while.
+
+Demonstrated using gevent here, but really this is an API that's more useful
+in callback-based event loops like :pypi:`twisted`, or :pypi:`tornado`.
+
+New Task Router API
+~~~~~~~~~~~~~~~~~~~
+
+The :setting:`task_routes` setting can now hold functions, and map routes
+now support glob patterns and regexes.
+
+Instead of using router classes you can now simply define a function:
+
+.. code-block:: python
+
+    def route_for_task(name, args, kwargs, options, task=None, **kwargs):
+        from proj import tasks
+
+        if name == tasks.add.name:
+            return {'queue': 'hipri'}
+
+If you don't need the arguments you can use start arguments, just make
+sure you always also accept star arguments so that we have the ability
+to add more features in the future:
+
+.. code-block:: python
+
+    def route_for_task(name, *args, **kwargs):
+        from proj import tasks
+        if name == tasks.add.name:
+            return {'queue': 'hipri', 'priority': 9}
+
+Both the ``options`` argument and the new ``task`` keyword argument
+are new to the function-style routers, and will make it easier to write
+routers based on execution options, or properties of the task.
+
+The optional ``task`` keyword argument won't be set if a task is called
+by name using :meth:`@send_task`.
+
+For more examples, including using glob/regexes in routers please see
+:setting:`task_routes` and :ref:`routing-automatic`.
+
 Canvas Refactor
----------------
+~~~~~~~~~~~~~~~
 
 The canvas/work-flow implementation have been heavily refactored
 to fix some long outstanding issues.
@@ -849,31 +1084,11 @@ to fix some long outstanding issues.
 
 - Chords now properly sets ``result.parent`` links.
 
-Amazon SQS transport now officially supported
----------------------------------------------
-
-The SQS broker transport has been rewritten to use async I/O and as such
-joins RabbitMQ and Redis as officially supported transports.
-
-The new implementation also takes advantage of long polling,
-and closes several issues related to using SQS as a broker.
-
-This work was sponsored by Nextdoor.
-
-Apache QPid transport now officially supported
-----------------------------------------------
-
-Contributed by **Brian Bouterse**.
-
-Schedule tasks based on sunrise, sunset, dawn and dusk
-------------------------------------------------------
-
-See :ref:`beat-solar` for more information.
-
-Contributed by **Mark Parncutt**.
+Periodic Tasks
+--------------
 
 New API for configuring periodic tasks
---------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This new API enables you to use signatures when defining periodic tasks,
 removing the chance of mistyping task names.
@@ -883,51 +1098,38 @@ An example of the new API is :ref:`here <beat-entries>`.
 .. :sha:`bc18d0859c1570f5eb59f5a969d1d32c63af764b`
 .. :sha:`132d8d94d38f4050db876f56a841d5a5e487b25b`
 
-Handling task connection errors
--------------------------------
+Optimized Beat implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Connection related errors occuring while sending a task is now re-raised
-as a :exc:`kombu.exceptions.OperationalError` error:
+The :program:`celery beat` implementation has been optimized
+for millions of periodic tasks by using a heap to schedule entries.
 
-.. code-block:: pycon
+Contributed by **Ask Solem** and **Alexander Koshelev**.
 
-    >>> try:
-    ...     add.delay(2, 2)
-    ... except add.OperationalError as exc:
-    ...     print('Could not send task %r: %r' % (add, exc))
+Schedule tasks based on sunrise, sunset, dawn and dusk
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-See :ref:`calling-connection-errors` for more information.
+See :ref:`beat-solar` for more information.
 
-RabbitMQ priority queue support
--------------------------------
+Contributed by **Mark Parncutt**.
 
-See :ref:`routing-options-rabbitmq-priorities` for more information.
 
-Contributed by **Gerald Manipon**.
+Result Backends
+---------------
 
-Prefork: Limit child process resident memory size
--------------------------------------------------
-.. :sha:`5cae0e754128750a893524dcba4ae030c414de33`
+RPC Result Backend matured
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can now limit the maximum amount of memory allocated per prefork
-pool child process by setting the worker
-:option:`--max-memory-per-child <celery worker --max-memory-per-child>` option,
-or the :setting:`worker_max_memory_per_child` setting.
+Lots of bugs in the previously experimental RPC result backend have been fixed
+and we now consider it production ready.
 
-The limit is for RSS/resident memory size and is specified in kilobytes.
-
-A child process having exceeded the limit will be terminated and replaced
-with a new process after the currently executing task returns.
-
-See :ref:`worker-max-memory-per-child` for more information.
-
-Contributed by **Dave Smith**.
+Contributed by **Ask Solem**, **Morris Tweed**.
 
 Redis: Result backend optimizations
------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-RPC is now using pub/sub for streaming task results
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``result.get()`` is now using pub/sub for streaming task results
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Calling ``result.get()`` when using the Redis result backend
 used to be extremely expensive as it was using polling to wait
@@ -942,7 +1144,7 @@ task round-trip times.
 Contributed by **Yaroslav Zhavoronkov** and **Ask Solem**.
 
 New optimized chord join implementation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This was an experimental feature introduced in Celery 3.1,
 that could only be enabled by adding ``?new_join=1`` to the
@@ -953,9 +1155,6 @@ to be considered stable and enabled by default.
 
 The new implementation greatly reduces the overhead of chords,
 and especially with larger chords the performance benefit can be massive.
-
-New Result backends
--------------------
 
 New Riak result backend introduced
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1049,168 +1248,8 @@ in the following way:
 
 .. :sha:`03399b4d7c26fb593e61acf34f111b66b340ba4e`
 
-``Task.replace``
+In Other News...
 ----------------
-
-Task.replace changed, removes Task.replace_in_chord.
-
-The two methods had almost the same functionality, but the old
-``Task.replace`` would force the new task to inherit the
-callbacks/errbacks of the existing task.
-
-If you replace a node in a tree, then you wouldn't expect the new node to
-inherit the children of the old node, so this seems like unexpected
-behavior.
-
-So ``self.replace(sig)`` now works for any task, in addition ``sig`` can now
-be a group.
-
-Groups are automatically converted to a chord, where the callback
-will "accumulate" the results of the group tasks.
-
-A new built-in task (`celery.accumulate` was added for this purpose)
-
-Closes #817
-
-Optimized Beat implementation
------------------------------
-
-The :program:`celery beat` implementation has been optimized
-for millions of periodic tasks by using a heap to schedule entries.
-
-Contributed by **Ask Solem** and **Alexander Koshelev**.
-
-Task Auto-retry Decorator
--------------------------
-
-Writing custom retry handling for exception events is so common
-that we now have built-in support for it.
-
-For this a new ``autoretry_for`` argument is now supported by
-the task decorators, where you can specify a tuple of exceptions
-to automatically retry for.
-
-See :ref:`task-autoretry` for more information.
-
-Contributed by **Dmitry Malinovsky**.
-
-.. :sha:`75246714dd11e6c463b9dc67f4311690643bff24`
-
-Remote Task Tracebacks
-----------------------
-
-The new :setting:`task_remote_tracebacks` will make task tracebacks more
-useful by injecting the stack of the remote worker.
-
-This feature requires the additional :pypi:`tblib` library.
-
-Contributed by **Ionel Cristian Mărieș**.
-
-Async Result API
-----------------
-
-Gevent/Eventlet: Dedicated thread for consuming results
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-When using :pypi:`gevent`, or :pypi:`eventlet` there is now a single
-thread responsible for consuming events.
-
-This means that if you have many calls retrieving results, there will be
-a dedicated thread for consuming them:
-
-.. code-block:: python
-
-
-    result = add.delay(2, 2)
-
-    # this call will delegate to the result consumer thread:
-    #   once the consumer thread has received the result this greenlet can
-    # continue.
-    value = result.get(timeout=3)
-
-This makes performing RPC calls when using gevent/eventlet perform much
-better.
-
-``AsyncResult.then(on_success, on_error)``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The AsyncResult API has been extended to support the :class:`~vine.promise` protocol.
-
-This currently only works with the RPC (amqp) and Redis result backends, but
-lets you attach callbacks to when tasks finish:
-
-.. code-block:: python
-
-    import gevent.monkey
-    monkey.patch_all()
-
-    import time
-    from celery import Celery
-
-    app = Celery(broker='amqp://', backend='rpc')
-
-    @app.task
-    def add(x, y):
-        return x + y
-
-    def on_result_ready(result):
-        print('Received result for id %r: %r' % (result.id, result.result,))
-
-    add.delay(2, 2).then(on_result_ready)
-
-    time.sleep(3)  # run gevent event loop for a while.
-
-Demonstrated using gevent here, but really this is an API that's more useful
-in callback-based event loops like :pypi:`twisted`, or :pypi:`tornado`.
-
-
-RPC Result Backend matured
---------------------------
-
-Lots of bugs in the previously experimental RPC result backend have been fixed
-and we now consider it production ready.
-
-Contributed by **Ask Solem**, **Morris Tweed**.
-
-New Task Router API
--------------------
-
-The :setting:`task_routes` setting can now hold functions, and map routes
-now support glob patterns and regexes.
-
-Instead of using router classes you can now simply define a function:
-
-.. code-block:: python
-
-    def route_for_task(name, args, kwargs, options, task=None, **kwargs):
-        from proj import tasks
-
-        if name == tasks.add.name:
-            return {'queue': 'hipri'}
-
-If you don't need the arguments you can use start arguments, just make
-sure you always also accept star arguments so that we have the ability
-to add more features in the future:
-
-.. code-block:: python
-
-    def route_for_task(name, *args, **kwargs):
-        from proj import tasks
-        if name == tasks.add.name:
-            return {'queue': 'hipri', 'priority': 9}
-
-Both the ``options`` argument and the new ``task`` keyword argument
-are new to the function-style routers, and will make it easier to write
-routers based on execution options, or properties of the task.
-
-The optional ``task`` keyword argument won't be set if a task is called
-by name using :meth:`@send_task`.
-
-For more examples, including using glob/regexes in routers please see
-:setting:`task_routes` and :ref:`routing-automatic`.
-
-In Other News
--------------
 
 Requirements
 ~~~~~~~~~~~~
