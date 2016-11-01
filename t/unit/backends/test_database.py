@@ -73,7 +73,7 @@ class test_DatabaseBackend:
         assert calls[0] == 5
 
     def test_missing_dburi_raises_ImproperlyConfigured(self):
-        self.app.conf.sqlalchemy_dburi = None
+        self.app.conf.database_url = None
         with pytest.raises(ImproperlyConfigured):
             DatabaseBackend(app=self.app)
 

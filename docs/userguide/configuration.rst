@@ -102,10 +102,10 @@ rush in moving to the new settings format.
 ``CELERY_TASK_RESULT_EXPIRES``         :setting:`result_expires`
 ``CELERY_RESULT_PERSISTENT``           :setting:`result_persistent`
 ``CELERY_RESULT_SERIALIZER``           :setting:`result_serializer`
-``CELERY_RESULT_DBURI``                :setting:`sqlalchemy_dburi`
-``CELERY_RESULT_ENGINE_OPTIONS``       :setting:`sqlalchemy_engine_options`
-``-*-_DB_SHORT_LIVED_SESSIONS``        :setting:`sqlalchemy_short_lived_sessions`
-``CELERY_RESULT_DB_TABLE_NAMES``       :setting:`sqlalchemy_db_names`
+``CELERY_RESULT_DBURI``                Use :setting:`result_backend` instead.
+``CELERY_RESULT_ENGINE_OPTIONS``       :setting:`database_engine_options`
+``[...]_DB_SHORT_LIVED_SESSIONS``      :setting:`database_short_lived_sessions`
+``CELERY_RESULT_DB_TABLE_NAMES``       :setting:`database_db_names`
 ``CELERY_SECURITY_CERTIFICATE``        :setting:`security_certificate`
 ``CELERY_SECURITY_CERT_STORE``         :setting:`security_cert_store`
 ``CELERY_SECURITY_KEY``                :setting:`security_key`
@@ -120,7 +120,7 @@ rush in moving to the new settings format.
 ``CELERY_DEFAULT_QUEUE``               :setting:`task_default_queue`
 ``CELERY_DEFAULT_RATE_LIMIT``          :setting:`task_default_rate_limit`
 ``CELERY_DEFAULT_ROUTING_KEY``         :setting:`task_default_routing_key`
-``-'-_EAGER_PROPAGATES_EXCEPTIONS``    :setting:`task_eager_propagates`
+``[...]_EAGER_PROPAGATES_EXCEPTIONS``  :setting:`task_eager_propagates`
 ``CELERY_IGNORE_RESULT``               :setting:`task_ignore_result`
 ``CELERY_TASK_PUBLISH_RETRY``          :setting:`task_publish_retry`
 ``CELERY_TASK_PUBLISH_RETRY_POLICY``   :setting:`task_publish_retry_policy`
@@ -697,17 +697,9 @@ strings (this is the part of the URI that comes after the ``db+`` prefix).
 .. _`Connection String`:
     http://www.sqlalchemy.org/docs/core/engines.html#database-urls
 
-.. setting:: sqlalchemy_dburi
+.. setting:: database_engine_options
 
-``sqlalchemy_dburi``
-~~~~~~~~~~~~~~~~~~~~
-
-This setting is no longer used as it's now possible to specify
-the database URL directly in the :setting:`result_backend` setting.
-
-.. setting:: sqlalchemy_engine_options
-
-``sqlalchemy_engine_options``
+``database_engine_options``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: ``{}`` (empty mapping).
@@ -716,11 +708,11 @@ To specify additional SQLAlchemy database engine options you can use
 the :setting:`sqlalchmey_engine_options` setting::
 
     # echo enables verbose logging from SQLAlchemy.
-    app.conf.sqlalchemy_engine_options = {'echo': True}
+    app.conf.database_engine_options = {'echo': True}
 
-.. setting:: sqlalchemy_short_lived_sessions
+.. setting:: database_short_lived_sessions
 
-``sqlalchemy_short_lived_sessions``
+``database_short_lived_sessions``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: Disabled by default.
@@ -732,9 +724,9 @@ going stale through inactivity. For example, intermittent errors like
 `(OperationalError) (2006, 'MySQL server has gone away')` can be fixed by enabling
 short lived sessions. This option only affects the database backend.
 
-.. setting:: sqlalchemy_table_names
+.. setting:: database_table_names
 
-``sqlalchemy_table_names``
+``database_table_names``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: ``{}`` (empty mapping).
@@ -746,7 +738,7 @@ you to customize the table names:
 .. code-block:: python
 
     # use custom table names for the database result backend.
-    sqlalchemy_table_names = {
+    database_table_names = {
         'task': 'myapp_taskmeta',
         'group': 'myapp_groupmeta',
     }

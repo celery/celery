@@ -188,8 +188,8 @@ NAMESPACES = Namespace(
         cert_store=Option(type='string'),
         key=Option(type='string'),
     ),
-    sqlalchemy=Namespace(
-        dburi=Option(old={'celery_result_dburi'}),
+    database=Namespace(
+        uri=Option(old={'celery_result_dburi'}),
         engine_options=Option(
             type='dict', old={'celery_result_engine_options'},
         ),

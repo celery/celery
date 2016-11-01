@@ -75,22 +75,22 @@ class DatabaseBackend(BaseBackend):
         super(DatabaseBackend, self).__init__(
             expires_type=maybe_timedelta, url=url, **kwargs)
         conf = self.app.conf
-        self.url = url or dburi or conf.sqlalchemy_dburi
+        self.url = url or dburi or conf.database_url
         self.engine_options = dict(
             engine_options or {},
-            **conf.sqlalchemy_engine_options or {})
+            **conf.database_engine_options or {})
         self.short_lived_sessions = kwargs.get(
             'short_lived_sessions',
-            conf.sqlalchemy_short_lived_sessions)
+            conf.database_short_lived_sessions)
 
-        tablenames = conf.sqlalchemy_table_names or {}
+        tablenames = conf.database_table_names or {}
         Task.__table__.name = tablenames.get('task', 'celery_taskmeta')
         TaskSet.__table__.name = tablenames.get('group', 'celery_tasksetmeta')
 
         if not self.url:
             raise ImproperlyConfigured(
                 'Missing connection string! Do you have the'
-                ' sqlalchemy_dburi setting set to a real value?')
+                ' database_url setting set to a real value?')
 
     def ResultSession(self, session_manager=SessionManager()):
         return session_manager.session_factory(

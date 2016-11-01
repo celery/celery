@@ -632,14 +632,14 @@ class test_App:
                    'worker_prefetch_multiplier=368',
                    '.foobarstring=(string)300',
                    '.foobarint=(int)300',
-                   'sqlalchemy_engine_options=(dict){"foo": "bar"}']
+                   'database_engine_options=(dict){"foo": "bar"}']
         self.app.config_from_cmdline(cmdline, namespace='worker')
         assert not self.app.conf.task_always_eager
         assert self.app.conf.result_backend == '/dev/null'
         assert self.app.conf.worker_prefetch_multiplier == 368
         assert self.app.conf.worker_foobarstring == '300'
         assert self.app.conf.worker_foobarint == 300
-        assert self.app.conf.sqlalchemy_engine_options == {'foo': 'bar'}
+        assert self.app.conf.database_engine_options == {'foo': 'bar'}
 
     def test_setting__broker_transport_options(self):
 

@@ -63,6 +63,9 @@ ignored_settings = {
     # MongoDB settings replaced by URL config.,
     'mongodb_backend_settings',
 
+    # Database URL replaced by URL config (result_backend = db+...).
+    'database_url',
+
     # Redis settings replaced by URL config.
     'redis_host',
     'redis_port',

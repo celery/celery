@@ -249,9 +249,16 @@ we've removed them completely, breaking backwards compatibility.
 
 - Using the Django ORM as a broker is no longer supported.
 
+    You can still use the Django ORM as a result backend:
+    see :ref:`django-celery-results` section for more information.
+
 - Using SQLAlchemy as a broker is no longer supported.
 
+    You can still use SQLAlchemy as a result backend.
+
 - Using CouchDB as a broker is no longer supported.
+
+    You can still use CouchDB as a result backend.
 
 - Using IronMQ as a broker is no longer supported.
 
@@ -357,8 +364,12 @@ and save a backup in :file:`proj/settings.py.orig`.
     You can find the most up to date Django Celery integration example
     here: :ref:`django-first-steps`.
 
-    Note that this will also add a prefix to settings that didn't previously
-    have one, like ``BROKER_URL``.
+    .. note::
+
+        This will also add a prefix to settings that didn't previously
+        have one, for example ``BROKER_URL`` should be written
+        ``CELERY_BROKER_URL`` with a namespace of ``CELERY``
+        ``CELERY_BROKER_URL``.
 
     Luckily you don't have to manually change the files, as
     the :program:`celery upgrade settings --django` program should do the
@@ -386,10 +397,10 @@ a few special ones:
 ``CELERY_MAX_CACHED_RESULTS``          :setting:`result_cache_max`
 ``CELERY_MESSAGE_COMPRESSION``         :setting:`result_compression`/:setting:`task_compression`.
 ``CELERY_TASK_RESULT_EXPIRES``         :setting:`result_expires`
-``CELERY_RESULT_DBURI``                :setting:`sqlalchemy_dburi`
-``CELERY_RESULT_ENGINE_OPTIONS``       :setting:`sqlalchemy_engine_options`
-``-*-_DB_SHORT_LIVED_SESSIONS``        :setting:`sqlalchemy_short_lived_sessions`
-``CELERY_RESULT_DB_TABLE_NAMES``       :setting:`sqlalchemy_db_names`
+``CELERY_RESULT_DBURI``                :setting:`result_backend`
+``CELERY_RESULT_ENGINE_OPTIONS``       :setting:`database_engine_options`
+``-*-_DB_SHORT_LIVED_SESSIONS``        :setting:`database_short_lived_sessions`
+``CELERY_RESULT_DB_TABLE_NAMES``       :setting:`database_db_names`
 ``CELERY_ACKS_LATE``                   :setting:`task_acks_late`
 ``CELERY_ALWAYS_EAGER``                :setting:`task_always_eager`
 ``CELERY_ANNOTATIONS``                 :setting:`task_annotations`
