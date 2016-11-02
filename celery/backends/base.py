@@ -417,8 +417,12 @@ class Backend(object):
             (group_id, body,), kwargs, countdown=countdown,
         )
 
+    def ensure_chords_allowed(self):
+        pass
+
     def apply_chord(self, header, partial_args, group_id, body,
                     options={}, **kwargs):
+        self.ensure_chords_allowed()
         fixed_options = {k: v for k, v in items(options) if k != 'task_id'}
         result = header(*partial_args, task_id=group_id, **fixed_options or {})
         self.fallback_chord_unlock(group_id, body, **kwargs)
@@ -677,6 +681,7 @@ class BaseKeyValueStoreBackend(Backend):
 
     def _apply_chord_incr(self, header, partial_args, group_id, body,
                           result=None, options={}, **kwargs):
+        self.ensure_chords_allowed()
         self.save_group(group_id, self.app.GroupResult(group_id, result))
 
         fixed_options = {k: v for k, v in items(options) if k != 'task_id'}
@@ -760,7 +765,7 @@ class DisabledBackend(BaseBackend):
     def store_result(self, *args, **kwargs):
         pass
 
-    def apply_chord(self, *args, **kwargs):
+    def ensure_chords_allowed(self):
         raise NotImplementedError(E_CHORD_NO_BACKEND.strip())
 
     def _is_disabled(self, *args, **kwargs):

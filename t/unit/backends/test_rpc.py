@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 import pytest
 from case import Mock, patch
+from celery import chord, group
 from celery.backends.rpc import RPCBackend
 from celery._state import _task_stack
 
@@ -18,6 +19,26 @@ class test_RPCBackend:
 
     def test_interface(self):
         self.b.on_reply_declare('task_id')
+
+    def test_ensure_chords_allowed(self):
+        with pytest.raises(NotImplementedError):
+            self.b.ensure_chords_allowed()
+
+    def test_apply_chord(self):
+        with pytest.raises(NotImplementedError):
+            self.b.apply_chord([], (), 'gid', Mock(name='body'))
+
+    @pytest.mark.celery(result_backend='rpc')
+    def test_chord_raises_error(self):
+        with pytest.raises(NotImplementedError):
+            chord(self.add.s(i, i) for i in range(10))(self.add.s([2]))
+
+    @pytest.mark.celery(result_backend='rpc')
+    def test_chain_with_chord_raises_error(self):
+        with pytest.raises(NotImplementedError):
+            (self.add.s(2, 2) |
+             group(self.add.s(2, 2),
+                   self.add.s(5, 6)) | self.add.s()).delay()
 
     def test_destination_for(self):
         req = Mock(name='request')

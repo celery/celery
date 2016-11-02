@@ -697,6 +697,7 @@ class _chain(Signature):
 
             prev_task, prev_res = task, res
             if isinstance(task, chord):
+                app.backend.ensure_chords_allowed()
                 # If the task is a chord, and the body is a chain
                 # the chain has already been prepared, and res is
                 # set to the last task in the callback chain.

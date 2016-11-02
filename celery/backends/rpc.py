@@ -21,6 +21,15 @@ from .async import AsyncBackendMixin, BaseResultConsumer
 
 __all__ = ['BacklogLimitExceeded', 'RPCBackend']
 
+E_NO_CHORD_SUPPORT = """
+The "rpc" result backend does not support chords!
+
+Note that a group chained with a task is also upgraded to be a chord,
+as this pattern requires synchronization.
+
+Result backends that supports chords: Redis, Database, Memcached, and more.
+"""
+
 
 class BacklogLimitExceeded(Exception):
     """Too much state history to fast-forward."""
@@ -146,6 +155,9 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         """Create new binding for task with id."""
         # RPC backend caches the binding, as one queue is used for all tasks.
         return self.binding
+
+    def ensure_chords_allowed(self):
+        raise NotImplementedError(E_NO_CHORD_SUPPORT.strip())
 
     def on_task_call(self, producer, task_id):
         # Called every time a task is sent when using this backend.
