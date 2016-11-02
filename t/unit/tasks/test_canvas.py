@@ -5,6 +5,7 @@ from celery._state import _task_stack
 from celery.canvas import (
     Signature,
     chain,
+    _chain,
     group,
     chord,
     signature,
@@ -147,16 +148,16 @@ class test_Signature(CanvasCase):
 
     def test_OR(self):
         x = self.add.s(2, 2) | self.mul.s(4)
-        assert isinstance(x, chain)
+        assert isinstance(x, _chain)
         y = self.add.s(4, 4) | self.div.s(2)
         z = x | y
-        assert isinstance(y, chain)
-        assert isinstance(z, chain)
+        assert isinstance(y, _chain)
+        assert isinstance(z, _chain)
         assert len(z.tasks) == 4
         with pytest.raises(TypeError):
             x | 10
         ax = self.add.s(2, 2) | (self.add.s(4) | self.add.s(8))
-        assert isinstance(ax, chain)
+        assert isinstance(ax, _chain)
         assert len(ax.tasks), 3 == 'consolidates chain to chain'
 
     def test_INVERT(self):
@@ -329,9 +330,9 @@ class test_chain(CanvasCase):
             self.add.s(20),
             self.add.s(30)
         )
-        c._use_link = False
-        tasks, _ = c.prepare_steps((), c.tasks)
-        assert isinstance(tasks[-1], chord)
+        assert isinstance(c, chord)
+        assert isinstance(c.body, _chain)
+        assert len(c.body.tasks) == 3
 
         c2 = self.add.s(2, 2) | group(self.add.s(i, i) for i in range(10))
         c2._use_link = False
@@ -367,8 +368,8 @@ class test_chain(CanvasCase):
 
     def test_reverse(self):
         x = self.add.s(2, 2) | self.add.s(2)
-        assert isinstance(signature(x), chain)
-        assert isinstance(signature(dict(x)), chain)
+        assert isinstance(signature(x), _chain)
+        assert isinstance(signature(dict(x)), _chain)
 
     def test_always_eager(self):
         self.app.conf.task_always_eager = True
@@ -401,9 +402,9 @@ class test_chain(CanvasCase):
     def test_from_dict_no_args__with_args(self):
         x = dict(self.add.s(2, 2) | self.add.s(4))
         x['args'] = None
-        assert isinstance(chain.from_dict(x), chain)
+        assert isinstance(chain.from_dict(x), _chain)
         x['args'] = (2,)
-        assert isinstance(chain.from_dict(x), chain)
+        assert isinstance(chain.from_dict(x), _chain)
 
     def test_accepts_generator_argument(self):
         x = chain(self.add.s(i) for i in range(10))
