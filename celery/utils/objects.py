@@ -140,5 +140,3 @@ class getitem_property(object):
 
     def __set__(self, obj, value):
         self._path(obj)[self.key] = value
-
-
