@@ -189,7 +189,7 @@ NAMESPACES = Namespace(
         key=Option(type='string'),
     ),
     database=Namespace(
-        uri=Option(old={'celery_result_dburi'}),
+        url=Option(old={'celery_result_dburi'}),
         engine_options=Option(
             type='dict', old={'celery_result_engine_options'},
         ),
