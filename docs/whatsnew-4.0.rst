@@ -2104,7 +2104,7 @@ Celery 3.0.
 
 If you have code like this:
 
-.. codeblock:: pycon
+.. code-block:: pycon
 
     >>> from celery.task import TaskSet
 

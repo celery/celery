@@ -150,3 +150,48 @@ def simple_format(s, keys, pattern=RE_FORMAT, expand=r'\1'):
 
         return pattern.sub(resolve, s)
     return s
+
+
+def remove_repeating_from_task(task_name, s):
+    # type: (str, str) -> str
+    """Given task name, remove repeating module names.
+
+    Example:
+        >>> remove_repeating_from_task(
+        ...     'tasks.add',
+        ...     'tasks.add(2, 2), tasks.mul(3), tasks.div(4)')
+        'tasks.add(2, 2), mul(3), div(4)'
+    """
+    # This is used by e.g. repr(chain), to remove repeating module names.
+    #  - extract the module part of the task name
+    module = str(task_name).rpartition('.')[0] + '.'
+    return remove_repeating(module, s)
+
+
+def remove_repeating(substr, s):
+    # type: (str, str) -> str
+    """Remove repeating module names from string.
+
+    Arguments:
+        task_name (str): Task name (full path including module),
+            to use as the basis for removing module names.
+        s (str): The string we want to work on.
+
+    Example:
+
+        >>> _shorten_names(
+        ...    'x.tasks.add',
+        ...    'x.tasks.add(2, 2) | x.tasks.add(4) | x.tasks.mul(8)',
+        ... )
+        'x.tasks.add(2, 2) | add(4) | mul(8)'
+    """
+    # find the first occurrence of substr in the string.
+    index = s.find(substr)
+    if index >= 0:
+        return ''.join([
+            # leave the first occurance of substr untouched.
+            s[:index + len(substr)],
+            # strip seen substr from the rest of the string.
+            s[index + len(substr):].replace(substr, ''),
+        ])
+    return s

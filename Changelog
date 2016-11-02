@@ -8,6 +8,7 @@ This document contains change notes for bugfix releases in
 the 4.0.x series (0today8), please see :ref:`whatsnew-4.0` for
 an overview of what's new in Celery 4.0.
 
+
 .. _version-4.0.0:
 
 4.0.0
@@ -17,4 +18,27 @@ an overview of what's new in Celery 4.0.
 :branch: master
 :release-by:
 
-See :ref:`whatsnew-4.0`.
+See :ref:`whatsnew-4.0` (in :file:`docs/whatsnew-4.0`).
+
+.. _version-4.0.0rc7
+
+4.0.0rc7
+========
+:release-date: 2016-11-02 01:30 P.M PDT
+
+Important notes
+---------------
+
+- Database result backend related setting names changed from
+  ``sqlalchemy_*`` -> ``database_*``.
+
+    The ``sqlalchemy_`` named settings won't work at all in this
+    version so you need to rename them.  This is a last minute change,
+    and as they were not supported in 3.1 we will not be providing
+    aliases.
+
+- ``chain(A, B, C)`` now works the same way as ``A | B | C``.
+
+    This means calling ``chain()`` might not actually return a chain,
+    it can return a group or any other type depending on how the
+    workflow can be optimized.

@@ -915,6 +915,7 @@ Cassandra backend settings
 
     See :ref:`bundles` for information on combining multiple extension
     requirements.
+
 This backend requires the following configuration directives to be set.
 
 .. setting:: cassandra_servers

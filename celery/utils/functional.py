@@ -287,3 +287,31 @@ def fun_takes_argument(name, fun, position=None):
 def maybe(typ, val):
     """Call typ on value if val is defined."""
     return typ(val) if val is not None else val
+
+
+def seq_concat_item(seq, item):
+    """Return copy of sequence seq with item added.
+
+    Returns:
+        Sequence: if seq is a tuple, the result will be a tuple,
+           otherwise it depends on the implementation of ``__add__``.
+    """
+    return seq + (item,) if isinstance(seq, tuple) else seq + [item]
+
+
+def seq_concat_seq(a, b):
+    """Concatenate two sequences: ``a + b``.
+
+    Returns:
+        Sequence: The return value will depend on the largest sequence
+            - if b is larger and is a tuple, the return value will be a tuple.
+            - if a is larger and is a list, the return value will be a list,
+    """
+    # find the type of the largest sequence
+    prefer = type(max([a, b], key=len))
+    # convert the smallest list to the type of the largest sequence.
+    if not isinstance(a, prefer):
+        a = prefer(a)
+    if not isinstance(b, prefer):
+        b = prefer(b)
+    return a + b

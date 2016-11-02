@@ -12,6 +12,8 @@ from celery.utils.functional import (
     mlazy,
     padlist,
     regen,
+    seq_concat_seq,
+    seq_concat_item,
 )
 
 
@@ -200,3 +202,25 @@ class test_fun_takes_argument:
             return 1
 
         assert not fun_takes_argument('foo', fun, position=4)
+
+
+@pytest.mark.parametrize('a,b,expected', [
+    ((1, 2, 3), [4, 5], (1, 2, 3, 4, 5)),
+    ((1, 2), [3, 4, 5], [1, 2, 3, 4, 5]),
+    ([1, 2, 3], (4, 5), [1, 2, 3, 4, 5]),
+    ([1, 2], (3, 4, 5), (1, 2, 3, 4, 5)),
+])
+def test_seq_concat_seq(a, b, expected):
+    res = seq_concat_seq(a, b)
+    assert type(res) is type(expected)  # noqa
+    assert res == expected
+
+
+@pytest.mark.parametrize('a,b,expected', [
+    ((1, 2, 3), 4, (1, 2, 3, 4)),
+    ([1, 2, 3], 4, [1, 2, 3, 4]),
+])
+def test_seq_concat_item(a, b, expected):
+    res = seq_concat_item(a, b)
+    assert type(res) is type(expected)  # noqa
+    assert res == expected

@@ -15,7 +15,6 @@ from celery.canvas import (
     _maybe_group,
     maybe_signature,
     maybe_unroll_group,
-    _seq_concat_seq,
 )
 from celery.result import AsyncResult, GroupResult, EagerResult
 
@@ -38,18 +37,6 @@ class test_maybe_unroll_group:
         assert maybe_unroll_group(g) is g
         g.tasks.__length_hint__.side_effect = AttributeError()
         assert maybe_unroll_group(g) is g
-
-
-@pytest.mark.parametrize('a,b,expected', [
-    ((1, 2, 3), [4, 5], (1, 2, 3, 4, 5)),
-    ((1, 2), [3, 4, 5], [1, 2, 3, 4, 5]),
-    ([1, 2, 3], (4, 5), [1, 2, 3, 4, 5]),
-    ([1, 2], (3, 4, 5), (1, 2, 3, 4, 5)),
-])
-def test_seq_concat_seq(a, b, expected):
-    res = _seq_concat_seq(a, b)
-    assert type(res) is type(expected)  # noqa
-    assert res == expected
 
 
 class CanvasCase:
