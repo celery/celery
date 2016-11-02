@@ -69,6 +69,8 @@ class test_DjangoFixup(FixupCase):
                     fixup(self.app)
                 Fixup.assert_not_called()
             with mock.module_exists('django'):
+                import django
+                django.VERSION = (1, 10, 1)
                 fixup(self.app)
                 Fixup.assert_called()
 
