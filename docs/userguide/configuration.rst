@@ -394,7 +394,10 @@ This requires the :pypi:`tblib` library, that can be installed using
 
 .. code-block:: console
 
-    $ pip install 'tblib>=1.3.0'
+    $ pip install celery[tblib]
+
+See :ref:`bundles` for information on combining multiple extension
+requirements.
 
 .. setting:: task_ignore_result
 
@@ -838,7 +841,10 @@ Configuring the backend URL
 
     .. code-block:: console
 
-        $ pip install redis
+        $ pip install celery[redis]
+
+    See :ref:`bundles` for information on combining multiple extension
+    requirements.
 
 This backend requires the :setting:`result_backend`
 setting to be set to a Redis URL::
@@ -905,8 +911,10 @@ Cassandra backend settings
 
     .. code-block:: console
 
-        $ pip install cassandra-driver
+        $ pip install celery[cassandra]
 
+    See :ref:`bundles` for information on combining multiple extension
+    requirements.
 This backend requires the following configuration directives to be set.
 
 .. setting:: cassandra_servers
@@ -1047,7 +1055,10 @@ Riak backend settings
 
     .. code-block:: console
 
-        $ pip install riak
+        $ pip install celery[riak]
+
+    See :ref:`bundles` for information on combining multiple extension
+    requirements.
 
 This backend requires the :setting:`result_backend`
 setting to be set to a Riak URL::
@@ -1143,7 +1154,10 @@ Couchbase backend settings
 
     .. code-block:: console
 
-        $ pip install couchbase
+        $ pip install celery[couchbase]
+
+    See :ref:`bundles` for instructions how to combine multiple extension
+    requirements.
 
 This backend can be configured via the :setting:`result_backend`
 set to a Couchbase URL:
@@ -1195,7 +1209,10 @@ CouchDB backend settings
 
     .. code-block:: console
 
-        $ pip install pycouchdb
+        $ pip install celery[couchdb]
+
+    See :ref:`bundles` for information on combining multiple extension
+    requirements.
 
 This backend can be configured via the :setting:`result_backend`
 set to a CouchDB URL::

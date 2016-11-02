@@ -859,7 +859,7 @@ Amazon SQS transport now officially supported
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The SQS broker transport has been rewritten to use async I/O and as such
-joins RabbitMQ and Redis as officially supported transports.
+joins RabbitMQ, Redis and QPid as officially supported transports.
 
 The new implementation also takes advantage of long polling,
 and closes several issues related to using SQS as a broker.
@@ -882,7 +882,15 @@ that we now have built-in support for it.
 
 For this a new ``autoretry_for`` argument is now supported by
 the task decorators, where you can specify a tuple of exceptions
-to automatically retry for.
+to automatically retry for:
+
+.. code-block:: python
+
+    from twitter.exceptions import FailWhaleError
+
+    @app.task(autoretry_for=(FailWhaleError,))
+    def refresh_timeline(user):
+        return twitter.refresh_timeline(user)
 
 See :ref:`task-autoretry` for more information.
 
@@ -890,30 +898,26 @@ Contributed by **Dmitry Malinovsky**.
 
 .. :sha:`75246714dd11e6c463b9dc67f4311690643bff24`
 
-``Task.replace``
-~~~~~~~~~~~~~~~~
+``Task.replace`` Improvements
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Task.replace changed, removes Task.replace_in_chord.
+- ``self.replace(signature)`` can now replace any task, chord or group,
+  and the signature to replace with can be a chord, group or any other
+  type of signature.
 
-The two methods had almost the same functionality, but the old
-``Task.replace`` would force the new task to inherit the
-callbacks/errbacks of the existing task.
+- No longer inherits the callbacks and errbacks of the existing task.
 
-If you replace a node in a tree, then you wouldn't expect the new node to
-inherit the children of the old node, so this seems like unexpected
-behavior.
+    If you replace a node in a tree, then you wouldn't expect the new node to
+    inherit the children of the old node.
 
-So ``self.replace(sig)`` now works for any task, in addition ``sig`` can now
-be a group.
+- ``Task.replace_in_chord`` has been removed, use ``.replace`` instead.
 
-Groups are automatically converted to a chord, where the callback
-will "accumulate" the results of the group tasks.
+- If the replacement is a group, that group will be automatically converted
+  to a chord, where the callback "accumulates" the results of the group tasks.
 
-A new built-in task (`celery.accumulate` was added for this purpose)
+    A new built-in task (`celery.accumulate` was added for this purpose)
 
 Contributed by **Steeve Morin**, and **Ask Solem**.
-
-Closes #817
 
 Remote Task Tracebacks
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -1124,7 +1128,6 @@ See :ref:`beat-solar` for more information.
 
 Contributed by **Mark Parncutt**.
 
-
 Result Backends
 ---------------
 
@@ -1132,7 +1135,7 @@ RPC Result Backend matured
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Lots of bugs in the previously experimental RPC result backend have been fixed
-and we now consider it production ready.
+and can now be considered to production use.
 
 Contributed by **Ask Solem**, **Morris Tweed**.
 
@@ -1208,6 +1211,15 @@ This package is fully Python 3 compliant just as this backend is:
 
 That installs the required package to talk to Consul's HTTP API from Python.
 
+You can also specify consul as an extension in your dependency on Celery:
+
+.. code-block:: console
+
+    $ pip install celery[consul]
+
+See :ref:`bundles` for more information.
+
+
 Contributed by **Wido den Hollander**.
 
 Brand new Cassandra result backend
@@ -1219,12 +1231,30 @@ library is replacing the old result backend using the older
 
 See :ref:`conf-cassandra-result-backend` for more information.
 
+To depend on Celery with Cassandra as the result backend use:
+
+.. code-block:: console
+
+    $ pip install celery[cassandra]
+
+You can also combine multiple extension requirements,
+please see :ref:`bundles` for more information.
+
 .. # XXX What changed?
 
 New Elasticsearch result backend introduced
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 See :ref:`conf-elasticsearch-result-backend` for more information.
+
+To depend on Celery with Elasticsearch as the result bakend use:
+
+.. code-block:: console
+
+    $ pip install celery[elasticsearch]
+
+You can also combine multiple extension requirements,
+please see :ref:`bundles` for more information.
 
 Contributed by **Ahmet Demir**.
 
@@ -1811,15 +1841,20 @@ Result
 TaskSet
 ~~~~~~~
 
-TaskSet has been renamed to group and TaskSet will be removed in version 4.0.
+TaskSet has been removed, as it was replaced by the ``group`` construct in
+Celery 3.0.
 
-Old::
+If you have code like this:
+
+.. codeblock:: pycon
 
     >>> from celery.task import TaskSet
 
     >>> TaskSet(add.subtask((i, i)) for i in xrange(10)).apply_async()
 
-New::
+You need to replace that with:
+
+.. code-block:: pycon
 
     >>> from celery import group
     >>> group(add.s(i, i) for i in xrange(10))()
@@ -1966,7 +2001,9 @@ Changes to internal API
 
 - ``celery.utils.is_iterable`` has been removed.
 
-    Instead use::
+    Instead use:
+
+    .. code-block:: python
 
         isinstance(x, collections.Iterable)
 

@@ -738,6 +738,14 @@ in a :keyword:`try` ... :keyword:`except` statement:
         except FailWhaleError as exc:
             raise div.retry(exc=exc, max_retries=5)
 
+If you want to automatically retry on any error, simply use:
+
+.. code-block:: python
+
+    @app.task(autoretry_for=(Exception,))
+    def x():
+        ...
+
 .. _task-options:
 
 List of Options
