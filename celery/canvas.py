@@ -1342,6 +1342,12 @@ class chord(Signature):
         if app.conf.task_always_eager:
             return self.apply(args, kwargs,
                               body=body, task_id=task_id, **options)
+        if len(self.tasks) == 1:
+            # chord([A], B) can be optimized as A | B
+            # - Issue #3323
+            return (self.tasks[0].set(task_id=task_id) | body).apply_async(
+                args, kwargs, **options)
+        # chord([A, B, ...], C)
         return self.run(tasks, body, args, task_id=task_id, **options)
 
     def apply(self, args=(), kwargs={}, propagate=True, body=None, **options):
