@@ -419,7 +419,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         # execute first task in chain
                         chain = task_request.chain
                         if chain:
-                            signature(chain.pop(), app=app).apply_async(
+                            _chsig = signature(chain.pop(), app=app)
+                            _chsig.apply_async(
                                 (retval,), chain=chain,
                                 parent_id=uuid, root_id=root_id,
                             )
