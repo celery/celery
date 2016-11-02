@@ -570,6 +570,16 @@ upgrade to 4.0:
         'fanout_prefix': True,
     }
 
+Redis Priorities Reversed
+-------------------------
+
+Priority 0 is now lowest, 9 is highest.
+
+This change was made to make priority support consistent with how
+it works in AMQP.
+
+Contributed by **Alex Koshelev**.
+
 Django: Auto-discover now supports Django app configurations
 ------------------------------------------------------------
 
@@ -855,6 +865,47 @@ the intent of the required connection.
             with app.connection_or_acquire(connection) as connection:
                 ...
 
+RabbitMQ queue extensions support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Queue declarations can now set a message TTL and queue expiry time directly,
+by using the ``message_ttl`` and ``expires`` arguments
+
+New arguments have been added to :class:`~kombu.Queue` that lets
+you directly and conveniently configure RabbitMQ queue extensions
+in queue declarations:
+
+- ``Queue(expires=20.0)``
+
+    Set queue expiry time in float seconds.
+
+    See :attr:`kombu.Queue.expires`.
+
+- ``Queue(message_ttl=30.0)``
+
+    Set queue message time-to-live float seconds.
+
+    See :attr:`kombu.Queue.message_ttl`.
+
+- ``Queue(max_length=1000)``
+
+    Set queue max length (number of messages) as int.
+
+    See :attr:`kombu.Queue.max_length`.
+
+- ``Queue(max_length_bytes=1000)``
+
+    Set queue max length (message size total in bytes) as int.
+
+    See :attr:`kombu.Queue.max_length_bytes`.
+
+- ``Queue(max_priority=10)``
+
+    Declare queue to be a priority queue that routes messages
+    based on the ``priority`` field of the message.
+
+    See :attr:`kombu.Queue.max_priority`.
+
 Amazon SQS transport now officially supported
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -870,6 +921,21 @@ Apache QPid transport now officially supported
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Contributed by **Brian Bouterse**.
+
+Redis: Support for Sentinel
+---------------------------
+
+You can point the connection to a list of sentinel URLs like:
+
+.. code-block:: text
+
+    sentinel://0.0.0.0:26379;sentinel://0.0.0.0:26380/...
+
+where each sentinel is separated by a `;`. Multiple sentinels are handled
+by :class:`kombu.Connection` constructor, and placed in the alternative
+list of servers to connect to in case of connection failure.
+
+Contributed by **Sergey Azovskov**, and **Lorenzo Mancini**.
 
 Tasks
 -----
@@ -1065,6 +1131,12 @@ to fix some long outstanding issues.
 
     See :ref:`guide-canvas` for more examples.
 
+- ``chain(a, b, c)`` now works the same as ``a | b | c``.
+
+    This means chain may no longer return an instance of ``chain``,
+    instead it may optimize the workflow so that e.g. two groups
+    chained together becomes one group.
+
 - Now unrolls groups within groups into a single group (Issue #1509).
 - chunks/map/starmap tasks now routes based on the target task
 - chords and chains can now be immutable.
@@ -1098,6 +1170,23 @@ to fix some long outstanding issues.
   to chord (Issue #2922).
 
 - Chords now properly sets ``result.parent`` links.
+
+- ``chunks``/``map``/``starmap`` are now routed based on the target task.
+
+- ``Signature.link`` now works when argument is scalar (not a list)
+    (Issue #2019).
+
+- ``group()`` now properly forwards keyword arguments (Issue #3426).
+
+    Fix contributed by **Samuel Giffard**.
+
+- A ``chord`` where the header group only consists of a single task
+  is now turned into a simple chain.
+
+- Passing a ``link`` argument to ``group.apply_async()`` now raises an error
+  (Issue #3508).
+
+- ``chord | sig`` now attaches to the chord callback (Issue #3356).
 
 Periodic Tasks
 --------------
@@ -1314,6 +1403,12 @@ Tasks
 
     Fix contributed by **Colin McIntosh**.
 
+- The default routing key and exchange name is now taken from the
+  :setting:`task_default_queue` setting.
+
+    This means that to change the name of the default queue, you now
+    only have to set a single setting.
+
 - New :setting:`task_reject_on_worker_lost` setting, and
   :attr:`~@Task.reject_on_worker_lost` task attribute decides what happens
   when the child worker process executing a late ack task is terminated.
@@ -1411,8 +1506,16 @@ App
   returns the task that's currently being worked on (or :const:`None`).
   (Issue #2100).
 
+Logging
+~~~~~~~
+
+- :func:`~celery.utils.log.get_task_logger` now raises an exception
+  if trying to use the name "celery" or "celery.task" (Issue #3475).
+
 Execution Pools
 ~~~~~~~~~~~~~~~
+
+- **Eventlet/Gevent**: now enables AMQP heartbeat (Issue #3338).
 
 - **Eventlet/Gevent**: Fixed race condition leading to "simultaneous read"
   errors (Issue #2812).
@@ -1428,14 +1531,73 @@ Execution Pools
 
     Contributed by **Alexander Oblovatniy**.
 
+Testing
+-------
+
+- Celery is now a :pypi:`pytest` plugin, including fixtures
+  useful for unit and integration testing.
+
+    See the :ref:`testing user guide <testing>` for more information.
+
 Transports
 ~~~~~~~~~~
+
+- ``amqps://`` can now be specified to require SSL.
 
 - **Redis Transport**: The Redis transport now supports the
   :setting:`broker_use_ssl` option.
 
+    Contributed by **Robert Kolba**.
+
+- JSON serializer now calls ``obj.__json__`` for unsupported types.
+
+    This means you can now define a ``__json__`` method for custom
+    types that can be reduced down to a built-in json type.
+
+    Example:
+
+    .. code-block:: python
+
+        class Person:
+            first_name = None
+            last_name = None
+            address = None
+
+            def __json__(self):
+                return {
+                    'first_name': self.first_name,
+                    'last_name': self.last_name,
+                    'address': self.address,
+                }
+
+- JSON serializer now handles datetimes, Django promise, UUID and Decimal.
+
+- New ``Queue.consumer_arguments`` can be used for the ability to
+  set consumer priority via ``x-priority``.
+
+  See https://www.rabbitmq.com/consumer-priority.html
+
+  Example:
+
+  .. code-block:: python
+
+        consumer = Consumer(channel, consumer_arguments={'x-priority': 3})
+
+- Queue/Exchange: ``no_declare`` option added (also enabled for
+  internal amq. exchanges).
+
 Programs
 ~~~~~~~~
+
+- Celery is now using :mod:`argparse`, instead of :mod:`optparse`.
+
+- All programs now disable colors if the controlling terminal is not a TTY.
+
+- :program:`celery worker`: The ``-q`` argument now disables the startup
+  banner.
+
+- :program:`celery worker`: The "worker ready" message is now logged
+  using severity info, instead of warn.
 
 - :program:`celery multi`: ``%n`` format for is now synonym with
   ``%N`` to be consistent with :program:`celery worker`.
@@ -1468,6 +1630,62 @@ Programs
   :option:`--prefetch-multiplier <celery worker --prefetch-multiplier>` option.
 
     Contributed by **Mickaël Penhard**.
+
+- The ``--loader`` argument is now always effective even if an app argument is
+  set (Issue #3405).
+
+- inspect/control now takes commands from registry
+
+    This means user remote-control commands can also be used from the
+    command-line.
+
+    Note that you need to specify the arguments/and type of arguments
+    for the arguments to be correctly passed on the command-line.
+
+    There are now two decorators, which use depends on the type of
+    command: `@inspect_command` + `@control_command`:
+
+    .. code-block:: python
+
+        from celery.worker.control import control_command
+
+        @control_command(
+            args=[('n', int)]
+            signature='[N=1]',
+        )
+        def something(state, n=1, **kwargs):
+            ...
+
+    Here ``args`` is a list of args supported by the command.
+    The list must contain tuples of ``(argument_name, type)``.
+
+    ``signature`` is just the command-line help used in e.g.
+    ``celery -A proj control --help``.
+
+    Commands also support `variadic` arguments, which means that any
+    arguments left over will be added to a single variable.  Here demonstrated
+    by the ``terminate`` command which takes a signal argument and a variable
+    number of task_ids:
+
+    .. code-block:: python
+
+        from celery.worker.control import control_command
+
+        @control_command(
+            args=[('signal', str)],
+            signature='<signal> [id1, [id2, [..., [idN]]]]',
+            variadic='ids',
+        )
+        def terminate(state, signal, ids, **kwargs):
+            ...
+
+    This command can now be called using:
+
+    .. code-block:: console
+
+        $ celery -A proj control terminate SIGKILL id1 id2 id3`
+
+    See :ref:`worker-custom-control-commands` for more information.
 
 Worker
 ~~~~~~
@@ -1512,6 +1730,11 @@ Worker
 
     Contributed by **Alan Justino**.
 
+- The :signal:`worker_shutdown` signal is now always called during shutdown.
+
+    Previously it would not be called if the worker instance was collected
+    by gc first.
+
 - Worker now only starts the remote control command consumer if the
   broker transport used actually supports them.
 
@@ -1519,6 +1742,9 @@ Worker
   (Issue #2005).
 
 - Now preserves exit code (Issue #2024).
+
+- Now rejects messages with an invalid ETA value (instead of ack, which means
+  they will be sent to the dead-letter exchange if one is configured).
 
 - Fixed crash when the ``-purge`` argument was used.
 
@@ -1541,6 +1767,12 @@ Worker
 
     Fix contributed by **Nat Williams**.
 
+- New :setting:`control_queue_ttl` and :setting:`control_queue_expires`
+  settings now enables you to configure remote control command
+  message TTLs, and queue expiry time.
+
+    Contributed by **Alan Justino**.
+
 - New :data:`celery.worker.state.requests` enables O(1) loookup
   of active/reserved tasks by id.
 
@@ -1551,6 +1783,30 @@ Worker
 - Fixed typo ``options_list`` -> ``option_list``.
 
     Fix contributed by **Greg Wilbur**.
+
+- Some worker command-line arguments and ``Worker()`` class arguments have
+  been renamed for consistency.
+
+    All of these have aliases for backward compatibility.
+
+    - ``--send-events`` -> ``--task-events``
+
+    - ``--schedule`` -> ``--schedule-filename``
+
+    - ``--maxtasksperchild`` -> ``--max-tasks-per-child``
+
+    - ``Beat(scheduler_cls=)`` -> ``Beat(scheduler=)``
+
+    - ``Worker(send_events=True)`` -> ``Worker(task_events=True)``
+
+    - ``Worker(task_time_limit=)`` -> ``Worker(time_limit=``)
+
+    - ``Worker(task_soft_time_limit=)`` -> ``Worker(soft_time_limit=)``
+
+    - ``Worker(state_db=)`` -> ``Worker(statedb=)``
+
+    - ``Worker(working_directory=)`` -> ``Worker(workdir=)``
+
 
 Debugging Utilities
 ~~~~~~~~~~~~~~~~~~~
@@ -1592,6 +1848,9 @@ Events
     The default is 5 seconds, but can be changed using the
     :setting:`event_queue_ttl` setting.
 
+- ``Task.send_event`` now automatically retries sending the event
+  on connection failure, according to the task publish retry settings.
+
 - Event monitors now sets the :setting:`event_queue_expires`
   setting by default.
 
@@ -1609,18 +1868,6 @@ Events
 
 - ``State.tasks_by_type`` and ``State.tasks_by_worker`` can now be
   used as a mapping for fast access to this information.
-
-Canvas
-~~~~~~
-
-- ``chunks``/``map``/``starmap`` are now routed based on the target task.
-
-- ``Signature.link`` now works when argument is scalar (not a list)
-    (Issue #2019).
-
-- ``group()`` now properly forwards keyword arguments (Issue #3426).
-
-    Fix contributed by **Samuel Giffard**.
 
 Deployment
 ~~~~~~~~~~
@@ -1645,7 +1892,7 @@ Deployment
 Result Backends
 ~~~~~~~~~~~~~~~
 
-- Redis: Now has a default socket timeout of 5 seconds.
+- Redis: Now has a default socket timeout of 120 seconds.
 
     The default can be changed using the new :setting:`redis_socket_timeout`
     setting.
@@ -1658,6 +1905,10 @@ Result Backends
   wasn't deserialized properly with the json serializer (Issue #2518).
 
     Fix contributed by **Allard Hoeve**.
+
+- CouchDB: The backend used to double-json encode results.
+
+    Fix contributed by **Andrew Stewart**.
 
 - CouchDB: Fixed typo causing the backend to not be found
   (Issue #3287).
@@ -1690,17 +1941,24 @@ Documentation Improvements
 Contributed by:
 
 - Adam Chainz
+- Amir Rustamzadeh
 - Arthur Vuillard
 - Batiste Bieler
+- Berker Peksag
+- Bryce Groff
 - Daniel Devine
 - Edward Betts
 - Jason Veatch
 - Jeff Widman
+- Maciej Obuchowski
 - Manuel Kaufmann
 - Maxime Beauchemin
 - Mitchel Humpherys
+- Pavlo Kapyshin
+- Pierre Fersing
 - Rik
 - Tayfun Sen
+- Wieland Hoffmann
 
 Reorganization, Deprecations, and Removals
 ==========================================

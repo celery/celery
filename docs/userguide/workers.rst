@@ -1107,6 +1107,18 @@ a worker using :program:`celery events`/:program:`celerymon`.
 Writing your own remote control commands
 ========================================
 
+There are two types of remote control commands:
+
+- Inspect command
+
+    Does not have side effects, will usually just return some value
+    found in the worker, like the list of currently registered tasks,
+    the list of active tasks, etc.
+
+- Control command
+
+    Performs side effects, like adding a new queue to consume from.
+
 Remote control commands are registered in the control panel and
 they take a single argument: the current
 :class:`~celery.worker.control.ControlDispatch` instance.
@@ -1117,9 +1129,42 @@ Here's an example control command that increments the task prefetch count:
 
 .. code-block:: python
 
-    from celery.worker.control import Panel
+    from celery.worker.control import control_command
 
-    @Panel.register
+    @control_command(
+        args=[('n', int)],
+        signature='[N=1]',  # <- used for help on the command-line.
+    )
     def increase_prefetch_count(state, n=1):
         state.consumer.qos.increment_eventually(n)
         return {'ok': 'prefetch count incremented'}
+
+Make sure you add this code to a module that is imported by the worker:
+this could be the same module as where your Celery app is defined, or you
+can add the module to the :setting:`imports` setting.
+
+Restart the worker so that the control command is registered, and now you
+can call your command using the :program:`celery control` utility:
+
+.. code-block:: console
+
+    $ celery -A proj control increase_prefetch_count 3
+
+You can also add actions to the :program:`celery inspect` program,
+for example one that reads the current prefetch count:
+
+.. code-block:: python
+
+    from celery.worker.control import inspect_command
+
+    @inspect_command
+    def current_prefetch_count(state):
+    return {'prefetch_count': state.consumer.qos.value}
+
+
+After restarting the worker you can now query this value using the
+:program:`celery inspect` program:
+
+.. code-block:: console
+
+    $ celery -A proj inspect current_prefetch_count
