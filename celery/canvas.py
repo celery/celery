@@ -491,7 +491,8 @@ class Signature(dict):
         if isinstance(self, group):
             if isinstance(other, group):
                 # group() | group() -> single group
-                return group(itertools.chain(self.tasks, other.tasks), app=self.app)
+                return group(
+                    itertools.chain(self.tasks, other.tasks), app=self.app)
             # group() | task -> chord
             if len(self.tasks) == 1:
                 # group(ONE.s()) | other -> ONE.s() | other
@@ -630,53 +631,6 @@ class Signature(dict):
 @Signature.register_type(name='chain')
 @python_2_unicode_compatible
 class _chain(Signature):
-    """Chain tasks together.
-
-    Each tasks follows one another,
-    by being applied as a callback of the previous task.
-
-    Note:
-        If called with only one argument, then that argument must
-        be an iterable of tasks to chain: this allows us
-        to use generator expressions.
-
-    Example:
-        This is effectively :math:`((2 + 2) + 4)`:
-
-        .. code-block:: pycon
-
-            >>> res = chain(add.s(2, 2), add.s(4))()
-            >>> res.get()
-            8
-
-        Calling a chain will return the result of the last task in the chain.
-        You can get to the other tasks by following the ``result.parent``'s:
-
-        .. code-block:: pycon
-
-            >>> res.parent.get()
-            4
-
-        Using a generator expression:
-
-        .. code-block:: pycon
-
-            >>> lazy_chain = chain(add.s(i) for i in range(10))
-            >>> res = lazy_chain(3)
-
-    Arguments:
-        *tasks (Signature): List of task signatures to chain.
-            If only one argument is passed and that argument is
-            an iterable, then that'll be used as the list of signatures
-            to chain instead.  This means that you can use a generator
-            expression.
-
-    Returns:
-        ~celery.chain: A lazy signature that can be called to apply the first
-            task in the chain.  When that task succeeed the next task in the
-            chain is applied, and so on.
-    """
-
     tasks = _getitem_property('kwargs.tasks', 'Tasks in chain.')
 
     @classmethod
@@ -886,16 +840,63 @@ class _chain(Signature):
 
 
 class chain(_chain):
+    """Chain tasks together.
+
+    Each tasks follows one another,
+    by being applied as a callback of the previous task.
+
+    Note:
+        If called with only one argument, then that argument must
+        be an iterable of tasks to chain: this allows us
+        to use generator expressions.
+
+    Example:
+        This is effectively :math:`((2 + 2) + 4)`:
+
+        .. code-block:: pycon
+
+            >>> res = chain(add.s(2, 2), add.s(4))()
+            >>> res.get()
+            8
+
+        Calling a chain will return the result of the last task in the chain.
+        You can get to the other tasks by following the ``result.parent``'s:
+
+        .. code-block:: pycon
+
+            >>> res.parent.get()
+            4
+
+        Using a generator expression:
+
+        .. code-block:: pycon
+
+            >>> lazy_chain = chain(add.s(i) for i in range(10))
+            >>> res = lazy_chain(3)
+
+    Arguments:
+        *tasks (Signature): List of task signatures to chain.
+            If only one argument is passed and that argument is
+            an iterable, then that'll be used as the list of signatures
+            to chain instead.  This means that you can use a generator
+            expression.
+
+    Returns:
+        ~celery.chain: A lazy signature that can be called to apply the first
+            task in the chain.  When that task succeeed the next task in the
+            chain is applied, and so on.
+    """
+
     # could be function, but must be able to reference as :class:`chain`.
 
-    def __new__(self, *tasks, **kwargs):
+    def __new__(cls, *tasks, **kwargs):
         # This forces `chain(X, Y, Z)` to work the same way as `X | Y | Z`
         if not kwargs and tasks:
             if len(tasks) == 1 and is_list(tasks[0]):
                 # ensure chain(generator_expression) works.
                 tasks = tasks[0]
             return reduce(operator.or_, tasks)
-        return super(chain, self).__new__(self, *tasks, **kwargs)
+        return super(chain, cls).__new__(cls, *tasks, **kwargs)
 
 
 class _basemap(Signature):
