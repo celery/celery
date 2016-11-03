@@ -882,7 +882,8 @@ class test_WorkController(ConsumerCase):
             args=[4, 8, 10], kwargs={},
         )
         task = Request(m, app=self.app)
-        worker._process_task(task)
+        with pytest.raises(KeyError):
+            worker._process_task(task)
         worker.pool.stop()
 
     def test_start_catches_base_exceptions(self):

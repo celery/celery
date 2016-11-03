@@ -195,11 +195,11 @@ class test_asynloop:
         on_task(msg)
         x.on_unknown_message.assert_called_with(msg.decode(), msg)
 
-    def test_on_task_not_registered(self):
+    def test_on_task_pool_raises(self):
         x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
-        exc = strategy.side_effect = KeyError(self.add.name)
-        on_task(msg)
-        x.on_invalid_task.assert_called_with(None, msg, exc)
+        exc = strategy.side_effect = ValueError()
+        with pytest.raises(ValueError):
+            on_task(msg)
 
     def test_on_task_InvalidTaskError(self):
         x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
