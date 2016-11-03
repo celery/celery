@@ -225,14 +225,14 @@ class Persistent(object):
 
     def _merge_clock(self, d):
         if self.clock:
-            d[b'clock'] = self.clock.adjust(d.get(b'clock') or 0)
+            d[str(b'clock')] = self.clock.adjust(d.get(str(b'clock')) or 0)
 
     def _merge_revoked(self, d):
         try:
-            self._merge_revoked_v3(d[b'zrevoked'])
+            self._merge_revoked_v3(d[str(b'zrevoked')])
         except KeyError:
             try:
-                self._merge_revoked_v2(d.pop(b'revoked'))
+                self._merge_revoked_v2(d.pop(str(b'revoked')))
             except KeyError:
                 pass
         # purge expired items at boot
