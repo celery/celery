@@ -561,9 +561,6 @@ class Consumer(object):
                     return on_invalid_task(payload, message, exc)
                 except MemoryError:
                     raise
-                except Exception as exc:  # pylint: disable=broad-except
-                    # XXX handle as internal error?
-                    return on_invalid_task(payload, message, exc)
 
         return on_task_received
 

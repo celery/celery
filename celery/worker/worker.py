@@ -230,9 +230,6 @@ class WorkController(object):
                 self._quick_release()   # Issue 877
             except AttributeError:
                 pass
-        except Exception as exc:
-            logger.critical('Internal error: %r\n%s',
-                            exc, traceback.format_exc(), exc_info=True)
 
     def signal_consumer_close(self):
         try:
