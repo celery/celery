@@ -197,7 +197,7 @@ class test_asynloop:
 
     def test_on_task_pool_raises(self):
         x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
-        exc = strategy.side_effect = ValueError()
+        strategy.side_effect = ValueError()
         with pytest.raises(ValueError):
             on_task(msg)
 
