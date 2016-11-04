@@ -41,7 +41,7 @@ What do I need?
     :subtitle: Celery version 4.0 runs on
 
     - Python ❨2.7, 3.4, 3.5❩
-    - PyPy ❨5.1, 2.4❩
+    - PyPy ❨5.4, 5.5❩
 
     This is the last version to support Python 2.7,
     and from the next version (Celery 5.x) Python 3.5 or newer is required.

@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp|
 
-:Version: 4.0.0rc7 (0today8)
+:Version: 4.0.0 (0today8)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: https://github.com/celery/celery/
@@ -43,7 +43,7 @@ What do I need?
 Celery version 4.0 runs on,
 
 - Python (2.7, 3.4, 3.5)
-- PyPy (5.1, 2.4)
+- PyPy (5.4, 5.5)
 
 
 This is the last version to support Python 2.7,
