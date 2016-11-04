@@ -170,7 +170,8 @@ class Task(object):
     #: Enable argument checking.
     #: You can set this to false if you don't want the signature to be
     #: checked when calling the task.
-    typing = True
+    #: Defaults to :attr:`app.strict_typing <@Celery.strict_typing>`.
+    typing = None
 
     #: Maximum number of retries before giving up.  If set to :const:`None`,
     #: it will **never** stop retrying.
@@ -310,6 +311,9 @@ class Task(object):
         cls._app = app
         conf = app.conf
         cls._exec_options = None  # clear option cache
+
+        if cls.typing is None:
+            cls.typing = app.strict_typing
 
         for attr_name, config_name in cls.from_config:
             if getattr(cls, attr_name, None) is None:

@@ -127,6 +127,9 @@ Step 3: Read the important notes in this document
 Make sure you are not affected by any of the important upgrade notes
 mentioned in the following section.
 
+An especially important note is that Celery now checks the arguments
+you send to a task by matching it to the signature (:ref:`v400-typing`).
+
 Step 4: Upgrade to Celery 4.0
 -----------------------------
 
@@ -516,6 +519,8 @@ general behavior, and then using the task decorator to realize the task:
 This change also means that the ``abstract`` attribute of the task
 no longer has any effect.
 
+.. _v400-typing:
+
 Task argument checking
 ----------------------
 
@@ -548,6 +553,13 @@ You can disable the argument checking for any task by setting its
     >>> @app.task(typing=False)
     ... def add(x, y):
     ...     return x + y
+
+Or if you would like to disable this completely for all tasks
+you can pass ``strict_typing=False`` when creating the app:
+
+.. code-block::
+
+    app = Celery(..., strict_typing=False)
 
 Redis Events not backward compatible
 ------------------------------------

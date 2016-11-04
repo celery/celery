@@ -293,6 +293,16 @@ class test_tasks(TasksCase):
         add.delay(1, kw=2)
         add.delay(1, 2, foobar=3)
 
+    def test_typing__disabled_by_app(self):
+        with self.Celery(set_as_current=False, strict_typing=False) as app:
+            @app.task()
+            def add(x, y, kw=1):
+                pass
+            assert not add.typing
+            add.delay(1)
+            add.delay(1, kw=2)
+            add.delay(1, 2, foobar=3)
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_unpickle_task(self):
         import pickle
