@@ -46,7 +46,6 @@ Preface
 
 XXX To be written
 
-
 Wall of Contributors
 --------------------
 
@@ -92,9 +91,9 @@ Randy Barlow, Raphael Michel, Rémy Léone, Robert Coup, Robert Kolba,
 Rockallite Wulf, Rodolfo Carvalho, Roger Hu, Romuald Brunet, Rongze Zhu,
 Ross Deane, Ryan Luckie, Rémy Greinhofer, Samuel Giffard, Samuel Jaillet,
 Sergey Azovskov, Sergey Tikhonov, Seungha Kim, Simon Peeters,
-Spencer E. Olson, Srinivas Garlapati, Stephen Milner, Steve Peak, Stuart Axon,
-Sukrit Khera, Tadej Janež, Taha Jahangir, Takeshi Kanemoto, Tayfun Sen,
-Tewfik Sadaoui, Thomas French, Thomas Grainger, Tomas Machalek,
+Spencer E. Olson, Srinivas Garlapati, Stephen Milner, Steve Peak, Steven Sklar,
+Stuart Axon, Sukrit Khera, Tadej Janež, Taha Jahangir, Takeshi Kanemoto,
+Tayfun Sen, Tewfik Sadaoui, Thomas French, Thomas Grainger, Tomas Machalek,
 Tobias Schottdorf, Tocho Tochev, Valentyn Klindukh, Vic Kumar,
 Vladimir Bolshakov, Vladimir Gorbunov, Wayne Chang, Wieland Hoffmann,
 Wido den Hollander, Wil Langford, Will Thompson, William King, Yury Selivanov,
@@ -1985,6 +1984,7 @@ Contributed by:
 - Pavlo Kapyshin
 - Pierre Fersing
 - Rik
+- Steven Sklar
 - Tayfun Sen
 - Wieland Hoffmann
 
