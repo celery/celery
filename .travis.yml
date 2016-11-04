@@ -43,6 +43,9 @@ before_install:
             virtualenv --python="$PYENV_ROOT/versions/pypy-$PYPY_VERSION/bin/python" "$HOME/virtualenvs/pypy-$PYPY_VERSION"
             source "$HOME/virtualenvs/pypy-$PYPY_VERSION/bin/activate"
           fi
+after_success:
+  - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml
+  - .tox/$TRAVIS_PYTHON_VERSION/bin/codecov -e TOXENV
 install: travis_retry pip install -U tox
 script: tox -v -- -v
 notifications:
