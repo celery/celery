@@ -142,7 +142,7 @@ Step 1: Upgrade to Celery 3.1.25
 
 If you haven't already, the first step is to upgrade to Celery 3.1.25.
 
-This version adds foreward compatibility to the new message protocol,
+This version adds forward compatibility to the new message protocol,
 so that you can incrementally upgrade from 3.1 to 4.0.
 
 Deploy the workers first by upgrading to 3.1.25, this means these
@@ -322,7 +322,7 @@ attempting to use them will raise an exception:
 
 - The experimental ``threads`` pool is no longer supported and has been removed.
 
-- The force_execv feature is no longer supported.
+- The ``force_execv`` feature is no longer supported.
 
     The ``celery worker`` command now ignores the ``--no-execv``,
     ``--force-execv``, and the ``CELERYD_FORCE_EXECV`` setting.
@@ -1119,8 +1119,8 @@ lets you attach callbacks to when tasks finish:
 
     time.sleep(3)  # run gevent event loop for a while.
 
-Demonstrated using gevent here, but really this is an API that's more useful
-in callback-based event loops like :pypi:`twisted`, or :pypi:`tornado`.
+Demonstrated using :pypi:`gevent` here, but really this is an API that's more
+useful in callback-based event loops like :pypi:`twisted`, or :pypi:`tornado`.
 
 New Task Router API
 ~~~~~~~~~~~~~~~~~~~
@@ -1532,7 +1532,7 @@ Beat
     When occurrence can never be reached (example, April, 31th), trying
     to reach the next occurrence would trigger an infinite loop.
 
-    Try fixing that by raising a RuntimeError after 2,000 iterations
+    Try fixing that by raising a :exc:`RuntimeError` after 2,000 iterations
 
     (Also added a test for crontab leap years in the process)
 
@@ -1628,7 +1628,7 @@ Transports
                     'address': self.address,
                 }
 
-- JSON serializer now handles datetimes, Django promise, UUID and Decimal.
+- JSON serializer now handles datetime's, Django promise, UUID and Decimal.
 
 - New ``Queue.consumer_arguments`` can be used for the ability to
   set consumer priority via ``x-priority``.
@@ -1934,7 +1934,7 @@ Deployment
   :envvar:`CELERY_SU` and :envvar:`CELERYD_SU_ARGS` environment variables
   to set the path and arguments for :command:`su` (:manpage:`su(1)`).
 
-- Generic init-scripts now better support FreBSD and other BSD
+- Generic init-scripts now better support FreeBSD and other BSD
   systems by searching :file:`/usr/local/etc/` for the configuration file.
 
     Contributed by **Taha Jahangir**.
@@ -1987,7 +1987,7 @@ Result Backends
   engine options when using NullPool (Issue #1930).
 
 - SQLAlchemy result backend: Now sets max char size to 155 to deal
-  with brain damaged MySQL unicode implementation (Issue #1748).
+  with brain damaged MySQL Unicode implementation (Issue #1748).
 
 - **General**: All Celery exceptions/warnings now inherit from common
   :class:`~celery.exceptions.CeleryError`/:class:`~celery.exceptions.CeleryWarning`.
