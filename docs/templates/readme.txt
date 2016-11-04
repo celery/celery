@@ -1,6 +1,6 @@
 .. image:: http://docs.celeryproject.org/en/master/_images/celery-banner.png
 
-|build-status| |coverage| |license| |wheel| |pyversion| |pyimp|
+|build-status| |license| |wheel| |pyversion| |pyimp|
 
 .. include:: ../includes/introduction.txt
 
