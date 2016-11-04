@@ -1,4 +1,5 @@
 .. image:: http://docs.celeryproject.org/en/master/_images/celery-banner.png
+    :width: 120
 
 |build-status| |license| |wheel| |pyversion| |pyimp|
 
