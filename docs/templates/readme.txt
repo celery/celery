@@ -1,4 +1,4 @@
-.. image:: http://cloud.github.com/downloads/celery/celery/celery-banner.png
+.. image:: http://docs.celeryproject.org/en/master/images/celery-banner.png
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp|
 
