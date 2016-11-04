@@ -1,4 +1,4 @@
-.. image:: http://cloud.github.com/downloads/celery/celery/celery-banner.png
+.. image:: http://docs.celeryproject.org/en/master/images/celery-banner.png
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp|
 
@@ -31,13 +31,11 @@ Celery is written in Python, but the protocol can be implemented in any
 language. In addition to Python there's node-celery_ for Node.js,
 and a `PHP client`_.
 
-Language interoperability can also be achieved
-by `using webhooks`_.
+Language interoperability can also be achieved by using webhooks
+in such a way that the client enqueues an URL to be requested by a worker.
 
 .. _node-celery: https://github.com/mher/node-celery
 .. _`PHP client`: https://github.com/gjedeer/celery-php
-.. _`using webhooks`:
-    http://docs.celeryproject.org/en/latest/userguide/remote-tasks.html
 
 What do I need?
 ===============
