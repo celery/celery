@@ -29,7 +29,6 @@ env:
     - TOXENV=apicheck
     - TOXENV=configcheck
     - TOXENV=pydocstyle
-    - TOXENV=cov
 before_install:
     - |
           if [ "$TOXENV" = "pypy" ]; then

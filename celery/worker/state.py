@@ -216,11 +216,11 @@ class Persistent(object):
 
     def _sync_with(self, d):
         self._revoked_tasks.purge()
-        d.update(
-            __proto__=3,
-            zrevoked=self.compress(self._dumps(self._revoked_tasks)),
-            clock=self.clock.forward() if self.clock else 0,
-        )
+        d.update({
+            b'__proto__': 3,
+            b'zrevoked': self.compress(self._dumps(self._revoked_tasks)),
+            b'clock': self.clock.forward() if self.clock else 0,
+        })
         return d
 
     def _merge_clock(self, d):
