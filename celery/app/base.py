@@ -233,7 +233,8 @@ class Celery(object):
                  amqp=None, events=None, log=None, control=None,
                  set_as_current=True, tasks=None, broker=None, include=None,
                  changes=None, config_source=None, fixups=None, task_cls=None,
-                 autofinalize=True, namespace=None, strict_typing=True, **kwargs):
+                 autofinalize=True, namespace=None, strict_typing=True,
+                 **kwargs):
         self.clock = LamportClock()
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
