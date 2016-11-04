@@ -61,7 +61,7 @@ of my employer, `Robinhood`_ (we're hiring!).
 
 Dedicated to Sebastian "Zeb" Bjørnerud (RIP),
 with special thanks to `Ty Wilkins`_, for designing our new logo,
-all the contributors who help make this happen, and my collegues
+all the contributors who help make this happen, and my colleagues
 at `Robinhood`_.
 
 .. _`Ty Wilkins`: http://tywilkins.com
