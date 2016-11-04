@@ -435,24 +435,24 @@ class PersistentScheduler(Scheduler):
         self._create_schedule()
 
         tz = self.app.conf.timezone
-        stored_tz = self._store.get(str(b'tz'))
+        stored_tz = self._store.get(str('tz'))
         if stored_tz is not None and stored_tz != tz:
             warning('Reset: Timezone changed from %r to %r', stored_tz, tz)
             self._store.clear()   # Timezone changed, reset db!
         utc = self.app.conf.enable_utc
-        stored_utc = self._store.get(str(b'utc_enabled'))
+        stored_utc = self._store.get(str('utc_enabled'))
         if stored_utc is not None and stored_utc != utc:
             choices = {True: 'enabled', False: 'disabled'}
             warning('Reset: UTC changed from %s to %s',
                     choices[stored_utc], choices[utc])
             self._store.clear()   # UTC setting changed, reset db!
-        entries = self._store.setdefault(str(b'entries'), {})
+        entries = self._store.setdefault(str('entries'), {})
         self.merge_inplace(self.app.conf.beat_schedule)
         self.install_default_entries(self.schedule)
         self._store.update({
-            str(b'__version__'): __version__,
-            str(b'tz'): tz,
-            str(b'utc_enabled'): utc,
+            str('__version__'): __version__,
+            str('tz'): tz,
+            str('utc_enabled'): utc,
         })
         self.sync()
         debug('Current schedule:\n' + '\n'.join(
@@ -461,31 +461,31 @@ class PersistentScheduler(Scheduler):
     def _create_schedule(self):
         for _ in (1, 2):
             try:
-                self._store[str(b'entries')]
+                self._store[str('entries')]
             except KeyError:
                 # new schedule db
                 try:
-                    self._store[str(b'entries')] = {}
+                    self._store[str('entries')] = {}
                 except KeyError as exc:
                     self._store = self._destroy_open_corrupted_schedule(exc)
                     continue
             else:
-                if str(b'__version__') not in self._store:
+                if str('__version__') not in self._store:
                     warning('DB Reset: Account for new __version__ field')
                     self._store.clear()   # remove schedule at 2.2.2 upgrade.
-                elif str(b'tz') not in self._store:
+                elif str('tz') not in self._store:
                     warning('DB Reset: Account for new tz field')
                     self._store.clear()   # remove schedule at 3.0.8 upgrade
-                elif str(b'utc_enabled') not in self._store:
+                elif str('utc_enabled') not in self._store:
                     warning('DB Reset: Account for new utc_enabled field')
                     self._store.clear()   # remove schedule at 3.0.9 upgrade
             break
 
     def get_schedule(self):
-        return self._store[str(b'entries')]
+        return self._store[str('entries')]
 
     def set_schedule(self, schedule):
-        self._store[str(b'entries')] = schedule
+        self._store[str('entries')] = schedule
     schedule = property(get_schedule, set_schedule)
 
     def sync(self):
