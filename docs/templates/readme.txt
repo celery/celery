@@ -1,8 +1,4 @@
-=================================
- Celery - Distributed Task Queue
-=================================
-
-.. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
+.. image:: http://cloud.github.com/downloads/celery/celery/celery-banner.png
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp|
 
