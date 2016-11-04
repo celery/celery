@@ -559,8 +559,6 @@ class Consumer(object):
                     )
                 except InvalidTaskError as exc:
                     return on_invalid_task(payload, message, exc)
-                except MemoryError:
-                    raise
 
         return on_task_received
 
