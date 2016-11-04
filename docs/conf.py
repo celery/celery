@@ -15,7 +15,7 @@ globals().update(conf.build_config(
     author_name='Ask Solem',
     copyright='2009-2016',
     publisher='Celery Project',
-    html_logo='images/celery_128.png',
+    html_logo='images/celery_512.png',
     html_favicon='images/favicon.ico',
     html_prepend_sidebars=['sidebardonations.html'],
     extra_extensions=[
