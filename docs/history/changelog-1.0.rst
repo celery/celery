@@ -1880,4 +1880,4 @@ arguments, so be sure to flush your task queue before you upgrade.
 Sphinx started sucking by removing images from _static, so we need to add
 them here into actual content to ensure they are included :-(
 
-.. image:: images/celery-banner.png
+.. image:: ../images/celery-banner.png
