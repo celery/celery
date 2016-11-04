@@ -121,7 +121,7 @@ class test_Persistent:
         p._merge_with(d)
         p.clock.adjust.assert_called_with(313)
         assert d[b'clock'] == 626
-        assert 'abc' in state.revoked
+        assert b'abc' in state.revoked
 
     def test_sync_clock_and_purge(self, p):
         passthrough = Mock()
