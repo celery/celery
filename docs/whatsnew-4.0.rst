@@ -603,7 +603,7 @@ You can disable the argument checking for any task by setting its
 Or if you would like to disable this completely for all tasks
 you can pass ``strict_typing=False`` when creating the app:
 
-.. code-block::
+.. code-block:: python
 
     app = Celery(..., strict_typing=False)
 
