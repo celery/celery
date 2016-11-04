@@ -12,7 +12,7 @@ import re
 import sys
 from collections import namedtuple
 
-SERIES = '0today8'
+SERIES = 'latentcall'
 
 __version__ = '4.0.0'
 __author__ = 'Ask Solem'

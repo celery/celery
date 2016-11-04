@@ -2,7 +2,7 @@
 
 |build-status| |license| |wheel| |pyversion| |pyimp|
 
-:Version: 4.0.0 (0today8)
+:Version: 4.0.0 (latentcall)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: https://github.com/celery/celery/
