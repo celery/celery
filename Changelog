@@ -13,12 +13,10 @@ an overview of what's new in Celery 4.0.
 
 4.0.0
 =====
-:release-date: TBA
-:status: *FROZEN*
-:branch: master
-:release-by:
+:release-date: 2016-11-04 02:00 P.M PDT
+:release-by: Ask Solem
 
-See :ref:`whatsnew-4.0` (in :file:`docs/whatsnew-4.0`).
+See :ref:`whatsnew-4.0` (in :file:`docs/whatsnew-4.0.rst`).
 
 .. _version-4.0.0rc7:
 

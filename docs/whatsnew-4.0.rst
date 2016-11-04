@@ -44,7 +44,28 @@ and also supported on PyPy.
 Preface
 =======
 
-XXX To be written
+Welcome to Celery 4!
+
+This is a massive release with over two years of changes.
+Not only does it come with many new features, but it also fixes
+a massive list of bugs, so in many ways you could call it
+our "Snow Leopard" release.
+
+The next major version of Celery will support Python 3.5 only, were
+we are planning to take advantage of the new asyncio library.
+
+This release would not have been possible without the support
+of my employer, `Robinhood`_ (we're hiring!).
+
+- Ask Solem
+
+Dedicated to Sebastian "Zeb" Bjørnerud (RIP),
+with special thanks to `Ty Wilkins`_, for designing our new logo,
+all the contributors who help make this happen, and my collegues
+at `Robinhood`_.
+
+.. _`Ty Wilkins`: http://tywilkins.com
+.. _`Robinhood`: http://robinhood.com
 
 Wall of Contributors
 --------------------
@@ -80,9 +101,9 @@ Kracekumar Ramaraju, Krzysztof Bujniewicz, Latitia M. Haskins, Len Buckens,
 Lev Berman, lidongming, Lorenzo Mancini, Lucas Wiman, Luke Pomfrey,
 Luyun Xie, Maciej Obuchowski, Manuel Kaufmann, Marat Sharafutdinov,
 Marc Sibson, Marcio Ribeiro, Marin Atanasov Nikolov, Mathieu Fenniak,
-Mark Parncutt, Maxime Beauchemin, Maxime Vdb, Mher Movsisyan, Michael Aquilina,
-Michael Duane Mooring, Michael Permana, Mickaël Penhard, Mike Attwood,
-Mitchel Humpherys, Mohamed Abouelsaoud, Morris Tweed, Morton Fox,
+Mark Parncutt, Mauro Rocco, Maxime Beauchemin, Maxime Vdb, Mher Movsisyan,
+Michael Aquilina, Michael Duane Mooring, Michael Permana, Mickaël Penhard,
+Mike Attwood, Mitchel Humpherys, Mohamed Abouelsaoud, Morris Tweed, Morton Fox,
 Môshe van der Sterre, Nat Williams, Nathan Van Gheem, Nicolas Unravel,
 Nik Nyby, Omer Katz, Omer Korner, Ori Hoch, Paul Pearce, Paulo Bu,
 Pavlo Kapyshin, Philip Garnero, Pierre Fersing, Piotr Kilczuk,
@@ -106,6 +127,12 @@ Vytis Banaitis, Zoran Pavlovic, Xin Li, 許邱翔, :github_user:`allenling`,
 :github_user:`mozillazg`, :github_user:`nokrik`, :github_user:`ocean1`,
 :github_user:`orlo666`, :github_user:`raducc`, :github_user:`wanglei`,
 :github_user:`worldexception`, :github_user:`xBeAsTx`.
+
+.. note::
+
+    This wall was automatically generated from git history,
+    so sadly it doesn't not include the people who help with more important
+    things like answering mailing-list questions.
 
 Upgrading from Celery 3.1
 =========================
@@ -223,7 +250,8 @@ Removed features
 
   The test suite is passing, and Celery seems to be working with Windows,
   but we make no guarantees as we are unable to diagnose issues on this
-  platform.
+  platform.  If you are a company requiring support on this platform,
+  please get in touch.
 
 - Jython is no longer supported.
 
@@ -242,7 +270,7 @@ Features removed for simplicity
     it's imported by the worker:
     https://github.com/celery/celery/blob/3.1/celery/task/http.py
 
-- Task no longer sends error emails.
+- Tasks no longer sends error emails.
 
     This also removes support for ``app.mail_admins``, and any functionality
     related to sending emails.
@@ -260,7 +288,7 @@ Features removed for lack of funding
 
 We announced with the 3.1 release that some transports were
 moved to experimental status, and that there'd be no official
-support for the transports, citing a lack of resources.
+support for the transports.
 
 As this subtle hint for the need of funding failed
 we've removed them completely, breaking backwards compatibility.
@@ -307,6 +335,9 @@ attempting to use them will raise an exception:
 
     Please use the ``rpc`` result backend for RPC-style calls, and a
     persistent result backend for multi-consumer results.
+
+We think most of these can be fixed without considerable effort, so if you're
+interested in getting any of these features back, please get in touch.
 
 **Now to the good news**...
 
