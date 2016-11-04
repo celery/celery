@@ -6,8 +6,8 @@ from sphinx_celery import conf
 globals().update(conf.build_config(
     'celery', __file__,
     project='Celery',
-    version_dev='4.0',
-    version_stable='3.1',
+    version_dev='5.0',
+    version_stable='4.0',
     canonical_url='http://docs.celeryproject.org',
     webdomain='celeryproject.org',
     github_project='celery/celery',
