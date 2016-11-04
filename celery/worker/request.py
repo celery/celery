@@ -367,7 +367,7 @@ class Request(object):
             )
         # (acks_late) acknowledge after result stored.
         if self.task.acks_late:
-            requeue = self.delivery_info.get('redelivered', None) is False
+            requeue = not self.delivery_info.get('redelivered')
             reject = (
                 self.task.reject_on_worker_lost and
                 isinstance(exc, WorkerLostError)
