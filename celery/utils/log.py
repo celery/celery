@@ -76,11 +76,11 @@ def logger_isa(l: logging.Logger, p: logging.Logger, max: int=1000) -> bool:
         if this == p:
             return True
         else:
-            if this in seen:
+            if id(this) in seen:
                 raise RuntimeError(
                     'Logger {0!r} parents recursive'.format(l),
                 )
-            seen.add(this)
+            seen.add(id(this))
             this = this.parent
             if not this:
                 break

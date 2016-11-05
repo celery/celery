@@ -12,7 +12,6 @@ from kombu.utils.objects import cached_property
 
 from celery import states
 from celery.exceptions import TimeoutError
-from celery.utils.threads import THREAD_TIMEOUT_MAX
 
 __all__ = [
     'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
@@ -90,7 +89,7 @@ class greenletDrainer(Drainer):
 
     def stop(self):
         self._stopped.set()
-        self._shutdown.wait(THREAD_TIMEOUT_MAX)
+        self._shutdown.wait(threading.TIMEOUT_MAX)
 
     def wait_for(self, p, wait, timeout=None):
         self.start()

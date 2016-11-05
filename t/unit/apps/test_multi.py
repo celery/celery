@@ -205,8 +205,7 @@ class test_Node:
 
     @patch('os.kill')
     def test_send__ESRCH(self, kill):
-        kill.side_effect = OSError()
-        kill.side_effect.errno = errno.ESRCH
+        kill.side_effect = ProcessLookupError()
         assert not self.node.send(9)
         kill.assert_called_with(self.node.pid, 9)
 

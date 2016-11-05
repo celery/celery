@@ -3,14 +3,15 @@
 import time
 
 from collections import (
-    Mapping, MutableMapping, MutableSet, Sequence,
+    Mapping, MutableMapping, MutableSet, Sequence as _Sequence,
     OrderedDict as _OrderedDict, deque,
 )
 from heapq import heapify, heappush, heappop
 from itertools import chain, count
 from queue import Empty
 from typing import (
-    Any, Callable, Dict, Iterable, Iterator, List, Tuple, Optional, Union,
+    Any, Callable, Dict, Iterable, Iterator,
+    List, Sequence, Tuple, Optional, Union,
 )
 
 from .functional import first, uniq
@@ -160,7 +161,7 @@ class ChainMap(MutableMapping):
     maps = None       # type: Sequence[Mapping]
 
     def __init__(self, *maps: Sequence[Mapping],
-                 key_t: Optional[KeyCallback], **kwargs) -> None:
+                 key_t: KeyCallback = None, **kwargs) -> None:
         maps = list(maps or [{}])
         self.__dict__.update(
             key_t=key_t,
@@ -659,7 +660,7 @@ class Messagebuffer(Evictable):
     @property
     def _evictcount(self) -> int:
         return len(self)
-Sequence.register(Messagebuffer)
+_Sequence.register(Messagebuffer)
 
 
 class BufferMap(OrderedDict, Evictable):
