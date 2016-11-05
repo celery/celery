@@ -1,6 +1,5 @@
 """The ``celery purge`` program, used to delete messages from queues."""
 from __future__ import absolute_import, unicode_literals
-from celery.five import keys
 from celery.bin.base import Command
 from celery.utils import text
 
@@ -40,7 +39,7 @@ class purge(Command):
     def run(self, force=False, queues=None, exclude_queues=None, **kwargs):
         queues = set(text.str_to_list(queues or []))
         exclude = set(text.str_to_list(exclude_queues or []))
-        names = (queues or set(keys(self.app.amqp.queues))) - exclude
+        names = (queues or set(self.app.amqp.queues.keys())) - exclude
         qnum = len(names)
 
         messages = None

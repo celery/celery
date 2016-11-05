@@ -2,7 +2,6 @@
 from __future__ import absolute_import, unicode_literals
 from kombu.utils.json import dumps
 from kombu.utils.objects import cached_property
-from celery.five import items, string_t
 from celery.bin.base import Command
 from celery.platforms import EX_UNAVAILABLE, EX_USAGE
 from celery.utils import text
@@ -95,7 +94,7 @@ class _RemoteControl(Command):
         self._ensure_fanout_supported()
 
         timeout = timeout or meta.default_timeout
-        if destination and isinstance(destination, string_t):
+        if destination and isinstance(destination, str):
             destination = [dest.strip() for dest in destination.split(',')]
 
         replies = self.call(
@@ -152,7 +151,7 @@ class _RemoteControl(Command):
         app.loader.import_default_modules()
 
         return {
-            name: info for name, info in items(Panel.meta)
+            name: info for name, info in Panel.meta.items()
             if info.type == cls.control_group and info.visible
         }
 

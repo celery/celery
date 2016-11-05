@@ -83,8 +83,7 @@ class Step(metaclass=StepType):
         pass
 
     def include_if(self, parent):
-        """An optional predicate that decides whether this
-        step should be created."""
+        """Return True if bootstep should be included."""
         return self.enabled
 
     def instantiate(self, name, *args, **kwargs):
@@ -114,6 +113,7 @@ class Step(metaclass=StepType):
 
 
 class StartStopStep(Step):
+    """Bootstep that is started and stopped."""
 
     #: Optional obj created by the :meth:`create` method.
     #: This is used by :class:`StartStopStep` to keep the
@@ -144,6 +144,8 @@ class StartStopStep(Step):
 
 
 class ConsumerStep(StartStopStep):
+    """Bootstep that starts message consumer."""
+
     requires = ('celery.worker.consumer:Connection',)
     consumers = None
 

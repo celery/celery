@@ -1,3 +1,4 @@
+"""Static types."""
 from datetime import datetime, timedelta
 from numbers import Number
 

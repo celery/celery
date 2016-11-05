@@ -48,6 +48,7 @@ class mlazy(lazy):
     The function is only evaluated once, every subsequent access
     will return the same value.
     """
+
     #: Set to :const:`True` after the object has been evaluated.
     evaluated = False  # type: bool
     _value = None      # type: Any

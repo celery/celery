@@ -71,8 +71,8 @@ def Property(deprecation: Optional[str]=None,
              removal: Optional[str]=None,
              alternative: Optional[str]=None,
              description: Optional[str]=None) -> Callable:
+    """Decorator for deprecated properties."""
     def _inner(fun: Callable) -> Any:
-        """Decorator for deprecated properties."""
         return _deprecated_property(
             fun, deprecation=deprecation, removal=removal,
             alternative=alternative, description=description or fun.__name__)

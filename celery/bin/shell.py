@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 import os
 import sys
 from importlib import import_module
-from celery.five import values
 from celery.bin.base import Command
 
 
@@ -83,7 +82,7 @@ class shell(Command):  # pragma: no cover
 
         if not without_tasks:
             self.locals.update({
-                task.__name__: task for task in values(self.app.tasks)
+                task.__name__: task for task in self.app.tasks.values()
                 if not task.name.startswith('celery.')
             })
 

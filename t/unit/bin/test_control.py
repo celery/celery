@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
+import io
 import pytest
 from case import Mock, patch
-from celery.five import WhateverIO
 from celery.bin.base import Error
 from celery.bin.control import _RemoteControl, inspect, control, status
 
@@ -57,7 +57,7 @@ class test_inspect:
 
     @patch('celery.app.control.Control.inspect')
     def test_run(self, real):
-        out = WhateverIO()
+        out = io.StringIO()
         i = inspect(app=self.app, stdout=out)
         with pytest.raises(Error):
             i.run()
@@ -112,7 +112,7 @@ class test_status:
 
     @patch('celery.bin.control.inspect')
     def test_run(self, inspect_):
-        out, err = WhateverIO(), WhateverIO()
+        out, err = io.StringIO(), io.StringIO()
         ins = inspect_.return_value = Mock()
         ins.run.return_value = []
         s = status(self.app, stdout=out, stderr=err)

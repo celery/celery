@@ -246,8 +246,12 @@ class ChainMap(MutableMapping):
         return cls(dict.fromkeys(iterable, *args))
 
     def copy(self) -> 'ChainMap':
-        """New ChainMap or subclass with a new copy of maps[0] and
-        refs to maps[1:]."""
+        """Copy chainmap.
+
+        Returns:
+            ChainMap: new chainmap or subclass with a new copy of
+            ``maps[0]`` and refs to ``maps[1:]``.
+        """
         return self.__class__(self.maps[0].copy(), *self.maps[1:])
 
     def _iter(self, op: Callable[[Mapping], Iterator]) -> Iterator:

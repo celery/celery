@@ -328,6 +328,7 @@ def main(argv=None):
 
 class multi(Command):
     """Start multiple worker instances."""
+
     fake_app = True
     requires_app = False
 

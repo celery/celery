@@ -254,8 +254,7 @@ def jsonify(obj: Any,
 
 
 def maybe_reraise() -> None:
-    """Re-raise if an exception is currently being handled, or return
-    otherwise."""
+    """Re-raise the current exception if any, or do nothing."""
     exc_info = sys.exc_info()
     try:
         if exc_info[2]:
