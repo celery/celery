@@ -6,9 +6,7 @@ The actual commands are implemented in :mod:`celery.worker.control`.
 """
 from celery import bootsteps
 from celery.utils.log import get_logger
-
 from celery.worker import pidbox
-
 from .tasks import Tasks
 
 __all__ = ['Control']

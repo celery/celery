@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
 """Couchbase result store backend."""
 import logging
-
+from kombu.utils.encoding import str_t
+from kombu.utils.url import _parse_url
+from celery.exceptions import ImproperlyConfigured
+from .base import KeyValueStoreBackend
 try:
     from couchbase import Couchbase
     from couchbase.connection import Connection
     from couchbase.exceptions import NotFoundError
 except ImportError:
     Couchbase = Connection = NotFoundError = None   # noqa
-
-from kombu.utils.encoding import str_t
-from kombu.utils.url import _parse_url
-
-from celery.exceptions import ImproperlyConfigured
-
-from .base import KeyValueStoreBackend
 
 __all__ = ['CouchbaseBackend']
 

@@ -1,11 +1,7 @@
 """Fixtures and testing utilities for :pypi:`py.test <pytest>`."""
 import os
 import pytest
-
 from contextlib import contextmanager
-
-from celery.backends.cache import CacheBackend, DummyClient
-
 from .testing import worker
 from .testing.app import TestApp, setup_default_app
 
@@ -152,15 +148,3 @@ def celery_worker(request, celery_app, celery_includes, celery_worker_pool):
 def depends_on_current_app(celery_app):
     """Fixture that sets app as current."""
     celery_app.set_current()
-
-
-@pytest.fixture(autouse=True)
-def reset_cache_backend_state(celery_app):
-    """Fixture that resets the internal state of the cache result backend."""
-    yield
-    backend = celery_app.__dict__.get('backend')
-    if backend is not None:
-        if isinstance(backend, CacheBackend):
-            if isinstance(backend.client, DummyClient):
-                backend.client.cache.clear()
-            backend._cache.clear()

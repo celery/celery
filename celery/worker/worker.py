@@ -14,7 +14,6 @@ The worker consists of several components, all managed by bootsteps
 """
 import os
 import sys
-import traceback
 
 from billiard import cpu_count
 from kombu.utils.compat import detect_environment
@@ -227,9 +226,6 @@ class WorkController:
                 self._quick_release()   # Issue 877
             except AttributeError:
                 pass
-        except Exception as exc:
-            logger.critical('Internal error: %r\n%s',
-                            exc, traceback.format_exc(), exc_info=True)
 
     def signal_consumer_close(self):
         try:

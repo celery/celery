@@ -45,9 +45,7 @@ import errno
 import os
 import socket
 import sys
-
 from pdb import Pdb
-
 from billiard.process import current_process
 
 __all__ = [

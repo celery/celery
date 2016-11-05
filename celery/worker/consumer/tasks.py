@@ -1,13 +1,10 @@
 """Worker Task Consumer Bootstep."""
 from kombu.common import QoS, ignore_errors
-
 from celery import bootsteps
 from celery.utils.log import get_logger
-
 from .mingle import Mingle
 
 __all__ = ['Tasks']
-
 logger = get_logger(__name__)
 debug = logger.debug
 

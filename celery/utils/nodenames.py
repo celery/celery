@@ -2,12 +2,9 @@
 """Worker name utilities."""
 import os
 import socket
-
 from functools import partial
 from typing import Dict, Optional, Tuple
-
 from kombu.entity import Exchange, Queue
-
 from .functional import memoize
 from .text import simple_format
 

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Private keys for the security serializer."""
 from kombu.utils.encoding import ensure_bytes
-
 from .utils import crypto, reraise_errors
 
 __all__ = ['PrivateKey']

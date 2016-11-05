@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 """Riak result store backend."""
+from kombu.utils.url import _parse_url
+from celery.exceptions import ImproperlyConfigured
+from .base import KeyValueStoreBackend
 try:
     import riak
     from riak import RiakClient
     from riak.resolver import last_written_resolver
 except ImportError:  # pragma: no cover
     riak = RiakClient = last_written_resolver = None  # noqa
-
-from kombu.utils.url import _parse_url
-
-from celery.exceptions import ImproperlyConfigured
-
-from .base import KeyValueStoreBackend
 
 __all__ = ['RiakBackend']
 

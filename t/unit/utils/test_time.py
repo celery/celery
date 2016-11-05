@@ -1,11 +1,8 @@
 import pytest
 import pytz
-
 from datetime import datetime, timedelta, tzinfo
 from pytz import AmbiguousTimeError
-
 from case import Mock
-
 from celery.utils.time import (
     delta_resolution,
     humanize_seconds,

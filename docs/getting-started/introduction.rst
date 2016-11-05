@@ -40,7 +40,8 @@ What do I need?
 .. sidebar:: Version Requirements
     :subtitle: Celery version 5.0 runs on
 
-    - Python ❨3.6❩
+    - Python ❨3.5, 3.6❩
+    - PyPy ❨5.5❩
 
     This is the last version to support Python 2.7,
     and from the next version (Celery 5.x) Python 3.5 or newer is required.

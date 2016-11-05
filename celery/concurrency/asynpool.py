@@ -233,7 +233,7 @@ class ResultHandler(_pool.ResultHandler):
                            else EOFError())
                 Hr += n
 
-        body_size, = unpack_from('>i', bufv)
+        body_size, = unpack_from(b'>i', bufv)
         if readcanbuf:
             buf = bytearray(body_size)
             bufv = memoryview(buf)
@@ -1131,11 +1131,12 @@ class AsynPool(_pool.Pool):
     def _setup_queues(self):
         # this is only used by the original pool that used a shared
         # queue for all processes.
+        self._quick_put = None
 
-        # these attributes makes no sense for us, but we'll still
-        # have to initialize them.
+        # these attributes are unused by this class, but we'll still
+        # have to initialize them for compatibility.
         self._inqueue = self._outqueue = \
-            self._quick_put = self._quick_get = self._poll_result = None
+            self._quick_get = self._poll_result = None
 
     def process_flush_queues(self, proc):
         """Flush all queues.

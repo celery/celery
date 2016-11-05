@@ -19,3 +19,5 @@ omit =
     *celery/backends/riak.py
     *celery/concurrency/asynpool.py
     *celery/utils/debug.py
+    *celery/contrib/testing/*
+    *celery/contrib/pytest.py

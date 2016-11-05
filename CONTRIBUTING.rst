@@ -463,6 +463,8 @@ install the development requirements first:
 
     $ pip install -U -r requirements/dev.txt
 
+THIS REQUIREMENT FILE MAY NOT BE PRESENT, SKIP IF NOT FOUND.
+
 Both the stable and the development version have testing related
 dependencies, so install these next:
 

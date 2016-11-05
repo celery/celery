@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Single-threaded execution pool."""
 import os
-
 from .base import BasePool, apply_target
 
 __all__ = ['TaskPool']

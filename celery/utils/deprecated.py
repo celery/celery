@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 """Deprecation utilities."""
 import warnings
-
 from typing import Any, Callable, Optional
-
 from vine.utils import wraps
-
 from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 
 __all__ = ['Callable', 'Property', 'warn']

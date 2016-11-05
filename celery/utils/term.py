@@ -5,11 +5,9 @@ import base64
 import os
 import platform
 import sys
-
 from functools import reduce
 from typing import Any, Tuple
 from typing import Callable, Mapping  # noqa
-
 from celery.platforms import isatty
 
 __all__ = ['colored']

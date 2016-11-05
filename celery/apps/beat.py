@@ -10,9 +10,7 @@ and so on.
 import numbers
 import socket
 import sys
-
 from datetime import datetime
-
 from celery import VERSION_BANNER, platforms, beat
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger

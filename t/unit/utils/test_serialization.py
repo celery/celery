@@ -1,12 +1,9 @@
 import pytest
 import pytz
 import sys
-
 from datetime import datetime, date, time, timedelta
-
 from case import Mock, mock
 from kombu import Queue
-
 from celery.utils.serialization import (
     UnpickleableExceptionWrapper,
     get_pickleable_etype,

@@ -1,17 +1,13 @@
-=================================
- Celery - Distributed Task Queue
-=================================
+.. image:: http://docs.celeryproject.org/en/latest/_images/celery-banner-small.png
 
-.. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
+|build-status| |license| |wheel| |pyversion| |pyimp|
 
-|build-status| |coverage| |license| |wheel| |pyversion| |pyimp|
-
-:Version: 4.0.0rc5 (0today8)
+:Version: 4.0.0 (latentcall)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: https://github.com/celery/celery/
-:Keywords: task queue, job queue, asynchronous, async, rabbitmq, amqp, redis,
-  python, webhooks, queue, distributed
+:Keywords: task, queue, job, async, rabbitmq, amqp, redis,
+  python, distributed, actors
 
 --
 
@@ -35,20 +31,19 @@ Celery is written in Python, but the protocol can be implemented in any
 language. In addition to Python there's node-celery_ for Node.js,
 and a `PHP client`_.
 
-Language interoperability can also be achieved
-by `using webhooks`_.
+Language interoperability can also be achieved by using webhooks
+in such a way that the client enqueues an URL to be requested by a worker.
 
 .. _node-celery: https://github.com/mher/node-celery
 .. _`PHP client`: https://github.com/gjedeer/celery-php
-.. _`using webhooks`:
-    http://docs.celeryproject.org/en/latest/userguide/remote-tasks.html
 
 What do I need?
 ===============
 
 Celery version 5.0 runs on,
 
-- Python (3.6)
+- Python (3.5, 3.6)
+- PyPy (5.5)
 
 
 This is the last version to support Python 2.7,
@@ -313,6 +308,13 @@ Transports and Backends
 
 :``celery[consul]``:
     for using the Consul.io Key/Value store as a message transport or result backend (*experimental*).
+
+:``celery[django]``
+    specifies the lowest version possible for Django support.
+
+    You should probably not use this in your requirements, it's here
+    for informational purposes only.
+
 
 .. _celery-installing-from-source:
 

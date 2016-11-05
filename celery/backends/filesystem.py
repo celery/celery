@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 """File-system result store backend."""
+import os
+import locale
 from kombu.utils.encoding import ensure_bytes
-
 from celery import uuid
 from celery.exceptions import ImproperlyConfigured
 from celery.backends.base import KeyValueStoreBackend
-
-import os
-import locale
-default_encoding = locale.getpreferredencoding(False)
 
 # Python 2 does not have FileNotFoundError and IsADirectoryError
 try:
@@ -16,6 +13,8 @@ try:
 except NameError:
     FileNotFoundError = IOError
     IsADirectoryError = IOError
+
+default_encoding = locale.getpreferredencoding(False)
 
 E_PATH_INVALID = """\
 The configured path for the file-system backend does not

@@ -11,7 +11,7 @@ from importlib import import_module
 
 from celery import _state
 from celery import signals
-from celery.exceptions import FixupWarning
+from celery.exceptions import FixupWarning, ImproperlyConfigured
 
 __all__ = ['DjangoFixup', 'fixup']
 
@@ -29,6 +29,11 @@ def _maybe_close_fd(fh):
         pass
 
 
+def _verify_django_version(django):
+    if django.VERSION < (1, 8):
+        raise ImproperlyConfigured('Celery 4.x requires Django 1.8 or later.')
+
+
 def fixup(app, env='DJANGO_SETTINGS_MODULE'):
     """Install Django fixup if settings module environment is set."""
     SETTINGS_MODULE = os.environ.get(env)
@@ -38,6 +43,7 @@ def fixup(app, env='DJANGO_SETTINGS_MODULE'):
         except ImportError:
             warnings.warn(FixupWarning(ERR_NOT_INSTALLED))
         else:
+            _verify_django_version(django)
             return DjangoFixup(app).install()
 
 

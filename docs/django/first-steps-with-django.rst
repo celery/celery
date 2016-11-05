@@ -150,6 +150,8 @@ concrete app instance:
 Extensions
 ==========
 
+.. _django-celery-results:
+
 ``django-celery-results`` - Using the Django ORM/Cache as a result backend
 --------------------------------------------------------------------------
 

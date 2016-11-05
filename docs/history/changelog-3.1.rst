@@ -8,6 +8,134 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.25:
+
+3.1.25
+======
+:release-date: 2016-10-10 12:00 PM PDT
+:release-by: Ask Solem
+
+- **Requirements**
+
+    - Now depends on :ref:`Kombu 3.0.37 <kombu:version-3.0.37>`
+
+- Fixed problem with chords in group introduced in 3.1.24 (Issue #3504).
+
+.. _version-3.1.24:
+
+3.1.24
+======
+:release-date: 2016-09-30 04:21 PM PDT
+:release-by: Ask Solem
+
+- **Requirements**
+
+    - Now depends on :ref:`Kombu 3.0.36 <kombu:version-3.0.36>`.
+
+- Now supports Task protocol 2 from the future 4.0 release.
+
+    Workers running 3.1.24 are now able to process messages
+    sent using the `new task message protocol`_ to be introduced
+    in Celery 4.0.
+
+    Users upgrading to Celery 4.0 when this is released are encouraged
+    to upgrade to this version as an intermediate step, as this
+    means workers not yet upgraded will be able to process
+    messages from clients/workers running 4.0.
+
+.. _`new task message protocol`:
+    http://docs.celeryproject.org/en/master/internals/protocol.html#version-2
+
+- ``Task.send_events`` can now be set to disable sending of events
+  for that task only.
+
+    Example when defining the task:
+
+    .. code-block:: python
+
+        @app.task(send_events=False)
+        def add(x, y):
+            return x + y
+
+- **Utils**: Fixed compatibility with recent :pypi:`psutil` versions
+  (Issue #3262).
+
+- **Canvas**: Chord now forwards partial arguments to its subtasks.
+
+    Fix contributed by Tayfun Sen.
+
+- **App**: Arguments to app such as ``backend``, ``broker``, etc
+  are now pickled and sent to the child processes on Windows.
+
+    Fix contributed by Jeremy Zafran.
+
+- **Deployment**: Generic init scripts now supports being symlinked
+  in runlevel directories (Issue #3208).
+
+- **Deployment**: Updated CentOS scripts to work with CentOS 7.
+
+    Contributed by Joe Sanford.
+
+- **Events**: The curses monitor no longer crashes when the
+  result of a task is empty.
+
+    Fix contributed by Dongweiming.
+
+- **Worker**: ``repr(worker)`` would crash when called early
+  in the startup process (Issue #2514).
+
+- **Tasks**: GroupResult now defines __bool__ and __nonzero__.
+
+    This is to fix an issue where a ResultSet or GroupResult with an empty
+    result list are not properly tupled with the as_tuple() method when it is
+    a parent result. This is due to the as_tuple() method performing a logical
+    and operation on the ResultSet.
+
+    Fix contributed by Colin McIntosh.
+
+- **Worker**: Fixed wrong values in autoscale related logging message.
+
+    Fix contributed by ``@raducc``.
+
+- Documentation improvements by
+
+    * Alexandru Chirila
+    * Michael Aquilina
+    * Mikko Ekström
+    * Mitchel Humpherys
+    * Thomas A. Neil
+    * Tiago Moreira Vieira
+    * Yuriy Syrovetskiy
+    * ``@dessant``
+
+.. _version-3.1.23:
+
+3.1.23
+======
+:release-date: 2016-03-09 06:00 P.M PST
+:release-by: Ask Solem
+
+- **Programs**: Last release broke support for the ``--hostnmame`` argument
+  to :program:`celery multi` and :program:`celery worker --detach`
+  (Issue #3103).
+
+- **Results**: MongoDB result backend could crash the worker at startup
+  if not configured using an URL.
+
+.. _version-3.1.22:
+
+3.1.22
+======
+:release-date: 2016-03-07 01:30 P.M PST
+:release-by: Ask Solem
+
+- **Programs**: The worker would crash immediately on startup on
+  ``backend.as_uri()`` when using some result backends (Issue #3094).
+
+- **Programs**: :program:`celery multi`/:program:`celery worker --detach`
+  would create an extraneous logfile including literal formats (e.g. ``%I``)
+  in the filename (Issue #3096).
+
 .. _version-3.1.21:
 
 3.1.21

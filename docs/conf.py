@@ -5,8 +5,8 @@ from sphinx_celery import conf
 globals().update(conf.build_config(
     'celery', __file__,
     project='Celery',
-    version_dev='4.0',
-    version_stable='3.1',
+    version_dev='5.0',
+    version_stable='4.0',
     canonical_url='http://docs.celeryproject.org',
     webdomain='celeryproject.org',
     github_project='celery/celery',
@@ -14,7 +14,7 @@ globals().update(conf.build_config(
     author_name='Ask Solem',
     copyright='2009-2016',
     publisher='Celery Project',
-    html_logo='images/celery_128.png',
+    html_logo='images/celery_512.png',
     html_favicon='images/favicon.ico',
     html_prepend_sidebars=['sidebardonations.html'],
     extra_extensions=[
@@ -61,6 +61,9 @@ ignored_settings = {
 
     # MongoDB settings replaced by URL config.,
     'mongodb_backend_settings',
+
+    # Database URL replaced by URL config (result_backend = db+...).
+    'database_url',
 
     # Redis settings replaced by URL config.
     'redis_host',

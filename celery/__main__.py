@@ -1,6 +1,5 @@
 """Entry-point for the :program:`celery` umbrella command."""
 import sys
-
 from . import maybe_patch_concurrency
 
 __all__ = ['main']

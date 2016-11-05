@@ -1,8 +1,6 @@
 """Worker Event Heartbeat Bootstep."""
 from celery import bootsteps
-
 from celery.worker import heartbeat
-
 from .events import Events
 
 __all__ = ['Heart']

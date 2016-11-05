@@ -2,10 +2,8 @@
 """Memcached and in-memory cache result backend."""
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.objects import cached_property
-
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.functional import LRUCache
-
 from .base import KeyValueStoreBackend
 
 __all__ = ['CacheBackend']

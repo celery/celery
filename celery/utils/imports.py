@@ -5,12 +5,10 @@ import importlib
 import os
 import sys
 import warnings
-
 from contextlib import contextmanager
 from imp import reload
 from types import ModuleType
 from typing import Any, Callable, Iterator, Optional
-
 from kombu.utils.imports import symbol_by_name
 
 #: Billiard sets this when execv is enabled.

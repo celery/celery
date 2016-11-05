@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 """Utilities used by the message signing serializer."""
 import sys
-
 from contextlib import contextmanager
-
 from celery.exceptions import SecurityError
-
 try:
     from OpenSSL import crypto
 except ImportError:  # pragma: no cover

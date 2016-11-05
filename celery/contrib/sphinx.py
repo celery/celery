@@ -29,10 +29,8 @@ using `:task:proj.tasks.add` syntax.
 Use ``.. autotask::`` to manually document a task.
 """
 from inspect import formatargspec, getfullargspec
-
 from sphinx.domains.python import PyModulelevel
 from sphinx.ext.autodoc import FunctionDocumenter
-
 from celery.app.task import BaseTask
 
 

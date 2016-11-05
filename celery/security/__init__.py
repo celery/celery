@@ -3,9 +3,7 @@
 from kombu.serialization import (
     registry, disable_insecure_serializers as _disable_insecure_serializers,
 )
-
 from celery.exceptions import ImproperlyConfigured
-
 from .serialization import register_auth
 
 SSL_NOT_INSTALLED = """\

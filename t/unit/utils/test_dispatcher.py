@@ -1,7 +1,6 @@
 import gc
 import sys
 import time
-
 from celery.utils.dispatch import Signal
 
 

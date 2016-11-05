@@ -149,13 +149,13 @@ class test_asynloop:
 
     def test_setup_heartbeat(self):
         x = X(self.app, heartbeat=10)
-        x.hub.call_repeatedly = Mock(name='x.hub.call_repeatedly()')
+        x.hub.timer.call_repeatedly = Mock(name='x.hub.call_repeatedly()')
         x.blueprint.state = CLOSE
         asynloop(*x.args)
         x.consumer.consume.assert_called_with()
         x.obj.on_ready.assert_called_with()
-        x.hub.call_repeatedly.assert_called_with(
-            10 / 2.0, x.connection.heartbeat_check, 2.0,
+        x.hub.timer.call_repeatedly.assert_called_with(
+            10 / 2.0, x.connection.heartbeat_check, (2.0,),
         )
 
     def task_context(self, sig, **kwargs):
@@ -192,11 +192,11 @@ class test_asynloop:
         on_task(msg)
         x.on_unknown_message.assert_called_with(msg.decode(), msg)
 
-    def test_on_task_not_registered(self):
+    def test_on_task_pool_raises(self):
         x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
-        exc = strategy.side_effect = KeyError(self.add.name)
-        on_task(msg)
-        x.on_invalid_task.assert_called_with(None, msg, exc)
+        strategy.side_effect = ValueError()
+        with pytest.raises(ValueError):
+            on_task(msg)
 
     def test_on_task_InvalidTaskError(self):
         x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))

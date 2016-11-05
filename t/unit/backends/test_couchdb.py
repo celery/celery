@@ -4,7 +4,6 @@ from celery.app import backends
 from celery.backends import couchdb as module
 from celery.backends.couchdb import CouchBackend
 from celery.exceptions import ImproperlyConfigured
-
 try:
     import pycouchdb
 except ImportError:

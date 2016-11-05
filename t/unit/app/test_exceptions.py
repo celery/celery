@@ -1,7 +1,5 @@
 import pickle
-
 from datetime import datetime
-
 from celery.exceptions import Reject, Retry
 
 

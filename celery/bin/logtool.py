@@ -4,10 +4,8 @@
 .. program:: celery logtool
 """
 import re
-
 from collections import Counter
 from fileinput import FileInput
-
 from .base import Command
 
 __all__ = ['logtool']

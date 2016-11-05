@@ -1,6 +1,5 @@
 """Consumer Broker Connection Bootstep."""
 from kombu.common import ignore_errors
-
 from celery import bootsteps
 from celery.utils.log import get_logger
 

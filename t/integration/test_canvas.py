@@ -2,6 +2,7 @@ import pytest
 from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
+from .conftest import flaky
 from .tasks import add, collect_ids, ids
 
 TIMEOUT = 120
@@ -9,10 +10,12 @@ TIMEOUT = 120
 
 class test_chain:
 
+    @flaky
     def test_simple_chain(self, manager):
         c = add.s(4, 4) | add.s(8) | add.s(16)
         assert c().get(timeout=TIMEOUT) == 32
 
+    @flaky
     def test_complex_chain(self, manager):
         c = (
             add.s(2, 2) | (
@@ -23,6 +26,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [32, 33, 34, 35]
 
+    @flaky
     def test_parent_ids(self, manager, num=10):
         assert manager.inspect().ping()
         c = chain(ids.si(i=i) for i in range(num))
@@ -54,6 +58,7 @@ class test_chain:
 
 class test_group:
 
+    @flaky
     def test_parent_ids(self, manager):
         assert manager.inspect().ping()
         g = (
@@ -80,10 +85,12 @@ def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
     assert parent_id == expected_parent_id
 
 
-@pytest.mark.celery(result_backend='redis://')
 class test_chord:
 
+    @flaky
     def test_parent_ids(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
         root = ids.si(i=1)
         expected_root_id = root.freeze().id
         g = chain(
@@ -95,7 +102,10 @@ class test_chord:
         )
         self.assert_parentids_chord(g(), expected_root_id)
 
+    @flaky
     def test_parent_ids__OR(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
         root = ids.si(i=1)
         expected_root_id = root.freeze().id
         g = (

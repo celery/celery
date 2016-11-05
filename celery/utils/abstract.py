@@ -2,7 +2,6 @@
 """Abstract classes."""
 from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import Callable
-
 from typing import Any, Sequence, Tuple
 
 __all__ = ['CallableTask', 'CallableSignature']

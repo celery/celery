@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 """Implementation of the Observer pattern."""
 import weakref
-
 from celery.local import PromiseProxy, Proxy
 from celery.utils.log import get_logger
-
 from . import saferef
 
 __all__ = ['Signal']

@@ -1,7 +1,6 @@
 """Useful mocks for unit testing."""
 import numbers
 from datetime import datetime, timedelta
-
 try:
     from case import Mock
 except ImportError:

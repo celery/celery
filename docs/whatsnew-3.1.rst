@@ -266,10 +266,9 @@ Caveats
     must then be moved back and rewritten to a new process.
 
     This is very expensive if you have the
-    :option:`--maxtasksperchild <celery worker --maxtasksperchild>` option
-    set to a low value (e.g., less than 10), so if you need to enable this option
-    you should also enable :option:`-Ofair <celery worker -O>` to turn off the
-    prefetching behavior.
+    :option:`--max-tasks-per-child <celery worker --max-tasks-per-child>`
+    option set to a low value (e.g., less than 10), you should not be
+    using the :option:`-Ofast <celery worker -O>` scheduler option.
 
 Django supported out of the box
 -------------------------------

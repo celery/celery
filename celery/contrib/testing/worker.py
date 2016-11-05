@@ -1,9 +1,7 @@
 """Embedded workers for integration tests."""
 import os
 import threading
-
 from contextlib import contextmanager
-
 from celery import worker
 from celery.result import allow_join_result, _set_task_join_will_block
 from celery.utils.dispatch import Signal

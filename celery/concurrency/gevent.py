@@ -3,7 +3,6 @@
 from kombu.async import timer as _timer
 from time import monotonic
 from . import base
-
 try:
     from gevent import Timeout
 except ImportError:  # pragma: no cover

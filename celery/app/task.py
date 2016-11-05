@@ -161,6 +161,12 @@ class Task:
     #: Name of the task.
     name = None
 
+    #: Enable argument checking.
+    #: You can set this to false if you don't want the signature to be
+    #: checked when calling the task.
+    #: Defaults to :attr:`app.strict_typing <@Celery.strict_typing>`.
+    typing = None
+
     #: Maximum number of retries before giving up.  If set to :const:`None`,
     #: it will **never** stop retrying.
     max_retries = 3
@@ -299,6 +305,9 @@ class Task:
         cls._app = app
         conf = app.conf
         cls._exec_options = None  # clear option cache
+
+        if cls.typing is None:
+            cls.typing = app.strict_typing
 
         for attr_name, config_name in cls.from_config:
             if getattr(cls, attr_name, None) is None:
@@ -479,18 +488,26 @@ class Task:
             headers (Dict): Message headers to be included in the message.
 
         Returns:
-            ~@AsyncResult: Future promise.
+            ~@AsyncResult: Promise of future evaluation.
+
+        Raises:
+            TypeError: If not enough arguments are passed, or too many
+                arguments are passed.  Note that signature checks may
+                be disabled by specifying ``@task(typing=False)``.
+            kombu.exceptions.OperationalError: If a connection to the
+               transport cannot be made, or if the connection is lost.
 
         Note:
             Also supports all keyword arguments supported by
             :meth:`kombu.Producer.publish`.
         """
-        try:
-            check_arguments = self.__header__
-        except AttributeError:  # pragma: no cover
-            pass
-        else:
-            check_arguments(*(args or ()), **(kwargs or {}))
+        if self.typing:
+            try:
+                check_arguments = self.__header__
+            except AttributeError:  # pragma: no cover
+                pass
+            else:
+                check_arguments(*(args or ()), **(kwargs or {}))
 
         app = self._get_app()
         if app.conf.task_always_eager:
@@ -776,7 +793,7 @@ class Task:
                 :setting:`task_publish_retry` setting.
             retry_policy (Mapping): Retry settings.  Default is taken
                 from the :setting:`task_publish_retry_policy` setting.
-            **fields (**Any): Map containing information about the event.
+            **fields (Any): Map containing information about the event.
                 Must be JSON serializable.
         """
         req = self.request
@@ -817,7 +834,7 @@ class Task:
 
         if self.request.chain:
             for t in self.request.chain:
-                sig |= signature(t)
+                sig |= signature(t, app=self.app)
 
         sig.freeze(self.request.id,
                    group_id=self.request.group,

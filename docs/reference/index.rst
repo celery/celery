@@ -51,6 +51,7 @@
     celery.beat
     celery.apps.worker
     celery.apps.beat
+    celery.apps.multi
     celery.worker
     celery.worker.request
     celery.worker.state
@@ -75,3 +76,11 @@
     celery.bin.amqp
     celery.bin.graph
     celery.bin.multi
+    celery.bin.call
+    celery.bin.control
+    celery.bin.list
+    celery.bin.migrate
+    celery.bin.purge
+    celery.bin.result
+    celery.bin.shell
+    celery.bin.upgrade

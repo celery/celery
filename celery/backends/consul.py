@@ -5,11 +5,9 @@
     in the key-value store of Consul.
 """
 from kombu.utils.url import parse_url
-
 from celery.exceptions import ImproperlyConfigured
 from celery.backends.base import KeyValueStoreBackend
 from celery.utils.log import get_logger
-
 try:
     import consul
 except ImportError:

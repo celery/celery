@@ -250,7 +250,8 @@ def humanize_seconds(secs: numbers.Number,
             return '{0}{1}{2} {3}'.format(prefix, sep, formatter(w),
                                           pluralize(w, unit))
     if microseconds and secs > 0.0:
-        return '{prefix}{0:.2f} seconds'.format(secs, prefix=prefix)
+        return '{prefix}{sep}{0:.2f} seconds'.format(
+            secs, sep=sep, prefix=prefix)
     return now
 
 

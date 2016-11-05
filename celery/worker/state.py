@@ -216,23 +216,23 @@ class Persistent:
 
     def _sync_with(self, d):
         self._revoked_tasks.purge()
-        d.update(
-            __proto__=3,
-            zrevoked=self.compress(self._dumps(self._revoked_tasks)),
-            clock=self.clock.forward() if self.clock else 0,
-        )
+        d.update({
+            b'__proto__': 3,
+            b'zrevoked': self.compress(self._dumps(self._revoked_tasks)),
+            b'clock': self.clock.forward() if self.clock else 0,
+        })
         return d
 
     def _merge_clock(self, d):
         if self.clock:
-            d['clock'] = self.clock.adjust(d.get('clock') or 0)
+            d[b'clock'] = self.clock.adjust(d.get(b'clock') or 0)
 
     def _merge_revoked(self, d):
         try:
-            self._merge_revoked_v3(d['zrevoked'])
+            self._merge_revoked_v3(d[b'zrevoked'])
         except KeyError:
             try:
-                self._merge_revoked_v2(d.pop('revoked'))
+                self._merge_revoked_v2(d.pop(b'revoked'))
             except KeyError:
                 pass
         # purge expired items at boot

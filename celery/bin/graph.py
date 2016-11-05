@@ -4,9 +4,7 @@
 .. program:: celery graph
 """
 from operator import itemgetter
-
 from celery.utils.graph import DependencyGraph, GraphFormatter
-
 from .base import Command
 
 __all__ = ['graph']

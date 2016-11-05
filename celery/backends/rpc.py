@@ -10,14 +10,22 @@ from kombu.common import maybe_declare
 from kombu.utils.compat import register_after_fork
 from kombu.utils.objects import cached_property
 
-from celery import current_task
 from celery import states
-from celery._state import task_join_will_block
+from celery._state import current_task, task_join_will_block
 
 from . import base
 from .async import AsyncBackendMixin, BaseResultConsumer
 
 __all__ = ['BacklogLimitExceeded', 'RPCBackend']
+
+E_NO_CHORD_SUPPORT = """
+The "rpc" result backend does not support chords!
+
+Note that a group chained with a task is also upgraded to be a chord,
+as this pattern requires synchronization.
+
+Result backends that supports chords: Redis, Database, Memcached, and more.
+"""
 
 
 class BacklogLimitExceeded(Exception):
@@ -144,6 +152,9 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         """Create new binding for task with id."""
         # RPC backend caches the binding, as one queue is used for all tasks.
         return self.binding
+
+    def ensure_chords_allowed(self):
+        raise NotImplementedError(E_NO_CHORD_SUPPORT.strip())
 
     def on_task_call(self, producer, task_id):
         # Called every time a task is sent when using this backend.

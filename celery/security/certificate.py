@@ -2,11 +2,8 @@
 """X.509 certificates."""
 import glob
 import os
-
 from kombu.utils.encoding import bytes_to_str
-
 from celery.exceptions import SecurityError
-
 from .utils import crypto, reraise_errors
 
 __all__ = ['Certificate', 'CertStore', 'FSCertStore']

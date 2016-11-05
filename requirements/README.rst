@@ -46,7 +46,7 @@ Index
 * :file:`requirements/dev.txt`
 
     Requirement file installing the current dev branch of Celery and
-    dependencies.
+    dependencies (will not be present in stable branches).
 
 Examples
 ========

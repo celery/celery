@@ -94,7 +94,7 @@ NAMESPACES = Namespace(
         connection_retry=Option(True, type='bool'),
         connection_max_retries=Option(100, type='int'),
         failover_strategy=Option(None, type='string'),
-        heartbeat=Option(None, type='int'),
+        heartbeat=Option(120, type='int'),
         heartbeat_checkrate=Option(3.0, type='int'),
         login_method=Option(None, type='string'),
         pool_limit=Option(10, type='int'),
@@ -185,8 +185,8 @@ NAMESPACES = Namespace(
         cert_store=Option(type='string'),
         key=Option(type='string'),
     ),
-    sqlalchemy=Namespace(
-        dburi=Option(old={'celery_result_dburi'}),
+    database=Namespace(
+        url=Option(old={'celery_result_dburi'}),
         engine_options=Option(
             type='dict', old={'celery_result_engine_options'},
         ),

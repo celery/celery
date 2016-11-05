@@ -5,11 +5,8 @@ Contains utilities for working with task routers, (:setting:`task_routes`).
 """
 import re
 import string
-
 from collections import Mapping, OrderedDict
-
 from kombu import Queue
-
 from celery.exceptions import QueueNotFound
 from celery.utils.collections import lpmerge
 from celery.utils.functional import maybe_evaluate, mlazy

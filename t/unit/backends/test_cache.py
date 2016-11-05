@@ -1,12 +1,9 @@
 import pytest
 import sys
 import types
-
 from contextlib import contextmanager
-
 from case import Mock, mock, patch, skip
 from kombu.utils.encoding import str_to_bytes, ensure_bytes
-
 from celery import states
 from celery import group, signature, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends

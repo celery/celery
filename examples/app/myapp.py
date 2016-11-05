@@ -22,7 +22,6 @@ name using the fully qualified form::
     $ celery -A myapp:app worker -l info
 
 """
-
 from celery import Celery
 
 app = Celery(

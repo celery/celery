@@ -103,6 +103,13 @@ Transports and Backends
 :``celery[consul]``:
     for using the Consul.io Key/Value store as a message transport or result backend (*experimental*).
 
+:``celery[django]``
+    specifies the lowest version possible for Django support.
+
+    You should probably not use this in your requirements, it's here
+    for informational purposes only.
+
+
 .. _celery-installing-from-source:
 
 Downloading and installing from source

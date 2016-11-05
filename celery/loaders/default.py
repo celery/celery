@@ -2,11 +2,9 @@
 """The default loader used when no custom app has been initialized."""
 import os
 import warnings
-
 from celery.exceptions import NotConfigured
 from celery.utils.collections import DictAttribute
 from celery.utils.serialization import strtobool
-
 from .base import BaseLoader
 
 __all__ = ['Loader', 'DEFAULT_CONFIG_MODULE']

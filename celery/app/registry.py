@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 """Registry of available tasks."""
 import inspect
-
 from importlib import import_module
-
 from celery._state import get_current_app
 from celery.exceptions import NotRegistered
 
