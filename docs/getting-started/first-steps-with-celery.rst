@@ -118,7 +118,7 @@ Let's create the file :file:`tasks.py`:
 
     from celery import Celery
 
-    app = Celery('tasks', broker='amqp://guest@localhost//')
+    app = Celery('tasks', broker='pyamqp://guest@localhost//')
 
     @app.task
     def add(x, y):
@@ -221,14 +221,14 @@ you choose to use a configuration module):
 
 .. code-block:: python
 
-    app = Celery('tasks', backend='rpc://', broker='amqp://')
+    app = Celery('tasks', backend='rpc://', broker='pyamqp://')
 
 Or if you want to use Redis as the result backend, but still use RabbitMQ as
 the message broker (a popular combination):
 
 .. code-block:: python
 
-    app = Celery('tasks', backend='redis://localhost', broker='amqp://')
+    app = Celery('tasks', backend='redis://localhost', broker='pyamqp://')
 
 To read more about result backends please see :ref:`task-result-backends`.
 
@@ -337,7 +337,7 @@ current directory or on the Python path, it could look like this:
 
 .. code-block:: python
 
-    broker_url = 'amqp://'
+    broker_url = 'pyamqp://'
     result_backend = 'rpc://'
 
     task_serializer = 'json'
