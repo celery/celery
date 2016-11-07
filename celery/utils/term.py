@@ -46,7 +46,7 @@ class colored:
     """
 
     def __init__(self, *s: Tuple[Any],
-                 enabled: bool=True, op: str='', **kwargs) -> None:
+                 enabled: bool=True, op: str = '', **kwargs) -> None:
         self.s = s
         self.enabled = not IS_WINDOWS and enabled
         self.op = op
@@ -166,16 +166,18 @@ class colored:
         return str(''.join((self.embed(), str(suffix))))
 
 
-def supports_images():
+def supports_images() -> bool:
     return isatty(sys.stdin) and ITERM_PROFILE
 
 
-def _read_as_base64(path):
+def _read_as_base64(path: str) -> bytes:
     with codecs.open(path, mode='rb') as fh:
         return base64.b64encode(fh.read())
 
 
-def imgcat(path, inline=1, preserve_aspect_ratio=0, **kwargs):
+def imgcat(path: str,
+           inline: int = 1,
+           preserve_aspect_ratio: int = 0, **kwargs):
     return '\n%s1337;File=inline=%d;preserveAspectRatio=%d:%s%s' % (
         _IMG_PRE, inline, preserve_aspect_ratio,
         _read_as_base64(path), _IMG_POST)

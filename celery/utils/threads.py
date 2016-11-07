@@ -47,7 +47,7 @@ def default_socket_timeout(timeout: Timeout) -> Iterator:
 class bgThread(threading.Thread):
     """Background service thread."""
 
-    def __init__(self, name: Optional[str]=None, **kwargs) -> None:
+    def __init__(self, name: str = None, **kwargs) -> None:
         super().__init__()
         self._is_shutdown = threading.Event()
         self._is_stopped = threading.Event()
@@ -267,8 +267,8 @@ class LocalManager:
     function for the wrapped locals.
     """
 
-    def __init__(self, locals: Optional[List]=None,
-                 ident_func: Optional[Callable]=None) -> None:
+    def __init__(self, locals: List = None,
+                 ident_func: Callable = None) -> None:
         if locals is None:
             self.locals = []
         elif isinstance(locals, Local):

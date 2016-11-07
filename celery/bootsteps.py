@@ -60,20 +60,24 @@ class Step(metaclass=StepType):
     #: Optional step name, will use ``qualname`` if not specified.
     name = None
 
-    #: Optional short name used for graph outputs and in logs.
+    #: Optional short name used for representation in logs and graphs.
     label = None
 
     #: Set this to true if the step is enabled based on some condition.
+    #: Note: This is only used for illustration purposes in graphs
+    #:       to differentiate optional steps - setting this won't affect
+    #:       your program.
     conditional = False
 
     #: List of other steps that that must be started before this step.
-    #: Note that all dependencies must be in the same blueprint.
+    #: Note: All dependencies that you list here must originate in the
+    #        same blueprint.
     requires = ()
 
-    #: This flag is reserved for the workers Consumer,
-    #: since it is required to always be started last.
-    #: There can only be one object marked last
-    #: in every blueprint.
+    #: Set to True if this step should always be started last.
+    #: Note: You cannot mark multiple steps in the same blueprint as .last,
+    #:       and it's not enforced so should you mark multiple
+    #:       steps as last then who wins is undefined behavior.
     last = False
 
     #: This provides the default for :meth:`include_if`.
@@ -231,8 +235,8 @@ class Blueprint:
 
     GraphFormatter = StepFormatter
 
-    name = None                        # type: Optional[str]
-    state = None                       # type: Optional[int]
+    name = None                        # type: str
+    state = None                       # type: int
     started = 0                        # type: int
     default_steps = set()              # type: Set[Union[str, Step]]
     state_to_name = {                  # type: Mapping[int, str]
@@ -242,18 +246,18 @@ class Blueprint:
         TERMINATE: 'terminating',
     }
 
-    def __init__(self, steps: Optional[Sequence]=None,
-                 name: Optional[str]=None,
-                 on_start: Optional[Callable[[], None]]=None,
-                 on_close: Optional[Callable[[], None]]=None,
-                 on_stopped: Optional[Callable[[], None]]=None) -> None:
+    def __init__(self, steps: Sequence = None,
+                 name: str = None,
+                 on_start: Callable[[], None] = None,
+                 on_close: Callable[[], None] = None,
+                 on_stopped: Callable[[], None] = None) -> None:
         self.name = name or self.name or qualname(type(self))
         self.types = set(steps or []) | set(self.default_steps)
         self.on_start = on_start
         self.on_close = on_close
         self.on_stopped = on_stopped
         self.shutdown_complete = Event()
-        self.steps = {}  # type: Mapping[str, Step]
+        self.steps = {} : Mapping[str, Step]
 
     def start(self, parent: Any) -> None:
         self.state = RUN
@@ -279,14 +283,18 @@ class Blueprint:
             self.on_close()
         self.send_all(parent, 'close', 'closing', reverse=False)
 
-    def restart(self, parent: Any, method: str='stop',
-                description: str='restarting', propagate: bool=False) -> None:
+    def restart(self,
+                parent: Any,
+                method: str = 'stop',
+                description: str = 'restarting',
+                propagate: bool = False) -> None:
         self.send_all(parent, method, description, propagate=propagate)
 
     def send_all(self, parent: Any, method: str,
-                 description: Optional[str]=None,
-                 reverse: bool=True, propagate: bool=True,
-                 args: Sequence=()) -> None:
+                 description: str = None,
+                 reverse: bool = True,
+                 propagate: bool = True,
+                 args: Sequence = ()) -> None:
         description = description or method.replace('_', ' ')
         steps = reversed(parent.steps) if reverse else parent.steps
         for step in steps:
@@ -304,7 +312,8 @@ class Blueprint:
                             'Error on %s %s: %r', description, step.alias, exc)
 
     def stop(self, parent: Any,
-             close: bool=True, terminate: bool=False) -> None:
+             close: bool = True,
+             terminate: bool = False) -> None:
         what = 'terminating' if terminate else 'stopping'
         if self.state in (CLOSE, TERMINATE):
             return
@@ -327,7 +336,7 @@ class Blueprint:
         self.state = TERMINATE
         self.shutdown_complete.set()
 
-    def join(self, timeout: Timeout=None) -> None:
+    def join(self, timeout: Timeout = None) -> None:
         try:
             # Will only get here if running green,
             # makes sure all greenthreads have exited.

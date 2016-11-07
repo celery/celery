@@ -6,7 +6,7 @@ import time as _time
 
 from calendar import monthrange
 from datetime import date, datetime, timedelta, tzinfo
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Union
 
 from kombu.utils.functional import reprcall
 from kombu.utils.objects import cached_property
@@ -113,8 +113,8 @@ class _Zone:
         return self.get_timezone(tzinfo)
 
     def to_local(self, dt: datetime,
-                 local: Optional[tzinfo]=None,
-                 orig: Optional[tzinfo]=None) -> datetime:
+                 local: tzinfo = None,
+                 orig: tzinfo = None) -> datetime:
         if is_naive(dt):
             dt = make_aware(dt, orig or self.utc)
         return localize(dt, self.tz_or_local(local))
@@ -145,7 +145,7 @@ timezone = _Zone()
 
 
 def maybe_timedelta(
-        delta: Optional[Union[numbers.Real, timedelta]]) -> timedelta:
+        delta: Union[numbers.Real, timedelta]) -> timedelta:
     """Convert integer to timedelta, if argument is an integer."""
     if isinstance(delta, numbers.Real):
         return timedelta(seconds=delta)
@@ -176,7 +176,7 @@ def delta_resolution(dt: datetime, delta: timedelta) -> datetime:
 
 
 def remaining(start: datetime, ends_in: timedelta,
-              now: Optional[Callable[[], datetime]]=None,
+              now: Callable[[], datetime]=None,
               relative: bool=False) -> timedelta:
     """Calculate the remaining time for a start date and a timedelta.
 
@@ -255,7 +255,7 @@ def humanize_seconds(secs: numbers.Number,
     return now
 
 
-def maybe_iso8601(dt: Optional[Union[str, datetime]]) -> Optional[datetime]:
+def maybe_iso8601(dt: Union[str, datetime]) -> datetime:
     """Either ``datetime | str -> datetime`` or ``None -> None``."""
     if not dt:
         return
@@ -306,7 +306,7 @@ def to_utc(dt: datetime) -> datetime:
     return make_aware(dt, timezone.utc)
 
 
-def maybe_make_aware(dt: datetime, tz: Optional[tzinfo]=None) -> datetime:
+def maybe_make_aware(dt: datetime, tz: tzinfo=None) -> datetime:
     """Convert dt to aware datetime, do nothing if dt is already aware."""
     if is_naive(dt):
         dt = to_utc(dt)

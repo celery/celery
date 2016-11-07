@@ -43,11 +43,11 @@ class Timer(threading.Thread):
             traceback.print_stack()
             super().start(*args, **kwargs)
 
-    def __init__(self, schedule: Optional[Schedule]=None,
-                 on_error: Optional[Callable]=None,
-                 on_tick: Optional[Callable]=None,
-                 on_start: Optional[Callable]=None,
-                 max_interval: Optional[Number]=None, **kwargs) -> None:
+    def __init__(self, schedule: Schedule = None,
+                 on_error: Callable = None,
+                 on_tick: Callable = None,
+                 on_start: Callable = None,
+                 max_interval: Number = None, **kwargs) -> None:
         self.schedule = schedule or self.Schedule(on_error=on_error,
                                                   max_interval=max_interval)
         self.on_start = on_start
@@ -114,7 +114,7 @@ class Timer(threading.Thread):
             return entry
 
     def enter(self, entry: Entry, eta: float,
-              priority: Optional[int]=None) -> Entry:
+              priority: int = None) -> Entry:
         return self._do_enter('enter_at', entry, eta, priority=priority)
 
     def call_at(self, *args, **kwargs) -> Entry:
@@ -130,7 +130,7 @@ class Timer(threading.Thread):
         return self._do_enter('call_repeatedly', *args, **kwargs)
 
     def exit_after(self, secs: Union[int, float],
-                   priority: Optional[int]=10) -> None:
+                   priority: int = 10) -> None:
         self.call_after(secs, sys.exit, priority)
 
     def cancel(self, tref: Entry) -> None:
