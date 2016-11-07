@@ -240,7 +240,7 @@ Example usage:
             article = Article.objects.create(**request.POST)
             # send this task only if the rest of the transaction succeeds.
             transaction.on_commit(partial(
-                send_article_created_notification.delay, article_id=article.pk)
+                send_article_created_notification.delay, article_id=article.pk))
             Log.objects.create(type=Log.ARTICLE_CREATED, object_pk=article.pk)
 
 Removed features
