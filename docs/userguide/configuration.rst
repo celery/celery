@@ -2281,9 +2281,11 @@ See :ref:`beat-entries`.
 ``beat_scheduler``
 ~~~~~~~~~~~~~~~~~~
 
-Default: ``"celery.beat:PersistentScheduer"``.
+Default: ``"celery.beat:PersistentScheduler"``.
 
-The default scheduler class.
+The default scheduler class. May be set to
+``"django_celery_beat.schedulers:DatabaseScheduler"`` for instance,
+if used alongside `django-celery-beat` extension.
 
 Can also be set via the :option:`celery beat -S` argument.
 
