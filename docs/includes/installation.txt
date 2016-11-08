@@ -67,7 +67,7 @@ Transports and Backends
 :``celery[sqs]``:
     for using Amazon SQS as a message transport (*experimental*).
 
-:``celery[tblib``]
+:``celery[tblib]``:
     for using the :setting:`task_remote_tracebacks` feature.
 
 :``celery[memcache]``:
@@ -103,7 +103,7 @@ Transports and Backends
 :``celery[consul]``:
     for using the Consul.io Key/Value store as a message transport or result backend (*experimental*).
 
-:``celery[django]``
+:``celery[django]``:
     specifies the lowest version possible for Django support.
 
     You should probably not use this in your requirements, it's here
