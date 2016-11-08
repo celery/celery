@@ -401,7 +401,7 @@ and save a backup in :file:`proj/settings.py.orig`.
 
     .. code-block:: console
 
-        $ celery upgrade settings --django proj/settings.py
+        $ celery upgrade settings proj/settings.py --django
 
     After upgrading the settings file, you need to set the prefix explicitly
     in your ``proj/celery.py`` module:
