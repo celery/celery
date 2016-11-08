@@ -431,12 +431,12 @@ To install and use this extension:
 
         $ pip install django-celery-beat
 
-#. Add the ``django_celery_beat`` module to ``INSTALLED_APPS`` in your
+#. Add ``django_celery_beat.apps.BeatConfig`` to ``INSTALLED_APPS`` in your
    Django project' :file:`settings.py`::
 
         INSTALLED_APPS = (
             ...,
-            'django_celery_beat',
+            'django_celery_beat.apps.BeatConfig',
         )
 
     Note that there is no dash in the module name, only underscores.
