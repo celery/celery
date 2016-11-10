@@ -387,7 +387,7 @@ class Scheduler(object):
 
     @cached_property
     def producer(self):
-        return self.Producer(self._ensure_connected())
+        return self.Producer(self._ensure_connected(), auto_declare=False)
 
     @property
     def info(self):

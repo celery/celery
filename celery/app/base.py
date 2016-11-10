@@ -710,7 +710,7 @@ class Celery(object):
         )
 
         if connection:
-            producer = amqp.Producer(connection)
+            producer = amqp.Producer(connection, auto_declare=False)
         with self.producer_or_acquire(producer) as P:
             with P.connection._reraise_as_library_errors():
                 self.backend.on_task_call(P, task_id)

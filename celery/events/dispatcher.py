@@ -102,7 +102,8 @@ class EventDispatcher(object):
     def enable(self):
         self.producer = Producer(self.channel or self.connection,
                                  exchange=self.exchange,
-                                 serializer=self.serializer)
+                                 serializer=self.serializer,
+                                 auto_declare=False)
         self.enabled = True
         for callback in self.on_enabled:
             callback()

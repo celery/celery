@@ -219,6 +219,7 @@ class Task(BaseTask):
             connection,
             exchange=exchange and Exchange(exchange, exchange_type),
             routing_key=self.routing_key, **options
+            auto_declare=False,
         )
 
     @classmethod
