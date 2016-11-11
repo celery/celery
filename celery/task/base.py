@@ -218,9 +218,7 @@ class Task(BaseTask):
         return self._get_app().amqp.Producer(
             connection,
             exchange=exchange and Exchange(exchange, exchange_type),
-            routing_key=self.routing_key, **options
-            auto_declare=False,
-        )
+            routing_key=self.routing_key, auto_declare=False, **options)
 
     @classmethod
     def get_consumer(cls, connection=None, queues=None, **kwargs):

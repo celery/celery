@@ -26,8 +26,8 @@ class Polaroid(object):
     """Record event snapshots."""
 
     timer = None
-    shutter_signal = Signal(providing_args=('state',))
-    cleanup_signal = Signal()
+    shutter_signal = Signal(name='shutter_signal', providing_args={'state'})
+    cleanup_signal = Signal(name='cleanup_signal')
     clear_after = False
 
     _tref = None

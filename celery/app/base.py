@@ -293,10 +293,13 @@ class Celery(object):
         # Signals
         if self.on_configure is None:
             # used to be a method pre 4.0
-            self.on_configure = Signal()
-        self.on_after_configure = Signal()
-        self.on_after_finalize = Signal()
-        self.on_after_fork = Signal()
+            self.on_configure = Signal(name='app.on_configure')
+        self.on_after_configure = Signal(
+            name='app.on_after_configure',
+            providing_args={'source'},
+        )
+        self.on_after_finalize = Signal(name='app.on_after_finalize')
+        self.on_after_fork = Signal(name='app.on_after_fork')
 
         self.on_init()
         _register_app(self)

@@ -46,10 +46,8 @@ class test_Signal:
 
     def _testIsClean(self, signal):
         """Assert that everything has been cleaned up automatically"""
+        assert not signal.has_listeners()
         assert signal.receivers == []
-
-        # force cleanup just in case
-        signal.receivers = []
 
     def test_exact(self):
         a_signal.connect(receiver_1_arg, sender=self)

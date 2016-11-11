@@ -2,10 +2,10 @@
 """Functional-style utilties."""
 from __future__ import absolute_import, print_function, unicode_literals
 
+import inspect
 import sys
 
 from functools import partial
-from inspect import isfunction
 from itertools import chain, islice
 
 from kombu.utils.functional import (
@@ -20,7 +20,7 @@ __all__ = [
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
     'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
     'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun',
-    'maybe',
+    'maybe', 'fun_accepts_kwargs',
 ]
 
 IS_PY3 = sys.version_info[0] == 3
@@ -249,7 +249,7 @@ def head_from_fun(fun, bound=False, debug=False):
     # in pure-Python.  Instead we use exec to create a new function
     # with an empty body, meaning it has the same performance as
     # as just calling a function.
-    if not isfunction(fun) and hasattr(fun, '__call__'):
+    if not inspect.isfunction(fun) and hasattr(fun, '__call__'):
         name, fun = fun.__class__.__name__, fun.__call__
     else:
         name = fun.__name__
@@ -282,6 +282,24 @@ def fun_takes_argument(name, fun, position=None):
         spec.varkw or spec.varargs or
         (len(spec.args) >= position if position else name in spec.args)
     )
+
+
+if IS_PY3:
+    def fun_accepts_kwargs(fun):
+        return any(
+            p for p in inspect.signature(fun).parameters.values()
+            if p.kind == p.VAR_KEYWORD
+        )
+else:
+    def fun_accepts_kwargs(fun):  # noqa
+        try:
+            argspec = inspect.getargspec(fun)
+        except TypeError:
+            try:
+                argspec = inspect.getargspec(fun.__call__)
+            except (TypeError, AttributeError):
+                return
+        return not argspec or argspec[2] is not None
 
 
 def maybe(typ, val):

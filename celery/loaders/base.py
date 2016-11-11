@@ -11,6 +11,7 @@ import sys
 from datetime import datetime
 
 from kombu.utils import json
+from kombu.utils.objects import cached_property
 
 from celery import signals
 from celery.five import reraise, string_t
@@ -107,13 +108,7 @@ class BaseLoader(object):
 
     def import_default_modules(self):
         signals.import_modules.send(sender=self.app)
-        return [
-            self.import_task_module(m) for m in (
-                tuple(self.builtin_modules) +
-                tuple(maybe_list(self.app.conf.imports)) +
-                tuple(maybe_list(self.app.conf.include))
-            )
-        ]
+        return [self.import_task_module(m) for m in self.default_modules]
 
     def init_worker(self):
         if not self.worker_initialized:
@@ -226,6 +221,14 @@ class BaseLoader(object):
         self.task_modules.update(
             mod.__name__ for mod in autodiscover_tasks(packages or (),
                                                        related_name) if mod)
+
+    @cached_property
+    def default_modules(self):
+        return (
+            tuple(self.builtin_modules) +
+            tuple(maybe_list(self.app.conf.imports)) +
+            tuple(maybe_list(self.app.conf.include))
+        )
 
     @property
     def conf(self):

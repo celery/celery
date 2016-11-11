@@ -8,11 +8,20 @@ from celery.result import allow_join_result, _set_task_join_will_block
 from celery.utils.dispatch import Signal
 from celery.utils.nodenames import anon_nodename
 
-test_worker_starting = Signal(providing_args=[])
-test_worker_started = Signal(providing_args=['worker', 'consumer'])
-test_worker_stopped = Signal(providing_args=['worker'])
-
 WORKER_LOGLEVEL = os.environ.get('WORKER_LOGLEVEL', 'error')
+
+test_worker_starting = Signal(
+    name='test_worker_starting',
+    providing_args={},
+)
+test_worker_started = Signal(
+    name='test_worker_started',
+    providing_args={'worker', 'consumer'},
+)
+test_worker_stopped = Signal(
+    name='test_worker_stopped',
+    providing_args={'worker'},
+)
 
 
 class TestWorkController(worker.WorkController):
