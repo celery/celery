@@ -15,8 +15,11 @@ class Events(bootsteps.StartStopStep):
 
     requires = (Connection,)
 
-    def __init__(self, c, task_events=True,
-                 without_heartbeat=False, without_gossip=False, **kwargs):
+    def __init__(self, c,
+                 task_events=True,
+                 without_heartbeat=False,
+                 without_gossip=False,
+                 **kwargs):
         self.groups = None if task_events else ['worker']
         self.send_events = (
             task_events or
@@ -30,8 +33,12 @@ class Events(bootsteps.StartStopStep):
         # flush events sent while connection was down.
         prev = self._close(c)
         dis = c.event_dispatcher = c.app.events.Dispatcher(
-            c.connect(), hostname=c.hostname,
-            enabled=self.send_events, groups=self.groups,
+            c.connection_for_write(),
+            hostname=c.hostname,
+            enabled=self.send_events,
+            groups=self.groups,
+            # we currently only buffer events when the event loop is enabled
+            # XXX This excludes eventlet/gevent, which should actually buffer.
             buffer_group=['task'] if c.hub else None,
             on_send_buffered=c.on_send_event_buffered if c.hub else None,
         )
