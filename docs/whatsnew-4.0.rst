@@ -376,7 +376,7 @@ lowercase and some setting names have been renamed for consistency.
 
 This change is fully backwards compatible so you can still use the uppercase
 setting names, but we would like you to upgrade as soon as possible and
-you can this automatically using the :program:`celery upgrade settings`
+you can do this automatically using the :program:`celery upgrade settings`
 command:
 
 .. code-block:: console
