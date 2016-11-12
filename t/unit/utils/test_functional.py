@@ -263,9 +263,9 @@ class test_fun_accepts_kwargs:
         lambda a, b, **kwargs: 1,
         lambda *args, **kwargs: 1,
         lambda foo=1, **kwargs: 1,
-        StarKwargsCallable,
-        StarArgsStarKwargsCallable,
-        ArgsStarKwargsCallable,
+        StarKwargsCallable(),
+        StarArgsStarKwargsCallable(),
+        ArgsStarKwargsCallable(),
     ])
     def test_accepts(self, fun):
         assert fun_accepts_kwargs(fun)
@@ -275,8 +275,8 @@ class test_fun_accepts_kwargs:
         lambda a, b: 1,
         lambda *args: 1,
         lambda a, kw1=1, kw2=2: 1,
-        StarArgsCallable,
-        ArgsCallable,
+        StarArgsCallable(),
+        ArgsCallable(),
     ])
     def test_rejects(self, fun):
         assert not fun_accepts_kwargs(fun)
