@@ -194,7 +194,8 @@ class test_BaseBackend_dict:
         e = x.prepare_exception(KeyError('foo'))
         assert 'exc_type' in e
         e = x.exception_to_python(e)
-        assert e.__class__.__name__ == 'KeyError'
+        assert e.__class__ is KeyError
+        assert e.args == ("foo", )
         assert str(e).strip('u') == "'foo'"
 
     def test_save_group(self):
