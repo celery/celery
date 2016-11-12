@@ -284,7 +284,7 @@ def fun_takes_argument(name, fun, position=None):
     )
 
 
-if IS_PY3:
+if hasattr(inspect, 'signature'):
     def fun_accepts_kwargs(fun):
         """Return true if function accepts arbitrary keyword arguments."""
         return any(
