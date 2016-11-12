@@ -286,12 +286,14 @@ def fun_takes_argument(name, fun, position=None):
 
 if IS_PY3:
     def fun_accepts_kwargs(fun):
+        """Return true if function accepts arbitrary keyword arguments."""
         return any(
             p for p in inspect.signature(fun).parameters.values()
             if p.kind == p.VAR_KEYWORD
         )
 else:
     def fun_accepts_kwargs(fun):  # noqa
+        """Return true if function accepts arbitrary keyword arguments."""
         try:
             argspec = inspect.getargspec(fun)
         except TypeError:

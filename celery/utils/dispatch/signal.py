@@ -119,7 +119,6 @@ class Signal(object):  # pragma: no cover
             raise ValueError(
                 'Signal receiver must accept keyword arguments.')
 
-
         if isinstance(sender, PromiseProxy):
             sender.__then__(
                 self._connect_proxy, receiver, sender, weak, dispatch_uid,

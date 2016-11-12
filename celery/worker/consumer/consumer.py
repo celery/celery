@@ -436,7 +436,6 @@ class Consumer(object):
             conn.transport.register_with_event_loop(conn.connection, self.hub)
         return conn
 
-
     def _flush_events(self):
         if self.event_dispatcher:
             self.event_dispatcher.flush()

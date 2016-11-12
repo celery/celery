@@ -7,7 +7,6 @@ import sys
 import threading
 import warnings
 
-from functools import partial
 from importlib import import_module
 
 from case import Mock
@@ -95,12 +94,15 @@ def reset_cache_backend_state(celery_app):
 def assert_signal_called(signal, **expected):
     """Context that verifes signal is called before exiting."""
     handler = Mock()
-    call_handler = partial(handler)
-    signal.connect(call_handler)
+
+    def on_call(**kwargs):
+        return handler(**kwargs)
+
+    signal.connect(on_call)
     try:
         yield handler
     finally:
-        signal.disconnect(call_handler)
+        signal.disconnect(on_call)
     handler.assert_called_with(signal=signal, **expected)
 
 

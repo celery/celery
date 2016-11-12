@@ -4,6 +4,7 @@ from kombu.utils.functional import lazy
 from celery.five import range, nextfun
 from celery.utils.functional import (
     DummyContext,
+    fun_accepts_kwargs,
     fun_takes_argument,
     head_from_fun,
     firstmethod,
@@ -224,3 +225,58 @@ def test_seq_concat_item(a, b, expected):
     res = seq_concat_item(a, b)
     assert type(res) is type(expected)  # noqa
     assert res == expected
+
+
+class StarKwargsCallable(object):
+
+    def __call__(self, **kwargs):
+        return 1
+
+
+class StarArgsStarKwargsCallable(object):
+
+    def __call__(self, *args, **kwargs):
+        return 1
+
+
+class StarArgsCallable(object):
+
+    def __call__(self, *args):
+        return 1
+
+
+class ArgsCallable(object):
+
+    def __call__(self, a, b):
+        return 1
+
+
+class ArgsStarKwargsCallable(object):
+
+    def __call__(self, a, b, **kwargs):
+        return 1
+
+
+class test_fun_accepts_kwargs:
+
+    @pytest.mark.parametrize('fun', [
+        lambda a, b, **kwargs: 1,
+        lambda *args, **kwargs: 1,
+        lambda foo=1, **kwargs: 1,
+        StarKwargsCallable,
+        StarArgsStarKwargsCallable,
+        ArgsStarKwargsCallable,
+    ])
+    def test_accepts(self, fun):
+        assert fun_accepts_kwargs(fun)
+
+    @pytest.mark.parametrize('fun', [
+        lambda a: 1,
+        lambda a, b: 1,
+        lambda *args: 1,
+        lambda a, kw1=1, kw2=2: 1,
+        StarArgsCallable,
+        ArgsCallable,
+    ])
+    def test_rejects(self, fun):
+        assert not fun_accepts_kwargs(fun)

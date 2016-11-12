@@ -310,7 +310,7 @@ class PromiseProxy(Proxy):
     promise will only evaluate it once.
     """
 
-    __slots__ = ('__pending__',)
+    __slots__ = ('__pending__', '__weakref__')
 
     def _get_current_object(self):
         try:
