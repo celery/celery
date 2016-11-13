@@ -222,7 +222,7 @@ to a model change, and you wish to cancel the task if the transaction is
 rolled back, or ensure the task is only executed after the changes have been
 written to the database.
 
-``transaction.on_commit`` enables you to solve this problem by adding
+``transaction.atomic`` enables you to solve this problem by adding
 the task as a callback to be called only when the transaction is committed.
 
 Example usage:
