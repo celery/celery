@@ -199,7 +199,7 @@ class test_BaseBackend_dict:
         x = DictBackend(self.app, serializer=serializer)
         e = x.prepare_exception(ValueError('foo'))
         if not isinstance(e, BaseException):
-            # not using pickle, returned value is the exception
+            # not using pickle
             assert 'exc_type' in e
         e = x.exception_to_python(e)
         assert e.__class__ is ValueError
@@ -210,7 +210,7 @@ class test_BaseBackend_dict:
         x = DictBackend(self.app, serializer=serializer)
         e = x.prepare_exception(CustomTestError('foo'))
         if not isinstance(e, BaseException):
-            # not using pickle, returned value is the exception
+            # not using pickle
             assert 'exc_type' in e
         e = x.exception_to_python(e)
         assert e.__class__ is CustomTestError
