@@ -180,6 +180,11 @@ class DictBackend(BaseBackend):
         self._data.pop(group_id, None)
 
 
+class CustomTestError(Exception):
+    """Custom exception defined for tests purposes"""
+    pass
+
+
 class test_BaseBackend_dict:
 
     def setup(self):
@@ -189,14 +194,27 @@ class test_BaseBackend_dict:
         self.b.delete_group('can-delete')
         assert 'can-delete' not in self.b._data
 
-    def test_prepare_exception_json(self):
-        x = DictBackend(self.app, serializer='json')
-        e = x.prepare_exception(KeyError('foo'))
-        assert 'exc_type' in e
+    @pytest.mark.parametrize(("serializer"), (("pickle", "json")))
+    def test_prepare_builtin_exception(self, serializer):
+        x = DictBackend(self.app, serializer=serializer)
+        e = x.prepare_exception(ValueError('foo'))
+        if not isinstance(e, BaseException):
+            # not using pickle, returned value is the exception
+            assert 'exc_type' in e
         e = x.exception_to_python(e)
-        assert e.__class__ is KeyError
+        assert e.__class__ is ValueError
         assert e.args == ("foo", )
-        assert str(e).strip('u') == "'foo'"
+
+    @pytest.mark.parametrize(("serializer"), (("pickle", "json")))
+    def test_prepare_custom_exception(self, serializer):
+        x = DictBackend(self.app, serializer=serializer)
+        e = x.prepare_exception(CustomTestError('foo'))
+        if not isinstance(e, BaseException):
+            # not using pickle, returned value is the exception
+            assert 'exc_type' in e
+        e = x.exception_to_python(e)
+        assert e.__class__ is CustomTestError
+        assert e.args == ("foo", )
 
     def test_save_group(self):
         b = BaseBackend(self.app)
