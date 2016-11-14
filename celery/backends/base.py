@@ -244,7 +244,9 @@ class Backend(object):
         if exc_module:
             exc_module = exc_module.__name__
 
-        return {'exc_type': type(exc).__name__, 'exc_args': exc.args, 'exc_module': exc_module}
+        return {'exc_type': type(exc).__name__,
+                'exc_args': exc.args,
+                'exc_module': exc_module}
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
