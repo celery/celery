@@ -81,21 +81,17 @@ def itermro(cls, stop):
 
 def create_exception_cls(name, module, parent=None):
     """Dynamically create an exception class."""
-    # handle builtin exceptions
-    if name in __builtins__ \
-            and isinstance(__builtins__[name], type(BaseException)):
-        return __builtins__[name]
-    # exception is not builtin, try to find it from its module
-    exc = None
     try:
+        # also works for 'builtins' module
         mod = import_module(module)
+        # should we raise if getattr fails ?
+        exc_cls = getattr(mod, name, None)
+        if exc_cls and isinstance(exc_cls, type(BaseException)):
+            return exc_cls
     except ImportError:
+        # module not found. We may want to raise instead of
+        # calling subclass_exception
         pass
-    else:
-        # should we raise ?
-        exc = getattr(mod, name, None)
-    if exc:
-        return exc
 
     # we could not find the exception, fallback and create a type.
     if not parent:
