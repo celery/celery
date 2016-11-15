@@ -380,14 +380,14 @@ This is an example systemd file:
   Group=celery
   EnvironmentFile=-/etc/conf.d/celery
   WorkingDirectory=/opt/celery
-  ExecStart=/bin/sh '${CELERY_BIN} multi start $CELERYD_NODES \
-    -A $CELERY_APP --logfile=${CELERYD_LOG_FILE} \
-    --pidfile=${CELERYD_PID_FILE} $CELERYD_OPTS'
-  ExecStop=/bin/sh '${CELERY_BIN} multi stopwait $CELERYD_NODES \
+  ExecStart=/bin/sh -c '${CELERY_BIN} multi start ${CELERYD_NODES} \
+    -A ${CELERY_APP} --pidfile=${CELERYD_PID_FILE} \
+    --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'
+  ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait ${CELERYD_NODES} \
     --pidfile=${CELERYD_PID_FILE}'
-  ExecReload=/bin/sh '${CELERY_BIN} multi restart $CELERYD_NODES \
-    -A $CELERY_APP --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
-    --loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
+  ExecReload=/bin/sh -c '${CELERY_BIN} multi restart ${CELERYD_NODES} \
+    -A ${CELERY_APP} --pidfile=${CELERYD_PID_FILE} \
+    --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'
 
   [Install]
   WantedBy=multi-user.target
@@ -430,6 +430,12 @@ This is an example configuration for a Python project:
     # Absolute or relative path to the 'celery' command:
     CELERY_BIN="/usr/local/bin/celery"
     #CELERY_BIN="/virtualenvs/def/bin/celery"
+    
+    # App instance to use
+    # comment out this line if you don't use an app
+    CELERY_APP="proj"
+    # or fully qualified:
+    #CELERY_APP="proj.tasks:app"
 
     # How to call manage.py
     CELERYD_MULTI="multi"
@@ -440,8 +446,9 @@ This is an example configuration for a Python project:
     # - %n will be replaced with the first part of the nodename.
     # - %I will be replaced with the current child process index
     #   and is important when using the prefork pool to avoid race conditions.
-    CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
     CELERYD_PID_FILE="/var/run/celery/%n.pid"
+    CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
+    CELERYD_LOG_LEVEL="INFO"
 
 Running the worker with superuser privileges (root)
 ======================================================================
