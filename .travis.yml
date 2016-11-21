@@ -21,9 +21,6 @@ env:
     - TOXENV=pypy-unit PYPY_VERSION="5.3"
     - TOXENV=pypy-integration-rabbitmq PYPY_VERSION="5.3"
     - TOXENV=pypy-integration-redis PYPY_VERSION="5.3"
-    - TOXENV=pypy3-unit
-    - TOXENV=pypy3-integration-rabbitmq
-    - TOXENV=pypy3-integration-redis
     - TOXENV=flake8
     - TOXENV=flakeplus
     - TOXENV=apicheck
