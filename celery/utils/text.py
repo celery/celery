@@ -60,6 +60,8 @@ def ensure_sep(sep, s, n=2):
     # type: (str, str, int) -> str
     """Ensure text s ends in separator sep'."""
     return s + sep * (n - s.count(sep))
+
+
 ensure_newlines = partial(ensure_sep, '\n')
 
 

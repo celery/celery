@@ -105,6 +105,8 @@ def get_logger(name):
     if logging.root not in (l, l.parent) and l is not base_logger:
         l = _using_logger_parent(base_logger, l)
     return l
+
+
 task_logger = get_logger('celery.task')
 worker_logger = get_logger('celery.worker')
 

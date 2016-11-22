@@ -66,6 +66,8 @@ class _TLS(threading.local):
     #: sets this, so it will always contain the last instantiated app,
     #: and is the default app returned by :func:`app_or_default`.
     current_app = None
+
+
 _tls = _TLS()
 
 _task_stack = LocalStack()
@@ -187,6 +189,7 @@ def disable_trace():
     """Disable tracing of app instances."""
     global app_or_default
     app_or_default = _app_or_default
+
 
 if os.environ.get('CELERY_TRACE_APP'):  # pragma: no cover
     enable_trace()

@@ -390,6 +390,7 @@ def maybe_evaluate(obj):
 
 # import fails in python 2.5. fallback to reduce in stdlib
 
+
 MODULE_DEPRECATED = """
 The module %s is deprecated and will be removed in a future version.
 """
@@ -419,6 +420,7 @@ def getappattr(path):
 def _compat_periodic_task_decorator(*args, **kwargs):
     from celery.task import periodic_task
     return periodic_task(*args, **kwargs)
+
 
 COMPAT_MODULES = {
     'celery': {

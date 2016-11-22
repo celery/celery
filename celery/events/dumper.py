@@ -103,5 +103,6 @@ def evdump(app=None, out=sys.stdout):
         except conn.connection_errors + conn.channel_errors:
             dumper.say('-> Connection lost, attempting reconnect')
 
+
 if __name__ == '__main__':  # pragma: no cover
     evdump()

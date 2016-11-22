@@ -53,7 +53,7 @@ def __optimize__():
     global _does_info
     _does_debug = logger.isEnabledFor(logging.DEBUG)
     _does_info = logger.isEnabledFor(logging.INFO)
-__optimize__()
+__optimize__()  # noqa: E305
 
 # Localize
 tz_or_local = timezone.tz_or_local

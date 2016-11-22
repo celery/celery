@@ -72,6 +72,7 @@ class Option(object):
         return '<Option: type->{0} default->{1!r}>'.format(self.type,
                                                            self.default)
 
+
 NAMESPACES = Namespace(
     accept_content=Option(DEFAULT_ACCEPT_CONTENT, type='list', old=OLD_NS),
     enable_utc=Option(True, type='bool'),
@@ -309,6 +310,8 @@ def flatten(d, root='', keyfilter=_flatten_keys):
             else:
                 for ret in keyfilter(ns, key, opt):
                     yield ret
+
+
 DEFAULTS = {
     key: opt.default for key, opt in flatten(NAMESPACES)
 }
