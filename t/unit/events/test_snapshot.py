@@ -11,6 +11,8 @@ class MockTimer(object):
     def call_repeatedly(self, secs, fun, *args, **kwargs):
         self.installed.append(fun)
         return Mock(name='TRef')
+
+
 timer = MockTimer()
 
 

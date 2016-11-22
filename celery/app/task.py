@@ -123,7 +123,6 @@ class Context(object):
             'expires': self.expires,
             'soft_time_limit': limit_soft,
             'time_limit': limit_hard,
-            'reply_to': self.reply_to,
             'headers': self.headers,
             'retries': self.retries,
             'reply_to': self.reply_to,
@@ -997,4 +996,4 @@ class Task(object):
     @property
     def __name__(self):
         return self.__class__.__name__
-BaseTask = Task  # compat alias
+BaseTask = Task  # noqa: E305 XXX compat alias

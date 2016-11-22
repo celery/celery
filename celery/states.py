@@ -124,6 +124,7 @@ class state(str):
     def __le__(self, other):
         return precedence(self) >= precedence(other)
 
+
 #: Task state is unknown (assumed pending since you know the id).
 PENDING = 'PENDING'
 #: Task was received by a worker (only used in events).

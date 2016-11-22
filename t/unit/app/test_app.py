@@ -33,6 +33,7 @@ class ObjectConfig(object):
     FOO = 1
     BAR = 2
 
+
 object_config = ObjectConfig()
 dict_config = dict(FOO=10, BAR=20)
 

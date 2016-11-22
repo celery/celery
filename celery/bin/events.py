@@ -173,5 +173,6 @@ def main():
     ev = events()
     ev.execute_from_commandline()
 
+
 if __name__ == '__main__':              # pragma: no cover
     main()
