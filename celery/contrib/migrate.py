@@ -102,7 +102,7 @@ def migrate_tasks(source, dest, migrate=migrate_task, app=None,
     """Migrate tasks from one broker to another."""
     app = app_or_default(app)
     queues = prepare_queues(queues)
-    producer = app.amqp.Producer(dest)
+    producer = app.amqp.Producer(dest, auto_declare=False)
     migrate = partial(migrate, producer, queues=queues)
 
     def on_declare_queue(queue):

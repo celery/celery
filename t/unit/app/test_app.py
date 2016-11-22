@@ -847,7 +847,8 @@ class test_App:
         self.app.amqp = Mock(name='amqp')
         self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
         self.app.send_task('foo', (1, 2), connection=connection, router=router)
-        self.app.amqp.Producer.assert_called_with(connection)
+        self.app.amqp.Producer.assert_called_with(
+            connection, auto_declare=False)
         self.app.amqp.send_task_message.assert_called_with(
             self.app.amqp.Producer(), 'foo',
             self.app.amqp.create_task_message())

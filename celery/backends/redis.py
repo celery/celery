@@ -254,8 +254,8 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
                 .rpush(jkey, self.encode([1, tid, state, result]))          \
                 .llen(jkey)                                                 \
                 .get(tkey)                                                  \
-                .expire(jkey, 86400)                                        \
-                .expire(tkey, 86400)                                        \
+                .expire(jkey, self.expires)                                 \
+                .expire(tkey, self.expires)                                 \
                 .execute()
 
         totaldiff = int(totaldiff or 0)
