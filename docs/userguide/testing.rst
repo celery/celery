@@ -193,6 +193,29 @@ Example:
             'result_backend': 'rpc',
         }
 
+
+``celery_parameters`` - Override to setup Celery test app parameters.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can redefine this fixture to change the ``__init__`` parameters of test
+Celery app. In contrast to :func:`celery_config`, these are directly passed to
+when instantiating :class:`~celery.Celery`.
+
+The config returned by your fixture will then be used
+to configure the :func:`celery_app`, and :func:`celery_session_app` fixtures.
+
+Example:
+
+.. code-block:: python
+
+    @pytest.fixture(scope='session')
+    def celery_parameters():
+        return {
+            'task_cls':  my.package.MyCustomTaskClass,
+            'strict_typing': False,
+        }
+
+
 ``celery_enable_logging`` - Override to enable logging in embedded workers.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
