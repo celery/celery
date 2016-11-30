@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 import pytest
 from celery.exceptions import SecurityError
+from celery.five import bytes_if_py2
 from celery.security.key import PrivateKey
 from . import CERT1, KEY1, KEY2
 from .case import SecurityCase
@@ -26,6 +27,6 @@ class test_PrivateKey(SecurityCase):
 
     def test_sign(self):
         pkey = PrivateKey(KEY1)
-        pkey.sign('test', b'sha1')
+        pkey.sign('test', bytes_if_py2('sha1'))
         with pytest.raises(ValueError):
-            pkey.sign('test', b'unknown')
+            pkey.sign('test', bytes_if_py2('unknown'))

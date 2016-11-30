@@ -2,11 +2,10 @@
 """Secure serializer."""
 from __future__ import absolute_import, unicode_literals
 
-import sys
-
 from kombu.serialization import registry, dumps, loads
 from kombu.utils.encoding import bytes_to_str, str_to_bytes, ensure_bytes
 
+from celery.five import bytes_if_py2
 from celery.utils.serialization import b64encode, b64decode
 
 from .certificate import Certificate, FSCertStore
@@ -14,8 +13,6 @@ from .key import PrivateKey
 from .utils import reraise_errors
 
 __all__ = ['SecureSerializer', 'register_auth']
-
-PY3 = sys.version_info[0] == 3
 
 
 class SecureSerializer(object):
@@ -26,7 +23,7 @@ class SecureSerializer(object):
         self._key = key
         self._cert = cert
         self._cert_store = cert_store
-        self._digest = str_to_bytes(digest) if not PY3 else digest
+        self._digest = bytes_if_py2(digest)
         self._serializer = serializer
 
     def serialize(self, data):

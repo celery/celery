@@ -49,7 +49,7 @@ class test_Consumer:
     def test_dump_body_buffer(self):
         msg = Mock()
         msg.body = 'str'
-        assert dump_body(msg, buffer(msg.body))
+        assert dump_body(msg, buffer(msg.body))  # noqa: F821
 
     def test_sets_heartbeat(self):
         c = self.get_consumer(amqheartbeat=10)
