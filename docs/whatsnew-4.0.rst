@@ -1576,7 +1576,7 @@ Execution Pools
 - **Eventlet/Gevent**: now enables AMQP heartbeat (Issue #3338).
 
 - **Eventlet/Gevent**: Fixed race condition leading to "simultaneous read"
-  errors (Issue #2812).
+  errors (Issue #2755).
 
 - **Prefork**: Prefork pool now uses ``poll`` instead of ``select`` where
   available (Issue #2373).
