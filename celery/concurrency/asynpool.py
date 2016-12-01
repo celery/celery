@@ -511,11 +511,11 @@ class AsynPool(_pool.Pool):
             _discard_tref(R._job)
         self.on_timeout_cancel = on_timeout_cancel
 
-    def _on_soft_timeout(self, job, soft, hard, hub, now=time.time):
+    def _on_soft_timeout(self, job, soft, hard, hub):
         # only used by async pool.
         if hard:
-            self._tref_for_id[job] = hub.call_at(
-                now() + (hard - soft), self._on_hard_timeout, job,
+            self._tref_for_id[job] = hub.call_later(
+                hard - soft, self._on_hard_timeout, job,
             )
         try:
             result = self._cache[job]
