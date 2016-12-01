@@ -303,7 +303,7 @@ class Request(object):
         task_ready(self)
         if soft:
             warn('Soft time limit (%ss) exceeded for %s[%s]',
-                 soft, self.name, self.id)
+                 timeout, self.name, self.id)
             exc = SoftTimeLimitExceeded(soft)
         else:
             error('Hard time limit (%ss) exceeded for %s[%s]',
