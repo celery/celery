@@ -261,7 +261,7 @@ class Celery(object):
         self._pending = deque()
         self._tasks = tasks
         if not isinstance(self._tasks, TaskRegistry):
-            self._tasks = TaskRegistry(self._tasks or {})
+            self._tasks = self.registry_cls(self._tasks or {})
 
         # If the class defines a custom __reduce_args__ we need to use
         # the old way of pickling apps: pickling a list of

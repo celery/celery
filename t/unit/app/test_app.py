@@ -901,6 +901,17 @@ class test_App:
         beat = self.app.Beat()
         assert isinstance(beat, Beat)
 
+    def test_registry_cls(self):
+
+        class TaskRegistry(self.app.registry_cls):
+            pass
+
+        class CustomCelery(type(self.app)):
+            registry_cls = TaskRegistry
+
+        app = CustomCelery(set_as_current=False)
+        assert isinstance(app.tasks, TaskRegistry)
+
 
 class test_defaults:
 
