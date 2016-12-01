@@ -18,6 +18,9 @@ class call(Command):
 
     args = '<task_name>'
 
+    # since we have an argument --args, we need to name this differently.
+    args_name = 'posargs'
+
     def add_arguments(self, parser):
         group = parser.add_argument_group('Calling Options')
         group.add_argument('--args', '-a',

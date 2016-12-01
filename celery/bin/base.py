@@ -201,6 +201,9 @@ class Command(object):
 
     prog_name = 'celery'
 
+    #: Name of argparse option used for parsing positional args.
+    args_name = 'args'
+
     def __init__(self, app=None, get_app=None, no_color=False,
                  stdout=None, stderr=None, quiet=False, on_error=None,
                  on_usage_error=None):
@@ -399,7 +402,7 @@ class Command(object):
         # so we handle --version manually here.
         self.parser = self.create_parser(prog_name, command)
         options = vars(self.parser.parse_args(arguments))
-        return options, options.pop('args', None) or []
+        return options, options.pop(self.args_name, None) or []
 
     def create_parser(self, prog_name, command=None):
         # for compatibility with optparse usage.
@@ -420,7 +423,7 @@ class Command(object):
         if self.supports_args:
             # for backward compatibility with optparse, we automatically
             # add arbitrary positional args.
-            parser.add_argument('args', nargs='*')
+            parser.add_argument(self.args_name, nargs='*')
         return self.prepare_parser(parser)
 
     def _format_epilog(self, epilog):
