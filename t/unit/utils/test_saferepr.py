@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 import pytest
 import re
+from case import skip
 from decimal import Decimal
 from pprint import pprint
 from celery.five import (
@@ -179,3 +181,15 @@ class test_saferepr:
         # aren't tested here.
         native = old_repr(value)
         assert saferepr(value) == native
+
+    @skip.if_python3()
+    def test_bytes_with_unicode(self):
+        class X(object):
+
+            def __repr__(self):
+                return 'æ e i a æ å'.encode(
+                    'utf-8', errors='backslash replace')
+
+        val = X()
+        assert repr(val)
+        assert saferepr(val)

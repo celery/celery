@@ -99,6 +99,24 @@ def _repr_empty_set(s):
     return '%s()' % (type(s).__name__,)
 
 
+def _safetext(val):
+    if isinstance(val, bytes):
+        try:
+            val.encode('utf-8')
+        except UnicodeDecodeError:
+            # is bytes with unrepresentable characters, attempt
+            # to convert back to unicode
+            return val.decode('utf-8', errors='backslashreplace')
+    return val
+
+
+def _format_chars(val, maxlen):
+    if IS_PY3 and isinstance(val, bytes):  # pragma: no cover
+        return "b'%s'" % (bytes_to_str(truncate_bytes(val, maxlen)),)
+    else:
+        return "'%s'" % (truncate(val, maxlen),)
+
+
 def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
     stack = deque([iter([o])])
     for token, it in reprstream(stack, seen=seen, maxlevels=maxlevels):
@@ -113,13 +131,9 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
         elif isinstance(token, _key):
             val = saferepr(token.value, maxlen, maxlevels)
         elif isinstance(token, _quoted):
-            val = token.value
-            if IS_PY3 and isinstance(val, bytes):  # pragma: no cover
-                val = "b'%s'" % (bytes_to_str(truncate_bytes(val, maxlen)),)
-            else:
-                val = "'%s'" % (truncate(val, maxlen),)
+            val = _format_chars(token.value, maxlen)
         else:
-            val = truncate(token, maxlen)
+            val = _safetext(truncate(token, maxlen))
         yield val
         if maxlen is not None:
             maxlen -= len(val)
