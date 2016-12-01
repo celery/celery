@@ -551,7 +551,7 @@ these manually:
     class CustomTask(Task):
         def run(self):
             print('running')
-    app.tasks.register(CustomTask())
+    app.register_task(CustomTask())
 
 The best practice is to use custom task classes only for overriding
 general behavior, and then using the task decorator to realize the task:
@@ -760,7 +760,7 @@ some long-requested features:
 
             def run(self, fun, *args, **kwargs):
                 return fun(*args, **kwargs)
-        call_as_task = app.tasks.register(call_as_task())
+        call_as_task = app.register_task(call_as_task())
 
 - New ``argsrepr`` and ``kwargsrepr`` fields contain textual representations
   of the task arguments (possibly truncated) for use in logs, monitors, etc.

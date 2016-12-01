@@ -478,6 +478,21 @@ class Celery(object):
             task = self._tasks[name]
         return task
 
+    def register_task(self, task):
+        """Utility for registering a task-based class.
+
+        Note:
+            This is here for compatibility with old Celery 1.0
+            style task classes, you should not need to use this for
+            new projects.
+        """
+        if not task.name:
+            task_cls = type(task)
+            task.name = self.gen_task_name(
+                task_cls.__name__, task_cls.__module__)
+        self.tasks[task.name] = task
+        return task
+
     def gen_task_name(self, name, module):
         return gen_task_name(self, name, module)
 
