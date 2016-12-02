@@ -1096,7 +1096,9 @@ class AsynPool(_pool.Pool):
             'avg': per(total / len(self.write_stats) if total else 0, total),
             'all': ', '.join(per(v, total) for v in vals),
             'raw': ', '.join(map(str, vals)),
-            'strategy': SCHED_STRATEGY_TO_NAME[self.sched_strategy],
+            'strategy': SCHED_STRATEGY_TO_NAME.get(
+                self.sched_strategy, self.sched_strategy,
+            ),
             'inqueues': {
                 'total': len(self._all_inqueues),
                 'active': len(self._active_writes),
