@@ -157,6 +157,11 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             # host+port are invalid options when using this connection type.
             connparams.pop('host', None)
             connparams.pop('port', None)
+            if hasattr(self, '_client_capabilities'):
+                # Not all subclasses seem to use the client capability feature
+                # (e.g. during testing), so we do this only if supported for
+                # backwards compatibility.
+                self._client_capabilities['socket_connect_timeout'] = False
         else:
             connparams['db'] = path
 
