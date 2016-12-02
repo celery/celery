@@ -888,6 +888,18 @@ Default: No limit.
 Maximum number of connections available in the Redis connection
 pool used for sending and retrieving results.
 
+.. setting:: redis_socket_connect_timeout
+
+``redis_socket_connect_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.0.1
+
+Default: :const:`None`
+
+Socket timeout for connections to Redis from the result backend
+in seconds (int/float)
+
 .. setting:: redis_socket_timeout
 
 ``redis_socket_timeout``
@@ -895,8 +907,8 @@ pool used for sending and retrieving results.
 
 Default: 5.0 seconds.
 
-Socket timeout for connections to Redis from the result backend
-in seconds (int/float)
+Socket timeout for reading/writing operations to the Redis server
+in seconds (int/float), used by the redis result backend.
 
 .. _conf-cassandra-result-backend:
 

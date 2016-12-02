@@ -119,13 +119,18 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             self.max_connections)
         self._ConnectionPool = connection_pool
 
+        socket_timeout = _get('redis_socket_timeout')
+        socket_connect_timeout = _get('redis_socket_connect_timeout')
+
         self.connparams = {
             'host': _get('redis_host') or 'localhost',
             'port': _get('redis_port') or 6379,
             'db': _get('redis_db') or 0,
             'password': _get('redis_password'),
-            'socket_timeout': _get('redis_socket_timeout'),
             'max_connections': self.max_connections,
+            'socket_timeout': socket_timeout and float(socket_timeout),
+            'socket_connect_timeout':
+                socket_connect_timeout and float(socket_connect_timeout),
         }
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
@@ -157,6 +162,7 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             # host+port are invalid options when using this connection type.
             connparams.pop('host', None)
             connparams.pop('port', None)
+            connparams.pop('socket_connect_timeout')
         else:
             connparams['db'] = path
 
@@ -290,14 +296,9 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
                 ChordError('Join error: {0!r}'.format(exc)),
             )
 
-    def _create_client(self, socket_timeout=None, socket_connect_timeout=None,
-                       **params):
+    def _create_client(self, **params):
         return self.redis.StrictRedis(
-            connection_pool=self.ConnectionPool(
-                socket_timeout=socket_timeout and float(socket_timeout),
-                socket_connect_timeout=socket_connect_timeout and float(
-                    socket_connect_timeout),
-                **params),
+            connection_pool=self.ConnectionPool(**params),
         )
 
     @property

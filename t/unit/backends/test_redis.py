@@ -150,6 +150,8 @@ class test_RedisBackend:
             self.Backend(app=self.app)
 
     def test_url(self):
+        self.app.conf.redis_socket_timeout = 30.0
+        self.app.conf.redis_socket_connect_timeout = 100.0
         x = self.Backend(
             'redis://:bosco@vandelay.com:123//1', app=self.app,
         )
@@ -158,8 +160,12 @@ class test_RedisBackend:
         assert x.connparams['db'] == 1
         assert x.connparams['port'] == 123
         assert x.connparams['password'] == 'bosco'
+        assert x.connparams['socket_timeout'] == 30.0
+        assert x.connparams['socket_connect_timeout'] == 100.0
 
     def test_socket_url(self):
+        self.app.conf.redis_socket_timeout = 30.0
+        self.app.conf.redis_socket_connect_timeout = 100.0
         x = self.Backend(
             'socket:///tmp/redis.sock?virtual_host=/3', app=self.app,
         )
@@ -169,6 +175,8 @@ class test_RedisBackend:
                 redis.UnixDomainSocketConnection)
         assert 'host' not in x.connparams
         assert 'port' not in x.connparams
+        assert x.connparams['socket_timeout'] == 30.0
+        assert 'socket_connect_timeout' not in x.connparams
         assert x.connparams['db'] == 3
 
     def test_compat_propertie(self):
