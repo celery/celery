@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 import pytest
 from celery.app.registry import _unpickle_task, _unpickle_task_v2
+from celery.exceptions import InvalidTaskError
 
 
 def returns():
@@ -24,6 +25,8 @@ class test_TaskRegistry:
 
     def setup(self):
         self.mytask = self.app.task(name='A', shared=False)(returns)
+        self.missing_name_task = self.app.task(name=None, shared=False)(returns)
+        self.missing_name_task.name = None  # name is overridden with path
         self.myperiodic = self.app.task(
             name='B', shared=False, type='periodic',
         )(returns)
@@ -44,6 +47,9 @@ class test_TaskRegistry:
 
         self.assert_register_unregister_cls(r, self.mytask)
         self.assert_register_unregister_cls(r, self.myperiodic)
+
+        with pytest.raises(InvalidTaskError):
+            r.register(self.missing_name_task)
 
         r.register(self.myperiodic)
         r.unregister(self.myperiodic.name)
