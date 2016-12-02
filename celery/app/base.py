@@ -491,6 +491,8 @@ class Celery(object):
             task.name = self.gen_task_name(
                 task_cls.__name__, task_cls.__module__)
         self.tasks[task.name] = task
+        task._app = self
+        task.bind(self)
         return task
 
     def gen_task_name(self, name, module):
