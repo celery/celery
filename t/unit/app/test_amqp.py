@@ -210,6 +210,9 @@ class test_AMQP:
         self.simple_message = self.app.amqp.as_task_v2(
             uuid(), 'foo', create_sent_event=True,
         )
+        self.simple_message_no_sent_event = self.app.amqp.as_task_v2(
+            uuid(), 'foo', create_sent_event=False,
+        )
 
     def test_kwargs_must_be_mapping(self):
         with pytest.raises(TypeError):
@@ -237,14 +240,16 @@ class test_AMQP:
     def test_send_task_message__properties(self):
         prod = Mock(name='producer')
         self.app.amqp.send_task_message(
-            prod, 'foo', self.simple_message, foo=1, retry=False,
+            prod, 'foo', self.simple_message_no_sent_event,
+            foo=1, retry=False,
         )
         assert prod.publish.call_args[1]['foo'] == 1
 
     def test_send_task_message__headers(self):
         prod = Mock(name='producer')
         self.app.amqp.send_task_message(
-            prod, 'foo', self.simple_message, headers={'x1x': 'y2x'},
+            prod, 'foo', self.simple_message_no_sent_event,
+            headers={'x1x': 'y2x'},
             retry=False,
         )
         assert prod.publish.call_args[1]['headers']['x1x'] == 'y2x'
@@ -252,7 +257,8 @@ class test_AMQP:
     def test_send_task_message__queue_string(self):
         prod = Mock(name='producer')
         self.app.amqp.send_task_message(
-            prod, 'foo', self.simple_message, queue='foo', retry=False,
+            prod, 'foo', self.simple_message_no_sent_event,
+            queue='foo', retry=False,
         )
         kwargs = prod.publish.call_args[1]
         assert kwargs['routing_key'] == 'foo'
@@ -273,7 +279,8 @@ class test_AMQP:
     def test_send_task_message__with_delivery_mode(self):
         prod = Mock(name='producer')
         self.app.amqp.send_task_message(
-            prod, 'foo', self.simple_message, delivery_mode=33, retry=False,
+            prod, 'foo', self.simple_message_no_sent_event,
+            delivery_mode=33, retry=False,
         )
         assert prod.publish.call_args[1]['delivery_mode'] == 33
 
