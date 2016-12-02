@@ -185,6 +185,8 @@ class Worker(WorkController):
         )
 
     def extra_info(self):
+        if self.loglevel is None:
+            return
         if self.loglevel <= logging.INFO:
             include_builtins = self.loglevel <= logging.DEBUG
             tasklist = self.tasklist(include_builtins=include_builtins)
