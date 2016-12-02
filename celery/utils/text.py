@@ -101,13 +101,6 @@ def truncate(s, maxlen=128, suffix='...'):
     return s
 
 
-def truncate_bytes(s, maxlen=128, suffix=b'...'):
-    # type: (bytes, int, bytes) -> bytes
-    if maxlen and len(s) >= maxlen:
-        return s[:maxlen].rsplit(b' ', 1)[0] + suffix
-    return s
-
-
 def pluralize(n, text, suffix='s'):
     # type: (int, str, str) -> str
     """Pluralize term when n is greater than one."""

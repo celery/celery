@@ -21,11 +21,9 @@ from itertools import chain
 from numbers import Number
 from pprint import _recursion
 
-from kombu.utils.encoding import bytes_to_str
-
 from celery.five import items, text_t
 
-from .text import truncate, truncate_bytes
+from .text import truncate
 
 __all__ = ['saferepr', 'reprstream']
 
@@ -110,11 +108,27 @@ def _safetext(val):
     return val
 
 
+def _format_binary_bytes(val, maxlen, ellipsis='...'):
+    if maxlen and len(val) > maxlen:
+        # we don't want to copy all the data, just take what we need.
+        chunk = memoryview(val)[:maxlen].tobytes()
+        return "b'{0}{1}'".format(_repr_binary_bytes(chunk), ellipsis)
+    return "b'{0}'".format(_repr_binary_bytes(val))
+
+
+def _repr_binary_bytes(val):
+    try:
+        return val.decode('utf-8')
+    except UnicodeDecodeError:
+        # possibly not unicode, but binary data so format as hex.
+        return val.hex()
+
+
 def _format_chars(val, maxlen):
     if IS_PY3 and isinstance(val, bytes):  # pragma: no cover
-        return "b'%s'" % (bytes_to_str(truncate_bytes(val, maxlen)),)
+        return _format_binary_bytes(val, maxlen)
     else:
-        return "'%s'" % (truncate(val, maxlen),)
+        return "'{0}'".format(truncate(val, maxlen))
 
 
 def _saferepr(o, maxlen=None, maxlevels=3, seen=None):

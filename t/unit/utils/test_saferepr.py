@@ -2,6 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 import pytest
 import re
+import struct
 from case import skip
 from decimal import Decimal
 from pprint import pprint
@@ -193,3 +194,25 @@ class test_saferepr:
         val = X()
         assert repr(val)
         assert saferepr(val)
+
+    @skip.unless_python3()
+    def test_unicode_bytes(self):
+        val = 'øystein'.encode('utf-8')
+        assert saferepr(val) == "b'øystein'"
+
+    @skip.unless_python3()
+    def test_unicode_bytes__long(self):
+        val = 'øystein'.encode('utf-8') * 1024
+        assert saferepr(val, maxlen=128).endswith("...'")
+
+    @skip.unless_python3()
+    def test_binary_bytes(self):
+        val = struct.pack('>QQQ', 12223, 1234, 3123)
+        assert '2fbf' in saferepr(val, maxlen=128)
+
+    @skip.unless_python3()
+    def test_binary_bytes__long(self):
+        val = struct.pack('>QQQ', 12223, 1234, 3123) * 1024
+        result = saferepr(val, maxlen=128)
+        assert '2fbf' in result
+        assert result.endswith("...'")
