@@ -123,7 +123,6 @@ class Context(object):
             'expires': self.expires,
             'soft_time_limit': limit_soft,
             'time_limit': limit_hard,
-            'reply_to': self.reply_to,
             'headers': self.headers,
             'retries': self.retries,
             'reply_to': self.reply_to,
@@ -564,9 +563,17 @@ class Task(object):
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
         options = request.as_execution_options()
-        options.update(
-            {'queue': queue} if queue else (request.delivery_info or {}),
-        )
+        if queue:
+            options['queue'] = queue
+        else:
+            delivery_info = request.delivery_info or {}
+            exchange = delivery_info.get('exchange')
+            routing_key = delivery_info.get('routing_key')
+            if exchange == '' and routing_key:
+                # sent to anon-exchange
+                options['queue'] = routing_key
+            else:
+                options.update(delivery_info)
         return self.signature(
             args, kwargs, options, type=self, **extra_options
         )
@@ -997,4 +1004,4 @@ class Task(object):
     @property
     def __name__(self):
         return self.__class__.__name__
-BaseTask = Task  # compat alias
+BaseTask = Task  # noqa: E305 XXX compat alias

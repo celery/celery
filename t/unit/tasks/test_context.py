@@ -15,6 +15,8 @@ def get_context_as_dict(ctx, getter=getattr):
             continue   # Ignore methods and other non-trivial types
         defaults[attr_name] = attr
     return defaults
+
+
 default_context = get_context_as_dict(Context())
 
 

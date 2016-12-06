@@ -451,5 +451,6 @@ class MultiTool(TermLogger):
     def DOWN(self):
         return str(self.colored.magenta('DOWN'))
 
+
 if __name__ == '__main__':              # pragma: no cover
     main()

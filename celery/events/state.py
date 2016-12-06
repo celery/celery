@@ -101,7 +101,7 @@ class CallableDefaultdict(defaultdict):
 
     def __call__(self, *args, **kwargs):
         return self.fun(*args, **kwargs)
-Callable.register(CallableDefaultdict)
+Callable.register(CallableDefaultdict)  # noqa: E305
 
 
 @memoize(maxsize=1000, keyfun=lambda a, _: a[0])

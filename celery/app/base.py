@@ -261,7 +261,7 @@ class Celery(object):
         self._pending = deque()
         self._tasks = tasks
         if not isinstance(self._tasks, TaskRegistry):
-            self._tasks = TaskRegistry(self._tasks or {})
+            self._tasks = self.registry_cls(self._tasks or {})
 
         # If the class defines a custom __reduce_args__ we need to use
         # the old way of pickling apps: pickling a list of
@@ -476,6 +476,23 @@ class Celery(object):
                 task._orig_run, task.run = task.run, run
         else:
             task = self._tasks[name]
+        return task
+
+    def register_task(self, task):
+        """Utility for registering a task-based class.
+
+        Note:
+            This is here for compatibility with old Celery 1.0
+            style task classes, you should not need to use this for
+            new projects.
+        """
+        if not task.name:
+            task_cls = type(task)
+            task.name = self.gen_task_name(
+                task_cls.__name__, task_cls.__module__)
+        self.tasks[task.name] = task
+        task._app = self
+        task.bind(self)
         return task
 
     def gen_task_name(self, name, module):
@@ -1227,4 +1244,4 @@ class Celery(object):
             return (timezone.get_timezone('UTC') if conf.enable_utc
                     else timezone.local)
         return timezone.get_timezone(conf.timezone)
-App = Celery  # compat
+App = Celery  # noqa: E305 XXX compat

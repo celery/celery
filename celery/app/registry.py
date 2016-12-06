@@ -25,7 +25,9 @@ class TaskRegistry(dict):
         instance. Name must be configured prior to registration.
         """
         if task.name is None:
-            raise InvalidTaskError('Task "class {0}" must specify name'.format(task.__class__.__name__))
+            raise InvalidTaskError(
+                'Task class {0!r} must specify .name attribute'.format(
+                    type(task).__name__))
         self[task.name] = inspect.isclass(task) and task() or task
 
     def unregister(self, name):

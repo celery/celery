@@ -21,11 +21,9 @@ from itertools import chain
 from numbers import Number
 from pprint import _recursion
 
-from kombu.utils.encoding import bytes_to_str
-
 from celery.five import items, text_t
 
-from .text import truncate, truncate_bytes
+from .text import truncate
 
 __all__ = ['saferepr', 'reprstream']
 
@@ -99,6 +97,47 @@ def _repr_empty_set(s):
     return '%s()' % (type(s).__name__,)
 
 
+def _safetext(val):
+    if isinstance(val, bytes):
+        try:
+            val.encode('utf-8')
+        except UnicodeDecodeError:
+            # is bytes with unrepresentable characters, attempt
+            # to convert back to unicode
+            return val.decode('utf-8', errors='backslashreplace')
+    return val
+
+
+def _format_binary_bytes(val, maxlen, ellipsis='...'):
+    if maxlen and len(val) > maxlen:
+        # we don't want to copy all the data, just take what we need.
+        chunk = memoryview(val)[:maxlen].tobytes()
+        return "b'{0}{1}'".format(_repr_binary_bytes(chunk), ellipsis)
+    return "b'{0}'".format(_repr_binary_bytes(val))
+
+
+def _repr_binary_bytes(val):
+    try:
+        return val.decode('utf-8')
+    except UnicodeDecodeError:
+        # possibly not unicode, but binary data so format as hex.
+        try:
+            ashex = val.hex
+        except AttributeError:  # pragma: no cover
+            # Python 3.4
+            return val.decode('utf-8', errors='backslashreplace')
+        else:
+            # Python 3.5+
+            return ashex()
+
+
+def _format_chars(val, maxlen):
+    if IS_PY3 and isinstance(val, bytes):  # pragma: no cover
+        return _format_binary_bytes(val, maxlen)
+    else:
+        return "'{0}'".format(truncate(val, maxlen))
+
+
 def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
     stack = deque([iter([o])])
     for token, it in reprstream(stack, seen=seen, maxlevels=maxlevels):
@@ -113,13 +152,9 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
         elif isinstance(token, _key):
             val = saferepr(token.value, maxlen, maxlevels)
         elif isinstance(token, _quoted):
-            val = token.value
-            if IS_PY3 and isinstance(val, bytes):  # pragma: no cover
-                val = "b'%s'" % (bytes_to_str(truncate_bytes(val, maxlen)),)
-            else:
-                val = "'%s'" % (truncate(val, maxlen),)
+            val = _format_chars(token.value, maxlen)
         else:
-            val = truncate(token, maxlen)
+            val = _safetext(truncate(token, maxlen))
         yield val
         if maxlen is not None:
             maxlen -= len(val)
@@ -183,10 +218,10 @@ def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
                         LIT_TUPLE_START,
                         LIT_TUPLE_END_SV if len(val) == 1 else LIT_TUPLE_END,
                         _chainlist(val))
-                elif isinstance(val, Mapping):
+                elif isinstance(val, dict):
                     lit_start, lit_end, val = (
                         LIT_DICT_START, LIT_DICT_END, _chaindict(val))
-                elif isinstance(val, Iterable):
+                elif isinstance(val, list):
                     lit_start, lit_end, val = (
                         LIT_LIST_START, LIT_LIST_END, _chainlist(val))
                 else:

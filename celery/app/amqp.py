@@ -571,7 +571,7 @@ class AMQP(object):
                     'routing_key': routing_key,
                 })
                 evd.publish('task-sent', sent_event,
-                            self, retry=retry, retry_policy=retry_policy)
+                            producer, retry=retry, retry_policy=retry_policy)
             return ret
         return send_task_message
 

@@ -25,7 +25,8 @@ class test_TaskRegistry:
 
     def setup(self):
         self.mytask = self.app.task(name='A', shared=False)(returns)
-        self.missing_name_task = self.app.task(name=None, shared=False)(returns)
+        self.missing_name_task = self.app.task(
+            name=None, shared=False)(returns)
         self.missing_name_task.name = None  # name is overridden with path
         self.myperiodic = self.app.task(
             name='B', shared=False, type='periodic',

@@ -60,6 +60,8 @@ def ensure_sep(sep, s, n=2):
     # type: (str, str, int) -> str
     """Ensure text s ends in separator sep'."""
     return s + sep * (n - s.count(sep))
+
+
 ensure_newlines = partial(ensure_sep, '\n')
 
 
@@ -96,13 +98,6 @@ def truncate(s, maxlen=128, suffix='...'):
     """Truncate text to a maximum number of characters."""
     if maxlen and len(s) >= maxlen:
         return s[:maxlen].rsplit(' ', 1)[0] + suffix
-    return s
-
-
-def truncate_bytes(s, maxlen=128, suffix=b'...'):
-    # type: (bytes, int, bytes) -> bytes
-    if maxlen and len(s) >= maxlen:
-        return s[:maxlen].rsplit(b' ', 1)[0] + suffix
     return s
 
 

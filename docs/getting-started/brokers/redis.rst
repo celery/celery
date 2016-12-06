@@ -15,7 +15,7 @@ the ``celery[redis]`` :ref:`bundle <bundles>`:
 
 .. code-block:: console
 
-    $ pip install -U celery[redis]
+    $ pip install -U "celery[redis]"
 
 .. _broker-redis-configuration:
 

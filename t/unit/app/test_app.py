@@ -33,6 +33,7 @@ class ObjectConfig(object):
     FOO = 1
     BAR = 2
 
+
 object_config = ObjectConfig()
 dict_config = dict(FOO=10, BAR=20)
 
@@ -899,6 +900,17 @@ class test_App:
         from celery.apps.beat import Beat
         beat = self.app.Beat()
         assert isinstance(beat, Beat)
+
+    def test_registry_cls(self):
+
+        class TaskRegistry(self.app.registry_cls):
+            pass
+
+        class CustomCelery(type(self.app)):
+            registry_cls = TaskRegistry
+
+        app = CustomCelery(set_as_current=False)
+        assert isinstance(app.tasks, TaskRegistry)
 
 
 class test_defaults:
