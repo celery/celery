@@ -121,7 +121,14 @@ def _repr_binary_bytes(val):
         return val.decode('utf-8')
     except UnicodeDecodeError:
         # possibly not unicode, but binary data so format as hex.
-        return val.hex()
+        try:
+            ashex = val.hex
+        except AttributeError:  # pragma: no cover
+            # Python 3.4
+            return val.decode('utf-8', errors='backslashreplace')
+        else:
+            # Python 3.5+
+            return ashex()
 
 
 def _format_chars(val, maxlen):
