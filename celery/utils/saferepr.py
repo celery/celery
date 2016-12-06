@@ -14,7 +14,7 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 
-from collections import Iterable, Mapping, deque, namedtuple
+from collections import deque, namedtuple
 
 from decimal import Decimal
 from itertools import chain
