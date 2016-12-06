@@ -208,11 +208,17 @@ class test_saferepr:
     @skip.unless_python3()
     def test_binary_bytes(self):
         val = struct.pack('>QQQ', 12223, 1234, 3123)
-        assert '2fbf' in saferepr(val, maxlen=128)
+        if hasattr(bytes, 'hex'):  # Python 3.5+
+            assert '2fbf' in saferepr(val, maxlen=128)
+        else:  # Python 3.4
+            assert saferepr(val, maxlen=128)
 
     @skip.unless_python3()
     def test_binary_bytes__long(self):
         val = struct.pack('>QQQ', 12223, 1234, 3123) * 1024
         result = saferepr(val, maxlen=128)
-        assert '2fbf' in result
-        assert result.endswith("...'")
+        if hasattr(bytes, 'hex'):  # Python 3.5+
+            assert '2fbf' in result
+            assert result.endswith("...'")
+        else:  # Python 3.4
+            assert result

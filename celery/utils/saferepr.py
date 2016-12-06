@@ -125,7 +125,7 @@ def _repr_binary_bytes(val):
             ashex = val.hex
         except AttributeError:  # pragma: no cover
             # Python 3.4
-            return val.decode('utf-8', errors='backslashreplace')
+            return val.decode('utf-8', errors='replace')
         else:
             # Python 3.5+
             return ashex()
