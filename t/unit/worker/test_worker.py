@@ -613,7 +613,7 @@ class test_Consumer(ConsumerCase):
             def close(self):
                 self.closed = True
 
-        c.connect = lambda: Connection(obj=c)
+        c.connection_for_read = lambda: Connection(obj=c)
         controller = find_step(c, consumer.Control)
         controller.box.loop(c)
 

@@ -97,7 +97,8 @@ class test_Pidbox_green:
 
     def test_loop(self):
         parent = Mock()
-        conn = parent.connect.return_value = self.app.connection_for_read()
+        conn = self.app.connection_for_read()
+        parent.connection_for_read.return_value = conn
         drain = conn.drain_events = Mock()
         g = gPidbox(parent)
         parent.connection = Mock()

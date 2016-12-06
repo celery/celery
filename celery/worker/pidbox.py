@@ -105,7 +105,7 @@ class gPidbox(Pidbox):
         shutdown = self._node_shutdown = threading.Event()
         stopped = self._node_stopped = threading.Event()
         try:
-            with c.connect() as connection:
+            with c.connection_for_read() as connection:
                 info('pidbox: Connected to %s.', connection.as_uri())
                 self._do_reset(c, connection)
                 while not shutdown.is_set() and c.connection:

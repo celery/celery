@@ -409,8 +409,11 @@ class Consumer(object):
             self.app.connection_for_read(heartbeat=heartbeat))
 
     def connection_for_write(self, heartbeat=None):
-        return self.ensure_connected(
+        conn = self.ensure_connected(
             self.app.connection_for_write(heartbeat=heartbeat))
+        if self.hub:
+            conn.transport.register_with_event_loop(conn.connection, self.hub)
+        return conn
 
     def ensure_connected(self, conn):
         # Callback called for each retry while the connection
@@ -432,8 +435,6 @@ class Consumer(object):
             _error_handler, self.app.conf.broker_connection_max_retries,
             callback=maybe_shutdown,
         )
-        if self.hub:
-            conn.transport.register_with_event_loop(conn.connection, self.hub)
         return conn
 
     def _flush_events(self):
