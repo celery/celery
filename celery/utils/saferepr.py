@@ -218,10 +218,10 @@ def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
                         LIT_TUPLE_START,
                         LIT_TUPLE_END_SV if len(val) == 1 else LIT_TUPLE_END,
                         _chainlist(val))
-                elif isinstance(val, Mapping):
+                elif isinstance(val, dict):
                     lit_start, lit_end, val = (
                         LIT_DICT_START, LIT_DICT_END, _chaindict(val))
-                elif isinstance(val, Iterable):
+                elif isinstance(val, list):
                     lit_start, lit_end, val = (
                         LIT_LIST_START, LIT_LIST_END, _chainlist(val))
                 else:
