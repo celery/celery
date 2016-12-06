@@ -44,7 +44,7 @@ an overview of what's new in Celery 4.0.
 - **Utils**: ``saferepr`` attempted to show iterables as lists
   and mappings as dicts.
 
-_ **Utils**: ``saferepr`` did not handle unicode-errors
+- **Utils**: ``saferepr`` did not handle unicode-errors
   when attempting to format ``bytes`` on Python 3 (Issue #3610).
 
 - **Utils**: ``saferepr`` should now properly represent byte strings
