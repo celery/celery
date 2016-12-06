@@ -163,9 +163,19 @@ class Settings(ConfigurationView):
         """
         return self['_'.join(part for part in parts if part)]
 
+    def finalize(self):
+        # See PendingConfiguration in celery/app/base.py
+        # first access will read actual configuration.
+        try:
+            self['__bogus__']
+        except KeyError:
+            pass
+        return self
+
     def table(self, with_defaults=False, censored=True):
         filt = filter_hidden_settings if censored else lambda v: v
         dict_members = dir(dict)
+        self.finalize()
         return filt({
             k: v for k, v in items(
                 self if with_defaults else self.without_defaults())
