@@ -127,7 +127,7 @@ class test_Queues:
         ex = Exchange('fff', 'fanout')
         q = Queues(default_exchange=ex)
         q.add(Queue('foo'))
-        assert q['foo'].exchange.name == ''
+        assert q['foo'].exchange.name == 'fff'
 
     def test_alias(self):
         q = Queues()
