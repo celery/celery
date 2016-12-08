@@ -74,15 +74,19 @@ def celery_session_app(request,
 
 
 @pytest.fixture(scope='session')
-def celery_session_worker(request, celery_session_app,
-                          celery_includes, celery_worker_pool):
+def celery_session_worker(request,
+                          celery_session_app,
+                          celery_includes,
+                          celery_worker_pool,
+                          celery_worker_parameters):
     # type: (Any, Celery, Sequence[str], str) -> WorkController
     """Session Fixture: Start worker that lives throughout test suite."""
     if not NO_WORKER:
         for module in celery_includes:
             celery_session_app.loader.import_task_module(module)
         with worker.start_worker(celery_session_app,
-                                 pool=celery_worker_pool) as w:
+                                 pool=celery_worker_pool,
+                                 **celery_worker_parameters) as w:
             yield w
 
 
@@ -137,6 +141,19 @@ def celery_parameters():
     return {}
 
 
+@pytest.fixture(scope='session')
+def celery_worker_parameters():
+    # type: () -> Mapping[str, Any]
+    """Redefine this fixture to change the init parameters of Celery workers.
+
+    This can be used e. g. to define queues the worker will consume tasks from.
+
+    The dict returned by your fixture will then be used
+    as parameters when instantiating :class:`~celery.worker.WorkController`.
+    """
+    return {}
+
+
 @pytest.fixture()
 def celery_app(request,
                celery_config,
@@ -155,13 +172,19 @@ def celery_app(request,
 
 
 @pytest.fixture()
-def celery_worker(request, celery_app, celery_includes, celery_worker_pool):
+def celery_worker(request,
+                  celery_app,
+                  celery_includes,
+                  celery_worker_pool,
+                  celery_worker_parameters):
     # type: (Any, Celery, Sequence[str], str) -> WorkController
     """Fixture: Start worker in a thread, stop it when the test returns."""
     if not NO_WORKER:
         for module in celery_includes:
             celery_app.loader.import_task_module(module)
-        with worker.start_worker(celery_app, pool=celery_worker_pool) as w:
+        with worker.start_worker(celery_app,
+                                 pool=celery_worker_pool,
+                                 **celery_worker_parameters) as w:
             yield w
 
 

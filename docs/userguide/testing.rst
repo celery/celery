@@ -215,6 +215,28 @@ Example:
             'strict_typing': False,
         }
 
+``celery_worker_parameters`` - Override to setup Celery worker parameters.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can redefine this fixture to change the ``__init__`` parameters of test
+Celery workers. These are directly passed to
+:class:`~celery.worker.WorkController` when it is instantiated.
+
+The config returned by your fixture will then be used
+to configure the :func:`celery_worker`, and :func:`celery_session_worker`
+fixtures.
+
+Example:
+
+.. code-block:: python
+
+    @pytest.fixture(scope='session')
+    def celery_worker_parameters():
+        return {
+            'queues':  ('high-prio', 'low-prio'),
+            'exclude_queues': ('celery'),
+        }
+
 
 ``celery_enable_logging`` - Override to enable logging in embedded workers.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
