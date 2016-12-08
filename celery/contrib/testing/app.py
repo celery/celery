@@ -15,7 +15,8 @@ DEFAULT_TEST_CONFIG = {
     'enable_utc': True,
     'timezone': 'UTC',
     'broker_url': 'memory://',
-    'result_backend': 'cache+memory://'
+    'result_backend': 'cache+memory://',
+    'broker_heartbeat': 0,
 }
 
 
