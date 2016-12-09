@@ -222,3 +222,9 @@ class test_saferepr:
             assert result.endswith("...'")
         else:  # Python 3.4
             assert result
+
+    def test_repr_raises(self):
+        class O(object):
+            def __repr__(self):
+                raise KeyError('foo')
+        assert 'Unrepresentable' in saferepr(O())
