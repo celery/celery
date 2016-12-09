@@ -14,7 +14,7 @@ from collections import namedtuple
 
 SERIES = 'latentcall'
 
-__version__ = '4.0.0'
+__version__ = '4.0.1'
 __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://celeryproject.org'
