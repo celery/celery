@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 import pytest
 from kombu.utils.functional import lazy
+from case import skip
 from celery.five import range, nextfun
 from celery.utils.functional import (
     DummyContext,
@@ -177,6 +178,26 @@ class test_head_from_fun:
             g(1)
         g(1, 2)
         g(1, 2, kwarg=3)
+
+    @skip.unless_python3()
+    def test_from_fun_forced_kwargs(self):
+        local = {}
+        fun = ('def f_kwargs(*, a, b="b", c=None):'
+               '    return')
+        try:
+            exec(fun, {}, local)
+        except SyntaxError:
+            # Python 2.
+            return
+        f_kwargs = local['f_kwargs']
+
+        g = head_from_fun(f_kwargs)
+        with pytest.raises(TypeError):
+            g(1)
+
+        g(a=1)
+        g(a=1, b=2)
+        g(a=1, b=2, c=3)
 
 
 class test_fun_takes_argument:
