@@ -42,7 +42,6 @@ from celery.utils.saferepr import saferepr
 from celery.utils.serialization import (
     get_pickleable_exception, get_pickled_exception, get_pickleable_etype,
 )
-from celery.utils.text import truncate
 
 __all__ = [
     'TraceInfo', 'build_tracer', 'trace_task',
@@ -244,8 +243,8 @@ class TraceInfo(object):
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                  Info=TraceInfo, eager=False, propagate=False, app=None,
-                 monotonic=monotonic, truncate=truncate,
-                 trace_ok_t=trace_ok_t, IGNORE_STATES=IGNORE_STATES):
+                 monotonic=monotonic, trace_ok_t=trace_ok_t,
+                 IGNORE_STATES=IGNORE_STATES):
     """Return a function that traces task execution.
 
     Catches all exceptions and updates result backend with the
