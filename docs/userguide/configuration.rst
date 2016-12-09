@@ -1582,9 +1582,8 @@ is optional, and defaults to the specific transports default values.
 
 The transport part is the broker implementation to use, and the
 default is ``amqp``, (uses ``librabbitmq`` if installed or falls back to
-``pyamqp``). There are also many other choices, including;
-``redis``, ``beanstalk``, ``sqlalchemy``, ``django``, ``mongodb``,
-and ``couchdb``.
+``pyamqp``). There are also other choices available, including;
+``redis://``, ``sqs://``, and ``qpid://``.
 
 The scheme can also be a fully qualified path to your own transport
 implementation::
