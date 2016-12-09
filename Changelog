@@ -12,8 +12,24 @@ an overview of what's new in Celery 4.0.
 
 4.0.1
 =====
-:release-date: TBA
+:release-date: 2016-12-08 05:22 PM PST
 :release-by: Ask Solem
+
+* [Security: `CELERYSA-0003`_] Insecure default configuration
+
+    The default :setting:`accept_content` setting was set to allow
+    deserialization of pickled messages in Celery 4.0.0.
+
+    The insecure default has been fixed in 4.0.1, and you can also
+    configure the 4.0.0 version to explicitly only allow json serialized
+    messages:
+
+    .. code-block:: python
+
+        app.conf.accept_content = ['json']
+
+.. _`CELERYSA-0003`:
+    https://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0003.txt
 
 - **Tasks**: Added new method to register class-based tasks (Issue #3615).
 
@@ -31,6 +47,11 @@ an overview of what's new in Celery 4.0.
                 return 'hello'
 
         app.register_task(CustomTask())
+
+- **Tasks**: Argument checking now supports keyword-only arguments on Python3
+  (Issue #3658).
+
+    Contributed by :github_user:`sww`.
 
 - **Tasks**: The ``task-sent`` event was not being sent even if
   configured to do so (Issue #3646).
