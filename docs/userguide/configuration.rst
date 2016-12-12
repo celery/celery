@@ -1363,7 +1363,7 @@ Where ``myapp.tasks.route_task`` could be:
 
 .. code-block:: python
 
-    def route_task(self, name, args, kwargs, options, task=None, **kwargs):
+    def route_task(self, name, args, kwargs, options, task=None, **kw):
             if task == 'celery.ping':
                 return {'queue': 'default'}
 
