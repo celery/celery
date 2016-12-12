@@ -19,6 +19,7 @@ from celery.result import (
     AsyncResult,
     EagerResult,
     ResultSet,
+    GroupResult,
     result_from_tuple,
     assert_will_not_block,
 )
@@ -614,6 +615,13 @@ class test_GroupResult:
         assert self.app.GroupResult.restore(ts.id) is None
         with pytest.raises(AttributeError):
             self.app.GroupResult.restore(ts.id, backend=object())
+
+    def test_restore_app(self):
+        subs = [MockAsyncResultSuccess(uuid(), app=self.app)]
+        ts = self.app.GroupResult(uuid(), subs)
+        ts.save()
+        restored = GroupResult.restore(ts.id, app=self.app)
+        assert restored.id == ts.id
 
     def test_join_native(self):
         backend = SimpleBackend()
