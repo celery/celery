@@ -591,11 +591,11 @@ Routers
 A router is a function that decides the routing options for a task.
 
 All you need to define a new router is to define a function with
-the signature ``(name, args, kwargs, options, task=None, **kwargs)``:
+the signature ``(name, args, kwargs, options, task=None, **kw)``:
 
 .. code-block:: python
 
-    def route_task(name, args, kwargs, options, task=None, **kwargs):
+    def route_task(name, args, kwargs, options, task=None, **kw):
             if name == 'myapp.tasks.compress_video':
                 return {'exchange': 'video',
                         'exchange_type': 'topic',
