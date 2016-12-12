@@ -38,7 +38,7 @@ as...
    a :sig:`SIGSEGV` (segmentation fault) or similar signals to the process.
 #. We assume that a system administrator deliberately killing the task
    does not want it to automatically restart.
-#. A task that allocates to much memory is in danger of triggering the kernel
+#. A task that allocates too much memory is in danger of triggering the kernel
    OOM killer, the same may happen again.
 #. A task that always fails when redelivered may cause a high-frequency
    message loop taking down the system.
