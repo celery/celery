@@ -162,15 +162,25 @@ class test_head_from_fun:
         g(1, 2)
         g(1, 2, kwarg=3)
 
+    @skip.unless_python3()
+    def test_regression_3678(self):
+        local = {}
+        fun = ('def f(foo, *args, bar=""):'
+               '    return foo, args, bar')
+        exec(fun, {}, local)
+
+        g = head_from_fun(local['f'])
+        g(1)
+        g(1, 2, 3, 4, bar=100)
+        with pytest.raises(TypeError):
+            g(bar=100)
+
+    @skip.unless_python3()
     def test_from_fun_with_hints(self):
         local = {}
         fun = ('def f_hints(x: int, y: int, kwarg: int=1):'
                '    pass')
-        try:
-            exec(fun, {}, local)
-        except SyntaxError:
-            # py2
-            return
+        exec(fun, {}, local)
         f_hints = local['f_hints']
 
         g = head_from_fun(f_hints)
@@ -184,11 +194,7 @@ class test_head_from_fun:
         local = {}
         fun = ('def f_kwargs(*, a, b="b", c=None):'
                '    return')
-        try:
-            exec(fun, {}, local)
-        except SyntaxError:
-            # Python 2.
-            return
+        exec(fun, {}, local)
         f_kwargs = local['f_kwargs']
 
         g = head_from_fun(f_kwargs)

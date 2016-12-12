@@ -235,6 +235,8 @@ def _argsfromspec(spec, replace_defaults=True):
     else:
         positional, optional = spec.args, []
 
+    varargs = spec.varargs
+    varkw = spec.varkw
     if spec.kwonlydefaults:
         split = len(spec.kwonlydefaults)
         kwonlyargs = spec.kwonlyargs[:-split]
@@ -249,9 +251,9 @@ def _argsfromspec(spec, replace_defaults=True):
     return ', '.join(filter(None, [
         ', '.join(positional),
         ', '.join('{0}={1}'.format(k, v) for k, v in optional),
-        '*{0}'.format(spec.varargs) if spec.varargs else None,
-        '**{0}'.format(spec.varkw) if spec.varkw else None,
-        '*' if kwonlyargs or kwonlyargs_optional else None,
+        '*{0}'.format(varargs) if varargs else None,
+        '**{0}'.format(varkw) if varkw else None,
+        '*' if (kwonlyargs or kwonlyargs_optional) and not varargs else None,
         ', '.join(kwonlyargs) if kwonlyargs else None,
         ', '.join('{0}="{1}"'.format(k, v) for k, v in kwonlyargs_optional),
     ]))
