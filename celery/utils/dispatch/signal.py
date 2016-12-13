@@ -52,7 +52,7 @@ class Signal(object):  # pragma: no cover
     #: ``{receiverkey (id): weakref(receiver)}`` mappings.
     receivers = None
 
-    def __init__(self, providing_args=None, use_caching=True, name=None):
+    def __init__(self, providing_args=None, use_caching=False, name=None):
         self.receivers = []
         self.providing_args = set(
             providing_args if providing_args is not None else [])
