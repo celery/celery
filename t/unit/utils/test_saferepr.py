@@ -231,4 +231,4 @@ class test_saferepr:
         assert 'Unrepresentable' in saferepr(O())
 
     def test_bytes_with_unicode(self):
-        assert saferepr([b'foo', 'a®rgs'.encode()])
+        assert saferepr([b'foo', 'a®rgs'.encode('utf-8')])
