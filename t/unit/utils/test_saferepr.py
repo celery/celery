@@ -230,5 +230,5 @@ class test_saferepr:
                 raise KeyError('foo')
         assert 'Unrepresentable' in saferepr(O())
 
-    def test_bytes_with_unicode(self):
+    def test_bytes_with_unicode_py2_and_3(self):
         assert saferepr([b'foo', 'a®rgs'.encode('utf-8')])
