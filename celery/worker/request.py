@@ -408,7 +408,6 @@ class Request(object):
             'args': self.argsrepr,
             'kwargs': self.kwargsrepr,
             'type': self.type,
-            'body': self.body,
             'hostname': self.hostname,
             'time_start': self.time_start,
             'acknowledged': self.acknowledged,
