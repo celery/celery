@@ -62,7 +62,8 @@ def old_repr(s):
             RE_OLD_SET_REPR.sub(
                 RE_OLD_SET_REPR_REPLACE,
                 RE_OLD_SET_CUSTOM_REPR.sub(
-                    RE_OLD_SET_CUSTOM_REPR_REPLACE, repr(s).replace("u'", "'"),
+                    RE_OLD_SET_CUSTOM_REPR_REPLACE,
+                    repr(s).replace("u'", "'"),
                 )
             ),
         ),
@@ -228,3 +229,6 @@ class test_saferepr:
             def __repr__(self):
                 raise KeyError('foo')
         assert 'Unrepresentable' in saferepr(O())
+
+    def test_bytes_with_unicode(self):
+        assert saferepr([b'foo', 'a®rgs'.encode()])

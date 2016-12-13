@@ -139,8 +139,13 @@ def _format_binary_bytes(val, maxlen, ellipsis='...'):
     if maxlen and len(val) > maxlen:
         # we don't want to copy all the data, just take what we need.
         chunk = memoryview(val)[:maxlen].tobytes()
-        return "b'{0}{1}'".format(_repr_binary_bytes(chunk), ellipsis)
-    return "b'{0}'".format(_repr_binary_bytes(val))
+        return _bytes_prefix("'{0}{1}'".format(
+            _repr_binary_bytes(chunk), ellipsis))
+    return _bytes_prefix("'{0}'".format(_repr_binary_bytes(val)))
+
+
+def _bytes_prefix(s):
+    return 'b' + s if IS_PY3 else s
 
 
 def _repr_binary_bytes(val):
@@ -161,7 +166,7 @@ def _repr_binary_bytes(val):
 
 def _format_chars(val, maxlen):
     # type: (AnyStr, int) -> str
-    if IS_PY3 and isinstance(val, bytes):  # pragma: no cover
+    if isinstance(val, bytes):  # pragma: no cover
         return _format_binary_bytes(val, maxlen)
     else:
         return "'{0}'".format(truncate(val, maxlen))
