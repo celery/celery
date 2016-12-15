@@ -1123,9 +1123,6 @@ class group(Signature):
                                   chord=chord, root_id=root_id,
                                   parent_id=parent_id)
 
-    def __iter__(self):
-        return iter(self.tasks)
-
     def __repr__(self):
         if self.tasks:
             return remove_repeating_from_task(

@@ -812,7 +812,7 @@ class AsynPool(_pool.Pool):
             # inqueues are writable.
             body = dumps(tup, protocol=protocol)
             body_size = len(body)
-            header = pack('>I', body_size)
+            header = pack(b'>I', body_size)
             # index 1,0 is the job ID.
             job = get_job(tup[1][0])
             job._payload = buf_t(header), buf_t(body), body_size
@@ -1252,7 +1252,7 @@ class AsynPool(_pool.Pool):
                         protocol=HIGHEST_PROTOCOL):
         body = dumps((type_, args), protocol=protocol)
         size = len(body)
-        header = pack('>I', size)
+        header = pack(b'>I', size)
         return header, body, size
 
     @classmethod

@@ -867,11 +867,11 @@ class GroupResult(ResultSet):
         return self.results
 
     @classmethod
-    def restore(cls, id, backend=None):
+    def restore(cls, id, backend=None, app=None):
         """Restore previously saved group result."""
-        return (
-            backend or (cls.app.backend if cls.app else current_app.backend)
-        ).restore_group(id)
+        app = app or cls.app
+        backend = backend or (app.backend if app else current_app.backend)
+        return backend.restore_group(id)
 
 
 @Thenable.register

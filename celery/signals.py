@@ -86,28 +86,19 @@ task_sent = Signal(
 celeryd_init = Signal(
     name='celeryd_init',
     providing_args={'instance', 'conf', 'options'},
-    use_caching=False,
 )
 celeryd_after_setup = Signal(
     name='celeryd_after_setup',
     providing_args={'instance', 'conf'},
-    use_caching=False,
 )
 
 # - Worker
 import_modules = Signal(name='import_modules')
-worker_init = Signal(name='worker_init', use_caching=False)
-# use_caching must be false when sender is None.
-worker_process_init = Signal(
-    name='worker_process_init',
-    use_caching=False,
-)
-worker_process_shutdown = Signal(
-    name='worker_process_shutdown',
-    use_caching=False,
-)
-worker_ready = Signal(name='worker_ready', use_caching=False)
-worker_shutdown = Signal(name='worker_shutdown', use_caching=False)
+worker_init = Signal(name='worker_init')
+worker_process_init = Signal(name='worker_process_init')
+worker_process_shutdown = Signal(name='worker_process_shutdown')
+worker_ready = Signal(name='worker_ready')
+worker_shutdown = Signal(name='worker_shutdown')
 heartbeat_sent = Signal(name='heartbeat_sent')
 
 # - Logging
@@ -116,26 +107,23 @@ setup_logging = Signal(
     providing_args={
         'loglevel', 'logfile', 'format', 'colorize',
     },
-    use_caching=False,
 )
 after_setup_logger = Signal(
     name='after_setup_logger',
     providing_args={
         'logger', 'loglevel', 'logfile', 'format', 'colorize',
     },
-    use_caching=False,
 )
 after_setup_task_logger = Signal(
     name='after_setup_task_logger',
     providing_args={
         'logger', 'loglevel', 'logfile', 'format', 'colorize',
     },
-    use_caching=False,
 )
 
 # - Beat
-beat_init = Signal(name='beat_init', use_caching=False)
-beat_embedded_init = Signal(name='beat_embedded_init', use_caching=False)
+beat_init = Signal(name='beat_init')
+beat_embedded_init = Signal(name='beat_embedded_init')
 
 # - Eventlet
 eventlet_pool_started = Signal(name='eventlet_pool_started')
@@ -150,5 +138,4 @@ eventlet_pool_apply = Signal(
 user_preload_options = Signal(
     name='user_preload_options',
     providing_args={'app', 'options'},
-    use_caching=False,
 )
