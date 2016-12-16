@@ -165,7 +165,7 @@ class test_head_from_fun:
     @skip.unless_python3()
     def test_regression_3678(self):
         local = {}
-        fun = ('def f(foo, *args, bar=""):'
+        fun = ('def f(foo, *args, bar="", **kwargs):'
                '    return foo, args, bar')
         exec(fun, {}, local)
 
