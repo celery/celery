@@ -19,8 +19,8 @@ an overview of what's new in Celery 4.0.
 
     - Now depends on :ref:`Kombu 4.0.2 <kombu:version-4.0.2>`.
 
-- **Tasks**: Fixed problem with JSON serialization of `group` (``keys must be
-    string`` error, Issue #3688).
+- **Tasks**: Fixed problem with JSON serialization of `group`
+  (``keys must be string`` error, Issue #3688).
 
 - **Worker**: Fixed JSON serialization issue when using ``inspect active``
   and friends (Issue #3667).
