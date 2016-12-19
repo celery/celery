@@ -31,6 +31,7 @@ __all__ = ['MongoBackend']
 
 BINARY_CODECS = frozenset(['pickle', 'msgpack'])
 
+
 class MongoBackend(BaseBackend):
     """MongoDB result backend.
 
