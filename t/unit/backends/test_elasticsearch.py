@@ -26,7 +26,7 @@ class test_ElasticsearchBackend:
         x._server = Mock()
         x._server.get = Mock()
         # expected result
-        r = dict(found=True, _source={sentinel.task_id: sentinel.result})
+        r = dict(found=True, _source={'result': sentinel.result})
         x._server.get.return_value = r
         dict_result = x.get(sentinel.task_id)
 
