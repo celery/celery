@@ -29,6 +29,8 @@ else:                                       # pragma: no cover
 
 __all__ = ['MongoBackend']
 
+BINARY_CODECS = frozenset(['pickle', 'msgpack'])
+
 
 class MongoBackend(BaseBackend):
     """MongoDB result backend.
@@ -150,7 +152,12 @@ class MongoBackend(BaseBackend):
         if self.serializer == 'bson':
             # mongodb handles serialization
             return data
-        return super(MongoBackend, self).encode(data)
+        payload = super(MongoBackend, self).encode(data)
+
+        # serializer which are in a unsupported format (pickle/binary)
+        if self.serializer in BINARY_CODECS:
+            payload = Binary(payload)
+        return payload
 
     def decode(self, data):
         if self.serializer == 'bson':
