@@ -27,13 +27,13 @@ class test_proto1_to_proto2:
 
     def test_message_without_args(self):
         self.body.pop('args')
-        with pytest.raises(InvalidTaskError):
-            proto1_to_proto2(self.message, self.body)
+        body, _, _, _ = proto1_to_proto2(self.message, self.body)
+        assert body[:2] == ((), {'foo': 'baz'})
 
     def test_message_without_kwargs(self):
         self.body.pop('kwargs')
-        with pytest.raises(InvalidTaskError):
-            proto1_to_proto2(self.message, self.body)
+        body, _, _, _ = proto1_to_proto2(self.message, self.body)
+        assert body[:2] == ((1,), {})
 
     def test_message_kwargs_not_mapping(self):
         self.body['kwargs'] = (2,)

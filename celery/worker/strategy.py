@@ -30,7 +30,7 @@ def proto1_to_proto2(message, body):
         Tuple: of ``(body, headers, already_decoded_status, utc)``
     """
     try:
-        args, kwargs = body['args'], body['kwargs']
+        args, kwargs = body.get('args', ()), body.get('kwargs', {})
         kwargs.items  # pylint: disable=pointless-statement
     except KeyError:
         raise InvalidTaskError('Message does not have args/kwargs')
