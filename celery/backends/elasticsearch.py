@@ -64,7 +64,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             )
             try:
                 if res['found']:
-                    return res['_source'][key]
+                    return res['_source']['result']
             except (TypeError, KeyError):
                 pass
         except elasticsearch.exceptions.NotFoundError:
@@ -75,7 +75,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             self._index(
                 id=key,
                 body={
-                    key: value,
+                    'result': value,
                     '@timestamp': '{0}Z'.format(
                         datetime.utcnow().isoformat()[:-3]
                     ),
@@ -103,7 +103,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def _get_server(self):
         """Connect to the Elasticsearch server."""
-        return elasticsearch.Elasticsearch(self.host)
+        return elasticsearch.Elasticsearch('%s:%s' % (self.host, self.port))
 
     @property
     def server(self):
