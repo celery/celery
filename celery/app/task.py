@@ -19,6 +19,7 @@ from celery.result import EagerResult
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
+from celery.utils.nodenames import gethostname
 from celery.utils.serialization import raise_with_context
 
 from .annotations import resolve_all as resolve_all_annotations
@@ -726,6 +727,7 @@ class Task(object):
             'is_eager': True,
             'logfile': logfile,
             'loglevel': loglevel or 0,
+            'hostname': gethostname(),
             'callbacks': maybe_list(link),
             'errbacks': maybe_list(link_error),
             'headers': headers,
