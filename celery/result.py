@@ -535,7 +535,7 @@ class ResultSet(ResultBase):
     maybe_reraise = maybe_throw  # XXX compat alias.
 
     def waiting(self):
-        """Return true if any of the tasks are incomplate.
+        """Return true if any of the tasks are incomplete.
 
         Returns:
             bool: true if one of the tasks are still
