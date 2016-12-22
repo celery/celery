@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
+import socket
 
 from datetime import datetime, timedelta
 
@@ -118,6 +119,12 @@ class TasksCase:
             return a / b
 
         self.autoretry_task = autoretry_task
+
+        @self.app.task(bind=True)
+        def task_check_request_context(self):
+            assert self.request.hostname == socket.gethostname()
+
+        self.task_check_request_context = task_check_request_context
 
         # memove all messages from memory-transport
         from kombu.transport.memory import Channel
@@ -591,6 +598,10 @@ class test_apply_task(TasksCase):
         self.app.conf.task_eager_propagates = True
         with pytest.raises(KeyError):
             self.raising.apply()
+
+    def test_apply_request_context_is_ok(self):
+        self.app.conf.task_eager_propagates = True
+        self.task_check_request_context.apply()
 
     def test_apply(self):
         self.increment_counter.count = 0
