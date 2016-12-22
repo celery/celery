@@ -23,4 +23,4 @@ After that, modify the content of the files suitable for your application, and e
 Note
 ====
 
-The command used in the script is ``celery worker`` instead of ``celery multi start`` since systemd seeems unable to capture the multiple parent PIDs. Please refer to https://github.com/celery/celery#3459 for more discussion.
+The command used in the script is ``celery worker`` instead of ``celery multi start`` since systemd seeems unable to capture the multiple parent PIDs. Please refer to https://github.com/celery/celery/issues/3459 for more discussion.
