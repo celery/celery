@@ -238,18 +238,18 @@ class Scheduler(object):
         return (mktime(entry.schedule.now().timetuple()) +
                 (adjust(next_time_to_run) or 0))
 
-    def populate_heap(self,event_t=event_t, heapify=heapq.heapify, mktime=time.mktime):
+    def populate_heap(self,event_t=event_t, heapify=heapq.heapify):
         """
         Populate the heap with the data contained in the schedule
         """
-        self._heap = [event_t(self._when(e, e.is_due()[1], mktime) or 0, 5, e)
+        self._heap = [event_t(self._when(e, e.is_due()[1]) or 0, 5, e)
                       for e in values(self.schedule)]
         heapify(self._heap)
 
     # pylint disable=redefined-outer-name
     def tick(self, event_t=event_t, min=min,
              heappop=heapq.heappop, heappush=heapq.heappush,
-             heapify=heapq.heapify, mktime=time.mktime):
+             mktime=time.mktime):
         """Run a tick - one iteration of the scheduler.
 
         Executes one due task per call.
@@ -261,7 +261,7 @@ class Scheduler(object):
         max_interval = self.max_interval
 
         if self._heap is None:
-            self.populate_heap(event_t, heapify, mktime)
+            self.populate_heap()
 
         H = self._heap
 
