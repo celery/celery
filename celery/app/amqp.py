@@ -561,9 +561,18 @@ class AMQP(object):
                 send_after_publish(sender=name, body=body, headers=headers2,
                                    exchange=exchange, routing_key=routing_key)
             if sent_receivers:  # XXX deprecated
-                send_task_sent(sender=name, task_id=body['id'], task=name,
-                               args=body['args'], kwargs=body['kwargs'],
-                               eta=body['eta'], taskset=body['taskset'])
+                if isinstance(body, tuple):  # protocol version 2
+                    send_task_sent(
+                        sender=name, task_id=headers2['id'], task=name,
+                        args=body[0], kwargs=body[1],
+                        eta=headers2['eta'], taskset=headers2['group'],
+                    )
+                else:  # protocol version 1
+                    send_task_sent(
+                        sender=name, task_id=body['id'], task=name,
+                        args=body['args'], kwargs=body['kwargs'],
+                        eta=body['eta'], taskset=body['taskset'],
+                    )
             if sent_event:
                 evd = event_dispatcher or default_evd
                 exname = exchange
