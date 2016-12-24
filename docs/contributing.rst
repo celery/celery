@@ -474,7 +474,7 @@ dependencies, so install these next:
     $ pip install -U -r requirements/default.txt
 
 After installing the dependencies required, you can now execute
-the test suite by calling :pypi:`py.test <pytest`:
+the test suite by calling :pypi:`py.test <pytest>`:
 
 .. code-block:: console
 
