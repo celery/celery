@@ -37,7 +37,7 @@
 
 .. cmdoption:: --pidfile
 
-    Optional file used to store the process pid.
+    File used to store the process pid. Defaults to `celerybeat.pid`.
 
     The program won't start if this file already exists
     and the pid is still alive.
