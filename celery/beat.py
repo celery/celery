@@ -239,9 +239,7 @@ class Scheduler(object):
                 (adjust(next_time_to_run) or 0))
 
     def populate_heap(self, event_t=event_t, heapify=heapq.heapify):
-        """
-        Populate the heap with the data contained in the schedule
-        """
+        """Populate the heap with the data contained in the schedule."""
         self._heap = [event_t(self._when(e, e.is_due()[1]) or 0, 5, e)
                       for e in values(self.schedule)]
         heapify(self._heap)
