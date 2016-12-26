@@ -238,7 +238,7 @@ class Scheduler(object):
         return (mktime(entry.schedule.now().timetuple()) +
                 (adjust(next_time_to_run) or 0))
 
-    def populate_heap(self,event_t=event_t, heapify=heapq.heapify):
+    def populate_heap(self, event_t=event_t, heapify=heapq.heapify):
         """
         Populate the heap with the data contained in the schedule
         """
