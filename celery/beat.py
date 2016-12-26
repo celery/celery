@@ -245,9 +245,8 @@ class Scheduler(object):
         heapify(self._heap)
 
     # pylint disable=redefined-outer-name
-    def tick(self, event_t=event_t, min=min,
-             heappop=heapq.heappop, heappush=heapq.heappush,
-             mktime=time.mktime):
+    def tick(self, event_t=event_t, min=min, heappop=heapq.heappop,
+             heappush=heapq.heappush):
         """Run a tick - one iteration of the scheduler.
 
         Executes one due task per call.
