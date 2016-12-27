@@ -786,7 +786,7 @@ some long-requested features:
 
     Dividing the responsibilities into creating and sending means that
     people who want to send messages using a Python AMQP client directly,
-    doesn't have to implement the protocol.
+    don't have to implement the protocol.
 
     The :meth:`@amqp.create_task_message` method calls either
     :meth:`@amqp.as_task_v2`, or :meth:`@amqp.as_task_v1` depending
