@@ -6,6 +6,7 @@ from pickle import dumps, loads
 from case import Mock, call, patch, skip
 from celery import beat
 from celery import uuid
+from celery.beat import event_t
 from celery.five import keys, string_t
 from celery.schedules import schedule
 from celery.utils.objects import Bunch
@@ -338,6 +339,15 @@ class test_Scheduler:
         assert 'foo' not in a.schedule
         assert 'baz' in a.schedule
         assert a.schedule['bar'].schedule._next_run_at == 40
+
+    @patch('celery.beat.Scheduler._when', return_value=1)
+    def test_populate_heap(self, _when):
+        scheduler = mScheduler(app=self.app)
+        scheduler.update_from_dict(
+            {'foo': {'schedule': mocked_schedule(True, 10)}}
+        )
+        scheduler.populate_heap()
+        assert scheduler._heap == [event_t(1, 5, scheduler.schedule['foo'])]
 
 
 def create_persistent_scheduler(shelv=None):
