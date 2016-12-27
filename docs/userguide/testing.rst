@@ -71,7 +71,7 @@ in this example:
 
         @patch('proj.tasks.Product.order')
         @patch('proj.tasks.send_order.retry')
-        def test_failure(send_order_retry, product_order):
+        def test_failure(self, send_order_retry, product_order):
             product = Product.objects.create(
                 name='Foo',
             )
