@@ -1565,6 +1565,31 @@ different :func:`~celery.signature`'s.
 You can read about chains and other powerful constructs
 at :ref:`designing-workflows`.
 
+By default celery will not enable you to run tasks within task synchronously
+in rare or extreme cases you might have to do so.
+**WARNING**:
+enabling subtasks run synchronously is not recommended!
+.. code-block:: python
+
+    @app.task
+    def update_page_info(url):
+        page = fetch_page.delay(url).get(disable_sync_subtasks=False)
+        info = parse_page.delay(url, page).get(disable_sync_subtasks=False)
+        store_page_info.delay(url, info)
+
+    @app.task
+    def fetch_page(url):
+        return myhttplib.get(url)
+
+    @app.task
+    def parse_page(url, page):
+        return myparser.parse_document(page)
+
+    @app.task
+    def store_page_info(url, info):
+        return PageInfo.objects.create(url, info)
+
+
 .. _task-performance-and-strategies:
 
 Performance and Strategies

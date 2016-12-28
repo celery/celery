@@ -136,7 +136,8 @@ class AsyncResult(ResultBase):
 
     def get(self, timeout=None, propagate=True, interval=0.5,
             no_ack=True, follow_parents=True, callback=None, on_message=None,
-            on_interval=None, EXCEPTION_STATES=states.EXCEPTION_STATES,
+            on_interval=None, disable_sync_subtasks=True,
+            EXCEPTION_STATES=states.EXCEPTION_STATES,
             PROPAGATE_STATES=states.PROPAGATE_STATES):
         """Wait until task is ready, and return its result.
 
@@ -157,6 +158,9 @@ class AsyncResult(ResultBase):
                 **not be acked**.
             follow_parents (bool): Re-raise any exception raised by
                 parent tasks.
+            disable_sync_subtasks (bool): Disable tasks to wait for sub tasks
+                this is the default configuration. CAUTION do not enable this
+                unless you must.
 
         Raises:
             celery.exceptions.TimeoutError: if `timeout` isn't
@@ -165,7 +169,8 @@ class AsyncResult(ResultBase):
             Exception: If the remote call raised an exception then that
                 exception will be re-raised in the caller process.
         """
-        assert_will_not_block()
+        if disable_sync_subtasks:
+            assert_will_not_block()
         _on_interval = promise()
         if follow_parents and propagate and self.parent:
             on_interval = promise(self._maybe_reraise_parent_error, weak=True)
