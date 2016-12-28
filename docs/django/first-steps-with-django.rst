@@ -28,10 +28,11 @@ an instance of the Celery library (called an "app")
 If you have a modern Django project layout like::
 
     - proj/
-      - proj/__init__.py
-      - proj/settings.py
-      - proj/urls.py
-    - manage.py
+      - manage.py
+      - proj/
+        - __init__.py
+        - settings.py
+        - urls.py
 
 then the recommended way is to create a new `proj/proj/celery.py` module
 that defines the Celery instance:
