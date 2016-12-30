@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 from time import sleep
-from celery import shared_task
+from celery import shared_task, group
 from celery.utils.log import get_task_logger
 
 logger = get_task_logger(__name__)
@@ -17,6 +17,13 @@ def add(x, y):
 def add_replaced(self, x, y):
     """Add two numbers (via the add task)."""
     raise self.replace(add.s(x, y))
+
+
+@shared_task(bind=True)
+def add_to_all(self, nums, val):
+    """Add the given value to all supplied numbers."""
+    subtasks = [add.s(num, val) for num in nums]
+    raise self.replace(group(*subtasks))
 
 
 @shared_task
