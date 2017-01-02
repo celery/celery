@@ -4,7 +4,7 @@ from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
 from .conftest import flaky
-from .tasks import add, collect_ids, ids
+from .tasks import add, add_replaced, collect_ids, ids
 
 TIMEOUT = 120
 
@@ -20,12 +20,12 @@ class test_chain:
     def test_complex_chain(self, manager):
         c = (
             add.s(2, 2) | (
-                add.s(4) | add.s(8) | add.s(16)
+                add.s(4) | add_replaced.s(8) | add.s(16) | add.s(32)
             ) |
             group(add.s(i) for i in range(4))
         )
         res = c()
-        assert res.get(timeout=TIMEOUT) == [32, 33, 34, 35]
+        assert res.get(timeout=TIMEOUT) == [64, 65, 66, 67]
 
     @flaky
     def test_parent_ids(self, manager, num=10):

@@ -850,7 +850,7 @@ class Task(object):
             chord = None
 
         if self.request.chain:
-            for t in self.request.chain:
+            for t in reversed(self.request.chain):
                 sig |= signature(t, app=self.app)
 
         sig.freeze(self.request.id,

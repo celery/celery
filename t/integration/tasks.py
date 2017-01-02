@@ -13,6 +13,12 @@ def add(x, y):
     return x + y
 
 
+@shared_task(bind=True)
+def add_replaced(self, x, y):
+    """Add two numbers (via the add task)."""
+    raise self.replace(add.s(x, y))
+
+
 @shared_task
 def print_unicode(log_message='håå®ƒ valmuefrø', print_message='hiöäüß'):
     """Task that both logs and print strings containing funny characters."""
