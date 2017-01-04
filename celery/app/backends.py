@@ -29,7 +29,8 @@ BACKEND_ALIASES = {
     'riak': 'celery.backends.riak:RiakBackend',
     'file': 'celery.backends.filesystem:FilesystemBackend',
     'disabled': 'celery.backends.base:DisabledBackend',
-    'consul': 'celery.backends.consul:ConsulBackend'
+    'consul': 'celery.backends.consul:ConsulBackend',
+    'dynamodb': 'celery.backends.dynamodb:DynamoDBBackend',
 }
 
 
