@@ -110,7 +110,6 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
     def _get_client(self, access_key_id=None, secret_access_key=None):
         """Get client connection."""
-
         if self._client is None:
             client_parameters = dict(
                 region_name=self.aws_region
@@ -219,9 +218,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
         )
 
     def _item_to_dict(self, raw_response):
-        """Convert the raw boto3 get_item() response to a
-        key-value dictionary according to the schema
-        fields."""
+        """Convert get_item() response to field-value pairs."""
         if 'Item' not in raw_response:
             return {}
         return {

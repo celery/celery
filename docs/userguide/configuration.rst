@@ -1129,6 +1129,63 @@ This is a dict supporting the following keys:
     The protocol to use to connect to the Riak server. This isn't configurable
     via :setting:`result_backend`
 
+.. _conf-dynamodb-result-backend:
+
+AWS DynamoDB backend settings
+-----------------------------
+
+.. note::
+
+    The Dynamodb backend requires the :pypi:`boto3` library.
+
+    To install this package use :command:`pip`:
+
+    .. code-block:: console
+
+        $ pip install celery[dynamodb]
+
+    See :ref:`bundles` for information on combining multiple extension
+    requirements.
+
+This backend requires the :setting:`result_backend`
+setting to be set to a DynamoDB URL::
+
+    result_backend = 'dynamodb://aws_access_key_id:aws_secret_access_key@region/table?read=n&write=m'
+
+For example, specifying the AWS region and the table name::
+
+    result_backend = 'dynamodb://@us-east-1/celery_results
+
+or retrieving AWS configuration parameters from the environment, using the default table name (``celery``)
+and specifying read and write provisioned throughput::
+
+    result_backend = 'dynamodb://@/?read=5&write=5'
+
+The fields of the URL are defined as follows:
+
+#. ``aws_access_key_id & aws_secret_access_key``
+
+    The credentials for accessing AWS API resources. These can also be resolved
+    by the :pypi:`boto3` library from various sources, as
+    described `here <http://boto3.readthedocs.io/en/latest/guide/configuration.html#configuring-credentials>`_.
+
+#. ``region``
+
+    The AWS region, e.g. ``us-east-1``.
+    See the :pypi:`boto3` library `documentation <http://boto3.readthedocs.io/en/latest/guide/configuration.html#environment-variable-configuration>`_
+    for definition options.
+
+#. ``table``
+
+    Table name to use. Default is ``celery``.
+    See the `DynamoDB Naming Rules <http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Limits.html#limits-naming-rules>`_
+    for information on the allowed characters and length.
+
+#. ``read & write``
+
+    The Read & Write Capacity Units for the created DynamoDB table. Default is ``1`` for both read and write.
+    More details can be found in the `Provisioned Throughput documentation <http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ProvisionedThroughput.html>`_.
+
 .. _conf-ironcache-result-backend:
 
 IronCache backend settings
