@@ -1253,7 +1253,7 @@ class chord(Signature):
         )
 
     def _traverse_tasks(self, tasks, value=None):
-        stack = deque(list(tasks))
+        stack = deque(tasks)
         while stack:
             task = stack.popleft()
             if isinstance(task, group):
@@ -1262,7 +1262,9 @@ class chord(Signature):
                 yield task if value is None else value
 
     def __length_hint__(self):
-        return sum(self._traverse_tasks(self.tasks, 1))
+        tasks = (self.tasks.tasks if isinstance(self.tasks, group)
+                 else self.tasks)
+        return sum(self._traverse_tasks(tasks, 1))
 
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
