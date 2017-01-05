@@ -1150,7 +1150,7 @@ AWS DynamoDB backend settings
 This backend requires the :setting:`result_backend`
 setting to be set to a DynamoDB URL::
 
-    result_backend = 'dynamodb://aws_access_key_id:aws_secret_access_key@region/table?read=n&write=m'
+    result_backend = 'dynamodb://aws_access_key_id:aws_secret_access_key@region:port/table?read=n&write=m'
 
 For example, specifying the AWS region and the table name::
 
@@ -1160,6 +1160,12 @@ or retrieving AWS configuration parameters from the environment, using the defau
 and specifying read and write provisioned throughput::
 
     result_backend = 'dynamodb://@/?read=5&write=5'
+
+or using the `downloadable version <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html>`_
+of DynamoDB
+`locally <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.Endpoint.html>`_::
+
+    result_backend = 'dynamodb://@localhost:8000
 
 The fields of the URL are defined as follows:
 
@@ -1171,9 +1177,15 @@ The fields of the URL are defined as follows:
 
 #. ``region``
 
-    The AWS region, e.g. ``us-east-1``.
+    The AWS region, e.g. ``us-east-1`` or ``localhost`` for the `Downloadable Version <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html>`_.
     See the :pypi:`boto3` library `documentation <http://boto3.readthedocs.io/en/latest/guide/configuration.html#environment-variable-configuration>`_
     for definition options.
+
+#. ``port``
+
+   The listening port of the local DynamoDB instance, if you are using the downloadable version.
+   If you have not specified the ``region`` parameter as ``localhost``,
+   setting this parameter has **no effect**.
 
 #. ``table``
 

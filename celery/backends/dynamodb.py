@@ -43,6 +43,9 @@ class DynamoDBBackend(KeyValueStoreBackend):
     #: AWS region (`default`)
     aws_region = None
 
+    #: The endpoint URL that is passed to boto3 (local DynamoDB) (`default`)
+    endpoint_url = None
+
     _key_field = DynamoDBAttribute(name='id', data_type='S')
     _value_field = DynamoDBAttribute(name='result', data_type='B')
     _timestamp_field = DynamoDBAttribute(name='timestamp', data_type='N')
@@ -64,7 +67,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
         aws_secret_access_key = None
 
         if url is not None:
-            scheme, region, _, username, password, table, query = \
+            scheme, region, port, username, password, table, query = \
                 parse_url(url)
 
             aws_access_key_id = username
@@ -80,7 +83,18 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
             aws_credentials_given = access_key_given
 
-            self.aws_region = region
+            if region == 'localhost':
+                # We are using the downloadable, local version of DynamoDB
+                self.endpoint_url = 'http://localhost:{}'.format(port)
+                self.aws_region = 'us-east-1'
+                logger.warning(
+                    'Using local-only DynamoDB endpoint URL: {}'.format(
+                        self.endpoint_url
+                    )
+                )
+            else:
+                self.aws_region = region
+
             self.read_capacity_units = int(
                 query.get(
                     'read',
@@ -119,6 +133,10 @@ class DynamoDBBackend(KeyValueStoreBackend):
                     aws_access_key_id=access_key_id,
                     aws_secret_access_key=secret_access_key
                 ))
+
+            if self.endpoint_url is not None:
+                client_parameters['endpoint_url'] = self.endpoint_url
+
             self._client = boto3.client(
                 'dynamodb',
                 **client_parameters
@@ -157,15 +175,10 @@ class DynamoDBBackend(KeyValueStoreBackend):
             self._wait_for_table_status('ACTIVE')
             return table_description
         except ClientError as e:
-            expected_message = \
-                'An error occurred (ResourceInUseException) ' \
-                'when calling the CreateTable operation: ' \
-                'Table already exists: {}'.format(
-                    self.table_name
-                )
+            error_code = e.response['Error'].get('Code', 'Unknown')
 
             # If table exists, do not fail, just return the description.
-            if expected_message == str(e):
+            if error_code == 'ResourceInUseException':
                 return self._client.describe_table(
                     TableName=self.table_name
                 )
