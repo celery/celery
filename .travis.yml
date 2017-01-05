@@ -12,15 +12,19 @@ env:
     - TOXENV=2.7-unit
     - TOXENV=2.7-integration-rabbitmq
     - TOXENV=2.7-integration-redis
+    - TOXENV=2.7-integration-dynamodb
     - TOXENV=3.4-unit
     - TOXENV=3.4-integration-rabbitmq
     - TOXENV=3.4-integration-redis
+    - TOXENV=3.4-integration-dynamodb
     - TOXENV=3.5-unit
     - TOXENV=3.5-integration-rabbitmq
     - TOXENV=3.5-integration-redis
+    - TOXENV=3.4-integration-dynamodb
     - TOXENV=pypy-unit PYPY_VERSION="5.3"
     - TOXENV=pypy-integration-rabbitmq PYPY_VERSION="5.3"
     - TOXENV=pypy-integration-redis PYPY_VERSION="5.3"
+    - TOXENV=pypy-integration-dynamodb PYPY_VERSION="5.3"
     - TOXENV=flake8
     - TOXENV=flakeplus
     - TOXENV=apicheck
@@ -38,6 +42,20 @@ before_install:
             "$PYENV_ROOT/bin/pyenv" install "pypy-$PYPY_VERSION"
             virtualenv --python="$PYENV_ROOT/versions/pypy-$PYPY_VERSION/bin/python" "$HOME/virtualenvs/pypy-$PYPY_VERSION"
             source "$HOME/virtualenvs/pypy-$PYPY_VERSION/bin/activate"
+          fi
+    - |
+          if [[ "$TOXENV" == *-dynamodb ]]; then
+              sudo apt-get install -y default-jre supervisor
+              mkdir /opt/dynamodb-local
+              cd /opt/dynamodb-local && curl -L http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_latest.tar.gz | tar zx
+              cd -
+              echo '[program:dynamodb-local]' | sudo tee /etc/supervisor/conf.d/dynamodb-local.conf
+              echo 'command=java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -inMemory' | sudo tee -a /etc/supervisor/conf.d/dynamodb-local.conf
+              echo 'directory=/opt/dynamodb-local' | sudo tee -a /etc/supervisor/conf.d/dynamodb-local.conf
+              sudo service supervisor stop
+              sudo service supervisor start
+              sleep 10
+              curl localhost:8000
           fi
 after_success:
   - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml
