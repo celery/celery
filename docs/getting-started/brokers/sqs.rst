@@ -38,13 +38,13 @@ The login credentials can also be set using the environment variables
 in that case the broker URL may only be ``sqs://``.
 
 If you are using IAM roles on instances, you can set the BROKER_URL to:
-``sqs://`` and kombu will attempt to retrive access tokens from the instance
+``sqs://`` and kombu will attempt to retrieve access tokens from the instance
 metadata.
 
 .. note::
 
     If you specify AWS credentials in the broker URL, then please keep in mind
-    that the secret access key may contain unsafe characters that needs to be
+    that the secret access key may contain unsafe characters that need to be
     URL encoded.
 
 Options
