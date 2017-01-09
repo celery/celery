@@ -42,6 +42,8 @@ from celery.worker.state import (
 __all__ = ['Consumer', 'Evloop', 'dump_body']
 
 CLOSE = bootsteps.CLOSE
+TERMINATE = bootsteps.TERMINATE
+STOP_CONDITIONS = {CLOSE, TERMINATE}
 logger = get_logger(__name__)
 debug, info, warn, error, crit = (logger.debug, logger.info, logger.warning,
                                   logger.error, logger.critical)
@@ -305,7 +307,7 @@ class Consumer(object):
 
     def start(self):
         blueprint = self.blueprint
-        while blueprint.state != CLOSE:
+        while blueprint.state not in STOP_CONDITIONS:
             maybe_shutdown()
             if self.restart_count:
                 try:
@@ -324,7 +326,7 @@ class Consumer(object):
                 if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
                     raise  # Too many open files
                 maybe_shutdown()
-                if blueprint.state != CLOSE:
+                if blueprint.state not in STOP_CONDITIONS:
                     if self.connection:
                         self.on_connection_error_after_connected(exc)
                     else:

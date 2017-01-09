@@ -10,7 +10,8 @@ from case import ContextMock, Mock, call, patch, skip
 from billiard.exceptions import RestartFreqExceeded
 
 from celery.worker.consumer.agent import Agent
-from celery.worker.consumer.consumer import CLOSE, Consumer, dump_body
+from celery.worker.consumer.consumer import (CLOSE, TERMINATE,
+                                             Consumer, dump_body)
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
@@ -152,6 +153,35 @@ class test_Consumer:
         with patch('celery.worker.consumer.consumer.sleep') as sleep:
             c.start()
             sleep.assert_called_with(1)
+
+    def test_do_not_restart_when_closed(self):
+        c = self.get_consumer()
+
+        c.blueprint.state = None
+
+        def bp_start(*args, **kwargs):
+            c.blueprint.state = CLOSE
+
+        c.blueprint.start.side_effect = bp_start
+        with patch('celery.worker.consumer.consumer.sleep'):
+            c.start()
+
+        c.blueprint.start.assert_called_once_with(c)
+
+    def test_do_not_restart_when_terminated(self):
+        c = self.get_consumer()
+
+        c.blueprint.state = None
+
+        def bp_start(*args, **kwargs):
+            c.blueprint.state = TERMINATE
+
+        c.blueprint.start.side_effect = bp_start
+
+        with patch('celery.worker.consumer.consumer.sleep'):
+            c.start()
+
+        c.blueprint.start.assert_called_once_with(c)
 
     def test_no_retry_raises_error(self):
         self.app.conf.broker_connection_retry = False
