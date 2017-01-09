@@ -19,23 +19,23 @@ env:
 matrix:
   include:
   - python: '3.5'
-    env: TOXENV=pypy-unit PYPY_VERSION="5.3" PYTHONUNBUFFERED=yes
+    env: TOXENV=pypy-unit PYPY_VERSION="5.3"
   - python: '3.5'
-    env: TOXENV=pypy-integration-rabbitmq PYPY_VERSION="5.3" PYTHONUNBUFFERED=yes
+    env: TOXENV=pypy-integration-rabbitmq PYPY_VERSION="5.3"
   - python: '3.5'
-    env: TOXENV=pypy-integration-redis PYPY_VERSION="5.3" PYTHONUNBUFFERED=yes
+    env: TOXENV=pypy-integration-redis PYPY_VERSION="5.3"
   - python: '3.5'
-    env: TOXENV=pypy-integration-dynamodb PYPY_VERSION="5.3" PYTHONUNBUFFERED=yes
+    env: TOXENV=pypy-integration-dynamodb PYPY_VERSION="5.3"
   - python: '3.5'
-    env: TOXENV=flake8 PYTHONUNBUFFERED=yes
+    env: TOXENV=flake8
   - python: '3.5'
-    env: TOXENV=flakeplus PYTHONUNBUFFERED=yes
+    env: TOXENV=flakeplus
   - python: '3.5'
-    env: TOXENV=apicheck PYTHONUNBUFFERED=yes
+    env: TOXENV=apicheck
   - python: '3.5'
-    env: TOXENV=configcheck PYTHONUNBUFFERED=yes
+    env: TOXENV=configcheck
   - python: '3.5'
-    env: TOXENV=pydocstyle PYTHONUNBUFFERED=yes
+    env: TOXENV=pydocstyle
 before_install:
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
@@ -68,7 +68,7 @@ after_success:
   - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml
   - .tox/$TRAVIS_PYTHON_VERSION/bin/codecov -e TOXENV
 install: travis_retry pip install -U tox
-script: env; exit 0; tox -v -- -v
+script: tox -v -- -v
 notifications:
   irc:
     channels:
