@@ -364,7 +364,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
                 # -*- TRACE -*-
                 try:
-                    R = retval = fun(*args, **kwargs)
+                    from celery.concurrency.future import future_executor
+                    R = retval = future_executor.apply_future(
+                        fun, *args, **kwargs)
                     state = SUCCESS
                 except Reject as exc:
                     I, R = Info(REJECTED, exc), ExceptionInfo(internal=True)
