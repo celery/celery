@@ -18,8 +18,8 @@ __all__ = ['TaskPool']
 
 
 def apply_timeout(target, args=(), kwargs={}, callback=None,
-                  accept_callback=None, pid=None, timeout=None, soft_timeout=None,
-                  timeout_callback=None, Timeout=Timeout,
+                  accept_callback=None, pid=None, timeout=None,
+                  soft_timeout=None, timeout_callback=None, Timeout=Timeout,
                   apply_target=base.apply_target, **rest):
     soft = None
     try:
@@ -108,7 +108,8 @@ class TaskPool(base.BasePool):
                  timeout_callback=None, apply_target=base.apply_target, **_):
         has_timeout = timeout or soft_timeout
         timeout = self.timeout if timeout is None else timeout
-        soft_timeout = self.soft_timeout if soft_timeout is None else soft_timeout
+        if soft_timeout is None:
+            soft_timeout = self.soft_timeout
         return self._quick_put(apply_timeout if has_timeout else apply_target,
                                target, args, kwargs, callback, accept_callback,
                                timeout=timeout, soft_timeout=soft_timeout,
