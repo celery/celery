@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
+
 from case import Mock, skip
+
 from celery.concurrency.gevent import (
     Timer,
     TaskPool,
@@ -99,28 +101,45 @@ class test_apply_timeout:
         class Timeout(Exception):
             value = None
 
-            def __init__(self, value):
-                self.__class__.value = value
+            def __init__(self, seconds, exception=None):
+                self.__class__.value = seconds
+                self.seconds = seconds
+                self.exception = exception
 
             def __enter__(self):
                 return self
 
             def __exit__(self, *exc_info):
-                pass
+                if self.seconds:
+                    raise self
+
         timeout_callback = Mock(name='timeout_callback')
         apply_target = Mock(name='apply_target')
         apply_timeout(
             Mock(), timeout=10, callback=Mock(name='callback'),
-            timeout_callback=timeout_callback,
+            timeout_callback=timeout_callback, soft_timeout=5,
             apply_target=apply_target, Timeout=Timeout,
         )
-        assert Timeout.value == 10
+        assert Timeout.value == 10  # hard timeout is instantiated second
         apply_target.assert_called()
 
-        apply_target.side_effect = Timeout(10)
         apply_timeout(
             Mock(), timeout=10, callback=Mock(),
             timeout_callback=timeout_callback,
             apply_target=apply_target, Timeout=Timeout,
         )
         timeout_callback.assert_called_with(False, 10)
+
+        apply_timeout(
+            Mock(), soft_timeout=5, callback=Mock(),
+            timeout_callback=timeout_callback,
+            apply_target=apply_target, Timeout=Timeout,
+        )
+        timeout_callback.assert_called_with(True, 5)
+
+        apply_timeout(
+            Mock(), soft_timeout=5, timeout=10, callback=Mock(),
+            timeout_callback=timeout_callback,
+            apply_target=apply_target, Timeout=Timeout,
+        )
+        timeout_callback.assert_called_with(True, 5)
