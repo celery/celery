@@ -18,6 +18,9 @@ env:
     - TOXENV=3.5-unit
     - TOXENV=3.5-integration-rabbitmq
     - TOXENV=3.5-integration-redis
+    - TOXENV=3.6-unit
+    - TOXENV=3.6-integration-rabbitmq
+    - TOXENV=3.6-integration-redis
     - TOXENV=pypy-unit PYPY_VERSION="5.3"
     - TOXENV=pypy-integration-rabbitmq PYPY_VERSION="5.3"
     - TOXENV=pypy-integration-redis PYPY_VERSION="5.3"
