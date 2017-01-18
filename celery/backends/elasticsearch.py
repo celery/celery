@@ -89,6 +89,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def _index(self, id, body, **kwargs):
         return self.server.index(
+            id=id,
             index=self.index,
             doc_type=self.doc_type,
             body=body,
