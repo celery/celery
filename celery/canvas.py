@@ -1282,6 +1282,9 @@ class chord(Signature):
             group_id=group_id, chord=body, root_id=root_id).results
         bodyres = body.freeze(task_id, root_id=root_id)
 
+        # Chains should not be passed to the header tasks. See #3771
+        options.pop('chain', None)
+
         parent = app.backend.apply_chord(
             header, partial_args, group_id, body,
             interval=interval, countdown=countdown,
