@@ -1739,21 +1739,15 @@ There's a race condition if the task starts executing
 before the transaction has been committed; The database object doesn't exist
 yet!
 
-The solution is to *always commit transactions before sending tasks
-depending on state from the current transaction*:
+The solution is to use the ``on_commit`` callback to launch your celery task 
+once all transactions have been committed successfully.
 
 .. code-block:: python
-
-    @transaction.commit_manually
+    from django.db.transaction import on_commit
+    
     def create_article(request):
-        try:
-            article = Article.objects.create()
-        except:
-            transaction.rollback()
-            raise
-        else:
-            transaction.commit()
-            expand_abbreviations.delay(article.pk)
+        article = Article.objects.create()
+        on_commit(lambda: expand_abbreviations.delay(article.pk))
 
 .. note::
     Django 1.6 (and later) now enables autocommit mode by default,
@@ -1766,8 +1760,8 @@ depending on state from the current transaction*:
     However, enabling ``ATOMIC_REQUESTS`` on the database
     connection will bring back the transaction-per-request model and the
     race condition along with it. In this case, the simple solution is
-    using the ``@transaction.non_atomic_requests`` decorator to go back
-    to autocommit for that view only.
+    using the ``on_commit`` callback to launch your task after all 
+    transactions are completed.
 
 .. _task-example:
 
