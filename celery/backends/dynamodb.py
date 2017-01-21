@@ -172,8 +172,18 @@ class DynamoDBBackend(KeyValueStoreBackend):
         table_schema = self._get_table_schema()
         try:
             table_description = self._client.create_table(**table_schema)
+            logger.info(
+                'DynamoDB Table {} did not exist, creating.'.format(
+                    self.table_name
+                )
+            )
             # In case we created the table, wait until it becomes available.
             self._wait_for_table_status('ACTIVE')
+            logger.info(
+                'DynamoDB Table {} is now available.'.format(
+                    self.table_name
+                )
+            )
             return table_description
         except ClientError as e:
             error_code = e.response['Error'].get('Code', 'Unknown')
@@ -194,7 +204,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
                 TableName=self.table_name
             )
             logger.debug(
-                'Waiting for DynamoDB table {} to become {}'.format(
+                'Waiting for DynamoDB table {} to become {}.'.format(
                     self.table_name,
                     expected
                 )
