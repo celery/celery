@@ -33,10 +33,14 @@ def print_unicode(log_message='håå®ƒ valmuefrø', print_message='hiöäüß'
     print(print_message)
 
 @shared_task
-def echo(message):
-    """Task that prints the message and echoes it."""
+def echo(message, stream=None):
+    """Task that prints the message and appends it to the previous message."""
     print(message)
-    return message
+    if stream:
+        stream.append(message)
+    else:
+        stream = [message]
+    return stream
 
 @shared_task
 def sleeping(i, **_):
