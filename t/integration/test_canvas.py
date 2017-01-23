@@ -34,7 +34,7 @@ class test_chain:
         after = group(echo.si('after {}'.format(i)) for i in range(2))
 
         res = (before | connect | after).delay()
-        assert res.get(timeout=TIMEOUT)
+        assert res.get(timeout=TIMEOUT) == ['before 0', 'before 1', 'before 2', 'connect', 'after 0', 'after 1']
 
     @flaky
     def test_parent_ids(self, manager, num=10):
