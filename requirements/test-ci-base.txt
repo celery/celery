@@ -1,4 +1,5 @@
 pytest-cov
+pytest-xdist
 codecov
 -r extras/redis.txt
 -r extras/sqlalchemy.txt
