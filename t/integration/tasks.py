@@ -32,6 +32,11 @@ def print_unicode(log_message='håå®ƒ valmuefrø', print_message='hiöäüß'
     logger.warning(log_message)
     print(print_message)
 
+@shared_task
+def echo(message):
+    """Task that prints the message and echoes it."""
+    print(message)
+    return message
 
 @shared_task
 def sleeping(i, **_):
