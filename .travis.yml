@@ -2,31 +2,42 @@ language: python
 sudo: required
 cache: false
 python:
-    - '3.5'
+  - '2.7'
+  - '3.4'
+  - '3.5'
+  - '3.6'
 os:
     - linux
 env:
   global:
-    PYTHONUNBUFFERED=yes
+  - PYTHONUNBUFFERED=yes
   matrix:
-    - TOXENV=2.7-unit
-    - TOXENV=2.7-integration-rabbitmq
-    - TOXENV=2.7-integration-redis
-    - TOXENV=3.4-unit
-    - TOXENV=3.4-integration-rabbitmq
-    - TOXENV=3.4-integration-redis
-    - TOXENV=3.5-unit
-    - TOXENV=3.5-integration-rabbitmq
-    - TOXENV=3.5-integration-redis
-    - TOXENV=pypy-unit PYPY_VERSION="5.3"
-    - TOXENV=pypy-integration-rabbitmq PYPY_VERSION="5.3"
-    - TOXENV=pypy-integration-redis PYPY_VERSION="5.3"
-    - TOXENV=flake8
-    - TOXENV=flakeplus
-    - TOXENV=apicheck
-    - TOXENV=configcheck
-    - TOXENV=pydocstyle
+  - MATRIX_TOXENV=unit
+  - MATRIX_TOXENV=integration-rabbitmq
+  - MATRIX_TOXENV=integration-redis
+  - MATRIX_TOXENV=integration-dynamodb
+matrix:
+  include:
+  - python: '3.5'
+    env: TOXENV=pypy-unit PYPY_VERSION="5.3"
+  - python: '3.5'
+    env: TOXENV=pypy-integration-rabbitmq PYPY_VERSION="5.3"
+  - python: '3.5'
+    env: TOXENV=pypy-integration-redis PYPY_VERSION="5.3"
+  - python: '3.5'
+    env: TOXENV=pypy-integration-dynamodb PYPY_VERSION="5.3"
+  - python: '3.5'
+    env: TOXENV=flake8
+  - python: '3.5'
+    env: TOXENV=flakeplus
+  - python: '3.5'
+    env: TOXENV=apicheck
+  - python: '3.5'
+    env: TOXENV=configcheck
+  - python: '3.5'
+    env: TOXENV=pydocstyle
 before_install:
+    - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
           if [ "$TOXENV" = "pypy" ]; then
             export PYENV_ROOT="$HOME/.pyenv"
@@ -38,6 +49,20 @@ before_install:
             "$PYENV_ROOT/bin/pyenv" install "pypy-$PYPY_VERSION"
             virtualenv --python="$PYENV_ROOT/versions/pypy-$PYPY_VERSION/bin/python" "$HOME/virtualenvs/pypy-$PYPY_VERSION"
             source "$HOME/virtualenvs/pypy-$PYPY_VERSION/bin/activate"
+          fi
+    - |
+          if [[ "$TOXENV" == *dynamodb ]]; then
+              sudo apt-get install -y default-jre supervisor
+              mkdir /opt/dynamodb-local
+              cd /opt/dynamodb-local && curl -L http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_latest.tar.gz | tar zx
+              cd -
+              echo '[program:dynamodb-local]' | sudo tee /etc/supervisor/conf.d/dynamodb-local.conf
+              echo 'command=java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -inMemory' | sudo tee -a /etc/supervisor/conf.d/dynamodb-local.conf
+              echo 'directory=/opt/dynamodb-local' | sudo tee -a /etc/supervisor/conf.d/dynamodb-local.conf
+              sudo service supervisor stop
+              sudo service supervisor start
+              sleep 10
+              curl localhost:8000
           fi
 after_success:
   - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml

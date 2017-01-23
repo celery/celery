@@ -73,7 +73,8 @@ EXTENSIONS = {
     'pyro',
     'slmq',
     'tblib',
-    'consul'
+    'consul',
+    'dynamodb'
 }
 
 # -*- Classifiers -*-
