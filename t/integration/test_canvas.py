@@ -29,6 +29,8 @@ class test_chain:
 
     @flaky
     def test_group_chord_group_chain(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
         before = group(echo.si('before {}'.format(i)) for i in range(3))
         connect = echo.si('connect')
         after = group(echo.si('after {}'.format(i)) for i in range(2))
