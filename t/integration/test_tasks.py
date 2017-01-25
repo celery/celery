@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 from celery import group
 from .conftest import flaky
-from .tasks import print_unicode, sleeping
+from .tasks import print_unicode, retry_once, sleeping
 
 
 class test_tasks:
@@ -11,6 +11,11 @@ class test_tasks:
         r1 = sleeping.delay(sleep)
         sleeping.delay(sleep)
         manager.assert_accepted([r1.id])
+
+    @flaky
+    def test_task_retried(self):
+        res = retry_once.delay()
+        assert res.get(timeout=10) == 1  # retried once
 
     @flaky
     def test_unicode_task(self, manager):
