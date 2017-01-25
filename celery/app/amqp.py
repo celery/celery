@@ -332,7 +332,7 @@ class AMQP(object):
             )
         eta = eta and eta.isoformat()
         # If we retry a task `expires` will already be ISO8601-formatted.
-        if not isinstance(expires, basestring):
+        if not isinstance(expires, string_t):
             expires = expires and expires.isoformat()
 
         if argsrepr is None:
