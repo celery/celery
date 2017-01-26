@@ -51,7 +51,7 @@ Not only does it come with many new features, but it also fixes
 a massive list of bugs, so in many ways you could call it
 our "Snow Leopard" release.
 
-The next major version of Celery will support Python 3.5 only, were
+The next major version of Celery will support Python 3.5 only, where
 we are planning to take advantage of the new asyncio library.
 
 This release would not have been possible without the support
