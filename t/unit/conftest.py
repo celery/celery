@@ -45,24 +45,25 @@ CASE_LOG_HANDLER_EFFECT = 'Test {0} modified handlers for the root logger'
 
 
 @pytest.fixture(scope='session')
-def celery_config():
+def celery_config(request):
+    xdist_suffix = getattr(request.config, 'slaveinput', {}).get('slaveid', '')
     return {
         'broker_url': 'memory://',
         'result_backend': 'cache+memory://',
 
-        'task_default_queue': 'testcelery',
-        'task_default_exchange': 'testcelery',
+        'task_default_queue': 'testcelery' + xdist_suffix,
+        'task_default_exchange': 'testcelery' + xdist_suffix,
         'task_default_routing_key': 'testcelery',
         'task_queues': (
-            Queue('testcelery', routing_key='testcelery'),
+            Queue('testcelery' + xdist_suffix, routing_key='testcelery'),
         ),
         'accept_content': ('json', 'pickle'),
 
         # Mongo results tests (only executed if installed and running)
         'mongodb_backend_settings': {
-            'host': os.environ.get('MONGO_HOST') or 'localhost',
-            'port': os.environ.get('MONGO_PORT') or 27017,
-            'database': os.environ.get('MONGO_DB') or 'celery_unittests',
+            'host': os.environ.get('MONGO_HOST', 'localhost'),
+            'port': os.environ.get('MONGO_PORT', 27017),
+            'database': os.environ.get('MONGO_DB', 'celery_unittests') + xdist_suffix,
             'taskmeta_collection': (
                 os.environ.get('MONGO_TASKMETA_COLLECTION') or
                 'taskmeta_collection'
