@@ -1750,18 +1750,11 @@ once all transactions have been committed successfully.
         on_commit(lambda: expand_abbreviations.delay(article.pk))
 
 .. note::
-    Django 1.6 (and later) now enables autocommit mode by default,
-    and ``commit_on_success``/``commit_manually`` are deprecated.
-
-    This means each SQL query is wrapped and executed in individual
-    transactions, making it less likely to experience the
-    problem described above.
-
-    However, enabling ``ATOMIC_REQUESTS`` on the database
-    connection will bring back the transaction-per-request model and the
-    race condition along with it. In this case, the simple solution is
-    using the ``on_commit`` callback to launch your task after all 
-    transactions are completed.
+    ``on_commit` is available in Django 1.9 and above, if you are using a
+    version prior to that then the `django-transaction-hooks`_ library 
+    adds support for this.
+    
+.. _`django-transaction-hooks`: https://github.com/carljm/django-transaction-hooks
 
 .. _task-example:
 
