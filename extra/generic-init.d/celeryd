@@ -6,7 +6,7 @@
 # :Usage: /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}
 # :Configuration file: /etc/default/celeryd
 #
-# See http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html#generic-init-scripts
+# See http://docs.celeryproject.org/en/latest/userguide/daemonizing.html
 
 
 ### BEGIN INIT INFO
