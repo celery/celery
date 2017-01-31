@@ -533,7 +533,7 @@ class test_group(CanvasCase):
 
     def test_iter(self):
         g = group([self.add.s(i, i) for i in range(10)])
-        assert list(iter(g)) == g.tasks
+        assert list(iter(g)) == list(g.keys())
 
     @staticmethod
     def helper_test_get_delay(result):

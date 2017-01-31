@@ -130,5 +130,6 @@ class detached_celeryd:
 def main(app=None):
     detached_celeryd(app).execute_from_commandline()
 
+
 if __name__ == '__main__':  # pragma: no cover
     main()

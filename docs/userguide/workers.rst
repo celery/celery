@@ -1057,7 +1057,7 @@ This command will gracefully shut down the worker remotely:
 .. code-block:: pycon
 
     >>> app.control.broadcast('shutdown') # shutdown all workers
-    >>> app.control.broadcast('shutdown, destination='worker1@example.com')
+    >>> app.control.broadcast('shutdown', destination='worker1@example.com')
 
 .. control:: ping
 

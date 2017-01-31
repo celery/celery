@@ -39,16 +39,6 @@ logger = get_logger(__name__)
 is_jython = sys.platform.startswith('java')
 is_pypy = hasattr(sys, 'pypy_version_info')
 
-
-def active_thread_count():
-    from threading import enumerate
-    return sum(1 for t in enumerate()
-               if not t.name.startswith('Dummy-'))
-
-
-def safe_say(msg):
-    print('\n{0}'.format(msg), file=sys.__stderr__)
-
 ARTLINES = [
     ' --------------',
     '---- **** -----',
@@ -84,6 +74,16 @@ EXTRA_INFO_FMT = """
 [tasks]
 {tasks}
 """
+
+
+def active_thread_count():
+    from threading import enumerate
+    return sum(1 for t in enumerate()
+               if not t.name.startswith('Dummy-'))
+
+
+def safe_say(msg):
+    print('\n{0}'.format(msg), file=sys.__stderr__)
 
 
 class Worker(WorkController):
@@ -182,6 +182,8 @@ class Worker(WorkController):
         )
 
     def extra_info(self):
+        if self.loglevel is None:
+            return
         if self.loglevel <= logging.INFO:
             include_builtins = self.loglevel <= logging.DEBUG
             tasklist = self.tasklist(include_builtins=include_builtins)
@@ -279,6 +281,8 @@ def _shutdown_handler(worker, sig='TERM', how='Warm',
                 raise exc(exitcode)
     _handle_request.__name__ = str('worker_{0}'.format(how))
     platforms.signals[sig] = _handle_request
+
+
 install_worker_term_handler = partial(
     _shutdown_handler, sig='SIGTERM', how='Warm', exc=WorkerShutdown,
 )
@@ -295,6 +299,8 @@ else:  # pragma: no cover
 def on_SIGINT(worker):
     safe_say('worker: Hitting Ctrl+C again will terminate all running tasks!')
     install_worker_term_hard_handler(worker, sig='SIGINT')
+
+
 if not is_jython:  # pragma: no cover
     install_worker_int_handler = partial(
         _shutdown_handler, sig='SIGINT', callback=on_SIGINT,

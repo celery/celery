@@ -38,7 +38,7 @@ see `Installing RabbitMQ on macOS`_.
     :command:`rabbitmqctl` then this blog post can help you identify
     the source of the problem:
 
-        http://somic.org/2009/02/19/on-rabbitmqctl-and-badrpcnodedown/
+        http://www.somic.org/2009/02/19/on-rabbitmqctl-and-badrpcnodedown/
 
 .. _rabbitmq-configuration:
 

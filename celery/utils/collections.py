@@ -3,7 +3,7 @@
 import time
 
 from collections import (
-    Mapping, MutableMapping, MutableSet, Sequence as _Sequence,
+    Mapping, MutableMapping, MutableSet,
     OrderedDict as _OrderedDict, deque,
 )
 from heapq import heapify, heappush, heappop
@@ -149,7 +149,7 @@ class DictAttribute:
     def values(self) -> Iterator[Any]:
         for key in self.keys():
             yield getattr(self.obj, key)
-MutableMapping.register(DictAttribute)
+MutableMapping.register(DictAttribute)  # noqa: E305
 
 
 class ChainMap(MutableMapping):
@@ -571,7 +571,7 @@ class LimitedSet:
     def _heap_overload(self) -> float:
         """Compute how much is heap bigger than data [percents]."""
         return len(self._heap) * 100 / max(len(self._data), 1) - 100
-MutableSet.register(LimitedSet)
+MutableSet.register(LimitedSet)  # noqa: E305
 
 
 class Evictable:
@@ -660,7 +660,7 @@ class Messagebuffer(Evictable):
     @property
     def _evictcount(self) -> int:
         return len(self)
-_Sequence.register(Messagebuffer)
+Sequence.register(Messagebuffer)  # noqa: E305
 
 
 class BufferMap(OrderedDict, Evictable):

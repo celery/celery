@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functional-style utilties."""
+import inspect
 import sys
-
 from collections import UserList
 from functools import partial
 from inspect import FullArgSpec, getfullargspec, isfunction
@@ -24,7 +24,7 @@ __all__ = [
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
     'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
     'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun',
-    'maybe',
+    'maybe', 'fun_accepts_kwargs',
 ]
 
 FUNHEAD_TEMPLATE = """
@@ -237,11 +237,28 @@ def _argsfromspec(spec: FullArgSpec, replace_defaults: bool=True) -> str:
         optional = list(zip(spec.args[-split:], defaults))
     else:
         positional, optional = spec.args, []
+
+    varargs = spec.varargs
+    varkw = spec.varkw
+    if spec.kwonlydefaults:
+        split = len(spec.kwonlydefaults)
+        kwonlyargs = spec.kwonlyargs[:-split]
+        if replace_defaults:
+            kwonlyargs_optional = [
+                (kw, i) for i, kw in enumerate(spec.kwonlyargs[-split:])]
+        else:
+            kwonlyargs_optional = list(spec.kwonlydefaults.items())
+    else:
+        kwonlyargs, kwonlyargs_optional = spec.kwonlyargs, []
+
     return ', '.join(filter(None, [
         ', '.join(positional),
         ', '.join('{0}={1}'.format(k, v) for k, v in optional),
-        '*{0}'.format(spec.varargs) if spec.varargs else None,
-        '**{0}'.format(spec.varkw) if spec.varkw else None,
+        '*{0}'.format(varargs) if varargs else None,
+        '**{0}'.format(varkw) if varkw else None,
+        '*' if (kwonlyargs or kwonlyargs_optional) and not varargs else None,
+        ', '.join(kwonlyargs) if kwonlyargs else None,
+        ', '.join('{0}="{1}"'.format(k, v) for k, v in kwonlyargs_optional),
     ]))
 
 
@@ -287,6 +304,26 @@ def fun_takes_argument(name: str, fun: Callable,
         spec.varkw or spec.varargs or
         (len(spec.args) >= position if position else name in spec.args)
     )
+
+
+if hasattr(inspect, 'signature'):
+    def fun_accepts_kwargs(fun):
+        """Return true if function accepts arbitrary keyword arguments."""
+        return any(
+            p for p in inspect.signature(fun).parameters.values()
+            if p.kind == p.VAR_KEYWORD
+        )
+else:
+    def fun_accepts_kwargs(fun):  # noqa
+        """Return true if function accepts arbitrary keyword arguments."""
+        try:
+            argspec = inspect.getargspec(fun)
+        except TypeError:
+            try:
+                argspec = inspect.getargspec(fun.__call__)
+            except (TypeError, AttributeError):
+                return
+        return not argspec or argspec[2] is not None
 
 
 def maybe(typ, val):

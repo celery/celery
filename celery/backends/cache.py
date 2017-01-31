@@ -70,6 +70,9 @@ class DummyClient:
     def incr(self, key, delta=1):
         return self.cache.incr(key, delta)
 
+    def touch(self, key, expire):
+        pass
+
 
 backends = {
     'memcache': get_best_memcache,
@@ -120,12 +123,15 @@ class CacheBackend(KeyValueStoreBackend):
         return self.client.delete(key)
 
     def _apply_chord_incr(self, header, partial_args, group_id, body, **opts):
-        self.client.set(self.get_key_for_chord(group_id), 0, time=86400)
+        self.client.set(self.get_key_for_chord(group_id), 0, time=self.expires)
         return super()._apply_chord_incr(
             header, partial_args, group_id, body, **opts)
 
     def incr(self, key):
         return self.client.incr(key)
+
+    def expire(self, key, value):
+        return self.client.touch(key, value)
 
     @cached_property
     def client(self):

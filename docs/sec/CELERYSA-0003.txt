@@ -1,0 +1,59 @@
+=========================================
+ CELERYSA-0003: Celery Security Advisory
+=========================================
+:contact: security@celeryproject.org
+:CVE id: TBA
+:date: 2016-12-08 05:00:00 p.m. PST
+
+Details
+=======
+
+:package: celery
+:vulnerability: Configuration Error
+:problem type: remote
+:risk: low
+:versions-affected: 4.0.0
+
+Description
+===========
+
+The default configuration in Celery 4.0.0 allowed for deserialization
+of pickled messages, even if the software is configured to send
+messages in the JSON format.
+
+The particular configuration in question is the `accept_content` setting,
+which by default was set to:
+
+    app.conf.accept_content = ['json', 'pickle', 'msgpack', 'yaml']
+
+The risk is still set to low considering that an attacker would require access
+to the message broker used to send messages to Celery workers.
+
+Systems affected
+================
+
+Users of Celery version 4.0.0 with no explicit accept_content setting set.
+
+Solution
+========
+
+To work around the issue you can explicitly configure the accept_content
+setting:
+
+    app.conf.accept_content = ['json']
+
+Or you can upgrade to the Celery 4.0.1 version:
+
+    $ pip install -U celery
+
+Distribution package maintainers are urged to provide their users
+with updated packages.
+
+Please direct questions to the celery-users mailing-list:
+http://groups.google.com/group/celery-users/,
+
+or if you're planning to report a new security related issue we request that
+you keep the information confidential by contacting
+security@celeryproject.org instead.
+
+Thank you!

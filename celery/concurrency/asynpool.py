@@ -498,11 +498,11 @@ class AsynPool(_pool.Pool):
             _discard_tref(R._job)
         self.on_timeout_cancel = on_timeout_cancel
 
-    def _on_soft_timeout(self, job, soft, hard, hub, now=time.time):
+    def _on_soft_timeout(self, job, soft, hard, hub):
         # only used by async pool.
         if hard:
-            self._tref_for_id[job] = hub.call_at(
-                now() + (hard - soft), self._on_hard_timeout, job,
+            self._tref_for_id[job] = hub.call_later(
+                hard - soft, self._on_hard_timeout, job,
             )
         try:
             result = self._cache[job]
@@ -799,7 +799,7 @@ class AsynPool(_pool.Pool):
             # inqueues are writable.
             body = dumps(tup, protocol=protocol)
             body_size = len(body)
-            header = pack('>I', body_size)
+            header = pack(b'>I', body_size)
             # index 1,0 is the job ID.
             job = get_job(tup[1][0])
             job._payload = buf_t(header), buf_t(body), body_size
@@ -1077,7 +1077,9 @@ class AsynPool(_pool.Pool):
             'avg': per(total / len(self.write_stats) if total else 0, total),
             'all': ', '.join(per(v, total) for v in vals),
             'raw': ', '.join(map(str, vals)),
-            'strategy': SCHED_STRATEGY_TO_NAME[self.sched_strategy],
+            'strategy': SCHED_STRATEGY_TO_NAME.get(
+                self.sched_strategy, self.sched_strategy,
+            ),
             'inqueues': {
                 'total': len(self._all_inqueues),
                 'active': len(self._active_writes),
@@ -1231,7 +1233,7 @@ class AsynPool(_pool.Pool):
                         protocol=HIGHEST_PROTOCOL):
         body = dumps((type_, args), protocol=protocol)
         size = len(body)
-        header = pack('>I', size)
+        header = pack(b'>I', size)
         return header, body, size
 
     @classmethod

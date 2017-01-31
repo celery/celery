@@ -20,7 +20,7 @@ elif is_pypy:
     else:
         DEFAULT_POOL = 'prefork'
 
-DEFAULT_ACCEPT_CONTENT = ['json', 'pickle', 'msgpack', 'yaml']
+DEFAULT_ACCEPT_CONTENT = ['json']
 DEFAULT_PROCESS_LOG_FMT = """
     [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
 """.strip()
@@ -68,6 +68,7 @@ class Option:
     def __repr__(self):
         return '<Option: type->{0} default->{1!r}>'.format(self.type,
                                                            self.default)
+
 
 NAMESPACES = Namespace(
     accept_content=Option(DEFAULT_ACCEPT_CONTENT, type='list', old=OLD_NS),
@@ -154,6 +155,7 @@ NAMESPACES = Namespace(
         password=Option(type='string'),
         port=Option(type='int'),
         socket_timeout=Option(120.0, type='float'),
+        socket_connect_timeout=Option(None, type='float'),
     ),
     result=Namespace(
         __old__=old_ns('celery_result'),
@@ -306,6 +308,8 @@ def flatten(d, root='', keyfilter=_flatten_keys):
             else:
                 for ret in keyfilter(ns, key, opt):
                     yield ret
+
+
 DEFAULTS = {
     key: opt.default for key, opt in flatten(NAMESPACES)
 }

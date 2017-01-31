@@ -226,7 +226,7 @@ class Pidfile:
                     "Inconsistency: Pidfile content doesn't match at re-read")
         finally:
             rfh.close()
-PIDFile = Pidfile  # compat alias
+PIDFile = Pidfile  # noqa: E305 XXX compat alias
 
 
 def create_pidlock(pidfile):
@@ -674,6 +674,7 @@ class Signals:
         """Set signal handlers from a mapping."""
         for name, handler in dict(_d_ or {}, **sigmap).items():
             self[name] = handler
+
 
 signals = Signals()
 get_signal = signals.signum                   # compat

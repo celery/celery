@@ -2,9 +2,7 @@
 """Secure serializer."""
 from kombu.serialization import registry, dumps, loads
 from kombu.utils.encoding import bytes_to_str, str_to_bytes, ensure_bytes
-
 from celery.utils.serialization import b64encode, b64decode
-
 from .certificate import Certificate, FSCertStore
 from .key import PrivateKey
 from .utils import reraise_errors

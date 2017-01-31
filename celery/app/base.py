@@ -256,7 +256,7 @@ class Celery:
         self._pending = deque()
         self._tasks = tasks
         if not isinstance(self._tasks, TaskRegistry):
-            self._tasks = TaskRegistry(self._tasks or {})
+            self._tasks = self.registry_cls(self._tasks or {})
 
         # If the class defines a custom __reduce_args__ we need to use
         # the old way of pickling apps: pickling a list of
@@ -288,10 +288,13 @@ class Celery:
         # Signals
         if self.on_configure is None:
             # used to be a method pre 4.0
-            self.on_configure = Signal()
-        self.on_after_configure = Signal()
-        self.on_after_finalize = Signal()
-        self.on_after_fork = Signal()
+            self.on_configure = Signal(name='app.on_configure')
+        self.on_after_configure = Signal(
+            name='app.on_after_configure',
+            providing_args={'source'},
+        )
+        self.on_after_finalize = Signal(name='app.on_after_finalize')
+        self.on_after_fork = Signal(name='app.on_after_fork')
 
         self.on_init()
         _register_app(self)
@@ -468,6 +471,23 @@ class Celery:
                 task._orig_run, task.run = task.run, run
         else:
             task = self._tasks[name]
+        return task
+
+    def register_task(self, task):
+        """Utility for registering a task-based class.
+
+        Note:
+            This is here for compatibility with old Celery 1.0
+            style task classes, you should not need to use this for
+            new projects.
+        """
+        if not task.name:
+            task_cls = type(task)
+            task.name = self.gen_task_name(
+                task_cls.__name__, task_cls.__module__)
+        self.tasks[task.name] = task
+        task._app = self
+        task.bind(self)
         return task
 
     def gen_task_name(self, name, module):
@@ -704,7 +724,7 @@ class Celery:
         )
 
         if connection:
-            producer = amqp.Producer(connection)
+            producer = amqp.Producer(connection, auto_declare=False)
         with self.producer_or_acquire(producer) as P:
             with P.connection._reraise_as_library_errors():
                 self.backend.on_task_call(P, task_id)

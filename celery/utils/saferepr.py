@@ -10,32 +10,49 @@ Differences from regular :func:`repr`:
 
 Very slow with no limits, super quick with limits.
 """
-from collections import Iterable, Mapping, deque, namedtuple
-
+import traceback
+from collections import Mapping, deque, namedtuple
 from decimal import Decimal
 from itertools import chain
 from numbers import Number
 from pprint import _recursion
 from typing import (
-    Any, Callable, Iterator, MutableSequence, Optional, Set, Sequence, Tuple,
+    Any, AnyStr, Callable, Iterator, Set, Sequence, Tuple,
 )
-
-from kombu.utils.encoding import bytes_to_str
-
-from .text import truncate, truncate_bytes
+from .text import truncate
 
 __all__ = ['saferepr', 'reprstream']
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.
 
+#: Node representing literal text.
+#:   - .value: is the literal text value
+#:   - .truncate: specifies if this text can be truncated, for things like
+#:                LIT_DICT_END this will be False, as we always display
+#:                the ending brackets, e.g:  [[[1, 2, 3, ...,], ..., ]]
+#:   - .direction: If +1 the current level is increment by one,
+#:                 if -1 the current level is decremented by one, and
+#:                 if 0 the current level is unchanged.
 _literal = namedtuple('_literal', ('value', 'truncate', 'direction'))
+
+#: Node representing a dictionary key.
 _key = namedtuple('_key', ('value',))
+
+#: Node representing quoted text, e.g. a string value.
 _quoted = namedtuple('_quoted', ('value',))
+
+
+#: Recursion protection.
 _dirty = namedtuple('_dirty', ('objid',))
 
+#: Types that are repsented as chars.
 chars_t = (bytes, str)
+
+#: Types that are regarded as safe to call repr on.
 safe_t = (Number,)
+
+#: Set types.
 set_t = (frozenset, set)
 
 LIT_DICT_START = _literal('{', False, +1)
@@ -51,8 +68,8 @@ LIT_TUPLE_END = _literal(')', False, -1)
 LIT_TUPLE_END_SV = _literal(',)', False, -1)
 
 
-def saferepr(o: Any, maxlen: Optional[int]=None,
-             maxlevels: int=3, seen: Optional[Set]=None) -> str:
+def saferepr(o: Any, maxlen: int = None,
+             maxlevels: int=3, seen: Set = None) -> str:
     """Safe version of :func:`repr`.
 
     Warning:
@@ -66,8 +83,8 @@ def saferepr(o: Any, maxlen: Optional[int]=None,
 
 
 def _chaindict(mapping: Mapping,
-               LIT_DICT_KVSEP: str=LIT_DICT_KVSEP,
-               LIT_LIST_SEP: str=LIT_LIST_SEP) -> Iterator[Any]:
+               LIT_DICT_KVSEP: _literal = LIT_DICT_KVSEP,
+               LIT_LIST_SEP: _literal = LIT_LIST_SEP) -> Iterator[Any]:
     size = len(mapping)
     for i, (k, v) in enumerate(mapping.items()):
         yield _key(k)
@@ -77,7 +94,8 @@ def _chaindict(mapping: Mapping,
             yield LIT_LIST_SEP
 
 
-def _chainlist(it: Sequence, LIT_LIST_SEP: str=LIT_LIST_SEP) -> Iterator[Any]:
+def _chainlist(it: Sequence,
+               LIT_LIST_SEP: _literal = LIT_LIST_SEP) -> Iterator[Any]:
     size = len(it)
     for i, v in enumerate(it):
         yield v
@@ -85,12 +103,69 @@ def _chainlist(it: Sequence, LIT_LIST_SEP: str=LIT_LIST_SEP) -> Iterator[Any]:
             yield LIT_LIST_SEP
 
 
-def _repr_empty_set(s: Any) -> str:
+def _repr_empty_set(s: Set) -> str:
     return '%s()' % (type(s).__name__,)
 
 
-def _saferepr(o: Any, maxlen: Optional[int]=None,
-              maxlevels: int=3, seen: Optional[Set]=None) -> str:
+def _safetext(val: AnyStr) -> str:
+    if isinstance(val, bytes):
+        try:
+            val.encode('utf-8')
+        except UnicodeDecodeError:
+            # is bytes with unrepresentable characters, attempt
+            # to convert back to unicode
+            return val.decode('utf-8', errors='backslashreplace')
+    return val
+
+
+def _format_binary_bytes(val: bytes, maxlen: int,
+                         ellipsis: str = '...') -> str:
+    if maxlen and len(val) > maxlen:
+        # we don't want to copy all the data, just take what we need.
+        chunk = memoryview(val)[:maxlen].tobytes()
+        return _bytes_prefix("'{0}{1}'".format(
+            _repr_binary_bytes(chunk), ellipsis))
+    return _bytes_prefix("'{0}'".format(_repr_binary_bytes(val)))
+
+
+def _bytes_prefix(s: str) -> str:
+    return 'b' + s
+
+
+def _repr_binary_bytes(val: bytes) -> str:
+    try:
+        return val.decode('utf-8')
+    except UnicodeDecodeError:
+        # possibly not unicode, but binary data so format as hex.
+        try:
+            ashex = val.hex
+        except AttributeError:  # pragma: no cover
+            # Python 3.4
+            return val.decode('utf-8', errors='replace')
+        else:
+            # Python 3.5+
+            return ashex()
+
+
+def _format_chars(val: AnyStr, maxlen: int) -> str:
+    if isinstance(val, bytes):  # pragma: no cover
+        return _format_binary_bytes(val, maxlen)
+    else:
+        return "'{0}'".format(truncate(val, maxlen))
+
+
+def _repr(obj: Any) -> str:
+    try:
+        return repr(obj)
+    except Exception as exc:
+        return '<Unrepresentable {0!r}{1:#x}: {2!r} {3!r}>'.format(
+            type(obj), id(obj), exc, '\n'.join(traceback.format_stack()))
+
+
+def _saferepr(o: Any,
+              maxlen: int = None,
+              maxlevels: int = 3,
+              seen: Set = None) -> str:
     stack = deque([iter([o])])
     for token, it in reprstream(stack, seen=seen, maxlevels=maxlevels):
         if maxlen is not None and maxlen <= 0:
@@ -104,11 +179,9 @@ def _saferepr(o: Any, maxlen: Optional[int]=None,
         elif isinstance(token, _key):
             val = saferepr(token.value, maxlen, maxlevels)
         elif isinstance(token, _quoted):
-            val = token.value
-            if isinstance(val, bytes):
-                val = "b'%s'" % (bytes_to_str(truncate_bytes(val, maxlen)),)
+            val = _format_chars(token.value, maxlen)
         else:
-            val = truncate(token, maxlen)
+            val = _safetext(truncate(token, maxlen))
         yield val
         if maxlen is not None:
             maxlen -= len(val)
@@ -119,8 +192,11 @@ def _saferepr(o: Any, maxlen: Optional[int]=None,
                 yield rest2.value
 
 
-def _reprseq(val: Any, lit_start: str, lit_end: str, builtin_type: Any,
-             chainer: Callable) -> Tuple[Any, Any, Any]:
+def _reprseq(val: Any,
+             lit_start: _literal,
+             lit_end: _literal,
+             builtin_type: Any,
+             chainer: Any) -> Tuple[Any, Any, Any]:
     if type(val) is builtin_type:  # noqa
         return lit_start, lit_end, chainer(val)
     return (
@@ -130,9 +206,11 @@ def _reprseq(val: Any, lit_start: str, lit_end: str, builtin_type: Any,
     )
 
 
-def reprstream(stack: MutableSequence, seen: Optional[Set]=None,
-               maxlevels: int=3, level: int=0,
-               isinstance: Callable=isinstance) -> Iterator[Any]:
+def reprstream(stack: deque,
+               seen: Set = None,
+               maxlevels: int = 3,
+               level: int = 0,
+               isinstance: Callable = isinstance) -> Iterator[Any]:
     """Streaming repr, yielding tokens."""
     seen = seen or set()
     append = stack.append
@@ -155,13 +233,13 @@ def reprstream(stack: MutableSequence, seen: Optional[Set]=None,
             elif isinstance(val, _key):
                 yield val, it
             elif isinstance(val, Decimal):
-                yield repr(val), it
+                yield _repr(val), it
             elif isinstance(val, safe_t):
                 yield str(val), it
             elif isinstance(val, chars_t):
                 yield _quoted(val), it
             elif isinstance(val, range):  # pragma: no cover
-                yield repr(val), it
+                yield _repr(val), it
             else:
                 if isinstance(val, set_t):
                     if not val:
@@ -175,15 +253,15 @@ def reprstream(stack: MutableSequence, seen: Optional[Set]=None,
                         LIT_TUPLE_START,
                         LIT_TUPLE_END_SV if len(val) == 1 else LIT_TUPLE_END,
                         _chainlist(val))
-                elif isinstance(val, Mapping):
+                elif isinstance(val, dict):
                     lit_start, lit_end, val = (
                         LIT_DICT_START, LIT_DICT_END, _chaindict(val))
-                elif isinstance(val, Iterable):
+                elif isinstance(val, list):
                     lit_start, lit_end, val = (
                         LIT_LIST_START, LIT_LIST_END, _chainlist(val))
                 else:
                     # other type of object
-                    yield repr(val), it
+                    yield _repr(val), it
                     continue
 
                 if maxlevels and level >= maxlevels:

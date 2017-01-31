@@ -25,8 +25,8 @@ class Polaroid:
     """Record event snapshots."""
 
     timer = None
-    shutter_signal = Signal(providing_args=('state',))
-    cleanup_signal = Signal()
+    shutter_signal = Signal(name='shutter_signal', providing_args={'state'})
+    cleanup_signal = Signal(name='cleanup_signal')
     clear_after = False
 
     _tref = None
@@ -56,13 +56,13 @@ class Polaroid:
 
     def cleanup(self):
         logger.debug('Cleanup: Running...')
-        self.cleanup_signal.send(None)
+        self.cleanup_signal.send(sender=self.state)
         self.on_cleanup()
 
     def shutter(self):
         if self.maxrate is None or self.maxrate.can_consume():
             logger.debug('Shutter: %s', self.state)
-            self.shutter_signal.send(self.state)
+            self.shutter_signal.send(sender=self.state)
             self.on_shutter(self.state)
 
     def capture(self):

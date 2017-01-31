@@ -366,5 +366,6 @@ class amqp(Command):
 def main():
     amqp().execute_from_commandline()
 
+
 if __name__ == '__main__':  # pragma: no cover
     main()

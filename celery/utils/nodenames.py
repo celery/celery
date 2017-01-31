@@ -85,6 +85,8 @@ def _fmt_process_index(prefix: str='', default: str='0') -> str:
     from .log import current_process_index
     index = current_process_index()
     return '{0}{1}'.format(prefix, index) if index else default
+
+
 _fmt_process_index_with_prefix = partial(_fmt_process_index, '-', '')
 
 

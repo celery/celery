@@ -2,6 +2,7 @@ import pytest
 from kombu.utils.functional import lazy
 from celery.utils.functional import (
     DummyContext,
+    fun_accepts_kwargs,
     fun_takes_argument,
     head_from_fun,
     firstmethod,
@@ -158,15 +159,23 @@ class test_head_from_fun:
         g(1, 2)
         g(1, 2, kwarg=3)
 
+    def test_regression_3678(self):
+        local = {}
+        fun = ('def f(foo, *args, bar=""):'
+               '    return foo, args, bar')
+        exec(fun, {}, local)
+
+        g = head_from_fun(local['f'])
+        g(1)
+        g(1, 2, 3, 4, bar=100)
+        with pytest.raises(TypeError):
+            g(bar=100)
+
     def test_from_fun_with_hints(self):
         local = {}
         fun = ('def f_hints(x: int, y: int, kwarg: int=1):'
                '    pass')
-        try:
-            exec(fun, {}, local)
-        except SyntaxError:
-            # py2
-            return
+        exec(fun, {}, local)
         f_hints = local['f_hints']
 
         g = head_from_fun(f_hints)
@@ -174,6 +183,21 @@ class test_head_from_fun:
             g(1)
         g(1, 2)
         g(1, 2, kwarg=3)
+
+    def test_from_fun_forced_kwargs(self):
+        local = {}
+        fun = ('def f_kwargs(*, a, b="b", c=None):'
+               '    return')
+        exec(fun, {}, local)
+        f_kwargs = local['f_kwargs']
+
+        g = head_from_fun(f_kwargs)
+        with pytest.raises(TypeError):
+            g(1)
+
+        g(a=1)
+        g(a=1, b=2)
+        g(a=1, b=2, c=3)
 
 
 class test_fun_takes_argument:
@@ -222,3 +246,58 @@ def test_seq_concat_item(a, b, expected):
     res = seq_concat_item(a, b)
     assert type(res) is type(expected)  # noqa
     assert res == expected
+
+
+class StarKwargsCallable(object):
+
+    def __call__(self, **kwargs):
+        return 1
+
+
+class StarArgsStarKwargsCallable(object):
+
+    def __call__(self, *args, **kwargs):
+        return 1
+
+
+class StarArgsCallable(object):
+
+    def __call__(self, *args):
+        return 1
+
+
+class ArgsCallable(object):
+
+    def __call__(self, a, b):
+        return 1
+
+
+class ArgsStarKwargsCallable(object):
+
+    def __call__(self, a, b, **kwargs):
+        return 1
+
+
+class test_fun_accepts_kwargs:
+
+    @pytest.mark.parametrize('fun', [
+        lambda a, b, **kwargs: 1,
+        lambda *args, **kwargs: 1,
+        lambda foo=1, **kwargs: 1,
+        StarKwargsCallable(),
+        StarArgsStarKwargsCallable(),
+        ArgsStarKwargsCallable(),
+    ])
+    def test_accepts(self, fun):
+        assert fun_accepts_kwargs(fun)
+
+    @pytest.mark.parametrize('fun', [
+        lambda a: 1,
+        lambda a, b: 1,
+        lambda *args: 1,
+        lambda a, kw1=1, kw2=2: 1,
+        StarArgsCallable(),
+        ArgsCallable(),
+    ])
+    def test_rejects(self, fun):
+        assert not fun_accepts_kwargs(fun)

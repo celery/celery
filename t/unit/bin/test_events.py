@@ -30,7 +30,7 @@ class MockCommand:
 
 def proctitle(prog, info=None):
     proctitle.last = (prog, info)
-proctitle.last = ()
+proctitle.last = ()  # noqa: E305
 
 
 class test_events:

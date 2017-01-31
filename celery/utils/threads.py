@@ -323,6 +323,7 @@ class _FastLocalStack(threading.local):
     def __len__(self) -> int:
         return len(self.stack)
 
+
 if USE_FAST_LOCALS:  # pragma: no cover
     LocalStack = _FastLocalStack
 else:

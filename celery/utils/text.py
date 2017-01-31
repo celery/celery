@@ -53,6 +53,8 @@ def join(l: Sequence[str], sep: str = '\n') -> str:
 def ensure_sep(sep: str, s: str, n: int = 2) -> str:
     """Ensure text s ends in separator sep'."""
     return s + sep * (n - s.count(sep))
+
+
 ensure_newlines = partial(ensure_sep, '\n')
 
 

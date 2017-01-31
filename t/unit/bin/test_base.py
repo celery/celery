@@ -11,6 +11,7 @@ from celery.bin.base import (
 class MyApp:
     user_options = {'preload': None}
 
+
 APP = MyApp()  # <-- Used by test_with_custom_app
 
 

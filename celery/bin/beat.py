@@ -126,5 +126,6 @@ class beat(Command):
 def main(app=None):
     beat(app=app).execute_from_commandline()
 
+
 if __name__ == '__main__':      # pragma: no cover
     main()

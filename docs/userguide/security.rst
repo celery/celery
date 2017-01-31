@@ -246,4 +246,4 @@ that can be used.
 
 .. rubric:: Footnotes
 
-.. [*] http://nadiana.com/python-pickle-insecure
+.. [*] https://blog.nelhage.com/2011/03/exploiting-pickle/

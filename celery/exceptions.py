@@ -236,7 +236,7 @@ class CDeprecationWarning(DeprecationWarning):
 
 class WorkerTerminate(SystemExit):
     """Signals that the worker should terminate immediately."""
-SystemTerminate = WorkerTerminate  # XXX compat
+SystemTerminate = WorkerTerminate  # noqa: E305 XXX compat
 
 
 class WorkerShutdown(SystemExit):

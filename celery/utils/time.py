@@ -141,6 +141,8 @@ class _Zone:
     @cached_property
     def utc(self) -> tzinfo:
         return self.get_timezone('UTC')
+
+
 timezone = _Zone()
 
 

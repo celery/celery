@@ -3,7 +3,7 @@
 import inspect
 from importlib import import_module
 from celery._state import get_current_app
-from celery.exceptions import NotRegistered
+from celery.exceptions import NotRegistered, InvalidTaskError
 
 __all__ = ['TaskRegistry']
 
@@ -20,8 +20,12 @@ class TaskRegistry(dict):
         """Register a task in the task registry.
 
         The task will be automatically instantiated if not already an
-        instance.
+        instance. Name must be configured prior to registration.
         """
+        if task.name is None:
+            raise InvalidTaskError(
+                'Task class {0!r} must specify .name attribute'.format(
+                    type(task).__name__))
         self[task.name] = inspect.isclass(task) and task() or task
 
     def unregister(self, name):

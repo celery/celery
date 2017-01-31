@@ -413,11 +413,11 @@ Data transferred between clients and workers needs to be serialized,
 so every message in Celery has a ``content_type`` header that
 describes the serialization method used to encode it.
 
-The default serializer is :mod:`pickle`, but you can
+The default serializer is `JSON`, but you can
 change this using the :setting:`task_serializer` setting,
 or for each individual task, or even per message.
 
-There's built-in support for :mod:`pickle`, `JSON`, `YAML`
+There's built-in support for `JSON`, :mod:`pickle`, `YAML`
 and ``msgpack``, and you can also add your own custom serializers by registering
 them into the Kombu serializer registry
 

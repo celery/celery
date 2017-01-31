@@ -504,7 +504,7 @@ class SyncBackendMixin:
 
 class BaseBackend(Backend, SyncBackendMixin):
     """Base (synchronous) result backend."""
-BaseDictBackend = BaseBackend  # XXX compat
+BaseDictBackend = BaseBackend  # noqa: E305 XXX compat
 
 
 class BaseKeyValueStoreBackend(Backend):
@@ -744,7 +744,7 @@ class BaseKeyValueStoreBackend(Backend):
                 deps.delete()
                 self.client.delete(key)
         else:
-            self.expire(key, 86400)
+            self.expire(key, self.expires)
 
 
 class KeyValueStoreBackend(BaseKeyValueStoreBackend, SyncBackendMixin):

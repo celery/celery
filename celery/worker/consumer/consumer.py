@@ -391,13 +391,25 @@ class Consumer:
             self.pool.flush()
 
     def connect(self):
-        """Establish the broker connection.
+        """Establish the broker connection used for consuming tasks.
 
         Retries establishing the connection if the
         :setting:`broker_connection_retry` setting is enabled
         """
-        conn = self.app.connection_for_read(heartbeat=self.amqheartbeat)
+        conn = self.connection_for_read(heartbeat=self.amqheartbeat)
+        if self.hub:
+            conn.transport.register_with_event_loop(conn.connection, self.hub)
+        return conn
 
+    def connection_for_read(self, heartbeat=None):
+        return self.ensure_connected(
+            self.app.connection_for_read(heartbeat=heartbeat))
+
+    def connection_for_write(self, heartbeat=None):
+        return self.ensure_connected(
+            self.app.connection_for_write(heartbeat=heartbeat))
+
+    def ensure_connected(self, conn):
         # Callback called for each retry while the connection
         # can't be established.
         def _error_handler(exc, interval, next_step=CONNECTION_RETRY_STEP):
@@ -417,8 +429,6 @@ class Consumer:
             _error_handler, self.app.conf.broker_connection_max_retries,
             callback=maybe_shutdown,
         )
-        if self.hub:
-            conn.transport.register_with_event_loop(conn.connection, self.hub)
         return conn
 
     def _flush_events(self):

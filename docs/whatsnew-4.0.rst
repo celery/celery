@@ -222,7 +222,7 @@ to a model change, and you wish to cancel the task if the transaction is
 rolled back, or ensure the task is only executed after the changes have been
 written to the database.
 
-``transaction.on_commit`` enables you to solve this problem by adding
+``transaction.atomic`` enables you to solve this problem by adding
 the task as a callback to be called only when the transaction is committed.
 
 Example usage:
@@ -240,7 +240,7 @@ Example usage:
             article = Article.objects.create(**request.POST)
             # send this task only if the rest of the transaction succeeds.
             transaction.on_commit(partial(
-                send_article_created_notification.delay, article_id=article.pk)
+                send_article_created_notification.delay, article_id=article.pk))
             Log.objects.create(type=Log.ARTICLE_CREATED, object_pk=article.pk)
 
 Removed features
@@ -376,7 +376,7 @@ lowercase and some setting names have been renamed for consistency.
 
 This change is fully backwards compatible so you can still use the uppercase
 setting names, but we would like you to upgrade as soon as possible and
-you can this automatically using the :program:`celery upgrade settings`
+you can do this automatically using the :program:`celery upgrade settings`
 command:
 
 .. code-block:: console
@@ -401,7 +401,7 @@ and save a backup in :file:`proj/settings.py.orig`.
 
     .. code-block:: console
 
-        $ celery upgrade settings --django proj/settings.py
+        $ celery upgrade settings proj/settings.py --django
 
     After upgrading the settings file, you need to set the prefix explicitly
     in your ``proj/celery.py`` module:
@@ -551,7 +551,7 @@ these manually:
     class CustomTask(Task):
         def run(self):
             print('running')
-    app.tasks.register(CustomTask())
+    app.register_task(CustomTask())
 
 The best practice is to use custom task classes only for overriding
 general behavior, and then using the task decorator to realize the task:
@@ -760,7 +760,7 @@ some long-requested features:
 
             def run(self, fun, *args, **kwargs):
                 return fun(*args, **kwargs)
-        call_as_task = app.tasks.register(call_as_task())
+        call_as_task = app.register_task(call_as_task())
 
 - New ``argsrepr`` and ``kwargsrepr`` fields contain textual representations
   of the task arguments (possibly truncated) for use in logs, monitors, etc.
@@ -1576,7 +1576,7 @@ Execution Pools
 - **Eventlet/Gevent**: now enables AMQP heartbeat (Issue #3338).
 
 - **Eventlet/Gevent**: Fixed race condition leading to "simultaneous read"
-  errors (Issue #2812).
+  errors (Issue #2755).
 
 - **Prefork**: Prefork pool now uses ``poll`` instead of ``select`` where
   available (Issue #2373).
