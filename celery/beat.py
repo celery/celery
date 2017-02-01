@@ -291,9 +291,7 @@ class Scheduler(object):
             b_model = b.get(name)
             if not b_model:
                 return False
-            if hasattr(model.crontab, '__repr__') and  model.crontab.__repr__() != b_model.crontab.__repr__():
-                return False
-            if hasattr(model.schedule, "human_seconds") and model.schedule.human_seconds != b_model.schedule.human_seconds:
+            if hasattr(model.schedule, '__repr__') and model.schedule.__repr__() != b_model.schedule.__repr__():
                 return False
         return True
 
