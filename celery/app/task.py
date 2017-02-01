@@ -605,7 +605,7 @@ class Task(object):
         Arguments:
             args (Tuple): Positional arguments to retry with.
             kwargs (Dict): Keyword arguments to retry with.
-            exc (Exception): Custom exception to report when the max restart
+            exc (Exception): Custom exception to report when the max retry
                 limit has been exceeded (default:
                 :exc:`~@MaxRetriesExceededError`).
 
