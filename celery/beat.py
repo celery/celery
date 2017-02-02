@@ -284,7 +284,6 @@ class Scheduler(object):
         return min(adjust(next_time_to_run) or max_interval, max_interval)
 
     def schedules_equal(self, a, b):
-        print('----------SCHEDULES EQUAL----------------')
         if a.keys() != b.keys():
             return False
         for name, model in a.items():
