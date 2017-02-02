@@ -33,14 +33,12 @@ def print_unicode(log_message='håå®ƒ valmuefrø', print_message='hiöäüß'
     print(print_message)
 
 @shared_task
-def echo(message, stream=None):
-    """Task that prints the message and appends it to the previous message."""
-    print(message)
-    if stream:
-        stream.append(message)
-    else:
-        stream = [message]
-    return stream
+def redis_echo(message):
+    """Task that appends the message to a redis list"""
+    from redis import StrictRedis
+
+    redis_connection = StrictRedis()
+    redis_connection.rpush('redis-echo', message)
 
 @shared_task
 def sleeping(i, **_):
