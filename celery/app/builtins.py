@@ -272,7 +272,8 @@ def add_chain_task(app):
         def apply_async(self, args=(), kwargs={}, group_id=None, chord=None,
                         task_id=None, link=None, link_error=None, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
-                return self.apply(args, kwargs, **options)
+                return self.apply(args, kwargs, link=link,
+                                  link_error=link_error, **options)
             options.pop('publisher', None)
             tasks, results = self.prepare_steps(args, kwargs['tasks'])
             result = results[-1]
@@ -293,8 +294,15 @@ def add_chain_task(app):
             tasks[0].apply_async(**options)
             return result
 
-        def apply(self, args=(), kwargs={}, signature=maybe_signature,
-                  **options):
+        def apply(self, args=(), kwargs={}, link=None, link_error=None,
+                  signature=maybe_signature, **options):
+            # make sure we can do a link() and link_error() on a chain object.
+            if link:
+                kwargs['tasks'][-1].set(link=link)
+            # and if any task in the chain fails, call the errbacks
+            if link_error:
+                for task in kwargs['tasks']:
+                    task.set(link_error=link_error)
             app = self.app
             last, fargs = None, args  # fargs passed to first task only
             for task in kwargs['tasks']:

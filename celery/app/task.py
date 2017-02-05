@@ -693,6 +693,9 @@ class Task(object):
         if is_eager:
             # if task was executed eagerly using apply(),
             # then the retry must also be executed eagerly.
+            # Reset errbacks on request so they don't get called
+            # multiple times when the stack unwinds.
+            request.errbacks = None
             S.apply().get()
             return ret
 
