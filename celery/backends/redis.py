@@ -286,6 +286,10 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
                         callback,
                         ChordError('Callback error: {0!r}'.format(exc)),
                     )
+                finally:
+                    task_ids = [decode(tup)[1] for tup in resl]
+                    for task_id in task_ids:
+                        self.result_consumer.cancel_for(task_id)
         except ChordError as exc:
             logger.exception('Chord %r raised: %r', request.group, exc)
             return self.chord_error_from_stack(callback, exc)
