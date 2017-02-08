@@ -318,7 +318,7 @@ class test_RedisBackend:
             call(jkey, 86400), call(tkey, 86400),
         ])
         self.b.result_consumer._pubsub.unsubscribe.assert_has_calls([
-           call(self.b.get_key_for_task(task.request.id)) for task in tasks
+            call(self.b.get_key_for_task(task.request.id)) for task in tasks
         ])
 
     def test_on_chord_part_return__success(self):
