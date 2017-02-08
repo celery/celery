@@ -225,7 +225,7 @@ class Task(object):
 
     #: This is the instance bound to if the task is a method of a class.
     __self__ = None
-
+    
     #: The application instance associated with this task class.
     _app = None
 
@@ -422,9 +422,7 @@ class Task(object):
         _task_stack.push(self)
         self.push_request()
         try:
-            # add self if this is a bound task
-            if self.__self__ is not None:
-                return self.run(self.__self__, *args, **kwargs)
+            args, kwargs = self.augment_args_for_run(args, kwargs)
             return self.run(*args, **kwargs)
         finally:
             self.pop_request()
@@ -563,15 +561,40 @@ class Task(object):
         if app.conf.CELERY_ALWAYS_EAGER:
             return self.apply(args, kwargs, task_id=task_id or uuid(),
                               link=link, link_error=link_error, **options)
-        # add 'self' if this is a "task_method".
-        if self.__self__ is not None:
-            args = args if isinstance(args, tuple) else tuple(args or ())
-            args = (self.__self__, ) + args
+        args, kwargs = self.augment_args_for_send(args, kwargs)
         return app.send_task(
             self.name, args, kwargs, task_id=task_id, producer=producer,
             link=link, link_error=link_error, result_cls=self.AsyncResult,
             **dict(self._get_exec_options(), **options)
         )
+
+    def augment_args_for_run(self, args, kwargs):
+        """
+        Augment the args/kwargs prior to running the task.
+        """
+        if self.__self__ is not None:
+            # add self if this is a bound task
+            args = args if isinstance(args, tuple) else tuple(args or ())
+            args = (self.__self__, ) + args
+        return args, kwargs
+
+    def augment_args_for_send(self, args, kwargs, async=True):
+        """
+        Augment the args/kwargs prior to sending the task to the broker.
+        """
+        # add 'self' if this is a "task_method".
+        if self.__self__ is not None:
+            args = args if isinstance(args, tuple) else tuple(args or ())
+            args = (self.__self__, ) + args
+        return args, kwargs
+
+    def augment_args_for_merge(self, signature, args=(), kwargs={}, options={}):
+        if signature.immutable:
+            return (signature.args, signature.kwargs,
+                    dict(signature.options, **options) if options else signature.options)
+        return (tuple(args) + tuple(signature.args) if args else signature.args,
+                dict(signature.kwargs, **kwargs) if kwargs else signature.kwargs,
+                dict(signature.options, **options) if options else signature.options)
 
     def subtask_from_request(self, request=None, args=None, kwargs=None,
                              queue=None, **extra_options):
@@ -722,9 +745,6 @@ class Task(object):
 
         app = self._get_app()
         args = args or ()
-        # add 'self' if this is a bound method.
-        if self.__self__ is not None:
-            args = (self.__self__, ) + tuple(args)
         kwargs = kwargs or {}
         task_id = options.get('task_id') or uuid()
         retries = options.get('retries', 0)
@@ -756,6 +776,9 @@ class Task(object):
                                for key, val in items(default_kwargs)
                                if key in supported_keys)
             kwargs.update(extend_with)
+
+        # Needs to be refactored - only works some of the time.
+        args, kwargs = self.augment_args_for_send(args, kwargs, async=False)
 
         tb = None
         retval, info = eager_trace_task(task, task_id, args, kwargs,

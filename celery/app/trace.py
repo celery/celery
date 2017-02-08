@@ -432,6 +432,7 @@ def _install_stack_protection():
         def __protected_call__(self, *args, **kwargs):
             stack = self.request_stack
             req = stack.top
+            args, kwargs = self.augment_args_for_run(args, kwargs)
             if req and not req._protected and \
                     len(stack) == 1 and not req.called_directly:
                 req._protected = 1

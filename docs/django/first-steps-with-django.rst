@@ -231,5 +231,6 @@ Where to go from here
 =====================
 
 If you want to learn more you should continue to the
-:ref:`Next Steps <next-steps>` tutorial, and after that you
-can study the :ref:`User Guide <guide>`.
+:ref:`Next Steps <next-steps>` tutorial, after that you
+can study the :ref:`User Guide <guide>` and then you may want to know how to
+efficiently :ref:`create a task from a Model method <celery.contrib.django>`.
