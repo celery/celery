@@ -878,6 +878,16 @@ The fields of the URL are defined as follows:
     Database number to use. Default is 0.
     The db can include an optional leading slash.
 
+.. setting:: redis_backend_use_ssl
+
+``redis_backend_use_ssl``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Disabled.
+
+The Redis backend supports SSL. The valid values of this options are the same
+as :setting:`broker_use_ssl`.
+
 .. setting:: redis_max_connections
 
 ``redis_max_connections``
