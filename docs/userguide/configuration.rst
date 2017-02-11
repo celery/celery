@@ -1766,6 +1766,11 @@ Default: Disabled.
 
 Toggles SSL usage on broker connection and SSL settings.
 
+The valid values for this option vary by transport.
+
+``pyamqp``
+__________
+
 If ``True`` the connection will use SSL with default SSL settings.
 If set to a dict, will configure SSL connection according to the specified
 policy. The format used is Python's :func:`ssl.wrap_socket` options.
@@ -1792,6 +1797,21 @@ certificate authority:
     configuration won't validate the server cert at all. Please read Python
     `ssl module security
     considerations <https://docs.python.org/3/library/ssl.html#ssl-security>`_.
+
+``redis``
+_________
+
+
+The setting must be a dict the keys:
+
+*  ``ssl_cert_reqs`` (required): one of the ``SSLContext.verify_mode`` values:
+    * ``ssl.CERT_NONE``
+    * ``ssl.CERT_OPTIONAL``
+    * ``ssl.CERT_REQURIED``
+*  ``ssl_ca_certs`` (optional): path to the CA certificate
+*  ``ssl_certfile`` (optional): path to the client certificate
+*  ``ssl_keyfile`` (optional): path to the client key
+
 
 .. setting:: broker_pool_limit
 
