@@ -91,13 +91,28 @@ class test_schedule:
         assert s1 == s2
 
 
+# This is needed for test_crontab_parser because datetime.utcnow doesn't pickle
+# in python 2
+def utcnow():
+    return datetime.utcnow()
+
+
 class test_crontab_parser:
 
     def crontab(self, *args, **kwargs):
         return crontab(*args, **dict(kwargs, app=self.app))
 
     def test_crontab_reduce(self):
-        assert loads(dumps(self.crontab('*')))
+        c = self.crontab('*')
+        assert c == loads(dumps(c))
+        c = self.crontab(
+            minute='1',
+            hour='2',
+            day_of_week='3',
+            day_of_month='4',
+            month_of_year='5',
+            nowfun=utcnow)
+        assert c == loads(dumps(c))
 
     def test_range_steps_not_enough(self):
         with pytest.raises(crontab_parser.ParseException):
