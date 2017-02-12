@@ -439,7 +439,8 @@ class Request(object):
                     send_failed_event = False  # already sent revoked event
             # (acks_late) acknowledge after result stored.
             if self.task.acks_late:
-                self.acknowledge()
+                if not isinstance(exc, WorkerLostError):
+                    self.acknowledge()
         self._log_error(exc_info, send_failed_event=send_failed_event)
 
     def _log_error(self, einfo, send_failed_event=True):
