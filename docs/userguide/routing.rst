@@ -54,8 +54,8 @@ specify the router in *items* format instead:
 .. code-block:: python
 
     task_routes = ([
-        ('feed.tasks.*': {'queue': 'feeds'}),
-        ('web.tasks.*': {'queue': 'web'}),
+        ('feed.tasks.*', {'queue': 'feeds'}),
+        ('web.tasks.*', {'queue': 'web'}),
         (re.compile(r'(video|image)\.tasks\..*'), {'queue': 'media'}),
     ],)
 
