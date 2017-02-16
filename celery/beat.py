@@ -8,10 +8,10 @@ import shelve
 import sys
 import traceback
 
-from collections import namedtuple
 from functools import total_ordering
 from threading import Event, Thread
 from time import monotonic
+from typing import NamedTuple
 
 from billiard import ensure_multiprocessing
 from billiard.context import Process
@@ -32,13 +32,19 @@ __all__ = [
     'PersistentScheduler', 'Service', 'EmbeddedService',
 ]
 
-event_t = namedtuple('event_t', ('time', 'priority', 'entry'))
-
 logger = get_logger(__name__)
 debug, info, error, warning = (logger.debug, logger.info,
                                logger.error, logger.warning)
 
 DEFAULT_MAX_INTERVAL = 300  # 5 minutes
+
+
+class event_t(NamedTuple):
+    """Represents beat event in heap."""
+
+    time: float
+    priority: int
+    entry: 'ScheduleEntry'
 
 
 class SchedulingError(Exception):

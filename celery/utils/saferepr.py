@@ -11,13 +11,13 @@ Differences from regular :func:`repr`:
 Very slow with no limits, super quick with limits.
 """
 import traceback
-from collections import Mapping, deque, namedtuple
+from collections import Mapping, deque
 from decimal import Decimal
 from itertools import chain
 from numbers import Number
 from pprint import _recursion
 from typing import (
-    Any, AnyStr, Callable, Iterator, Set, Sequence, Tuple,
+    Any, AnyStr, Callable, Iterator, NamedTuple, Set, Sequence, Tuple,
 )
 from .text import truncate
 
@@ -26,25 +26,42 @@ __all__ = ['saferepr', 'reprstream']
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.
 
-#: Node representing literal text.
-#:   - .value: is the literal text value
-#:   - .truncate: specifies if this text can be truncated, for things like
-#:                LIT_DICT_END this will be False, as we always display
-#:                the ending brackets, e.g:  [[[1, 2, 3, ...,], ..., ]]
-#:   - .direction: If +1 the current level is increment by one,
-#:                 if -1 the current level is decremented by one, and
-#:                 if 0 the current level is unchanged.
-_literal = namedtuple('_literal', ('value', 'truncate', 'direction'))
 
-#: Node representing a dictionary key.
-_key = namedtuple('_key', ('value',))
+class _literal(NamedTuple):
+    """Node representing literal text.
 
-#: Node representing quoted text, e.g. a string value.
-_quoted = namedtuple('_quoted', ('value',))
+    Attributes:
+       - .value: is the literal text value
+       - .truncate: specifies if this text can be truncated, for things like
+                    LIT_DICT_END this will be False, as we always display
+                    the ending brackets, e.g:  [[[1, 2, 3, ...,], ..., ]]
+       - .direction: If +1 the current level is increment by one,
+                     if -1 the current level is decremented by one, and
+                     if 0 the current level is unchanged.
+    """
+
+    value: str
+    truncate: bool
+    direction: int
 
 
-#: Recursion protection.
-_dirty = namedtuple('_dirty', ('objid',))
+class _key(NamedTuple):
+    """Node representing a dictionary key."""
+
+    value: str
+
+
+class _quoted(NamedTuple):
+    """Node representing quoted text, e.g. a string value."""
+
+    value: str
+
+
+class _dirty(NamedTuple):
+    """Recursion protection."""
+
+    objid: int
+
 
 #: Types that are repsented as chars.
 chars_t = (bytes, str)

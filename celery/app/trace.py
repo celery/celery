@@ -19,8 +19,8 @@ import logging
 import os
 import sys
 
-from collections import namedtuple
 from time import monotonic
+from typing import Any, NamedTuple
 from warnings import warn
 
 from billiard.einfo import ExceptionInfo
@@ -79,9 +79,16 @@ LOG_RETRY = """\
 Task %(name)s[%(id)s] retry: %(exc)s\
 """
 
-log_policy_t = namedtuple(
-    'log_policy_t', ('format', 'description', 'severity', 'traceback', 'mail'),
-)
+
+class log_policy_t(NamedTuple):
+    """Describes the logging policy for a specific state."""
+
+    format: str
+    description: str
+    severity: int
+    traceback: int
+    mail: int
+
 
 log_policy_reject = log_policy_t(LOG_REJECTED, 'rejected', logging.WARN, 1, 1)
 log_policy_ignore = log_policy_t(LOG_IGNORED, 'ignored', logging.INFO, 0, 0)
@@ -111,7 +118,12 @@ IGNORE_STATES = frozenset({IGNORED, RETRY, REJECTED})
 _localized = []
 _patched = {}
 
-trace_ok_t = namedtuple('trace_ok_t', ('retval', 'info', 'runtime', 'retstr'))
+trace_ok_t = NamedTuple('trace_ok_t', [
+    ('retval', Any),
+    ('info', 'TraceInfo'),
+    ('runtime', float),
+    ('retstr', str),
+])
 
 
 def task_has_custom(task, attr):

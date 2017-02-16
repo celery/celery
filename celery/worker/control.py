@@ -2,19 +2,19 @@
 """Worker remote control command implementations."""
 import io
 import tempfile
-
-from collections import UserDict, namedtuple
-
+from collections import UserDict
+from typing import (
+    Any, Callable, Iterable, Mapping, NamedTuple, Sequence, Tuple, Union,
+)
 from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr
-
 from celery.exceptions import WorkerShutdown
 from celery.platforms import signals as _signals
+from celery.types import ControlStateT as StateT, RequestT, TimerT
 from celery.utils.functional import maybe_list
 from celery.utils.log import get_logger
 from celery.utils.serialization import jsonify, strtobool
 from celery.utils.time import rate
-
 from . import state as worker_state
 from .request import Request
 
@@ -23,17 +23,24 @@ __all__ = ['Panel']
 DEFAULT_TASK_INFO_ITEMS = ('exchange', 'routing_key', 'rate_limit')
 logger = get_logger(__name__)
 
-controller_info_t = namedtuple('controller_info_t', [
-    'alias', 'type', 'visible', 'default_timeout',
-    'help', 'signature', 'args', 'variadic',
-])
+class controller_info_t(NamedTuple):
+    """Metadata about control command."""
+
+    alias: str
+    type: str
+    visible: bool
+    default_timeout: float
+    help: str
+    signature: str
+    args: Sequence[Tuple[str, type]]
+    variadic: str
 
 
-def ok(value):
+def ok(value: Any) -> Mapping:
     return {'ok': value}
 
 
-def nok(value):
+def nok(value: Any) -> Mapping:
     return {'error': value}
 
 
@@ -44,17 +51,24 @@ class Panel(UserDict):
     meta = {}      # -"-
 
     @classmethod
-    def register(cls, *args, **kwargs):
+    def register(cls, *args, **kwargs) -> Callable:
         if args:
             return cls._register(**kwargs)(*args)
         return cls._register(**kwargs)
 
     @classmethod
-    def _register(cls, name=None, alias=None, type='control',
-                  visible=True, default_timeout=1.0, help=None,
-                  signature=None, args=None, variadic=None):
+    def _register(cls,
+                  name: str = None,
+                  alias: str = None,
+                  type: str = 'control',
+                  visible: bool = True,
+                  default_timeout: float = 1.0,
+                  help: str = None,
+                  signature: str = None,
+                  args: Sequence[Tuple[str, type]] = None,
+                  variadic: str = None) -> Callable:
 
-        def _inner(fun):
+        def _inner(fun: Callable) -> Callable:
             control_name = name or fun.__name__
             _help = help or (fun.__doc__ or '').strip().split('\n')[0]
             cls.data[control_name] = fun
@@ -67,18 +81,18 @@ class Panel(UserDict):
         return _inner
 
 
-def control_command(**kwargs):
+def control_command(**kwargs) -> Callable:
     return Panel.register(type='control', **kwargs)
 
 
-def inspect_command(**kwargs):
+def inspect_command(**kwargs) -> Callable:
     return Panel.register(type='inspect', **kwargs)
 
 # -- App
 
 
 @inspect_command()
-def report(state):
+def report(state: StateT) -> Mapping:
     """Information about Celery installation for bug reports."""
     return ok(state.app.bugreport())
 
@@ -88,14 +102,14 @@ def report(state):
     signature='[include_defaults=False]',
     args=[('with_defaults', strtobool)],
 )
-def conf(state, with_defaults=False, **kwargs):
+def conf(state: StateT, with_defaults: bool = False, **kwargs) -> Mapping:
     """List configuration."""
     return jsonify(state.app.conf.table(with_defaults=with_defaults),
                    keyfilter=_wanted_config_key,
                    unknown_type_filter=safe_repr)
 
 
-def _wanted_config_key(key):
+def _wanted_config_key(key: Any) -> bool:
     return isinstance(key, str) and not key.startswith('__')
 
 
@@ -105,7 +119,9 @@ def _wanted_config_key(key):
     variadic='ids',
     signature='[id1 [id2 [... [idN]]]]',
 )
-def query_task(state, ids, **kwargs):
+def query_task(state: StateT,
+               ids: Union[str, Sequence[str]],
+               **kwargs) -> Mapping[str, Tuple[str, Mapping]]:
     """Query for task information by id."""
     return {
         req.id: (_state_of_task(req), req.info())
@@ -113,8 +129,10 @@ def query_task(state, ids, **kwargs):
     }
 
 
-def _find_requests_by_id(ids,
-                         get_request=worker_state.requests.__getitem__):
+def _find_requests_by_id(
+        ids: Sequence[str],
+        *,
+        get_request=worker_state.requests.__getitem__) -> Iterable[RequestT]:
     for task_id in ids:
         try:
             yield get_request(task_id)
@@ -122,9 +140,11 @@ def _find_requests_by_id(ids,
             pass
 
 
-def _state_of_task(request,
-                   is_active=worker_state.active_requests.__contains__,
-                   is_reserved=worker_state.reserved_requests.__contains__):
+def _state_of_task(
+        request: RequestT,
+        *,
+        is_active=worker_state.active_requests.__contains__,
+        is_reserved=worker_state.reserved_requests.__contains__) -> str:
     if is_active(request):
         return 'active'
     elif is_reserved(request):
@@ -136,7 +156,9 @@ def _state_of_task(request,
     variadic='task_id',
     signature='[id1 [id2 [... [idN]]]]',
 )
-def revoke(state, task_id, terminate=False, signal=None, **kwargs):
+def revoke(state: StateT, task_id: str,
+           terminate: bool = False,
+           signal: Union[str, int] = None, **kwargs) -> Mapping:
     """Revoke task by task id (or list of ids).
 
     Keyword Arguments:
@@ -176,7 +198,7 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
     args=[('signal', str)],
     signature='<signal> [id1 [id2 [... [idN]]]]'
 )
-def terminate(state, signal, task_id, **kwargs):
+def terminate(state: StateT, signal: str, task_id: str, **kwargs) -> Mapping:
     """Terminate task by task id (or list of ids)."""
     return revoke(state, task_id, terminate=True, signal=signal)
 
@@ -185,7 +207,8 @@ def terminate(state, signal, task_id, **kwargs):
     args=[('task_name', str), ('rate_limit', str)],
     signature='<task_name> <rate_limit (e.g., 5/s | 5/m | 5/h)>',
 )
-def rate_limit(state, task_name, rate_limit, **kwargs):
+def rate_limit(state: StateT, task_name: str, rate_limit: Union[str, int],
+               **kwargs) -> Mapping:
     """Tell worker(s) to modify the rate limit for a task by type.
 
     See Also:
@@ -225,7 +248,10 @@ def rate_limit(state, task_name, rate_limit, **kwargs):
     args=[('task_name', str), ('soft', float), ('hard', float)],
     signature='<task_name> <soft_secs> [hard_secs]',
 )
-def time_limit(state, task_name=None, hard=None, soft=None, **kwargs):
+def time_limit(state: StateT,
+               task_name: str = None,
+               hard: float = None,
+               soft: float = None, **kwargs) -> Mapping:
     """Tell worker(s) to modify the time limit for task by type.
 
     Arguments:
@@ -252,13 +278,14 @@ def time_limit(state, task_name=None, hard=None, soft=None, **kwargs):
 
 
 @inspect_command()
-def clock(state, **kwargs):
+def clock(state: StateT, **kwargs) -> Mapping:
     """Get current logical clock value."""
     return {'clock': state.app.clock.value}
 
 
 @control_command()
-def election(state, id, topic, action=None, **kwargs):
+def election(state: StateT, id: str, topic: str, action: str = None,
+             **kwargs) -> None:
     """Hold election.
 
     Arguments:
@@ -271,7 +298,7 @@ def election(state, id, topic, action=None, **kwargs):
 
 
 @control_command()
-def enable_events(state):
+def enable_events(state: StateT) -> Mapping:
     """Tell worker(s) to send task-related events."""
     dispatcher = state.consumer.event_dispatcher
     if dispatcher.groups and 'task' not in dispatcher.groups:
@@ -282,7 +309,7 @@ def enable_events(state):
 
 
 @control_command()
-def disable_events(state):
+def disable_events(state: StateT) -> Mapping:
     """Tell worker(s) to stop sending task-related events."""
     dispatcher = state.consumer.event_dispatcher
     if 'task' in dispatcher.groups:
@@ -293,7 +320,7 @@ def disable_events(state):
 
 
 @control_command()
-def heartbeat(state):
+def heartbeat(state: StateT) -> None:
     """Tell worker(s) to send event heartbeat immediately."""
     logger.debug('Heartbeat requested by remote.')
     dispatcher = state.consumer.event_dispatcher
@@ -303,7 +330,8 @@ def heartbeat(state):
 # -- Worker
 
 @inspect_command(visible=False)
-def hello(state, from_node, revoked=None, **kwargs):
+def hello(state: StateT, from_node: str,
+          revoked: Mapping = None, **kwargs) -> Mapping:
     """Request mingle sync-data."""
     # pylint: disable=redefined-outer-name
     # XXX Note that this redefines `revoked`:
@@ -319,24 +347,24 @@ def hello(state, from_node, revoked=None, **kwargs):
 
 
 @inspect_command(default_timeout=0.2)
-def ping(state, **kwargs):
+def ping(state: StateT, **kwargs) -> Mapping:
     """Ping worker(s)."""
     return ok('pong')
 
 
 @inspect_command()
-def stats(state, **kwargs):
+def stats(state: StateT, **kwargs) -> Mapping:
     """Request worker statistics/information."""
     return state.consumer.controller.stats()
 
 
 @inspect_command(alias='dump_schedule')
-def scheduled(state, **kwargs):
+def scheduled(state: StateT, **kwargs) -> Sequence[Mapping]:
     """List of currently scheduled ETA/countdown tasks."""
     return list(_iter_schedule_requests(state.consumer.timer))
 
 
-def _iter_schedule_requests(timer):
+def _iter_schedule_requests(timer: TimerT) -> Iterable[Mapping]:
     for waiting in timer.schedule.queue:
         try:
             arg0 = waiting.entry.args[0]
@@ -352,7 +380,7 @@ def _iter_schedule_requests(timer):
 
 
 @inspect_command(alias='dump_reserved')
-def reserved(state, **kwargs):
+def reserved(state: StateT, **kwargs) -> Sequence[Mapping]:
     """List of currently reserved tasks, not including scheduled/active."""
     reserved_tasks = (
         state.tset(worker_state.reserved_requests) -
@@ -364,14 +392,14 @@ def reserved(state, **kwargs):
 
 
 @inspect_command(alias='dump_active')
-def active(state, **kwargs):
+def active(state: StateT, **kwargs) -> Sequence[Mapping]:
     """List of tasks currently being executed."""
     return [request.info()
             for request in state.tset(worker_state.active_requests)]
 
 
 @inspect_command(alias='dump_revoked')
-def revoked(state, **kwargs):
+def revoked(state: StateT, **kwargs) -> Sequence[str]:
     """List of revoked task-ids."""
     return list(worker_state.revoked)
 
@@ -381,7 +409,9 @@ def revoked(state, **kwargs):
     variadic='taskinfoitems',
     signature='[attr1 [attr2 [... [attrN]]]]',
 )
-def registered(state, taskinfoitems=None, builtins=False, **kwargs):
+def registered(state: StateT,
+               taskinfoitems: Sequence[str] = None,
+               builtins: bool = False, **kwargs) -> Sequence[Mapping]:
     """List of registered tasks.
 
     Arguments:
@@ -415,7 +445,10 @@ def registered(state, taskinfoitems=None, builtins=False, **kwargs):
     args=[('type', str), ('num', int), ('max_depth', int)],
     signature='[object_type=Request] [num=200 [max_depth=10]]',
 )
-def objgraph(state, num=200, max_depth=10, type='Request'):  # pragma: no cover
+def objgraph(state: StateT,  # pragma: no cover
+             num: int = 200,
+             max_depth: int = 10,
+             type: str = 'Request') -> Mapping:
     """Create graph of uncollected objects (memory-leak debugging).
 
     Arguments:
@@ -440,7 +473,7 @@ def objgraph(state, num=200, max_depth=10, type='Request'):  # pragma: no cover
 
 
 @inspect_command()
-def memsample(state, **kwargs):
+def memsample(state: StateT, **kwargs) -> str:
     """Sample current RSS memory usage."""
     from celery.utils.debug import sample_mem
     return sample_mem()
@@ -450,7 +483,8 @@ def memsample(state, **kwargs):
     args=[('samples', int)],
     signature='[n_samples=10]',
 )
-def memdump(state, samples=10, **kwargs):  # pragma: no cover
+def memdump(state: StateT,  # pragma: no cover
+            samples: int = 10, **kwargs) -> str:
     """Dump statistics of previous memsample requests."""
     from celery.utils import debug
     out = io.StringIO()
@@ -464,7 +498,7 @@ def memdump(state, samples=10, **kwargs):  # pragma: no cover
     args=[('n', int)],
     signature='[N=1]',
 )
-def pool_grow(state, n=1, **kwargs):
+def pool_grow(state: StateT, n: int = 1, **kwargs) -> Mapping:
     """Grow pool by n processes/threads."""
     if state.consumer.controller.autoscaler:
         state.consumer.controller.autoscaler.force_scale_up(n)
@@ -478,7 +512,7 @@ def pool_grow(state, n=1, **kwargs):
     args=[('n', int)],
     signature='[N=1]',
 )
-def pool_shrink(state, n=1, **kwargs):
+def pool_shrink(state: StateT, n: int = 1, **kwargs) -> Mapping:
     """Shrink pool by n processes/threads."""
     if state.consumer.controller.autoscaler:
         state.consumer.controller.autoscaler.force_scale_down(n)
@@ -489,7 +523,11 @@ def pool_shrink(state, n=1, **kwargs):
 
 
 @control_command()
-def pool_restart(state, modules=None, reload=False, reloader=None, **kwargs):
+def pool_restart(state: StateT,
+                 modules: Sequence[str] = None,
+                 reload: bool = False,
+                 reloader: Callable = None,
+                 **kwargs) -> Mapping:
     """Restart execution pool."""
     if state.app.conf.worker_pool_restarts:
         state.consumer.controller.reload(modules, reload, reloader=reloader)
@@ -502,7 +540,7 @@ def pool_restart(state, modules=None, reload=False, reloader=None, **kwargs):
     args=[('max', int), ('min', int)],
     signature='[max [min]]',
 )
-def autoscale(state, max=None, min=None):
+def autoscale(state: StateT, max: int = None, min: int = None) -> Mapping:
     """Modify autoscale settings."""
     autoscaler = state.consumer.controller.autoscaler
     if autoscaler:
@@ -512,7 +550,8 @@ def autoscale(state, max=None, min=None):
 
 
 @control_command()
-def shutdown(state, msg='Got shutdown from remote', **kwargs):
+def shutdown(state: StateT, msg: str = 'Got shutdown from remote',
+             **kwargs) -> None:
     """Shutdown worker(s)."""
     logger.warning(msg)
     raise WorkerShutdown(msg)
@@ -529,8 +568,11 @@ def shutdown(state, msg='Got shutdown from remote', **kwargs):
     ],
     signature='<queue> [exchange [type [routing_key]]]',
 )
-def add_consumer(state, queue, exchange=None, exchange_type=None,
-                 routing_key=None, **options):
+def add_consumer(state: StateT, queue: str,
+                 exchange: str = None,
+                 exchange_type: str = None,
+                 routing_key: str = None,
+                 **options) -> Mapping:
     """Tell worker(s) to consume from task queue by name."""
     state.consumer.call_soon(
         state.consumer.add_task_queue,
@@ -542,7 +584,7 @@ def add_consumer(state, queue, exchange=None, exchange_type=None,
     args=[('queue', str)],
     signature='<queue>',
 )
-def cancel_consumer(state, queue, **_):
+def cancel_consumer(state: StateT, queue: str, **_) -> Mapping:
     """Tell worker(s) to stop consuming from task queue by name."""
     state.consumer.call_soon(
         state.consumer.cancel_task_queue, queue,
@@ -551,7 +593,7 @@ def cancel_consumer(state, queue, **_):
 
 
 @inspect_command()
-def active_queues(state):
+async def active_queues(state: StateT) -> Sequence[Mapping]:
     """List the task queues a worker are currently consuming from."""
     if state.consumer.task_consumer:
         return [dict(queue.as_dict(recurse=True))

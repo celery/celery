@@ -4,8 +4,9 @@ import numbers
 import re
 
 from bisect import bisect, bisect_left
-from collections import Iterable, namedtuple
+from collections import Iterable
 from datetime import datetime, timedelta
+from typing import NamedTuple
 
 from kombu.utils.objects import cached_property
 
@@ -21,7 +22,6 @@ __all__ = [
     'maybe_schedule', 'solar',
 ]
 
-schedstate = namedtuple('schedstate', ('is_due', 'next'))
 
 CRON_PATTERN_INVALID = """\
 Invalid crontab pattern.  Valid range is {min}-{max}. \
@@ -49,6 +49,15 @@ Argument longitude {lon} is invalid, must be between -180 and 180.\
 SOLAR_INVALID_EVENT = """\
 Argument event "{event}" is invalid, must be one of {all_events}.\
 """
+
+Kailuga1
+
+
+class schedstate(NamedTuple):
+    """Return value of ``schedule.is_due``."""
+
+    is_due: bool
+    next: float
 
 
 def cronfield(s):

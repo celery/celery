@@ -1,5 +1,6 @@
 """Worker Event Heartbeat Bootstep."""
 from celery import bootsteps
+from celery.types import WorkerConsumerT
 from celery.worker import heartbeat
 from .events import Events
 
@@ -17,19 +18,23 @@ class Heart(bootsteps.StartStopStep):
 
     requires = (Events,)
 
-    def __init__(self, c,
-                 without_heartbeat=False, heartbeat_interval=None, **kwargs):
+    def __init__(self, c: WorkerConsumerT,
+                 without_heartbeat: bool = False,
+                 heartbeat_interval: float = None,
+                 **kwargs) -> None:
         self.enabled = not without_heartbeat
         self.heartbeat_interval = heartbeat_interval
         c.heart = None
         super(Heart, self).__init__(c, **kwargs)
 
-    def start(self, c):
+    async def start(self, c: WorkerConsumerT) -> None:
         c.heart = heartbeat.Heart(
             c.timer, c.event_dispatcher, self.heartbeat_interval,
         )
-        c.heart.start()
+        await c.heart.start()
 
-    def stop(self, c):
-        c.heart = c.heart and c.heart.stop()
+    async def stop(self, c: WorkerConsumerT) -> None:
+        heart, c.heart = c.heart, None
+        if heart:
+            await heart.stop()
     shutdown = stop

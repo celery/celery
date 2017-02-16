@@ -11,19 +11,24 @@ import os
 
 from collections import defaultdict
 from time import sleep
+from typing import Callable, Mapping, Tuple
 
 from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.async.semaphore import DummyLock
+from kombu.types import ConnectionT, MessageT
 from kombu.utils.compat import _detect_environment
 from kombu.utils.encoding import safe_repr
 from kombu.utils.limits import TokenBucket
-from vine import ppartial, promise
+from vine import Thenable, ppartial, promise
 
 from celery import bootsteps
 from celery import signals
 from celery.app.trace import build_tracer
 from celery.exceptions import InvalidTaskError, NotRegistered
+from celery.types import (
+    AppT, LoopT, PoolT, RequestT, TaskT, TimerT, WorkerT, WorkerConsumerT,
+)
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -109,7 +114,7 @@ body: {0}
 """
 
 
-def dump_body(m, body):
+def dump_body(m: MessageT, body: bytes):
     """Format message body for debugging purposes."""
     # v2 protocol does not deserialize body
     body = m.body if body is None else body
@@ -151,15 +156,25 @@ class Consumer:
             'celery.worker.consumer.agent:Agent',
         ]
 
-        def shutdown(self, parent):
-            self.send_all(parent, 'shutdown')
+        async def shutdown(self, parent: WorkerConsumerT) -> None:
+            await self.send_all(parent, 'shutdown')
 
-    def __init__(self, on_task_request,
-                 init_callback=noop, hostname=None,
-                 pool=None, app=None,
-                 timer=None, controller=None, hub=None, amqheartbeat=None,
-                 worker_options=None, disable_rate_limits=False,
-                 initial_prefetch_count=2, prefetch_multiplier=1, **kwargs):
+    def __init__(self,
+                 on_task_request: Callable,
+                 *,
+                 init_callback: Callable = noop,
+                 hostname: str = None,
+                 pool: PoolT = None,
+                 app: AppT = None,
+                 timer: TimerT = None,
+                 controller: WorkerT = None,
+                 hub: LoopT = None,
+                 amqheartbeat: float = None,
+                 worker_options: Mapping = None,
+                 disable_rate_limits: bool = False,
+                 initial_prefetch_count: int = 2,
+                 prefetch_multiplier: int = 1,
+                 **kwargs) -> None:
         self.app = app
         self.controller = controller
         self.init_callback = init_callback
@@ -213,14 +228,14 @@ class Consumer:
         )
         self.blueprint.apply(self, **dict(worker_options or {}, **kwargs))
 
-    def call_soon(self, p, *args, **kwargs):
+    def call_soon(self, p: Thenable, *args, **kwargs) -> Thenable:
         p = ppartial(p, *args, **kwargs)
         if self.hub:
             return self.hub.call_soon(p)
         self._pending_operations.append(p)
         return p
 
-    def perform_pending_operations(self):
+    def perform_pending_operations(self) -> None:
         if not self.hub:
             while self._pending_operations:
                 try:
@@ -228,16 +243,16 @@ class Consumer:
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception('Pending callback raised: %r', exc)
 
-    def bucket_for_task(self, type):
+    def bucket_for_task(self, type: TaskT) -> TokenBucket:
         limit = rate(getattr(type, 'rate_limit', None))
         return TokenBucket(limit, capacity=1) if limit else None
 
-    def reset_rate_limits(self):
+    def reset_rate_limits(self) -> None:
         self.task_buckets.update(
             (n, self.bucket_for_task(t)) for n, t in self.app.tasks.items()
         )
 
-    def _update_prefetch_count(self, index=0):
+    def _update_prefetch_count(self, index: int = 0) -> int:
         """Update prefetch count after pool/shrink grow operations.
 
         Index must be the change in number of processes as a positive
@@ -256,33 +271,35 @@ class Consumer:
         )
         return self._update_qos_eventually(index)
 
-    def _update_qos_eventually(self, index):
+    def _update_qos_eventually(self, index: int) -> int:
         return (self.qos.decrement_eventually if index < 0
                 else self.qos.increment_eventually)(
             abs(index) * self.prefetch_multiplier)
 
-    def _limit_move_to_pool(self, request):
+    async def _limit_move_to_pool(self, request: RequestT) -> None:
         task_reserved(request)
-        self.on_task_request(request)
+        await self.on_task_request(request)
 
-    def _on_bucket_wakeup(self, bucket, tokens):
+    async def _on_bucket_wakeup(self, bucket: TokenBucket, tokens: int):
         try:
             request = bucket.pop()
         except IndexError:
             pass
         else:
-            self._limit_move_to_pool(request)
+            await self._limit_move_to_pool(request)
             self._schedule_oldest_bucket_request(bucket, tokens)
 
-    def _schedule_oldest_bucket_request(self, bucket, tokens):
+    def _schedule_oldest_bucket_request(
+            self, bucket: TokenBucket, tokens: int) -> None:
         try:
             request = bucket.pop()
         except IndexError:
             pass
         else:
-            return self._schedule_bucket_request(request, bucket, tokens)
+            self._schedule_bucket_request(request, bucket, tokens)
 
-    def _schedule_bucket_request(self, request, bucket, tokens):
+    def _schedule_bucket_request(
+            self, request: RequestT, bucket: TokenBucket, tokens: int) -> None:
         bucket.can_consume(tokens)
         bucket.add(request)
         pri = self._limit_order = (self._limit_order + 1) % 10
@@ -292,12 +309,16 @@ class Consumer:
             priority=pri,
         )
 
-    def _limit_task(self, request, bucket, tokens):
+    def _limit_task(
+            self, request: RequestT,
+            bucket: TokenBucket,
+            tokens: int) -> None:
         if bucket.contents:
-            return bucket.add(request)
-        return self._schedule_bucket_request(request, bucket, tokens)
+            bucket.add(request)
+        else:
+            self._schedule_bucket_request(request, bucket, tokens)
 
-    def start(self):
+    async def start(self) -> None:
         blueprint = self.blueprint
         while blueprint.state != CLOSE:
             maybe_shutdown()
@@ -309,7 +330,7 @@ class Consumer:
                     sleep(1)
             self.restart_count += 1
             try:
-                blueprint.start(self)
+                await blueprint.start(self)
             except self.connection_errors as exc:
                 # If we're not retrying connections, no need to catch
                 # connection errors
@@ -324,42 +345,42 @@ class Consumer:
                     else:
                         self.on_connection_error_before_connected(exc)
                     self.on_close()
-                    blueprint.restart(self)
+                    await blueprint.restart(self)
 
-    def on_connection_error_before_connected(self, exc):
+    def on_connection_error_before_connected(self, exc: Exception) -> None:
         error(CONNECTION_ERROR, self.conninfo.as_uri(), exc,
               'Trying to reconnect...')
 
-    def on_connection_error_after_connected(self, exc):
+    def on_connection_error_after_connected(self, exc: Exception) -> None:
         warn(CONNECTION_RETRY, exc_info=True)
         try:
             self.connection.collect()
         except Exception:  # pylint: disable=broad-except
             pass
 
-    def register_with_event_loop(self, hub):
-        self.blueprint.send_all(
+    async def register_with_event_loop(self, hub: LoopT) -> None:
+        await self.blueprint.send_all(
             self, 'register_with_event_loop', args=(hub,),
             description='Hub.register',
         )
 
-    def shutdown(self):
-        self.blueprint.shutdown(self)
+    async def shutdown(self) -> None:
+        await self.blueprint.shutdown(self)
 
-    def stop(self):
-        self.blueprint.stop(self)
+    async def stop(self) -> None:
+        await self.blueprint.stop(self)
 
-    def on_ready(self):
+    def on_ready(self) -> None:
         callback, self.init_callback = self.init_callback, None
         if callback:
             callback(self)
 
-    def loop_args(self):
+    def loop_args(self) -> Tuple:
         return (self, self.connection, self.task_consumer,
                 self.blueprint, self.hub, self.qos, self.amqheartbeat,
                 self.app.clock, self.amqheartbeat_rate)
 
-    def on_decode_error(self, message, exc):
+    async def on_decode_error(self, message: MessageT, exc: Exception) -> None:
         """Callback called if an error occurs while decoding a message.
 
         Simply logs the error and acknowledges the message so it
@@ -373,9 +394,9 @@ class Consumer:
              exc, message.content_type, message.content_encoding,
              safe_repr(message.headers), dump_body(message, message.body),
              exc_info=1)
-        message.ack()
+        await message.ack()
 
-    def on_close(self):
+    def on_close(self) -> None:
         # Clear internal queues to get rid of old messages.
         # They can't be acked anyway, as a delivery tag is specific
         # to the current channel.
@@ -390,26 +411,29 @@ class Consumer:
         if self.pool and self.pool.flush:
             self.pool.flush()
 
-    def connect(self):
+    async def connect(self) -> ConnectionT:
         """Establish the broker connection used for consuming tasks.
 
         Retries establishing the connection if the
         :setting:`broker_connection_retry` setting is enabled
         """
         conn = self.connection_for_read(heartbeat=self.amqheartbeat)
+        await conn.connect()
         if self.hub:
             conn.transport.register_with_event_loop(conn.connection, self.hub)
         return conn
 
-    def connection_for_read(self, heartbeat=None):
-        return self.ensure_connected(
+    async def connection_for_read(self,
+                                  heartbeat: float = None) -> ConnectionT:
+        return await self.ensure_connected(
             self.app.connection_for_read(heartbeat=heartbeat))
 
-    def connection_for_write(self, heartbeat=None):
-        return self.ensure_connected(
+    async def connection_for_write(self,
+                                   heartbeat: float = None) -> ConnectionT:
+        return await self.ensure_connected(
             self.app.connection_for_write(heartbeat=heartbeat))
 
-    def ensure_connected(self, conn):
+    async def ensure_connected(self, conn: ConnectionT) -> ConnectionT:
         # Callback called for each retry while the connection
         # can't be established.
         def _error_handler(exc, interval, next_step=CONNECTION_RETRY_STEP):
@@ -422,25 +446,28 @@ class Consumer:
         # until needed.
         if not self.app.conf.broker_connection_retry:
             # retry disabled, just call connect directly.
-            conn.connect()
+            await conn.connect()
             return conn
 
-        conn = conn.ensure_connection(
+        conn = await conn.ensure_connection(
             _error_handler, self.app.conf.broker_connection_max_retries,
             callback=maybe_shutdown,
         )
         return conn
 
-    def _flush_events(self):
+    def _flush_events(self) -> None:
         if self.event_dispatcher:
             self.event_dispatcher.flush()
 
-    def on_send_event_buffered(self):
+    def on_send_event_buffered(self) -> None:
         if self.hub:
             self.hub._ready.add(self._flush_events)
 
-    def add_task_queue(self, queue, exchange=None, exchange_type=None,
-                       routing_key=None, **options):
+    async def add_task_queue(self, queue: str,
+                             exchange: str = None,
+                             exchange_type: str = None,
+                             routing_key: str = None,
+                             **options) -> None:
         cset = self.task_consumer
         queues = self.app.amqp.queues
         # Must use in' here, as __missing__ will automatically
@@ -458,33 +485,34 @@ class Consumer:
                                   routing_key=routing_key, **options)
         if not cset.consuming_from(queue):
             cset.add_queue(q)
-            cset.consume()
+            await cset.consume()
             info('Started consuming from %s', queue)
 
-    def cancel_task_queue(self, queue):
+    async def cancel_task_queue(self, queue):
         info('Canceling queue %s', queue)
         self.app.amqp.queues.deselect(queue)
-        self.task_consumer.cancel_by_queue(queue)
+        await self.task_consumer.cancel_by_queue(queue)
 
-    def apply_eta_task(self, task):
+    def apply_eta_task(self, request: RequestT) -> None:
         """Method called by the timer to apply a task with an ETA/countdown."""
-        task_reserved(task)
-        self.on_task_request(task)
+        task_reserved(request)
+        self.on_task_request(request)
         self.qos.decrement_eventually()
 
-    def _message_report(self, body, message):
+    def _message_report(self, body: bytes, message: MessageT) -> str:
         return MESSAGE_REPORT.format(dump_body(message, body),
                                      safe_repr(message.content_type),
                                      safe_repr(message.content_encoding),
                                      safe_repr(message.delivery_info),
                                      safe_repr(message.headers))
 
-    def on_unknown_message(self, body, message):
+    async def on_unknown_message(self, body: bytes, message: MessageT) -> None:
         warn(UNKNOWN_FORMAT, self._message_report(body, message))
-        message.reject_log_error(logger, self.connection_errors)
+        await message.reject_log_error(logger, self.connection_errors)
         signals.task_rejected.send(sender=self, message=message, exc=None)
 
-    def on_unknown_task(self, body, message, exc):
+    async def on_unknown_task(
+            self, body: bytes, message: MessageT, exc: Exception) -> None:
         error(UNKNOWN_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
         try:
             id_, name = message.headers['id'], message.headers['task']
@@ -499,12 +527,12 @@ class Consumer:
             reply_to=message.properties.get('reply_to'),
             errbacks=None,
         )
-        message.reject_log_error(logger, self.connection_errors)
-        self.app.backend.mark_as_failure(
+        await message.reject_log_error(logger, self.connection_errors)
+        await self.app.backend.mark_as_failure(
             id_, NotRegistered(name), request=request,
         )
         if self.event_dispatcher:
-            self.event_dispatcher.send(
+            await self.event_dispatcher.send(
                 'task-failed', uuid=id_,
                 exception='NotRegistered({0!r})'.format(name),
             )
@@ -512,27 +540,29 @@ class Consumer:
             sender=self, message=message, exc=exc, name=name, id=id_,
         )
 
-    def on_invalid_task(self, body, message, exc):
+    async def on_invalid_task(
+            self, body: bytes, message: MessageT, exc: Exception) -> None:
         error(INVALID_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
-        message.reject_log_error(logger, self.connection_errors)
+        await message.reject_log_error(logger, self.connection_errors)
         signals.task_rejected.send(sender=self, message=message, exc=exc)
 
-    def update_strategies(self):
+    def update_strategies(self) -> None:
         loader = self.app.loader
         for name, task in self.app.tasks.items():
             self.strategies[name] = task.start_strategy(self.app, self)
             task.__trace__ = build_tracer(name, task, loader, self.hostname,
                                           app=self.app)
 
-    def create_task_handler(self, promise=promise):
+    def create_task_handler(self) -> Callable:
         strategies = self.strategies
         on_unknown_message = self.on_unknown_message
         on_unknown_task = self.on_unknown_task
         on_invalid_task = self.on_invalid_task
         callbacks = self.on_task_message
         call_soon = self.call_soon
+        promise_t = promise
 
-        def on_task_received(message):
+        async def on_task_received(message: MessageT) -> None:
             # payload will only be set for v1 protocol, since v2
             # will defer deserializing the message body to the pool.
             payload = None
@@ -544,29 +574,29 @@ class Consumer:
                 try:
                     payload = message.decode()
                 except Exception as exc:  # pylint: disable=broad-except
-                    return self.on_decode_error(message, exc)
+                    return await self.on_decode_error(message, exc)
                 try:
                     type_, payload = payload['task'], payload  # protocol v1
                 except (TypeError, KeyError):
-                    return on_unknown_message(payload, message)
+                    return await on_unknown_message(payload, message)
             try:
                 strategy = strategies[type_]
             except KeyError as exc:
-                return on_unknown_task(None, message, exc)
+                return await on_unknown_task(None, message, exc)
             else:
                 try:
-                    strategy(
+                    await strategy(
                         message, payload,
-                        promise(call_soon, (message.ack_log_error,)),
-                        promise(call_soon, (message.reject_log_error,)),
+                        promise_t(call_soon, (message.ack_log_error,)),
+                        promise_t(call_soon, (message.reject_log_error,)),
                         callbacks,
                     )
                 except InvalidTaskError as exc:
-                    return on_invalid_task(payload, message, exc)
+                    return await on_invalid_task(payload, message, exc)
 
         return on_task_received
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """``repr(self)``."""
         return '<Consumer: {self.hostname} ({state})>'.format(
             self=self, state=self.blueprint.human_state(),
@@ -583,9 +613,9 @@ class Evloop(bootsteps.StartStopStep):
     label = 'event loop'
     last = True
 
-    def start(self, c):
+    async def start(self, c: WorkerConsumerT) -> None:
         self.patch_all(c)
         c.loop(*c.loop_args())
 
-    def patch_all(self, c):
+    def patch_all(self, c: WorkerConsumerT) -> None:
         c.qos._mutex = DummyLock()

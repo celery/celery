@@ -14,8 +14,6 @@ import signal as _signal
 import sys
 import warnings
 
-from collections import namedtuple
-
 from billiard.compat import get_fdmax, close_open_fds
 # fileno used to be in this module
 from kombu.utils.compat import maybe_fileno
@@ -64,8 +62,6 @@ PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
 
 PIDLOCKED = """ERROR: Pidfile ({0}) already exists.
 Seems we're already running? (pid: {1})"""
-
-_range = namedtuple('_range', ('start', 'stop'))
 
 C_FORCE_ROOT = os.environ.get('C_FORCE_ROOT', False)
 

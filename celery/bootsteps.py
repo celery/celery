@@ -122,24 +122,24 @@ class StartStopStep(Step):
     #: Optional obj created by the :meth:`create` method.
     #: This is used by :class:`StartStopStep` to keep the
     #: original service object.
-    obj = None
+    obj: Any = None
 
-    def start(self, parent):
+    async def start(self, parent: Any) -> None:
         if self.obj:
-            return self.obj.start()
+            await self.obj.start()
 
-    def stop(self, parent):
+    async def stop(self, parent: Any) -> None:
         if self.obj:
-            return self.obj.stop()
+            await self.obj.stop()
 
-    def close(self, parent):
-        pass
+    async def close(self, parent: Any) -> None:
+        ...
 
-    def terminate(self, parent):
+    async def terminate(self, parent: Any) -> None:
         if self.obj:
-            return getattr(self.obj, 'terminate', self.obj.stop)()
+            await getattr(self.obj, 'terminate', self.obj.stop)()
 
-    def include(self, parent):
+    def include(self, parent: Any) -> bool:
         inc, ret = self._should_include(parent)
         if inc:
             self.obj = ret
@@ -156,27 +156,27 @@ class ConsumerStep(StartStopStep):
     def get_consumers(self, channel):
         raise NotImplementedError('missing get_consumers')
 
-    def start(self, c):
+    async def start(self, c):
         channel = c.connection.channel()
         self.consumers = self.get_consumers(channel)
         for consumer in self.consumers or []:
             consumer.consume()
 
-    def stop(self, c):
-        self._close(c, True)
+    async def stop(self, c):
+        await self._close(c, True)
 
-    def shutdown(self, c):
-        self._close(c, False)
+    async def shutdown(self, c):
+        await self._close(c, False)
 
-    def _close(self, c, cancel_consumers=True):
+    async def _close(self, c, cancel_consumers=True):
         channels = set()
         for consumer in self.consumers or []:
             if cancel_consumers:
-                ignore_errors(c.connection, consumer.cancel)
+                await ignore_errors(c.connection, consumer.cancel)
             if consumer.channel:
                 channels.add(consumer.channel)
         for channel in channels:
-            ignore_errors(c.connection, channel.close)
+            await ignore_errors(c.connection, channel.close)
 
 
 def _pre(ns: Step, fmt: str) -> str:
@@ -235,11 +235,11 @@ class Blueprint:
 
     GraphFormatter = StepFormatter
 
-    name = None                        # type: str
-    state = None                       # type: int
-    started = 0                        # type: int
-    default_steps = set()              # type: Set[Union[str, Step]]
-    state_to_name = {                  # type: Mapping[int, str]
+    name: str = None
+    state: int = None
+    started: int = 0
+    default_steps: Set[Union[str, Step]] = set()
+    state_to_name: Mapping[int, str] = {
         0: 'initializing',
         RUN: 'running',
         CLOSE: 'closing',
@@ -257,16 +257,16 @@ class Blueprint:
         self.on_close = on_close
         self.on_stopped = on_stopped
         self.shutdown_complete = Event()
-        self.steps = {} : Mapping[str, Step]
+        self.steps: Mapping[str, Step] = {}
 
-    def start(self, parent: Any) -> None:
+    async def start(self, parent: Any) -> None:
         self.state = RUN
         if self.on_start:
             self.on_start()
         for i, step in enumerate(s for s in parent.steps if s is not None):
             self._debug('Starting %s', step.alias)
             self.started = i + 1
-            step.start(parent)
+            await step.start(parent)
             logger.debug('^-- substep ok')
 
     def human_state(self) -> str:
@@ -278,23 +278,24 @@ class Blueprint:
             info.update(step.info(parent) or {})
         return info
 
-    def close(self, parent: Any) -> None:
+    async def close(self, parent: Any) -> None:
         if self.on_close:
             self.on_close()
-        self.send_all(parent, 'close', 'closing', reverse=False)
+        await self.send_all(parent, 'close', 'closing', reverse=False)
 
-    def restart(self,
-                parent: Any,
-                method: str = 'stop',
-                description: str = 'restarting',
-                propagate: bool = False) -> None:
-        self.send_all(parent, method, description, propagate=propagate)
+    async def restart(
+            self,
+            parent: Any,
+            method: str = 'stop',
+            description: str = 'restarting',
+            propagate: bool = False) -> None:
+        await self.send_all(parent, method, description, propagate=propagate)
 
-    def send_all(self, parent: Any, method: str,
-                 description: str = None,
-                 reverse: bool = True,
-                 propagate: bool = True,
-                 args: Sequence = ()) -> None:
+    async def send_all(self, parent: Any, method: str,
+                       description: str = None,
+                       reverse: bool = True,
+                       propagate: bool = True,
+                       args: Sequence = ()) -> None:
         description = description or method.replace('_', ' ')
         steps = reversed(parent.steps) if reverse else parent.steps
         for step in steps:
@@ -304,16 +305,16 @@ class Blueprint:
                     self._debug('%s %s...',
                                 description.capitalize(), step.alias)
                     try:
-                        fun(parent, *args)
+                        await fun(parent, *args)
                     except Exception as exc:  # pylint: disable=broad-except
                         if propagate:
                             raise
                         logger.exception(
                             'Error on %s %s: %r', description, step.alias, exc)
 
-    def stop(self, parent: Any,
-             close: bool = True,
-             terminate: bool = False) -> None:
+    async def stop(self, parent: Any,
+                   close: bool = True,
+                   terminate: bool = False) -> None:
         what = 'terminating' if terminate else 'stopping'
         if self.state in (CLOSE, TERMINATE):
             return
@@ -323,10 +324,10 @@ class Blueprint:
             self.state = TERMINATE
             self.shutdown_complete.set()
             return
-        self.close(parent)
+        await self.close(parent)
         self.state = CLOSE
 
-        self.restart(
+        await self.restart(
             parent, 'terminate' if terminate else 'stop',
             description=what, propagate=False,
         )

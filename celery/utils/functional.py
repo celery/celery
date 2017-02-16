@@ -50,8 +50,8 @@ class mlazy(lazy):
     """
 
     #: Set to :const:`True` after the object has been evaluated.
-    evaluated = False  # type: bool
-    _value = None      # type: Any
+    evaluated: bool = False
+    _value: Any = None
 
     def evaluate(self) -> Any:
         if not self.evaluated:
@@ -169,7 +169,7 @@ def mattrgetter(*attrs: str) -> Callable[[Any], Mapping[str, Any]]:
 
 def uniq(it: Iterable) -> Iterable[Any]:
     """Return all unique elements in ``it``, preserving order."""
-    seen = set()  # type: MutableSet
+    seen = set()
     return (seen.add(obj) or obj for obj in it if obj not in seen)
 
 
@@ -274,7 +274,7 @@ def head_from_fun(fun: Callable,
         name, fun = fun.__class__.__name__, fun.__call__
     else:
         name = fun.__name__
-    definition = FUNHEAD_TEMPLATE.format(   # type: str
+    definition = FUNHEAD_TEMPLATE.format(
         fun_name=name,
         fun_args=_argsfromspec(getfullargspec(fun)),
         fun_value=1,
@@ -285,7 +285,7 @@ def head_from_fun(fun: Callable,
     # pylint: disable=exec-used
     # Tasks are rarely, if ever, created at runtime - exec here is fine.
     exec(definition, namespace)
-    result = namespace[name]  # type: Any
+    result: Any = namespace[name]
     result._source = definition
     if bound:
         return partial(result, object())

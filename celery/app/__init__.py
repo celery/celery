@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
-"""Celery Application."""
+from typing import Callable, Union
 from celery.local import Proxy
 from celery import _state
 from celery._state import (
     app_or_default, enable_trace, disable_trace,
     push_current_task, pop_current_task,
 )
+from celery.types import AppT, TaskT
 from .base import Celery
 from .utils import AppPickler
 
@@ -19,12 +19,12 @@ __all__ = [
 default_app = Proxy(lambda: _state.default_app)
 
 
-def bugreport(app=None):
+def bugreport(app: AppT = None) -> str:
     """Return information useful in bug reports."""
     return (app or _state.get_current_app()).bugreport()
 
 
-def shared_task(*args, **kwargs):
+def shared_task(*args, **kwargs) -> Union[Callable, TaskT]:
     """Create shared task (decorator).
 
     This can be used by library authors to create tasks that'll work
@@ -48,10 +48,10 @@ def shared_task(*args, **kwargs):
         >>> add.app is app2
         True
     """
-    def create_shared_task(**options):
+    def create_shared_task(**options) -> Callable:
 
-        def __inner(fun):
-            name = options.get('name')
+        def __inner(fun: Callable) -> TaskT:
+            name: str = options.get('name')
             # Set as shared task so that unfinalized apps,
             # and future apps will register a copy of this task.
             _state.connect_on_app_finalize(
@@ -66,7 +66,7 @@ def shared_task(*args, **kwargs):
 
             # Return a proxy that always gets the task from the current
             # apps task registry.
-            def task_by_cons():
+            def task_by_cons() -> TaskT:
                 app = _state.get_current_app()
                 return app.tasks[
                     name or app.gen_task_name(fun.__name__, fun.__module__)

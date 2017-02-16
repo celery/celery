@@ -4,21 +4,23 @@ import os
 import platform as _platform
 import re
 
-from collections import Mapping, namedtuple
+from collections import Mapping
 from copy import deepcopy
 from types import ModuleType
+from typing import Any, Callable, MutableMapping, NamedTuple, Set, Union
 
 from kombu.utils.url import maybe_sanitize_url
 
 from celery.exceptions import ImproperlyConfigured
 from celery.platforms import pyimplementation
+from celery.types import AppT
 from celery.utils.collections import ConfigurationView
 from celery.utils.text import pretty
 from celery.utils.imports import import_from_cwd, symbol_by_name, qualname
 
 from .defaults import (
     _TO_NEW_KEY, _TO_OLD_KEY, _OLD_DEFAULTS, _OLD_SETTING_KEYS,
-    DEFAULTS, SETTING_KEYS, find,
+    DEFAULTS, SETTING_KEYS, find, find_result_t,
 )
 
 __all__ = [
@@ -65,7 +67,7 @@ Or change all of the settings to use the new format :)
 FMT_REPLACE_SETTING = '{replace:<36} -> {with_}'
 
 
-def appstr(app):
+def appstr(app: AppT) -> str:
     """String used in __repr__ etc, to id app instances."""
     return '{0}:{1:#x}'.format(app.main or '__main__', id(app))
 
@@ -80,7 +82,7 @@ class Settings(ConfigurationView):
     """
 
     @property
-    def broker_read_url(self):
+    def broker_read_url(self) -> str:
         return (
             os.environ.get('CELERY_BROKER_READ_URL') or
             self.get('broker_read_url') or
@@ -88,7 +90,7 @@ class Settings(ConfigurationView):
         )
 
     @property
-    def broker_write_url(self):
+    def broker_write_url(self) -> str:
         return (
             os.environ.get('CELERY_BROKER_WRITE_URL') or
             self.get('broker_write_url') or
@@ -96,40 +98,40 @@ class Settings(ConfigurationView):
         )
 
     @property
-    def broker_url(self):
+    def broker_url(self) -> str:
         return (
             os.environ.get('CELERY_BROKER_URL') or
             self.first('broker_url', 'broker_host')
         )
 
     @property
-    def task_default_exchange(self):
+    def task_default_exchange(self) -> str:
         return self.first(
             'task_default_exchange',
             'task_default_queue',
         )
 
     @property
-    def task_default_routing_key(self):
+    def task_default_routing_key(self) -> str:
         return self.first(
             'task_default_routing_key',
             'task_default_queue',
         )
 
     @property
-    def timezone(self):
+    def timezone(self) -> str:
         # this way we also support django's time zone.
         return self.first('timezone', 'time_zone')
 
-    def without_defaults(self):
+    def without_defaults(self) -> 'Settings':
         """Return the current configuration, but without defaults."""
         # the last stash is the default settings, so just skip that
         return Settings({}, self.maps[:-1])
 
-    def value_set_for(self, key):
+    def value_set_for(self, key: str) -> bool:
         return key in self.without_defaults()
 
-    def find_option(self, name, namespace=''):
+    def find_option(self, name: str, namespace: str = '') -> find_result_t:
         """Search for option by name.
 
         Example:
@@ -146,11 +148,11 @@ class Settings(ConfigurationView):
         """
         return find(name, namespace)
 
-    def find_value_for_key(self, name, namespace='celery'):
+    def find_value_for_key(self, name: str, namespace: str = 'celery') -> Any:
         """Shortcut to ``get_by_parts(*find_option(name)[:-1])``."""
         return self.get_by_parts(*self.find_option(name, namespace)[:-1])
 
-    def get_by_parts(self, *parts):
+    def get_by_parts(self, *parts) -> Any:
         """Return the current value for setting specified as a path.
 
         Example:
@@ -160,7 +162,7 @@ class Settings(ConfigurationView):
         """
         return self['_'.join(part for part in parts if part)]
 
-    def finalize(self):
+    def finalize(self) -> None:
         # See PendingConfiguration in celery/app/base.py
         # first access will read actual configuration.
         try:
@@ -169,7 +171,9 @@ class Settings(ConfigurationView):
             pass
         return self
 
-    def table(self, with_defaults=False, censored=True):
+    def table(self, *,
+              with_defaults: bool = False,
+              censored: bool = True) -> Mapping:
         filt = filter_hidden_settings if censored else lambda v: v
         dict_members = dir(dict)
         self.finalize()
@@ -179,24 +183,29 @@ class Settings(ConfigurationView):
             if not k.startswith('_') and k not in dict_members
         })
 
-    def humanize(self, with_defaults=False, censored=True):
+    def humanize(self, *,
+                 with_defaults: bool = False,
+                 censored: bool = True) -> str:
         """Return a human readable text showing configuration changes."""
         return '\n'.join(
             '{0}: {1}'.format(key, pretty(value, width=50))
             for key, value in self.table(with_defaults, censored).items())
 
 
-def _new_key_to_old(key, convert=_TO_OLD_KEY.get):
+def _new_key_to_old(key: str, *, convert: Callable = _TO_OLD_KEY.get) -> str:
     return convert(key, key)
 
 
-def _old_key_to_new(key, convert=_TO_NEW_KEY.get):
+def _old_key_to_new(key: str, *, convert: Callable = _TO_NEW_KEY.get) -> str:
     return convert(key, key)
 
 
-_settings_info_t = namedtuple('settings_info_t', (
-    'defaults', 'convert', 'key_t', 'mix_error',
-))
+class _settings_info_t(NamedTuple):
+    defaults: Mapping
+    convert: Mapping
+    key_t: Callable
+    mix_error: str
+
 
 _settings_info = _settings_info_t(
     DEFAULTS, _TO_NEW_KEY, _old_key_to_new, E_MIX_OLD_INTO_NEW,
@@ -206,8 +215,12 @@ _old_settings_info = _settings_info_t(
 )
 
 
-def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
-                    all_keys=SETTING_KEYS, old_keys=_OLD_SETTING_KEYS):
+def detect_settings(conf: MutableMapping,
+                    preconf: Mapping = {},
+                    ignore_keys: Set = set(),
+                    prefix: str = None,
+                    all_keys: Set = SETTING_KEYS,
+                    old_keys: Set = _OLD_SETTING_KEYS) -> Settings:
     source = conf
     if conf is None:
         source, conf = preconf, {}
@@ -260,42 +273,51 @@ def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
 class AppPickler:
     """Old application pickler/unpickler (< 3.1)."""
 
-    def __call__(self, cls, *args):
+    def __call__(self, cls: type, *args) -> AppT:
         kwargs = self.build_kwargs(*args)
         app = self.construct(cls, **kwargs)
         self.prepare(app, **kwargs)
         return app
 
-    def prepare(self, app, **kwargs):
+    def prepare(self, app: AppT, **kwargs) -> None:
         app.conf.update(kwargs['changes'])
 
-    def build_kwargs(self, *args):
+    def build_kwargs(self, *args) -> Mapping:
         return self.build_standard_kwargs(*args)
 
-    def build_standard_kwargs(self, main, changes, loader, backend, amqp,
-                              events, log, control, accept_magic_kwargs,
-                              config_source=None):
+    def build_standard_kwargs(
+            self,
+            main: str,
+            changes: Mapping,
+            loader: Union[str, type],
+            backend: Union[str, type],
+            amqp: Union[str, type],
+            events: Union[str, type],
+            log: Union[str, type],
+            control: Union[str, type],
+            accept_magic_kwargs: bool,
+            config_source: str = None) -> Mapping:
         return dict(main=main, loader=loader, backend=backend, amqp=amqp,
                     changes=changes, events=events, log=log, control=control,
                     set_as_current=False,
                     config_source=config_source)
 
-    def construct(self, cls, **kwargs):
+    def construct(self, cls: Callable, **kwargs) -> Any:
         return cls(**kwargs)
 
 
-def _unpickle_app(cls, pickler, *args):
+def _unpickle_app(cls, pickler: type, *args) -> AppT:
     """Rebuild app for versions 2.5+."""
     return pickler()(cls, *args)
 
 
-def _unpickle_app_v2(cls, kwargs):
+def _unpickle_app_v2(cls: type, kwargs: Mapping) -> AppT:
     """Rebuild app for versions 3.1+."""
     kwargs['set_as_current'] = False
     return cls(**kwargs)
 
 
-def filter_hidden_settings(conf):
+def filter_hidden_settings(conf: Mapping) -> Mapping:
     """Filter sensitive settings."""
     def maybe_censor(key, value, mask='*' * 8):
         if isinstance(value, Mapping):
@@ -314,7 +336,7 @@ def filter_hidden_settings(conf):
     return {k: maybe_censor(k, v) for k, v in conf.items()}
 
 
-def bugreport(app):
+def bugreport(app: AppT) -> str:
     """Return a string containing information useful in bug-reports."""
     import billiard
     import celery
@@ -344,7 +366,10 @@ def bugreport(app):
     )
 
 
-def find_app(app, symbol_by_name=symbol_by_name, imp=import_from_cwd):
+def find_app(app: AppT,
+             *,
+             symbol_by_name: Callable = symbol_by_name,
+             imp: Callable = import_from_cwd) -> AppT:
     """Find app by name."""
     from .base import Celery
 

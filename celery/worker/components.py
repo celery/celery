@@ -2,13 +2,14 @@
 """Worker-level Bootsteps."""
 import atexit
 import warnings
-
+from typing import Mapping, Sequence, Tuple, Union
 from kombu.async import Hub as _Hub, get_event_loop, set_event_loop
 from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
 from kombu.async.timer import Timer as _Timer
-
+from kombu.types import HubT
 from celery import bootsteps
 from celery._state import _set_task_join_will_block
+from celery.types import BeatT, ConsumerT, PoolT, StepT, WorkerT
 from celery.exceptions import ImproperlyConfigured
 from celery.platforms import IS_WINDOWS
 from celery.utils.log import worker_logger as logger
@@ -32,7 +33,7 @@ as early as possible.
 class Timer(bootsteps.Step):
     """Timer bootstep."""
 
-    def create(self, w):
+    def create(self, w: WorkerT) -> None:
         if w.use_eventloop:
             # does not use dedicated timer thread.
             w.timer = _Timer(max_interval=10.0)
@@ -46,26 +47,26 @@ class Timer(bootsteps.Step):
                                        on_error=self.on_timer_error,
                                        on_tick=self.on_timer_tick)
 
-    def on_timer_error(self, exc):
+    def on_timer_error(self, exc: Exception) -> None:
         logger.error('Timer error: %r', exc, exc_info=True)
 
-    def on_timer_tick(self, delay):
+    def on_timer_tick(self, delay: float) -> None:
         logger.debug('Timer wake-up! Next ETA %s secs.', delay)
 
 
 class Hub(bootsteps.StartStopStep):
     """Worker starts the event loop."""
 
-    requires = (Timer,)
+    requires: Sequence[StepT] = (Timer,)
 
-    def __init__(self, w, **kwargs):
+    def __init__(self, w: WorkerT, **kwargs) -> None:
         w.hub = None
         super(Hub, self).__init__(w, **kwargs)
 
-    def include_if(self, w):
+    def include_if(self, w: WorkerT) -> bool:
         return w.use_eventloop
 
-    def create(self, w):
+    def create(self, w: WorkerT) -> 'Hub':
         w.hub = get_event_loop()
         if w.hub is None:
             required_hub = getattr(w._conninfo, 'requires_hub', None)
@@ -74,16 +75,16 @@ class Hub(bootsteps.StartStopStep):
         self._patch_thread_primitives(w)
         return self
 
-    def start(self, w):
-        pass
+    async def start(self, w: WorkerT) -> None:
+        ...
 
-    def stop(self, w):
+    async def stop(self, w: WorkerT) -> None:
         w.hub.close()
 
-    def terminate(self, w):
+    async def terminate(self, w: WorkerT) -> None:
         w.hub.close()
 
-    def _patch_thread_primitives(self, w):
+    def _patch_thread_primitives(self, w: WorkerT) -> None:
         # make clock use dummy lock
         w.app.clock.mutex = DummyLock()
         # multiprocessing's ApplyResult uses this lock.
@@ -111,7 +112,9 @@ class Pool(bootsteps.StartStopStep):
 
     requires = (Hub,)
 
-    def __init__(self, w, autoscale=None, **kwargs):
+    def __init__(self, w: WorkerT,
+                 autoscale: Union[str, Tuple[int, int]] = None,
+                 **kwargs) -> None:
         w.pool = None
         w.max_concurrency = None
         w.min_concurrency = w.concurrency
@@ -124,15 +127,15 @@ class Pool(bootsteps.StartStopStep):
             w.max_concurrency, w.min_concurrency = w.autoscale
         super(Pool, self).__init__(w, **kwargs)
 
-    def close(self, w):
+    async def close(self, w: WorkerT) -> None:
         if w.pool:
             w.pool.close()
 
-    def terminate(self, w):
+    async def terminate(self, w: WorkerT) -> None:
         if w.pool:
             w.pool.terminate()
 
-    def create(self, w):
+    def create(self, w: WorkerT) -> PoolT:
         semaphore = None
         max_restarts = None
         if w.app.conf.worker_pool in GREEN_POOLS:  # pragma: no cover
@@ -168,10 +171,10 @@ class Pool(bootsteps.StartStopStep):
         _set_task_join_will_block(pool.task_join_will_block)
         return pool
 
-    def info(self, w):
+    def info(self, w: WorkerT) -> Mapping:
         return {'pool': w.pool.info if w.pool else 'N/A'}
 
-    def register_with_event_loop(self, w, hub):
+    def register_with_event_loop(self, w: WorkerT, hub: HubT) -> None:
         w.pool.register_with_event_loop(hub)
 
 
@@ -184,12 +187,12 @@ class Beat(bootsteps.StartStopStep):
     label = 'Beat'
     conditional = True
 
-    def __init__(self, w, beat=False, **kwargs):
+    def __init__(self, w: WorkerT, beat: bool = False, **kwargs) -> None:
         self.enabled = w.beat = beat
         w.beat = None
         super(Beat, self).__init__(w, beat=beat, **kwargs)
 
-    def create(self, w):
+    def create(self, w: WorkerT) -> BeatT:
         from celery.beat import EmbeddedService
         if w.pool_cls.__module__.endswith(('gevent', 'eventlet')):
             raise ImproperlyConfigured(ERR_B_GREEN)
@@ -202,12 +205,12 @@ class Beat(bootsteps.StartStopStep):
 class StateDB(bootsteps.Step):
     """Bootstep that sets up between-restart state database file."""
 
-    def __init__(self, w, **kwargs):
+    def __init__(self, w: WorkerT, **kwargs) -> None:
         self.enabled = w.statedb
         w._persistence = None
         super(StateDB, self).__init__(w, **kwargs)
 
-    def create(self, w):
+    def create(self, w: WorkerT) -> None:
         w._persistence = w.state.Persistent(w.state, w.statedb, w.app.clock)
         atexit.register(w._persistence.save)
 
@@ -217,7 +220,7 @@ class Consumer(bootsteps.StartStopStep):
 
     last = True
 
-    def create(self, w):
+    def create(self, w: WorkerT) -> ConsumerT:
         if w.max_concurrency:
             prefetch_count = max(w.min_concurrency, 1) * w.prefetch_multiplier
         else:

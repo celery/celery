@@ -29,7 +29,7 @@ __all__ = [
     'humanbytes', 'mem_rss', 'ps', 'cry',
 ]
 
-UNITS = (               # type: Sequence[Tuple[float, str]]
+UNITS: Sequence[Tuple[float, str]] = (
     (2 ** 40.0, 'TB'),
     (2 ** 30.0, 'GB'),
     (2 ** 20.0, 'MB'),
@@ -37,8 +37,8 @@ UNITS = (               # type: Sequence[Tuple[float, str]]
     (0.0, 'b'),
 )
 
-_process = None         # type: Optional[Process]
-_mem_sample = []        # type: MutableSequence[str]
+_process: Process = None
+_mem_sample: MutableSequence[str] = []
 
 
 def _on_blocking(signum: int, frame: Any) -> None:

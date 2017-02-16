@@ -103,7 +103,7 @@ class DictAttribute:
     `obj[k] = val -> obj.k = val`
     """
 
-    obj = None  # type: Mapping[Any, Any]
+    obj: Mapping = None
 
     def __init__(self, obj: Mapping) -> None:
         object.__setattr__(self, 'obj', obj)
@@ -155,10 +155,10 @@ MutableMapping.register(DictAttribute)  # noqa: E305
 class ChainMap(MutableMapping):
     """Key lookup on a sequence of maps."""
 
-    key_t = None      # type: Optional[KeyCallback]
-    changes = None    # type: Mapping
-    defaults = None   # type: Sequence[Mapping]
-    maps = None       # type: Sequence[Mapping]
+    key_t: Optional[KeyCallback] = None
+    changes: Mapping = None
+    defaults: Sequence[Mapping] = None
+    maps: Sequence[Mapping] = None
 
     def __init__(self, *maps: Sequence[Mapping],
                  key_t: KeyCallback = None, **kwargs) -> None:
@@ -305,7 +305,6 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
         return key,
 
     def __getitem__(self, key: str) -> Any:
-        # type: (str) -> Any
         keys = self._to_keys(key)
         getitem = super(ConfigurationView, self).__getitem__
         for k in keys + (
@@ -420,11 +419,9 @@ class LimitedSet:
         self.minlen = 0 if minlen is None else minlen
         self.expires = 0 if expires is None else expires
 
-        # type: Mapping[str, Any]
-        self._data = {}
+        self._data: Mapping[str, Any] = {}
 
-        # type: Sequence[Tuple[float, Any]]
-        self._heap = []
+        self._heap: Sequence[Tuple[float, Any]] = []
 
         if data:
             # import items from data
@@ -577,7 +574,7 @@ MutableSet.register(LimitedSet)  # noqa: E305
 class Evictable:
     """Mixin for classes supporting the ``evict`` method."""
 
-    Empty = Empty  # type: Exception
+    Empty = Empty
 
     def evict(self) -> None:
         """Force evict until maxsize is enforced."""
@@ -607,12 +604,12 @@ class Messagebuffer(Evictable):
                  maxsize: Optional[int],
                  iterable: Optional[Iterable]=None, deque: Any=deque) -> None:
         self.maxsize = maxsize
-        self.data = deque(iterable or [])  # type: deque
+        self.data = deque(iterable or [])
 
-        self._append = self.data.append    # type: Callable[[Any], None]
-        self._pop = self.data.popleft      # type: Callable[[], Any]
-        self._len = self.data.__len__      # type: Callable[[], int]
-        self._extend = self.data.extend    # type: Callable[[Iterable], None]
+        self._append = self.data.append
+        self._pop = self.data.popleft
+        self._len = self.data.__len__
+        self._extend = self.data.extend
 
     def put(self, item: Any) -> None:
         self._append(item)
@@ -682,7 +679,6 @@ class BufferMap(OrderedDict, Evictable):
         if iterable:
             self.update(iterable)
 
-        # type: int
         self.total = sum(len(buf) for buf in self.items())
 
     def put(self, key: Any, item: Any) -> None:

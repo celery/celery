@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """Configuration introspection and defaults."""
 import sys
-from collections import deque, namedtuple
+from collections import deque
 from datetime import timedelta
+from typing import NamedTuple
 from celery.utils.functional import memoize
 from celery.utils.serialization import strtobool
 
@@ -31,7 +32,13 @@ OLD_NS = {'celery_{0}'}
 OLD_NS_BEAT = {'celerybeat_{0}'}
 OLD_NS_WORKER = {'celeryd_{0}'}
 
-searchresult = namedtuple('searchresult', ('namespace', 'key', 'type'))
+
+class find_result_t(NamedTuple):
+    """Return value of :func:`find`."""
+
+    namespace: str
+    key: str
+    type: 'Option'
 
 
 def Namespace(__old__=None, **options):
@@ -340,18 +347,18 @@ def find(name, namespace='celery'):
     # - Try specified name-space first.
     namespace = namespace.lower()
     try:
-        return searchresult(
+        return find_result_t(
             namespace, name.lower(), NAMESPACES[namespace][name.lower()],
         )
     except KeyError:
         # - Try all the other namespaces.
         for ns, opts in NAMESPACES.items():
             if ns.lower() == name.lower():
-                return searchresult(None, ns, opts)
+                return find_result_t(None, ns, opts)
             elif isinstance(opts, dict):
                 try:
-                    return searchresult(ns, name.lower(), opts[name.lower()])
+                    return find_result_t(ns, name.lower(), opts[name.lower()])
                 except KeyError:
                     pass
     # - See if name is a qualname last.
-    return searchresult(None, name.lower(), DEFAULTS[name.lower()])
+    return find_result_t(None, name.lower(), DEFAULTS[name.lower()])

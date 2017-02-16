@@ -47,7 +47,7 @@ class DependencyGraph(Iterable):
     def __init__(self, it: Optional[Iterable]=None,
                  formatter: Optional['GraphFormatter']=None) -> None:
         self.formatter = formatter or GraphFormatter()
-        self.adjacent = {}  # type: Dict[Any, Any]
+        self.adjacent: Dict[Any, Any] = {}
         if it is not None:
             self.update(it)
 
@@ -116,8 +116,8 @@ class DependencyGraph(Iterable):
 
         See https://en.wikipedia.org/wiki/Topological_sorting
         """
-        count = Counter()  # type: Counter
-        result = []        # type: MutableSequence[Any]
+        count = Counter()
+        result: MutableSequence[Any] = []
 
         for node in self:
             for successor in self[node]:
@@ -141,9 +141,9 @@ class DependencyGraph(Iterable):
         See Also:
             :wikipedia:`Tarjan%27s_strongly_connected_components_algorithm`
         """
-        result = []  # type: MutableSequence[Any]
-        stack = []   # type: MutableSequence[Any]
-        low = {}     # type: Dict[Any, Any]
+        result: MutableSequence[Any] = []
+        stack: MutableSequence[Any] = []
+        low: Dict[Any, Any] = {}
 
         def visit(node):
             if node in low:
@@ -178,7 +178,7 @@ class DependencyGraph(Iterable):
             formatter (celery.utils.graph.GraphFormatter): Custom graph
                 formatter to use.
         """
-        seen = set()  # type: MutableSet
+        seen: MutableSet = set()
         draw = formatter or self.formatter
 
         def P(s):

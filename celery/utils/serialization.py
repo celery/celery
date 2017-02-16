@@ -105,13 +105,13 @@ class UnpickleableExceptionWrapper(Exception):
     """
 
     #: The module of the original exception.
-    exc_module = None       # type: str
+    exc_module: str = None
 
     #: The name of the original exception class.
-    exc_cls_name = None     # type: str
+    exc_cls_name: str = None
 
     #: The arguments for the original exception.
-    exc_args = None         # type: Sequence[Any]
+    exc_args: Sequence[Any] = None
 
     def __init__(self, exc_module: str, exc_cls_name: str,
                  exc_args: Sequence[Any], text: Optional[str]=None) -> None:

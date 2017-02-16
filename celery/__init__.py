@@ -8,7 +8,7 @@
 import os
 import re
 import sys
-from collections import namedtuple
+from typing import NamedTuple
 
 SERIES = 'latentcall'
 
@@ -30,9 +30,16 @@ __all__ = [
 
 VERSION_BANNER = '{0} ({1})'.format(__version__, SERIES)
 
-version_info_t = namedtuple('version_info_t', (
-    'major', 'minor', 'micro', 'releaselevel', 'serial',
-))
+
+class version_info_t(NamedTuple):
+    """Version information tuple."""
+
+    major: int
+    minor: int
+    micro: int
+    releaselevel: str
+    serial: str
+
 
 # bumpversion can only search for {current_version}
 # so we have to parse the version here.

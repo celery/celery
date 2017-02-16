@@ -1,5 +1,8 @@
 """Implementation for the app.events shortcuts."""
 from contextlib import contextmanager
+from celery.events import EventDispatcher, EventReceiver
+from celery.events.state import State
+from celery.types import AppT
 from kombu.utils.objects import cached_property
 
 
@@ -10,27 +13,30 @@ class Events:
     dispatcher_cls = 'celery.events.dispatcher:EventDispatcher'
     state_cls = 'celery.events.state:State'
 
-    def __init__(self, app=None):
+    def __init__(self, app: AppT = None):
         self.app = app
 
     @cached_property
-    def Receiver(self):
+    def Receiver(self) -> EventReceiver:
         return self.app.subclass_with_self(
             self.receiver_cls, reverse='events.Receiver')
 
     @cached_property
-    def Dispatcher(self):
+    def Dispatcher(self) -> EventDispatcher:
         return self.app.subclass_with_self(
             self.dispatcher_cls, reverse='events.Dispatcher')
 
     @cached_property
-    def State(self):
+    def State(self) -> State:
         return self.app.subclass_with_self(
             self.state_cls, reverse='events.State')
 
     @contextmanager
-    def default_dispatcher(self, hostname=None, enabled=True,
-                           buffer_while_offline=False):
+    def default_dispatcher(
+            self,
+            hostname: str = None,
+            enabled: bool = True,
+            buffer_while_offline: bool = False) -> EventDispatcher:
         with self.app.amqp.producer_pool.acquire(block=True) as prod:
             # pylint: disable=too-many-function-args
             # This is a property pylint...

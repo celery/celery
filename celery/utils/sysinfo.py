@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 """System information utilities."""
 import os
-from collections import namedtuple
 from math import ceil
+from typing import NamedTuple
 from kombu.utils.objects import cached_property
 
 __all__ = ['load_average', 'load_average_t', 'df']
 
-load_average_t = namedtuple('load_average_t', (
-    'min_1', 'min_5', 'min_15',
-))
+class load_average_t(NamedTuple):
+    """Load average information triple."""
+
+    min_1: float
+    min_5: float
+    min_15: float
 
 
 def _avg(f: float) -> float:

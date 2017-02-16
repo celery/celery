@@ -23,11 +23,12 @@ import socket
 import struct
 import time
 
-from collections import Counter, deque, namedtuple
+from collections import Counter, deque
 from io import BytesIO
 from numbers import Integral
 from pickle import HIGHEST_PROTOCOL
 from time import sleep
+from typing import NamedTuple
 from weakref import WeakValueDictionary, ref
 
 from billiard.pool import RUN, TERMINATE, ACK, NACK, WorkersJoined
@@ -91,7 +92,13 @@ SCHED_STRATEGIES = {
 }
 SCHED_STRATEGY_TO_NAME = {v: k for k, v in SCHED_STRATEGIES.items()}
 
-Ack = namedtuple('Ack', ('id', 'fd', 'payload'))
+
+class Ack(NamedTuple):
+    """Ack message payload."""
+
+    id: int
+    fd: int
+    payload: bytes
 
 
 def gen_not_started(gen):

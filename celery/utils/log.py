@@ -34,7 +34,7 @@ RESERVED_LOGGER_NAMES = {'celery', 'celery.task'}
 # Every logger in the celery package inherits from the "celery"
 # logger, and every task logger inherits from the "celery.task"
 # logger.
-base_logger = logger = _get_logger('celery')  # type: logging.Logger
+base_logger = logger = _get_logger('celery')
 
 
 def set_in_sighandler(value: bool) -> None:

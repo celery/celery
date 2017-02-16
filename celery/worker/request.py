@@ -7,21 +7,27 @@ how tasks are executed.
 import logging
 import sys
 
-from datetime import datetime
+from datetime import datetime, tzinfo
+from typing import Any, Awaitable, Callable, Mapping, Sequence, Tuple, Union
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
+from billiard.einfo import ExceptionInfo
+from kombu.types import MessageT
 from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.objects import cached_property
 
 from celery import signals
 from celery.app.trace import trace_task, trace_task_ret
+from celery.events import EventDispatcher
 from celery.exceptions import (
     Ignore, TaskRevokedError, InvalidTaskError,
     SoftTimeLimitExceeded, TimeLimitExceeded,
     WorkerLostError, Terminated, Retry, Reject,
 )
 from celery.platforms import signals as _signals
+from celery.types import AppT, PoolT, SignatureT, TaskT
+from celery.utils.collections import LimitedSet
 from celery.utils.functional import maybe, noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -44,7 +50,7 @@ _does_info = False
 _does_debug = False
 
 
-def __optimize__():
+def __optimize__() -> None:
     # this is also called by celery.app.trace.setup_worker_optimizations
     global _does_debug
     global _does_info
@@ -65,13 +71,13 @@ class Request:
     """A request for task execution."""
 
     acknowledged = False
-    time_start = None
-    worker_pid = None
-    time_limits = (None, None)
-    _already_revoked = False
-    _terminate_on_ack = None
-    _apply_result = None
-    _tzlocal = None
+    time_start: float = None
+    worker_pid: int = None
+    time_limits: Tuple[float, float] = (None, None)
+    _already_revoked: bool = False
+    _terminate_on_ack: bool = None
+    _apply_result: Awaitable = None
+    _tzlocal: tzinfo = None
 
     if not IS_PYPY:  # pragma: no cover
         __slots__ = (
@@ -83,13 +89,23 @@ class Request:
             '__weakref__', '__dict__',
         )
 
-    def __init__(self, message, on_ack=noop,
-                 hostname=None, eventer=None, app=None,
-                 connection_errors=None, request_dict=None,
-                 task=None, on_reject=noop, body=None,
-                 headers=None, decoded=False, utc=True,
-                 maybe_make_aware=maybe_make_aware,
-                 maybe_iso8601=maybe_iso8601, **opts):
+    def __init__(self, message: MessageT,
+                 *,
+                 on_ack: Callable = noop,
+                 hostname: str = None,
+                 eventer: EventDispatcher = None,
+                 app: AppT = None,
+                 connection_errors: Tuple = None,
+                 request_dict: Mapping = None,
+                 task: str = None,
+                 on_reject: Callable = noop,
+                 body: Mapping = None,
+                 headers: Mapping = None,
+                 decoded: bool = False,
+                 utc: bool = True,
+                 maybe_make_aware: Callable = maybe_make_aware,
+                 maybe_iso8601: Callable = maybe_iso8601,
+                 **opts) -> None:
         if headers is None:
             headers = message.headers
         if body is None:
@@ -163,10 +179,10 @@ class Request:
         self.request_dict = headers
 
     @property
-    def delivery_info(self):
+    def delivery_info(self) -> Mapping:
         return self.request_dict['delivery_info']
 
-    def execute_using_pool(self, pool, **kwargs):
+    def execute_using_pool(self, pool: PoolT, **kwargs) -> Awaitable:
         """Used by the worker to send this task to the pool.
 
         Arguments:
@@ -198,7 +214,7 @@ class Request:
         self._apply_result = maybe(ref, result)
         return result
 
-    def execute(self, loglevel=None, logfile=None):
+    def execute(self, loglevel: int = None, logfile: str = None) -> Any:
         """Execute the task in a :func:`~celery.app.trace.trace_task`.
 
         Arguments:
@@ -230,15 +246,16 @@ class Request:
         self.acknowledge()
         return retval
 
-    def maybe_expire(self):
+    def maybe_expire(self) -> bool:
         """If expired, mark the task as revoked."""
         if self.expires:
             now = datetime.now(self.expires.tzinfo)
             if now > self.expires:
                 revoked_tasks.add(self.id)
                 return True
+        return False
 
-    def terminate(self, pool, signal=None):
+    def terminate(self, pool: PoolT, signal: Union[str, int] = None) -> None:
         signal = _signals.signum(signal or TERM_SIGNAME)
         if self.time_start:
             pool.terminate_job(self.worker_pid, signal)
@@ -250,7 +267,8 @@ class Request:
             if obj is not None:
                 obj.terminate(signal)
 
-    def _announce_revoked(self, reason, terminated, signum, expired):
+    def _announce_revoked(self, reason: str, terminated: bool,
+                          signum: int, expired: bool):
         task_ready(self)
         self.send_event('task-revoked',
                         terminated=terminated, signum=signum, expired=expired)
@@ -262,7 +280,7 @@ class Request:
         send_revoked(self.task, request=self,
                      terminated=terminated, signum=signum, expired=expired)
 
-    def revoked(self):
+    def revoked(self) -> bool:
         """If revoked, skip task and mark state."""
         expired = False
         if self._already_revoked:
@@ -277,11 +295,11 @@ class Request:
             return True
         return False
 
-    def send_event(self, type, **fields):
+    def send_event(self, type: str, **fields) -> Awaitable:
         if self.eventer and self.eventer.enabled and self.task.send_events:
-            self.eventer.send(type, uuid=self.id, **fields)
+            return self.eventer.send(type, uuid=self.id, **fields)
 
-    def on_accepted(self, pid, time_accepted):
+    def on_accepted(self, pid: int, time_accepted: float) -> None:
         """Handler called when task is accepted by worker pool."""
         self.worker_pid = pid
         self.time_start = time_accepted
@@ -294,7 +312,7 @@ class Request:
         if self._terminate_on_ack is not None:
             self.terminate(*self._terminate_on_ack)
 
-    def on_timeout(self, soft, timeout):
+    def on_timeout(self, soft: bool, timeout: float) -> None:
         """Handler called if the task times out."""
         task_ready(self)
         if soft:
@@ -313,7 +331,8 @@ class Request:
         if self.task.acks_late:
             self.acknowledge()
 
-    def on_success(self, failed__retval__runtime, **kwargs):
+    def on_success(self, failed__retval__runtime: Tuple[bool, Any, float],
+                   **kwargs) -> None:
         """Handler called if the task was successfully processed."""
         failed, retval, runtime = failed__retval__runtime
         if failed:
@@ -327,7 +346,7 @@ class Request:
 
         self.send_event('task-succeeded', result=retval, runtime=runtime)
 
-    def on_retry(self, exc_info):
+    def on_retry(self, exc_info: ExceptionInfo) -> None:
         """Handler called if the task should be retried."""
         if self.task.acks_late:
             self.acknowledge()
@@ -336,7 +355,9 @@ class Request:
                         exception=safe_repr(exc_info.exception.exc),
                         traceback=safe_str(exc_info.traceback))
 
-    def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
+    def on_failure(self, exc_info: ExceptionInfo,
+                   send_failed_event: bool = True,
+                   return_ok: bool = False) -> None:
         """Handler called if the task raised an exception."""
         task_ready(self)
         if isinstance(exc_info.exception, MemoryError):
@@ -385,19 +406,19 @@ class Request:
             error('Task handler raised error: %r', exc,
                   exc_info=exc_info.exc_info)
 
-    def acknowledge(self):
+    def acknowledge(self) -> None:
         """Acknowledge task."""
         if not self.acknowledged:
             self.on_ack(logger, self.connection_errors)
             self.acknowledged = True
 
-    def reject(self, requeue=False):
+    def reject(self, requeue: bool = False) -> None:
         if not self.acknowledged:
             self.on_reject(logger, self.connection_errors, requeue)
             self.acknowledged = True
             self.send_event('task-rejected', requeue=requeue)
 
-    def info(self, safe=False):
+    def info(self, safe: bool = False) -> Mapping:
         return {
             'id': self.id,
             'name': self.name,
@@ -411,10 +432,10 @@ class Request:
             'worker_pid': self.worker_pid,
         }
 
-    def humaninfo(self):
+    def humaninfo(self) -> str:
         return '{0.name}[{0.id}]'.format(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """``str(self)``."""
         return ' '.join([
             self.humaninfo(),
@@ -422,7 +443,7 @@ class Request:
             ' expires:[{0}]'.format(self.expires) if self.expires else '',
         ])
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """``repr(self)``."""
         return '<{0}: {1} {2} {3}>'.format(
             type(self).__name__, self.humaninfo(),
@@ -430,32 +451,32 @@ class Request:
         )
 
     @property
-    def tzlocal(self):
+    def tzlocal(self) -> tzinfo:
         if self._tzlocal is None:
             self._tzlocal = self.app.conf.timezone
         return self._tzlocal
 
     @property
-    def store_errors(self):
+    def store_errors(self) -> bool:
         return (not self.task.ignore_result or
                 self.task.store_errors_even_if_ignored)
 
     @property
-    def reply_to(self):
+    def reply_to(self) -> str:
         # used by rpc backend when failures reported by parent process
         return self.request_dict['reply_to']
 
     @property
-    def correlation_id(self):
+    def correlation_id(self) -> str:
         # used similarly to reply_to
         return self.request_dict['correlation_id']
 
     @cached_property
-    def _payload(self):
+    def _payload(self) -> Any:
         return self.body if self._decoded else self.message.payload
 
     @cached_property
-    def chord(self):
+    def chord(self) -> SignatureT:
         # used by backend.mark_as_failure when failure is reported
         # by parent process
         # pylint: disable=unpacking-non-sequence
@@ -464,7 +485,7 @@ class Request:
         return embed.get('chord')
 
     @cached_property
-    def errbacks(self):
+    def errbacks(self) -> Sequence[SignatureT]:
         # used by backend.mark_as_failure when failure is reported
         # by parent process
         # pylint: disable=unpacking-non-sequence
@@ -473,15 +494,19 @@ class Request:
         return embed.get('errbacks')
 
     @cached_property
-    def group(self):
+    def group(self) -> str:
         # used by backend.on_chord_part_return when failures reported
         # by parent process
         return self.request_dict['group']
 
 
-def create_request_cls(base, task, pool, hostname, eventer,
-                       ref=ref, revoked_tasks=revoked_tasks,
-                       task_ready=task_ready, trace=trace_task_ret):
+def create_request_cls(base: type, task: TaskT, pool: PoolT,
+                       hostname: str, eventer: EventDispatcher,
+                       *,
+                       ref: Callable = ref,
+                       revoked_tasks: LimitedSet = revoked_tasks,
+                       task_ready: Callable = task_ready,
+                       trace: Callable = trace_task_ret) -> type:
     default_time_limit = task.time_limit
     default_soft_time_limit = task.soft_time_limit
     apply_async = pool.apply_async

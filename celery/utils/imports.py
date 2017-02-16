@@ -8,7 +8,7 @@ import warnings
 from contextlib import contextmanager
 from imp import reload
 from types import ModuleType
-from typing import Any, Callable, Iterator, Optional
+from typing import Any, Callable, Iterator
 from kombu.utils.imports import symbol_by_name
 
 #: Billiard sets this when execv is enabled.
@@ -65,8 +65,8 @@ def cwd_in_path() -> Iterator:
 
 
 def find_module(module: str,
-                path: Optional[str]=None,
-                imp: Optional[Callable]=None) -> ModuleType:
+                path: str = None,
+                imp: Callable = None) -> ModuleType:
     """Version of :func:`imp.find_module` supporting dots."""
     if imp is None:
         imp = importlib.import_module
@@ -86,8 +86,8 @@ def find_module(module: str,
 
 
 def import_from_cwd(module: str,
-                    imp: Optional[Callable]=None,
-                    package: Optional[str]=None) -> ModuleType:
+                    imp: Callable = None,
+                    package: str = None) -> ModuleType:
     """Import module, temporarily including modules in the current directory.
 
     Modules located in the current directory has
@@ -100,7 +100,7 @@ def import_from_cwd(module: str,
 
 
 def reload_from_cwd(module: ModuleType,
-                    reloader: Optional[Callable]=None) -> Any:
+                    reloader: Callable = None) -> Any:
     """Reload module (ensuring that CWD is in sys.path)."""
     if reloader is None:
         reloader = reload

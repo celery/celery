@@ -2,17 +2,24 @@
 """Sending/Receiving Messages (Kombu integration)."""
 import numbers
 
-from collections import Mapping, namedtuple
-from datetime import timedelta
+from collections import Mapping
+from datetime import datetime, timedelta, tzinfo
+from typing import (
+    Any, Callable, MutableMapping, NamedTuple, Set, Sequence, Union,
+    cast,
+)
 from weakref import WeakValueDictionary
 
 from kombu import pools
 from kombu import Connection, Consumer, Exchange, Producer, Queue
 from kombu.common import Broadcast
+from kombu.types import ChannelT, ConsumerT, EntityT, ProducerT, ResourceT
 from kombu.utils.functional import maybe_list
 from kombu.utils.objects import cached_property
 
 from celery import signals
+from celery.events import EventDispatcher
+from celery.types import AppT, ResultT, RouterT, SignatureT
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
@@ -31,11 +38,19 @@ QUEUE_FORMAT = """
 key={0.routing_key}
 """
 
-task_message = namedtuple('task_message',
-                          ('headers', 'properties', 'body', 'sent_event'))
+QueuesArgT = Union[Mapping[str, Queue], Sequence[Queue]]
 
 
-def utf8dict(d, encoding='utf-8'):
+class task_message(NamedTuple):
+    """Represents a task message that can be sent."""
+
+    headers: MutableMapping
+    properties: MutableMapping
+    body: Any
+    sent_event: Mapping
+
+
+def utf8dict(d: Mapping, encoding: str = 'utf-8') -> Mapping:
     return {k.decode(encoding) if isinstance(k, bytes) else k: v
             for k, v in d.items()}
 
@@ -54,11 +69,16 @@ class Queues(dict):
 
     #: If set, this is a subset of queues to consume from.
     #: The rest of the queues are then used for routing only.
-    _consume_from = None
+    _consume_from: Mapping[str, Queue] = None
 
-    def __init__(self, queues=None, default_exchange=None,
-                 create_missing=True, ha_policy=None, autoexchange=None,
-                 max_priority=None, default_routing_key=None):
+    def __init__(self,
+                 queues: QueuesArgT = None,
+                 default_exchange: str = None,
+                 create_missing: bool = True,
+                 ha_policy: Union[Sequence, str] = None,
+                 autoexchange: Callable[[str], Exchange] = None,
+                 max_priority: int = None,
+                 default_routing_key: str = None) -> None:
         dict.__init__(self)
         self.aliases = WeakValueDictionary()
         self.default_exchange = default_exchange
@@ -72,25 +92,25 @@ class Queues(dict):
         for name, q in (queues or {}).items():
             self.add(q) if isinstance(q, Queue) else self.add_compat(name, **q)
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Queue:
         try:
             return self.aliases[name]
         except KeyError:
             return dict.__getitem__(self, name)
 
-    def __setitem__(self, name, queue):
+    def __setitem__(self, name: str, queue: Queue) -> None:
         if self.default_exchange and not queue.exchange:
             queue.exchange = self.default_exchange
         dict.__setitem__(self, name, queue)
         if queue.alias:
             self.aliases[queue.alias] = queue
 
-    def __missing__(self, name):
+    def __missing__(self, name: str) -> Queue:
         if self.create_missing:
             return self.add(self.new_missing(name))
         raise KeyError(name)
 
-    def add(self, queue, **kwargs):
+    def add(self, queue: Union[Queue, str], **kwargs) -> Queue:
         """Add new queue.
 
         The first argument can either be a :class:`kombu.Queue` instance,
@@ -111,14 +131,14 @@ class Queues(dict):
             return self.add_compat(queue, **kwargs)
         return self._add(queue)
 
-    def add_compat(self, name, **options):
+    def add_compat(self, name: str, **options) -> Queue:
         # docs used to use binding_key as routing key
         options.setdefault('routing_key', options.get('binding_key'))
         if options['routing_key'] is None:
             options['routing_key'] = name
         return self._add(Queue.from_dict(name, **options))
 
-    def _add(self, queue):
+    def _add(self, queue: Queue) -> Queue:
         if not queue.routing_key:
             if queue.exchange is None or queue.exchange.name == '':
                 queue.exchange = self.default_exchange
@@ -134,18 +154,19 @@ class Queues(dict):
         self[queue.name] = queue
         return queue
 
-    def _set_ha_policy(self, args):
+    def _set_ha_policy(self, args: MutableMapping) -> None:
         policy = self.ha_policy
         if isinstance(policy, (list, tuple)):
-            return args.update({'x-ha-policy': 'nodes',
-                                'x-ha-policy-params': list(policy)})
-        args['x-ha-policy'] = policy
+            args.update({'x-ha-policy': 'nodes',
+                         'x-ha-policy-params': list(policy)})
+        else:
+            args['x-ha-policy'] = policy
 
-    def _set_max_priority(self, args):
+    def _set_max_priority(self, args: MutableMapping) -> None:
         if 'x-max-priority' not in args and self.max_priority is not None:
-            return args.update({'x-max-priority': self.max_priority})
+            args.update({'x-max-priority': self.max_priority})
 
-    def format(self, indent=0, indent_first=True):
+    def format(self, indent: int = 0, indent_first: bool = True) -> str:
         """Format routing table into string for log dumps."""
         active = self.consume_from
         if not active:
@@ -156,7 +177,7 @@ class Queues(dict):
             return textindent('\n'.join(info), indent)
         return info[0] + '\n' + textindent('\n'.join(info[1:]), indent)
 
-    def select_add(self, queue, **kwargs):
+    def select_add(self, queue: Queue, **kwargs) -> Queue:
         """Add new task queue that'll be consumed from.
 
         The queue will be active even when a subset has been selected
@@ -167,7 +188,7 @@ class Queues(dict):
             self._consume_from[q.name] = q
         return q
 
-    def select(self, include):
+    def select(self, include: Union[Sequence[str], str]) -> None:
         """Select a subset of currently defined queues to consume from.
 
         Arguments:
@@ -178,7 +199,7 @@ class Queues(dict):
                 name: self[name] for name in maybe_list(include)
             }
 
-    def deselect(self, exclude):
+    def deselect(self, exclude: Union[Sequence[str], str]) -> None:
         """Deselect queues so that they won't be consumed from.
 
         Arguments:
@@ -189,19 +210,20 @@ class Queues(dict):
             exclude = maybe_list(exclude)
             if self._consume_from is None:
                 # using selection
-                return self.select(k for k in self if k not in exclude)
-            # using all queues
-            for queue in exclude:
-                self._consume_from.pop(queue, None)
+                self.select(k for k in self if k not in exclude)
+            else:
+                # using all queues
+                for queue in exclude:
+                    self._consume_from.pop(queue, None)
 
-    def new_missing(self, name):
+    def new_missing(self, name: str) -> Queue:
         return Queue(name, self.autoexchange(name), name)
 
     @property
-    def consume_from(self):
+    def consume_from(self) -> Mapping[str, Queue]:
         if self._consume_from is not None:
             return self._consume_from
-        return self
+        return cast(Mapping[str, Queue], self)
 
 
 class AMQP:
@@ -221,13 +243,13 @@ class AMQP:
 
     #: Underlying producer pool instance automatically
     #: set by the :attr:`producer_pool`.
-    _producer_pool = None
+    _producer_pool: ResourceT = None
 
     # Exchange class/function used when defining automatic queues.
     # For example, you can use ``autoexchange = lambda n: None`` to use the
     # AMQP default exchange: a shortcut to bypass routing
     # and instead send directly to the queue named in the routing key.
-    autoexchange = None
+    autoexchange: Callable[[str], Exchange] = None
 
     #: Max size of positional argument representation used for
     #: logging purposes.
@@ -236,7 +258,9 @@ class AMQP:
     #: Max size of keyword argument representation used for logging purposes.
     kwargsrepr_maxsize = 1024
 
-    def __init__(self, app):
+    task_protocols: Mapping[int, Callable] = None
+
+    def __init__(self, app: AppT) -> None:
         self.app = app
         self.task_protocols = {
             1: self.as_task_v1,
@@ -244,15 +268,18 @@ class AMQP:
         }
 
     @cached_property
-    def create_task_message(self):
+    def create_task_message(self) -> Callable:
         return self.task_protocols[self.app.conf.task_protocol]
 
     @cached_property
-    def send_task_message(self):
+    def send_task_message(self) -> Callable:
         return self._create_task_sender()
 
-    def Queues(self, queues, create_missing=None, ha_policy=None,
-               autoexchange=None, max_priority=None):
+    def Queues(self, queues: QueuesArgT,
+               create_missing: bool = None,
+               ha_policy: Union[Sequence, str] = None,
+               autoexchange: Callable[[str], Exchange] = None,
+               max_priority: int = None) -> Queues:
         # Create new :class:`Queues` instance, using queue defaults
         # from the current configuration.
         conf = self.app.conf
@@ -267,23 +294,27 @@ class AMQP:
             queues = (Queue(conf.task_default_queue,
                             exchange=self.default_exchange,
                             routing_key=default_routing_key),)
-        autoexchange = (self.autoexchange if autoexchange is None
-                        else autoexchange)
+        autoexchange = (self.autoexchange
+                        if autoexchange is None else autoexchange)
         return self.queues_cls(
             queues, self.default_exchange, create_missing,
             ha_policy, autoexchange, max_priority, default_routing_key,
         )
 
-    def Router(self, queues=None, create_missing=None):
+    def Router(self, queues: Mapping[str, Queue] = None,
+               create_missing: bool = None) -> RouterT:
         """Return the current task router."""
         return _routes.Router(self.routes, queues or self.queues,
                               self.app.either('task_create_missing_queues',
                                               create_missing), app=self.app)
 
-    def flush_routes(self):
+    def flush_routes(self) -> None:
         self._rtable = _routes.prepare(self.app.conf.task_routes)
 
-    def TaskConsumer(self, channel, queues=None, accept=None, **kw):
+    def TaskConsumer(self, channel: ChannelT,
+                     queues: Mapping[str, Queue] = None,
+                     accept: Set[str] = None,
+                     **kw) -> ConsumerT:
         if accept is None:
             accept = self.app.conf.accept_content
         return self.Consumer(
@@ -292,14 +323,30 @@ class AMQP:
             **kw
         )
 
-    def as_task_v2(self, task_id, name, args=None, kwargs=None,
-                   countdown=None, eta=None, group_id=None,
-                   expires=None, retries=0, chord=None,
-                   callbacks=None, errbacks=None, reply_to=None,
-                   time_limit=None, soft_time_limit=None,
-                   create_sent_event=False, root_id=None, parent_id=None,
-                   shadow=None, chain=None, now=None, timezone=None,
-                   origin=None, argsrepr=None, kwargsrepr=None):
+    def as_task_v2(self, task_id: str, name: str, *,
+                   args: Sequence = None,
+                   kwargs: Mapping = None,
+                   countdown: float = None,
+                   eta: datetime = None,
+                   group_id: str = None,
+                   expires: Union[float, datetime] = None,
+                   retries: int = 0,
+                   chord: SignatureT = None,
+                   callbacks: Sequence[SignatureT] = None,
+                   errbacks: Sequence[SignatureT] = None,
+                   reply_to: str = None,
+                   time_limit: float = None,
+                   soft_time_limit: float = None,
+                   create_sent_event: bool = False,
+                   root_id: str = None,
+                   parent_id: str = None,
+                   shadow: str = None,
+                   chain: Sequence[SignatureT] = None,
+                   now: datetime = None,
+                   timezone: tzinfo = None,
+                   origin: str = None,
+                   argsrepr: str = None,
+                   kwargsrepr: str = None) -> task_message:
         args = args or ()
         kwargs = kwargs or {}
         if not isinstance(args, (list, tuple)):
@@ -372,13 +419,26 @@ class AMQP:
             } if create_sent_event else None,
         )
 
-    def as_task_v1(self, task_id, name, args=None, kwargs=None,
-                   countdown=None, eta=None, group_id=None,
-                   expires=None, retries=0,
-                   chord=None, callbacks=None, errbacks=None, reply_to=None,
-                   time_limit=None, soft_time_limit=None,
-                   create_sent_event=False, root_id=None, parent_id=None,
-                   shadow=None, now=None, timezone=None):
+    def as_task_v1(self, task_id, name,
+                   args: Sequence = None,
+                   kwargs: Mapping = None,
+                   countdown: float = None,
+                   eta: datetime = None,
+                   group_id: str = None,
+                   expires: Union[float, datetime] = None,
+                   retries: int = 0,
+                   chord: SignatureT = None,
+                   callbacks: Sequence[SignatureT] = None,
+                   errbacks: Sequence[SignatureT] = None,
+                   reply_to: str = None,
+                   time_limit: float = None,
+                   soft_time_limit: float = None,
+                   create_sent_event: bool = False,
+                   root_id: str = None,
+                   parent_id: str = None,
+                   shadow: str = None,
+                   now: datetime = None,
+                   timezone: tzinfo = None) -> task_message:
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
@@ -436,12 +496,12 @@ class AMQP:
             } if create_sent_event else None,
         )
 
-    def _verify_seconds(self, s, what):
+    def _verify_seconds(self, s: float, what: str) -> float:
         if s < INT_MIN:
             raise ValueError('%s is out of range: %r' % (what, s))
         return s
 
-    def _create_task_sender(self):
+    def _create_task_sender(self) -> Callable:
         default_retry = self.app.conf.task_publish_retry
         default_policy = self.app.conf.task_publish_retry_policy
         default_delivery_mode = self.app.conf.task_default_delivery_mode
@@ -459,13 +519,22 @@ class AMQP:
         default_serializer = self.app.conf.task_serializer
         default_compressor = self.app.conf.result_compression
 
-        def send_task_message(producer, name, message,
-                              exchange=None, routing_key=None, queue=None,
-                              event_dispatcher=None,
-                              retry=None, retry_policy=None,
-                              serializer=None, delivery_mode=None,
-                              compression=None, declare=None,
-                              headers=None, exchange_type=None, **kwargs):
+        def send_task_message(
+                producer: ProducerT, name: str, message: task_message,
+                *,
+                exchange: Union[Exchange, str] = None,
+                routing_key: str = None,
+                queue: str = None,
+                event_dispatcher: EventDispatcher = None,
+                retry: bool = None,
+                retry_policy: Mapping[str, Any] = None,
+                serializer: str = None,
+                delivery_mode: Union[str, int] = None,
+                compression: str = None,
+                declare: Sequence[EntityT] = None,
+                headers: Mapping = None,
+                exchange_type: str = None,
+                **kwargs) -> ResultT:
             retry = default_retry if retry is None else retry
             headers2, properties, body, sent_event = message
             if headers:
@@ -547,30 +616,30 @@ class AMQP:
         return send_task_message
 
     @cached_property
-    def default_queue(self):
+    def default_queue(self) -> Queue:
         return self.queues[self.app.conf.task_default_queue]
 
     @cached_property
-    def queues(self):
+    def queues(self) -> Queues:
         """Queue name⇒ declaration mapping."""
         return self.Queues(self.app.conf.task_queues)
 
     @queues.setter  # noqa
-    def queues(self, queues):
+    def queues(self, queues: QueuesArgT) -> Queues:
         return self.Queues(queues)
 
     @property
-    def routes(self):
+    def routes(self) -> Sequence[RouterT]:
         if self._rtable is None:
             self.flush_routes()
         return self._rtable
 
     @cached_property
-    def router(self):
+    def router(self) -> RouterT:
         return self.Router()
 
     @property
-    def producer_pool(self):
+    def producer_pool(self) -> ResourceT:
         if self._producer_pool is None:
             self._producer_pool = pools.producers[
                 self.app.connection_for_write()]
@@ -578,16 +647,16 @@ class AMQP:
         return self._producer_pool
 
     @cached_property
-    def default_exchange(self):
+    def default_exchange(self) -> Exchange:
         return Exchange(self.app.conf.task_default_exchange,
                         self.app.conf.task_default_exchange_type)
 
     @cached_property
-    def utc(self):
+    def utc(self) -> bool:
         return self.app.conf.enable_utc
 
     @cached_property
-    def _event_dispatcher(self):
+    def _event_dispatcher(self) -> EventDispatcher:
         # We call Dispatcher.publish with a custom producer
         # so don't need the diuspatcher to be enabled.
         return self.app.events.Dispatcher(enabled=False)
