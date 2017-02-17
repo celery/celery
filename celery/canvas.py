@@ -1337,7 +1337,8 @@ class chord(Signature):
                 tasks = self.tasks.tasks  # is a group
             except AttributeError:
                 tasks = self.tasks
-            app = tasks[0]._app
+            if len(tasks):
+                app = tasks[0]._app
             if app is None and body is not None:
                 app = body._app
         return app if app is not None else current_app
