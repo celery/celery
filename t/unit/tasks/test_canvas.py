@@ -607,6 +607,10 @@ class test_chord(CanvasCase):
         x = chord([t1], body=t2)
         assert x.app is t2._app
 
+    def test_app_when_header_is_empty(self):
+        x = chord([], self.add.s(4, 4))
+        assert x.app is self.add.app
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_app_fallback_to_current(self):
         from celery._state import current_app
