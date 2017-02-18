@@ -171,6 +171,13 @@ class test_make_aware:
         assert maybe_make_aware(aware)
         naive = datetime.utcnow()
         assert maybe_make_aware(naive)
+        assert maybe_make_aware(naive).tzinfo is pytz.utc
+
+        tz = pytz.timezone('US/Eastern')
+        eastern = datetime.utcnow().replace(tzinfo=tz)
+        assert maybe_make_aware(eastern).tzinfo is tz
+        utcnow = datetime.utcnow()
+        assert maybe_make_aware(utcnow, 'UTC').tzinfo is pytz.utc
 
 
 class test_localize:
