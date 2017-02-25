@@ -17,6 +17,10 @@ from copy import copy
 
 from kombu.utils import cached_property
 from kombu.utils.compat import OrderedDict
+try:
+    import tblib
+except ImportError:
+    tblib = False
 
 from . import current_app
 from . import states
@@ -24,7 +28,7 @@ from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .datastructures import DependencyGraph, GraphFormatter
 from .exceptions import IncompleteStream, TimeoutError
-from .five import items, range, string_t, monotonic
+from .five import items, range, string_t, monotonic, reraise
 from .utils import deprecated
 
 __all__ = ['ResultBase', 'AsyncResult', 'ResultSet', 'GroupResult',
@@ -171,9 +175,15 @@ class AsyncResult(ResultBase):
         if meta:
             self._maybe_set_cache(meta)
             status = meta['status']
+            result = meta['result']
+            traceback = meta.get('traceback')
             if status in PROPAGATE_STATES and propagate:
-                raise meta['result']
-            return meta['result']
+                if tblib and traceback and self.app.conf.CELERY_RAISE_WITH_FAKE_TRACEBACK:
+                    tb = tblib.Traceback.from_string(traceback)
+                    reraise(type(result), result, tb.as_traceback())
+                else:
+                    raise result
+            return result
     wait = get  # deprecated alias to :meth:`get`.
 
     def _maybe_reraise_parent_error(self):

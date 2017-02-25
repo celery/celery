@@ -132,6 +132,7 @@ NAMESPACES = {
         'MAX_CACHED_RESULTS': Option(100, type='int'),
         'MESSAGE_COMPRESSION': Option(type='string'),
         'MONGODB_BACKEND_SETTINGS': Option(type='dict'),
+        'RAISE_WITH_FAKE_TRACEBACK': Option(False, type='bool'),
         'REDIS_HOST': Option(type='string', **_REDIS_OLD),
         'REDIS_PORT': Option(type='int', **_REDIS_OLD),
         'REDIS_DB': Option(type='int', **_REDIS_OLD),
