@@ -407,17 +407,11 @@ class AMQP(object):
         if countdown:  # convert countdown to ETA
             self._verify_seconds(countdown, 'countdown')
             now = now or self.app.now()
-            timezone = timezone or self.app.timezone
             eta = now + timedelta(seconds=countdown)
-            if utc:
-                eta = to_utc(eta).astimezone(timezone)
         if isinstance(expires, numbers.Real):
             self._verify_seconds(expires, 'expires')
             now = now or self.app.now()
-            timezone = timezone or self.app.timezone
             expires = now + timedelta(seconds=expires)
-            if utc:
-                expires = to_utc(expires).astimezone(timezone)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
