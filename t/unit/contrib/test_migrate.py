@@ -267,8 +267,11 @@ class test_migrate_task:
 class test_migrate_tasks:
 
     def test_migrate(self, app, name='testcelery'):
-        x = Connection('memory://foo')
-        y = Connection('memory://foo')
+        connection_kwargs = dict(
+            transport_options={'polling_interval': 0.01}
+        )
+        x = Connection('memory://foo', **connection_kwargs)
+        y = Connection('memory://foo', **connection_kwargs)
         # use separate state
         x.default_channel.queues = {}
         y.default_channel.queues = {}
@@ -281,7 +284,6 @@ class test_migrate_tasks:
         Producer(x).publish('baz', exchange=name, routing_key=name)
         assert x.default_channel.queues
         assert not y.default_channel.queues
-
         migrate_tasks(x, y, accept=['text/plain'], app=app)
 
         yq = q(y.default_channel)
@@ -309,7 +311,7 @@ class test_migrate_tasks:
             qd.side_effect = effect
             migrate_tasks(x, y, app=app)
 
-        x = Connection('memory://')
+        x = Connection('memory://', **connection_kwargs)
         x.default_channel.queues = {}
         y.default_channel.queues = {}
         callback = Mock()
