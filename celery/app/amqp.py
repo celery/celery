@@ -21,7 +21,7 @@ from celery.local import try_import
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
-from celery.utils.time import maybe_make_aware, to_utc
+from celery.utils.time import maybe_make_aware
 
 from . import routes as _routes
 

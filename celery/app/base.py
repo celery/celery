@@ -1233,8 +1233,7 @@ class Celery(object):
         return self.amqp.producer_pool
 
     def uses_utc_timezone(self):
-        """Check if the application uses the UTC timezone.
-        """
+        """Check if the application uses the UTC timezone."""
         return self.conf.timezone == 'UTC' or self.conf.timezone is None
 
     @cached_property

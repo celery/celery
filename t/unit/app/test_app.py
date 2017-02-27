@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+from datetime import datetime, timedelta
 import gc
 import itertools
 import os
@@ -23,7 +24,7 @@ from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
 from celery.utils.serialization import pickle
-from celery.utils.time import timezone
+from celery.utils.time import timezone, to_utc, localize
 from celery.utils.objects import Bunch
 
 THIS_IS_A_KEY = 'this is a value'
@@ -74,9 +75,6 @@ class test_App:
         self.app.add_defaults(deepcopy(self.CELERY_TEST_CONFIG))
 
     def test_now(self):
-        from datetime import datetime, timedelta
-        from celery.utils.time import to_utc, localize, make_aware
-
         timezone_setting_value = 'US/Eastern'
         tz_utc = timezone.get_timezone('UTC')
         tz_us_eastern = timezone.get_timezone(timezone_setting_value)
