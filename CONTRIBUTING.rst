@@ -1,8 +1,8 @@
 .. _contributing:
 
-==============
- Contributing
-==============
+============
+Contributing
+============
 
 Welcome!
 
@@ -285,6 +285,7 @@ Branches
 Current active version branches:
 
 * dev (which git calls "master") (https://github.com/celery/celery/tree/master)
+* 4.0 (https://github.com/celery/celery/tree/4.0)
 * 3.1 (https://github.com/celery/celery/tree/3.1)
 * 3.0 (https://github.com/celery/celery/tree/3.0)
 
