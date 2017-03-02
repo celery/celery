@@ -331,7 +331,9 @@ class AMQP(object):
                 now + timedelta(seconds=expires), tz=timezone,
             )
         eta = eta and eta.isoformat()
-        expires = expires and expires.isoformat()
+        # If we retry a task `expires` will already be ISO8601-formatted.
+        if not isinstance(expires, string_t):
+            expires = expires and expires.isoformat()
 
         if argsrepr is None:
             argsrepr = saferepr(args, self.argsrepr_maxsize)
