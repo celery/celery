@@ -364,7 +364,7 @@ pip commands:
 With git
 ~~~~~~~~
 
-Please the Contributing section.
+Please see the Contributing section.
 
 .. _getting-help:
 
