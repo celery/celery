@@ -159,13 +159,14 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
     def ensure_chords_allowed(self):
         raise NotImplementedError(E_NO_CHORD_SUPPORT.strip())
 
-    def on_task_call(self, producer, task_id):
+    def on_task_call(self, producer, task_id, reply_to=None):
         # Called every time a task is sent when using this backend.
         # We declare the queue we receive replies on in advance of sending
         # the message, but we skip this if running in the prefork pool
         # (task_join_will_block), as we know the queue is already declared.
         if not task_join_will_block():
-            maybe_declare(self.binding(producer.channel), retry=True)
+            binding = self._get_binding(reply_to)
+            maybe_declare(binding(producer.channel), retry=True)
 
     def destination_for(self, task_id, request):
         """Get the destination for result by task id.
@@ -330,14 +331,18 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             expires=self.expires,
         ))
 
-    @property
-    def binding(self):
+    def _get_binding(self, reply_to=None):
+        qname = reply_to or self.oid
         return self.Queue(
-            self.oid, self.exchange, self.oid,
+            qname, self.exchange, qname,
             durable=False,
             auto_delete=True,
             expires=self.expires,
         )
+
+    @property
+    def binding(self):
+        return self._get_binding(None)
 
     @cached_property
     def oid(self):
