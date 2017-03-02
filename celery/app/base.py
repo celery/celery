@@ -870,7 +870,8 @@ class Celery(object):
 
     def now(self):
         """Return the current time and date as a datetime."""
-        return self.loader.now(utc=self.conf.enable_utc)
+        from datetime import datetime
+        return datetime.utcnow().replace(tzinfo=self.timezone)
 
     def select_queues(self, queues=None):
         """Select subset of queues.
@@ -1231,6 +1232,10 @@ class Celery(object):
     def producer_pool(self):
         return self.amqp.producer_pool
 
+    def uses_utc_timezone(self):
+        """Check if the application uses the UTC timezone."""
+        return self.conf.timezone == 'UTC' or self.conf.timezone is None
+
     @cached_property
     def timezone(self):
         """Current timezone for this app.
@@ -1239,9 +1244,12 @@ class Celery(object):
         :setting:`timezone` setting.
         """
         conf = self.conf
-        tz = conf.timezone
+        tz = conf.timezone or 'UTC'
         if not tz:
-            return (timezone.get_timezone('UTC') if conf.enable_utc
-                    else timezone.local)
-        return timezone.get_timezone(conf.timezone)
+            if conf.enable_utc:
+                return timezone.get_timezone('UTC')
+            else:
+                if not conf.timezone:
+                    return timezone.local
+        return timezone.get_timezone(tz)
 App = Celery  # noqa: E305 XXX compat

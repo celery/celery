@@ -251,6 +251,16 @@ class test_task_retries(TasksCase):
         self.autoretry_task.apply((1, 0))
         assert self.autoretry_task.iterations == 6
 
+    def test_retry_wrong_eta_when_not_enable_utc(self):
+        """Issue #3753"""
+        self.app.conf.enable_utc = False
+        self.app.conf.timezone = 'US/Eastern'
+        self.autoretry_task.iterations = 0
+        self.autoretry_task.default_retry_delay = 2
+
+        self.autoretry_task.apply((1, 0))
+        assert self.autoretry_task.iterations == 6
+
 
 class test_canvas_utils(TasksCase):
 
