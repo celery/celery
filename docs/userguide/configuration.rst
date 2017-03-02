@@ -120,7 +120,7 @@ rush in moving to the new settings format.
 ``CELERY_DEFAULT_QUEUE``               :setting:`task_default_queue`
 ``CELERY_DEFAULT_RATE_LIMIT``          :setting:`task_default_rate_limit`
 ``CELERY_DEFAULT_ROUTING_KEY``         :setting:`task_default_routing_key`
-``CELERY_TASK_EAGER_PROPAGATES``       :setting:`task_eager_propagates`
+``[...]_EAGER_PROPAGATES_EXCEPTIONS``  :setting:`task_eager_propagates`
 ``CELERY_IGNORE_RESULT``               :setting:`task_ignore_result`
 ``CELERY_TASK_PUBLISH_RETRY``          :setting:`task_publish_retry`
 ``CELERY_TASK_PUBLISH_RETRY_POLICY``   :setting:`task_publish_retry_policy`
