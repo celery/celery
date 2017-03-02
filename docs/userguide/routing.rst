@@ -676,7 +676,12 @@ copies of tasks to all workers connected to it:
     from kombu.common import Broadcast
 
     app.conf.task_queues = (Broadcast('broadcast_tasks'),)
-    app.conf.task_routes = {'tasks.reload_cache': {'queue': 'broadcast_tasks'}}
+    app.conf.task_routes = {
+        'tasks.reload_cache': {
+            'queue': 'broadcast_tasks',
+            'exchange': 'broadcast_tasks'
+        }
+    }
 
 Now the ``tasks.reload_cache`` task will be sent to every
 worker consuming from this queue.
