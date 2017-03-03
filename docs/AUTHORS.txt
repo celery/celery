@@ -113,6 +113,7 @@ Noah Kantrowitz <noah@coderanger.net>
 Norman Richards <orb@nostacktrace.com>
 Patrick Altman <paltman@gmail.com>
 Piotr Sikora <piotr.sikora@frickle.com>
+Primož Kerin <kerin.primoz@gmail.com>
 Remy Noel <mocramis@gmail.com>
 Reza Lotun <rlotun@gmail.com>
 Roberto Gaiser <gaiser@geekbunker.org>
