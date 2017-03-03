@@ -10,6 +10,7 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 import time
+import inspect
 
 from collections import namedtuple
 from datetime import timedelta
@@ -237,14 +238,23 @@ class Backend(object):
         serializer = self.serializer if serializer is None else serializer
         if serializer in EXCEPTION_ABLE_CODECS:
             return get_pickleable_exception(exc)
-        return {'exc_type': type(exc).__name__, 'exc_message': str(exc)}
+
+        # retrieve exception original module
+        exc_module = inspect.getmodule(type(exc))
+        if exc_module:
+            exc_module = exc_module.__name__
+
+        return {'exc_type': type(exc).__name__,
+                'exc_args': exc.args,
+                'exc_module': exc_module}
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
         if exc:
             if not isinstance(exc, BaseException):
+                exc_module = exc.get('exc_module') or __name__
                 exc = create_exception_cls(
-                    from_utf8(exc['exc_type']), __name__)(exc['exc_message'])
+                    from_utf8(exc['exc_type']), exc_module)(*exc['exc_args'])
             if self.serializer in EXCEPTION_ABLE_CODECS:
                 exc = get_pickled_exception(exc)
         return exc

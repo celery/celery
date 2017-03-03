@@ -10,6 +10,7 @@ from base64 import b64encode as base64encode, b64decode as base64decode
 from functools import partial
 from inspect import getmro
 from itertools import takewhile
+from importlib import import_module
 
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
@@ -80,6 +81,19 @@ def itermro(cls, stop):
 
 def create_exception_cls(name, module, parent=None):
     """Dynamically create an exception class."""
+    try:
+        # also works for 'builtins' module
+        mod = import_module(module)
+        # should we raise if getattr fails ?
+        exc_cls = getattr(mod, name, None)
+        if exc_cls and isinstance(exc_cls, type(BaseException)):
+            return exc_cls
+    except ImportError:
+        # module not found. We may want to raise instead of
+        # calling subclass_exception
+        pass
+
+    # we could not find the exception, fallback and create a type.
     if not parent:
         parent = Exception
     return subclass_exception(name, parent, module)
