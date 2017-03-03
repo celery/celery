@@ -112,6 +112,7 @@ Neil Chintomby
 Noah Kantrowitz <noah@coderanger.net>
 Norman Richards <orb@nostacktrace.com>
 Patrick Altman <paltman@gmail.com>
+Peter Bittner <django@bittner.it>
 Piotr Sikora <piotr.sikora@frickle.com>
 Primož Kerin <kerin.primoz@gmail.com>
 Remy Noel <mocramis@gmail.com>
