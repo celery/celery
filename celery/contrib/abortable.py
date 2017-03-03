@@ -107,7 +107,7 @@ ABORTED = 'ABORTED'
 
 
 class AbortableAsyncResult(AsyncResult):
-    """Represents a abortable result.
+    """Represents an abortable result.
 
     Specifically, this gives the `AsyncResult` a :meth:`abort()` method,
     that sets the state of the underlying Task to `'ABORTED'`.
