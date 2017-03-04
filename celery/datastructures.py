@@ -569,6 +569,8 @@ class LimitedSet(object):
         self.expires = expires
         self._data = {} if data is None else data
         self._heap = []
+        # Ensures inserts do not become ambiguous
+        self.last_added = 0.0
 
         # make shortcuts
         self.__len__ = self._heap.__len__
@@ -587,8 +589,14 @@ class LimitedSet(object):
         # and it will end up in the correct order.
         self.purge(1, offset=1)
         inserted = now()
+        if inserted <= self.last_added:
+            # Force uniqueness
+            inserted = self.last_added + 1e-6
+
         self._data[key] = inserted
         heappush(self._heap, (inserted, key))
+        # Update our last-inserted time for future reference
+        self.last_added = inserted
 
     def clear(self):
         """Remove all members"""
