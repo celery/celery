@@ -139,6 +139,11 @@ class test_prepare_exception:
         y = self.b.exception_to_python(x)
         assert isinstance(y, KeyError)
 
+    def test_unicode_message(self):
+        message = u'\u03ac'
+        x = self.b.prepare_exception(Exception(message))
+        assert x == {'exc_message': message, 'exc_type': 'Exception'}
+
 
 class KVBackend(KeyValueStoreBackend):
     mget_returns_dict = False
