@@ -29,7 +29,7 @@ from celery._state import get_current_task
 from celery.exceptions import (
     ChordError, TimeoutError, TaskRevokedError, ImproperlyConfigured,
 )
-from celery.five import items
+from celery.five import items, string
 from celery.result import (
     GroupResult, ResultBase, allow_join_result, result_from_tuple,
 )
@@ -237,7 +237,7 @@ class Backend(object):
         serializer = self.serializer if serializer is None else serializer
         if serializer in EXCEPTION_ABLE_CODECS:
             return get_pickleable_exception(exc)
-        return {'exc_type': type(exc).__name__, 'exc_message': str(exc)}
+        return {'exc_type': type(exc).__name__, 'exc_message': string(exc)}
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
