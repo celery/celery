@@ -551,7 +551,7 @@ these manually:
     class CustomTask(Task):
         def run(self):
             print('running')
-    app.register_task(CustomTask())
+    CustomTask = app.register_task(CustomTask())
 
 The best practice is to use custom task classes only for overriding
 general behavior, and then using the task decorator to realize the task:
