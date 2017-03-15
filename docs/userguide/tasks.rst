@@ -66,10 +66,10 @@ consider enabling the :setting:`task_reject_on_worker_lost` setting.
 
     The default prefork pool scheduler is not friendly to long-running tasks,
     so if you have tasks that run for minutes/hours make sure you enable
-    the -Ofair`` command-line argument to the :program:`celery worker`.
-    See :ref:`prefork-pool-prefetch` for more information, and for the
-    best performance route long-running and short-running tasks to
-    dedicated workers (:ref:`routing-automatic`).
+    the :option:`-Ofair <celery worker -O>` command-line argument to
+    the :program:`celery worker`. See :ref:`prefork-pool-prefetch` for more
+    information, and for the best performance route long-running and
+    short-running tasks to dedicated workers (:ref:`routing-automatic`).
 
     If your worker hangs then please investigate what tasks are running
     before submitting an issue, as most likely the hanging is caused
@@ -1573,6 +1573,7 @@ By default celery will not enable you to run tasks within task synchronously
 in rare or extreme cases you might have to do so.
 **WARNING**:
 enabling subtasks run synchronously is not recommended!
+
 .. code-block:: python
 
     @app.task
@@ -1743,21 +1744,22 @@ There's a race condition if the task starts executing
 before the transaction has been committed; The database object doesn't exist
 yet!
 
-The solution is to use the ``on_commit`` callback to launch your celery task 
+The solution is to use the ``on_commit`` callback to launch your celery task
 once all transactions have been committed successfully.
 
 .. code-block:: python
+
     from django.db.transaction import on_commit
-    
+
     def create_article(request):
         article = Article.objects.create()
         on_commit(lambda: expand_abbreviations.delay(article.pk))
 
 .. note::
-    ``on_commit` is available in Django 1.9 and above, if you are using a
-    version prior to that then the `django-transaction-hooks`_ library 
+    ``on_commit`` is available in Django 1.9 and above, if you are using a
+    version prior to that then the `django-transaction-hooks`_ library
     adds support for this.
-    
+
 .. _`django-transaction-hooks`: https://github.com/carljm/django-transaction-hooks
 
 .. _task-example:
