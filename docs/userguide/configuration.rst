@@ -905,7 +905,7 @@ in seconds (int/float)
 ``redis_socket_timeout``
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: 5.0 seconds.
+Default: 120.0 seconds.
 
 Socket timeout for reading/writing operations to the Redis server
 in seconds (int/float), used by the redis result backend.
