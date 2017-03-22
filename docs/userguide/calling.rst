@@ -45,10 +45,10 @@ The API defines a standard set of execution options, as well as three methods:
     - ``T.apply_async((arg,), {'kwarg': value})``
 
     - ``T.apply_async(countdown=10)``
-        executes 10 seconds from now.
+        executes in 10 seconds from now.
 
     - ``T.apply_async(eta=now + timedelta(seconds=10))``
-        executes 10 seconds from now, specified using ``eta``
+        executes in 10 seconds from now, specified using ``eta``
 
     - ``T.apply_async(countdown=60, expires=120)``
         executes in one minute from now, but expires after 2 minutes.
