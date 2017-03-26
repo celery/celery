@@ -4,7 +4,7 @@ from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
 from .conftest import flaky
-from .tasks import add, add_replaced, add_to_all, collect_ids, ids
+from .tasks import add, add_replaced, add_to_all, collect_ids, ids, redis_echo
 
 TIMEOUT = 120
 
@@ -26,6 +26,21 @@ class test_chain:
         )
         res = c()
         assert res.get(timeout=TIMEOUT) == [64, 65, 66, 67]
+
+    @flaky
+    def test_group_chord_group_chain(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        from redis import StrictRedis
+        redis_connection = StrictRedis()
+
+        before = group(redis_echo.si('before {}'.format(i)) for i in range(3))
+        connect = redis_echo.si('connect')
+        after = group(redis_echo.si('after {}'.format(i)) for i in range(2))
+
+        res = (before | connect | after).delay()
+        res.get(timeout=TIMEOUT)
+        assert redis_connection.lrange('redis-echo', 0, -1) == ['before 0', 'before 1', 'before 2', 'connect', 'after 0', 'after 1']
 
     @flaky
     def test_parent_ids(self, manager, num=10):
@@ -87,7 +102,6 @@ def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
 
 
 class test_chord:
-
     @flaky
     def test_group_chain(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
