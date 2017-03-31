@@ -1739,7 +1739,7 @@ Example::
 
     # Random failover strategy
     def random_failover_strategy(servers):
-        it = list(it)  # don't modify callers list
+        it = list(servers)  # don't modify callers list
         shuffle = random.shuffle
         for _ in repeat(None):
             shuffle(it)
