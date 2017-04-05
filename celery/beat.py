@@ -285,14 +285,13 @@ class Scheduler(object):
         return min(adjust(next_time_to_run) or max_interval, max_interval)
 
     def schedules_equal(self, a, b):
-        if a.keys() != b.keys():
+        if set(a.keys()) != set(b.keys()):
             return False
         for name, model in a.items():
             b_model = b.get(name)
             if not b_model:
                 return False
-            if (hasattr(model.schedule, '__repr__') and
-                    model.schedule.__repr__() != b_model.schedule.__repr__()):
+            if model.schedule != b_model.schedule:
                 return False
         return True
 
