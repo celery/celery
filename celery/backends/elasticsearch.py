@@ -60,7 +60,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
         self.es_retry_on_timeout = (
             _get('elasticsearch_retry_on_timeout') or self.es_retry_on_timeout
-            )
+        )
 
         es_timeout = _get('elasticsearch_timeout')
         if es_timeout is not None:
@@ -126,7 +126,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             retry_on_timeout=self.es_retry_on_timeout,
             max_retries=self.es_max_retries,
             timeout=self.es_timeout
-            )
+        )
 
     @property
     def server(self):
