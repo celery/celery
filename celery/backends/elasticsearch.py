@@ -59,15 +59,15 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         self.port = port or self.port
 
         self.es_retry_on_timeout = (
-                _get('elasticsearch_retry_on_timeout') or self.es_retry_on_timeout
-                )
+            _get('elasticsearch_retry_on_timeout') or self.es_retry_on_timeout
+            )
 
         es_timeout = _get('elasticsearch_timeout')
         if es_timeout is not None:
             self.es_timeout = es_timeout
 
         es_max_retries = _get('elasticsearch_max_retries')
-        if es_max_retries is not None: 
+        if es_max_retries is not None:
             self.es_max_retries = es_max_retries
 
         self._server = None
@@ -121,10 +121,12 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def _get_server(self):
         """Connect to the Elasticsearch server."""
-        return elasticsearch.Elasticsearch('%s:%s' % (self.host, self.port), 
-                retry_on_timeout=self.es_retry_on_timeout, 
-                max_retries=self.es_max_retries, 
-                timeout=self.es_timeout)
+        return elasticsearch.Elasticsearch(
+            '%s:%s' % (self.host, self.port),
+            retry_on_timeout=self.es_retry_on_timeout,
+            max_retries=self.es_max_retries,
+            timeout=self.es_timeout
+            )
 
     @property
     def server(self):
