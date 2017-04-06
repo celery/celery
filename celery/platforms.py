@@ -632,9 +632,11 @@ class Signals(object):
     def supported(self, name):
         """Return true value if signal by ``name`` exists on this platform."""
         try:
-            return self.signum(name)
+            self.signum(name)
         except AttributeError:
-            pass
+            return False
+        else:
+            return True
 
     def signum(self, name):
         """Get signal number by name."""
