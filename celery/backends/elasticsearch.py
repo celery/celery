@@ -32,8 +32,8 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     scheme = 'http'
     host = 'localhost'
     port = 9200
-    es_retry_on_timeout=False
-    es_timeout=10
+    es_retry_on_timeout = False
+    es_timeout = 10
     es_max_retries = 3
 
     def __init__(self, url=None, *args, **kwargs):
@@ -61,13 +61,14 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         self.es_retry_on_timeout = (
                 _get('elasticsearch_retry_on_timeout') or self.es_retry_on_timeout
                 )
-        self.es_timeout = (
-                _get('elasticsearch_timeout') or self.es_timeout
-                )
 
-        self.es_max_retries = (
-                _get('elasticsearch_max_retries') or self.es_max_retries
-                )
+        es_timeout = _get('elasticsearch_timeout')
+        if es_timeout is not None:
+            self.es_timeout = es_timeout
+
+        es_max_retries = _get('elasticsearch_max_retries')
+        if es_max_retries is not None: 
+            self.es_max_retries = es_max_retries
 
         self._server = None
 
