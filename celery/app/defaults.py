@@ -178,6 +178,13 @@ NAMESPACES = Namespace(
         persistent=Option(None, type='bool'),
         serializer=Option('json'),
     ),
+    elasticsearch=Namespace(
+        __old__=old_ns('celery_elasticsearch'),
+
+        retry_on_timeout=Option(type='bool'),
+        max_retries=Option(type='int'),
+        timeout=Option(type='float'),
+    ),
     riak=Namespace(
         __old__=old_ns('celery_riak'),
 
