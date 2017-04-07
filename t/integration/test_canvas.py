@@ -1,10 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 import pytest
+from redis import StrictRedis
 from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
 from .conftest import flaky
-from .tasks import add, add_replaced, add_to_all, collect_ids, ids
+from .tasks import add, add_replaced, add_to_all, collect_ids, ids, redis_echo
 
 TIMEOUT = 120
 
@@ -26,6 +27,25 @@ class test_chain:
         )
         res = c()
         assert res.get(timeout=TIMEOUT) == [64, 65, 66, 67]
+
+    @flaky
+    def test_group_chord_group_chain(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        redis_connection = StrictRedis()
+        redis_connection.delete('redis-echo')
+        before = group(redis_echo.si('before {}'.format(i)) for i in range(3))
+        connect = redis_echo.si('connect')
+        after = group(redis_echo.si('after {}'.format(i)) for i in range(2))
+
+        result = (before | connect | after).delay()
+        result.get(timeout=TIMEOUT)
+        redis_messages = redis_connection.lrange('redis-echo', 0, -1)
+        assert set(['before 0', 'before 1', 'before 2']) == \
+            set(redis_messages[:3])
+        assert redis_messages[3] == 'connect'
+        assert set(redis_messages[4:]) == set(['after 0', 'after 1'])
+        redis_connection.delete('redis-echo')
 
     @flaky
     def test_parent_ids(self, manager, num=10):
