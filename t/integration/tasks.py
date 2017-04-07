@@ -63,3 +63,12 @@ def retry_once(self):
     if self.request.retries:
         return self.request.retries
     raise self.retry(countdown=0.1)
+
+
+@shared_task
+def redis_echo(message):
+    """Task that appends the message to a redis list"""
+    from redis import StrictRedis
+
+    redis_connection = StrictRedis()
+    redis_connection.rpush('redis-echo', message)
