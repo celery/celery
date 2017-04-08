@@ -30,6 +30,8 @@ class test_chain:
 
     @flaky
     def test_group_chord_group_chain(self, manager):
+        from celery.five import bytes_if_py2
+
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
         redis_connection = StrictRedis()
@@ -40,11 +42,17 @@ class test_chain:
 
         result = (before | connect | after).delay()
         result.get(timeout=TIMEOUT)
-        redis_messages = redis_connection.lrange('redis-echo', 0, -1)
-        assert set(['before 0', 'before 1', 'before 2']) == \
-            set(redis_messages[:3])
-        assert redis_messages[3] == 'connect'
-        assert set(redis_messages[4:]) == set(['after 0', 'after 1'])
+        redis_messages = list(map(
+            bytes_if_py2,
+            redis_connection.lrange('redis-echo', 0, -1)
+        ))
+        before_items = \
+            set(map(bytes_if_py2, (b'before 0', b'before 1', b'before 2')))
+        after_items = set(map(bytes_if_py2, (b'after 0', b'after 1')))
+
+        assert set(redis_messages[:3]) == before_items
+        assert redis_messages[3] == b'connect'
+        assert set(redis_messages[4:]) == after_items
         redis_connection.delete('redis-echo')
 
     @flaky
