@@ -289,9 +289,7 @@ class Scheduler(object):
             return False
         for name, old_entry in old_schedules.items():
             new_entry = new_schedules.get(name)
-            if not new_entry:
-                return False
-            if old_entry.schedule != new_entry.schedule:
+            if not new_entry or old_entry.schedule != new_entry.schedule:
                 return False
         return True
 
