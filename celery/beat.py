@@ -197,6 +197,7 @@ class Scheduler(object):
                              self.max_interval)
         self.Producer = Producer or app.amqp.Producer
         self._heap = None
+        self.old_schedulers = None
         self.sync_every_tasks = (
             app.conf.beat_sync_every if sync_every_tasks is None
             else sync_every_tasks)
@@ -257,7 +258,8 @@ class Scheduler(object):
         adjust = self.adjust
         max_interval = self.max_interval
 
-        if self._heap is None:
+        if self._heap is None or not self.schedules_equal(self.old_schedulers, self.schedule):
+            self.old_schedulers = self.schedule
             self.populate_heap()
 
         H = self._heap
@@ -280,6 +282,17 @@ class Scheduler(object):
                 heappush(H, verify)
                 return min(verify[0], max_interval)
         return min(adjust(next_time_to_run) or max_interval, max_interval)
+
+    def schedules_equal(self, a, b):
+        if a.keys() != b.keys():
+            return False
+        for name, model in a.items():
+            b_model = b.get(name)
+            if not b_model:
+                return False
+            if hasattr(model.schedule, '__repr__') and model.schedule.__repr__() != b_model.schedule.__repr__():
+                return False
+        return True
 
     def should_sync(self):
         return (
