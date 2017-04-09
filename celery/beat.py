@@ -284,11 +284,11 @@ class Scheduler(object):
                 return min(verify[0], max_interval)
         return min(adjust(next_time_to_run) or max_interval, max_interval)
 
-    def schedules_equal(self, old_schedules, b):
-        if set(old_schedules.keys()) != set(b.keys()):
+    def schedules_equal(self, old_schedules, new_schedules):
+        if set(old_schedules.keys()) != set(new_schedules.keys()):
             return False
         for name, model in old_schedules.items():
-            b_model = b.get(name)
+            b_model = new_schedules.get(name)
             if not b_model:
                 return False
             if model.schedule != b_model.schedule:
