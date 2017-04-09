@@ -287,11 +287,11 @@ class Scheduler(object):
     def schedules_equal(self, old_schedules, new_schedules):
         if set(old_schedules.keys()) != set(new_schedules.keys()):
             return False
-        for name, model in old_schedules.items():
+        for name, old_entry in old_schedules.items():
             b_model = new_schedules.get(name)
             if not b_model:
                 return False
-            if model.schedule != b_model.schedule:
+            if old_entry.schedule != b_model.schedule:
                 return False
         return True
 
