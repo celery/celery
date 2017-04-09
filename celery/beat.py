@@ -288,10 +288,10 @@ class Scheduler(object):
         if set(old_schedules.keys()) != set(new_schedules.keys()):
             return False
         for name, old_entry in old_schedules.items():
-            b_model = new_schedules.get(name)
-            if not b_model:
+            new_entry = new_schedules.get(name)
+            if not new_entry:
                 return False
-            if old_entry.schedule != b_model.schedule:
+            if old_entry.schedule != new_entry.schedule:
                 return False
         return True
 
