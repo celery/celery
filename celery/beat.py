@@ -2,6 +2,7 @@
 """The periodic task scheduler."""
 from __future__ import absolute_import, unicode_literals
 
+import copy
 import errno
 import heapq
 import os
@@ -260,7 +261,7 @@ class Scheduler(object):
 
         if (self._heap is None or
                 not self.schedules_equal(self.old_schedulers, self.schedule)):
-            self.old_schedulers = self.schedule
+            self.old_schedulers = copy.copy(self.schedule)
             self.populate_heap()
 
         H = self._heap
