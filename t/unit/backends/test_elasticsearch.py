@@ -80,3 +80,32 @@ class test_ElasticsearchBackend:
             assert x.scheme == 'elasticsearch'
             assert x.host == 'localhost'
             assert x.port == 9200
+
+    def test_index(self):
+        x = ElasticsearchBackend(app=self.app)
+        x.doc_type = 'test-doc-type'
+        x._server = Mock()
+        x._server.index = Mock()
+        expected_result = dict(
+            _id=sentinel.task_id,
+            _source={'result': sentinel.result}
+        )
+        x._server.index.return_value = expected_result
+
+        body = {"field1": "value1"}
+        x._server.index.assert_called_once_with(
+            id=sentinel.task_id,
+            doc_type=x.doc_type,
+            index=x.index,
+            body=body,
+            kwarg1='test1'
+        )
+
+    def test_config_params(self):
+        self.app.conf.elasticsearch_max_retries = 10
+        self.app.conf.elasticsearch_timeout = 20.0
+        self.app.conf.elasticsearch_retry_on_timeout = True
+
+        assert self.backend.es_max_retries == 10
+        assert self.backend.es_timeout == 20.0
+        assert self.backend.es_retry_on_timeout == True
