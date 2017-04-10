@@ -4,6 +4,7 @@ from __future__ import absolute_import, unicode_literals
 from datetime import datetime
 from kombu.utils.url import _parse_url
 from celery.exceptions import ImproperlyConfigured
+from celery.five import string
 from .base import KeyValueStoreBackend
 try:
     import elasticsearch
@@ -31,10 +32,14 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     scheme = 'http'
     host = 'localhost'
     port = 9200
+    es_retry_on_timeout=False
+    es_timeout=10
+    es_max_retries = 3
 
     def __init__(self, url=None, *args, **kwargs):
         super(ElasticsearchBackend, self).__init__(*args, **kwargs)
         self.url = url
+        _get = self.app.conf.get
 
         if elasticsearch is None:
             raise ImproperlyConfigured(E_LIB_MISSING)
@@ -52,6 +57,17 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         self.scheme = scheme or self.scheme
         self.host = host or self.host
         self.port = port or self.port
+
+        self.es_retry_on_timeout = (
+                _get('elasticsearch_retry_on_timeout') or self.es_retry_on_timeout
+                )
+        self.es_timeout = (
+                _get('elasticsearch_timeout') or self.es_timeout
+                )
+
+        self.es_max_retries = (
+                _get('elasticsearch_max_retries') or self.es_max_retries
+                )
 
         self._server = None
 
@@ -89,6 +105,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def _index(self, id, body, **kwargs):
         return self.server.index(
+            id=string(id),
             index=self.index,
             doc_type=self.doc_type,
             body=body,
@@ -103,7 +120,10 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def _get_server(self):
         """Connect to the Elasticsearch server."""
-        return elasticsearch.Elasticsearch('%s:%s' % (self.host, self.port))
+        return elasticsearch.Elasticsearch('%s:%s' % (self.host, self.port), 
+                retry_on_timeout=self.es_retry_on_timeout, 
+                max_retries=self.es_max_retries, 
+                timeout=self.es_timeout)
 
     @property
     def server(self):
