@@ -108,6 +108,8 @@ class test_ElasticsearchBackend:
         self.app.conf.elasticsearch_timeout = 20.0
         self.app.conf.elasticsearch_retry_on_timeout = True
 
+        self.backend = ElasticsearchBackend(app=self.app)
+
         assert self.backend.es_max_retries == 10
         assert self.backend.es_timeout == 20.0
         assert self.backend.es_retry_on_timeout is True
