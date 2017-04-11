@@ -93,6 +93,7 @@ class test_ElasticsearchBackend:
         x._server.index.return_value = expected_result
 
         body = {"field1": "value1"}
+        x._index(id=sentinel.task_id, body=body, kwarg1='test1')
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             doc_type=x.doc_type,
@@ -108,4 +109,4 @@ class test_ElasticsearchBackend:
 
         assert self.backend.es_max_retries == 10
         assert self.backend.es_timeout == 20.0
-        assert self.backend.es_retry_on_timeout == True
+        assert self.backend.es_retry_on_timeout is True
