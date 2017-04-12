@@ -439,7 +439,7 @@ To install and use this extension:
             'django_celery_beat',
         )
 
-    Note that there is no dash in the module name, only underscores.
+   Note that there is no dash in the module name, only underscores.
 
 #. Apply Django database migrations so that the necessary tables are created:
 
