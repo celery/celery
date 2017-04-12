@@ -932,6 +932,10 @@ This is used by all result backends except Redis and Memcached: they
 increment a counter after each task in the header, then applies the callback
 when the counter exceeds the number of tasks in the set.
 
+*Note:* In Redis result backend this approach will be used only
+when :const:`new_join` is set to :const:`True` in a :const:`result_backend`
+connection params, otherwise polling will be used.
+
 The Redis and Memcached approach is a much better solution, but not easily
 implemented in other backends (suggestions welcome!).
 
