@@ -1055,6 +1055,8 @@ Example configuration
 
     result_backend = 'elasticsearch://example.com:9200/index_name/doc_type'
 
+.. _conf-riak-result-backend:
+
 .. setting:: elasticsearch_retry_on_timeout
 
 ``elasticsearch_retry_on_timeout``
@@ -1081,8 +1083,6 @@ Maximum number of retries before an exception is propagated.
 Default: 10.0 seconds.
 
 Global timeout,used by the elasticsearch result backend.
-
-.. _conf-riak-result-backend:
 
 Riak backend settings
 ---------------------
