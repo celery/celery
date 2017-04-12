@@ -285,6 +285,7 @@ Branches
 Current active version branches:
 
 * dev (which git calls "master") (https://github.com/celery/celery/tree/master)
+* 4.0 (https://github.com/celery/celery/tree/4.0)
 * 3.1 (https://github.com/celery/celery/tree/3.1)
 * 3.0 (https://github.com/celery/celery/tree/3.0)
 
@@ -581,11 +582,12 @@ Building the documentation
 --------------------------
 
 To build the documentation you need to install the dependencies
-listed in :file:`requirements/docs.txt`:
+listed in :file:`requirements/docs.txt` and :file:`requirements/default.txt`:
 
 .. code-block:: console
 
     $ pip install -U -r requirements/docs.txt
+    $ pip install -U -r requirements/default.txt
 
 After these dependencies are installed you should be able to
 build the docs by running:
@@ -628,7 +630,7 @@ the ``flakes`` target instead:
 
 .. code-block:: console
 
-    $ make flakes§
+    $ make flakes
 
 API reference
 ~~~~~~~~~~~~~
@@ -747,14 +749,14 @@ is following the conventions.
 * Import order
 
     * Python standard library (`import xxx`)
-    * Python standard library ('from xxx import`)
+    * Python standard library (`from xxx import`)
     * Third-party packages.
     * Other modules from the current package.
 
     or in case of code using Django:
 
     * Python standard library (`import xxx`)
-    * Python standard library ('from xxx import`)
+    * Python standard library (`from xxx import`)
     * Third-party packages.
     * Django packages.
     * Other modules from the current package.
@@ -804,7 +806,7 @@ is following the conventions.
      support for Python 2.5)
 
 
-* Note that we use "new-style` relative imports when the distribution
+* Note that we use "new-style" relative imports when the distribution
   doesn't support Python versions below 2.5
 
     This requires Python 2.5 or later:

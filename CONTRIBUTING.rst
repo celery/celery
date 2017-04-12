@@ -1,8 +1,8 @@
 .. _contributing:
 
-============
-Contributing
-============
+==============
+ Contributing
+==============
 
 Welcome!
 
@@ -475,7 +475,7 @@ dependencies, so install these next:
     $ pip install -U -r requirements/default.txt
 
 After installing the dependencies required, you can now execute
-the test suite by calling ``py.test <pytest``:
+the test suite by calling ``py.test <pytest>``:
 
 ::
 
@@ -582,11 +582,12 @@ Building the documentation
 --------------------------
 
 To build the documentation you need to install the dependencies
-listed in ``requirements/docs.txt``:
+listed in ``requirements/docs.txt`` and ``requirements/default.txt``:
 
 ::
 
     $ pip install -U -r requirements/docs.txt
+    $ pip install -U -r requirements/default.txt
 
 After these dependencies are installed you should be able to
 build the docs by running:
@@ -629,7 +630,7 @@ the ``flakes`` target instead:
 
 ::
 
-    $ make flakes§
+    $ make flakes
 
 API reference
 ~~~~~~~~~~~~~
@@ -748,14 +749,14 @@ is following the conventions.
 * Import order
 
     * Python standard library (`import xxx`)
-    * Python standard library ('from xxx import`)
+    * Python standard library (`from xxx import`)
     * Third-party packages.
     * Other modules from the current package.
 
     or in case of code using Django:
 
     * Python standard library (`import xxx`)
-    * Python standard library ('from xxx import`)
+    * Python standard library (`from xxx import`)
     * Third-party packages.
     * Django packages.
     * Other modules from the current package.
@@ -805,7 +806,7 @@ is following the conventions.
      support for Python 2.5)
 
 
-* Note that we use "new-style` relative imports when the distribution
+* Note that we use "new-style" relative imports when the distribution
   doesn't support Python versions below 2.5
 
     This requires Python 2.5 or later:
