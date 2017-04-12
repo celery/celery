@@ -9,6 +9,7 @@ trim_trailing_whitespace = true
 insert_final_newline = true
 charset = utf-8
 end_of_line = lf
+max_line_length = 78
 
 [Makefile]
 indent_style = tab
