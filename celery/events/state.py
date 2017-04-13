@@ -293,11 +293,14 @@ class Task(object):
     def __init__(self, uuid=None, cluster_state=None, children=None, **kwargs):
         self.uuid = uuid
         self.cluster_state = cluster_state
-        self.children = WeakSet(
-            self.cluster_state.tasks.get(task_id)
-            for task_id in children or ()
-            if task_id in self.cluster_state.tasks
-        )
+        if self.cluster_state is not None:
+            self.children = WeakSet(
+                self.cluster_state.tasks.get(task_id)
+                for task_id in children or ()
+                if task_id in self.cluster_state.tasks
+            )
+        else:
+            self.children = WeakSet()
         self._serializer_handlers = {
             'children': self._serializable_children,
             'root': self._serializable_root,
@@ -384,11 +387,19 @@ class Task(object):
 
     @cached_property
     def parent(self):
-        return self.parent_id and self.cluster_state.tasks[self.parent_id]
+        # issue github.com/mher/flower/issues/648
+        try:
+            return self.parent_id and self.cluster_state.tasks[self.parent_id]
+        except KeyError:
+            return None
 
     @cached_property
     def root(self):
-        return self.root_id and self.cluster_state.tasks[self.root_id]
+        # issue github.com/mher/flower/issues/648
+        try:
+            return self.root_id and self.cluster_state.tasks[self.root_id]
+        except KeyError:
+            return None
 
 
 class State(object):
