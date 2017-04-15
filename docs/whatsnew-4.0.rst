@@ -65,7 +65,7 @@ all the contributors who help make this happen, and my colleagues
 at `Robinhood`_.
 
 .. _`Ty Wilkins`: http://tywilkins.com
-.. _`Robinhood`: http://robinhood.com
+.. _`Robinhood`: https://robinhood.com
 
 Wall of Contributors
 --------------------
@@ -1347,7 +1347,7 @@ This allows Celery to store Task results in the K/V store of Consul.
 Consul also allows to set a TTL on keys using the Sessions from Consul. This way
 the backend supports auto expiry of Task results.
 
-For more information on Consul visit http://consul.io/
+For more information on Consul visit https://consul.io/
 
 The backend uses :pypi:`python-consul` for talking to the HTTP API.
 This package is fully Python 3 compliant just as this backend is:

@@ -120,7 +120,7 @@ Downloading and installing from source
 
 Download the latest version of Celery from PyPI:
 
-http://pypi.python.org/pypi/celery/
+https://pypi.python.org/pypi/celery/
 
 You can install it by doing the following,:
 

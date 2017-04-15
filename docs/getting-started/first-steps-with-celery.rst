@@ -78,7 +78,7 @@ the event of abrupt termination or power failures. Detailed information about us
 
 :ref:`broker-redis`
 
-.. _`Redis`: http://redis.io/
+.. _`Redis`: https://redis.io/
 
 Other brokers
 -------------

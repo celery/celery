@@ -166,7 +166,7 @@ class DjangoWorkerFixup(object):
             self.close_database()
 
     def on_task_postrun(self, sender, **kwargs):
-        # See http://groups.google.com/group/django-users/
+        # See https://groups.google.com/group/django-users/
         #            browse_thread/thread/78200863d0c07c6d/
         if not getattr(sender.request, 'is_eager', False):
             self.close_database()

@@ -210,7 +210,7 @@ If you're confused about these terms, you should read up on AMQP.
 .. _`Rabbits and Warrens`: http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/
 .. _`CloudAMQP tutorial`: amqp in 10 minutes part 3
     https://www.cloudamqp.com/blog/2015-09-03-part4-rabbitmq-for-beginners-exchanges-routing-keys-bindings.html
-.. _`RabbitMQ FAQ`: http://www.rabbitmq.com/faq.html
+.. _`RabbitMQ FAQ`: https://www.rabbitmq.com/faq.html
 
 .. _routing-special_options:
 

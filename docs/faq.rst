@@ -21,7 +21,7 @@ What kinds of things should I use Celery for?
 describing why you'd use a queue in a web context.
 
 .. _`Queue everything and delight everyone`:
-    http://decafbad.com/blog/2008/07/04/queue-everything-and-delight-everyone
+    https://decafbad.com/blog/2008/07/04/queue-everything-and-delight-everyone
 
 These are some common use cases:
 
@@ -223,7 +223,7 @@ Transaction Model and Locking`_ in the MySQL user manual.
 
 (Thanks to Honza Kral and Anton Tsigularov for this solution)
 
-.. _`MySQL - The InnoDB Transaction Model and Locking`: http://dev.mysql.com/doc/refman/5.1/en/innodb-transaction-model.html
+.. _`MySQL - The InnoDB Transaction Model and Locking`: https://dev.mysql.com/doc/refman/5.1/en/innodb-transaction-model.html
 
 .. _faq-worker-hanging:
 
@@ -485,7 +485,7 @@ Why is RabbitMQ crashing?
 
 **Answer:** RabbitMQ will crash if it runs out of memory. This will be fixed in a
 future release of RabbitMQ. please refer to the RabbitMQ FAQ:
-http://www.rabbitmq.com/faq.html#node-runs-out-of-memory
+https://www.rabbitmq.com/faq.html#node-runs-out-of-memory
 
 .. note::
 
