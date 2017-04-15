@@ -584,13 +584,13 @@ Can be one of the following:
 
 .. _`SQLAlchemy`: http://sqlalchemy.org
 .. _`Memcached`: http://memcached.org
-.. _`Redis`: http://redis.io
+.. _`Redis`: https://redis.io
 .. _`Cassandra`: http://cassandra.apache.org/
 .. _`Elasticsearch`: https://aws.amazon.com/elasticsearch-service/
 .. _`IronCache`: http://www.iron.io/cache
 .. _`CouchDB`: http://www.couchdb.com/
-.. _`Couchbase`: http://www.couchbase.com/
-.. _`Consul`: http://consul.io/
+.. _`Couchbase`: https://www.couchbase.com/
+.. _`Consul`: https://consul.io/
 
 .. setting:: result_serializer
 

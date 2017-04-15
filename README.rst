@@ -4,7 +4,7 @@
 
 :Version: 4.0.2 (latentcall)
 :Web: http://celeryproject.org/
-:Download: http://pypi.python.org/pypi/celery/
+:Download: https://pypi.python.org/pypi/celery/
 :Source: https://github.com/celery/celery/
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
   python, distributed, actors
@@ -154,8 +154,8 @@ It supports...
 .. _`Eventlet`: http://eventlet.net/
 .. _`gevent`: http://gevent.org/
 
-.. _RabbitMQ: http://rabbitmq.com
-.. _Redis: http://redis.io
+.. _RabbitMQ: https://rabbitmq.com
+.. _Redis: https://redis.io
 .. _SQLAlchemy: http://sqlalchemy.org
 
 Framework Integration
@@ -182,15 +182,15 @@ The integration packages aren't strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
 database connections at ``fork``.
 
-.. _`Django`: http://djangoproject.com/
+.. _`Django`: https://djangoproject.com/
 .. _`Pylons`: http://pylonsproject.org/
 .. _`Flask`: http://flask.pocoo.org/
 .. _`web2py`: http://web2py.com/
-.. _`Bottle`: http://bottlepy.org/
+.. _`Bottle`: https://bottlepy.org/
 .. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
-.. _`pyramid_celery`: http://pypi.python.org/pypi/pyramid_celery/
-.. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
-.. _`web2py-celery`: http://code.google.com/p/web2py-celery/
+.. _`pyramid_celery`: https://pypi.python.org/pypi/pyramid_celery/
+.. _`celery-pylons`: https://pypi.python.org/pypi/celery-pylons
+.. _`web2py-celery`: https://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
 
@@ -323,7 +323,7 @@ Downloading and installing from source
 
 Download the latest version of Celery from PyPI:
 
-http://pypi.python.org/pypi/celery/
+https://pypi.python.org/pypi/celery/
 
 You can install it by doing the following,:
 
@@ -379,7 +379,7 @@ Mailing list
 For discussions about the usage, development, and future of Celery,
 please join the `celery-users`_ mailing list.
 
-.. _`celery-users`: http://groups.google.com/group/celery-users/
+.. _`celery-users`: https://groups.google.com/group/celery-users/
 
 .. _irc-channel:
 
@@ -389,7 +389,7 @@ IRC
 Come chat with us on IRC. The **#celery** channel is located at the `Freenode`_
 network.
 
-.. _`Freenode`: http://freenode.net
+.. _`Freenode`: https://freenode.net
 
 .. _bug-tracker:
 
@@ -404,7 +404,7 @@ to our issue tracker at https://github.com/celery/celery/issues/
 Wiki
 ====
 
-http://wiki.github.com/celery/celery/
+https://wiki.github.com/celery/celery/
 
 .. _contributing-short:
 
@@ -446,13 +446,13 @@ file in the top distribution directory for the full license text.
 
 .. |wheel| image:: https://img.shields.io/pypi/wheel/celery.svg
     :alt: Celery can be installed via wheel
-    :target: http://pypi.python.org/pypi/celery/
+    :target: https://pypi.python.org/pypi/celery/
 
 .. |pyversion| image:: https://img.shields.io/pypi/pyversions/celery.svg
     :alt: Supported Python versions.
-    :target: http://pypi.python.org/pypi/celery/
+    :target: https://pypi.python.org/pypi/celery/
 
 .. |pyimp| image:: https://img.shields.io/pypi/implementation/celery.svg
     :alt: Support Python implementations.
-    :target: http://pypi.python.org/pypi/celery/
+    :target: https://pypi.python.org/pypi/celery/
 

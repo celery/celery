@@ -1,6 +1,6 @@
 # Sample script to install Python and pip under Windows
 # Authors: Olivier Grisel and Kyle Kastner
-# License: CC0 1.0 Universal: http://creativecommons.org/publicdomain/zero/1.0/
+# License: CC0 1.0 Universal: https://creativecommons.org/publicdomain/zero/1.0/
 
 $BASE_URL = "https://www.python.org/ftp/python/"
 $GET_PIP_URL = "https://bootstrap.pypa.io/get-pip.py"
