@@ -1817,7 +1817,7 @@ The setting must be a dict the keys:
 *  ``ssl_cert_reqs`` (required): one of the ``SSLContext.verify_mode`` values:
     * ``ssl.CERT_NONE``
     * ``ssl.CERT_OPTIONAL``
-    * ``ssl.CERT_REQURIED``
+    * ``ssl.CERT_REQUIRED``
 *  ``ssl_ca_certs`` (optional): path to the CA certificate
 *  ``ssl_certfile`` (optional): path to the client certificate
 *  ``ssl_keyfile`` (optional): path to the client key
