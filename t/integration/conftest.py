@@ -54,6 +54,11 @@ def manager(app, celery_session_worker):
     return Manager(app)
 
 
+@pytest.fixture
+def uses_sqs_transport(app):
+    return app.conf.broker_url.startswith('sqs://')
+
+
 @pytest.fixture(autouse=True)
 def ZZZZ_set_app_current(app):
     app.set_current()
