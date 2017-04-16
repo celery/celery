@@ -132,6 +132,15 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             'socket_connect_timeout':
                 socket_connect_timeout and float(socket_connect_timeout),
         }
+
+        # "redis_backend_use_ssl" must be a dict with the keys:
+        # 'ssl_cert_reqs', 'ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile'
+        # (the same as "broker_use_ssl")
+        ssl = _get('redis_backend_use_ssl')
+        if ssl:
+            self.connparams.update(ssl)
+            self.connparams['connection_class'] = redis.SSLConnection
+
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
         self.url = url

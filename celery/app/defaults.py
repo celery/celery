@@ -152,6 +152,7 @@ NAMESPACES = Namespace(
     redis=Namespace(
         __old__=old_ns('celery_redis'),
 
+        backend_use_ssl=Option(type='dict'),
         db=Option(type='int'),
         host=Option(type='string'),
         max_connections=Option(type='int'),
