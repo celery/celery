@@ -56,8 +56,9 @@ class test_chain:
         redis_connection.delete('redis-echo')
 
     @flaky
-    def test_parent_ids(self, manager, num=10):
-        assert manager.inspect().ping()
+    def test_parent_ids(self, manager, uses_sqs_transport, num=10):
+        if not uses_sqs_transport:
+            assert manager.inspect().ping()
         c = chain(ids.si(i=i) for i in range(num))
         c.freeze()
         res = c()
@@ -88,8 +89,9 @@ class test_chain:
 class test_group:
 
     @flaky
-    def test_parent_ids(self, manager):
-        assert manager.inspect().ping()
+    def test_parent_ids(self, manager, uses_sqs_transport):
+        if not uses_sqs_transport:
+            assert manager.inspect().ping()
         g = (
             ids.si(i=1) |
             ids.si(i=2) |
