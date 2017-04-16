@@ -101,6 +101,11 @@ class BaseSchedule(object):
             return timezone.to_local_fallback(dt)
         return dt
 
+    def __eq__(self, other):
+        if isinstance(other, BaseSchedule):
+            return other.nowfun == self.nowfun
+        return NotImplemented
+
 
 @python_2_unicode_compatible
 class schedule(BaseSchedule):
@@ -398,6 +403,7 @@ class crontab(BaseSchedule):
         self._orig_day_of_week = cronfield(day_of_week)
         self._orig_day_of_month = cronfield(day_of_month)
         self._orig_month_of_year = cronfield(month_of_year)
+        self._orig_kwargs = kwargs
         self.hour = self._expand_cronspec(hour, 24)
         self.minute = self._expand_cronspec(minute, 60)
         self.day_of_week = self._expand_cronspec(day_of_week, 7)
@@ -529,7 +535,12 @@ class crontab(BaseSchedule):
                                  self._orig_hour,
                                  self._orig_day_of_week,
                                  self._orig_day_of_month,
-                                 self._orig_month_of_year), None)
+                                 self._orig_month_of_year), self._orig_kwargs)
+
+    def __setstate__(self, state):
+        # Calling super's init because the kwargs aren't necessarily passed in
+        # the same form as they are stored by the superclass
+        super(crontab, self).__init__(**state)
 
     def remaining_delta(self, last_run_at, tz=None, ffwd=ffwd):
         # pylint: disable=redefined-outer-name
@@ -624,7 +635,8 @@ class crontab(BaseSchedule):
                 other.day_of_month == self.day_of_month and
                 other.day_of_week == self.day_of_week and
                 other.hour == self.hour and
-                other.minute == self.minute
+                other.minute == self.minute and
+                super(crontab, self).__eq__(other)
             )
         return NotImplemented
 
