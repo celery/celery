@@ -64,6 +64,11 @@ before_install:
               sleep 10
               curl localhost:8000
           fi
+    - |
+        if [[ "$TOXENV" == *sqs ]]; then
+            # Start moto server for SQS
+            ./.travis-ci/integration/sqs/start-sqs-mock-server.sh
+        fi
 after_success:
   - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml
   - .tox/$TRAVIS_PYTHON_VERSION/bin/codecov -e TOXENV
