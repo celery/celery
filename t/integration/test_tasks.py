@@ -7,10 +7,11 @@ from .tasks import print_unicode, retry_once, sleeping
 class test_tasks:
 
     @flaky
-    def test_task_accepted(self, manager, sleep=1):
+    def test_task_accepted(self, manager, uses_sqs_transport, sleep=1):
         r1 = sleeping.delay(sleep)
         sleeping.delay(sleep)
-        manager.assert_accepted([r1.id])
+        if not uses_sqs_transport:
+            manager.assert_accepted([r1.id])
 
     @flaky
     def test_task_retried(self):
