@@ -1,5 +1,7 @@
 #!/bin/bash -x
 
+set -e -u
+
 MOTO_DIRECTORY="$TRAVIS_BUILD_DIR/servers/moto"
 mkdir -p "$MOTO_DIRECTORY"
 cd $MOTO_DIRECTORY
