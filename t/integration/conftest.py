@@ -63,8 +63,8 @@ def uses_sqs_transport(app):
 def enable_boto3_logging(app):
     if uses_sqs_transport(app):
         import logging
-        logging.getLogger('boto3').setLevel(logging.DEBUG)
-        logging.getLogger('botocore').setLevel(logging.DEBUG)
+        logging.getLogger('boto3').setLevel(logging.INFO)
+        logging.getLogger('botocore').setLevel(logging.INFO)
 
 
 @pytest.fixture(autouse=True)
