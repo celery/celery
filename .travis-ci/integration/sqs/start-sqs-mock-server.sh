@@ -9,7 +9,10 @@ cd $MOTO_DIRECTORY
 virtualenv moto-env
 git clone https://github.com/spulec/moto.git moto-git
 $MOTO_DIRECTORY/./moto-env/bin/pip install -U pip
-cd moto-git && $MOTO_DIRECTORY/./moto-env/bin/pip install .[server]
+cd moto-git
+# Use specific working commit
+git checkout df84675ae67e717449f01fafe3a022eb14984e26
+$MOTO_DIRECTORY/./moto-env/bin/pip install .[server]
 
 SUPERVISORD_CONF_PATH=/etc/supervisor/conf.d/moto-server-sqs.conf
 echo '[program:moto-server-sqs]' | sudo tee "$SUPERVISORD_CONF_PATH"
