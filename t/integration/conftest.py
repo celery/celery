@@ -59,6 +59,14 @@ def uses_sqs_transport(app):
     return app.conf.broker_url.startswith('sqs://')
 
 
+@pytest.fixture(autouse=True, scope='function')
+def enable_boto3_logging(app):
+    if uses_sqs_transport(app):
+        import logging
+        logging.getLogger('boto3').setLevel(logging.DEBUG)
+        logging.getLogger('botocore').setLevel(logging.DEBUG)
+
+
 @pytest.fixture(autouse=True)
 def ZZZZ_set_app_current(app):
     app.set_current()

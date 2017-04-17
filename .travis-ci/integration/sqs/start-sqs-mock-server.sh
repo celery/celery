@@ -16,7 +16,7 @@ $MOTO_DIRECTORY/./moto-env/bin/pip install .[server]
 
 SUPERVISORD_CONF_PATH=/etc/supervisor/conf.d/moto-server-sqs.conf
 echo '[program:moto-server-sqs]' | sudo tee "$SUPERVISORD_CONF_PATH"
-echo "command=$MOTO_DIRECTORY/./moto-env/bin/moto_server sqs -H 127.0.0.1 -p 80" | sudo tee -a "$SUPERVISORD_CONF_PATH"
+echo "command=$MOTO_DIRECTORY/./moto-env/bin/moto_server sqs -H 0.0.0.0 -p 80" | sudo tee -a "$SUPERVISORD_CONF_PATH"
 echo "user=root" | sudo tee -a "$SUPERVISORD_CONF_PATH"
 echo 'stdout_logfile=/var/log/moto-server-sqs.log' | sudo tee -a "$SUPERVISORD_CONF_PATH"
 echo 'stderr_logfile=/var/log/moto-server-sqs.log' | sudo tee -a "$SUPERVISORD_CONF_PATH"

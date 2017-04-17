@@ -85,3 +85,6 @@ notifications:
 services:
     - rabbitmq
     - redis
+addons:
+  hosts:
+    - sqs.us-east-1.amazonaws.com
