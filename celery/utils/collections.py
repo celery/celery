@@ -578,14 +578,14 @@ class LimitedSet(object):
         now = now or time.time()
         if item in self._data:
             self.discard(item)
-        if inserted <= self.last_added:
+        if now <= self.last_added:
             # Force uniqueness
-            inserted = self.last_added + 1e-6
+            now = self.last_added + 1e-6
         entry = (now, item)
         self._data[item] = entry
         heappush(self._heap, entry)
         # Update our last-inserted time for future reference
-        self.last_added = inserted
+        self.last_added = now
         if self.maxlen and len(self._data) >= self.maxlen:
             self.purge()
 
