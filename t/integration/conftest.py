@@ -59,12 +59,21 @@ def uses_sqs_transport(app):
     return app.conf.broker_url.startswith('sqs://')
 
 
-@pytest.fixture(autouse=True, scope='function')
-def enable_boto3_logging(app):
-    if uses_sqs_transport(app):
+@pytest.fixture(autouse=True, scope='session')
+def enable_boto3_logging():
+    if celery_config()['broker_url'].startswith('sqs://'):
         import logging
         logging.getLogger('boto3').setLevel(logging.INFO)
         logging.getLogger('botocore').setLevel(logging.INFO)
+        yield
+
+
+@pytest.fixture(autouse=True, scope='function')
+def redis_backend_cleanup():
+    if celery_config()['result_backend'].startswith('redis://'):
+        import redis
+        yield
+        redis.StrictRedis().flushall()
 
 
 @pytest.fixture(autouse=True)
