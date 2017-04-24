@@ -49,7 +49,6 @@ __all__ = [
 ]
 
 logger = get_logger(__name__)
-info = logger.info
 
 #: Format string used to log task success.
 LOG_SUCCESS = """\
@@ -177,7 +176,7 @@ class TraceInfo(object):
             task.on_retry(reason.exc, req.id, req.args, req.kwargs, einfo)
             signals.task_retry.send(sender=task, request=req,
                                     reason=reason, einfo=einfo)
-            info(LOG_RETRY, {
+            _info(LOG_RETRY, {
                 'id': req.id,
                 'name': task.name,
                 'exc': text_t(reason),
@@ -436,7 +435,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         if success_receivers:
                             send_success(sender=task, result=retval)
                         if _does_info:
-                            info(LOG_SUCCESS, {
+                            _info(LOG_SUCCESS, {
                                 'id': uuid, 'name': name,
                                 'return_value': Rstr, 'runtime': T,
                             })
@@ -623,3 +622,7 @@ def _install_stack_protection():
             return orig(self, *args, **kwargs)
         BaseTask.__call__ = __protected_call__
         BaseTask._stackprotected = True
+
+
+def _info(fmt, context):
+    logger.info(fmt, context, extra={'data': context})
