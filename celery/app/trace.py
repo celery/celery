@@ -115,6 +115,14 @@ _patched = {}
 trace_ok_t = namedtuple('trace_ok_t', ('retval', 'info', 'runtime', 'retstr'))
 
 
+def info(fmt, context):
+    """Log 'fmt % context' with severity 'INFO'.
+
+    'context' is also passed in extra with key 'data' for custom handlers.
+    """
+    logger.info(fmt, context, extra={'data': context})
+
+
 def task_has_custom(task, attr):
     """Return true if the task overrides ``attr``."""
     return mro_lookup(task.__class__, attr, stop={BaseTask, object},
@@ -176,7 +184,7 @@ class TraceInfo(object):
             task.on_retry(reason.exc, req.id, req.args, req.kwargs, einfo)
             signals.task_retry.send(sender=task, request=req,
                                     reason=reason, einfo=einfo)
-            _info(LOG_RETRY, {
+            info(LOG_RETRY, {
                 'id': req.id,
                 'name': task.name,
                 'exc': text_t(reason),
@@ -435,7 +443,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         if success_receivers:
                             send_success(sender=task, result=retval)
                         if _does_info:
-                            _info(LOG_SUCCESS, {
+                            info(LOG_SUCCESS, {
                                 'id': uuid, 'name': name,
                                 'return_value': Rstr, 'runtime': T,
                             })
@@ -622,7 +630,3 @@ def _install_stack_protection():
             return orig(self, *args, **kwargs)
         BaseTask.__call__ = __protected_call__
         BaseTask._stackprotected = True
-
-
-def _info(fmt, context):
-    logger.info(fmt, context, extra={'data': context})
