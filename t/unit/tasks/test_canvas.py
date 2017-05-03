@@ -1,4 +1,5 @@
 from __future__ import absolute_import, unicode_literals
+import json
 import pytest
 from case import MagicMock, Mock
 from celery._state import _task_stack
@@ -259,6 +260,16 @@ class test_chain(CanvasCase):
 
     def test_from_dict_no_tasks(self):
         assert chain.from_dict(dict(chain(app=self.app)), app=self.app)
+
+    def test_from_dict_full_subtasks(self):
+        c = chain(self.add.si(1, 2), self.add.si(3, 4), self.add.si(5, 6))
+
+        serialized = json.loads(json.dumps(c))
+
+        deserialized = chain.from_dict(serialized)
+
+        for task in deserialized.tasks:
+            assert isinstance(task, Signature)
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_app_falls_back_to_default(self):
