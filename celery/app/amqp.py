@@ -540,7 +540,7 @@ class AMQP(object):
                     sender=name, body=body,
                     exchange=exchange, routing_key=routing_key,
                     declare=declare, headers=headers2,
-                    properties=kwargs, retry_policy=retry_policy,
+                    properties=properties, retry_policy=retry_policy,
                 )
             ret = producer.publish(
                 body,
