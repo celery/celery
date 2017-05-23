@@ -76,8 +76,9 @@ in this example:
                 name='Foo',
             )
 
-            # set a side effect on the patched method
-            # so that it raises the error we want.
+            # Set a side effect on the patched methods
+            # so that they raise the errors we want.
+            send_order_retry.side_effect = Retry()
             product_order.side_effect = OperationalError()
 
             with raises(Retry):
