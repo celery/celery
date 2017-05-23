@@ -69,5 +69,5 @@ class TaskDirective(PyModulelevel):
 def setup(app):
     """Setup Sphinx extension."""
     app.add_autodocumenter(TaskDocumenter)
-    app.domains['py'].directives['task'] = TaskDirective
+    app.add_directive_to_domain('py', 'task', TaskDirective)
     app.add_config_value('celery_task_prefix', '(task)', True)
