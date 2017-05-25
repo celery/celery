@@ -231,7 +231,7 @@ The worker isn't doing anything, just hanging
 ---------------------------------------------
 
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
-            or `Why is Task.delay/apply\* just hanging?`.
+            or `Why is Task.delay/apply\*/the worker just hanging?`_.
 
 .. _faq-results-unreliable:
 
