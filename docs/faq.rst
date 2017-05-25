@@ -230,8 +230,8 @@ Transaction Model and Locking`_ in the MySQL user manual.
 The worker isn't doing anything, just hanging
 ---------------------------------------------
 
-**Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
-            or `Why is Task.delay/apply\*/the worker just hanging?`_.
+**Answer:** See `MySQL is throwing deadlock errors, what can I do?`_,
+or `Why is Task.delay/apply\*/the worker just hanging?`_.
 
 .. _faq-results-unreliable:
 
