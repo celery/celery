@@ -342,7 +342,10 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
     def password(self):
         return self.connparams['password']
 
+
 class SentinelBackend(RedisBackend):
+    """Sentinel task result store."""
+
     def __init__(self, *args, **kwargs):
         super(SentinelBackend, self).__init__(*args, **kwargs)
 
