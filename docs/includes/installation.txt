@@ -161,4 +161,4 @@ pip commands:
 With git
 ~~~~~~~~
 
-Please the Contributing section.
+See :ref:`forking-and-setting-up`
