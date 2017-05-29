@@ -155,7 +155,7 @@ Example:
 
 .. code-block:: python
 
-    # Put this in your confttest.py
+    # Put this in your conftest.py
     @pytest.fixture(scope='session')
     def celery_config():
         return {
