@@ -563,6 +563,24 @@ using the virtual transports:
 Tasks
 =====
 
+.. _faq-tasks-disabling-prefetching:
+
+How can I disable prefetching of tasks?
+-------------------------------------------------------
+
+**Answer**: See the :setting:`CELERYD_PREFETCH_MULTIPLIER` setting, but note
+that tasks with ETA's/countdowns bypass prefetch limits.  If you want to
+disable prefetching for scheduled tasks, just create a new Dispatcher Task
+that accepts the desired task name as an argument (along with any other
+parameters), and schedule it to a
+special new Dispatcher Queue instead of scheduling your desired task.
+Then have several workers service the Dispatcher
+Queue, creating the desired named tasks as unscheduled ones and
+immediately dispatching them to
+the actual worker queues.  Note that you will need to use the
+:setting:`CELERY_ACKS_LATE` setting to avoid message lossage, so make sure
+your tasks are idempotent.
+
 .. _faq-tasks-connection-reuse:
 
 How can I reuse the same connection when calling tasks?
