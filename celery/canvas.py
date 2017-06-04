@@ -925,7 +925,7 @@ class group(Signature):
         [4, 8]
 
     Arguments:
-        *tasks (List[Signature]): A list of signatures that this group will 
+        *tasks (List[Signature]): A list of signatures that this group will
             call. If there's only one argument, and that argument is an
             iterable, then that'll define the list of signatures instead.
         **options (Any): Execution options applied to all tasks
