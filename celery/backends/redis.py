@@ -184,7 +184,7 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         connparams.update(query)
         return connparams
 
-    def on_task_call(self, producer, task_id):
+    def on_task_call(self, producer, task_id, reply_to=None):
         if not task_join_will_block():
             self.result_consumer.consume_from(task_id)
 

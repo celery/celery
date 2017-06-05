@@ -32,7 +32,8 @@ __all__ = ['Context', 'Task']
 extract_exec_options = mattrgetter(
     'queue', 'routing_key', 'exchange', 'priority', 'expires',
     'serializer', 'delivery_mode', 'compression', 'time_limit',
-    'soft_time_limit', 'immediate', 'mandatory',  # imm+man is deprecated
+    'soft_time_limit', 'immediate', 'mandatory', 'reply_to',
+    # imm+man is deprecated
 )
 
 # We take __repr__ very seriously around here ;)

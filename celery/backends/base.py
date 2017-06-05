@@ -401,7 +401,7 @@ class Backend(object):
         """Cleanup actions to do at the end of a task worker process."""
         pass
 
-    def on_task_call(self, producer, task_id):
+    def on_task_call(self, producer, task_id, reply_to=None):
         return {}
 
     def add_to_chord(self, chord_id, result):
