@@ -1,5 +1,5 @@
 language: python
-sudo: required
+sudo: false
 cache: pip
 python:
   - '2.7'
@@ -13,19 +13,19 @@ env:
   - PYTHONUNBUFFERED=yes
   matrix:
   - MATRIX_TOXENV=unit
-  - MATRIX_TOXENV=integration-rabbitmq
-  - MATRIX_TOXENV=integration-redis
-  - MATRIX_TOXENV=integration-dynamodb
+  - MATRIX_TOXENV=integration-rabbitmq INTEGRATION_SERVICE=rabbitmq
+  - MATRIX_TOXENV=integration-redis INTEGRATION_SERVICE=redis
+  - MATRIX_TOXENV=integration-dynamodb INTEGRATION_SERVICE=redis
 matrix:
   include:
   - python: '3.5'
     env: TOXENV=pypy-unit PYPY_VERSION="5.3"
   - python: '3.5'
-    env: TOXENV=pypy-integration-rabbitmq PYPY_VERSION="5.3"
+    env: TOXENV=pypy-integration-rabbitmq PYPY_VERSION="5.3" INTEGRATION_SERVICE=rabbitmq
   - python: '3.5'
-    env: TOXENV=pypy-integration-redis PYPY_VERSION="5.3"
+    env: TOXENV=pypy-integration-redis PYPY_VERSION="5.3" INTEGRATION_SERVICE=redis
   - python: '3.5'
-    env: TOXENV=pypy-integration-dynamodb PYPY_VERSION="5.3"
+    env: TOXENV=pypy-integration-dynamodb PYPY_VERSION="5.3" INTEGRATION_SERVICE=redis
   - python: '3.5'
     env: TOXENV=flake8
   - python: '3.5'
@@ -52,15 +52,14 @@ before_install:
           fi
     - |
           if [[ "$TOXENV" == *dynamodb ]]; then
-              sudo apt-get install -y default-jre supervisor
-              mkdir /opt/dynamodb-local
-              cd /opt/dynamodb-local && curl -L http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_latest.tar.gz | tar zx
+              pip2 install --user supervisor
+              mkdir /home/travis/dynamodb-local
+              cd /home/travis/dynamodb-local && curl -L http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_latest.tar.gz | tar zx
               cd -
-              echo '[program:dynamodb-local]' | sudo tee /etc/supervisor/conf.d/dynamodb-local.conf
-              echo 'command=java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -inMemory' | sudo tee -a /etc/supervisor/conf.d/dynamodb-local.conf
-              echo 'directory=/opt/dynamodb-local' | sudo tee -a /etc/supervisor/conf.d/dynamodb-local.conf
-              sudo service supervisor stop
-              sudo service supervisor start
+              echo -e '[supervisord]\n[program:dynamodb-local]' | tee /home/travis/dynamodb-local/supervisord.conf
+              echo 'command=java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -inMemory' | tee -a /home/travis/dynamodb-local/supervisord.conf
+              echo 'directory=/home/travis/dynamodb-local' | tee -a /home/travis/dynamodb-local/supervisord.conf
+              /home/travis/.local/bin/supervisord -c /home/travis/dynamodb-local/supervisord.conf
               sleep 10
               curl localhost:8000
           fi
@@ -75,6 +74,4 @@ notifications:
       - "chat.freenode.net#celery"
     on_success: change
     on_failure: change
-services:
-    - rabbitmq
-    - redis
+services: ${INTEGRATION_SERVICE}
