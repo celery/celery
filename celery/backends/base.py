@@ -27,7 +27,11 @@ from celery import states
 from celery import current_app, group, maybe_signature
 from celery._state import get_current_task
 from celery.exceptions import (
-    ChordError, TimeoutError, TaskRevokedError, ImproperlyConfigured,
+    ChordError,
+    ImproperlyConfigured,
+    NotRegistered,
+    TaskRevokedError,
+    TimeoutError
 )
 from celery.five import items, string
 from celery.result import (
@@ -171,9 +175,12 @@ class Backend(object):
         old_signature = []
         for errback in request.errbacks:
             errback = self.app.signature(errback)
-            if arity_greater(errback.type.__header__, 1):
-                errback(request, exc, traceback)
-            else:
+            try:
+                if arity_greater(errback.type.__header__, 1):
+                    errback(request, exc, traceback)
+                else:
+                    old_signature.append(errback)
+            except NotRegistered:
                 old_signature.append(errback)
         if old_signature:
             # Previously errback was called as a task so we still
