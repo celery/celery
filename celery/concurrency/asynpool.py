@@ -872,6 +872,9 @@ class AsynPool(_pool.Pool):
                     else:
                         errors = 0
             finally:
+                if errors == 0:  # job successfully written
+                    job._write_to = None
+
                 hub_remove(fd)
                 write_stats[proc.index] += 1
                 # message written, so this fd is now available
