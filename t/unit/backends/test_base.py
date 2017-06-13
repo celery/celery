@@ -142,7 +142,7 @@ class test_prepare_exception:
     def test_unicode_message(self):
         message = u'\u03ac'
         x = self.b.prepare_exception(Exception(message))
-        assert x == {'exc_message': (message,), 
+        assert x == {'exc_message': (message,),
                      'exc_type': Exception.__name__,
                      'exc_module': Exception.__module__}
 
