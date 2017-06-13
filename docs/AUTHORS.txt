@@ -65,6 +65,7 @@ Iurii Kriachko <iurii.kriachko@gmail.com>
 Ivan Metzlar <metzlar@gmail.com>
 Jannis Leidel <jannis@leidel.info>
 Jason Baker <amnorvend@gmail.com>
+Jay McGrath <jaymcgrath@users.noreply.github.com>
 Jeff Balogh <me@jeffbalogh.org>
 Jeff Terrace <jterrace@gmail.com>
 Jerzy Kozera <jerzy.kozera@gmail.com>
