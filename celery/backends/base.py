@@ -237,7 +237,9 @@ class Backend(object):
         serializer = self.serializer if serializer is None else serializer
         if serializer in EXCEPTION_ABLE_CODECS:
             return get_pickleable_exception(exc)
-        return {'exc_type': type(exc).__name__, 'exc_message': exc.args, 'exc_module': type(exc).__module__}
+        return {'exc_type': type(exc).__name__,
+                'exc_message': exc.args,
+                'exc_module': type(exc).__module__}
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
@@ -245,13 +247,13 @@ class Backend(object):
             if not isinstance(exc, BaseException):
                 exc_module = exc.get('exc_module')
                 if exc_module is None:
-                    exc = create_exception_cls(
-                        from_utf8(exc['exc_type']), __name__)(exc['exc_message'])
+                    cls = create_exception_cls(
+                        from_utf8(exc['exc_type']), __name__)
                 else:
-                    exc_msg = exc['exc_message']
-                    exc_module, exc_type = map(from_utf8, [exc_module, exc['exc_type']])
-                    exc = getattr(sys.modules[exc_module], exc_type)(
-                        *exc_msg if isinstance(exc_msg, tuple) else exc_msg)
+                    exc_module = from_utf8(exc_module)
+                    cls = getattr(sys.modules[exc_module], exc['exc_type'])
+                exc_msg = exc['exc_message']
+                exc = cls(*exc_msg if isinstance(exc_msg, tuple) else exc_msg)
             if self.serializer in EXCEPTION_ABLE_CODECS:
                 exc = get_pickled_exception(exc)
         return exc
