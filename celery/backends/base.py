@@ -244,7 +244,7 @@ class Backend(object):
         if exc:
             if not isinstance(exc, BaseException):
                 exc_msg = exc['exc_message']
-                exc = getattr(sys.modules[exc['exc_module']], exc['exc_name'])(*exc_msg if isinstance(exc_msg, tuple) else exc_msg)
+                exc = getattr(sys.modules[exc['exc_module']], exc['exc_type'])(*exc_msg if isinstance(exc_msg, tuple) else exc_msg)
             if self.serializer in EXCEPTION_ABLE_CODECS:
                 exc = get_pickled_exception(exc)
         return exc
