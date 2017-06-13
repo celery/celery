@@ -251,7 +251,8 @@ class Backend(object):
                         from_utf8(exc['exc_type']), __name__)
                 else:
                     exc_module = from_utf8(exc_module)
-                    cls = getattr(sys.modules[exc_module], exc['exc_type'])
+                    exc_type = from_utf8(exc['exc_type'])
+                    cls = getattr(sys.modules[exc_module], exc_type)
                 exc_msg = exc['exc_message']
                 exc = cls(*exc_msg if isinstance(exc_msg, tuple) else exc_msg)
             if self.serializer in EXCEPTION_ABLE_CODECS:
