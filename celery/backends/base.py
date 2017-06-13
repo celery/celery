@@ -237,14 +237,14 @@ class Backend(object):
         serializer = self.serializer if serializer is None else serializer
         if serializer in EXCEPTION_ABLE_CODECS:
             return get_pickleable_exception(exc)
-        return {'exc_type': type(exc).__name__, 'exc_message': string(exc)}
+        return {'exc_type': type(exc).__name__, 'exc_args': exc.args}
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
         if exc:
             if not isinstance(exc, BaseException):
                 exc = create_exception_cls(
-                    from_utf8(exc['exc_type']), __name__)(exc['exc_message'])
+                    from_utf8(exc['exc_type']), __name__)(*exc['exc_args'])
             if self.serializer in EXCEPTION_ABLE_CODECS:
                 exc = get_pickled_exception(exc)
         return exc
