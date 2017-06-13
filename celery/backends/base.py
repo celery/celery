@@ -29,7 +29,7 @@ from celery._state import get_current_task
 from celery.exceptions import (
     ChordError, TimeoutError, TaskRevokedError, ImproperlyConfigured,
 )
-from celery.five import items, string
+from celery.five import items
 from celery.result import (
     GroupResult, ResultBase, allow_join_result, result_from_tuple,
 )
@@ -251,7 +251,7 @@ class Backend(object):
                     exc_msg = exc['exc_message']
                     exc_module, exc_type = map(from_utf8, [exc_module, exc['exc_type']])
                     exc = getattr(sys.modules[exc_module], exc_type)(
-                            *exc_msg if isinstance(exc_msg, tuple) else exc_msg)
+                        *exc_msg if isinstance(exc_msg, tuple) else exc_msg)
             if self.serializer in EXCEPTION_ABLE_CODECS:
                 exc = get_pickled_exception(exc)
         return exc
