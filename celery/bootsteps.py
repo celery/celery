@@ -367,11 +367,11 @@ class StartStopStep(Step):
 
     def start(self, parent):
         if self.obj:
-            return self.obj.start()
+            return self.obj.start(parent)
 
     def stop(self, parent):
         if self.obj:
-            return self.obj.stop()
+            return self.obj.stop(parent)
 
     def close(self, parent):
         pass
