@@ -51,7 +51,7 @@ class ConsulBackend(KeyValueStoreBackend):
 
     def _key_to_consul_key(self, key):
         if PY3:
-            key = key.encode('utf-8')
+            key = key.decode('utf-8')
         return key if self.path is None else '{0}/{1}'.format(self.path, key)
 
     def get(self, key):
