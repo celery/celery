@@ -3,6 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import os
+import random
 import threading
 import warnings
 
@@ -463,8 +464,24 @@ class Celery(object):
 
             autoretry_for = tuple(options.get('autoretry_for', ()))
             retry_kwargs = options.get('retry_kwargs', {})
+            retry_backoff = options.get('retry_backoff', False)
+            if retry_backoff is True:
+                retry_backoff = 1
+            retry_backoff_max = options.get('retry_backoff_max', 600)
+            retry_jitter = options.get('retry_jitter', True)
 
             if autoretry_for and not hasattr(task, '_orig_run'):
+
+                if retry_backoff:
+                    countdown = retry_backoff * (2 ** task.retries)
+                    if retry_jitter is True:
+                        countdown = random.randrange(countdown)
+                    elif isinstance(retry_jitter, int):
+                        jitter = random.randrange(retry_jitter)
+                        countdown += jitter * random.choice((1, -1))
+                    if retry_backoff_max:
+                        countdown = min(countdown, retry_backoff_max)
+                    retry_kwargs['countdown'] = countdown
 
                 @wraps(task.run)
                 def run(*args, **kwargs):
