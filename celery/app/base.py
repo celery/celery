@@ -473,7 +473,7 @@ class Celery(object):
             if autoretry_for and not hasattr(task, '_orig_run'):
 
                 if retry_backoff:
-                    countdown = retry_backoff * (2 ** task.retries)
+                    countdown = retry_backoff * (2 ** run.retries)
                     if retry_jitter is True:
                         countdown = random.randrange(countdown)
                     elif isinstance(retry_jitter, int):
