@@ -2,6 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import pytest
 import socket
+import tempfile
 
 from datetime import datetime, timedelta
 
@@ -130,7 +131,8 @@ class TasksCase:
         def autoretry_backoff_task(self, url):
             self.iterations += 1
             if "error" in url:
-                raise HTTPError()
+                fp = tempfile.TemporaryFile()
+                raise HTTPError(url, '500', 'Error', '', fp)
             return url
 
         self.autoretry_backoff_task = autoretry_backoff_task
@@ -272,8 +274,8 @@ class test_task_retries(TasksCase):
         self.autoretry_backoff_task.max_retries = 3
         self.autoretry_backoff_task.iterations = 0
         self.autoretry_backoff_task.apply(("http://httpbin.org/error",))
-        assert self.autoretry_backoff_task.iterations == 3
-        expected = [call(1), call(2), call(4)]
+        assert self.autoretry_backoff_task.iterations == 4
+        expected = [call(1), call(2), call(4), call(8)]
         assert randrange.call_args_list == expected
 
     def test_retry_wrong_eta_when_not_enable_utc(self):
