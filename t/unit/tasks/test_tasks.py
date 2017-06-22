@@ -5,7 +5,12 @@ import socket
 
 from datetime import datetime, timedelta
 
-from case import ContextMock, MagicMock, Mock, patch
+try:
+    from urllib.error import HTTPError
+except ImportError:  # pragma: no cover
+    from urllib2 import HTTPError
+
+from case import ContextMock, MagicMock, Mock, patch, call
 from kombu import Queue
 
 from celery import Task, group, uuid
@@ -119,6 +124,16 @@ class TasksCase:
             return a / b
 
         self.autoretry_task = autoretry_task
+
+        @self.app.task(bind=True, autoretry_for=(HTTPError,),
+                       retry_backoff=True, shared=False)
+        def autoretry_backoff_task(self, url):
+            self.iterations += 1
+            if "error" in url:
+                raise HTTPError()
+            return url
+
+        self.autoretry_backoff_task = autoretry_backoff_task
 
         @self.app.task(bind=True)
         def task_check_request_context(self):
@@ -250,6 +265,16 @@ class test_task_retries(TasksCase):
         self.autoretry_task.iterations = 0
         self.autoretry_task.apply((1, 0))
         assert self.autoretry_task.iterations == 6
+
+    @patch('random.randrange')
+    def test_autoretry_backoff(self, randrange):
+        randrange.side_effect = lambda i: i
+        self.autoretry_backoff_task.max_retries = 3
+        self.autoretry_backoff_task.iterations = 0
+        self.autoretry_backoff_task.apply(("http://httpbin.org/error",))
+        assert self.autoretry_backoff_task.iterations == 3
+        expected = [call(1), call(2), call(4)]
+        assert randrange.call_args_list == expected
 
     def test_retry_wrong_eta_when_not_enable_utc(self):
         """Issue #3753"""
