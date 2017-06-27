@@ -785,12 +785,12 @@ class solar(BaseSchedule):
         try:
             if self.use_center:
                 next_utc = getattr(self.cal, self.method)(
-                	self.ephem.Sun(),
-                	start=last_run_at_utc, use_center=self.use_center,
+                    self.ephem.Sun(),
+                    start=last_run_at_utc, use_center=self.use_center
                 )
             else:
                 next_utc = getattr(self.cal, self.method)(
-                        self.ephem.Sun(),start=last_run_at_utc
+                    self.ephem.Sun(), start=last_run_at_utc
                 )
 
         except self.ephem.CircumpolarError:  # pragma: no cover
