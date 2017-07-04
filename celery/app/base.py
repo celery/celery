@@ -472,22 +472,23 @@ class Celery(object):
 
             if autoretry_for and not hasattr(task, '_orig_run'):
 
-                if retry_backoff:
-                    countdown = retry_backoff * (2 ** task.request.retries)
-                    if retry_jitter is True:
-                        countdown = random.randrange(countdown)
-                    elif isinstance(retry_jitter, int):
-                        jitter = random.randrange(retry_jitter)
-                        countdown += jitter * random.choice((1, -1))
-                    if retry_backoff_max:
-                        countdown = min(countdown, retry_backoff_max)
-                    retry_kwargs['countdown'] = countdown
-
                 @wraps(task.run)
                 def run(*args, **kwargs):
                     try:
                         return task._orig_run(*args, **kwargs)
                     except autoretry_for as exc:
+                        if retry_backoff:
+                            countdown = (
+                                retry_backoff * (2 ** task.request.retries)
+                            )
+                            if retry_jitter is True:
+                                countdown = random.randrange(countdown)
+                            elif isinstance(retry_jitter, int):
+                                jitter = random.randrange(retry_jitter)
+                                countdown += jitter * random.choice((1, -1))
+                            if retry_backoff_max:
+                                countdown = min(countdown, retry_backoff_max)
+                            retry_kwargs['countdown'] = countdown
                         raise task.retry(exc=exc, **retry_kwargs)
 
                 task._orig_run, task.run = task.run, run
