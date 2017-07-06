@@ -93,7 +93,11 @@ class test_ElasticsearchBackend:
         x._server.index.return_value = expected_result
 
         body = {"field1": "value1"}
-        x._index(id=sentinel.task_id, body=body, kwarg1='test1')
+        x._index(
+            id=str(sentinel.task_id).encode(),
+            body=body,
+            kwarg1='test1'
+        )
         x._server.index.assert_called_once_with(
             id=str(sentinel.task_id),
             doc_type=x.doc_type,
@@ -114,7 +118,11 @@ class test_ElasticsearchBackend:
         x._server.index.return_value = expected_result
 
         body = {b"field1": "value1"}
-        x._index(id=sentinel.task_id, body=body, kwarg1='test1')
+        x._index(
+            id=str(sentinel.task_id).encode(),
+            body=body,
+            kwarg1='test1'
+        )
         x._server.index.assert_called_once_with(
             id=str(sentinel.task_id),
             doc_type=x.doc_type,
