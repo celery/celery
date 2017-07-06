@@ -96,7 +96,7 @@ class test_ElasticsearchBackend:
         body = {"field1": "value1"}
         x._index(id=sentinel.task_id, body=body, kwarg1='test1')
         x._server.index.assert_called_once_with(
-            id=string(sentinel.task_id),
+            id=sentinel.task_id if PY2 else sentinel.task_id.decode(),
             doc_type=x.doc_type,
             index=x.index,
             body=body,
