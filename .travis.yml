@@ -1,5 +1,6 @@
 language: python
 sudo: required
+dist: trusty
 cache: pip
 python:
   - '2.7'
