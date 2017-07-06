@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 import pytest
 from case import Mock, sentinel, skip
 from celery.app import backends
-from celery.five import string
+from celery.five import PY2
 from celery.backends import elasticsearch as module
 from celery.backends.elasticsearch import ElasticsearchBackend
 from celery.exceptions import ImproperlyConfigured
@@ -117,7 +117,7 @@ class test_ElasticsearchBackend:
         body = {b"field1": "value1"}
         x._index(id=sentinel.task_id, body=body, kwarg1='test1')
         x._server.index.assert_called_once_with(
-            id=string(sentinel.task_id),
+            id=sentinel.task_id if PY2 else sentinel.task_id.decode(),
             doc_type=x.doc_type,
             index=x.index,
             body={"field1": "value1"},
