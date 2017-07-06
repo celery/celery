@@ -105,7 +105,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             self._index(key, data, refresh=True)
 
     def _index(self, id, body, **kwargs):
-        body = dict((string(k), v) for k, v in body.items())
+        body = {string(k): v for k, v in five.items(body)}
         return self.server.index(
             id=string(id),
             index=self.index,
