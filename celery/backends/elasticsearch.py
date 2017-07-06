@@ -4,7 +4,7 @@ from __future__ import absolute_import, unicode_literals
 from datetime import datetime
 from kombu.utils.url import _parse_url
 from celery.exceptions import ImproperlyConfigured
-from celery.five import string
+from celery.five import string, items
 from .base import KeyValueStoreBackend
 try:
     import elasticsearch
@@ -105,7 +105,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             self._index(key, data, refresh=True)
 
     def _index(self, id, body, **kwargs):
-        body = {string(k): v for k, v in five.items(body)}
+        body = {string(k): v for k, v in items(body)}
         return self.server.index(
             id=string(id),
             index=self.index,
