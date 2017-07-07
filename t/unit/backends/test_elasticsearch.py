@@ -2,7 +2,6 @@ from __future__ import absolute_import, unicode_literals
 import pytest
 from case import Mock, sentinel, skip
 from celery.app import backends
-from celery.five import string
 from celery.backends import elasticsearch as module
 from celery.backends.elasticsearch import ElasticsearchBackend
 from celery.exceptions import ImproperlyConfigured
@@ -94,12 +93,41 @@ class test_ElasticsearchBackend:
         x._server.index.return_value = expected_result
 
         body = {"field1": "value1"}
-        x._index(id=sentinel.task_id, body=body, kwarg1='test1')
+        x._index(
+            id=str(sentinel.task_id).encode(),
+            body=body,
+            kwarg1='test1'
+        )
         x._server.index.assert_called_once_with(
-            id=string(sentinel.task_id),
+            id=str(sentinel.task_id),
             doc_type=x.doc_type,
             index=x.index,
             body=body,
+            kwarg1='test1'
+        )
+
+    def test_index_bytes_key(self):
+        x = ElasticsearchBackend(app=self.app)
+        x.doc_type = 'test-doc-type'
+        x._server = Mock()
+        x._server.index = Mock()
+        expected_result = dict(
+            _id=sentinel.task_id,
+            _source={'result': sentinel.result}
+        )
+        x._server.index.return_value = expected_result
+
+        body = {b"field1": "value1"}
+        x._index(
+            id=str(sentinel.task_id).encode(),
+            body=body,
+            kwarg1='test1'
+        )
+        x._server.index.assert_called_once_with(
+            id=str(sentinel.task_id),
+            doc_type=x.doc_type,
+            index=x.index,
+            body={"field1": "value1"},
             kwarg1='test1'
         )
 
