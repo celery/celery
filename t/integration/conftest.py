@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 import os
+import time
 import pytest
 from functools import wraps
 from celery.contrib.testing.manager import Manager
@@ -25,7 +26,8 @@ def flaky(fun):
 def celery_config():
     return {
         'broker_url': TEST_BROKER,
-        'result_backend': TEST_BACKEND
+        'result_backend': TEST_BACKEND,
+        'task_default_queue': 'queue_{}'.format(int(time.time() * 1000))
     }
 
 
@@ -52,6 +54,27 @@ def app(celery_app):
 @pytest.fixture
 def manager(app, celery_session_worker):
     return Manager(app)
+
+
+@pytest.fixture
+def uses_sqs_transport(app):
+    return app.conf.broker_url.startswith('sqs://')
+
+
+@pytest.fixture(autouse=True, scope='session')
+def enable_boto3_logging():
+    if celery_config()['broker_url'].startswith('sqs://'):
+        import logging
+        logging.getLogger('boto3').setLevel(logging.INFO)
+        logging.getLogger('botocore').setLevel(logging.INFO)
+
+
+@pytest.fixture(autouse=True, scope='function')
+def redis_backend_cleanup():
+    yield
+    if celery_config()['result_backend'].startswith('redis://'):
+        import redis
+        redis.StrictRedis().flushall()
 
 
 @pytest.fixture(autouse=True)

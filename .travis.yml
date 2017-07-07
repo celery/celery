@@ -17,6 +17,7 @@ env:
   - MATRIX_TOXENV=integration-rabbitmq
   - MATRIX_TOXENV=integration-redis
   - MATRIX_TOXENV=integration-dynamodb
+  - MATRIX_TOXENV=integration-sqs
 matrix:
   include:
   - python: '3.5'
@@ -65,6 +66,12 @@ before_install:
               sleep 10
               curl localhost:8000
           fi
+    - |
+        if [[ "$TOXENV" == *sqs ]]; then
+            # Start moto server for SQS
+            ./.travis-ci/integration/sqs/start-sqs-mock-server.sh
+            tail -F /var/log/moto-server-sqs.log &
+        fi
 after_success:
   - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml
   - .tox/$TRAVIS_PYTHON_VERSION/bin/codecov -e TOXENV
@@ -79,3 +86,6 @@ notifications:
 services:
     - rabbitmq
     - redis
+addons:
+  hosts:
+    - sqs.us-east-1.amazonaws.com
