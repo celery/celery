@@ -7,6 +7,7 @@ python:
   - '3.4'
   - '3.5'
   - '3.6'
+  - 'pypy-5.3.1'
 os:
     - linux
 env:
