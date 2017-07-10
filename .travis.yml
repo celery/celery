@@ -53,7 +53,7 @@ before_install:
           fi
     - |
           if [[ "$TOXENV" == *dynamodb ]]; then
-              sudo apt-get install -y default-jre supervisor
+              sudo apt-get update && apt-get install -y default-jre supervisor
               mkdir /opt/dynamodb-local
               cd /opt/dynamodb-local && curl --retry 5 --retry-delay 1 -L http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_latest.tar.gz | tar zx
               cd -
