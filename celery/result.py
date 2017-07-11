@@ -92,7 +92,7 @@ class AsyncResult(ResultBase):
         self.id = id
         self.backend = backend or self.app.backend
         self.parent = parent
-        self.on_ready = promise(self._on_fulfilled, weak=True)
+        self.on_ready = promise(self._on_fulfilled)
         self._cache = None
 
     def then(self, callback, on_error=None, weak=False):
@@ -173,7 +173,7 @@ class AsyncResult(ResultBase):
             assert_will_not_block()
         _on_interval = promise()
         if follow_parents and propagate and self.parent:
-            on_interval = promise(self._maybe_reraise_parent_error, weak=True)
+            on_interval = promise(self._maybe_reraise_parent_error)
             self._maybe_reraise_parent_error()
         if on_interval:
             _on_interval.then(on_interval)
@@ -467,7 +467,7 @@ class ResultSet(ResultBase):
         self.on_ready = promise(args=(self,))
         self._on_full = ready_barrier or barrier(results)
         if self._on_full:
-            self._on_full.then(promise(self.on_ready, weak=True))
+            self._on_full.then(promise(self.on_ready))
 
     def add(self, result):
         """Add :class:`AsyncResult` as a new member of the set.
