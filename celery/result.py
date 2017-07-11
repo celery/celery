@@ -467,7 +467,7 @@ class ResultSet(ResultBase):
         self.on_ready = promise(args=(self,))
         self._on_full = ready_barrier or barrier(results)
         if self._on_full:
-            self._on_full.then(promise(self.on_ready))
+            self._on_full.then(promise(self._on_ready))
 
     def add(self, result):
         """Add :class:`AsyncResult` as a new member of the set.
