@@ -413,7 +413,7 @@ Using custom scheduler classes
 ------------------------------
 
 Custom scheduler classes can be specified on the command-line (the
-:option:`-S <celery beat -S>` argument).
+:option:`--scheduler <celery beat --scheduler>` argument).
 
 The default scheduler is the :class:`celery.beat.PersistentScheduler`,
 that simply keeps track of the last run times in a local :mod:`shelve`
@@ -447,10 +447,12 @@ To install and use this extension:
 
         $ python manage.py migrate
 
-#. Start the :program:`celery beat` service using the ``django`` scheduler:
+#. Start the :program:`celery beat` service using the ``django_celery_beat.schedulers:DatabaseScheduler`` scheduler:
 
     .. code-block:: console
 
-        $ celery -A proj beat -l info -S django
+        $ celery -A proj beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+   Note:  You may also add this as an settings option directly.
 
 #. Visit the Django-Admin interface to set up some periodic tasks.
