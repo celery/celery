@@ -6,7 +6,7 @@ python:
   - '2.7'
   - '3.4'
   - '3.5'
-  - '3.6'  
+  - '3.6'
 os:
     - linux
 env:
@@ -40,7 +40,7 @@ matrix:
 before_install:
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
-          if [ "$TOXENV" = "pypy*" ]; then
+          if [ "$TOXENV" = "pypy" ]; then
             export PYENV_ROOT="$HOME/.pyenv"
             if [ -f "$PYENV_ROOT/bin/pyenv" ]; then
               cd "$PYENV_ROOT" && git pull
