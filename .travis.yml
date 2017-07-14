@@ -6,8 +6,7 @@ python:
   - '2.7'
   - '3.4'
   - '3.5'
-  - '3.6'
-  - 'pypy-5.3.1'
+  - '3.6'  
 os:
     - linux
 env:
@@ -46,11 +45,12 @@ before_install:
             if [ -f "$PYENV_ROOT/bin/pyenv" ]; then
               cd "$PYENV_ROOT" && git pull
             else
-              rm -rf "$PYENV_ROOT" && git clone --depth 1 https://github.com/yyuu/pyenv.git "$PYENV_ROOT"
+              rm -rf "$PYENV_ROOT" && git clone --depth 1 https://github.com/pyenv/pyenv.git "$PYENV_ROOT"
             fi
             "$PYENV_ROOT/bin/pyenv" install "$PYPY_VERSION"
-            virtualenv --python="$PYENV_ROOT/versions/pypy-$PYPY_VERSION/bin/python" "$HOME/virtualenvs/$PYPY_VERSION"
+            virtualenv --python="$PYENV_ROOT/versions/$PYPY_VERSION/bin/python" "$HOME/virtualenvs/$PYPY_VERSION"
             source "$HOME/virtualenvs/$PYPY_VERSION/bin/activate"
+            which python
           fi
     - |
           if [[ "$TOXENV" == *dynamodb ]]; then
