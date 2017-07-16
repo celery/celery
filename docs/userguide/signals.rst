@@ -499,6 +499,27 @@ Dispatched when Celery sends a worker heartbeat.
 
 Sender is the :class:`celery.worker.heartbeat.Heart` instance.
 
+.. signal:: worker_shutting_down
+
+``worker_shutting_down``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Dispatched when the worker begins the shutdown process.
+
+Provides arguments:
+
+* ``sig``
+
+    The POSIX signal that was received.
+
+* ``how``
+
+    The shutdown method, warm or cold.
+
+* ``exitcode``
+
+    The exitcode that will be used when the main process exits.
+
 .. signal:: worker_process_init
 
 ``worker_process_init``
