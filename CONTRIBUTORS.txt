@@ -236,6 +236,7 @@ Jianjian Yu, 2017/04/09
 Brian May, 2017/04/10
 Dmytro Petruk, 2017/04/12
 Joey Wilhelm, 2017/04/12
+Yoichi Nakayama, 2017/04/25
 Simon Schmidt, 2017/05/19
 Anthony Lukach, 2017/05/23
 Samuel Dion-Girardeau, 2017/05/29
