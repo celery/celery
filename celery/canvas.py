@@ -531,8 +531,7 @@ class _chain(Signature):
         if tasks:
             if isinstance(tasks, tuple):  # aaaargh
                 tasks = d['kwargs']['tasks'] = list(tasks)
-            # First task must be signature object to get app
-            tasks[0] = maybe_signature(tasks[0], app=app)
+            tasks = [maybe_signature(task, app=app) for task in tasks]
         return _upgrade(d, _chain(tasks, app=app, **d['options']))
 
     def __init__(self, *tasks, **options):
@@ -926,9 +925,9 @@ class group(Signature):
         [4, 8]
 
     Arguments:
-        *tasks (Signature): A list of signatures that this group will call.
-            If there's only one argument, and that argument is an iterable,
-            then that'll define the list of signatures instead.
+        *tasks (List[Signature]): A list of signatures that this group will
+            call. If there's only one argument, and that argument is an
+            iterable, then that'll define the list of signatures instead.
         **options (Any): Execution options applied to all tasks
             in the group.
 

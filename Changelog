@@ -8,7 +8,162 @@ This document contains change notes for bugfix releases in
 the 4.0.x series (latentcall), please see :ref:`whatsnew-4.0` for
 an overview of what's new in Celery 4.0.
 
-.. _version-4.0.2:
+.. _version-4.0.3:
+
+4.0.3
+=====
+:release-date: 2017-??-?? ??:?? PM PST
+:release-by: Ask Solem
+
+- **Requirements**
+
+    - Now depends on :ref:`Kombu 4.0.3 <kombu:version-4.0.3>`.
+
+- **Results**: Elasticsearch now reuses fields when new results are added.
+
+    Contributed by **Mike Chen**.
+
+- **Results**: Fixed MongoDB integration when using binary encodings
+  (Issue #3575).
+
+    Contributed by **Andrew de Quincey**.
+
+- **Worker**: Making missing ``*args`` and ``**kwargs`` in Task protocol 1
+return empty value in protocol 2 (Issue #3687).
+
+    Contributed by **Roman Sichny**.
+
+- **App**: Fixed :exc:`TypeError` in AMQP when using deprecated signal
+  (Issue #3707).
+
+    Contributed by :github_user:`michael-k`.
+
+- **Beat**: Added a transparent method to update the scheduler heap.
+
+    Contributed by **Alejandro Pernin**.
+
+- **Task**: Fixed handling of tasks with keyword arguments on Python 3
+  (Issue #3657).
+
+    Contributed by **Roman Sichny**.
+
+- **Task**: Fixed request context for blocking task apply by adding missing
+  hostname attribute.
+
+    Contributed by **Marat Sharafutdinov**.
+
+- **Task**: Added option to run subtasks synchronously with
+  ``disable_sync_subtasks`` argument.
+
+    Contributed by :github_user:`shalev67`.
+
+- **App**: Fixed chaining of replaced tasks (Issue #3726).
+
+    Contributed by **Morgan Doocy**.
+
+- **Canvas**: Fixed bug where replaced tasks with groups were not completing
+  (Issue #3725).
+
+    Contributed by **Morgan Doocy**.
+
+- **Worker**: Fixed problem where consumer does not shutdown properly when
+  embedded in a gevent application (Issue #3745).
+
+    Contributed by **Arcadiy Ivanov**.
+
+- **Results**: Added support for using AWS DynamoDB as a result backend.
+
+    Contributed by **George Psarakis**.
+
+- **Testing**: Added caching on pip installs.
+
+    Contributed by :github_user:`orf`.
+
+- **Worker**: Prevent consuming queue before ready on startup (Issue #3620).
+
+    Contributed by **Alan Hamlett**.
+
+- **App**: Fixed task ETA issues when timezone is defined in configuration
+  (Issue #3753).
+
+    Contributed by **George Psarakis**.
+
+- **Utils**: ``maybe_make_aware`` should not modify datetime when it is
+  already timezone-aware (Issue #3849).
+
+    Contributed by **Taylor C. Richberger**.
+
+- **App**: Fixed retrying tasks with expirations (Issue #3734).
+
+    Contributed by **Brendan MacDonell**.
+
+- **Results**: Allow unicode message for exceptions raised in task
+  (Issue #3858).
+
+    Contributed by :github_user:`staticfox`.
+
+- **Canvas**: Fixed :exc:`IndexError` raised when chord has an empty header.
+
+    Contributed by **Marc Gibbons**.
+
+- **Canvas**: Avoid duplicating chains in chords (Issue #3771).
+
+    Contributed by **Ryan Hiebert** and **George Psarakis**.
+
+- **Utils**: Allow class methods to define tasks (Issue #3863).
+
+    Contributed by **George Psarakis**.
+
+- **Beat**: Populate heap when periodic tasks are changed.
+
+    Contributed by :github_user:`wzywno` and **Brian May**.
+
+- **Results**: Added support for Elasticsearch backend options settings.
+
+    Contributed by :github_user:`Acey9`.
+
+- **Events**: Ensure ``Task.as_dict()`` works when not all information about
+  task is available.
+
+    Contributed by :github_user:`tramora`.
+
+- **Schedules**: Fixed pickled crontab schedules to restore properly (Issue #3826).
+
+    Contributed by **Taylor C. Richberger**.
+
+- **Results**: Added SSL option for redis backends (Issue #3830).
+
+    Contributed by **Chris Kuehl**.
+
+- Documentation and examples improvements by:
+
+    - **Bruno Alla**
+    - **Jamie Alessio**
+    - **Peter Bittner**
+    - **Jon Dufresne**
+    - **Sergey Fursov**
+    - **Daniel Hahler**
+    - **Mike Helmick**
+    - **Marc Hörsken**
+    - **Christopher Hoskin**
+    - **Michal Kuffa**
+    - **Simon Legner**
+    - **Ed Morley**
+    - **Dmytro Petruk**
+    - **Salvatore Rinchiera**
+    - **Arnaud Rocher**
+    - **YuLun Shih**
+    - **Tom 'Biwaa' Riat**
+    - **Arthur Vigil**
+    - **Joey Wilhelm**
+    - **Jian Yu**
+    - :github_user:`baixuexue123`
+    - :github_user:`bronsen`
+    - :github_user:`michael-k`
+    - :github_user:`orf`
+    - :github_user:`3lnc`
+
+.. _version-4.0.3:
 
 4.0.2
 =====

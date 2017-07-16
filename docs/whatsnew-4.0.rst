@@ -551,7 +551,7 @@ these manually:
     class CustomTask(Task):
         def run(self):
             print('running')
-    app.register_task(CustomTask())
+    CustomTask = app.register_task(CustomTask())
 
 The best practice is to use custom task classes only for overriding
 general behavior, and then using the task decorator to realize the task:
@@ -2286,7 +2286,7 @@ Logging Settings
 ``CELERYD_LOG_LEVEL``                  :option:`celery worker --loglevel`
 ``CELERYD_LOG_FILE``                   :option:`celery worker --logfile`
 ``CELERYBEAT_LOG_LEVEL``               :option:`celery beat --loglevel`
-``CELERYBEAT_LOG_FILE``                :option:`celery beat --loglevel`
+``CELERYBEAT_LOG_FILE``                :option:`celery beat --logfile`
 ``CELERYMON_LOG_LEVEL``                celerymon is deprecated, use flower
 ``CELERYMON_LOG_FILE``                 celerymon is deprecated, use flower
 ``CELERYMON_LOG_FORMAT``               celerymon is deprecated, use flower

@@ -173,7 +173,7 @@ The ``base`` argument to the task decorator specifies the base class of the task
     class MyTask(celery.Task):
 
         def on_failure(self, exc, task_id, args, kwargs, einfo):
-            print('{0!r} failed: {1!r}'.format(task_id, exc)
+            print('{0!r} failed: {1!r}'.format(task_id, exc))
 
     @task(base=MyTask)
     def add(x, y):

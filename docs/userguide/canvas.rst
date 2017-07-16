@@ -766,7 +766,8 @@ Chords
 
     Tasks used within a chord must *not* ignore their results. If the result
     backend is disabled for *any* task (header or body) in your chord you
-    should read ":ref:`chord-important-notes`."
+    should read ":ref:`chord-important-notes`." Chords are not currently
+    supported with the RPC result backend.
 
 
 A chord is a task that only executes after all of the tasks in a group have

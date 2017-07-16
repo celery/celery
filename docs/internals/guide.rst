@@ -176,7 +176,7 @@ a large potential user base.
 
 In Django there's a global settings object, so multiple Django projects
 can't co-exist in the same process space, this later posed a problem
-for using Celery with frameworks that doesn't have this limitation.
+for using Celery with frameworks that don't have this limitation.
 
 Therefore the app concept was introduced. When using apps you use 'celery'
 objects instead of importing things from Celery sub-modules, this

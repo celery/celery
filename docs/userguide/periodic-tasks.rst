@@ -105,7 +105,7 @@ that we'll not evaluate the app at module level when using ``test.s()``.
 
 The :meth:`~@add_periodic_task` function will add the entry to the
 :setting:`beat_schedule` setting behind the scenes, and the same setting
-can also can be used to set up periodic tasks manually:
+can also be used to set up periodic tasks manually:
 
 Example: Run the `tasks.add` task every 30 seconds.
 
@@ -413,7 +413,7 @@ Using custom scheduler classes
 ------------------------------
 
 Custom scheduler classes can be specified on the command-line (the
-:option:`-S <celery beat -S>` argument).
+:option:`--scheduler <celery beat --scheduler>` argument).
 
 The default scheduler is the :class:`celery.beat.PersistentScheduler`,
 that simply keeps track of the last run times in a local :mod:`shelve`
@@ -447,10 +447,12 @@ To install and use this extension:
 
         $ python manage.py migrate
 
-#. Start the :program:`celery beat` service using the ``django`` scheduler:
+#. Start the :program:`celery beat` service using the ``django_celery_beat.schedulers:DatabaseScheduler`` scheduler:
 
     .. code-block:: console
 
-        $ celery -A proj beat -l info -S django
+        $ celery -A proj beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+   Note:  You may also add this as an settings option directly.
 
 #. Visit the Django-Admin interface to set up some periodic tasks.

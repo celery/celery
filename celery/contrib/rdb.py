@@ -5,7 +5,7 @@ Introduction
 ============
 
 This is a remote debugger for Celery tasks running in multiprocessing
-pool workers.  Inspired by http://snippets.dzone.com/posts/show/7248
+pool workers.  Inspired by a lost post on dzone.com.
 
 Usage
 -----
