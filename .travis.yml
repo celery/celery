@@ -51,7 +51,7 @@ before_install:
             virtualenv --python="$PYENV_ROOT/versions/$PYPY_VERSION/bin/python" "$HOME/virtualenvs/$PYPY_VERSION"
             source "$HOME/virtualenvs/$PYPY_VERSION/bin/activate"
             which python
-            pip install -U pip
+            pip install pip==9.0.1
           fi
     - |
           if [[ "$TOXENV" == *dynamodb ]]; then
