@@ -277,6 +277,28 @@ class test_AMQP:
         assert event['routing_key'] == 'xyz'
         assert event['exchange'] == 'abc'
 
+    def test_send_event_exchange_direct_with_exchange(self):
+        prod = Mock(name='prod')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event, queue='bar',
+            retry=False, exchange_type='direct', exchange='xyz',
+        )
+        prod.publish.assert_called()
+        pub = prod.publish.call_args[1]
+        assert pub['routing_key'] == 'bar'
+        assert pub['exchange'] == ''
+
+    def test_send_event_exchange_direct_with_routing_key(self):
+        prod = Mock(name='prod')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event, queue='bar',
+            retry=False, exchange_type='direct', routing_key='xyb',
+        )
+        prod.publish.assert_called()
+        pub = prod.publish.call_args[1]
+        assert pub['routing_key'] == 'bar'
+        assert pub['exchange'] == ''
+
     def test_send_event_exchange_string(self):
         evd = Mock(name='evd')
         self.app.amqp.send_task_message(
