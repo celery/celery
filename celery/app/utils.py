@@ -70,7 +70,7 @@ FMT_REPLACE_SETTING = '{replace:<36} -> {with_}'
 
 def appstr(app):
     """String used in __repr__ etc, to id app instances."""
-    return '{0}:{1:#x}'.format(app.main or '__main__', id(app))
+    return '{0} at {1:#x}'.format(app.main or '__main__', id(app))
 
 
 class Settings(ConfigurationView):
