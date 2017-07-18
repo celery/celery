@@ -285,7 +285,7 @@ NAMESPACES = Namespace(
             'WARNING', old={'celery_redirect_stdouts_level'},
         ),
         send_task_events=Option(
-            False, type='bool', old={'celeryd_send_events'},
+            False, type='bool', old={'celery_send_events'},
         ),
         state_db=Option(),
         task_log_format=Option(DEFAULT_TASK_LOG_FMT),
