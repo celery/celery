@@ -8,7 +8,7 @@ Contents
 ``proj/``
 ---------
 
-This is the project iself, created using
+This is the project itself, created using
 ``django-admin.py startproject proj``, and then the settings module
 (``proj/settings.py``) was modified to add ``demoapp`` to
 ``INSTALLED_APPS``
