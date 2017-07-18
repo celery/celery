@@ -521,7 +521,7 @@ class AMQP(object):
                     exchange_type = 'direct'
 
             # convert to anon-exchange, when exchange not set and direct ex.
-            if not exchange or not routing_key and exchange_type == 'direct':
+            if (not exchange or not routing_key) and exchange_type == 'direct':
                     exchange, routing_key = '', qname
             elif exchange is None:
                 # not topic exchange, and exchange not undefined
