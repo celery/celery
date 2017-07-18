@@ -50,7 +50,7 @@ before_install:
             "$PYENV_ROOT/bin/pyenv" install "$PYPY_VERSION"
             virtualenv --python="$PYENV_ROOT/versions/$PYPY_VERSION/bin/python" "$HOME/virtualenvs/$PYPY_VERSION"
             source "$HOME/virtualenvs/$PYPY_VERSION/bin/activate"
-            which python
+            which python            
           fi
     - |
           if [[ "$TOXENV" == *dynamodb ]]; then
@@ -69,7 +69,7 @@ before_install:
 after_success:
   - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml
   - .tox/$TRAVIS_PYTHON_VERSION/bin/codecov -e TOXENV
-install: travis_retry pip install -U tox
+install: travis_retry pip install -U tox | cat
 script: tox -v -- -v
 notifications:
   irc:
