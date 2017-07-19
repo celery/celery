@@ -28,6 +28,11 @@ except ImportError:                 # pragma: no cover
     redis = None                    # noqa
     get_redis_error_classes = None  # noqa
 
+try:
+    from redis import sentinel
+except ImportError:
+    sentinel = None
+
 __all__ = ['RedisBackend']
 
 E_REDIS_MISSING = """
@@ -306,9 +311,15 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             )
 
     def _create_client(self, **params):
-        return self.redis.StrictRedis(
-            connection_pool=self.ConnectionPool(**params),
+        return self._get_client()(
+            connection_pool=self._get_pool(**params),
         )
+
+    def _get_client(self):
+        return self.redis.StrictRedis
+
+    def _get_pool(self, **params):
+        return self.ConnectionPool(**params)
 
     @property
     def ConnectionPool(self):
@@ -340,3 +351,44 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
     @deprecated.Property(4.0, 5.0)
     def password(self):
         return self.connparams['password']
+
+
+class SentinelBackend(RedisBackend):
+    def __init__(self, *args, **kwargs):
+        if not sentinel:
+            raise ImportError("Cannot import module sentinel")
+
+        super(SentinelBackend, self).__init__(*args, **kwargs)
+
+    def _params_from_url(self, url, defaults):
+        """
+        url looks like sentinel://0.0.0.0:26347/3;sentinel://0.0.0.0:26348/3
+        """
+        chunks = url.split(";")
+        connparams = dict(defaults, hosts=[])
+        for chunk in chunks:
+            data = super(SentinelBackend, self)._params_from_url(url=chunk,
+                                                                 defaults=defaults)
+            connparams['hosts'].append(data)
+        for p in ("host", "port", "password", "db"):
+            connparams.pop(p)
+        return connparams
+
+    def _get_pool(self, **params):
+        connparams = params.copy()
+
+        hosts = connparams.pop("hosts")
+        result_backend_options = self.app.conf.get("result_backend_options", dict())
+
+        sentinel_instance = sentinel.Sentinel(
+            [(cp['host'], cp['port']) for cp in hosts],
+            min_other_sentinels=result_backend_options.get("min_other_sentinels", 0),
+            sentinel_kwargs=result_backend_options.get("sentinel_kwargs", dict()),
+            **connparams)
+
+        master_name = result_backend_options.get("master_name", None)
+
+        return sentinel_instance.master_for(
+            master_name,
+            self._get_client(),
+        ).connection_pool

@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 import pytest
 import ssl
+import random
 from datetime import timedelta
 from contextlib import contextmanager
 from pickle import loads, dumps
@@ -16,10 +17,10 @@ from celery.utils.collections import AttributeDict
 
 
 def raise_on_second_call(mock, exc, *retval):
-
     def on_first_call(*args, **kwargs):
         mock.side_effect = exc
         return mock.return_value
+
     mock.side_effect = on_first_call
     if retval:
         mock.return_value, = retval
@@ -33,16 +34,15 @@ class Connection(object):
 
 
 class Pipeline(object):
-
     def __init__(self, client):
         self.client = client
         self.steps = []
 
     def __getattr__(self, attr):
-
         def add_step(*args, **kwargs):
             self.steps.append((getattr(self.client, attr), args, kwargs))
             return self
+
         return add_step
 
     def __enter__(self):
@@ -105,22 +105,32 @@ class Redis(mock.MockCallbacks):
         return len(self.keyspace.get(key) or [])
 
 
+class Sentinel(mock.MockCallbacks):
+    def __init__(self, sentinels, min_other_sentinels=0, sentinel_kwargs=None,
+                 **connection_kwargs):
+        self.sentinel_kwargs = sentinel_kwargs
+        self.sentinels = [Redis(hostname, port, **self.sentinel_kwargs)
+                          for hostname, port in sentinels]
+        self.min_other_sentinels = min_other_sentinels
+        self.connection_kwargs = connection_kwargs
+
+    def master_for(self, service_name, **kwargs):
+        return random.choice(self.sentinels)
+
+
 class redis(object):
     StrictRedis = Redis
 
     class ConnectionPool(object):
-
         def __init__(self, **kwargs):
             pass
 
     class UnixDomainSocketConnection(object):
-
         def __init__(self, **kwargs):
             pass
 
 
 class test_RedisBackend:
-
     def get_backend(self):
         from celery.backends.redis import RedisBackend
 
@@ -418,3 +428,59 @@ class test_RedisBackend:
         self.b.client.expire.assert_called_with(
             key, 512,
         )
+
+
+class test_SentinelBackend:
+    def get_backend(self):
+        from celery.backends.redis import SentinelBackend
+
+        class _SentinelBackend(SentinelBackend):
+            redis = redis
+
+        return _SentinelBackend
+
+    def get_E_LOST(self):
+        from celery.backends.redis import E_LOST
+        return E_LOST
+
+    def setup(self):
+        self.Backend = self.get_backend()
+        self.E_LOST = self.get_E_LOST()
+        self.b = self.Backend(app=self.app)
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    @skip.unless_module('redis')
+    def test_reduce(self):
+        from celery.backends.redis import SentinelBackend
+        x = SentinelBackend(app=self.app)
+        assert loads(dumps(x))
+
+    def test_no_redis(self):
+        self.Backend.redis = None
+        with pytest.raises(ImproperlyConfigured):
+            self.Backend(app=self.app)
+
+    def test_url(self):
+        self.app.conf.redis_socket_timeout = 30.0
+        self.app.conf.redis_socket_connect_timeout = 100.0
+        x = self.Backend(
+            'sentinel://:test@github.com:123//1;sentinel://:test@github.com:124//1',
+            app=self.app,
+        )
+        assert x.connparams
+        assert "host" not in x.connparams
+        assert "db" not in x.connparams
+        assert "port" not in x.connparams
+        assert "password" not in x.connparams
+        assert len(x.connparams['hosts']) == 2
+        assert [cp['host'] for cp in x.connparams['hosts']] == ["github.com", "github.com"]
+        assert [cp['port'] for cp in x.connparams['hosts']] == [123, 124]
+        assert [cp['password'] for cp in x.connparams['hosts']] == ["test", "test"]
+        assert [cp['db'] for cp in x.connparams['hosts']] == [1, 1]
+
+    def test_get_pool(self):
+        x = self.Backend(
+            'sentinel://:test@github.com:123//1;sentinel://:test@github.com:124//1',
+            app=self.app,
+        )
+        pool = x._get_pool(**x.connparams)
