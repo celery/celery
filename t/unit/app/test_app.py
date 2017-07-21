@@ -788,14 +788,17 @@ class test_App:
 
     def test_amqp_heartbeat_settings(self):
         # Test default broker_heartbeat value
-        assert self.app.connection('amqp:////value').heartbeat == 0
+        assert self.app.connection('amqp:////value') \
+                   .heartbeat == 0
 
         # Test passing heartbeat through app configuration
         self.app.conf.broker_heartbeat = 60
-        assert self.app.connection('amqp:////value').heartbeat == 60
+        assert self.app.connection('amqp:////value') \
+                   .heartbeat == 60
 
         # Test passing heartbeat as connection argument
-        assert self.app.connection('amqp:////value', heartbeat=30).heartbeat == 30
+        assert self.app.connection('amqp:////value', heartbeat=30) \
+                   .heartbeat == 30
 
     def test_after_fork(self):
         self.app._pool = Mock()
