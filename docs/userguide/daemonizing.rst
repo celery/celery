@@ -63,6 +63,13 @@ the worker you must also export them (e.g., :command:`export DISPLAY=":0"`)
 
         $ celery multi stopwait worker1 --pidfile="$HOME/run/celery/%n.pid"
 
+To force stop celery workers, you can use
+
+        $ pkill -9 -f 'celery worker'
+
+See :ref:`stopping-worker` for more information.
+
+
 .. _generic-initd-celeryd-example:
 
 Example configuration
@@ -430,7 +437,7 @@ This is an example configuration for a Python project:
     # Absolute or relative path to the 'celery' command:
     CELERY_BIN="/usr/local/bin/celery"
     #CELERY_BIN="/virtualenvs/def/bin/celery"
-    
+
     # App instance to use
     # comment out this line if you don't use an app
     CELERY_APP="proj"
