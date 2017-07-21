@@ -99,7 +99,6 @@ class test_LoaderBase:
         with pytest.raises(ImportError):
             self.loader.import_default_modules()
 
-
     def test_import_from_cwd_custom_imp(self):
         imp = Mock(name='imp')
         self.loader.import_from_cwd('foo', imp=imp)
