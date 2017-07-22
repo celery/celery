@@ -16,157 +16,41 @@ an overview of what's new in Celery 4.1.
 :release-by: Omer Katz
 
 
-- Fix typos (#4140)
-
- Contributed by **Vivek Anand**.
-
-- CELERY_SEND_EVENTS instead of CELERYD_SEND_EVENTS for 3.1.x compatibility (#3997)
+- **Configuration**: CELERY_SEND_EVENTS instead of CELERYD_SEND_EVENTS for 3.1.x compatibility (#3997)
 
  Contributed by **abhinav nilaratna**.
 
-- Restore behavior so Broadcast queues work. (#3934)
+- **App**: Restore behavior so Broadcast queues work. (#3934)
 
  Contributed by **Patrick Cloke**.
 
-- Make appstr use standard format (#4134) (#4139)
+- **Sphinx**: Make appstr use standard format (#4134) (#4139)
 
  Contributed by **Preston Moore**.
 
-- Resolve pip UnicodeEncoderError for PyPy environments (#4138)
-
- Contributed by **George Psarakis**.
-
-- Handle possibility there are no workers (#4074)
-
- Contributed by **Derek Harland**.
-
-- Make id, name always accessible from logging.Formatter via extra (#3994)
+- **App**: Make id, name always accessible from logging.Formatter via extra (#3994)
 
  Contributed by **Yoichi NAKAYAMA**.
 
-- Add worker_shutting_down signal (#3998)
+- **Worker**: Add worker_shutting_down signal (#3998)
 
  Contributed by **Daniel Huang**.
 
-- Bump PyPy version in build to 5.8.0 (#4128)
+- **PyPy**: Support PyPy version 5.8.0 (#4128)
 
  Contributed by **Omer Katz**.
 
-- Update rdb.py (#4135)
+- **Results**: Elasticsearch: Fix serializing keys (#3924)
 
- Contributed by **James Michael DuPont**.
+ Contributed by :github_user:`staticfox`.
 
-- Updated documentation settings for DatabaseScheduler. #4057 (#4058)
+- **Canvas**: Deserialize all tasks in a chain (#4015)
 
- Contributed by **Steven**.
+ Contributed by :github_user:`fcoelho`.
 
-- Fix CELERY_TASK_ settings (#4094)
-
- Contributed by **Anthony Lukach**.
-
-- Update before installing dependencies.
-
- Contributed by **Omer Katz**.
-
-- Retry downloading dynamodb if it fails.
-
- Contributed by **Omer Katz**.
-
-- elasticsearch: Fix serializing keys (#3924)
-
- Contributed by **Static**.
-
-- Upgrade build environment to trusty.
-
- Contributed by **Omer Katz**.
-
-- Add note about RPC backend not support chords (#4120)
-
- Contributed by **Anthony Lukach**.
-
-- Update CONTRIBUTORS.txt
-
- Contributed by **aydin**.
-
-- Create states.py
-
- Contributed by **aydin**.
-
-- fix minor grammatical errors and rewrite to be more clear and concise, (#3801)
-
- Contributed by **Jay McGrath**.
-
-- Fix wrong type in docstring (#4067)
-
- Contributed by **Kirill Romanov**.
-
-- Fix task eager Django setting names (#4061)
-
- Contributed by **Ross Patterson**.
-
-- Update whatsnew-4.0 (#3909)
-
- Contributed by **Primož Kerin**.
-
-- Fix typo in periodic-tasks docs (#3869)
-
- Contributed by **Primož Kerin**.
-
-- Fix CELERYBEAT_LOG_FILE replacement option typo (#3788)
-
- Contributed by **Tamer Sherif**.
-
-- documentation fix. (#3732)
-
- Contributed by **Eric Poelke**.
-
-- Deserialize all tasks in a chain (#4015)
-
- Contributed by **Felipe**.
-
-- recover loglevel for ExecStart in systemd config (#4023)
+- **Systemd**: Recover loglevel for ExecStart in systemd config (#4023)
 
  Contributed by **Yoichi NAKAYAMA**.
-
-- Fix pytest config file name
-
- Contributed by **Samuel Dion-Girardeau**.
-
-- Update contributors list
-
- Contributed by **Samuel Dion-Girardeau**.
-
-- Fix multiline formatting issue
-
- Contributed by **Samuel Dion-Girardeau**.
-
-- Fix link reference in the FAQ
-
- Contributed by **Samuel Dion-Girardeau**.
-
-- Fix minor typos in the FAQ and user guide
-
- Contributed by **Samuel Dion-Girardeau**.
-
-- fix small documentation typos
-
- Contributed by **Viraj**.
-
-- Add link to Version 2
-
- Contributed by **Anthony Lukach**.
-
-- Fix docs example (small) (#4009)
-
- Contributed by **Anthony Lukach**.
-
-- Correct broker URL in RabbitMQ getting started info. (#4043)
-
- Contributed by **Luke Plant**.
-
-- Update testing.rst (#4046)
-
- Contributed by **Rico Moorman**.
 
 - Use the Sphinx add_directive_to_domain API. (#4037)
 
@@ -180,13 +64,9 @@ an overview of what's new in Celery 4.1.
 
  Contributed by **Jon Dufresne**.
 
-- Signal before_task_publish not doing what documented (#4035)
+- **App**: Pass properties to before_task_publish signal (#4035)
 
  Contributed by **Javier Domingo Cansino**.
-
-- Update changelog for v4.0.3 (#3999)
-
- Contributed by **Daniel Huang**.
 
 - Add SSL option for redis backends (#3831)
 
@@ -416,37 +296,9 @@ an overview of what's new in Celery 4.1.
 
  Contributed by **Alejandro Pernin**.
 
-- add myself to contributor list (#3710)
-
- Contributed by **Mike Chen**.
-
-- fix typo (#3717)
-
- Contributed by **YuLun Shih**.
-
-- Grammar: pluralize verb (#3713)
-
- Contributed by **Kalle Bronsen**.
-
 - Specify default value for pidfile option of celery beat. (#3722)
 
  Contributed by **Arnaud Rocher**.
-
-- Fixed TypeError due to change of task protocol (#3714)
-
- Contributed by **Michael**.
-
-- [docs] Fixed link to pytest (#3720)
-
- Contributed by **Michael**.
-
-- make missing args/kwargs in protocol v1 message to return empty value in protocol v2 message (#3695)
-
- Contributed by **Roman Sichny**.
-
-- Fix celery mongodb integration so that binary encodings like pickle/m… (#3705)
-
- Contributed by **Andrew de Quincey**.
 
 - **Results**: Elasticsearch: Stop generating a new field every time when a new result is being put (#3708)
 
@@ -576,25 +428,41 @@ return empty value in protocol 2 (Issue #3687).
 
     - **Bruno Alla**
     - **Jamie Alessio**
-    - **Ask Solem**
     - **Peter Bittner**
+    - **Kalle Bronsen**
     - **Jon Dufresne**
+    - **James Michael DuPont**
     - **Sergey Fursov**
+    - **Samuel Dion-Girardeau**
     - **Daniel Hahler**
     - **Mike Helmick**
     - **Marc Hörsken**
     - **Christopher Hoskin**
+    - **Daniel Huang**
+    - **Primož Kerin**
     - **Michal Kuffa**
     - **Simon Legner**
+    - **Anthony Lukach**
     - **Ed Morley**
+    - **Jay McGrath**
+    - **Rico Moorman**
+    - **Ross Patterson**
     - **Dmytro Petruk**
+    - **Luke Plant**
+    - **Eric Poelke**
     - **Salvatore Rinchiera**
     - **Arnaud Rocher**
+    - **Kirill Romanov**
+    - **Tamer Sherif**
     - **YuLun Shih**
+    - **Ask Solem**
     - **Tom 'Biwaa' Riat**
     - **Arthur Vigil**
     - **Joey Wilhelm**
     - **Jian Yu**
+    - **YuLun Shih**
+    - **Vivek Anand**
+    - **Viraj**
     - :github_user:`baixuexue123`
     - :github_user:`bronsen`
     - :github_user:`michael-k`
