@@ -138,7 +138,7 @@ class TasksCase:
         self.autoretry_backoff_task = autoretry_backoff_task
 
         @self.app.task(bind=True, autoretry_for=(HTTPError,),
-                       retry_backoff=True, retry_jitter=2, shared=False)
+                       retry_backoff=True, retry_jitter=True, shared=False)
         def autoretry_backoff_jitter_task(self, url):
             self.iterations += 1
             if "error" in url:
@@ -294,9 +294,8 @@ class test_task_retries(TasksCase):
         ]
         assert retry_call_countdowns == [1, 2, 4, 8]
 
-    @patch('random.randrange', side_effect=lambda i: i - 1)
-    @patch('random.choice', side_effect=lambda seq: seq[0])
-    def test_autoretry_backoff_jitter(self, randchoice, randrange):
+    @patch('random.randrange', side_effect=lambda i: i - 2)
+    def test_autoretry_backoff_jitter(self, randrange):
         task = self.autoretry_backoff_jitter_task
         task.max_retries = 3
         task.iterations = 0
@@ -308,7 +307,7 @@ class test_task_retries(TasksCase):
         retry_call_countdowns = [
             call[1]['countdown'] for call in fake_retry.call_args_list
         ]
-        assert retry_call_countdowns == [3, 4, 6, 10]
+        assert retry_call_countdowns == [0, 1, 3, 7]
 
     def test_retry_wrong_eta_when_not_enable_utc(self):
         """Issue #3753"""

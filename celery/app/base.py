@@ -37,7 +37,7 @@ from celery.utils import abstract
 from celery.utils.collections import AttributeDictMixin
 from celery.utils.dispatch import Signal
 from celery.utils.functional import first, maybe_list, head_from_fun
-from celery.utils.time import timezone
+from celery.utils.time import timezone, get_exponential_backoff_interval
 from celery.utils.imports import gen_task_name, instantiate, symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
@@ -464,10 +464,8 @@ class Celery(object):
 
             autoretry_for = tuple(options.get('autoretry_for', ()))
             retry_kwargs = options.get('retry_kwargs', {})
-            retry_backoff = options.get('retry_backoff', False)
-            if retry_backoff is True:
-                retry_backoff = 1
-            retry_backoff_max = options.get('retry_backoff_max', 600)
+            retry_backoff = int(options.get('retry_backoff', False))
+            retry_backoff_max = int(options.get('retry_backoff_max', 600))
             retry_jitter = options.get('retry_jitter', True)
 
             if autoretry_for and not hasattr(task, '_orig_run'):
@@ -478,17 +476,13 @@ class Celery(object):
                         return task._orig_run(*args, **kwargs)
                     except autoretry_for as exc:
                         if retry_backoff:
-                            countdown = (
-                                retry_backoff * (2 ** task.request.retries)
-                            )
-                            if retry_jitter is True:
-                                countdown = random.randrange(countdown + 1)
-                            elif isinstance(retry_jitter, int):
-                                jitter = random.randrange(retry_jitter + 1)
-                                countdown += jitter * random.choice((1, -1))
-                            if retry_backoff_max:
-                                countdown = min(countdown, retry_backoff_max)
-                            retry_kwargs['countdown'] = countdown
+                            retry_kwargs['countdown'] = \
+                                get_exponential_backoff_interval(
+                                    factor=retry_backoff,
+                                    retries=task.request.retries,
+                                    maximum=retry_backoff_max,
+                                    full_jitter=retry_jitter
+                                )
                         raise task.retry(exc=exc, **retry_kwargs)
 
                 task._orig_run, task.run = task.run, run
