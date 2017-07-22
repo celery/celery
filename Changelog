@@ -124,23 +124,19 @@ an overview of what's new in Celery 4.1.
 
  Contributed by **George Psarakis**.
 
-- Prevent consuming queue before ready on startup (#3752)
-
- Contributed by **Alan Hamlett**.
-
-- Consumer does not shutdown properly when embedded in gevent application (#3746)
+- **Concurrency**: Consumer does not shutdown properly when embedded in gevent application (#3746)
 
  Contributed by **Arcadiy Ivanov**.
 
-- Fix #3725: Task replaced with group does not complete (#3731)
+- **Canvas**: Fix #3725: Task replaced with group does not complete (#3731)
 
  Contributed by **Morgan Doocy**.
 
-- Fix #3726 - Chaining of replaced tasks (#3730)
+- **Task**: Correct order in chains with replaced tasks (#3730)
 
  Contributed by **Morgan Doocy**.
 
-- Sync subtask option (#3696)
+- **Result**: Enable synchronous execution of sub-tasks (#3696)
 
  Contributed by **shalev67**.
 
