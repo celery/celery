@@ -279,7 +279,7 @@ class test_task_retries(TasksCase):
         self.autoretry_task.apply((1, 0))
         assert self.autoretry_task.iterations == 6
 
-    @patch('random.randrange', side_effect=lambda i: i-1)
+    @patch('random.randrange', side_effect=lambda i: i - 1)
     def test_autoretry_backoff(self, randrange):
         task = self.autoretry_backoff_task
         task.max_retries = 3
@@ -294,7 +294,7 @@ class test_task_retries(TasksCase):
         ]
         assert retry_call_countdowns == [1, 2, 4, 8]
 
-    @patch('random.randrange', side_effect=lambda i: i-1)
+    @patch('random.randrange', side_effect=lambda i: i - 1)
     @patch('random.choice', side_effect=lambda seq: seq[0])
     def test_autoretry_backoff_jitter(self, randchoice, randrange):
         task = self.autoretry_backoff_jitter_task
