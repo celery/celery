@@ -482,9 +482,9 @@ class Celery(object):
                                 retry_backoff * (2 ** task.request.retries)
                             )
                             if retry_jitter is True:
-                                countdown = random.randrange(countdown)
+                                countdown = random.randrange(countdown + 1)
                             elif isinstance(retry_jitter, int):
-                                jitter = random.randrange(retry_jitter)
+                                jitter = random.randrange(retry_jitter + 1)
                                 countdown += jitter * random.choice((1, -1))
                             if retry_backoff_max:
                                 countdown = min(countdown, retry_backoff_max)

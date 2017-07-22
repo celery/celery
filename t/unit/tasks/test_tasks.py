@@ -281,7 +281,7 @@ class test_task_retries(TasksCase):
 
     @patch('random.randrange')
     def test_autoretry_backoff(self, randrange):
-        randrange.side_effect = lambda i: i
+        randrange.side_effect = lambda i: i - 1
         task = self.autoretry_backoff_task
         task.max_retries = 3
         task.iterations = 0
@@ -298,7 +298,7 @@ class test_task_retries(TasksCase):
     @patch('random.randrange')
     @patch('random.choice')
     def test_autoretry_backoff_jitter(self, randchoice, randrange):
-        randrange.side_effect = lambda i: i
+        randrange.side_effect = lambda i: i - 1
         randchoice.side_effect = lambda seq: seq[0]
         task = self.autoretry_backoff_jitter_task
         task.max_retries = 3
