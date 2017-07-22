@@ -11,7 +11,7 @@ try:
 except ImportError:  # pragma: no cover
     from urllib2 import HTTPError
 
-from case import ContextMock, MagicMock, Mock, patch, call
+from case import ContextMock, MagicMock, Mock, patch
 from kombu import Queue
 
 from celery import Task, group, uuid
@@ -136,6 +136,17 @@ class TasksCase:
             return url
 
         self.autoretry_backoff_task = autoretry_backoff_task
+
+        @self.app.task(bind=True, autoretry_for=(HTTPError,),
+                       retry_backoff=True, retry_jitter=2, shared=False)
+        def autoretry_backoff_jitter_task(self, url):
+            self.iterations += 1
+            if "error" in url:
+                fp = tempfile.TemporaryFile()
+                raise HTTPError(url, '500', 'Error', '', fp)
+            return url
+
+        self.autoretry_backoff_jitter_task = autoretry_backoff_jitter_task
 
         @self.app.task(bind=True)
         def task_check_request_context(self):
@@ -271,12 +282,36 @@ class test_task_retries(TasksCase):
     @patch('random.randrange')
     def test_autoretry_backoff(self, randrange):
         randrange.side_effect = lambda i: i
-        self.autoretry_backoff_task.max_retries = 3
-        self.autoretry_backoff_task.iterations = 0
-        self.autoretry_backoff_task.apply(("http://httpbin.org/error",))
-        assert self.autoretry_backoff_task.iterations == 4
-        expected = [call(1), call(2), call(4), call(8)]
-        assert randrange.call_args_list == expected
+        task = self.autoretry_backoff_task
+        task.max_retries = 3
+        task.iterations = 0
+
+        with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
+            task.apply(("http://httpbin.org/error",))
+
+        assert task.iterations == 4
+        retry_call_countdowns = [
+            call[1]['countdown'] for call in fake_retry.call_args_list
+        ]
+        assert retry_call_countdowns == [1, 2, 4, 8]
+
+    @patch('random.randrange')
+    @patch('random.choice')
+    def test_autoretry_backoff_jitter(self, randchoice, randrange):
+        randrange.side_effect = lambda i: i
+        randchoice.side_effect = lambda seq: seq[0]
+        task = self.autoretry_backoff_jitter_task
+        task.max_retries = 3
+        task.iterations = 0
+
+        with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
+            task.apply(("http://httpbin.org/error",))
+
+        assert task.iterations == 4
+        retry_call_countdowns = [
+            call[1]['countdown'] for call in fake_retry.call_args_list
+        ]
+        assert retry_call_countdowns == [3, 4, 6, 10]
 
     def test_retry_wrong_eta_when_not_enable_utc(self):
         """Issue #3753"""
