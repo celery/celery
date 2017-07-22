@@ -52,187 +52,75 @@ an overview of what's new in Celery 4.1.
 
  Contributed by **Yoichi NAKAYAMA**.
 
-- Use the Sphinx add_directive_to_domain API. (#4037)
+- **Sphinx**: Use the Sphinx add_directive_to_domain API. (#4037)
 
  Contributed by **Patrick Cloke**.
-
-- Clarify AsyncResult.ready docstring (#4038)
-
- Contributed by **Simon Schmidt**.
-
-- Rename section to [bdist_wheel] as [wheel] is considered legacy (#4033)
-
- Contributed by **Jon Dufresne**.
 
 - **App**: Pass properties to before_task_publish signal (#4035)
 
  Contributed by **Javier Domingo Cansino**.
 
-- Add SSL option for redis backends (#3831)
+- **Results**: Add SSL option for Redis backends (#3831)
 
  Contributed by **Chris Kuehl**.
 
-- celery.schedule.crontab: fix reduce (#3826) (#3827)
+- **Beat**: celery.schedule.crontab: fix reduce (#3826) (#3827)
 
  Contributed by **Taylor C. Richberger**.
 
-- Prefer https over http when available (#3966)
-
- Contributed by **Jon Dufresne**.
-
-- Updates, fixes, and improvements to documentation (#3976)
-
- Contributed by **Joey Wilhelm**.
-
-- Remove duplicate entry in __all__
-
- Contributed by **Tao Qingyun**.
-
-- FIX badly written check  if cluster_state is None
+- **State**: Fix celery issues when using flower REST API
 
  Contributed by **Thierry RAMORASOAVINA**.
 
-- Fix celery issues when using flower REST API
-
- Contributed by **Thierry RAMORASOAVINA**.
-
-- Typo of variable name
-
- Contributed by **Dmytro Petruk**.
-
-- Elasticsearch: Fix serializing document id.
+- **Results**: Elasticsearch: Fix serializing document id.
 
  Contributed by **Acey9**.
 
-- Support Elasticsearch backend options settings
-
- Contributed by **Acey9**.
-
-- Add tests for ensuring schedule changes are detected
+- **Beat**: Make shallow copy of schedules dictionary
 
  Contributed by **Brian May**.
 
-- Make shallow copy of schedules dictionary
-
- Contributed by **Brian May**.
-
-- Populate heap when periodic tasks are changed
+- **Beat**: Populate heap when periodic tasks are changed
 
  Contributed by **Wojciech Żywno**.
 
-- Resolve issue with Redis integration test in Python3
+- **Task**: Allow class methods to define tasks (#3952)
 
  Contributed by **georgepsarakis**.
 
-- Allow class methods to define tasks
-
- Contributed by **georgepsarakis**.
-
-- return boolean value according to the doc
+- **Platforms**: Always return boolean value when checking if signal is supported (#3962).
 
  Contributed by **Jian Yu**.
 
-- Add regression test for chain duplication in chords (#3771)
-
- Contributed by **georgepsarakis**.
-
-- Avoid duplicating chains in chords (#3779)
+- **Canvas**: Avoid duplicating chains in chords (#3779)
 
  Contributed by **Ryan Hiebert**.
 
-- Lookup task only if list has items
+- **Canvas**: Lookup task only if list has items (#3847)
 
  Contributed by **Marc Gibbons**.
 
-- Write failing test
-
- Contributed by **Marc Gibbons**.
-
-- Update slightly the doc (#3929)
-
- Contributed by **Tom 'Biwaa' Riat**.
-
-- Remove non-free ICC profiles from docs/images (#3936)
-
- Contributed by **Christopher Hoskin**.
-
-- Changed default redis_socket_timeout setting value (#3920)
-
- Contributed by **Sergey Fursov**.
-
-- Indent statement in docs function (#3910)
-
- Contributed by **Michal Kuffa**.
-
-- -Ofair reference, rst formatting fixes (#3913)
-
- Contributed by **Slam**.
-
-- Document rate limit and ETA incompatibilities (#3899)
-
- Contributed by **Bruno Alla**.
-
-- Fix grammar, update .gitignore (#3887)
-
- Contributed by **Static**.
-
-- Allow unicode message for exception raised in task (#3903)
+- **Results**: Allow unicode message for exception raised in task (#3903)
 
  Contributed by **George Psarakis**.
 
-- Document support for Python 3.6 (#3904)
+- **Python3**: Support for Python 3.6 (#3904, #3903, #3736)
 
- Contributed by **Jon Dufresne**.
+ Contributed by **Jon Dufresne**, **George Psarakis**, **Asif Saifuddin Auvi**, **Omer Katz**.
 
-- Revert "Fix setting name for task_eager_propagates" (#3880)
-
- Contributed by **Omer Katz**.
-
-- Fix setting name for task_eager_propagates (#3846)
-
- Contributed by **Mike Helmick**.
-
-- Fix retried tasks with expirations (#3790)
+- **App**: Fix retried tasks with expirations (#3790)
 
  Contributed by **Brendan MacDonell**.
-
-- Fix typo from "restart limit" to "retry limit" (#3807)
-
- Contributed by **Salvatore Rinchiera**.
-
-- Typo in README (#3836)
-
- Contributed by **Jamie Alessio**.
-
-- confirm error (#3840)
-
- Contributed by **Pysaoke**.
-
-- Use a wording a bit closer to English (#3842)
-
- Contributed by **Peter Bittner**.
 
 - * Fixes items format route in docs (#3875)
 
  Contributed by **Slam**.
 
-- Fix URLs to userguide/daemonizing docs (#3871)
-
- Contributed by **Simon Legner**.
-
-- Add a link to django-transaction-hooks (#3799)
-
- Contributed by **orf**.
-
-- Docs: Fix typo in whatsnew-4.0.rst (#3793)
-
- Contributed by **Ed Morley**.
-
-- Fix maybe_make_aware (#3850)
+- **Utils**: Fix maybe_make_aware (#3850)
 
  Contributed by **Taylor C. Richberger**.
 
-- Fix task ETA issues when timezone is defined in configuration (#3867)
+- **Task**: Fix task ETA issues when timezone is defined in configuration (#3867)
 
  Contributed by **George Psarakis**.
 
@@ -240,29 +128,9 @@ an overview of what's new in Celery 4.1.
 
  Contributed by **Alan Hamlett**.
 
-- Cache pip installs (#3785)
-
- Contributed by **orf**.
-
-- Update tasks.rst (#3777)
-
- Contributed by **orf**.
-
-- AWS DynamoDB result backend (#3736)
-
- Contributed by **George Psarakis**.
-
 - Consumer does not shutdown properly when embedded in gevent application (#3746)
 
  Contributed by **Arcadiy Ivanov**.
-
-- Added python3.6 on tox (#3749)
-
- Contributed by **Asif Saifuddin Auvi**.
-
-- Fix sqs broker documentation typos (#3742)
-
- Contributed by **Arthur Vigil**.
 
 - Fix #3725: Task replaced with group does not complete (#3731)
 
@@ -272,31 +140,23 @@ an overview of what's new in Celery 4.1.
 
  Contributed by **Morgan Doocy**.
 
-- Update first-steps-with-django.rst (#3724)
-
- Contributed by **Marc Hörsken**.
-
 - Sync subtask option (#3696)
 
  Contributed by **shalev67**.
 
-- Fix request context for blocking task apply (added hostname) (#3716)
+- **Task**: Fix request context for blocking task apply (added hostname) (#3716)
 
  Contributed by **Marat Sharafutdinov**.
 
-- Doc: add 'self' to test_send_order.test_failure (#3718)
-
- Contributed by **Daniel Hahler**.
-
-- Fix #3678 (#3693)
+- **Utils**: Fix task argument handling (#3678) (#3693)
 
  Contributed by **Roman Sichny**.
 
-- Provide a transparent method to update the Scheduler heap (#3721)
+- **Beat**: Provide a transparent method to update the Scheduler heap (#3721)
 
  Contributed by **Alejandro Pernin**.
 
-- Specify default value for pidfile option of celery beat. (#3722)
+- **Beat**: Specify default value for pidfile option of celery beat. (#3722)
 
  Contributed by **Arnaud Rocher**.
 
@@ -360,7 +220,7 @@ return empty value in protocol 2 (Issue #3687).
 
     Contributed by **Arcadiy Ivanov**.
 
-- **Results**: Added support for using AWS DynamoDB as a result backend.
+- **Results**: Added support for using AWS DynamoDB as a result backend (#3736).
 
     Contributed by **George Psarakis**.
 
@@ -428,6 +288,7 @@ return empty value in protocol 2 (Issue #3687).
 
     - **Bruno Alla**
     - **Jamie Alessio**
+    - **Vivek Anand**
     - **Peter Bittner**
     - **Kalle Bronsen**
     - **Jon Dufresne**
@@ -446,6 +307,7 @@ return empty value in protocol 2 (Issue #3687).
     - **Ed Morley**
     - **Jay McGrath**
     - **Rico Moorman**
+    - **Viraj Navkal**
     - **Ross Patterson**
     - **Dmytro Petruk**
     - **Luke Plant**
@@ -453,6 +315,7 @@ return empty value in protocol 2 (Issue #3687).
     - **Salvatore Rinchiera**
     - **Arnaud Rocher**
     - **Kirill Romanov**
+    - **Simon Schmidt**
     - **Tamer Sherif**
     - **YuLun Shih**
     - **Ask Solem**
@@ -461,8 +324,8 @@ return empty value in protocol 2 (Issue #3687).
     - **Joey Wilhelm**
     - **Jian Yu**
     - **YuLun Shih**
-    - **Vivek Anand**
-    - **Viraj**
+    - **Arthur Vigil**
+    - **Joey Wilhelm**
     - :github_user:`baixuexue123`
     - :github_user:`bronsen`
     - :github_user:`michael-k`
