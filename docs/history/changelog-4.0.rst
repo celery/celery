@@ -1,4 +1,4 @@
-.. _changelog:
+.. _changelog-4.0:
 
 ================
  Change history
