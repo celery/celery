@@ -746,6 +746,68 @@ If you want to automatically retry on any error, simply use:
     def x():
         ...
 
+.. versionadded:: 4.1
+
+If your tasks depend on another service, like making a request to an API,
+then it's a good idea to use `exponential backoff`_ to avoid overwhelming the
+service with your requests. Fortunately, Celery's automatic retry support
+makes it easy. Just specify the :attr:`~Task.retry_backoff` argument, like this:
+
+.. code-block:: python
+
+    from requests.exceptions import RequestException
+
+    @app.task(autoretry_for=(RequestException,), retry_backoff=True)
+    def x():
+        ...
+
+By default, this exponential backoff will also introduce random jitter_ to
+avoid having all the tasks run at the same moment. It will also cap the
+maximum backoff delay to 10 minutes. All these settings can be customized
+via options documented below.
+
+.. attribute:: Task.autoretry_for
+
+    A list/tuple of exception classes. If any of these exceptions are raised
+    during the execution of the task, the task will automatically be retried.
+    By default, no exceptions will be autoretried.
+
+.. attribute:: Task.retry_kwargs
+
+    A dictionary. Use this to customize how autoretries are executed.
+    Note that if you use the exponential backoff options below, the `countdown`
+    task option will be determined by Celery's autoretry system, and any
+    `countdown` included in this dictionary will be ignored.
+
+.. attribute:: Task.retry_backoff
+
+    A boolean, or a number. If this option is set to ``True``, autoretries
+    will be delayed following the rules of `exponential backoff`_. The first
+    retry will have a delay of 1 second, the second retry will have a delay
+    of 2 seconds, the third will delay 4 seconds, the fourth will delay 8
+    seconds, and so on. (However, this delay value is modified by
+    :attr:`~Task.retry_jitter`, if it is enabled.)
+    If this option is set to a number, it is used as a
+    delay factor. For example, if this option is set to ``3``, the first retry
+    will delay 3 seconds, the second will delay 6 seconds, the third will
+    delay 12 seconds, the fourth will delay 24 seconds, and so on. By default,
+    this option is set to ``False``, and autoretries will not be delayed.
+
+.. attribute:: Task.retry_backoff_max
+
+    A number. If ``retry_backoff`` is enabled, this option will set a maximum
+    delay in seconds between task autoretries. By default, this option is set to ``600``,
+    which is 10 minutes.
+
+.. attribute:: Task.retry_jitter
+
+    A boolean. `Jitter`_ is used to introduce randomness into
+    exponential backoff delays, to prevent all tasks in the queue from being
+    executed simultaneously. If this option is set to ``True``, the delay
+    value calculated by :attr:`~Task.retry_backoff` is treated as a maximum,
+    and the actual delay value will be a random number between zero and that
+    maximum. By default, this option is set to ``True``.
+
 .. _task-options:
 
 List of Options
@@ -1899,3 +1961,5 @@ To make API calls to `Akismet`_ I use the `akismet.py`_ library written by
 .. _`Akismet`: http://akismet.com/faq/
 .. _`akismet.py`: http://www.voidspace.org.uk/downloads/akismet.py
 .. _`Michael Foord`: http://www.voidspace.org.uk/
+.. _`exponential backoff`: https://en.wikipedia.org/wiki/Exponential_backoff
+.. _`jitter`: https://en.wikipedia.org/wiki/Jitter

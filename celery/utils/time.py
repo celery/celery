@@ -4,6 +4,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import numbers
 import os
+import random
 import sys
 import time as _time
 
@@ -27,6 +28,7 @@ __all__ = [
     'humanize_seconds', 'maybe_iso8601', 'is_naive',
     'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
     'ffwd', 'utcoffset', 'adjust_timestamp',
+    'get_exponential_backoff_interval',
 ]
 
 PY3 = sys.version_info[0] == 3
@@ -383,3 +385,20 @@ def utcoffset(time=_time, localtime=_time.localtime):
 def adjust_timestamp(ts, offset, here=utcoffset):
     """Adjust timestamp based on provided utcoffset."""
     return ts - (offset - here()) * 3600
+
+
+def get_exponential_backoff_interval(
+    factor,
+    retries,
+    maximum,
+    full_jitter=False
+):
+    """Calculate the exponential backoff wait time."""
+    # Will be zero if factor equals 0
+    countdown = factor * (2 ** retries)
+    # Full jitter according to
+    # https://www.awsarchitectureblog.com/2015/03/backoff.html
+    if full_jitter:
+        countdown = random.randrange(countdown + 1)
+    # Adjust according to maximum wait time and account for negative values.
+    return max(0, min(maximum, countdown))

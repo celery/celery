@@ -3,7 +3,7 @@ import pytest
 import pytz
 from datetime import datetime, timedelta, tzinfo
 from pytz import AmbiguousTimeError
-from case import Mock
+from case import Mock, patch
 from celery.utils.time import (
     delta_resolution,
     humanize_seconds,
@@ -18,6 +18,7 @@ from celery.utils.time import (
     LocalTimezone,
     ffwd,
     utcoffset,
+    get_exponential_backoff_interval,
 )
 from celery.utils.iso8601 import parse_iso8601
 
@@ -253,3 +254,39 @@ class test_utcoffset:
         assert utcoffset(time=_time) is not None
         _time.daylight = False
         assert utcoffset(time=_time) is not None
+
+
+class test_get_exponential_backoff_interval:
+
+    @patch('random.randrange', lambda n: n - 2)
+    def test_with_jitter(self):
+        assert get_exponential_backoff_interval(
+            factor=4,
+            retries=3,
+            maximum=100,
+            full_jitter=True
+        ) == 4 * (2 ** 3) - 1
+
+    def test_without_jitter(self):
+        assert get_exponential_backoff_interval(
+            factor=4,
+            retries=3,
+            maximum=100,
+            full_jitter=False
+        ) == 4 * (2 ** 3)
+
+    def test_bound_by_maximum(self):
+        maximum_boundary = 100
+        assert get_exponential_backoff_interval(
+            factor=40,
+            retries=3,
+            maximum=maximum_boundary
+        ) == maximum_boundary
+
+    @patch('random.randrange', lambda n: n - 1)
+    def test_negative_values(self):
+        assert get_exponential_backoff_interval(
+            factor=-40,
+            retries=3,
+            maximum=100
+        ) == 0
