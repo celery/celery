@@ -746,7 +746,7 @@ If you want to automatically retry on any error, simply use:
     def x():
         ...
 
-.. versionadded:: 4.2
+.. versionadded:: 4.1
 
 If your tasks depend on another service, like making a request to an API,
 then it's a good idea to use `exponential backoff`_ to avoid overwhelming the
@@ -796,9 +796,8 @@ via options documented below.
 .. attribute:: Task.retry_backoff_max
 
     A number. If ``retry_backoff`` is enabled, this option will set a maximum
-    delay between task autoretries. By default, this option is set to ``600``,
-    which is 10 minutes. To allow unlimited delay between autoretries,
-    set this option to ``False``.
+    delay in seconds between task autoretries. By default, this option is set to ``600``,
+    which is 10 minutes.
 
 .. attribute:: Task.retry_jitter
 
