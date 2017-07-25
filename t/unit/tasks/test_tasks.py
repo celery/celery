@@ -2,8 +2,14 @@ from __future__ import absolute_import, unicode_literals
 
 import pytest
 import socket
+import tempfile
 
 from datetime import datetime, timedelta
+
+try:
+    from urllib.error import HTTPError
+except ImportError:  # pragma: no cover
+    from urllib2 import HTTPError
 
 from case import ContextMock, MagicMock, Mock, patch
 from kombu import Queue
@@ -119,6 +125,28 @@ class TasksCase:
             return a / b
 
         self.autoretry_task = autoretry_task
+
+        @self.app.task(bind=True, autoretry_for=(HTTPError,),
+                       retry_backoff=True, shared=False)
+        def autoretry_backoff_task(self, url):
+            self.iterations += 1
+            if "error" in url:
+                fp = tempfile.TemporaryFile()
+                raise HTTPError(url, '500', 'Error', '', fp)
+            return url
+
+        self.autoretry_backoff_task = autoretry_backoff_task
+
+        @self.app.task(bind=True, autoretry_for=(HTTPError,),
+                       retry_backoff=True, retry_jitter=True, shared=False)
+        def autoretry_backoff_jitter_task(self, url):
+            self.iterations += 1
+            if "error" in url:
+                fp = tempfile.TemporaryFile()
+                raise HTTPError(url, '500', 'Error', '', fp)
+            return url
+
+        self.autoretry_backoff_jitter_task = autoretry_backoff_jitter_task
 
         @self.app.task(bind=True)
         def task_check_request_context(self):
@@ -250,6 +278,36 @@ class test_task_retries(TasksCase):
         self.autoretry_task.iterations = 0
         self.autoretry_task.apply((1, 0))
         assert self.autoretry_task.iterations == 6
+
+    @patch('random.randrange', side_effect=lambda i: i - 1)
+    def test_autoretry_backoff(self, randrange):
+        task = self.autoretry_backoff_task
+        task.max_retries = 3
+        task.iterations = 0
+
+        with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
+            task.apply(("http://httpbin.org/error",))
+
+        assert task.iterations == 4
+        retry_call_countdowns = [
+            call[1]['countdown'] for call in fake_retry.call_args_list
+        ]
+        assert retry_call_countdowns == [1, 2, 4, 8]
+
+    @patch('random.randrange', side_effect=lambda i: i - 2)
+    def test_autoretry_backoff_jitter(self, randrange):
+        task = self.autoretry_backoff_jitter_task
+        task.max_retries = 3
+        task.iterations = 0
+
+        with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
+            task.apply(("http://httpbin.org/error",))
+
+        assert task.iterations == 4
+        retry_call_countdowns = [
+            call[1]['countdown'] for call in fake_retry.call_args_list
+        ]
+        assert retry_call_countdowns == [0, 1, 3, 7]
 
     def test_retry_wrong_eta_when_not_enable_utc(self):
         """Issue #3753"""
