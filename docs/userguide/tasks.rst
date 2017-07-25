@@ -746,7 +746,7 @@ If you want to automatically retry on any error, simply use:
     def x():
         ...
 
-.. versionadded:: 4.1
+.. versionadded:: 4.2
 
 If your tasks depend on another service, like making a request to an API,
 then it's a good idea to use `exponential backoff`_ to avoid overwhelming the
@@ -802,21 +802,12 @@ via options documented below.
 
 .. attribute:: Task.retry_jitter
 
-    A boolean, or an integer. `Jitter`_ is used to introduce randomness into
+    A boolean. `Jitter`_ is used to introduce randomness into
     exponential backoff delays, to prevent all tasks in the queue from being
     executed simultaneously. If this option is set to ``True``, the delay
     value calculated by :attr:`~Task.retry_backoff` is treated as a maximum,
     and the actual delay value will be a random number between zero and that
-    maximum.
-
-    If this option is set to an integer, that integer is the maximum deviation
-    from the calculated delay value. For example, for the fourth autoretry of
-    a task, the calculated delay value is 8. If ``retry_jitter`` is set to 2,
-    then the actual delay value will be a random number between 6 and 10.
-
-    If this option is set to ``False`` or 0, then no jitter is introduced.
-
-    By default, this option is set to ``True``.
+    maximum. By default, this option is set to ``True``.
 
 .. _task-options:
 
