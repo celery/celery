@@ -480,8 +480,7 @@ class Celery(object):
                                     factor=retry_backoff,
                                     retries=task.request.retries,
                                     maximum=retry_backoff_max,
-                                    full_jitter=retry_jitter
-                                )
+                                    full_jitter=retry_jitter)
                         raise task.retry(exc=exc, **retry_kwargs)
 
                 task._orig_run, task.run = task.run, run
