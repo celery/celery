@@ -258,8 +258,7 @@ class test_utcoffset:
 
 class test_get_exponential_backoff_interval:
 
-    @patch('random.randrange', lambda n: n - 2)
-    @patch('random.choice', lambda sequence: sequence[0])
+    @patch('random.randrange', lambda n: n - 2)    
     def test_with_jitter(self):
         assert get_exponential_backoff_interval(
             factor=4,
@@ -284,8 +283,7 @@ class test_get_exponential_backoff_interval:
             maximum=maximum_boundary
         ) == maximum_boundary
 
-    @patch('random.randrange', lambda n: n - 1)
-    @patch('random.choice', lambda sequence: -1)
+    @patch('random.randrange', lambda n: n - 1)    
     def test_negative_values(self):
         assert get_exponential_backoff_interval(
             factor=-40,
