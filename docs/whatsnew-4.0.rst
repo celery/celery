@@ -1056,7 +1056,7 @@ Contributed by **Ionel Cristian Mărieș**.
 Handling task connection errors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Connection related errors occuring while sending a task is now re-raised
+Connection related errors occurring while sending a task is now re-raised
 as a :exc:`kombu.exceptions.OperationalError` error:
 
 .. code-block:: pycon

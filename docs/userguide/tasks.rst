@@ -243,7 +243,7 @@ Automatic naming and relative imports
 
 .. sidebar:: Absolute Imports
 
-    The best practice for developers targetting Python 2 is to add the
+    The best practice for developers targeting Python 2 is to add the
     following to the top of **every module**:
 
     .. code-block:: python
