@@ -728,7 +728,7 @@ class solar(BaseSchedule):
         'dawn_nautical': True,
         'dawn_civil': True,
         'sunrise': False,
-        'solar_noon': True,
+        'solar_noon': False,
         'sunset': False,
         'dusk_civil': True,
         'dusk_nautical': True,
@@ -783,10 +783,16 @@ class solar(BaseSchedule):
         last_run_at_utc = localize(last_run_at, timezone.utc)
         self.cal.date = last_run_at_utc
         try:
-            next_utc = getattr(self.cal, self.method)(
-                self.ephem.Sun(),
-                start=last_run_at_utc, use_center=self.use_center,
-            )
+            if self.use_center:
+                next_utc = getattr(self.cal, self.method)(
+                    self.ephem.Sun(),
+                    start=last_run_at_utc, use_center=self.use_center
+                )
+            else:
+                next_utc = getattr(self.cal, self.method)(
+                    self.ephem.Sun(), start=last_run_at_utc
+                )
+
         except self.ephem.CircumpolarError:  # pragma: no cover
             # Sun won't rise/set today.  Check again tomorrow
             # (specifically, after the next anti-transit).

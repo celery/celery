@@ -74,6 +74,17 @@ class test_solar:
         with pytest.raises(ValueError):
             solar('asdqwewqew', 60, 60, app=self.app)
 
+    def test_event_uses_center(self):
+        s = solar('solar_noon', 60, 60, app=self.app)
+        for ev, is_center in s._use_center_l.items():
+            s.method = s._methods[ev]
+            s.is_center = s._use_center_l[ev]
+            try:
+                s.remaining_estimate(datetime.utcnow())
+            except TypeError:
+                pytest.fail("{0} was called with 'use_center' which is not a \
+                    valid keyword for the function.".format(s.method))
+
 
 class test_schedule:
 
