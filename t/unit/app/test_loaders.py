@@ -88,6 +88,17 @@ class test_LoaderBase:
         assert (sorted(modnames(self.loader.import_default_modules())) ==
                 sorted(modnames([os, sys])))
 
+    def test_import_default_modules_with_exception(self):
+        """ Make sure exceptions are not silenced since this step is prior to
+            setup logging. """
+        def trigger_exception(**kwargs):
+            raise ImportError('Dummy ImportError')
+        from celery.signals import import_modules
+        import_modules.connect(trigger_exception)
+        self.app.conf.imports = ('os', 'sys')
+        with pytest.raises(ImportError):
+            self.loader.import_default_modules()
+
     def test_import_from_cwd_custom_imp(self):
         imp = Mock(name='imp')
         self.loader.import_from_cwd('foo', imp=imp)
