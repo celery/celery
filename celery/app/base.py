@@ -2,6 +2,7 @@
 """Actual App instance implementation."""
 from __future__ import absolute_import, unicode_literals
 
+from datetime import datetime
 import os
 import threading
 import warnings
@@ -36,7 +37,8 @@ from celery.utils import abstract
 from celery.utils.collections import AttributeDictMixin
 from celery.utils.dispatch import Signal
 from celery.utils.functional import first, maybe_list, head_from_fun
-from celery.utils.time import timezone, get_exponential_backoff_interval
+from celery.utils.time import timezone, \
+    get_exponential_backoff_interval, to_utc
 from celery.utils.imports import gen_task_name, instantiate, symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
@@ -880,9 +882,6 @@ class Celery(object):
 
     def now(self):
         """Return the current time and date as a datetime."""
-        from celery.utils.time import to_utc
-        from datetime import datetime
-
         now_in_utc = to_utc(datetime.utcnow())
         return now_in_utc.astimezone(self.timezone)
 
