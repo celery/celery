@@ -546,7 +546,9 @@ class crontab(BaseSchedule):
         # pylint: disable=redefined-outer-name
         # caching global ffwd
         tz = tz or self.tz
-        last_run_at = self.maybe_make_aware(last_run_at)
+        last_run_at = localize(
+            self.maybe_make_aware(last_run_at),
+            self.now().tzinfo or timezone.utc)
         now = self.maybe_make_aware(self.now())
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
