@@ -548,7 +548,7 @@ class crontab(BaseSchedule):
         tz = tz or self.tz
         last_run_at = localize(
             self.maybe_make_aware(last_run_at),
-            self.now().tzinfo)
+            self.now().tzinfo or timezone.utc)
         now = self.maybe_make_aware(self.now())
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
