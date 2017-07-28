@@ -79,10 +79,10 @@ class test_App:
         tz_utc = timezone.get_timezone('UTC')
         tz_us_eastern = timezone.get_timezone(timezone_setting_value)
 
-        now = datetime.utcnow().replace(tzinfo=tz_utc)
+        now = to_utc(datetime.utcnow())
         app_now = self.app.now()
 
-        assert app_now.tzinfo == tz_utc
+        assert app_now.tzinfo is tz_utc
         assert app_now - now <= timedelta(seconds=1)
 
         # Check that timezone conversion is applied from configuration
@@ -92,7 +92,8 @@ class test_App:
         del self.app.timezone
 
         app_now = self.app.now()
-        assert app_now.tzinfo == tz_us_eastern
+
+        assert app_now.tzinfo.zone == tz_us_eastern.zone
 
         diff = to_utc(datetime.utcnow()) - localize(app_now, tz_utc)
         assert diff <= timedelta(seconds=1)
@@ -102,7 +103,7 @@ class test_App:
         del self.app.timezone
         app_now = self.app.now()
         assert self.app.timezone == tz_us_eastern
-        assert app_now.tzinfo == tz_us_eastern
+        assert app_now.tzinfo.zone == tz_us_eastern.zone
 
     @patch('celery.app.base.set_default_app')
     def test_set_default(self, set_default_app):
