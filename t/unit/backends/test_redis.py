@@ -464,7 +464,8 @@ class test_SentinelBackend:
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
         x = self.Backend(
-            'sentinel://:test@github.com:123//1;sentinel://:test@github.com:124//1',
+            'sentinel://:test@github.com:123//1;'
+            'sentinel://:test@github.com:124//1',
             app=self.app,
         )
         assert x.connparams
@@ -473,14 +474,27 @@ class test_SentinelBackend:
         assert "port" not in x.connparams
         assert "password" not in x.connparams
         assert len(x.connparams['hosts']) == 2
-        assert [cp['host'] for cp in x.connparams['hosts']] == ["github.com", "github.com"]
-        assert [cp['port'] for cp in x.connparams['hosts']] == [123, 124]
-        assert [cp['password'] for cp in x.connparams['hosts']] == ["test", "test"]
-        assert [cp['db'] for cp in x.connparams['hosts']] == [1, 1]
+        expected_hosts = ["github.com", "github.com"]
+        found_hosts = [cp['host'] for cp in x.connparams['hosts']]
+        assert found_hosts == expected_hosts
+
+        expected_ports = [123, 124]
+        found_ports = [cp['port'] for cp in x.connparams['hosts']]
+        assert found_ports == expected_ports
+
+        expected_passwords = ["test", "test"]
+        found_passwords = [cp['password'] for cp in x.connparams['hosts']]
+        assert found_passwords == expected_passwords
+
+        expected_dbs = [1, 1]
+        found_dbs = [cp['db'] for cp in x.connparams['hosts']]
+        assert found_dbs == expected_dbs
 
     def test_get_pool(self):
         x = self.Backend(
-            'sentinel://:test@github.com:123//1;sentinel://:test@github.com:124//1',
+            'sentinel://:test@github.com:123//1;'
+            'sentinel://:test@github.com:124//1',
             app=self.app,
         )
         pool = x._get_pool(**x.connparams)
+        assert pool

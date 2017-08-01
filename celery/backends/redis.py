@@ -367,8 +367,8 @@ class SentinelBackend(RedisBackend):
         chunks = url.split(";")
         connparams = dict(defaults, hosts=[])
         for chunk in chunks:
-            data = super(SentinelBackend, self)._params_from_url(url=chunk,
-                                                                 defaults=defaults)
+            data = super(SentinelBackend, self)._params_from_url(
+                url=chunk, defaults=defaults)
             connparams['hosts'].append(data)
         for p in ("host", "port", "password", "db"):
             connparams.pop(p)
@@ -378,15 +378,19 @@ class SentinelBackend(RedisBackend):
         connparams = params.copy()
 
         hosts = connparams.pop("hosts")
-        result_backend_options = self.app.conf.get("result_backend_options", dict())
+        result_backend_opts = self.app.conf.get(
+            "result_backend_options", {})
+        min_other_sentinels = result_backend_opts.get(
+            "min_other_sentinels", 0)
+        sentinel_kwargs = result_backend_opts.get("sentinel_kwargs", {})
 
         sentinel_instance = sentinel.Sentinel(
             [(cp['host'], cp['port']) for cp in hosts],
-            min_other_sentinels=result_backend_options.get("min_other_sentinels", 0),
-            sentinel_kwargs=result_backend_options.get("sentinel_kwargs", dict()),
+            min_other_sentinels=min_other_sentinels,
+            sentinel_kwargs=sentinel_kwargs,
             **connparams)
 
-        master_name = result_backend_options.get("master_name", None)
+        master_name = result_backend_opts.get("master_name", None)
 
         return sentinel_instance.master_for(
             master_name,
