@@ -193,7 +193,7 @@ class DjangoWorkerFixup(object):
 
     def close_cache(self):
         try:
-            self._cache.cache.close()
+            self._cache.close_caches()
         except (TypeError, AttributeError):
             pass
 
