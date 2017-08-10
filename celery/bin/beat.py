@@ -20,7 +20,7 @@
 .. cmdoption:: -S, --scheduler
 
     Scheduler class to use.
-    Default is :class:`celery.beat.PersistentScheduler`.
+    Default is :class:`{default}`.
 
 .. cmdoption:: --max-interval
 
@@ -113,7 +113,7 @@ class beat(Command):
         bopts.add_argument(
             '-s', '--schedule', default=c.beat_schedule_filename)
         bopts.add_argument('--max-interval', type=float)
-        bopts.add_argument('-S', '--scheduler')
+        bopts.add_argument('-S', '--scheduler', default=c.beat_scheduler)
         bopts.add_argument('-l', '--loglevel', default='WARN')
 
         daemon_options(parser, default_pidfile='celerybeat.pid')
