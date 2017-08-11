@@ -1,3 +1,4 @@
 pytz>dev
 billiard>=3.5.0.2,<3.6.0
 kombu>=4.0.2,<5.0
+monotonic>=1.3
