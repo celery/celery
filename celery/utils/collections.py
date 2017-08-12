@@ -542,8 +542,6 @@ class LimitedSet(object):
         self.expires = 0 if expires is None else expires
         self._data = {}
         self._heap = []
-        # Ensures inserts do not become ambiguous
-        self.last_added = 0.0
 
         if data:
             # import items from data
@@ -575,6 +573,7 @@ class LimitedSet(object):
     def add(self, item, now=None):
         # type: (Any, float) -> None
         """Add a new item, or reset the expiry time of an existing item."""
+        now = now or monotonic()
         if item in self._data:
             self.discard(item)
         if now is None:
@@ -586,8 +585,6 @@ class LimitedSet(object):
         entry = (now, item)
         self._data[item] = entry
         heappush(self._heap, entry)
-        # Update our last-inserted time for future reference
-        self.last_added = now
         if self.maxlen and len(self._data) >= self.maxlen:
             self.purge()
 
