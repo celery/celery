@@ -3,7 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import sys
-import time
+from celery.five import monotonic
 
 from collections import (
     Callable, Mapping, MutableMapping, MutableSet, Sequence,
@@ -579,7 +579,7 @@ class LimitedSet(object):
             self.discard(item)
         if now is None:
             # Get time
-            now = time.time()
+            now = monotonic()
             if now <= self.last_added:
                 # Force uniqueness (because we're not a call from update())
                 now = self.last_added + 1e-6
@@ -633,7 +633,7 @@ class LimitedSet(object):
             now (float): Time of purging -- by default right now.
                 This can be useful for unit testing.
         """
-        now = now or time.time()
+        now = now or monotonic()
         now = now() if isinstance(now, Callable) else now
         if self.maxlen:
             while len(self._data) > self.maxlen:
