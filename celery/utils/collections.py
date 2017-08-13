@@ -526,7 +526,7 @@ class LimitedSet(object):
         False
         >>> len(s)  # maxlen is reached
         50000
-        >>> s.purge(now=time.time() + 7200)  # clock + 2 hours
+        >>> s.purge(now=monotonic() + 7200)  # clock + 2 hours
         >>> len(s)  # now only minlen items are cached
         4000
         >>>> 57000 in s  # even this item is gone now
