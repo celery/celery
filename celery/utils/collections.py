@@ -576,12 +576,6 @@ class LimitedSet(object):
         now = now or monotonic()
         if item in self._data:
             self.discard(item)
-        if now is None:
-            # Get time
-            now = monotonic()
-            if now <= self.last_added:
-                # Force uniqueness (because we're not a call from update())
-                now = self.last_added + 1e-6
         entry = (now, item)
         self._data[item] = entry
         heappush(self._heap, entry)
