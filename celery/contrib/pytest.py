@@ -13,8 +13,7 @@ NO_WORKER = os.environ.get('NO_WORKER')
 
 
 @contextmanager
-def _create_app(request,
-                enable_logging=False,
+def _create_app(enable_logging=False,
                 use_trap=False,
                 parameters={},
                 **config):
@@ -26,18 +25,7 @@ def _create_app(request,
         config=config,
         **parameters
     )
-    # request.module is not defined for session
-    _module = getattr(request, 'module', None)
-    _cls = getattr(request, 'cls', None)
-    _function = getattr(request, 'function', None)
     with setup_default_app(test_app, use_trap=use_trap):
-        is_not_contained = any([
-            not getattr(_module, 'app_contained', True),
-            not getattr(_cls, 'app_contained', True),
-            not getattr(_function, 'app_contained', True)
-        ])
-        if is_not_contained:
-            test_app.set_current()
         yield test_app
 
 
@@ -62,8 +50,7 @@ def celery_session_app(request,
     """Session Fixture: Return app for session fixtures."""
     mark = request.node.get_marker('celery')
     config = dict(celery_config, **mark.kwargs if mark else {})
-    with _create_app(request,
-                     enable_logging=celery_enable_logging,
+    with _create_app(enable_logging=celery_enable_logging,
                      use_trap=use_celery_app_trap,
                      parameters=celery_parameters,
                      **config) as app:
@@ -163,8 +150,7 @@ def celery_app(request,
     """Fixture creating a Celery application instance."""
     mark = request.node.get_marker('celery')
     config = dict(celery_config, **mark.kwargs if mark else {})
-    with _create_app(request,
-                     enable_logging=celery_enable_logging,
+    with _create_app(enable_logging=celery_enable_logging,
                      use_trap=use_celery_app_trap,
                      parameters=celery_parameters,
                      **config) as app:
