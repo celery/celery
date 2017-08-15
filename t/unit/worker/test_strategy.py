@@ -114,6 +114,7 @@ class test_default_strategy_proto2:
     def _context(self, sig,
                  rate_limits=True, events=True, utc=True, limit=None):
         assert sig.type.Strategy
+        assert sig.type.Request
 
         reserved = Mock()
         consumer = Mock()
