@@ -1502,6 +1502,28 @@ Handlers
 
     The return value of this handler is ignored.
 
+
+Requests and custom requests
+----------------------------
+
+Upon receiving a message to run a task, the `worker <guide-workers>`:ref:
+creates a `request <celery.worker.request.Request>`:class: to represent such
+demand.
+
+Custom task classes may override which request class to use by changing the
+attribute `celery.app.task.Task.Request`:attr:.
+
+The request has several responsibilities.  Custom request classes should cover
+them all.  We strongly recommend to inherit from
+`celery.worker.request.Request`:class:.
+
+When using the `pre-forking worker <worker-concurrency>`:ref:, the methods
+`~celery.worker.request.Request.on_timeout`:meth: and
+`~celery.worker.request.Request.on_failure`:meth: are executed in the main
+worker process.  An application may leverage such facility to detect failures
+which are not detected using `celery.app.task.Task.on_failure`:meth:.
+
+
 .. _task-how-they-work:
 
 How it works
