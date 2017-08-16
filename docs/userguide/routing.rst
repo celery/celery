@@ -373,7 +373,7 @@ Related API commands
     :keyword durable: Durable exchanges are persistent (i.e., they survive
         a broker restart).
 
-    :keyword auto_delete: This means the queue will be deleted by the broker
+    :keyword auto_delete: This means the exchange will be deleted by the broker
         when there are no more queues using it.
 
 
