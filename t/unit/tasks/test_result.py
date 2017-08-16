@@ -895,9 +895,9 @@ class test_tuples:
 
     def test_GroupResult_with_parent(self):
         parent = self.app.AsyncResult(uuid())
-        ts = self.app.GroupResult(
+        result = self.app.GroupResult(
             uuid(), [self.app.AsyncResult(uuid()) for _ in range(10)],
             parent
         )
-        r = result_from_tuple(ts.to_tuple(), self.app)
-        assert r.parent == parent
+        second_result = result_from_tuple(result.as_tuple(), self.app)
+        assert second_result.parent == parent
