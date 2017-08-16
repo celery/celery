@@ -815,6 +815,7 @@ class GroupResult(ResultSet):
     Arguments:
         id (str): The id of the group.
         results (Sequence[AsyncResult]): List of result instances.
+        parent (ResultBase): Parent result of this group.
     """
 
     #: The UUID of the group.
@@ -823,8 +824,12 @@ class GroupResult(ResultSet):
     #: List/iterator of results in the group
     results = None
 
-    def __init__(self, id=None, results=None, **kwargs):
+    #: Parent Result of the group, if any
+    parent = None
+
+    def __init__(self, id=None, results=None, parent=None, **kwargs):
         self.id = id
+        self.parent = parent
         ResultSet.__init__(self, results, **kwargs)
 
     def save(self, backend=None):
@@ -865,7 +870,7 @@ class GroupResult(ResultSet):
                                          ', '.join(r.id for r in self.results))
 
     def as_tuple(self):
-        return self.id, [r.as_tuple() for r in self.results]
+        return (self.id, self.parent), [r.as_tuple() for r in self.results]
 
     @property
     def children(self):
@@ -968,14 +973,14 @@ def result_from_tuple(r, app=None):
     app = app_or_default(app)
     Result = app.AsyncResult
     if not isinstance(r, ResultBase):
-        res, nodes = r
-        if nodes:
-            return app.GroupResult(
-                res, [result_from_tuple(child, app) for child in nodes],
-            )
-        # previously didn't include parent
-        id, parent = res if isinstance(res, (list, tuple)) else (res, None)
+        (id, parent), nodes = r
         if parent:
             parent = result_from_tuple(parent, app)
+
+        if nodes:
+            return app.GroupResult(
+                id, [result_from_tuple(child, app) for child in nodes], parent=parent,
+            )
+
         return Result(id, parent=parent)
     return r
