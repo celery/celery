@@ -973,7 +973,8 @@ def result_from_tuple(r, app=None):
     app = app_or_default(app)
     Result = app.AsyncResult
     if not isinstance(r, ResultBase):
-        (id, parent), nodes = r
+        res, nodes = r
+        id, parent = res if isinstance(res, (list, tuple)) else (res, None)
         if parent:
             parent = result_from_tuple(parent, app)
 
