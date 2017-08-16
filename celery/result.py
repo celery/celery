@@ -980,7 +980,8 @@ def result_from_tuple(r, app=None):
 
         if nodes:
             return app.GroupResult(
-                id, [result_from_tuple(child, app) for child in nodes], parent=parent,
+                id, [result_from_tuple(child, app) for child in nodes],
+                parent=parent,
             )
 
         return Result(id, parent=parent)
