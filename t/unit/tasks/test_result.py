@@ -900,4 +900,5 @@ class test_tuples:
             parent
         )
         second_result = result_from_tuple(result.as_tuple(), self.app)
+        assert second_result == result
         assert second_result.parent == parent
