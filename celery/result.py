@@ -824,9 +824,6 @@ class GroupResult(ResultSet):
     #: List/iterator of results in the group
     results = None
 
-    #: Parent Result of the group, if any
-    parent = None
-
     def __init__(self, id=None, results=None, parent=None, **kwargs):
         self.id = id
         self.parent = parent
@@ -858,7 +855,11 @@ class GroupResult(ResultSet):
 
     def __eq__(self, other):
         if isinstance(other, GroupResult):
-            return other.id == self.id and other.results == self.results
+            return (
+                other.id == self.id and
+                other.results == self.results and
+                other.parent == self.parent
+            )
         return NotImplemented
 
     def __ne__(self, other):
