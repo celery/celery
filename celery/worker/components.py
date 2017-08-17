@@ -83,9 +83,11 @@ class Hub(bootsteps.StartStopStep):
 
     def stop(self, w):
         w.hub.close()
+        set_event_loop(None)
 
     def terminate(self, w):
         w.hub.close()
+        set_event_loop(None)
 
     def _patch_thread_primitives(self, w):
         # make clock use dummy lock
