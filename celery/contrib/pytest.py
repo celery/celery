@@ -26,6 +26,7 @@ def _create_app(enable_logging=False,
         **parameters
     )
     with setup_default_app(test_app, use_trap=use_trap):
+        test_app.set_current()
         yield test_app
 
 
