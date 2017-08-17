@@ -53,7 +53,7 @@ def app(celery_app):
 
 
 @pytest.fixture
-def manager(app, celery_session_worker):
+def manager(app, celery_worker):
     return Manager(app)
 
 
