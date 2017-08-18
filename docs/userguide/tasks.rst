@@ -1502,6 +1502,68 @@ Handlers
 
     The return value of this handler is ignored.
 
+
+Requests and custom requests
+----------------------------
+
+Upon receiving a message to run a task, the `worker <guide-workers>`:ref:
+creates a `request <celery.worker.request.Request>`:class: to represent such
+demand.
+
+Custom task classes may override which request class to use by changing the
+attribute `celery.app.task.Task.Request`:attr:.  You may either assign the
+custom request class itself, or its fully qualified name.
+
+The request has several responsibilities.  Custom request classes should cover
+them all -- they are responsible to actually run and trace the task.  We
+strongly recommend to inherit from `celery.worker.request.Request`:class:.
+
+When using the `pre-forking worker <worker-concurrency>`:ref:, the methods
+`~celery.worker.request.Request.on_timeout`:meth: and
+`~celery.worker.request.Request.on_failure`:meth: are executed in the main
+worker process.  An application may leverage such facility to detect failures
+which are not detected using `celery.app.task.Task.on_failure`:meth:.
+
+As an example, the following custom request detects and logs hard time
+limits, and other failures.
+
+.. code-block:: python
+
+   import logging
+   from celery.worker.request import Request
+
+   logger = logging.getLogger('my.package')
+
+   class MyRequest(Request):
+       'A minimal custom request to log failures and hard time limits.'
+
+       def on_timeout(self, soft, timeout):
+           super(MyRequest, self).on_timeout(soft, timeout)
+           if not soft:
+              logger.warning(
+                  'A hard timeout was enforced for task %s',
+                  self.task.name
+              )
+
+       def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
+           super(Request, self).on_failure(
+               exc_info,
+               send_failed_event=send_failed_event,
+               return_ok=return_ok
+           )
+           logger.warning(
+               'Failure detected for task %s',
+               self.task.name
+           )
+
+   class MyTask(Task):
+       Request = MyRequest  # you can use a FQN 'my.package:MyRequest'
+
+   @app.task(base=MyTask)
+   def some_longrunning_task():
+       # use your imagination
+
+
 .. _task-how-they-work:
 
 How it works

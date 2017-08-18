@@ -158,6 +158,9 @@ class Task(object):
     #: Execution strategy used, or the qualified name of one.
     Strategy = 'celery.worker.strategy:default'
 
+    #: Request class used, or the qualified name of one.
+    Request = 'celery.worker.request:Request'
+
     #: This is the instance bound to if the task is a method of a class.
     __self__ = None
 
