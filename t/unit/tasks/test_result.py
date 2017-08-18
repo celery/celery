@@ -595,6 +595,21 @@ class test_GroupResult:
     def test_eq_other(self):
         assert self.ts != 1
 
+    def test_eq_with_parent(self):
+        # GroupResult instances with different .parent are not equal
+        grp_res = self.app.GroupResult(
+            uuid(), [self.app.AsyncResult(uuid()) for _ in range(10)],
+            parent=self.app.AsyncResult(uuid())
+        )
+        grp_res_2 = self.app.GroupResult(grp_res.id, grp_res.results)
+        assert grp_res != grp_res_2
+
+        grp_res_2.parent = self.app.AsyncResult(uuid())
+        assert grp_res != grp_res_2
+
+        grp_res_2.parent = grp_res.parent
+        assert grp_res == grp_res_2
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_pickleable(self):
         assert pickle.loads(pickle.dumps(self.ts))
