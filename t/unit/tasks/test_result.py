@@ -917,3 +917,19 @@ class test_tuples:
         second_result = result_from_tuple(result.as_tuple(), self.app)
         assert second_result == result
         assert second_result.parent == parent
+
+    def test_GroupResult_as_tuple(self):
+        parent = self.app.AsyncResult(uuid())
+        result = self.app.GroupResult(
+            'group-result-1',
+            [self.app.AsyncResult('async-result-{}'.format(i))
+             for i in range(2)],
+            parent
+        )
+        (result_id, parent_id), group_results = result.as_tuple()
+        assert result_id == result.id
+        assert parent_id == parent.id
+        assert isinstance(group_results, list)
+        expected_grp_res = [(('async-result-{}'.format(i), None), None)
+                            for i in range(2)]
+        assert group_results == expected_grp_res
