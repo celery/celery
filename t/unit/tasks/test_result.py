@@ -36,10 +36,10 @@ Doesn't matter: really!\
 
 
 def mock_task(name, state, result, traceback=None):
-    return dict(
-        id=uuid(), name=name, state=state,
-        result=result, traceback=traceback,
-    )
+    return {
+        'id': uuid(), 'name': name, 'state': state,
+        'result': result, 'traceback': traceback,
+    }
 
 
 def save_result(app, task):

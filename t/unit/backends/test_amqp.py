@@ -29,7 +29,7 @@ class test_AMQPBackend:
         self.app.conf.result_cache_max = 100
 
     def create_backend(self, **opts):
-        opts = dict(dict(serializer='pickle', persistent=True), **opts)
+        opts = dict({'serializer': 'pickle', 'persistent': True}, **opts)
         return AMQPBackend(self.app, **opts)
 
     def test_destination_for(self):

@@ -30,7 +30,7 @@ class test_Context:
 
     def test_updated_context(self):
         expected = dict(default_context)
-        changes = dict(id='unique id', args=['some', 1], wibble='wobble')
+        changes = {'id': 'unique id', 'args': ['some', 1], 'wibble': 'wobble'}
         ctx = Context()
         expected.update(changes)
         ctx.update(changes)
@@ -48,7 +48,7 @@ class test_Context:
         assert get_context_as_dict(Context()) == default_context
 
     def test_cleared_context(self):
-        changes = dict(id='unique id', args=['some', 1], wibble='wobble')
+        changes = {'id': 'unique id', 'args': ['some', 1], 'wibble': 'wobble'}
         ctx = Context()
         ctx.update(changes)
         ctx.clear()
@@ -58,7 +58,7 @@ class test_Context:
 
     def test_context_get(self):
         expected = dict(default_context)
-        changes = dict(id='unique id', args=['some', 1], wibble='wobble')
+        changes = {'id': 'unique id', 'args': ['some', 1], 'wibble': 'wobble'}
         ctx = Context()
         expected.update(changes)
         ctx.update(changes)

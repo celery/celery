@@ -224,7 +224,7 @@ class CassandraBackend(BaseBackend):
 
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
-            dict(servers=self.servers,
-                 keyspace=self.keyspace,
-                 table=self.table))
+            {'servers': self.servers,
+             'keyspace': self.keyspace,
+             'table': self.table})
         return super(CassandraBackend, self).__reduce__(args, kwargs)

@@ -41,13 +41,13 @@ class test_ScheduleEntry:
     Entry = beat.ScheduleEntry
 
     def create_entry(self, **kwargs):
-        entry = dict(
-            name='celery.unittest.add',
-            schedule=timedelta(seconds=10),
-            args=(2, 2),
-            options={'routing_key': 'cpu'},
-            app=self.app,
-        )
+        entry = {
+            'name': 'celery.unittest.add',
+            'schedule': timedelta(seconds=10),
+            'args': (2, 2),
+            'options': {'routing_key': 'cpu'},
+            'app': self.app,
+        }
         return self.Entry(**dict(entry, **kwargs))
 
     def test_next(self):
@@ -309,9 +309,8 @@ class test_Scheduler:
     def test_ticks(self):
         scheduler = mScheduler(app=self.app)
         nums = [600, 300, 650, 120, 250, 36]
-        s = dict(('test_ticks%s' % i,
-                 {'schedule': mocked_schedule(False, j)})
-                 for i, j in enumerate(nums))
+        s = {'test_ticks%s' % i: {'schedule': mocked_schedule(False, j)}
+             for i, j in enumerate(nums)}
         scheduler.update_from_dict(s)
         assert scheduler.tick() == min(nums) - 0.010
 
@@ -367,11 +366,11 @@ class test_Scheduler:
         assert scheduler._heap == [event_t(1, 5, scheduler.schedule['foo'])]
 
     def create_schedule_entry(self, schedule):
-        entry = dict(
-            name='celery.unittest.add',
-            schedule=schedule,
-            app=self.app,
-        )
+        entry = {
+            'name': 'celery.unittest.add',
+            'schedule': schedule,
+            'app': self.app,
+        }
         return beat.ScheduleEntry(**dict(entry))
 
     def test_schedule_equal_schedule_vs_schedule_success(self):

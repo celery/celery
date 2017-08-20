@@ -56,8 +56,8 @@ class Option(object):
     deprecate_by = None
     remove_by = None
     old = set()
-    typemap = dict(string=str, int=int, float=float, any=lambda v: v,
-                   bool=strtobool, dict=dict, tuple=tuple)
+    typemap = {'string': str, 'int': int, 'float': float, 'any': lambda v: v,
+               'bool': strtobool, 'dict': dict, 'tuple': tuple}
 
     def __init__(self, default=None, *args, **kwargs):
         self.default = default

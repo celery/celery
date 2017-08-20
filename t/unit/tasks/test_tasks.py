@@ -467,7 +467,7 @@ class test_tasks(TasksCase):
 
             # With arguments.
             presult2 = self.mytask.apply_async(
-                kwargs=dict(name='George Costanza'),
+                kwargs={'name': 'George Costanza'},
             )
             self.assert_next_task_data_equal(
                 consumer, presult2, self.mytask.name, name='George Costanza',
@@ -475,14 +475,14 @@ class test_tasks(TasksCase):
 
             # send_task
             sresult = self.app.send_task(self.mytask.name,
-                                         kwargs=dict(name='Elaine M. Benes'))
+                                         kwargs={'name': 'Elaine M. Benes'})
             self.assert_next_task_data_equal(
                 consumer, sresult, self.mytask.name, name='Elaine M. Benes',
             )
 
             # With ETA.
             presult2 = self.mytask.apply_async(
-                kwargs=dict(name='George Costanza'),
+                kwargs={'name': 'George Costanza'},
                 eta=self.now() + timedelta(days=1),
                 expires=self.now() + timedelta(days=2),
             )
@@ -493,7 +493,7 @@ class test_tasks(TasksCase):
 
             # With countdown.
             presult2 = self.mytask.apply_async(
-                kwargs=dict(name='George Costanza'), countdown=10, expires=12,
+                kwargs={'name': 'George Costanza'}, countdown=10, expires=12,
             )
             self.assert_next_task_data_equal(
                 consumer, presult2, self.mytask.name,

@@ -232,19 +232,19 @@ class test_ControlPanel:
 
     def test_time_limit(self):
         panel = self.create_panel(consumer=Mock())
-        r = panel.handle('time_limit', arguments=dict(
-            task_name=self.mytask.name, hard=30, soft=10))
+        r = panel.handle('time_limit', arguments={
+            'task_name': self.mytask.name, 'hard': 30, 'soft': 10})
         assert self.mytask.time_limit == 30
         assert self.mytask.soft_time_limit == 10
         assert 'ok' in r
-        r = panel.handle('time_limit', arguments=dict(
-            task_name=self.mytask.name, hard=None, soft=None))
+        r = panel.handle('time_limit', arguments={
+            'task_name': self.mytask.name, 'hard': None, 'soft': None})
         assert self.mytask.time_limit is None
         assert self.mytask.soft_time_limit is None
         assert 'ok' in r
 
-        r = panel.handle('time_limit', arguments=dict(
-            task_name='248e8afya9s8dh921eh928', hard=30))
+        r = panel.handle('time_limit', arguments={
+            'task_name': '248e8afya9s8dh921eh928', 'hard': 30})
         assert 'error' in r
 
     def test_active_queues(self):
@@ -416,8 +416,8 @@ class test_ControlPanel:
             worker_state.reserved_requests.clear()
 
     def test_rate_limit_invalid_rate_limit_string(self):
-        e = self.panel.handle('rate_limit', arguments=dict(
-            task_name='tasks.add', rate_limit='x1240301#%!'))
+        e = self.panel.handle('rate_limit', arguments={
+            'task_name': 'tasks.add', 'rate_limit': 'x1240301#%!'})
         assert 'Invalid rate limit string' in e.get('error')
 
     def test_rate_limit(self):
@@ -432,15 +432,15 @@ class test_ControlPanel:
         panel = self.create_panel(app=self.app, consumer=consumer)
 
         task = self.app.tasks[self.mytask.name]
-        panel.handle('rate_limit', arguments=dict(task_name=task.name,
-                                                  rate_limit='100/m'))
+        panel.handle('rate_limit', arguments={'task_name': task.name,
+                                              'rate_limit': '100/m'})
         assert task.rate_limit == '100/m'
         assert consumer.reset
         consumer.reset = False
-        panel.handle('rate_limit', arguments=dict(
-            task_name=task.name,
-            rate_limit=0,
-        ))
+        panel.handle('rate_limit', arguments={
+            'task_name': task.name,
+            'rate_limit': 0,
+        })
         assert task.rate_limit == 0
         assert consumer.reset
 

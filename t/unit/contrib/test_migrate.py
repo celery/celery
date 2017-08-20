@@ -267,9 +267,9 @@ class test_migrate_task:
 class test_migrate_tasks:
 
     def test_migrate(self, app, name='testcelery'):
-        connection_kwargs = dict(
-            transport_options={'polling_interval': 0.01}
-        )
+        connection_kwargs = {
+            'transport_options': {'polling_interval': 0.01}
+        }
         x = Connection('memory://foo', **connection_kwargs)
         y = Connection('memory://foo', **connection_kwargs)
         # use separate state
