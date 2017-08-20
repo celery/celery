@@ -241,12 +241,5 @@ class test_autodiscovery:
                 imp.return_value.__path__ = 'foo'
                 base.find_related_module(base, 'tasks')
 
-                def se1(val):
-                    imp.side_effect = AttributeError()
-
-                imp.side_effect = se1
-                base.find_related_module(base, 'tasks')
-                imp.side_effect = None
-
                 find.side_effect = ImportError()
                 base.find_related_module(base, 'tasks')
