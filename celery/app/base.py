@@ -303,6 +303,9 @@ class Celery(object):
         self.on_after_finalize = Signal(name='app.on_after_finalize')
         self.on_after_fork = Signal(name='app.on_after_fork')
 
+        # kwargs for cherami transport
+        self.kwargs = kwargs
+
         self.on_init()
         _register_app(self)
 
@@ -839,6 +842,7 @@ class Celery(object):
             connect_timeout=self.either(
                 'broker_connection_timeout', connect_timeout
             ),
+            **self.kwargs
         )
     broker_connection = connection
 
