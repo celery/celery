@@ -365,7 +365,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 # -*- TRACE -*-
                 try:
                     try:
-                        from celery.concurrency.future import get_future_executor
+                        from celery.concurrency.future import (
+                            get_future_executor)
                     except RuntimeError:
                         R = retval = fun(*args, **kwargs)
                         state = SUCCESS

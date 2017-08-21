@@ -1,7 +1,7 @@
 
 # -*- coding: utf-8 -*-
 
-"""A future executor supports tornado coroutine and interacts between tornado ioloop and greenlet.
+"""Future executor supports communication between tornado ioloop and greenlet.
 
 With this, we can use coroutine in celery task like the following:
 
@@ -95,7 +95,8 @@ class defaultFutureExecutor(object):
 
         :param func: coroutine function or regular function.
         :param kwargs: if `callback` in kwargs dict,
-            the value will be treated as a function and called when coroutine finishs.
+            the value will be treated as a function and called when coroutine
+            finishs.
         """
         hub = cls.get_hub()
         callback = kwargs.pop('callback', None)
@@ -121,10 +122,9 @@ class greenFutureExecutor(defaultFutureExecutor):
             def resume_future():
                 try:
                     ret = f.result()
-                except:
+                except Exception:
                     g.throw(f.exception())
                 else:
-                    print('switch into', ret)
                     g.switch(ret)
 
             # future is done and ready switching to the previous greenlet
@@ -144,7 +144,6 @@ class eventletFutureExecutor(greenFutureExecutor):
     """Future executor based on eventlet."""
 
     from eventlet import getcurrent
-    
     from eventlet.patcher import is_monkey_patched, original
 
     thread_cls = original('threading').Thread
@@ -161,7 +160,7 @@ class eventletFutureExecutor(greenFutureExecutor):
 
     @classmethod
     def spawn(cls, func, g_hub):
-        """Spawn a new greenlet within the same hub of greenlet that called `apply_future` method.
+        """Spawn a new greenlet within the same hub of the caller.
 
         :param func: new greenlet's main function.
         :param g_hub: the hub of greenlet that called `apply_future` method.
@@ -192,7 +191,7 @@ class geventFutureExecutor(greenFutureExecutor):
 
     @classmethod
     def spawn(cls, func, g_hub):
-        """Spawn a new greenlet within the same hub of greenlet that called `apply_future` method.
+        """Spawn a new greenlet within the same hub of the caller.
 
         :param func: new greenlet's main function.
         :param g_hub: the hub of greenlet that called `apply_future` method.
@@ -208,6 +207,7 @@ class TornadoHub(object):
 
     def __init__(self, thread_cls, event_cls, **kwargs):
         """Initialize tornado hub.
+
         :param thread_cls: the native `threading.Thread` class.
 
         """
@@ -270,14 +270,14 @@ class TornadoHub(object):
 
         try:
             callback(future)
-        except:
+        except Exception:
             logger.error(
                 'uncaught exception when corotuine finished:', exc_info=1)
 
     def stop(self):
         """Stop the tornado coroutine thread.
 
-        Normally, we shoud not use this method directly, and it's just for test.
+        Normally, we shoud not use this method directly, and just for test.
         """
         self._io_loop.add_callback(lambda: self._io_loop.stop())
 

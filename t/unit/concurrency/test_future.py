@@ -1,10 +1,14 @@
 
+from __future__ import absolute_import, unicode_literals
+
+from case import skip
 from tornado import gen, httpclient
 
 from celery.concurrency.future import (
     defaultFutureExecutor, eventletFutureExecutor, geventFutureExecutor)
 
 
+@skip.if_pypy()
 class test_FutureExecutor:
 
     # start tornado hub thread before running test to avoid any linger threads
