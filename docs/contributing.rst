@@ -39,7 +39,7 @@ meeting or private correspondence.
 The Code of Conduct is heavily based on the `Ubuntu Code of Conduct`_, and
 the `Pylons Code of Conduct`_.
 
-.. _`Ubuntu Code of Conduct`: http://www.ubuntu.com/community/conduct
+.. _`Ubuntu Code of Conduct`: https://www.ubuntu.com/community/conduct
 .. _`Pylons Code of Conduct`: http://docs.pylonshq.com/community/conduct.html
 
 Be considerate
@@ -285,6 +285,7 @@ Branches
 Current active version branches:
 
 * dev (which git calls "master") (https://github.com/celery/celery/tree/master)
+* 4.0 (https://github.com/celery/celery/tree/4.0)
 * 3.1 (https://github.com/celery/celery/tree/3.1)
 * 3.0 (https://github.com/celery/celery/tree/3.0)
 
@@ -442,10 +443,10 @@ fetch and checkout a remote branch like this::
 
     git checkout --track -b 3.0-devel origin/3.0-devel
 
-.. _`Fork a Repo`: http://help.github.com/fork-a-repo/
+.. _`Fork a Repo`: https://help.github.com/fork-a-repo/
 .. _`Rebasing merge commits in git`:
-    http://notes.envato.com/developers/rebasing-merge-commits-in-git/
-.. _`Rebase`: http://help.github.com/rebase/
+    https://notes.envato.com/developers/rebasing-merge-commits-in-git/
+.. _`Rebase`: https://help.github.com/rebase/
 
 .. _contributing-testing:
 
@@ -514,7 +515,7 @@ of your contribution. Read the `Pull Requests`_ section in the GitHub
 Guide to learn how this is done.
 
 You can also attach pull requests to existing issues by following
-the steps outlined here: http://bit.ly/koJoso
+the steps outlined here: https://bit.ly/koJoso
 
 .. _`Pull Requests`: http://help.github.com/send-pull-requests/
 
@@ -581,11 +582,12 @@ Building the documentation
 --------------------------
 
 To build the documentation you need to install the dependencies
-listed in :file:`requirements/docs.txt`:
+listed in :file:`requirements/docs.txt` and :file:`requirements/default.txt`:
 
 .. code-block:: console
 
     $ pip install -U -r requirements/docs.txt
+    $ pip install -U -r requirements/default.txt
 
 After these dependencies are installed you should be able to
 build the docs by running:
@@ -628,7 +630,7 @@ the ``flakes`` target instead:
 
 .. code-block:: console
 
-    $ make flakes§
+    $ make flakes
 
 API reference
 ~~~~~~~~~~~~~
@@ -747,14 +749,14 @@ is following the conventions.
 * Import order
 
     * Python standard library (`import xxx`)
-    * Python standard library ('from xxx import`)
+    * Python standard library (`from xxx import`)
     * Third-party packages.
     * Other modules from the current package.
 
     or in case of code using Django:
 
     * Python standard library (`import xxx`)
-    * Python standard library ('from xxx import`)
+    * Python standard library (`from xxx import`)
     * Third-party packages.
     * Django packages.
     * Other modules from the current package.
@@ -804,7 +806,7 @@ is following the conventions.
      support for Python 2.5)
 
 
-* Note that we use "new-style` relative imports when the distribution
+* Note that we use "new-style" relative imports when the distribution
   doesn't support Python versions below 2.5
 
     This requires Python 2.5 or later:
@@ -896,7 +898,7 @@ Ask Solem
 ~~~~~~~~~
 
 :github: https://github.com/ask
-:twitter: http://twitter.com/#!/asksol
+:twitter: https://twitter.com/#!/asksol
 
 Asif Saif Uddin
 ~~~~~~~~~~~~~~~
@@ -920,7 +922,7 @@ Mher Movsisyan
 ~~~~~~~~~~~~~~
 
 :github: https://github.com/mher
-:twitter: http://twitter.com/#!/movsm
+:twitter: https://twitter.com/#!/movsm
 
 Omer Katz
 ~~~~~~~~~
@@ -931,7 +933,7 @@ Steeve Morin
 ~~~~~~~~~~~~
 
 :github: https://github.com/steeve
-:twitter: http://twitter.com/#!/steeve
+:twitter: https://twitter.com/#!/steeve
 
 Website
 -------
@@ -950,7 +952,7 @@ Jan Henrik Helmers
 ~~~~~~~~~~~~~~~~~~
 
 :web: http://www.helmersworks.com
-:twitter: http://twitter.com/#!/helmers
+:twitter: https://twitter.com/#!/helmers
 
 
 .. _packages:
@@ -962,7 +964,7 @@ Packages
 ----------
 
 :git: https://github.com/celery/celery
-:CI: http://travis-ci.org/#!/celery/celery
+:CI: https://travis-ci.org/#!/celery/celery
 :Windows-CI: https://ci.appveyor.com/project/ask/celery
 :PyPI: :pypi:`celery`
 :docs: http://docs.celeryproject.org
@@ -973,7 +975,7 @@ Packages
 Messaging library.
 
 :git: https://github.com/celery/kombu
-:CI: http://travis-ci.org/#!/celery/kombu
+:CI: https://travis-ci.org/#!/celery/kombu
 :Windows-CI: https://ci.appveyor.com/project/ask/kombu
 :PyPI: :pypi:`kombu`
 :docs: https://kombu.readthedocs.io
@@ -984,7 +986,7 @@ Messaging library.
 Python AMQP 0.9.1 client.
 
 :git: https://github.com/celery/py-amqp
-:CI: http://travis-ci.org/#!/celery/py-amqp
+:CI: https://travis-ci.org/#!/celery/py-amqp
 :Windows-CI: https://ci.appveyor.com/project/ask/py-amqp
 :PyPI: :pypi:`amqp`
 :docs: https://amqp.readthedocs.io
@@ -995,7 +997,7 @@ Python AMQP 0.9.1 client.
 Promise/deferred implementation.
 
 :git: https://github.com/celery/vine/
-:CI: http://travis-ci.org/#!/celery/vine/
+:CI: https://travis-ci.org/#!/celery/vine/
 :Windows-CI: https://ci.appveyor.com/project/ask/vine
 :PyPI: :pypi:`vine`
 :docs: https://vine.readthedocs.io
@@ -1007,7 +1009,7 @@ Fork of multiprocessing containing improvements
 that'll eventually be merged into the Python stdlib.
 
 :git: https://github.com/celery/billiard
-:CI: http://travis-ci.org/#!/celery/billiard/
+:CI: https://travis-ci.org/#!/celery/billiard/
 :Windows-CI: https://ci.appveyor.com/project/ask/billiard
 :PyPI: :pypi:`billiard`
 
@@ -1017,7 +1019,7 @@ that'll eventually be merged into the Python stdlib.
 Database-backed Periodic Tasks with admin interface using the Django ORM.
 
 :git: https://github.com/celery/django-celery-beat
-:CI: http://travis-ci.org/#!/celery/django-celery-beat
+:CI: https://travis-ci.org/#!/celery/django-celery-beat
 :Windows-CI: https://ci.appveyor.com/project/ask/django-celery-beat
 :PyPI: :pypi:`django-celery-beat`
 
@@ -1027,7 +1029,7 @@ Database-backed Periodic Tasks with admin interface using the Django ORM.
 Store task results in the Django ORM, or using the Django Cache Framework.
 
 :git: https://github.com/celery/django-celery-results
-:CI: http://travis-ci.org/#!/celery/django-celery-results
+:CI: https://travis-ci.org/#!/celery/django-celery-results
 :Windows-CI: https://ci.appveyor.com/project/ask/django-celery-results
 :PyPI: :pypi:`django-celery-results`
 
@@ -1155,7 +1157,7 @@ If this is a new release series then you also need to do the
 following:
 
 * Go to the Read The Docs management interface at:
-    http://readthedocs.org/projects/celery/?fromdocs=celery
+    https://readthedocs.org/projects/celery/?fromdocs=celery
 
 * Enter "Edit project"
 

@@ -1,2 +1,3 @@
 simplejson
 -r extras/redis.txt
+-r extras/dynamodb.txt

@@ -273,7 +273,7 @@ class AsyncResult(ResultBase):
                     raise IncompleteStream()
 
     def ready(self):
-        """Return :const:`True` if the task started executing.
+        """Return :const:`True` if the task has executed.
 
         If the task is still running, pending, or is waiting
         for retry then :const:`False` is returned.

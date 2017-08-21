@@ -11,8 +11,9 @@ from celery.exceptions import InvalidTaskError
 from celery.utils.log import get_logger
 from celery.utils.saferepr import saferepr
 from celery.utils.time import timezone
+from celery.utils.imports import symbol_by_name
 
-from .request import Request, create_request_cls
+from .request import create_request_cls
 from .state import task_reserved
 
 __all__ = ['default']
@@ -84,6 +85,7 @@ def default(task, app, consumer,
     handle = consumer.on_task_request
     limit_task = consumer._limit_task
     body_can_be_buffer = consumer.pool.body_can_be_buffer
+    Request = symbol_by_name(task.Request)
     Req = create_request_cls(Request, task, consumer.pool, hostname, eventer)
 
     revoked_tasks = consumer.controller.state.revoked
@@ -92,7 +94,7 @@ def default(task, app, consumer,
                              to_timestamp=to_timestamp):
         if body is None:
             body, headers, decoded, utc = (
-                message.body, message.headers, False, True,
+                message.body, message.headers, False, app.uses_utc_timezone(),
             )
             if not body_can_be_buffer:
                 body = bytes(body) if isinstance(body, buffer_t) else body
@@ -126,7 +128,7 @@ def default(task, app, consumer,
                 if req.utc:
                     eta = to_timestamp(to_system_tz(req.eta))
                 else:
-                    eta = to_timestamp(req.eta, timezone.local)
+                    eta = to_timestamp(req.eta, app.timezone)
             except (OverflowError, ValueError) as exc:
                 error("Couldn't convert ETA %r to timestamp: %r. Task: %r",
                       req.eta, exc, req.info(safe=True), exc_info=True)

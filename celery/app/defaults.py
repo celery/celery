@@ -152,6 +152,7 @@ NAMESPACES = Namespace(
     redis=Namespace(
         __old__=old_ns('celery_redis'),
 
+        backend_use_ssl=Option(type='dict'),
         db=Option(type='int'),
         host=Option(type='string'),
         max_connections=Option(type='int'),
@@ -177,6 +178,13 @@ NAMESPACES = Namespace(
         ),
         persistent=Option(None, type='bool'),
         serializer=Option('json'),
+    ),
+    elasticsearch=Namespace(
+        __old__=old_ns('celery_elasticsearch'),
+
+        retry_on_timeout=Option(type='bool'),
+        max_retries=Option(type='int'),
+        timeout=Option(type='float'),
     ),
     riak=Namespace(
         __old__=old_ns('celery_riak'),
@@ -277,7 +285,7 @@ NAMESPACES = Namespace(
             'WARNING', old={'celery_redirect_stdouts_level'},
         ),
         send_task_events=Option(
-            False, type='bool', old={'celeryd_send_events'},
+            False, type='bool', old={'celery_send_events'},
         ),
         state_db=Option(),
         task_log_format=Option(DEFAULT_TASK_LOG_FMT),

@@ -848,7 +848,7 @@ In Other News
 
     Contributed by Alain Masiero.
 
-    .. _`Couchbase`: http://www.couchbase.com
+    .. _`Couchbase`: https://www.couchbase.com
 
 - CentOS init-script now supports starting multiple worker instances.
 

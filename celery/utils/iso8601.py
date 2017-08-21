@@ -1,7 +1,7 @@
 """Parse ISO8601 dates.
 
 Originally taken from :pypi:`pyiso8601`
-(http://code.google.com/p/pyiso8601/)
+(https://bitbucket.org/micktwomey/pyiso8601)
 
 Modified to match the behavior of ``dateutil.parser``:
 

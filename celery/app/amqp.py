@@ -21,7 +21,7 @@ from celery.local import try_import
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
-from celery.utils.time import maybe_make_aware, to_utc
+from celery.utils.time import maybe_make_aware
 
 from . import routes as _routes
 
@@ -331,7 +331,9 @@ class AMQP(object):
                 now + timedelta(seconds=expires), tz=timezone,
             )
         eta = eta and eta.isoformat()
-        expires = expires and expires.isoformat()
+        # If we retry a task `expires` will already be ISO8601-formatted.
+        if not isinstance(expires, string_t):
+            expires = expires and expires.isoformat()
 
         if argsrepr is None:
             argsrepr = saferepr(args, self.argsrepr_maxsize)
@@ -407,17 +409,11 @@ class AMQP(object):
         if countdown:  # convert countdown to ETA
             self._verify_seconds(countdown, 'countdown')
             now = now or self.app.now()
-            timezone = timezone or self.app.timezone
             eta = now + timedelta(seconds=countdown)
-            if utc:
-                eta = to_utc(eta).astimezone(timezone)
         if isinstance(expires, numbers.Real):
             self._verify_seconds(expires, 'expires')
             now = now or self.app.now()
-            timezone = timezone or self.app.timezone
             expires = now + timedelta(seconds=expires)
-            if utc:
-                expires = to_utc(expires).astimezone(timezone)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
@@ -525,7 +521,7 @@ class AMQP(object):
                     exchange_type = 'direct'
 
             # convert to anon-exchange, when exchange not set and direct ex.
-            if not exchange or not routing_key and exchange_type == 'direct':
+            if (not exchange or not routing_key) and exchange_type == 'direct':
                     exchange, routing_key = '', qname
             elif exchange is None:
                 # not topic exchange, and exchange not undefined
@@ -544,7 +540,7 @@ class AMQP(object):
                     sender=name, body=body,
                     exchange=exchange, routing_key=routing_key,
                     declare=declare, headers=headers2,
-                    properties=kwargs, retry_policy=retry_policy,
+                    properties=properties, retry_policy=retry_policy,
                 )
             ret = producer.publish(
                 body,

@@ -41,6 +41,7 @@ app = Celery(
 
 app.conf.timezone = 'UTC'
 
+
 @app.task
 def say(what):
     print(what)
@@ -53,6 +54,7 @@ def setup_periodic_tasks(sender, **kwargs):
 
     # See periodic tasks user guide for more examples:
     # http://docs.celeryproject.org/en/latest/userguide/periodic-tasks.html
+
 
 if __name__ == '__main__':
     app.start()

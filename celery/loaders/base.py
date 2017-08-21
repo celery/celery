@@ -107,7 +107,13 @@ class BaseLoader(object):
         )
 
     def import_default_modules(self):
-        signals.import_modules.send(sender=self.app)
+        responses = signals.import_modules.send(sender=self.app)
+        # Prior to this point loggers are not yet set up properly, need to
+        #   check responses manually and reraised exceptions if any, otherwise
+        #   they'll be silenced, making it incredibly difficult to debug.
+        for _, response in responses:
+            if isinstance(response, Exception):
+                raise response
         return [self.import_task_module(m) for m in self.default_modules]
 
     def init_worker(self):

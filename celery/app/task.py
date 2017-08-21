@@ -132,7 +132,7 @@ class Context(object):
 
     @property
     def children(self):
-        # children must be an empy list for every thread
+        # children must be an empty list for every thread
         if self._children is None:
             self._children = []
         return self._children
@@ -157,6 +157,9 @@ class Task(object):
 
     #: Execution strategy used, or the qualified name of one.
     Strategy = 'celery.worker.strategy:default'
+
+    #: Request class used, or the qualified name of one.
+    Request = 'celery.worker.request:Request'
 
     #: This is the instance bound to if the task is a method of a class.
     __self__ = None
@@ -383,7 +386,7 @@ class Task(object):
             _task_stack.pop()
 
     def __reduce__(self):
-        # - tasks are pickled into the name of the task only, and the reciever
+        # - tasks are pickled into the name of the task only, and the receiver
         # - simply grabs it from the local registry.
         # - in later versions the module of the task is also included,
         # - and the receiving side tries to import that module so that
@@ -605,7 +608,7 @@ class Task(object):
         Arguments:
             args (Tuple): Positional arguments to retry with.
             kwargs (Dict): Keyword arguments to retry with.
-            exc (Exception): Custom exception to report when the max restart
+            exc (Exception): Custom exception to report when the max retry
                 limit has been exceeded (default:
                 :exc:`~@MaxRetriesExceededError`).
 

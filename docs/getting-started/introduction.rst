@@ -78,7 +78,7 @@ then you should read our getting started tutorials:
 Celery is…
 ==========
 
-.. _`mailing-list`: http://groups.google.com/group/celery-users
+.. _`mailing-list`: https://groups.google.com/group/celery-users
 
 .. topic:: \
 
@@ -234,11 +234,11 @@ The integration packages aren't strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
 database connections at :manpage:`fork(2)`.
 
-.. _`Django`: http://djangoproject.com/
+.. _`Django`: https://djangoproject.com/
 .. _`Pylons`: http://pylonshq.com/
 .. _`Flask`: http://flask.pocoo.org/
 .. _`web2py`: http://web2py.com/
-.. _`Bottle`: http://bottlepy.org/
+.. _`Bottle`: https://bottlepy.org/
 .. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/

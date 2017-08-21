@@ -139,6 +139,13 @@ class test_prepare_exception:
         y = self.b.exception_to_python(x)
         assert isinstance(y, KeyError)
 
+    def test_unicode_message(self):
+        message = u'\u03ac'
+        x = self.b.prepare_exception(Exception(message))
+        assert x == {'exc_message': (message,),
+                     'exc_type': Exception.__name__,
+                     'exc_module': Exception.__module__}
+
 
 class KVBackend(KeyValueStoreBackend):
     mget_returns_dict = False
@@ -357,19 +364,25 @@ class test_KeyValueStoreBackend:
             ids = {uuid(): i for i in range(10)}
             for id, i in items(ids):
                 self.b.mark_as_done(id, i)
-            it = self.b.get_many(list(ids))
+            it = self.b.get_many(list(ids), interval=0.01)
             for i, (got_id, got_state) in enumerate(it):
                 assert got_state['result'] == ids[got_id]
             assert i == 9
-            assert list(self.b.get_many(list(ids)))
+            assert list(self.b.get_many(list(ids), interval=0.01))
 
             self.b._cache.clear()
             callback = Mock(name='callback')
-            it = self.b.get_many(list(ids), on_message=callback)
+            it = self.b.get_many(
+                list(ids),
+                on_message=callback,
+                interval=0.05
+            )
             for i, (got_id, got_state) in enumerate(it):
                 assert got_state['result'] == ids[got_id]
             assert i == 9
-            assert list(self.b.get_many(list(ids)))
+            assert list(
+                self.b.get_many(list(ids), interval=0.01)
+            )
             callback.assert_has_calls([
                 call(ANY) for id in ids
             ])

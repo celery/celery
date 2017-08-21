@@ -109,24 +109,24 @@ rush in moving to the new settings format.
 ``CELERY_SECURITY_CERTIFICATE``        :setting:`security_certificate`
 ``CELERY_SECURITY_CERT_STORE``         :setting:`security_cert_store`
 ``CELERY_SECURITY_KEY``                :setting:`security_key`
-``CELERY_ACKS_LATE``                   :setting:`task_acks_late`
-``CELERY_ALWAYS_EAGER``                :setting:`task_always_eager`
-``CELERY_ANNOTATIONS``                 :setting:`task_annotations`
-``CELERY_MESSAGE_COMPRESSION``         :setting:`task_compression`
-``CELERY_CREATE_MISSING_QUEUES``       :setting:`task_create_missing_queues`
-``CELERY_DEFAULT_DELIVERY_MODE``       :setting:`task_default_delivery_mode`
-``CELERY_DEFAULT_EXCHANGE``            :setting:`task_default_exchange`
-``CELERY_DEFAULT_EXCHANGE_TYPE``       :setting:`task_default_exchange_type`
-``CELERY_DEFAULT_QUEUE``               :setting:`task_default_queue`
-``CELERY_DEFAULT_RATE_LIMIT``          :setting:`task_default_rate_limit`
-``CELERY_DEFAULT_ROUTING_KEY``         :setting:`task_default_routing_key`
-``[...]_EAGER_PROPAGATES_EXCEPTIONS``  :setting:`task_eager_propagates`
-``CELERY_IGNORE_RESULT``               :setting:`task_ignore_result`
+``CELERY_TASK_ACKS_LATE``              :setting:`task_acks_late`
+``CELERY_TASK_ALWAYS_EAGER``           :setting:`task_always_eager`
+``CELERY_TASK_ANNOTATIONS``            :setting:`task_annotations`
+``CELERY_TASK_COMPRESSION``            :setting:`task_compression`
+``CELERY_TASK_CREATE_MISSING_QUEUES``  :setting:`task_create_missing_queues`
+``CELERY_TASK_DEFAULT_DELIVERY_MODE``  :setting:`task_default_delivery_mode`
+``CELERY_TASK_DEFAULT_EXCHANGE``       :setting:`task_default_exchange`
+``CELERY_TASK_DEFAULT_EXCHANGE_TYPE``  :setting:`task_default_exchange_type`
+``CELERY_TASK_DEFAULT_QUEUE``          :setting:`task_default_queue`
+``CELERY_TASK_DEFAULT_RATE_LIMIT``     :setting:`task_default_rate_limit`
+``CELERY_TASK_DEFAULT_ROUTING_KEY``    :setting:`task_default_routing_key`
+``CELERY_TASK_EAGER_PROPAGATES``       :setting:`task_eager_propagates`
+``CELERY_TASK_IGNORE_RESULT``          :setting:`task_ignore_result`
 ``CELERY_TASK_PUBLISH_RETRY``          :setting:`task_publish_retry`
 ``CELERY_TASK_PUBLISH_RETRY_POLICY``   :setting:`task_publish_retry_policy`
-``CELERY_QUEUES``                      :setting:`task_queues`
-``CELERY_ROUTES``                      :setting:`task_routes`
-``CELERY_SEND_TASK_SENT_EVENT``        :setting:`task_send_sent_event`
+``CELERY_TASK_QUEUES``                 :setting:`task_queues`
+``CELERY_TASK_ROUTES``                 :setting:`task_routes`
+``CELERY_TASK_SEND_SENT_EVENT``        :setting:`task_send_sent_event`
 ``CELERY_TASK_SERIALIZER``             :setting:`task_serializer`
 ``CELERYD_TASK_SOFT_TIME_LIMIT``       :setting:`task_soft_time_limit`
 ``CELERYD_TASK_TIME_LIMIT``            :setting:`task_time_limit`
@@ -584,13 +584,13 @@ Can be one of the following:
 
 .. _`SQLAlchemy`: http://sqlalchemy.org
 .. _`Memcached`: http://memcached.org
-.. _`Redis`: http://redis.io
+.. _`Redis`: https://redis.io
 .. _`Cassandra`: http://cassandra.apache.org/
 .. _`Elasticsearch`: https://aws.amazon.com/elasticsearch-service/
 .. _`IronCache`: http://www.iron.io/cache
 .. _`CouchDB`: http://www.couchdb.com/
-.. _`Couchbase`: http://www.couchbase.com/
-.. _`Consul`: http://consul.io/
+.. _`Couchbase`: https://www.couchbase.com/
+.. _`Consul`: https://consul.io/
 
 .. setting:: result_serializer
 
@@ -878,6 +878,16 @@ The fields of the URL are defined as follows:
     Database number to use. Default is 0.
     The db can include an optional leading slash.
 
+.. setting:: redis_backend_use_ssl
+
+``redis_backend_use_ssl``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Disabled.
+
+The Redis backend supports SSL. The valid values of this options are the same
+as :setting:`broker_use_ssl`.
+
 .. setting:: redis_max_connections
 
 ``redis_max_connections``
@@ -905,7 +915,7 @@ in seconds (int/float)
 ``redis_socket_timeout``
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: 5.0 seconds.
+Default: 120.0 seconds.
 
 Socket timeout for reading/writing operations to the Redis server
 in seconds (int/float), used by the redis result backend.
@@ -1055,6 +1065,33 @@ Example configuration
 
     result_backend = 'elasticsearch://example.com:9200/index_name/doc_type'
 
+.. setting:: elasticsearch_retry_on_timeout
+
+``elasticsearch_retry_on_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: :const:`False`
+
+Should timeout trigger a retry on different node?
+
+.. setting:: elasticsearch_max_retries
+
+``elasticsearch_max_retries``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 3.
+
+Maximum number of retries before an exception is propagated.
+
+.. setting:: elasticsearch_timeout
+
+``elasticsearch_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 10.0 seconds.
+
+Global timeout,used by the elasticsearch result backend.
+
 .. _conf-riak-result-backend:
 
 Riak backend settings
@@ -1128,6 +1165,75 @@ This is a dict supporting the following keys:
 
     The protocol to use to connect to the Riak server. This isn't configurable
     via :setting:`result_backend`
+
+.. _conf-dynamodb-result-backend:
+
+AWS DynamoDB backend settings
+-----------------------------
+
+.. note::
+
+    The Dynamodb backend requires the :pypi:`boto3` library.
+
+    To install this package use :command:`pip`:
+
+    .. code-block:: console
+
+        $ pip install celery[dynamodb]
+
+    See :ref:`bundles` for information on combining multiple extension
+    requirements.
+
+This backend requires the :setting:`result_backend`
+setting to be set to a DynamoDB URL::
+
+    result_backend = 'dynamodb://aws_access_key_id:aws_secret_access_key@region:port/table?read=n&write=m'
+
+For example, specifying the AWS region and the table name::
+
+    result_backend = 'dynamodb://@us-east-1/celery_results
+
+or retrieving AWS configuration parameters from the environment, using the default table name (``celery``)
+and specifying read and write provisioned throughput::
+
+    result_backend = 'dynamodb://@/?read=5&write=5'
+
+or using the `downloadable version <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html>`_
+of DynamoDB
+`locally <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.Endpoint.html>`_::
+
+    result_backend = 'dynamodb://@localhost:8000
+
+The fields of the URL are defined as follows:
+
+#. ``aws_access_key_id & aws_secret_access_key``
+
+    The credentials for accessing AWS API resources. These can also be resolved
+    by the :pypi:`boto3` library from various sources, as
+    described `here <http://boto3.readthedocs.io/en/latest/guide/configuration.html#configuring-credentials>`_.
+
+#. ``region``
+
+    The AWS region, e.g. ``us-east-1`` or ``localhost`` for the `Downloadable Version <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html>`_.
+    See the :pypi:`boto3` library `documentation <http://boto3.readthedocs.io/en/latest/guide/configuration.html#environment-variable-configuration>`_
+    for definition options.
+
+#. ``port``
+
+   The listening port of the local DynamoDB instance, if you are using the downloadable version.
+   If you have not specified the ``region`` parameter as ``localhost``,
+   setting this parameter has **no effect**.
+
+#. ``table``
+
+    Table name to use. Default is ``celery``.
+    See the `DynamoDB Naming Rules <http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Limits.html#limits-naming-rules>`_
+    for information on the allowed characters and length.
+
+#. ``read & write``
+
+    The Read & Write Capacity Units for the created DynamoDB table. Default is ``1`` for both read and write.
+    More details can be found in the `Provisioned Throughput documentation <http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ProvisionedThroughput.html>`_.
 
 .. _conf-ironcache-result-backend:
 
@@ -1643,7 +1749,7 @@ Example::
 
     # Random failover strategy
     def random_failover_strategy(servers):
-        it = list(it)  # don't modify callers list
+        it = list(servers)  # don't modify callers list
         shuffle = random.shuffle
         for _ in repeat(None):
             shuffle(it)
@@ -1697,6 +1803,11 @@ Default: Disabled.
 
 Toggles SSL usage on broker connection and SSL settings.
 
+The valid values for this option vary by transport.
+
+``pyamqp``
+__________
+
 If ``True`` the connection will use SSL with default SSL settings.
 If set to a dict, will configure SSL connection according to the specified
 policy. The format used is Python's :func:`ssl.wrap_socket` options.
@@ -1723,6 +1834,21 @@ certificate authority:
     configuration won't validate the server cert at all. Please read Python
     `ssl module security
     considerations <https://docs.python.org/3/library/ssl.html#ssl-security>`_.
+
+``redis``
+_________
+
+
+The setting must be a dict the keys:
+
+*  ``ssl_cert_reqs`` (required): one of the ``SSLContext.verify_mode`` values:
+    * ``ssl.CERT_NONE``
+    * ``ssl.CERT_OPTIONAL``
+    * ``ssl.CERT_REQUIRED``
+*  ``ssl_ca_certs`` (optional): path to the CA certificate
+*  ``ssl_certfile`` (optional): path to the client certificate
+*  ``ssl_keyfile`` (optional): path to the client key
+
 
 .. setting:: broker_pool_limit
 

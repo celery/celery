@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+from datetime import datetime, timedelta
 import gc
 import itertools
 import os
@@ -23,7 +24,7 @@ from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
 from celery.utils.serialization import pickle
-from celery.utils.time import timezone
+from celery.utils.time import timezone, to_utc, localize
 from celery.utils.objects import Bunch
 
 THIS_IS_A_KEY = 'this is a value'
@@ -72,6 +73,37 @@ class test_App:
 
     def setup(self):
         self.app.add_defaults(deepcopy(self.CELERY_TEST_CONFIG))
+
+    def test_now(self):
+        timezone_setting_value = 'US/Eastern'
+        tz_utc = timezone.get_timezone('UTC')
+        tz_us_eastern = timezone.get_timezone(timezone_setting_value)
+
+        now = to_utc(datetime.utcnow())
+        app_now = self.app.now()
+
+        assert app_now.tzinfo is tz_utc
+        assert app_now - now <= timedelta(seconds=1)
+
+        # Check that timezone conversion is applied from configuration
+        self.app.conf.enable_utc = False
+        self.app.conf.timezone = timezone_setting_value
+        # timezone is a cached property
+        del self.app.timezone
+
+        app_now = self.app.now()
+
+        assert app_now.tzinfo.zone == tz_us_eastern.zone
+
+        diff = to_utc(datetime.utcnow()) - localize(app_now, tz_utc)
+        assert diff <= timedelta(seconds=1)
+
+        # Verify that timezone setting overrides enable_utc=on setting
+        self.app.conf.enable_utc = True
+        del self.app.timezone
+        app_now = self.app.now()
+        assert self.app.timezone == tz_us_eastern
+        assert app_now.tzinfo.zone == tz_us_eastern.zone
 
     @patch('celery.app.base.set_default_app')
     def test_set_default(self, set_default_app):
@@ -647,7 +679,8 @@ class test_App:
         _args = {'foo': 'bar', 'spam': 'baz'}
 
         self.app.config_from_object(Bunch())
-        assert self.app.conf.broker_transport_options == {}
+        assert self.app.conf.broker_transport_options == \
+            {'polling_interval': 0.1}
 
         self.app.config_from_object(Bunch(broker_transport_options=_args))
         assert self.app.conf.broker_transport_options == _args
@@ -754,6 +787,20 @@ class test_App:
         assert self.app.connection('amqp:////value') \
                        .failover_strategy == my_failover_strategy
 
+    def test_amqp_heartbeat_settings(self):
+        # Test default broker_heartbeat value
+        assert self.app.connection('amqp:////value') \
+                   .heartbeat == 0
+
+        # Test passing heartbeat through app configuration
+        self.app.conf.broker_heartbeat = 60
+        assert self.app.connection('amqp:////value') \
+                   .heartbeat == 60
+
+        # Test passing heartbeat as connection argument
+        assert self.app.connection('amqp:////value', heartbeat=30) \
+                   .heartbeat == 30
+
     def test_after_fork(self):
         self.app._pool = Mock()
         self.app.on_after_fork = Mock(name='on_after_fork')
@@ -796,6 +843,16 @@ class test_App:
         self.app.conf.timezone = None
         tz = self.app.timezone
         assert tz == timezone.get_timezone('UTC')
+
+    def test_uses_utc_timezone(self):
+        self.app.conf.timezone = None
+        assert self.app.uses_utc_timezone() is True
+
+        self.app.conf.timezone = 'US/Eastern'
+        assert self.app.uses_utc_timezone() is False
+
+        self.app.conf.timezone = 'UTC'
+        assert self.app.uses_utc_timezone() is True
 
     def test_compat_on_configure(self):
         _on_configure = Mock(name='on_configure')

@@ -38,6 +38,10 @@ When a message is received it's converted into a
 Tasks with an ETA, or rate-limit are entered into the `timer`,
 messages that can be immediately processed are sent to the execution pool.
 
+ETA and rate-limit are 2 incompatible parameters, and the ETA is overriding
+the rate-limit by default. A task with both will follow its ETA and ignore its
+rate-limit.
+
 Timer
 -----
 

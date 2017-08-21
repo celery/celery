@@ -21,7 +21,7 @@ What kinds of things should I use Celery for?
 describing why you'd use a queue in a web context.
 
 .. _`Queue everything and delight everyone`:
-    http://decafbad.com/blog/2008/07/04/queue-everything-and-delight-everyone
+    https://decafbad.com/blog/2008/07/04/queue-everything-and-delight-everyone
 
 These are some common use cases:
 
@@ -175,7 +175,7 @@ See :ref:`brokers` for more information.
 Redis as a broker won't perform as well as
 an AMQP broker, but the combination RabbitMQ as broker and Redis as a result
 store is commonly used. If you have strict reliability requirements you're
-encouraged to use RabbitMQ or another AMQP broker. Some transports also uses
+encouraged to use RabbitMQ or another AMQP broker. Some transports also use
 polling, so they're likely to consume more resources. However, if you for
 some reason aren't able to use AMQP, feel free to use these alternatives.
 They will probably work fine for most use cases, and note that the above
@@ -195,7 +195,7 @@ language has an AMQP client, there shouldn't be much work to create a worker
 in your language. A Celery worker is just a program connecting to the broker
 to process messages.
 
-Also, there's another way to be language independent, and that's to use REST
+Also, there's another way to be language-independent, and that's to use REST
 tasks, instead of your tasks being functions, they're URLs. With this
 information you can even create simple web servers that enable preloading of
 code. Simply expose an endpoint that performs an operation, and create a task
@@ -223,15 +223,15 @@ Transaction Model and Locking`_ in the MySQL user manual.
 
 (Thanks to Honza Kral and Anton Tsigularov for this solution)
 
-.. _`MySQL - The InnoDB Transaction Model and Locking`: http://dev.mysql.com/doc/refman/5.1/en/innodb-transaction-model.html
+.. _`MySQL - The InnoDB Transaction Model and Locking`: https://dev.mysql.com/doc/refman/5.1/en/innodb-transaction-model.html
 
 .. _faq-worker-hanging:
 
 The worker isn't doing anything, just hanging
 ---------------------------------------------
 
-**Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
-            or `Why is Task.delay/apply\* just hanging?`.
+**Answer:** See `MySQL is throwing deadlock errors, what can I do?`_,
+or `Why is Task.delay/apply\*/the worker just hanging?`_.
 
 .. _faq-results-unreliable:
 
@@ -485,7 +485,7 @@ Why is RabbitMQ crashing?
 
 **Answer:** RabbitMQ will crash if it runs out of memory. This will be fixed in a
 future release of RabbitMQ. please refer to the RabbitMQ FAQ:
-http://www.rabbitmq.com/faq.html#node-runs-out-of-memory
+https://www.rabbitmq.com/faq.html#node-runs-out-of-memory
 
 .. note::
 

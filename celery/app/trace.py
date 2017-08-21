@@ -49,7 +49,6 @@ __all__ = [
 ]
 
 logger = get_logger(__name__)
-info = logger.info
 
 #: Format string used to log task success.
 LOG_SUCCESS = """\
@@ -114,6 +113,14 @@ _localized = []
 _patched = {}
 
 trace_ok_t = namedtuple('trace_ok_t', ('retval', 'info', 'runtime', 'retstr'))
+
+
+def info(fmt, context):
+    """Log 'fmt % context' with severity 'INFO'.
+
+    'context' is also passed in extra with key 'data' for custom handlers.
+    """
+    logger.info(fmt, context, extra={'data': context})
 
 
 def task_has_custom(task, attr):

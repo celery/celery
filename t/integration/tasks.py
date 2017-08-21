@@ -55,3 +55,20 @@ def collect_ids(self, res, i):
 
     """
     return res, (self.request.root_id, self.request.parent_id, i)
+
+
+@shared_task(bind=True, expires=60.0, max_retries=1)
+def retry_once(self):
+    """Task that fails and is retried. Returns the number of retries."""
+    if self.request.retries:
+        return self.request.retries
+    raise self.retry(countdown=0.1)
+
+
+@shared_task
+def redis_echo(message):
+    """Task that appends the message to a redis list"""
+    from redis import StrictRedis
+
+    redis_connection = StrictRedis()
+    redis_connection.rpush('redis-echo', message)

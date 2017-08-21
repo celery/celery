@@ -24,7 +24,7 @@ from celery.utils.collections import LimitedSet
 __all__ = [
     'SOFTWARE_INFO', 'reserved_requests', 'active_requests',
     'total_count', 'revoked', 'task_reserved', 'maybe_shutdown',
-    'task_accepted', 'task_reserved', 'task_ready', 'Persistent',
+    'task_accepted', 'task_ready', 'Persistent',
 ]
 
 #: Worker software/platform information.
