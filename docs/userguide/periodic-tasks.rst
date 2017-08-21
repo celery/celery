@@ -65,9 +65,9 @@ schedule manually.
         $ python manage.py shell
         >>> from djcelery.models import PeriodicTask
         >>> PeriodicTask.objects.update(last_run_at=None)
-    
+
     Django-Celery only supports Celery 4.0 and below, for Celery 4.0 and above, do as follow:
-    
+
     .. code-block:: console
 
         $ python manage.py shell

@@ -281,8 +281,8 @@ Configuration
 =============
 
 Celery, like a consumer appliance, doesn't need much configuration to operate.
-It has an input and an output. The input must be connected to a broker, and the output can 
-be optionally connected to a result backend. However, if you look closely at the back, 
+It has an input and an output. The input must be connected to a broker, and the output can
+be optionally connected to a result backend. However, if you look closely at the back,
 there's a lid revealing loads of sliders, dials, and buttons: this is the configuration.
 
 The default configuration should be good enough for most use cases, but there are
@@ -315,7 +315,7 @@ If you're configuring many settings at once you can use ``update``:
 For larger projects, a dedicated configuration module is recommended.
 Hard coding periodic task intervals and task routing options is discouraged.
 It is much better to keep these in a centralized location. This is especially
-true for libraries, as it enables users to control how their tasks behave. 
+true for libraries, as it enables users to control how their tasks behave.
 A centralized configuration will also allow your SysAdmin to make simple changes
 in the event of system trouble.
 
