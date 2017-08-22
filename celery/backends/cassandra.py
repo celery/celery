@@ -79,7 +79,7 @@ class CassandraBackend(BaseBackend):
     supports_autoexpire = True      # autoexpire supported via entry_ttl
 
     def __init__(self, servers=None, keyspace=None, table=None, entry_ttl=None,
-                 port=9042, cassandra_options=None, **kwargs):
+                 port=9042, **kwargs):
         super(CassandraBackend, self).__init__(**kwargs)
 
         if not cassandra:
@@ -90,8 +90,7 @@ class CassandraBackend(BaseBackend):
         self.port = port or conf.get('cassandra_port', None)
         self.keyspace = keyspace or conf.get('cassandra_keyspace', None)
         self.table = table or conf.get('cassandra_table', None)
-        self.cassandra_options = dict(conf.get('cassandra_options') or {},
-                                      **cassandra_options or {})
+        self.cassandra_options = conf.get('cassandra_options', {})
 
         if not self.servers or not self.keyspace or not self.table:
             raise ImproperlyConfigured('Cassandra backend not configured.')
