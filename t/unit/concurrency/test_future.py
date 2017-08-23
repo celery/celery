@@ -2,7 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from case import skip
-from tornado import gen, httpclient
+from tornado import gen, httpclient, ioloop
 
 from celery.concurrency.future import (
     defaultFutureExecutor, eventletFutureExecutor, geventFutureExecutor)
@@ -12,7 +12,8 @@ from celery.concurrency.future import (
 class test_FutureExecutor:
 
     # start tornado hub thread before running test to avoid any linger threads
-    tornado_hub = defaultFutureExecutor.get_hub()
+    tornado_hub = defaultFutureExecutor.get_hub(
+        io_loop=ioloop.IOLoop.instance())
 
     @gen.coroutine
     def foo(self, count):
@@ -62,7 +63,7 @@ class test_FutureExecutor:
         task()
         finish_event.wait()
         httpserver.stop()
-        sleep(1)  # make sure httpserver thread exited
+        sleep(2)  # make sure httpserver thread exited
 
     def test_gevent_executor(self):
         from gevent import sleep, spawn_raw

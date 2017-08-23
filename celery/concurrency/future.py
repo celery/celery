@@ -24,7 +24,6 @@ With this, we can use coroutine in celery task like the following:
 
 from __future__ import absolute_import, unicode_literals
 import functools
-import sys
 
 from greenlet import greenlet
 from kombu.utils.compat import detect_environment
@@ -33,8 +32,6 @@ try:
 except ImportError:
     raise RuntimeError(
         "you can't use this future module without tornado framework.")
-
-from celery.utils.log import logger
 
 
 __all__ = [
@@ -71,20 +68,24 @@ def get_future_executor():
 class defaultFutureExecutor(object):
     """Default future executor."""
 
-    import threading
-    thread_cls = threading.Thread
-    if sys.version_info.major < 3:
-        event_cls = classmethod(threading.Event)
-    else:
-        event_cls = threading.Event
-
     _hub = None
 
     @classmethod
-    def get_hub(cls):
+    def thread_cls(cls):
+        import threading
+        return threading.Thread
+
+    @classmethod
+    def event_cls(cls):
+        import threading
+        return threading.Event
+
+    @classmethod
+    def get_hub(cls, io_loop=None):
         """Return TornadoHub instance."""
         if cls._hub is None:
-            cls._hub = TornadoHub(cls.thread_cls, cls.event_cls)
+            cls._hub = TornadoHub(
+                cls.thread_cls(), cls.event_cls(), io_loop=io_loop)
             cls._hub.start()
 
         return cls._hub
@@ -114,18 +115,21 @@ class greenFutureExecutor(defaultFutureExecutor):
     """Base class for future executor with greenlet."""
 
     @classmethod
+    def getcurrent(cls):
+        raise NotImplemented()
+
+    @classmethod
+    def get_greentlet_hub(cls):
+        raise NotImplemented()
+
+    @classmethod
     def apply_future(cls, func, *args, **kwargs):
         """Execute coroutine and send future result to the called greenlet."""
         g = cls.getcurrent()
 
         def future_done(g_hub, f):
             def resume_future():
-                try:
-                    ret = f.result()
-                except Exception:
-                    g.throw(f.exception())
-                else:
-                    g.switch(ret)
+                g.switch(f)
 
             # future is done and ready switching to the previous greenlet
             cls.spawn(resume_future, g_hub)
@@ -135,28 +139,34 @@ class greenFutureExecutor(defaultFutureExecutor):
         kwargs['callback'] = functools.partial(future_done, g_hub)
         hub.execute(func, *args, **kwargs)
 
-        # yield to parent greenlet and run any other greenlets
-        ret = g.parent.switch()
-        return ret
+        # yield to hub greenlet and run any other greenlets
+        g_future = g_hub.switch()
+
+        return g_future.result()
 
 
 class eventletFutureExecutor(greenFutureExecutor):
     """Future executor based on eventlet."""
 
-    from eventlet import getcurrent
-    from eventlet.patcher import is_monkey_patched, original
+    @classmethod
+    def thread_cls(cls):
+        from eventlet.patcher import original
+        return original('threading').Thread
 
-    thread_cls = original('threading').Thread
-    if sys.version_info.major < 3:
-        event_cls = classmethod(original('threading').Event)
+    @classmethod
+    def event_cls(cls):
+        from eventlet.patcher import original
+        return original('threading').Event
 
-        @classmethod
-        def get_greentlet_hub(cls):
-            from eventlet.hubs import get_hub
-            return get_hub()
-    else:
-        event_cls = original('threading').Event
-        from eventlet.hubs import get_hub as get_greentlet_hub
+    @classmethod
+    def getcurrent(cls):
+        from eventlet import getcurrent
+        return getcurrent()
+
+    @classmethod
+    def get_greentlet_hub(cls):
+        from eventlet.hubs import get_hub
+        return get_hub()
 
     @classmethod
     def spawn(cls, func, g_hub):
@@ -174,20 +184,25 @@ class eventletFutureExecutor(greenFutureExecutor):
 class geventFutureExecutor(greenFutureExecutor):
     """Future executor based on gevent."""
 
-    from gevent import getcurrent
-    from gevent.monkey import get_original
+    @classmethod
+    def thread_cls(cls):
+        from gevent.monkey import get_original
+        return get_original('threading', 'Thread')
 
-    thread_cls = get_original('threading', 'Thread')
-    if sys.version_info.major < 3:
-        event_cls = classmethod(get_original('threading', 'Event'))
+    @classmethod
+    def event_cls(cls):
+        from gevent.monkey import get_original
+        return get_original('threading', 'Event')
 
-        @classmethod
-        def get_greentlet_hub(cls):
-            from gevent import get_hub
-            return get_hub()
-    else:
-        event_cls = get_original('threading', 'Event')
-        from gevent import get_hub as get_greentlet_hub
+    @classmethod
+    def getcurrent(cls):
+        from gevent import getcurrent
+        return getcurrent()
+
+    @classmethod
+    def get_greentlet_hub(cls):
+        from gevent import get_hub
+        return get_hub()
 
     @classmethod
     def spawn(cls, func, g_hub):
@@ -205,19 +220,19 @@ class geventFutureExecutor(greenFutureExecutor):
 class TornadoHub(object):
     """Tornado coroutine execution hub."""
 
-    def __init__(self, thread_cls, event_cls, **kwargs):
+    def __init__(self, thread_cls, event_cls, io_loop=None, **kwargs):
         """Initialize tornado hub.
 
         :param thread_cls: the native `threading.Thread` class.
 
         """
-        self._io_loop = None
+        self._io_loop = io_loop
         self._ioloop_event = event_cls()
         self._io_thread = thread_cls(target=self._run)
         self._io_thread.setDaemon(True)
 
     def _run(self):
-        self._io_loop = ioloop.IOLoop.instance()
+        self._io_loop = self._io_loop or ioloop.IOLoop.instance()
         self._ioloop_event.set()
         self._io_loop.start()
 
@@ -238,7 +253,7 @@ class TornadoHub(object):
         """
         callback = kwargs.pop('callback', None)
         self._io_loop.add_callback(functools.partial(
-            self.on_run, callback, func, *args, **kwargs))
+            self.on_start, callback, func, *args, **kwargs))
 
     def execute_future(self, future, callback=None):
         """Execute future within tornado ioloop.
@@ -251,28 +266,25 @@ class TornadoHub(object):
         self._io_loop.add_callback(functools.partial(
             self._io_loop.add_future, future, callback))
 
-    def on_run(self, callback, func, *args, **kwargs):
-        """Coroutine run callback."""
+    def on_start(self, callback, func, *args, **kwargs):
+        """Coroutine start callback."""
         ret = func(*args, **kwargs)
-        if concurrent.is_future(ret):
-            self._io_loop.add_future(
-                ret, functools.partial(self.on_finish, callback))
-        else:
+        f = None
+        if not concurrent.is_future(ret):
             f = gen.TracebackFuture()
             f.set_result(ret)
-            if callback:
-                callback(f)
+        else:
+            f = ret
+
+        self._io_loop.add_future(
+            f, functools.partial(self.on_finish, callback))
 
     def on_finish(self, callback, future):
         """Coroutine finish callback."""
         if not callback:
             return
 
-        try:
-            callback(future)
-        except Exception:
-            logger.error(
-                'uncaught exception when corotuine finished:', exc_info=1)
+        callback(future)
 
     def stop(self):
         """Stop the tornado coroutine thread.
