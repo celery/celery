@@ -82,7 +82,7 @@ def logger_isa(l, p, max=1000):
         else:
             if this in seen:
                 raise RuntimeError(
-                    'Logger {0!r} parents recursive'.format(l),
+                    'Logger {0!r} parents recursive'.format(l.name),
                 )
             seen.add(this)
             this = this.parent

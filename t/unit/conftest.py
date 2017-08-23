@@ -48,8 +48,10 @@ CASE_LOG_HANDLER_EFFECT = 'Test {0} modified handlers for the root logger'
 def celery_config():
     return {
         'broker_url': 'memory://',
+        'broker_transport_options': {
+            'polling_interval': 0.1
+        },
         'result_backend': 'cache+memory://',
-
         'task_default_queue': 'testcelery',
         'task_default_exchange': 'testcelery',
         'task_default_routing_key': 'testcelery',

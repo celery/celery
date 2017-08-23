@@ -5,7 +5,7 @@ Introduction
 ============
 
 This is a remote debugger for Celery tasks running in multiprocessing
-pool workers.  Inspired by http://snippets.dzone.com/posts/show/7248
+pool workers.  Inspired by a lost post on dzone.com.
 
 Usage
 -----
@@ -124,6 +124,7 @@ class Rdb(Pdb):
         this_port = None
         for i in range(search_limit):
             _sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            _sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             this_port = port + skew + i
             try:
                 _sock.bind((host, this_port))

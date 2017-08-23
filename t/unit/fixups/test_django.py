@@ -227,9 +227,7 @@ class test_DjangoWorkerFixup(FixupCase):
     def test_close_cache(self):
         with self.fixup_context(self.app) as (f, _, _):
             f.close_cache()
-            f._cache.cache.close.assert_called_with()
-            f._cache.cache.close.side_effect = TypeError()
-            f.close_cache()
+            f._cache.close_caches.assert_called_with()
 
     def test_on_worker_ready(self):
         with self.fixup_context(self.app) as (f, _, _):

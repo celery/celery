@@ -11,7 +11,7 @@ Mailing list
 For discussions about the usage, development, and future of Celery,
 please join the `celery-users`_ mailing list.
 
-.. _`celery-users`: http://groups.google.com/group/celery-users/
+.. _`celery-users`: https://groups.google.com/group/celery-users/
 
 .. _irc-channel:
 
@@ -21,7 +21,7 @@ IRC
 Come chat with us on IRC. The **#celery** channel is located at the `Freenode`_
 network.
 
-.. _`Freenode`: http://freenode.net
+.. _`Freenode`: https://freenode.net
 
 .. _bug-tracker:
 
@@ -36,7 +36,7 @@ to our issue tracker at https://github.com/celery/celery/issues/
 Wiki
 ====
 
-http://wiki.github.com/celery/celery/
+https://wiki.github.com/celery/celery/
 
 .. _contributing-short:
 

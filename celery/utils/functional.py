@@ -266,7 +266,11 @@ def head_from_fun(fun, bound=False, debug=False):
     # in pure-Python.  Instead we use exec to create a new function
     # with an empty body, meaning it has the same performance as
     # as just calling a function.
-    if not inspect.isfunction(fun) and hasattr(fun, '__call__'):
+    is_function = inspect.isfunction(fun)
+    is_callable = hasattr(fun, '__call__')
+    is_method = inspect.ismethod(fun)
+
+    if not is_function and is_callable and not is_method:
         name, fun = fun.__class__.__name__, fun.__call__
     else:
         name = fun.__name__

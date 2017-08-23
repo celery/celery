@@ -2,6 +2,7 @@
 """Actual App instance implementation."""
 from __future__ import absolute_import, unicode_literals
 
+from datetime import datetime
 import os
 import threading
 import warnings
@@ -36,7 +37,8 @@ from celery.utils import abstract
 from celery.utils.collections import AttributeDictMixin
 from celery.utils.dispatch import Signal
 from celery.utils.functional import first, maybe_list, head_from_fun
-from celery.utils.time import timezone
+from celery.utils.time import timezone, \
+    get_exponential_backoff_interval, to_utc
 from celery.utils.imports import gen_task_name, instantiate, symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
@@ -463,6 +465,9 @@ class Celery(object):
 
             autoretry_for = tuple(options.get('autoretry_for', ()))
             retry_kwargs = options.get('retry_kwargs', {})
+            retry_backoff = int(options.get('retry_backoff', False))
+            retry_backoff_max = int(options.get('retry_backoff_max', 600))
+            retry_jitter = options.get('retry_jitter', True)
 
             if autoretry_for and not hasattr(task, '_orig_run'):
 
@@ -471,6 +476,13 @@ class Celery(object):
                     try:
                         return task._orig_run(*args, **kwargs)
                     except autoretry_for as exc:
+                        if retry_backoff:
+                            retry_kwargs['countdown'] = \
+                                get_exponential_backoff_interval(
+                                    factor=retry_backoff,
+                                    retries=task.request.retries,
+                                    maximum=retry_backoff_max,
+                                    full_jitter=retry_jitter)
                         raise task.retry(exc=exc, **retry_kwargs)
 
                 task._orig_run, task.run = task.run, run
@@ -816,7 +828,7 @@ class Celery(object):
             port or conf.broker_port,
             transport=transport or conf.broker_transport,
             ssl=self.either('broker_use_ssl', ssl),
-            heartbeat=heartbeat,
+            heartbeat=heartbeat or self.conf.broker_heartbeat,
             login_method=login_method or conf.broker_login_method,
             failover_strategy=(
                 failover_strategy or conf.broker_failover_strategy
@@ -870,7 +882,8 @@ class Celery(object):
 
     def now(self):
         """Return the current time and date as a datetime."""
-        return self.loader.now(utc=self.conf.enable_utc)
+        now_in_utc = to_utc(datetime.utcnow())
+        return now_in_utc.astimezone(self.timezone)
 
     def select_queues(self, queues=None):
         """Select subset of queues.
@@ -1231,6 +1244,10 @@ class Celery(object):
     def producer_pool(self):
         return self.amqp.producer_pool
 
+    def uses_utc_timezone(self):
+        """Check if the application uses the UTC timezone."""
+        return self.conf.timezone == 'UTC' or self.conf.timezone is None
+
     @cached_property
     def timezone(self):
         """Current timezone for this app.
@@ -1239,9 +1256,12 @@ class Celery(object):
         :setting:`timezone` setting.
         """
         conf = self.conf
-        tz = conf.timezone
+        tz = conf.timezone or 'UTC'
         if not tz:
-            return (timezone.get_timezone('UTC') if conf.enable_utc
-                    else timezone.local)
-        return timezone.get_timezone(conf.timezone)
+            if conf.enable_utc:
+                return timezone.get_timezone('UTC')
+            else:
+                if not conf.timezone:
+                    return timezone.local
+        return timezone.get_timezone(tz)
 App = Celery  # noqa: E305 XXX compat

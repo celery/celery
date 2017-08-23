@@ -62,19 +62,19 @@ Users of the 2.4 series should upgrade to 2.4.4:
 
     * ``pip install -U celery``, or
     * ``easy_install -U celery``, or
-    * http://pypi.python.org/pypi/celery/2.4.4
+    * https://pypi.python.org/pypi/celery/2.4.4
 
 Users of the 2.3 series should upgrade to 2.3.4:
 
     * ``pip install -U celery==2.3.4``, or
     * ``easy_install -U celery==2.3.4``, or
-    * http://pypi.python.org/pypi/celery/2.3.4
+    * https://pypi.python.org/pypi/celery/2.3.4
 
 Users of the 2.2 series should upgrade to 2.2.8:
 
     * ``pip install -U celery==2.2.8``, or
     * ``easy_install -U celery==2.2.8``, or
-    * http://pypi.python.org/pypi/celery/2.2.8
+    * https://pypi.python.org/pypi/celery/2.2.8
 
 The 2.1 series is no longer being maintained, so we urge users
 of that series to upgrade to a more recent version.
@@ -84,7 +84,7 @@ with updated packages.
 
 
 Please direct questions to the celery-users mailing-list:
-http://groups.google.com/group/celery-users/,
+https://groups.google.com/group/celery-users/,
 
 or if you're planning to report a security issue we request that
 you keep the information confidential by contacting

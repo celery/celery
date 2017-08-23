@@ -24,7 +24,7 @@ try:
 except ImportError:  # pragma: no cover
     raise ImproperlyConfigured(
         'The database result backend requires SQLAlchemy to be installed.'
-        'See http://pypi.python.org/pypi/SQLAlchemy')
+        'See https://pypi.python.org/pypi/SQLAlchemy')
 
 logger = logging.getLogger(__name__)
 

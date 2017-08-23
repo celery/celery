@@ -425,6 +425,7 @@ class test_funs:
 class test_signal_handlers:
 
     class _Worker(object):
+        hostname = 'foo'
         stopped = False
         terminated = False
 
@@ -642,3 +643,16 @@ class test_signal_handlers:
             handlers = self.psig(cd.install_worker_term_hard_handler, worker)
             with pytest.raises(WorkerTerminate):
                 handlers['SIGQUIT']('SIGQUIT', object())
+
+    def test_send_worker_shutting_down_signal(self):
+        with patch('celery.apps.worker.signals.worker_shutting_down') as wsd:
+            worker = self._Worker()
+            handlers = self.psig(cd.install_worker_term_handler, worker)
+            try:
+                with pytest.raises(WorkerShutdown):
+                    handlers['SIGTERM']('SIGTERM', object())
+            finally:
+                state.should_stop = None
+            wsd.send.assert_called_with(
+                sender='foo', sig='SIGTERM', how='Warm', exitcode=0,
+            )

@@ -205,6 +205,18 @@ class test_head_from_fun:
         g(a=1, b=2)
         g(a=1, b=2, c=3)
 
+    def test_classmethod(self):
+        class A(object):
+            @classmethod
+            def f(cls, x):
+                return x
+
+        fun = head_from_fun(A.f, bound=False)
+        assert fun(A, 1) == 1
+
+        fun = head_from_fun(A.f, bound=True)
+        assert fun(1) == 1
+
 
 class test_fun_takes_argument:
 

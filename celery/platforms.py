@@ -86,7 +86,7 @@ ROOT_DISCOURAGED = """\
 You're running the worker with superuser privileges: this is
 absolutely not recommended!
 
-Please specify a different user using the -u option.
+Please specify a different user using the --uid option.
 
 User information: uid={uid} euid={euid} gid={gid} egid={egid}
 """
@@ -632,9 +632,11 @@ class Signals(object):
     def supported(self, name):
         """Return true value if signal by ``name`` exists on this platform."""
         try:
-            return self.signum(name)
+            self.signum(name)
         except AttributeError:
-            pass
+            return False
+        else:
+            return True
 
     def signum(self, name):
         """Get signal number by name."""
