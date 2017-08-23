@@ -595,6 +595,21 @@ class test_GroupResult:
     def test_eq_other(self):
         assert self.ts != 1
 
+    def test_eq_with_parent(self):
+        # GroupResult instances with different .parent are not equal
+        grp_res = self.app.GroupResult(
+            uuid(), [self.app.AsyncResult(uuid()) for _ in range(10)],
+            parent=self.app.AsyncResult(uuid())
+        )
+        grp_res_2 = self.app.GroupResult(grp_res.id, grp_res.results)
+        assert grp_res != grp_res_2
+
+        grp_res_2.parent = self.app.AsyncResult(uuid())
+        assert grp_res != grp_res_2
+
+        grp_res_2.parent = grp_res.parent
+        assert grp_res == grp_res_2
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_pickleable(self):
         assert pickle.loads(pickle.dumps(self.ts))
@@ -892,3 +907,29 @@ class test_tuples:
         )
         assert x, result_from_tuple(x.as_tuple() == self.app)
         assert x, result_from_tuple(x == self.app)
+
+    def test_GroupResult_with_parent(self):
+        parent = self.app.AsyncResult(uuid())
+        result = self.app.GroupResult(
+            uuid(), [self.app.AsyncResult(uuid()) for _ in range(10)],
+            parent
+        )
+        second_result = result_from_tuple(result.as_tuple(), self.app)
+        assert second_result == result
+        assert second_result.parent == parent
+
+    def test_GroupResult_as_tuple(self):
+        parent = self.app.AsyncResult(uuid())
+        result = self.app.GroupResult(
+            'group-result-1',
+            [self.app.AsyncResult('async-result-{}'.format(i))
+             for i in range(2)],
+            parent
+        )
+        (result_id, parent_id), group_results = result.as_tuple()
+        assert result_id == result.id
+        assert parent_id == parent.id
+        assert isinstance(group_results, list)
+        expected_grp_res = [(('async-result-{}'.format(i), None), None)
+                            for i in range(2)]
+        assert group_results == expected_grp_res
