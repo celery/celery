@@ -116,11 +116,11 @@ class greenFutureExecutor(defaultFutureExecutor):
 
     @classmethod
     def getcurrent(cls):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     @classmethod
     def get_greentlet_hub(cls):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     @classmethod
     def apply_future(cls, func, *args, **kwargs):
