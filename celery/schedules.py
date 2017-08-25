@@ -430,8 +430,7 @@ class crontab(BaseSchedule):
             if unit in defined_units:
                 last_defined_unit = unit
             elif last_defined_unit:
-                logger.warning("May be you forgot specify '{unit}'".format(
-                    unit=unit))
+                logger.warning("May be you forgot specify '%s'", unit)
 
     @staticmethod
     def _expand_cronspec(cronspec, max_, min_=0):
