@@ -533,13 +533,14 @@ class Task(object):
         preopts = self._get_exec_options()
         options = dict(preopts, **options) if options else preopts
         # connection for cherami
-        return app.send_task(
-            self.name, args, kwargs, task_id=task_id,
-            producer=producer, connection=app.connection_for_write(),
-            link=link, link_error=link_error, result_cls=self.AsyncResult,
-            shadow=shadow, task_type=self,
-            **options
-        )
+        with app.connection_or_acquire() as conn:
+            return app.send_task(
+                    self.name, args, kwargs, task_id=task_id,
+                    producer=producer, connection=conn,
+                    link=link, link_error=link_error, result_cls=self.AsyncResult,
+                    shadow=shadow, task_type=self,
+                    **options
+            )
 
     def shadow_name(self, args, kwargs, options):
         """Override for custom task name in worker logs/monitoring.
