@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 
 from kombu.utils.objects import cached_property
 
+from celery.utils.log import get_logger
 from . import current_app
 from .five import python_2_unicode_compatible, range, string_t
 from .utils.collections import AttributeDict
@@ -52,6 +53,8 @@ Argument longitude {lon} is invalid, must be between -180 and 180.\
 SOLAR_INVALID_EVENT = """\
 Argument event "{event}" is invalid, must be one of {all_events}.\
 """
+
+logger = get_logger(__name__)
 
 
 def cronfield(s):
@@ -398,6 +401,10 @@ class crontab(BaseSchedule):
 
     def __init__(self, minute='*', hour='*', day_of_week='*',
                  day_of_month='*', month_of_year='*', **kwargs):
+        self._validate_args(
+            minute=minute, hour=hour, day_of_week=day_of_week,
+            day_of_month=day_of_month, moy=month_of_year
+        )
         self._orig_minute = cronfield(minute)
         self._orig_hour = cronfield(hour)
         self._orig_day_of_week = cronfield(day_of_week)
@@ -410,6 +417,21 @@ class crontab(BaseSchedule):
         self.day_of_month = self._expand_cronspec(day_of_month, 31, 1)
         self.month_of_year = self._expand_cronspec(month_of_year, 12, 1)
         super(crontab, self).__init__(**kwargs)
+
+    @staticmethod
+    def _validate_args(**kwargs):
+        unit_list = ['month', 'day', 'hour', 'minute']
+        defined_units = {
+            var_name.split('_')[0] for var_name in kwargs
+        }
+
+        last_defined_unit = None
+        for unit in unit_list:
+            if unit in defined_units:
+                last_defined_unit = unit
+            elif last_defined_unit:
+                logger.warning("May be you forgot specify '{unit}'".format(
+                    unit=unit))
 
     @staticmethod
     def _expand_cronspec(cronspec, max_, min_=0):
