@@ -1,2 +1,2 @@
-boto>=2.13.3
+boto3>=1.4.6
 pycurl
