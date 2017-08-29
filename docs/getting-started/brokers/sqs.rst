@@ -14,7 +14,7 @@ library using :command:`pip`:
 
 .. code-block:: console
 
-    $ pip install -U boto
+    $ pip install -U boto3
 
 .. _broker-sqs-configuration:
 
