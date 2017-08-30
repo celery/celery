@@ -404,13 +404,24 @@ class Signature(dict):
         if not isinstance(self, _chain) and isinstance(other, _chain):
             # task | chain -> chain
             return _chain(
-                seq_concat_seq((self,), other.tasks), app=self._app)
+                seq_concat_seq((self,), [
+                    reduce(
+                        lambda t, s: t.on_error(s),
+                        other._with_list_option('link_error'),
+                        t.clone())
+                    for t in other.tasks]),
+                    app=self._app)
         elif isinstance(other, _chain):
             # chain | chain -> chain
             sig = self.clone()
             if isinstance(sig.tasks, tuple):
                 sig.tasks = list(sig.tasks)
-            sig.tasks.extend(other.tasks)
+            # assign chain's link_error sugnatures to each chain's task
+            sig.tasks.extend(reduce(
+                    lambda t, s: t.on_error(s),
+                    other._with_list_option('link_error'),
+                    t.clone())
+                for t in other.tasks)
             return sig
         elif isinstance(self, chord):
             # chord(ONE, body) | other -> ONE | body | other
