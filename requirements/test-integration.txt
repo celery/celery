@@ -1,3 +1,4 @@
 simplejson
 -r extras/redis.txt
--r extras/dynamodb.txt
+#: Disabled because SQS already covers the boto3 requirement.
+#-r extras/dynamodb.txt
