@@ -237,7 +237,7 @@ class Scheduler(object):
     def _when(self, entry, next_time_to_run, mktime=time.mktime):
         adjust = self.adjust
 
-        return (mktime(entry.schedule.now().timetuple()) +
+        return (mktime(entry._default_now().timetuple()) +
                 (adjust(next_time_to_run) or 0))
 
     def populate_heap(self, event_t=event_t, heapify=heapq.heapify):
