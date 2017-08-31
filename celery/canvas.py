@@ -413,16 +413,18 @@ class Signature(dict):
                     app=self._app)
         elif isinstance(other, _chain):
             # chain | chain -> chain
-            sig = self.clone()
-            if isinstance(sig.tasks, tuple):
-                sig.tasks = list(sig.tasks)
             # assign chain's link_error sugnatures to each chain's task
-            sig.tasks.extend(reduce(
+            return _chain(seq_concat_seq([
+                reduce(
+                    lambda t, s: t.on_error(s),
+                    self._with_list_option('link_error'),
+                    t.clone())
+                for t in self.tasks], [
+                reduce(
                     lambda t, s: t.on_error(s),
                     other._with_list_option('link_error'),
                     t.clone())
-                for t in other.tasks)
-            return sig
+                for t in other.tasks]), app=self._app)
         elif isinstance(self, chord):
             # chord(ONE, body) | other -> ONE | body | other
             # chord with one header task is unecessary.
