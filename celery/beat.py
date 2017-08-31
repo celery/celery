@@ -102,6 +102,7 @@ class ScheduleEntry(object):
 
     def default_now(self):
         return self.schedule.now() if self.schedule else self.app.now()
+    _default_now = default_now  # compat
 
     def _next_instance(self, last_run_at=None):
         """Return new instance, with date and count fields updated."""
