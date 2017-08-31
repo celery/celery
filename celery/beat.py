@@ -97,17 +97,17 @@ class ScheduleEntry(object):
         self.kwargs = kwargs
         self.options = options
         self.schedule = maybe_schedule(schedule, relative, app=self.app)
-        self.last_run_at = last_run_at or self._default_now()
+        self.last_run_at = last_run_at or self.default_now()
         self.total_run_count = total_run_count or 0
 
-    def _default_now(self):
+    def default_now(self):
         return self.schedule.now() if self.schedule else self.app.now()
 
     def _next_instance(self, last_run_at=None):
         """Return new instance, with date and count fields updated."""
         return self.__class__(**dict(
             self,
-            last_run_at=last_run_at or self._default_now(),
+            last_run_at=last_run_at or self.default_now(),
             total_run_count=self.total_run_count + 1,
         ))
     __next__ = next = _next_instance  # for 2to3
@@ -237,7 +237,7 @@ class Scheduler(object):
     def _when(self, entry, next_time_to_run, mktime=time.mktime):
         adjust = self.adjust
 
-        return (mktime(entry._default_now().timetuple()) +
+        return (mktime(entry.default_now().timetuple()) +
                 (adjust(next_time_to_run) or 0))
 
     def populate_heap(self, event_t=event_t, heapify=heapq.heapify):
