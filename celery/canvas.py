@@ -395,9 +395,14 @@ class Signature(dict):
             other = maybe_unroll_group(other)
             if isinstance(self, _chain):
                 # chain | group() -> chain
-                sig = self.clone()
-                sig.tasks.append(other)
-                return sig
+                return _chain(
+                    seq_concat_item([
+                        reduce(
+                            lambda t, s: t.on_error(s),
+                            self._with_list_option('link_error'),
+                            t.clone())
+                        for t in self.tasks], other),
+                        app=self._app)
             # task | group() -> chain
             return _chain(self, other, app=self.app)
 
