@@ -448,7 +448,12 @@ class Signature(dict):
                 else:
                     # chain | task -> chain
                     return _chain(
-                        seq_concat_item(self.tasks, other), app=self._app)
+                        seq_concat_item([
+                            reduce(
+                                lambda t, s: t.on_error(s),
+                                self._with_list_option('link_error'),
+                                t.clone())
+                            for t in self.tasks], other), app=self._app)
             # task | task -> chain
             return _chain(self, other, app=self._app)
         return NotImplemented
