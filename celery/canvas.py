@@ -402,7 +402,7 @@ class Signature(dict):
                             self._with_list_option('link_error'),
                             t.clone())
                         for t in self.tasks], other),
-                        app=self._app)
+                    app=self._app)
             # task | group() -> chain
             return _chain(self, other, app=self.app)
 
@@ -415,7 +415,7 @@ class Signature(dict):
                         other._with_list_option('link_error'),
                         t.clone())
                     for t in other.tasks]),
-                    app=self._app)
+                app=self._app)
         elif isinstance(other, _chain):
             # chain | chain -> chain
             # assign chain's link_error sugnatures to each chain's task
