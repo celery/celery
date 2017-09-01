@@ -88,7 +88,7 @@ from itertools import count
 from celery.task import Task
 from celery.five import Empty, Queue
 from celery.utils.log import get_logger
-from celery.worker.job import Request
+from celery.worker.request import Request
 from celery.utils import noop
 
 __all__ = ['Batches']
