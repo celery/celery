@@ -16,7 +16,7 @@ consumer = None
 tchannel = TChannelSyncClient(name='celery_example', known_peers=['127.0.0.1:4922'])
 logger = get_logger('example_client')
 
-# call this to prevent celery initialization from stalling when opening the consumer/publisher
+# Initialize IOLoop here since initializing cherami client will need to make tchannel calls.
 ioloop.IOLoop.current()
 
 while True:
