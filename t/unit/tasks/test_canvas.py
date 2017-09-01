@@ -234,6 +234,7 @@ class test_Signature(CanvasCase):
         assert SIG in x.options['link_error']
         assert not x.tasks[0].options.get('link_error')
 
+
 class test_xmap_xstarmap(CanvasCase):
 
     def test_apply(self):
