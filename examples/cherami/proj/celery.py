@@ -7,7 +7,7 @@ from cherami import publisher
 
 app = Celery('proj',
              broker='cherami://',
-            include=['proj.tasks'],
+             include=['proj.tasks'],
              cherami_publisher=publisher,
              cherami_consumer=consumer,)
 

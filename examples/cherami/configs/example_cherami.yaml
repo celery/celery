@@ -1,0 +1,6 @@
+celery:
+  cherami:
+      enabled: True
+      reconnect_delay: 3
+      destination: /test/dest
+      consumergroup: /test/cg

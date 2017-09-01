@@ -535,11 +535,11 @@ class Task(object):
         # connection for cherami
         with app.connection_or_acquire() as conn:
             return app.send_task(
-                    self.name, args, kwargs, task_id=task_id,
-                    producer=producer, connection=conn,
-                    link=link, link_error=link_error, result_cls=self.AsyncResult,
-                    shadow=shadow, task_type=self,
-                    **options
+                self.name, args, kwargs, task_id=task_id,
+                producer=producer, connection=conn,
+                link=link, link_error=link_error, result_cls=self.AsyncResult,
+                shadow=shadow, task_type=self,
+                **options
             )
 
     def shadow_name(self, args, kwargs, options):
