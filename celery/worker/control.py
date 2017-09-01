@@ -555,7 +555,7 @@ def cancel_consumer(state, queue, **_):
 
 @inspect_command()
 def active_queues(state):
-    """List the task queues a worker are currently consuming from."""
+    """List the task queues a worker is currently consuming from."""
     if state.consumer.task_consumer:
         return [dict(queue.as_dict(recurse=True))
                 for queue in state.consumer.task_consumer.queues]
