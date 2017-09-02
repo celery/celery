@@ -305,6 +305,12 @@ class Consumer(object):
             return bucket.add(request)
         return self._schedule_bucket_request(request, bucket, tokens)
 
+    def _limit_post_eta(self, request, bucket, tokens):
+        self.qos.decrement_eventually()
+        if bucket.contents:
+            return bucket.add(request)
+        return self._schedule_bucket_request(request, bucket, tokens)
+
     def start(self):
         blueprint = self.blueprint
         while blueprint.state not in STOP_CONDITIONS:

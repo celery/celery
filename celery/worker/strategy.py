@@ -84,6 +84,7 @@ def default(task, app, consumer,
     get_bucket = consumer.task_buckets.__getitem__
     handle = consumer.on_task_request
     limit_task = consumer._limit_task
+    limit_post_eta = consumer._limit_post_eta
     body_can_be_buffer = consumer.pool.body_can_be_buffer
     Request = symbol_by_name(task.Request)
     Req = create_request_cls(Request, task, consumer.pool, hostname, eventer)
@@ -123,6 +124,8 @@ def default(task, app, consumer,
                 expires=req.expires and req.expires.isoformat(),
             )
 
+        bucket = None
+        eta = None
         if req.eta:
             try:
                 if req.utc:
@@ -133,17 +136,22 @@ def default(task, app, consumer,
                 error("Couldn't convert ETA %r to timestamp: %r. Task: %r",
                       req.eta, exc, req.info(safe=True), exc_info=True)
                 req.reject(requeue=False)
-            else:
-                consumer.qos.increment_eventually()
-                call_at(eta, apply_eta_task, (req,), priority=6)
-        else:
-            if rate_limits_enabled:
-                bucket = get_bucket(task.name)
-                if bucket:
-                    return limit_task(req, bucket, 1)
-            task_reserved(req)
-            if callbacks:
-                [callback(req) for callback in callbacks]
-            handle(req)
+        if rate_limits_enabled:
+            bucket = get_bucket(task.name)
 
+        if eta and bucket:
+            consumer.qos.increment_eventually()
+            return call_at(eta, limit_post_eta, (req, bucket, 1),
+                           priority=6)
+        if eta:
+            consumer.qos.increment_eventually()
+            call_at(eta, apply_eta_task, (req,), priority=6)
+            return task_message_handler
+        if bucket:
+            return limit_task(req, bucket, 1)
+
+        task_reserved(req)
+        if callbacks:
+            [callback(req) for callback in callbacks]
+        handle(req)
     return task_message_handler
