@@ -28,17 +28,17 @@ ioloop.IOLoop.current()
 while True:
     try:
         client = Client(tchannel,
-                logger,)
+                        logger,)
 
         publisher = client.create_publisher(
-                        config.get('celery.cherami.destination'))
+            config.get('celery.cherami.destination'))
         publisher.open()
 
         consumer = client.create_consumer(
-                        config.get('celery.cherami.destination'),
-                        config.get('celery.cherami.consumergroup'))
+            config.get('celery.cherami.destination'),
+            config.get('celery.cherami.consumergroup'))
         consumer.open()
         break
-    except Exception as e:
+    except Exception as e:   # pylint: disable=broad-except
         logger.exception('Failed to connect to cherami: %s', e)
         time.sleep(config.get('celery.cherami.reconnect_delay'))
