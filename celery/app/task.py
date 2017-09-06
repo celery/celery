@@ -619,7 +619,7 @@ class Task(object):
                 If no exception was raised it will raise the ``exc``
                 argument provided.
             countdown (float): Time in seconds to delay the retry for.
-            eta (~datetime.dateime): Explicit time and date to run the
+            eta (~datetime.datetime): Explicit time and date to run the
                 retry at.
             max_retries (int): If set, overrides the default retry limit for
                 this execution.  Changes to this parameter don't propagate to
