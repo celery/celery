@@ -278,10 +278,10 @@ class AppPickler(object):
     def build_standard_kwargs(self, main, changes, loader, backend, amqp,
                               events, log, control, accept_magic_kwargs,
                               config_source=None):
-        return dict(main=main, loader=loader, backend=backend, amqp=amqp,
-                    changes=changes, events=events, log=log, control=control,
-                    set_as_current=False,
-                    config_source=config_source)
+        return {'main': main, 'loader': loader, 'backend': backend,
+                'amqp': amqp, 'changes': changes, 'events': events,
+                'log': log, 'control': control, 'set_as_current': False,
+                'config_source': config_source}
 
     def construct(self, cls, **kwargs):
         return cls(**kwargs)

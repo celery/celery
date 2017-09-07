@@ -204,14 +204,14 @@ class test_DynamoDBBackend:
 
         assert self.backend._client.put_item.call_count == 1
         _, call_kwargs = self.backend._client.put_item.call_args
-        expected_kwargs = dict(
-            Item={
+        expected_kwargs = {
+            'Item': {
                 u'timestamp': {u'N': str(self._static_timestamp)},
                 u'id': {u'S': string(sentinel.key)},
                 u'result': {u'B': sentinel.value}
             },
-            TableName='celery'
-        )
+            'TableName': 'celery'
+        }
         assert call_kwargs['Item'] == expected_kwargs['Item']
         assert call_kwargs['TableName'] == 'celery'
 

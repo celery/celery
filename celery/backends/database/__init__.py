@@ -182,7 +182,7 @@ class DatabaseBackend(BaseBackend):
 
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
-            dict(dburi=self.url,
-                 expires=self.expires,
-                 engine_options=self.engine_options))
+            {'dburi': self.url,
+             'expires': self.expires,
+             'engine_options': self.engine_options})
         return super(DatabaseBackend, self).__reduce__(args, kwargs)

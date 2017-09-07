@@ -88,15 +88,15 @@ def _add_optparse_argument(parser, opt, typemap={
             opt.default = False
     parser.add_argument(
         *opt._long_opts + opt._short_opts,
-        **dictfilter(dict(
-            action=opt.action,
-            type=typemap.get(opt.type, opt.type),
-            dest=opt.dest,
-            nargs=opt.nargs,
-            choices=opt.choices,
-            help=opt.help,
-            metavar=opt.metavar,
-            default=opt.default)))
+        **dictfilter({
+            'action': opt.action,
+            'type': typemap.get(opt.type, opt.type),
+            'dest': opt.dest,
+            'nargs': opt.nargs,
+            'choices': opt.choices,
+            'help': opt.help,
+            'metavar': opt.metavar,
+            'default': opt.default}))
 
 
 def _add_compat_options(parser, options):

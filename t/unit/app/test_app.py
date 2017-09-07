@@ -36,7 +36,7 @@ class ObjectConfig(object):
 
 
 object_config = ObjectConfig()
-dict_config = dict(FOO=10, BAR=20)
+dict_config = {'FOO': 10, 'BAR': 20}
 
 
 class ObjectConfig2(object):
@@ -537,8 +537,8 @@ class test_App:
             _task_stack.pop()
 
     def test_pickle_app(self):
-        changes = dict(THE_FOO_BAR='bars',
-                       THE_MII_MAR='jars')
+        changes = {'THE_FOO_BAR': 'bars',
+                   'THE_MII_MAR': 'jars'}
         self.app.conf.update(changes)
         saved = pickle.dumps(self.app)
         assert len(saved) < 2048

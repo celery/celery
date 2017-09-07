@@ -126,14 +126,14 @@ class DynamoDBBackend(KeyValueStoreBackend):
     def _get_client(self, access_key_id=None, secret_access_key=None):
         """Get client connection."""
         if self._client is None:
-            client_parameters = dict(
-                region_name=self.aws_region
-            )
+            client_parameters = {
+                'region_name': self.aws_region
+            }
             if access_key_id is not None:
-                client_parameters.update(dict(
-                    aws_access_key_id=access_key_id,
-                    aws_secret_access_key=secret_access_key
-                ))
+                client_parameters.update({
+                    'aws_access_key_id': access_key_id,
+                    'aws_secret_access_key': secret_access_key
+                })
 
             if self.endpoint_url is not None:
                 client_parameters['endpoint_url'] = self.endpoint_url
@@ -147,25 +147,25 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
     def _get_table_schema(self):
         """Get the boto3 structure describing the DynamoDB table schema."""
-        return dict(
-            AttributeDefinitions=[
+        return {
+            'AttributeDefinitions': [
                 {
                     'AttributeName': self._key_field.name,
                     'AttributeType': self._key_field.data_type
                 }
             ],
-            TableName=self.table_name,
-            KeySchema=[
+            'TableName': self.table_name,
+            'KeySchema': [
                 {
                     'AttributeName': self._key_field.name,
                     'KeyType': 'HASH'
                 }
             ],
-            ProvisionedThroughput={
+            'ProvisionedThroughput': {
                 'ReadCapacityUnits': self.read_capacity_units,
                 'WriteCapacityUnits': self.write_capacity_units
             }
-        )
+        }
 
     def _get_or_create_table(self):
         """Create table if not exists, otherwise return the description."""
@@ -215,20 +215,20 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
     def _prepare_get_request(self, key):
         """Construct the item retrieval request parameters."""
-        return dict(
-            TableName=self.table_name,
-            Key={
+        return {
+            'TableName': self.table_name,
+            'Key': {
                 self._key_field.name: {
                     self._key_field.data_type: key
                 }
             }
-        )
+        }
 
     def _prepare_put_request(self, key, value):
         """Construct the item creation request parameters."""
-        return dict(
-            TableName=self.table_name,
-            Item={
+        return {
+            'TableName': self.table_name,
+            'Item': {
                 self._key_field.name: {
                     self._key_field.data_type: key
                 },
@@ -239,7 +239,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
                     self._timestamp_field.data_type: str(time())
                 }
             }
-        )
+        }
 
     def _item_to_dict(self, raw_response):
         """Convert get_item() response to field-value pairs."""

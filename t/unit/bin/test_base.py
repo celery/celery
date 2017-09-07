@@ -21,7 +21,7 @@ class MockCommand(Command):
     mock_args = ('arg1', 'arg2', 'arg3')
 
     def parse_options(self, prog_name, arguments, command=None):
-        options = dict(foo='bar', prog_name=prog_name)
+        options = {'foo': 'bar', 'prog_name': prog_name}
         return options, self.mock_args
 
     def run(self, *args, **kwargs):

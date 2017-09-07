@@ -563,13 +563,15 @@ class test_group(CanvasCase):
 
     def test_kwargs_apply(self):
         x = group([self.add.s(), self.add.s()])
-        res = x.apply(kwargs=dict(x=1, y=1)).get()
+        res = x.apply(kwargs={'x': 1, 'y': 1}).get()
         assert res == [2, 2]
 
     def test_kwargs_apply_async(self):
         self.app.conf.task_always_eager = True
         x = group([self.add.s(), self.add.s()])
-        res = self.helper_test_get_delay(x.apply_async(kwargs=dict(x=1, y=1)))
+        res = self.helper_test_get_delay(
+            x.apply_async(kwargs={'x': 1, 'y': 1})
+        )
         assert res == [2, 2]
 
     def test_kwargs_delay(self):

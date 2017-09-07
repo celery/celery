@@ -147,9 +147,9 @@ class CacheBackend(KeyValueStoreBackend):
         servers = ';'.join(self.servers)
         backend = '{0}://{1}/'.format(self.backend, servers)
         kwargs.update(
-            dict(backend=backend,
-                 expires=self.expires,
-                 options=self.options))
+            {'backend': backend,
+             'expires': self.expires,
+             'options': self.options})
         return super(CacheBackend, self).__reduce__(args, kwargs)
 
     def as_uri(self, *args, **kwargs):
