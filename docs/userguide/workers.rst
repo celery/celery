@@ -173,10 +173,10 @@ Node name replacements
 For example, if the current hostname is ``george@foo.example.com`` then
 these will expand to:
 
-- ``--logfile-%p.log`` -> :file:`george@foo.example.com.log`
+- ``--logfile=%p.log`` -> :file:`george@foo.example.com.log`
 - ``--logfile=%h.log`` -> :file:`foo.example.com.log`
 - ``--logfile=%n.log`` -> :file:`george.log`
-- ``--logfile=%d`` -> :file:`example.com.log`
+- ``--logfile=%d.log`` -> :file:`example.com.log`
 
 .. _worker-files-process-index:
 
