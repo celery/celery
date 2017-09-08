@@ -103,7 +103,7 @@ class test_default_strategy_proto2:
             called = self.consumer.timer.call_at.called
             if called:
                 assert self.consumer.timer.call_at.call_args[0][1] == \
-                       self.consumer._limit_post_eta
+                    self.consumer._limit_post_eta
             return called
 
         def was_scheduled(self):
