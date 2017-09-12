@@ -14,6 +14,7 @@ Allan Caffee <allan.caffee@gmail.com>
 Andrew McFague <amcfague@wgen.net>
 Andrew Watts <andrewwatts@gmail.com>
 Armin Ronacher <armin.ronacher@active-4.com>
+Arpan Shah <arpanshah29@gmail.com>
 Ask Solem <ask@celeryproject.org>
 Augusto Becciu <augusto@becciu.org>
 Balachandran C <balachandran.c@gramvaani.org>
