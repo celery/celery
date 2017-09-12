@@ -98,6 +98,14 @@ class test_default_strategy_proto2:
             assert not self.was_reserved()
             return self.consumer._limit_task.called
 
+        def was_limited_with_eta(self):
+            assert not self.was_reserved()
+            called = self.consumer.timer.call_at.called
+            if called:
+                assert self.consumer.timer.call_at.call_args[0][1] == \
+                    self.consumer._limit_post_eta
+            return called
+
         def was_scheduled(self):
             assert not self.was_reserved()
             assert not self.was_rate_limited()
@@ -185,6 +193,13 @@ class test_default_strategy_proto2:
         with self._context(task, rate_limits=True, limit='1/m') as C:
             C()
             assert C.was_rate_limited()
+
+    def test_when_rate_limited_with_eta(self):
+        task = self.add.s(2, 2).set(countdown=10)
+        with self._context(task, rate_limits=True, limit='1/m') as C:
+            C()
+            assert C.was_limited_with_eta()
+            C.consumer.qos.increment_eventually.assert_called_with()
 
     def test_when_rate_limited__limits_disabled(self):
         task = self.add.s(2, 2)
