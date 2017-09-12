@@ -918,10 +918,6 @@ General
     maximum number of  requests per second), you must restrict to a given
     queue.
 
-    .. note::
-
-        This attribute is ignored if the task is requested with an ETA.
-
 .. attribute:: Task.time_limit
 
     The hard time limit, in seconds, for this task.
