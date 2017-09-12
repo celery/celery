@@ -731,15 +731,26 @@ class Celery(object):
                     root_id = parent.request.root_id or parent.request.id
                 if not parent_id:
                     parent_id = parent.request.id
-
-        message = amqp.create_task_message(
-            task_id, name, args, kwargs, countdown, eta, group_id,
-            expires, retries, chord,
-            maybe_list(link), maybe_list(link_error),
-            reply_to or self.oid, time_limit, soft_time_limit,
-            self.conf.task_send_sent_event,
-            root_id, parent_id, shadow, chain,
-        )
+        if conf.task_protocol == 1:
+            message = amqp.create_task_message(
+                task_id, name, args, kwargs, countdown, eta, group_id,
+                expires, retries, chord,
+                maybe_list(link), maybe_list(link_error),
+                reply_to or self.oid, time_limit, soft_time_limit,
+                self.conf.task_send_sent_event,
+                root_id, parent_id, shadow, chain,
+            )
+        else:
+            message = amqp.create_task_message(
+                task_id, name, args, kwargs, countdown, eta, group_id,
+                expires, retries, chord,
+                maybe_list(link), maybe_list(link_error),
+                reply_to or self.oid, time_limit, soft_time_limit,
+                self.conf.task_send_sent_event,
+                root_id, parent_id, shadow, chain,
+                argsrepr=options.get('argsrepr'),
+                kwargsrepr=options.get('kwargsrepr'),
+            )
 
         if connection:
             producer = amqp.Producer(connection, auto_declare=False)
