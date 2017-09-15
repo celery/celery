@@ -395,37 +395,19 @@ class Signature(dict):
             other = maybe_unroll_group(other)
             if isinstance(self, _chain):
                 # chain | group() -> chain
-                tasks = [t.clone() for t in self.tasks]
-                link_error = self.options.get('link_error', [])
-                for sig in link_error:
-                    for task in tasks:
-                        task.on_error(sig)
-                return _chain(seq_concat_item(tasks, other), app=self._app)
+                return _chain(seq_concat_item(
+                    self.unchain_tasks(), other), app=self._app)
             # task | group() -> chain
             return _chain(self, other, app=self.app)
 
         if not isinstance(self, _chain) and isinstance(other, _chain):
             # task | chain -> chain
-            tasks = [t.clone() for t in other.tasks]
-            link_error = other.options.get('link_error', [])
-            for sig in link_error:
-                for task in tasks:
-                    task.on_error(sig)
-            return _chain(seq_concat_seq((self,), tasks), app=self._app)
+            return _chain(seq_concat_seq(
+                (self,), other.unchain_tasks()), app=self._app)
         elif isinstance(other, _chain):
             # chain | chain -> chain
-            # assign chain's link_error sugnatures to each chain's task
-            tasks = [t.clone() for t in self.tasks]
-            link_error = self.options.get('link_error', [])
-            for sig in link_error:
-                for task in tasks:
-                    task.on_error(sig)
-            other_tasks = [t.clone() for t in other.tasks]
-            link_error = other.options.get('link_error', [])
-            for sig in link_error:
-                for task in other_tasks:
-                    task.on_error(sig)
-            return _chain(seq_concat_seq(tasks, other_tasks), app=self._app)
+            return _chain(seq_concat_seq(
+                self.unchain_tasks(), other.unchain_tasks()), app=self._app)
         elif isinstance(self, chord):
             # chord(ONE, body) | other -> ONE | body | other
             # chord with one header task is unecessary.
@@ -450,12 +432,8 @@ class Signature(dict):
                     return sig
                 else:
                     # chain | task -> chain
-                    tasks = [t.clone() for t in self.tasks]
-                    link_error = self.options.get('link_error', [])
-                    for sig in link_error:
-                        for task in tasks:
-                            task.on_error(sig)
-                    return _chain(seq_concat_item(tasks, other), app=self._app)
+                    return _chain(seq_concat_item(
+                        self.unchain_tasks(), other), app=self._app)
             # task | task -> chain
             return _chain(self, other, app=self._app)
         return NotImplemented
@@ -574,6 +552,15 @@ class _chain(Signature):
             for sig in s.kwargs['tasks']
         ]
         return s
+
+    def unchain_tasks(self):
+        # Clone chain's tasks assigning sugnatures from link_error
+        # to each task
+        tasks = [t.clone() for t in self.tasks]
+        for sig in self.options.get('link_error', []):
+            for task in tasks:
+                task.link_error(sig)
+        return tasks
 
     def apply_async(self, args=(), kwargs={}, **options):
         # python is best at unpacking kwargs, so .run is here to do that.
