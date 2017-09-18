@@ -66,10 +66,10 @@
 """
 from __future__ import absolute_import, unicode_literals
 from functools import partial
-from types import MethodType
+
+from celery.backends.base import DisabledBackend
 from celery.platforms import detached, maybe_drop_privileges
 from celery.bin.base import Command, daemon_options
-from celery.utils import noop
 
 __all__ = ['beat']
 
@@ -101,8 +101,8 @@ class beat(Command):
         kwargs.pop('app', None)
         beat = partial(self.app.Beat,
                        logfile=logfile, pidfile=pidfile, **kwargs)
-        # standalone beat does not care about results, so replace on_task_call
-        self.app.backend.on_task_call = MethodType(noop, self.app.backend)
+        # standalone beat does not care about results, so disable backend
+        self.app.backend = DisabledBackend(self.app)
 
         if detach:
             with detached(logfile, pidfile, uid, gid, umask, workdir):
