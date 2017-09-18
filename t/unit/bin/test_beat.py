@@ -5,6 +5,7 @@ import sys
 from case import Mock, mock, patch
 from celery import beat
 from celery import platforms
+from celery.backends.base import DisabledBackend
 from celery.bin import beat as beat_bin
 from celery.apps import beat as beatapp
 
@@ -142,3 +143,9 @@ class test_div:
         cmd.app = self.app
         options, args = cmd.parse_options('celery beat', ['-s', 'foo'])
         assert options['schedule'] == 'foo'
+
+    def test_backend_disabled(self):
+        cmd = beat_bin.beat()
+        cmd.app = self.app
+        cmd.run()
+        assert isinstance(self.app.backend, DisabledBackend)
