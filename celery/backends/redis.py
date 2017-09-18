@@ -361,9 +361,7 @@ class SentinelBackend(RedisBackend):
         super(SentinelBackend, self).__init__(*args, **kwargs)
 
     def _params_from_url(self, url, defaults):
-        """
-        url looks like sentinel://0.0.0.0:26347/3;sentinel://0.0.0.0:26348/3
-        """
+        # URL looks like sentinel://0.0.0.0:26347/3;sentinel://0.0.0.0:26348/3.
         chunks = url.split(";")
         connparams = dict(defaults, hosts=[])
         for chunk in chunks:
