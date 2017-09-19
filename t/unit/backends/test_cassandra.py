@@ -182,3 +182,15 @@ class test_CassandraBackend:
         }
         with pytest.raises(ImproperlyConfigured):
             mod.CassandraBackend(app=self.app)
+
+    def test_options(self):
+        # Ensure valid options works properly
+        from celery.backends import cassandra as mod
+
+        mod.cassandra = Mock()
+        # Valid options
+        self.app.conf.cassandra_options = {
+            'cql_version': '3.2.1',
+            'protocol_version': 3
+        }
+        mod.CassandraBackend(app=self.app)

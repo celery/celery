@@ -90,6 +90,7 @@ class CassandraBackend(BaseBackend):
         self.port = port or conf.get('cassandra_port', None)
         self.keyspace = keyspace or conf.get('cassandra_keyspace', None)
         self.table = table or conf.get('cassandra_table', None)
+        self.cassandra_options = conf.get('cassandra_options', {})
 
         if not self.servers or not self.keyspace or not self.table:
             raise ImproperlyConfigured('Cassandra backend not configured.')
@@ -141,7 +142,8 @@ class CassandraBackend(BaseBackend):
         try:
             self._connection = cassandra.cluster.Cluster(
                 self.servers, port=self.port,
-                auth_provider=self.auth_provider)
+                auth_provider=self.auth_provider,
+                **self.cassandra_options)
             self._session = self._connection.connect(self.keyspace)
 
             # We're forced to do concatenation below, as formatting would

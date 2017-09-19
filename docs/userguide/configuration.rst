@@ -83,6 +83,7 @@ rush in moving to the new settings format.
 ``CASSANDRA_READ_CONSISTENCY``         :setting:`cassandra_read_consistency`
 ``CASSANDRA_SERVERS``                  :setting:`cassandra_servers`
 ``CASSANDRA_WRITE_CONSISTENCY``        :setting:`cassandra_write_consistency`
+``CASSANDRA_OPTIONS``                  :setting:`cassandra_options`
 ``CELERY_COUCHBASE_BACKEND_SETTINGS``  :setting:`couchbase_backend_settings`
 ``CELERY_MONGODB_BACKEND_SETTINGS``    :setting:`mongodb_backend_settings`
 ``CELERY_EVENT_QUEUE_EXPIRES``         :setting:`event_queue_expires`
@@ -1036,6 +1037,22 @@ Named arguments to pass into the authentication provider. For example:
     cassandra_auth_kwargs = {
         username: 'cassandra',
         password: 'cassandra'
+    }
+
+.. setting:: cassandra_options
+
+``cassandra_options``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}`` (empty mapping).
+
+Named arguments to pass into the ``cassandra.cluster`` class.
+
+.. code-block:: python
+
+    cassandra_options = {
+        'cql_version': '3.2.1'
+        'protocol_version': 3
     }
 
 Example configuration

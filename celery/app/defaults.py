@@ -126,6 +126,7 @@ NAMESPACES = Namespace(
         write_consistency=Option(type='string'),
         auth_provider=Option(type='string'),
         auth_kwargs=Option(type='string'),
+        options=Option({}, type='dict'),
     ),
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
