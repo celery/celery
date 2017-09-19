@@ -397,6 +397,6 @@ class SentinelBackend(RedisBackend):
         master_name = result_backend_opts.get("master_name", None)
 
         return sentinel_instance.master_for(
-            master_name,
-            self._get_client(),
+            service_name=master_name,
+            redis_class=self._get_client(),
         ).connection_pool

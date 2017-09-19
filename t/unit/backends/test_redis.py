@@ -114,7 +114,7 @@ class Sentinel(mock.MockCallbacks):
         self.min_other_sentinels = min_other_sentinels
         self.connection_kwargs = connection_kwargs
 
-    def master_for(self, service_name, **kwargs):
+    def master_for(self, service_name, redis_class):
         return random.choice(self.sentinels)
 
 
