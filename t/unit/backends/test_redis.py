@@ -130,6 +130,10 @@ class redis(object):
             pass
 
 
+class sentinel(object):
+    Sentinel = Sentinel
+
+
 class test_RedisBackend:
     def get_backend(self):
         from celery.backends.redis import RedisBackend
@@ -436,6 +440,7 @@ class test_SentinelBackend:
 
         class _SentinelBackend(SentinelBackend):
             redis = redis
+            sentinel = sentinel
 
         return _SentinelBackend
 

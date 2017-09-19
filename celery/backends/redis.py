@@ -24,8 +24,8 @@ from . import base
 try:
     import redis
     from kombu.transport.redis import get_redis_error_classes
-except ImportError:                 # pragma: no cover
-    redis = None                    # noqa
+except ImportError:  # pragma: no cover
+    redis = None  # noqa
     get_redis_error_classes = None  # noqa
 
 try:
@@ -40,13 +40,17 @@ You need to install the redis library in order to use \
 the Redis result store backend.
 """
 
+E_REDIS_SENTINEL_MISSING = """
+You need to install the redis library with support of \
+sentinel in order to use the Redis result store backend.
+"""
+
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 
 logger = get_logger(__name__)
 
 
 class ResultConsumer(async.BaseResultConsumer):
-
     _pubsub = None
 
     def __init__(self, *args, **kwargs):
@@ -270,12 +274,12 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         tkey = self.get_key_for_group(gid, '.t')
         result = self.encode_result(result, state)
         with client.pipeline() as pipe:
-            _, readycount, totaldiff, _, _ = pipe                           \
-                .rpush(jkey, self.encode([1, tid, state, result]))          \
-                .llen(jkey)                                                 \
-                .get(tkey)                                                  \
-                .expire(jkey, self.expires)                                 \
-                .expire(tkey, self.expires)                                 \
+            _, readycount, totaldiff, _, _ = pipe \
+                .rpush(jkey, self.encode([1, tid, state, result])) \
+                .llen(jkey) \
+                .get(tkey) \
+                .expire(jkey, self.expires) \
+                .expire(tkey, self.expires) \
                 .execute()
 
         totaldiff = int(totaldiff or 0)
@@ -286,10 +290,10 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             if readycount == total:
                 decode, unpack = self.decode, self._unpack_chord_result
                 with client.pipeline() as pipe:
-                    resl, _, _ = pipe               \
-                        .lrange(jkey, 0, total)     \
-                        .delete(jkey)               \
-                        .delete(tkey)               \
+                    resl, _, _ = pipe \
+                        .lrange(jkey, 0, total) \
+                        .delete(jkey) \
+                        .delete(tkey) \
                         .execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])
@@ -354,9 +358,11 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
 
 
 class SentinelBackend(RedisBackend):
+    sentinel = sentinel
+
     def __init__(self, *args, **kwargs):
-        if not sentinel:
-            raise ImportError("Cannot import module sentinel")
+        if self.sentinel is None:
+            raise ImproperlyConfigured(E_REDIS_SENTINEL_MISSING.strip())
 
         super(SentinelBackend, self).__init__(*args, **kwargs)
 
@@ -382,7 +388,7 @@ class SentinelBackend(RedisBackend):
             "min_other_sentinels", 0)
         sentinel_kwargs = result_backend_opts.get("sentinel_kwargs", {})
 
-        sentinel_instance = sentinel.Sentinel(
+        sentinel_instance = self.sentinel.Sentinel(
             [(cp['host'], cp['port']) for cp in hosts],
             min_other_sentinels=min_other_sentinels,
             sentinel_kwargs=sentinel_kwargs,
