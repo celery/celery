@@ -378,15 +378,22 @@ class SentinelBackend(RedisBackend):
             connparams.pop(p)
         return connparams
 
-    def _get_pool(self, **params):
+    def _get_sentinel_instance(self, **params):
         connparams = params.copy()
 
         hosts = connparams.pop("hosts")
-        result_backend_opts = self.app.conf.get(
+        result_backend_transport_opts = self.app.conf.get(
             "result_backend_transport_options", {})
-        min_other_sentinels = result_backend_opts.get(
+        min_other_sentinels = result_backend_transport_opts.get(
             "min_other_sentinels", 0)
-        sentinel_kwargs = result_backend_opts.get("sentinel_kwargs", {})
+        sentinel_kwargs = result_backend_transport_opts.get(
+            "sentinel_kwargs", {}).copy()
+
+        # assuming all the sentinel will have the same db/password configured
+        if "db" in hosts[0]:
+            sentinel_kwargs['db'] = hosts[0].get("db")
+        if "password" in hosts[0]:
+            sentinel_kwargs['password'] = hosts[0].get("password")
 
         sentinel_instance = self.sentinel.Sentinel(
             [(cp['host'], cp['port']) for cp in hosts],
@@ -394,7 +401,14 @@ class SentinelBackend(RedisBackend):
             sentinel_kwargs=sentinel_kwargs,
             **connparams)
 
-        master_name = result_backend_opts.get("master_name", None)
+        return sentinel_instance
+
+    def _get_pool(self, **params):
+        sentinel_instance = self._get_sentinel_instance(**params)
+
+        result_backend_transport_opts = self.app.conf.get(
+            "result_backend_transport_options", {})
+        master_name = result_backend_transport_opts.get("master_name", None)
 
         return sentinel_instance.master_for(
             service_name=master_name,

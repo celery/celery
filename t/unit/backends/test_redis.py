@@ -469,8 +469,8 @@ class test_SentinelBackend:
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
         x = self.Backend(
-            'sentinel://:test@github.com:123//1;'
-            'sentinel://:test@github.com:124//1',
+            'sentinel://:test@github.com:123/1;'
+            'sentinel://:test@github.com:124/1',
             app=self.app,
         )
         assert x.connparams
@@ -495,10 +495,23 @@ class test_SentinelBackend:
         found_dbs = [cp['db'] for cp in x.connparams['hosts']]
         assert found_dbs == expected_dbs
 
+    def test_get_sentinel_instance(self):
+        x = self.Backend(
+            'sentinel://:test@github.com:123/1;'
+            'sentinel://:test@github.com:124/1',
+            app=self.app,
+        )
+        sentinel_instance = x._get_sentinel_instance(**x.connparams)
+        assert sentinel_instance.sentinel_kwargs == {
+            'db': 1,
+            'password': "test",
+        }
+        assert len(sentinel_instance.sentinels) == 2
+
     def test_get_pool(self):
         x = self.Backend(
-            'sentinel://:test@github.com:123//1;'
-            'sentinel://:test@github.com:124//1',
+            'sentinel://:test@github.com:123/1;'
+            'sentinel://:test@github.com:124/1',
             app=self.app,
         )
         pool = x._get_pool(**x.connparams)
