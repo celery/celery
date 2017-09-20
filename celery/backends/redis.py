@@ -383,7 +383,7 @@ class SentinelBackend(RedisBackend):
 
         hosts = connparams.pop("hosts")
         result_backend_opts = self.app.conf.get(
-            "result_backend_options", {})
+            "result_backend_transport_options", {})
         min_other_sentinels = result_backend_opts.get(
             "min_other_sentinels", 0)
         sentinel_kwargs = result_backend_opts.get("sentinel_kwargs", {})
