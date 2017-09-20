@@ -475,9 +475,9 @@ class test_SentinelBackend:
         )
         assert x.connparams
         assert "host" not in x.connparams
-        assert "db" not in x.connparams
+        assert x.connparams['db'] == 1
         assert "port" not in x.connparams
-        assert "password" not in x.connparams
+        assert x.connparams['password'] == "test"
         assert len(x.connparams['hosts']) == 2
         expected_hosts = ["github.com", "github.com"]
         found_hosts = [cp['host'] for cp in x.connparams['hosts']]
@@ -502,10 +502,9 @@ class test_SentinelBackend:
             app=self.app,
         )
         sentinel_instance = x._get_sentinel_instance(**x.connparams)
-        assert sentinel_instance.sentinel_kwargs == {
-            'db': 1,
-            'password': "test",
-        }
+        assert sentinel_instance.sentinel_kwargs == {}
+        assert sentinel_instance.connection_kwargs['db'] == 1
+        assert sentinel_instance.connection_kwargs['password'] == "test"
         assert len(sentinel_instance.sentinels) == 2
 
     def test_get_pool(self):

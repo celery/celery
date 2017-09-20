@@ -374,8 +374,13 @@ class SentinelBackend(RedisBackend):
             data = super(SentinelBackend, self)._params_from_url(
                 url=chunk, defaults=defaults)
             connparams['hosts'].append(data)
-        for p in ("host", "port", "password", "db"):
+        for p in ("host", "port", "db", "password"):
             connparams.pop(p)
+
+        # adding db/password back to the connparams to connect to the correct instance
+        for p in ("db", "password"):
+            if connparams['hosts'] and p in connparams['hosts'][0]:
+                connparams[p] = connparams['hosts'][0].get(p)
         return connparams
 
     def _get_sentinel_instance(self, **params):
@@ -387,13 +392,7 @@ class SentinelBackend(RedisBackend):
         min_other_sentinels = result_backend_transport_opts.get(
             "min_other_sentinels", 0)
         sentinel_kwargs = result_backend_transport_opts.get(
-            "sentinel_kwargs", {}).copy()
-
-        # assuming all the sentinel will have the same db/password configured
-        if "db" in hosts[0]:
-            sentinel_kwargs['db'] = hosts[0].get("db")
-        if "password" in hosts[0]:
-            sentinel_kwargs['password'] = hosts[0].get("password")
+            "sentinel_kwargs", {})
 
         sentinel_instance = self.sentinel.Sentinel(
             [(cp['host'], cp['port']) for cp in hosts],
