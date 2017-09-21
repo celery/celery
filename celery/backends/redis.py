@@ -377,7 +377,7 @@ class SentinelBackend(RedisBackend):
         for p in ("host", "port", "db", "password"):
             connparams.pop(p)
 
-        # adding db/password back to the connparams to connect to the correct instance
+        # Adding db/password in connparams to connect to the correct instance
         for p in ("db", "password"):
             if connparams['hosts'] and p in connparams['hosts'][0]:
                 connparams[p] = connparams['hosts'][0].get(p)
