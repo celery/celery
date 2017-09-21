@@ -597,7 +597,8 @@ Can be one of the following:
 .. setting:: result_backend_transport_options
 
 ``result_backend_transport_options``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Default: ``{}`` (empty mapping).
 
 A dict of additional options passed to the underlying transport.

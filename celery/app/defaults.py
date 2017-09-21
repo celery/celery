@@ -179,6 +179,7 @@ NAMESPACES = Namespace(
         ),
         persistent=Option(None, type='bool'),
         serializer=Option('json'),
+        backend_transport_options=Option({}, type='dict'),
     ),
     elasticsearch=Namespace(
         __old__=old_ns('celery_elasticsearch'),
