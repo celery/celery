@@ -950,6 +950,8 @@ class group(Signature):
             tasks = tasks[0]
             if isinstance(tasks, group):
                 tasks = tasks.tasks
+            if isinstance(tasks, abstract.CallableSignature):
+                tasks = [tasks.clone()]
             if not isinstance(tasks, _regen):
                 tasks = regen(tasks)
         Signature.__init__(
