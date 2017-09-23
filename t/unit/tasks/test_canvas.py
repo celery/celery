@@ -547,6 +547,14 @@ class test_group(CanvasCase):
         g = group([self.add.s(i, i) for i in range(10)])
         assert list(iter(g)) == list(g.keys())
 
+    def test_single_task(self):
+        g = group([self.add.s(1, 1)])
+        assert isinstance(g, group)
+        assert len(g.tasks) == 1
+        g = group(self.add.s(1, 1))
+        assert isinstance(g, group)
+        assert len(g.tasks) == 1
+
     @staticmethod
     def helper_test_get_delay(result):
         import time
