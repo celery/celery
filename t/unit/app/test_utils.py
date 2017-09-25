@@ -33,6 +33,11 @@ class test_Settings:
                            'memory://thisshouldntbethebroker')
         assert self.app.conf.broker_url == prepatch_broker_url
 
+    def test_broker_dynamic_setting(self):
+        prepatch_broker_url = 'memory://thisshouldbethebroker'
+        self.app.conf.broker_url = prepatch_broker_url
+        assert self.app.conf.broker_url == prepatch_broker_url
+
     def test_table(self):
         assert self.app.conf.table(with_defaults=True)
         assert self.app.conf.table(with_defaults=False)
