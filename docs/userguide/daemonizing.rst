@@ -430,7 +430,7 @@ This is an example configuration for a Python project:
     # Absolute or relative path to the 'celery' command:
     CELERY_BIN="/usr/local/bin/celery"
     #CELERY_BIN="/virtualenvs/def/bin/celery"
-    
+
     # App instance to use
     # comment out this line if you don't use an app
     CELERY_APP="proj"
