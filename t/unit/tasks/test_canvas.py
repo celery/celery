@@ -188,6 +188,52 @@ class test_Signature(CanvasCase):
         s = signature('xxx.not.registered', app=self.app)
         assert s._apply_async
 
+    def test_keeping_link_error_on_chaining(self):
+        x = self.add.s(2, 2) | self.mul.s(4)
+        assert isinstance(x, _chain)
+        x.link_error(SIG)
+        assert SIG in x.options['link_error']
+
+        t = signature(SIG)
+        z = x | t
+        assert isinstance(z, _chain)
+        assert t in z.tasks
+        assert not z.options.get('link_error')
+        assert SIG in z.tasks[0].options['link_error']
+        assert not z.tasks[2].options.get('link_error')
+        assert SIG in x.options['link_error']
+        assert t not in x.tasks
+        assert not x.tasks[0].options.get('link_error')
+
+        z = t | x
+        assert isinstance(z, _chain)
+        assert t in z.tasks
+        assert not z.options.get('link_error')
+        assert SIG in z.tasks[1].options['link_error']
+        assert not z.tasks[0].options.get('link_error')
+        assert SIG in x.options['link_error']
+        assert t not in x.tasks
+        assert not x.tasks[0].options.get('link_error')
+
+        y = self.add.s(4, 4) | self.div.s(2)
+        assert isinstance(y, _chain)
+
+        z = x | y
+        assert isinstance(z, _chain)
+        assert not z.options.get('link_error')
+        assert SIG in z.tasks[0].options['link_error']
+        assert not z.tasks[2].options.get('link_error')
+        assert SIG in x.options['link_error']
+        assert not x.tasks[0].options.get('link_error')
+
+        z = y | x
+        assert isinstance(z, _chain)
+        assert not z.options.get('link_error')
+        assert SIG in z.tasks[3].options['link_error']
+        assert not z.tasks[1].options.get('link_error')
+        assert SIG in x.options['link_error']
+        assert not x.tasks[0].options.get('link_error')
+
 
 class test_xmap_xstarmap(CanvasCase):
 

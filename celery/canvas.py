@@ -395,23 +395,19 @@ class Signature(dict):
             other = maybe_unroll_group(other)
             if isinstance(self, _chain):
                 # chain | group() -> chain
-                sig = self.clone()
-                sig.tasks.append(other)
-                return sig
+                return _chain(seq_concat_item(
+                    self.unchain_tasks(), other), app=self._app)
             # task | group() -> chain
             return _chain(self, other, app=self.app)
 
         if not isinstance(self, _chain) and isinstance(other, _chain):
             # task | chain -> chain
-            return _chain(
-                seq_concat_seq((self,), other.tasks), app=self._app)
+            return _chain(seq_concat_seq(
+                (self,), other.unchain_tasks()), app=self._app)
         elif isinstance(other, _chain):
             # chain | chain -> chain
-            sig = self.clone()
-            if isinstance(sig.tasks, tuple):
-                sig.tasks = list(sig.tasks)
-            sig.tasks.extend(other.tasks)
-            return sig
+            return _chain(seq_concat_seq(
+                self.unchain_tasks(), other.unchain_tasks()), app=self._app)
         elif isinstance(self, chord):
             # chord(ONE, body) | other -> ONE | body | other
             # chord with one header task is unecessary.
@@ -436,8 +432,8 @@ class Signature(dict):
                     return sig
                 else:
                     # chain | task -> chain
-                    return _chain(
-                        seq_concat_item(self.tasks, other), app=self._app)
+                    return _chain(seq_concat_item(
+                        self.unchain_tasks(), other), app=self._app)
             # task | task -> chain
             return _chain(self, other, app=self._app)
         return NotImplemented
@@ -556,6 +552,15 @@ class _chain(Signature):
             for sig in s.kwargs['tasks']
         ]
         return s
+
+    def unchain_tasks(self):
+        # Clone chain's tasks assigning sugnatures from link_error
+        # to each task
+        tasks = [t.clone() for t in self.tasks]
+        for sig in self.options.get('link_error', []):
+            for task in tasks:
+                task.link_error(sig)
+        return tasks
 
     def apply_async(self, args=(), kwargs={}, **options):
         # python is best at unpacking kwargs, so .run is here to do that.
