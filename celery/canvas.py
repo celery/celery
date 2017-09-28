@@ -986,6 +986,9 @@ class group(Signature):
         if not self.tasks:
             return self.freeze()
 
+        if 'chord' in self.options:
+            options['chord'] = self.options['chord']
+
         options, group_id, root_id = self._freeze_gid(options)
         tasks = self._prepared(self.tasks, [], group_id, root_id, app)
         p = barrier()
