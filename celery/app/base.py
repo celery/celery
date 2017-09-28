@@ -27,7 +27,7 @@ from celery._state import (
     get_current_worker_task, connect_on_app_finalize,
     _announce_app_finalized,
 )
-from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
+from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured, Ignore
 from celery.five import (
     UserDict, bytes_if_py2, python_2_unicode_compatible, values,
 )
@@ -475,6 +475,8 @@ class Celery(object):
                 def run(*args, **kwargs):
                     try:
                         return task._orig_run(*args, **kwargs)
+                    except Ignore:
+                        raise
                     except autoretry_for as exc:
                         if retry_backoff:
                             retry_kwargs['countdown'] = \
