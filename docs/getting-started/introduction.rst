@@ -184,7 +184,7 @@ Features
         - **Scheduling**
 
             You can specify the time to run a task in seconds or a
-            :class:`~datetime.datetime`, or or you can use
+            :class:`~datetime.datetime`, or you can use
             periodic tasks for recurring events based on a
             simple interval, or Crontab expressions
             supporting minute, hour, day of week, day of month, and
