@@ -14,6 +14,7 @@
 -r extras/gevent.txt
 -r extras/elasticsearch.txt
 -r extras/couchdb.txt
+-r extras/couchbase.txt
 -r extras/consul.txt
 -r extras/cassandra.txt
 -r extras/dynamodb.txt
