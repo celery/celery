@@ -21,11 +21,11 @@ NODENAME_DEFAULT = 'celery'
 
 gethostname = memoize(1, Cache=dict)(socket.gethostname)
 
-__all__ = [
+__all__ = (
     'worker_direct', 'gethostname', 'nodename',
     'anon_nodename', 'nodesplit', 'default_nodename',
     'node_format', 'host_format',
-]
+)
 
 
 def worker_direct(hostname):

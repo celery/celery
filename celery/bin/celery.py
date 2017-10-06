@@ -284,7 +284,7 @@ from celery.bin.shell import shell
 from celery.bin.worker import worker
 from celery.bin.upgrade import upgrade
 
-__all__ = ['CeleryCommand', 'main']
+__all__ = ('CeleryCommand', 'main')
 
 HELP = """
 ---- -- - - ---- Commands- -------------- --- ------------

@@ -4,7 +4,7 @@ from kombu.common import ignore_errors
 from celery import bootsteps
 from celery.utils.log import get_logger
 
-__all__ = ['Connection']
+__all__ = ('Connection',)
 
 logger = get_logger(__name__)
 info = logger.info

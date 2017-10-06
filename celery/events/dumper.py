@@ -11,7 +11,7 @@ from celery.app import app_or_default
 from celery.utils.functional import LRUCache
 from celery.utils.time import humanize_seconds
 
-__all__ = ['Dumper', 'evdump']
+__all__ = ('Dumper', 'evdump')
 
 TASK_NAMES = LRUCache(limit=0xFFF)
 

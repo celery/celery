@@ -39,7 +39,7 @@ from celery.worker.state import (
     task_reserved, maybe_shutdown, reserved_requests,
 )
 
-__all__ = ['Consumer', 'Evloop', 'dump_body']
+__all__ = ('Consumer', 'Evloop', 'dump_body')
 
 CLOSE = bootsteps.CLOSE
 TERMINATE = bootsteps.TERMINATE

@@ -7,7 +7,7 @@ from celery._state import get_current_app
 from celery.exceptions import NotRegistered, InvalidTaskError
 from celery.five import items
 
-__all__ = ['TaskRegistry']
+__all__ = ('TaskRegistry',)
 
 
 class TaskRegistry(dict):

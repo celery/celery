@@ -16,7 +16,7 @@ from celery.utils.imports import symbol_by_name
 from .request import create_request_cls
 from .state import task_reserved
 
-__all__ = ['default']
+__all__ = ('default',)
 
 logger = get_logger(__name__)
 

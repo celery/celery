@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import sys
 from . import maybe_patch_concurrency
 
-__all__ = ['main']
+__all__ = ('main',)
 
 
 def main():

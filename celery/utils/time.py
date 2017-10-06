@@ -22,14 +22,14 @@ from .functional import dictfilter
 from .iso8601 import parse_iso8601
 from .text import pluralize
 
-__all__ = [
+__all__ = (
     'LocalTimezone', 'timezone', 'maybe_timedelta',
     'delta_resolution', 'remaining', 'rate', 'weekday',
     'humanize_seconds', 'maybe_iso8601', 'is_naive',
     'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
     'ffwd', 'utcoffset', 'adjust_timestamp',
     'get_exponential_backoff_interval',
-]
+)
 
 PY3 = sys.version_info[0] == 3
 PY33 = sys.version_info >= (3, 3)

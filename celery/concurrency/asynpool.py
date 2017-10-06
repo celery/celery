@@ -76,7 +76,7 @@ except (ImportError, NameError):  # pragma: no cover
     def unpack_from(fmt, iobuf, unpack=struct.unpack):  # noqa
         return unpack(fmt, iobuf.getvalue())  # <-- BytesIO
 
-__all__ = ['AsynPool']
+__all__ = ('AsynPool',)
 
 logger = get_logger(__name__)
 error, debug = logger.error, logger.debug

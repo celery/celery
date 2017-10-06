@@ -5,7 +5,7 @@ import warnings
 from vine.utils import wraps
 from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 
-__all__ = ['Callable', 'Property', 'warn']
+__all__ = ('Callable', 'Property', 'warn')
 
 
 PENDING_DEPRECATION_FMT = """

@@ -9,7 +9,7 @@ try:
 except ImportError:  # pragma: no cover
     Timeout = None  # noqa
 
-__all__ = ['TaskPool']
+__all__ = ('TaskPool',)
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.

@@ -24,10 +24,10 @@ from .defaults import (
     DEFAULTS, SETTING_KEYS, find,
 )
 
-__all__ = [
+__all__ = (
     'Settings', 'appstr', 'bugreport',
     'filter_hidden_settings', 'find_app',
-]
+)
 
 #: Format used to generate bug-report information.
 BUGREPORT_INFO = """

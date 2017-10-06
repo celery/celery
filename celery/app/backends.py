@@ -8,7 +8,7 @@ from celery._state import current_app
 from celery.five import reraise
 from celery.utils.imports import load_extension_class_names, symbol_by_name
 
-__all__ = ['by_name', 'by_url']
+__all__ = ('by_name', 'by_url')
 
 UNKNOWN_BACKEND = """
 Unknown result backend: {0!r}.  Did you spell that correctly? ({1!r})

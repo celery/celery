@@ -15,7 +15,7 @@ from celery import _state
 from celery import signals
 from celery.exceptions import FixupWarning, ImproperlyConfigured
 
-__all__ = ['DjangoFixup', 'fixup']
+__all__ = ('DjangoFixup', 'fixup')
 
 ERR_NOT_INSTALLED = """\
 Environment variable DJANGO_SETTINGS_MODULE is defined

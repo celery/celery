@@ -28,7 +28,7 @@ except ImportError:                 # pragma: no cover
     redis = None                    # noqa
     get_redis_error_classes = None  # noqa
 
-__all__ = ['RedisBackend']
+__all__ = ('RedisBackend',)
 
 E_REDIS_MISSING = """
 You need to install the redis library in order to use \

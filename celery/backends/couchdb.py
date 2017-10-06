@@ -9,7 +9,7 @@ try:
 except ImportError:
     pycouchdb = None  # noqa
 
-__all__ = ['CouchBackend']
+__all__ = ('CouchBackend',)
 
 ERR_LIB_MISSING = """\
 You need to install the pycouchdb library to use the CouchDB result backend\

@@ -10,7 +10,7 @@ from collections import Counter
 from fileinput import FileInput
 from .base import Command
 
-__all__ = ['logtool']
+__all__ = ('logtool',)
 
 RE_LOG_START = re.compile(r'^\[\d\d\d\d\-\d\d-\d\d ')
 RE_TASK_RECEIVED = re.compile(r'.+?\] Received')

@@ -27,10 +27,10 @@ try:
 except ImportError:
     tblib = None
 
-__all__ = [
+__all__ = (
     'ResultBase', 'AsyncResult', 'ResultSet',
     'GroupResult', 'EagerResult', 'result_from_tuple',
-]
+)
 
 E_WOULDBLOCK = """\
 Never call result.get() within a task!

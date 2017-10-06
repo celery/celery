@@ -15,7 +15,8 @@ from celery.utils.log import get_logger
 from celery.utils.nodenames import default_nodename, node_format
 from celery.bin.base import daemon_options
 
-__all__ = ['detached_celeryd', 'detach']
+__all__ = ('detached_celeryd', 'detach')
+
 logger = get_logger(__name__)
 C_FAKEFORK = os.environ.get('C_FAKEFORK')
 

@@ -10,7 +10,7 @@ try:
 except ImportError:  # pragma: no cover
     crypto = None    # noqa
 
-__all__ = ['reraise_errors']
+__all__ = ('reraise_errors',)
 
 
 @contextmanager

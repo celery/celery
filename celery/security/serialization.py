@@ -12,7 +12,7 @@ from .certificate import Certificate, FSCertStore
 from .key import PrivateKey
 from .utils import reraise_errors
 
-__all__ = ['SecureSerializer', 'register_auth']
+__all__ = ('SecureSerializer', 'register_auth')
 
 
 class SecureSerializer(object):

@@ -15,7 +15,7 @@ from celery.local import Proxy, class_property, reclassmethod
 from celery.schedules import maybe_schedule
 from celery.utils.log import get_task_logger
 
-__all__ = ['Context', 'Task', 'TaskType', 'PeriodicTask', 'task']
+__all__ = ('Context', 'Task', 'TaskType', 'PeriodicTask', 'task')
 
 #: list of methods that must be classmethods in the old API.
 _COMPAT_CLASSMETHODS = (

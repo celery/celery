@@ -8,12 +8,12 @@ from textwrap import fill
 from pprint import pformat
 from celery.five import string_t
 
-__all__ = [
+__all__ = (
     'abbr', 'abbrtask', 'dedent', 'dedent_initial',
     'ensure_newlines', 'ensure_sep',
     'fill_paragraphs', 'indent', 'join',
     'pluralize', 'pretty', 'str_to_list', 'simple_format', 'truncate',
-]
+)
 
 UNKNOWN_SIMPLE_FORMAT_KEY = """
 Unknown format %{0} in string {1!r}.

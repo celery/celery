@@ -5,7 +5,7 @@ from celery.five import items
 from celery.utils.log import get_logger
 from .events import Events
 
-__all__ = ['Mingle']
+__all__ = ('Mingle',)
 
 logger = get_logger(__name__)
 debug, info, exception = logger.debug, logger.info, logger.exception

@@ -35,7 +35,7 @@ from celery.five import items, python_2_unicode_compatible, values
 from celery.utils.functional import LRUCache, memoize, pass1
 from celery.utils.log import get_logger
 
-__all__ = ['Worker', 'Task', 'State', 'heartbeat_expires']
+__all__ = ('Worker', 'Task', 'State', 'heartbeat_expires')
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.

@@ -26,7 +26,7 @@ from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
 from .utils import appstr
 
-__all__ = ['Context', 'Task']
+__all__ = ('Context', 'Task')
 
 #: extracts attributes related to publishing a message from an object.
 extract_exec_options = mattrgetter(

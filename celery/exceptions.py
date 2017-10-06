@@ -55,7 +55,7 @@ from billiard.exceptions import (
 )
 from kombu.exceptions import OperationalError
 
-__all__ = [
+__all__ = (
     # Warnings
     'CeleryWarning',
     'AlwaysEagerIgnored', 'DuplicateNodenameWarning',
@@ -86,7 +86,7 @@ __all__ = [
 
     # Worker shutdown semi-predicates (inherits from SystemExit).
     'WorkerShutdown', 'WorkerTerminate',
-]
+)
 
 UNREGISTERED_FMT = """\
 Task of kind {0} never registered, please make sure it's imported.\

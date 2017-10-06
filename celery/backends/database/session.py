@@ -9,7 +9,7 @@ from kombu.utils.compat import register_after_fork
 
 ResultModelBase = declarative_base()
 
-__all__ = ['SessionManager']
+__all__ = ('SessionManager',)
 
 
 def _after_fork_cleanup_session(session):

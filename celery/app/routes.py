@@ -14,7 +14,7 @@ from celery.utils.collections import lpmerge
 from celery.utils.functional import maybe_evaluate, mlazy
 from celery.utils.imports import symbol_by_name
 
-__all__ = ['MapRoute', 'Router', 'prepare']
+__all__ = ('MapRoute', 'Router', 'prepare')
 
 
 def glob_to_re(glob, quote=string.punctuation.replace('*', '')):

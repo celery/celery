@@ -13,7 +13,7 @@ try:
 except ImportError:
     Couchbase = Connection = NotFoundError = None   # noqa
 
-__all__ = ['CouchbaseBackend']
+__all__ = ('CouchbaseBackend',)
 
 
 class CouchbaseBackend(KeyValueStoreBackend):

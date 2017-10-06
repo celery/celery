@@ -21,7 +21,7 @@ from celery.bin.base import Command
 from celery.five import string_t
 from celery.utils.serialization import strtobool
 
-__all__ = ['AMQPAdmin', 'AMQShell', 'Spec', 'amqp']
+__all__ = ('AMQPAdmin', 'AMQShell', 'Spec', 'amqp')
 
 # Map to coerce strings to other types.
 COERCE = {bool: strtobool}

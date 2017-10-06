@@ -4,9 +4,9 @@ import time
 from copy import copy
 from kombu import Exchange
 
-__all__ = [
+__all__ = (
     'Event', 'event_exchange', 'get_exchange', 'group_from',
-]
+)
 
 #: Exchange used to send events on.
 #: Note: Use :func:`get_exchange` instead, as the type of

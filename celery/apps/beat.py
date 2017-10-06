@@ -18,7 +18,7 @@ from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger
 from celery.utils.time import humanize_seconds
 
-__all__ = ['Beat']
+__all__ = ('Beat',)
 
 STARTUP_INFO_FMT = """
 LocalTime -> {timestamp}

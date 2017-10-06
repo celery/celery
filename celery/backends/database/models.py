@@ -8,7 +8,7 @@ from celery import states
 from celery.five import python_2_unicode_compatible
 from .session import ResultModelBase
 
-__all__ = ['Task', 'TaskSet']
+__all__ = ('Task', 'TaskSet')
 
 
 @python_2_unicode_compatible

@@ -105,7 +105,7 @@ from celery.platforms import EX_FAILURE, EX_OK, signals
 from celery.utils import term
 from celery.utils.text import pluralize
 
-__all__ = ['MultiTool']
+__all__ = ('MultiTool',)
 
 USAGE = """\
 usage: {prog_name} start <node1 node2 nodeN|range> [worker options]

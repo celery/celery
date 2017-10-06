@@ -27,7 +27,7 @@ else:                                       # pragma: no cover
     class InvalidDocument(Exception):       # noqa
         pass
 
-__all__ = ['MongoBackend']
+__all__ = ('MongoBackend',)
 
 BINARY_CODECS = frozenset(['pickle', 'msgpack'])
 

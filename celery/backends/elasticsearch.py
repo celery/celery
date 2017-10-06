@@ -12,7 +12,7 @@ try:
 except ImportError:
     elasticsearch = None  # noqa
 
-__all__ = ['ElasticsearchBackend']
+__all__ = ('ElasticsearchBackend',)
 
 E_LIB_MISSING = """\
 You need to install the elasticsearch library to use the Elasticsearch \

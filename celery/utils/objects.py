@@ -3,7 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 from functools import reduce
 
-__all__ = ['Bunch', 'FallbackContext', 'getitem_property', 'mro_lookup']
+__all__ = ('Bunch', 'FallbackContext', 'getitem_property', 'mro_lookup')
 
 
 class Bunch(object):

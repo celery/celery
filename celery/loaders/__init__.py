@@ -7,7 +7,7 @@ when workers start, when tasks are executed and so on.
 from __future__ import absolute_import, unicode_literals
 from celery.utils.imports import symbol_by_name, import_from_cwd
 
-__all__ = ['get_loader_cls']
+__all__ = ('get_loader_cls',)
 
 LOADER_ALIASES = {
     'app': 'celery.loaders.app:AppLoader',
