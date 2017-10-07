@@ -9,7 +9,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
-import time
+from celery.five import monotonic
 
 from collections import defaultdict, Mapping, MutableMapping, MutableSet
 from heapq import heapify, heappush, heappop
@@ -580,7 +580,7 @@ class LimitedSet(object):
         self._heap[:] = [(t, key) for key, t in items(self._data)]
         heapify(self._heap)
 
-    def add(self, key, now=time.time, heappush=heappush):
+    def add(self, key, now=monotonic, heappush=heappush):
         """Add a new member."""
         # offset is there to modify the length of the list,
         # this way we can expire an item before inserting the value,
@@ -608,7 +608,7 @@ class LimitedSet(object):
         self._data.pop(value, None)
     pop_value = discard  # XXX compat
 
-    def purge(self, limit=None, offset=0, now=time.time):
+    def purge(self, limit=None, offset=0, now=monotonic):
         """Purge expired items."""
         H, maxlen = self._heap, self.maxlen
         if not maxlen:
