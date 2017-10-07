@@ -293,8 +293,6 @@ class test_LimitedSet:
 
     def test_iterable_and_ordering(self):
         s = LimitedSet(maxlen=35, expires=None)
-        # we use a custom clock here, as monotonic() does not have enough
-        # precision when called quickly (can return the same value twice).
         clock = count(1)
         for i in reversed(range(15)):
             s.add(i, now=next(clock))
