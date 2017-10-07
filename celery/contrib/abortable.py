@@ -87,7 +87,7 @@ from __future__ import absolute_import, unicode_literals
 from celery import Task
 from celery.result import AsyncResult
 
-__all__ = ['AbortableAsyncResult', 'AbortableTask']
+__all__ = ('AbortableAsyncResult', 'AbortableTask')
 
 
 """

@@ -28,10 +28,10 @@ except ImportError:  # pragma: no cover
                 from dummy_thread import get_ident      # noqa
 
 
-__all__ = [
+__all__ = (
     'bgThread', 'Local', 'LocalStack', 'LocalManager',
     'get_ident', 'default_socket_timeout',
-]
+)
 
 USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
 PY3 = sys.version_info[0] == 3

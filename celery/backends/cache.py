@@ -8,7 +8,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.utils.functional import LRUCache
 from .base import KeyValueStoreBackend
 
-__all__ = ['CacheBackend']
+__all__ = ('CacheBackend',)
 
 _imp = [None]
 

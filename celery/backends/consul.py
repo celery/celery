@@ -16,7 +16,7 @@ except ImportError:
 
 logger = get_logger(__name__)
 
-__all__ = ['ConsulBackend']
+__all__ = ('ConsulBackend',)
 
 CONSUL_MISSING = """\
 You need to install the python-consul library in order to use \

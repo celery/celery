@@ -15,7 +15,7 @@ from celery.utils.imports import instantiate
 _first_match = firstmethod('annotate')
 _first_match_any = firstmethod('annotate_any')
 
-__all__ = ['MapAnnotation', 'prepare', 'resolve_all']
+__all__ = ('MapAnnotation', 'prepare', 'resolve_all')
 
 
 class MapAnnotation(dict):

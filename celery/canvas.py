@@ -33,10 +33,10 @@ from celery.utils.functional import (
 from celery.utils.objects import getitem_property
 from celery.utils.text import truncate, remove_repeating_from_task
 
-__all__ = [
+__all__ = (
     'Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
     'group', 'chord', 'signature', 'maybe_signature',
-]
+)
 
 PY3 = sys.version_info[0] == 3
 

@@ -15,7 +15,7 @@ from celery.utils.time import adjust_timestamp
 
 from .event import get_exchange
 
-__all__ = ['EventReceiver']
+__all__ = ('EventReceiver',)
 
 CLIENT_CLOCK_SKEW = -1
 

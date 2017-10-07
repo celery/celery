@@ -19,6 +19,7 @@ from celery.backends.cache import CacheBackend, DummyClient
 # that installs the pytest plugin into the setuptools registry.
 from celery.contrib.pytest import (
     celery_app, celery_enable_logging, depends_on_current_app,
+    celery_parameters
 )
 from celery.contrib.testing.app import Trap, TestApp
 from celery.contrib.testing.mocks import (
@@ -26,9 +27,10 @@ from celery.contrib.testing.mocks import (
 )
 
 # Tricks flake8 into silencing redefining fixtures warnings.
-__all__ = [
+__all__ = (
     'celery_app', 'celery_enable_logging', 'depends_on_current_app',
-]
+    'celery_parameters'
+)
 
 try:
     WindowsError = WindowsError  # noqa

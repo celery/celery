@@ -10,7 +10,7 @@ from celery.utils.log import get_logger
 from celery.worker import pidbox
 from .tasks import Tasks
 
-__all__ = ['Control']
+__all__ = ('Control',)
 
 logger = get_logger(__name__)
 

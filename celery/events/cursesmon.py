@@ -18,7 +18,7 @@ from celery.app import app_or_default
 from celery.five import items, values
 from celery.utils.text import abbr, abbrtask
 
-__all__ = ['CursesMonitor', 'evtop']
+__all__ = ('CursesMonitor', 'evtop')
 
 BORDER_SPACING = 4
 LEFT_BORDER_OFFSET = 3

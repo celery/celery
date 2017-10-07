@@ -14,7 +14,7 @@ functions are called whenever a signal is called.
 from __future__ import absolute_import, unicode_literals
 from .utils.dispatch import Signal
 
-__all__ = [
+__all__ = (
     'before_task_publish', 'after_task_publish',
     'task_prerun', 'task_postrun', 'task_success',
     'task_retry', 'task_failure', 'task_revoked', 'celeryd_init',
@@ -24,7 +24,7 @@ __all__ = [
     'beat_init', 'beat_embedded_init', 'heartbeat_sent',
     'eventlet_pool_started', 'eventlet_pool_preshutdown',
     'eventlet_pool_postshutdown', 'eventlet_pool_apply',
-]
+)
 
 # - Task
 before_task_publish = Signal(

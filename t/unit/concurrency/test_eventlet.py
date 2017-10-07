@@ -18,6 +18,7 @@ eventlet_modules = (
 
 
 @skip.if_pypy()
+@skip.unless_module('eventlet')
 class EventletCase:
 
     def setup(self):

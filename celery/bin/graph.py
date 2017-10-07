@@ -9,7 +9,7 @@ from celery.five import items, python_2_unicode_compatible
 from celery.utils.graph import DependencyGraph, GraphFormatter
 from .base import Command
 
-__all__ = ['graph']
+__all__ = ('graph',)
 
 
 class graph(Command):

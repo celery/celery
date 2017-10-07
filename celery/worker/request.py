@@ -33,7 +33,7 @@ from celery.utils.serialization import get_pickled_exception
 
 from . import state
 
-__all__ = ['Request']
+__all__ = ('Request',)
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.

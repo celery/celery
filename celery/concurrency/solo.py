@@ -4,7 +4,7 @@ from __future__ import absolute_import, unicode_literals
 import os
 from .base import BasePool, apply_target
 
-__all__ = ['TaskPool']
+__all__ = ('TaskPool',)
 
 
 class TaskPool(BasePool):

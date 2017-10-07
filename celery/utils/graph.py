@@ -6,7 +6,7 @@ from textwrap import dedent
 from kombu.utils.encoding import safe_str, bytes_to_str
 from celery.five import items, python_2_unicode_compatible
 
-__all__ = ['DOT', 'CycleError', 'DependencyGraph', 'GraphFormatter']
+__all__ = ('DOT', 'CycleError', 'DependencyGraph', 'GraphFormatter')
 
 
 class DOT:

@@ -30,12 +30,12 @@ except ImportError:
         pass
     LazySettings = LazyObject  # noqa
 
-__all__ = [
+__all__ = (
     'AttributeDictMixin', 'AttributeDict', 'BufferMap', 'ChainMap',
     'ConfigurationView', 'DictAttribute', 'Evictable',
     'LimitedSet', 'Messagebuffer', 'OrderedDict',
     'force_mapping', 'lpmerge',
-]
+)
 
 PY3 = sys.version_info[0] >= 3
 

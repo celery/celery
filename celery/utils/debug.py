@@ -18,10 +18,10 @@ try:
 except ImportError:
     Process = None  # noqa
 
-__all__ = [
+__all__ = (
     'blockdetection', 'sample_mem', 'memdump', 'sample',
     'humanbytes', 'mem_rss', 'ps', 'cry',
-]
+)
 
 UNITS = (
     (2 ** 40.0, 'TB'),

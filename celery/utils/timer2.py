@@ -20,7 +20,7 @@ from kombu.async.timer import Entry, Timer as Schedule, to_timestamp, logger
 
 TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
 
-__all__ = ['Entry', 'Schedule', 'Timer', 'to_timestamp']
+__all__ = ('Entry', 'Schedule', 'Timer', 'to_timestamp')
 
 
 class Timer(threading.Thread):

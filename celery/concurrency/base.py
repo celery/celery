@@ -16,7 +16,7 @@ from celery.utils import timer2
 from celery.utils.text import truncate
 from celery.utils.log import get_logger
 
-__all__ = ['BasePool', 'apply_target']
+__all__ = ('BasePool', 'apply_target')
 
 logger = get_logger('celery.pool')
 

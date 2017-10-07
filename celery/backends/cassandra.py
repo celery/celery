@@ -14,7 +14,7 @@ except ImportError:  # pragma: no cover
     cassandra = None   # noqa
 
 
-__all__ = ['CassandraBackend']
+__all__ = ('CassandraBackend',)
 
 logger = get_logger(__name__)
 
