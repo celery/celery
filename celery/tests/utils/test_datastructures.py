@@ -4,7 +4,7 @@ import pickle
 import sys
 
 from billiard.einfo import ExceptionInfo
-from time import time
+from celery.five import monotonic
 
 from celery.datastructures import (
     LimitedSet,
@@ -198,18 +198,18 @@ class test_LimitedSet(Case):
         s = LimitedSet(maxlen=None, expires=1)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        s.purge(1, now=lambda: time() + 100)
+        s.purge(1, now=lambda: monotonic() + 100)
         self.assertEqual(len(s), 9)
-        s.purge(None, now=lambda: time() + 100)
+        s.purge(None, now=lambda: monotonic() + 100)
         self.assertEqual(len(s), 2)
 
         # not expired
         s = LimitedSet(maxlen=None, expires=1)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        s.purge(1, now=lambda: time() - 100)
+        s.purge(1, now=lambda: monotonic() - 100)
         self.assertEqual(len(s), 10)
-        s.purge(None, now=lambda: time() - 100)
+        s.purge(None, now=lambda: monotonic() - 100)
         self.assertEqual(len(s), 10)
 
         s = LimitedSet(maxlen=None)
