@@ -5,7 +5,7 @@ import pytest
 
 from collections import Mapping
 from itertools import count
-from time import time
+from celery.five import monotonic
 
 from case import skip
 from billiard.einfo import ExceptionInfo
@@ -198,21 +198,21 @@ class test_LimitedSet:
         s = LimitedSet(maxlen=10, expires=1)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        s.purge(now=time() + 100)
+        s.purge(now=monotonic() + 100)
         assert len(s) == 0
 
         # not expired
         s = LimitedSet(maxlen=None, expires=1)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        s.purge(now=lambda: time() - 100)
+        s.purge(now=lambda: monotonic() - 100)
         assert len(s) == 2
 
         # expired -> minsize
         s = LimitedSet(maxlen=10, minlen=10, expires=1)
         [s.add(i) for i in range(20)]
         s.minlen = 3
-        s.purge(now=time() + 3)
+        s.purge(now=monotonic() + 3)
         assert s.minlen == len(s)
         assert len(s._heap) <= s.maxlen * (
             100. + s.max_heap_percent_overload) / 100
@@ -293,8 +293,6 @@ class test_LimitedSet:
 
     def test_iterable_and_ordering(self):
         s = LimitedSet(maxlen=35, expires=None)
-        # we use a custom clock here, as time.time() does not have enough
-        # precision when called quickly (can return the same value twice).
         clock = count(1)
         for i in reversed(range(15)):
             s.add(i, now=next(clock))
