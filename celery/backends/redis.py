@@ -4,6 +4,7 @@ from __future__ import absolute_import, unicode_literals
 
 from functools import partial
 
+from kombu import Connection
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
 from kombu.utils.url import _parse_url
@@ -340,3 +341,22 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
     @deprecated.Property(4.0, 5.0)
     def password(self):
         return self.connparams['password']
+
+
+class SentinelBackend(RedisBackend):
+    """Sentinel task result store."""
+
+    def __init__(self, *args, **kwargs):
+        super(SentinelBackend, self).__init__(*args, **kwargs)
+
+        _get = self.app.conf.get
+
+        self.broker_url = _get('BROKER_URL') or {}
+        self.transport_options = _get('BROKER_TRANSPORT_OPTIONS') or {}
+
+    @cached_property
+    def client(self):
+        connection = Connection(self.broker_url,
+                                transport_options=self.transport_options)
+
+        return connection.connect()._avail_channels[0].client
