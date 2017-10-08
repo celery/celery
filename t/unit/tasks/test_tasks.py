@@ -411,7 +411,7 @@ class test_tasks(TasksCase):
 
     def assert_next_task_data_equal(self, consumer, presult, task_name,
                                     test_eta=False, test_expires=False,
-                                    headers=None, **kwargs):
+                                    properties=None, headers=None, **kwargs):
         next_task = consumer.queues[0].get(accept=['pickle', 'json'])
         task_properties = next_task.properties
         task_headers = next_task.headers
@@ -427,6 +427,9 @@ class test_tasks(TasksCase):
             assert isinstance(task_headers.get('expires'), string_t)
             to_datetime = parse_iso8601(task_headers.get('expires'))
             assert isinstance(to_datetime, datetime)
+        properties = properties or {}
+        for arg_name, arg_value in items(properties):
+            assert task_properties.get(arg_name) == arg_value
         headers = headers or {}
         for arg_name, arg_value in items(headers):
             assert task_headers.get(arg_name) == arg_value
