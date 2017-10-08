@@ -359,7 +359,7 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
 
 class SentinelBackend(RedisBackend):
     """Redis sentinel task result store."""
-    
+
     sentinel = sentinel
 
     def __init__(self, *args, **kwargs):
