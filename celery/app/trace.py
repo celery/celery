@@ -43,10 +43,10 @@ from celery.utils.serialization import (
     get_pickleable_exception, get_pickled_exception, get_pickleable_etype,
 )
 
-__all__ = [
+__all__ = (
     'TraceInfo', 'build_tracer', 'trace_task',
     'setup_worker_optimizations', 'reset_worker_optimizations',
-]
+)
 
 logger = get_logger(__name__)
 

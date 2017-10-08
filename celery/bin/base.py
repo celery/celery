@@ -42,9 +42,9 @@ try:
 except NameError:  # pragma: no cover
     pass
 
-__all__ = [
+__all__ = (
     'Error', 'UsageError', 'Extensions', 'Command', 'Option', 'daemon_options',
-]
+)
 
 # always enable DeprecationWarnings, so our users can see them.
 for warning in (CDeprecationWarning, CPendingDeprecationWarning):

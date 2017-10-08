@@ -16,11 +16,11 @@ from celery.five import reload
 #: task to be that of ``App.main``.
 MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE')
 
-__all__ = [
+__all__ = (
     'NotAPackage', 'qualname', 'instantiate', 'symbol_by_name',
     'cwd_in_path', 'find_module', 'import_from_cwd',
     'reload_from_cwd', 'module_file', 'gen_task_name',
-]
+)
 
 
 class NotAPackage(Exception):

@@ -5,7 +5,7 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import Callable
 from celery.five import with_metaclass
 
-__all__ = ['CallableTask', 'CallableSignature']
+__all__ = ('CallableTask', 'CallableSignature')
 
 
 def _hasattr(C, attr):

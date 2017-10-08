@@ -33,10 +33,10 @@ from celery.utils.functional import (
 from celery.utils.objects import getitem_property
 from celery.utils.text import truncate, remove_repeating_from_task
 
-__all__ = [
+__all__ = (
     'Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
     'group', 'chord', 'signature', 'maybe_signature',
-]
+)
 
 PY3 = sys.version_info[0] == 3
 
@@ -395,23 +395,19 @@ class Signature(dict):
             other = maybe_unroll_group(other)
             if isinstance(self, _chain):
                 # chain | group() -> chain
-                sig = self.clone()
-                sig.tasks.append(other)
-                return sig
+                return _chain(seq_concat_item(
+                    self.unchain_tasks(), other), app=self._app)
             # task | group() -> chain
             return _chain(self, other, app=self.app)
 
         if not isinstance(self, _chain) and isinstance(other, _chain):
             # task | chain -> chain
-            return _chain(
-                seq_concat_seq((self,), other.tasks), app=self._app)
+            return _chain(seq_concat_seq(
+                (self,), other.unchain_tasks()), app=self._app)
         elif isinstance(other, _chain):
             # chain | chain -> chain
-            sig = self.clone()
-            if isinstance(sig.tasks, tuple):
-                sig.tasks = list(sig.tasks)
-            sig.tasks.extend(other.tasks)
-            return sig
+            return _chain(seq_concat_seq(
+                self.unchain_tasks(), other.unchain_tasks()), app=self._app)
         elif isinstance(self, chord):
             # chord(ONE, body) | other -> ONE | body | other
             # chord with one header task is unecessary.
@@ -436,8 +432,8 @@ class Signature(dict):
                     return sig
                 else:
                     # chain | task -> chain
-                    return _chain(
-                        seq_concat_item(self.tasks, other), app=self._app)
+                    return _chain(seq_concat_item(
+                        self.unchain_tasks(), other), app=self._app)
             # task | task -> chain
             return _chain(self, other, app=self._app)
         return NotImplemented
@@ -556,6 +552,15 @@ class _chain(Signature):
             for sig in s.kwargs['tasks']
         ]
         return s
+
+    def unchain_tasks(self):
+        # Clone chain's tasks assigning sugnatures from link_error
+        # to each task
+        tasks = [t.clone() for t in self.tasks]
+        for sig in self.options.get('link_error', []):
+            for task in tasks:
+                task.link_error(sig)
+        return tasks
 
     def apply_async(self, args=(), kwargs={}, **options):
         # python is best at unpacking kwargs, so .run is here to do that.
@@ -950,6 +955,8 @@ class group(Signature):
             tasks = tasks[0]
             if isinstance(tasks, group):
                 tasks = tasks.tasks
+            if isinstance(tasks, abstract.CallableSignature):
+                tasks = [tasks.clone()]
             if not isinstance(tasks, _regen):
                 tasks = regen(tasks)
         Signature.__init__(
@@ -1174,8 +1181,9 @@ class chord(Signature):
 
     @classmethod
     def from_dict(cls, d, app=None):
-        args, d['kwargs'] = cls._unpack_args(**d['kwargs'])
-        return _upgrade(d, cls(*args, app=app, **d))
+        options = d.copy()
+        args, options['kwargs'] = cls._unpack_args(**options['kwargs'])
+        return _upgrade(d, cls(*args, app=app, **options))
 
     @staticmethod
     def _unpack_args(header=None, body=None, **kwargs):

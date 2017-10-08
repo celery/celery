@@ -17,7 +17,7 @@ from celery.utils.log import get_logger
 
 from .base import BaseBackend
 
-__all__ = ['BacklogLimitExceeded', 'AMQPBackend']
+__all__ = ('BacklogLimitExceeded', 'AMQPBackend')
 
 logger = get_logger(__name__)
 

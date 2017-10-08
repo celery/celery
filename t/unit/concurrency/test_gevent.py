@@ -1,5 +1,5 @@
 from __future__ import absolute_import, unicode_literals
-from case import Mock, skip
+from case import Mock
 from celery.concurrency.gevent import (
     Timer,
     TaskPool,
@@ -15,7 +15,6 @@ gevent_modules = (
 )
 
 
-@skip.if_pypy()
 class test_gevent_patch:
 
     def test_is_patched(self):
@@ -28,7 +27,6 @@ class test_gevent_patch:
         patch_all.assert_called()
 
 
-@skip.if_pypy()
 class test_Timer:
 
     def setup(self):
@@ -60,7 +58,6 @@ class test_Timer:
         g.cancel()
 
 
-@skip.if_pypy()
 class test_TaskPool:
 
     def setup(self):
@@ -90,7 +87,6 @@ class test_TaskPool:
         assert x.num_processes == 3
 
 
-@skip.if_pypy()
 class test_apply_timeout:
 
     def test_apply_timeout(self):

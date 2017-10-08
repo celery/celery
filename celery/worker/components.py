@@ -16,7 +16,7 @@ from celery.five import string_t
 from celery.platforms import IS_WINDOWS
 from celery.utils.log import worker_logger as logger
 
-__all__ = ['Timer', 'Hub', 'Pool', 'Beat', 'StateDB', 'Consumer']
+__all__ = ('Timer', 'Hub', 'Pool', 'Beat', 'StateDB', 'Consumer')
 
 GREEN_POOLS = {'eventlet', 'gevent'}
 

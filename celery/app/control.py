@@ -13,7 +13,7 @@ from kombu.utils.objects import cached_property
 from celery.exceptions import DuplicateNodenameWarning
 from celery.utils.text import pluralize
 
-__all__ = ['Inspect', 'Control', 'flatten_reply']
+__all__ = ('Inspect', 'Control', 'flatten_reply')
 
 W_DUPNODE = """\
 Received multiple replies from node {0}: {1}.

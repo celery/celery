@@ -9,7 +9,7 @@ from celery.signals import heartbeat_sent
 from celery.utils.sysinfo import load_average
 from .state import SOFTWARE_INFO, active_requests, all_total_count
 
-__all__ = ['Heart']
+__all__ = ('Heart',)
 
 
 class Heart(object):

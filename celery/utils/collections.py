@@ -3,7 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import sys
-import time
+from celery.five import monotonic
 
 from collections import (
     Callable, Mapping, MutableMapping, MutableSet, Sequence,
@@ -30,12 +30,12 @@ except ImportError:
         pass
     LazySettings = LazyObject  # noqa
 
-__all__ = [
+__all__ = (
     'AttributeDictMixin', 'AttributeDict', 'BufferMap', 'ChainMap',
     'ConfigurationView', 'DictAttribute', 'Evictable',
     'LimitedSet', 'Messagebuffer', 'OrderedDict',
     'force_mapping', 'lpmerge',
-]
+)
 
 PY3 = sys.version_info[0] >= 3
 
@@ -526,7 +526,7 @@ class LimitedSet(object):
         False
         >>> len(s)  # maxlen is reached
         50000
-        >>> s.purge(now=time.time() + 7200)  # clock + 2 hours
+        >>> s.purge(now=monotonic() + 7200)  # clock + 2 hours
         >>> len(s)  # now only minlen items are cached
         4000
         >>>> 57000 in s  # even this item is gone now
@@ -573,7 +573,7 @@ class LimitedSet(object):
     def add(self, item, now=None):
         # type: (Any, float) -> None
         """Add a new item, or reset the expiry time of an existing item."""
-        now = now or time.time()
+        now = now or monotonic()
         if item in self._data:
             self.discard(item)
         entry = (now, item)
@@ -624,7 +624,7 @@ class LimitedSet(object):
             now (float): Time of purging -- by default right now.
                 This can be useful for unit testing.
         """
-        now = now or time.time()
+        now = now or monotonic()
         now = now() if isinstance(now, Callable) else now
         if self.maxlen:
             while len(self._data) > self.maxlen:

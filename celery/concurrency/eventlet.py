@@ -4,7 +4,7 @@ from __future__ import absolute_import, unicode_literals
 import sys
 from kombu.five import monotonic
 
-__all__ = ['TaskPool']
+__all__ = ('TaskPool',)
 
 W_RACE = """\
 Celery module with %s imported before eventlet patched\

@@ -19,7 +19,7 @@ from celery.five import items, range
 from . import base
 from .async import AsyncBackendMixin, BaseResultConsumer
 
-__all__ = ['BacklogLimitExceeded', 'RPCBackend']
+__all__ = ('BacklogLimitExceeded', 'RPCBackend')
 
 E_NO_CHORD_SUPPORT = """
 The "rpc" result backend does not support chords!

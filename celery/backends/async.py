@@ -16,10 +16,10 @@ from celery.exceptions import TimeoutError
 from celery.five import Empty, monotonic
 from celery.utils.threads import THREAD_TIMEOUT_MAX
 
-__all__ = [
+__all__ = (
     'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
     'register_drainer',
-]
+)
 
 drainers = {}
 

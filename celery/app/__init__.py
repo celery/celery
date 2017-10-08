@@ -10,11 +10,11 @@ from celery._state import (
 from .base import Celery
 from .utils import AppPickler
 
-__all__ = [
+__all__ = (
     'Celery', 'AppPickler', 'app_or_default', 'default_app',
     'bugreport', 'enable_trace', 'disable_trace', 'shared_task',
     'push_current_task', 'pop_current_task',
-]
+)
 
 #: Proxy always returning the app set as default.
 default_app = Proxy(lambda: _state.default_app)

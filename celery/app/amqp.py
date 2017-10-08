@@ -25,7 +25,7 @@ from celery.utils.time import maybe_make_aware
 
 from . import routes as _routes
 
-__all__ = ['AMQP', 'Queues', 'task_message']
+__all__ = ('AMQP', 'Queues', 'task_message')
 
 PY3 = sys.version_info[0] == 3
 

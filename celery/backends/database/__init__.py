@@ -28,7 +28,7 @@ except ImportError:  # pragma: no cover
 
 logger = logging.getLogger(__name__)
 
-__all__ = ['DatabaseBackend']
+__all__ = ('DatabaseBackend',)
 
 
 @contextmanager

@@ -185,7 +185,7 @@ from celery.platforms import maybe_drop_privileges
 from celery.utils.log import LOG_LEVELS, mlevel
 from celery.utils.nodenames import default_nodename
 
-__all__ = ['worker', 'main']
+__all__ = ('worker', 'main')
 
 HELP = __doc__
 

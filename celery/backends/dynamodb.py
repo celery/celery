@@ -15,7 +15,7 @@ try:
 except ImportError:  # pragma: no cover
     boto3 = ClientError = None  # noqa
 
-__all__ = ['DynamoDBBackend']
+__all__ = ('DynamoDBBackend',)
 
 
 # Helper class that describes a DynamoDB attribute

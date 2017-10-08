@@ -22,7 +22,7 @@ from celery.utils.nodenames import (
 )
 from celery.utils.saferepr import saferepr
 
-__all__ = ['Cluster', 'Node']
+__all__ = ('Cluster', 'Node')
 
 CELERY_EXE = 'celery'
 

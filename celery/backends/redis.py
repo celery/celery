@@ -33,7 +33,7 @@ try:
 except ImportError:
     sentinel = None
 
-__all__ = ['RedisBackend']
+__all__ = ('RedisBackend', 'SentinelBackend')
 
 E_REDIS_MISSING = """
 You need to install the redis library in order to use \

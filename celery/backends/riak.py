@@ -12,7 +12,7 @@ try:
 except ImportError:  # pragma: no cover
     riak = RiakClient = last_written_resolver = None  # noqa
 
-__all__ = ['RiakBackend']
+__all__ = ('RiakBackend',)
 
 E_BUCKET_NAME = """\
 Riak bucket names must be composed of ASCII characters only, not: {0!r}\

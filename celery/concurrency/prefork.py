@@ -22,7 +22,7 @@ from celery.utils.log import get_logger
 
 from .asynpool import AsynPool
 
-__all__ = ['TaskPool', 'process_initializer', 'process_destructor']
+__all__ = ('TaskPool', 'process_initializer', 'process_destructor')
 
 #: List of signals to reset when a child process starts.
 WORKER_SIGRESET = {

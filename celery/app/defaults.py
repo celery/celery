@@ -8,7 +8,7 @@ from celery.five import items, keys, python_2_unicode_compatible
 from celery.utils.functional import memoize
 from celery.utils.serialization import strtobool
 
-__all__ = ['Option', 'NAMESPACES', 'flatten', 'find']
+__all__ = ('Option', 'NAMESPACES', 'flatten', 'find')
 
 is_jython = sys.platform.startswith('java')
 is_pypy = hasattr(sys, 'pypy_version_info')

@@ -39,7 +39,7 @@ pwd = try_import('pwd')
 grp = try_import('grp')
 mputil = try_import('multiprocessing.util')
 
-__all__ = [
+__all__ = (
     'EX_OK', 'EX_FAILURE', 'EX_UNAVAILABLE', 'EX_USAGE', 'SYSTEM',
     'IS_macOS', 'IS_WINDOWS', 'SIGMAP', 'pyimplementation', 'LockFailed',
     'get_fdmax', 'Pidfile', 'create_pidlock', 'close_open_fds',
@@ -47,7 +47,7 @@ __all__ = [
     'initgroups', 'setgid', 'setuid', 'maybe_drop_privileges', 'signals',
     'signal_name', 'set_process_title', 'set_mp_process_title',
     'get_errno_name', 'ignore_errno', 'fd_by_path', 'isatty',
-]
+)
 
 # exitcodes
 EX_OK = getattr(os, 'EX_OK', 0)

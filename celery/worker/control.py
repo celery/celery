@@ -21,7 +21,7 @@ from celery.utils.time import rate
 from . import state as worker_state
 from .request import Request
 
-__all__ = ['Panel']
+__all__ = ('Panel',)
 
 DEFAULT_TASK_INFO_ITEMS = ('exchange', 'routing_key', 'rate_limit')
 logger = get_logger(__name__)

@@ -10,10 +10,10 @@ from __future__ import absolute_import, unicode_literals
 from celery._state import current_app, current_task as current
 from celery.local import LazyModule, Proxy, recreate_module
 
-__all__ = [
+__all__ = (
     'BaseTask', 'Task', 'PeriodicTask', 'task', 'periodic_task',
     'group', 'chord', 'subtask',
-]
+)
 
 
 STATICA_HACK = True

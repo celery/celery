@@ -8,7 +8,7 @@ from celery.exceptions import SecurityError
 from celery.five import values
 from .utils import crypto, reraise_errors
 
-__all__ = ['Certificate', 'CertStore', 'FSCertStore']
+__all__ = ('Certificate', 'CertStore', 'FSCertStore')
 
 
 class Certificate(object):

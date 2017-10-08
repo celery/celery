@@ -57,7 +57,7 @@ from .utils import (
 # Load all builtin tasks
 from . import builtins  # noqa
 
-__all__ = ['Celery']
+__all__ = ('Celery',)
 
 logger = get_logger(__name__)
 

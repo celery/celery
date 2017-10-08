@@ -17,7 +17,7 @@ try:
 except ImportError:
     from .weakref_backports import WeakMethod  # noqa
 
-__all__ = ['Signal']
+__all__ = ('Signal',)
 
 PY3 = sys.version_info[0] >= 3
 logger = get_logger(__name__)

@@ -18,12 +18,12 @@ from celery.five import string_t, text_t
 
 from .term import colored
 
-__all__ = [
+__all__ = (
     'ColorFormatter', 'LoggingProxy', 'base_logger',
     'set_in_sighandler', 'in_sighandler', 'get_logger',
     'get_task_logger', 'mlevel',
     'get_multiprocessing_logger', 'reset_multiprocessing_logger',
-]
+)
 
 _process_aware = False
 _in_sighandler = False

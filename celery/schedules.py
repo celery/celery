@@ -19,10 +19,10 @@ from .utils.time import (
     timezone, maybe_make_aware, ffwd, localize
 )
 
-__all__ = [
+__all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
     'maybe_schedule', 'solar',
-]
+)
 
 schedstate = namedtuple('schedstate', ('is_due', 'next'))
 
