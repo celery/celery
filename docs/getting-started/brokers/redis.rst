@@ -86,9 +86,14 @@ you should configure these settings::
     app.conf.result_backend = 'redis://localhost:6379/0'
 
 For a complete list of options supported by the Redis result backend, see
-:ref:`conf-redis-result-backend`
+:ref:`conf-redis-result-backend`.
 
-*Note that sentinel is not a supported backend*
+If you are using Sentinel, you should specify the master_name using the :setting:`result_backend_transport_options` setting:
+
+.. code-block:: python
+
+    app.conf.result_backend_transport_options = {'master_name': "mymaster"}
+
 
 .. _redis-caveats:
 
