@@ -21,6 +21,8 @@ from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import raise_with_context
+from celery.result import _set_task_join_will_block
+
 
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
@@ -737,10 +739,14 @@ class Task(object):
             'delivery_info': {'is_eager': True},
         }
         tb = None
-        tracer = build_tracer(
-            task.name, task, eager=True,
-            propagate=throw, app=self._get_app(),
-        )
+        try:
+            _set_task_join_will_block(True)
+            tracer = build_tracer(
+                task.name, task, eager=True,
+                propagate=throw, app=self._get_app(),
+            )
+        finally:
+            _set_task_join_will_block(False)
         ret = tracer(task_id, args, kwargs, request)
         retval = ret.retval
         if isinstance(retval, ExceptionInfo):
