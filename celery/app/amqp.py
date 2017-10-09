@@ -398,7 +398,8 @@ class AMQP(object):
                    chord=None, callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
-                   shadow=None, now=None, timezone=None):
+                   shadow=None, now=None, timezone=None,
+                   **compat_kwargs):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc

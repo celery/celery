@@ -41,7 +41,6 @@ class MockApplyTask(Task):
 class TasksCase:
 
     def setup(self):
-        self.app.conf.task_protocol = 1  # XXX  Still using proto1
         self.mytask = self.app.task(shared=False)(return_True)
 
         @self.app.task(bind=True, count=0, shared=False)
@@ -412,20 +411,28 @@ class test_tasks(TasksCase):
 
     def assert_next_task_data_equal(self, consumer, presult, task_name,
                                     test_eta=False, test_expires=False,
-                                    **kwargs):
+                                    properties=None, headers=None, **kwargs):
         next_task = consumer.queues[0].get(accept=['pickle', 'json'])
-        task_data = next_task.decode()
-        assert task_data['id'] == presult.id
-        assert task_data['task'] == task_name
-        task_kwargs = task_data.get('kwargs', {})
+        task_properties = next_task.properties
+        task_headers = next_task.headers
+        task_body = next_task.decode()
+        task_args, task_kwargs, embed = task_body
+        assert task_headers['id'] == presult.id
+        assert task_headers['task'] == task_name
         if test_eta:
-            assert isinstance(task_data.get('eta'), string_t)
-            to_datetime = parse_iso8601(task_data.get('eta'))
+            assert isinstance(task_headers.get('eta'), string_t)
+            to_datetime = parse_iso8601(task_headers.get('eta'))
             assert isinstance(to_datetime, datetime)
         if test_expires:
-            assert isinstance(task_data.get('expires'), string_t)
-            to_datetime = parse_iso8601(task_data.get('expires'))
+            assert isinstance(task_headers.get('expires'), string_t)
+            to_datetime = parse_iso8601(task_headers.get('expires'))
             assert isinstance(to_datetime, datetime)
+        properties = properties or {}
+        for arg_name, arg_value in items(properties):
+            assert task_properties.get(arg_name) == arg_value
+        headers = headers or {}
+        for arg_name, arg_value in items(headers):
+            assert task_headers.get(arg_name) == arg_value
         for arg_name, arg_value in items(kwargs):
             assert task_kwargs.get(arg_name) == arg_value
 
@@ -498,6 +505,27 @@ class test_tasks(TasksCase):
             self.assert_next_task_data_equal(
                 consumer, presult2, self.mytask.name,
                 name='George Costanza', test_eta=True, test_expires=True,
+            )
+
+            # Default argsrepr/kwargsrepr behavior
+            presult2 = self.mytask.apply_async(
+                args=('spam',), kwargs={'name': 'Jerry Seinfeld'}
+            )
+            self.assert_next_task_data_equal(
+                consumer, presult2, self.mytask.name,
+                headers={'argsrepr': "('spam',)",
+                         'kwargsrepr': "{'name': 'Jerry Seinfeld'}"},
+            )
+
+            # With argsrepr/kwargsrepr
+            presult2 = self.mytask.apply_async(
+                args=('secret',), argsrepr="'***'",
+                kwargs={'password': 'foo'}, kwargsrepr="{'password': '***'}",
+            )
+            self.assert_next_task_data_equal(
+                consumer, presult2, self.mytask.name,
+                headers={'argsrepr': "'***'",
+                         'kwargsrepr': "{'password': '***'}"},
             )
 
             # Discarding all tasks.
