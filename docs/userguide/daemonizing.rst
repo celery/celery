@@ -378,7 +378,7 @@ This is an example systemd file:
   Type=forking
   User=celery
   Group=celery
-  EnvironmentFile=-/etc/conf.d/celery
+  EnvironmentFile=/etc/conf.d/celery
   WorkingDirectory=/opt/celery
   ExecStart=/bin/sh -c '${CELERY_BIN} multi start ${CELERYD_NODES} \
     -A ${CELERY_APP} --pidfile=${CELERYD_PID_FILE} \
