@@ -2,7 +2,6 @@
 """Loader base class."""
 from __future__ import absolute_import, unicode_literals
 
-import imp as _imp
 import importlib
 import os
 import re
@@ -268,13 +267,6 @@ def find_related_module(package, related_name):
             raise
 
     try:
-        pkg_path = importlib.import_module(package).__path__
-    except AttributeError:
-        return
-
-    try:
-        _imp.find_module(related_name, pkg_path)
+        return importlib.import_module('{0}.{1}'.format(package, related_name))
     except ImportError:
         return
-
-    return importlib.import_module('{0}.{1}'.format(package, related_name))
