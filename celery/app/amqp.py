@@ -356,6 +356,7 @@ class AMQP(object):
                 'lang': 'py',
                 'task': name,
                 'id': task_id,
+                'shadow': shadow,
                 'eta': eta,
                 'expires': expires,
                 'group': group_id,
