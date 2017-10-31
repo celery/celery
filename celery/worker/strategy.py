@@ -90,14 +90,17 @@ def default(task, app, consumer,
 
     def task_message_handler(message, body, ack, reject, callbacks,
                              to_timestamp=to_timestamp):
-        if body is None:
+        if body is None and 'args' not in message.payload:
             body, headers, decoded, utc = (
                 message.body, message.headers, False, app.uses_utc_timezone(),
             )
             if not body_can_be_buffer:
                 body = bytes(body) if isinstance(body, buffer_t) else body
         else:
-            body, headers, decoded, utc = proto1_to_proto2(message, body)
+            if 'args' in message.payload:
+                body, headers, decoded, utc = proto1_to_proto2(message, message.payload)
+            else:
+                body, headers, decoded, utc = proto1_to_proto2(message, body)
 
         req = Req(
             message,
