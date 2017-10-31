@@ -450,10 +450,10 @@ class Consumer(object):
         def on_task_received(body, message):
             headers = message.headers
             try:
-                type_, is_proto2 = headers['task'], 1
+                type_, is_proto2 = body['task'], 0
             except (KeyError, TypeError):
                 try:
-                    type_, is_proto2 = body['task'], 0
+                    type_, is_proto2 = headers['task'], 1
                 except (KeyError, TypeError):
                     return on_unknown_message(body, message)
 
