@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 
 
 def hybrid_to_proto2(message, body):
-    "Create a fresh protocol 2 message from a hybrid protocol 1/2 message."
+    """Create a fresh protocol 2 message from a hybrid protocol 1/2 message."""
     try:
         args, kwargs = body.get('args', ()), body.get('kwargs', {})
         kwargs.items  # pylint: disable=pointless-statement
