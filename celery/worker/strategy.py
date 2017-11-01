@@ -23,7 +23,48 @@ logger = get_logger(__name__)
 # We cache globals and attribute lookups, so disable this warning.
 
 
-def proto1_to_proto2(message, body):
+def clean_hybrid_protocol(message, body):
+    """Create a fresh protocol 2 message from a "hybrid" protocol 1/2 message
+    """
+    try:
+        args, kwargs = body.get('args', ()), body.get('kwargs', {})
+        kwargs.items  # pylint: disable=pointless-statement
+    except KeyError:
+        raise InvalidTaskError('Message does not have args/kwargs')
+    except AttributeError:
+        raise InvalidTaskError(
+            'Task keyword arguments must be a mapping',
+        )
+
+    headers = {
+        'lang': body.get('lang'),
+        'task': body.get('task'),
+        'id': body.get('id'),
+        'root_id': body.get('root_id'),
+        'parent_id': body.get('parent_id'),
+        'group': body.get('group'),
+        'meth': body.get('meth'),
+        'shadow': body.get('shadow'),
+        'eta': body.get('eta'),
+        'expires': body.get('expires'),
+        'retries': body.get('retries'),
+        'timelimit': body.get('timelimit'),
+        'argsrepr': body.get('argsrepr'),
+        'kwargsrepr': body.get('kwargsrepr'),
+        'origin': body.get('origin'),
+    }
+
+    embed = {
+        'callbacks': body.get('callbacks'),
+        'errbacks': body.get('errbacks'),
+        'chord': body.get('chord'),
+        'chain': None,
+    }
+
+    return (args, kwargs, embed), headers, True, body.get('utc', True)
+
+
+def proto1_to_proto2(message, body, hybrid=False):
     """Convert Task message protocol 1 arguments to protocol 2.
 
     Returns:
@@ -98,7 +139,7 @@ def default(task, app, consumer,
                 body = bytes(body) if isinstance(body, buffer_t) else body
         else:
             if 'args' in message.payload:
-                body, headers, decoded, utc = proto1_to_proto2(message, message.payload)
+                body, headers, decoded, utc = clean_hybrid_protocol(message, message.payload)
             else:
                 body, headers, decoded, utc = proto1_to_proto2(message, body)
 
