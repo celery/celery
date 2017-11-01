@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 # We cache globals and attribute lookups, so disable this warning.
 
 
-def clean_hybrid_protocol(message, body):
+def hybrid_to_proto2(message, body):
     "Create a fresh protocol 2 message from a hybrid protocol 1/2 message."
     try:
         args, kwargs = body.get('args', ()), body.get('kwargs', {})
@@ -138,7 +138,8 @@ def default(task, app, consumer,
                 body = bytes(body) if isinstance(body, buffer_t) else body
         else:
             if 'args' in message.payload:
-                body, headers, decoded, utc = clean_hybrid_protocol(message, message.payload)
+                body, headers, decoded, utc = hybrid_to_proto2(message,
+                                                               message.payload)
             else:
                 body, headers, decoded, utc = proto1_to_proto2(message, body)
 
