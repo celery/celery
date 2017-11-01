@@ -64,7 +64,7 @@ def clean_hybrid_protocol(message, body):
     return (args, kwargs, embed), headers, True, body.get('utc', True)
 
 
-def proto1_to_proto2(message, body, hybrid=False):
+def proto1_to_proto2(message, body):
     """Convert Task message protocol 1 arguments to protocol 2.
 
     Returns:
