@@ -656,7 +656,7 @@ class Celery(object):
             baz/__init__.py
                 models.py
 
-        Then calling ``app.autodiscover_tasks(['foo', bar', 'baz'])`` will
+        Then calling ``app.autodiscover_tasks(['foo', 'bar', 'baz'])`` will
         result in the modules ``foo.tasks`` and ``bar.tasks`` being imported.
 
         Arguments:
