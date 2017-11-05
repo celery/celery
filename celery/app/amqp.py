@@ -198,9 +198,9 @@ class Queues(dict):
         if exclude:
             exclude = maybe_list(exclude)
             if self._consume_from is None:
-                # using selection
+                # using all queues
                 return self.select(k for k in self if k not in exclude)
-            # using all queues
+            # using selection
             for queue in exclude:
                 self._consume_from.pop(queue, None)
 
