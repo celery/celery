@@ -856,10 +856,8 @@ class Task(object):
             for t in reversed(self.request.chain):
                 sig |= signature(t, app=self.app)
 
-        sig.freeze(self.request.id,
-                   group_id=self.request.group,
-                   chord=chord,
-                   root_id=self.request.root_id)
+        sig = sig.set(chord=self.request.chord, group_id=self.request.group, root_id=self.request.root_id)
+        sig.freeze(self.request.id)
 
         sig.delay()
         raise Ignore('Replaced by new task')
@@ -878,9 +876,8 @@ class Task(object):
         """
         if not self.request.chord:
             raise ValueError('Current task is not member of any chord')
-        result = sig.freeze(group_id=self.request.group,
-                            chord=self.request.chord,
-                            root_id=self.request.root_id)
+        sig = sig.set(chord=self.request.chord, group_id=self.request.group, root_id=self.request.root_id)
+        result = sig.freeze()
         self.backend.add_to_chord(self.request.group, result)
         return sig.delay() if not lazy else sig
 
