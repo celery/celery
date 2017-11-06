@@ -54,6 +54,16 @@ def allow_join_result():
         _set_task_join_will_block(reset_value)
 
 
+@contextmanager
+def denied_join_result():
+    reset_value = task_join_will_block()
+    _set_task_join_will_block(True)
+    try:
+        yield
+    finally:
+        _set_task_join_will_block(reset_value)
+
+
 class ResultBase(object):
     """Base class for results."""
 
@@ -620,7 +630,8 @@ class ResultSet(ResultBase):
                 raise TimeoutError('The operation timed out')
 
     def get(self, timeout=None, propagate=True, interval=0.5,
-            callback=None, no_ack=True, on_message=None):
+            callback=None, no_ack=True, on_message=None,
+            disable_sync_subtasks=True):
         """See :meth:`join`.
 
         This is here for API compatibility with :class:`AsyncResult`,
@@ -632,11 +643,12 @@ class ResultSet(ResultBase):
         return (self.join_native if self.supports_native_join else self.join)(
             timeout=timeout, propagate=propagate,
             interval=interval, callback=callback, no_ack=no_ack,
-            on_message=on_message,
+            on_message=on_message, disable_sync_subtasks=disable_sync_subtasks
         )
 
     def join(self, timeout=None, propagate=True, interval=0.5,
-             callback=None, no_ack=True, on_message=None, on_interval=None):
+             callback=None, no_ack=True, on_message=None,
+             disable_sync_subtasks=True, on_interval=None):
         """Gather the results of all tasks as a list in order.
 
         Note:
@@ -672,13 +684,17 @@ class ResultSet(ResultBase):
             no_ack (bool): Automatic message acknowledgment (Note that if this
                 is set to :const:`False` then the messages
                 *will not be acknowledged*).
+            disable_sync_subtasks (bool): Disable tasks to wait for sub tasks
+                this is the default configuration. CAUTION do not enable this
+                unless you must.
 
         Raises:
             celery.exceptions.TimeoutError: if ``timeout`` isn't
                 :const:`None` and the operation takes longer than ``timeout``
                 seconds.
         """
-        assert_will_not_block()
+        if disable_sync_subtasks:
+            assert_will_not_block()
         time_start = monotonic()
         remaining = None
 
@@ -726,7 +742,8 @@ class ResultSet(ResultBase):
 
     def join_native(self, timeout=None, propagate=True,
                     interval=0.5, callback=None, no_ack=True,
-                    on_message=None, on_interval=None):
+                    on_message=None, on_interval=None,
+                    disable_sync_subtasks=True):
         """Backend optimized version of :meth:`join`.
 
         .. versionadded:: 2.2
@@ -737,7 +754,8 @@ class ResultSet(ResultBase):
         This is currently only supported by the amqp, Redis and cache
         result backends.
         """
-        assert_will_not_block()
+        if disable_sync_subtasks:
+            assert_will_not_block()
         order_index = None if callback else {
             result.id: i for i, result in enumerate(self.results)
         }
@@ -919,7 +937,11 @@ class EagerResult(AsyncResult):
     def ready(self):
         return True
 
-    def get(self, timeout=None, propagate=True, **kwargs):
+    def get(self, timeout=None, propagate=True,
+            disable_sync_subtasks=True, **kwargs):
+        if disable_sync_subtasks:
+            assert_will_not_block()
+
         if self.successful():
             return self.result
         elif self.state in states.PROPAGATE_STATES:

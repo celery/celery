@@ -15,7 +15,7 @@ from celery.canvas import signature
 from celery.exceptions import Ignore, MaxRetriesExceededError, Reject, Retry
 from celery.five import items, python_2_unicode_compatible
 from celery.local import class_property
-from celery.result import EagerResult
+from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
@@ -522,8 +522,9 @@ class Task(object):
 
         app = self._get_app()
         if app.conf.task_always_eager:
-            return self.apply(args, kwargs, task_id=task_id or uuid(),
-                              link=link, link_error=link_error, **options)
+            with denied_join_result():
+                return self.apply(args, kwargs, task_id=task_id or uuid(),
+                                  link=link, link_error=link_error, **options)
         # add 'self' if this is a "task_method".
         if self.__self__ is not None:
             args = args if isinstance(args, tuple) else tuple(args or ())
