@@ -163,13 +163,17 @@ class ScheduleEntry(object):
         return True
 
     def __eq__(self, other):
-        """Will only compare "editable" fields:
+        """Test schedule entries equality.
+
+        Will only compare "editable" fields:
         ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
         """
         return self.editable_fields_equal(other)
 
     def __ne__(self, other):
-        """Will only compare "editable" fields:
+        """Test schedule entries inequality.
+
+        Will only compare "editable" fields:
         ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
         """
         return not self == other
