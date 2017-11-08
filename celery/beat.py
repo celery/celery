@@ -156,6 +156,28 @@ class ScheduleEntry(object):
             return id(self) < id(other)
         return NotImplemented
 
+    def editable_fields_equal(self, other):
+        for attr in ('task', 'args', 'kwargs', 'options', 'schedule'):
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+        return True
+
+    def __eq__(self, other):
+        """Test schedule entries equality.
+
+        Will only compare "editable" fields:
+        ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
+        """
+        return self.editable_fields_equal(other)
+
+    def __ne__(self, other):
+        """Test schedule entries inequality.
+
+        Will only compare "editable" fields:
+        ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
+        """
+        return not self == other
+
 
 class Scheduler(object):
     """Scheduler for periodic tasks.
@@ -291,7 +313,9 @@ class Scheduler(object):
             return False
         for name, old_entry in old_schedules.items():
             new_entry = new_schedules.get(name)
-            if not new_entry or old_entry.schedule != new_entry.schedule:
+            if not new_entry:
+                return False
+            if new_entry != old_entry:
                 return False
         return True
 
