@@ -157,7 +157,7 @@ class ScheduleEntry(object):
         return NotImplemented
 
     def editable_fields_equal(self, other):
-        for attr in ['task', 'args', 'kwargs', 'options', 'schedule']:
+        for attr in ('task', 'args', 'kwargs', 'options', 'schedule'):
             if getattr(self, attr) != getattr(other, attr):
                 return False
         return True
