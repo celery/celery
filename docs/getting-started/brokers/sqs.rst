@@ -9,7 +9,7 @@
 Installation
 ============
 
-For the Amazon SQS ssupport you have to install additional dependencies.
+For the Amazon SQS support you have to install additional dependencies.
 You can install both Celery and these dependencies in one go using
 the ``celery[sqs]`` :ref:`bundle <bundles>`:
 
