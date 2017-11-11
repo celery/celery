@@ -150,6 +150,10 @@ class TraceInfo(object):
     def __init__(self, state, retval=None):
         self.state = state
         self.retval = retval
+        
+    @staticmethod
+    def get_name(task, req):
+        return req.shadow if hasattr(req, 'shadow') else task.name
 
     def handle_error_state(self, task, req,
                            eager=False, call_errbacks=True):
@@ -186,7 +190,7 @@ class TraceInfo(object):
                                     reason=reason, einfo=einfo)
             info(LOG_RETRY, {
                 'id': req.id,
-                'name': task.name,
+                'name': self.get_name(task, req),
                 'exc': text_t(reason),
             })
             return einfo
@@ -234,7 +238,7 @@ class TraceInfo(object):
         context = {
             'hostname': req.hostname,
             'id': req.id,
-            'name': task.name,
+            'name': self.get_name(task, req),
             'exc': exception,
             'traceback': traceback,
             'args': sargs,
@@ -356,6 +360,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
             root_id = task_request.root_id or uuid
+            the_name = request['shadow'] if 'shadow' in request else name
             push_request(task_request)
             try:
                 # -*- PRE -*-
@@ -444,7 +449,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             send_success(sender=task, result=retval)
                         if _does_info:
                             info(LOG_SUCCESS, {
-                                'id': uuid, 'name': name,
+                                'id': uuid, 'name': the_name,
                                 'return_value': Rstr, 'runtime': T,
                             })
 
