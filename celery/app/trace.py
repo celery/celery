@@ -142,9 +142,9 @@ def get_log_policy(task, einfo, exc):
         return log_policy_unexpected
 
     
-def get_task_name(name, request):
+def get_task_name(request, default):
     """Use 'shadow' in request for the task name if applicable."""
-    return getattr(request, 'shadow', name)
+    return getattr(request, 'shadow', default)
     
 
 class TraceInfo(object):
@@ -191,7 +191,7 @@ class TraceInfo(object):
                                     reason=reason, einfo=einfo)
             info(LOG_RETRY, {
                 'id': req.id,
-                'name': get_task_name(task.name, req),
+                'name': get_task_name(req, task.name),
                 'exc': text_t(reason),
             })
             return einfo
@@ -239,7 +239,7 @@ class TraceInfo(object):
         context = {
             'hostname': req.hostname,
             'id': req.id,
-            'name': get_task_name(task.name, req),
+            'name': get_task_name(req, task.name),
             'exc': exception,
             'traceback': traceback,
             'args': sargs,
@@ -449,7 +449,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             send_success(sender=task, result=retval)
                         if _does_info:
                             info(LOG_SUCCESS, {
-                                'id': uuid, 'name': get_task_name(name, task_request),
+                                'id': uuid, 'name': get_task_name(task_request, name),
                                 'return_value': Rstr, 'runtime': T,
                             })
 
