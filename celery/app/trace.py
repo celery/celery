@@ -144,7 +144,8 @@ def get_log_policy(task, einfo, exc):
     
 def get_task_name(request, default):
     """Use 'shadow' in request for the task name if applicable."""
-    return getattr(request, 'shadow', default)
+    # request.shadow could be None or an empty string. If so, we should use default.
+    return getattr(request, 'shadow', None) or default
     
 
 class TraceInfo(object):
