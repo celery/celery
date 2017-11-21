@@ -5,11 +5,13 @@ from kombu.exceptions import EncodeError
 from celery import group, uuid
 from celery import signals
 from celery import states
+from celery.app.task import Context
 from celery.exceptions import Ignore, Retry, Reject
 from celery.app.trace import (
     TraceInfo,
     build_tracer,
     get_log_policy,
+    get_task_name,
     log_policy_reject,
     log_policy_ignore,
     log_policy_internal,
@@ -85,6 +87,12 @@ class test_trace(TraceCase):
         einfo2.internal = True
         assert (get_log_policy(self.add, einfo2, KeyError()) is
                 log_policy_internal)
+        
+    def test_get_task_name(self):
+        assert get_task_name(Context({}), 'default') == 'default'
+        assert get_task_name(Context({'shadow': None}), 'default') == 'default'
+        assert get_task_name(Context({'shadow': ''}), 'default') == 'default'
+        assert get_task_name(Context({'shadow': 'test'}), 'default') == 'test'
 
     def test_trace_after_return(self):
 
