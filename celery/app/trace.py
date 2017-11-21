@@ -141,6 +141,12 @@ def get_log_policy(task, einfo, exc):
             return log_policy_expected
         return log_policy_unexpected
 
+    
+def get_task_name(request, default):
+    """Use 'shadow' in request for the task name if applicable."""
+    # request.shadow could be None or an empty string. If so, we should use default.
+    return getattr(request, 'shadow', None) or default
+    
 
 class TraceInfo(object):
     """Information about task execution."""
@@ -150,7 +156,7 @@ class TraceInfo(object):
     def __init__(self, state, retval=None):
         self.state = state
         self.retval = retval
-
+        
     def handle_error_state(self, task, req,
                            eager=False, call_errbacks=True):
         store_errors = not eager
@@ -186,7 +192,7 @@ class TraceInfo(object):
                                     reason=reason, einfo=einfo)
             info(LOG_RETRY, {
                 'id': req.id,
-                'name': task.name,
+                'name': get_task_name(req, task.name),
                 'exc': text_t(reason),
             })
             return einfo
@@ -234,7 +240,7 @@ class TraceInfo(object):
         context = {
             'hostname': req.hostname,
             'id': req.id,
-            'name': task.name,
+            'name': get_task_name(req, task.name),
             'exc': exception,
             'traceback': traceback,
             'args': sargs,
@@ -444,7 +450,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             send_success(sender=task, result=retval)
                         if _does_info:
                             info(LOG_SUCCESS, {
-                                'id': uuid, 'name': name,
+                                'id': uuid, 'name': get_task_name(task_request, name),
                                 'return_value': Rstr, 'runtime': T,
                             })
 
