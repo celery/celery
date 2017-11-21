@@ -11,6 +11,7 @@ from celery.app.trace import (
     TraceInfo,
     build_tracer,
     get_log_policy,
+    get_task_name,
     log_policy_reject,
     log_policy_ignore,
     log_policy_internal,
