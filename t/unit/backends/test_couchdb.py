@@ -30,10 +30,10 @@ class test_CouchBackend:
             module.pycouchdb = prev
 
     def test_get_container_exists(self):
-            self.backend._connection = sentinel._connection
-            connection = self.backend.connection
-            assert connection is sentinel._connection
-            self.Server.assert_not_called()
+        self.backend._connection = sentinel._connection
+        connection = self.backend.connection
+        assert connection is sentinel._connection
+        self.Server.assert_not_called()
 
     def test_get(self):
         """test_get

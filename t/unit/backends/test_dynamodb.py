@@ -42,37 +42,37 @@ class test_DynamoDBBackend:
             'celery.backends.dynamodb.DynamoDBBackend._get_or_create_table'
         with patch('boto3.client') as mock_boto_client, \
                 patch(table_creation_path):
-                backend = DynamoDBBackend(
-                    app=self.app,
-                    url='dynamodb://@localhost:8000'
-                )
-                client = backend._get_client()
-                assert backend.client is client
-                mock_boto_client.assert_called_once_with(
-                    'dynamodb',
-                    endpoint_url='http://localhost:8000',
-                    region_name='us-east-1'
-                )
-                assert backend.endpoint_url == 'http://localhost:8000'
+            backend = DynamoDBBackend(
+                app=self.app,
+                url='dynamodb://@localhost:8000'
+            )
+            client = backend._get_client()
+            assert backend.client is client
+            mock_boto_client.assert_called_once_with(
+                'dynamodb',
+                endpoint_url='http://localhost:8000',
+                region_name='us-east-1'
+            )
+            assert backend.endpoint_url == 'http://localhost:8000'
 
     def test_get_client_credentials(self):
         table_creation_path = \
             'celery.backends.dynamodb.DynamoDBBackend._get_or_create_table'
         with patch('boto3.client') as mock_boto_client, \
                 patch(table_creation_path):
-                backend = DynamoDBBackend(
-                    app=self.app,
-                    url='dynamodb://key:secret@test'
-                )
-                client = backend._get_client()
-                assert client is backend.client
-                mock_boto_client.assert_called_once_with(
-                    'dynamodb',
-                    aws_access_key_id='key',
-                    aws_secret_access_key='secret',
-                    region_name='test'
-                )
-                assert backend.aws_region == 'test'
+            backend = DynamoDBBackend(
+                app=self.app,
+                url='dynamodb://key:secret@test'
+            )
+            client = backend._get_client()
+            assert client is backend.client
+            mock_boto_client.assert_called_once_with(
+                'dynamodb',
+                aws_access_key_id='key',
+                aws_secret_access_key='secret',
+                region_name='test'
+            )
+            assert backend.aws_region == 'test'
 
     def test_get_or_create_table_not_exists(self):
         self.backend._client = MagicMock()

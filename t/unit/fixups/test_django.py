@@ -137,22 +137,22 @@ class test_DjangoWorkerFixup(FixupCase):
     def test_on_worker_process_init(self, patching):
         with self.fixup_context(self.app) as (f, _, _):
             with patch('celery.fixups.django._maybe_close_fd') as mcf:
-                    _all = f._db.connections.all = Mock()
-                    conns = _all.return_value = [
-                        Mock(), Mock(),
-                    ]
-                    conns[0].connection = None
-                    with patch.object(f, 'close_cache'):
-                        with patch.object(f, '_close_database'):
-                            f.on_worker_process_init()
-                            mcf.assert_called_with(conns[1].connection)
-                            f.close_cache.assert_called_with()
-                            f._close_database.assert_called_with()
+                _all = f._db.connections.all = Mock()
+                conns = _all.return_value = [
+                    Mock(), Mock(),
+                ]
+                conns[0].connection = None
+                with patch.object(f, 'close_cache'):
+                    with patch.object(f, '_close_database'):
+                        f.on_worker_process_init()
+                        mcf.assert_called_with(conns[1].connection)
+                        f.close_cache.assert_called_with()
+                        f._close_database.assert_called_with()
 
-                            f.validate_models = Mock(name='validate_models')
-                            patching.setenv('FORKED_BY_MULTIPROCESSING', '1')
-                            f.on_worker_process_init()
-                            f.validate_models.assert_called_with()
+                        f.validate_models = Mock(name='validate_models')
+                        patching.setenv('FORKED_BY_MULTIPROCESSING', '1')
+                        f.on_worker_process_init()
+                        f.validate_models.assert_called_with()
 
     def test_on_task_prerun(self):
         task = Mock()

@@ -87,7 +87,7 @@ class test_trace(TraceCase):
         einfo2.internal = True
         assert (get_log_policy(self.add, einfo2, KeyError()) is
                 log_policy_internal)
-        
+
     def test_get_task_name(self):
         assert get_task_name(Context({}), 'default') == 'default'
         assert get_task_name(Context({'shadow': None}), 'default') == 'default'

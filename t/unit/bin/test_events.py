@@ -31,6 +31,8 @@ class MockCommand(object):
 
 def proctitle(prog, info=None):
     proctitle.last = (prog, info)
+
+
 proctitle.last = ()  # noqa: E305
 
 

@@ -161,7 +161,7 @@ class ev_snapshot(replay):
             worker = not i % 2 and 'utest2' or 'utest1'
             type = not i % 2 and 'task2' or 'task1'
             self.events.append(Event('task-received', name=type,
-                               uuid=uuid(), hostname=worker))
+                                     uuid=uuid(), hostname=worker))
 
 
 class test_Worker:

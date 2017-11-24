@@ -102,7 +102,7 @@ class test_multi_args:
         assert expand('%h') == '*P*jerry@*S*'
         assert expand('%n') == '*P*jerry'
         nodes2 = list(multi_args(p, cmd='COMMAND', append='',
-                      prefix='*P*', suffix='*S*'))
+                                 prefix='*P*', suffix='*S*'))
         assert nodes2[0].argv[-1] == '-- .disable_rate_limits=1'
 
         p2 = NamespacedOptionParser(['10', '-c:1', '5'])

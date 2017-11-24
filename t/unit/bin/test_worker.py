@@ -407,7 +407,7 @@ class test_funs:
         cmd = worker()
         cmd.app = self.app
         opts, args = cmd.parse_options('worker', ['--concurrency=512',
-                                       '--heartbeat-interval=10'])
+                                                  '--heartbeat-interval=10'])
         assert opts['concurrency'] == 512
         assert opts['heartbeat_interval'] == 10
 
