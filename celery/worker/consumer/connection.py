@@ -1,10 +1,9 @@
 """Consumer Broker Connection Bootstep."""
 from __future__ import absolute_import, unicode_literals
 
-from kombu.common import ignore_errors
-
 from celery import bootsteps
 from celery.utils.log import get_logger
+from kombu.common import ignore_errors
 
 __all__ = ('Connection',)
 

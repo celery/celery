@@ -18,8 +18,6 @@ import os
 import sys
 
 from billiard import cpu_count
-from kombu.utils.compat import detect_environment
-
 from celery import concurrency as _concurrency
 from celery import bootsteps, signals
 from celery.bootsteps import RUN, TERMINATE
@@ -33,6 +31,7 @@ from celery.utils.log import mlevel
 from celery.utils.nodenames import default_nodename, worker_direct
 from celery.utils.text import str_to_list
 from celery.utils.threads import default_socket_timeout
+from kombu.utils.compat import detect_environment
 
 from . import state
 

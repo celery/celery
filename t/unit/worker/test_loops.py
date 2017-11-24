@@ -5,8 +5,6 @@ import socket
 
 import pytest
 from case import Mock
-from kombu.async import ERR, READ, WRITE, Hub
-
 from celery.bootsteps import CLOSE, RUN
 from celery.exceptions import (InvalidTaskError, WorkerLostError,
                                WorkerShutdown, WorkerTerminate)
@@ -15,6 +13,7 @@ from celery.platforms import EX_FAILURE
 from celery.worker import state
 from celery.worker.consumer import Consumer
 from celery.worker.loops import _quick_drain, asynloop, synloop
+from kombu.async import ERR, READ, WRITE, Hub
 
 
 @python_2_unicode_compatible

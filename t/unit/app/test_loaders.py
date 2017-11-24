@@ -6,7 +6,6 @@ import warnings
 
 import pytest
 from case import Mock, mock, patch
-
 from celery import loaders
 from celery.exceptions import NotConfigured
 from celery.five import bytes_if_py2

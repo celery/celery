@@ -5,9 +5,6 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 from billiard.einfo import ExceptionInfo
-from kombu.exceptions import OperationalError
-from kombu.utils.uuid import uuid
-
 from celery import current_app, group, states
 from celery._state import _task_stack
 from celery.canvas import signature
@@ -20,6 +17,8 @@ from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import raise_with_context
+from kombu.exceptions import OperationalError
+from kombu.utils.uuid import uuid
 
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2

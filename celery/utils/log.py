@@ -10,12 +10,11 @@ import threading
 import traceback
 from contextlib import contextmanager
 
+from celery.five import string_t, text_t
 from kombu.five import values
 from kombu.log import get_logger as _get_logger
 from kombu.log import LOG_LEVELS
 from kombu.utils.encoding import safe_str
-
-from celery.five import string_t, text_t
 
 from .term import colored
 

@@ -4,10 +4,6 @@ from __future__ import absolute_import, unicode_literals
 
 from functools import partial
 
-from kombu.utils.functional import retry_over_time
-from kombu.utils.objects import cached_property
-from kombu.utils.url import _parse_url
-
 from celery import states
 from celery._state import task_join_will_block
 from celery.canvas import maybe_signature
@@ -17,6 +13,9 @@ from celery.utils import deprecated
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
+from kombu.utils.functional import retry_over_time
+from kombu.utils.objects import cached_property
+from kombu.utils.url import _parse_url
 
 from . import async, base
 

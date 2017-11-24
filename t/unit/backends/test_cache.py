@@ -6,12 +6,11 @@ from contextlib import contextmanager
 
 import pytest
 from case import Mock, mock, patch, skip
-from kombu.utils.encoding import ensure_bytes, str_to_bytes
-
 from celery import group, signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
 from celery.five import bytes_if_py2, items, string, text_t
+from kombu.utils.encoding import ensure_bytes, str_to_bytes
 
 PY3 = sys.version_info[0] == 3
 

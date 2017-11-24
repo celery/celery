@@ -4,7 +4,6 @@ import json
 
 import pytest
 from case import MagicMock, Mock
-
 from celery._state import _task_stack
 from celery.canvas import (Signature, _chain, _maybe_group, chain, chord,
                            chunks, group, maybe_signature, maybe_unroll_group,

@@ -3,10 +3,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 import sys
 
-from kombu.five import monotonic  # noqa
-
 from celery import Celery  # noqa
 from celery.five import range  # noqa
+from kombu.five import monotonic  # noqa
 
 os.environ.update(
     NOSETPS='yes',

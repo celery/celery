@@ -2,13 +2,12 @@ from __future__ import absolute_import, unicode_literals
 
 import pytest
 from case import ANY, Mock
-from kombu import Exchange, Queue
-from kombu.utils.functional import maybe_evaluate
-
 from celery.app import routes
 from celery.exceptions import QueueNotFound
 from celery.five import items
 from celery.utils.imports import qualname
+from kombu import Exchange, Queue
+from kombu.utils.functional import maybe_evaluate
 
 
 def Router(app, *args, **kwargs):

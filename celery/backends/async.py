@@ -7,13 +7,12 @@ from collections import deque
 from time import sleep
 from weakref import WeakKeyDictionary
 
-from kombu.utils.compat import detect_environment
-from kombu.utils.objects import cached_property
-
 from celery import states
 from celery.exceptions import TimeoutError
 from celery.five import Empty, monotonic
 from celery.utils.threads import THREAD_TIMEOUT_MAX
+from kombu.utils.compat import detect_environment
+from kombu.utils.objects import cached_property
 
 __all__ = (
     'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',

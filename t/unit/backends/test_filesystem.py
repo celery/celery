@@ -6,7 +6,6 @@ import tempfile
 
 import pytest
 from case import skip
-
 from celery import states, uuid
 from celery.backends.filesystem import FilesystemBackend
 from celery.exceptions import ImproperlyConfigured

@@ -16,12 +16,11 @@ from __future__ import absolute_import, unicode_literals
 
 import pytest
 from case import Mock, mock, patch
-from kombu.serialization import disable_insecure_serializers, registry
-
 from celery.exceptions import ImproperlyConfigured, SecurityError
 from celery.five import builtins
 from celery.security import disable_untrusted_serializers, setup_security
 from celery.security.utils import reraise_errors
+from kombu.serialization import disable_insecure_serializers, registry
 
 from .case import SecurityCase
 

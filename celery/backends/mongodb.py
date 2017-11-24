@@ -4,13 +4,12 @@ from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime, timedelta
 
-from kombu.exceptions import EncodeError
-from kombu.utils.objects import cached_property
-from kombu.utils.url import maybe_sanitize_url
-
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.five import items, string_t
+from kombu.exceptions import EncodeError
+from kombu.utils.objects import cached_property
+from kombu.utils.url import maybe_sanitize_url
 
 from .base import BaseBackend
 

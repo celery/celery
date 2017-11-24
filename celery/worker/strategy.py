@@ -4,14 +4,13 @@ from __future__ import absolute_import, unicode_literals
 
 import logging
 
-from kombu.async.timer import to_timestamp
-from kombu.five import buffer_t
-
 from celery.exceptions import InvalidTaskError
 from celery.utils.imports import symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.saferepr import saferepr
 from celery.utils.time import timezone
+from kombu.async.timer import to_timestamp
+from kombu.five import buffer_t
 
 from .request import create_request_cls
 from .state import task_reserved

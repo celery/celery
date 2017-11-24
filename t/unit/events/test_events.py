@@ -4,7 +4,6 @@ import socket
 
 import pytest
 from case import Mock, call
-
 from celery.events import Event
 from celery.events.receiver import CLIENT_CLOCK_SKEW
 

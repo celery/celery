@@ -4,10 +4,9 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 
+from celery import signals  # noqa
 from kombu.async import timer as _timer  # noqa
 from kombu.five import monotonic
-
-from celery import signals  # noqa
 
 from . import base  # noqa
 

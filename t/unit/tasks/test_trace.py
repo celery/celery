@@ -2,8 +2,6 @@ from __future__ import absolute_import, unicode_literals
 
 import pytest
 from case import Mock, patch
-from kombu.exceptions import EncodeError
-
 from celery import group, signals, states, uuid
 from celery.app.task import Context
 from celery.app.trace import (TraceInfo, _fast_trace_task, _trace_task_ret,
@@ -14,6 +12,7 @@ from celery.app.trace import (TraceInfo, _fast_trace_task, _trace_task_ret,
                               reset_worker_optimizations,
                               setup_worker_optimizations, trace_task)
 from celery.exceptions import Ignore, Reject, Retry
+from kombu.exceptions import EncodeError
 
 
 def trace(app, task, args=(), kwargs={},

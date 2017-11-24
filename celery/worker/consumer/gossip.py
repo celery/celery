@@ -6,13 +6,12 @@ from functools import partial
 from heapq import heappush
 from operator import itemgetter
 
-from kombu import Consumer
-from kombu.async.semaphore import DummyLock
-
 from celery import bootsteps
 from celery.five import values
 from celery.utils.log import get_logger
 from celery.utils.objects import Bunch
+from kombu import Consumer
+from kombu.async.semaphore import DummyLock
 
 from .mingle import Mingle
 

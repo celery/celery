@@ -9,8 +9,6 @@ from pickle import dumps, loads
 
 import pytest
 from case import ContextMock, Mock, mock, patch
-from vine import promise
-
 from celery import app as _app
 from celery import Celery, _state, current_app, shared_task
 from celery.app import base as _appbase
@@ -23,6 +21,7 @@ from celery.utils.collections import DictAttribute
 from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
 from celery.utils.time import localize, timezone, to_utc
+from vine import promise
 
 THIS_IS_A_KEY = 'this is a value'
 

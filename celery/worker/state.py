@@ -13,13 +13,12 @@ import sys
 import weakref
 import zlib
 
-from kombu.serialization import pickle, pickle_protocol
-from kombu.utils.objects import cached_property
-
 from celery import __version__
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.five import Counter
 from celery.utils.collections import LimitedSet
+from kombu.serialization import pickle, pickle_protocol
+from kombu.utils.objects import cached_property
 
 __all__ = (
     'SOFTWARE_INFO', 'reserved_requests', 'active_requests',

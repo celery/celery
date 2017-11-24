@@ -7,7 +7,6 @@ from random import shuffle
 from time import time
 
 from case import Mock, patch, skip
-
 from celery import states, uuid
 from celery.events import Event
 from celery.events.state import (HEARTBEAT_DRIFT_MAX, HEARTBEAT_EXPIRE_WINDOW,

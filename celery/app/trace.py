@@ -13,11 +13,6 @@ from collections import namedtuple
 from warnings import warn
 
 from billiard.einfo import ExceptionInfo
-from kombu.exceptions import EncodeError
-from kombu.serialization import loads as loads_message
-from kombu.serialization import prepare_accept_content
-from kombu.utils.encoding import safe_repr, safe_str
-
 from celery import current_app, group, signals, states
 from celery._state import _task_stack
 from celery.app.task import Task as BaseTask
@@ -31,6 +26,10 @@ from celery.utils.saferepr import saferepr
 from celery.utils.serialization import (get_pickleable_etype,
                                         get_pickleable_exception,
                                         get_pickled_exception)
+from kombu.exceptions import EncodeError
+from kombu.serialization import loads as loads_message
+from kombu.serialization import prepare_accept_content
+from kombu.utils.encoding import safe_repr, safe_str
 
 # ## ---
 # This is the heart of the worker, the inner loop so to speak.

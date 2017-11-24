@@ -11,12 +11,6 @@ from threading import Event
 import pytest
 from amqp import ChannelError
 from case import Mock, patch, skip
-from kombu import Connection
-from kombu.common import QoS, ignore_errors
-from kombu.transport.base import Message
-from kombu.transport.memory import Transport
-from kombu.utils.uuid import uuid
-
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
 from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
@@ -33,6 +27,11 @@ from celery.worker import components, consumer, state
 from celery.worker.consumer import Consumer
 from celery.worker.pidbox import gPidbox
 from celery.worker.request import Request
+from kombu import Connection
+from kombu.common import QoS, ignore_errors
+from kombu.transport.base import Message
+from kombu.transport.memory import Transport
+from kombu.utils.uuid import uuid
 
 
 def MockStep(step=None):

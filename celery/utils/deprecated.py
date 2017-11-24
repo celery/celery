@@ -4,9 +4,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import warnings
 
-from vine.utils import wraps
-
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
+from vine.utils import wraps
 
 __all__ = ('Callable', 'Property', 'warn')
 

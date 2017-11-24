@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 
 import pytest
 from case import MagicMock, Mock, patch, sentinel, skip
-
 from celery.backends import riak as module
 from celery.backends.riak import RiakBackend
 from celery.exceptions import ImproperlyConfigured

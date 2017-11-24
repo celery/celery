@@ -15,12 +15,6 @@ from time import sleep
 
 from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
-from kombu.async.semaphore import DummyLock
-from kombu.utils.compat import _detect_environment
-from kombu.utils.encoding import bytes_t, safe_repr
-from kombu.utils.limits import TokenBucket
-from vine import ppartial, promise
-
 from celery import bootsteps, signals
 from celery.app.trace import build_tracer
 from celery.exceptions import InvalidTaskError, NotRegistered
@@ -34,6 +28,11 @@ from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
 from celery.worker.state import (maybe_shutdown, reserved_requests,
                                  task_reserved)
+from kombu.async.semaphore import DummyLock
+from kombu.utils.compat import _detect_environment
+from kombu.utils.encoding import bytes_t, safe_repr
+from kombu.utils.limits import TokenBucket
+from vine import ppartial, promise
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 

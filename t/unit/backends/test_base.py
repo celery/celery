@@ -6,7 +6,6 @@ from contextlib import contextmanager
 
 import pytest
 from case import ANY, Mock, call, patch, skip
-
 from celery import chord, group, states, uuid
 from celery.backends.base import (BaseBackend, DisabledBackend,
                                   KeyValueStoreBackend, _nulldict)

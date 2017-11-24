@@ -16,11 +16,6 @@ from functools import partial as _partial
 from functools import reduce
 from operator import itemgetter
 
-from kombu.utils.functional import fxrange, reprcall
-from kombu.utils.objects import cached_property
-from kombu.utils.uuid import uuid
-from vine import barrier
-
 from celery._state import current_app
 from celery.five import python_2_unicode_compatible
 from celery.local import try_import
@@ -31,6 +26,10 @@ from celery.utils.functional import (_regen, is_list, maybe_list, regen,
                                      seq_concat_item, seq_concat_seq)
 from celery.utils.objects import getitem_property
 from celery.utils.text import remove_repeating_from_task, truncate
+from kombu.utils.functional import fxrange, reprcall
+from kombu.utils.objects import cached_property
+from kombu.utils.uuid import uuid
+from vine import barrier
 
 __all__ = (
     'Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
