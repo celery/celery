@@ -141,12 +141,12 @@ def get_log_policy(task, einfo, exc):
             return log_policy_expected
         return log_policy_unexpected
 
-    
+
 def get_task_name(request, default):
     """Use 'shadow' in request for the task name if applicable."""
     # request.shadow could be None or an empty string. If so, we should use default.
     return getattr(request, 'shadow', None) or default
-    
+
 
 class TraceInfo(object):
     """Information about task execution."""
@@ -156,7 +156,7 @@ class TraceInfo(object):
     def __init__(self, state, retval=None):
         self.state = state
         self.retval = retval
-        
+
     def handle_error_state(self, task, req,
                            eager=False, call_errbacks=True):
         store_errors = not eager
@@ -521,6 +521,8 @@ def _trace_task_ret(name, uuid, request, body, content_type,
     R, I, T, Rstr = trace_task(app.tasks[name],
                                uuid, args, kwargs, request, app=app)
     return (1, R, T) if I else (0, Rstr, T)
+
+
 trace_task_ret = _trace_task_ret  # noqa: E305
 
 

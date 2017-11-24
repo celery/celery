@@ -1372,6 +1372,8 @@ def signature(varies, *args, **kwargs):
             return varies.clone()
         return Signature.from_dict(varies, app=app)
     return Signature(varies, *args, **kwargs)
+
+
 subtask = signature  # noqa: E305 XXX compat
 
 
@@ -1400,4 +1402,6 @@ def maybe_signature(d, app=None, clone=False):
         if app is not None:
             d._app = app
     return d
+
+
 maybe_subtask = maybe_signature  # noqa: E305 XXX compat

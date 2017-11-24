@@ -117,11 +117,11 @@ class MongoBackend(BaseBackend):
             self.options.update(config)
 
     def _prepare_client_options(self):
-            if pymongo.version_tuple >= (3,):
-                return {'maxPoolSize': self.max_pool_size}
-            else:  # pragma: no cover
-                return {'max_pool_size': self.max_pool_size,
-                        'auto_start_request': False}
+        if pymongo.version_tuple >= (3,):
+            return {'maxPoolSize': self.max_pool_size}
+        else:  # pragma: no cover
+            return {'max_pool_size': self.max_pool_size,
+                    'auto_start_request': False}
 
     def _get_connection(self):
         """Connect to the MongoDB server."""

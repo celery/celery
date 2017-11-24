@@ -520,6 +520,8 @@ class SyncBackendMixin(object):
 
 class BaseBackend(Backend, SyncBackendMixin):
     """Base (synchronous) result backend."""
+
+
 BaseDictBackend = BaseBackend  # noqa: E305 XXX compat
 
 

@@ -1009,4 +1009,6 @@ class Task(object):
     @property
     def __name__(self):
         return self.__class__.__name__
+
+
 BaseTask = Task  # noqa: E305 XXX compat alias

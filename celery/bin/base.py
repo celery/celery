@@ -85,7 +85,7 @@ def _add_optparse_argument(parser, opt, typemap={
     # store_true sets value to "('NO', 'DEFAULT')" for some
     # crazy reason, so not to set a sane default here.
     if opt.action == 'store_true' and opt.default is None:
-            opt.default = False
+        opt.default = False
     parser.add_argument(
         *opt._long_opts + opt._short_opts,
         **dictfilter({

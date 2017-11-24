@@ -229,6 +229,8 @@ class Pidfile(object):
                     "Inconsistency: Pidfile content doesn't match at re-read")
         finally:
             rfh.close()
+
+
 PIDFile = Pidfile  # noqa: E305 XXX compat alias
 
 

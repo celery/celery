@@ -115,9 +115,9 @@ class Beat(object):
         c = self.colored
         return text_t(  # flake8: noqa
             c.blue('__    ', c.magenta('-'),
-            c.blue('    ... __   '), c.magenta('-'),
-            c.blue('        _\n'),
-            c.reset(self.startup_info(service))),
+                   c.blue('    ... __   '), c.magenta('-'),
+                   c.blue('        _\n'),
+                   c.reset(self.startup_info(service))),
         )
 
     def init_loader(self):

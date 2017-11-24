@@ -362,7 +362,7 @@ class ffwd(object):
         month = self.month or other.month
         day = min(monthrange(year, month)[1], self.day or other.day)
         ret = other.replace(**dict(dictfilter(self._fields()),
-                            year=year, month=month, day=day))
+                                   year=year, month=month, day=day))
         if self.weekday is not None:
             ret += timedelta(days=(7 - ret.weekday() + self.weekday) % 7)
         return ret + timedelta(days=self.days)
