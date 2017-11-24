@@ -144,7 +144,8 @@ def get_log_policy(task, einfo, exc):
 
 def get_task_name(request, default):
     """Use 'shadow' in request for the task name if applicable."""
-    # request.shadow could be None or an empty string. If so, we should use default.
+    # request.shadow could be None or an empty string.
+    # If so, we should use default.
     return getattr(request, 'shadow', None) or default
 
 
@@ -450,8 +451,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             send_success(sender=task, result=retval)
                         if _does_info:
                             info(LOG_SUCCESS, {
-                                'id': uuid, 'name': get_task_name(task_request, name),
-                                'return_value': Rstr, 'runtime': T,
+                                'id': uuid,
+                                'name': get_task_name(task_request, name),
+                                'return_value': Rstr,
+                                'runtime': T,
                             })
 
                 # -* POST *-
