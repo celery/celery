@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """Text formatting utilities."""
 from __future__ import absolute_import, unicode_literals
+
 import re
 from collections import Callable
 from functools import partial
-from textwrap import fill
 from pprint import pformat
+from textwrap import fill
+
 from celery.five import string_t
 
 __all__ = (

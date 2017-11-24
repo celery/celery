@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
+
 from celery import group
+
 from .conftest import flaky
 from .tasks import print_unicode, retry_once, sleeping
 

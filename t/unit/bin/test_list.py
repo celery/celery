@@ -1,7 +1,9 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
 from case import Mock
 from kombu.five import WhateverIO
+
 from celery.bin.base import Error
 from celery.bin.list import list_
 

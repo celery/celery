@@ -5,7 +5,6 @@ from __future__ import absolute_import, unicode_literals
 import os
 import platform as _platform
 import re
-
 from collections import Mapping, namedtuple
 from copy import deepcopy
 from types import ModuleType
@@ -16,13 +15,11 @@ from celery.exceptions import ImproperlyConfigured
 from celery.five import items, keys, string_t, values
 from celery.platforms import pyimplementation
 from celery.utils.collections import ConfigurationView
+from celery.utils.imports import import_from_cwd, qualname, symbol_by_name
 from celery.utils.text import pretty
-from celery.utils.imports import import_from_cwd, symbol_by_name, qualname
 
-from .defaults import (
-    _TO_NEW_KEY, _TO_OLD_KEY, _OLD_DEFAULTS, _OLD_SETTING_KEYS,
-    DEFAULTS, SETTING_KEYS, find,
-)
+from .defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY,
+                       _TO_OLD_KEY, DEFAULTS, SETTING_KEYS, find)
 
 __all__ = (
     'Settings', 'appstr', 'bugreport',

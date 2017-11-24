@@ -2,13 +2,12 @@
 from __future__ import absolute_import, unicode_literals
 
 import os
-import pytest
 import tempfile
 
+import pytest
 from case import skip
 
-from celery import uuid
-from celery import states
+from celery import states, uuid
 from celery.backends.filesystem import FilesystemBackend
 from celery.exceptions import ImproperlyConfigured
 

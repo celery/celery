@@ -18,7 +18,6 @@ from __future__ import absolute_import, unicode_literals
 import bisect
 import sys
 import threading
-
 from collections import Callable, defaultdict
 from datetime import datetime
 from decimal import Decimal

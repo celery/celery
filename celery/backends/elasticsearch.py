@@ -1,12 +1,17 @@
 # -* coding: utf-8 -*-
 """Elasticsearch result store backend."""
 from __future__ import absolute_import, unicode_literals
+
 from datetime import datetime
-from kombu.utils.url import _parse_url
+
 from kombu.utils.encoding import bytes_to_str
+from kombu.utils.url import _parse_url
+
 from celery.exceptions import ImproperlyConfigured
 from celery.five import items
+
 from .base import KeyValueStoreBackend
+
 try:
     import elasticsearch
 except ImportError:

@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 """Couchbase result store backend."""
 from __future__ import absolute_import, unicode_literals
+
 import logging
+
 from kombu.utils.encoding import str_t
 from kombu.utils.url import _parse_url
+
 from celery.exceptions import ImproperlyConfigured
+
 from .base import KeyValueStoreBackend
+
 try:
     from couchbase import Couchbase
     from couchbase.connection import Connection

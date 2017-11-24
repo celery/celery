@@ -1,30 +1,24 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
 import sys
 import types
-
 from contextlib import contextmanager
 
+import pytest
 from case import ANY, Mock, call, patch, skip
 
-from celery import states
-from celery import chord, group, uuid
-from celery.backends.base import (
-    BaseBackend,
-    KeyValueStoreBackend,
-    DisabledBackend,
-    _nulldict,
-)
+from celery import chord, group, states, uuid
+from celery.backends.base import (BaseBackend, DisabledBackend,
+                                  KeyValueStoreBackend, _nulldict)
 from celery.exceptions import ChordError, TimeoutError
-from celery.five import items, bytes_if_py2, range
+from celery.five import bytes_if_py2, items, range
 from celery.result import result_from_tuple
 from celery.utils import serialization
 from celery.utils.functional import pass1
-from celery.utils.serialization import subclass_exception
 from celery.utils.serialization import find_pickleable_exception as fnpe
-from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.utils.serialization import get_pickleable_exception as gpe
+from celery.utils.serialization import (UnpickleableExceptionWrapper,
+                                        subclass_exception)
 
 
 class wrapobject(object):

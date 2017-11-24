@@ -48,12 +48,14 @@ Error Hierarchy
         - :exc:`~celery.exceptions.WorkerShutdown`
 """
 from __future__ import absolute_import, unicode_literals
+
 import numbers
-from .five import python_2_unicode_compatible, string_t
-from billiard.exceptions import (
-    SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError, Terminated,
-)
+
+from billiard.exceptions import (SoftTimeLimitExceeded, Terminated,
+                                 TimeLimitExceeded, WorkerLostError)
 from kombu.exceptions import OperationalError
+
+from .five import python_2_unicode_compatible, string_t
 
 __all__ = (
     # Warnings

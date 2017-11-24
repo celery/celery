@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
 """AWS DynamoDB result store backend."""
 from __future__ import absolute_import, unicode_literals
+
 from collections import namedtuple
-from time import time, sleep
+from time import sleep, time
 
 from kombu.utils.url import _parse_url as parse_url
+
 from celery.exceptions import ImproperlyConfigured
-from celery.utils.log import get_logger
 from celery.five import string
+from celery.utils.log import get_logger
+
 from .base import KeyValueStoreBackend
+
 try:
     import boto3
     from botocore.exceptions import ClientError

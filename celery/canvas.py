@@ -10,10 +10,10 @@ from __future__ import absolute_import, unicode_literals
 import itertools
 import operator
 import sys
-
 from collections import MutableSequence, deque
 from copy import deepcopy
-from functools import partial as _partial, reduce
+from functools import partial as _partial
+from functools import reduce
 from operator import itemgetter
 
 from kombu.utils.functional import fxrange, reprcall
@@ -26,12 +26,11 @@ from celery.five import python_2_unicode_compatible
 from celery.local import try_import
 from celery.result import GroupResult
 from celery.utils import abstract
-from celery.utils.functional import (
-    maybe_list, is_list, _regen, regen, chunks as _chunks,
-    seq_concat_seq, seq_concat_item,
-)
+from celery.utils.functional import chunks as _chunks
+from celery.utils.functional import (_regen, is_list, maybe_list, regen,
+                                     seq_concat_item, seq_concat_seq)
 from celery.utils.objects import getitem_property
-from celery.utils.text import truncate, remove_repeating_from_task
+from celery.utils.text import remove_repeating_from_task, truncate
 
 __all__ = (
     'Signature', 'chain', 'xmap', 'xstarmap', 'chunks',

@@ -1,22 +1,19 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
-
 from collections import defaultdict
 from contextlib import contextmanager
 
+import pytest
 from case import Mock, patch
 from kombu.utils.limits import TokenBucket
 
 from celery import Task
 from celery.exceptions import InvalidTaskError
-from celery.worker import state
-from celery.worker.strategy import (
-    proto1_to_proto2,
-    default as default_strategy
-)
-from celery.worker.request import Request
 from celery.utils.time import rate
+from celery.worker import state
+from celery.worker.request import Request
+from celery.worker.strategy import default as default_strategy
+from celery.worker.strategy import proto1_to_proto2
 
 
 class test_proto1_to_proto2:

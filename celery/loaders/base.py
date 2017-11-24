@@ -6,7 +6,6 @@ import importlib
 import os
 import re
 import sys
-
 from datetime import datetime
 
 from kombu.utils import json
@@ -16,9 +15,8 @@ from celery import signals
 from celery.five import reraise, string_t
 from celery.utils.collections import DictAttribute, force_mapping
 from celery.utils.functional import maybe_list
-from celery.utils.imports import (
-    import_from_cwd, symbol_by_name, NotAPackage, find_module,
-)
+from celery.utils.imports import (NotAPackage, find_module, import_from_cwd,
+                                  symbol_by_name)
 
 __all__ = ('BaseLoader',)
 

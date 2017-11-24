@@ -10,37 +10,29 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 import time
-
 from collections import namedtuple
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
-from kombu.serialization import (
-    dumps, loads, prepare_accept_content,
-    registry as serializer_registry,
-)
+from kombu.serialization import registry as serializer_registry
+from kombu.serialization import dumps, loads, prepare_accept_content
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
 from kombu.utils.url import maybe_sanitize_url
 
-from celery import states
-from celery import current_app, group, maybe_signature
+from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
-from celery.exceptions import (
-    ChordError, TimeoutError, TaskRevokedError, ImproperlyConfigured,
-)
+from celery.exceptions import (ChordError, ImproperlyConfigured,
+                               TaskRevokedError, TimeoutError)
 from celery.five import items
-from celery.result import (
-    GroupResult, ResultBase, allow_join_result, result_from_tuple,
-)
+from celery.result import (GroupResult, ResultBase, allow_join_result,
+                           result_from_tuple)
 from celery.utils.collections import BufferMap
 from celery.utils.functional import LRUCache, arity_greater
 from celery.utils.log import get_logger
-from celery.utils.serialization import (
-    get_pickled_exception,
-    get_pickleable_exception,
-    create_exception_cls,
-)
+from celery.utils.serialization import (create_exception_cls,
+                                        get_pickleable_exception,
+                                        get_pickled_exception)
 
 __all__ = ('BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend')
 

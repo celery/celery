@@ -3,16 +3,14 @@
 from __future__ import absolute_import, unicode_literals
 
 import sys
-from celery.five import monotonic
-
-from collections import (
-    Callable, Mapping, MutableMapping, MutableSet, Sequence,
-    OrderedDict as _OrderedDict, deque,
-)
-from heapq import heapify, heappush, heappop
+from collections import OrderedDict as _OrderedDict
+from collections import (Callable, Mapping, MutableMapping, MutableSet,
+                         Sequence, deque)
+from heapq import heapify, heappop, heappush
 from itertools import chain, count
 
-from celery.five import Empty, items, keys, python_2_unicode_compatible, values
+from celery.five import (Empty, items, keys, monotonic,
+                         python_2_unicode_compatible, values)
 
 from .functional import first, uniq
 from .text import match_case

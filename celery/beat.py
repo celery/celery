@@ -6,31 +6,27 @@ import copy
 import errno
 import heapq
 import os
-import time
 import shelve
 import sys
+import time
 import traceback
-
 from collections import namedtuple
 from functools import total_ordering
 from threading import Event, Thread
 
 from billiard import ensure_multiprocessing
-from billiard.context import Process
 from billiard.common import reset_signals
+from billiard.context import Process
 from kombu.utils.functional import maybe_evaluate, reprcall
 from kombu.utils.objects import cached_property
 
-from . import __version__
-from . import platforms
-from . import signals
-from .five import (
-    items, monotonic, python_2_unicode_compatible, reraise, values,
-)
-from .schedules import maybe_schedule, crontab
+from . import __version__, platforms, signals
+from .five import (items, monotonic, python_2_unicode_compatible, reraise,
+                   values)
+from .schedules import crontab, maybe_schedule
 from .utils.imports import load_extension_class_names, symbol_by_name
-from .utils.time import humanize_seconds
 from .utils.log import get_logger, iter_open_logger_fds
+from .utils.time import humanize_seconds
 
 __all__ = (
     'SchedulingError', 'ScheduleEntry', 'Scheduler',

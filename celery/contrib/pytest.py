@@ -1,8 +1,11 @@
 """Fixtures and testing utilities for :pypi:`py.test <pytest>`."""
 from __future__ import absolute_import, unicode_literals
+
 import os
-import pytest
 from contextlib import contextmanager
+
+import pytest
+
 from .testing import worker
 from .testing.app import TestApp, setup_default_app
 

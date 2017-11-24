@@ -1,7 +1,9 @@
 from __future__ import absolute_import, unicode_literals
+
 from case import patch
-from celery.five import WhateverIO
+
 from celery.bin.result import result
+from celery.five import WhateverIO
 
 
 class test_result:

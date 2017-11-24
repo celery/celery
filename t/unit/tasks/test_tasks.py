@@ -1,16 +1,10 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
 import socket
 import tempfile
-
 from datetime import datetime, timedelta
 
-try:
-    from urllib.error import HTTPError
-except ImportError:  # pragma: no cover
-    from urllib2 import HTTPError
-
+import pytest
 from case import ContextMock, MagicMock, Mock, patch
 from kombu import Queue
 
@@ -20,6 +14,13 @@ from celery.exceptions import Ignore, Retry
 from celery.five import items, range, string_t
 from celery.result import EagerResult
 from celery.utils.time import parse_iso8601
+
+try:
+    from urllib.error import HTTPError
+except ImportError:  # pragma: no cover
+    from urllib2 import HTTPError
+
+
 
 
 def return_True(*args, **kwargs):

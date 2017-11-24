@@ -1,18 +1,18 @@
 from __future__ import absolute_import, unicode_literals
-import pytest
-import ssl
+
 import random
-from datetime import timedelta
+import ssl
 from contextlib import contextmanager
-from pickle import loads, dumps
-from case import ANY, ContextMock, Mock, mock, call, patch, skip
-from celery import signature
-from celery import states
-from celery import uuid
+from datetime import timedelta
+from pickle import dumps, loads
+
+import pytest
+from case import ANY, ContextMock, Mock, call, mock, patch, skip
+
+from celery import signature, states, uuid
 from celery.canvas import Signature
-from celery.exceptions import (
-    ChordError, CPendingDeprecationWarning, ImproperlyConfigured,
-)
+from celery.exceptions import (ChordError, CPendingDeprecationWarning,
+                               ImproperlyConfigured)
 from celery.utils.collections import AttributeDict
 
 

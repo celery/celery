@@ -1,15 +1,17 @@
 from __future__ import absolute_import, unicode_literals
-import pytest
+
 import sys
 import types
 from contextlib import contextmanager
+
+import pytest
 from case import Mock, mock, patch, skip
-from kombu.utils.encoding import str_to_bytes, ensure_bytes
-from celery import states
-from celery import group, signature, uuid
+from kombu.utils.encoding import ensure_bytes, str_to_bytes
+
+from celery import group, signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items, bytes_if_py2, string, text_t
+from celery.five import bytes_if_py2, items, string, text_t
 
 PY3 = sys.version_info[0] == 3
 

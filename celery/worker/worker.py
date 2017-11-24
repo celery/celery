@@ -16,30 +16,33 @@ from __future__ import absolute_import, unicode_literals
 
 import os
 import sys
-try:
-    import resource
-except ImportError:  # pragma: no cover
-    resource = None  # noqa
 
 from billiard import cpu_count
 from kombu.utils.compat import detect_environment
 
-from celery import bootsteps
-from celery.bootsteps import RUN, TERMINATE
 from celery import concurrency as _concurrency
-from celery import signals
-from celery.exceptions import (
-    ImproperlyConfigured, WorkerTerminate, TaskRevokedError,
-)
+from celery import bootsteps, signals
+from celery.bootsteps import RUN, TERMINATE
+from celery.exceptions import (ImproperlyConfigured, TaskRevokedError,
+                               WorkerTerminate)
 from celery.five import python_2_unicode_compatible, values
 from celery.platforms import EX_FAILURE, create_pidlock
 from celery.utils.imports import reload_from_cwd
-from celery.utils.log import mlevel, worker_logger as logger
+from celery.utils.log import worker_logger as logger
+from celery.utils.log import mlevel
 from celery.utils.nodenames import default_nodename, worker_direct
 from celery.utils.text import str_to_list
 from celery.utils.threads import default_socket_timeout
 
 from . import state
+
+try:
+    import resource
+except ImportError:  # pragma: no cover
+    resource = None  # noqa
+
+
+
 
 __all__ = ('WorkController',)
 

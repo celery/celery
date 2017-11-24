@@ -6,6 +6,32 @@ errors are recorded, handlers are applied and so on.
 """
 from __future__ import absolute_import, unicode_literals
 
+import logging
+import os
+import sys
+from collections import namedtuple
+from warnings import warn
+
+from billiard.einfo import ExceptionInfo
+from kombu.exceptions import EncodeError
+from kombu.serialization import loads as loads_message
+from kombu.serialization import prepare_accept_content
+from kombu.utils.encoding import safe_repr, safe_str
+
+from celery import current_app, group, signals, states
+from celery._state import _task_stack
+from celery.app.task import Task as BaseTask
+from celery.app.task import Context
+from celery.exceptions import Ignore, InvalidTaskError, Reject, Retry
+from celery.five import monotonic, text_t
+from celery.utils.log import get_logger
+from celery.utils.nodenames import gethostname
+from celery.utils.objects import mro_lookup
+from celery.utils.saferepr import saferepr
+from celery.utils.serialization import (get_pickleable_etype,
+                                        get_pickleable_exception,
+                                        get_pickled_exception)
+
 # ## ---
 # This is the heart of the worker, the inner loop so to speak.
 # It used to be split up into nice little classes and methods,
@@ -17,31 +43,9 @@ from __future__ import absolute_import, unicode_literals
 # pylint: disable=broad-except
 # We know what we're doing...
 
-import logging
-import os
-import sys
 
-from collections import namedtuple
-from warnings import warn
 
-from billiard.einfo import ExceptionInfo
-from kombu.exceptions import EncodeError
-from kombu.serialization import loads as loads_message, prepare_accept_content
-from kombu.utils.encoding import safe_repr, safe_str
 
-from celery import current_app, group
-from celery import states, signals
-from celery._state import _task_stack
-from celery.app.task import Task as BaseTask, Context
-from celery.exceptions import Ignore, Reject, Retry, InvalidTaskError
-from celery.five import monotonic, text_t
-from celery.utils.log import get_logger
-from celery.utils.nodenames import gethostname
-from celery.utils.objects import mro_lookup
-from celery.utils.saferepr import saferepr
-from celery.utils.serialization import (
-    get_pickleable_exception, get_pickled_exception, get_pickleable_etype,
-)
 
 __all__ = (
     'TraceInfo', 'build_tracer', 'trace_task',

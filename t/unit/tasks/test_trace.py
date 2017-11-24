@@ -1,28 +1,19 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
 from case import Mock, patch
 from kombu.exceptions import EncodeError
-from celery import group, uuid
-from celery import signals
-from celery import states
+
+from celery import group, signals, states, uuid
 from celery.app.task import Context
-from celery.exceptions import Ignore, Retry, Reject
-from celery.app.trace import (
-    TraceInfo,
-    build_tracer,
-    get_log_policy,
-    get_task_name,
-    log_policy_reject,
-    log_policy_ignore,
-    log_policy_internal,
-    log_policy_expected,
-    log_policy_unexpected,
-    trace_task,
-    _trace_task_ret,
-    _fast_trace_task,
-    setup_worker_optimizations,
-    reset_worker_optimizations,
-)
+from celery.app.trace import (TraceInfo, _fast_trace_task, _trace_task_ret,
+                              build_tracer, get_log_policy, get_task_name,
+                              log_policy_expected, log_policy_ignore,
+                              log_policy_internal, log_policy_reject,
+                              log_policy_unexpected,
+                              reset_worker_optimizations,
+                              setup_worker_optimizations, trace_task)
+from celery.exceptions import Ignore, Reject, Retry
 
 
 def trace(app, task, args=(), kwargs={},

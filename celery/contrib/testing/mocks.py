@@ -1,7 +1,9 @@
 """Useful mocks for unit testing."""
 from __future__ import absolute_import, unicode_literals
+
 import numbers
 from datetime import datetime, timedelta
+
 try:
     from case import Mock
 except ImportError:

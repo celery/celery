@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 """Database models used by the SQLAlchemy result store backend."""
 from __future__ import absolute_import, unicode_literals
-import sqlalchemy as sa
+
 from datetime import datetime
-from sqlalchemy.types import PickleType
+
+import sqlalchemy as sa
 from celery import states
 from celery.five import python_2_unicode_compatible
+from sqlalchemy.types import PickleType
+
 from .session import ResultModelBase
 
 __all__ = ('Task', 'TaskSet')

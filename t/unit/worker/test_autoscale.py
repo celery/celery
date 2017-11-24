@@ -1,11 +1,13 @@
 from __future__ import absolute_import, unicode_literals
+
 import sys
+
 from case import Mock, mock, patch
+
 from celery.concurrency.base import BasePool
 from celery.five import monotonic
-from celery.worker import state
-from celery.worker import autoscale
 from celery.utils.objects import Bunch
+from celery.worker import autoscale, state
 
 
 class MockPool(BasePool):

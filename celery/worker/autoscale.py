@@ -12,7 +12,6 @@ from __future__ import absolute_import, unicode_literals
 
 import os
 import threading
-
 from time import sleep
 
 from kombu.async.semaphore import DummyLock

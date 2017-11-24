@@ -6,19 +6,17 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import cmd as _cmd
-import sys
-import shlex
 import pprint
-
+import shlex
+import sys
 from functools import partial
 from itertools import count
 
 from kombu.utils.encoding import safe_str
 
-from celery.utils.functional import padlist
-
 from celery.bin.base import Command
 from celery.five import string_t
+from celery.utils.functional import padlist
 from celery.utils.serialization import strtobool
 
 __all__ = ('AMQPAdmin', 'AMQShell', 'Spec', 'amqp')
