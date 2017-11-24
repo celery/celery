@@ -37,6 +37,8 @@ matrix:
     env: TOXENV=configcheck
   - python: '3.5'
     env: TOXENV=pydocstyle
+  - python: '3.5'
+    env: TOXENV=isort-check
 before_install:
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
