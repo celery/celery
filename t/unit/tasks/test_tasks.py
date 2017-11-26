@@ -20,8 +20,6 @@ except ImportError:  # pragma: no cover
     from urllib2 import HTTPError
 
 
-
-
 def return_True(*args, **kwargs):
     # Task run functions can't be closures/lambdas, as they're pickled.
     return True

@@ -43,9 +43,6 @@ from kombu.utils.encoding import safe_repr, safe_str
 # We know what we're doing...
 
 
-
-
-
 __all__ = (
     'TraceInfo', 'build_tracer', 'trace_task',
     'setup_worker_optimizations', 'reset_worker_optimizations',

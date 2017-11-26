@@ -27,9 +27,6 @@ for mod in (mod for mod in sys.modules if mod.startswith(RACE_MODS)):
             warnings.warn(RuntimeWarning(W_RACE % side))
 
 
-
-
-
 def apply_target(target, args=(), kwargs={}, callback=None,
                  accept_callback=None, getpid=None):
     return base.apply_target(target, args, kwargs, callback, accept_callback,

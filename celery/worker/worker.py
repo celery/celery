@@ -41,8 +41,6 @@ except ImportError:  # pragma: no cover
     resource = None  # noqa
 
 
-
-
 __all__ = ('WorkController',)
 
 #: Default socket timeout at shutdown.
