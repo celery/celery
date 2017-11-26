@@ -469,6 +469,16 @@ class test_chain(CanvasCase):
             seen.add(node.id)
             node = node.parent
 
+    def test_append_to_empty_chain(self):
+        x = chain()
+        x |= self.add.s(1, 1)
+        x |= self.add.s(1)
+        x.freeze()
+        tasks, _ = x._frozen
+        assert len(tasks) == 2
+
+        assert x.apply().get() == 3
+
 
 class test_group(CanvasCase):
 

@@ -417,13 +417,13 @@ class Signature(dict):
             return sig
         elif isinstance(other, Signature):
             if isinstance(self, _chain):
-                if isinstance(self.tasks[-1], group):
+                if self.tasks and isinstance(self.tasks[-1], group):
                     # CHAIN [last item is group] | TASK -> chord
                     sig = self.clone()
                     sig.tasks[-1] = chord(
                         sig.tasks[-1], other, app=self._app)
                     return sig
-                elif isinstance(self.tasks[-1], chord):
+                elif self.tasks and isinstance(self.tasks[-1], chord):
                     # CHAIN [last item is chord] -> chain with chord body.
                     sig = self.clone()
                     sig.tasks[-1].body = sig.tasks[-1].body | other
