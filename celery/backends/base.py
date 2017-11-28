@@ -15,6 +15,11 @@ from datetime import timedelta
 from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
+from kombu.serialization import dumps, loads, prepare_accept_content
+from kombu.serialization import registry as serializer_registry
+from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
+from kombu.utils.url import maybe_sanitize_url
+
 from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
 from celery.exceptions import (ChordError, ImproperlyConfigured,
@@ -28,10 +33,6 @@ from celery.utils.log import get_logger
 from celery.utils.serialization import (create_exception_cls,
                                         get_pickleable_exception,
                                         get_pickled_exception)
-from kombu.serialization import registry as serializer_registry
-from kombu.serialization import dumps, loads, prepare_accept_content
-from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
-from kombu.utils.url import maybe_sanitize_url
 
 __all__ = ('BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend')
 

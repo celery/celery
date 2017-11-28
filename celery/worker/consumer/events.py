@@ -4,8 +4,9 @@
 """
 from __future__ import absolute_import, unicode_literals
 
-from celery import bootsteps
 from kombu.common import ignore_errors
+
+from celery import bootsteps
 
 from .connection import Connection
 

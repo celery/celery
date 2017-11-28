@@ -6,13 +6,14 @@ import socket
 from functools import partial
 from itertools import cycle, islice
 
+from kombu import Queue, eventloop
+from kombu.common import maybe_declare
+from kombu.utils.encoding import ensure_bytes
+
 from celery.app import app_or_default
 from celery.five import python_2_unicode_compatible, string, string_t
 from celery.utils.nodenames import worker_direct
 from celery.utils.text import str_to_list
-from kombu import Queue, eventloop
-from kombu.common import maybe_declare
-from kombu.utils.encoding import ensure_bytes
 
 __all__ = (
     'StopFiltering', 'State', 'republish', 'migrate_task',

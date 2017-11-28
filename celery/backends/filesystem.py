@@ -5,10 +5,11 @@ from __future__ import absolute_import, unicode_literals
 import locale
 import os
 
+from kombu.utils.encoding import ensure_bytes
+
 from celery import uuid
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
-from kombu.utils.encoding import ensure_bytes
 
 # Python 2 does not have FileNotFoundError and IsADirectoryError
 try:

@@ -8,6 +8,7 @@ from pickle import dumps, loads
 import pytest
 from billiard.einfo import ExceptionInfo
 from case import Mock, mock
+
 from celery import states, uuid
 from celery.backends.amqp import AMQPBackend
 from celery.five import Empty, Queue, range

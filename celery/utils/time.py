@@ -10,11 +10,12 @@ import time as _time
 from calendar import monthrange
 from datetime import date, datetime, timedelta, tzinfo
 
-from celery.five import python_2_unicode_compatible, string_t
 from kombu.utils.functional import reprcall
 from kombu.utils.objects import cached_property
-from pytz import timezone as _timezone
 from pytz import AmbiguousTimeError, FixedOffset
+from pytz import timezone as _timezone
+
+from celery.five import python_2_unicode_compatible, string_t
 
 from .functional import dictfilter
 from .iso8601 import parse_iso8601

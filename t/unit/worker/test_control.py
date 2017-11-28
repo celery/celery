@@ -7,17 +7,18 @@ from datetime import datetime, timedelta
 
 import pytest
 from case import Mock, call, patch
+from kombu import pidbox
+from kombu.utils.uuid import uuid
+
 from celery.five import Queue as FastQueue
 from celery.utils.collections import AttributeDict
 from celery.utils.timer2 import Timer
 from celery.worker import WorkController as _WC  # noqa
-from celery.worker import state as worker_state
 from celery.worker import consumer, control
+from celery.worker import state as worker_state
 from celery.worker.pidbox import Pidbox, gPidbox
 from celery.worker.request import Request
 from celery.worker.state import revoked
-from kombu import pidbox
-from kombu.utils.uuid import uuid
 
 hostname = socket.gethostname()
 

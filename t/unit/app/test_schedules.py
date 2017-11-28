@@ -7,11 +7,11 @@ from pickle import dumps, loads
 
 import pytest
 import pytz
+from case import Case, Mock, skip
+
 from celery.five import items
 from celery.schedules import (ParseException, crontab, crontab_parser,
                               schedule, solar)
-
-from case import Case, Mock, skip
 
 assertions = Case('__init__')
 

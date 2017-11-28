@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, tzinfo
 import pytest
 import pytz
 from case import Mock, patch
+from pytz import AmbiguousTimeError
+
 from celery.utils.iso8601 import parse_iso8601
 from celery.utils.time import (LocalTimezone, delta_resolution, ffwd,
                                get_exponential_backoff_interval,
@@ -12,7 +14,6 @@ from celery.utils.time import (LocalTimezone, delta_resolution, ffwd,
                                maybe_iso8601, maybe_make_aware,
                                maybe_timedelta, rate, remaining, timezone,
                                utcoffset)
-from pytz import AmbiguousTimeError
 
 
 class test_LocalTimezone:

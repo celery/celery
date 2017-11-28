@@ -7,6 +7,7 @@ from itertools import cycle
 
 import pytest
 from case import Mock, mock, patch, skip
+
 from celery.app.defaults import DEFAULTS
 from celery.five import range
 from celery.utils.collections import AttributeDict

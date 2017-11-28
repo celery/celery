@@ -14,6 +14,8 @@ import os
 import sys
 from logging.handlers import WatchedFileHandler
 
+from kombu.utils.encoding import set_default_encoding_file
+
 from celery import signals
 from celery._state import get_current_task
 from celery.five import string_t
@@ -24,7 +26,6 @@ from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
                               reset_multiprocessing_logger)
 from celery.utils.nodenames import node_format
 from celery.utils.term import colored
-from kombu.utils.encoding import set_default_encoding_file
 
 __all__ = ('TaskFormatter', 'Logging')
 

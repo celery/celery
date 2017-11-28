@@ -7,6 +7,8 @@ import sys
 import pytest
 from billiard.process import current_process
 from case import Mock, mock, patch, skip
+from kombu import Exchange, Queue
+
 from celery import platforms, signals
 from celery.app import trace
 from celery.apps import worker as cd
@@ -16,7 +18,6 @@ from celery.exceptions import (ImproperlyConfigured, WorkerShutdown,
                                WorkerTerminate)
 from celery.platforms import EX_FAILURE, EX_OK
 from celery.worker import state
-from kombu import Exchange, Queue
 
 
 @pytest.fixture(autouse=True)

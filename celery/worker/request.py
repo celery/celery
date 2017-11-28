@@ -12,6 +12,9 @@ from datetime import datetime
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
+from kombu.utils.encoding import safe_repr, safe_str
+from kombu.utils.objects import cached_property
+
 from celery import signals
 from celery.app.trace import trace_task, trace_task_ret
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
@@ -24,8 +27,6 @@ from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import get_pickled_exception
 from celery.utils.time import maybe_iso8601, maybe_make_aware, timezone
-from kombu.utils.encoding import safe_repr, safe_str
-from kombu.utils.objects import cached_property
 
 from . import state
 

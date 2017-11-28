@@ -18,20 +18,22 @@ import os
 import sys
 
 from billiard import cpu_count
+from kombu.utils.compat import detect_environment
+
+from celery import bootsteps
 from celery import concurrency as _concurrency
-from celery import bootsteps, signals
+from celery import signals
 from celery.bootsteps import RUN, TERMINATE
 from celery.exceptions import (ImproperlyConfigured, TaskRevokedError,
                                WorkerTerminate)
 from celery.five import python_2_unicode_compatible, values
 from celery.platforms import EX_FAILURE, create_pidlock
 from celery.utils.imports import reload_from_cwd
-from celery.utils.log import worker_logger as logger
 from celery.utils.log import mlevel
+from celery.utils.log import worker_logger as logger
 from celery.utils.nodenames import default_nodename, worker_direct
 from celery.utils.text import str_to_list
 from celery.utils.threads import default_socket_timeout
-from kombu.utils.compat import detect_environment
 
 from . import state
 

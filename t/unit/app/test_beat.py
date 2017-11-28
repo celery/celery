@@ -6,6 +6,7 @@ from pickle import dumps, loads
 
 import pytest
 from case import Mock, call, patch, skip
+
 from celery import beat, uuid
 from celery.beat import event_t
 from celery.five import keys, string_t

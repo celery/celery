@@ -1,11 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
+from redis import StrictRedis
+
 from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
-
-from redis import StrictRedis
 
 from .conftest import flaky
 from .tasks import add, add_replaced, add_to_all, collect_ids, ids, redis_echo

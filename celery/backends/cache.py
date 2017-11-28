@@ -4,10 +4,11 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 
-from celery.exceptions import ImproperlyConfigured
-from celery.utils.functional import LRUCache
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.objects import cached_property
+
+from celery.exceptions import ImproperlyConfigured
+from celery.utils.functional import LRUCache
 
 from .base import KeyValueStoreBackend
 

@@ -1,7 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
-from celery.utils.nodenames import worker_direct
 from kombu import Queue
+
+from celery.utils.nodenames import worker_direct
 
 
 class test_worker_direct:

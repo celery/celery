@@ -5,6 +5,7 @@ from pickle import dumps, loads
 
 import pytest
 from case import Mock, patch, skip
+
 from celery import states, uuid
 from celery.exceptions import ImproperlyConfigured
 

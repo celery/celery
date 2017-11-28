@@ -9,12 +9,13 @@ import re
 import string
 from collections import Mapping, OrderedDict
 
+from kombu import Queue
+
 from celery.exceptions import QueueNotFound
 from celery.five import items, string_t
 from celery.utils.collections import lpmerge
 from celery.utils.functional import maybe_evaluate, mlazy
 from celery.utils.imports import symbol_by_name
-from kombu import Queue
 
 __all__ = ('MapRoute', 'Router', 'prepare')
 

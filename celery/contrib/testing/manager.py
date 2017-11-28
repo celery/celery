@@ -7,12 +7,13 @@ from collections import defaultdict
 from functools import partial
 from itertools import count
 
+from kombu.utils.functional import retry_over_time
+
 from celery.exceptions import TimeoutError
 from celery.five import items
 from celery.result import ResultSet
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds as _humanize_seconds
-from kombu.utils.functional import retry_over_time
 
 E_STILL_WAITING = 'Still waiting for {0}.  Trying again {when}: {exc!r}'
 

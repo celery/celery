@@ -9,13 +9,14 @@ from tempfile import mktemp
 import pytest
 from case import Mock, mock, patch, skip
 from case.utils import get_logger_handlers
+
 from celery import signals, uuid
 from celery.app.log import TaskFormatter
 from celery.five import python_2_unicode_compatible
-from celery.utils.log import logger as base_logger
 from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
-                              get_task_logger, in_sighandler, logger_isa,
-                              task_logger)
+                              get_task_logger, in_sighandler)
+from celery.utils.log import logger as base_logger
+from celery.utils.log import logger_isa, task_logger
 
 
 class test_TaskFormatter:

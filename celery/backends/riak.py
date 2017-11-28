@@ -4,8 +4,9 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 
-from celery.exceptions import ImproperlyConfigured
 from kombu.utils.url import _parse_url
+
+from celery.exceptions import ImproperlyConfigured
 
 from .base import KeyValueStoreBackend
 

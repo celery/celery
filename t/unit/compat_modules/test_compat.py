@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 from datetime import timedelta
 
 import pytest
+
 from celery.five import bytes_if_py2
 from celery.schedules import schedule
 from celery.task import PeriodicTask, periodic_task

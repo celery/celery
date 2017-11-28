@@ -4,6 +4,7 @@ import sys
 
 import pytest
 from case import Mock, skip
+
 from celery.five import long_t, python_2_unicode_compatible, string
 from celery.local import PromiseProxy, Proxy, maybe_evaluate, try_import
 

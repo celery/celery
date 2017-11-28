@@ -11,9 +11,10 @@ from functools import partial
 from inspect import getmro
 from itertools import takewhile
 
+from kombu.utils.encoding import bytes_to_str, str_to_bytes
+
 from celery.five import (bytes_if_py2, items, python_2_unicode_compatible,
                          reraise, string_t)
-from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
 from .encoding import safe_repr
 

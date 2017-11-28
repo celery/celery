@@ -9,13 +9,14 @@ from collections import Mapping, namedtuple
 from copy import deepcopy
 from types import ModuleType
 
+from kombu.utils.url import maybe_sanitize_url
+
 from celery.exceptions import ImproperlyConfigured
 from celery.five import items, keys, string_t, values
 from celery.platforms import pyimplementation
 from celery.utils.collections import ConfigurationView
 from celery.utils.imports import import_from_cwd, qualname, symbol_by_name
 from celery.utils.text import pretty
-from kombu.utils.url import maybe_sanitize_url
 
 from .defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY,
                        _TO_OLD_KEY, DEFAULTS, SETTING_KEYS, find)

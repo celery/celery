@@ -4,12 +4,14 @@ import sys
 
 import pytest
 from case import Mock, patch
+
 from celery import __main__
 from celery.bin import celery as mod
 from celery.bin.base import Error
-from celery.bin.celery import main as mainfun
 from celery.bin.celery import (CeleryCommand, Command, determine_exit_status,
-                               help, multi, report)
+                               help)
+from celery.bin.celery import main as mainfun
+from celery.bin.celery import multi, report
 from celery.five import WhateverIO
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
 

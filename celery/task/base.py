@@ -8,14 +8,16 @@ and shouldn't be used in new applications.
 """
 from __future__ import absolute_import, unicode_literals
 
+from kombu import Exchange
+
 from celery import current_app
+from celery.app.task import Context
 from celery.app.task import Task as BaseTask
-from celery.app.task import Context, _reprtask
+from celery.app.task import _reprtask
 from celery.five import python_2_unicode_compatible, with_metaclass
 from celery.local import Proxy, class_property, reclassmethod
 from celery.schedules import maybe_schedule
 from celery.utils.log import get_task_logger
-from kombu import Exchange
 
 __all__ = ('Context', 'Task', 'TaskType', 'PeriodicTask', 'task')
 

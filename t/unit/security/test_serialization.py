@@ -4,12 +4,13 @@ import base64
 import os
 
 import pytest
+from kombu.serialization import registry
+from kombu.utils.encoding import bytes_to_str
+
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore
 from celery.security.key import PrivateKey
 from celery.security.serialization import SecureSerializer, register_auth
-from kombu.serialization import registry
-from kombu.utils.encoding import bytes_to_str
 
 from . import CERT1, CERT2, KEY1, KEY2
 from .case import SecurityCase

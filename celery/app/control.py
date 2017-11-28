@@ -9,11 +9,12 @@ from __future__ import absolute_import, unicode_literals
 import warnings
 
 from billiard.common import TERM_SIGNAME
-from celery.exceptions import DuplicateNodenameWarning
-from celery.utils.text import pluralize
 from kombu.pidbox import Mailbox
 from kombu.utils.functional import lazy
 from kombu.utils.objects import cached_property
+
+from celery.exceptions import DuplicateNodenameWarning
+from celery.utils.text import pluralize
 
 __all__ = ('Inspect', 'Control', 'flatten_reply')
 

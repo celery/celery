@@ -5,8 +5,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 from collections import Counter
 from textwrap import dedent
 
-from celery.five import items, python_2_unicode_compatible
 from kombu.utils.encoding import bytes_to_str, safe_str
+
+from celery.five import items, python_2_unicode_compatible
 
 __all__ = ('DOT', 'CycleError', 'DependencyGraph', 'GraphFormatter')
 

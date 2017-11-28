@@ -5,8 +5,10 @@ import sys
 
 import pytest
 from case import Mock, patch
+
+from celery.bin.multi import MultiTool
 from celery.bin.multi import __doc__ as doc
-from celery.bin.multi import MultiTool, main
+from celery.bin.multi import main
 from celery.five import WhateverIO
 
 

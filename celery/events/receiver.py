@@ -4,12 +4,13 @@ from __future__ import absolute_import, unicode_literals
 import time
 from operator import itemgetter
 
-from celery import uuid
-from celery.app import app_or_default
-from celery.utils.time import adjust_timestamp
 from kombu import Queue
 from kombu.connection import maybe_channel
 from kombu.mixins import ConsumerMixin
+
+from celery import uuid
+from celery.app import app_or_default
+from celery.utils.time import adjust_timestamp
 
 from .event import get_exchange
 

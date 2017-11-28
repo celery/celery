@@ -13,9 +13,11 @@ import threading
 from itertools import count
 from time import sleep
 
-from celery.five import THREAD_TIMEOUT_MAX
+from kombu.async.timer import Entry
 from kombu.async.timer import Timer as Schedule
-from kombu.async.timer import Entry, logger, to_timestamp
+from kombu.async.timer import logger, to_timestamp
+
+from celery.five import THREAD_TIMEOUT_MAX
 
 TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
 

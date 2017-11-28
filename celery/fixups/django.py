@@ -7,10 +7,11 @@ import warnings
 from datetime import datetime
 from importlib import import_module
 
-from celery import _state, signals
-from celery.exceptions import FixupWarning, ImproperlyConfigured
 from kombu.utils.imports import symbol_by_name
 from kombu.utils.objects import cached_property
+
+from celery import _state, signals
+from celery.exceptions import FixupWarning, ImproperlyConfigured
 
 __all__ = ('DjangoFixup', 'fixup')
 

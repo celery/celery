@@ -6,6 +6,7 @@ import sys
 
 import pytest
 from case import Mock, call, patch, skip
+
 from celery.apps.multi import (Cluster, MultiParser, NamespacedOptionParser,
                                Node, format_opt)
 

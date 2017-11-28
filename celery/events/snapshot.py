@@ -9,6 +9,8 @@ in :mod:`djcelery.snapshots` in the `django-celery` distribution.
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
+from kombu.utils.limits import TokenBucket
+
 from celery import platforms
 from celery.app import app_or_default
 from celery.utils.dispatch import Signal
@@ -16,7 +18,6 @@ from celery.utils.imports import instantiate
 from celery.utils.log import get_logger
 from celery.utils.time import rate
 from celery.utils.timer2 import Timer
-from kombu.utils.limits import TokenBucket
 
 __all__ = ('Polaroid', 'evcam')
 

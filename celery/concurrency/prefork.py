@@ -9,8 +9,9 @@ import os
 
 from billiard import forking_enable
 from billiard.common import REMAP_SIGTERM, TERM_SIGNAME
-from billiard.pool import Pool as BlockingPool
 from billiard.pool import CLOSE, RUN
+from billiard.pool import Pool as BlockingPool
+
 from celery import platforms, signals
 from celery._state import _set_task_join_will_block, set_default_app
 from celery.app import trace
