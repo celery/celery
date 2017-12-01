@@ -16,4 +16,5 @@
 -r extras/couchdb.txt
 -r extras/consul.txt
 -r extras/cassandra.txt
+-r extras/tornado.txt
 -r extras/dynamodb.txt

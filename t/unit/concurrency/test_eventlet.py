@@ -12,6 +12,7 @@ eventlet_modules = (
     'eventlet.debug',
     'eventlet.greenthread',
     'eventlet.greenpool',
+    'eventlet.hubs',
     'greenlet',
 )
 
@@ -27,6 +28,8 @@ class EventletCase:
         for mod in [mod for mod in sys.modules
                     if mod.startswith('eventlet')]:
             try:
+                # This is unsafe when refering module level global variables in
+                # eventlet package's functions
                 del(sys.modules[mod])
             except KeyError:
                 pass

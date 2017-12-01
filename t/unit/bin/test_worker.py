@@ -643,10 +643,14 @@ class test_signal_handlers:
             with pytest.raises(WorkerTerminate):
                 handlers['SIGQUIT']('SIGQUIT', object())
 
-    def test_send_worker_shutting_down_signal(self):
-        with patch('celery.apps.worker.signals.worker_shutting_down') as wsd:
+    def test_send_worker_shutting_down_signal(self, mocker):
+        with patch('celery.signals.worker_shutting_down') as wsd:
             worker = self._Worker()
             handlers = self.psig(cd.install_worker_term_handler, worker)
+            active_thread_count = mocker.patch(
+                'celery.apps.worker.active_thread_count')
+            active_thread_count.return_value = 1
+
             try:
                 with pytest.raises(WorkerShutdown):
                     handlers['SIGTERM']('SIGTERM', object())

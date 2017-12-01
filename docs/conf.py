@@ -42,6 +42,7 @@ globals().update(conf.build_config(
         'celery.apps',
         'celery.canvas',
         'celery.concurrency.asynpool',
+        'celery.concurrency.future',
         'celery.utils.encoding',
         r'celery.utils.static.*',
     ],
