@@ -5,7 +5,6 @@ from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
 from .conftest import flaky
 from .tasks import add, add_replaced, add_to_all, collect_ids, ids
-from .tasks import sum_
 
 TIMEOUT = 120
 
@@ -93,6 +92,7 @@ class test_chord:
     def test_redis_subscribed_channels_leak(self, manager):
         from time import sleep
         import redis
+        from .tasks import sum_
         
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
