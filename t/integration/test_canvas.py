@@ -8,7 +8,8 @@ from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
 
 from .conftest import flaky
-from .tasks import add, add_replaced, add_to_all, collect_ids, ids, redis_echo
+from .tasks import (add, add_replaced, add_to_all, collect_ids, ids,
+                    redis_echo, second_order_replace1)
 
 TIMEOUT = 120
 
@@ -57,6 +58,26 @@ class test_chain:
         assert redis_messages[3] == b'connect'
         assert set(redis_messages[4:]) == after_items
         redis_connection.delete('redis-echo')
+
+    @flaky
+    def test_second_order_replace(self, manager):
+        from celery.five import bytes_if_py2
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = StrictRedis()
+        redis_connection.delete('redis-echo')
+
+        result = second_order_replace1.delay()
+        result.get(timeout=TIMEOUT)
+        redis_messages = list(map(
+            bytes_if_py2,
+            redis_connection.lrange('redis-echo', 0, -1)
+        ))
+
+        expected_messages = [b'In A', b'In B', b'In/Out C', b'Out B', b'Out A']
+        assert redis_messages == expected_messages
 
     @flaky
     def test_parent_ids(self, manager, num=10):
