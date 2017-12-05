@@ -1,5 +1,10 @@
 from __future__ import absolute_import, unicode_literals
+from time import sleep
 import pytest
+try:
+    import redis
+except ImportError:
+    redis = None
 from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
@@ -88,6 +93,23 @@ def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
 
 class test_chord:
 
+    @flaky
+    def test_redis_subscribed_channels_leak(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        redis_client = redis.StrictRedis()
+        async_result = chord([add.s(5, 6), add.s(6, 7)])(sum_.s())
+        for _ in range(TIMEOUT / 2):
+            if async_result.state == 'STARTED':
+                break
+            sleep(1)
+        channels_before = \
+            len(redis_client.execute_command('PUBSUB CHANNELS'))
+        assert async_result.get(timeout=TIMEOUT) == 24
+        channels_after = \
+            len(redis_client.execute_command('PUBSUB CHANNELS'))
+        assert channels_after < channels_before
+    
     @flaky
     def test_group_chain(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
