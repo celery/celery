@@ -12,6 +12,10 @@ def add(x, y):
     """Add two numbers."""
     return x + y
 
+@shared_task
+def sum_(numbers):
+    """Sum the iterable of numbers."""
+    return sum(numbers)
 
 @shared_task(bind=True)
 def add_replaced(self, x, y):
