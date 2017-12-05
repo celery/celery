@@ -4,8 +4,8 @@ from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
 from .conftest import flaky
-from .tasks import add, add_replaced, add_to_all, \
-    collect_ids, ids, sum_
+from .tasks import add, add_replaced, add_to_all, collect_ids, ids
+from .tasks import sum_
 
 TIMEOUT = 120
 
