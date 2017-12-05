@@ -1,10 +1,5 @@
 from __future__ import absolute_import, unicode_literals
-from time import sleep
 import pytest
-try:
-    import redis
-except ImportError:
-    redis = None
 from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
@@ -95,8 +90,12 @@ class test_chord:
 
     @flaky
     def test_redis_subscribed_channels_leak(self, manager):
+        from time import sleep
+        import redis
+        
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
+
         redis_client = redis.StrictRedis()
         async_result = chord([add.s(5, 6), add.s(6, 7)])(sum_.s())
         for _ in range(TIMEOUT / 2):
