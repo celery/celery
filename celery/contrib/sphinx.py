@@ -66,11 +66,10 @@ class TaskDocumenter(FunctionDocumenter):
         pass
 
     def check_module(self):
-        """Normally checks if *self.object* is really defined in the module
-        given by *self.modname*. But since functions decorated with the @task
-        decorator are instances living in the celery.local module we're
-        checking for that and simply agree to document those then.
-        """
+        # Normally checks if *self.object* is really defined in the module
+        # given by *self.modname*. But since functions decorated with the @task
+        # decorator are instances living in the celery.local module we're
+        # checking for that and simply agree to document those then.
         modname = self.get_attr(self.object, '__module__', None)
         if modname and modname == 'celery.local':
             return True
