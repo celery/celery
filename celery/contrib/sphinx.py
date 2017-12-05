@@ -43,6 +43,7 @@ except ImportError:  # Py2
 
 class TaskDocumenter(FunctionDocumenter):
     """Document task definitions."""
+
     objtype = 'task'
     member_order = 11
 
