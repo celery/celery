@@ -98,7 +98,7 @@ class test_chord:
             raise pytest.skip('Requires redis result backend.')
 
         redis_client = redis.StrictRedis()
-        async_result = chord([add.s(5, 6), add.s(6, 7)])(sum_.s())
+        async_result = chord([add.s(5, 6), add.s(6, 7)])(delayed_sum.s())
         for _ in range(TIMEOUT):
             if async_result.state == 'STARTED':
                 break
