@@ -92,17 +92,17 @@ class test_chord:
     def test_redis_subscribed_channels_leak(self, manager):
         from time import sleep
         import redis
-        from .tasks import sum_
+        from .tasks import delayed_sum
         
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
         redis_client = redis.StrictRedis()
         async_result = chord([add.s(5, 6), add.s(6, 7)])(sum_.s())
-        for _ in range(TIMEOUT / 2):
+        for _ in range(TIMEOUT):
             if async_result.state == 'STARTED':
                 break
-            sleep(1)
+            sleep(0.2)
         channels_before = \
             len(redis_client.execute_command('PUBSUB CHANNELS'))
         assert async_result.get(timeout=TIMEOUT) == 24
