@@ -54,6 +54,8 @@ class TaskDocumenter(FunctionDocumenter):
         wrapped = getattr(self.object, '__wrapped__', None)
         if wrapped is not None:
             argspec = getfullargspec(wrapped)
+            if argspec[0] and argspec[0][0] in ('cls', 'self'):
+                del argspec[0][0]
             fmt = formatargspec(*argspec)
             fmt = fmt.replace('\\', '\\\\')
             return fmt
