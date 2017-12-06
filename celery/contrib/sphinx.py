@@ -22,11 +22,12 @@ then you can change the ``celery_task_prefix`` configuration value:
     celery_task_prefix = '(task)'  # < default
 
 With the extension installed `autodoc` will automatically find
-task decorated objects and generate the correct (as well as
-add a ``(task)`` prefix), and you can also refer to the tasks
-using `:task:proj.tasks.add` syntax.
+task decorated objects (e.g. when using the automodule directive)
+and generate the correct (as well as add a ``(task)`` prefix),
+and you can also refer to the tasks using `:task:proj.tasks.add`
+syntax.
 
-Use ``.. autotask::`` to manually document a task.
+Use ``.. autotask::`` to alternatively manually document a task.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -63,6 +64,16 @@ class TaskDocumenter(FunctionDocumenter):
 
     def document_members(self, all_members=False):
         pass
+
+    def check_module(self):
+        # Normally checks if *self.object* is really defined in the module
+        # given by *self.modname*. But since functions decorated with the @task
+        # decorator are instances living in the celery.local module we're
+        # checking for that and simply agree to document those then.
+        modname = self.get_attr(self.object, '__module__', None)
+        if modname and modname == 'celery.local':
+            return True
+        return super(TaskDocumenter, self).check_module()
 
 
 class TaskDirective(PyModulelevel):
