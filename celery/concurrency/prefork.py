@@ -63,14 +63,7 @@ def process_initializer(app, hostname):
                   bool(os.environ.get('CELERY_LOG_REDIRECT', False)),
                   str(os.environ.get('CELERY_LOG_REDIRECT_LEVEL')),
                   hostname=hostname)
-    if os.environ.get('FORKED_BY_MULTIPROCESSING'):
-        # pool did execv after fork
-        trace.setup_worker_optimizations(app, hostname)
-    else:
-        app.set_current()
-        set_default_app(app)
-        app.finalize()
-        trace._tasks = app._tasks  # enables fast_trace_task optimization.
+    trace.setup_worker_optimizations(app, hostname)
     # rebuild execution handler for all tasks.
     from celery.app.trace import build_tracer
     for name, task in items(app.tasks):
