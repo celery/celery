@@ -630,12 +630,16 @@ class test_GroupResult:
         backend = SimpleBackend()
         backend.supports_native_join = False
         ts = self.app.GroupResult(uuid(), [
-            MockAsyncResultSuccess(uuid(), result='1.1', app=self.app, backend=backend),
+            MockAsyncResultSuccess(uuid(), result='1.1',
+                                   app=self.app, backend=backend),
             self.app.GroupResult(uuid(), [
-                MockAsyncResultSuccess(uuid(), result='2.1', app=self.app, backend=backend),
+                MockAsyncResultSuccess(uuid(), result='2.1',
+                                       app=self.app, backend=backend),
                 self.app.GroupResult(uuid(), [
-                    MockAsyncResultSuccess(uuid(), result='3.1', app=self.app, backend=backend),
-                    MockAsyncResultSuccess(uuid(), result='3.2', app=self.app, backend=backend),
+                    MockAsyncResultSuccess(uuid(), result='3.1',
+                                           app=self.app, backend=backend),
+                    MockAsyncResultSuccess(uuid(), result='3.2',
+                                           app=self.app, backend=backend),
                 ]),
             ]),
         ])
