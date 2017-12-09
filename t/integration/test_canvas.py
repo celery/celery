@@ -113,6 +113,9 @@ class test_group:
 
     @flaky
     def test_empty_group_result(self):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        
         task = group([])
         result = task.apply_async()
 
