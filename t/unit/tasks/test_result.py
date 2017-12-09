@@ -641,6 +641,16 @@ class test_GroupResult:
         with pytest.raises(AttributeError):
             self.app.GroupResult.restore(ts.id, backend=object())
 
+    def test_save_restore_empty(self):
+        subs = []
+        ts = self.app.GroupResult(uuid(), subs)
+        ts.save()
+        assert isinstance(
+            self.app.GroupResult.restore(ts.id),
+            self.app.GroupResult,
+        )
+        assert self.app.GroupResult.restore(ts.id).results == ts.results == []
+
     def test_restore_app(self):
         subs = [MockAsyncResultSuccess(uuid(), app=self.app)]
         ts = self.app.GroupResult(uuid(), subs)

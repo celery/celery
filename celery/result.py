@@ -998,7 +998,7 @@ def result_from_tuple(r, app=None):
         if parent:
             parent = result_from_tuple(parent, app)
 
-        if nodes:
+        if nodes is not None:
             return app.GroupResult(
                 id, [result_from_tuple(child, app) for child in nodes],
                 parent=parent,
