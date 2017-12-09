@@ -112,6 +112,15 @@ class test_chain:
 class test_group:
 
     @flaky
+    def test_empty_group_result(self):
+        task = group([])
+        result = task.apply_async()
+
+        GroupResult.save(result)
+        task = GroupResult.restore(result.id)
+        assert task.results == []
+
+    @flaky
     def test_parent_ids(self, manager):
         assert manager.inspect().ping()
         g = (
