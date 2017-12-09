@@ -9,6 +9,9 @@ python:
   - '3.6'
 os:
     - linux
+stages:
+  - lint
+  - test
 env:
   global:
   - PYTHONUNBUFFERED=yes
