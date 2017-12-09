@@ -895,8 +895,10 @@ class GroupResult(ResultSet):
     @classmethod
     def restore(cls, id, backend=None, app=None):
         """Restore previously saved group result."""
-        app = app or cls.app
-        backend = backend or (app.backend if app else current_app.backend)
+        app = app or (
+            cls.app if not isinstance(cls.app, property) else current_app
+        )
+        backend = backend or app.backend
         return backend.restore_group(id)
 
 
