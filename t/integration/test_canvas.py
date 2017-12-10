@@ -112,6 +112,18 @@ class test_chain:
 class test_group:
 
     @flaky
+    def test_empty_group_result(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        task = group([])
+        result = task.apply_async()
+
+        GroupResult.save(result)
+        task = GroupResult.restore(result.id)
+        assert task.results == []
+
+    @flaky
     def test_parent_ids(self, manager):
         assert manager.inspect().ping()
         g = (
