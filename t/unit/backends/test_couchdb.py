@@ -43,15 +43,45 @@ class test_CouchBackend:
 
         CouchBackend.get should return  and take two params
         db conn to couchdb is mocked.
-        TODO Should test on key not exists
-
         """
         x = CouchBackend(app=self.app)
         x._connection = Mock()
         get = x._connection.get = MagicMock()
-        # should return None
         assert x.get('1f3fab') == get.return_value['value']
         x._connection.get.assert_called_once_with('1f3fab')
+
+    def test_get_non_existent_key(self):
+        x = CouchBackend(app=self.app)
+        x._connection = Mock()
+        get = x._connection.get = MagicMock()
+        get.side_effect = pycouchdb.exceptions.NotFound
+        assert x.get('1f3fab') is None
+        x._connection.get.assert_called_once_with('1f3fab')
+
+    @pytest.mark.parametrize("key", ['1f3fab', b'1f3fab'])
+    def test_set(self, key):
+        x = CouchBackend(app=self.app)
+        x._connection = Mock()
+
+        x.set(key, 'value')
+
+        x._connection.save.assert_called_once_with({'_id': '1f3fab',
+                                                    'value': 'value'})
+
+    @pytest.mark.parametrize("key", ['1f3fab', b'1f3fab'])
+    def test_set_with_conflict(self, key):
+        x = CouchBackend(app=self.app)
+        x._connection = Mock()
+        x._connection.save.side_effect = (pycouchdb.exceptions.Conflict, None)
+        get = x._connection.get = MagicMock()
+
+        x.set(key, 'value')
+
+        x._connection.get.assert_called_once_with('1f3fab')
+        x._connection.get('1f3fab').__setitem__.assert_called_once_with(
+            'value', 'value')
+        x._connection.save.assert_called_with(get('1f3fab'))
+        assert x._connection.save.call_count == 2
 
     def test_delete(self):
         """test_delete
