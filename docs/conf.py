@@ -45,6 +45,9 @@ globals().update(conf.build_config(
         'celery.utils.encoding',
         r'celery.utils.static.*',
     ],
+    linkcheck_ignore=[
+        r'^http://localhost'
+    ]
 ))
 
 settings = {}
