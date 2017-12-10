@@ -2,6 +2,7 @@
 """CouchDB result store backend."""
 from __future__ import absolute_import, unicode_literals
 
+from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
@@ -86,6 +87,7 @@ class CouchBackend(KeyValueStoreBackend):
             return None
 
     def set(self, key, value):
+        key = bytes_to_str(key)
         data = {'_id': key, 'value': value}
         try:
             self.connection.save(data)
