@@ -153,6 +153,25 @@ class test_chord:
         assert res.get(timeout=TIMEOUT) == [12, 13, 14, 15]
 
     @flaky
+    def test_nested_group_chain(self, manager):
+        c = chain(
+            add.si(1, 0),
+            group(
+                add.si(1, 100),
+                chain(
+                    add.si(1, 200),
+                    group(
+                        add.si(1, 1000),
+                        add.si(1, 2000),
+                    ),
+                ),
+            ),
+            add.si(1, 10),
+        )
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 11
+
+    @flaky
     def test_parent_ids(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
