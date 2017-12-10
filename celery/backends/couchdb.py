@@ -87,7 +87,8 @@ class CouchBackend(KeyValueStoreBackend):
             return None
 
     def set(self, key, value):
-        data = {'_id': bytes_to_str(key), 'value': value}
+        key = bytes_to_str(key)
+        data = {'_id': key, 'value': value}
         try:
             self.connection.save(data)
         except pycouchdb.exceptions.Conflict:
