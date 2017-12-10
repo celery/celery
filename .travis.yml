@@ -77,6 +77,10 @@ before_install:
               sleep 10
               curl localhost:8000
           fi
+    - |
+          wget -qO - https://packages.couchbase.com/ubuntu/couchbase.key | sudo apt-key add -
+          sudo apt-add-repository -y 'deb http://packages.couchbase.com/ubuntu trusty trusty/main'
+          sudo apt-get update && sudo apt-get install -y libcouchbase-dev
 after_success:
   - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml
   - .tox/$TRAVIS_PYTHON_VERSION/bin/codecov -e TOXENV

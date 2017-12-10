@@ -12,6 +12,10 @@ from celery.exceptions import ImproperlyConfigured
 from .base import KeyValueStoreBackend
 
 try:
+    import couchbase_ffi # noqa
+except ImportError:
+    pass # noqa
+try:
     from couchbase import Couchbase
     from couchbase.connection import Connection
     from couchbase.exceptions import NotFoundError
