@@ -658,6 +658,14 @@ class test_GroupResult:
         restored = GroupResult.restore(ts.id, app=self.app)
         assert restored.id == ts.id
 
+    def test_restore_current_app_fallback(self):
+        subs = [MockAsyncResultSuccess(uuid(), app=self.app)]
+        ts = self.app.GroupResult(uuid(), subs)
+        ts.save()
+        with pytest.raises(RuntimeError,
+                           message="Test depends on current_app"):
+            GroupResult.restore(ts.id)
+
     def test_join_native(self):
         backend = SimpleBackend()
         results = [self.app.AsyncResult(uuid(), backend=backend)
