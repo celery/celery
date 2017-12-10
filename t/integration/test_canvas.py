@@ -146,16 +146,7 @@ class test_group:
         )
         res = c()
 
-        assert res.get(timeout=TIMEOUT) == [
-            11,
-            [
-                101,
-                [
-                    1001,
-                    2001,
-                ],
-            ]
-        ]
+        assert res.get(timeout=TIMEOUT) == [11, 101, 1001, 2001]
 
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
