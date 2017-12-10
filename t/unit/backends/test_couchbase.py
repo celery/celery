@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 
 import pytest
 from case import MagicMock, Mock, patch, sentinel, skip
-from kombu.utils.encoding import str_t
 
 from celery.app import backends
 from celery.backends import couchbase as module
