@@ -1,9 +1,14 @@
 """Worker Task Consumer Bootstep."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+from typing import Mapping
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.common import QoS, ignore_errors
 
 from celery import bootsteps
+from celery.types import WorkerConsumerT
 from celery.utils.log import get_logger
 
 from .mingle import Mingle
@@ -19,11 +24,11 @@ class Tasks(bootsteps.StartStopStep):
 
     requires = (Mingle,)
 
-    def __init__(self, c, **kwargs):
+    def __init__(self, c: WorkerConsumerT, **kwargs) -> None:
         c.task_consumer = c.qos = None
         super(Tasks, self).__init__(c, **kwargs)
 
-    def start(self, c):
+    async def start(self, c: WorkerConsumerT) -> None:
         """Start task consumer."""
         c.update_strategies()
 
@@ -41,20 +46,20 @@ class Tasks(bootsteps.StartStopStep):
             c.connection, on_decode_error=c.on_decode_error,
         )
 
-        def set_prefetch_count(prefetch_count):
-            return c.task_consumer.qos(
+        async def set_prefetch_count(prefetch_count: int) -> None:
+            await c.task_consumer.qos(
                 prefetch_count=prefetch_count,
                 apply_global=qos_global,
             )
         c.qos = QoS(set_prefetch_count, c.initial_prefetch_count)
 
-    def stop(self, c):
+    async def stop(self, c: WorkerConsumerT) -> None:
         """Stop task consumer."""
         if c.task_consumer:
             debug('Canceling task consumer...')
             ignore_errors(c, c.task_consumer.cancel)
 
-    def shutdown(self, c):
+    async def shutdown(self, c: WorkerConsumerT) -> None:
         """Shutdown task consumer."""
         if c.task_consumer:
             self.stop(c)
@@ -62,6 +67,6 @@ class Tasks(bootsteps.StartStopStep):
             ignore_errors(c, c.task_consumer.close)
             c.task_consumer = None
 
-    def info(self, c):
+    def info(self, c: WorkerConsumerT) -> Mapping:
         """Return task consumer info."""
         return {'prefetch_count': c.qos.value if c.qos else 'N/A'}

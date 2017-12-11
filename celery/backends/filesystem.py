@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 """File-system result store backend."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+import os
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import locale
 import os
 
@@ -40,7 +44,7 @@ class FilesystemBackend(KeyValueStoreBackend):
 
     def __init__(self, url=None, open=open, unlink=os.unlink, sep=os.sep,
                  encoding=default_encoding, *args, **kwargs):
-        super(FilesystemBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
         path = self._find_path(url)
 

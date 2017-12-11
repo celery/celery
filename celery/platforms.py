@@ -4,8 +4,6 @@
 Utilities dealing with platform specifics: signals, daemonization,
 users, groups, and so on.
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import atexit
 import errno
 import math
@@ -15,16 +13,24 @@ import platform as _platform
 import signal as _signal
 import sys
 import warnings
+<<<<<<< HEAD
 from collections import namedtuple
 from contextlib import contextmanager
 
 from billiard.compat import close_open_fds, get_fdmax
+=======
+
+from billiard.compat import get_fdmax, close_open_fds
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 # fileno used to be in this module
 from kombu.utils.compat import maybe_fileno
 from kombu.utils.encoding import safe_str
 
 from .exceptions import SecurityError
+<<<<<<< HEAD
 from .five import items, reraise, string_t
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from .local import try_import
 
 try:
@@ -66,8 +72,6 @@ PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
 
 PIDLOCKED = """ERROR: Pidfile ({0}) already exists.
 Seems we're already running? (pid: {1})"""
-
-_range = namedtuple('_range', ('start', 'stop'))
 
 C_FORCE_ROOT = os.environ.get('C_FORCE_ROOT', False)
 
@@ -124,7 +128,7 @@ class LockFailed(Exception):
     """Raised if a PID lock can't be acquired."""
 
 
-class Pidfile(object):
+class Pidfile:
     """Pidfile.
 
     This is the type returned by :func:`create_pidlock`.
@@ -146,8 +150,8 @@ class Pidfile(object):
         """Acquire lock."""
         try:
             self.write_pid()
-        except OSError as exc:
-            reraise(LockFailed, LockFailed(str(exc)), sys.exc_info()[2])
+        except FileExistsError as exc:
+            raise LockFailed(str(exc)).with_traceback(sys.exc_info()[2])
         return self
     __enter__ = acquire
 
@@ -299,7 +303,7 @@ def fd_by_path(paths):
     return [_fd for _fd in range(get_fdmax(2048)) if fd_in_stats(_fd)]
 
 
-class DaemonContext(object):
+class DaemonContext:
     """Context manager daemonizing the process."""
 
     _is_open = False
@@ -307,7 +311,7 @@ class DaemonContext(object):
     def __init__(self, pidfile=None, workdir=None, umask=None,
                  fake=False, after_chdir=None, after_forkers=True,
                  **kwargs):
-        if isinstance(umask, string_t):
+        if isinstance(umask, str):
             # octal or decimal, depending on initial zero.
             umask = int(umask, 8 if umask.startswith('0') else 10)
         self.workdir = workdir or DAEMON_WORKDIR
@@ -481,9 +485,7 @@ def setgroups(groups):
         pass
     try:
         return _setgroups_hack(groups[:max_groups])
-    except OSError as exc:
-        if exc.errno != errno.EPERM:
-            raise
+    except PermissionError:
         if any(group not in groups for group in os.getgroups()):
             # we shouldn't be allowed to change to this group.
             raise
@@ -563,17 +565,16 @@ def _setuid(uid, gid):
     # ... and make sure privileges cannot be restored:
     try:
         setuid(0)
-    except OSError as exc:
-        if exc.errno != errno.EPERM:
-            raise
+    except PermissionError:
         # we should get here: cannot restore privileges,
         # everything was fine.
+        pass
     else:
         raise SecurityError(
             'non-root user able to restore privileges after setuid.')
 
 
-class Signals(object):
+class Signals:
     """Convenience interface to :mod:`signals`.
 
     If the requested signal isn't supported on the current platform,
@@ -643,8 +644,7 @@ class Signals(object):
         """Get signal number by name."""
         if isinstance(name, numbers.Integral):
             return name
-        if not isinstance(name, string_t) \
-                or not name.isupper():
+        if not isinstance(name, str) or not name.isupper():
             raise TypeError('signal name must be uppercase string.')
         if not name.startswith('SIG'):
             name = 'SIG' + name
@@ -682,7 +682,7 @@ class Signals(object):
 
     def update(self, _d_=None, **sigmap):
         """Set signal handlers from a mapping."""
-        for name, handler in items(dict(_d_ or {}, **sigmap)):
+        for name, handler in dict(_d_ or {}, **sigmap).items():
             self[name] = handler
 
 
@@ -737,7 +737,7 @@ else:
 
 def get_errno_name(n):
     """Get errno for string (e.g., ``ENOENT``)."""
-    if isinstance(n, string_t):
+    if isinstance(n, str):
         return getattr(errno, n)
     return n
 

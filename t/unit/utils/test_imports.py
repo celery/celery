@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import pytest
@@ -6,6 +7,18 @@ from case import Mock
 from celery.five import bytes_if_py2
 from celery.utils.imports import (NotAPackage, find_module, gen_task_name,
                                   module_file, qualname, reload_from_cwd)
+=======
+import pytest
+from case import Mock
+from celery.utils.imports import (
+    NotAPackage,
+    qualname,
+    gen_task_name,
+    reload_from_cwd,
+    module_file,
+    find_module,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 def test_find_module():
@@ -18,9 +31,7 @@ def test_find_module():
 
 
 def test_qualname():
-    Class = type(bytes_if_py2('Fox'), (object,), {
-        '__module__': 'quick.brown',
-    })
+    Class = type('Fox', (object,), {'__module__': 'quick.brown'})
     assert qualname(Class) == 'quick.brown.Fox'
     assert qualname(Class()) == 'quick.brown.Fox'
 

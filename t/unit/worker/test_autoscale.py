@@ -1,11 +1,21 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import sys
 
+=======
+import sys
+from time import monotonic
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from case import Mock, mock, patch
 
 from celery.concurrency.base import BasePool
+<<<<<<< HEAD
 from celery.five import monotonic
+=======
+from celery.worker import state
+from celery.worker import autoscale
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.objects import Bunch
 from celery.worker import autoscale, state
 

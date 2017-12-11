@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Utilities for safely pickling exceptions."""
-from __future__ import absolute_import, unicode_literals
-
 import datetime
 import numbers
 import sys
@@ -10,12 +8,16 @@ from base64 import b64encode as base64encode
 from functools import partial
 from inspect import getmro
 from itertools import takewhile
+from typing import Any, AnyStr, Callable, Optional, Sequence, Union
 
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
+<<<<<<< HEAD
 from celery.five import (bytes_if_py2, items, python_2_unicode_compatible,
                          reraise, string_t)
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from .encoding import safe_repr
 
 try:
@@ -39,13 +41,15 @@ except NameError:  # pragma: no cover
     unwanted_base_classes = (Exception, BaseException, object)  # py3k
 
 
-def subclass_exception(name, parent, module):  # noqa
+def subclass_exception(name: str, parent: Any, module: str) -> Any:  # noqa
     """Create new exception class."""
-    return type(bytes_if_py2(name), (parent,), {'__module__': module})
+    return type(name, (parent,), {'__module__': module})
 
 
-def find_pickleable_exception(exc, loads=pickle.loads,
-                              dumps=pickle.dumps):
+def find_pickleable_exception(
+        exc: Exception,
+        loads: Callable[[AnyStr], Any]=pickle.loads,
+        dumps: Callable[[Any], AnyStr]=pickle.dumps) -> Optional[Exception]:
     """Find first pickleable exception base class.
 
     With an exception instance, iterate over its super classes (by MRO)
@@ -73,18 +77,18 @@ def find_pickleable_exception(exc, loads=pickle.loads,
             return superexc
 
 
-def itermro(cls, stop):
+def itermro(cls: Any, stop: Any) -> Any:
     return takewhile(lambda sup: sup not in stop, getmro(cls))
 
 
-def create_exception_cls(name, module, parent=None):
+def create_exception_cls(name: str, module: str,
+                         parent: Optional[Any]=None) -> Exception:
     """Dynamically create an exception class."""
     if not parent:
         parent = Exception
     return subclass_exception(name, parent, module)
 
 
-@python_2_unicode_compatible
 class UnpickleableExceptionWrapper(Exception):
     """Wraps unpickleable exceptions.
 
@@ -107,15 +111,16 @@ class UnpickleableExceptionWrapper(Exception):
     """
 
     #: The module of the original exception.
-    exc_module = None
+    exc_module: str = None
 
     #: The name of the original exception class.
-    exc_cls_name = None
+    exc_cls_name: str = None
 
     #: The arguments for the original exception.
-    exc_args = None
+    exc_args: Sequence[Any] = None
 
-    def __init__(self, exc_module, exc_cls_name, exc_args, text=None):
+    def __init__(self, exc_module: str, exc_cls_name: str,
+                 exc_args: Sequence[Any], text: Optional[str]=None) -> None:
         safe_exc_args = []
         for arg in exc_args:
             try:
@@ -129,22 +134,22 @@ class UnpickleableExceptionWrapper(Exception):
         self.text = text
         Exception.__init__(self, exc_module, exc_cls_name, safe_exc_args, text)
 
-    def restore(self):
+    def restore(self) -> Exception:
         return create_exception_cls(self.exc_cls_name,
                                     self.exc_module)(*self.exc_args)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.text
 
     @classmethod
-    def from_exception(cls, exc):
+    def from_exception(cls, exc: Exception) -> 'UnpickleableExceptionWrapper':
         return cls(exc.__class__.__module__,
                    exc.__class__.__name__,
                    getattr(exc, 'args', []),
                    safe_repr(exc))
 
 
-def get_pickleable_exception(exc):
+def get_pickleable_exception(exc: Exception) -> Exception:
     """Make sure exception is pickleable."""
     try:
         pickle.loads(pickle.dumps(exc))
@@ -158,7 +163,10 @@ def get_pickleable_exception(exc):
     return UnpickleableExceptionWrapper.from_exception(exc)
 
 
-def get_pickleable_etype(cls, loads=pickle.loads, dumps=pickle.dumps):
+def get_pickleable_etype(
+        cls: Any,
+        loads: Callable[[AnyStr], Any]=pickle.loads,
+        dumps: Callable[[Any], AnyStr]=pickle.dumps) -> Exception:
     """Get pickleable exception type."""
     try:
         loads(dumps(cls))
@@ -168,29 +176,30 @@ def get_pickleable_etype(cls, loads=pickle.loads, dumps=pickle.dumps):
         return cls
 
 
-def get_pickled_exception(exc):
+def get_pickled_exception(exc: Exception) -> Exception:
     """Reverse of :meth:`get_pickleable_exception`."""
     if isinstance(exc, UnpickleableExceptionWrapper):
         return exc.restore()
     return exc
 
 
-def b64encode(s):
+def b64encode(s: AnyStr) -> str:
     return bytes_to_str(base64encode(str_to_bytes(s)))
 
 
-def b64decode(s):
+def b64decode(s: AnyStr) -> bytes:
     return base64decode(str_to_bytes(s))
 
 
-def strtobool(term, table={'false': False, 'no': False, '0': False,
-                           'true': True, 'yes': True, '1': True,
-                           'on': True, 'off': False}):
+def strtobool(term: Union[str, bool],
+              table={'false': False, 'no': False, '0': False,
+                     'true': True, 'yes': True, '1': True,
+                     'on': True, 'off': False}) -> bool:
     """Convert common terms for true/false to bool.
 
     Examples (true/false/yes/no/on/off/1/0).
     """
-    if isinstance(term, string_t):
+    if isinstance(term, str):
         try:
             return table[term.lower()]
         except KeyError:
@@ -216,10 +225,10 @@ def _datetime_to_json(dt):
         return dt.isoformat()
 
 
-def jsonify(obj,
-            builtin_types=(numbers.Real, string_t), key=None,
-            keyfilter=None,
-            unknown_type_filter=None):
+def jsonify(obj: Any,
+            builtin_types=(numbers.Real, str), key: Optional[str]=None,
+            keyfilter: Optional[Callable[[str], Any]]=None,
+            unknown_type_filter: Optional[Callable[[Any], Any]]=None) -> Any:
     """Transform object making it suitable for json serialization."""
     from kombu.abstract import Object as KombuDictType
     _jsonify = partial(jsonify, builtin_types=builtin_types, key=key,
@@ -235,7 +244,7 @@ def jsonify(obj,
         return [_jsonify(v) for v in obj]
     elif isinstance(obj, dict):
         return {
-            k: _jsonify(v, key=k) for k, v in items(obj)
+            k: _jsonify(v, key=k) for k, v in obj.items()
             if (keyfilter(k) if keyfilter else 1)
         }
     elif isinstance(obj, (datetime.date, datetime.time)):
@@ -250,27 +259,12 @@ def jsonify(obj,
         return unknown_type_filter(obj)
 
 
-# Since PyPy 3 targets Python 3.2, 'raise exc from None' will
-# raise a TypeError so we need to look for Python 3.3 or newer
-if PY33:  # pragma: no cover
-    from vine.five import exec_
-    _raise_with_context = None  # for flake8
-    exec_("""def _raise_with_context(exc, ctx): raise exc from ctx""")
-
-    def raise_with_context(exc):
-        exc_info = sys.exc_info()
-        if not exc_info:
-            raise exc
-        elif exc_info[1] is exc:
+def maybe_reraise() -> None:
+    """Re-raise the current exception if any, or do nothing."""
+    exc_info = sys.exc_info()
+    try:
+        if exc_info[2]:
             raise
-        _raise_with_context(exc, exc_info[1])
-else:
-    def raise_with_context(exc):
-        exc_info = sys.exc_info()
-        if not exc_info:
-            raise exc
-        if exc_info[1] is exc:
-            raise
-        elif exc_info[2]:
-            reraise(type(exc), exc, exc_info[2])
-        raise exc
+    finally:
+        # see http://docs.python.org/library/sys.html#sys.exc_info
+        del(exc_info)

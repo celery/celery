@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import gc
 import sys
 import time
@@ -31,7 +34,7 @@ def receiver_1_arg(val, **kwargs):
     return val
 
 
-class Callable(object):
+class Callable:
 
     def __call__(self, val, **kwargs):
         return val

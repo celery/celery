@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 """SQLAlchemy session."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 from kombu.utils.compat import register_after_fork
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -17,7 +20,7 @@ def _after_fork_cleanup_session(session):
     session._after_fork()
 
 
-class SessionManager(object):
+class SessionManager:
     """Manage SQLAlchemy sessions."""
 
     def __init__(self):

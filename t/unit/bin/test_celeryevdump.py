@@ -1,17 +1,29 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+import io
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from time import time
 
 from case import Mock, patch
+<<<<<<< HEAD
 
 from celery.events.dumper import Dumper, evdump, humanize_type
 from celery.five import WhateverIO
+=======
+from celery.events.dumper import (
+    humanize_type,
+    Dumper,
+    evdump,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class test_Dumper:
 
     def setup(self):
-        self.out = WhateverIO()
+        self.out = io.StringIO()
         self.dumper = Dumper(out=self.out)
 
     def test_humanize_type(self):

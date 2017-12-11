@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+import pytest
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import socket
 
 import pytest
@@ -9,7 +13,7 @@ from celery.events import Event
 from celery.events.receiver import CLIENT_CLOCK_SKEW
 
 
-class MockProducer(object):
+class MockProducer:
 
     raise_on_publish = False
 
@@ -178,14 +182,6 @@ class test_EventDispatcher:
             dispatcher.enable()
             assert dispatcher.enabled
             assert dispatcher.producer
-
-            # XXX test compat attribute
-            assert dispatcher.publisher is dispatcher.producer
-            prev, dispatcher.publisher = dispatcher.producer, 42
-            try:
-                assert dispatcher.producer == 42
-            finally:
-                dispatcher.producer = prev
         finally:
             channel.close()
             connection.close()

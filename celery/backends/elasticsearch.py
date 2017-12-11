@@ -1,7 +1,10 @@
 # -* coding: utf-8 -*-
 """Elasticsearch result store backend."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from datetime import datetime
 
 from kombu.utils.encoding import bytes_to_str
@@ -43,7 +46,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     es_max_retries = 3
 
     def __init__(self, url=None, *args, **kwargs):
-        super(ElasticsearchBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
         _get = self.app.conf.get
 

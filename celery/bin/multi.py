@@ -93,8 +93,11 @@ Examples
     celery worker -n baz@myhost -c 10
     celery worker -n xuzzy@myhost -c 3
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, print_function, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import os
 import signal
 import sys
@@ -162,7 +165,7 @@ def using_cluster_and_sig(fun):
     return _inner
 
 
-class TermLogger(object):
+class TermLogger:
 
     splash_text = 'celery multi v{version}'
     splash_context = {'version': VERSION_BANNER}

@@ -1,7 +1,12 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import random
 import ssl
+=======
+import pytest
+from datetime import timedelta
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
@@ -11,8 +16,12 @@ from case import ANY, ContextMock, Mock, call, mock, patch, skip
 
 from celery import signature, states, uuid
 from celery.canvas import Signature
+<<<<<<< HEAD
 from celery.exceptions import (ChordError, CPendingDeprecationWarning,
                                ImproperlyConfigured)
+=======
+from celery.exceptions import ChordError, ImproperlyConfigured
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.collections import AttributeDict
 
 
@@ -26,14 +35,19 @@ def raise_on_second_call(mock, exc, *retval):
         mock.return_value, = retval
 
 
-class Connection(object):
+class Connection:
     connected = True
 
     def disconnect(self):
         self.connected = False
 
 
+<<<<<<< HEAD
 class Pipeline(object):
+=======
+class Pipeline:
+
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
     def __init__(self, client):
         self.client = client
         self.steps = []
@@ -105,6 +119,7 @@ class Redis(mock.MockCallbacks):
         return len(self.keyspace.get(key) or [])
 
 
+<<<<<<< HEAD
 class Sentinel(mock.MockCallbacks):
     def __init__(self, sentinels, min_other_sentinels=0, sentinel_kwargs=None,
                  **connection_kwargs):
@@ -126,6 +141,18 @@ class redis(object):
             pass
 
     class UnixDomainSocketConnection(object):
+=======
+class redis:
+    StrictRedis = Redis
+
+    class ConnectionPool:
+
+        def __init__(self, **kwargs):
+            pass
+
+    class UnixDomainSocketConnection:
+
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
         def __init__(self, **kwargs):
             pass
 
@@ -194,6 +221,7 @@ class test_RedisBackend:
         assert 'socket_connect_timeout' not in x.connparams
         assert x.connparams['db'] == 3
 
+<<<<<<< HEAD
     @skip.unless_module('redis')
     def test_backend_ssl(self):
         self.app.conf.redis_backend_use_ssl = {
@@ -235,6 +263,8 @@ class test_RedisBackend:
         with pytest.warns(CPendingDeprecationWarning):
             assert x.password == 'bosco'
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
     def test_conf_raises_KeyError(self):
         self.app.conf = AttributeDict({
             'result_serializer': 'json',

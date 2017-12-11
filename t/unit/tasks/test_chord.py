@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+import pytest
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from contextlib import contextmanager
 
 import pytest
@@ -7,8 +11,12 @@ from case import Mock
 
 from celery import canvas, group, result, uuid
 from celery.exceptions import ChordError, Retry
+<<<<<<< HEAD
 from celery.five import range
 from celery.result import AsyncResult, EagerResult, GroupResult
+=======
+from celery.result import AsyncResult, GroupResult, EagerResult
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 def passthru(x):

@@ -1,16 +1,25 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import errno
 from datetime import datetime, timedelta
 from pickle import dumps, loads
 
 import pytest
 from case import Mock, call, patch, skip
+<<<<<<< HEAD
 
 from celery import beat, uuid
 from celery.beat import event_t
 from celery.five import keys, string_t
 from celery.schedules import crontab, schedule
+=======
+from celery import beat
+from celery import uuid
+from celery.schedules import schedule
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.objects import Bunch
 
 
@@ -25,7 +34,7 @@ class MockShelve(dict):
         self.synced = True
 
 
-class MockService(object):
+class MockService:
     started = False
     stopped = False
 
@@ -238,7 +247,7 @@ class test_Scheduler:
 
     def test_info(self):
         scheduler = mScheduler(app=self.app)
-        assert isinstance(scheduler.info, string_t)
+        assert isinstance(scheduler.info, str)
 
     def test_maybe_entry(self):
         s = mScheduler(app=self.app)
@@ -560,7 +569,7 @@ class test_Service:
         assert isinstance(schedule, dict)
         assert isinstance(s.scheduler, beat.Scheduler)
         scheduled = list(schedule.keys())
-        for task_name in keys(sh[str('entries')]):
+        for task_name in sh[str('entries')].keys():
             assert task_name in scheduled
 
         s.sync()
@@ -614,7 +623,7 @@ class test_EmbeddedService:
         assert isinstance(s.service, beat.Service)
         s.service = MockService()
 
-        class _Popen(object):
+        class _Popen:
             terminated = False
 
             def terminate(self):

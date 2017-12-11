@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Registry of available tasks."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import inspect
@@ -8,6 +9,14 @@ from importlib import import_module
 from celery._state import get_current_app
 from celery.exceptions import InvalidTaskError, NotRegistered
 from celery.five import items
+=======
+import inspect
+from importlib import import_module
+from typing import Any
+from celery._state import get_current_app
+from celery.exceptions import NotRegistered, InvalidTaskError
+from celery.types import TaskT
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 __all__ = ('TaskRegistry',)
 
@@ -17,10 +26,10 @@ class TaskRegistry(dict):
 
     NotRegistered = NotRegistered
 
-    def __missing__(self, key):
+    def __missing__(self, key: str) -> Any:
         raise self.NotRegistered(key)
 
-    def register(self, task):
+    def register(self, task: TaskT) -> None:
         """Register a task in the task registry.
 
         The task will be automatically instantiated if not already an
@@ -32,7 +41,7 @@ class TaskRegistry(dict):
                     type(task).__name__))
         self[task.name] = inspect.isclass(task) and task() or task
 
-    def unregister(self, name):
+    def unregister(self, name: str) -> None:
         """Unregister task by name.
 
         Arguments:
@@ -47,23 +56,12 @@ class TaskRegistry(dict):
         except KeyError:
             raise self.NotRegistered(name)
 
-    # -- these methods are irrelevant now and will be removed in 4.0
-    def regular(self):
-        return self.filter_types('regular')
 
-    def periodic(self):
-        return self.filter_types('periodic')
-
-    def filter_types(self, type):
-        return {name: task for name, task in items(self)
-                if getattr(task, 'type', 'regular') == type}
-
-
-def _unpickle_task(name):
+def _unpickle_task(name: str) -> TaskT:
     return get_current_app().tasks[name]
 
 
-def _unpickle_task_v2(name, module=None):
+def _unpickle_task_v2(name: str, module: str = None) -> TaskT:
     if module:
         import_module(module)
     return get_current_app().tasks[name]

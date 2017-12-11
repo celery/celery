@@ -1,25 +1,39 @@
 # -*- coding: utf-8 -*-
 """Task implementation: request context and the task base class."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
+
+from datetime import datetime
+from typing import (
+    Any, Awaitable, Callable, Iterable, Mapping, Sequence, Tuple, Union,
+)
 
 from billiard.einfo import ExceptionInfo
 from kombu.exceptions import OperationalError
+from kombu.types import ProducerT
 from kombu.utils.uuid import uuid
 
 from celery import current_app, group, states
 from celery._state import _task_stack
 from celery.canvas import signature
 from celery.exceptions import Ignore, MaxRetriesExceededError, Reject, Retry
-from celery.five import items, python_2_unicode_compatible
 from celery.local import class_property
+<<<<<<< HEAD
 from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import raise_with_context
+=======
+from celery.result import EagerResult
+from celery.types import (
+    AppT, BackendT, ResultT, SignatureT, TaskT, TracerT, WorkerConsumerT,
+)
+from celery.utils import abstract
+from celery.utils.functional import mattrgetter, maybe_list
+from celery.utils.imports import instantiate
+from celery.utils.threads import LocalStack
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
@@ -44,15 +58,14 @@ R_INSTANCE = '<@task: {0.name} of {app}{flags}>'
 TaskType = type
 
 
-def _strflags(flags, default=''):
+def _strflags(flags: Sequence, default: str = '') -> str:
     if flags:
         return ' ({0})'.format(', '.join(flags))
     return default
 
 
-def _reprtask(task, fmt=None, flags=None):
+def _reprtask(task: TaskT, fmt: str = None, flags: Sequence = None) -> str:
     flags = list(flags) if flags is not None else []
-    flags.append('v2 compatible') if task.__v2_compat__ else None
     if not fmt:
         fmt = R_BOUND_TASK if task._app else R_UNBOUND_TASK
     return fmt.format(
@@ -61,55 +74,57 @@ def _reprtask(task, fmt=None, flags=None):
     )
 
 
-@python_2_unicode_compatible
-class Context(object):
+class Context:
     """Task request variables (Task.request)."""
 
-    logfile = None
-    loglevel = None
-    hostname = None
-    id = None
-    args = None
-    kwargs = None
-    retries = 0
-    eta = None
-    expires = None
-    is_eager = False
-    headers = None
-    delivery_info = None
-    reply_to = None
-    root_id = None
-    parent_id = None
-    correlation_id = None
-    taskset = None   # compat alias to group
-    group = None
-    chord = None
-    chain = None
-    utc = None
-    called_directly = True
-    callbacks = None
-    errbacks = None
-    timelimit = None
-    origin = None
-    _children = None   # see property
-    _protected = 0
+    logfile: str = None
+    loglevel: int = None
+    hostname: str = None
+    id: str = None
+    args: Sequence = None
+    kwargs: Mapping = None
+    retries: int = 0
+    eta: datetime = None
+    expires: Union[float, datetime] = None
+    is_eager: bool = False
+    headers: Mapping = None
+    delivery_info: Mapping = None
+    reply_to: str = None
+    root_id: str = None
+    parent_id: str = None
+    correlation_id: str = None
+    # compat alias to group
+    taskset: str = None
+    group: str = None
+    chord: SignatureT = None
+    chain: Sequence[SignatureT] = None
+    utc: bool = None
+    called_directly: bool = True
+    callbacks: Sequence[SignatureT] = None
+    errbacks: Sequence[SignatureT] = None
+    timelimit: Tuple[float, float] = None
+    origin: str = None
 
-    def __init__(self, *args, **kwargs):
+    # see property
+    _children: Sequence[ResultT] = None
+    _protected: int = 0
+
+    def __init__(self, *args, **kwargs) -> None:
         self.update(*args, **kwargs)
 
-    def update(self, *args, **kwargs):
-        return self.__dict__.update(*args, **kwargs)
+    def update(self, *args, **kwargs) -> None:
+        self.__dict__.update(*args, **kwargs)
 
-    def clear(self):
-        return self.__dict__.clear()
+    def clear(self) -> None:
+        self.__dict__.clear()
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Any = None) -> Any:
         return getattr(self, key, default)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Context: {0!r}>'.format(vars(self))
 
-    def as_execution_options(self):
+    def as_execution_options(self) -> Mapping:
         limit_hard, limit_soft = self.timelimit or (None, None)
         return {
             'task_id': self.id,
@@ -130,16 +145,20 @@ class Context(object):
         }
 
     @property
+<<<<<<< HEAD
     def children(self):
         # children must be an empty list for every thread
+=======
+    def children(self) -> Sequence[ResultT]:
+        # children must be an empy list for every thread
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
         if self._children is None:
             self._children = []
         return self._children
 
 
 @abstract.CallableTask.register
-@python_2_unicode_compatible
-class Task(object):
+class Task:
     """Task base class.
 
     Note:
@@ -148,7 +167,7 @@ class Task(object):
         is overridden).
     """
 
-    __trace__ = None
+    __trace__: TracerT = None
     __v2_compat__ = False  # set by old base in celery.task.base
 
     MaxRetriesExceededError = MaxRetriesExceededError
@@ -161,42 +180,42 @@ class Task(object):
     Request = 'celery.worker.request:Request'
 
     #: This is the instance bound to if the task is a method of a class.
-    __self__ = None
+    __self__: Any = None
 
     #: The application instance associated with this task class.
-    _app = None
+    _app: AppT = None
 
     #: Name of the task.
-    name = None
+    name: str = None
 
     #: Enable argument checking.
     #: You can set this to false if you don't want the signature to be
     #: checked when calling the task.
     #: Defaults to :attr:`app.strict_typing <@Celery.strict_typing>`.
-    typing = None
+    typing: bool = None
 
     #: Maximum number of retries before giving up.  If set to :const:`None`,
     #: it will **never** stop retrying.
-    max_retries = 3
+    max_retries: int = 3
 
     #: Default time in seconds before a retry of the task should be
     #: executed.  3 minutes by default.
-    default_retry_delay = 3 * 60
+    default_retry_delay = 180.0
 
     #: Rate limit for this task type.  Examples: :const:`None` (no rate
     #: limit), `'100/s'` (hundred tasks a second), `'100/m'` (hundred tasks
     #: a minute),`'100/h'` (hundred tasks an hour)
-    rate_limit = None
+    rate_limit: Union[int, str] = None
 
     #: If enabled the worker won't store task state and return values
     #: for this task.  Defaults to the :setting:`task_ignore_result`
     #: setting.
-    ignore_result = None
+    ignore_result: bool = None
 
     #: If enabled the request will keep track of subtasks started by
     #: this task, and this information will be sent with the result
     #: (``result.children``).
-    trail = True
+    trail: bool = True
 
     #: If enabled the worker will send monitoring events related to
     #: this task (but only if the worker is configured to send
@@ -204,29 +223,29 @@ class Task(object):
     #: Note that this has no effect on the task-failure event case
     #: where a task is not registered (as it will have no task class
     #: to check this flag).
-    send_events = True
+    send_events: bool = True
 
     #: When enabled errors will be stored even if the task is otherwise
     #: configured to ignore results.
-    store_errors_even_if_ignored = None
+    store_errors_even_if_ignored: bool = None
 
     #: The name of a serializer that are registered with
     #: :mod:`kombu.serialization.registry`.  Default is `'pickle'`.
-    serializer = None
+    serializer: str = None
 
     #: Hard time limit.
     #: Defaults to the :setting:`task_time_limit` setting.
-    time_limit = None
+    time_limit: float = None
 
     #: Soft time limit.
     #: Defaults to the :setting:`task_soft_time_limit` setting.
-    soft_time_limit = None
+    soft_time_limit: float = None
 
     #: The result store backend used for this task.
-    backend = None
+    backend: BackendT = None
 
     #: If disabled this task won't be registered automatically.
-    autoregister = True
+    autoregister: bool = True
 
     #: If enabled the task will report its status as 'started' when the task
     #: is executed by a worker.  Disabled by default as the normal behavior
@@ -239,7 +258,7 @@ class Task(object):
     #:
     #: The application default can be overridden using the
     #: :setting:`task_track_started` setting.
-    track_started = None
+    track_started: bool = None
 
     #: When enabled messages for this task will be acknowledged **after**
     #: the task has been executed, and not *just before* (the
@@ -250,7 +269,7 @@ class Task(object):
     #:
     #: The application default can be overridden with the
     #: :setting:`task_acks_late` setting.
-    acks_late = None
+    acks_late: bool = None
 
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
@@ -262,7 +281,7 @@ class Task(object):
     #:
     #: Warning: Enabling this can cause message loops; make sure you know
     #: what you're doing.
-    reject_on_worker_lost = None
+    reject_on_worker_lost: bool = None
 
     #: Tuple of expected exceptions.
     #:
@@ -270,29 +289,29 @@ class Task(object):
     #: and that shouldn't be regarded as a real error by the worker.
     #: Currently this means that the state will be updated to an error
     #: state, but the worker won't log the event as an error.
-    throws = ()
+    throws: Tuple[type] = ()
 
     #: Default task expiry time.
-    expires = None
+    expires: float = None
 
     #: Max length of result representation used in logs and events.
-    resultrepr_maxsize = 1024
+    resultrepr_maxsize: int = 1024
 
     #: Task request stack, the current request will be the topmost.
-    request_stack = None
+    request_stack: LocalStack = None
 
     #: Some may expect a request to exist even if the task hasn't been
     #: called.  This should probably be deprecated.
-    _default_request = None
+    _default_request: Context = None
 
     #: Deprecated attribute ``abstract`` here for compatibility.
-    abstract = True
+    abstract: bool = True
 
-    _exec_options = None
+    _exec_options: Mapping = None
 
-    __bound__ = False
+    __bound__: bool = False
 
-    from_config = (
+    from_config: Tuple[Tuple[str, str], ...] = (
         ('serializer', 'task_serializer'),
         ('rate_limit', 'task_default_rate_limit'),
         ('track_started', 'task_track_started'),
@@ -302,13 +321,14 @@ class Task(object):
         ('store_errors_even_if_ignored', 'task_store_errors_even_if_ignored'),
     )
 
-    _backend = None  # set by backend property.
+    # set by backend property.
+    _backend: BackendT = None
 
     # - Tasks are lazily bound, so that configuration is not set
     # - until the task is actually used
 
     @classmethod
-    def bind(cls, app):
+    def bind(cls, app: AppT) -> AppT:
         was_bound, cls.__bound__ = cls.__bound__, True
         cls._app = app
         conf = app.conf
@@ -334,17 +354,17 @@ class Task(object):
         return app
 
     @classmethod
-    def on_bound(cls, app):
+    def on_bound(cls, app: AppT) -> None:
         """Called when the task is bound to an app.
 
         Note:
             This class method can be defined to do additional actions when
             the task class is bound to an app.
         """
-        pass
+        ...
 
     @classmethod
-    def _get_app(cls):
+    def _get_app(cls) -> AppT:
         if cls._app is None:
             cls._app = current_app
         if not cls.__bound__:
@@ -355,16 +375,16 @@ class Task(object):
     app = class_property(_get_app, bind)
 
     @classmethod
-    def annotate(cls):
+    def annotate(cls) -> None:
         for d in resolve_all_annotations(cls.app.annotations, cls):
-            for key, value in items(d):
+            for key, value in d.items():
                 if key.startswith('@'):
                     cls.add_around(key[1:], value)
                 else:
                     setattr(cls, key, value)
 
     @classmethod
-    def add_around(cls, attr, around):
+    def add_around(cls, attr: str, around: Callable) -> None:
         orig = getattr(cls, attr)
         if getattr(orig, '__wrapped__', None):
             orig = orig.__wrapped__
@@ -372,7 +392,7 @@ class Task(object):
         meth.__wrapped__ = orig
         setattr(cls, attr, meth)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> Any:
         _task_stack.push(self)
         self.push_request(args=args, kwargs=kwargs)
         try:
@@ -384,8 +404,13 @@ class Task(object):
             self.pop_request()
             _task_stack.pop()
 
+<<<<<<< HEAD
     def __reduce__(self):
         # - tasks are pickled into the name of the task only, and the receiver
+=======
+    def __reduce__(self) -> Tuple:
+        # - tasks are pickled into the name of the task only, and the reciever
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
         # - simply grabs it from the local registry.
         # - in later versions the module of the task is also included,
         # - and the receiving side tries to import that module so that
@@ -394,14 +419,15 @@ class Task(object):
         mod = mod if mod and mod in sys.modules else None
         return (_unpickle_task_v2, (self.name, mod), None)
 
-    def run(self, *args, **kwargs):
+    def run(self, *args, **kwargs) -> Any:
         """The body of the task executed by workers."""
         raise NotImplementedError('Tasks must define the run method.')
 
-    def start_strategy(self, app, consumer, **kwargs):
+    def start_strategy(self, app: AppT, consumer: WorkerConsumerT,
+                       **kwargs) -> Callable:
         return instantiate(self.Strategy, self, app, consumer, **kwargs)
 
-    def delay(self, *args, **kwargs):
+    def delay(self, *args, **kwargs) -> ResultT:
         """Star argument version of :meth:`apply_async`.
 
         Does not support the extra options enabled by :meth:`apply_async`.
@@ -414,8 +440,15 @@ class Task(object):
         """
         return self.apply_async(args, kwargs)
 
-    def apply_async(self, args=None, kwargs=None, task_id=None, producer=None,
-                    link=None, link_error=None, shadow=None, **options):
+    def apply_async(self,
+                    args: Sequence = None,
+                    kwargs: Mapping = None,
+                    task_id: str = None,
+                    producer: ProducerT = None,
+                    link: Sequence[SignatureT] = None,
+                    link_error: Sequence[SignatureT] = None,
+                    shadow: str = None,
+                    **options) -> ResultT:
         """Apply tasks asynchronously by sending a message.
 
         Arguments:
@@ -493,8 +526,6 @@ class Task(object):
                 attribute.  Trailing can also be disabled by default using the
                 :attr:`trail` attribute
 
-            publisher (kombu.Producer): Deprecated alias to ``producer``.
-
             headers (Dict): Message headers to be included in the message.
 
         Returns:
@@ -539,7 +570,10 @@ class Task(object):
             **options
         )
 
-    def shadow_name(self, args, kwargs, options):
+    def shadow_name(self,
+                    args: Sequence,
+                    kwargs: Mapping,
+                    options: Mapping) -> str:
         """Override for custom task name in worker logs/monitoring.
 
         Example:
@@ -561,8 +595,12 @@ class Task(object):
         """
         pass
 
-    def signature_from_request(self, request=None, args=None, kwargs=None,
-                               queue=None, **extra_options):
+    def signature_from_request(self,
+                               request: Context = None,
+                               args: Sequence = None,
+                               kwargs: Mapping = None,
+                               queue: str = None,
+                               **extra_options) -> SignatureT:
         request = self.request if request is None else request
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
@@ -583,8 +621,15 @@ class Task(object):
         )
     subtask_from_request = signature_from_request  # XXX compat
 
-    def retry(self, args=None, kwargs=None, exc=None, throw=True,
-              eta=None, countdown=None, max_retries=None, **options):
+    def retry(self,
+              args: Sequence = None,
+              kwargs: Mapping = None,
+              exc: Exception = None,
+              throw: bool = True,
+              eta: datetime = None,
+              countdown: float = None,
+              max_retries: int = None,
+              **options) -> None:
         """Retry the task.
 
         Example:
@@ -653,7 +698,8 @@ class Task(object):
         if request.called_directly:
             # raises orig stack if PyErr_Occurred,
             # and augments with exc' if that argument is defined.
-            raise_with_context(exc or Retry('Task can be retried', None))
+            exc = exc or Retry('Task can be retried', None)
+            raise exc from sys.exc_info()[2]
 
         if not eta and countdown is None:
             countdown = self.default_retry_delay
@@ -669,7 +715,7 @@ class Task(object):
             if exc:
                 # On Py3: will augment any current exception with
                 # the exc' argument provided (raise exc from orig)
-                raise_with_context(exc)
+                raise exc from sys.exc_info()[2]
             raise self.MaxRetriesExceededError(
                 "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
                     self.name, request.id, S.args, S.kwargs))
@@ -692,10 +738,18 @@ class Task(object):
             raise ret
         return ret
 
-    def apply(self, args=None, kwargs=None,
-              link=None, link_error=None,
-              task_id=None, retries=None, throw=None,
-              logfile=None, loglevel=None, headers=None, **options):
+    def apply(self,
+              args: Sequence = None,
+              kwargs: Mapping = None,
+              link: Sequence[SignatureT] = None,
+              link_error: Sequence[SignatureT] = None,
+              task_id: str = None,
+              retries: int = None,
+              throw: bool = None,
+              logfile: str = None,
+              loglevel: int = None,
+              headers: Mapping = None,
+              **options) -> ResultT:
         """Execute this task locally, by blocking until the task returns.
 
         Arguments:
@@ -748,16 +802,17 @@ class Task(object):
         state = states.SUCCESS if ret.info is None else ret.info.state
         return EagerResult(task_id, retval, state, traceback=tb)
 
-    def AsyncResult(self, task_id, **kwargs):
+    def AsyncResult(self, task_id: str, **kwargs) -> ResultT:
         """Get AsyncResult instance for this kind of task.
 
         Arguments:
             task_id (str): Task id to get result for.
         """
-        return self._get_app().AsyncResult(task_id, backend=self.backend,
-                                           task_name=self.name, **kwargs)
+        return self._get_app().AsyncResult(
+            task_id, backend=self.backend, **kwargs)
 
-    def signature(self, args=None, *starargs, **starkwargs):
+    def signature(self, args: Sequence = None,
+                  *starargs, **starkwargs) -> SignatureT:
         """Create signature.
 
         Returns:
@@ -769,36 +824,39 @@ class Task(object):
         return signature(self, args, *starargs, **starkwargs)
     subtask = signature
 
-    def s(self, *args, **kwargs):
+    def s(self, *args, **kwargs) -> SignatureT:
         """Create signature.
 
         Shortcut for ``.s(*a, **k) -> .signature(a, k)``.
         """
         return self.signature(args, kwargs)
 
-    def si(self, *args, **kwargs):
+    def si(self, *args, **kwargs) -> SignatureT:
         """Create immutable signature.
 
         Shortcut for ``.si(*a, **k) -> .signature(a, k, immutable=True)``.
         """
         return self.signature(args, kwargs, immutable=True)
 
-    def chunks(self, it, n):
+    def chunks(self, it: Iterable, n: int) -> SignatureT:
         """Create a :class:`~celery.canvas.chunks` task for this task."""
         from celery import chunks
         return chunks(self.s(), it, n, app=self.app)
 
-    def map(self, it):
+    def map(self, it: Iterable) -> SignatureT:
         """Create a :class:`~celery.canvas.xmap` task from ``it``."""
         from celery import xmap
         return xmap(self.s(), it, app=self.app)
 
-    def starmap(self, it):
+    def starmap(self, it: Iterable) -> SignatureT:
         """Create a :class:`~celery.canvas.xstarmap` task from ``it``."""
         from celery import xstarmap
         return xstarmap(self.s(), it, app=self.app)
 
-    def send_event(self, type_, retry=True, retry_policy=None, **fields):
+    def send_event(self, type_: str,
+                   retry: bool = True,
+                   retry_policy: Mapping = None,
+                   **fields) -> Awaitable:
         """Send monitoring event message.
 
         This can be used to add custom event types in :pypi:`Flower`
@@ -824,7 +882,7 @@ class Task(object):
                 type_,
                 uuid=req.id, retry=retry, retry_policy=retry_policy, **fields)
 
-    def replace(self, sig):
+    def replace(self, sig: SignatureT) -> None:
         """Replace this task, with a new task inheriting the task id.
 
         .. versionadded:: 4.0
@@ -864,7 +922,8 @@ class Task(object):
         sig.delay()
         raise Ignore('Replaced by new task')
 
-    def add_to_chord(self, sig, lazy=False):
+    def add_to_chord(self, sig: SignatureT,
+                     lazy: bool = False) -> Union[ResultT, SignatureT]:
         """Add signature to the chord the current task is a member of.
 
         .. versionadded:: 4.0
@@ -884,7 +943,10 @@ class Task(object):
         self.backend.add_to_chord(self.request.group, result)
         return sig.delay() if not lazy else sig
 
-    def update_state(self, task_id=None, state=None, meta=None):
+    def update_state(self,
+                     task_id: str = None,
+                     state: str = None,
+                     meta: Mapping = None) -> None:
         """Update task state.
 
         Arguments:
@@ -897,7 +959,11 @@ class Task(object):
             task_id = self.request.id
         self.backend.store_result(task_id, meta, state)
 
-    def on_success(self, retval, task_id, args, kwargs):
+    def on_success(self,
+                   retval: Any,
+                   task_id: str,
+                   args: Sequence,
+                   kwargs: Mapping) -> None:
         """Success handler.
 
         Run by the worker if the task executes successfully.
@@ -911,9 +977,14 @@ class Task(object):
         Returns:
             None: The return value of this handler is ignored.
         """
-        pass
+        ...
 
-    def on_retry(self, exc, task_id, args, kwargs, einfo):
+    def on_retry(self,
+                 exc: Exception,
+                 task_id: str,
+                 args: Sequence,
+                 kwargs: Mapping,
+                 einfo: ExceptionInfo) -> None:
         """Retry handler.
 
         This is run by the worker when the task is to be retried.
@@ -928,9 +999,14 @@ class Task(object):
         Returns:
             None: The return value of this handler is ignored.
         """
-        pass
+        ...
 
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
+    def on_failure(self,
+                   exc: Exception,
+                   task_id: str,
+                   args: Sequence,
+                   kwargs: Mapping,
+                   einfo: ExceptionInfo) -> None:
         """Error handler.
 
         This is run by the worker when the task fails.
@@ -945,9 +1021,11 @@ class Task(object):
         Returns:
             None: The return value of this handler is ignored.
         """
-        pass
+        ...
 
-    def after_return(self, status, retval, task_id, args, kwargs, einfo):
+    def after_return(self, status: str, retval: Any, task_id: str,
+                     args: Sequence, kwargs: Mapping,
+                     einfo: ExceptionInfo) -> None:
         """Handler called after the task returns.
 
         Arguments:
@@ -961,24 +1039,24 @@ class Task(object):
         Returns:
             None: The return value of this handler is ignored.
         """
-        pass
+        ...
 
-    def add_trail(self, result):
+    def add_trail(self, result: ResultT) -> ResultT:
         if self.trail:
             self.request.children.append(result)
         return result
 
-    def push_request(self, *args, **kwargs):
+    def push_request(self, *args, **kwargs) -> None:
         self.request_stack.push(Context(*args, **kwargs))
 
-    def pop_request(self):
+    def pop_request(self) -> None:
         self.request_stack.pop()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """``repr(task)``."""
         return _reprtask(self, R_SELF_TASK if self.__self__ else R_INSTANCE)
 
-    def _get_request(self):
+    def _get_request(self) -> Context:
         """Get current request object."""
         req = self.request_stack.top
         if req is None:
@@ -990,24 +1068,24 @@ class Task(object):
         return req
     request = property(_get_request)
 
-    def _get_exec_options(self):
+    def _get_exec_options(self) -> Mapping:
         if self._exec_options is None:
             self._exec_options = extract_exec_options(self)
         return self._exec_options
 
     @property
-    def backend(self):
+    def backend(self) -> BackendT:
         backend = self._backend
         if backend is None:
             return self.app.backend
         return backend
 
     @backend.setter
-    def backend(self, value):  # noqa
+    def backend(self, value: BackendT) -> None:  # noqa
         self._backend = value
 
     @property
-    def __name__(self):
+    def __name__(self) -> str:
         return self.__class__.__name__
 
 

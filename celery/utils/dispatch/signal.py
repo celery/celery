@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """Implementation of the Observer pattern."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import sys
 import threading
 import warnings
@@ -10,7 +13,6 @@ import weakref
 from kombu.utils.functional import retry_over_time
 
 from celery.exceptions import CDeprecationWarning
-from celery.five import python_2_unicode_compatible, range, text_t
 from celery.local import PromiseProxy, Proxy
 from celery.utils.functional import fun_accepts_kwargs
 from celery.utils.log import get_logger
@@ -30,7 +32,7 @@ logger = get_logger(__name__)
 def _make_id(target):  # pragma: no cover
     if isinstance(target, Proxy):
         target = target._get_current_object()
-    if isinstance(target, (bytes, text_t)):
+    if isinstance(target, (bytes, str)):
         # see Issue #2475
         return target
     if hasattr(target, '__func__'):
@@ -47,8 +49,7 @@ Could not process signal receiver %(receiver)s. Retrying %(when)s...\
 """
 
 
-@python_2_unicode_compatible
-class Signal(object):  # pragma: no cover
+class Signal:
     """Create new signal.
 
     Keyword Arguments:

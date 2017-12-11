@@ -359,7 +359,7 @@ may contain:
         def gen_task_name(self, name, module):
             if module.endswith('.tasks'):
                 module = module[:-6]
-            return super(MyCelery, self).gen_task_name(name, module)
+            return super().gen_task_name(name, module)
 
     app = MyCelery('main')
 
@@ -1233,7 +1233,7 @@ you have to pass them as regular args:
             self.headers = headers
             self.body = body
 
-            super(HttpError, self).__init__(status_code, headers, body)
+            super().__init__(status_code, headers, body)
 
 .. _task-semipredicates:
 
@@ -1322,6 +1322,7 @@ Example using reject when a task causes an out of memory condition:
         except OSError as exc:
             if exc.errno == errno.ENOMEM:
                 raise Reject(exc, requeue=False)
+            raise self.retry(exc, countdown=10)
 
         # For any other error we retry after 10 seconds.
         except Exception as exc:

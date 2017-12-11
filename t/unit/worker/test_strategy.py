@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
+=======
+import pytest
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 from collections import defaultdict
 from contextlib import contextmanager
@@ -71,7 +75,7 @@ class test_default_strategy_proto2:
     def prepare_message(self, message):
         return message
 
-    class Context(object):
+    class Context:
 
         def __init__(self, sig, s, reserved, consumer, message):
             self.sig = sig

@@ -2,12 +2,19 @@
 
 ``Events`` -> :class:`celery.events.EventDispatcher`.
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.common import ignore_errors
 
 from celery import bootsteps
+<<<<<<< HEAD
 
+=======
+from celery.types import WorkerConsumerT
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from .connection import Connection
 
 __all__ = ('Events',)
@@ -18,11 +25,11 @@ class Events(bootsteps.StartStopStep):
 
     requires = (Connection,)
 
-    def __init__(self, c,
-                 task_events=True,
-                 without_heartbeat=False,
-                 without_gossip=False,
-                 **kwargs):
+    def __init__(self, c: WorkerConsumerT,
+                 task_events: bool = True,
+                 without_heartbeat: bool = False,
+                 without_gossip: bool = False,
+                 **kwargs) -> None:
         self.groups = None if task_events else ['worker']
         self.send_events = (
             task_events or
@@ -32,7 +39,7 @@ class Events(bootsteps.StartStopStep):
         c.event_dispatcher = None
         super(Events, self).__init__(c, **kwargs)
 
-    def start(self, c):
+    async def start(self, c: WorkerConsumerT) -> None:
         # flush events sent while connection was down.
         prev = self._close(c)
         dis = c.event_dispatcher = c.app.events.Dispatcher(
@@ -49,10 +56,13 @@ class Events(bootsteps.StartStopStep):
             dis.extend_buffer(prev)
             dis.flush()
 
-    def stop(self, c):
-        pass
+    async def stop(self, c: WorkerConsumerT) -> None:
+        ...
 
-    def _close(self, c):
+    async def shutdown(self, c: WorkerConsumerT) -> None:
+        await self._close(c)
+
+    async def _close(self, c: WorkerConsumerT) -> None:
         if c.event_dispatcher:
             dispatcher = c.event_dispatcher
             # remember changes from remote control commands:
@@ -60,10 +70,7 @@ class Events(bootsteps.StartStopStep):
 
             # close custom connection
             if dispatcher.connection:
-                ignore_errors(c, dispatcher.connection.close)
+                await ignore_errors(c, dispatcher.connection.close)
             ignore_errors(c, dispatcher.close)
             c.event_dispatcher = None
             return dispatcher
-
-    def shutdown(self, c):
-        self._close(c)

@@ -4,8 +4,11 @@
 Client for worker remote control commands.
 Server implementation is in :mod:`celery.worker.control`.
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import warnings
 
 from billiard.common import TERM_SIGNAME
@@ -51,7 +54,7 @@ def flatten_reply(reply):
     return nodes
 
 
-class Inspect(object):
+class Inspect:
     """API for app.control.inspect."""
 
     app = None
@@ -141,7 +144,7 @@ class Inspect(object):
         return self._request('objgraph', num=n, max_depth=max_depth, type=type)
 
 
-class Control(object):
+class Control:
     """Worker remote control client."""
 
     Mailbox = Mailbox

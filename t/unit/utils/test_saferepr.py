@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
@@ -11,16 +12,21 @@ from case import skip
 
 from celery.five import (items, long_t, python_2_unicode_compatible, text_t,
                          values)
+=======
+import pytest
+import re
+from decimal import Decimal
+from pprint import pprint
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.saferepr import saferepr
 
 D_NUMBERS = {
     b'integer': 1,
     b'float': 1.3,
     b'decimal': Decimal('1.3'),
-    b'long': long_t(4),
     b'complex': complex(13.3),
 }
-D_INT_KEYS = {v: k for k, v in items(D_NUMBERS)}
+D_INT_KEYS = {v: k for k, v in D_NUMBERS.items()}
 
 QUICK_BROWN_FOX = 'The quick brown fox jumps over the lazy dog.'
 B_QUICK_BROWN_FOX = b'The quick brown fox jumps over the lazy dog.'
@@ -32,7 +38,7 @@ D_TEXT = {
     b'xuzzy': B_QUICK_BROWN_FOX,
 }
 
-L_NUMBERS = list(values(D_NUMBERS))
+L_NUMBERS = list(D_NUMBERS.values())
 
 D_TEXT_LARGE = {
     b'bazxuzzyfoobarlongverylonglong': QUICK_BROWN_FOX * 30,
@@ -57,15 +63,14 @@ RE_LONG_SUFFIX = re.compile(r'(\d)+L')
 
 
 def old_repr(s):
-    return text_t(RE_LONG_SUFFIX.sub(
+    return str(RE_LONG_SUFFIX.sub(
         r'\1',
         RE_EMPTY_SET_REPR.sub(
             RE_EMPTY_SET_REPR_REPLACE,
             RE_OLD_SET_REPR.sub(
                 RE_OLD_SET_REPR_REPLACE,
                 RE_OLD_SET_CUSTOM_REPR.sub(
-                    RE_OLD_SET_CUSTOM_REPR_REPLACE,
-                    repr(s).replace("u'", "'"),
+                    RE_OLD_SET_CUSTOM_REPR_REPLACE, repr(s).replace("u'", "'"),
                 )
             ),
         ),
@@ -76,7 +81,6 @@ class list2(list):
     pass
 
 
-@python_2_unicode_compatible
 class list3(list):
 
     def __repr__(self):
@@ -87,7 +91,6 @@ class tuple2(tuple):
     pass
 
 
-@python_2_unicode_compatible
 class tuple3(tuple):
 
     def __repr__(self):
@@ -98,7 +101,6 @@ class set2(set):
     pass
 
 
-@python_2_unicode_compatible
 class set3(set):
 
     def __repr__(self):
@@ -109,7 +111,6 @@ class frozenset2(frozenset):
     pass
 
 
-@python_2_unicode_compatible
 class frozenset3(frozenset):
 
     def __repr__(self):
@@ -120,7 +121,6 @@ class dict2(dict):
     pass
 
 
-@python_2_unicode_compatible
 class dict3(dict):
 
     def __repr__(self):
@@ -129,7 +129,7 @@ class dict3(dict):
 
 class test_saferepr:
 
-    @pytest.mark.parametrize('value', list(values(D_NUMBERS)))
+    @pytest.mark.parametrize('value', list(D_NUMBERS.values()))
     def test_safe_types(self, value):
         assert saferepr(value) == old_repr(value)
 
@@ -185,52 +185,3 @@ class test_saferepr:
         # aren't tested here.
         native = old_repr(value)
         assert saferepr(value) == native
-
-    @skip.if_python3()
-    def test_bytes_with_unicode(self):
-        class X(object):
-
-            def __repr__(self):
-                return 'æ e i a æ å'.encode(
-                    'utf-8', errors='backslash replace')
-
-        val = X()
-        assert repr(val)
-        assert saferepr(val)
-
-    @skip.unless_python3()
-    def test_unicode_bytes(self):
-        val = 'øystein'.encode('utf-8')
-        assert saferepr(val) == "b'øystein'"
-
-    @skip.unless_python3()
-    def test_unicode_bytes__long(self):
-        val = 'øystein'.encode('utf-8') * 1024
-        assert saferepr(val, maxlen=128).endswith("...'")
-
-    @skip.unless_python3()
-    def test_binary_bytes(self):
-        val = struct.pack('>QQQ', 12223, 1234, 3123)
-        if hasattr(bytes, 'hex'):  # Python 3.5+
-            assert '2fbf' in saferepr(val, maxlen=128)
-        else:  # Python 3.4
-            assert saferepr(val, maxlen=128)
-
-    @skip.unless_python3()
-    def test_binary_bytes__long(self):
-        val = struct.pack('>QQQ', 12223, 1234, 3123) * 1024
-        result = saferepr(val, maxlen=128)
-        if hasattr(bytes, 'hex'):  # Python 3.5+
-            assert '2fbf' in result
-            assert result.endswith("...'")
-        else:  # Python 3.4
-            assert result
-
-    def test_repr_raises(self):
-        class O(object):
-            def __repr__(self):
-                raise KeyError('foo')
-        assert 'Unrepresentable' in saferepr(O())
-
-    def test_bytes_with_unicode_py2_and_3(self):
-        assert saferepr([b'foo', 'a®rgs'.encode('utf-8')])

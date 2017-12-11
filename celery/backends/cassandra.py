@@ -1,9 +1,12 @@
 # -* coding: utf-8 -*-
 """Apache Cassandra result store backend using the DataStax driver."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import sys
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.log import get_logger
@@ -17,8 +20,12 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     cassandra = None   # noqa
 
+<<<<<<< HEAD
 
 __all__ = ('CassandraBackend',)
+=======
+__all__ = ['CassandraBackend']
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 logger = get_logger(__name__)
 
@@ -61,11 +68,9 @@ Q_EXPIRES = """
     USING TTL {0}
 """
 
-if sys.version_info[0] == 3:
-    def buf_t(x):
-        return bytes(x, 'utf8')
-else:
-    buf_t = buffer  # noqa
+
+def buf_t(x):
+    return bytes(x, 'utf8')
 
 
 class CassandraBackend(BaseBackend):
@@ -84,7 +89,7 @@ class CassandraBackend(BaseBackend):
 
     def __init__(self, servers=None, keyspace=None, table=None, entry_ttl=None,
                  port=9042, **kwargs):
-        super(CassandraBackend, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         if not cassandra:
             raise ImproperlyConfigured(E_NO_CASSANDRA)
@@ -230,7 +235,14 @@ class CassandraBackend(BaseBackend):
 
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
+<<<<<<< HEAD
             {'servers': self.servers,
              'keyspace': self.keyspace,
              'table': self.table})
         return super(CassandraBackend, self).__reduce__(args, kwargs)
+=======
+            dict(servers=self.servers,
+                 keyspace=self.keyspace,
+                 table=self.table))
+        return super().__reduce__(args, kwargs)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726

@@ -1,11 +1,13 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pytest
 from case import ContextMock, Mock, patch
 
 from celery import chord, group
 from celery.app import builtins
-from celery.five import range
 from celery.utils.functional import pass1
 
 
@@ -97,7 +99,7 @@ class test_group(BuiltinsCase):
         self.app.producer_or_acquire.attach_mock(ContextMock(), 'return_value')
         self.app.conf.task_always_eager = True
         self.task = builtins.add_group_task(self.app)
-        BuiltinsCase.setup(self)
+        super().setup()
 
     def test_apply_async_eager(self):
         self.task.apply = Mock(name='apply')
@@ -144,7 +146,7 @@ class test_chord(BuiltinsCase):
 
     def setup(self):
         self.task = builtins.add_chord_task(self.app)
-        BuiltinsCase.setup(self)
+        super().setup()
 
     def test_apply_async(self):
         x = chord([self.add.s(i, i) for i in range(10)], body=self.xsum.s())

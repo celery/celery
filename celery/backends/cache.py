@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """Memcached and in-memory cache result backend."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import sys
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.objects import cached_property
 
@@ -15,8 +18,6 @@ from .base import KeyValueStoreBackend
 __all__ = ('CacheBackend',)
 
 _imp = [None]
-
-PY3 = sys.version_info[0] == 3
 
 REQUIRES_BACKEND = """\
 The Memcached backend requires either pylibmc or python-memcached.\
@@ -30,7 +31,7 @@ Please use one of the following backends instead: {1}\
 
 def import_best_memcache():
     if _imp[0] is None:
-        is_pylibmc, memcache_key_t = False, ensure_bytes
+        is_pylibmc = False
         try:
             import pylibmc as memcache
             is_pylibmc = True
@@ -39,9 +40,7 @@ def import_best_memcache():
                 import memcache  # noqa
             except ImportError:
                 raise ImproperlyConfigured(REQUIRES_BACKEND)
-        if PY3:  # pragma: no cover
-            memcache_key_t = bytes_to_str
-        _imp[0] = (is_pylibmc, memcache, memcache_key_t)
+        _imp[0] = (is_pylibmc, memcache, bytes_to_str)
     return _imp[0]
 
 
@@ -59,7 +58,7 @@ def get_best_memcache(*args, **kwargs):
     return Client, key_t
 
 
-class DummyClient(object):
+class DummyClient:
 
     def __init__(self, *args, **kwargs):
         self.cache = LRUCache(limit=5000)
@@ -102,7 +101,7 @@ class CacheBackend(KeyValueStoreBackend):
 
     def __init__(self, app, expires=None, backend=None,
                  options={}, url=None, **kwargs):
-        super(CacheBackend, self).__init__(app, **kwargs)
+        super().__init__(app, **kwargs)
         self.url = url
 
         self.options = dict(self.app.conf.cache_backend_options,
@@ -134,7 +133,7 @@ class CacheBackend(KeyValueStoreBackend):
 
     def _apply_chord_incr(self, header, partial_args, group_id, body, **opts):
         self.client.set(self.get_key_for_chord(group_id), 0, time=self.expires)
-        return super(CacheBackend, self)._apply_chord_incr(
+        return super()._apply_chord_incr(
             header, partial_args, group_id, body, **opts)
 
     def incr(self, key):
@@ -151,10 +150,17 @@ class CacheBackend(KeyValueStoreBackend):
         servers = ';'.join(self.servers)
         backend = '{0}://{1}/'.format(self.backend, servers)
         kwargs.update(
+<<<<<<< HEAD
             {'backend': backend,
              'expires': self.expires,
              'options': self.options})
         return super(CacheBackend, self).__reduce__(args, kwargs)
+=======
+            dict(backend=backend,
+                 expires=self.expires,
+                 options=self.options))
+        return super().__reduce__(args, kwargs)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
     def as_uri(self, *args, **kwargs):
         """Return the backend as an URI.

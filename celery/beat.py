@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 """The periodic task scheduler."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import copy
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import errno
 import heapq
 import os
@@ -10,9 +13,15 @@ import shelve
 import sys
 import time
 import traceback
+<<<<<<< HEAD
 from collections import namedtuple
+=======
+
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from functools import total_ordering
 from threading import Event, Thread
+from time import monotonic
+from typing import NamedTuple
 
 from billiard import ensure_multiprocessing
 from billiard.common import reset_signals
@@ -20,10 +29,17 @@ from billiard.context import Process
 from kombu.utils.functional import maybe_evaluate, reprcall
 from kombu.utils.objects import cached_property
 
+<<<<<<< HEAD
 from . import __version__, platforms, signals
 from .five import (items, monotonic, python_2_unicode_compatible, reraise,
                    values)
 from .schedules import crontab, maybe_schedule
+=======
+from . import __version__
+from . import platforms
+from . import signals
+from .schedules import maybe_schedule, crontab
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from .utils.imports import load_extension_class_names, symbol_by_name
 from .utils.log import get_logger, iter_open_logger_fds
 from .utils.time import humanize_seconds
@@ -33,8 +49,6 @@ __all__ = (
     'PersistentScheduler', 'Service', 'EmbeddedService',
 )
 
-event_t = namedtuple('event_t', ('time', 'priority', 'entry'))
-
 logger = get_logger(__name__)
 debug, info, error, warning = (logger.debug, logger.info,
                                logger.error, logger.warning)
@@ -42,13 +56,20 @@ debug, info, error, warning = (logger.debug, logger.info,
 DEFAULT_MAX_INTERVAL = 300  # 5 minutes
 
 
+class event_t(NamedTuple):
+    """Represents beat event in heap."""
+
+    time: float
+    priority: int
+    entry: 'ScheduleEntry'
+
+
 class SchedulingError(Exception):
     """An error occurred while scheduling a task."""
 
 
 @total_ordering
-@python_2_unicode_compatible
-class ScheduleEntry(object):
+class ScheduleEntry:
     """An entry in the scheduler.
 
     Arguments:
@@ -132,7 +153,7 @@ class ScheduleEntry(object):
         return self.schedule.is_due(self.last_run_at)
 
     def __iter__(self):
-        return iter(items(vars(self)))
+        return iter(vars(self).items())
 
     def __repr__(self):
         return '<{name}: {0.name} {call} {0.schedule}'.format(
@@ -175,7 +196,7 @@ class ScheduleEntry(object):
         return not self == other
 
 
-class Scheduler(object):
+class Scheduler:
     """Scheduler for periodic tasks.
 
     The :program:`celery beat` program may instantiate this class
@@ -284,7 +305,14 @@ class Scheduler(object):
             self.populate_heap()
 
         H = self._heap
+<<<<<<< HEAD
 
+=======
+        if H is None:
+            H = self._heap = [event_t(_when(e, e.is_due()[1]) or 0, 5, e)
+                              for e in self.schedule.values()]
+            heapify(H)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
         if not H:
             return max_interval
 
@@ -344,9 +372,9 @@ class Scheduler(object):
                                       producer=producer,
                                       **entry.options)
         except Exception as exc:  # pylint: disable=broad-except
-            reraise(SchedulingError, SchedulingError(
+            raise SchedulingError(
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
-                    entry, exc=exc)), sys.exc_info()[2])
+                    entry, exc=exc)).with_traceback(sys.exc_info()[2])
         finally:
             self._tasks_since_sync += 1
             if self.should_sync():
@@ -386,7 +414,7 @@ class Scheduler(object):
     def update_from_dict(self, dict_):
         self.schedule.update({
             name: self._maybe_entry(name, entry)
-            for name, entry in items(dict_)
+            for name, entry in dict_.items()
         })
 
     def merge_inplace(self, b):
@@ -498,7 +526,7 @@ class PersistentScheduler(Scheduler):
         })
         self.sync()
         debug('Current schedule:\n' + '\n'.join(
-            repr(entry) for entry in values(entries)))
+            repr(entry) for entry in entries.values()))
 
     def _create_schedule(self):
         for _ in (1, 2):
@@ -543,7 +571,7 @@ class PersistentScheduler(Scheduler):
         return '    . db -> {self.schedule_filename}'.format(self=self)
 
 
-class Service(object):
+class Service:
     """Celery periodic task service."""
 
     scheduler_cls = PersistentScheduler
@@ -618,7 +646,7 @@ class _Threaded(Thread):
     """Embedded task scheduler using threading."""
 
     def __init__(self, app, **kwargs):
-        super(_Threaded, self).__init__()
+        super().__init__()
         self.app = app
         self.service = Service(app, **kwargs)
         self.daemon = True
@@ -640,7 +668,7 @@ else:
     class _Process(Process):    # noqa
 
         def __init__(self, app, **kwargs):
-            super(_Process, self).__init__()
+            super().__init__()
             self.app = app
             self.service = Service(app, **kwargs)
             self.name = 'Beat'

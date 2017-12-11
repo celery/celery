@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+import pytest
+from pickle import loads, dumps
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from datetime import datetime
 from pickle import dumps, loads
 
@@ -106,7 +111,7 @@ class test_CassandraBackend:
         class OTOExc(Exception):
             pass
 
-        class VeryFaultyCluster(object):
+        class VeryFaultyCluster:
             def __init__(self, *args, **kwargs):
                 pass
 
@@ -134,7 +139,7 @@ class test_CassandraBackend:
         # Ensure that Cluster object IS shut down.
         from celery.backends import cassandra as mod
 
-        class RAMHoggingCluster(object):
+        class RAMHoggingCluster:
 
             objects_alive = 0
 
@@ -165,7 +170,7 @@ class test_CassandraBackend:
         # ImproperlyConfigured exception.
         from celery.backends import cassandra as mod
 
-        class DummyAuth(object):
+        class DummyAuth:
             ValidAuthProvider = Mock()
 
         mod.cassandra = Mock()

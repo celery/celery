@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 """Schedules define the intervals at which periodic tasks run."""
-from __future__ import absolute_import, unicode_literals
-
 import numbers
 import re
 from bisect import bisect, bisect_left
-from collections import Iterable, namedtuple
+from collections import Iterable
 from datetime import datetime, timedelta
+from typing import NamedTuple
 
 from kombu.utils.objects import cached_property
 
 from . import current_app
-from .five import python_2_unicode_compatible, range, string_t
 from .utils.collections import AttributeDict
 from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware,
                          maybe_timedelta, remaining, timezone, weekday)
@@ -21,7 +19,6 @@ __all__ = (
     'maybe_schedule', 'solar',
 )
 
-schedstate = namedtuple('schedstate', ('is_due', 'next'))
 
 CRON_PATTERN_INVALID = """\
 Invalid crontab pattern.  Valid range is {min}-{max}. \
@@ -50,6 +47,15 @@ SOLAR_INVALID_EVENT = """\
 Argument event "{event}" is invalid, must be one of {all_events}.\
 """
 
+Kailuga1
+
+
+class schedstate(NamedTuple):
+    """Return value of ``schedule.is_due``."""
+
+    is_due: bool
+    next: float
+
 
 def cronfield(s):
     return '*' if s is None else s
@@ -59,7 +65,7 @@ class ParseException(Exception):
     """Raised by :class:`crontab_parser` when the input can't be parsed."""
 
 
-class BaseSchedule(object):
+class BaseSchedule:
 
     def __init__(self, nowfun=None, app=None):
         self.nowfun = nowfun
@@ -104,7 +110,6 @@ class BaseSchedule(object):
         return NotImplemented
 
 
-@python_2_unicode_compatible
 class schedule(BaseSchedule):
     """Schedule for periodic task.
 
@@ -190,7 +195,7 @@ class schedule(BaseSchedule):
         return humanize_seconds(self.seconds)
 
 
-class crontab_parser(object):
+class crontab_parser:
     """Parser for Crontab expressions.
 
     Any expression of the form 'groups'
@@ -293,7 +298,7 @@ class crontab_parser(object):
         return list(range(self.min_, self.max_ + self.min_))
 
     def _expand_number(self, s):
-        if isinstance(s, string_t) and s[0] == '-':
+        if isinstance(s, str) and s[0] == '-':
             raise self.ParseException('negative numbers not supported')
         try:
             i = int(s)
@@ -314,7 +319,6 @@ class crontab_parser(object):
         return i
 
 
-@python_2_unicode_compatible
 class crontab(BaseSchedule):
     """Crontab schedule.
 
@@ -437,7 +441,7 @@ class crontab(BaseSchedule):
         """
         if isinstance(cronspec, numbers.Integral):
             result = {cronspec}
-        elif isinstance(cronspec, string_t):
+        elif isinstance(cronspec, str):
             result = crontab_parser(max_, min_).parse(cronspec)
         elif isinstance(cronspec, set):
             result = cronspec
@@ -661,7 +665,6 @@ def maybe_schedule(s, relative=False, app=None):
     return s
 
 
-@python_2_unicode_compatible
 class solar(BaseSchedule):
     """Solar event.
 

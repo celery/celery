@@ -4,12 +4,31 @@
 This module defines how the task execution is traced:
 errors are recorded, handlers are applied and so on.
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
+=======
+# ## ---
+# This is the heart of the worker, the inner loop so to speak.
+# It used to be split up into nice little classes and methods,
+# but in the end it only resulted in bad performance and horrible tracebacks,
+# so instead we now use one closure per task class.
+
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
+# pylint: disable=broad-except
+# We know what we're doing...
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 import logging
 import os
 import sys
+<<<<<<< HEAD
 from collections import namedtuple
+=======
+
+from time import monotonic
+from typing import Any, NamedTuple
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from warnings import warn
 
 from billiard.einfo import ExceptionInfo
@@ -20,10 +39,15 @@ from kombu.utils.encoding import safe_repr, safe_str
 
 from celery import current_app, group, signals, states
 from celery._state import _task_stack
+<<<<<<< HEAD
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
 from celery.exceptions import Ignore, InvalidTaskError, Reject, Retry
 from celery.five import monotonic, text_t
+=======
+from celery.app.task import Task as BaseTask, Context
+from celery.exceptions import Ignore, Reject, Retry, InvalidTaskError
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import mro_lookup
@@ -81,9 +105,16 @@ LOG_RETRY = """\
 Task %(name)s[%(id)s] retry: %(exc)s\
 """
 
-log_policy_t = namedtuple(
-    'log_policy_t', ('format', 'description', 'severity', 'traceback', 'mail'),
-)
+
+class log_policy_t(NamedTuple):
+    """Describes the logging policy for a specific state."""
+
+    format: str
+    description: str
+    severity: int
+    traceback: int
+    mail: int
+
 
 log_policy_reject = log_policy_t(LOG_REJECTED, 'rejected', logging.WARN, 1, 1)
 log_policy_ignore = log_policy_t(LOG_IGNORED, 'ignored', logging.INFO, 0, 0)
@@ -113,7 +144,12 @@ IGNORE_STATES = frozenset({IGNORED, RETRY, REJECTED})
 _localized = []
 _patched = {}
 
-trace_ok_t = namedtuple('trace_ok_t', ('retval', 'info', 'runtime', 'retstr'))
+trace_ok_t = NamedTuple('trace_ok_t', [
+    ('retval', Any),
+    ('info', 'TraceInfo'),
+    ('runtime', float),
+    ('retstr', str),
+])
 
 
 def info(fmt, context):
@@ -143,6 +179,7 @@ def get_log_policy(task, einfo, exc):
         return log_policy_unexpected
 
 
+<<<<<<< HEAD
 def get_task_name(request, default):
     """Use 'shadow' in request for the task name if applicable."""
     # request.shadow could be None or an empty string.
@@ -151,6 +188,9 @@ def get_task_name(request, default):
 
 
 class TraceInfo(object):
+=======
+class TraceInfo:
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
     """Information about task execution."""
 
     __slots__ = ('state', 'retval')
@@ -194,8 +234,13 @@ class TraceInfo(object):
                                     reason=reason, einfo=einfo)
             info(LOG_RETRY, {
                 'id': req.id,
+<<<<<<< HEAD
                 'name': get_task_name(req, task.name),
                 'exc': text_t(reason),
+=======
+                'name': task.name,
+                'exc': str(reason),
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
             })
             return einfo
         finally:

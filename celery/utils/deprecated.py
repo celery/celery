@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 """Deprecation utilities."""
+<<<<<<< HEAD
 from __future__ import absolute_import, print_function, unicode_literals
 
 import warnings
 
+=======
+import warnings
+from typing import Any, Callable, Optional
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from vine.utils import wraps
 
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
@@ -23,8 +28,11 @@ DEPRECATION_FMT = """
 """
 
 
-def warn(description=None, deprecation=None,
-         removal=None, alternative=None, stacklevel=2):
+def warn(description: Optional[str]=None,
+         deprecation: Optional[str]=None,
+         removal: Optional[str]=None,
+         alternative: Optional[str]=None,
+         stacklevel: int=2) -> None:
     """Warn of (pending) deprecation."""
     ctx = {'description': description,
            'deprecation': deprecation, 'removal': removal,
@@ -36,8 +44,10 @@ def warn(description=None, deprecation=None,
     warnings.warn(w, stacklevel=stacklevel)
 
 
-def Callable(deprecation=None, removal=None,
-             alternative=None, description=None):
+def Callable(deprecation: Optional[str]=None,
+             removal: Optional[str]=None,
+             alternative: Optional[str]=None,
+             description: Optional[str]=None) -> Callable:
     """Decorator for deprecated functions.
 
     A deprecation warning will be emitted when the function is called.
@@ -65,19 +75,26 @@ def Callable(deprecation=None, removal=None,
     return _inner
 
 
-def Property(deprecation=None, removal=None,
-             alternative=None, description=None):
+def Property(deprecation: Optional[str]=None,
+             removal: Optional[str]=None,
+             alternative: Optional[str]=None,
+             description: Optional[str]=None) -> Callable:
     """Decorator for deprecated properties."""
-    def _inner(fun):
+    def _inner(fun: Callable) -> Any:
         return _deprecated_property(
             fun, deprecation=deprecation, removal=removal,
             alternative=alternative, description=description or fun.__name__)
     return _inner
 
 
-class _deprecated_property(object):
+class _deprecated_property:
 
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None, **depreinfo):
+    def __init__(self,
+                 fget: Optional[Callable]=None,
+                 fset: Optional[Callable]=None,
+                 fdel: Optional[Callable]=None,
+                 doc: Optional[str]=None,
+                 **depreinfo) -> None:
         self.__get = fget
         self.__set = fset
         self.__del = fdel
@@ -87,13 +104,13 @@ class _deprecated_property(object):
         self.depreinfo = depreinfo
         self.depreinfo.setdefault('stacklevel', 3)
 
-    def __get__(self, obj, type=None):
+    def __get__(self, obj: Any, type: Optional[Any]=None) -> Any:
         if obj is None:
             return self
         warn(**self.depreinfo)
         return self.__get(obj)
 
-    def __set__(self, obj, value):
+    def __set__(self, obj: Any, value: Any) -> Any:
         if obj is None:
             return self
         if self.__set is None:
@@ -101,7 +118,7 @@ class _deprecated_property(object):
         warn(**self.depreinfo)
         self.__set(obj, value)
 
-    def __delete__(self, obj):
+    def __delete__(self, obj: Any) -> Any:
         if obj is None:
             return self
         if self.__del is None:
@@ -109,8 +126,8 @@ class _deprecated_property(object):
         warn(**self.depreinfo)
         self.__del(obj)
 
-    def setter(self, fset):
+    def setter(self, fset: Callable) -> Any:
         return self.__class__(self.__get, fset, self.__del, **self.depreinfo)
 
-    def deleter(self, fdel):
+    def deleter(self, fdel: Callable) -> Any:
         return self.__class__(self.__get, self.__set, fdel, **self.depreinfo)

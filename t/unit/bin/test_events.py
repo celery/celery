@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import importlib
 from functools import wraps
 
@@ -25,7 +28,7 @@ def _old_patch(module, name, mocked):
     return _patch
 
 
-class MockCommand(object):
+class MockCommand:
     executed = []
 
     def execute_from_commandline(self, **kwargs):

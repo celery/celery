@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """Riak result store backend."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import sys
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
@@ -23,18 +26,13 @@ E_BUCKET_NAME = """\
 Riak bucket names must be composed of ASCII characters only, not: {0!r}\
 """
 
-if sys.version_info[0] == 3:
 
-    def to_bytes(s):
-        return s.encode() if isinstance(s, str) else s
+def to_bytes(s):
+    return s.encode() if isinstance(s, str) else s
 
-    def str_decode(s, encoding):
-        return to_bytes(s).decode(encoding)
 
-else:
-
-    def str_decode(s, encoding):
-        return s.decode('ascii')
+def str_decode(s, encoding):
+    return to_bytes(s).decode(encoding)
 
 
 def is_ascii(s):
@@ -70,7 +68,7 @@ class RiakBackend(KeyValueStoreBackend):
 
     def __init__(self, host=None, port=None, bucket_name=None, protocol=None,
                  url=None, *args, **kwargs):
-        super(RiakBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
 
         if not riak:

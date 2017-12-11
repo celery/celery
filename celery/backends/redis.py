@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Redis result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 from functools import partial
 
 from kombu.utils.functional import retry_over_time
@@ -12,8 +10,6 @@ from celery import states
 from celery._state import task_join_will_block
 from celery.canvas import maybe_signature
 from celery.exceptions import ChordError, ImproperlyConfigured
-from celery.five import string_t
-from celery.utils import deprecated
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
@@ -53,7 +49,7 @@ class ResultConsumer(async.BaseResultConsumer):
     _pubsub = None
 
     def __init__(self, *args, **kwargs):
-        super(ResultConsumer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._get_key_for_task = self.backend.get_key_for_task
         self._decode_result = self.backend.decode_result
         self.subscribed_to = set()
@@ -113,7 +109,7 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
     def __init__(self, host=None, port=None, db=None, password=None,
                  max_connections=None, url=None,
                  connection_pool=None, **kwargs):
-        super(RedisBackend, self).__init__(expires_type=int, **kwargs)
+        super().__init__(expires_type=int, **kwargs)
         _get = self.app.conf.get
         if self.redis is None:
             raise ImproperlyConfigured(E_REDIS_MISSING.strip())
@@ -185,7 +181,7 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
 
         # db may be string and start with / like in kombu.
         db = connparams.get('db') or 0
-        db = db.strip('/') if isinstance(db, string_t) else db
+        db = db.strip('/') if isinstance(db, str) else db
         connparams['db'] = int(db)
 
         # Query parameters override other parameters
@@ -335,9 +331,10 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         return self._create_client(**self.connparams)
 
     def __reduce__(self, args=(), kwargs={}):
-        return super(RedisBackend, self).__reduce__(
+        return super().__reduce__(
             (self.url,), {'expires': self.expires},
         )
+<<<<<<< HEAD
 
     @deprecated.Property(4.0, 5.0)
     def host(self):
@@ -414,3 +411,5 @@ class SentinelBackend(RedisBackend):
             service_name=master_name,
             redis_class=self._get_client(),
         ).connection_pool
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726

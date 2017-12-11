@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-'
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.app.task import Context
 
 
-# Retreive the values of all context attributes as a
+# Retrieve the values of all context attributes as a
 # dictionary in an implementation-agnostic manner.
 def get_context_as_dict(ctx, getter=getattr):
     defaults = {}

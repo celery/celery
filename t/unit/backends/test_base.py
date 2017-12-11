@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import sys
@@ -6,12 +7,22 @@ from contextlib import contextmanager
 
 import pytest
 from case import ANY, Mock, call, patch, skip
+=======
+import pytest
+
+from contextlib import contextmanager
+
+from case import ANY, Mock, call, patch
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 from celery import chord, group, states, uuid
 from celery.backends.base import (BaseBackend, DisabledBackend,
                                   KeyValueStoreBackend, _nulldict)
 from celery.exceptions import ChordError, TimeoutError
+<<<<<<< HEAD
 from celery.five import bytes_if_py2, items, range
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.result import result_from_tuple
 from celery.utils import serialization
 from celery.utils.functional import pass1
@@ -21,25 +32,14 @@ from celery.utils.serialization import get_pickleable_exception as gpe
 from celery.utils.serialization import subclass_exception
 
 
-class wrapobject(object):
+class wrapobject:
 
     def __init__(self, *args, **kwargs):
         self.args = args
 
-
-if sys.version_info[0] == 3 or getattr(sys, 'pypy_version_info', None):
-    Oldstyle = None
-else:
-    Oldstyle = types.ClassType(bytes_if_py2('Oldstyle'), (), {})
-Unpickleable = subclass_exception(
-    bytes_if_py2('Unpickleable'), KeyError, 'foo.module',
-)
-Impossible = subclass_exception(
-    bytes_if_py2('Impossible'), object, 'foo.module',
-)
-Lookalike = subclass_exception(
-    bytes_if_py2('Lookalike'), wrapobject, 'foo.module',
-)
+Unpickleable = subclass_exception('Unpickleable', KeyError, 'foo.module')
+Impossible = subclass_exception('Impossible', object, 'foo.module')
+Lookalike = subclass_exception('Lookalike', wrapobject, 'foo.module')
 
 
 class test_nulldict:
@@ -85,11 +85,6 @@ class test_BaseBackend_interface:
 
 class test_exception_pickle:
 
-    @skip.if_python3(reason='does not support old style classes')
-    @skip.if_pypy()
-    def test_oldstyle(self):
-        assert fnpe(Oldstyle())
-
     def test_BaseException(self):
         assert fnpe(Exception()) is None
 
@@ -121,10 +116,7 @@ class test_prepare_exception:
         assert str(x)
         y = self.b.exception_to_python(x)
         assert y.__class__.__name__ == 'Impossible'
-        if sys.version_info < (2, 5):
-            assert y.__class__.__module__
-        else:
-            assert y.__class__.__module__ == 'foo.module'
+        assert y.__class__.__module__ == 'foo.module'
 
     def test_regular(self):
         self.b.serializer = 'pickle'
@@ -146,7 +138,7 @@ class KVBackend(KeyValueStoreBackend):
 
     def __init__(self, app, *args, **kwargs):
         self.db = {}
-        super(KVBackend, self).__init__(app)
+        super().__init__(app)
 
     def get(self, key):
         return self.db.get(key)
@@ -356,7 +348,7 @@ class test_KeyValueStoreBackend:
         for is_dict in True, False:
             self.b.mget_returns_dict = is_dict
             ids = {uuid(): i for i in range(10)}
-            for id, i in items(ids):
+            for id, i in ids.items():
                 self.b.mark_as_done(id, i)
             it = self.b.get_many(list(ids), interval=0.01)
             for i, (got_id, got_state) in enumerate(it):

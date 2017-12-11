@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pickle
 from time import time
 
@@ -156,7 +159,7 @@ class test_Persistent:
             assert item in saved
 
 
-class SimpleReq(object):
+class SimpleReq:
 
     def __init__(self, name):
         self.id = uuid()

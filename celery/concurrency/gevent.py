@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 """Gevent execution pool."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 from kombu.async import timer as _timer
 from kombu.five import monotonic
 
+=======
+from kombu.async import timer as _timer
+from time import monotonic
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from . import base
 
 try:
@@ -41,7 +46,7 @@ class Timer(_timer.Timer):
 
         self._Greenlet = _Greenlet
         self._GreenletExit = GreenletExit
-        super(Timer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._queue = set()
 
     def _enter(self, eta, priority, entry, **kwargs):
@@ -91,7 +96,7 @@ class TaskPool(base.BasePool):
         self.Pool = Pool
         self.spawn_n = spawn_raw
         self.timeout = kwargs.get('timeout')
-        super(TaskPool, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def on_start(self):
         self._pool = self.Pool(self.limit)

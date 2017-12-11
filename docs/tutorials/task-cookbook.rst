@@ -37,8 +37,9 @@ For this reason your tasks run-time shouldn't exceed the timeout.
 
 .. code-block:: python
 
+    from time import monotonic
+
     from celery import task
-    from celery.five import monotonic
     from celery.utils.log import get_task_logger
     from contextlib import contextmanager
     from django.core.cache import cache

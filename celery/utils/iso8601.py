@@ -32,8 +32,11 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import re
 from datetime import datetime
 
@@ -53,19 +56,20 @@ TIMEZONE_REGEX = re.compile(
 )
 
 
-def parse_iso8601(datestring):
+def parse_iso8601(datestring: str) -> datetime:
     """Parse and convert ISO-8601 string to datetime."""
+    tz = None
     m = ISO8601_REGEX.match(datestring)
     if not m:
         raise ValueError('unable to parse date string %r' % datestring)
     groups = m.groupdict()
-    tz = groups['timezone']
-    if tz == 'Z':
+    tz_str = groups['timezone']
+    if tz_str == 'Z':
         tz = FixedOffset(0)
-    elif tz:
-        m = TIMEZONE_REGEX.match(tz)
-        prefix, hours, minutes = m.groups()
-        hours, minutes = int(hours), int(minutes)
+    elif tz_str:
+        m = TIMEZONE_REGEX.match(tz_str)
+        prefix, hours_str, minutes_str = m.groups()
+        hours, minutes = int(hours_str), int(minutes_str)
         if prefix == '-':
             hours = -hours
             minutes = -minutes

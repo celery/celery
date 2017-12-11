@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 """Utilities related to dates, times, intervals, and timezones."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import numbers
 import os
+<<<<<<< HEAD
 import random
 import sys
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import time as _time
 from calendar import monthrange
 from datetime import date, datetime, timedelta, tzinfo
+from typing import Any, Callable, Dict, Union
 
 from kombu.utils.functional import reprcall
 from kombu.utils.objects import cached_property
 from pytz import AmbiguousTimeError, FixedOffset
 from pytz import timezone as _timezone
-
-from celery.five import python_2_unicode_compatible, string_t
 
 from .functional import dictfilter
 from .iso8601 import parse_iso8601
@@ -29,9 +29,6 @@ __all__ = (
     'ffwd', 'utcoffset', 'adjust_timestamp',
     'get_exponential_backoff_interval',
 )
-
-PY3 = sys.version_info[0] == 3
-PY33 = sys.version_info >= (3, 3)
 
 C_REMDEBUG = os.environ.get('C_REMDEBUG', False)
 
@@ -56,7 +53,6 @@ ZERO = timedelta(0)
 _local_timezone = None
 
 
-@python_2_unicode_compatible
 class LocalTimezone(tzinfo):
     """Local time implementation.
 
@@ -66,7 +62,7 @@ class LocalTimezone(tzinfo):
 
     _offset_cache = {}
 
-    def __init__(self):
+    def __init__(self) -> None:
         # This code is moved in __init__ to execute it as late as possible
         # See get_default_timezone().
         self.STDOFFSET = timedelta(seconds=-_time.timezone)
@@ -77,36 +73,34 @@ class LocalTimezone(tzinfo):
         self.DSTDIFF = self.DSTOFFSET - self.STDOFFSET
         tzinfo.__init__(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<LocalTimezone: UTC{0:+03d}>'.format(
             int(self.DSTOFFSET.total_seconds() / 3600),
         )
 
-    def utcoffset(self, dt):
+    def utcoffset(self, dt: datetime) -> timedelta:
         return self.DSTOFFSET if self._isdst(dt) else self.STDOFFSET
 
-    def dst(self, dt):
+    def dst(self, dt: timedelta) -> timedelta:
         return self.DSTDIFF if self._isdst(dt) else ZERO
 
-    def tzname(self, dt):
+    def tzname(self, dt: datetime) -> str:
         return _time.tzname[self._isdst(dt)]
 
-    if PY3:  # pragma: no cover
+    def fromutc(self, dt: datetime) -> datetime:
+        # The base tzinfo class no longer implements a DST
+        # offset aware .fromutc() in Python 3 (Issue #2306).
 
-        def fromutc(self, dt):
-            # The base tzinfo class no longer implements a DST
-            # offset aware .fromutc() in Python 3 (Issue #2306).
+        # I'd rather rely on pytz to do this, than port
+        # the C code from cpython's fromutc [asksol]
+        offset = int(self.utcoffset(dt).seconds / 60.0)
+        try:
+            tz = self._offset_cache[offset]
+        except KeyError:
+            tz = self._offset_cache[offset] = FixedOffset(offset)
+        return tz.fromutc(dt.replace(tzinfo=tz))
 
-            # I'd rather rely on pytz to do this, than port
-            # the C code from cpython's fromutc [asksol]
-            offset = int(self.utcoffset(dt).seconds / 60.0)
-            try:
-                tz = self._offset_cache[offset]
-            except KeyError:
-                tz = self._offset_cache[offset] = FixedOffset(offset)
-            return tz.fromutc(dt.replace(tzinfo=tz))
-
-    def _isdst(self, dt):
+    def _isdst(self, dt: datetime) -> bool:
         tt = (dt.year, dt.month, dt.day,
               dt.hour, dt.minute, dt.second,
               dt.weekday(), 0, 0)
@@ -115,61 +109,57 @@ class LocalTimezone(tzinfo):
         return tt.tm_isdst > 0
 
 
-class _Zone(object):
+class _Zone:
 
-    def tz_or_local(self, tzinfo=None):
+    def tz_or_local(self, tzinfo: tzinfo = None) -> tzinfo:
         # pylint: disable=redefined-outer-name
         if tzinfo is None:
             return self.local
         return self.get_timezone(tzinfo)
 
-    def to_local(self, dt, local=None, orig=None):
+    def to_local(self, dt: datetime,
+                 local: tzinfo = None,
+                 orig: tzinfo = None) -> datetime:
         if is_naive(dt):
             dt = make_aware(dt, orig or self.utc)
         return localize(dt, self.tz_or_local(local))
 
-    if PY33:  # pragma: no cover
+    def to_system(self, dt: datetime) -> datetime:
+        # tz=None is a special case since Python 3.3, and will
+        # convert to the current local timezone (Issue #2306).
+        return dt.astimezone(tz=None)
 
-        def to_system(self, dt):
-            # tz=None is a special case since Python 3.3, and will
-            # convert to the current local timezone (Issue #2306).
-            return dt.astimezone(tz=None)
-
-    else:
-
-        def to_system(self, dt):  # noqa
-            return localize(dt, self.local)
-
-    def to_local_fallback(self, dt):
+    def to_local_fallback(self, dt: datetime) -> datetime:
         if is_naive(dt):
             return make_aware(dt, self.local)
         return localize(dt, self.local)
 
-    def get_timezone(self, zone):
-        if isinstance(zone, string_t):
+    def get_timezone(self, zone: Union[str, tzinfo]) -> tzinfo:
+        if isinstance(zone, str):
             return _timezone(zone)
         return zone
 
     @cached_property
-    def local(self):
+    def local(self) -> tzinfo:
         return LocalTimezone()
 
     @cached_property
-    def utc(self):
+    def utc(self) -> tzinfo:
         return self.get_timezone('UTC')
 
 
 timezone = _Zone()
 
 
-def maybe_timedelta(delta):
+def maybe_timedelta(
+        delta: Union[numbers.Real, timedelta]) -> timedelta:
     """Convert integer to timedelta, if argument is an integer."""
     if isinstance(delta, numbers.Real):
         return timedelta(seconds=delta)
     return delta
 
 
-def delta_resolution(dt, delta):
+def delta_resolution(dt: datetime, delta: timedelta) -> datetime:
     """Round a :class:`~datetime.datetime` to the resolution of timedelta.
 
     If the :class:`~datetime.timedelta` is in days, the
@@ -192,7 +182,9 @@ def delta_resolution(dt, delta):
     return dt
 
 
-def remaining(start, ends_in, now=None, relative=False):
+def remaining(start: datetime, ends_in: timedelta,
+              now: Callable[[], datetime]=None,
+              relative: bool=False) -> timedelta:
     """Calculate the remaining time for a start date and a timedelta.
 
     For example, "how many seconds left for 30 seconds after start?"
@@ -223,17 +215,17 @@ def remaining(start, ends_in, now=None, relative=False):
     return ret
 
 
-def rate(r):
+def rate(r: Union[str, numbers.Number]) -> int:
     """Convert rate string (`"100/m"`, `"2/h"` or `"0.5/s"`) to seconds."""
     if r:
-        if isinstance(r, string_t):
+        if isinstance(r, str):
             ops, _, modifier = r.partition('/')
             return RATE_MODIFIER_MAP[modifier or 's'](float(ops)) or 0
         return r or 0
     return 0
 
 
-def weekday(name):
+def weekday(name: str) -> int:
     """Return the position of a weekday: 0 - 7, where 0 is Sunday.
 
     Example:
@@ -248,7 +240,9 @@ def weekday(name):
         raise KeyError(name)
 
 
-def humanize_seconds(secs, prefix='', sep='', now='now', microseconds=False):
+def humanize_seconds(secs: numbers.Number,
+                     prefix: str='', sep: str='', now: str='now',
+                     microseconds: bool=False) -> str:
     """Show seconds in human form.
 
     For example, 60 becomes "1 minute", and 7200 becomes "2 hours".
@@ -271,7 +265,7 @@ def humanize_seconds(secs, prefix='', sep='', now='now', microseconds=False):
     return now
 
 
-def maybe_iso8601(dt):
+def maybe_iso8601(dt: Union[str, datetime]) -> datetime:
     """Either ``datetime | str -> datetime`` or ``None -> None``."""
     if not dt:
         return
@@ -280,12 +274,12 @@ def maybe_iso8601(dt):
     return parse_iso8601(dt)
 
 
-def is_naive(dt):
+def is_naive(dt: datetime) -> bool:
     """Return :const:`True` if :class:`~datetime.datetime` is naive."""
     return dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None
 
 
-def make_aware(dt, tz):
+def make_aware(dt: datetime, tz: tzinfo) -> datetime:
     """Set timezone for a :class:`~datetime.datetime` object."""
     try:
         _localize = tz.localize
@@ -300,7 +294,7 @@ def make_aware(dt, tz):
                        _localize(dt, is_dst=False))
 
 
-def localize(dt, tz):
+def localize(dt: datetime, tz: tzinfo) -> datetime:
     """Convert aware :class:`~datetime.datetime` to another timezone."""
     dt = dt.astimezone(tz)
     try:
@@ -317,12 +311,12 @@ def localize(dt, tz):
                        _normalize(dt, is_dst=False))
 
 
-def to_utc(dt):
+def to_utc(dt: datetime) -> datetime:
     """Convert naive :class:`~datetime.datetime` to UTC."""
     return make_aware(dt, timezone.utc)
 
 
-def maybe_make_aware(dt, tz=None):
+def maybe_make_aware(dt: datetime, tz: tzinfo=None) -> datetime:
     """Convert dt to aware datetime, do nothing if dt is already aware."""
     if is_naive(dt):
         dt = to_utc(dt)
@@ -332,13 +326,20 @@ def maybe_make_aware(dt, tz=None):
     return dt
 
 
-@python_2_unicode_compatible
-class ffwd(object):
+class ffwd:
     """Version of ``dateutil.relativedelta`` that only supports addition."""
 
-    def __init__(self, year=None, month=None, weeks=0, weekday=None, day=None,
-                 hour=None, minute=None, second=None, microsecond=None,
-                 **kwargs):
+    def __init__(self,
+                 year: int = None,
+                 month: int = None,
+                 weeks: int = 0,
+                 weekday: int = None,
+                 day: int = None,
+                 hour: int = None,
+                 minute: int = None,
+                 second: numbers.Number = None,
+                 microsecond: numbers.Number = None,
+                 **kwargs: Any) -> None:
         # pylint: disable=redefined-outer-name
         # weekday is also a function in outer scope.
         self.year = year
@@ -353,11 +354,11 @@ class ffwd(object):
         self.days = weeks * 7
         self._has_time = self.hour is not None or self.minute is not None
 
-    def __repr__(self):
-        return reprcall('ffwd', (), self._fields(weeks=self.weeks,
-                                                 weekday=self.weekday))
+    def __repr__(self) -> str:
+        return reprcall('ffwd', (), self._fields(
+            weeks=self.weeks, weekday=self.weekday))
 
-    def __radd__(self, other):
+    def __radd__(self, other: Any) -> datetime:
         if not isinstance(other, date):
             return NotImplemented
         year = self.year or other.year
@@ -369,7 +370,7 @@ class ffwd(object):
             ret += timedelta(days=(7 - ret.weekday() + self.weekday) % 7)
         return ret + timedelta(days=self.days)
 
-    def _fields(self, **extra):
+    def _fields(self, **extra) -> Dict:
         return dictfilter({
             'year': self.year, 'month': self.month, 'day': self.day,
             'hour': self.hour, 'minute': self.minute,
@@ -377,14 +378,14 @@ class ffwd(object):
         }, **extra)
 
 
-def utcoffset(time=_time, localtime=_time.localtime):
+def utcoffset(time=_time, localtime=_time.localtime) -> float:
     """Return the current offset to UTC in hours."""
     if localtime().tm_isdst:
         return time.altzone // 3600
     return time.timezone // 3600
 
 
-def adjust_timestamp(ts, offset, here=utcoffset):
+def adjust_timestamp(ts: float, offset: float, here=utcoffset) -> float:
     """Adjust timestamp based on provided utcoffset."""
     return ts - (offset - here()) * 3600
 

@@ -1,6 +1,5 @@
-from __future__ import absolute_import, unicode_literals
-
 import errno
+import io
 import os
 import signal
 import sys
@@ -11,6 +10,7 @@ from case import Mock, call, mock, patch, skip
 
 from celery import _find_option_with_arg, platforms
 from celery.exceptions import SecurityError
+<<<<<<< HEAD
 from celery.five import WhateverIO
 from celery.platforms import (DaemonContext, LockFailed, Pidfile,
                               _setgroups_hack, check_privileges,
@@ -20,6 +20,32 @@ from celery.platforms import (DaemonContext, LockFailed, Pidfile,
                               parse_uid, set_mp_process_title,
                               set_process_title, setgid, setgroups, setuid,
                               signals)
+=======
+from celery.platforms import (
+    get_fdmax,
+    ignore_errno,
+    check_privileges,
+    set_process_title,
+    set_mp_process_title,
+    signals,
+    maybe_drop_privileges,
+    setuid,
+    setgid,
+    initgroups,
+    parse_uid,
+    parse_gid,
+    detached,
+    DaemonContext,
+    create_pidlock,
+    Pidfile,
+    LockFailed,
+    setgroups,
+    _setgroups_hack,
+    close_open_fds,
+    fd_by_path,
+    isatty,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 try:
     import resource
@@ -212,7 +238,7 @@ class test_maybe_drop_privileges:
         geteuid.return_value = 10
         getuid.return_value = 10
 
-        class pw_struct(object):
+        class pw_struct:
             pw_gid = 50001
 
         def raise_on_second_call(*args, **kwargs):
@@ -328,7 +354,7 @@ class test_setget_uid_gid:
     @patch('pwd.getpwnam')
     def test_parse_uid_when_existing_name(self, getpwnam):
 
-        class pwent(object):
+        class pwent:
             pw_uid = 5001
 
         getpwnam.return_value = pwent()
@@ -347,7 +373,7 @@ class test_setget_uid_gid:
     @patch('grp.getgrnam')
     def test_parse_gid_when_existing_name(self, getgrnam):
 
-        class grent(object):
+        class grent:
             gr_gid = 50001
 
         getgrnam.return_value = grent()
@@ -382,7 +408,7 @@ class test_initgroups:
         try:
             getpwuid.return_value = ['user']
 
-            class grent(object):
+            class grent:
                 gr_mem = ['user']
 
                 def __init__(self, gid):
@@ -676,9 +702,9 @@ class test_Pidfile:
     def test_write_pid(self, open_, fdopen, osopen, getpid, fsync):
         getpid.return_value = 1816
         osopen.return_value = 13
-        w = fdopen.return_value = WhateverIO()
+        w = fdopen.return_value = io.StringIO()
         w.close = Mock()
-        r = open_.return_value = WhateverIO()
+        r = open_.return_value = io.StringIO()
         r.write('1816\n')
         r.seek(0)
 
@@ -704,9 +730,9 @@ class test_Pidfile:
                                 osopen, getpid, fsync):
         getpid.return_value = 1816
         osopen.return_value = 13
-        w = fdopen.return_value = WhateverIO()
+        w = fdopen.return_value = io.StringIO()
         w.close = Mock()
-        r = open_.return_value = WhateverIO()
+        r = open_.return_value = io.StringIO()
         r.write('11816\n')
         r.seek(0)
 
@@ -804,7 +830,7 @@ class test_setgroups:
 
 
 def test_check_privileges():
-    class Obj(object):
+    class Obj:
         fchown = 13
     prev, platforms.os = platforms.os, Obj()
     try:

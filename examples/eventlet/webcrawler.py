@@ -19,7 +19,6 @@ We don't have to do compression manually, just set the tasks compression
 to "zlib", and the serializer to "pickle".
 
 """
-from __future__ import absolute_import, print_function, unicode_literals
 import re
 import requests
 from celery import task, group

@@ -1,8 +1,13 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 from case import Mock
 
 from celery.five import WhateverIO, items
+=======
+import io
+from case import Mock
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.graph import DependencyGraph
 
 
@@ -49,7 +54,7 @@ class test_DependencyGraph:
         assert x.format(obj) is obj
 
     def test_items(self):
-        assert dict(items(self.graph1())) == {
+        assert dict(self.graph1().items()) == {
             'A': [], 'B': [], 'C': ['A'], 'D': ['C', 'B'],
         }
 
@@ -58,6 +63,6 @@ class test_DependencyGraph:
         assert x.repr_node('fasdswewqewq')
 
     def test_to_dot(self):
-        s = WhateverIO()
+        s = io.StringIO()
         self.graph1().to_dot(s)
         assert s.getvalue()

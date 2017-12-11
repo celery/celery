@@ -4,7 +4,6 @@ from __future__ import absolute_import, unicode_literals
 from kombu.utils.json import loads
 
 from celery.bin.base import Command
-from celery.five import string_t
 from celery.utils.time import maybe_iso8601
 
 
@@ -56,8 +55,8 @@ class call(Command):
                    queue=None, exchange=None, routing_key=None,
                    eta=None, expires=None, **_):
         # arguments
-        args = loads(args) if isinstance(args, string_t) else args
-        kwargs = loads(kwargs) if isinstance(kwargs, string_t) else kwargs
+        args = loads(args) if isinstance(args, str) else args
+        kwargs = loads(kwargs) if isinstance(kwargs, str) else kwargs
 
         # Expires can be int/float.
         try:

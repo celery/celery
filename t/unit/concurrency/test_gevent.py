@@ -1,8 +1,17 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 from case import Mock
 
 from celery.concurrency.gevent import TaskPool, Timer, apply_timeout
+=======
+from case import Mock, skip
+from celery.concurrency.gevent import (
+    Timer,
+    TaskPool,
+    apply_timeout,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 gevent_modules = (
     'gevent',

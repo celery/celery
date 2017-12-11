@@ -1,18 +1,24 @@
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import sys
 
+<<<<<<< HEAD
 from kombu.five import monotonic  # noqa
 
 from celery import Celery  # noqa
 from celery.five import range  # noqa
+=======
+from time import monotonic
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 os.environ.update(
     NOSETPS='yes',
     USE_FAST_LOCALS='yes',
 )
 
+<<<<<<< HEAD
+=======
+from celery import Celery  # noqa
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 DEFAULT_ITS = 40000
 

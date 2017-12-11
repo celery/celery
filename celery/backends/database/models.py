@@ -1,21 +1,27 @@
 # -*- coding: utf-8 -*-
 """Database models used by the SQLAlchemy result store backend."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+import sqlalchemy as sa
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from datetime import datetime
 
 import sqlalchemy as sa
 from sqlalchemy.types import PickleType
 
 from celery import states
+<<<<<<< HEAD
 from celery.five import python_2_unicode_compatible
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from .session import ResultModelBase
 
 __all__ = ('Task', 'TaskSet')
 
 
-@python_2_unicode_compatible
 class Task(ResultModelBase):
     """Task result/status."""
 
@@ -47,7 +53,6 @@ class Task(ResultModelBase):
         return '<Task {0.task_id} state: {0.status}>'.format(self)
 
 
-@python_2_unicode_compatible
 class TaskSet(ResultModelBase):
     """TaskSet result."""
 

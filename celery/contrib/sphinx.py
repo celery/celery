@@ -29,6 +29,7 @@ syntax.
 
 Use ``.. autotask::`` to alternatively manually document a task.
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 from celery.app.task import BaseTask
@@ -39,6 +40,12 @@ try:  # pragma: no cover
     from inspect import formatargspec, getfullargspec
 except ImportError:  # Py2
     from inspect import formatargspec, getargspec as getfullargspec  # noqa
+=======
+from inspect import formatargspec, getfullargspec
+from sphinx.domains.python import PyModulelevel
+from sphinx.ext.autodoc import FunctionDocumenter
+from celery.app.task import BaseTask
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class TaskDocumenter(FunctionDocumenter):

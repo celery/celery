@@ -1,9 +1,14 @@
 """Consumer Broker Connection Bootstep."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+from typing import Mapping
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.common import ignore_errors
 
 from celery import bootsteps
+from celery.types import WorkerConsumerT
 from celery.utils.log import get_logger
 
 __all__ = ('Connection',)
@@ -15,22 +20,22 @@ info = logger.info
 class Connection(bootsteps.StartStopStep):
     """Service managing the consumer broker connection."""
 
-    def __init__(self, c, **kwargs):
+    def __init__(self, c: WorkerConsumerT, **kwargs) -> None:
         c.connection = None
         super(Connection, self).__init__(c, **kwargs)
 
-    def start(self, c):
-        c.connection = c.connect()
+    async def start(self, c) -> None:
+        c.connection = await c.connect()
         info('Connected to %s', c.connection.as_uri())
 
-    def shutdown(self, c):
+    async def shutdown(self, c) -> None:
         # We must set self.connection to None here, so
         # that the green pidbox thread exits.
         connection, c.connection = c.connection, None
         if connection:
-            ignore_errors(connection, connection.close)
+            await ignore_errors(connection, connection.close)
 
-    def info(self, c):
+    def info(self, c) -> Mapping:
         params = 'N/A'
         if c.connection:
             params = c.connection.info()

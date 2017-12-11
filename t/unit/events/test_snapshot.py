@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pytest
 from case import Mock, mock, patch
 
@@ -7,7 +10,7 @@ from celery.app.events import Events
 from celery.events.snapshot import Polaroid, evcam
 
 
-class MockTimer(object):
+class MockTimer:
     installed = []
 
     def call_repeatedly(self, secs, fun, *args, **kwargs):
@@ -90,7 +93,7 @@ class test_Polaroid:
 
 class test_evcam:
 
-    class MockReceiver(object):
+    class MockReceiver:
         raise_keyboard_interrupt = False
 
         def capture(self, **kwargs):

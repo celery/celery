@@ -18,8 +18,12 @@ NAME = 'celery'
 
 E_UNSUPPORTED_PYTHON = """
 ----------------------------------------
- Celery 4.0 requires %s %s or later
+ Celery 5.0 requires %s %s or later!
 ----------------------------------------
+
+- For CPython 2.7, PyPy 2.x, Jython 2.7, CPython 3.4->3.5; use Celery 4.0:
+
+    $ pip install 'celery>3,<5'
 
 - For CPython 2.6, PyPy 1.x, Jython 2.6, CPython 3.2->3.3; use Celery 3.1:
 
@@ -35,18 +39,15 @@ E_UNSUPPORTED_PYTHON = """
 """
 
 PYIMP = _pyimp()
-PY26_OR_LESS = sys.version_info < (2, 7)
 PY3 = sys.version_info[0] == 3
-PY33_OR_LESS = PY3 and sys.version_info < (3, 4)
+PY35_OR_LESS = PY3 and sys.version_info < (3, 6)
 JYTHON = sys.platform.startswith('java')
 PYPY_VERSION = getattr(sys, 'pypy_version_info', None)
 PYPY = PYPY_VERSION is not None
 PYPY24_ATLEAST = PYPY_VERSION and PYPY_VERSION >= (2, 4)
 
-if PY26_OR_LESS:
-    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '2.7'))
-elif PY33_OR_LESS and not PYPY24_ATLEAST:
-    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '3.4'))
+if PY35_OR_LESS:
+    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '3.6'))
 
 # -*- Extras -*-
 
@@ -85,11 +86,12 @@ classes = """
     Topic :: System :: Distributed Computing
     Topic :: Software Development :: Object Brokering
     Programming Language :: Python
-    Programming Language :: Python :: 2
-    Programming Language :: Python :: 2.7
     Programming Language :: Python :: 3
+<<<<<<< HEAD
     Programming Language :: Python :: 3.4
     Programming Language :: Python :: 3.5
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
     Programming Language :: Python :: 3.6
     Programming Language :: Python :: Implementation :: CPython
     Programming Language :: Python :: Implementation :: PyPy

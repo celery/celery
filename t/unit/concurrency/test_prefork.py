@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import os
 import socket
@@ -9,7 +7,6 @@ import pytest
 from case import Mock, mock, patch, skip
 
 from celery.app.defaults import DEFAULTS
-from celery.five import range
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import noop
 from celery.utils.objects import Bunch
@@ -19,10 +16,10 @@ try:
     from celery.concurrency import asynpool
 except ImportError:
 
-    class _mp(object):
+    class _mp:
         RUN = 0x1
 
-        class TaskPool(object):
+        class TaskPool:
             _pool = Mock()
 
             def __init__(self, *args, **kwargs):
@@ -40,7 +37,7 @@ except ImportError:
     asynpool = None  # noqa
 
 
-class MockResult(object):
+class MockResult:
 
     def __init__(self, value, pid):
         self.value = value
@@ -111,7 +108,7 @@ class test_process_destructor:
         )
 
 
-class MockPool(object):
+class MockPool:
     started = False
     closed = False
     joined = False
@@ -379,7 +376,7 @@ class test_TaskPool:
         pool = TaskPool(10)
         procs = [Bunch(pid=i) for i in range(pool.limit)]
 
-        class _Pool(object):
+        class _Pool:
             _pool = procs
             _maxtasksperchild = None
             timeout = 10

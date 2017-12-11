@@ -1,28 +1,43 @@
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import sys
 from collections import defaultdict
 from io import StringIO
 from tempfile import mktemp
 
+<<<<<<< HEAD
 import pytest
 from case import Mock, mock, patch, skip
+=======
+from case import Mock, mock, patch
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from case.utils import get_logger_handlers
 
 from celery import signals, uuid
 from celery.app.log import TaskFormatter
+<<<<<<< HEAD
 from celery.five import python_2_unicode_compatible
 from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
                               get_task_logger, in_sighandler)
 from celery.utils.log import logger as base_logger
 from celery.utils.log import logger_isa, task_logger
+=======
+from celery.utils.log import LoggingProxy
+from celery.utils.log import (
+    get_logger,
+    ColorFormatter,
+    logger as base_logger,
+    get_task_logger,
+    task_logger,
+    in_sighandler,
+    logger_isa,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class test_TaskFormatter:
 
     def test_no_task(self):
-        class Record(object):
+        class Record:
             msg = 'hello world'
             levelname = 'info'
             exc_text = exc_info = None
@@ -62,13 +77,11 @@ class test_logger_isa:
         assert logger_isa(z, z)
 
     def test_recursive(self):
+        raise pytest.skip('HANGS ON PYTHON 3.6 BETA, LOOKS LIKE UPSTREAM BUG')
         x = get_task_logger('X1foo')
         prev, x.parent = x.parent, x
-        try:
-            with pytest.raises(RuntimeError):
-                logger_isa(x, task_logger)
-        finally:
-            x.parent = prev
+        with pytest.raises(RuntimeError):
+            logger_isa(x, task_logger)
 
         y = get_task_logger('X2foo')
         z = get_task_logger('X2foo')
@@ -105,8 +118,6 @@ class test_ColorFormatter:
             raise Exception()
         except Exception:
             assert x.formatException(sys.exc_info())
-        if sys.version_info[0] == 2:
-            safe_str.assert_called()
 
     @patch('logging.Formatter.format')
     def test_format_object(self, _format):
@@ -128,8 +139,7 @@ class test_ColorFormatter:
                 safe_str.side_effect = None
         safe_str.side_effect = on_safe_str
 
-        @python_2_unicode_compatible
-        class Record(object):
+        class Record:
             levelname = 'ERROR'
             msg = 'HELLO'
             exc_info = 1
@@ -149,25 +159,17 @@ class test_ColorFormatter:
         assert '<Unrepresentable' in msg
         assert safe_str.call_count == 1
 
-    @skip.if_python3()
-    @patch('celery.utils.log.safe_str')
-    def test_format_raises_no_color(self, safe_str):
-        x = ColorFormatter(use_color=False)
-        record = Mock()
-        record.levelname = 'ERROR'
-        record.msg = 'HELLO'
-        record.exc_text = 'error text'
-        x.format(record)
-        assert safe_str.call_count == 1
-
 
 class test_default_logger:
 
     def setup(self):
-        self.setup_logger = self.app.log.setup_logger
         self.get_logger = lambda n=None: get_logger(n) if n else logging.root
         signals.setup_logging.receivers[:] = []
         self.app.log.already_setup = False
+
+    def setup_logger(self, name='celery', *args, **kwargs):
+        self.app.log.setup_logging_subsystem(*args, **kwargs)
+        return logging.root
 
     def test_get_logger_sets_parent(self):
         logger = get_logger('celery.test_get_logger')
@@ -232,9 +234,7 @@ class test_default_logger:
     @patch('os.fstat')
     def test_setup_logger_no_handlers_file(self, *args):
         tempfile = mktemp(suffix='unittest', prefix='celery')
-        _open = ('builtins.open' if sys.version_info[0] == 3
-                 else '__builtin__.open')
-        with patch(_open) as osopen:
+        with patch('builtins.open') as osopen:
             with mock.restore_logging():
                 files = defaultdict(StringIO)
 

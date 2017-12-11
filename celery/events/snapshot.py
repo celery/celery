@@ -7,8 +7,11 @@ state of a cluster at regular intervals.  There's a full
 implementation of this writing the snapshots to a database
 in :mod:`djcelery.snapshots` in the `django-celery` distribution.
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, print_function, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.utils.limits import TokenBucket
 
 from celery import platforms
@@ -24,7 +27,7 @@ __all__ = ('Polaroid', 'evcam')
 logger = get_logger('celery.evcam')
 
 
-class Polaroid(object):
+class Polaroid:
     """Record event snapshots."""
 
     timer = None

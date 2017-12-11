@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import socket
 import sys
@@ -7,6 +5,7 @@ from collections import deque
 from datetime import datetime, timedelta
 from functools import partial
 from threading import Event
+from queue import Empty, Queue as FastQueue
 
 import pytest
 from amqp import ChannelError
@@ -19,12 +18,19 @@ from kombu.utils.uuid import uuid
 
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
+<<<<<<< HEAD
 from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
                                TaskRevokedError, WorkerShutdown,
                                WorkerTerminate)
 from celery.five import Empty
 from celery.five import Queue as FastQueue
 from celery.five import range
+=======
+from celery.exceptions import (
+    WorkerShutdown, WorkerTerminate, TaskRevokedError,
+    InvalidTaskError, ImproperlyConfigured,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.platforms import EX_FAILURE
 from celery.utils.nodenames import worker_direct
 from celery.utils.serialization import pickle
@@ -580,7 +586,7 @@ class test_Consumer(ConsumerCase):
         controller.box.node.listen = BConsumer()
         connections = []
 
-        class Connection(object):
+        class Connection:
             calls = 0
 
             def __init__(self, obj):
@@ -641,7 +647,7 @@ class test_Consumer(ConsumerCase):
 
     def test_start__loop(self):
 
-        class _QoS(object):
+        class _QoS:
             prev = 3
             value = 4
 

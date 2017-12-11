@@ -5,8 +5,11 @@ Using :func:`os.execv` as forking and multiprocessing
 leads to weird issues (it was a long time ago now, but it
 could have something to do with the threading mutex bug)
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import argparse
 import os
 import sys
@@ -48,7 +51,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
         return EX_FAILURE
 
 
-class detached_celeryd(object):
+class detached_celeryd:
     """Daemonize the celery worker process."""
 
     usage = '%(prog)s [options] [celeryd options]'

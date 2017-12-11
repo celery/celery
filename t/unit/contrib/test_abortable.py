@@ -1,6 +1,10 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 from celery.contrib.abortable import AbortableAsyncResult, AbortableTask
+=======
+from celery.contrib.abortable import AbortableTask, AbortableAsyncResult
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class test_AbortableTask:

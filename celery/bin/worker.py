@@ -79,7 +79,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 .. cmdoption:: -E, --task-events
 
     Send task-related events that can be captured by monitors like
-    :program:`celery events`, `celerymon`, and others.
+    :program:`celery events`, :pypi:`flower` and others.
 
 .. cmdoption:: --without-gossip
 
@@ -175,14 +175,16 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
     Executable to use for the detached process.
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import sys
 
 from celery import concurrency
 from celery.bin.base import Command, daemon_options
 from celery.bin.celeryd_detach import detached_celeryd
-from celery.five import string_t
 from celery.platforms import maybe_drop_privileges
 from celery.utils.log import LOG_LEVELS, mlevel
 from celery.utils.nodenames import default_nodename
@@ -247,7 +249,7 @@ class worker(Command):
             except KeyError:  # pragma: no cover
                 self.die('Unknown level {0!r}.  Please use one of {1}.'.format(
                     loglevel, '|'.join(
-                        l for l in LOG_LEVELS if isinstance(l, string_t))))
+                        l for l in LOG_LEVELS if isinstance(l, str))))
 
         worker = self.app.Worker(
             hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,

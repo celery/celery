@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """Base command-line interface."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import argparse
+<<<<<<< HEAD
 import json
+=======
+import inspect
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import os
 import random
 import re
@@ -13,11 +15,19 @@ from collections import defaultdict
 from heapq import heappush
 from pprint import pformat
 
+<<<<<<< HEAD
 from celery import VERSION_BANNER, Celery, maybe_patch_concurrency, signals
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.five import (getfullargspec, items, long_t,
                          python_2_unicode_compatible, string, string_t,
                          text_t)
+=======
+from celery import VERSION_BANNER, Celery, maybe_patch_concurrency
+from celery import signals
+from celery.exceptions import (
+    CDeprecationWarning, CPendingDeprecationWarning, ImproperlyConfigured,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE, isatty
 from celery.utils import imports, term, text
 from celery.utils.functional import dictfilter
@@ -65,9 +75,9 @@ def _optparse_callback_to_type(option, callback):
 
 
 def _add_optparse_argument(parser, opt, typemap={
-        'string': text_t,
+        'string': str,
         'int': int,
-        'long': long_t,
+        'long': int,
         'float': float,
         'complex': complex,
         'choice': None}):
@@ -101,7 +111,6 @@ def _add_compat_options(parser, options):
             _add_optparse_argument(parser, option)
 
 
-@python_2_unicode_compatible
 class Error(Exception):
     """Exception raised by commands."""
 
@@ -110,7 +119,7 @@ class Error(Exception):
     def __init__(self, reason, status=None):
         self.reason = reason
         self.status = status if status is not None else self.status
-        super(Error, self).__init__(reason, status)
+        super().__init__(reason, status)
 
     def __str__(self):
         return self.reason
@@ -122,7 +131,7 @@ class UsageError(Error):
     status = EX_USAGE
 
 
-class Extensions(object):
+class Extensions:
     """Loads extensions from setuptools entrypoints."""
 
     def __init__(self, namespace, register):
@@ -140,7 +149,7 @@ class Extensions(object):
         return self.names
 
 
-class Command(object):
+class Command:
     """Base class for command-line applications.
 
     Arguments:
@@ -171,7 +180,10 @@ class Command(object):
 
     # Some programs (multi) does not want to load the app specified
     # (Issue #1008).
-    respects_app_option = True
+    requires_app = True
+
+    # Some programs (multi) does not want to set up fixups etc.
+    fake_app = False
 
     #: Enable if the application should support config from the cmdline.
     enable_config_from_cmdline = False
@@ -202,7 +214,7 @@ class Command(object):
                  stdout=None, stderr=None, quiet=False, on_error=None,
                  on_usage_error=None):
         self.app = app
-        self.get_app = get_app or self._get_default_app
+        self.get_app = get_app
         self.stdout = stdout or sys.stdout
         self.stderr = stderr or sys.stderr
         self._colored = None
@@ -245,7 +257,7 @@ class Command(object):
             return exc.status
 
     def verify_args(self, given, _index=0):
-        S = getfullargspec(self.run)
+        S = inspect.getfullargspec(self.run)
         _index = 1 if S.args and S.args[0] == 'self' else _index
         required = S.args[_index:-len(S.defaults) if S.defaults else None]
         missing = required[len(given):]
@@ -314,7 +326,7 @@ class Command(object):
         pass
 
     def expanduser(self, value):
-        if isinstance(value, string_t):
+        if isinstance(value, str):
             return os.path.expanduser(value)
         return value
 
@@ -365,7 +377,7 @@ class Command(object):
         if options:
             options = {
                 k: self.expanduser(v)
-                for k, v in items(options) if not k.startswith('_')
+                for k, v in options.items() if not k.startswith('_')
             }
         args = [self.expanduser(arg) for arg in args]
         self.check_args(args)
@@ -436,7 +448,7 @@ class Command(object):
     def prepare_parser(self, parser):
         docs = [self.parse_doc(doc) for doc in (self.doc, __doc__) if doc]
         for doc in docs:
-            for long_opt, help in items(doc):
+            for long_opt, help in doc.items():
                 option = parser._option_string_actions[long_opt]
                 if option is not None:
                     option.help = ' '.join(help).format(default=option.default)
@@ -470,15 +482,8 @@ class Command(object):
         config = preload_options.get('config')
         if config:
             os.environ['CELERY_CONFIG_MODULE'] = config
-        if self.respects_app_option:
-            if app:
-                self.app = self.find_app(app)
-            elif self.app is None:
-                self.app = self.get_app(loader=loader)
-            if self.enable_config_from_cmdline:
-                argv = self.process_cmdline_config(argv)
-        else:
-            self.app = Celery(fixups=[])
+
+        argv = self.initialize_app(app, loader, argv)
 
         self._handle_user_preload_options(argv)
 
@@ -492,13 +497,32 @@ class Command(object):
                 sender=self, app=self.app, options=user_options,
             )
 
+    def initialize_app(self, app=None, loader=None, argv=None):
+        if self.requires_app:
+            if app:
+                self.app = self.find_app(app)
+            elif self.app is None:
+                self.app = self.get_default_app(app, loader)
+            if self.enable_config_from_cmdline:
+                argv = self.process_cmdline_config(argv)
+        else:
+            if self.fake_app:
+                self.app = Celery(fixups=[])
+            else:
+                self.app = self.get_default_app(app, loader)
+        return argv
+
+    def get_default_app(self, app=None, loader=None):
+        if self.get_app is not None:
+            return self.get_app(loader=loader)
+        raise ImproperlyConfigured('Missing required --app|-A option')
+
     def find_app(self, app):
         from celery.app.utils import find_app
         return find_app(app, symbol_by_name=self.symbol_by_name)
 
     def symbol_by_name(self, name, imp=imports.import_from_cwd):
         return imports.symbol_by_name(name, imp=imp)
-    get_cls_by_name = symbol_by_name  # XXX compat
 
     def process_cmdline_config(self, argv):
         try:
@@ -606,8 +630,8 @@ class Command(object):
                 return self.pretty_dict_ok_error(n)
             else:
                 return OK, json.dumps(n, sort_keys=True, indent=4)
-        if isinstance(n, string_t):
-            return OK, string(n)
+        if isinstance(n, str):
+            return OK, str(n)
         return OK, pformat(n)
 
     def say_chat(self, direction, title, body=''):

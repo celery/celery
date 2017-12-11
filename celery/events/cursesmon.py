@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Graphical monitor of Celery events using curses."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import curses
 import sys
 import threading
@@ -13,7 +11,6 @@ from time import time
 
 from celery import VERSION_BANNER, states
 from celery.app import app_or_default
-from celery.five import items, values
 from celery.utils.text import abbr, abbrtask
 
 __all__ = ('CursesMonitor', 'evtop')
@@ -34,7 +31,7 @@ events: {s.event_count} tasks:{s.task_count} workers:{w_alive}/{w_all}
 """
 
 
-class CursesMonitor(object):  # pragma: no cover
+class CursesMonitor:  # pragma: no cover
     """A curses based Celery task monitor."""
 
     keymap = {}
@@ -206,7 +203,7 @@ class CursesMonitor(object):  # pragma: no cover
             for subreply in reply:
                 curline = next(y)
 
-                host, response = next(items(subreply))
+                host, response = next(subreply.items())
                 host = '{0}: '.format(host)
                 self.win.addstr(curline, 3, host, curses.A_BOLD)
                 attr = curses.A_NORMAL
@@ -389,7 +386,7 @@ class CursesMonitor(object):  # pragma: no cover
                         info['result'] = abbr(info['result'], 16)
                     info = ' '.join(
                         '{0}={1}'.format(key, value)
-                        for key, value in items(info)
+                        for key, value in info.items()
                     )
                     detail = '... -> key i'
                 infowin = abbr(info,
@@ -418,8 +415,10 @@ class CursesMonitor(object):  # pragma: no cover
                 my - 3, x + len(self.info_str),
                 STATUS_SCREEN.format(
                     s=self.state,
-                    w_alive=len([w for w in values(self.state.workers)
-                                 if w.alive]),
+                    w_alive=len([
+                        w for w in self.state.workers.values()
+                        if w.alive
+                    ]),
                     w_all=len(self.state.workers),
                 ),
                 curses.A_DIM,
@@ -478,7 +477,7 @@ class CursesMonitor(object):  # pragma: no cover
 
     @property
     def workers(self):
-        return [hostname for hostname, w in items(self.state.workers)
+        return [hostname for hostname, w in self.state.workers.items()
                 if w.alive]
 
 

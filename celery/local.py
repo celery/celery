@@ -6,21 +6,25 @@ soon as possible, and that shall not load any third party modules.
 
 Parts of this module is Copyright by Werkzeug Team.
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import operator
 import sys
 from functools import reduce
 from importlib import import_module
 from types import ModuleType
+<<<<<<< HEAD
 
 from .five import bytes_if_py2, items, string, string_t
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 __all__ = ('Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate')
 
 __module__ = __name__  # used by Proxy class body
-
-PY3 = sys.version_info[0] == 3
 
 
 def _default_cls_attr(name, type_, cls_value):
@@ -38,7 +42,7 @@ def _default_cls_attr(name, type_, cls_value):
     def __get__(self, obj, cls=None):
         return self.__getter(obj) if obj is not None else self
 
-    return type(bytes_if_py2(name), (type_,), {
+    return type(name, (type_,), {
         '__new__': __new__, '__get__': __get__,
     })
 
@@ -54,7 +58,7 @@ def try_import(module, default=None):
         return default
 
 
-class Proxy(object):
+class Proxy:
     """Proxy to another object."""
 
     # Code stolen from werkzeug.local.Proxy.
@@ -134,7 +138,6 @@ class Proxy(object):
             return bool(self._get_current_object())
         except RuntimeError:  # pragma: no cover
             return False
-    __nonzero__ = __bool__  # Py2
 
     def __dir__(self):
         try:
@@ -290,19 +293,6 @@ class Proxy(object):
 
     def __reduce__(self):
         return self._get_current_object().__reduce__()
-
-    if not PY3:  # pragma: no cover
-        def __cmp__(self, other):
-            return cmp(self._get_current_object(), other)  # noqa
-
-        def __long__(self):
-            return long(self._get_current_object())  # noqa
-
-        def __unicode__(self):
-            try:
-                return string(self._get_current_object())
-            except RuntimeError:  # pragma: no cover
-                return repr(self)
 
 
 class PromiseProxy(Proxy):
@@ -467,7 +457,7 @@ COMPAT_MODULES = {
 DEPRECATED_ATTRS = set(COMPAT_MODULES['celery'].keys()) | {'subtask'}
 
 
-class class_property(object):
+class class_property:
 
     def __init__(self, getter=None, setter=None):
         if getter is not None and not isinstance(getter, classmethod):
@@ -537,10 +527,10 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
 
     attrs = {
         attr_name: (prepare_attr(attr) if prepare_attr else attr)
-        for attr_name, attr in items(attrs)
+        for attr_name, attr in attrs.items()
     }
     module = sys.modules[fqdn] = type(
-        bytes_if_py2(modname), (base,), cls_attrs)(bytes_if_py2(name))
+        modname, (base,), cls_attrs)(name)
     module.__dict__.update(attrs)
     return module
 
@@ -572,21 +562,21 @@ def recreate_module(name, compat_modules=(), by_module={}, direct={},
 
 def get_compat_module(pkg, name):
     def prepare(attr):
-        if isinstance(attr, string_t):
+        if isinstance(attr, str):
             return Proxy(getappattr, (attr,))
         return attr
 
     attrs = COMPAT_MODULES[pkg.__name__][name]
-    if isinstance(attrs, string_t):
+    if isinstance(attrs, str):
         fqdn = '.'.join([pkg.__name__, name])
         module = sys.modules[fqdn] = import_module(attrs)
         return module
-    attrs[bytes_if_py2('__all__')] = list(attrs)
+    attrs['__all__'] = list(attrs)
     return create_module(name, dict(attrs), pkg=pkg, prepare_attr=prepare)
 
 
 def get_origins(defs):
     origins = {}
-    for module, attrs in items(defs):
+    for module, attrs in defs.items():
         origins.update({attr: module for attr in attrs})
     return origins

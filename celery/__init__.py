@@ -5,12 +5,10 @@
 # :copyright: (c) 2009 - 2012 Ask Solem and individual contributors,
 #                 All rights reserved.
 # :license:   BSD (3 Clause), see LICENSE for more details.
-
-from __future__ import absolute_import, print_function, unicode_literals
 import os
 import re
 import sys
-from collections import namedtuple
+from typing import NamedTuple
 
 SERIES = 'latentcall'
 
@@ -32,9 +30,16 @@ __all__ = (
 
 VERSION_BANNER = '{0} ({1})'.format(__version__, SERIES)
 
-version_info_t = namedtuple('version_info_t', (
-    'major', 'minor', 'micro', 'releaselevel', 'serial',
-))
+
+class version_info_t(NamedTuple):
+    """Version information tuple."""
+
+    major: int
+    minor: int
+    micro: int
+    releaselevel: str
+    serial: str
+
 
 # bumpversion can only search for {current_version}
 # so we have to parse the version here.
@@ -46,7 +51,7 @@ del _temp
 del re
 
 if os.environ.get('C_IMPDEBUG'):  # pragma: no cover
-    from .five import builtins
+    import builtins
 
     def debug_import(name, locals=None, globals=None,
                      fromlist=None, level=-1, real_import=builtins.__import__):
@@ -69,7 +74,7 @@ if STATICA_HACK:  # pragma: no cover
     from celery._state import current_app, current_task  # noqa
     from celery.canvas import (                          # noqa
         chain, chord, chunks, group,
-        signature, maybe_signature, xmap, xstarmap, subtask,
+        signature, maybe_signature, xmap, xstarmap,
     )
     from celery.utils import uuid                        # noqa
 
@@ -160,7 +165,7 @@ old_module, new_module = local.recreate_module(  # pragma: no cover
         'celery._state': ['current_app', 'current_task'],
         'celery.canvas': [
             'Signature', 'chain', 'chord', 'chunks', 'group',
-            'signature', 'maybe_signature', 'subtask',
+            'signature', 'maybe_signature',
             'xmap', 'xstarmap',
         ],
         'celery.utils': ['uuid'],
@@ -175,7 +180,4 @@ old_module, new_module = local.recreate_module(  # pragma: no cover
     version_info=version_info,
     maybe_patch_concurrency=maybe_patch_concurrency,
     _find_option_with_arg=_find_option_with_arg,
-    absolute_import=absolute_import,
-    unicode_literals=unicode_literals,
-    print_function=print_function,
 )

@@ -1,17 +1,27 @@
 # -*- coding: utf-8 -*-
 """Utilities related to importing modules and symbols by name."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import imp as _imp
 import importlib
 import os
 import sys
 import warnings
 from contextlib import contextmanager
+<<<<<<< HEAD
 
 from kombu.utils.imports import symbol_by_name
 
 from celery.five import reload
+=======
+from imp import reload
+from types import ModuleType
+from typing import Any, Callable, Iterator
+from kombu.utils.imports import symbol_by_name
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 #: Billiard sets this when execv is enabled.
 #: We use it to find out the name of the original ``__main__``
@@ -30,24 +40,17 @@ class NotAPackage(Exception):
     """Raised when importing a package, but it's not a package."""
 
 
-if sys.version_info > (3, 3):  # pragma: no cover
-    def qualname(obj):
-        """Return object name."""
-        if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
-            obj = obj.__class__
-        q = getattr(obj, '__qualname__', None)
-        if '.' not in q:
-            q = '.'.join((obj.__module__, q))
-        return q
-else:
-    def qualname(obj):  # noqa
-        """Return object name."""
-        if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
-            obj = obj.__class__
-        return '.'.join((obj.__module__, obj.__name__))
+def qualname(obj: Any) -> str:
+    """Return object name."""
+    if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
+        obj = obj.__class__
+    q = getattr(obj, '__qualname__', None)
+    if '.' not in q:
+        q = '.'.join((obj.__module__, q))
+    return q
 
 
-def instantiate(name, *args, **kwargs):
+def instantiate(name: Any, *args, **kwargs) -> Any:
     """Instantiate class by name.
 
     See Also:
@@ -57,7 +60,7 @@ def instantiate(name, *args, **kwargs):
 
 
 @contextmanager
-def cwd_in_path():
+def cwd_in_path() -> Iterator:
     """Context adding the current working directory to sys.path."""
     cwd = os.getcwd()
     if cwd in sys.path:
@@ -73,7 +76,9 @@ def cwd_in_path():
                 pass
 
 
-def find_module(module, path=None, imp=None):
+def find_module(module: str,
+                path: str = None,
+                imp: Callable = None) -> ModuleType:
     """Version of :func:`imp.find_module` supporting dots."""
     if imp is None:
         imp = importlib.import_module
@@ -92,7 +97,9 @@ def find_module(module, path=None, imp=None):
         return _imp.find_module(module)
 
 
-def import_from_cwd(module, imp=None, package=None):
+def import_from_cwd(module: str,
+                    imp: Callable = None,
+                    package: str = None) -> ModuleType:
     """Import module, temporarily including modules in the current directory.
 
     Modules located in the current directory has
@@ -104,7 +111,8 @@ def import_from_cwd(module, imp=None, package=None):
         return imp(module, package=package)
 
 
-def reload_from_cwd(module, reloader=None):
+def reload_from_cwd(module: ModuleType,
+                    reloader: Callable = None) -> Any:
     """Reload module (ensuring that CWD is in sys.path)."""
     if reloader is None:
         reloader = reload
@@ -112,13 +120,13 @@ def reload_from_cwd(module, reloader=None):
         return reloader(module)
 
 
-def module_file(module):
+def module_file(module: ModuleType) -> str:
     """Return the correct original file name of a module."""
     name = module.__file__
     return name[:-1] if name.endswith('.pyc') else name
 
 
-def gen_task_name(app, name, module_name):
+def gen_task_name(app: Any, name: str, module_name: str) -> str:
     """Generate task name from name/module pair."""
     module_name = module_name or '__main__'
     try:

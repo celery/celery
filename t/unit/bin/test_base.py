@@ -1,15 +1,26 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import os
 
 import pytest
 from case import Mock, mock, patch
+<<<<<<< HEAD
 
 from celery.bin.base import Command, Extensions, Option
 from celery.five import bytes_if_py2
+=======
+from celery.bin.base import (
+    Command,
+    Option,
+    Extensions,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
-class MyApp(object):
+class MyApp:
     user_options = {'preload': None}
 
 
@@ -204,7 +215,8 @@ class test_Command:
 
     def test_setup_app_no_respect(self, app):
         cmd = MockCommand(app=app)
-        cmd.respects_app_option = False
+        cmd.fake_app = True
+        cmd.requires_app = False
         with patch('celery.bin.base.Celery') as cp:
             cmd.setup_app_from_commandline(['--app=x.y:z'])
             cp.assert_called()
@@ -316,7 +328,7 @@ class test_Command:
         cmd = MockCommand(app=app)
         with patch('celery.utils.imports.symbol_by_name') as sbn:
             from types import ModuleType
-            x = ModuleType(bytes_if_py2('proj'))
+            x = ModuleType('proj')
 
             def on_sbn(*args, **kwargs):
 

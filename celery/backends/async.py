@@ -1,19 +1,24 @@
 """Async I/O backend support utilities."""
-from __future__ import absolute_import, unicode_literals
-
 import socket
 import threading
 from collections import deque
-from time import sleep
+from time import monotonic, sleep
+from typing import (
+    Any, Awaitable, Callable, Iterable, Iterator, Mapping, Set, Sequence,
+)
+from queue import Empty
 from weakref import WeakKeyDictionary
 
+from kombu.types import MessageT
 from kombu.utils.compat import detect_environment
 from kombu.utils.objects import cached_property
 
 from celery import states
 from celery.exceptions import TimeoutError
-from celery.five import Empty, monotonic
-from celery.utils.threads import THREAD_TIMEOUT_MAX
+from celery.types import AppT, BackendT, ResultT, ResultConsumerT
+from celery.utils.collections import BufferMap
+
+from .base import pending_results_t
 
 __all__ = (
     'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
@@ -23,28 +28,31 @@ __all__ = (
 drainers = {}
 
 
-def register_drainer(name):
+def register_drainer(name: str) -> Callable:
     """Decorator used to register a new result drainer type."""
-    def _inner(cls):
+    def _inner(cls: type) -> type:
         drainers[name] = cls
         return cls
     return _inner
 
 
 @register_drainer('default')
-class Drainer(object):
+class Drainer:
     """Result draining service."""
 
-    def __init__(self, result_consumer):
+    def __init__(self, result_consumer: ResultConsumerT) -> None:
         self.result_consumer = result_consumer
 
-    def start(self):
-        pass
+    def start(self) -> None:
+        ...
 
-    def stop(self):
-        pass
+    def stop(self) -> None:
+        ...
 
-    def drain_events_until(self, p, timeout=None, on_interval=None, wait=None):
+    def drain_events_until(self, p: Awaitable,
+                           timeout: float = None,
+                           on_interval: Callable = None,
+                           wait: Callable = None) -> Iterator:
         wait = wait or self.result_consumer.drain_events
         time_start = monotonic()
 
@@ -61,7 +69,8 @@ class Drainer(object):
             if p.ready:  # got event on the wanted channel.
                 break
 
-    def wait_for(self, p, wait, timeout=None):
+    def wait_for(self, p: Awaitable, wait: Callable,
+                 timeout: float = None) -> None:
         wait(timeout=timeout)
 
 
@@ -69,13 +78,13 @@ class greenletDrainer(Drainer):
     spawn = None
     _g = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(greenletDrainer, self).__init__(*args, **kwargs)
         self._started = threading.Event()
         self._stopped = threading.Event()
         self._shutdown = threading.Event()
 
-    def run(self):
+    def run(self) -> None:
         self._started.set()
         while not self._stopped.is_set():
             try:
@@ -84,16 +93,17 @@ class greenletDrainer(Drainer):
                 pass
         self._shutdown.set()
 
-    def start(self):
+    def start(self) -> None:
         if not self._started.is_set():
             self._g = self.spawn(self.run)
             self._started.wait()
 
-    def stop(self):
+    def stop(self) -> None:
         self._stopped.set()
-        self._shutdown.wait(THREAD_TIMEOUT_MAX)
+        self._shutdown.wait(threading.TIMEOUT_MAX)
 
-    def wait_for(self, p, wait, timeout=None):
+    def wait_for(self, p: Awaitable, wait: Callable,
+                 timeout: float = None) -> None:
         self.start()
         if not p.ready:
             sleep(0)
@@ -103,7 +113,7 @@ class greenletDrainer(Drainer):
 class eventletDrainer(greenletDrainer):
 
     @cached_property
-    def spawn(self):
+    def spawn(self) -> Callable:
         from eventlet import spawn
         return spawn
 
@@ -112,18 +122,21 @@ class eventletDrainer(greenletDrainer):
 class geventDrainer(greenletDrainer):
 
     @cached_property
-    def spawn(self):
+    def spawn(self) -> Callable:
         from gevent import spawn
         return spawn
 
 
-class AsyncBackendMixin(object):
+class AsyncBackendMixin:
     """Mixin for backends that enables the async API."""
 
-    def _collect_into(self, result, bucket):
+    def _collect_into(self, result: ResultT, bucket: deque):
         self.result_consumer.buckets[result] = bucket
 
-    def iter_native(self, result, no_ack=True, **kwargs):
+    async def iter_native(
+            self, result: ResultT,
+            *,
+            no_ack: bool = True, **kwargs) -> Iterator[str, Mapping]:
         self._ensure_not_eager()
 
         results = result.results
@@ -147,7 +160,9 @@ class AsyncBackendMixin(object):
             node = bucket.popleft()
             yield node.id, node._cache
 
-    def add_pending_result(self, result, weak=False, start_drainer=True):
+    def add_pending_result(self, result: ResultT,
+                           weak: bool = False,
+                           start_drainer: bool = True) -> ResultT:
         if start_drainer:
             self.result_consumer.drainer.start()
         try:
@@ -156,57 +171,64 @@ class AsyncBackendMixin(object):
             self._add_pending_result(result.id, result, weak=weak)
         return result
 
-    def _maybe_resolve_from_buffer(self, result):
+    def _maybe_resolve_from_buffer(self, result: ResultT) -> None:
         result._maybe_set_cache(self._pending_messages.take(result.id))
 
-    def _add_pending_result(self, task_id, result, weak=False):
+    def _add_pending_result(self, task_id: str, result: ResultT,
+                            weak: bool = False) -> None:
         concrete, weak_ = self._pending_results
         if task_id not in weak_ and result.id not in concrete:
             (weak_ if weak else concrete)[task_id] = result
             self.result_consumer.consume_from(task_id)
 
-    def add_pending_results(self, results, weak=False):
+    def add_pending_results(self, results: Sequence[ResultT],
+                            weak: bool = False) -> None:
         self.result_consumer.drainer.start()
-        return [self.add_pending_result(result, weak=weak, start_drainer=False)
-                for result in results]
+        [self.add_pending_result(result, weak=weak, start_drainer=False)
+         for result in results]
 
-    def remove_pending_result(self, result):
+    def remove_pending_result(self, result: ResultT) -> ResultT:
         self._remove_pending_result(result.id)
         self.on_result_fulfilled(result)
         return result
 
-    def _remove_pending_result(self, task_id):
+    def _remove_pending_result(self, task_id: str) -> None:
         for map in self._pending_results:
             map.pop(task_id, None)
 
-    def on_result_fulfilled(self, result):
+    def on_result_fulfilled(self, result: ResultT) -> None:
         self.result_consumer.cancel_for(result.id)
 
-    def wait_for_pending(self, result,
-                         callback=None, propagate=True, **kwargs):
+    def wait_for_pending(self, result: ResultT,
+                         callback: Callable = None,
+                         propagate: bool = True,
+                         **kwargs) -> Any:
         self._ensure_not_eager()
         for _ in self._wait_for_pending(result, **kwargs):
             pass
         return result.maybe_throw(callback=callback, propagate=propagate)
 
-    def _wait_for_pending(self, result,
-                          timeout=None, on_interval=None, on_message=None,
-                          **kwargs):
+    def _wait_for_pending(self, result: ResultT,
+                          timeout: float = None,
+                          on_interval: Callable = None,
+                          on_message: Callable = None,
+                          **kwargs) -> Iterable:
         return self.result_consumer._wait_for_pending(
             result, timeout=timeout,
             on_interval=on_interval, on_message=on_message,
         )
 
     @property
-    def is_async(self):
+    def is_async(self) -> bool:
         return True
 
 
-class BaseResultConsumer(object):
+class BaseResultConsumer:
     """Manager responsible for consuming result messages."""
 
-    def __init__(self, backend, app, accept,
-                 pending_results, pending_messages):
+    def __init__(self, backend: BackendT, app: AppT, accept: Set[str],
+                 pending_results: pending_results_t,
+                 pending_messages: BufferMap) -> None:
         self.backend = backend
         self.app = app
         self.accept = accept
@@ -216,37 +238,39 @@ class BaseResultConsumer(object):
         self.buckets = WeakKeyDictionary()
         self.drainer = drainers[detect_environment()](self)
 
-    def start(self, initial_task_id, **kwargs):
+    def start(self, initial_task_id: str, **kwargs) -> None:
         raise NotImplementedError()
 
-    def stop(self):
-        pass
+    def stop(self) -> None:
+        ...
 
-    def drain_events(self, timeout=None):
+    def drain_events(self, timeout: float = None) -> None:
         raise NotImplementedError()
 
-    def consume_from(self, task_id):
+    def consume_from(self, task_id: str) -> None:
         raise NotImplementedError()
 
-    def cancel_for(self, task_id):
+    def cancel_for(self, task_id: str) -> None:
         raise NotImplementedError()
 
-    def _after_fork(self):
+    def _after_fork(self) -> None:
         self.buckets.clear()
         self.buckets = WeakKeyDictionary()
         self.on_message = None
         self.on_after_fork()
 
-    def on_after_fork(self):
-        pass
+    def on_after_fork(self) -> None:
+        ...
 
-    def drain_events_until(self, p, timeout=None, on_interval=None):
+    def drain_events_until(self, p: Awaitable,
+                           timeout: float = None,
+                           on_interval: Callable = None) -> Iterable:
         return self.drainer.drain_events_until(
             p, timeout=timeout, on_interval=on_interval)
 
     def _wait_for_pending(self, result,
                           timeout=None, on_interval=None, on_message=None,
-                          **kwargs):
+                          **kwargs) -> Iterable:
         self.on_wait_for_pending(result, timeout=timeout, **kwargs)
         prev_on_m, self.on_message = self.on_message, on_message
         try:
@@ -260,13 +284,14 @@ class BaseResultConsumer(object):
         finally:
             self.on_message = prev_on_m
 
-    def on_wait_for_pending(self, result, timeout=None, **kwargs):
-        pass
+    def on_wait_for_pending(self, result: ResultT,
+                            timeout: float = None, **kwargs) -> None:
+        ...
 
-    def on_out_of_band_result(self, message):
+    def on_out_of_band_result(self, message: MessageT) -> None:
         self.on_state_change(message.payload, message)
 
-    def _get_pending_result(self, task_id):
+    def _get_pending_result(self, task_id: str) -> ResultT:
         for mapping in self._pending_results:
             try:
                 return mapping[task_id]
@@ -274,7 +299,7 @@ class BaseResultConsumer(object):
                 pass
         raise KeyError(task_id)
 
-    def on_state_change(self, meta, message):
+    def on_state_change(self, meta: Mapping, message: MessageT) -> None:
         if self.on_message:
             self.on_message(meta)
         if meta['status'] in states.READY_STATES:

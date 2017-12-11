@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+import pytest
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -9,9 +13,15 @@ import pytest
 import pytz
 from case import Case, Mock, skip
 
+<<<<<<< HEAD
 from celery.five import items
 from celery.schedules import (ParseException, crontab, crontab_parser,
                               schedule, solar)
+=======
+from celery.schedules import (
+    ParseException, crontab, crontab_parser, schedule, solar,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 assertions = Case('__init__')
 
@@ -624,7 +634,7 @@ class test_crontab_is_due:
         l2, d2, n2 = due.remaining_delta(last_ran, ffwd=relativedelta)
         if not isinstance(d1, relativedelta):
             assert l1 == l2
-            for field, value in items(d1._fields()):
+            for field, value in d1._fields().items():
                 assert getattr(d1, field) == value
             assert not d2.years
             assert not d2.months

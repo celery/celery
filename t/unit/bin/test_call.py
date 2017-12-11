@@ -1,11 +1,19 @@
 from __future__ import absolute_import, unicode_literals
+<<<<<<< HEAD
 
+=======
+import io
+import pytest
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from datetime import datetime
 
 import pytest
 from case import patch
 from kombu.utils.json import dumps
+<<<<<<< HEAD
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.bin.call import call
 from celery.five import WhateverIO
 
@@ -21,7 +29,7 @@ class test_call:
 
     @patch('celery.app.base.Celery.send_task')
     def test_run(self, send_task):
-        a = call(app=self.app, stderr=WhateverIO(), stdout=WhateverIO())
+        a = call(app=self.app, stderr=io.StringIO(), stdout=io.StringIO())
         a.run(self.add.name)
         send_task.assert_called()
 

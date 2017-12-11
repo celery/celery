@@ -1,24 +1,32 @@
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import socket
+<<<<<<< HEAD
+=======
+import pytest
+import queue
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 import pytest
 from case import Mock
 from kombu.async import ERR, READ, WRITE, Hub
 
 from celery.bootsteps import CLOSE, RUN
+<<<<<<< HEAD
 from celery.exceptions import (InvalidTaskError, WorkerLostError,
                                WorkerShutdown, WorkerTerminate)
 from celery.five import Empty, python_2_unicode_compatible
+=======
+from celery.exceptions import (
+    InvalidTaskError, WorkerLostError, WorkerShutdown, WorkerTerminate,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.platforms import EX_FAILURE
 from celery.worker import state
 from celery.worker.consumer import Consumer
 from celery.worker.loops import _quick_drain, asynloop, synloop
 
 
-@python_2_unicode_compatible
-class PromiseEqual(object):
+class PromiseEqual:
 
     def __init__(self, fun, *args, **kwargs):
         self.fun = fun
@@ -34,7 +42,7 @@ class PromiseEqual(object):
         return '<promise: {0.fun!r} {0.args!r} {0.kwargs!r}>'.format(self)
 
 
-class X(object):
+class X:
 
     def __init__(self, app, heartbeat=None, on_task_message=None,
                  transport_driver_type=None):
@@ -284,7 +292,7 @@ class test_asynloop:
         x.hub.on_tick.add(x.close_then_error(Mock(name='tick'), 2))
         poller = x.hub.poller
         poller.poll.return_value = [(6, READ)]
-        reader.side_effect = Empty()
+        reader.side_effect = queue.Empty()
         with pytest.raises(socket.error):
             asynloop(*x.args)
         reader.assert_called_with(6)

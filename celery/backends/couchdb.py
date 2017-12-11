@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 """CouchDB result store backend."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 from kombu.utils.encoding import bytes_to_str
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
@@ -37,7 +40,7 @@ class CouchBackend(KeyValueStoreBackend):
     password = None
 
     def __init__(self, url=None, *args, **kwargs):
-        super(CouchBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
 
         if pycouchdb is None:

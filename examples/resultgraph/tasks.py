@@ -17,7 +17,6 @@
 #
 #    >>> unlock_graph.apply_async((A.apply_async(),
 #    ...                           A_callback.s()), countdown=1)
-from __future__ import absolute_import, print_function, unicode_literals
 from celery import chord, group, task, signature, uuid
 from celery.result import AsyncResult, ResultSet, allow_join_result
 from collections import deque
@@ -91,7 +90,7 @@ def A_callback(res):
     return res
 
 
-class chord2(object):
+class chord2:
 
     def __init__(self, tasks, **options):
         self.tasks = tasks

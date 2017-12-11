@@ -1,11 +1,21 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+import io
+import pytest
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import sys
 
 import pytest
 from case import Mock, patch
 
 from celery import __main__
+<<<<<<< HEAD
+=======
+from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
+from celery.bin.base import Error
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.bin import celery as mod
 from celery.bin.base import Error
 from celery.bin.celery import (CeleryCommand, Command, determine_exit_status,
@@ -46,8 +56,8 @@ class test_Command:
         assert str(x)
 
     def setup(self):
-        self.out = WhateverIO()
-        self.err = WhateverIO()
+        self.out = io.StringIO()
+        self.err = io.StringIO()
         self.cmd = Command(self.app, stdout=self.out, stderr=self.err)
 
     def test_error(self):
@@ -93,7 +103,7 @@ class test_Command:
 class test_report:
 
     def test_run(self):
-        out = WhateverIO()
+        out = io.StringIO()
         r = report(app=self.app, stdout=out)
         assert r.run() == EX_OK
         assert out.getvalue()
@@ -102,7 +112,7 @@ class test_report:
 class test_help:
 
     def test_run(self):
-        out = WhateverIO()
+        out = io.StringIO()
         h = help(app=self.app, stdout=out)
         h.parser = Mock()
         assert h.run() == EX_USAGE
@@ -128,14 +138,18 @@ class test_CeleryCommand:
         with pytest.raises(SystemExit):
             x.execute_from_commandline()
 
-        x.respects_app_option = True
+        x.requires_app = True
+        x.fake_app = False
         with pytest.raises(SystemExit):
             x.execute_from_commandline(['celery', 'multi'])
-        assert not x.respects_app_option
-        x.respects_app_option = True
+        assert not x.requires_app
+        assert x.fake_app
+        x.requires_app = True
+        x.fake_app = False
         with pytest.raises(SystemExit):
             x.execute_from_commandline(['manage.py', 'celery', 'multi'])
-        assert not x.respects_app_option
+        assert not x.requires_app
+        assert x.fake_app
 
     def test_with_pool_option(self):
         x = CeleryCommand(app=self.app)

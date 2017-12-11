@@ -7,9 +7,12 @@ in the configuration.
 This prepares and performs the annotations in the
 :setting:`task_annotations` setting.
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 from celery.five import string_t
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.functional import firstmethod, mlazy
 from celery.utils.imports import instantiate
 
@@ -40,7 +43,7 @@ def prepare(annotations):
     def expand_annotation(annotation):
         if isinstance(annotation, dict):
             return MapAnnotation(annotation)
-        elif isinstance(annotation, string_t):
+        elif isinstance(annotation, str):
             return mlazy(instantiate, annotation)
         return annotation
 

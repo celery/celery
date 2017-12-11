@@ -1,7 +1,12 @@
 from __future__ import absolute_import, unicode_literals
+<<<<<<< HEAD
 
 from case import Mock
 
+=======
+import io
+from case import Mock
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.bin.purge import purge
 from celery.five import WhateverIO
 
@@ -9,7 +14,7 @@ from celery.five import WhateverIO
 class test_purge:
 
     def test_run(self):
-        out = WhateverIO()
+        out = io.StringIO()
         a = purge(app=self.app, stdout=out)
         a._purge = Mock(name='_purge')
         a._purge.return_value = 0

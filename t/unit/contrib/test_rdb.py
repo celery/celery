@@ -1,13 +1,25 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import errno
+import io
 import socket
 
 import pytest
 from case import Mock, patch, skip
+<<<<<<< HEAD
 
 from celery.contrib.rdb import Rdb, debugger, set_trace
 from celery.five import WhateverIO
+=======
+from celery.contrib.rdb import (
+    Rdb,
+    debugger,
+    set_trace,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class SockErr(socket.error):
@@ -35,7 +47,7 @@ class test_Rdb:
         sock = Mock()
         get_avail_port.return_value = (sock, 8000)
         sock.accept.return_value = (Mock(), ['helu'])
-        out = WhateverIO()
+        out = io.StringIO()
         with Rdb(out=out) as rdb:
             get_avail_port.assert_called()
             assert 'helu' in out.getvalue()
@@ -76,7 +88,7 @@ class test_Rdb:
     @patch('socket.socket')
     @skip.if_pypy()
     def test_get_avail_port(self, sock):
-        out = WhateverIO()
+        out = io.StringIO()
         sock.return_value.accept.return_value = (Mock(), ['helu'])
         with Rdb(out=out):
             pass

@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pytest
 from case import skip
 
@@ -38,7 +41,7 @@ class test_colored:
         assert str(getattr(colored(), name)('f'))
 
     def test_unicode(self):
-        assert text_t(colored().green('∂bar'))
+        assert str(colored().green('∂bar'))
         assert colored().red('éefoo') + colored().green('∂bar')
         assert colored().red('foo').no_color() == 'foo'
 

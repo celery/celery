@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 """Eventlet execution pool."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import sys
 
 from kombu.async import timer as _timer  # noqa
 from kombu.five import monotonic
+=======
+import sys
+from time import monotonic
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 from celery import signals  # noqa
 
@@ -40,7 +45,7 @@ class Timer(_timer.Timer):
     def __init__(self, *args, **kwargs):
         from eventlet.greenthread import spawn_after
         from greenlet import GreenletExit
-        super(Timer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.GreenletExit = GreenletExit
         self._spawn_after = spawn_after
@@ -105,7 +110,7 @@ class TaskPool(base.BasePool):
         self.getpid = lambda: id(greenthread.getcurrent())
         self.spawn_n = greenthread.spawn_n
 
-        super(TaskPool, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def on_start(self):
         self._pool = self.Pool(self.limit)
@@ -139,7 +144,7 @@ class TaskPool(base.BasePool):
         self.limit = limit
 
     def _get_info(self):
-        info = super(TaskPool, self)._get_info()
+        info = super()._get_info()
         info.update({
             'max-concurrency': self.limit,
             'free-threads': self._pool.free(),

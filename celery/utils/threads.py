@@ -1,16 +1,21 @@
 # -*- coding: utf-8 -*-
 """Threading primitives and utilities."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import socket
 import sys
 import threading
 import traceback
 from contextlib import contextmanager
+from typing import Any, Callable, Iterator, List, Optional
 
+<<<<<<< HEAD
 from celery.five import THREAD_TIMEOUT_MAX, items, python_2_unicode_compatible
 from celery.local import Proxy
+=======
+from celery.local import Proxy
+
+from .typing import Timeout
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 try:
     from greenlet import getcurrent as get_ident
@@ -26,18 +31,21 @@ except ImportError:  # pragma: no cover
             except ImportError:
                 from dummy_thread import get_ident      # noqa
 
+<<<<<<< HEAD
 
 __all__ = (
+=======
+__all__ = [
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
     'bgThread', 'Local', 'LocalStack', 'LocalManager',
     'get_ident', 'default_socket_timeout',
 )
 
 USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
-PY3 = sys.version_info[0] == 3
 
 
 @contextmanager
-def default_socket_timeout(timeout):
+def default_socket_timeout(timeout: Timeout) -> Iterator:
     """Context temporarily setting the default socket timeout."""
     prev = socket.getdefaulttimeout()
     socket.setdefaulttimeout(timeout)
@@ -48,21 +56,21 @@ def default_socket_timeout(timeout):
 class bgThread(threading.Thread):
     """Background service thread."""
 
-    def __init__(self, name=None, **kwargs):
-        super(bgThread, self).__init__()
+    def __init__(self, name: str = None, **kwargs) -> None:
+        super().__init__()
         self._is_shutdown = threading.Event()
         self._is_stopped = threading.Event()
         self.daemon = True
         self.name = name or self.__class__.__name__
 
-    def body(self):
+    def body(self) -> None:
         raise NotImplementedError()
 
-    def on_crash(self, msg, *fmt, **kwargs):
+    def on_crash(self, msg: str, *fmt, **kwargs) -> None:
         print(msg.format(*fmt), file=sys.stderr)
         traceback.print_exc(None, sys.stderr)
 
-    def run(self):
+    def run(self) -> None:
         body = self.body
         shutdown_set = self._is_shutdown.is_set
         try:
@@ -78,7 +86,7 @@ class bgThread(threading.Thread):
         finally:
             self._set_stopped()
 
-    def _set_stopped(self):
+    def _set_stopped(self) -> None:
         try:
             self._is_stopped.set()
         except TypeError:  # pragma: no cover
@@ -86,15 +94,15 @@ class bgThread(threading.Thread):
             # so gc collected built-in modules.
             pass
 
-    def stop(self):
+    def stop(self) -> None:
         """Graceful shutdown."""
         self._is_shutdown.set()
         self._is_stopped.wait()
         if self.is_alive():
-            self.join(THREAD_TIMEOUT_MAX)
+            self.join(threading.TIMEOUT_MAX)
 
 
-def release_local(local):
+def release_local(local: 'Local') -> None:
     """Release the contents of the local for the current context.
 
     This makes it possible to use locals without a manager.
@@ -115,32 +123,32 @@ def release_local(local):
     local.__release_local__()
 
 
-class Local(object):
+class Local:
     """Local object."""
 
     __slots__ = ('__storage__', '__ident_func__')
 
-    def __init__(self):
+    def __init__(self) -> None:
         object.__setattr__(self, '__storage__', {})
         object.__setattr__(self, '__ident_func__', get_ident)
 
-    def __iter__(self):
-        return iter(items(self.__storage__))
+    def __iter__(self) -> Iterator:
+        return iter(self.__storage__.items())
 
-    def __call__(self, proxy):
+    def __call__(self, proxy: Any) -> 'Proxy':
         """Create a proxy for a name."""
         return Proxy(self, proxy)
 
-    def __release_local__(self):
+    def __release_local__(self) -> None:
         self.__storage__.pop(self.__ident_func__(), None)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         try:
             return self.__storage__[self.__ident_func__()][name]
         except KeyError:
             raise AttributeError(name)
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: Any) -> None:
         ident = self.__ident_func__()
         storage = self.__storage__
         try:
@@ -148,14 +156,14 @@ class Local(object):
         except KeyError:
             storage[ident] = {name: value}
 
-    def __delattr__(self, name):
+    def __delattr__(self, name: str) -> None:
         try:
             del self.__storage__[self.__ident_func__()][name]
         except KeyError:
             raise AttributeError(name)
 
 
-class _LocalStack(object):
+class _LocalStack:
     """Local stack.
 
     This class works similar to a :class:`Local` but keeps a stack
@@ -182,29 +190,29 @@ class _LocalStack(object):
     resolves to the topmost item on the stack.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._local = Local()
 
-    def __release_local__(self):
+    def __release_local__(self) -> None:
         self._local.__release_local__()
 
-    def _get__ident_func__(self):
+    def _get__ident_func__(self) -> Optional[Callable]:
         return self._local.__ident_func__
 
-    def _set__ident_func__(self, value):
+    def _set__ident_func__(self, value: Optional[Callable]) -> None:
         object.__setattr__(self._local, '__ident_func__', value)
     __ident_func__ = property(_get__ident_func__, _set__ident_func__)
     del _get__ident_func__, _set__ident_func__
 
-    def __call__(self):
-        def _lookup():
+    def __call__(self) -> 'Proxy':
+        def _lookup() -> Any:
             rv = self.top
             if rv is None:
                 raise RuntimeError('object unbound')
             return rv
         return Proxy(_lookup)
 
-    def push(self, obj):
+    def push(self, obj: Any) -> Any:
         """Push a new item to the stack."""
         rv = getattr(self._local, 'stack', None)
         if rv is None:
@@ -214,7 +222,7 @@ class _LocalStack(object):
         rv.append(obj)
         return rv
 
-    def pop(self):
+    def pop(self) -> Any:
         """Remove the topmost item from the stack.
 
         Note:
@@ -229,12 +237,12 @@ class _LocalStack(object):
         else:
             return stack.pop()
 
-    def __len__(self):
+    def __len__(self) -> int:
         stack = getattr(self._local, 'stack', None)
         return len(stack) if stack else 0
 
     @property
-    def stack(self):
+    def stack(self) -> List:
         # get_current_worker_task uses this to find
         # the original task that was executed by the worker.
         stack = getattr(self._local, 'stack', None)
@@ -243,7 +251,7 @@ class _LocalStack(object):
         return []
 
     @property
-    def top(self):
+    def top(self) -> Any:
         """The topmost item on the stack.
 
         Note:
@@ -255,8 +263,7 @@ class _LocalStack(object):
             return None
 
 
-@python_2_unicode_compatible
-class LocalManager(object):
+class LocalManager:
     """Local objects cannot manage themselves.
 
     For that you need a local manager.
@@ -269,7 +276,8 @@ class LocalManager(object):
     function for the wrapped locals.
     """
 
-    def __init__(self, locals=None, ident_func=None):
+    def __init__(self, locals: List = None,
+                 ident_func: Callable = None) -> None:
         if locals is None:
             self.locals = []
         elif isinstance(locals, Local):
@@ -283,7 +291,7 @@ class LocalManager(object):
         else:
             self.ident_func = get_ident
 
-    def get_ident(self):
+    def get_ident(self) -> Any:
         """Return context identifier.
 
         This is the indentifer the local objects use internally
@@ -293,7 +301,7 @@ class LocalManager(object):
         """
         return self.ident_func()
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Manually clean up the data in the locals for this context.
 
         Call this at the end of the request or use ``make_middleware()``.
@@ -301,7 +309,7 @@ class LocalManager(object):
         for local in self.locals:
             release_local(local)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0} storages: {1}>'.format(
             self.__class__.__name__, len(self.locals))
 
@@ -312,16 +320,16 @@ class _FastLocalStack(threading.local):
         self.stack = []
         self.push = self.stack.append
         self.pop = self.stack.pop
-        super(_FastLocalStack, self).__init__()
+        super().__init__()
 
     @property
-    def top(self):
+    def top(self) -> Any:
         try:
             return self.stack[-1]
         except (AttributeError, IndexError):
             return None
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.stack)
 
 

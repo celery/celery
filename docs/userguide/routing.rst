@@ -273,9 +273,8 @@ This is an example task message represented as a Python dictionary:
 Producers, consumers, and brokers
 ---------------------------------
 
-The client sending messages is typically called a *publisher*, or
-a *producer*, while the entity receiving messages is called
-a *consumer*.
+The client sending messages is typically called a *producer*,
+while the entity receiving messages is called a *consumer*.
 
 The *broker* is the message server, routing messages from producers
 to consumers.
@@ -630,7 +629,6 @@ Router functions can also be added by name:
 .. code-block:: python
 
     task_routes = ('myapp.routers.route_task',)
-
 
 For simple task name -> route mappings like the router example above,
 you can simply drop a dict into :setting:`task_routes` to get the

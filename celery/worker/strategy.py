@@ -1,19 +1,26 @@
 # -*- coding: utf-8 -*-
 """Task execution strategy (optimization)."""
-from __future__ import absolute_import, unicode_literals
-
 import logging
-
+from typing import (
+    Awaitable, Callable, Dict, List, Mapping, NamedTuple, Sequence, Tuple,
+)
 from kombu.async.timer import to_timestamp
-from kombu.five import buffer_t
-
+from kombu.types import MessageT
 from celery.exceptions import InvalidTaskError
+<<<<<<< HEAD
 from celery.utils.imports import symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.saferepr import saferepr
 from celery.utils.time import timezone
 
 from .request import create_request_cls
+=======
+from celery.types import AppT, WorkerConsumerT
+from celery.utils.log import get_logger
+from celery.utils.saferepr import saferepr
+from celery.utils.time import timezone
+from .request import Request, create_request_cls
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from .state import task_reserved
 
 __all__ = ('default',)
@@ -24,7 +31,16 @@ logger = get_logger(__name__)
 # We cache globals and attribute lookups, so disable this warning.
 
 
-def proto1_to_proto2(message, body):
+class converted_message_t(NamedTuple):
+    """Describes a converted message."""
+
+    body: Tuple[List, Dict, Mapping]
+    headers: Mapping
+    decoded: bool
+    utc: bool
+
+
+def proto1_to_proto2(message: MessageT, body: Mapping) -> converted_message_t:
     """Convert Task message protocol 1 arguments to protocol 2.
 
     Returns:
@@ -54,13 +70,28 @@ def proto1_to_proto2(message, body):
         'chord': body.get('chord'),
         'chain': None,
     }
-    return (args, kwargs, embed), body, True, body.get('utc', True)
+    return converted_message_t(
+        body=(args, kwargs, embed),
+        headers=body,
+        decoded=True,
+        utc=body.get('utc', True),
+    )
 
 
-def default(task, app, consumer,
-            info=logger.info, error=logger.error, task_reserved=task_reserved,
-            to_system_tz=timezone.to_system, bytes=bytes, buffer_t=buffer_t,
-            proto1_to_proto2=proto1_to_proto2):
+StrategyT = Callable[
+    [MessageT, Mapping, Callable, Callable, Sequence[Callable]],
+    Awaitable,
+]
+
+
+def default(task: str, app: AppT, consumer: WorkerConsumerT,
+            *,
+            info: Callable = logger.info,
+            error: Callable = logger.error,
+            task_reserved: Callable = task_reserved,
+            to_system_tz: Callable = timezone.to_system,
+            proto1_to_proto2: Callable = proto1_to_proto2,
+            bytes: Callable = bytes) -> StrategyT:
     """Default task execution strategy.
 
     Note:
@@ -84,21 +115,27 @@ def default(task, app, consumer,
     get_bucket = consumer.task_buckets.__getitem__
     handle = consumer.on_task_request
     limit_task = consumer._limit_task
+<<<<<<< HEAD
     limit_post_eta = consumer._limit_post_eta
     body_can_be_buffer = consumer.pool.body_can_be_buffer
     Request = symbol_by_name(task.Request)
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
     Req = create_request_cls(Request, task, consumer.pool, hostname, eventer)
 
     revoked_tasks = consumer.controller.state.revoked
+    convert_to_timestamp = to_timestamp
 
-    def task_message_handler(message, body, ack, reject, callbacks,
-                             to_timestamp=to_timestamp):
+    async def task_message_handler(
+            message: MessageT,
+            body: Mapping,
+            ack: Callable,
+            reject: Callable,
+            callbacks: Sequence[Callable]) -> Awaitable:
         if body is None:
             body, headers, decoded, utc = (
                 message.body, message.headers, False, app.uses_utc_timezone(),
             )
-            if not body_can_be_buffer:
-                body = bytes(body) if isinstance(body, buffer_t) else body
         else:
             body, headers, decoded, utc = proto1_to_proto2(message, body)
 
@@ -129,9 +166,13 @@ def default(task, app, consumer,
         if req.eta:
             try:
                 if req.utc:
-                    eta = to_timestamp(to_system_tz(req.eta))
+                    eta = convert_to_timestamp(to_system_tz(req.eta))
                 else:
+<<<<<<< HEAD
                     eta = to_timestamp(req.eta, app.timezone)
+=======
+                    eta = convert_to_timestamp(req.eta, timezone.local)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
             except (OverflowError, ValueError) as exc:
                 error("Couldn't convert ETA %r to timestamp: %r. Task: %r",
                       req.eta, exc, req.info(safe=True), exc_info=True)

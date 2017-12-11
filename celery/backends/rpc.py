@@ -3,18 +3,28 @@
 
 RPC-style result backend, using reply-to and one queue per client.
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import time
 
 import kombu
+=======
+import kombu
+import time
+
+from typing import Any, Dict, Iterator, Mapping, Set, Tuple, Union
+
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.common import maybe_declare
+from kombu.types import ChannelT, ConnectionT, EntityT, MessageT, ProducerT
 from kombu.utils.compat import register_after_fork
 from kombu.utils.objects import cached_property
 
 from celery import states
 from celery._state import current_task, task_join_will_block
-from celery.five import items, range
+from celery.types import AppT, BackendT, ResultT, RequestT
+from celery.result import GroupResult
 
 from . import base
 from .async import AsyncBackendMixin, BaseResultConsumer
@@ -35,21 +45,23 @@ class BacklogLimitExceeded(Exception):
     """Too much state history to fast-forward."""
 
 
-def _on_after_fork_cleanup_backend(backend):
+def _on_after_fork_cleanup_backend(backend: BackendT) -> None:
     backend._after_fork()
 
 
 class ResultConsumer(BaseResultConsumer):
     Consumer = kombu.Consumer
 
-    _connection = None
-    _consumer = None
+    _connection: ConnectionT = None
+    _consumer: ConsumerT = None
 
-    def __init__(self, *args, **kwargs):
-        super(ResultConsumer, self).__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self._create_binding = self.backend._create_binding
 
-    def start(self, initial_task_id, no_ack=True, **kwargs):
+    def start(self, initial_task_id: str,
+              *,
+              no_ack: bool = True, **kwargs) -> None:
         self._connection = self.app.connection()
         initial_queue = self._create_binding(initial_task_id)
         self._consumer = self.Consumer(
@@ -58,33 +70,34 @@ class ResultConsumer(BaseResultConsumer):
             accept=self.accept)
         self._consumer.consume()
 
-    def drain_events(self, timeout=None):
+    def drain_events(self, timeout: float = None) -> None:
         if self._connection:
-            return self._connection.drain_events(timeout=timeout)
+            self._connection.drain_events(timeout=timeout)
         elif timeout:
             time.sleep(timeout)
 
-    def stop(self):
+    def stop(self) -> None:
         try:
             self._consumer.cancel()
         finally:
             self._connection.close()
 
-    def on_after_fork(self):
+    def on_after_fork(self) -> None:
         self._consumer = None
         if self._connection is not None:
             self._connection.collect()
             self._connection = None
 
-    def consume_from(self, task_id):
+    def consume_from(self, task_id: str) -> None:
         if self._consumer is None:
-            return self.start(task_id)
-        queue = self._create_binding(task_id)
-        if not self._consumer.consuming_from(queue):
-            self._consumer.add_queue(queue)
-            self._consumer.consume()
+            self.start(task_id)
+        else:
+            queue = self._create_binding(task_id)
+            if not self._consumer.consuming_from(queue):
+                self._consumer.add_queue(queue)
+                self._consumer.consume()
 
-    def cancel_for(self, task_id):
+    def cancel_for(self, task_id: str) -> None:
         if self._consumer:
             self._consumer.cancel_by_queue(self._create_binding(task_id).name)
 
@@ -120,9 +133,15 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
 
         can_cache_declaration = False
 
-    def __init__(self, app, connection=None, exchange=None, exchange_type=None,
-                 persistent=None, serializer=None, auto_delete=True, **kwargs):
-        super(RPCBackend, self).__init__(app, **kwargs)
+    def __init__(self, app: AppT,
+                 connection: ConnectionT = None,
+                 exchange: str = None,
+                 exchange_type: str = None,
+                 persistent: bool = None,
+                 serializer: str = None,
+                 auto_delete: bool = True,
+                 **kwargs) -> None:
+        super().__init__(app, **kwargs)
         conf = self.app.conf
         self._connection = connection
         self._out_of_band = {}
@@ -142,32 +161,36 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         if register_after_fork is not None:
             register_after_fork(self, _on_after_fork_cleanup_backend)
 
-    def _after_fork(self):
+    def _after_fork(self) -> None:
         # clear state for child processes.
         self._pending_results.clear()
         self.result_consumer._after_fork()
 
-    def _create_exchange(self, name, type='direct', delivery_mode=2):
+    def _create_exchange(self, name: str,
+                         type: str = 'direct',
+                         delivery_mode: Union[int, str] = 2) -> Exchange:
         # uses direct to queue routing (anon exchange).
         return self.Exchange(None)
 
-    def _create_binding(self, task_id):
+    def _create_binding(self, task_id: str) -> EntityT:
         """Create new binding for task with id."""
         # RPC backend caches the binding, as one queue is used for all tasks.
         return self.binding
 
-    def ensure_chords_allowed(self):
+    def ensure_chords_allowed(self) -> None:
         raise NotImplementedError(E_NO_CHORD_SUPPORT.strip())
 
-    def on_task_call(self, producer, task_id):
+    def on_task_call(self, producer: ProducerT, task_id: str) -> Mapping:
         # Called every time a task is sent when using this backend.
         # We declare the queue we receive replies on in advance of sending
         # the message, but we skip this if running in the prefork pool
         # (task_join_will_block), as we know the queue is already declared.
         if not task_join_will_block():
             maybe_declare(self.binding(producer.channel), retry=True)
+        return {}
 
-    def destination_for(self, task_id, request):
+    def destination_for(self,
+                        task_id: str, request: RequestT) -> Tuple[str, str]:
         """Get the destination for result by task id.
 
         Returns:
@@ -182,22 +205,23 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
                 'RPC backend missing task request for {0!r}'.format(task_id))
         return request.reply_to, request.correlation_id or task_id
 
-    def on_reply_declare(self, task_id):
+    def on_reply_declare(self, task_id: str) -> None:
         # Return value here is used as the `declare=` argument
         # for Producer.publish.
         # By default we don't have to declare anything when sending a result.
-        pass
+        ...
 
-    def on_result_fulfilled(self, result):
+    def on_result_fulfilled(self, result: ResultT) -> None:
         # This usually cancels the queue after the result is received,
         # but we don't have to cancel since we have one queue per process.
-        pass
+        ...
 
-    def as_uri(self, include_password=True):
+    def as_uri(self, include_password: bool = True) -> str:
         return 'rpc://'
 
-    def store_result(self, task_id, result, state,
-                     traceback=None, request=None, **kwargs):
+    def store_result(self, task_id: str, result: Any, state: str,
+                     traceback: str = None, request: RequestT = None,
+                     **kwargs) -> Any:
         """Send task return value and state."""
         routing_key, correlation_id = self.destination_for(task_id, request)
         if not routing_key:
@@ -215,7 +239,9 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             )
         return result
 
-    def _to_result(self, task_id, state, result, traceback, request):
+    def _to_result(self,
+                   task_id: str, state: str, result: Any,
+                   traceback: str, request: RequestT) -> Mapping:
         return {
             'task_id': task_id,
             'status': state,
@@ -224,7 +250,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             'children': self.current_task_children(request),
         }
 
-    def on_out_of_band_result(self, task_id, message):
+    def on_out_of_band_result(self, task_id: str, message: MessageT) -> None:
         # Callback called when a reply for a task is received,
         # but we have no idea what do do with it.
         # Since the result is not pending, we put it in a separate
@@ -233,7 +259,8 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             self.result_consumer.on_out_of_band_result(message)
         self._out_of_band[task_id] = message
 
-    def get_task_meta(self, task_id, backlog_limit=1000):
+    def get_task_meta(self, task_id: str,
+                      *, backlog_limit: int = 1000) -> Mapping:
         buffered = self._out_of_band.pop(task_id, None)
         if buffered:
             return self._set_cache_by_message(task_id, buffered)
@@ -251,7 +278,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
                 prev = None
 
         latest = latest_by_id.pop(task_id, None)
-        for tid, msg in items(latest_by_id):
+        for tid, msg in latest_by_id.items():
             self.on_out_of_band_result(tid, msg)
 
         if latest:
@@ -264,15 +291,16 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             except KeyError:
                 # result probably pending.
                 return {'status': states.PENDING, 'result': None}
-    poll = get_task_meta  # XXX compat
 
-    def _set_cache_by_message(self, task_id, message):
+    def _set_cache_by_message(self,
+                              task_id: str, message: MessageT) -> Mapping:
         payload = self._cache[task_id] = self.meta_from_decoded(
             message.payload)
         return payload
 
-    def _slurp_from_queue(self, task_id, accept,
-                          limit=1000, no_ack=False):
+    def _slurp_from_queue(self, task_id: str, accept: Set[str],
+                          limit: int = 1000,
+                          no_ack: bool = False) -> Iterator[MessageT]:
         with self.app.pool.acquire_channel(block=True) as (_, channel):
             binding = self._create_binding(task_id)(channel)
             binding.declare()
@@ -285,7 +313,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             else:
                 raise self.BacklogLimitExceeded(task_id)
 
-    def _get_message_task_id(self, message):
+    def _get_message_task_id(self, message: MessageT) -> str:
         try:
             # try property first so we don't have to deserialize
             # the payload.
@@ -294,10 +322,10 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             # message sent by old Celery version, need to deserialize.
             return message.payload['task_id']
 
-    def revive(self, channel):
-        pass
+    def revive(self, channel: ChannelT) -> None:
+        ...
 
-    def reload_task_result(self, task_id):
+    def reload_task_result(self, task_id: str) -> None:
         raise NotImplementedError(
             'reload_task_result is not supported by this backend.')
 
@@ -306,20 +334,20 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         raise NotImplementedError(
             'reload_group_result is not supported by this backend.')
 
-    def save_group(self, group_id, result):
+    def save_group(self, group_id: str, result: GroupResult) -> None:
         raise NotImplementedError(
             'save_group is not supported by this backend.')
 
-    def restore_group(self, group_id, cache=True):
+    def restore_group(self, group_id: str, cache: bool = True) -> GroupResult:
         raise NotImplementedError(
             'restore_group is not supported by this backend.')
 
-    def delete_group(self, group_id):
+    def delete_group(self, group_id: str) -> None:
         raise NotImplementedError(
             'delete_group is not supported by this backend.')
 
-    def __reduce__(self, args=(), kwargs={}):
-        return super(RPCBackend, self).__reduce__(args, dict(
+    def __reduce__(self, args: Tuple = (), kwargs: Dict = {}) -> Tuple:
+        return super().__reduce__(args, dict(
             kwargs,
             connection=self._connection,
             exchange=self.exchange.name,
@@ -331,7 +359,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         ))
 
     @property
-    def binding(self):
+    def binding(self) -> EntityT:
         return self.Queue(
             self.oid, self.exchange, self.oid,
             durable=False,
@@ -340,6 +368,6 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         )
 
     @cached_property
-    def oid(self):
+    def oid(self) -> str:
         # cached here is the app OID: name of queue we receive results on.
         return self.app.oid

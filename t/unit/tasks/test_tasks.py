@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import socket
@@ -5,13 +6,15 @@ import tempfile
 from datetime import datetime, timedelta
 
 import pytest
+=======
+import pytest
+from datetime import datetime, timedelta
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from case import ContextMock, MagicMock, Mock, patch
 from kombu import Queue
-
 from celery import Task, group, uuid
 from celery.app.task import _reprtask
 from celery.exceptions import Ignore, Retry
-from celery.five import items, range, string_t
 from celery.result import EagerResult
 from celery.utils.time import parse_iso8601
 
@@ -419,6 +422,7 @@ class test_tasks(TasksCase):
         assert task_headers['id'] == presult.id
         assert task_headers['task'] == task_name
         if test_eta:
+<<<<<<< HEAD
             assert isinstance(task_headers.get('eta'), string_t)
             to_datetime = parse_iso8601(task_headers.get('eta'))
             assert isinstance(to_datetime, datetime)
@@ -433,6 +437,16 @@ class test_tasks(TasksCase):
         for arg_name, arg_value in items(headers):
             assert task_headers.get(arg_name) == arg_value
         for arg_name, arg_value in items(kwargs):
+=======
+            assert isinstance(task_data.get('eta'), str)
+            to_datetime = parse_iso8601(task_data.get('eta'))
+            assert isinstance(to_datetime, datetime)
+        if test_expires:
+            assert isinstance(task_data.get('expires'), str)
+            to_datetime = parse_iso8601(task_data.get('expires'))
+            assert isinstance(to_datetime, datetime)
+        for arg_name, arg_value in kwargs.items():
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
             assert task_kwargs.get(arg_name) == arg_value
 
     def test_incomplete_task_cls(self):
@@ -601,10 +615,6 @@ class test_tasks(TasksCase):
         mytask.trail = False
         mytask.add_trail('foo')
 
-    def test_repr_v2_compat(self):
-        self.mytask.__v2_compat__ = True
-        assert 'v2 compatible' in repr(self.mytask)
-
     def test_apply_with_self(self):
 
         @self.app.task(__self__=42, shared=False)
@@ -656,12 +666,12 @@ class test_tasks(TasksCase):
         try:
             tid = uuid()
             yyy.update_state(tid, 'FROBULATING', {'fooz': 'baaz'})
-            assert yyy.AsyncResult(tid).status == 'FROBULATING'
+            assert yyy.AsyncResult(tid).state == 'FROBULATING'
             assert yyy.AsyncResult(tid).result == {'fooz': 'baaz'}
 
             yyy.request.id = tid
             yyy.update_state(state='FROBUZATING', meta={'fooz': 'baaz'})
-            assert yyy.AsyncResult(tid).status == 'FROBUZATING'
+            assert yyy.AsyncResult(tid).state == 'FROBUZATING'
             assert yyy.AsyncResult(tid).result == {'fooz': 'baaz'}
         finally:
             yyy.pop_request()

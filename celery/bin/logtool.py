@@ -3,9 +3,12 @@
 
 .. program:: celery logtool
 """
+<<<<<<< HEAD
 
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import re
 from collections import Counter
 from fileinput import FileInput
@@ -47,7 +50,7 @@ def task_info(line):
     return m.groups()
 
 
-class Audit(object):
+class Audit:
 
     def __init__(self, on_task_error=None, on_trace=None, on_debug=None):
         self.ids = set()

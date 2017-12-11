@@ -253,8 +253,11 @@ in any command that also has a `--detach` option.
 
     Destination routing key (defaults to the queue routing key).
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, print_function, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import numbers
 import sys
 from functools import partial
@@ -327,7 +330,8 @@ def main(argv=None):
 class multi(Command):
     """Start multiple worker instances."""
 
-    respects_app_option = False
+    fake_app = True
+    requires_app = False
 
     def run_from_argv(self, prog_name, argv, command=None):
         from celery.bin.multi import MultiTool
@@ -478,10 +482,11 @@ class CeleryCommand(Command):
     def execute_from_commandline(self, argv=None):
         argv = sys.argv if argv is None else argv
         if 'multi' in argv[1:3]:  # Issue 1008
-            self.respects_app_option = False
+            self.requires_app = False
+            self.fake_app = True
         try:
             sys.exit(determine_exit_status(
-                super(CeleryCommand, self).execute_from_commandline(argv)))
+                super().execute_from_commandline(argv)))
         except KeyboardInterrupt:
             sys.exit(EX_FAILURE)
 

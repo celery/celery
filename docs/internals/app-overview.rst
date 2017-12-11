@@ -176,7 +176,7 @@ is missing.
 
     from celery.app import app_or_default
 
-    class SomeClass(object):
+    class SomeClass:
 
         def __init__(self, app=None):
             self.app = app_or_default(app)

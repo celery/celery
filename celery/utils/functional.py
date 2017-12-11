@@ -1,17 +1,25 @@
 # -*- coding: utf-8 -*-
 """Functional-style utilties."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import inspect
 import sys
+<<<<<<< HEAD
+=======
+from collections import UserList
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from functools import partial
+from inspect import FullArgSpec, getfullargspec, isfunction
 from itertools import chain, islice
+from typing import (
+    Any, Callable, Iterable, Iterator, Optional,
+    Mapping, MutableSequence, Sequence, Tuple, Union,
+)
+from typing import MutableSet  # noqa
 
 from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
                                     maybe_evaluate, maybe_list, memoize)
 from vine import promise
 
-from celery.five import UserList, getfullargspec, range
+from .typing import ExcInfo
 
 __all__ = (
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
@@ -20,20 +28,18 @@ __all__ = (
     'maybe', 'fun_accepts_kwargs',
 )
 
-IS_PY3 = sys.version_info[0] == 3
-
 FUNHEAD_TEMPLATE = """
 def {fun_name}({fun_args}):
     return {fun_value}
 """
 
 
-class DummyContext(object):
+class DummyContext:
 
-    def __enter__(self):
+    def __enter__(self) -> Any:
         return self
 
-    def __exit__(self, *exc_info):
+    def __exit__(self, *exc_info: ExcInfo) -> Any:
         pass
 
 
@@ -45,17 +51,17 @@ class mlazy(lazy):
     """
 
     #: Set to :const:`True` after the object has been evaluated.
-    evaluated = False
-    _value = None
+    evaluated: bool = False
+    _value: Any = None
 
-    def evaluate(self):
+    def evaluate(self) -> Any:
         if not self.evaluated:
-            self._value = super(mlazy, self).evaluate()
+            self._value = super().evaluate()
             self.evaluated = True
         return self._value
 
 
-def noop(*args, **kwargs):
+def noop(*args: Tuple, **kwargs: Mapping) -> Any:
     """No operation.
 
     Takes any arguments/keyword arguments and does nothing.
@@ -63,19 +69,19 @@ def noop(*args, **kwargs):
     pass
 
 
-def pass1(arg, *args, **kwargs):
+def pass1(arg: Any, *args: Tuple, **kwargs: Mapping) -> Any:
     """Return the first positional argument."""
     return arg
 
 
-def evaluate_promises(it):
+def evaluate_promises(it: Iterable) -> Iterator[Any]:
     for value in it:
         if isinstance(value, promise):
             value = value()
         yield value
 
 
-def first(predicate, it):
+def first(predicate: Callable[[Any], Any], it: Iterable) -> Any:
     """Return the first element in ``it`` that ``predicate`` accepts.
 
     If ``predicate`` is None it will return the first item that's not
@@ -88,7 +94,7 @@ def first(predicate, it):
     )
 
 
-def firstmethod(method, on_call=None):
+def firstmethod(method: str, on_call: Optional[Callable]=None) -> Any:
     """Multiple dispatch.
 
     Return a function that with a list of instances,
@@ -111,7 +117,7 @@ def firstmethod(method, on_call=None):
     return _matcher
 
 
-def chunks(it, n):
+def chunks(it: Iterable, n: int) -> Iterable:
     """Split an iterator into chunks with `n` elements each.
 
     Warning:
@@ -136,7 +142,8 @@ def chunks(it, n):
         yield [item] + list(islice(it, n - 1))
 
 
-def padlist(container, size, default=None):
+def padlist(container: Sequence, size: int,
+            default: Optional[Any]=None) -> Sequence:
     """Pad list with default elements.
 
     Example:
@@ -152,7 +159,7 @@ def padlist(container, size, default=None):
     return list(container)[:size] + [default] * (size - len(container))
 
 
-def mattrgetter(*attrs):
+def mattrgetter(*attrs: str) -> Callable[[Any], Mapping[str, Any]]:
     """Get attributes, ignoring attribute errors.
 
     Like :func:`operator.itemgetter` but return :const:`None` on missing
@@ -161,13 +168,13 @@ def mattrgetter(*attrs):
     return lambda obj: {attr: getattr(obj, attr, None) for attr in attrs}
 
 
-def uniq(it):
+def uniq(it: Iterable) -> Iterable[Any]:
     """Return all unique elements in ``it``, preserving order."""
     seen = set()
     return (seen.add(obj) or obj for obj in it if obj not in seen)
 
 
-def regen(it):
+def regen(it: Iterable) -> Union[list, tuple, '_regen']:
     """Convert iterator to an object that can be consumed multiple times.
 
     ``Regen`` takes any iterable, and if the object is an
@@ -182,7 +189,7 @@ def regen(it):
 class _regen(UserList, list):
     # must be subclass of list so that json can encode.
 
-    def __init__(self, it):
+    def __init__(self, it: Iterable) -> None:
         # pylint: disable=super-init-not-called
         # UserList creates a new list and sets .data, so we don't
         # want to call init here.
@@ -190,16 +197,16 @@ class _regen(UserList, list):
         self.__index = 0
         self.__consumed = []
 
-    def __reduce__(self):
+    def __reduce__(self) -> Any:
         return list, (self.data,)
 
-    def __length_hint__(self):
+    def __length_hint__(self) -> int:
         return self.__it.__length_hint__()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator:
         return chain(self.__consumed, self.__it)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: Any) -> Any:
         if index < 0:
             return self.data[index]
         try:
@@ -214,7 +221,7 @@ class _regen(UserList, list):
                 return self.__consumed[index]
 
     @property
-    def data(self):
+    def data(self) -> MutableSequence:
         try:
             self.__consumed.extend(list(self.__it))
         except StopIteration:
@@ -222,7 +229,7 @@ class _regen(UserList, list):
         return self.__consumed
 
 
-def _argsfromspec(spec, replace_defaults=True):
+def _argsfromspec(spec: FullArgSpec, replace_defaults: bool=True) -> str:
     if spec.defaults:
         split = len(spec.defaults)
         defaults = (list(range(len(spec.defaults))) if replace_defaults
@@ -256,18 +263,23 @@ def _argsfromspec(spec, replace_defaults=True):
     ]))
 
 
-def head_from_fun(fun, bound=False, debug=False):
+def head_from_fun(fun: Callable,
+                  bound: bool=False, debug: bool=False) -> partial:
     """Generate signature function from actual function."""
     # we could use inspect.Signature here, but that implementation
     # is very slow since it implements the argument checking
     # in pure-Python.  Instead we use exec to create a new function
     # with an empty body, meaning it has the same performance as
     # as just calling a function.
+<<<<<<< HEAD
     is_function = inspect.isfunction(fun)
     is_callable = hasattr(fun, '__call__')
     is_method = inspect.ismethod(fun)
 
     if not is_function and is_callable and not is_method:
+=======
+    if not isfunction(fun) and hasattr(fun, '__call__'):
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
         name, fun = fun.__class__.__name__, fun.__call__
     else:
         name = fun.__name__
@@ -282,21 +294,22 @@ def head_from_fun(fun, bound=False, debug=False):
     # pylint: disable=exec-used
     # Tasks are rarely, if ever, created at runtime - exec here is fine.
     exec(definition, namespace)
-    result = namespace[name]
+    result: Any = namespace[name]
     result._source = definition
     if bound:
         return partial(result, object())
     return result
 
 
-def arity_greater(fun, n):
+def arity_greater(fun: Callable, n: int) -> bool:
     argspec = getfullargspec(fun)
-    return argspec.varargs or len(argspec.args) > n
+    return bool(argspec.varargs or len(argspec.args) > n)
 
 
-def fun_takes_argument(name, fun, position=None):
+def fun_takes_argument(name: str, fun: Callable,
+                       position: Optional[int]=None) -> bool:
     spec = getfullargspec(fun)
-    return (
+    return bool(
         spec.varkw or spec.varargs or
         (len(spec.args) >= position if position else name in spec.args)
     )

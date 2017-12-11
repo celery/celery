@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """Couchbase result store backend."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import logging
 
 from kombu.utils.encoding import str_t
@@ -45,7 +48,7 @@ class CouchbaseBackend(KeyValueStoreBackend):
     key_t = str_t
 
     def __init__(self, url=None, *args, **kwargs):
-        super(CouchbaseBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
 
         if Couchbase is None:

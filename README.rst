@@ -40,10 +40,17 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
+<<<<<<< HEAD
 Celery version 4.1 runs on,
 
 - Python (2.7, 3.4, 3.5, 3.6)
 - PyPy (5.8)
+=======
+Celery version 5.0 runs on,
+
+- Python (3.5, 3.6)
+- PyPy (5.5)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 This is the last version to support Python 2.7,

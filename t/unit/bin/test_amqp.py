@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import pytest
@@ -5,12 +6,24 @@ from case import Mock, patch
 
 from celery.bin.amqp import AMQPAdmin, AMQShell, amqp, dump_message, main
 from celery.five import WhateverIO
+=======
+import io
+import pytest
+from case import Mock, patch
+from celery.bin.amqp import (
+    AMQPAdmin,
+    AMQShell,
+    dump_message,
+    amqp,
+    main,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class test_AMQShell:
 
     def setup(self):
-        self.fh = WhateverIO()
+        self.fh = io.StringIO()
         self.adm = self.create_adm()
         self.shell = AMQShell(connect=self.adm.connect, out=self.fh)
 

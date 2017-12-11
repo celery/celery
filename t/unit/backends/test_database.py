@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime
@@ -7,8 +8,15 @@ import pytest
 from case import Mock, patch, skip
 
 from celery import states, uuid
+=======
+import pytest
+from datetime import datetime
+from pickle import loads, dumps
+from case import Mock, patch, skip
+from celery import states
+from celery import uuid
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.exceptions import ImproperlyConfigured
-
 try:
     import sqlalchemy  # noqa
 except ImportError:
@@ -23,7 +31,7 @@ else:
     from celery.backends.database.models import Task, TaskSet
 
 
-class SomeClass(object):
+class SomeClass:
 
     def __init__(self, data):
         self.data = data

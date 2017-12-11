@@ -1,10 +1,13 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pytest
 from case import patch
 
 from celery.app import backends
-from celery.backends.amqp import AMQPBackend
+from celery.backends.rpc import RPCBackend
 from celery.backends.cache import CacheBackend
 from celery.exceptions import ImproperlyConfigured
 
@@ -12,7 +15,7 @@ from celery.exceptions import ImproperlyConfigured
 class test_backends:
 
     @pytest.mark.parametrize('url,expect_cls', [
-        ('amqp://', AMQPBackend),
+        ('rpc://', RPCBackend),
         ('cache+memory://', CacheBackend),
     ])
     def test_get_backend_aliases(self, url, expect_cls, app):

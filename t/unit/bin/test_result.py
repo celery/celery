@@ -1,7 +1,12 @@
 from __future__ import absolute_import, unicode_literals
+<<<<<<< HEAD
 
 from case import patch
 
+=======
+import io
+from case import patch
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.bin.result import result
 from celery.five import WhateverIO
 
@@ -17,7 +22,7 @@ class test_result:
 
     def test_run(self):
         with patch('celery.result.AsyncResult.get') as get:
-            out = WhateverIO()
+            out = io.StringIO()
             r = result(app=self.app, stdout=out)
             get.return_value = 'Jerry'
             r.run('id')

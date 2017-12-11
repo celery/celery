@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 """Task results/state and results for groups of tasks."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import time
 from collections import OrderedDict, deque
+=======
+from collections import deque
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from contextlib import contextmanager
-from copy import copy
+from time import monotonic
 
 from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
@@ -14,9 +18,13 @@ from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
+<<<<<<< HEAD
 from .five import (items, monotonic, python_2_unicode_compatible, range,
                    string_t)
 from .utils import deprecated
+=======
+from .utils.abstract import AbstractResult
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from .utils.graph import DependencyGraph, GraphFormatter
 
 try:
@@ -51,6 +59,7 @@ def allow_join_result():
         _set_task_join_will_block(reset_value)
 
 
+<<<<<<< HEAD
 @contextmanager
 def denied_join_result():
     reset_value = task_join_will_block()
@@ -62,14 +71,17 @@ def denied_join_result():
 
 
 class ResultBase(object):
+=======
+class ResultBase:
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
     """Base class for results."""
 
     #: Parent result (if part of a chain)
     parent = None
 
 
+@AbstractResult.register
 @Thenable.register
-@python_2_unicode_compatible
 class AsyncResult(ResultBase):
     """Query task state.
 
@@ -200,7 +212,6 @@ class AsyncResult(ResultBase):
             callback=callback,
             on_message=on_message,
         )
-    wait = get  # deprecated alias to :meth:`get`.
 
     def _maybe_reraise_parent_error(self):
         for node in reversed(list(self._parents())):
@@ -337,7 +348,7 @@ class AsyncResult(ResultBase):
     def __eq__(self, other):
         if isinstance(other, AsyncResult):
             return other.id == self.id
-        elif isinstance(other, string_t):
+        elif isinstance(other, str):
             return other == self.id
         return NotImplemented
 
@@ -441,20 +452,10 @@ class AsyncResult(ResultBase):
                 then contains the tasks return value.
         """
         return self._get_task_meta()['status']
-    status = state  # XXX compat
-
-    @property
-    def task_id(self):
-        """Compat. alias to :attr:`id`."""
-        return self.id
-
-    @task_id.setter  # noqa
-    def task_id(self, id):
-        self.id = id
 
 
 @Thenable.register
-@python_2_unicode_compatible
+@AbstractResult.register
 class ResultSet(ResultBase):
     """A collection of results.
 
@@ -498,7 +499,7 @@ class ResultSet(ResultBase):
         Raises:
             KeyError: if the result isn't a member.
         """
-        if isinstance(result, string_t):
+        if isinstance(result, str):
             result = self.app.AsyncResult(result)
         try:
             self.results.remove(result)
@@ -601,30 +602,6 @@ class ResultSet(ResultBase):
     def __getitem__(self, index):
         """`res[i] -> res.results[i]`."""
         return self.results[index]
-
-    @deprecated.Callable('4.0', '5.0')
-    def iterate(self, timeout=None, propagate=True, interval=0.5):
-        """Deprecated method, use :meth:`get` with a callback argument."""
-        elapsed = 0.0
-        results = OrderedDict((result.id, copy(result))
-                              for result in self.results)
-
-        while results:
-            removed = set()
-            for task_id, result in items(results):
-                if result.ready():
-                    yield result.get(timeout=timeout and timeout - elapsed,
-                                     propagate=propagate)
-                    removed.add(task_id)
-                else:
-                    if result.backend.subpolling_interval:
-                        time.sleep(result.backend.subpolling_interval)
-            for task_id in removed:
-                results.pop(task_id, None)
-            time.sleep(interval)
-            elapsed += interval
-            if timeout and elapsed >= timeout:
-                raise TimeoutError('The operation timed out')
 
     def get(self, timeout=None, propagate=True, interval=0.5,
             callback=None, no_ack=True, on_message=None,
@@ -817,8 +794,8 @@ class ResultSet(ResultBase):
         return self.app.backend if self.app else self.results[0].backend
 
 
+@AbstractResult.register
 @Thenable.register
-@python_2_unicode_compatible
 class GroupResult(ResultSet):
     """Like :class:`ResultSet`, but with an associated id.
 
@@ -866,7 +843,6 @@ class GroupResult(ResultSet):
 
     def __bool__(self):
         return bool(self.id or self.results)
-    __nonzero__ = __bool__  # Included for Py2 backwards compatibility
 
     def __eq__(self, other):
         if isinstance(other, GroupResult):
@@ -902,8 +878,8 @@ class GroupResult(ResultSet):
         return backend.restore_group(id)
 
 
+@AbstractResult.register
 @Thenable.register
-@python_2_unicode_compatible
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 
@@ -947,7 +923,6 @@ class EagerResult(AsyncResult):
             if propagate:
                 raise self.result
             return self.result
-    wait = get  # XXX Compat (remove 5.0)
 
     def forget(self):
         pass

@@ -1,7 +1,10 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime, timedelta, tzinfo
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pytest
 import pytz
 from case import Mock, patch

@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """Single-threaded execution pool."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import os
 
 from .base import BasePool, apply_target
@@ -15,7 +18,7 @@ class TaskPool(BasePool):
     body_can_be_buffer = True
 
     def __init__(self, *args, **kwargs):
-        super(TaskPool, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.on_apply = apply_target
         self.limit = 1
 

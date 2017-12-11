@@ -7,23 +7,30 @@ Sets up logging for the worker and other programs,
 redirects standard outs, colors log output, patches logging
 related compatibility fixes, and so on.
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import os
 import sys
 from logging.handlers import WatchedFileHandler
+from typing import Union
 
 from kombu.utils.encoding import set_default_encoding_file
 
 from celery import signals
 from celery._state import get_current_task
-from celery.five import string_t
 from celery.local import class_property
 from celery.platforms import isatty
+<<<<<<< HEAD
 from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
                               get_multiprocessing_logger, mlevel,
                               reset_multiprocessing_logger)
+=======
+from celery.types import AppT
+from celery.utils.log import (
+    get_logger, mlevel,
+    ColorFormatter, LoggingProxy, get_multiprocessing_logger,
+    reset_multiprocessing_logger,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.nodenames import node_format
 from celery.utils.term import colored
 
@@ -35,7 +42,7 @@ MP_LOG = os.environ.get('MP_LOG', False)
 class TaskFormatter(ColorFormatter):
     """Formatter for tasks, adding the task name and id."""
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         task = get_current_task()
         if task and task.request:
             record.__dict__.update(task_id=task.request.id,
@@ -46,7 +53,7 @@ class TaskFormatter(ColorFormatter):
         return ColorFormatter.format(self, record)
 
 
-class Logging(object):
+class Logging:
     """Application logging setup (app.log)."""
 
     #: The logging subsystem is only configured once per process.
@@ -54,15 +61,20 @@ class Logging(object):
     #: will do nothing.
     _setup = False
 
-    def __init__(self, app):
+    def __init__(self, app: AppT) -> None:
         self.app = app
         self.loglevel = mlevel(logging.WARN)
         self.format = self.app.conf.worker_log_format
         self.task_format = self.app.conf.worker_task_log_format
         self.colorize = self.app.conf.worker_log_color
 
-    def setup(self, loglevel=None, logfile=None, redirect_stdouts=False,
-              redirect_level='WARNING', colorize=None, hostname=None):
+    def setup(self,
+              loglevel: Union[str, int] = None,
+              logfile: str = None,
+              redirect_stdouts: bool = False,
+              redirect_level: str = 'WARNING',
+              colorize: bool = None,
+              hostname: str = None) -> bool:
         loglevel = mlevel(loglevel)
         handled = self.setup_logging_subsystem(
             loglevel, logfile, colorize=colorize, hostname=hostname,
@@ -76,7 +88,9 @@ class Logging(object):
         )
         return handled
 
-    def redirect_stdouts(self, loglevel=None, name='celery.redirected'):
+    def redirect_stdouts(self,
+                         loglevel: int = None,
+                         name: str = 'celery.redirected') -> None:
         self.redirect_stdouts_to_logger(
             get_logger(name), loglevel=loglevel
         )
@@ -85,10 +99,15 @@ class Logging(object):
             CELERY_LOG_REDIRECT_LEVEL=str(loglevel or ''),
         )
 
-    def setup_logging_subsystem(self, loglevel=None, logfile=None, format=None,
-                                colorize=None, hostname=None, **kwargs):
+    def setup_logging_subsystem(self,
+                                loglevel: Union[int, str] = None,
+                                logfile: str = None,
+                                format: str = None,
+                                colorize: bool = None,
+                                hostname: str = None,
+                                **kwargs) -> bool:
         if self.already_setup:
-            return
+            return False
         if logfile and hostname:
             logfile = node_format(logfile, hostname)
         Logging._setup = True
@@ -140,22 +159,32 @@ class Logging(object):
 
         # This is a hack for multiprocessing's fork+exec, so that
         # logging before Process.run works.
-        logfile_name = logfile if isinstance(logfile, string_t) else ''
+        logfile_name = logfile if isinstance(logfile, str) else ''
         os.environ.update(_MP_FORK_LOGLEVEL_=str(loglevel),
                           _MP_FORK_LOGFILE_=logfile_name,
                           _MP_FORK_LOGFORMAT_=format)
-        return receivers
+        return bool(receivers)
 
-    def _configure_logger(self, logger, logfile, loglevel,
-                          format, colorize, **kwargs):
+    def _configure_logger(self,
+                          logger: logging.Logger,
+                          logfile: str,
+                          loglevel: int,
+                          format: str,
+                          colorize: bool,
+                          **kwargs) -> None:
         if logger is not None:
             self.setup_handlers(logger, logfile, format,
                                 colorize, **kwargs)
             if loglevel:
                 logger.setLevel(loglevel)
 
-    def setup_task_loggers(self, loglevel=None, logfile=None, format=None,
-                           colorize=None, propagate=False, **kwargs):
+    def setup_task_loggers(self,
+                           loglevel: Union[str, int] = None,
+                           logfile: str = None,
+                           format: str = None,
+                           colorize: bool = None,
+                           propagate: bool = False,
+                           **kwargs) -> logging.Logger:
         """Setup the task logger.
 
         If `logfile` is not specified, then `sys.stderr` is used.
@@ -181,8 +210,10 @@ class Logging(object):
         )
         return logger
 
-    def redirect_stdouts_to_logger(self, logger, loglevel=None,
-                                   stdout=True, stderr=True):
+    def redirect_stdouts_to_logger(self, logger: logging.Logger,
+                                   loglevel: int = None,
+                                   stdout: bool = True,
+                                   stderr: bool = True) -> LoggingProxy:
         """Redirect :class:`sys.stdout` and :class:`sys.stderr` to logger.
 
         Arguments:
@@ -197,7 +228,9 @@ class Logging(object):
             sys.stderr = proxy
         return proxy
 
-    def supports_color(self, colorize=None, logfile=None):
+    def supports_color(self,
+                       colorize: bool = None,
+                       logfile: str = None) -> bool:
         colorize = self.colorize if colorize is None else colorize
         if self.app.IS_WINDOWS:
             # Windows does not support ANSI color codes.
@@ -208,11 +241,12 @@ class Logging(object):
             return logfile is None and isatty(sys.stderr)
         return colorize
 
-    def colored(self, logfile=None, enabled=None):
+    def colored(self, logfile: str = None, enabled: bool = None) -> colored:
         return colored(enabled=self.supports_color(enabled, logfile))
 
-    def setup_handlers(self, logger, logfile, format, colorize,
-                       formatter=ColorFormatter, **kwargs):
+    def setup_handlers(self, logger: logging.Logger,
+                       logfile: str, format: str, colorize: bool,
+                       formatter=ColorFormatter, **kwargs) -> logging.Logger:
         if self._is_configured(logger):
             return logger
         handler = self._detect_handler(logfile)
@@ -220,35 +254,31 @@ class Logging(object):
         logger.addHandler(handler)
         return logger
 
-    def _detect_handler(self, logfile=None):
+    def _detect_handler(self, logfile: str = None) -> logging.Handler:
         """Create handler from filename, an open stream or `None` (stderr)."""
         logfile = sys.__stderr__ if logfile is None else logfile
         if hasattr(logfile, 'write'):
             return logging.StreamHandler(logfile)
         return WatchedFileHandler(logfile)
 
-    def _has_handler(self, logger):
+    def _has_handler(self, logger: logging.Logger) -> bool:
         return any(
             not isinstance(h, logging.NullHandler)
             for h in logger.handlers or []
         )
 
-    def _is_configured(self, logger):
+    def _is_configured(self, logger: logging.Logger) -> bool:
         return self._has_handler(logger) and not getattr(
             logger, '_rudimentary_setup', False)
 
-    def setup_logger(self, name='celery', *args, **kwargs):
-        """Deprecated: No longer used."""
-        self.setup_logging_subsystem(*args, **kwargs)
-        return logging.root
-
-    def get_default_logger(self, name='celery', **kwargs):
+    def get_default_logger(self, name: str = 'celery',
+                           **kwargs) -> logging.Logger:
         return get_logger(name)
 
     @class_property
-    def already_setup(self):
+    def already_setup(self) -> bool:
         return self._setup
 
     @already_setup.setter  # noqa
-    def already_setup(self, was_setup):
+    def already_setup(self, was_setup: bool) -> None:
         self._setup = was_setup

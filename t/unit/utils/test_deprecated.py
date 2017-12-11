@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pytest
 from case import patch
 
@@ -11,7 +14,7 @@ class test_deprecated_property:
     @patch('celery.utils.deprecated.warn')
     def test_deprecated(self, warn):
 
-        class X(object):
+        class X:
             _foo = None
 
             @deprecated.Property(deprecation='1.2')
@@ -49,7 +52,8 @@ class test_deprecated_property:
         assert x._foo is None
 
     def test_deprecated_no_setter_or_deleter(self):
-        class X(object):
+
+        class X:
             @deprecated.Property(deprecation='1.2')
             def foo(self):
                 pass

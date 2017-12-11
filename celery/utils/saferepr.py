@@ -10,18 +10,19 @@ Differences from regular :func:`repr`:
 
 Very slow with no limits, super quick with limits.
 """
-from __future__ import absolute_import, unicode_literals
-
-import sys
 import traceback
+<<<<<<< HEAD
 from collections import deque, namedtuple
+=======
+from collections import Mapping, deque
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from decimal import Decimal
 from itertools import chain
 from numbers import Number
 from pprint import _recursion
-
-from celery.five import items, text_t
-
+from typing import (
+    Any, AnyStr, Callable, Iterator, NamedTuple, Set, Sequence, Tuple,
+)
 from .text import truncate
 
 __all__ = ('saferepr', 'reprstream')
@@ -29,36 +30,45 @@ __all__ = ('saferepr', 'reprstream')
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.
 
-IS_PY3 = sys.version_info[0] == 3
 
-if IS_PY3:  # pragma: no cover
-    range_t = (range, )
-else:
-    class range_t(object):  # noqa
-        pass
+class _literal(NamedTuple):
+    """Node representing literal text.
 
-#: Node representing literal text.
-#:   - .value: is the literal text value
-#:   - .truncate: specifies if this text can be truncated, for things like
-#:                LIT_DICT_END this will be False, as we always display
-#:                the ending brackets, e.g:  [[[1, 2, 3, ...,], ..., ]]
-#:   - .direction: If +1 the current level is increment by one,
-#:                 if -1 the current level is decremented by one, and
-#:                 if 0 the current level is unchanged.
-_literal = namedtuple('_literal', ('value', 'truncate', 'direction'))
+    Attributes:
+       - .value: is the literal text value
+       - .truncate: specifies if this text can be truncated, for things like
+                    LIT_DICT_END this will be False, as we always display
+                    the ending brackets, e.g:  [[[1, 2, 3, ...,], ..., ]]
+       - .direction: If +1 the current level is increment by one,
+                     if -1 the current level is decremented by one, and
+                     if 0 the current level is unchanged.
+    """
 
-#: Node representing a dictionary key.
-_key = namedtuple('_key', ('value',))
-
-#: Node representing quoted text, e.g. a string value.
-_quoted = namedtuple('_quoted', ('value',))
+    value: str
+    truncate: bool
+    direction: int
 
 
-#: Recursion protection.
-_dirty = namedtuple('_dirty', ('objid',))
+class _key(NamedTuple):
+    """Node representing a dictionary key."""
+
+    value: str
+
+
+class _quoted(NamedTuple):
+    """Node representing quoted text, e.g. a string value."""
+
+    value: str
+
+
+class _dirty(NamedTuple):
+    """Recursion protection."""
+
+    objid: int
+
 
 #: Types that are repsented as chars.
-chars_t = (bytes, text_t)
+chars_t = (bytes, str)
 
 #: Types that are regarded as safe to call repr on.
 safe_t = (Number,)
@@ -79,8 +89,8 @@ LIT_TUPLE_END = _literal(')', False, -1)
 LIT_TUPLE_END_SV = _literal(',)', False, -1)
 
 
-def saferepr(o, maxlen=None, maxlevels=3, seen=None):
-    # type: (Any, int, int, Set) -> str
+def saferepr(o: Any, maxlen: int = None,
+             maxlevels: int=3, seen: Set = None) -> str:
     """Safe version of :func:`repr`.
 
     Warning:
@@ -93,12 +103,11 @@ def saferepr(o, maxlen=None, maxlevels=3, seen=None):
     ))
 
 
-def _chaindict(mapping,
-               LIT_DICT_KVSEP=LIT_DICT_KVSEP,
-               LIT_LIST_SEP=LIT_LIST_SEP):
-    # type: (Dict, _literal, _literal) -> Iterator[Any]
+def _chaindict(mapping: Mapping,
+               LIT_DICT_KVSEP: _literal = LIT_DICT_KVSEP,
+               LIT_LIST_SEP: _literal = LIT_LIST_SEP) -> Iterator[Any]:
     size = len(mapping)
-    for i, (k, v) in enumerate(items(mapping)):
+    for i, (k, v) in enumerate(mapping.items()):
         yield _key(k)
         yield LIT_DICT_KVSEP
         yield v
@@ -106,8 +115,8 @@ def _chaindict(mapping,
             yield LIT_LIST_SEP
 
 
-def _chainlist(it, LIT_LIST_SEP=LIT_LIST_SEP):
-    # type: (List) -> Iterator[Any]
+def _chainlist(it: Sequence,
+               LIT_LIST_SEP: _literal = LIT_LIST_SEP) -> Iterator[Any]:
     size = len(it)
     for i, v in enumerate(it):
         yield v
@@ -115,13 +124,11 @@ def _chainlist(it, LIT_LIST_SEP=LIT_LIST_SEP):
             yield LIT_LIST_SEP
 
 
-def _repr_empty_set(s):
-    # type: (Set) -> str
+def _repr_empty_set(s: Set) -> str:
     return '%s()' % (type(s).__name__,)
 
 
-def _safetext(val):
-    # type: (AnyStr) -> str
+def _safetext(val: AnyStr) -> str:
     if isinstance(val, bytes):
         try:
             val.encode('utf-8')
@@ -132,8 +139,8 @@ def _safetext(val):
     return val
 
 
-def _format_binary_bytes(val, maxlen, ellipsis='...'):
-    # type: (bytes, int, str) -> str
+def _format_binary_bytes(val: bytes, maxlen: int,
+                         ellipsis: str = '...') -> str:
     if maxlen and len(val) > maxlen:
         # we don't want to copy all the data, just take what we need.
         chunk = memoryview(val)[:maxlen].tobytes()
@@ -142,12 +149,11 @@ def _format_binary_bytes(val, maxlen, ellipsis='...'):
     return _bytes_prefix("'{0}'".format(_repr_binary_bytes(val)))
 
 
-def _bytes_prefix(s):
-    return 'b' + s if IS_PY3 else s
+def _bytes_prefix(s: str) -> str:
+    return 'b' + s
 
 
-def _repr_binary_bytes(val):
-    # type: (bytes) -> str
+def _repr_binary_bytes(val: bytes) -> str:
     try:
         return val.decode('utf-8')
     except UnicodeDecodeError:
@@ -162,16 +168,14 @@ def _repr_binary_bytes(val):
             return ashex()
 
 
-def _format_chars(val, maxlen):
-    # type: (AnyStr, int) -> str
+def _format_chars(val: AnyStr, maxlen: int) -> str:
     if isinstance(val, bytes):  # pragma: no cover
         return _format_binary_bytes(val, maxlen)
     else:
         return "'{0}'".format(truncate(val, maxlen))
 
 
-def _repr(obj):
-    # type: (Any) -> str
+def _repr(obj: Any) -> str:
     try:
         return repr(obj)
     except Exception as exc:
@@ -179,8 +183,10 @@ def _repr(obj):
             type(obj), id(obj), exc, '\n'.join(traceback.format_stack()))
 
 
-def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
-    # type: (Any, int, int, Set) -> str
+def _saferepr(o: Any,
+              maxlen: int = None,
+              maxlevels: int = 3,
+              seen: Set = None) -> str:
     stack = deque([iter([o])])
     for token, it in reprstream(stack, seen=seen, maxlevels=maxlevels):
         if maxlen is not None and maxlen <= 0:
@@ -207,8 +213,11 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
                 yield rest2.value
 
 
-def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
-    # type: (Sequence, _literal, _literal, Any, Any) -> Tuple[Any, ...]
+def _reprseq(val: Any,
+             lit_start: _literal,
+             lit_end: _literal,
+             builtin_type: Any,
+             chainer: Any) -> Tuple[Any, Any, Any]:
     if type(val) is builtin_type:  # noqa
         return lit_start, lit_end, chainer(val)
     return (
@@ -218,9 +227,12 @@ def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
     )
 
 
-def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
+def reprstream(stack: deque,
+               seen: Set = None,
+               maxlevels: int = 3,
+               level: int = 0,
+               isinstance: Callable = isinstance) -> Iterator[Any]:
     """Streaming repr, yielding tokens."""
-    # type: (deque, Set, int, int, Callable) -> Iterator[Any]
     seen = seen or set()
     append = stack.append
     popleft = stack.popleft
@@ -244,10 +256,10 @@ def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
             elif isinstance(val, Decimal):
                 yield _repr(val), it
             elif isinstance(val, safe_t):
-                yield text_t(val), it
+                yield str(val), it
             elif isinstance(val, chars_t):
                 yield _quoted(val), it
-            elif isinstance(val, range_t):  # pragma: no cover
+            elif isinstance(val, range):  # pragma: no cover
                 yield _repr(val), it
             else:
                 if isinstance(val, set_t):

@@ -3,8 +3,6 @@
 
 .. program:: celery amqp
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import cmd as _cmd
 import pprint
 import shlex
@@ -15,8 +13,11 @@ from itertools import count
 from kombu.utils.encoding import safe_str
 
 from celery.bin.base import Command
+<<<<<<< HEAD
 from celery.five import string_t
 from celery.utils.functional import padlist
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.serialization import strtobool
 
 __all__ = ('AMQPAdmin', 'AMQShell', 'Spec', 'amqp')
@@ -37,7 +38,7 @@ Example:
 say = partial(print, file=sys.stderr)
 
 
-class Spec(object):
+class Spec:
     """AMQP Command specification.
 
     Used to convert arguments to Python values and display various help
@@ -251,7 +252,7 @@ class AMQShell(_cmd.Cmd):
 
         Look-up order is: :attr:`builtins` -> :attr:`amqp`.
         """
-        if isinstance(arglist, string_t):
+        if isinstance(arglist, str):
             arglist = shlex.split(safe_str(arglist))
         if cmd in self.builtins:
             return getattr(self, self.builtins[cmd])(*arglist)
@@ -271,7 +272,7 @@ class AMQShell(_cmd.Cmd):
 
     def onecmd(self, line):
         """Parse line and execute command."""
-        if isinstance(line, string_t):
+        if isinstance(line, str):
             line = shlex.split(safe_str(line))
         cmd, arg, line = self.parseline(line)
         if not line:
@@ -289,7 +290,7 @@ class AMQShell(_cmd.Cmd):
     def respond(self, retval):
         """What to do with the return value of a command."""
         if retval is not None:
-            if isinstance(retval, string_t):
+            if isinstance(retval, str):
                 self.say(retval)
             else:
                 self.say(pprint.pformat(retval))
@@ -306,7 +307,7 @@ class AMQShell(_cmd.Cmd):
         return self.prompt_fmt.format(self=self)
 
 
-class AMQPAdmin(object):
+class AMQPAdmin:
     """The celery :program:`celery amqp` utility."""
 
     Shell = AMQShell

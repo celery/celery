@@ -47,12 +47,19 @@ Error Hierarchy
         - :exc:`~celery.exceptions.WorkerTerminate`
         - :exc:`~celery.exceptions.WorkerShutdown`
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
 import numbers
 
 from billiard.exceptions import (SoftTimeLimitExceeded, Terminated,
                                  TimeLimitExceeded, WorkerLostError)
+=======
+import numbers
+from billiard.exceptions import (
+    SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError, Terminated,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.exceptions import OperationalError
 
 from .five import python_2_unicode_compatible, string_t
@@ -123,7 +130,6 @@ class TaskPredicate(CeleryError):
     """Base class for task-related semi-predicates."""
 
 
-@python_2_unicode_compatible
 class Retry(TaskPredicate):
     """The task is to be retried later."""
 
@@ -140,7 +146,7 @@ class Retry(TaskPredicate):
     def __init__(self, message=None, exc=None, when=None, **kwargs):
         from kombu.utils.encoding import safe_repr
         self.message = message
-        if isinstance(exc, string_t):
+        if isinstance(exc, str):
             self.exc, self.excs = None, exc
         else:
             self.exc, self.excs = exc, safe_repr(exc) if exc else None
@@ -161,23 +167,25 @@ class Retry(TaskPredicate):
 
     def __reduce__(self):
         return self.__class__, (self.message, self.excs, self.when)
+<<<<<<< HEAD
 
 
 RetryTaskError = Retry  # noqa: E305 XXX compat
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class Ignore(TaskPredicate):
     """A task can raise this to ignore doing state updates."""
 
 
-@python_2_unicode_compatible
 class Reject(TaskPredicate):
     """A task can raise this if it wants to reject/re-queue the message."""
 
     def __init__(self, reason=None, requeue=False):
         self.reason = reason
         self.requeue = requeue
-        super(Reject, self).__init__(reason, requeue)
+        super().__init__(reason, requeue)
 
     def __repr__(self):
         return 'reject requeue=%s: %s' % (self.requeue, self.reason)
@@ -203,7 +211,6 @@ class IncompleteStream(TaskError):
     """Found the end of a stream of data, but the data isn't complete."""
 
 
-@python_2_unicode_compatible
 class NotRegistered(KeyError, TaskError):
     """The task ain't registered."""
 

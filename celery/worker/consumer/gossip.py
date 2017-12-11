@@ -1,16 +1,16 @@
 """Worker <-> Worker communication Bootstep."""
-from __future__ import absolute_import, unicode_literals
-
 from collections import defaultdict
 from functools import partial
 from heapq import heappush
 from operator import itemgetter
+from typing import Callable, Set, Sequence
 
 from kombu import Consumer
 from kombu.async.semaphore import DummyLock
+from kombu.types import ChannelT, ConsumerT, MessageT
 
 from celery import bootsteps
-from celery.five import values
+from celery.types import AppT, EventT, SignatureT, WorkerT, WorkerConsumerT
 from celery.utils.log import get_logger
 from celery.utils.objects import Bunch
 
@@ -33,10 +33,13 @@ class Gossip(bootsteps.ConsumerStep):
     _cons_stamp_fields = itemgetter(
         'id', 'clock', 'hostname', 'pid', 'topic', 'action', 'cver',
     )
-    compatible_transports = {'amqp', 'redis'}
+    compatible_transports: Set[str] = {'amqp', 'redis'}
 
-    def __init__(self, c, without_gossip=False,
-                 interval=5.0, heartbeat_interval=2.0, **kwargs):
+    def __init__(self, c: WorkerConsumerT,
+                 without_gossip: bool = False,
+                 interval: float = 5.0,
+                 heartbeat_interval: float = 2.0,
+                 **kwargs) -> None:
         self.enabled = not without_gossip and self.compatible_transport(c.app)
         self.app = c.app
         c.gossip = self
@@ -76,40 +79,41 @@ class Gossip(bootsteps.ConsumerStep):
 
         super(Gossip, self).__init__(c, **kwargs)
 
-    def compatible_transport(self, app):
+    def compatible_transport(self, app: AppT) -> bool:
         with app.connection_for_read() as conn:
             return conn.transport.driver_type in self.compatible_transports
 
-    def election(self, id, topic, action=None):
+    async def election(self, id: str, topic: str, action: str = None):
         self.consensus_replies[id] = []
-        self.dispatcher.send(
+        await self.dispatcher.send(
             'worker-elect',
             id=id, topic=topic, action=action, cver=1,
         )
 
-    def call_task(self, task):
+    async def call_task(self, task: SignatureT) -> None:
         try:
             self.app.signature(task).apply_async()
         except Exception as exc:  # pylint: disable=broad-except
             logger.exception('Could not call task: %r', exc)
 
-    def on_elect(self, event):
+    async def on_elect(self, event: EventT) -> None:
         try:
             (id_, clock, hostname, pid,
              topic, action, _) = self._cons_stamp_fields(event)
         except KeyError as exc:
-            return logger.exception('election request missing field %s', exc)
-        heappush(
-            self.consensus_requests[id_],
-            (clock, '%s.%s' % (hostname, pid), topic, action),
-        )
-        self.dispatcher.send('worker-elect-ack', id=id_)
+            logger.exception('election request missing field %s', exc)
+        else:
+            heappush(
+                self.consensus_requests[id_],
+                (clock, '%s.%s' % (hostname, pid), topic, action),
+            )
+            await self.dispatcher.send('worker-elect-ack', id=id_)
 
-    def start(self, c):
-        super(Gossip, self).start(c)
+    async def start(self, c: WorkerConsumerT) -> None:
+        super().start(c)
         self.dispatcher = c.event_dispatcher
 
-    def on_elect_ack(self, event):
+    async def on_elect_ack(self, event: EventT) -> None:
         id = event['id']
         try:
             replies = self.consensus_replies[id]
@@ -129,59 +133,62 @@ class Gossip(bootsteps.ConsumerStep):
                 except KeyError:
                     logger.exception('Unknown election topic %r', topic)
                 else:
-                    handler(action)
+                    await handler(action)
             else:
                 info('node %s elected for %r', leader, id)
             self.consensus_requests.pop(id, None)
             self.consensus_replies.pop(id, None)
 
-    def on_node_join(self, worker):
+    async def on_node_join(self, worker: WorkerT):
         debug('%s joined the party', worker.hostname)
-        self._call_handlers(self.on.node_join, worker)
+        await self._call_handlers(self.on.node_join, worker)
 
-    def on_node_leave(self, worker):
+    async def on_node_leave(self, worker: WorkerT):
         debug('%s left', worker.hostname)
-        self._call_handlers(self.on.node_leave, worker)
+        await self._call_handlers(self.on.node_leave, worker)
 
-    def on_node_lost(self, worker):
+    async def on_node_lost(self, worker: WorkerT):
         info('missed heartbeat from %s', worker.hostname)
-        self._call_handlers(self.on.node_lost, worker)
+        await self._call_handlers(self.on.node_lost, worker)
 
-    def _call_handlers(self, handlers, *args, **kwargs):
+    async def _call_handlers(self, handlers: Sequence[Callable],
+                             *args, **kwargs) -> None:
         for handler in handlers:
             try:
-                handler(*args, **kwargs)
+                await handler(*args, **kwargs)
             except Exception as exc:  # pylint: disable=broad-except
                 logger.exception(
                     'Ignored error from handler %r: %r', handler, exc)
 
-    def register_timer(self):
+    def register_timer(self) -> None:
         if self._tref is not None:
             self._tref.cancel()
         self._tref = self.timer.call_repeatedly(self.interval, self.periodic)
 
-    def periodic(self):
+    async def periodic(self) -> None:
         workers = self.state.workers
         dirty = set()
-        for worker in values(workers):
+        for worker in workers.values():
             if not worker.alive:
                 dirty.add(worker)
-                self.on_node_lost(worker)
+                await self.on_node_lost(worker)
         for worker in dirty:
             workers.pop(worker.hostname, None)
 
-    def get_consumers(self, channel):
+    def get_consumers(self, channel: ChannelT) -> Sequence[ConsumerT]:
         self.register_timer()
         ev = self.Receiver(channel, routing_key='worker.#',
                            queue_ttl=self.heartbeat_interval)
-        return [Consumer(
-            channel,
-            queues=[ev.queue],
-            on_message=partial(self.on_message, ev.event_from_message),
-            no_ack=True
-        )]
+        return [
+            Consumer(
+                channel,
+                queues=[ev.queue],
+                on_message=partial(self.on_message, ev.event_from_message),
+                no_ack=True
+            )
+        ]
 
-    def on_message(self, prepare, message):
+    async def on_message(self, prepare: Callable, message: MessageT) -> None:
         _type = message.delivery_info['routing_key']
 
         # For redis when `fanout_patterns=False` (See Issue #1882)
@@ -192,7 +199,7 @@ class Gossip(bootsteps.ConsumerStep):
         except KeyError:
             pass
         else:
-            return handler(message.payload)
+            return await handler(message.payload)
 
         # proto2: hostname in header; proto1: in body
         hostname = (message.headers.get('hostname') or

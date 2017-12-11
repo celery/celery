@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
 """Configuration introspection and defaults."""
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import sys
-from collections import deque, namedtuple
+from collections import deque
 from datetime import timedelta
+<<<<<<< HEAD
 
 from celery.five import items, keys, python_2_unicode_compatible
+=======
+from typing import NamedTuple
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.functional import memoize
 from celery.utils.serialization import strtobool
 
@@ -35,12 +42,18 @@ OLD_NS = {'celery_{0}'}
 OLD_NS_BEAT = {'celerybeat_{0}'}
 OLD_NS_WORKER = {'celeryd_{0}'}
 
-searchresult = namedtuple('searchresult', ('namespace', 'key', 'type'))
+
+class find_result_t(NamedTuple):
+    """Return value of :func:`find`."""
+
+    namespace: str
+    key: str
+    type: 'Option'
 
 
 def Namespace(__old__=None, **options):
     if __old__ is not None:
-        for key, opt in items(options):
+        for key, opt in options.items():
             if not opt.old:
                 opt.old = {o.format(key) for o in __old__}
     return options
@@ -50,8 +63,7 @@ def old_ns(ns):
     return {'{0}_{{0}}'.format(ns)}
 
 
-@python_2_unicode_compatible
-class Option(object):
+class Option:
     """Decribes a Celery configuration option."""
 
     alt = None
@@ -64,7 +76,7 @@ class Option(object):
     def __init__(self, default=None, *args, **kwargs):
         self.default = default
         self.type = kwargs.get('type') or 'string'
-        for attr, value in items(kwargs):
+        for attr, value in kwargs.items():
             setattr(self, attr, value)
 
     def to_python(self, value):
@@ -317,7 +329,7 @@ def flatten(d, root='', keyfilter=_flatten_keys):
     stack = deque([(root, d)])
     while stack:
         ns, options = stack.popleft()
-        for key, opt in items(options):
+        for key, opt in options.items():
             if isinstance(opt, dict):
                 stack.append((ns + key + '_', opt))
             else:
@@ -334,8 +346,8 @@ _TO_OLD_KEY = {new_key: old_key for old_key, new_key, _ in __compat}
 _TO_NEW_KEY = {old_key: new_key for old_key, new_key, _ in __compat}
 __compat = None
 
-SETTING_KEYS = set(keys(DEFAULTS))
-_OLD_SETTING_KEYS = set(keys(_TO_NEW_KEY))
+SETTING_KEYS = set(DEFAULTS)
+_OLD_SETTING_KEYS = set(_TO_NEW_KEY)
 
 
 def find_deprecated_settings(source):  # pragma: no cover
@@ -355,18 +367,18 @@ def find(name, namespace='celery'):
     # - Try specified name-space first.
     namespace = namespace.lower()
     try:
-        return searchresult(
+        return find_result_t(
             namespace, name.lower(), NAMESPACES[namespace][name.lower()],
         )
     except KeyError:
         # - Try all the other namespaces.
-        for ns, opts in items(NAMESPACES):
+        for ns, opts in NAMESPACES.items():
             if ns.lower() == name.lower():
-                return searchresult(None, ns, opts)
+                return find_result_t(None, ns, opts)
             elif isinstance(opts, dict):
                 try:
-                    return searchresult(ns, name.lower(), opts[name.lower()])
+                    return find_result_t(ns, name.lower(), opts[name.lower()])
                 except KeyError:
                     pass
     # - See if name is a qualname last.
-    return searchresult(None, name.lower(), DEFAULTS[name.lower()])
+    return find_result_t(None, name.lower(), DEFAULTS[name.lower()])

@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 import numbers
 import os
 import signal
 import socket
 import sys
 from datetime import datetime, timedelta
+from time import monotonic
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -16,12 +15,33 @@ from kombu.utils.encoding import (default_encode, from_utf8, safe_repr,
 from kombu.utils.uuid import uuid
 
 from celery import states
+<<<<<<< HEAD
 from celery.app.trace import (TraceInfo, _trace_task_ret, build_tracer,
                               mro_lookup, reset_worker_optimizations,
                               setup_worker_optimizations, trace_task)
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated, WorkerLostError)
 from celery.five import monotonic
+=======
+from celery.app.trace import (
+    trace_task,
+    _trace_task_ret,
+    TraceInfo,
+    mro_lookup,
+    build_tracer,
+    setup_worker_optimizations,
+    reset_worker_optimizations,
+)
+from celery.exceptions import (
+    Ignore,
+    InvalidTaskError,
+    Reject,
+    Retry,
+    TaskRevokedError,
+    Terminated,
+    WorkerLostError,
+)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.signals import task_revoked
 from celery.worker import request as module
 from celery.worker.request import Request, create_request_cls
@@ -66,7 +86,7 @@ class test_mro_lookup:
 
     def test_order(self):
 
-        class A(object):
+        class A:
             pass
 
         class B(A):
@@ -377,15 +397,6 @@ class test_Request(RequestCase):
             einfo.internal = True
             job.on_failure(einfo)
 
-    def test_compat_properties(self):
-        job = self.xRequest()
-        assert job.task_id == job.id
-        assert job.task_name == job.name
-        job.task_id = 'ID'
-        assert job.id == 'ID'
-        job.task_name = 'NAME'
-        assert job.name == 'NAME'
-
     def test_terminate__pool_ref(self):
         pool = Mock()
         signum = signal.SIGTERM
@@ -441,7 +452,7 @@ class test_Request(RequestCase):
         )
         job.revoked()
         assert job.id not in revoked
-        assert self.mytask.backend.get_status(job.id) != states.REVOKED
+        assert self.mytask.backend.get_state(job.id) != states.REVOKED
 
     def test_revoked_expires_ignore_result(self):
         self.mytask.ignore_result = True
@@ -450,7 +461,7 @@ class test_Request(RequestCase):
         )
         job.revoked()
         assert job.id in revoked
-        assert self.mytask.backend.get_status(job.id) != states.REVOKED
+        assert self.mytask.backend.get_state(job.id) != states.REVOKED
 
     def test_already_revoked(self):
         job = self.xRequest()
@@ -574,13 +585,13 @@ class test_Request(RequestCase):
         job = self.xRequest()
         exc_info = get_ei()
         job.on_failure(exc_info)
-        assert self.mytask.backend.get_status(job.id) == states.FAILURE
+        assert self.mytask.backend.get_state(job.id) == states.FAILURE
 
         self.mytask.ignore_result = True
         exc_info = get_ei()
         job = self.xRequest()
         job.on_failure(exc_info)
-        assert self.mytask.backend.get_status(job.id) == states.PENDING
+        assert self.mytask.backend.get_state(job.id) == states.PENDING
 
     def test_on_failure_acks_late(self):
         job = self.xRequest()
@@ -610,13 +621,13 @@ class test_Request(RequestCase):
         assert 'Soft time limit' in warn.call_args[0][0]
         job.on_timeout(soft=False, timeout=1337)
         assert 'Hard time limit' in error.call_args[0][0]
-        assert self.mytask.backend.get_status(job.id) == states.FAILURE
+        assert self.mytask.backend.get_state(job.id) == states.FAILURE
         job.acknowledge.assert_called_with()
 
         self.mytask.ignore_result = True
         job = self.xRequest()
         job.on_timeout(soft=True, timeout=1336)
-        assert self.mytask.backend.get_status(job.id) == states.PENDING
+        assert self.mytask.backend.get_state(job.id) == states.PENDING
 
         job = self.xRequest()
         job.acknowledge = Mock(name='ack')
@@ -707,11 +718,11 @@ class test_Request(RequestCase):
                 w.handle_retry(
                     self.mytask, self.mytask.request, store_errors=False,
                 )
-                assert self.mytask.backend.get_status(tid) == states.PENDING
+                assert self.mytask.backend.get_state(tid) == states.PENDING
                 w.handle_retry(
                     self.mytask, self.mytask.request, store_errors=True,
                 )
-                assert self.mytask.backend.get_status(tid) == states.RETRY
+                assert self.mytask.backend.get_state(tid) == states.RETRY
         finally:
             self.mytask.pop_request()
 
@@ -727,11 +738,11 @@ class test_Request(RequestCase):
                 w.handle_failure(
                     self.mytask, self.mytask.request, store_errors=False,
                 )
-                assert self.mytask.backend.get_status(tid) == states.PENDING
+                assert self.mytask.backend.get_state(tid) == states.PENDING
                 w.handle_failure(
                     self.mytask, self.mytask.request, store_errors=True,
                 )
-                assert self.mytask.backend.get_status(tid) == states.FAILURE
+                assert self.mytask.backend.get_state(tid) == states.FAILURE
         finally:
             self.mytask.pop_request()
 

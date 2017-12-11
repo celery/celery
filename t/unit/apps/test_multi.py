@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 from __future__ import absolute_import, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import errno
 import signal
 import sys
@@ -208,8 +211,7 @@ class test_Node:
 
     @patch('os.kill')
     def test_send__ESRCH(self, kill):
-        kill.side_effect = OSError()
-        kill.side_effect.errno = errno.ESRCH
+        kill.side_effect = ProcessLookupError()
         assert not self.node.send(9)
         kill.assert_called_with(self.node.pid, 9)
 
@@ -397,7 +399,7 @@ class test_Cluster:
         nodes = p.getpids('celery worker')
 
     def prepare_pidfile_for_getpids(self, Pidfile):
-        class pids(object):
+        class pids:
 
             def __init__(self, path):
                 self.path = path

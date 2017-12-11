@@ -41,8 +41,11 @@ Environment Variables
     The debugger will try to find an available port starting from the
     base port.  The selected port will be logged by the worker.
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, print_function, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import errno
 import os
 import socket
@@ -50,8 +53,11 @@ import sys
 from pdb import Pdb
 
 from billiard.process import current_process
+<<<<<<< HEAD
 
 from celery.five import range
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 __all__ = (
     'CELERY_RDB_HOST', 'CELERY_RDB_PORT', 'DEFAULT_PORT',

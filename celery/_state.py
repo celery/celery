@@ -6,8 +6,11 @@ like the ``current_app``, and ``current_task``.
 
 This module shouldn't be used directly.
 """
+<<<<<<< HEAD
 from __future__ import absolute_import, print_function, unicode_literals
 
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import os
 import sys
 import threading

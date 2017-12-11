@@ -52,7 +52,7 @@ Misc
 ----
 
 """
-from __future__ import absolute_import, unicode_literals
+from typing import Any, Optional
 
 __all__ = (
     'PENDING', 'RECEIVED', 'STARTED', 'SUCCESS', 'FAILURE',
@@ -80,7 +80,7 @@ PRECEDENCE_LOOKUP = dict(zip(PRECEDENCE, range(0, len(PRECEDENCE))))
 NONE_PRECEDENCE = PRECEDENCE_LOOKUP[None]
 
 
-def precedence(state):
+def precedence(state: Optional[str]) -> int:
     """Get the precedence index for state.
 
     Lower index means higher precedence.
@@ -112,16 +112,16 @@ class state(str):
         False
     """
 
-    def __gt__(self, other):
+    def __gt__(self, other: Any) -> bool:
         return precedence(self) < precedence(other)
 
-    def __ge__(self, other):
+    def __ge__(self, other: Any) -> bool:
         return precedence(self) <= precedence(other)
 
-    def __lt__(self, other):
+    def __lt__(self, other: Any) -> bool:
         return precedence(self) > precedence(other)
 
-    def __le__(self, other):
+    def __le__(self, other: Any) -> bool:
         return precedence(self) >= precedence(other)
 
 
