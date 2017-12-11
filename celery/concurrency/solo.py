@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
 """Single-threaded execution pool."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import os
+
 from .base import BasePool, apply_target
 
-__all__ = ['TaskPool']
+__all__ = ('TaskPool',)
 
 
 class TaskPool(BasePool):

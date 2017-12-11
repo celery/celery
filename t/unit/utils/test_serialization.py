@@ -1,14 +1,18 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+import sys
+from datetime import date, datetime, time, timedelta
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pytest
 import pytz
-import sys
-from datetime import datetime, date, time, timedelta
 from case import Mock, mock
 from kombu import Queue
-from celery.utils.serialization import (
-    UnpickleableExceptionWrapper,
-    get_pickleable_etype,
-    jsonify,
-)
+
+from celery.utils.serialization import (UnpickleableExceptionWrapper,
+                                        get_pickleable_etype, jsonify)
 
 
 class test_AAPickle:

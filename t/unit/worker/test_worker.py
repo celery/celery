@@ -1,14 +1,13 @@
 import os
-import pytest
 import socket
 import sys
-
 from collections import deque
 from datetime import datetime, timedelta
 from functools import partial
 from threading import Event
 from queue import Empty, Queue as FastQueue
 
+import pytest
 from amqp import ChannelError
 from case import Mock, patch, skip
 from kombu import Connection
@@ -17,23 +16,30 @@ from kombu.transport.base import Message
 from kombu.transport.memory import Transport
 from kombu.utils.uuid import uuid
 
-from celery.bootsteps import RUN, CLOSE, TERMINATE, StartStopStep
+from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
+<<<<<<< HEAD
+from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
+                               TaskRevokedError, WorkerShutdown,
+                               WorkerTerminate)
+from celery.five import Empty
+from celery.five import Queue as FastQueue
+from celery.five import range
+=======
 from celery.exceptions import (
     WorkerShutdown, WorkerTerminate, TaskRevokedError,
     InvalidTaskError, ImproperlyConfigured,
 )
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.platforms import EX_FAILURE
-from celery.worker import worker as worker_module
-from celery.worker import components
-from celery.worker import consumer
-from celery.worker import state
-from celery.worker.consumer import Consumer
-from celery.worker.pidbox import gPidbox
-from celery.worker.request import Request
 from celery.utils.nodenames import worker_direct
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
+from celery.worker import components, consumer, state
+from celery.worker import worker as worker_module
+from celery.worker.consumer import Consumer
+from celery.worker.pidbox import gPidbox
+from celery.worker.request import Request
 
 
 def MockStep(step=None):

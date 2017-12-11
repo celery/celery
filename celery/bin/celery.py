@@ -253,20 +253,19 @@ in any command that also has a `--detach` option.
 
     Destination routing key (defaults to the queue routing key).
 """
+<<<<<<< HEAD
+from __future__ import absolute_import, print_function, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import numbers
 import sys
-
 from functools import partial
-
-from celery.platforms import EX_OK, EX_FAILURE, EX_USAGE
-from celery.utils import term
-from celery.utils import text
-
-# Cannot use relative imports here due to a Windows issue (#1111).
-from celery.bin.base import Command, Extensions
 
 # Import commands from other modules
 from celery.bin.amqp import amqp
+# Cannot use relative imports here due to a Windows issue (#1111).
+from celery.bin.base import Command, Extensions
 from celery.bin.beat import beat
 from celery.bin.call import call
 from celery.bin.control import _RemoteControl  # noqa
@@ -279,10 +278,12 @@ from celery.bin.migrate import migrate
 from celery.bin.purge import purge
 from celery.bin.result import result
 from celery.bin.shell import shell
-from celery.bin.worker import worker
 from celery.bin.upgrade import upgrade
+from celery.bin.worker import worker
+from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
+from celery.utils import term, text
 
-__all__ = ['CeleryCommand', 'main']
+__all__ = ('CeleryCommand', 'main')
 
 HELP = """
 ---- -- - - ---- Commands- -------------- --- ------------

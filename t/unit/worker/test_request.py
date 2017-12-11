@@ -1,20 +1,28 @@
 # -*- coding: utf-8 -*-
 import numbers
 import os
-import pytest
 import signal
 import socket
 import sys
-
 from datetime import datetime, timedelta
 from time import monotonic
 
-from case import Mock, patch
+import pytest
 from billiard.einfo import ExceptionInfo
-from kombu.utils.encoding import default_encode, from_utf8, safe_str, safe_repr
+from case import Mock, patch
+from kombu.utils.encoding import (default_encode, from_utf8, safe_repr,
+                                  safe_str)
 from kombu.utils.uuid import uuid
 
 from celery import states
+<<<<<<< HEAD
+from celery.app.trace import (TraceInfo, _trace_task_ret, build_tracer,
+                              mro_lookup, reset_worker_optimizations,
+                              setup_worker_optimizations, trace_task)
+from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
+                               TaskRevokedError, Terminated, WorkerLostError)
+from celery.five import monotonic
+=======
 from celery.app.trace import (
     trace_task,
     _trace_task_ret,
@@ -33,11 +41,11 @@ from celery.exceptions import (
     Terminated,
     WorkerLostError,
 )
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.signals import task_revoked
 from celery.worker import request as module
-from celery.worker.request import (
-    Request, create_request_cls, logger as req_logger,
-)
+from celery.worker.request import Request, create_request_cls
+from celery.worker.request import logger as req_logger
 from celery.worker.state import revoked
 
 

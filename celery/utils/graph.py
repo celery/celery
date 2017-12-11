@@ -1,5 +1,15 @@
 # -*- coding: utf-8 -*-
 """Dependency graph implementation."""
+<<<<<<< HEAD
+from __future__ import absolute_import, print_function, unicode_literals
+
+from collections import Counter
+from textwrap import dedent
+
+from kombu.utils.encoding import bytes_to_str, safe_str
+
+from celery.five import items, python_2_unicode_compatible
+=======
 from collections import Counter
 from textwrap import dedent
 from typing import (
@@ -8,8 +18,9 @@ from typing import (
 from typing import MutableSet, MutableSequence  # noqa
 
 from kombu.utils.encoding import safe_str, bytes_to_str
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
-__all__ = ['DOT', 'CycleError', 'DependencyGraph', 'GraphFormatter']
+__all__ = ('DOT', 'CycleError', 'DependencyGraph', 'GraphFormatter')
 
 
 class DOT:

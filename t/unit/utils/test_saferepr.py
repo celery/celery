@@ -1,7 +1,23 @@
+<<<<<<< HEAD
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, unicode_literals
+
+import re
+import struct
+from decimal import Decimal
+from pprint import pprint
+
+import pytest
+from case import skip
+
+from celery.five import (items, long_t, python_2_unicode_compatible, text_t,
+                         values)
+=======
 import pytest
 import re
 from decimal import Decimal
 from pprint import pprint
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.saferepr import saferepr
 
 D_NUMBERS = {

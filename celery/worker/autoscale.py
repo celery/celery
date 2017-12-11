@@ -10,8 +10,13 @@ the :option:`celery worker --autoscale` option is used.
 """
 import os
 import threading
+<<<<<<< HEAD
+from time import sleep
+
+=======
 from time import monotonic, sleep
 from typing import Mapping, Optional, Tuple
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.async.semaphore import DummyLock
 from celery import bootsteps
 from celery.types import AutoscalerT, LoopT, PoolT, RequestT, WorkerT
@@ -20,7 +25,7 @@ from celery.utils.threads import bgThread
 from . import state
 from .components import Pool
 
-__all__ = ['Autoscaler', 'WorkerComponent']
+__all__ = ('Autoscaler', 'WorkerComponent')
 
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error

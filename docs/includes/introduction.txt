@@ -1,6 +1,6 @@
-:Version: 4.0.2 (latentcall)
+:Version: 4.1.0 (latentcall)
 :Web: http://celeryproject.org/
-:Download: http://pypi.python.org/pypi/celery/
+:Download: https://pypi.python.org/pypi/celery/
 :Source: https://github.com/celery/celery/
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
   python, distributed, actors
@@ -150,8 +150,8 @@ It supports…
 .. _`Eventlet`: http://eventlet.net/
 .. _`gevent`: http://gevent.org/
 
-.. _RabbitMQ: http://rabbitmq.com
-.. _Redis: http://redis.io
+.. _RabbitMQ: https://rabbitmq.com
+.. _Redis: https://redis.io
 .. _SQLAlchemy: http://sqlalchemy.org
 
 Framework Integration
@@ -178,15 +178,15 @@ The integration packages aren't strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
 database connections at ``fork``.
 
-.. _`Django`: http://djangoproject.com/
+.. _`Django`: https://djangoproject.com/
 .. _`Pylons`: http://pylonsproject.org/
 .. _`Flask`: http://flask.pocoo.org/
 .. _`web2py`: http://web2py.com/
-.. _`Bottle`: http://bottlepy.org/
+.. _`Bottle`: https://bottlepy.org/
 .. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
-.. _`pyramid_celery`: http://pypi.python.org/pypi/pyramid_celery/
-.. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
-.. _`web2py-celery`: http://code.google.com/p/web2py-celery/
+.. _`pyramid_celery`: https://pypi.python.org/pypi/pyramid_celery/
+.. _`celery-pylons`: https://pypi.python.org/pypi/celery-pylons
+.. _`web2py-celery`: https://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
 

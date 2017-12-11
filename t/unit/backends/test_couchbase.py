@@ -1,7 +1,12 @@
 """Tests for the CouchbaseBackend."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pytest
-from kombu.utils.encoding import str_t
 from case import MagicMock, Mock, patch, sentinel, skip
+
 from celery.app import backends
 from celery.backends import couchbase as module
 from celery.backends.couchbase import CouchbaseBackend
@@ -105,15 +110,3 @@ class test_CouchbaseBackend:
             assert x.username == 'johndoe'
             assert x.password == 'mysecret'
             assert x.port == 123
-
-    def test_correct_key_types(self):
-        keys = [
-            self.backend.get_key_for_task('task_id', bytes('key')),
-            self.backend.get_key_for_chord('group_id', bytes('key')),
-            self.backend.get_key_for_group('group_id', bytes('key')),
-            self.backend.get_key_for_task('task_id', 'key'),
-            self.backend.get_key_for_chord('group_id', 'key'),
-            self.backend.get_key_for_group('group_id', 'key'),
-        ]
-        for key in keys:
-            assert isinstance(key, str_t)

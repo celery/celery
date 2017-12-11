@@ -2,8 +2,14 @@
 """Worker-level Bootsteps."""
 import atexit
 import warnings
+<<<<<<< HEAD
+
+from kombu.async import Hub as _Hub
+from kombu.async import get_event_loop, set_event_loop
+=======
 from typing import Mapping, Sequence, Tuple, Union
 from kombu.async import Hub as _Hub, get_event_loop, set_event_loop
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
 from kombu.async.timer import Timer as _Timer
 from kombu.types import HubT
@@ -14,7 +20,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.platforms import IS_WINDOWS
 from celery.utils.log import worker_logger as logger
 
-__all__ = ['Timer', 'Hub', 'Pool', 'Beat', 'StateDB', 'Consumer']
+__all__ = ('Timer', 'Hub', 'Pool', 'Beat', 'StateDB', 'Consumer')
 
 GREEN_POOLS = {'eventlet', 'gevent'}
 

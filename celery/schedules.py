@@ -2,7 +2,6 @@
 """Schedules define the intervals at which periodic tasks run."""
 import numbers
 import re
-
 from bisect import bisect, bisect_left
 from collections import Iterable
 from datetime import datetime, timedelta
@@ -12,15 +11,13 @@ from kombu.utils.objects import cached_property
 
 from . import current_app
 from .utils.collections import AttributeDict
-from .utils.time import (
-    weekday, maybe_timedelta, remaining, humanize_seconds,
-    timezone, maybe_make_aware, ffwd, localize
-)
+from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware,
+                         maybe_timedelta, remaining, timezone, weekday)
 
-__all__ = [
+__all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
     'maybe_schedule', 'solar',
-]
+)
 
 
 CRON_PATTERN_INVALID = """\
@@ -106,6 +103,11 @@ class BaseSchedule:
         if not self.utc_enabled:
             return timezone.to_local_fallback(dt)
         return dt
+
+    def __eq__(self, other):
+        if isinstance(other, BaseSchedule):
+            return other.nowfun == self.nowfun
+        return NotImplemented
 
 
 class schedule(BaseSchedule):
@@ -402,6 +404,7 @@ class crontab(BaseSchedule):
         self._orig_day_of_week = cronfield(day_of_week)
         self._orig_day_of_month = cronfield(day_of_month)
         self._orig_month_of_year = cronfield(month_of_year)
+        self._orig_kwargs = kwargs
         self.hour = self._expand_cronspec(hour, 24)
         self.minute = self._expand_cronspec(minute, 60)
         self.day_of_week = self._expand_cronspec(day_of_week, 7)
@@ -475,15 +478,20 @@ class crontab(BaseSchedule):
                 return True
             return False
 
+        def is_before_last_run(year, month, day):
+            return self.maybe_make_aware(datetime(year,
+                                                  month,
+                                                  day)) < last_run_at
+
         def roll_over():
             for _ in range(2000):
                 flag = (datedata.dom == len(days_of_month) or
                         day_out_of_range(datedata.year,
                                          months_of_year[datedata.moy],
                                          days_of_month[datedata.dom]) or
-                        (self.maybe_make_aware(datetime(datedata.year,
-                         months_of_year[datedata.moy],
-                         days_of_month[datedata.dom])) < last_run_at))
+                        (is_before_last_run(datedata.year,
+                                            months_of_year[datedata.moy],
+                                            days_of_month[datedata.dom])))
 
                 if flag:
                     datedata.dom = 0
@@ -533,7 +541,12 @@ class crontab(BaseSchedule):
                                  self._orig_hour,
                                  self._orig_day_of_week,
                                  self._orig_day_of_month,
-                                 self._orig_month_of_year), None)
+                                 self._orig_month_of_year), self._orig_kwargs)
+
+    def __setstate__(self, state):
+        # Calling super's init because the kwargs aren't necessarily passed in
+        # the same form as they are stored by the superclass
+        super(crontab, self).__init__(**state)
 
     def remaining_delta(self, last_run_at, tz=None, ffwd=ffwd):
         # pylint: disable=redefined-outer-name
@@ -628,7 +641,8 @@ class crontab(BaseSchedule):
                 other.day_of_month == self.day_of_month and
                 other.day_of_week == self.day_of_week and
                 other.hour == self.hour and
-                other.minute == self.minute
+                other.minute == self.minute and
+                super(crontab, self).__eq__(other)
             )
         return NotImplemented
 
@@ -719,7 +733,7 @@ class solar(BaseSchedule):
         'dawn_nautical': True,
         'dawn_civil': True,
         'sunrise': False,
-        'solar_noon': True,
+        'solar_noon': False,
         'sunset': False,
         'dusk_civil': True,
         'dusk_nautical': True,
@@ -774,10 +788,16 @@ class solar(BaseSchedule):
         last_run_at_utc = localize(last_run_at, timezone.utc)
         self.cal.date = last_run_at_utc
         try:
-            next_utc = getattr(self.cal, self.method)(
-                self.ephem.Sun(),
-                start=last_run_at_utc, use_center=self.use_center,
-            )
+            if self.use_center:
+                next_utc = getattr(self.cal, self.method)(
+                    self.ephem.Sun(),
+                    start=last_run_at_utc, use_center=self.use_center
+                )
+            else:
+                next_utc = getattr(self.cal, self.method)(
+                    self.ephem.Sun(), start=last_run_at_utc
+                )
+
         except self.ephem.CircumpolarError:  # pragma: no cover
             # Sun won't rise/set today.  Check again tomorrow
             # (specifically, after the next anti-transit).

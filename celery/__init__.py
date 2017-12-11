@@ -12,7 +12,7 @@ from typing import NamedTuple
 
 SERIES = 'latentcall'
 
-__version__ = '4.0.2'
+__version__ = '4.1.0'
 __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://celeryproject.org'
@@ -21,12 +21,12 @@ __keywords__ = 'task job queue distributed messaging actor'
 
 # -eof meta-
 
-__all__ = [
+__all__ = (
     'Celery', 'bugreport', 'shared_task', 'task',
     'current_app', 'current_task', 'maybe_signature',
     'chain', 'chord', 'chunks', 'group', 'signature',
     'xmap', 'xstarmap', 'uuid',
-]
+)
 
 VERSION_BANNER = '{0} ({1})'.format(__version__, SERIES)
 
@@ -149,6 +149,7 @@ def maybe_patch_concurrency(argv=sys.argv,
         # set up eventlet/gevent environments ASAP
         from celery import concurrency
         concurrency.get_implementation(pool)
+
 
 # Lazy loading
 from . import local  # noqa

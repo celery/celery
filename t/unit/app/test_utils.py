@@ -1,6 +1,13 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from collections import Mapping, MutableMapping
+
 from case import Mock
-from celery.app.utils import Settings, filter_hidden_settings, bugreport
+
+from celery.app.utils import Settings, bugreport, filter_hidden_settings
 
 
 class test_Settings:

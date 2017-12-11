@@ -4,6 +4,58 @@
 This module defines how the task execution is traced:
 errors are recorded, handlers are applied and so on.
 """
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+=======
+# ## ---
+# This is the heart of the worker, the inner loop so to speak.
+# It used to be split up into nice little classes and methods,
+# but in the end it only resulted in bad performance and horrible tracebacks,
+# so instead we now use one closure per task class.
+
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
+# pylint: disable=broad-except
+# We know what we're doing...
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
+
+import logging
+import os
+import sys
+<<<<<<< HEAD
+from collections import namedtuple
+=======
+
+from time import monotonic
+from typing import Any, NamedTuple
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
+from warnings import warn
+
+from billiard.einfo import ExceptionInfo
+from kombu.exceptions import EncodeError
+from kombu.serialization import loads as loads_message
+from kombu.serialization import prepare_accept_content
+from kombu.utils.encoding import safe_repr, safe_str
+
+from celery import current_app, group, signals, states
+from celery._state import _task_stack
+<<<<<<< HEAD
+from celery.app.task import Context
+from celery.app.task import Task as BaseTask
+from celery.exceptions import Ignore, InvalidTaskError, Reject, Retry
+from celery.five import monotonic, text_t
+=======
+from celery.app.task import Task as BaseTask, Context
+from celery.exceptions import Ignore, Reject, Retry, InvalidTaskError
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
+from celery.utils.log import get_logger
+from celery.utils.nodenames import gethostname
+from celery.utils.objects import mro_lookup
+from celery.utils.saferepr import saferepr
+from celery.utils.serialization import (get_pickleable_etype,
+                                        get_pickleable_exception,
+                                        get_pickled_exception)
+
 # ## ---
 # This is the heart of the worker, the inner loop so to speak.
 # It used to be split up into nice little classes and methods,
@@ -15,39 +67,13 @@ errors are recorded, handlers are applied and so on.
 # pylint: disable=broad-except
 # We know what we're doing...
 
-import logging
-import os
-import sys
 
-from time import monotonic
-from typing import Any, NamedTuple
-from warnings import warn
-
-from billiard.einfo import ExceptionInfo
-from kombu.exceptions import EncodeError
-from kombu.serialization import loads as loads_message, prepare_accept_content
-from kombu.utils.encoding import safe_repr, safe_str
-
-from celery import current_app, group
-from celery import states, signals
-from celery._state import _task_stack
-from celery.app.task import Task as BaseTask, Context
-from celery.exceptions import Ignore, Reject, Retry, InvalidTaskError
-from celery.utils.log import get_logger
-from celery.utils.nodenames import gethostname
-from celery.utils.objects import mro_lookup
-from celery.utils.saferepr import saferepr
-from celery.utils.serialization import (
-    get_pickleable_exception, get_pickled_exception, get_pickleable_etype,
-)
-
-__all__ = [
+__all__ = (
     'TraceInfo', 'build_tracer', 'trace_task',
     'setup_worker_optimizations', 'reset_worker_optimizations',
-]
+)
 
 logger = get_logger(__name__)
-info = logger.info
 
 #: Format string used to log task success.
 LOG_SUCCESS = """\
@@ -126,6 +152,14 @@ trace_ok_t = NamedTuple('trace_ok_t', [
 ])
 
 
+def info(fmt, context):
+    """Log 'fmt % context' with severity 'INFO'.
+
+    'context' is also passed in extra with key 'data' for custom handlers.
+    """
+    logger.info(fmt, context, extra={'data': context})
+
+
 def task_has_custom(task, attr):
     """Return true if the task overrides ``attr``."""
     return mro_lookup(task.__class__, attr, stop={BaseTask, object},
@@ -145,7 +179,18 @@ def get_log_policy(task, einfo, exc):
         return log_policy_unexpected
 
 
+<<<<<<< HEAD
+def get_task_name(request, default):
+    """Use 'shadow' in request for the task name if applicable."""
+    # request.shadow could be None or an empty string.
+    # If so, we should use default.
+    return getattr(request, 'shadow', None) or default
+
+
+class TraceInfo(object):
+=======
 class TraceInfo:
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
     """Information about task execution."""
 
     __slots__ = ('state', 'retval')
@@ -189,8 +234,13 @@ class TraceInfo:
                                     reason=reason, einfo=einfo)
             info(LOG_RETRY, {
                 'id': req.id,
+<<<<<<< HEAD
+                'name': get_task_name(req, task.name),
+                'exc': text_t(reason),
+=======
                 'name': task.name,
                 'exc': str(reason),
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
             })
             return einfo
         finally:
@@ -237,7 +287,7 @@ class TraceInfo:
         context = {
             'hostname': req.hostname,
             'id': req.id,
-            'name': task.name,
+            'name': get_task_name(req, task.name),
             'exc': exception,
             'traceback': traceback,
             'args': sargs,
@@ -447,8 +497,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             send_success(sender=task, result=retval)
                         if _does_info:
                             info(LOG_SUCCESS, {
-                                'id': uuid, 'name': name,
-                                'return_value': Rstr, 'runtime': T,
+                                'id': uuid,
+                                'name': get_task_name(task_request, name),
+                                'return_value': Rstr,
+                                'runtime': T,
                             })
 
                 # -* POST *-
@@ -518,6 +570,8 @@ def _trace_task_ret(name, uuid, request, body, content_type,
     R, I, T, Rstr = trace_task(app.tasks[name],
                                uuid, args, kwargs, request, app=app)
     return (1, R, T) if I else (0, Rstr, T)
+
+
 trace_task_ret = _trace_task_ret  # noqa: E305
 
 

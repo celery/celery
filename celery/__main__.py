@@ -1,8 +1,14 @@
 """Entry-point for the :program:`celery` umbrella command."""
+<<<<<<< HEAD
+from __future__ import absolute_import, print_function, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import sys
+
 from . import maybe_patch_concurrency
 
-__all__ = ['main']
+__all__ = ('main',)
 
 
 def main():

@@ -1,24 +1,22 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+from datetime import datetime, timedelta, tzinfo
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pytest
 import pytz
-from datetime import datetime, timedelta, tzinfo
+from case import Mock, patch
 from pytz import AmbiguousTimeError
-from case import Mock
-from celery.utils.time import (
-    delta_resolution,
-    humanize_seconds,
-    maybe_iso8601,
-    maybe_timedelta,
-    timezone,
-    rate,
-    remaining,
-    make_aware,
-    maybe_make_aware,
-    localize,
-    LocalTimezone,
-    ffwd,
-    utcoffset,
-)
+
 from celery.utils.iso8601 import parse_iso8601
+from celery.utils.time import (LocalTimezone, delta_resolution, ffwd,
+                               get_exponential_backoff_interval,
+                               humanize_seconds, localize, make_aware,
+                               maybe_iso8601, maybe_make_aware,
+                               maybe_timedelta, rate, remaining, timezone,
+                               utcoffset)
 
 
 class test_LocalTimezone:
@@ -170,6 +168,13 @@ class test_make_aware:
         assert maybe_make_aware(aware)
         naive = datetime.utcnow()
         assert maybe_make_aware(naive)
+        assert maybe_make_aware(naive).tzinfo is pytz.utc
+
+        tz = pytz.timezone('US/Eastern')
+        eastern = datetime.utcnow().replace(tzinfo=tz)
+        assert maybe_make_aware(eastern).tzinfo is tz
+        utcnow = datetime.utcnow()
+        assert maybe_make_aware(utcnow, 'UTC').tzinfo is pytz.utc
 
 
 class test_localize:
@@ -245,3 +250,39 @@ class test_utcoffset:
         assert utcoffset(time=_time) is not None
         _time.daylight = False
         assert utcoffset(time=_time) is not None
+
+
+class test_get_exponential_backoff_interval:
+
+    @patch('random.randrange', lambda n: n - 2)
+    def test_with_jitter(self):
+        assert get_exponential_backoff_interval(
+            factor=4,
+            retries=3,
+            maximum=100,
+            full_jitter=True
+        ) == 4 * (2 ** 3) - 1
+
+    def test_without_jitter(self):
+        assert get_exponential_backoff_interval(
+            factor=4,
+            retries=3,
+            maximum=100,
+            full_jitter=False
+        ) == 4 * (2 ** 3)
+
+    def test_bound_by_maximum(self):
+        maximum_boundary = 100
+        assert get_exponential_backoff_interval(
+            factor=40,
+            retries=3,
+            maximum=maximum_boundary
+        ) == maximum_boundary
+
+    @patch('random.randrange', lambda n: n - 1)
+    def test_negative_values(self):
+        assert get_exponential_backoff_interval(
+            factor=-40,
+            retries=3,
+            maximum=100
+        ) == 0

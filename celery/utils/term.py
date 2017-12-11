@@ -1,16 +1,27 @@
 # -*- coding: utf-8 -*-
 """Terminals and colors."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+import base64
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import codecs
 import base64
 import os
 import platform
 import sys
 from functools import reduce
+<<<<<<< HEAD
+
+from celery.five import python_2_unicode_compatible, string
+=======
 from typing import Any, Tuple
 from typing import Callable, Mapping  # noqa
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.platforms import isatty
 
-__all__ = ['colored']
+__all__ = ('colored',)
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 OP_SEQ = '\033[%dm'

@@ -1,8 +1,15 @@
 """Implementation for the app.events shortcuts."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+from contextlib import contextmanager
+
+=======
 from contextlib import contextmanager
 from celery.events import EventDispatcher, EventReceiver
 from celery.events.state import State
 from celery.types import AppT
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.utils.objects import cached_property
 
 

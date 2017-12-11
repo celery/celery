@@ -2,12 +2,22 @@
 
 ``Events`` -> :class:`celery.events.EventDispatcher`.
 """
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.common import ignore_errors
+
 from celery import bootsteps
+<<<<<<< HEAD
+
+=======
 from celery.types import WorkerConsumerT
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from .connection import Connection
 
-__all__ = ['Events']
+__all__ = ('Events',)
 
 
 class Events(bootsteps.StartStopStep):

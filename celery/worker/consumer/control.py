@@ -4,13 +4,19 @@
 
 The actual commands are implemented in :mod:`celery.worker.control`.
 """
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery import bootsteps
 from celery.utils.log import get_logger
 from celery.types import WorkerConsumerT
 from celery.worker import pidbox
+
 from .tasks import Tasks
 
-__all__ = ['Control']
+__all__ = ('Control',)
 
 logger = get_logger(__name__)
 

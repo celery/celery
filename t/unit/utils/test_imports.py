@@ -1,3 +1,13 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+import pytest
+from case import Mock
+
+from celery.five import bytes_if_py2
+from celery.utils.imports import (NotAPackage, find_module, gen_task_name,
+                                  module_file, qualname, reload_from_cwd)
+=======
 import pytest
 from case import Mock
 from celery.utils.imports import (
@@ -8,6 +18,7 @@ from celery.utils.imports import (
     module_file,
     find_module,
 )
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 def test_find_module():

@@ -1,7 +1,6 @@
 """Async I/O backend support utilities."""
 import socket
 import threading
-
 from collections import deque
 from time import monotonic, sleep
 from typing import (
@@ -21,10 +20,10 @@ from celery.utils.collections import BufferMap
 
 from .base import pending_results_t
 
-__all__ = [
+__all__ = (
     'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
     'register_drainer',
-]
+)
 
 drainers = {}
 

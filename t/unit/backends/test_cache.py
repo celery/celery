@@ -1,13 +1,24 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
 import pytest
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import sys
 import types
 from contextlib import contextmanager
+
+import pytest
 from case import Mock, mock, patch, skip
-from kombu.utils.encoding import str_to_bytes, ensure_bytes
-from celery import states
-from celery import group, signature, uuid
+from kombu.utils.encoding import ensure_bytes, str_to_bytes
+
+from celery import group, signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
+<<<<<<< HEAD
+from celery.five import bytes_if_py2, items, string, text_t
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class SomeClass:

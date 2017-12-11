@@ -1,16 +1,26 @@
 import errno
 import io
 import os
-import pytest
-import sys
 import signal
+import sys
 import tempfile
 
+import pytest
 from case import Mock, call, mock, patch, skip
 
-from celery import _find_option_with_arg
-from celery import platforms
+from celery import _find_option_with_arg, platforms
 from celery.exceptions import SecurityError
+<<<<<<< HEAD
+from celery.five import WhateverIO
+from celery.platforms import (DaemonContext, LockFailed, Pidfile,
+                              _setgroups_hack, check_privileges,
+                              close_open_fds, create_pidlock, detached,
+                              fd_by_path, get_fdmax, ignore_errno, initgroups,
+                              isatty, maybe_drop_privileges, parse_gid,
+                              parse_uid, set_mp_process_title,
+                              set_process_title, setgid, setgroups, setuid,
+                              signals)
+=======
 from celery.platforms import (
     get_fdmax,
     ignore_errno,
@@ -35,6 +45,7 @@ from celery.platforms import (
     fd_by_path,
     isatty,
 )
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 try:
     import resource

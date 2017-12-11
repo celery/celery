@@ -3,11 +3,20 @@
 
 .. program:: celery graph
 """
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
 from operator import itemgetter
+
+from celery.five import items, python_2_unicode_compatible
+=======
+from operator import itemgetter
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.graph import DependencyGraph, GraphFormatter
+
 from .base import Command
 
-__all__ = ['graph']
+__all__ = ('graph',)
 
 
 class graph(Command):
@@ -158,7 +167,7 @@ class graph(Command):
             workers = args['nodes']
             threads = args.get('threads') or []
         except KeyError:
-            replies = self.app.control.inspect().stats()
+            replies = self.app.control.inspect().stats() or {}
             workers, threads = [], []
             for worker, reply in replies.items():
                 workers.append(worker)

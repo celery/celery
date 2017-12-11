@@ -1,12 +1,24 @@
 # -*- coding: utf-8 -*-
 """X.509 certificates."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import glob
 import os
+
 from kombu.utils.encoding import bytes_to_str
+
 from celery.exceptions import SecurityError
+<<<<<<< HEAD
+from celery.five import values
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from .utils import crypto, reraise_errors
 
-__all__ = ['Certificate', 'CertStore', 'FSCertStore']
+__all__ = ('Certificate', 'CertStore', 'FSCertStore')
 
 
 class Certificate:

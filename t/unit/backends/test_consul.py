@@ -1,4 +1,10 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from case import Mock, skip
+
 from celery.backends.consul import ConsulBackend
 
 
@@ -21,3 +27,8 @@ class test_ConsulBackend:
         self.backend.client = Mock(name='c.client')
         self.backend.client.kv.get.return_value = (index, data)
         assert self.backend.get(data['Key']) == 'mypayload'
+
+    def test_index_bytes_key(self):
+        key = 'test-consul-2'
+        assert self.backend._key_to_consul_key(key) == key
+        assert self.backend._key_to_consul_key(key.encode('utf-8')) == key

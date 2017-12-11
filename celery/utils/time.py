@@ -2,28 +2,33 @@
 """Utilities related to dates, times, intervals, and timezones."""
 import numbers
 import os
+<<<<<<< HEAD
+import random
+import sys
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import time as _time
-
 from calendar import monthrange
 from datetime import date, datetime, timedelta, tzinfo
 from typing import Any, Callable, Dict, Union
 
 from kombu.utils.functional import reprcall
 from kombu.utils.objects import cached_property
-
-from pytz import timezone as _timezone, AmbiguousTimeError, FixedOffset
+from pytz import AmbiguousTimeError, FixedOffset
+from pytz import timezone as _timezone
 
 from .functional import dictfilter
 from .iso8601 import parse_iso8601
 from .text import pluralize
 
-__all__ = [
+__all__ = (
     'LocalTimezone', 'timezone', 'maybe_timedelta',
     'delta_resolution', 'remaining', 'rate', 'weekday',
     'humanize_seconds', 'maybe_iso8601', 'is_naive',
     'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
     'ffwd', 'utcoffset', 'adjust_timestamp',
-]
+    'get_exponential_backoff_interval',
+)
 
 C_REMDEBUG = os.environ.get('C_REMDEBUG', False)
 
@@ -197,6 +202,9 @@ def remaining(start: datetime, ends_in: timedelta,
         ~datetime.timedelta: Remaining time.
     """
     now = now or datetime.utcnow()
+    if now.utcoffset() != start.utcoffset():
+        # Timezone has changed, or DST started/ended
+        start = start.replace(tzinfo=now.tzinfo)
     end_date = start + ends_in
     if relative:
         end_date = delta_resolution(end_date, ends_in)
@@ -312,9 +320,10 @@ def maybe_make_aware(dt: datetime, tz: tzinfo=None) -> datetime:
     """Convert dt to aware datetime, do nothing if dt is already aware."""
     if is_naive(dt):
         dt = to_utc(dt)
-    return localize(
-        dt, timezone.utc if tz is None else timezone.tz_or_local(tz),
-    )
+        return localize(
+            dt, timezone.utc if tz is None else timezone.tz_or_local(tz),
+        )
+    return dt
 
 
 class ffwd:
@@ -356,7 +365,7 @@ class ffwd:
         month = self.month or other.month
         day = min(monthrange(year, month)[1], self.day or other.day)
         ret = other.replace(**dict(dictfilter(self._fields()),
-                            year=year, month=month, day=day))
+                                   year=year, month=month, day=day))
         if self.weekday is not None:
             ret += timedelta(days=(7 - ret.weekday() + self.weekday) % 7)
         return ret + timedelta(days=self.days)
@@ -379,3 +388,20 @@ def utcoffset(time=_time, localtime=_time.localtime) -> float:
 def adjust_timestamp(ts: float, offset: float, here=utcoffset) -> float:
     """Adjust timestamp based on provided utcoffset."""
     return ts - (offset - here()) * 3600
+
+
+def get_exponential_backoff_interval(
+    factor,
+    retries,
+    maximum,
+    full_jitter=False
+):
+    """Calculate the exponential backoff wait time."""
+    # Will be zero if factor equals 0
+    countdown = factor * (2 ** retries)
+    # Full jitter according to
+    # https://www.awsarchitectureblog.com/2015/03/backoff.html
+    if full_jitter:
+        countdown = random.randrange(countdown + 1)
+    # Adjust according to maximum wait time and account for negative values.
+    return max(0, min(maximum, countdown))

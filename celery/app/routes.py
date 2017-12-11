@@ -3,18 +3,28 @@
 
 Contains utilities for working with task routers, (:setting:`task_routes`).
 """
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+import re
+import string
+from collections import Mapping, OrderedDict
+
+=======
 import re
 import string
 from collections import Mapping, OrderedDict
 from typing import Any, Callable, Sequence, Union, Tuple
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu import Queue
+
 from celery.exceptions import QueueNotFound
 from celery.types import AppT, RouterT, TaskT
 from celery.utils.collections import lpmerge
 from celery.utils.functional import maybe_evaluate, mlazy
 from celery.utils.imports import symbol_by_name
 
-__all__ = ['MapRoute', 'Router', 'prepare']
+__all__ = ('MapRoute', 'Router', 'prepare')
 
 
 def glob_to_re(glob: str, *,

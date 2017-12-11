@@ -1,7 +1,6 @@
 """Integration testing utilities."""
 import socket
 import sys
-
 from collections import defaultdict
 from functools import partial
 from itertools import count

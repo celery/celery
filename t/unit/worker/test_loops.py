@@ -1,15 +1,25 @@
 import errno
 import socket
+<<<<<<< HEAD
+=======
 import pytest
 import queue
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
+import pytest
 from case import Mock
-from kombu.async import Hub, READ, WRITE, ERR
+from kombu.async import ERR, READ, WRITE, Hub
 
 from celery.bootsteps import CLOSE, RUN
+<<<<<<< HEAD
+from celery.exceptions import (InvalidTaskError, WorkerLostError,
+                               WorkerShutdown, WorkerTerminate)
+from celery.five import Empty, python_2_unicode_compatible
+=======
 from celery.exceptions import (
     InvalidTaskError, WorkerLostError, WorkerShutdown, WorkerTerminate,
 )
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.platforms import EX_FAILURE
 from celery.worker import state
 from celery.worker.consumer import Consumer

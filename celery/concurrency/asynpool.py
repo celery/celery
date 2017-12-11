@@ -22,8 +22,12 @@ import select
 import socket
 import struct
 import time
+<<<<<<< HEAD
+from collections import deque, namedtuple
+=======
 
 from collections import Counter, deque
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from io import BytesIO
 from numbers import Integral
 from pickle import HIGHEST_PROTOCOL
@@ -31,11 +35,11 @@ from time import sleep
 from typing import NamedTuple
 from weakref import WeakValueDictionary, ref
 
-from billiard.pool import RUN, TERMINATE, ACK, NACK, WorkersJoined
 from billiard import pool as _pool
-from billiard.compat import buf_t, setblocking, isblocking
+from billiard.compat import buf_t, isblocking, setblocking
+from billiard.pool import ACK, NACK, RUN, TERMINATE, WorkersJoined
 from billiard.queues import _SimpleQueue
-from kombu.async import WRITE, ERR
+from kombu.async import ERR, WRITE
 from kombu.serialization import pickle as _pickle
 from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange
@@ -68,7 +72,7 @@ except (ImportError, NameError):  # pragma: no cover
     def unpack_from(fmt, iobuf, unpack=struct.unpack):  # noqa
         return unpack(fmt, iobuf.getvalue())  # <-- BytesIO
 
-__all__ = ['AsynPool']
+__all__ = ('AsynPool',)
 
 logger = get_logger(__name__)
 error, debug = logger.error, logger.debug

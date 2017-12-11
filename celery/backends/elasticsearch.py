@@ -1,15 +1,26 @@
 # -* coding: utf-8 -*-
 """Elasticsearch result store backend."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from datetime import datetime
+
+from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import _parse_url
+
 from celery.exceptions import ImproperlyConfigured
+from celery.five import items
+
 from .base import KeyValueStoreBackend
+
 try:
     import elasticsearch
 except ImportError:
     elasticsearch = None  # noqa
 
-__all__ = ['ElasticsearchBackend']
+__all__ = ('ElasticsearchBackend',)
 
 E_LIB_MISSING = """\
 You need to install the elasticsearch library to use the Elasticsearch \
@@ -30,10 +41,14 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     scheme = 'http'
     host = 'localhost'
     port = 9200
+    es_retry_on_timeout = False
+    es_timeout = 10
+    es_max_retries = 3
 
     def __init__(self, url=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.url = url
+        _get = self.app.conf.get
 
         if elasticsearch is None:
             raise ImproperlyConfigured(E_LIB_MISSING)
@@ -52,6 +67,18 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         self.host = host or self.host
         self.port = port or self.port
 
+        self.es_retry_on_timeout = (
+            _get('elasticsearch_retry_on_timeout') or self.es_retry_on_timeout
+        )
+
+        es_timeout = _get('elasticsearch_timeout')
+        if es_timeout is not None:
+            self.es_timeout = es_timeout
+
+        es_max_retries = _get('elasticsearch_max_retries')
+        if es_max_retries is not None:
+            self.es_max_retries = es_max_retries
+
         self._server = None
 
     def get(self, key):
@@ -63,7 +90,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             )
             try:
                 if res['found']:
-                    return res['_source'][key]
+                    return res['_source']['result']
             except (TypeError, KeyError):
                 pass
         except elasticsearch.exceptions.NotFoundError:
@@ -74,7 +101,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             self._index(
                 id=key,
                 body={
-                    key: value,
+                    'result': value,
                     '@timestamp': '{0}Z'.format(
                         datetime.utcnow().isoformat()[:-3]
                     ),
@@ -87,7 +114,9 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             self._index(key, data, refresh=True)
 
     def _index(self, id, body, **kwargs):
+        body = {bytes_to_str(k): v for k, v in items(body)}
         return self.server.index(
+            id=bytes_to_str(id),
             index=self.index,
             doc_type=self.doc_type,
             body=body,
@@ -102,7 +131,12 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def _get_server(self):
         """Connect to the Elasticsearch server."""
-        return elasticsearch.Elasticsearch(self.host)
+        return elasticsearch.Elasticsearch(
+            '%s:%s' % (self.host, self.port),
+            retry_on_timeout=self.es_retry_on_timeout,
+            max_retries=self.es_max_retries,
+            timeout=self.es_timeout
+        )
 
     @property
     def server(self):

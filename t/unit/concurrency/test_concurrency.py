@@ -1,8 +1,15 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import os
-import pytest
 from itertools import count
+
+import pytest
 from case import Mock, patch
-from celery.concurrency.base import apply_target, BasePool
+
+from celery.concurrency.base import BasePool, apply_target
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 
 

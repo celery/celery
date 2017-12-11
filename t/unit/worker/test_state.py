@@ -1,11 +1,18 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pickle
-import pytest
 from time import time
+
+import pytest
 from case import Mock, patch
+
 from celery import uuid
 from celery.exceptions import WorkerShutdown, WorkerTerminate
-from celery.worker import state
 from celery.utils.collections import LimitedSet
+from celery.worker import state
 
 
 @pytest.fixture

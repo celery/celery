@@ -1,9 +1,15 @@
 """Embedded workers for integration tests."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import os
 import threading
 from contextlib import contextmanager
+
 from celery import worker
-from celery.result import allow_join_result, _set_task_join_will_block
+from celery.result import _set_task_join_will_block, allow_join_result
 from celery.utils.dispatch import Signal
 from celery.utils.nodenames import anon_nodename
 

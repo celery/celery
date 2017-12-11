@@ -71,13 +71,14 @@ in this example:
 
         @patch('proj.tasks.Product.order')
         @patch('proj.tasks.send_order.retry')
-        def test_failure(send_order_retry, product_order):
+        def test_failure(self, send_order_retry, product_order):
             product = Product.objects.create(
                 name='Foo',
             )
 
-            # set a side effect on the patched method
-            # so that it raises the error we want.
+            # Set a side effect on the patched methods
+            # so that they raise the errors we want.
+            send_order_retry.side_effect = Retry()
             product_order.side_effect = OperationalError()
 
             with raises(Retry):
@@ -154,7 +155,7 @@ Example:
 
 .. code-block:: python
 
-    # Put this in your confttest.py
+    # Put this in your conftest.py
     @pytest.fixture(scope='session')
     def celery_config():
         return {

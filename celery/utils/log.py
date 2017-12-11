@@ -6,21 +6,27 @@ import os
 import sys
 import threading
 import traceback
-
 from contextlib import contextmanager
+<<<<<<< HEAD
+
+from kombu.five import values
+from kombu.log import LOG_LEVELS
+from kombu.log import get_logger as _get_logger
+=======
 from typing import Any, Iterable, Iterator, Optional, Tuple, Union
 
 from kombu.log import get_logger as _get_logger, LOG_LEVELS
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.utils.encoding import safe_str
 
 from .term import colored
 
-__all__ = [
+__all__ = (
     'ColorFormatter', 'LoggingProxy', 'base_logger',
     'set_in_sighandler', 'in_sighandler', 'get_logger',
     'get_task_logger', 'mlevel',
     'get_multiprocessing_logger', 'reset_multiprocessing_logger',
-]
+)
 
 _process_aware = False
 _in_sighandler = False
@@ -78,7 +84,7 @@ def logger_isa(l: logging.Logger, p: logging.Logger, max: int=1000) -> bool:
         else:
             if id(this) in seen:
                 raise RuntimeError(
-                    'Logger {0!r} parents recursive'.format(l),
+                    'Logger {0!r} parents recursive'.format(l.name),
                 )
             seen.add(id(this))
             this = this.parent

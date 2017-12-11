@@ -1,8 +1,14 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pytest
 from case import Mock, patch
+
 from celery import chord, group
-from celery.backends.rpc import RPCBackend
 from celery._state import _task_stack
+from celery.backends.rpc import RPCBackend
 
 
 class test_RPCBackend:

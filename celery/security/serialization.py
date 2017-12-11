@@ -1,13 +1,24 @@
 # -*- coding: utf-8 -*-
 """Secure serializer."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+from kombu.serialization import dumps, loads, registry
+from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
+
+from celery.five import bytes_if_py2
+from celery.utils.serialization import b64decode, b64encode
+
+=======
 from kombu.serialization import registry, dumps, loads
 from kombu.utils.encoding import bytes_to_str, str_to_bytes, ensure_bytes
 from celery.utils.serialization import b64encode, b64decode
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from .certificate import Certificate, FSCertStore
 from .key import PrivateKey
 from .utils import reraise_errors
 
-__all__ = ['SecureSerializer', 'register_auth']
+__all__ = ('SecureSerializer', 'register_auth')
 
 
 class SecureSerializer:

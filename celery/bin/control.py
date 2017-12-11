@@ -1,8 +1,14 @@
 """The ``celery control``, ``. inspect`` and ``. status`` programs."""
 from __future__ import absolute_import, unicode_literals
+
 from kombu.utils.json import dumps
 from kombu.utils.objects import cached_property
+<<<<<<< HEAD
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.bin.base import Command
+from celery.five import items, string_t
 from celery.platforms import EX_UNAVAILABLE, EX_USAGE
 from celery.utils import text
 

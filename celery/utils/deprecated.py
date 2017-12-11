@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-
 """Deprecation utilities."""
+<<<<<<< HEAD
+from __future__ import absolute_import, print_function, unicode_literals
+
+import warnings
+
+=======
 import warnings
 from typing import Any, Callable, Optional
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from vine.utils import wraps
-from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 
-__all__ = ['Callable', 'Property', 'warn']
+from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
+
+__all__ = ('Callable', 'Property', 'warn')
 
 
 PENDING_DEPRECATION_FMT = """

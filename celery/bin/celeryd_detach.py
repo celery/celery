@@ -5,16 +5,23 @@ Using :func:`os.execv` as forking and multiprocessing
 leads to weird issues (it was a long time ago now, but it
 could have something to do with the threading mutex bug)
 """
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import argparse
-import celery
 import os
 import sys
+
+import celery
+from celery.bin.base import daemon_options
 from celery.platforms import EX_FAILURE, detached
 from celery.utils.log import get_logger
 from celery.utils.nodenames import default_nodename, node_format
-from celery.bin.base import daemon_options
 
-__all__ = ['detached_celeryd', 'detach']
+__all__ = ('detached_celeryd', 'detach')
+
 logger = get_logger(__name__)
 C_FAKEFORK = os.environ.get('C_FAKEFORK')
 

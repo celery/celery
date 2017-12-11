@@ -7,8 +7,16 @@ here for backwards compatibility.
 from .functional import memoize  # noqa
 from .nodenames import worker_direct, nodename, nodesplit
 
+<<<<<<< HEAD
+__all__ = ('worker_direct', 'gen_task_name', 'nodename', 'nodesplit',
+           'cached_property', 'uuid')
+
+PY3 = sys.version_info[0] == 3
+
+=======
 __all__ = ['worker_direct', 'gen_task_name', 'nodename', 'nodesplit',
            'cached_property', 'uuid', 'memoize']
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 # ------------------------------------------------------------------------ #
 # > XXX Compat

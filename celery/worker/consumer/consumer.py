@@ -8,7 +8,6 @@ up and running.
 import errno
 import logging
 import os
-
 from collections import defaultdict
 from time import sleep
 from typing import Callable, Mapping, Tuple
@@ -18,12 +17,15 @@ from billiard.exceptions import RestartFreqExceeded
 from kombu.async.semaphore import DummyLock
 from kombu.types import ConnectionT, MessageT
 from kombu.utils.compat import _detect_environment
+<<<<<<< HEAD
+from kombu.utils.encoding import bytes_t, safe_repr
+=======
 from kombu.utils.encoding import safe_repr
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.utils.limits import TokenBucket
 from vine import Thenable, ppartial, promise
 
-from celery import bootsteps
-from celery import signals
+from celery import bootsteps, signals
 from celery.app.trace import build_tracer
 from celery.exceptions import InvalidTaskError, NotRegistered
 from celery.types import (
@@ -35,15 +37,15 @@ from celery.utils.nodenames import gethostname
 from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds, rate
-
 from celery.worker import loops
-from celery.worker.state import (
-    task_reserved, maybe_shutdown, reserved_requests,
-)
+from celery.worker.state import (maybe_shutdown, reserved_requests,
+                                 task_reserved)
 
-__all__ = ['Consumer', 'Evloop', 'dump_body']
+__all__ = ('Consumer', 'Evloop', 'dump_body')
 
 CLOSE = bootsteps.CLOSE
+TERMINATE = bootsteps.TERMINATE
+STOP_CONDITIONS = {CLOSE, TERMINATE}
 logger = get_logger(__name__)
 debug, info, warn, error, crit = (logger.debug, logger.info, logger.warning,
                                   logger.error, logger.critical)
@@ -318,9 +320,19 @@ class Consumer:
         else:
             self._schedule_bucket_request(request, bucket, tokens)
 
+<<<<<<< HEAD
+    def _limit_post_eta(self, request, bucket, tokens):
+        self.qos.decrement_eventually()
+        if bucket.contents:
+            return bucket.add(request)
+        return self._schedule_bucket_request(request, bucket, tokens)
+
+    def start(self):
+=======
     async def start(self) -> None:
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
         blueprint = self.blueprint
-        while blueprint.state != CLOSE:
+        while blueprint.state not in STOP_CONDITIONS:
             maybe_shutdown()
             if self.restart_count:
                 try:
@@ -339,7 +351,7 @@ class Consumer:
                 if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
                     raise  # Too many open files
                 maybe_shutdown()
-                if blueprint.state != CLOSE:
+                if blueprint.state not in STOP_CONDITIONS:
                     if self.connection:
                         self.on_connection_error_after_connected(exc)
                     else:

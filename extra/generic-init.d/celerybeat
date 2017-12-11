@@ -6,7 +6,7 @@
 # :Usage: /etc/init.d/celerybeat {start|stop|force-reload|restart|try-restart|status}
 # :Configuration file: /etc/default/celerybeat or /etc/default/celeryd
 #
-# See http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html#generic-init-scripts
+# See http://docs.celeryproject.org/en/latest/userguide/daemonizing.html#generic-init-scripts
 
 ### BEGIN INIT INFO
 # Provides:          celerybeat

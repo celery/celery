@@ -1,18 +1,28 @@
 # -*- coding: utf-8 -*-
 """Text formatting utilities."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import re
 from collections import Callable
 from functools import partial
 from pprint import pformat
 from textwrap import fill
-from typing import Any, ByteString, Mapping, Pattern, Sequence, Union
+<<<<<<< HEAD
 
-__all__ = [
+from celery.five import string_t
+=======
+from typing import Any, ByteString, Mapping, Pattern, Sequence, Union
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
+
+__all__ = (
     'abbr', 'abbrtask', 'dedent', 'dedent_initial',
     'ensure_newlines', 'ensure_sep',
     'fill_paragraphs', 'indent', 'join',
     'pluralize', 'pretty', 'str_to_list', 'simple_format', 'truncate',
-]
+)
 
 UNKNOWN_SIMPLE_FORMAT_KEY = """
 Unknown format %{0} in string {1!r}.

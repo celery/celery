@@ -1,3 +1,12 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+import pytest
+from case import Mock, patch
+
+from celery.bin.amqp import AMQPAdmin, AMQShell, amqp, dump_message, main
+from celery.five import WhateverIO
+=======
 import io
 import pytest
 from case import Mock, patch
@@ -8,6 +17,7 @@ from celery.bin.amqp import (
     amqp,
     main,
 )
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class test_AMQShell:

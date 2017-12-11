@@ -1,5 +1,11 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from case import skip
-from celery.utils.sysinfo import load_average, df
+
+from celery.utils.sysinfo import df, load_average
 
 
 @skip.unless_symbol('os.getloadavg')

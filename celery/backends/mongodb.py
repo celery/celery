@@ -1,11 +1,23 @@
 # -*- coding: utf-8 -*-
 """MongoDB result store backend."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from datetime import datetime, timedelta
+
+from kombu.exceptions import EncodeError
 from kombu.utils.objects import cached_property
 from kombu.utils.url import maybe_sanitize_url
-from kombu.exceptions import EncodeError
+
 from celery import states
 from celery.exceptions import ImproperlyConfigured
+<<<<<<< HEAD
+from celery.five import items, string_t
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from .base import BaseBackend
 
 try:
@@ -25,7 +37,9 @@ else:                                       # pragma: no cover
     class InvalidDocument(Exception):       # noqa
         pass
 
-__all__ = ['MongoBackend']
+__all__ = ('MongoBackend',)
+
+BINARY_CODECS = frozenset(['pickle', 'msgpack'])
 
 
 class MongoBackend(BaseBackend):
@@ -113,11 +127,11 @@ class MongoBackend(BaseBackend):
             self.options.update(config)
 
     def _prepare_client_options(self):
-            if pymongo.version_tuple >= (3,):
-                return {'maxPoolSize': self.max_pool_size}
-            else:  # pragma: no cover
-                return {'max_pool_size': self.max_pool_size,
-                        'auto_start_request': False}
+        if pymongo.version_tuple >= (3,):
+            return {'maxPoolSize': self.max_pool_size}
+        else:  # pragma: no cover
+            return {'max_pool_size': self.max_pool_size,
+                    'auto_start_request': False}
 
     def _get_connection(self):
         """Connect to the MongoDB server."""
@@ -148,7 +162,16 @@ class MongoBackend(BaseBackend):
         if self.serializer == 'bson':
             # mongodb handles serialization
             return data
+<<<<<<< HEAD
+        payload = super(MongoBackend, self).encode(data)
+
+        # serializer which are in a unsupported format (pickle/binary)
+        if self.serializer in BINARY_CODECS:
+            payload = Binary(payload)
+        return payload
+=======
         return super().encode(data)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
     def decode(self, data):
         if self.serializer == 'bson':

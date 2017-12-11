@@ -1,7 +1,14 @@
 from __future__ import absolute_import, unicode_literals
+<<<<<<< HEAD
+
+from case import patch
+
+=======
 import io
 from case import patch
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.bin.result import result
+from celery.five import WhateverIO
 
 
 class test_result:

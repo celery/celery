@@ -7,16 +7,27 @@ It does everything necessary to run that module
 as an actual application, like installing signal handlers
 and so on.
 """
+<<<<<<< HEAD
+from __future__ import absolute_import, print_function, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import numbers
 import socket
 import sys
 from datetime import datetime
+<<<<<<< HEAD
+
+from celery import VERSION_BANNER, beat, platforms
+from celery.five import text_t
+=======
 from celery import VERSION_BANNER, platforms, beat
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger
 from celery.utils.time import humanize_seconds
 
-__all__ = ['Beat']
+__all__ = ('Beat',)
 
 STARTUP_INFO_FMT = """
 LocalTime -> {timestamp}
@@ -114,9 +125,9 @@ class Beat:
         c = self.colored
         return str(  # flake8: noqa
             c.blue('__    ', c.magenta('-'),
-            c.blue('    ... __   '), c.magenta('-'),
-            c.blue('        _\n'),
-            c.reset(self.startup_info(service))),
+                   c.blue('    ... __   '), c.magenta('-'),
+                   c.blue('        _\n'),
+                   c.reset(self.startup_info(service))),
         )
 
     def init_loader(self):

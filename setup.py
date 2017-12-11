@@ -74,7 +74,8 @@ EXTENSIONS = {
     'pyro',
     'slmq',
     'tblib',
-    'consul'
+    'consul',
+    'dynamodb'
 }
 
 # -*- Classifiers -*-
@@ -86,6 +87,11 @@ classes = """
     Topic :: Software Development :: Object Brokering
     Programming Language :: Python
     Programming Language :: Python :: 3
+<<<<<<< HEAD
+    Programming Language :: Python :: 3.4
+    Programming Language :: Python :: 3.5
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
     Programming Language :: Python :: 3.6
     Programming Language :: Python :: Implementation :: CPython
     Programming Language :: Python :: Implementation :: PyPy

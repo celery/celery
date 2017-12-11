@@ -1,3 +1,3 @@
 from .base import Option
 
-__all__ = ['Option']
+__all__ = ('Option',)

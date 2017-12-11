@@ -35,6 +35,7 @@
     celery.backends.riak
     celery.backends.cassandra
     celery.backends.couchbase
+    celery.backends.dynamodb
     celery.backends.filesystem
     celery.app.trace
     celery.app.annotations

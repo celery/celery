@@ -1,25 +1,35 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+import sys
+import types
+from contextlib import contextmanager
+
+import pytest
+from case import ANY, Mock, call, patch, skip
+=======
 import pytest
 
 from contextlib import contextmanager
 
 from case import ANY, Mock, call, patch
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
-from celery import states
-from celery import chord, group, uuid
-from celery.backends.base import (
-    BaseBackend,
-    KeyValueStoreBackend,
-    DisabledBackend,
-    _nulldict,
-)
+from celery import chord, group, states, uuid
+from celery.backends.base import (BaseBackend, DisabledBackend,
+                                  KeyValueStoreBackend, _nulldict)
 from celery.exceptions import ChordError, TimeoutError
+<<<<<<< HEAD
+from celery.five import bytes_if_py2, items, range
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.result import result_from_tuple
 from celery.utils import serialization
 from celery.utils.functional import pass1
-from celery.utils.serialization import subclass_exception
-from celery.utils.serialization import find_pickleable_exception as fnpe
 from celery.utils.serialization import UnpickleableExceptionWrapper
+from celery.utils.serialization import find_pickleable_exception as fnpe
 from celery.utils.serialization import get_pickleable_exception as gpe
+from celery.utils.serialization import subclass_exception
 
 
 class wrapobject:
@@ -114,6 +124,13 @@ class test_prepare_exception:
         assert isinstance(x, KeyError)
         y = self.b.exception_to_python(x)
         assert isinstance(y, KeyError)
+
+    def test_unicode_message(self):
+        message = u'\u03ac'
+        x = self.b.prepare_exception(Exception(message))
+        assert x == {'exc_message': (message,),
+                     'exc_type': Exception.__name__,
+                     'exc_module': Exception.__module__}
 
 
 class KVBackend(KeyValueStoreBackend):
@@ -333,19 +350,25 @@ class test_KeyValueStoreBackend:
             ids = {uuid(): i for i in range(10)}
             for id, i in ids.items():
                 self.b.mark_as_done(id, i)
-            it = self.b.get_many(list(ids))
+            it = self.b.get_many(list(ids), interval=0.01)
             for i, (got_id, got_state) in enumerate(it):
                 assert got_state['result'] == ids[got_id]
             assert i == 9
-            assert list(self.b.get_many(list(ids)))
+            assert list(self.b.get_many(list(ids), interval=0.01))
 
             self.b._cache.clear()
             callback = Mock(name='callback')
-            it = self.b.get_many(list(ids), on_message=callback)
+            it = self.b.get_many(
+                list(ids),
+                on_message=callback,
+                interval=0.05
+            )
             for i, (got_id, got_state) in enumerate(it):
                 assert got_state['result'] == ids[got_id]
             assert i == 9
-            assert list(self.b.get_many(list(ids)))
+            assert list(
+                self.b.get_many(list(ids), interval=0.01)
+            )
             callback.assert_has_calls([
                 call(ANY) for id in ids
             ])

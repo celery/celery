@@ -1,13 +1,25 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import errno
 import io
 import socket
+
 import pytest
 from case import Mock, patch, skip
+<<<<<<< HEAD
+
+from celery.contrib.rdb import Rdb, debugger, set_trace
+from celery.five import WhateverIO
+=======
 from celery.contrib.rdb import (
     Rdb,
     debugger,
     set_trace,
 )
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class SockErr(socket.error):

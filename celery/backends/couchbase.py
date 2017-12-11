@@ -1,10 +1,23 @@
 # -*- coding: utf-8 -*-
 """Couchbase result store backend."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import logging
+
 from kombu.utils.encoding import str_t
 from kombu.utils.url import _parse_url
+
 from celery.exceptions import ImproperlyConfigured
+
 from .base import KeyValueStoreBackend
+
+try:
+    import couchbase_ffi # noqa
+except ImportError:
+    pass # noqa
 try:
     from couchbase import Couchbase
     from couchbase.connection import Connection
@@ -12,7 +25,7 @@ try:
 except ImportError:
     Couchbase = Connection = NotFoundError = None   # noqa
 
-__all__ = ['CouchbaseBackend']
+__all__ = ('CouchbaseBackend',)
 
 
 class CouchbaseBackend(KeyValueStoreBackend):

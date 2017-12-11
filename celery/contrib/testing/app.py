@@ -1,10 +1,16 @@
 """Create Celery app instances used for testing."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import weakref
 from contextlib import contextmanager
 from copy import deepcopy
+
 from kombu.utils.imports import symbol_by_name
-from celery import Celery
-from celery import _state
+
+from celery import Celery, _state
 
 #: Contains the default configuration values for the test app.
 DEFAULT_TEST_CONFIG = {

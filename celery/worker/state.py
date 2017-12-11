@@ -5,9 +5,9 @@ This includes the currently active and reserved tasks,
 statistics, and revoked tasks.
 """
 import os
-import sys
 import platform
 import shelve
+import sys
 import weakref
 import zlib
 
@@ -25,11 +25,11 @@ from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.types import RequestT
 from celery.utils.collections import LimitedSet
 
-__all__ = [
+__all__ = (
     'SOFTWARE_INFO', 'reserved_requests', 'active_requests',
     'total_count', 'revoked', 'task_reserved', 'maybe_shutdown',
-    'task_accepted', 'task_reserved', 'task_ready', 'Persistent',
-]
+    'task_accepted', 'task_ready', 'Persistent',
+)
 
 #: Worker software/platform information.
 SOFTWARE_INFO: Mapping[str, Any] = {

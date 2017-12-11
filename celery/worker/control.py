@@ -2,10 +2,15 @@
 """Worker remote control command implementations."""
 import io
 import tempfile
+<<<<<<< HEAD
+from collections import namedtuple
+
+=======
 from collections import UserDict
 from typing import (
     Any, Callable, Iterable, Mapping, NamedTuple, Sequence, Tuple, Union,
 )
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr
 from celery.exceptions import WorkerShutdown
@@ -18,7 +23,7 @@ from celery.utils.time import rate
 from . import state as worker_state
 from .request import Request
 
-__all__ = ['Panel']
+__all__ = ('Panel',)
 
 DEFAULT_TASK_INFO_ITEMS = ('exchange', 'routing_key', 'rate_limit')
 logger = get_logger(__name__)
@@ -593,8 +598,13 @@ def cancel_consumer(state: StateT, queue: str, **_) -> Mapping:
 
 
 @inspect_command()
+<<<<<<< HEAD
+def active_queues(state):
+    """List the task queues a worker is currently consuming from."""
+=======
 async def active_queues(state: StateT) -> Sequence[Mapping]:
     """List the task queues a worker are currently consuming from."""
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
     if state.consumer.task_consumer:
         return [dict(queue.as_dict(recurse=True))
                 for queue in state.consumer.task_consumer.queues]

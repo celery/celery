@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 """Object related utilities, including introspection, etc."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from functools import reduce
 from typing import Any, Callable, Set, Sequence
 
-__all__ = ['Bunch', 'FallbackContext', 'getitem_property', 'mro_lookup']
+__all__ = ('Bunch', 'FallbackContext', 'getitem_property', 'mro_lookup')
 
 
 class Bunch:

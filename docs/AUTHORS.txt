@@ -7,12 +7,14 @@ Aaron Ross <aaron@wawd.com>
 Adam Endicott
 Adriano Petrich <petrich@gmail.com>
 Akira Matsuzaki <akira.matsuzaki.1977@gmail.com>
+Alan Brogan <github@al-got-rhythm.net>
 Alec Clowes <aclowes@gmail.com>
 Ales Zoulek <ales.zoulek@gmail.com>
 Allan Caffee <allan.caffee@gmail.com>
 Andrew McFague <amcfague@wgen.net>
 Andrew Watts <andrewwatts@gmail.com>
 Armin Ronacher <armin.ronacher@active-4.com>
+Arpan Shah <arpanshah29@gmail.com>
 Ask Solem <ask@celeryproject.org>
 Augusto Becciu <augusto@becciu.org>
 Balachandran C <balachandran.c@gramvaani.org>
@@ -64,6 +66,7 @@ Iurii Kriachko <iurii.kriachko@gmail.com>
 Ivan Metzlar <metzlar@gmail.com>
 Jannis Leidel <jannis@leidel.info>
 Jason Baker <amnorvend@gmail.com>
+Jay McGrath <jaymcgrath@users.noreply.github.com>
 Jeff Balogh <me@jeffbalogh.org>
 Jeff Terrace <jterrace@gmail.com>
 Jerzy Kozera <jerzy.kozera@gmail.com>
@@ -94,6 +97,7 @@ Mark Stover <stovenator@gmail.com>
 Mark Thurman <mthurman@gmail.com>
 Martin Galpin <m@66laps.com>
 Martin Melin <git@martinmelin.com>
+Matt Ullman <staticfox@staticfox.net>
 Matt Williamson <dawsdesign@gmail.com>
 Matthew J Morrison <mattj.morrison@gmail.com>
 Matthew Miller <matthewgarrettmiller@gmail.com>
@@ -111,7 +115,9 @@ Neil Chintomby
 Noah Kantrowitz <noah@coderanger.net>
 Norman Richards <orb@nostacktrace.com>
 Patrick Altman <paltman@gmail.com>
+Peter Bittner <django@bittner.it>
 Piotr Sikora <piotr.sikora@frickle.com>
+Primož Kerin <kerin.primoz@gmail.com>
 Remy Noel <mocramis@gmail.com>
 Reza Lotun <rlotun@gmail.com>
 Roberto Gaiser <gaiser@geekbunker.org>
@@ -129,6 +135,7 @@ Stefan Kjartansson <esteban.supreme@gmail.com>
 Steven Skoczen
 Tayfun Sen <tayfun.sen@markafoni.com>
 Thomas Johansson <prencher@prencher.dk>
+Thomas Forbes <tom@tomforb.es>
 Timo Sugliani <timo.sugliani@gmail.com>
 Travis Swicegood <development@domain51.com>
 Vincent Driessen <vincent@datafox.nl>

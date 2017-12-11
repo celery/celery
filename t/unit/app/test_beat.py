@@ -1,11 +1,25 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import errno
-import pytest
 from datetime import datetime, timedelta
 from pickle import dumps, loads
+
+import pytest
 from case import Mock, call, patch, skip
+<<<<<<< HEAD
+
+from celery import beat, uuid
+from celery.beat import event_t
+from celery.five import keys, string_t
+from celery.schedules import crontab, schedule
+=======
 from celery import beat
 from celery import uuid
 from celery.schedules import schedule
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.objects import Bunch
 
 
@@ -38,13 +52,13 @@ class test_ScheduleEntry:
     Entry = beat.ScheduleEntry
 
     def create_entry(self, **kwargs):
-        entry = dict(
-            name='celery.unittest.add',
-            schedule=timedelta(seconds=10),
-            args=(2, 2),
-            options={'routing_key': 'cpu'},
-            app=self.app,
-        )
+        entry = {
+            'name': 'celery.unittest.add',
+            'schedule': timedelta(seconds=10),
+            'args': (2, 2),
+            'options': {'routing_key': 'cpu'},
+            'app': self.app,
+        }
         return self.Entry(**dict(entry, **kwargs))
 
     def test_next(self):
@@ -306,11 +320,27 @@ class test_Scheduler:
     def test_ticks(self):
         scheduler = mScheduler(app=self.app)
         nums = [600, 300, 650, 120, 250, 36]
-        s = dict(('test_ticks%s' % i,
-                 {'schedule': mocked_schedule(False, j)})
-                 for i, j in enumerate(nums))
+        s = {'test_ticks%s' % i: {'schedule': mocked_schedule(False, j)}
+             for i, j in enumerate(nums)}
         scheduler.update_from_dict(s)
         assert scheduler.tick() == min(nums) - 0.010
+
+    def test_ticks_schedule_change(self):
+        # initialise schedule and check heap is not initialized
+        scheduler = mScheduler(app=self.app)
+        assert scheduler._heap is None
+
+        # set initial schedule and check heap is updated
+        schedule_5 = schedule(5)
+        scheduler.add(name='test_schedule', schedule=schedule_5)
+        scheduler.tick()
+        assert scheduler._heap[0].entry.schedule == schedule_5
+
+        # update schedule and check heap is updated
+        schedule_10 = schedule(10)
+        scheduler.add(name='test_schedule', schedule=schedule(10))
+        scheduler.tick()
+        assert scheduler._heap[0].entry.schedule == schedule_10
 
     def test_schedule_no_remain(self):
         scheduler = mScheduler(app=self.app)
@@ -336,6 +366,112 @@ class test_Scheduler:
         assert 'foo' not in a.schedule
         assert 'baz' in a.schedule
         assert a.schedule['bar'].schedule._next_run_at == 40
+
+    @patch('celery.beat.Scheduler._when', return_value=1)
+    def test_populate_heap(self, _when):
+        scheduler = mScheduler(app=self.app)
+        scheduler.update_from_dict(
+            {'foo': {'schedule': mocked_schedule(True, 10)}}
+        )
+        scheduler.populate_heap()
+        assert scheduler._heap == [event_t(1, 5, scheduler.schedule['foo'])]
+
+    def create_schedule_entry(self, schedule=None, args=(), kwargs={},
+                              options={}, task=None):
+        entry = {
+            'name': 'celery.unittest.add',
+            'schedule': schedule,
+            'app': self.app,
+            'args': args,
+            'kwargs': kwargs,
+            'options': options,
+            'task': task
+        }
+        return beat.ScheduleEntry(**dict(entry))
+
+    def test_schedule_equal_schedule_vs_schedule_success(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(schedule=schedule(5))}
+        b = {'a': self.create_schedule_entry(schedule=schedule(5))}
+        assert scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_schedule_vs_schedule_fail(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(schedule=schedule(5))}
+        b = {'a': self.create_schedule_entry(schedule=schedule(10))}
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_crontab_vs_crontab_success(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(schedule=crontab(minute=5))}
+        b = {'a': self.create_schedule_entry(schedule=crontab(minute=5))}
+        assert scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_crontab_vs_crontab_fail(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(schedule=crontab(minute=5))}
+        b = {'a': self.create_schedule_entry(schedule=crontab(minute=10))}
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_crontab_vs_schedule_fail(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(schedule=crontab(minute=5))}
+        b = {'a': self.create_schedule_entry(schedule=schedule(5))}
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_different_key_fail(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(schedule=schedule(5))}
+        b = {'b': self.create_schedule_entry(schedule=schedule(5))}
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_args_vs_args_success(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(args='a')}
+        b = {'a': self.create_schedule_entry(args='a')}
+        assert scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_args_vs_args_fail(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(args='a')}
+        b = {'a': self.create_schedule_entry(args='b')}
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_kwargs_vs_kwargs_success(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(kwargs={'a': 'a'})}
+        b = {'a': self.create_schedule_entry(kwargs={'a': 'a'})}
+        assert scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_kwargs_vs_kwargs_fail(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(kwargs={'a': 'a'})}
+        b = {'a': self.create_schedule_entry(kwargs={'b': 'b'})}
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_options_vs_options_success(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(options={'a': 'a'})}
+        b = {'a': self.create_schedule_entry(options={'a': 'a'})}
+        assert scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_options_vs_options_fail(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(options={'a': 'a'})}
+        b = {'a': self.create_schedule_entry(options={'b': 'b'})}
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_task_vs_task_success(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(task='a')}
+        b = {'a': self.create_schedule_entry(task='a')}
+        assert scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_task_vs_task_fail(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(task='a')}
+        b = {'a': self.create_schedule_entry(task='b')}
+        assert not scheduler.schedules_equal(a, b)
 
 
 def create_persistent_scheduler(shelv=None):

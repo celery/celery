@@ -12,12 +12,19 @@ from kombu.exceptions import OperationalError
 from kombu.types import ProducerT
 from kombu.utils.uuid import uuid
 
-from celery import current_app, group
-from celery import states
+from celery import current_app, group, states
 from celery._state import _task_stack
 from celery.canvas import signature
 from celery.exceptions import Ignore, MaxRetriesExceededError, Reject, Retry
 from celery.local import class_property
+<<<<<<< HEAD
+from celery.result import EagerResult, denied_join_result
+from celery.utils import abstract
+from celery.utils.functional import mattrgetter, maybe_list
+from celery.utils.imports import instantiate
+from celery.utils.nodenames import gethostname
+from celery.utils.serialization import raise_with_context
+=======
 from celery.result import EagerResult
 from celery.types import (
     AppT, BackendT, ResultT, SignatureT, TaskT, TracerT, WorkerConsumerT,
@@ -26,12 +33,13 @@ from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.threads import LocalStack
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
 from .utils import appstr
 
-__all__ = ['Context', 'Task']
+__all__ = ('Context', 'Task')
 
 #: extracts attributes related to publishing a message from an object.
 extract_exec_options = mattrgetter(
@@ -137,8 +145,13 @@ class Context:
         }
 
     @property
+<<<<<<< HEAD
+    def children(self):
+        # children must be an empty list for every thread
+=======
     def children(self) -> Sequence[ResultT]:
         # children must be an empy list for every thread
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
         if self._children is None:
             self._children = []
         return self._children
@@ -162,6 +175,9 @@ class Task:
 
     #: Execution strategy used, or the qualified name of one.
     Strategy = 'celery.worker.strategy:default'
+
+    #: Request class used, or the qualified name of one.
+    Request = 'celery.worker.request:Request'
 
     #: This is the instance bound to if the task is a method of a class.
     __self__: Any = None
@@ -388,8 +404,13 @@ class Task:
             self.pop_request()
             _task_stack.pop()
 
+<<<<<<< HEAD
+    def __reduce__(self):
+        # - tasks are pickled into the name of the task only, and the receiver
+=======
     def __reduce__(self) -> Tuple:
         # - tasks are pickled into the name of the task only, and the reciever
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
         # - simply grabs it from the local registry.
         # - in later versions the module of the task is also included,
         # - and the receiving side tries to import that module so that
@@ -508,7 +529,7 @@ class Task:
             headers (Dict): Message headers to be included in the message.
 
         Returns:
-            ~@AsyncResult: Promise of future evaluation.
+            celery.result.AsyncResult: Promise of future evaluation.
 
         Raises:
             TypeError: If not enough arguments are passed, or too many
@@ -531,8 +552,9 @@ class Task:
 
         app = self._get_app()
         if app.conf.task_always_eager:
-            return self.apply(args, kwargs, task_id=task_id or uuid(),
-                              link=link, link_error=link_error, **options)
+            with denied_join_result():
+                return self.apply(args, kwargs, task_id=task_id or uuid(),
+                                  link=link, link_error=link_error, **options)
         # add 'self' if this is a "task_method".
         if self.__self__ is not None:
             args = args if isinstance(args, tuple) else tuple(args or ())
@@ -631,7 +653,7 @@ class Task:
         Arguments:
             args (Tuple): Positional arguments to retry with.
             kwargs (Dict): Keyword arguments to retry with.
-            exc (Exception): Custom exception to report when the max restart
+            exc (Exception): Custom exception to report when the max retry
                 limit has been exceeded (default:
                 :exc:`~@MaxRetriesExceededError`).
 
@@ -642,7 +664,7 @@ class Task:
                 If no exception was raised it will raise the ``exc``
                 argument provided.
             countdown (float): Time in seconds to delay the retry for.
-            eta (~datetime.dateime): Explicit time and date to run the
+            eta (~datetime.datetime): Explicit time and date to run the
                 retry at.
             max_retries (int): If set, overrides the default retry limit for
                 this execution.  Changes to this parameter don't propagate to
@@ -762,6 +784,7 @@ class Task:
             'is_eager': True,
             'logfile': logfile,
             'loglevel': loglevel or 0,
+            'hostname': gethostname(),
             'callbacks': maybe_list(link),
             'errbacks': maybe_list(link_error),
             'headers': headers,
@@ -888,7 +911,7 @@ class Task:
             chord = None
 
         if self.request.chain:
-            for t in self.request.chain:
+            for t in reversed(self.request.chain):
                 sig |= signature(t, app=self.app)
 
         sig.freeze(self.request.id,
@@ -1064,4 +1087,6 @@ class Task:
     @property
     def __name__(self) -> str:
         return self.__class__.__name__
+
+
 BaseTask = Task  # noqa: E305 XXX compat alias

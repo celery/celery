@@ -4,13 +4,19 @@
 This is a simple program that dumps events to the console
 as they happen.  Think of it like a `tcpdump` for Celery events.
 """
+<<<<<<< HEAD
+from __future__ import absolute_import, print_function, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import sys
 from datetime import datetime
+
 from celery.app import app_or_default
 from celery.utils.functional import LRUCache
 from celery.utils.time import humanize_seconds
 
-__all__ = ['Dumper', 'evdump']
+__all__ = ('Dumper', 'evdump')
 
 TASK_NAMES = LRUCache(limit=0xFFF)
 

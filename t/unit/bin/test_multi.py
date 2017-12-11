@@ -1,9 +1,24 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
 import io
 import pytest
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import signal
 import sys
+
+import pytest
 from case import Mock, patch
+<<<<<<< HEAD
+
+from celery.bin.multi import MultiTool
+from celery.bin.multi import __doc__ as doc
+from celery.bin.multi import main
+from celery.five import WhateverIO
+=======
 from celery.bin.multi import main, MultiTool, __doc__ as doc
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class test_MultiTool:

@@ -1,15 +1,18 @@
 import pickle
-
 from decimal import Decimal
+from itertools import count
 from random import shuffle
 from time import time
-from itertools import count
 
 from case import Mock, patch, skip
 
-from celery import states
-from celery import uuid
+from celery import states, uuid
 from celery.events import Event
+<<<<<<< HEAD
+from celery.events.state import (HEARTBEAT_DRIFT_MAX, HEARTBEAT_EXPIRE_WINDOW,
+                                 State, Task, Worker, heartbeat_expires)
+from celery.five import range
+=======
 from celery.events.state import (
     HEARTBEAT_EXPIRE_WINDOW,
     HEARTBEAT_DRIFT_MAX,
@@ -18,6 +21,7 @@ from celery.events.state import (
     Task,
     heartbeat_expires,
 )
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class replay:
@@ -158,7 +162,7 @@ class ev_snapshot(replay):
             worker = not i % 2 and 'utest2' or 'utest1'
             type = not i % 2 and 'task2' or 'task1'
             self.events.append(Event('task-received', name=type,
-                               uuid=uuid(), hostname=worker))
+                                     uuid=uuid(), hostname=worker))
 
 
 class test_Worker:

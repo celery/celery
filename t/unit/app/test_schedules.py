@@ -1,15 +1,27 @@
-import pytest
-import time
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
 
+=======
+import pytest
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
+import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pickle import dumps, loads
 
+import pytest
+import pytz
 from case import Case, Mock, skip
 
+<<<<<<< HEAD
+from celery.five import items
+from celery.schedules import (ParseException, crontab, crontab_parser,
+                              schedule, solar)
+=======
 from celery.schedules import (
     ParseException, crontab, crontab_parser, schedule, solar,
 )
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 assertions = Case('__init__')
 
@@ -71,6 +83,17 @@ class test_solar:
         with pytest.raises(ValueError):
             solar('asdqwewqew', 60, 60, app=self.app)
 
+    def test_event_uses_center(self):
+        s = solar('solar_noon', 60, 60, app=self.app)
+        for ev, is_center in s._use_center_l.items():
+            s.method = s._methods[ev]
+            s.is_center = s._use_center_l[ev]
+            try:
+                s.remaining_estimate(datetime.utcnow())
+            except TypeError:
+                pytest.fail("{0} was called with 'use_center' which is not a \
+                    valid keyword for the function.".format(s.method))
+
 
 class test_schedule:
 
@@ -88,13 +111,28 @@ class test_schedule:
         assert s1 == s2
 
 
+# This is needed for test_crontab_parser because datetime.utcnow doesn't pickle
+# in python 2
+def utcnow():
+    return datetime.utcnow()
+
+
 class test_crontab_parser:
 
     def crontab(self, *args, **kwargs):
         return crontab(*args, **dict(kwargs, app=self.app))
 
     def test_crontab_reduce(self):
-        assert loads(dumps(self.crontab('*')))
+        c = self.crontab('*')
+        assert c == loads(dumps(c))
+        c = self.crontab(
+            minute='1',
+            hour='2',
+            day_of_week='3',
+            day_of_month='4',
+            month_of_year='5',
+            nowfun=utcnow)
+        assert c == loads(dumps(c))
 
     def test_range_steps_not_enough(self):
         with pytest.raises(crontab_parser.ParseException):
@@ -412,6 +450,40 @@ class test_crontab_remaining_estimate:
             datetime(2012, 2, 29, 14, 30),
         )
         assert next == datetime(2016, 2, 29, 14, 30)
+
+    def test_day_after_dst_end(self):
+        # Test for #1604 issue with region configuration using DST
+        tzname = "Europe/Paris"
+        self.app.timezone = tzname
+        tz = pytz.timezone(tzname)
+        crontab = self.crontab(minute=0, hour=9)
+
+        # Set last_run_at Before DST end
+        last_run_at = tz.localize(datetime(2017, 10, 28, 9, 0))
+        # Set now after DST end
+        now = tz.localize(datetime(2017, 10, 29, 7, 0))
+        crontab.nowfun = lambda: now
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        assert next.utcoffset().seconds == 3600
+        assert next == tz.localize(datetime(2017, 10, 29, 9, 0))
+
+    def test_day_after_dst_start(self):
+        # Test for #1604 issue with region configuration using DST
+        tzname = "Europe/Paris"
+        self.app.timezone = tzname
+        tz = pytz.timezone(tzname)
+        crontab = self.crontab(minute=0, hour=9)
+
+        # Set last_run_at Before DST start
+        last_run_at = tz.localize(datetime(2017, 3, 25, 9, 0))
+        # Set now after DST start
+        now = tz.localize(datetime(2017, 3, 26, 7, 0))
+        crontab.nowfun = lambda: now
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        assert next.utcoffset().seconds == 7200
+        assert next == tz.localize(datetime(2017, 3, 26, 9, 0))
 
 
 class test_crontab_is_due:

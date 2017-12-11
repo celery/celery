@@ -175,7 +175,13 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
     Executable to use for the detached process.
 """
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import sys
+
 from celery import concurrency
 from celery.bin.base import Command, daemon_options
 from celery.bin.celeryd_detach import detached_celeryd
@@ -183,7 +189,7 @@ from celery.platforms import maybe_drop_privileges
 from celery.utils.log import LOG_LEVELS, mlevel
 from celery.utils.nodenames import default_nodename
 
-__all__ = ['worker', 'main']
+__all__ = ('worker', 'main')
 
 HELP = __doc__
 

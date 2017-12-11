@@ -1,5 +1,18 @@
 # -*- coding: utf-8 -*-
 """Custom maps, sets, sequences, and other data structures."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+import sys
+from collections import Callable, Mapping, MutableMapping, MutableSet
+from collections import OrderedDict as _OrderedDict
+from collections import Sequence, deque
+from heapq import heapify, heappop, heappush
+from itertools import chain, count
+
+from celery.five import (Empty, items, keys, monotonic,
+                         python_2_unicode_compatible, values)
+=======
 import time
 
 from collections import (
@@ -13,6 +26,7 @@ from typing import (
     Any, Callable, Dict, Iterable, Iterator,
     List, Sequence, Tuple, Optional, Union,
 )
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 from .functional import first, uniq
 from .text import match_case
@@ -31,12 +45,12 @@ except ImportError:
         pass
     LazySettings = LazyObject  # noqa
 
-__all__ = [
+__all__ = (
     'AttributeDictMixin', 'AttributeDict', 'BufferMap', 'ChainMap',
     'ConfigurationView', 'DictAttribute', 'Evictable',
     'LimitedSet', 'Messagebuffer', 'OrderedDict',
     'force_mapping', 'lpmerge',
-]
+)
 
 REPR_LIMITED_SET = """\
 <{name}({size}): maxlen={0.maxlen}, expires={0.expires}, minlen={0.minlen}>\
@@ -149,6 +163,30 @@ class DictAttribute:
     def values(self) -> Iterator[Any]:
         for key in self.keys():
             yield getattr(self.obj, key)
+<<<<<<< HEAD
+    itervalues = _iterate_values
+
+    if sys.version_info[0] == 3:  # pragma: no cover
+        items = _iterate_items
+        keys = _iterate_keys
+        values = _iterate_values
+    else:
+
+        def keys(self):
+            # type: () -> List[Any]
+            return list(self)
+
+        def items(self):
+            # type: () -> List[Tuple[Any, Any]]
+            return list(self._iterate_items())
+
+        def values(self):
+            # type: () -> List[Any]
+            return list(self._iterate_values())
+
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 MutableMapping.register(DictAttribute)  # noqa: E305
 
 
@@ -401,7 +439,7 @@ class LimitedSet:
         False
         >>> len(s)  # maxlen is reached
         50000
-        >>> s.purge(now=time.time() + 7200)  # clock + 2 hours
+        >>> s.purge(now=monotonic() + 7200)  # clock + 2 hours
         >>> len(s)  # now only minlen items are cached
         4000
         >>>> 57000 in s  # even this item is gone now
@@ -449,7 +487,7 @@ class LimitedSet:
 
     def add(self, item: Any, now: Optional[float]=None) -> None:
         """Add a new item, or reset the expiry time of an existing item."""
-        now = now or time.time()
+        now = now or monotonic()
         if item in self._data:
             self.discard(item)
         entry = (now, item)
@@ -497,7 +535,7 @@ class LimitedSet:
             now (float): Time of purging -- by default right now.
                 This can be useful for unit testing.
         """
-        now = now or time.time()
+        now = now or monotonic()
         now = now() if isinstance(now, Callable) else now
         if self.maxlen:
             while len(self._data) > self.maxlen:
@@ -568,6 +606,8 @@ class LimitedSet:
     def _heap_overload(self) -> float:
         """Compute how much is heap bigger than data [percents]."""
         return len(self._heap) * 100 / max(len(self._data), 1) - 100
+
+
 MutableSet.register(LimitedSet)  # noqa: E305
 
 
@@ -657,6 +697,8 @@ class Messagebuffer(Evictable):
     @property
     def _evictcount(self) -> int:
         return len(self)
+
+
 Sequence.register(Messagebuffer)  # noqa: E305
 
 

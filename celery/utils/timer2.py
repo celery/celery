@@ -8,17 +8,23 @@
 import os
 import sys
 import threading
-
 from itertools import count
 from numbers import Number
 from time import sleep
-from typing import Callable, MutableSequence, Optional, Union
+<<<<<<< HEAD
 
-from kombu.async.timer import Entry, Timer as Schedule, to_timestamp, logger
+from kombu.async.timer import Entry
+from kombu.async.timer import Timer as Schedule
+from kombu.async.timer import logger, to_timestamp
+=======
+from typing import Callable, MutableSequence, Optional, Union
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
+
+from celery.five import THREAD_TIMEOUT_MAX
 
 TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
 
-__all__ = ['Entry', 'Schedule', 'Timer', 'to_timestamp']
+__all__ = ('Entry', 'Schedule', 'Timer', 'to_timestamp')
 
 
 class Timer(threading.Thread):

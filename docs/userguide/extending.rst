@@ -44,7 +44,7 @@ whenever the connection is established:
             message.ack()
     app.steps['consumer'].add(MyConsumerStep)
 
-    def send_me_a_message(self, who='world!', producer=None):
+    def send_me_a_message(who, producer=None):
         with app.producer_or_acquire(producer) as producer:
             producer.publish(
                 {'hello': who},
@@ -56,7 +56,7 @@ whenever the connection is established:
             )
 
     if __name__ == '__main__':
-        send_me_a_message('celery')
+        send_me_a_message('world!')
 
 
 .. note::

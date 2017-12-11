@@ -1,14 +1,25 @@
 # -*- coding: utf-8 -*-
 """Backend selection."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+import sys
+import types
+
+from celery._state import current_app
+from celery.exceptions import ImproperlyConfigured
+from celery.five import reraise
+=======
 import sys
 import types
 from typing import Mapping, Tuple, Union
 from celery.exceptions import ImproperlyConfigured
 from celery._state import current_app
 from celery.types import LoaderT
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.imports import load_extension_class_names, symbol_by_name
 
-__all__ = ['by_name', 'by_url']
+__all__ = ('by_name', 'by_url')
 
 UNKNOWN_BACKEND = """
 Unknown result backend: {0!r}.  Did you spell that correctly? ({1!r})
@@ -19,6 +30,7 @@ BACKEND_ALIASES: Mapping[str, str] = {
     'rpc': 'celery.backends.rpc.RPCBackend',
     'cache': 'celery.backends.cache:CacheBackend',
     'redis': 'celery.backends.redis:RedisBackend',
+    'sentinel': 'celery.backends.redis:SentinelBackend',
     'mongodb': 'celery.backends.mongodb:MongoBackend',
     'db': 'celery.backends.database:DatabaseBackend',
     'database': 'celery.backends.database:DatabaseBackend',
@@ -29,7 +41,8 @@ BACKEND_ALIASES: Mapping[str, str] = {
     'riak': 'celery.backends.riak:RiakBackend',
     'file': 'celery.backends.filesystem:FilesystemBackend',
     'disabled': 'celery.backends.base:DisabledBackend',
-    'consul': 'celery.backends.consul:ConsulBackend'
+    'consul': 'celery.backends.consul:ConsulBackend',
+    'dynamodb': 'celery.backends.dynamodb:DynamoDBBackend',
 }
 
 

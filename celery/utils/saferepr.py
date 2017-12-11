@@ -11,7 +11,11 @@ Differences from regular :func:`repr`:
 Very slow with no limits, super quick with limits.
 """
 import traceback
+<<<<<<< HEAD
+from collections import deque, namedtuple
+=======
 from collections import Mapping, deque
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from decimal import Decimal
 from itertools import chain
 from numbers import Number
@@ -21,7 +25,7 @@ from typing import (
 )
 from .text import truncate
 
-__all__ = ['saferepr', 'reprstream']
+__all__ = ('saferepr', 'reprstream')
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.

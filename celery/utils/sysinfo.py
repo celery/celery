@@ -1,5 +1,15 @@
 # -*- coding: utf-8 -*-
 """System information utilities."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+import os
+from math import ceil
+
+from kombu.utils.objects import cached_property
+
+__all__ = ('load_average', 'df')
+=======
 import os
 from math import ceil
 from typing import NamedTuple
@@ -17,6 +27,7 @@ class load_average_t(NamedTuple):
 
 def _avg(f: float) -> float:
     return ceil(f * 1e2) / 1e2
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 if hasattr(os, 'getloadavg'):

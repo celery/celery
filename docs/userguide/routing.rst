@@ -54,8 +54,8 @@ specify the router in *items* format instead:
 .. code-block:: python
 
     task_routes = ([
-        ('feed.tasks.*': {'queue': 'feeds'}),
-        ('web.tasks.*': {'queue': 'web'}),
+        ('feed.tasks.*', {'queue': 'feeds'}),
+        ('web.tasks.*', {'queue': 'web'}),
         (re.compile(r'(video|image)\.tasks\..*'), {'queue': 'media'}),
     ],)
 
@@ -210,7 +210,7 @@ If you're confused about these terms, you should read up on AMQP.
 .. _`Rabbits and Warrens`: http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/
 .. _`CloudAMQP tutorial`: amqp in 10 minutes part 3
     https://www.cloudamqp.com/blog/2015-09-03-part4-rabbitmq-for-beginners-exchanges-routing-keys-bindings.html
-.. _`RabbitMQ FAQ`: http://www.rabbitmq.com/faq.html
+.. _`RabbitMQ FAQ`: https://www.rabbitmq.com/faq.html
 
 .. _routing-special_options:
 
@@ -372,7 +372,7 @@ Related API commands
     :keyword durable: Durable exchanges are persistent (i.e., they survive
         a broker restart).
 
-    :keyword auto_delete: This means the queue will be deleted by the broker
+    :keyword auto_delete: This means the exchange will be deleted by the broker
         when there are no more queues using it.
 
 
@@ -674,7 +674,12 @@ copies of tasks to all workers connected to it:
     from kombu.common import Broadcast
 
     app.conf.task_queues = (Broadcast('broadcast_tasks'),)
-    app.conf.task_routes = {'tasks.reload_cache': {'queue': 'broadcast_tasks'}}
+    app.conf.task_routes = {
+        'tasks.reload_cache': {
+            'queue': 'broadcast_tasks',
+            'exchange': 'broadcast_tasks'
+        }
+    }
 
 Now the ``tasks.reload_cache`` task will be sent to every
 worker consuming from this queue.

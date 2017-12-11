@@ -7,14 +7,23 @@ from typing import (
 from kombu.async.timer import to_timestamp
 from kombu.types import MessageT
 from celery.exceptions import InvalidTaskError
+<<<<<<< HEAD
+from celery.utils.imports import symbol_by_name
+from celery.utils.log import get_logger
+from celery.utils.saferepr import saferepr
+from celery.utils.time import timezone
+
+from .request import create_request_cls
+=======
 from celery.types import AppT, WorkerConsumerT
 from celery.utils.log import get_logger
 from celery.utils.saferepr import saferepr
 from celery.utils.time import timezone
 from .request import Request, create_request_cls
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from .state import task_reserved
 
-__all__ = ['default']
+__all__ = ('default',)
 
 logger = get_logger(__name__)
 
@@ -38,7 +47,7 @@ def proto1_to_proto2(message: MessageT, body: Mapping) -> converted_message_t:
         Tuple: of ``(body, headers, already_decoded_status, utc)``
     """
     try:
-        args, kwargs = body['args'], body['kwargs']
+        args, kwargs = body.get('args', ()), body.get('kwargs', {})
         kwargs.items  # pylint: disable=pointless-statement
     except KeyError:
         raise InvalidTaskError('Message does not have args/kwargs')
@@ -106,6 +115,12 @@ def default(task: str, app: AppT, consumer: WorkerConsumerT,
     get_bucket = consumer.task_buckets.__getitem__
     handle = consumer.on_task_request
     limit_task = consumer._limit_task
+<<<<<<< HEAD
+    limit_post_eta = consumer._limit_post_eta
+    body_can_be_buffer = consumer.pool.body_can_be_buffer
+    Request = symbol_by_name(task.Request)
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
     Req = create_request_cls(Request, task, consumer.pool, hostname, eventer)
 
     revoked_tasks = consumer.controller.state.revoked
@@ -119,7 +134,7 @@ def default(task: str, app: AppT, consumer: WorkerConsumerT,
             callbacks: Sequence[Callable]) -> Awaitable:
         if body is None:
             body, headers, decoded, utc = (
-                message.body, message.headers, False, True,
+                message.body, message.headers, False, app.uses_utc_timezone(),
             )
         else:
             body, headers, decoded, utc = proto1_to_proto2(message, body)
@@ -146,27 +161,38 @@ def default(task: str, app: AppT, consumer: WorkerConsumerT,
                 expires=req.expires and req.expires.isoformat(),
             )
 
+        bucket = None
+        eta = None
         if req.eta:
             try:
                 if req.utc:
                     eta = convert_to_timestamp(to_system_tz(req.eta))
                 else:
+<<<<<<< HEAD
+                    eta = to_timestamp(req.eta, app.timezone)
+=======
                     eta = convert_to_timestamp(req.eta, timezone.local)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
             except (OverflowError, ValueError) as exc:
                 error("Couldn't convert ETA %r to timestamp: %r. Task: %r",
                       req.eta, exc, req.info(safe=True), exc_info=True)
                 req.reject(requeue=False)
-            else:
-                consumer.qos.increment_eventually()
-                call_at(eta, apply_eta_task, (req,), priority=6)
-        else:
-            if rate_limits_enabled:
-                bucket = get_bucket(task.name)
-                if bucket:
-                    return limit_task(req, bucket, 1)
-            task_reserved(req)
-            if callbacks:
-                [callback(req) for callback in callbacks]
-            handle(req)
+        if rate_limits_enabled:
+            bucket = get_bucket(task.name)
 
+        if eta and bucket:
+            consumer.qos.increment_eventually()
+            return call_at(eta, limit_post_eta, (req, bucket, 1),
+                           priority=6)
+        if eta:
+            consumer.qos.increment_eventually()
+            call_at(eta, apply_eta_task, (req,), priority=6)
+            return task_message_handler
+        if bucket:
+            return limit_task(req, bucket, 1)
+
+        task_reserved(req)
+        if callbacks:
+            [callback(req) for callback in callbacks]
+        handle(req)
     return task_message_handler

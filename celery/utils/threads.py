@@ -5,13 +5,17 @@ import socket
 import sys
 import threading
 import traceback
-
 from contextlib import contextmanager
 from typing import Any, Callable, Iterator, List, Optional
 
+<<<<<<< HEAD
+from celery.five import THREAD_TIMEOUT_MAX, items, python_2_unicode_compatible
+from celery.local import Proxy
+=======
 from celery.local import Proxy
 
 from .typing import Timeout
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 try:
     from greenlet import getcurrent as get_ident
@@ -27,10 +31,15 @@ except ImportError:  # pragma: no cover
             except ImportError:
                 from dummy_thread import get_ident      # noqa
 
+<<<<<<< HEAD
+
+__all__ = (
+=======
 __all__ = [
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
     'bgThread', 'Local', 'LocalStack', 'LocalManager',
     'get_ident', 'default_socket_timeout',
-]
+)
 
 USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
 

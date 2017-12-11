@@ -7,13 +7,19 @@ in the configuration.
 This prepares and performs the annotations in the
 :setting:`task_annotations` setting.
 """
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+from celery.five import string_t
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.functional import firstmethod, mlazy
 from celery.utils.imports import instantiate
 
 _first_match = firstmethod('annotate')
 _first_match_any = firstmethod('annotate_any')
 
-__all__ = ['MapAnnotation', 'prepare', 'resolve_all']
+__all__ = ('MapAnnotation', 'prepare', 'resolve_all')
 
 
 class MapAnnotation(dict):

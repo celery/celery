@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 """Loader base class."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
 import imp as _imp
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import importlib
 import os
 import re
 import sys
-
 from datetime import datetime
 
 from kombu.utils import json
@@ -14,11 +18,10 @@ from kombu.utils.objects import cached_property
 from celery import signals
 from celery.utils.collections import DictAttribute, force_mapping
 from celery.utils.functional import maybe_list
-from celery.utils.imports import (
-    import_from_cwd, symbol_by_name, NotAPackage, find_module,
-)
+from celery.utils.imports import (NotAPackage, find_module, import_from_cwd,
+                                  symbol_by_name)
 
-__all__ = ['BaseLoader']
+__all__ = ('BaseLoader',)
 
 _RACE_PROTECTION = False
 
@@ -104,7 +107,13 @@ class BaseLoader:
         )
 
     def import_default_modules(self):
-        signals.import_modules.send(sender=self.app)
+        responses = signals.import_modules.send(sender=self.app)
+        # Prior to this point loggers are not yet set up properly, need to
+        #   check responses manually and reraised exceptions if any, otherwise
+        #   they'll be silenced, making it incredibly difficult to debug.
+        for _, response in responses:
+            if isinstance(response, Exception):
+                raise response
         return [self.import_task_module(m) for m in self.default_modules]
 
     def init_worker(self):
@@ -260,13 +269,6 @@ def find_related_module(package, related_name):
             raise
 
     try:
-        pkg_path = importlib.import_module(package).__path__
-    except AttributeError:
-        return
-
-    try:
-        _imp.find_module(related_name, pkg_path)
+        return importlib.import_module('{0}.{1}'.format(package, related_name))
     except ImportError:
         return
-
-    return importlib.import_module('{0}.{1}'.format(package, related_name))

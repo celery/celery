@@ -28,10 +28,11 @@ an instance of the Celery library (called an "app")
 If you have a modern Django project layout like::
 
     - proj/
-      - proj/__init__.py
-      - proj/settings.py
-      - proj/urls.py
-    - manage.py
+      - manage.py
+      - proj/
+        - __init__.py
+        - settings.py
+        - urls.py
 
 then the recommended way is to create a new `proj/proj/celery.py` module
 that defines the Celery instance:
@@ -81,7 +82,7 @@ from the Django settings; but you can also separate them if wanted.
 
 The uppercase name-space means that all Celery configuration options
 must be specified in uppercase instead of lowercase, and start with
-``CELERY_``, so for example the :setting:`task_always_eager`` setting
+``CELERY_``, so for example the :setting:`task_always_eager` setting
 becomes ``CELERY_TASK_ALWAYS_EAGER``, and the :setting:`broker_url`
 setting becomes ``CELERY_BROKER_URL``.
 
@@ -166,17 +167,23 @@ To use this with your project you need to follow these steps:
 
         $ pip install django-celery-results
 
-2. Add ``django_celery_results`` to ``INSTALLED_APPS``.
+#. Add ``django_celery_results`` to ``INSTALLED_APPS`` in your
+   Django project's :file:`settings.py`::
 
-    Note that there's no dashes in this name, only underscores.
+        INSTALLED_APPS = (
+            ...,
+            'django_celery_results',
+        )
 
-3. Create the Celery database tables by performing a database migrations:
+   Note that there is no dash in the module name, only underscores.
+
+#. Create the Celery database tables by performing a database migrations:
 
     .. code-block:: console
 
         $ python manage.py migrate django_celery_results
 
-4. Configure Celery to use the :pypi:`django-celery-results` backend.
+#. Configure Celery to use the :pypi:`django-celery-results` backend.
 
     Assuming you are using Django's :file:`settings.py` to also configure
     Celery, add the following settings:

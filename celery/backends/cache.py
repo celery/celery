@@ -1,12 +1,21 @@
 # -*- coding: utf-8 -*-
 """Memcached and in-memory cache result backend."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+import sys
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.objects import cached_property
+
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.functional import LRUCache
+
 from .base import KeyValueStoreBackend
 
-__all__ = ['CacheBackend']
+__all__ = ('CacheBackend',)
 
 _imp = [None]
 
@@ -141,10 +150,17 @@ class CacheBackend(KeyValueStoreBackend):
         servers = ';'.join(self.servers)
         backend = '{0}://{1}/'.format(self.backend, servers)
         kwargs.update(
+<<<<<<< HEAD
+            {'backend': backend,
+             'expires': self.expires,
+             'options': self.options})
+        return super(CacheBackend, self).__reduce__(args, kwargs)
+=======
             dict(backend=backend,
                  expires=self.expires,
                  options=self.options))
         return super().__reduce__(args, kwargs)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
     def as_uri(self, *args, **kwargs):
         """Return the backend as an URI.

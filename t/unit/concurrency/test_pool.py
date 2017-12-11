@@ -1,7 +1,14 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
 import time
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import itertools
-from case import skip
+import time
+
 from billiard.einfo import ExceptionInfo
+from case import skip
 
 
 def do_something(i):

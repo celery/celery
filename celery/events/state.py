@@ -16,7 +16,6 @@ to for example, store that in a database.
 import bisect
 import sys
 import threading
-
 from collections import Callable, defaultdict
 from datetime import datetime
 from decimal import Decimal
@@ -33,7 +32,7 @@ from celery import states
 from celery.utils.functional import LRUCache, memoize, pass1
 from celery.utils.log import get_logger
 
-__all__ = ['Worker', 'Task', 'State', 'heartbeat_expires']
+__all__ = ('Worker', 'Task', 'State', 'heartbeat_expires')
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.
@@ -99,6 +98,8 @@ class CallableDefaultdict(defaultdict):
 
     def __call__(self, *args, **kwargs) -> Any:
         return self.fun(*args, **kwargs)
+
+
 Callable.register(CallableDefaultdict)  # noqa: E305
 
 
@@ -312,11 +313,14 @@ class Task:
                  **kwargs) -> None:
         self.uuid = uuid
         self.cluster_state = cluster_state
-        self.children = WeakSet(
-            self.cluster_state.tasks.get(task_id)
-            for task_id in children or ()
-            if task_id in self.cluster_state.tasks
-        )
+        if self.cluster_state is not None:
+            self.children = WeakSet(
+                self.cluster_state.tasks.get(task_id)
+                for task_id in children or ()
+                if task_id in self.cluster_state.tasks
+            )
+        else:
+            self.children = WeakSet()
         self._serializer_handlers = {
             'children': self._serializable_children,
             'root': self._serializable_root,
@@ -407,12 +411,29 @@ class Task:
         return self.state in states.READY_STATES
 
     @cached_property
+<<<<<<< HEAD
+    def parent(self):
+        # issue github.com/mher/flower/issues/648
+        try:
+            return self.parent_id and self.cluster_state.tasks[self.parent_id]
+        except KeyError:
+            return None
+
+    @cached_property
+    def root(self):
+        # issue github.com/mher/flower/issues/648
+        try:
+            return self.root_id and self.cluster_state.tasks[self.root_id]
+        except KeyError:
+            return None
+=======
     def parent(self) -> 'Task':
         return self.parent_id and self.cluster_state.tasks[self.parent_id]
 
     @cached_property
     def root(self) -> 'Task':
         return self.root_id and self.cluster_state.tasks[self.root_id]
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class State:

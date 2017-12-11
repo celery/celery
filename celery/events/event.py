@@ -1,11 +1,17 @@
 """Creating events, and event exchange definition."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import time
 from copy import copy
+
 from kombu import Exchange
 
-__all__ = [
+__all__ = (
     'Event', 'event_exchange', 'get_exchange', 'group_from',
-]
+)
 
 #: Exchange used to send events on.
 #: Note: Use :func:`get_exchange` instead, as the type of

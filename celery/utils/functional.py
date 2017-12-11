@@ -2,7 +2,10 @@
 """Functional-style utilties."""
 import inspect
 import sys
+<<<<<<< HEAD
+=======
 from collections import UserList
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from functools import partial
 from inspect import FullArgSpec, getfullargspec, isfunction
 from itertools import chain, islice
@@ -12,20 +15,18 @@ from typing import (
 )
 from typing import MutableSet  # noqa
 
-from kombu.utils.functional import (
-    LRUCache, dictfilter, lazy, maybe_evaluate, memoize,
-    is_list, maybe_list,
-)
+from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
+                                    maybe_evaluate, maybe_list, memoize)
 from vine import promise
 
 from .typing import ExcInfo
 
-__all__ = [
+__all__ = (
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
     'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
     'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun',
     'maybe', 'fun_accepts_kwargs',
-]
+)
 
 FUNHEAD_TEMPLATE = """
 def {fun_name}({fun_args}):
@@ -255,10 +256,10 @@ def _argsfromspec(spec: FullArgSpec, replace_defaults: bool=True) -> str:
         ', '.join(positional),
         ', '.join('{0}={1}'.format(k, v) for k, v in optional),
         '*{0}'.format(varargs) if varargs else None,
-        '**{0}'.format(varkw) if varkw else None,
         '*' if (kwonlyargs or kwonlyargs_optional) and not varargs else None,
         ', '.join(kwonlyargs) if kwonlyargs else None,
         ', '.join('{0}="{1}"'.format(k, v) for k, v in kwonlyargs_optional),
+        '**{0}'.format(varkw) if varkw else None,
     ]))
 
 
@@ -270,7 +271,15 @@ def head_from_fun(fun: Callable,
     # in pure-Python.  Instead we use exec to create a new function
     # with an empty body, meaning it has the same performance as
     # as just calling a function.
+<<<<<<< HEAD
+    is_function = inspect.isfunction(fun)
+    is_callable = hasattr(fun, '__call__')
+    is_method = inspect.ismethod(fun)
+
+    if not is_function and is_callable and not is_method:
+=======
     if not isfunction(fun) and hasattr(fun, '__call__'):
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
         name, fun = fun.__class__.__name__, fun.__call__
     else:
         name = fun.__name__

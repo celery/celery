@@ -1,10 +1,9 @@
 import errno
 import os
-import pytest
 import socket
-
 from itertools import cycle
 
+import pytest
 from case import Mock, mock, patch, skip
 
 from celery.app.defaults import DEFAULTS

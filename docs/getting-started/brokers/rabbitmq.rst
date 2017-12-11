@@ -16,11 +16,12 @@ the broker instance you want to use:
 
 .. code-block:: python
 
-    broker_url = 'amqp://guest:guest@localhost:5672//'
+    broker_url = 'amqp://myuser:mypassword@localhost:5672/myvhost'
 
 For a description of broker URLs and a full list of the
 various broker configuration options available to Celery,
-see :ref:`conf-broker-settings`.
+see :ref:`conf-broker-settings`, and see below for setting up the
+username, password and vhost.
 
 .. _installing-rabbitmq:
 
@@ -63,6 +64,8 @@ allow that user access to that virtual host:
 .. code-block:: console
 
     $ sudo rabbitmqctl set_permissions -p myvhost myuser ".*" ".*" ".*"
+
+Substitute in appropriate values for ``myuser``, ``mypassword`` and ``myvhost`` above.
 
 See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
 

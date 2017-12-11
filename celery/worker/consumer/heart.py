@@ -1,10 +1,16 @@
 """Worker Event Heartbeat Bootstep."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery import bootsteps
 from celery.types import WorkerConsumerT
 from celery.worker import heartbeat
+
 from .events import Events
 
-__all__ = ['Heart']
+__all__ = ('Heart',)
 
 
 class Heart(bootsteps.StartStopStep):

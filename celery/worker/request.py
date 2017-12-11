@@ -6,9 +6,13 @@ how tasks are executed.
 """
 import logging
 import sys
+<<<<<<< HEAD
+from datetime import datetime
+=======
 
 from datetime import datetime, tzinfo
 from typing import Any, Awaitable, Callable, Mapping, Sequence, Tuple, Union
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
@@ -19,24 +23,31 @@ from kombu.utils.objects import cached_property
 
 from celery import signals
 from celery.app.trace import trace_task, trace_task_ret
+<<<<<<< HEAD
+from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
+                               SoftTimeLimitExceeded, TaskRevokedError,
+                               Terminated, TimeLimitExceeded, WorkerLostError)
+from celery.five import python_2_unicode_compatible, string
+=======
 from celery.events import EventDispatcher
 from celery.exceptions import (
     Ignore, TaskRevokedError, InvalidTaskError,
     SoftTimeLimitExceeded, TimeLimitExceeded,
     WorkerLostError, Terminated, Retry, Reject,
 )
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.platforms import signals as _signals
 from celery.types import AppT, PoolT, SignatureT, TaskT
 from celery.utils.collections import LimitedSet
 from celery.utils.functional import maybe, noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
-from celery.utils.time import maybe_iso8601, timezone, maybe_make_aware
 from celery.utils.serialization import get_pickled_exception
+from celery.utils.time import maybe_iso8601, maybe_make_aware, timezone
 
 from . import state
 
-__all__ = ['Request']
+__all__ = ('Request',)
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.
@@ -56,6 +67,8 @@ def __optimize__() -> None:
     global _does_info
     _does_debug = logger.isEnabledFor(logging.DEBUG)
     _does_info = logger.isEnabledFor(logging.INFO)
+
+
 __optimize__()  # noqa: E305
 
 # Localize

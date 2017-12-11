@@ -3,8 +3,12 @@
 import os
 import threading
 import warnings
+<<<<<<< HEAD
+from collections import defaultdict, deque
+=======
 
 from collections import UserDict, defaultdict, deque
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from datetime import datetime
 from operator import attrgetter
 from types import ModuleType
@@ -24,15 +28,17 @@ from kombu.types import ConnectionT, ProducerT, ResourceT
 from vine import starpromise
 from vine.utils import wraps
 
-from celery import platforms
-from celery import signals
-from celery._state import (
-    _task_stack, get_current_app, _set_current_app, set_default_app,
-    _register_app, _deregister_app,
-    get_current_worker_task, connect_on_app_finalize,
-    _announce_app_finalized,
-)
+from celery import platforms, signals
+from celery._state import (_announce_app_finalized, _deregister_app,
+                           _register_app, _set_current_app, _task_stack,
+                           connect_on_app_finalize, get_current_app,
+                           get_current_worker_task, set_default_app)
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
+<<<<<<< HEAD
+from celery.five import (UserDict, bytes_if_py2, python_2_unicode_compatible,
+                         values)
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.types import (
@@ -43,27 +49,24 @@ from celery.types import (
 from celery.utils import abstract
 from celery.utils.collections import AttributeDictMixin
 from celery.utils.dispatch import Signal
-from celery.utils.functional import first, maybe_list, head_from_fun
-from celery.utils.time import timezone
+from celery.utils.functional import first, head_from_fun, maybe_list
 from celery.utils.imports import gen_task_name, instantiate, symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
-
-from .annotations import prepare as prepare_annotations
-from . import backends
-from .defaults import find_deprecated_settings
-from .registry import TaskRegistry
-from .utils import (
-    AppPickler, Settings,
-    bugreport, _unpickle_app, _unpickle_app_v2,
-    _old_key_to_new, _new_key_to_old,
-    appstr, detect_settings,
-)
+from celery.utils.time import (get_exponential_backoff_interval, timezone,
+                               to_utc)
 
 # Load all builtin tasks
 from . import builtins  # noqa
+from . import backends
+from .annotations import prepare as prepare_annotations
+from .defaults import find_deprecated_settings
+from .registry import TaskRegistry
+from .utils import (AppPickler, Settings, _new_key_to_old, _old_key_to_new,
+                    _unpickle_app, _unpickle_app_v2, appstr, bugreport,
+                    detect_settings)
 
-__all__ = ['Celery']
+__all__ = ('Celery',)
 
 logger = get_logger(__name__)
 
@@ -500,6 +503,9 @@ class Celery:
 
             autoretry_for = tuple(options.get('autoretry_for', ()))
             retry_kwargs = options.get('retry_kwargs', {})
+            retry_backoff = int(options.get('retry_backoff', False))
+            retry_backoff_max = int(options.get('retry_backoff_max', 600))
+            retry_jitter = options.get('retry_jitter', True)
 
             if autoretry_for and not hasattr(task, '_orig_run'):
 
@@ -508,6 +514,13 @@ class Celery:
                     try:
                         return task._orig_run(*args, **kwargs)
                     except autoretry_for as exc:
+                        if retry_backoff:
+                            retry_kwargs['countdown'] = \
+                                get_exponential_backoff_interval(
+                                    factor=retry_backoff,
+                                    retries=task.request.retries,
+                                    maximum=retry_backoff_max,
+                                    full_jitter=retry_jitter)
                         raise task.retry(exc=exc, **retry_kwargs)
 
                 task._orig_run, task.run = task.run, run
@@ -697,7 +710,7 @@ class Celery:
             baz/__init__.py
                 models.py
 
-        Then calling ``app.autodiscover_tasks(['foo', bar', 'baz'])`` will
+        Then calling ``app.autodiscover_tasks(['foo', 'bar', 'baz'])`` will
         result in the modules ``foo.tasks`` and ``bar.tasks`` being imported.
 
         Arguments:
@@ -803,6 +816,8 @@ class Celery:
             reply_to or self.oid, time_limit, soft_time_limit,
             self.conf.task_send_sent_event,
             root_id, parent_id, shadow, chain,
+            argsrepr=options.get('argsrepr'),
+            kwargsrepr=options.get('kwargsrepr'),
         )
 
         if connection:
@@ -909,7 +924,7 @@ class Celery:
             port or conf.broker_port,
             transport=transport or conf.broker_transport,
             ssl=self.either('broker_use_ssl', ssl),
-            heartbeat=heartbeat,
+            heartbeat=heartbeat or self.conf.broker_heartbeat,
             login_method=login_method or conf.broker_login_method,
             failover_strategy=(
                 failover_strategy or conf.broker_failover_strategy
@@ -963,7 +978,8 @@ class Celery:
 
     def now(self) -> datetime:
         """Return the current time and date as a datetime."""
-        return self.loader.now(utc=self.conf.enable_utc)
+        now_in_utc = to_utc(datetime.utcnow())
+        return now_in_utc.astimezone(self.timezone)
 
     def select_queues(self, queues: Sequence[str] = None) -> None:
         """Select subset of queues.
@@ -1331,6 +1347,10 @@ class Celery:
     def producer_pool(self):
         return self.amqp.producer_pool
 
+    def uses_utc_timezone(self):
+        """Check if the application uses the UTC timezone."""
+        return self.conf.timezone == 'UTC' or self.conf.timezone is None
+
     @cached_property
     def timezone(self):
         """Current timezone for this app.
@@ -1339,8 +1359,20 @@ class Celery:
         :setting:`timezone` setting.
         """
         conf = self.conf
-        tz = conf.timezone
+        tz = conf.timezone or 'UTC'
         if not tz:
+<<<<<<< HEAD
+            if conf.enable_utc:
+                return timezone.get_timezone('UTC')
+            else:
+                if not conf.timezone:
+                    return timezone.local
+        return timezone.get_timezone(tz)
+
+
+App = Celery  # noqa: E305 XXX compat
+=======
             return (timezone.get_timezone('UTC') if conf.enable_utc
                     else timezone.local)
         return timezone.get_timezone(conf.timezone)
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726

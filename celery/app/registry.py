@@ -1,13 +1,24 @@
 # -*- coding: utf-8 -*-
 """Registry of available tasks."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+import inspect
+from importlib import import_module
+
+from celery._state import get_current_app
+from celery.exceptions import InvalidTaskError, NotRegistered
+from celery.five import items
+=======
 import inspect
 from importlib import import_module
 from typing import Any
 from celery._state import get_current_app
 from celery.exceptions import NotRegistered, InvalidTaskError
 from celery.types import TaskT
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
-__all__ = ['TaskRegistry']
+__all__ = ('TaskRegistry',)
 
 
 class TaskRegistry(dict):

@@ -1,13 +1,20 @@
 # -*- coding: utf-8 -*-
 """The default loader used when no custom app has been initialized."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import os
 import warnings
+
 from celery.exceptions import NotConfigured
 from celery.utils.collections import DictAttribute
 from celery.utils.serialization import strtobool
+
 from .base import BaseLoader
 
-__all__ = ['Loader', 'DEFAULT_CONFIG_MODULE']
+__all__ = ('Loader', 'DEFAULT_CONFIG_MODULE')
 
 DEFAULT_CONFIG_MODULE = 'celeryconfig'
 

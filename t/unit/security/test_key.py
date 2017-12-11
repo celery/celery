@@ -1,7 +1,14 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pytest
+
 from celery.exceptions import SecurityError
 from celery.five import bytes_if_py2
 from celery.security.key import PrivateKey
+
 from . import CERT1, KEY1, KEY2
 from .case import SecurityCase
 

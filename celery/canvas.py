@@ -7,10 +7,15 @@
 """
 import itertools
 import operator
+<<<<<<< HEAD
+import sys
+=======
 
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from collections import MutableSequence, deque
 from copy import deepcopy
-from functools import partial as _partial, reduce
+from functools import partial as _partial
+from functools import reduce
 from operator import itemgetter
 from typing import (
     Any, Callable, Dict, Iterable, Iterator,
@@ -28,17 +33,17 @@ from celery._state import current_app
 from celery.result import GroupResult
 from celery.types import AppT, ResultT, RouterT, SignatureT, TaskT
 from celery.utils import abstract
-from celery.utils.functional import (
-    maybe_list, is_list, _regen, regen, chunks as _chunks,
-    seq_concat_seq, seq_concat_item,
-)
+from celery.utils.functional import _regen
+from celery.utils.functional import chunks as _chunks
+from celery.utils.functional import (is_list, maybe_list, regen,
+                                     seq_concat_item, seq_concat_seq)
 from celery.utils.objects import getitem_property
-from celery.utils.text import truncate, remove_repeating_from_task
+from celery.utils.text import remove_repeating_from_task, truncate
 
-__all__ = [
+__all__ = (
     'Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
     'group', 'chord', 'signature', 'maybe_signature',
-]
+)
 
 
 def maybe_unroll_group(g: SignatureT) -> Any:
@@ -419,23 +424,19 @@ class Signature(dict):
             other = maybe_unroll_group(other)
             if isinstance(self, _chain):
                 # chain | group() -> chain
-                sig = self.clone()
-                sig.tasks.append(other)
-                return sig
+                return _chain(seq_concat_item(
+                    self.unchain_tasks(), other), app=self._app)
             # task | group() -> chain
             return _chain(self, other, app=self.app)
 
         if not isinstance(self, _chain) and isinstance(other, _chain):
             # task | chain -> chain
-            return _chain(
-                seq_concat_seq((self,), other.tasks), app=self._app)
+            return _chain(seq_concat_seq(
+                (self,), other.unchain_tasks()), app=self._app)
         elif isinstance(other, _chain):
             # chain | chain -> chain
-            sig = self.clone()
-            if isinstance(sig.tasks, tuple):
-                sig.tasks = list(sig.tasks)
-            sig.tasks.extend(other.tasks)
-            return sig
+            return _chain(seq_concat_seq(
+                self.unchain_tasks(), other.unchain_tasks()), app=self._app)
         elif isinstance(self, chord):
             # chord(ONE, body) | other -> ONE | body | other
             # chord with one header task is unecessary.
@@ -447,21 +448,21 @@ class Signature(dict):
             return sig
         elif isinstance(other, Signature):
             if isinstance(self, _chain):
-                if isinstance(self.tasks[-1], group):
+                if self.tasks and isinstance(self.tasks[-1], group):
                     # CHAIN [last item is group] | TASK -> chord
                     sig = self.clone()
                     sig.tasks[-1] = chord(
                         sig.tasks[-1], other, app=self._app)
                     return sig
-                elif isinstance(self.tasks[-1], chord):
+                elif self.tasks and isinstance(self.tasks[-1], chord):
                     # CHAIN [last item is chord] -> chain with chord body.
                     sig = self.clone()
                     sig.tasks[-1].body = sig.tasks[-1].body | other
                     return sig
                 else:
                     # chain | task -> chain
-                    return _chain(
-                        seq_concat_item(self.tasks, other), app=self._app)
+                    return _chain(seq_concat_item(
+                        self.unchain_tasks(), other), app=self._app)
             # task | task -> chain
             return _chain(self, other, app=self._app)
         return NotImplemented
@@ -549,8 +550,7 @@ class _chain(Signature):
         if tasks:
             if isinstance(tasks, tuple):  # aaaargh
                 tasks = d['kwargs']['tasks'] = list(tasks)
-            # First task must be signature object to get app
-            tasks[0] = maybe_signature(tasks[0], app=app)
+            tasks = [maybe_signature(task, app=app) for task in tasks]
         return _upgrade(d, _chain(tasks, app=app, **d['options']))
 
     def __init__(self, *tasks, **options) -> None:
@@ -576,10 +576,23 @@ class _chain(Signature):
         ]
         return s
 
+<<<<<<< HEAD
+    def unchain_tasks(self):
+        # Clone chain's tasks assigning sugnatures from link_error
+        # to each task
+        tasks = [t.clone() for t in self.tasks]
+        for sig in self.options.get('link_error', []):
+            for task in tasks:
+                task.link_error(sig)
+        return tasks
+
+    def apply_async(self, args=(), kwargs={}, **options):
+=======
     def apply_async(self,
                     args: Sequence = (),
                     kwargs: Mapping = {},
                     **options) -> ResultT:
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
         # python is best at unpacking kwargs, so .run is here to do that.
         app = self.app
         if app.conf.task_always_eager:
@@ -976,9 +989,9 @@ class group(Signature):
         [4, 8]
 
     Arguments:
-        *tasks (Signature): A list of signatures that this group will call.
-            If there's only one argument, and that argument is an iterable,
-            then that'll define the list of signatures instead.
+        *tasks (List[Signature]): A list of signatures that this group will
+            call. If there's only one argument, and that argument is an
+            iterable, then that'll define the list of signatures instead.
         **options (Any): Execution options applied to all tasks
             in the group.
 
@@ -1001,6 +1014,8 @@ class group(Signature):
             tasks = tasks[0]
             if isinstance(tasks, group):
                 tasks = tasks.tasks
+            if isinstance(tasks, abstract.CallableSignature):
+                tasks = [tasks.clone()]
             if not isinstance(tasks, _regen):
                 tasks = regen(tasks)
         Signature.__init__(
@@ -1256,9 +1271,16 @@ class chord(Signature):
     """
 
     @classmethod
+<<<<<<< HEAD
+    def from_dict(cls, d, app=None):
+        options = d.copy()
+        args, options['kwargs'] = cls._unpack_args(**options['kwargs'])
+        return _upgrade(d, cls(*args, app=app, **options))
+=======
     def from_dict(cls, d: Mapping, app: AppT = None) -> SignatureT:
         args, d['kwargs'] = cls._unpack_args(**d['kwargs'])
         return _upgrade(d, cls(*args, app=app, **d))
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
     @staticmethod
     def _unpack_args(header: Sequence[SignatureT] = None,
@@ -1277,8 +1299,8 @@ class chord(Signature):
                  **options) -> None:
         Signature.__init__(
             self, task, args,
-            dict(kwargs=kwargs, header=_maybe_group(header, app),
-                 body=maybe_signature(body, app=app)), app=app, **options
+            {'kwargs': kwargs, 'header': _maybe_group(header, app),
+             'body': maybe_signature(body, app=app)}, app=app, **options
         )
         self.subtask_type = 'chord'
 
@@ -1355,9 +1377,14 @@ class chord(Signature):
             args=(tasks.apply(args, kwargs).get(propagate=propagate),),
         )
 
+<<<<<<< HEAD
+    def _traverse_tasks(self, tasks, value=None):
+        stack = deque(tasks)
+=======
     def _traverse_tasks(self, tasks: Sequence[SignatureT],
                         value: Any = None) -> Iterator[SignatureT]:
         stack = deque(list(tasks))
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
         while stack:
             task = stack.popleft()
             if isinstance(task, group):
@@ -1365,8 +1392,15 @@ class chord(Signature):
             else:
                 yield task if value is None else value
 
+<<<<<<< HEAD
+    def __length_hint__(self):
+        tasks = (self.tasks.tasks if isinstance(self.tasks, group)
+                 else self.tasks)
+        return sum(self._traverse_tasks(tasks, 1))
+=======
     def __length_hint__(self) -> int:
         return sum(self._traverse_tasks(self.tasks, 1))
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
     def run(self, header: SignatureT, body: SignatureT, partial_args: Sequence,
             app: AppT = None, interval: float = None,
@@ -1385,6 +1419,9 @@ class chord(Signature):
         results = header.freeze(
             group_id=group_id, chord=body, root_id=root_id).results
         bodyres = body.freeze(task_id, root_id=root_id)
+
+        # Chains should not be passed to the header tasks. See #3771
+        options.pop('chain', None)
 
         parent = app.backend.apply_chord(
             header, partial_args, group_id, body,
@@ -1441,7 +1478,8 @@ class chord(Signature):
                 tasks = self.tasks.tasks  # is a group
             except AttributeError:
                 tasks = self.tasks
-            app = tasks[0]._app
+            if len(tasks):
+                app = tasks[0]._app
             if app is None and body is not None:
                 app = body._app
         return app if app is not None else current_app
@@ -1465,6 +1503,12 @@ def signature(varies: SignatureT, *args, **kwargs) -> SignatureT:
             return varies.clone()
         return Signature.from_dict(varies, app=app)
     return Signature(varies, *args, **kwargs)
+<<<<<<< HEAD
+
+
+subtask = signature  # noqa: E305 XXX compat
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 def maybe_signature(d: Optional[SignatureT],
@@ -1494,3 +1538,9 @@ def maybe_signature(d: Optional[SignatureT],
         if app is not None:
             d._app = app
     return d
+<<<<<<< HEAD
+
+
+maybe_subtask = maybe_signature  # noqa: E305 XXX compat
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726

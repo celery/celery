@@ -173,10 +173,10 @@ Node name replacements
 For example, if the current hostname is ``george@foo.example.com`` then
 these will expand to:
 
-- ``--logfile-%p.log`` -> :file:`george@foo.example.com.log`
+- ``--logfile=%p.log`` -> :file:`george@foo.example.com.log`
 - ``--logfile=%h.log`` -> :file:`foo.example.com.log`
 - ``--logfile=%n.log`` -> :file:`george.log`
-- ``--logfile=%d`` -> :file:`example.com.log`
+- ``--logfile=%d.log`` -> :file:`example.com.log`
 
 .. _worker-files-process-index:
 
@@ -1159,7 +1159,7 @@ for example one that reads the current prefetch count:
 
     @inspect_command
     def current_prefetch_count(state):
-    return {'prefetch_count': state.consumer.qos.value}
+        return {'prefetch_count': state.consumer.qos.value}
 
 
 After restarting the worker you can now query this value using the

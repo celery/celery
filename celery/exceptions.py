@@ -47,13 +47,24 @@ Error Hierarchy
         - :exc:`~celery.exceptions.WorkerTerminate`
         - :exc:`~celery.exceptions.WorkerShutdown`
 """
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+import numbers
+
+from billiard.exceptions import (SoftTimeLimitExceeded, Terminated,
+                                 TimeLimitExceeded, WorkerLostError)
+=======
 import numbers
 from billiard.exceptions import (
     SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError, Terminated,
 )
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.exceptions import OperationalError
 
-__all__ = [
+from .five import python_2_unicode_compatible, string_t
+
+__all__ = (
     # Warnings
     'CeleryWarning',
     'AlwaysEagerIgnored', 'DuplicateNodenameWarning',
@@ -84,7 +95,7 @@ __all__ = [
 
     # Worker shutdown semi-predicates (inherits from SystemExit).
     'WorkerShutdown', 'WorkerTerminate',
-]
+)
 
 UNREGISTERED_FMT = """\
 Task of kind {0} never registered, please make sure it's imported.\
@@ -156,6 +167,12 @@ class Retry(TaskPredicate):
 
     def __reduce__(self):
         return self.__class__, (self.message, self.excs, self.when)
+<<<<<<< HEAD
+
+
+RetryTaskError = Retry  # noqa: E305 XXX compat
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class Ignore(TaskPredicate):
@@ -236,6 +253,8 @@ class CDeprecationWarning(DeprecationWarning):
 
 class WorkerTerminate(SystemExit):
     """Signals that the worker should terminate immediately."""
+
+
 SystemTerminate = WorkerTerminate  # noqa: E305 XXX compat
 
 

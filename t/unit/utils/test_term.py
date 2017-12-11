@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pytest
 from case import skip
+
+from celery.five import text_t
 from celery.utils import term
 from celery.utils.term import colored, fg
 

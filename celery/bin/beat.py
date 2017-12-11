@@ -20,7 +20,7 @@
 .. cmdoption:: -S, --scheduler
 
     Scheduler class to use.
-    Default is :class:`celery.beat.PersistentScheduler`.
+    Default is :class:`{default}`.
 
 .. cmdoption:: --max-interval
 
@@ -37,7 +37,7 @@
 
 .. cmdoption:: --pidfile
 
-    Optional file used to store the process pid.
+    File used to store the process pid. Defaults to `celerybeat.pid`.
 
     The program won't start if this file already exists
     and the pid is still alive.
@@ -64,11 +64,17 @@
 
     Executable to use for the detached process.
 """
-from functools import partial
-from celery.platforms import detached, maybe_drop_privileges
-from celery.bin.base import Command, daemon_options
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
 
-__all__ = ['beat']
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
+from functools import partial
+
+from celery.bin.base import Command, daemon_options
+from celery.platforms import detached, maybe_drop_privileges
+
+__all__ = ('beat',)
 
 HELP = __doc__
 
@@ -112,7 +118,7 @@ class beat(Command):
         bopts.add_argument(
             '-s', '--schedule', default=c.beat_schedule_filename)
         bopts.add_argument('--max-interval', type=float)
-        bopts.add_argument('-S', '--scheduler')
+        bopts.add_argument('-S', '--scheduler', default=c.beat_scheduler)
         bopts.add_argument('-l', '--loglevel', default='WARN')
 
         daemon_options(parser, default_pidfile='celerybeat.pid')

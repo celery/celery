@@ -14,21 +14,30 @@ from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
 
-from . import async
-from . import base
+from . import async, base
 
 try:
     import redis
     from kombu.transport.redis import get_redis_error_classes
-except ImportError:                 # pragma: no cover
-    redis = None                    # noqa
+except ImportError:  # pragma: no cover
+    redis = None  # noqa
     get_redis_error_classes = None  # noqa
 
-__all__ = ['RedisBackend']
+try:
+    from redis import sentinel
+except ImportError:
+    sentinel = None
+
+__all__ = ('RedisBackend', 'SentinelBackend')
 
 E_REDIS_MISSING = """
 You need to install the redis library in order to use \
 the Redis result store backend.
+"""
+
+E_REDIS_SENTINEL_MISSING = """
+You need to install the redis library with support of \
+sentinel in order to use the Redis result store backend.
 """
 
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
@@ -37,7 +46,6 @@ logger = get_logger(__name__)
 
 
 class ResultConsumer(async.BaseResultConsumer):
-
     _pubsub = None
 
     def __init__(self, *args, **kwargs):
@@ -128,6 +136,15 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             'socket_connect_timeout':
                 socket_connect_timeout and float(socket_connect_timeout),
         }
+
+        # "redis_backend_use_ssl" must be a dict with the keys:
+        # 'ssl_cert_reqs', 'ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile'
+        # (the same as "broker_use_ssl")
+        ssl = _get('redis_backend_use_ssl')
+        if ssl:
+            self.connparams.update(ssl)
+            self.connparams['connection_class'] = redis.SSLConnection
+
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
         self.url = url
@@ -252,12 +269,12 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         tkey = self.get_key_for_group(gid, '.t')
         result = self.encode_result(result, state)
         with client.pipeline() as pipe:
-            _, readycount, totaldiff, _, _ = pipe                           \
-                .rpush(jkey, self.encode([1, tid, state, result]))          \
-                .llen(jkey)                                                 \
-                .get(tkey)                                                  \
-                .expire(jkey, self.expires)                                 \
-                .expire(tkey, self.expires)                                 \
+            _, readycount, totaldiff, _, _ = pipe \
+                .rpush(jkey, self.encode([1, tid, state, result])) \
+                .llen(jkey) \
+                .get(tkey) \
+                .expire(jkey, self.expires) \
+                .expire(tkey, self.expires) \
                 .execute()
 
         totaldiff = int(totaldiff or 0)
@@ -268,10 +285,10 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             if readycount == total:
                 decode, unpack = self.decode, self._unpack_chord_result
                 with client.pipeline() as pipe:
-                    resl, _, _ = pipe               \
-                        .lrange(jkey, 0, total)     \
-                        .delete(jkey)               \
-                        .delete(tkey)               \
+                    resl, _, _ = pipe \
+                        .lrange(jkey, 0, total) \
+                        .delete(jkey) \
+                        .delete(tkey) \
                         .execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])
@@ -293,9 +310,15 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             )
 
     def _create_client(self, **params):
-        return self.redis.StrictRedis(
-            connection_pool=self.ConnectionPool(**params),
+        return self._get_client()(
+            connection_pool=self._get_pool(**params),
         )
+
+    def _get_client(self):
+        return self.redis.StrictRedis
+
+    def _get_pool(self, **params):
+        return self.ConnectionPool(**params)
 
     @property
     def ConnectionPool(self):
@@ -311,3 +334,82 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         return super().__reduce__(
             (self.url,), {'expires': self.expires},
         )
+<<<<<<< HEAD
+
+    @deprecated.Property(4.0, 5.0)
+    def host(self):
+        return self.connparams['host']
+
+    @deprecated.Property(4.0, 5.0)
+    def port(self):
+        return self.connparams['port']
+
+    @deprecated.Property(4.0, 5.0)
+    def db(self):
+        return self.connparams['db']
+
+    @deprecated.Property(4.0, 5.0)
+    def password(self):
+        return self.connparams['password']
+
+
+class SentinelBackend(RedisBackend):
+    """Redis sentinel task result store."""
+
+    sentinel = sentinel
+
+    def __init__(self, *args, **kwargs):
+        if self.sentinel is None:
+            raise ImproperlyConfigured(E_REDIS_SENTINEL_MISSING.strip())
+
+        super(SentinelBackend, self).__init__(*args, **kwargs)
+
+    def _params_from_url(self, url, defaults):
+        # URL looks like sentinel://0.0.0.0:26347/3;sentinel://0.0.0.0:26348/3.
+        chunks = url.split(";")
+        connparams = dict(defaults, hosts=[])
+        for chunk in chunks:
+            data = super(SentinelBackend, self)._params_from_url(
+                url=chunk, defaults=defaults)
+            connparams['hosts'].append(data)
+        for p in ("host", "port", "db", "password"):
+            connparams.pop(p)
+
+        # Adding db/password in connparams to connect to the correct instance
+        for p in ("db", "password"):
+            if connparams['hosts'] and p in connparams['hosts'][0]:
+                connparams[p] = connparams['hosts'][0].get(p)
+        return connparams
+
+    def _get_sentinel_instance(self, **params):
+        connparams = params.copy()
+
+        hosts = connparams.pop("hosts")
+        result_backend_transport_opts = self.app.conf.get(
+            "result_backend_transport_options", {})
+        min_other_sentinels = result_backend_transport_opts.get(
+            "min_other_sentinels", 0)
+        sentinel_kwargs = result_backend_transport_opts.get(
+            "sentinel_kwargs", {})
+
+        sentinel_instance = self.sentinel.Sentinel(
+            [(cp['host'], cp['port']) for cp in hosts],
+            min_other_sentinels=min_other_sentinels,
+            sentinel_kwargs=sentinel_kwargs,
+            **connparams)
+
+        return sentinel_instance
+
+    def _get_pool(self, **params):
+        sentinel_instance = self._get_sentinel_instance(**params)
+
+        result_backend_transport_opts = self.app.conf.get(
+            "result_backend_transport_options", {})
+        master_name = result_backend_transport_opts.get("master_name", None)
+
+        return sentinel_instance.master_for(
+            service_name=master_name,
+            redis_class=self._get_client(),
+        ).connection_pool
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726

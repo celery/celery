@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-
 """File-system result store backend."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
 import os
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import locale
+import os
+
 from kombu.utils.encoding import ensure_bytes
+
 from celery import uuid
-from celery.exceptions import ImproperlyConfigured
 from celery.backends.base import KeyValueStoreBackend
+from celery.exceptions import ImproperlyConfigured
 
 # Python 2 does not have FileNotFoundError and IsADirectoryError
 try:

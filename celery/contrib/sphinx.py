@@ -22,16 +22,30 @@ then you can change the ``celery_task_prefix`` configuration value:
     celery_task_prefix = '(task)'  # < default
 
 With the extension installed `autodoc` will automatically find
-task decorated objects and generate the correct (as well as
-add a ``(task)`` prefix), and you can also refer to the tasks
-using `:task:proj.tasks.add` syntax.
+task decorated objects (e.g. when using the automodule directive)
+and generate the correct (as well as add a ``(task)`` prefix),
+and you can also refer to the tasks using `:task:proj.tasks.add`
+syntax.
 
-Use ``.. autotask::`` to manually document a task.
+Use ``.. autotask::`` to alternatively manually document a task.
 """
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+from celery.app.task import BaseTask
+from sphinx.domains.python import PyModulelevel
+from sphinx.ext.autodoc import FunctionDocumenter
+
+try:  # pragma: no cover
+    from inspect import formatargspec, getfullargspec
+except ImportError:  # Py2
+    from inspect import formatargspec, getargspec as getfullargspec  # noqa
+=======
 from inspect import formatargspec, getfullargspec
 from sphinx.domains.python import PyModulelevel
 from sphinx.ext.autodoc import FunctionDocumenter
 from celery.app.task import BaseTask
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 
 class TaskDocumenter(FunctionDocumenter):
@@ -48,6 +62,8 @@ class TaskDocumenter(FunctionDocumenter):
         wrapped = getattr(self.object, '__wrapped__', None)
         if wrapped is not None:
             argspec = getfullargspec(wrapped)
+            if argspec[0] and argspec[0][0] in ('cls', 'self'):
+                del argspec[0][0]
             fmt = formatargspec(*argspec)
             fmt = fmt.replace('\\', '\\\\')
             return fmt
@@ -55,6 +71,16 @@ class TaskDocumenter(FunctionDocumenter):
 
     def document_members(self, all_members=False):
         pass
+
+    def check_module(self):
+        # Normally checks if *self.object* is really defined in the module
+        # given by *self.modname*. But since functions decorated with the @task
+        # decorator are instances living in the celery.local module we're
+        # checking for that and simply agree to document those then.
+        modname = self.get_attr(self.object, '__module__', None)
+        if modname and modname == 'celery.local':
+            return True
+        return super(TaskDocumenter, self).check_module()
 
 
 class TaskDirective(PyModulelevel):
@@ -67,5 +93,5 @@ class TaskDirective(PyModulelevel):
 def setup(app):
     """Setup Sphinx extension."""
     app.add_autodocumenter(TaskDocumenter)
-    app.domains['py'].directives['task'] = TaskDirective
+    app.add_directive_to_domain('py', 'task', TaskDirective)
     app.add_config_value('celery_task_prefix', '(task)', True)

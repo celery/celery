@@ -10,7 +10,6 @@ related compatibility fixes, and so on.
 import logging
 import os
 import sys
-
 from logging.handlers import WatchedFileHandler
 from typing import Union
 
@@ -20,16 +19,22 @@ from celery import signals
 from celery._state import get_current_task
 from celery.local import class_property
 from celery.platforms import isatty
+<<<<<<< HEAD
+from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
+                              get_multiprocessing_logger, mlevel,
+                              reset_multiprocessing_logger)
+=======
 from celery.types import AppT
 from celery.utils.log import (
     get_logger, mlevel,
     ColorFormatter, LoggingProxy, get_multiprocessing_logger,
     reset_multiprocessing_logger,
 )
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.nodenames import node_format
 from celery.utils.term import colored
 
-__all__ = ['TaskFormatter', 'Logging']
+__all__ = ('TaskFormatter', 'Logging')
 
 MP_LOG = os.environ.get('MP_LOG', False)
 

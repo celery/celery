@@ -19,7 +19,7 @@ except ImportError:  # pragma: no cover
 else:
     IGNORE_ERRORS = (GreenletExit,)
 
-__all__ = ['Blueprint', 'Step', 'StartStopStep', 'ConsumerStep']
+__all__ = ('Blueprint', 'Step', 'StartStopStep', 'ConsumerStep')
 
 #: States
 RUN = 0x1

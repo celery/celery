@@ -1,12 +1,20 @@
 """Worker Task Consumer Bootstep."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
 from typing import Mapping
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from kombu.common import QoS, ignore_errors
+
 from celery import bootsteps
 from celery.types import WorkerConsumerT
 from celery.utils.log import get_logger
+
 from .mingle import Mingle
 
-__all__ = ['Tasks']
+__all__ = ('Tasks',)
+
 logger = get_logger(__name__)
 debug = logger.debug
 

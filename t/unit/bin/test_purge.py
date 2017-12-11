@@ -1,7 +1,14 @@
 from __future__ import absolute_import, unicode_literals
+<<<<<<< HEAD
+
+from case import Mock
+
+=======
 import io
 from case import Mock
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.bin.purge import purge
+from celery.five import WhateverIO
 
 
 class test_purge:

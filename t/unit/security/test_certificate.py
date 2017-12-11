@@ -1,7 +1,14 @@
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import pytest
 from case import Mock, mock, patch, skip
+
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
+
 from . import CERT1, CERT2, KEY1
 from .case import SecurityCase
 

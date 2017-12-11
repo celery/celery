@@ -1,11 +1,17 @@
 """Worker <-> Worker Sync at startup (Bootstep)."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
 from typing import Mapping
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery import bootsteps
 from celery.types import AppT, WorkerConsumerT
 from celery.utils.log import get_logger
+
 from .events import Events
 
-__all__ = ['Mingle']
+__all__ = ('Mingle',)
 
 logger = get_logger(__name__)
 debug, info, exception = logger.debug, logger.info, logger.exception

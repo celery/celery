@@ -1,15 +1,27 @@
 # -*- coding: utf-8 -*-
 """Utilities related to importing modules and symbols by name."""
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 import imp as _imp
 import importlib
 import os
 import sys
 import warnings
 from contextlib import contextmanager
+<<<<<<< HEAD
+
+from kombu.utils.imports import symbol_by_name
+
+from celery.five import reload
+=======
 from imp import reload
 from types import ModuleType
 from typing import Any, Callable, Iterator
 from kombu.utils.imports import symbol_by_name
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 #: Billiard sets this when execv is enabled.
 #: We use it to find out the name of the original ``__main__``
@@ -17,11 +29,11 @@ from kombu.utils.imports import symbol_by_name
 #: task to be that of ``App.main``.
 MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE')
 
-__all__ = [
+__all__ = (
     'NotAPackage', 'qualname', 'instantiate', 'symbol_by_name',
     'cwd_in_path', 'find_module', 'import_from_cwd',
     'reload_from_cwd', 'module_file', 'gen_task_name',
-]
+)
 
 
 class NotAPackage(Exception):

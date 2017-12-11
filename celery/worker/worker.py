@@ -14,16 +14,25 @@ The worker consists of several components, all managed by bootsteps
 """
 import os
 import sys
+<<<<<<< HEAD
+=======
 
 from typing import Any, Callable, Mapping, Set, Sequence, Union
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 from billiard import cpu_count
 from kombu.utils.compat import detect_environment
 
 from celery import bootsteps
-from celery.bootsteps import RUN, TERMINATE
 from celery import concurrency as _concurrency
 from celery import signals
+<<<<<<< HEAD
+from celery.bootsteps import RUN, TERMINATE
+from celery.exceptions import (ImproperlyConfigured, TaskRevokedError,
+                               WorkerTerminate)
+from celery.five import python_2_unicode_compatible, values
+from celery.platforms import EX_FAILURE, create_pidlock
+=======
 from celery.exceptions import (
     ImproperlyConfigured, WorkerTerminate, TaskRevokedError,
 )
@@ -31,8 +40,10 @@ from celery.types import (
     AppT, BlueprintT, LoopT, PoolT, RequestT, StepT, WorkerConsumerT,
 )
 from celery.platforms import EX_FAILURE, Pidfile, create_pidlock
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.utils.imports import reload_from_cwd
-from celery.utils.log import mlevel, worker_logger as logger
+from celery.utils.log import mlevel
+from celery.utils.log import worker_logger as logger
 from celery.utils.nodenames import default_nodename, worker_direct
 from celery.utils.text import str_to_list
 from celery.utils.threads import default_socket_timeout
@@ -44,7 +55,12 @@ try:
 except ImportError:  # pragma: no cover
     resource = None  # noqa
 
+<<<<<<< HEAD
+
+__all__ = ('WorkController',)
+=======
 __all__ = ['WorkController']
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 
 #: Default socket timeout at shutdown.
 SHUTDOWN_SOCKET_TIMEOUT = 5.0

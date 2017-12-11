@@ -15,14 +15,12 @@ Generated with:
 import builtins
 
 import pytest
-
 from case import Mock, mock, patch
-from kombu.serialization import disable_insecure_serializers
+from kombu.serialization import disable_insecure_serializers, registry
 
 from celery.exceptions import ImproperlyConfigured, SecurityError
 from celery.security import disable_untrusted_serializers, setup_security
 from celery.security.utils import reraise_errors
-from kombu.serialization import registry
 
 from .case import SecurityCase
 

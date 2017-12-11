@@ -3,7 +3,6 @@
 import os
 import sys
 import traceback
-
 from contextlib import contextmanager
 from functools import partial
 from io import StringIO
@@ -24,10 +23,10 @@ except ImportError:
     class Process:  # noqa
         pass
 
-__all__ = [
+__all__ = (
     'blockdetection', 'sample_mem', 'memdump', 'sample',
     'humanbytes', 'mem_rss', 'ps', 'cry',
-]
+)
 
 UNITS: Sequence[Tuple[float, str]] = (
     (2 ** 40.0, 'TB'),

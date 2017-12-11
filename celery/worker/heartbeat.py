@@ -4,14 +4,20 @@
 This is the internal thread responsible for sending heartbeat events
 at regular intervals (may not be an actual thread).
 """
+<<<<<<< HEAD
+from __future__ import absolute_import, unicode_literals
+
+=======
 from typing import Awaitable
 from celery.events import EventDispatcher
+>>>>>>> 7ee75fa9882545bea799db97a40cc7879d35e726
 from celery.signals import heartbeat_sent
 from celery.types import EventT, TimerT
 from celery.utils.sysinfo import load_average
+
 from .state import SOFTWARE_INFO, active_requests, all_total_count
 
-__all__ = ['Heart']
+__all__ = ('Heart',)
 
 
 class Heart:
