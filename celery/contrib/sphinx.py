@@ -88,3 +88,7 @@ def setup(app):
     app.add_autodocumenter(TaskDocumenter)
     app.add_directive_to_domain('py', 'task', TaskDirective)
     app.add_config_value('celery_task_prefix', '(task)', True)
+
+    return {
+        'parallel_read_safe': True
+    }
