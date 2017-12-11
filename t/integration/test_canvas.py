@@ -209,6 +209,21 @@ class test_chord:
         assert res.get(timeout=TIMEOUT) == 11
 
     @flaky
+    def test_single_task_header(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c1 = chord([add.s(2, 5)], body=add_to_all.s(9))
+        res1 = c1()
+        assert res1.get(timeout=TIMEOUT) == [16]
+
+        c2 = group([add.s(2, 5)]) | add_to_all.s(9)
+        res2 = c2()
+        assert res2.get(timeout=TIMEOUT) == [16]
+
+    @flaky
     def test_parent_ids(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
