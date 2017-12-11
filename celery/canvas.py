@@ -1274,6 +1274,8 @@ class chord(Signature):
 
         # Chains should not be passed to the header tasks. See #3771
         options.pop('chain', None)
+        # Neither should chords, for deeply nested chords to work
+        options.pop('chord', None)
 
         parent = app.backend.apply_chord(
             header, partial_args, group_id, body,
