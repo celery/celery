@@ -175,7 +175,7 @@ class test_chord:
         try:
             manager.app.backend.ensure_chords_allowed()
         except NotImplementedError as e:
-            raise pytest.skip(e.msg)
+            raise pytest.skip(e.args[0])
 
         if not manager.app.backend.supports_native_join:
             raise pytest.skip('Requires native join support.')
