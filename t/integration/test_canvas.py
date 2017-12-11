@@ -172,6 +172,11 @@ class test_chord:
 
     @flaky
     def test_nested_group_chain(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.msg)
+
         if not manager.app.backend.supports_native_join:
             raise pytest.skip('Requires native join support.')
         c = chain(
