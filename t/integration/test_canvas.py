@@ -142,6 +142,24 @@ class test_group:
             assert parent_id == expected_parent_id
             assert value == i + 2
 
+    @flaky
+    def test_nested_group(self, manager):
+        assert manager.inspect().ping()
+
+        c = group(
+            add.si(1, 10),
+            group(
+                add.si(1, 100),
+                group(
+                    add.si(1, 1000),
+                    add.si(1, 2000),
+                ),
+            ),
+        )
+        res = c()
+
+        assert res.get(timeout=TIMEOUT) == [11, 101, 1001, 2001]
+
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
     root_id, parent_id, value = r.get(timeout=TIMEOUT)
@@ -163,6 +181,32 @@ class test_chord:
         )
         res = c()
         assert res.get(timeout=TIMEOUT) == [12, 13, 14, 15]
+
+    @flaky
+    def test_nested_group_chain(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.backend.supports_native_join:
+            raise pytest.skip('Requires native join support.')
+        c = chain(
+            add.si(1, 0),
+            group(
+                add.si(1, 100),
+                chain(
+                    add.si(1, 200),
+                    group(
+                        add.si(1, 1000),
+                        add.si(1, 2000),
+                    ),
+                ),
+            ),
+            add.si(1, 10),
+        )
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 11
 
     @flaky
     def test_parent_ids(self, manager):
