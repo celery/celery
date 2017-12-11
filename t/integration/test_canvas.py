@@ -173,7 +173,7 @@ class test_chord:
     @flaky
     def test_nested_group_chain(self, manager):
         if not manager.app.backend.supports_native_join:
-            raise pytest.skip('Requires a result backend that supports native joins.')
+            raise pytest.skip('Requires native join support.')
         c = chain(
             add.si(1, 0),
             group(
