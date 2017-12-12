@@ -251,15 +251,13 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             raise ChordError('Dependency {0} raised {1!r}'.format(tid, retval))
         return retval
 
-    def apply_chord(self, header, partial_args, group_id, body,
-                    result=None, options={}, **kwargs):
+    def apply_chord(self, header_result, body, **kwargs):
         # Overrides this to avoid calling GroupResult.save
         # pylint: disable=method-hidden
         # Note that KeyValueStoreBackend.__init__ sets self.apply_chord
         # if the implements_incr attr is set.  Redis backend doesn't set
         # this flag.
-        options['task_id'] = group_id
-        return header(*partial_args, **options or {})
+        pass
 
     def on_chord_part_return(self, request, state, result,
                              propagate=None, **kwargs):

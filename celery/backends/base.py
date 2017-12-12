@@ -412,23 +412,19 @@ class Backend(object):
     def on_chord_part_return(self, request, state, result, **kwargs):
         pass
 
-    def fallback_chord_unlock(self, group_id, body, result=None,
-                              countdown=1, **kwargs):
-        kwargs['result'] = [r.as_tuple() for r in result]
+    def fallback_chord_unlock(self, header_result, body, countdown=1,
+                              **kwargs):
+        kwargs['result'] = [r.as_tuple() for r in header_result]
         self.app.tasks['celery.chord_unlock'].apply_async(
-            (group_id, body,), kwargs, countdown=countdown,
+            (header_result.id, body,), kwargs, countdown=countdown,
         )
 
     def ensure_chords_allowed(self):
         pass
 
-    def apply_chord(self, header, partial_args, group_id, body,
-                    options={}, **kwargs):
+    def apply_chord(self, header_result, body, **kwargs):
         self.ensure_chords_allowed()
-        fixed_options = {k: v for k, v in items(options) if k != 'task_id'}
-        result = header(*partial_args, task_id=group_id, **fixed_options or {})
-        self.fallback_chord_unlock(group_id, body, **kwargs)
-        return result
+        self.fallback_chord_unlock(header_result, body, **kwargs)
 
     def current_task_children(self, request=None):
         request = request or getattr(get_current_task(), 'request', None)
@@ -683,14 +679,9 @@ class BaseKeyValueStoreBackend(Backend):
             meta['result'] = result_from_tuple(result, self.app)
             return meta
 
-    def _apply_chord_incr(self, header, partial_args, group_id, body,
-                          result=None, options={}, **kwargs):
+    def _apply_chord_incr(self, header_result, body, **kwargs):
         self.ensure_chords_allowed()
-        self.save_group(group_id, self.app.GroupResult(group_id, result))
-
-        fixed_options = {k: v for k, v in items(options) if k != 'task_id'}
-
-        return header(*partial_args, task_id=group_id, **fixed_options or {})
+        header_result.save(backend=self)
 
     def on_chord_part_return(self, request, state, result, **kwargs):
         if not self.implements_incr:
