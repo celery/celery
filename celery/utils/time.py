@@ -14,6 +14,7 @@ from kombu.utils.functional import reprcall
 from kombu.utils.objects import cached_property
 from pytz import AmbiguousTimeError, FixedOffset
 from pytz import timezone as _timezone
+from pytz import utc
 
 from celery.five import python_2_unicode_compatible, string_t
 
@@ -302,7 +303,10 @@ def make_aware(dt, tz):
 
 def localize(dt, tz):
     """Convert aware :class:`~datetime.datetime` to another timezone."""
-    dt = dt.astimezone(tz)
+    if is_naive(dt):  # Ensure timezone aware datetime
+        dt = make_aware(dt, tz)
+    if dt.tzinfo == utc:
+        dt = dt.astimezone(tz)  # Always safe to call astimezone on utc zones
     try:
         _normalize = tz.normalize
     except AttributeError:  # non-pytz tz
