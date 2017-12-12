@@ -375,20 +375,12 @@ class Signature(dict):
     def __or__(self, other):
         # These could be implemented in each individual class,
         # I'm sure, but for now we have this.
-        if isinstance(other, chord) and len(other.tasks) == 1:
-            # chord with one header -> header[0] | body
-            other = other.tasks[0] | other.body
-
         if isinstance(self, group):
             if isinstance(other, group):
                 # group() | group() -> single group
                 return group(
                     itertools.chain(self.tasks, other.tasks), app=self.app)
             # group() | task -> chord
-            if len(self.tasks) == 1:
-                # group(ONE.s()) | other -> ONE.s() | other
-                # Issue #3323
-                return self.tasks[0] | other
             return chord(self, body=other, app=self._app)
         elif isinstance(other, group):
             # unroll group with one member
@@ -409,10 +401,6 @@ class Signature(dict):
             return _chain(seq_concat_seq(
                 self.unchain_tasks(), other.unchain_tasks()), app=self._app)
         elif isinstance(self, chord):
-            # chord(ONE, body) | other -> ONE | body | other
-            # chord with one header task is unecessary.
-            if len(self.tasks) == 1:
-                return self.tasks[0] | self.body | other
             # chord | task ->  attach to body
             sig = self.clone()
             sig.body = sig.body | other
@@ -1243,11 +1231,6 @@ class chord(Signature):
         if app.conf.task_always_eager:
             return self.apply(args, kwargs,
                               body=body, task_id=task_id, **options)
-        if len(self.tasks) == 1:
-            # chord([A], B) can be optimized as A | B
-            # - Issue #3323
-            return (self.tasks[0] | body).set(task_id=task_id).apply_async(
-                args, kwargs, **options)
         # chord([A, B, ...], C)
         return self.run(tasks, body, args, task_id=task_id, **options)
 
@@ -1291,6 +1274,8 @@ class chord(Signature):
 
         # Chains should not be passed to the header tasks. See #3771
         options.pop('chain', None)
+        # Neither should chords, for deeply nested chords to work
+        options.pop('chord', None)
 
         parent = app.backend.apply_chord(
             header, partial_args, group_id, body,
