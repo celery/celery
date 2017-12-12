@@ -164,7 +164,9 @@ class AsyncResult(ResultBase):
                 message).  If this is :const:`False` then the message will
                 **not be acked**.
             follow_parents (bool): Re-raise any exception raised by
-                parent tasks.
+                parent tasks chronologically. Needs to be combined with
+                ``propagate`` enabled. If this is :const:`False` then failed
+                parent tasks cause subtasks to stay pending forever.
             disable_sync_subtasks (bool): Disable tasks to wait for sub tasks
                 this is the default configuration. CAUTION do not enable this
                 unless you must.
@@ -204,7 +206,7 @@ class AsyncResult(ResultBase):
 
     def _maybe_reraise_parent_error(self):
         for node in reversed(list(self._parents())):
-            node.maybe_throw()
+            node.get(propagate=True, follow_parents=False)
 
     def _parents(self):
         node = self.parent
