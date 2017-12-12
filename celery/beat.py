@@ -6,31 +6,27 @@ import copy
 import errno
 import heapq
 import os
-import time
 import shelve
 import sys
+import time
 import traceback
-
 from collections import namedtuple
 from functools import total_ordering
 from threading import Event, Thread
 
 from billiard import ensure_multiprocessing
-from billiard.context import Process
 from billiard.common import reset_signals
+from billiard.context import Process
 from kombu.utils.functional import maybe_evaluate, reprcall
 from kombu.utils.objects import cached_property
 
-from . import __version__
-from . import platforms
-from . import signals
-from .five import (
-    items, monotonic, python_2_unicode_compatible, reraise, values,
-)
-from .schedules import maybe_schedule, crontab
+from . import __version__, platforms, signals
+from .five import (items, monotonic, python_2_unicode_compatible, reraise,
+                   values)
+from .schedules import crontab, maybe_schedule
 from .utils.imports import load_extension_class_names, symbol_by_name
-from .utils.time import humanize_seconds
 from .utils.log import get_logger, iter_open_logger_fds
+from .utils.time import humanize_seconds
 
 __all__ = (
     'SchedulingError', 'ScheduleEntry', 'Scheduler',
@@ -155,6 +151,28 @@ class ScheduleEntry(object):
             # just as well be random.
             return id(self) < id(other)
         return NotImplemented
+
+    def editable_fields_equal(self, other):
+        for attr in ('task', 'args', 'kwargs', 'options', 'schedule'):
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+        return True
+
+    def __eq__(self, other):
+        """Test schedule entries equality.
+
+        Will only compare "editable" fields:
+        ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
+        """
+        return self.editable_fields_equal(other)
+
+    def __ne__(self, other):
+        """Test schedule entries inequality.
+
+        Will only compare "editable" fields:
+        ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
+        """
+        return not self == other
 
 
 class Scheduler(object):
@@ -291,7 +309,9 @@ class Scheduler(object):
             return False
         for name, old_entry in old_schedules.items():
             new_entry = new_schedules.get(name)
-            if not new_entry or old_entry.schedule != new_entry.schedule:
+            if not new_entry:
+                return False
+            if new_entry != old_entry:
                 return False
         return True
 

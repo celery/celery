@@ -2,15 +2,14 @@ from __future__ import absolute_import, unicode_literals
 
 import errno
 import socket
-import pytest
 
+import pytest
 from case import Mock
-from kombu.async import Hub, READ, WRITE, ERR
+from kombu.async import ERR, READ, WRITE, Hub
 
 from celery.bootsteps import CLOSE, RUN
-from celery.exceptions import (
-    InvalidTaskError, WorkerLostError, WorkerShutdown, WorkerTerminate,
-)
+from celery.exceptions import (InvalidTaskError, WorkerLostError,
+                               WorkerShutdown, WorkerTerminate)
 from celery.five import Empty, python_2_unicode_compatible
 from celery.platforms import EX_FAILURE
 from celery.worker import state

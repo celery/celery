@@ -4,7 +4,6 @@ from __future__ import absolute_import, unicode_literals
 
 import io
 import tempfile
-
 from collections import namedtuple
 
 from billiard.common import TERM_SIGNAME

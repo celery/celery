@@ -18,7 +18,6 @@ from __future__ import absolute_import, unicode_literals
 import bisect
 import sys
 import threading
-
 from collections import Callable, defaultdict
 from datetime import datetime
 from decimal import Decimal
@@ -101,6 +100,8 @@ class CallableDefaultdict(defaultdict):
 
     def __call__(self, *args, **kwargs):
         return self.fun(*args, **kwargs)
+
+
 Callable.register(CallableDefaultdict)  # noqa: E305
 
 

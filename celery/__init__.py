@@ -145,6 +145,7 @@ def maybe_patch_concurrency(argv=sys.argv,
         from celery import concurrency
         concurrency.get_implementation(pool)
 
+
 # Lazy loading
 from . import local  # noqa
 

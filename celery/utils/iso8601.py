@@ -33,8 +33,10 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 from __future__ import absolute_import, unicode_literals
+
 import re
 from datetime import datetime
+
 from pytz import FixedOffset
 
 __all__ = ('parse_iso8601',)

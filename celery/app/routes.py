@@ -4,10 +4,13 @@
 Contains utilities for working with task routers, (:setting:`task_routes`).
 """
 from __future__ import absolute_import, unicode_literals
+
 import re
 import string
 from collections import Mapping, OrderedDict
+
 from kombu import Queue
+
 from celery.exceptions import QueueNotFound
 from celery.five import items, string_t
 from celery.utils.collections import lpmerge

@@ -4,9 +4,12 @@
 .. program:: celery graph
 """
 from __future__ import absolute_import, unicode_literals
+
 from operator import itemgetter
+
 from celery.five import items, python_2_unicode_compatible
 from celery.utils.graph import DependencyGraph, GraphFormatter
+
 from .base import Command
 
 __all__ = ('graph',)

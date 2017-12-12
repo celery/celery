@@ -1,17 +1,15 @@
 from __future__ import absolute_import, unicode_literals
 
 import pickle
-import pytest
-
 from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
 
-from case import Mock, mock
+import pytest
 from billiard.einfo import ExceptionInfo
+from case import Mock, mock
 
-from celery import states
-from celery import uuid
+from celery import states, uuid
 from celery.backends.amqp import AMQPBackend
 from celery.five import Empty, Queue, range
 from celery.result import AsyncResult

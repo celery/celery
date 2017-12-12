@@ -3,15 +3,14 @@
 from __future__ import absolute_import, unicode_literals
 
 import socket
-
 from collections import deque
 from operator import itemgetter
 
-from kombu import Exchange, Queue, Producer, Consumer
+from kombu import Consumer, Exchange, Producer, Queue
 
 from celery import states
 from celery.exceptions import TimeoutError
-from celery.five import range, monotonic
+from celery.five import monotonic, range
 from celery.utils import deprecated
 from celery.utils.log import get_logger
 

@@ -174,7 +174,7 @@ an overview of what's new in Celery 4.1.
     Contributed by **Andrew de Quincey**.
 
 - **Worker**: Making missing ``*args`` and ``**kwargs`` in Task protocol 1
-return empty value in protocol 2 (Issue #3687).
+  return empty value in protocol 2 (Issue #3687).
 
     Contributed by **Roman Sichny**.
 

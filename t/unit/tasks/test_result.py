@@ -1,29 +1,21 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
 import traceback
-
 from contextlib import contextmanager
 
+import pytest
 from case import Mock, call, patch, skip
 
-from celery import uuid
-from celery import states
+from celery import states, uuid
 from celery.backends.base import SyncBackendMixin
-from celery.exceptions import (
-    CPendingDeprecationWarning, ImproperlyConfigured,
-    IncompleteStream, TimeoutError,
-)
+from celery.exceptions import (CPendingDeprecationWarning,
+                               ImproperlyConfigured, IncompleteStream,
+                               TimeoutError)
 from celery.five import range
-from celery.result import (
-    AsyncResult,
-    EagerResult,
-    ResultSet,
-    GroupResult,
-    result_from_tuple,
-    assert_will_not_block,
-)
+from celery.result import (AsyncResult, EagerResult, GroupResult, ResultSet,
+                           assert_will_not_block, result_from_tuple)
 from celery.utils.serialization import pickle
+
 
 PYTRACEBACK = """\
 Traceback (most recent call last):
@@ -527,12 +519,16 @@ class MockAsyncResultFailure(AsyncResult):
 class MockAsyncResultSuccess(AsyncResult):
     forgotten = False
 
+    def __init__(self, *args, **kwargs):
+        self._result = kwargs.pop('result', 42)
+        super(MockAsyncResultSuccess, self).__init__(*args, **kwargs)
+
     def forget(self):
         self.forgotten = True
 
     @property
     def result(self):
-        return 42
+        return self._result
 
     @property
     def state(self):
@@ -543,17 +539,17 @@ class MockAsyncResultSuccess(AsyncResult):
 
 
 class SimpleBackend(SyncBackendMixin):
-        ids = []
+    ids = []
 
-        def __init__(self, ids=[]):
-            self.ids = ids
+    def __init__(self, ids=[]):
+        self.ids = ids
 
-        def _ensure_not_eager(self):
-            pass
+    def _ensure_not_eager(self):
+        pass
 
-        def get_many(self, *args, **kwargs):
-            return ((id, {'result': i, 'status': states.SUCCESS})
-                    for i, id in enumerate(self.ids))
+    def get_many(self, *args, **kwargs):
+        return ((id, {'result': i, 'status': states.SUCCESS})
+                for i, id in enumerate(self.ids))
 
 
 class test_GroupResult:
@@ -630,6 +626,37 @@ class test_GroupResult:
         for sub in subs:
             assert sub.forgotten
 
+    def test_get_nested_without_native_join(self):
+        backend = SimpleBackend()
+        backend.supports_native_join = False
+        ts = self.app.GroupResult(uuid(), [
+            MockAsyncResultSuccess(uuid(), result='1.1',
+                                   app=self.app, backend=backend),
+            self.app.GroupResult(uuid(), [
+                MockAsyncResultSuccess(uuid(), result='2.1',
+                                       app=self.app, backend=backend),
+                self.app.GroupResult(uuid(), [
+                    MockAsyncResultSuccess(uuid(), result='3.1',
+                                           app=self.app, backend=backend),
+                    MockAsyncResultSuccess(uuid(), result='3.2',
+                                           app=self.app, backend=backend),
+                ]),
+            ]),
+        ])
+        ts.app.backend = backend
+
+        vals = ts.get()
+        assert vals == [
+            '1.1',
+            [
+                '2.1',
+                [
+                    '3.1',
+                    '3.2',
+                ]
+            ],
+        ]
+
     def test_getitem(self):
         subs = [MockAsyncResultSuccess(uuid(), app=self.app),
                 MockAsyncResultSuccess(uuid(), app=self.app)]
@@ -649,12 +676,30 @@ class test_GroupResult:
         with pytest.raises(AttributeError):
             self.app.GroupResult.restore(ts.id, backend=object())
 
+    def test_save_restore_empty(self):
+        subs = []
+        ts = self.app.GroupResult(uuid(), subs)
+        ts.save()
+        assert isinstance(
+            self.app.GroupResult.restore(ts.id),
+            self.app.GroupResult,
+        )
+        assert self.app.GroupResult.restore(ts.id).results == ts.results == []
+
     def test_restore_app(self):
         subs = [MockAsyncResultSuccess(uuid(), app=self.app)]
         ts = self.app.GroupResult(uuid(), subs)
         ts.save()
         restored = GroupResult.restore(ts.id, app=self.app)
         assert restored.id == ts.id
+
+    def test_restore_current_app_fallback(self):
+        subs = [MockAsyncResultSuccess(uuid(), app=self.app)]
+        ts = self.app.GroupResult(uuid(), subs)
+        ts.save()
+        with pytest.raises(RuntimeError,
+                           message="Test depends on current_app"):
+            GroupResult.restore(ts.id)
 
     def test_join_native(self):
         backend = SimpleBackend()
@@ -879,6 +924,15 @@ class test_EagerResult:
     def test_revoke(self):
         res = self.raising.apply(args=[3, 3])
         assert not res.revoke()
+
+    @patch('celery.result.task_join_will_block')
+    def test_get_sync_subtask_option(self, task_join_will_block):
+        task_join_will_block.return_value = True
+        tid = uuid()
+        res_subtask_async = EagerResult(tid, 'x', 'x', states.SUCCESS)
+        with pytest.raises(RuntimeError):
+            res_subtask_async.get()
+        res_subtask_async.get(disable_sync_subtasks=False)
 
 
 class test_tuples:

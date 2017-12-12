@@ -5,7 +5,8 @@ from __future__ import absolute_import, unicode_literals
 import atexit
 import warnings
 
-from kombu.async import Hub as _Hub, get_event_loop, set_event_loop
+from kombu.async import Hub as _Hub
+from kombu.async import get_event_loop, set_event_loop
 from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
 from kombu.async.timer import Timer as _Timer
 

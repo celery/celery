@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 """Implementation of the Observer pattern."""
 from __future__ import absolute_import, unicode_literals
+
 import sys
 import threading
-import weakref
 import warnings
+import weakref
+
 from kombu.utils.functional import retry_over_time
+
 from celery.exceptions import CDeprecationWarning
 from celery.five import python_2_unicode_compatible, range, text_t
 from celery.local import PromiseProxy, Proxy
 from celery.utils.functional import fun_accepts_kwargs
-from celery.utils.time import humanize_seconds
 from celery.utils.log import get_logger
+from celery.utils.time import humanize_seconds
+
 try:
     from weakref import WeakMethod
 except ImportError:

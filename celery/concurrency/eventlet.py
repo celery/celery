@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
 """Eventlet execution pool."""
 from __future__ import absolute_import, unicode_literals
+
 import sys
+
+from kombu.async import timer as _timer  # noqa
 from kombu.five import monotonic
+
+from celery import signals  # noqa
+
+from . import base  # noqa
 
 __all__ = ('TaskPool',)
 
@@ -19,14 +26,6 @@ for mod in (mod for mod in sys.modules if mod.startswith(RACE_MODS)):
         if getattr(mod, side, None):
             import warnings
             warnings.warn(RuntimeWarning(W_RACE % side))
-
-# idiotic pep8.py does not allow expressions before imports
-# so have to silence errors here
-from kombu.async import timer as _timer  # noqa
-
-from celery import signals  # noqa
-
-from . import base  # noqa
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,

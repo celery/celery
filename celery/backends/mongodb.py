@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 """MongoDB result store backend."""
 from __future__ import absolute_import, unicode_literals
+
 from datetime import datetime, timedelta
+
+from kombu.exceptions import EncodeError
 from kombu.utils.objects import cached_property
 from kombu.utils.url import maybe_sanitize_url
-from kombu.exceptions import EncodeError
+
 from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.five import string_t, items
+from celery.five import items, string_t
+
 from .base import BaseBackend
 
 try:
@@ -117,11 +121,11 @@ class MongoBackend(BaseBackend):
             self.options.update(config)
 
     def _prepare_client_options(self):
-            if pymongo.version_tuple >= (3,):
-                return {'maxPoolSize': self.max_pool_size}
-            else:  # pragma: no cover
-                return {'max_pool_size': self.max_pool_size,
-                        'auto_start_request': False}
+        if pymongo.version_tuple >= (3,):
+            return {'maxPoolSize': self.max_pool_size}
+        else:  # pragma: no cover
+            return {'max_pool_size': self.max_pool_size,
+                    'auto_start_request': False}
 
     def _get_connection(self):
         """Connect to the MongoDB server."""

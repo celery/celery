@@ -1,10 +1,13 @@
 """The consumers highly-optimized inner loop."""
 from __future__ import absolute_import, unicode_literals
+
 import errno
 import socket
+
 from celery import bootsteps
-from celery.exceptions import WorkerShutdown, WorkerTerminate, WorkerLostError
+from celery.exceptions import WorkerLostError, WorkerShutdown, WorkerTerminate
 from celery.utils.log import get_logger
+
 from . import state
 
 __all__ = ('asynloop', 'synloop')

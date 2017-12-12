@@ -1,6 +1,8 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
 from case import Mock, patch, skip
+
 from celery.exceptions import ImproperlyConfigured
 from celery.worker.components import Beat, Hub, Pool, Timer
 

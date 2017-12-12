@@ -1,26 +1,19 @@
 from __future__ import absolute_import, unicode_literals
+
+from datetime import datetime, timedelta, tzinfo
+
 import pytest
 import pytz
-from datetime import datetime, timedelta, tzinfo
-from pytz import AmbiguousTimeError
 from case import Mock, patch
-from celery.utils.time import (
-    delta_resolution,
-    humanize_seconds,
-    maybe_iso8601,
-    maybe_timedelta,
-    timezone,
-    rate,
-    remaining,
-    make_aware,
-    maybe_make_aware,
-    localize,
-    LocalTimezone,
-    ffwd,
-    utcoffset,
-    get_exponential_backoff_interval,
-)
+from pytz import AmbiguousTimeError
+
 from celery.utils.iso8601 import parse_iso8601
+from celery.utils.time import (LocalTimezone, delta_resolution, ffwd,
+                               get_exponential_backoff_interval,
+                               humanize_seconds, localize, make_aware,
+                               maybe_iso8601, maybe_make_aware,
+                               maybe_timedelta, rate, remaining, timezone,
+                               utcoffset)
 
 
 class test_LocalTimezone:

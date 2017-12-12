@@ -1,21 +1,19 @@
 from __future__ import absolute_import, unicode_literals
 
-from datetime import datetime, timedelta
 import gc
 import itertools
 import os
-import pytest
-
 from copy import deepcopy
-from pickle import loads, dumps
+from datetime import datetime, timedelta
+from pickle import dumps, loads
 
+import pytest
 from case import ContextMock, Mock, mock, patch
 from vine import promise
 
-from celery import Celery
-from celery import shared_task, current_app
+from celery import Celery, _state
 from celery import app as _app
-from celery import _state
+from celery import current_app, shared_task
 from celery.app import base as _appbase
 from celery.app import defaults
 from celery.exceptions import ImproperlyConfigured
@@ -23,9 +21,9 @@ from celery.five import items, keys
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
-from celery.utils.serialization import pickle
-from celery.utils.time import timezone, to_utc, localize
 from celery.utils.objects import Bunch
+from celery.utils.serialization import pickle
+from celery.utils.time import localize, timezone, to_utc
 
 THIS_IS_A_KEY = 'this is a value'
 

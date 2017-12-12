@@ -15,18 +15,17 @@ import platform as _platform
 import signal as _signal
 import sys
 import warnings
-
 from collections import namedtuple
+from contextlib import contextmanager
 
-from billiard.compat import get_fdmax, close_open_fds
+from billiard.compat import close_open_fds, get_fdmax
 # fileno used to be in this module
 from kombu.utils.compat import maybe_fileno
 from kombu.utils.encoding import safe_str
-from contextlib import contextmanager
 
 from .exceptions import SecurityError
-from .local import try_import
 from .five import items, reraise, string_t
+from .local import try_import
 
 try:
     from billiard.process import current_process
@@ -229,6 +228,8 @@ class Pidfile(object):
                     "Inconsistency: Pidfile content doesn't match at re-read")
         finally:
             rfh.close()
+
+
 PIDFile = Pidfile  # noqa: E305 XXX compat alias
 
 

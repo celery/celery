@@ -1,23 +1,15 @@
 from __future__ import absolute_import, unicode_literals
+
 import json
+
 import pytest
 from case import MagicMock, Mock
+
 from celery._state import _task_stack
-from celery.canvas import (
-    Signature,
-    chain,
-    _chain,
-    group,
-    chord,
-    signature,
-    xmap,
-    xstarmap,
-    chunks,
-    _maybe_group,
-    maybe_signature,
-    maybe_unroll_group,
-)
-from celery.result import AsyncResult, GroupResult, EagerResult
+from celery.canvas import (Signature, _chain, _maybe_group, chain, chord,
+                           chunks, group, maybe_signature, maybe_unroll_group,
+                           signature, xmap, xstarmap)
+from celery.result import AsyncResult, EagerResult, GroupResult
 
 SIG = Signature({
     'task': 'TASK',
@@ -477,6 +469,16 @@ class test_chain(CanvasCase):
             assert node.id not in seen
             seen.add(node.id)
             node = node.parent
+
+    def test_append_to_empty_chain(self):
+        x = chain()
+        x |= self.add.s(1, 1)
+        x |= self.add.s(1)
+        x.freeze()
+        tasks, _ = x._frozen
+        assert len(tasks) == 2
+
+        assert x.apply().get() == 3
 
 
 class test_group(CanvasCase):

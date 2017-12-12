@@ -3,16 +3,14 @@
 from __future__ import absolute_import, unicode_literals
 
 import sys
-from celery.five import monotonic
-
-from collections import (
-    Callable, Mapping, MutableMapping, MutableSet, Sequence,
-    OrderedDict as _OrderedDict, deque,
-)
-from heapq import heapify, heappush, heappop
+from collections import Callable, Mapping, MutableMapping, MutableSet
+from collections import OrderedDict as _OrderedDict
+from collections import Sequence, deque
+from heapq import heapify, heappop, heappush
 from itertools import chain, count
 
-from celery.five import Empty, items, keys, python_2_unicode_compatible, values
+from celery.five import (Empty, items, keys, monotonic,
+                         python_2_unicode_compatible, values)
 
 from .functional import first, uniq
 from .text import match_case
@@ -229,6 +227,8 @@ class DictAttribute(object):
         def values(self):
             # type: () -> List[Any]
             return list(self._iterate_values())
+
+
 MutableMapping.register(DictAttribute)  # noqa: E305
 
 
@@ -707,6 +707,8 @@ class LimitedSet(object):
         # type: () -> float
         """Compute how much is heap bigger than data [percents]."""
         return len(self._heap) * 100 / max(len(self._data), 1) - 100
+
+
 MutableSet.register(LimitedSet)  # noqa: E305
 
 
@@ -809,6 +811,8 @@ class Messagebuffer(Evictable):
     def _evictcount(self):
         # type: () -> int
         return len(self)
+
+
 Sequence.register(Messagebuffer)  # noqa: E305
 
 
