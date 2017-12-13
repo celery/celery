@@ -85,8 +85,11 @@ before_install:
           sudo apt-add-repository -y 'deb http://packages.couchbase.com/ubuntu trusty trusty/main'
           sudo apt-get update && sudo apt-get install -y libcouchbase-dev
 after_success:
-  - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml
-  - .tox/$TRAVIS_PYTHON_VERSION/bin/codecov -e TOXENV
+  - |
+          if [[ -v MATRIX_TOXENV || "$TOXENV" =~ "pypy" ]]; then
+              .tox/$TOXENV/bin/coverage xml
+              .tox/$TOXENV/bin/codecov -e TOXENV
+          fi;
 install: travis_retry pip install -U tox | cat
 script: tox -v -- -v
 notifications:

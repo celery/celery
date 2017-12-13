@@ -1,6 +1,6 @@
 .. image:: http://docs.celeryproject.org/en/latest/_images/celery-banner-small.png
 
-|build-status| |license| |wheel| |pyversion| |pyimp|
+|build-status| |coverage| |license| |wheel| |pyversion| |pyimp|
 
 :Version: 4.1.0 (latentcall)
 :Web: http://celeryproject.org/
