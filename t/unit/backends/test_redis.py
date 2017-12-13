@@ -266,14 +266,14 @@ class test_RedisBackend:
         self.b.expire('foo', 300)
         self.b.client.expire.assert_called_with('foo', 300)
 
-    def test_apply_chord(self):
-        header = Mock(name='header')
-        header.results = [Mock(name='t1'), Mock(name='t2')]
-        self.b.apply_chord(
-            header, (1, 2), 'gid', None,
-            options={'max_retries': 10},
+    def test_apply_chord(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        header_result = self.app.GroupResult(
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
         )
-        header.assert_called_with(1, 2, max_retries=10, task_id='gid')
+        self.b.apply_chord(header_result, None)
+        assert self.app.tasks[unlock].apply_async.call_count == 0
 
     def test_unpack_chord_result(self):
         self.b.exception_to_python = Mock(name='etp')

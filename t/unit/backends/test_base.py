@@ -76,10 +76,11 @@ class test_BaseBackend_interface:
 
     def test_apply_chord(self, unlock='celery.chord_unlock'):
         self.app.tasks[unlock] = Mock()
-        self.b.apply_chord(
-            group(app=self.app), (), 'dakj221', None,
-            result=[self.app.AsyncResult(x) for x in [1, 2, 3]],
+        header_result = self.app.GroupResult(
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
         )
+        self.b.apply_chord(header_result, None)
         assert self.app.tasks[unlock].apply_async.call_count
 
 
@@ -527,12 +528,15 @@ class test_KeyValueStoreBackend:
     def test_chord_apply_fallback(self):
         self.b.implements_incr = False
         self.b.fallback_chord_unlock = Mock()
+        header_result = self.app.GroupResult(
+            'group_id',
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
         self.b.apply_chord(
-            group(app=self.app), (), 'group_id', 'body',
-            result='result', foo=1,
+            header_result, 'body', foo=1,
         )
         self.b.fallback_chord_unlock.assert_called_with(
-            'group_id', 'body', result='result', foo=1,
+            header_result, 'body', foo=1,
         )
 
     def test_get_missing_meta(self):

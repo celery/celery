@@ -1268,21 +1268,32 @@ class chord(Signature):
             options.pop('task_id', None)
             body.options.update(options)
 
-        results = header.freeze(
-            group_id=group_id, chord=body, root_id=root_id).results
         bodyres = body.freeze(task_id, root_id=root_id)
 
         # Chains should not be passed to the header tasks. See #3771
         options.pop('chain', None)
         # Neither should chords, for deeply nested chords to work
         options.pop('chord', None)
+        options.pop('task_id', None)
 
-        parent = app.backend.apply_chord(
-            header, partial_args, group_id, body,
-            interval=interval, countdown=countdown,
-            options=options, max_retries=max_retries,
-            result=results)
-        bodyres.parent = parent
+        header.freeze(group_id=group_id, chord=body, root_id=root_id)
+        header_result = header(*partial_args, task_id=group_id, **options)
+
+        if len(header_result) > 0:
+            app.backend.apply_chord(
+                header_result,
+                body,
+                interval=interval,
+                countdown=countdown,
+                max_retries=max_retries,
+            )
+        # The execution of a chord body is normally triggered by its header's
+        # tasks completing. If the header is empty this will never happen, so
+        # we execute the body manually here.
+        else:
+            body.delay([])
+
+        bodyres.parent = header_result
         return bodyres
 
     def clone(self, *args, **kwargs):

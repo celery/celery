@@ -223,6 +223,20 @@ class test_chord:
         res2 = c2()
         assert res2.get(timeout=TIMEOUT) == [16]
 
+    def test_empty_header_chord(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c1 = chord([], body=add_to_all.s(9))
+        res1 = c1()
+        assert res1.get(timeout=TIMEOUT) == []
+
+        c2 = group([]) | add_to_all.s(9)
+        res2 = c2()
+        assert res2.get(timeout=TIMEOUT) == []
+
     @flaky
     def test_nested_chord(self, manager):
         try:

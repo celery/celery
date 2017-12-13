@@ -28,7 +28,7 @@ class test_RPCBackend:
 
     def test_apply_chord(self):
         with pytest.raises(NotImplementedError):
-            self.b.apply_chord([], (), 'gid', Mock(name='body'))
+            self.b.apply_chord(self.app.GroupResult(), None)
 
     @pytest.mark.celery(result_backend='rpc')
     def test_chord_raises_error(self):
