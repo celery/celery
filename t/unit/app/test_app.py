@@ -494,24 +494,6 @@ class test_App:
         i.annotate()
         i.annotate()
 
-    def test_apply_async_has__self__(self):
-        @self.app.task(__self__='hello', shared=False)
-        def aawsX(x, y):
-            pass
-
-        with pytest.raises(TypeError):
-            aawsX.apply_async(())
-        with pytest.raises(TypeError):
-            aawsX.apply_async((2,))
-
-        with patch('celery.app.amqp.AMQP.create_task_message') as create:
-            with patch('celery.app.amqp.AMQP.send_task_message') as send:
-                create.return_value = Mock(), Mock(), Mock(), Mock()
-                aawsX.apply_async((4, 5))
-                args = create.call_args[0][2]
-                assert args, ('hello', 4 == 5)
-                send.assert_called()
-
     def test_apply_async_adds_children(self):
         from celery._state import _task_stack
 
