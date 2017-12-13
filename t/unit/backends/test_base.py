@@ -63,6 +63,12 @@ class test_BaseBackend_interface:
     def setup(self):
         self.b = BaseBackend(self.app)
 
+        @self.app.task(shared=False)
+        def callback(result):
+            pass
+
+        self.callback = callback
+
     def test__forget(self):
         with pytest.raises(NotImplementedError):
             self.b._forget('SOMExx-N0Nex1stant-IDxx-')
@@ -80,8 +86,32 @@ class test_BaseBackend_interface:
             uuid(),
             [self.app.AsyncResult(x) for x in range(3)],
         )
-        self.b.apply_chord(header_result, None)
+        self.b.apply_chord(header_result, self.callback.s())
         assert self.app.tasks[unlock].apply_async.call_count
+
+    def test_chord_unlock_queue(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        header_result = self.app.GroupResult(
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        body = self.callback.s()
+
+        self.b.apply_chord(header_result, body)
+        called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+        assert called_kwargs['queue'] is None
+
+        self.b.apply_chord(header_result, body.set(queue='test_queue'))
+        called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+        assert called_kwargs['queue'] == 'test_queue'
+
+        @self.app.task(shared=False, queue='test_queue_two')
+        def callback_queue(result):
+            pass
+
+        self.b.apply_chord(header_result, callback_queue.s())
+        called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+        assert called_kwargs['queue'] == 'test_queue_two'
 
 
 class test_exception_pickle:
