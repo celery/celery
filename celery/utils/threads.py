@@ -327,7 +327,7 @@ class _FastLocalStack(threading.local):
 
 if USE_FAST_LOCALS:  # pragma: no cover
     LocalStack = _FastLocalStack
-else:
+else:  # pragma: no cover
     # - See #706
     # since each thread has its own greenlet we can just use those as
     # identifiers for the context.  If greenlets aren't available we
