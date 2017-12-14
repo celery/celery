@@ -4,7 +4,7 @@ import socket
 import tempfile
 from datetime import datetime, timedelta
 
-from case import ContextMock, MagicMock, Mock, patch, ANY
+from case import ANY, ContextMock, MagicMock, Mock, patch
 from kombu import Queue
 
 from celery import Task, group, uuid
