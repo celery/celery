@@ -6,36 +6,32 @@ import copy
 import errno
 import heapq
 import os
-import time
 import shelve
 import sys
+import time
 import traceback
-
 from collections import namedtuple
 from functools import total_ordering
 from threading import Event, Thread
 
 from billiard import ensure_multiprocessing
-from billiard.context import Process
 from billiard.common import reset_signals
+from billiard.context import Process
 from kombu.utils.functional import maybe_evaluate, reprcall
 from kombu.utils.objects import cached_property
 
-from . import __version__
-from . import platforms
-from . import signals
-from .five import (
-    items, monotonic, python_2_unicode_compatible, reraise, values,
-)
-from .schedules import maybe_schedule, crontab
+from . import __version__, platforms, signals
+from .five import (items, monotonic, python_2_unicode_compatible, reraise,
+                   values)
+from .schedules import crontab, maybe_schedule
 from .utils.imports import load_extension_class_names, symbol_by_name
-from .utils.time import humanize_seconds
 from .utils.log import get_logger, iter_open_logger_fds
+from .utils.time import humanize_seconds
 
-__all__ = [
+__all__ = (
     'SchedulingError', 'ScheduleEntry', 'Scheduler',
     'PersistentScheduler', 'Service', 'EmbeddedService',
-]
+)
 
 event_t = namedtuple('event_t', ('time', 'priority', 'entry'))
 
@@ -97,17 +93,18 @@ class ScheduleEntry(object):
         self.kwargs = kwargs
         self.options = options
         self.schedule = maybe_schedule(schedule, relative, app=self.app)
-        self.last_run_at = last_run_at or self._default_now()
+        self.last_run_at = last_run_at or self.default_now()
         self.total_run_count = total_run_count or 0
 
-    def _default_now(self):
+    def default_now(self):
         return self.schedule.now() if self.schedule else self.app.now()
+    _default_now = default_now  # compat
 
     def _next_instance(self, last_run_at=None):
         """Return new instance, with date and count fields updated."""
         return self.__class__(**dict(
             self,
-            last_run_at=last_run_at or self._default_now(),
+            last_run_at=last_run_at or self.default_now(),
             total_run_count=self.total_run_count + 1,
         ))
     __next__ = next = _next_instance  # for 2to3
@@ -154,6 +151,28 @@ class ScheduleEntry(object):
             # just as well be random.
             return id(self) < id(other)
         return NotImplemented
+
+    def editable_fields_equal(self, other):
+        for attr in ('task', 'args', 'kwargs', 'options', 'schedule'):
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+        return True
+
+    def __eq__(self, other):
+        """Test schedule entries equality.
+
+        Will only compare "editable" fields:
+        ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
+        """
+        return self.editable_fields_equal(other)
+
+    def __ne__(self, other):
+        """Test schedule entries inequality.
+
+        Will only compare "editable" fields:
+        ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
+        """
+        return not self == other
 
 
 class Scheduler(object):
@@ -237,7 +256,7 @@ class Scheduler(object):
     def _when(self, entry, next_time_to_run, mktime=time.mktime):
         adjust = self.adjust
 
-        return (mktime(entry.schedule.now().timetuple()) +
+        return (mktime(entry.default_now().timetuple()) +
                 (adjust(next_time_to_run) or 0))
 
     def populate_heap(self, event_t=event_t, heapify=heapq.heapify):
@@ -290,7 +309,9 @@ class Scheduler(object):
             return False
         for name, old_entry in old_schedules.items():
             new_entry = new_schedules.get(name)
-            if not new_entry or old_entry.schedule != new_entry.schedule:
+            if not new_entry:
+                return False
+            if new_entry != old_entry:
                 return False
         return True
 

@@ -180,7 +180,7 @@ or stop it:
 
 The ``stop`` command is asynchronous so it won't wait for the
 worker to shutdown. You'll probably want to use the ``stopwait`` command
-instead,  this ensures all currently executing tasks is completed
+instead,  this ensures all currently executing tasks are completed
 before exiting:
 
 .. code-block:: console

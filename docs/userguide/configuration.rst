@@ -83,6 +83,7 @@ rush in moving to the new settings format.
 ``CASSANDRA_READ_CONSISTENCY``         :setting:`cassandra_read_consistency`
 ``CASSANDRA_SERVERS``                  :setting:`cassandra_servers`
 ``CASSANDRA_WRITE_CONSISTENCY``        :setting:`cassandra_write_consistency`
+``CASSANDRA_OPTIONS``                  :setting:`cassandra_options`
 ``CELERY_COUCHBASE_BACKEND_SETTINGS``  :setting:`couchbase_backend_settings`
 ``CELERY_MONGODB_BACKEND_SETTINGS``    :setting:`mongodb_backend_settings`
 ``CELERY_EVENT_QUEUE_EXPIRES``         :setting:`event_queue_expires`
@@ -111,22 +112,22 @@ rush in moving to the new settings format.
 ``CELERY_SECURITY_KEY``                :setting:`security_key`
 ``CELERY_ACKS_LATE``                   :setting:`task_acks_late`
 ``CELERY_TASK_ALWAYS_EAGER``           :setting:`task_always_eager`
-``CELERY_ANNOTATIONS``                 :setting:`task_annotations`
-``CELERY_MESSAGE_COMPRESSION``         :setting:`task_compression`
-``CELERY_CREATE_MISSING_QUEUES``       :setting:`task_create_missing_queues`
-``CELERY_DEFAULT_DELIVERY_MODE``       :setting:`task_default_delivery_mode`
-``CELERY_DEFAULT_EXCHANGE``            :setting:`task_default_exchange`
-``CELERY_DEFAULT_EXCHANGE_TYPE``       :setting:`task_default_exchange_type`
-``CELERY_DEFAULT_QUEUE``               :setting:`task_default_queue`
-``CELERY_DEFAULT_RATE_LIMIT``          :setting:`task_default_rate_limit`
-``CELERY_DEFAULT_ROUTING_KEY``         :setting:`task_default_routing_key`
+``CELERY_TASK_ANNOTATIONS``            :setting:`task_annotations`
+``CELERY_TASK_COMPRESSION``            :setting:`task_compression`
+``CELERY_TASK_CREATE_MISSING_QUEUES``  :setting:`task_create_missing_queues`
+``CELERY_TASK_DEFAULT_DELIVERY_MODE``  :setting:`task_default_delivery_mode`
+``CELERY_TASK_DEFAULT_EXCHANGE``       :setting:`task_default_exchange`
+``CELERY_TASK_DEFAULT_EXCHANGE_TYPE``  :setting:`task_default_exchange_type`
+``CELERY_TASK_DEFAULT_QUEUE``          :setting:`task_default_queue`
+``CELERY_TASK_DEFAULT_RATE_LIMIT``     :setting:`task_default_rate_limit`
+``CELERY_TASK_DEFAULT_ROUTING_KEY``    :setting:`task_default_routing_key`
 ``CELERY_TASK_EAGER_PROPAGATES``       :setting:`task_eager_propagates`
-``CELERY_IGNORE_RESULT``               :setting:`task_ignore_result`
+``CELERY_TASK_IGNORE_RESULT``          :setting:`task_ignore_result`
 ``CELERY_TASK_PUBLISH_RETRY``          :setting:`task_publish_retry`
 ``CELERY_TASK_PUBLISH_RETRY_POLICY``   :setting:`task_publish_retry_policy`
-``CELERY_QUEUES``                      :setting:`task_queues`
-``CELERY_ROUTES``                      :setting:`task_routes`
-``CELERY_SEND_TASK_SENT_EVENT``        :setting:`task_send_sent_event`
+``CELERY_TASK_QUEUES``                 :setting:`task_queues`
+``CELERY_TASK_ROUTES``                 :setting:`task_routes`
+``CELERY_TASK_SEND_SENT_EVENT``        :setting:`task_send_sent_event`
 ``CELERY_TASK_SERIALIZER``             :setting:`task_serializer`
 ``CELERYD_TASK_SOFT_TIME_LIMIT``       :setting:`task_soft_time_limit`
 ``CELERYD_TASK_TIME_LIMIT``            :setting:`task_time_limit`
@@ -592,6 +593,27 @@ Can be one of the following:
 .. _`Couchbase`: https://www.couchbase.com/
 .. _`Consul`: https://consul.io/
 
+
+.. setting:: result_backend_transport_options
+
+``result_backend_transport_options``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}`` (empty mapping).
+
+A dict of additional options passed to the underlying transport.
+
+See your transport user manual for supported options (if any).
+
+Example setting the visibility timeout (supported by Redis and SQS
+transports):
+
+.. code-block:: python
+
+    result_backend_transport_options = {'visibility_timeout': 18000}  # 5 hours
+
+
+
 .. setting:: result_serializer
 
 ``result_serializer``
@@ -1036,6 +1058,22 @@ Named arguments to pass into the authentication provider. For example:
     cassandra_auth_kwargs = {
         username: 'cassandra',
         password: 'cassandra'
+    }
+
+.. setting:: cassandra_options
+
+``cassandra_options``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}`` (empty mapping).
+
+Named arguments to pass into the ``cassandra.cluster`` class.
+
+.. code-block:: python
+
+    cassandra_options = {
+        'cql_version': '3.2.1'
+        'protocol_version': 3
     }
 
 Example configuration

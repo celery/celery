@@ -4,7 +4,6 @@ from __future__ import absolute_import, unicode_literals
 
 import numbers
 import re
-
 from bisect import bisect, bisect_left
 from collections import Iterable, namedtuple
 from datetime import datetime, timedelta
@@ -14,15 +13,13 @@ from kombu.utils.objects import cached_property
 from . import current_app
 from .five import python_2_unicode_compatible, range, string_t
 from .utils.collections import AttributeDict
-from .utils.time import (
-    weekday, maybe_timedelta, remaining, humanize_seconds,
-    timezone, maybe_make_aware, ffwd, localize
-)
+from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware,
+                         maybe_timedelta, remaining, timezone, weekday)
 
-__all__ = [
+__all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
     'maybe_schedule', 'solar',
-]
+)
 
 schedstate = namedtuple('schedstate', ('is_due', 'next'))
 
@@ -477,15 +474,20 @@ class crontab(BaseSchedule):
                 return True
             return False
 
+        def is_before_last_run(year, month, day):
+            return self.maybe_make_aware(datetime(year,
+                                                  month,
+                                                  day)) < last_run_at
+
         def roll_over():
             for _ in range(2000):
                 flag = (datedata.dom == len(days_of_month) or
                         day_out_of_range(datedata.year,
                                          months_of_year[datedata.moy],
                                          days_of_month[datedata.dom]) or
-                        (self.maybe_make_aware(datetime(datedata.year,
-                         months_of_year[datedata.moy],
-                         days_of_month[datedata.dom])) < last_run_at))
+                        (is_before_last_run(datedata.year,
+                                            months_of_year[datedata.moy],
+                                            days_of_month[datedata.dom])))
 
                 if flag:
                     datedata.dom = 0
@@ -728,7 +730,7 @@ class solar(BaseSchedule):
         'dawn_nautical': True,
         'dawn_civil': True,
         'sunrise': False,
-        'solar_noon': True,
+        'solar_noon': False,
         'sunset': False,
         'dusk_civil': True,
         'dusk_nautical': True,
@@ -783,10 +785,16 @@ class solar(BaseSchedule):
         last_run_at_utc = localize(last_run_at, timezone.utc)
         self.cal.date = last_run_at_utc
         try:
-            next_utc = getattr(self.cal, self.method)(
-                self.ephem.Sun(),
-                start=last_run_at_utc, use_center=self.use_center,
-            )
+            if self.use_center:
+                next_utc = getattr(self.cal, self.method)(
+                    self.ephem.Sun(),
+                    start=last_run_at_utc, use_center=self.use_center
+                )
+            else:
+                next_utc = getattr(self.cal, self.method)(
+                    self.ephem.Sun(), start=last_run_at_utc
+                )
+
         except self.ephem.CircumpolarError:  # pragma: no cover
             # Sun won't rise/set today.  Check again tomorrow
             # (specifically, after the next anti-transit).

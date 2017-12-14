@@ -18,7 +18,6 @@ from __future__ import absolute_import, unicode_literals
 import bisect
 import sys
 import threading
-
 from collections import Callable, defaultdict
 from datetime import datetime
 from decimal import Decimal
@@ -35,7 +34,7 @@ from celery.five import items, python_2_unicode_compatible, values
 from celery.utils.functional import LRUCache, memoize, pass1
 from celery.utils.log import get_logger
 
-__all__ = ['Worker', 'Task', 'State', 'heartbeat_expires']
+__all__ = ('Worker', 'Task', 'State', 'heartbeat_expires')
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.
@@ -101,6 +100,8 @@ class CallableDefaultdict(defaultdict):
 
     def __call__(self, *args, **kwargs):
         return self.fun(*args, **kwargs)
+
+
 Callable.register(CallableDefaultdict)  # noqa: E305
 
 

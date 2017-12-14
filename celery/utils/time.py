@@ -4,16 +4,17 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import numbers
 import os
+import random
 import sys
 import time as _time
-
 from calendar import monthrange
 from datetime import date, datetime, timedelta, tzinfo
 
 from kombu.utils.functional import reprcall
 from kombu.utils.objects import cached_property
-
-from pytz import timezone as _timezone, AmbiguousTimeError, FixedOffset
+from pytz import AmbiguousTimeError, FixedOffset
+from pytz import timezone as _timezone
+from pytz import utc
 
 from celery.five import python_2_unicode_compatible, string_t
 
@@ -21,13 +22,14 @@ from .functional import dictfilter
 from .iso8601 import parse_iso8601
 from .text import pluralize
 
-__all__ = [
+__all__ = (
     'LocalTimezone', 'timezone', 'maybe_timedelta',
     'delta_resolution', 'remaining', 'rate', 'weekday',
     'humanize_seconds', 'maybe_iso8601', 'is_naive',
     'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
     'ffwd', 'utcoffset', 'adjust_timestamp',
-]
+    'get_exponential_backoff_interval',
+)
 
 PY3 = sys.version_info[0] == 3
 PY33 = sys.version_info >= (3, 3)
@@ -209,6 +211,9 @@ def remaining(start, ends_in, now=None, relative=False):
         ~datetime.timedelta: Remaining time.
     """
     now = now or datetime.utcnow()
+    if now.utcoffset() != start.utcoffset():
+        # Timezone has changed, or DST started/ended
+        start = start.replace(tzinfo=now.tzinfo)
     end_date = start + ends_in
     if relative:
         end_date = delta_resolution(end_date, ends_in)
@@ -298,7 +303,10 @@ def make_aware(dt, tz):
 
 def localize(dt, tz):
     """Convert aware :class:`~datetime.datetime` to another timezone."""
-    dt = dt.astimezone(tz)
+    if is_naive(dt):  # Ensure timezone aware datetime
+        dt = make_aware(dt, tz)
+    if dt.tzinfo == utc:
+        dt = dt.astimezone(tz)  # Always safe to call astimezone on utc zones
     try:
         _normalize = tz.normalize
     except AttributeError:  # non-pytz tz
@@ -360,7 +368,7 @@ class ffwd(object):
         month = self.month or other.month
         day = min(monthrange(year, month)[1], self.day or other.day)
         ret = other.replace(**dict(dictfilter(self._fields()),
-                            year=year, month=month, day=day))
+                                   year=year, month=month, day=day))
         if self.weekday is not None:
             ret += timedelta(days=(7 - ret.weekday() + self.weekday) % 7)
         return ret + timedelta(days=self.days)
@@ -383,3 +391,20 @@ def utcoffset(time=_time, localtime=_time.localtime):
 def adjust_timestamp(ts, offset, here=utcoffset):
     """Adjust timestamp based on provided utcoffset."""
     return ts - (offset - here()) * 3600
+
+
+def get_exponential_backoff_interval(
+    factor,
+    retries,
+    maximum,
+    full_jitter=False
+):
+    """Calculate the exponential backoff wait time."""
+    # Will be zero if factor equals 0
+    countdown = factor * (2 ** retries)
+    # Full jitter according to
+    # https://www.awsarchitectureblog.com/2015/03/backoff.html
+    if full_jitter:
+        countdown = random.randrange(countdown + 1)
+    # Adjust according to maximum wait time and account for negative values.
+    return max(0, min(maximum, countdown))

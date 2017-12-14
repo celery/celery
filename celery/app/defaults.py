@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 """Configuration introspection and defaults."""
 from __future__ import absolute_import, unicode_literals
+
 import sys
 from collections import deque, namedtuple
 from datetime import timedelta
+
 from celery.five import items, keys, python_2_unicode_compatible
 from celery.utils.functional import memoize
 from celery.utils.serialization import strtobool
 
-__all__ = ['Option', 'NAMESPACES', 'flatten', 'find']
+__all__ = ('Option', 'NAMESPACES', 'flatten', 'find')
 
 is_jython = sys.platform.startswith('java')
 is_pypy = hasattr(sys, 'pypy_version_info')
@@ -56,8 +58,8 @@ class Option(object):
     deprecate_by = None
     remove_by = None
     old = set()
-    typemap = dict(string=str, int=int, float=float, any=lambda v: v,
-                   bool=strtobool, dict=dict, tuple=tuple)
+    typemap = {'string': str, 'int': int, 'float': float, 'any': lambda v: v,
+               'bool': strtobool, 'dict': dict, 'tuple': tuple}
 
     def __init__(self, default=None, *args, **kwargs):
         self.default = default
@@ -126,6 +128,7 @@ NAMESPACES = Namespace(
         write_consistency=Option(type='string'),
         auth_provider=Option(type='string'),
         auth_kwargs=Option(type='string'),
+        options=Option({}, type='dict'),
     ),
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
@@ -178,6 +181,7 @@ NAMESPACES = Namespace(
         ),
         persistent=Option(None, type='bool'),
         serializer=Option('json'),
+        backend_transport_options=Option({}, type='dict'),
     ),
     elasticsearch=Namespace(
         __old__=old_ns('celery_elasticsearch'),
@@ -285,7 +289,7 @@ NAMESPACES = Namespace(
             'WARNING', old={'celery_redirect_stdouts_level'},
         ),
         send_task_events=Option(
-            False, type='bool', old={'celeryd_send_events'},
+            False, type='bool', old={'celery_send_events'},
         ),
         state_db=Option(),
         task_log_format=Option(DEFAULT_TASK_LOG_FMT),

@@ -1,6 +1,8 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
 from case import Mock, sentinel, skip
+
 from celery.app import backends
 from celery.backends import elasticsearch as module
 from celery.backends.elasticsearch import ElasticsearchBackend
@@ -26,7 +28,7 @@ class test_ElasticsearchBackend:
         x._server = Mock()
         x._server.get = Mock()
         # expected result
-        r = dict(found=True, _source={'result': sentinel.result})
+        r = {'found': True, '_source': {'result': sentinel.result}}
         x._server.get.return_value = r
         dict_result = x.get(sentinel.task_id)
 
@@ -86,10 +88,10 @@ class test_ElasticsearchBackend:
         x.doc_type = 'test-doc-type'
         x._server = Mock()
         x._server.index = Mock()
-        expected_result = dict(
-            _id=sentinel.task_id,
-            _source={'result': sentinel.result}
-        )
+        expected_result = {
+            '_id': sentinel.task_id,
+            '_source': {'result': sentinel.result}
+        }
         x._server.index.return_value = expected_result
 
         body = {"field1": "value1"}
@@ -111,10 +113,10 @@ class test_ElasticsearchBackend:
         x.doc_type = 'test-doc-type'
         x._server = Mock()
         x._server.index = Mock()
-        expected_result = dict(
-            _id=sentinel.task_id,
-            _source={'result': sentinel.result}
-        )
+        expected_result = {
+            '_id': sentinel.task_id,
+            '_source': {'result': sentinel.result}
+        }
         x._server.index.return_value = expected_result
 
         body = {b"field1": "value1"}

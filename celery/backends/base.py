@@ -10,39 +10,31 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 import time
-
 from collections import namedtuple
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
-from kombu.serialization import (
-    dumps, loads, prepare_accept_content,
-    registry as serializer_registry,
-)
+from kombu.serialization import dumps, loads, prepare_accept_content
+from kombu.serialization import registry as serializer_registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
 from kombu.utils.url import maybe_sanitize_url
 
-from celery import states
-from celery import current_app, group, maybe_signature
+from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
-from celery.exceptions import (
-    ChordError, TimeoutError, TaskRevokedError, ImproperlyConfigured,
-)
-from celery.five import items, string
-from celery.result import (
-    GroupResult, ResultBase, allow_join_result, result_from_tuple,
-)
+from celery.exceptions import (ChordError, ImproperlyConfigured,
+                               TaskRevokedError, TimeoutError)
+from celery.five import items
+from celery.result import (GroupResult, ResultBase, allow_join_result,
+                           result_from_tuple)
 from celery.utils.collections import BufferMap
 from celery.utils.functional import LRUCache, arity_greater
 from celery.utils.log import get_logger
-from celery.utils.serialization import (
-    get_pickled_exception,
-    get_pickleable_exception,
-    create_exception_cls,
-)
+from celery.utils.serialization import (create_exception_cls,
+                                        get_pickleable_exception,
+                                        get_pickled_exception)
 
-__all__ = ['BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend']
+__all__ = ('BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend')
 
 EXCEPTION_ABLE_CODECS = frozenset({'pickle'})
 PY3 = sys.version_info >= (3, 0)
@@ -237,14 +229,24 @@ class Backend(object):
         serializer = self.serializer if serializer is None else serializer
         if serializer in EXCEPTION_ABLE_CODECS:
             return get_pickleable_exception(exc)
-        return {'exc_type': type(exc).__name__, 'exc_message': string(exc)}
+        return {'exc_type': type(exc).__name__,
+                'exc_message': exc.args,
+                'exc_module': type(exc).__module__}
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
         if exc:
             if not isinstance(exc, BaseException):
-                exc = create_exception_cls(
-                    from_utf8(exc['exc_type']), __name__)(exc['exc_message'])
+                exc_module = exc.get('exc_module')
+                if exc_module is None:
+                    cls = create_exception_cls(
+                        from_utf8(exc['exc_type']), __name__)
+                else:
+                    exc_module = from_utf8(exc_module)
+                    exc_type = from_utf8(exc['exc_type'])
+                    cls = getattr(sys.modules[exc_module], exc_type)
+                exc_msg = exc['exc_message']
+                exc = cls(*exc_msg if isinstance(exc_msg, tuple) else exc_msg)
             if self.serializer in EXCEPTION_ABLE_CODECS:
                 exc = get_pickled_exception(exc)
         return exc
@@ -410,23 +412,19 @@ class Backend(object):
     def on_chord_part_return(self, request, state, result, **kwargs):
         pass
 
-    def fallback_chord_unlock(self, group_id, body, result=None,
-                              countdown=1, **kwargs):
-        kwargs['result'] = [r.as_tuple() for r in result]
+    def fallback_chord_unlock(self, header_result, body, countdown=1,
+                              **kwargs):
+        kwargs['result'] = [r.as_tuple() for r in header_result]
         self.app.tasks['celery.chord_unlock'].apply_async(
-            (group_id, body,), kwargs, countdown=countdown,
+            (header_result.id, body,), kwargs, countdown=countdown,
         )
 
     def ensure_chords_allowed(self):
         pass
 
-    def apply_chord(self, header, partial_args, group_id, body,
-                    options={}, **kwargs):
+    def apply_chord(self, header_result, body, **kwargs):
         self.ensure_chords_allowed()
-        fixed_options = {k: v for k, v in items(options) if k != 'task_id'}
-        result = header(*partial_args, task_id=group_id, **fixed_options or {})
-        self.fallback_chord_unlock(group_id, body, **kwargs)
-        return result
+        self.fallback_chord_unlock(header_result, body, **kwargs)
 
     def current_task_children(self, request=None):
         request = request or getattr(get_current_task(), 'request', None)
@@ -510,6 +508,8 @@ class SyncBackendMixin(object):
 
 class BaseBackend(Backend, SyncBackendMixin):
     """Base (synchronous) result backend."""
+
+
 BaseDictBackend = BaseBackend  # noqa: E305 XXX compat
 
 
@@ -679,14 +679,9 @@ class BaseKeyValueStoreBackend(Backend):
             meta['result'] = result_from_tuple(result, self.app)
             return meta
 
-    def _apply_chord_incr(self, header, partial_args, group_id, body,
-                          result=None, options={}, **kwargs):
+    def _apply_chord_incr(self, header_result, body, **kwargs):
         self.ensure_chords_allowed()
-        self.save_group(group_id, self.app.GroupResult(group_id, result))
-
-        fixed_options = {k: v for k, v in items(options) if k != 'task_id'}
-
-        return header(*partial_args, task_id=group_id, **fixed_options or {})
+        header_result.save(backend=self)
 
     def on_chord_part_return(self, request, state, result, **kwargs):
         if not self.implements_incr:

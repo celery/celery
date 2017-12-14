@@ -1,17 +1,16 @@
 from __future__ import absolute_import, unicode_literals
 
 import os
-import pytest
 import sys
 import warnings
 
+import pytest
 from case import Mock, mock, patch
 
 from celery import loaders
 from celery.exceptions import NotConfigured
 from celery.five import bytes_if_py2
-from celery.loaders import base
-from celery.loaders import default
+from celery.loaders import base, default
 from celery.loaders.app import AppLoader
 from celery.utils.imports import NotAPackage
 
@@ -87,6 +86,17 @@ class test_LoaderBase:
         self.app.conf.imports = ('os', 'sys')
         assert (sorted(modnames(self.loader.import_default_modules())) ==
                 sorted(modnames([os, sys])))
+
+    def test_import_default_modules_with_exception(self):
+        """ Make sure exceptions are not silenced since this step is prior to
+            setup logging. """
+        def trigger_exception(**kwargs):
+            raise ImportError('Dummy ImportError')
+        from celery.signals import import_modules
+        import_modules.connect(trigger_exception)
+        self.app.conf.imports = ('os', 'sys')
+        with pytest.raises(ImportError):
+            self.loader.import_default_modules()
 
     def test_import_from_cwd_custom_imp(self):
         imp = Mock(name='imp')
@@ -229,13 +239,6 @@ class test_autodiscovery:
                 imp.return_value = Mock()
                 imp.return_value.__path__ = 'foo'
                 base.find_related_module(base, 'tasks')
-
-                def se1(val):
-                    imp.side_effect = AttributeError()
-
-                imp.side_effect = se1
-                base.find_related_module(base, 'tasks')
-                imp.side_effect = None
 
                 find.side_effect = ImportError()
                 base.find_related_module(base, 'tasks')

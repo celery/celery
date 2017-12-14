@@ -1,21 +1,19 @@
 from __future__ import absolute_import, unicode_literals
-import pytest
+
 import sys
+
+import pytest
 from case import Mock, patch
+
 from celery import __main__
-from celery.five import WhateverIO
-from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
-from celery.bin.base import Error
 from celery.bin import celery as mod
-from celery.bin.celery import (
-    Command,
-    help,
-    report,
-    CeleryCommand,
-    determine_exit_status,
-    multi,
-    main as mainfun,
-)
+from celery.bin.base import Error
+from celery.bin.celery import (CeleryCommand, Command, determine_exit_status,
+                               help)
+from celery.bin.celery import main as mainfun
+from celery.bin.celery import multi, report
+from celery.five import WhateverIO
+from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
 
 
 class test__main__:

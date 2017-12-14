@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """System information utilities."""
 from __future__ import absolute_import, unicode_literals
+
 import os
 from math import ceil
+
 from kombu.utils.objects import cached_property
 
-__all__ = ['load_average', 'df']
+__all__ = ('load_average', 'df')
 
 
 if hasattr(os, 'getloadavg'):

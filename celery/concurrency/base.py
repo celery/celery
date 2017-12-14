@@ -13,10 +13,10 @@ from kombu.utils.encoding import safe_repr
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.five import monotonic, reraise
 from celery.utils import timer2
-from celery.utils.text import truncate
 from celery.utils.log import get_logger
+from celery.utils.text import truncate
 
-__all__ = ['BasePool', 'apply_target']
+__all__ = ('BasePool', 'apply_target')
 
 logger = get_logger('celery.pool')
 

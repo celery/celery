@@ -1,10 +1,10 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
 import socket
-
+import tempfile
 from datetime import datetime, timedelta
 
+import pytest
 from case import ContextMock, MagicMock, Mock, patch
 from kombu import Queue
 
@@ -14,6 +14,11 @@ from celery.exceptions import Ignore, Retry
 from celery.five import items, range, string_t
 from celery.result import EagerResult
 from celery.utils.time import parse_iso8601
+
+try:
+    from urllib.error import HTTPError
+except ImportError:  # pragma: no cover
+    from urllib2 import HTTPError
 
 
 def return_True(*args, **kwargs):
@@ -35,7 +40,6 @@ class MockApplyTask(Task):
 class TasksCase:
 
     def setup(self):
-        self.app.conf.task_protocol = 1  # XXX  Still using proto1
         self.mytask = self.app.task(shared=False)(return_True)
 
         @self.app.task(bind=True, count=0, shared=False)
@@ -119,6 +123,28 @@ class TasksCase:
             return a / b
 
         self.autoretry_task = autoretry_task
+
+        @self.app.task(bind=True, autoretry_for=(HTTPError,),
+                       retry_backoff=True, shared=False)
+        def autoretry_backoff_task(self, url):
+            self.iterations += 1
+            if "error" in url:
+                fp = tempfile.TemporaryFile()
+                raise HTTPError(url, '500', 'Error', '', fp)
+            return url
+
+        self.autoretry_backoff_task = autoretry_backoff_task
+
+        @self.app.task(bind=True, autoretry_for=(HTTPError,),
+                       retry_backoff=True, retry_jitter=True, shared=False)
+        def autoretry_backoff_jitter_task(self, url):
+            self.iterations += 1
+            if "error" in url:
+                fp = tempfile.TemporaryFile()
+                raise HTTPError(url, '500', 'Error', '', fp)
+            return url
+
+        self.autoretry_backoff_jitter_task = autoretry_backoff_jitter_task
 
         @self.app.task(bind=True)
         def task_check_request_context(self):
@@ -251,6 +277,36 @@ class test_task_retries(TasksCase):
         self.autoretry_task.apply((1, 0))
         assert self.autoretry_task.iterations == 6
 
+    @patch('random.randrange', side_effect=lambda i: i - 1)
+    def test_autoretry_backoff(self, randrange):
+        task = self.autoretry_backoff_task
+        task.max_retries = 3
+        task.iterations = 0
+
+        with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
+            task.apply(("http://httpbin.org/error",))
+
+        assert task.iterations == 4
+        retry_call_countdowns = [
+            call[1]['countdown'] for call in fake_retry.call_args_list
+        ]
+        assert retry_call_countdowns == [1, 2, 4, 8]
+
+    @patch('random.randrange', side_effect=lambda i: i - 2)
+    def test_autoretry_backoff_jitter(self, randrange):
+        task = self.autoretry_backoff_jitter_task
+        task.max_retries = 3
+        task.iterations = 0
+
+        with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
+            task.apply(("http://httpbin.org/error",))
+
+        assert task.iterations == 4
+        retry_call_countdowns = [
+            call[1]['countdown'] for call in fake_retry.call_args_list
+        ]
+        assert retry_call_countdowns == [0, 1, 3, 7]
+
     def test_retry_wrong_eta_when_not_enable_utc(self):
         """Issue #3753"""
         self.app.conf.enable_utc = False
@@ -354,20 +410,28 @@ class test_tasks(TasksCase):
 
     def assert_next_task_data_equal(self, consumer, presult, task_name,
                                     test_eta=False, test_expires=False,
-                                    **kwargs):
+                                    properties=None, headers=None, **kwargs):
         next_task = consumer.queues[0].get(accept=['pickle', 'json'])
-        task_data = next_task.decode()
-        assert task_data['id'] == presult.id
-        assert task_data['task'] == task_name
-        task_kwargs = task_data.get('kwargs', {})
+        task_properties = next_task.properties
+        task_headers = next_task.headers
+        task_body = next_task.decode()
+        task_args, task_kwargs, embed = task_body
+        assert task_headers['id'] == presult.id
+        assert task_headers['task'] == task_name
         if test_eta:
-            assert isinstance(task_data.get('eta'), string_t)
-            to_datetime = parse_iso8601(task_data.get('eta'))
+            assert isinstance(task_headers.get('eta'), string_t)
+            to_datetime = parse_iso8601(task_headers.get('eta'))
             assert isinstance(to_datetime, datetime)
         if test_expires:
-            assert isinstance(task_data.get('expires'), string_t)
-            to_datetime = parse_iso8601(task_data.get('expires'))
+            assert isinstance(task_headers.get('expires'), string_t)
+            to_datetime = parse_iso8601(task_headers.get('expires'))
             assert isinstance(to_datetime, datetime)
+        properties = properties or {}
+        for arg_name, arg_value in items(properties):
+            assert task_properties.get(arg_name) == arg_value
+        headers = headers or {}
+        for arg_name, arg_value in items(headers):
+            assert task_headers.get(arg_name) == arg_value
         for arg_name, arg_value in items(kwargs):
             assert task_kwargs.get(arg_name) == arg_value
 
@@ -409,7 +473,7 @@ class test_tasks(TasksCase):
 
             # With arguments.
             presult2 = self.mytask.apply_async(
-                kwargs=dict(name='George Costanza'),
+                kwargs={'name': 'George Costanza'},
             )
             self.assert_next_task_data_equal(
                 consumer, presult2, self.mytask.name, name='George Costanza',
@@ -417,14 +481,14 @@ class test_tasks(TasksCase):
 
             # send_task
             sresult = self.app.send_task(self.mytask.name,
-                                         kwargs=dict(name='Elaine M. Benes'))
+                                         kwargs={'name': 'Elaine M. Benes'})
             self.assert_next_task_data_equal(
                 consumer, sresult, self.mytask.name, name='Elaine M. Benes',
             )
 
             # With ETA.
             presult2 = self.mytask.apply_async(
-                kwargs=dict(name='George Costanza'),
+                kwargs={'name': 'George Costanza'},
                 eta=self.now() + timedelta(days=1),
                 expires=self.now() + timedelta(days=2),
             )
@@ -435,11 +499,32 @@ class test_tasks(TasksCase):
 
             # With countdown.
             presult2 = self.mytask.apply_async(
-                kwargs=dict(name='George Costanza'), countdown=10, expires=12,
+                kwargs={'name': 'George Costanza'}, countdown=10, expires=12,
             )
             self.assert_next_task_data_equal(
                 consumer, presult2, self.mytask.name,
                 name='George Costanza', test_eta=True, test_expires=True,
+            )
+
+            # Default argsrepr/kwargsrepr behavior
+            presult2 = self.mytask.apply_async(
+                args=('spam',), kwargs={'name': 'Jerry Seinfeld'}
+            )
+            self.assert_next_task_data_equal(
+                consumer, presult2, self.mytask.name,
+                headers={'argsrepr': "('spam',)",
+                         'kwargsrepr': "{'name': 'Jerry Seinfeld'}"},
+            )
+
+            # With argsrepr/kwargsrepr
+            presult2 = self.mytask.apply_async(
+                args=('secret',), argsrepr="'***'",
+                kwargs={'password': 'foo'}, kwargsrepr="{'password': '***'}",
+            )
+            self.assert_next_task_data_equal(
+                consumer, presult2, self.mytask.name,
+                headers={'argsrepr': "'***'",
+                         'kwargsrepr': "{'password': '***'}"},
             )
 
             # Discarding all tasks.

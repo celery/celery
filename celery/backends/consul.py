@@ -5,10 +5,14 @@
     in the key-value store of Consul.
 """
 from __future__ import absolute_import, unicode_literals
+
+from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import parse_url
+
+from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.backends.base import KeyValueStoreBackend, PY3
 from celery.utils.log import get_logger
+
 try:
     import consul
 except ImportError:
@@ -16,7 +20,7 @@ except ImportError:
 
 logger = get_logger(__name__)
 
-__all__ = ['ConsulBackend']
+__all__ = ('ConsulBackend',)
 
 CONSUL_MISSING = """\
 You need to install the python-consul library in order to use \
@@ -50,8 +54,7 @@ class ConsulBackend(KeyValueStoreBackend):
                                     consistency=self.consistency)
 
     def _key_to_consul_key(self, key):
-        if PY3:
-            key = key.encode('utf-8')
+        key = bytes_to_str(key)
         return key if self.path is None else '{0}/{1}'.format(self.path, key)
 
     def get(self, key):
@@ -78,9 +81,8 @@ class ConsulBackend(KeyValueStoreBackend):
         If the session expires it will remove the key so that results
         can auto expire from the K/V store
         """
-        session_name = key
-        if PY3:
-            session_name = key.decode('utf-8')
+        session_name = bytes_to_str(key)
+
         key = self._key_to_consul_key(key)
 
         logger.debug('Trying to create Consul session %s with TTL %d',

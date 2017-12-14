@@ -1,25 +1,26 @@
 from __future__ import absolute_import, unicode_literals
-import pytest
+
+import random
 import ssl
-from datetime import timedelta
 from contextlib import contextmanager
-from pickle import loads, dumps
-from case import ANY, ContextMock, Mock, mock, call, patch, skip
-from celery import signature
-from celery import states
-from celery import uuid
+from datetime import timedelta
+from pickle import dumps, loads
+
+import pytest
+from case import ANY, ContextMock, Mock, call, mock, patch, skip
+
+from celery import signature, states, uuid
 from celery.canvas import Signature
-from celery.exceptions import (
-    ChordError, CPendingDeprecationWarning, ImproperlyConfigured,
-)
+from celery.exceptions import (ChordError, CPendingDeprecationWarning,
+                               ImproperlyConfigured)
 from celery.utils.collections import AttributeDict
 
 
 def raise_on_second_call(mock, exc, *retval):
-
     def on_first_call(*args, **kwargs):
         mock.side_effect = exc
         return mock.return_value
+
     mock.side_effect = on_first_call
     if retval:
         mock.return_value, = retval
@@ -33,16 +34,15 @@ class Connection(object):
 
 
 class Pipeline(object):
-
     def __init__(self, client):
         self.client = client
         self.steps = []
 
     def __getattr__(self, attr):
-
         def add_step(*args, **kwargs):
             self.steps.append((getattr(self.client, attr), args, kwargs))
             return self
+
         return add_step
 
     def __enter__(self):
@@ -105,22 +105,36 @@ class Redis(mock.MockCallbacks):
         return len(self.keyspace.get(key) or [])
 
 
+class Sentinel(mock.MockCallbacks):
+    def __init__(self, sentinels, min_other_sentinels=0, sentinel_kwargs=None,
+                 **connection_kwargs):
+        self.sentinel_kwargs = sentinel_kwargs
+        self.sentinels = [Redis(hostname, port, **self.sentinel_kwargs)
+                          for hostname, port in sentinels]
+        self.min_other_sentinels = min_other_sentinels
+        self.connection_kwargs = connection_kwargs
+
+    def master_for(self, service_name, redis_class):
+        return random.choice(self.sentinels)
+
+
 class redis(object):
     StrictRedis = Redis
 
     class ConnectionPool(object):
-
         def __init__(self, **kwargs):
             pass
 
     class UnixDomainSocketConnection(object):
-
         def __init__(self, **kwargs):
             pass
 
 
-class test_RedisBackend:
+class sentinel(object):
+    Sentinel = Sentinel
 
+
+class test_RedisBackend:
     def get_backend(self):
         from celery.backends.redis import RedisBackend
 
@@ -252,14 +266,14 @@ class test_RedisBackend:
         self.b.expire('foo', 300)
         self.b.client.expire.assert_called_with('foo', 300)
 
-    def test_apply_chord(self):
-        header = Mock(name='header')
-        header.results = [Mock(name='t1'), Mock(name='t2')]
-        self.b.apply_chord(
-            header, (1, 2), 'gid', None,
-            options={'max_retries': 10},
+    def test_apply_chord(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        header_result = self.app.GroupResult(
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
         )
-        header.assert_called_with(1, 2, max_retries=10, task_id='gid')
+        self.b.apply_chord(header_result, None)
+        assert self.app.tasks[unlock].apply_async.call_count == 0
 
     def test_unpack_chord_result(self):
         self.b.exception_to_python = Mock(name='etp')
@@ -418,3 +432,86 @@ class test_RedisBackend:
         self.b.client.expire.assert_called_with(
             key, 512,
         )
+
+
+class test_SentinelBackend:
+    def get_backend(self):
+        from celery.backends.redis import SentinelBackend
+
+        class _SentinelBackend(SentinelBackend):
+            redis = redis
+            sentinel = sentinel
+
+        return _SentinelBackend
+
+    def get_E_LOST(self):
+        from celery.backends.redis import E_LOST
+        return E_LOST
+
+    def setup(self):
+        self.Backend = self.get_backend()
+        self.E_LOST = self.get_E_LOST()
+        self.b = self.Backend(app=self.app)
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    @skip.unless_module('redis')
+    def test_reduce(self):
+        from celery.backends.redis import SentinelBackend
+        x = SentinelBackend(app=self.app)
+        assert loads(dumps(x))
+
+    def test_no_redis(self):
+        self.Backend.redis = None
+        with pytest.raises(ImproperlyConfigured):
+            self.Backend(app=self.app)
+
+    def test_url(self):
+        self.app.conf.redis_socket_timeout = 30.0
+        self.app.conf.redis_socket_connect_timeout = 100.0
+        x = self.Backend(
+            'sentinel://:test@github.com:123/1;'
+            'sentinel://:test@github.com:124/1',
+            app=self.app,
+        )
+        assert x.connparams
+        assert "host" not in x.connparams
+        assert x.connparams['db'] == 1
+        assert "port" not in x.connparams
+        assert x.connparams['password'] == "test"
+        assert len(x.connparams['hosts']) == 2
+        expected_hosts = ["github.com", "github.com"]
+        found_hosts = [cp['host'] for cp in x.connparams['hosts']]
+        assert found_hosts == expected_hosts
+
+        expected_ports = [123, 124]
+        found_ports = [cp['port'] for cp in x.connparams['hosts']]
+        assert found_ports == expected_ports
+
+        expected_passwords = ["test", "test"]
+        found_passwords = [cp['password'] for cp in x.connparams['hosts']]
+        assert found_passwords == expected_passwords
+
+        expected_dbs = [1, 1]
+        found_dbs = [cp['db'] for cp in x.connparams['hosts']]
+        assert found_dbs == expected_dbs
+
+    def test_get_sentinel_instance(self):
+        x = self.Backend(
+            'sentinel://:test@github.com:123/1;'
+            'sentinel://:test@github.com:124/1',
+            app=self.app,
+        )
+        sentinel_instance = x._get_sentinel_instance(**x.connparams)
+        assert sentinel_instance.sentinel_kwargs == {}
+        assert sentinel_instance.connection_kwargs['db'] == 1
+        assert sentinel_instance.connection_kwargs['password'] == "test"
+        assert len(sentinel_instance.sentinels) == 2
+
+    def test_get_pool(self):
+        x = self.Backend(
+            'sentinel://:test@github.com:123/1;'
+            'sentinel://:test@github.com:124/1',
+            app=self.app,
+        )
+        pool = x._get_pool(**x.connparams)
+        assert pool

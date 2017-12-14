@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 """Riak result store backend."""
 from __future__ import absolute_import, unicode_literals
+
 import sys
+
 from kombu.utils.url import _parse_url
+
 from celery.exceptions import ImproperlyConfigured
+
 from .base import KeyValueStoreBackend
+
 try:
     import riak
     from riak import RiakClient
@@ -12,7 +17,7 @@ try:
 except ImportError:  # pragma: no cover
     riak = RiakClient = last_written_resolver = None  # noqa
 
-__all__ = ['RiakBackend']
+__all__ = ('RiakBackend',)
 
 E_BUCKET_NAME = """\
 Riak bucket names must be composed of ASCII characters only, not: {0!r}\

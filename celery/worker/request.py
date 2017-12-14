@@ -8,7 +8,6 @@ from __future__ import absolute_import, unicode_literals
 
 import logging
 import sys
-
 from datetime import datetime
 from weakref import ref
 
@@ -18,22 +17,20 @@ from kombu.utils.objects import cached_property
 
 from celery import signals
 from celery.app.trace import trace_task, trace_task_ret
-from celery.exceptions import (
-    Ignore, TaskRevokedError, InvalidTaskError,
-    SoftTimeLimitExceeded, TimeLimitExceeded,
-    WorkerLostError, Terminated, Retry, Reject,
-)
+from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
+                               SoftTimeLimitExceeded, TaskRevokedError,
+                               Terminated, TimeLimitExceeded, WorkerLostError)
 from celery.five import python_2_unicode_compatible, string
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
-from celery.utils.time import maybe_iso8601, timezone, maybe_make_aware
 from celery.utils.serialization import get_pickled_exception
+from celery.utils.time import maybe_iso8601, maybe_make_aware, timezone
 
 from . import state
 
-__all__ = ['Request']
+__all__ = ('Request',)
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.
@@ -53,6 +50,8 @@ def __optimize__():
     global _does_info
     _does_debug = logger.isEnabledFor(logging.DEBUG)
     _does_info = logger.isEnabledFor(logging.INFO)
+
+
 __optimize__()  # noqa: E305
 
 # Localize

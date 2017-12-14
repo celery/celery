@@ -5,20 +5,18 @@ from __future__ import absolute_import, print_function, unicode_literals
 import curses
 import sys
 import threading
-
 from datetime import datetime
 from itertools import count
+from math import ceil
 from textwrap import wrap
 from time import time
-from math import ceil
 
-from celery import VERSION_BANNER
-from celery import states
+from celery import VERSION_BANNER, states
 from celery.app import app_or_default
 from celery.five import items, values
 from celery.utils.text import abbr, abbrtask
 
-__all__ = ['CursesMonitor', 'evtop']
+__all__ = ('CursesMonitor', 'evtop')
 
 BORDER_SPACING = 4
 LEFT_BORDER_OFFSET = 3

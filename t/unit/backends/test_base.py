@@ -1,30 +1,24 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
 import sys
 import types
-
 from contextlib import contextmanager
 
+import pytest
 from case import ANY, Mock, call, patch, skip
 
-from celery import states
-from celery import chord, group, uuid
-from celery.backends.base import (
-    BaseBackend,
-    KeyValueStoreBackend,
-    DisabledBackend,
-    _nulldict,
-)
+from celery import chord, group, states, uuid
+from celery.backends.base import (BaseBackend, DisabledBackend,
+                                  KeyValueStoreBackend, _nulldict)
 from celery.exceptions import ChordError, TimeoutError
-from celery.five import items, bytes_if_py2, range
+from celery.five import bytes_if_py2, items, range
 from celery.result import result_from_tuple
 from celery.utils import serialization
 from celery.utils.functional import pass1
-from celery.utils.serialization import subclass_exception
-from celery.utils.serialization import find_pickleable_exception as fnpe
 from celery.utils.serialization import UnpickleableExceptionWrapper
+from celery.utils.serialization import find_pickleable_exception as fnpe
 from celery.utils.serialization import get_pickleable_exception as gpe
+from celery.utils.serialization import subclass_exception
 
 
 class wrapobject(object):
@@ -82,10 +76,11 @@ class test_BaseBackend_interface:
 
     def test_apply_chord(self, unlock='celery.chord_unlock'):
         self.app.tasks[unlock] = Mock()
-        self.b.apply_chord(
-            group(app=self.app), (), 'dakj221', None,
-            result=[self.app.AsyncResult(x) for x in [1, 2, 3]],
+        header_result = self.app.GroupResult(
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
         )
+        self.b.apply_chord(header_result, None)
         assert self.app.tasks[unlock].apply_async.call_count
 
 
@@ -142,7 +137,9 @@ class test_prepare_exception:
     def test_unicode_message(self):
         message = u'\u03ac'
         x = self.b.prepare_exception(Exception(message))
-        assert x == {'exc_message': message, 'exc_type': 'Exception'}
+        assert x == {'exc_message': (message,),
+                     'exc_type': Exception.__name__,
+                     'exc_module': Exception.__module__}
 
 
 class KVBackend(KeyValueStoreBackend):
@@ -531,12 +528,15 @@ class test_KeyValueStoreBackend:
     def test_chord_apply_fallback(self):
         self.b.implements_incr = False
         self.b.fallback_chord_unlock = Mock()
+        header_result = self.app.GroupResult(
+            'group_id',
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
         self.b.apply_chord(
-            group(app=self.app), (), 'group_id', 'body',
-            result='result', foo=1,
+            header_result, 'body', foo=1,
         )
         self.b.fallback_chord_unlock.assert_called_with(
-            'group_id', 'body', result='result', foo=1,
+            header_result, 'body', foo=1,
         )
 
     def test_get_missing_meta(self):

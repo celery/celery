@@ -7,11 +7,10 @@ import socket
 import sys
 import threading
 import traceback
-
 from contextlib import contextmanager
 
-from celery.local import Proxy
 from celery.five import THREAD_TIMEOUT_MAX, items, python_2_unicode_compatible
+from celery.local import Proxy
 
 try:
     from greenlet import getcurrent as get_ident
@@ -28,10 +27,10 @@ except ImportError:  # pragma: no cover
                 from dummy_thread import get_ident      # noqa
 
 
-__all__ = [
+__all__ = (
     'bgThread', 'Local', 'LocalStack', 'LocalManager',
     'get_ident', 'default_socket_timeout',
-]
+)
 
 USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
 PY3 = sys.version_info[0] == 3

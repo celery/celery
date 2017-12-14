@@ -10,7 +10,6 @@ from __future__ import absolute_import, unicode_literals
 import errno
 import logging
 import os
-
 from collections import defaultdict
 from time import sleep
 
@@ -18,12 +17,11 @@ from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.async.semaphore import DummyLock
 from kombu.utils.compat import _detect_environment
-from kombu.utils.encoding import safe_repr, bytes_t
+from kombu.utils.encoding import bytes_t, safe_repr
 from kombu.utils.limits import TokenBucket
 from vine import ppartial, promise
 
-from celery import bootsteps
-from celery import signals
+from celery import bootsteps, signals
 from celery.app.trace import build_tracer
 from celery.exceptions import InvalidTaskError, NotRegistered
 from celery.five import buffer_t, items, python_2_unicode_compatible, values
@@ -33,13 +31,11 @@ from celery.utils.nodenames import gethostname
 from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds, rate
-
 from celery.worker import loops
-from celery.worker.state import (
-    task_reserved, maybe_shutdown, reserved_requests,
-)
+from celery.worker.state import (maybe_shutdown, reserved_requests,
+                                 task_reserved)
 
-__all__ = ['Consumer', 'Evloop', 'dump_body']
+__all__ = ('Consumer', 'Evloop', 'dump_body')
 
 CLOSE = bootsteps.CLOSE
 TERMINATE = bootsteps.TERMINATE
@@ -301,6 +297,12 @@ class Consumer(object):
         )
 
     def _limit_task(self, request, bucket, tokens):
+        if bucket.contents:
+            return bucket.add(request)
+        return self._schedule_bucket_request(request, bucket, tokens)
+
+    def _limit_post_eta(self, request, bucket, tokens):
+        self.qos.decrement_eventually()
         if bucket.contents:
             return bucket.add(request)
         return self._schedule_bucket_request(request, bucket, tokens)

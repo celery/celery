@@ -1,11 +1,15 @@
 # -* coding: utf-8 -*-
 """Apache Cassandra result store backend using the DataStax driver."""
 from __future__ import absolute_import, unicode_literals
+
 import sys
+
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.log import get_logger
+
 from .base import BaseBackend
+
 try:  # pragma: no cover
     import cassandra
     import cassandra.auth
@@ -14,7 +18,7 @@ except ImportError:  # pragma: no cover
     cassandra = None   # noqa
 
 
-__all__ = ['CassandraBackend']
+__all__ = ('CassandraBackend',)
 
 logger = get_logger(__name__)
 
@@ -90,6 +94,7 @@ class CassandraBackend(BaseBackend):
         self.port = port or conf.get('cassandra_port', None)
         self.keyspace = keyspace or conf.get('cassandra_keyspace', None)
         self.table = table or conf.get('cassandra_table', None)
+        self.cassandra_options = conf.get('cassandra_options', {})
 
         if not self.servers or not self.keyspace or not self.table:
             raise ImproperlyConfigured('Cassandra backend not configured.')
@@ -141,7 +146,8 @@ class CassandraBackend(BaseBackend):
         try:
             self._connection = cassandra.cluster.Cluster(
                 self.servers, port=self.port,
-                auth_provider=self.auth_provider)
+                auth_provider=self.auth_provider,
+                **self.cassandra_options)
             self._session = self._connection.connect(self.keyspace)
 
             # We're forced to do concatenation below, as formatting would
@@ -224,7 +230,7 @@ class CassandraBackend(BaseBackend):
 
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
-            dict(servers=self.servers,
-                 keyspace=self.keyspace,
-                 table=self.table))
+            {'servers': self.servers,
+             'keyspace': self.keyspace,
+             'table': self.table})
         return super(CassandraBackend, self).__reduce__(args, kwargs)

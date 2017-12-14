@@ -4,13 +4,11 @@ from __future__ import absolute_import, unicode_literals
 
 import numbers
 import sys
-
 from collections import Mapping, namedtuple
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
-from kombu import pools
-from kombu import Connection, Consumer, Exchange, Producer, Queue
+from kombu import Connection, Consumer, Exchange, Producer, Queue, pools
 from kombu.common import Broadcast
 from kombu.utils.functional import maybe_list
 from kombu.utils.objects import cached_property
@@ -25,7 +23,7 @@ from celery.utils.time import maybe_make_aware
 
 from . import routes as _routes
 
-__all__ = ['AMQP', 'Queues', 'task_message']
+__all__ = ('AMQP', 'Queues', 'task_message')
 
 PY3 = sys.version_info[0] == 3
 
@@ -198,9 +196,9 @@ class Queues(dict):
         if exclude:
             exclude = maybe_list(exclude)
             if self._consume_from is None:
-                # using selection
+                # using all queues
                 return self.select(k for k in self if k not in exclude)
-            # using all queues
+            # using selection
             for queue in exclude:
                 self._consume_from.pop(queue, None)
 
@@ -356,6 +354,7 @@ class AMQP(object):
                 'lang': 'py',
                 'task': name,
                 'id': task_id,
+                'shadow': shadow,
                 'eta': eta,
                 'expires': expires,
                 'group': group_id,
@@ -398,7 +397,8 @@ class AMQP(object):
                    chord=None, callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
-                   shadow=None, now=None, timezone=None):
+                   shadow=None, now=None, timezone=None,
+                   **compat_kwargs):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
@@ -521,8 +521,8 @@ class AMQP(object):
                     exchange_type = 'direct'
 
             # convert to anon-exchange, when exchange not set and direct ex.
-            if not exchange or not routing_key and exchange_type == 'direct':
-                    exchange, routing_key = '', qname
+            if (not exchange or not routing_key) and exchange_type == 'direct':
+                exchange, routing_key = '', qname
             elif exchange is None:
                 # not topic exchange, and exchange not undefined
                 exchange = queue.exchange.name or default_exchange

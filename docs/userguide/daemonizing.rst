@@ -378,7 +378,7 @@ This is an example systemd file:
   Type=forking
   User=celery
   Group=celery
-  EnvironmentFile=-/etc/conf.d/celery
+  EnvironmentFile=/etc/conf.d/celery
   WorkingDirectory=/opt/celery
   ExecStart=/bin/sh -c '${CELERY_BIN} multi start ${CELERYD_NODES} \
     -A ${CELERY_APP} --pidfile=${CELERYD_PID_FILE} \
@@ -430,7 +430,7 @@ This is an example configuration for a Python project:
     # Absolute or relative path to the 'celery' command:
     CELERY_BIN="/usr/local/bin/celery"
     #CELERY_BIN="/virtualenvs/def/bin/celery"
-    
+
     # App instance to use
     # comment out this line if you don't use an app
     CELERY_APP="proj"

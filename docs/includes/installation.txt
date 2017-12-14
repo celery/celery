@@ -161,4 +161,4 @@ pip commands:
 With git
 ~~~~~~~~
 
-Please the Contributing section.
+Please see the :ref:`Contributing <contributing>` section.

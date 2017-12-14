@@ -1,6 +1,8 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
-from celery.utils import chunks, cached_property
+
+from celery.utils import cached_property, chunks
 
 
 @pytest.mark.parametrize('items,n,expected', [
@@ -9,8 +11,8 @@ from celery.utils import chunks, cached_property
     (range(10), 2, [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]]),
 ])
 def test_chunks(items, n, expected):
-        x = chunks(iter(list(items)), n)
-        assert list(x) == expected
+    x = chunks(iter(list(items)), n)
+    assert list(x) == expected
 
 
 def test_cached_property():

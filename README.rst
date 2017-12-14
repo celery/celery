@@ -1,8 +1,8 @@
 .. image:: http://docs.celeryproject.org/en/latest/_images/celery-banner-small.png
 
-|build-status| |license| |wheel| |pyversion| |pyimp|
+|build-status| |coverage| |license| |wheel| |pyversion| |pyimp|
 
-:Version: 4.0.2 (latentcall)
+:Version: 4.1.0 (latentcall)
 :Web: http://celeryproject.org/
 :Download: https://pypi.python.org/pypi/celery/
 :Source: https://github.com/celery/celery/
@@ -40,10 +40,10 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 4.0 runs on,
+Celery version 4.1 runs on,
 
-- Python (2.7, 3.4, 3.5)
-- PyPy (5.4, 5.5)
+- Python (2.7, 3.4, 3.5, 3.6)
+- PyPy (5.8)
 
 
 This is the last version to support Python 2.7,
@@ -72,7 +72,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery 4.0 coming from previous versions then you should read our
+new to Celery 4.1 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -273,7 +273,7 @@ Transports and Backends
 :``celery[sqs]``:
     for using Amazon SQS as a message transport (*experimental*).
 
-:``celery[tblib``]
+:``celery[tblib``]:
     for using the ``task_remote_tracebacks`` feature.
 
 :``celery[memcache]``:
@@ -309,7 +309,7 @@ Transports and Backends
 :``celery[consul]``:
     for using the Consul.io Key/Value store as a message transport or result backend (*experimental*).
 
-:``celery[django]``
+:``celery[django]``:
     specifies the lowest version possible for Django support.
 
     You should probably not use this in your requirements, it's here

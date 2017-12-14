@@ -46,7 +46,7 @@ help:
 	@echo "readme               - Regenerate README.rst file."
 	@echo "contrib              - Regenerate CONTRIBUTING.rst file"
 	@echo "clean-dist --------- - Clean all distribution build artifacts."
-	@echo "  clean-git-force    - Remove all uncomitted files."
+	@echo "  clean-git-force    - Remove all uncommitted files."
 	@echo "  clean ------------ - Non-destructive clean"
 	@echo "    clean-pyc        - Remove .pyc/__pycache__ files"
 	@echo "    clean-docs       - Remove documentation build artifacts."

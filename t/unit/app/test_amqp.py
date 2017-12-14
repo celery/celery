@@ -1,8 +1,11 @@
 from __future__ import absolute_import, unicode_literals
-import pytest
+
 from datetime import datetime, timedelta
+
+import pytest
 from case import Mock
 from kombu import Exchange, Queue
+
 from celery import uuid
 from celery.app.amqp import Queues, utf8dict
 from celery.five import keys
@@ -135,24 +138,24 @@ class test_Queues:
         assert q['barfoo'] is q['foo']
 
     @pytest.mark.parametrize('queues_kwargs,qname,q,expected', [
-        (dict(max_priority=10),
+        ({'max_priority': 10},
          'foo', 'foo', {'x-max-priority': 10}),
-        (dict(max_priority=10),
+        ({'max_priority': 10},
          'xyz', Queue('xyz', queue_arguments={'x-max-priority': 3}),
          {'x-max-priority': 3}),
-        (dict(max_priority=10),
+        ({'max_priority': 10},
          'moo', Queue('moo', queue_arguments=None),
          {'x-max-priority': 10}),
-        (dict(ha_policy='all', max_priority=5),
+        ({'ha_policy': 'all', 'max_priority': 5},
          'bar', 'bar',
          {'x-ha-policy': 'all', 'x-max-priority': 5}),
-        (dict(ha_policy='all', max_priority=5),
+        ({'ha_policy': 'all', 'max_priority': 5},
          'xyx2', Queue('xyx2', queue_arguments={'x-max-priority': 2}),
          {'x-ha-policy': 'all', 'x-max-priority': 2}),
-        (dict(max_priority=None),
+        ({'max_priority': None},
          'foo2', 'foo2',
          None),
-        (dict(max_priority=None),
+        ({'max_priority': None},
          'xyx3', Queue('xyx3', queue_arguments={'x-max-priority': 7}),
          {'x-max-priority': 7}),
 
@@ -263,6 +266,41 @@ class test_AMQP:
         kwargs = prod.publish.call_args[1]
         assert kwargs['routing_key'] == 'foo'
         assert kwargs['exchange'] == ''
+
+    def test_send_task_message__broadcast_without_exchange(self):
+        from kombu.common import Broadcast
+        evd = Mock(name='evd')
+        self.app.amqp.send_task_message(
+            Mock(), 'foo', self.simple_message, retry=False,
+            routing_key='xyz', queue=Broadcast('abc'),
+            event_dispatcher=evd,
+        )
+        evd.publish.assert_called()
+        event = evd.publish.call_args[0][1]
+        assert event['routing_key'] == 'xyz'
+        assert event['exchange'] == 'abc'
+
+    def test_send_event_exchange_direct_with_exchange(self):
+        prod = Mock(name='prod')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event, queue='bar',
+            retry=False, exchange_type='direct', exchange='xyz',
+        )
+        prod.publish.assert_called()
+        pub = prod.publish.call_args[1]
+        assert pub['routing_key'] == 'bar'
+        assert pub['exchange'] == ''
+
+    def test_send_event_exchange_direct_with_routing_key(self):
+        prod = Mock(name='prod')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event, queue='bar',
+            retry=False, exchange_type='direct', routing_key='xyb',
+        )
+        prod.publish.assert_called()
+        pub = prod.publish.call_args[1]
+        assert pub['routing_key'] == 'bar'
+        assert pub['exchange'] == ''
 
     def test_send_event_exchange_string(self):
         evd = Mock(name='evd')

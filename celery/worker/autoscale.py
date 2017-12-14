@@ -12,7 +12,6 @@ from __future__ import absolute_import, unicode_literals
 
 import os
 import threading
-
 from time import sleep
 
 from kombu.async.semaphore import DummyLock
@@ -25,7 +24,7 @@ from celery.utils.threads import bgThread
 from . import state
 from .components import Pool
 
-__all__ = ['Autoscaler', 'WorkerComponent']
+__all__ = ('Autoscaler', 'WorkerComponent')
 
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error

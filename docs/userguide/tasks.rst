@@ -243,7 +243,7 @@ Automatic naming and relative imports
 
 .. sidebar:: Absolute Imports
 
-    The best practice for developers targetting Python 2 is to add the
+    The best practice for developers targeting Python 2 is to add the
     following to the top of **every module**:
 
     .. code-block:: python
@@ -746,6 +746,68 @@ If you want to automatically retry on any error, simply use:
     def x():
         ...
 
+.. versionadded:: 4.1
+
+If your tasks depend on another service, like making a request to an API,
+then it's a good idea to use `exponential backoff`_ to avoid overwhelming the
+service with your requests. Fortunately, Celery's automatic retry support
+makes it easy. Just specify the :attr:`~Task.retry_backoff` argument, like this:
+
+.. code-block:: python
+
+    from requests.exceptions import RequestException
+
+    @app.task(autoretry_for=(RequestException,), retry_backoff=True)
+    def x():
+        ...
+
+By default, this exponential backoff will also introduce random jitter_ to
+avoid having all the tasks run at the same moment. It will also cap the
+maximum backoff delay to 10 minutes. All these settings can be customized
+via options documented below.
+
+.. attribute:: Task.autoretry_for
+
+    A list/tuple of exception classes. If any of these exceptions are raised
+    during the execution of the task, the task will automatically be retried.
+    By default, no exceptions will be autoretried.
+
+.. attribute:: Task.retry_kwargs
+
+    A dictionary. Use this to customize how autoretries are executed.
+    Note that if you use the exponential backoff options below, the `countdown`
+    task option will be determined by Celery's autoretry system, and any
+    `countdown` included in this dictionary will be ignored.
+
+.. attribute:: Task.retry_backoff
+
+    A boolean, or a number. If this option is set to ``True``, autoretries
+    will be delayed following the rules of `exponential backoff`_. The first
+    retry will have a delay of 1 second, the second retry will have a delay
+    of 2 seconds, the third will delay 4 seconds, the fourth will delay 8
+    seconds, and so on. (However, this delay value is modified by
+    :attr:`~Task.retry_jitter`, if it is enabled.)
+    If this option is set to a number, it is used as a
+    delay factor. For example, if this option is set to ``3``, the first retry
+    will delay 3 seconds, the second will delay 6 seconds, the third will
+    delay 12 seconds, the fourth will delay 24 seconds, and so on. By default,
+    this option is set to ``False``, and autoretries will not be delayed.
+
+.. attribute:: Task.retry_backoff_max
+
+    A number. If ``retry_backoff`` is enabled, this option will set a maximum
+    delay in seconds between task autoretries. By default, this option is set to ``600``,
+    which is 10 minutes.
+
+.. attribute:: Task.retry_jitter
+
+    A boolean. `Jitter`_ is used to introduce randomness into
+    exponential backoff delays, to prevent all tasks in the queue from being
+    executed simultaneously. If this option is set to ``True``, the delay
+    value calculated by :attr:`~Task.retry_backoff` is treated as a maximum,
+    and the actual delay value will be a random number between zero and that
+    maximum. By default, this option is set to ``True``.
+
 .. _task-options:
 
 List of Options
@@ -855,10 +917,6 @@ General
     rate limit. To enforce a global rate limit (e.g., for an API with a
     maximum number of  requests per second), you must restrict to a given
     queue.
-
-    .. note::
-
-        This attribute is ignored if the task is requested with an ETA.
 
 .. attribute:: Task.time_limit
 
@@ -1440,6 +1498,68 @@ Handlers
 
     The return value of this handler is ignored.
 
+
+Requests and custom requests
+----------------------------
+
+Upon receiving a message to run a task, the `worker <guide-workers>`:ref:
+creates a `request <celery.worker.request.Request>`:class: to represent such
+demand.
+
+Custom task classes may override which request class to use by changing the
+attribute `celery.app.task.Task.Request`:attr:.  You may either assign the
+custom request class itself, or its fully qualified name.
+
+The request has several responsibilities.  Custom request classes should cover
+them all -- they are responsible to actually run and trace the task.  We
+strongly recommend to inherit from `celery.worker.request.Request`:class:.
+
+When using the `pre-forking worker <worker-concurrency>`:ref:, the methods
+`~celery.worker.request.Request.on_timeout`:meth: and
+`~celery.worker.request.Request.on_failure`:meth: are executed in the main
+worker process.  An application may leverage such facility to detect failures
+which are not detected using `celery.app.task.Task.on_failure`:meth:.
+
+As an example, the following custom request detects and logs hard time
+limits, and other failures.
+
+.. code-block:: python
+
+   import logging
+   from celery.worker.request import Request
+
+   logger = logging.getLogger('my.package')
+
+   class MyRequest(Request):
+       'A minimal custom request to log failures and hard time limits.'
+
+       def on_timeout(self, soft, timeout):
+           super(MyRequest, self).on_timeout(soft, timeout)
+           if not soft:
+              logger.warning(
+                  'A hard timeout was enforced for task %s',
+                  self.task.name
+              )
+
+       def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
+           super(Request, self).on_failure(
+               exc_info,
+               send_failed_event=send_failed_event,
+               return_ok=return_ok
+           )
+           logger.warning(
+               'Failure detected for task %s',
+               self.task.name
+           )
+
+   class MyTask(Task):
+       Request = MyRequest  # you can use a FQN 'my.package:MyRequest'
+
+   @app.task(base=MyTask)
+   def some_longrunning_task():
+       # use your imagination
+
+
 .. _task-how-they-work:
 
 How it works
@@ -1899,3 +2019,5 @@ To make API calls to `Akismet`_ I use the `akismet.py`_ library written by
 .. _`Akismet`: http://akismet.com/faq/
 .. _`akismet.py`: http://www.voidspace.org.uk/downloads/akismet.py
 .. _`Michael Foord`: http://www.voidspace.org.uk/
+.. _`exponential backoff`: https://en.wikipedia.org/wiki/Exponential_backoff
+.. _`jitter`: https://en.wikipedia.org/wiki/Jitter

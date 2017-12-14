@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 """Utilities related to importing modules and symbols by name."""
 from __future__ import absolute_import, unicode_literals
+
 import imp as _imp
 import importlib
 import os
 import sys
 import warnings
 from contextlib import contextmanager
+
 from kombu.utils.imports import symbol_by_name
+
 from celery.five import reload
 
 #: Billiard sets this when execv is enabled.
@@ -16,11 +19,11 @@ from celery.five import reload
 #: task to be that of ``App.main``.
 MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE')
 
-__all__ = [
+__all__ = (
     'NotAPackage', 'qualname', 'instantiate', 'symbol_by_name',
     'cwd_in_path', 'find_module', 'import_from_cwd',
     'reload_from_cwd', 'module_file', 'gen_task_name',
-]
+)
 
 
 class NotAPackage(Exception):

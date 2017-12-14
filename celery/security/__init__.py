@@ -24,7 +24,7 @@ configuration settings to use the auth serializer.
 Please see the configuration reference for more information.
 """
 
-__all__ = ['setup_security']
+__all__ = ('setup_security',)
 
 
 def setup_security(allowed_serializers=None, key=None, cert=None, store=None,

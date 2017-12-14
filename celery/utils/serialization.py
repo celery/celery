@@ -5,17 +5,16 @@ from __future__ import absolute_import, unicode_literals
 import datetime
 import numbers
 import sys
-
-from base64 import b64encode as base64encode, b64decode as base64decode
+from base64 import b64decode as base64decode
+from base64 import b64encode as base64encode
 from functools import partial
 from inspect import getmro
 from itertools import takewhile
 
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
-from celery.five import (
-    bytes_if_py2, python_2_unicode_compatible, items, reraise, string_t,
-)
+from celery.five import (bytes_if_py2, items, python_2_unicode_compatible,
+                         reraise, string_t)
 
 from .encoding import safe_repr
 
@@ -26,12 +25,12 @@ except ImportError:
 
 PY33 = sys.version_info >= (3, 3)
 
-__all__ = [
+__all__ = (
     'UnpickleableExceptionWrapper', 'subclass_exception',
     'find_pickleable_exception', 'create_exception_cls',
     'get_pickleable_exception', 'get_pickleable_etype',
     'get_pickled_exception', 'strtobool',
-]
+)
 
 #: List of base classes we probably don't want to reduce to.
 try:

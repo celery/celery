@@ -1,25 +1,19 @@
 from __future__ import absolute_import, unicode_literals
+
+from datetime import datetime, timedelta, tzinfo
+
 import pytest
 import pytz
-from datetime import datetime, timedelta, tzinfo
+from case import Mock, patch
 from pytz import AmbiguousTimeError
-from case import Mock
-from celery.utils.time import (
-    delta_resolution,
-    humanize_seconds,
-    maybe_iso8601,
-    maybe_timedelta,
-    timezone,
-    rate,
-    remaining,
-    make_aware,
-    maybe_make_aware,
-    localize,
-    LocalTimezone,
-    ffwd,
-    utcoffset,
-)
+
 from celery.utils.iso8601 import parse_iso8601
+from celery.utils.time import (LocalTimezone, delta_resolution, ffwd,
+                               get_exponential_backoff_interval,
+                               humanize_seconds, localize, make_aware,
+                               maybe_iso8601, maybe_make_aware,
+                               maybe_timedelta, rate, remaining, timezone,
+                               utcoffset)
 
 
 class test_LocalTimezone:
@@ -183,7 +177,12 @@ class test_make_aware:
 class test_localize:
 
     def test_tz_without_normalize(self):
-        tz = tzinfo()
+        class tzz(tzinfo):
+
+            def utcoffset(self, dt):
+                return None  # Mock no utcoffset specified
+
+        tz = tzz()
         assert not hasattr(tz, 'normalize')
         assert localize(make_aware(datetime.utcnow(), tz), tz)
 
@@ -191,6 +190,9 @@ class test_localize:
 
         class tzz(tzinfo):
             raises = None
+
+            def utcoffset(self, dt):
+                return None
 
             def normalize(self, dt, **kwargs):
                 self.normalized = True
@@ -214,6 +216,26 @@ class test_localize:
         localize(make_aware(datetime.utcnow(), tz3), tz3)
         assert tz3.normalized
         assert tz3.raised
+
+    def test_localize_changes_utc_dt(self):
+        now_utc_time = datetime.now(tz=pytz.utc)
+        local_tz = pytz.timezone('US/Eastern')
+        localized_time = localize(now_utc_time, local_tz)
+        assert localized_time == now_utc_time
+
+    def test_localize_aware_dt_idempotent(self):
+        t = (2017, 4, 23, 21, 36, 59, 0)
+        local_zone = pytz.timezone('America/New_York')
+        local_time = datetime(*t)
+        local_time_aware = datetime(*t, tzinfo=local_zone)
+        alternate_zone = pytz.timezone('America/Detroit')
+        localized_time = localize(local_time_aware, alternate_zone)
+        assert localized_time == local_time_aware
+        assert local_zone.utcoffset(
+            local_time) == alternate_zone.utcoffset(local_time)
+        localized_utc_offset = localized_time.tzinfo.utcoffset(local_time)
+        assert localized_utc_offset == alternate_zone.utcoffset(local_time)
+        assert localized_utc_offset == local_zone.utcoffset(local_time)
 
 
 @pytest.mark.parametrize('s,expected', [
@@ -253,3 +275,39 @@ class test_utcoffset:
         assert utcoffset(time=_time) is not None
         _time.daylight = False
         assert utcoffset(time=_time) is not None
+
+
+class test_get_exponential_backoff_interval:
+
+    @patch('random.randrange', lambda n: n - 2)
+    def test_with_jitter(self):
+        assert get_exponential_backoff_interval(
+            factor=4,
+            retries=3,
+            maximum=100,
+            full_jitter=True
+        ) == 4 * (2 ** 3) - 1
+
+    def test_without_jitter(self):
+        assert get_exponential_backoff_interval(
+            factor=4,
+            retries=3,
+            maximum=100,
+            full_jitter=False
+        ) == 4 * (2 ** 3)
+
+    def test_bound_by_maximum(self):
+        maximum_boundary = 100
+        assert get_exponential_backoff_interval(
+            factor=40,
+            retries=3,
+            maximum=maximum_boundary
+        ) == maximum_boundary
+
+    @patch('random.randrange', lambda n: n - 1)
+    def test_negative_values(self):
+        assert get_exponential_backoff_interval(
+            factor=-40,
+            retries=3,
+            maximum=100
+        ) == 0
