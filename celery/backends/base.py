@@ -415,8 +415,11 @@ class Backend(object):
     def fallback_chord_unlock(self, header_result, body, countdown=1,
                               **kwargs):
         kwargs['result'] = [r.as_tuple() for r in header_result]
+        queue = body.options.get('queue', getattr(body.type, 'queue', None))
         self.app.tasks['celery.chord_unlock'].apply_async(
-            (header_result.id, body,), kwargs, countdown=countdown,
+            (header_result.id, body,), kwargs,
+            countdown=countdown,
+            queue=queue,
         )
 
     def ensure_chords_allowed(self):
