@@ -227,6 +227,8 @@ integration packages:
     +--------------------+------------------------+
     | `Tornado`_         | :pypi:`tornado-celery` |
     +--------------------+------------------------+
+    | `Tryton`_          | :pypi:`celery_tryton`  |
+    +--------------------+------------------------+
 
 For `Django`_ see :ref:`django-first-steps`.
 
@@ -241,6 +243,7 @@ database connections at :manpage:`fork(2)`.
 .. _`Bottle`: https://bottlepy.org/
 .. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
 .. _`Tornado`: http://www.tornadoweb.org/
+.. _`Tryton`: http://www.tryton.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
 
 Quick Jump
