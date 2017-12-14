@@ -4,6 +4,7 @@ import socket
 import tempfile
 from datetime import datetime, timedelta
 
+import pytest
 from case import ANY, ContextMock, MagicMock, Mock, patch
 from kombu import Queue
 
