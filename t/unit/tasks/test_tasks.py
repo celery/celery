@@ -603,7 +603,7 @@ class test_tasks(TasksCase):
         class JsonMagicMock(MagicMock):
             parent = None
 
-            def __to_json__(self):
+            def __json__(self):
                 return 'whatever'
 
             def reprcall(self, *args, **kwargs):
