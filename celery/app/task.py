@@ -878,7 +878,11 @@ class Task(object):
         """
         if not self.request.chord:
             raise ValueError('Current task is not member of any chord')
-        sig = sig.set(chord=self.request.chord, group_id=self.request.group, root_id=self.request.root_id)
+        sig.set(
+            group_id=self.request.group,
+            chord=self.request.chord,
+            root_id=self.request.root_id,
+        )
         result = sig.freeze()
         self.backend.add_to_chord(self.request.group, result)
         return sig.delay() if not lazy else sig

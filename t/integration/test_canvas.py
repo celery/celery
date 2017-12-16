@@ -10,8 +10,9 @@ from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
 
 from .conftest import flaky
-from .tasks import (add, add_replaced, add_to_all, collect_ids, delayed_sum,
-                    delayed_sum_with_soft_guard, ids, redis_echo,
+from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
+                    add_to_all_to_chord, collect_ids, delayed_sum,
+                    delayed_sum_with_soft_guard, identity, ids, redis_echo,
                     second_order_replace1, tsum)
 
 TIMEOUT = 120
@@ -219,11 +220,35 @@ class test_chord:
             raise pytest.skip(e.args[0])
 
         c1 = chord([
-            chord([add.s(1, 2), add_replaced.s(3, 4)], add_to_all.s(5)) | tsum.s(),
-            chord([add_replaced.s(6, 7), add.s(0, 0)], add_to_all.s(8)) | tsum.s()
+            chord(
+                [add.s(1, 2), add_replaced.s(3, 4)],
+                add_to_all.s(5),
+            ) | tsum.s(),
+            chord(
+                [add_replaced.s(6, 7), add.s(0, 0)],
+                add_to_all.s(8),
+            ) | tsum.s(),
         ], add_to_all.s(9))
         res1 = c1()
-        assert res1.get(timeout=TIMEOUT) == [1+2+5+3+4+5+9, 6+7+8+8+9]
+        assert res1.get(timeout=TIMEOUT) == [29, 38]
+
+    @flaky
+    def test_add_to_chord(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        c = group([add_to_all_to_chord.s([1, 2, 3], 4)]) | identity.s()
+        res = c()
+        assert res.get() == [0, 5, 6, 7]
+
+    @flaky
+    def test_add_chord_to_chord(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        c = group([add_chord_to_chord.s([1, 2, 3], 4)]) | identity.s()
+        res = c()
+        assert res.get() == [0, 5 + 6 + 7]
 
     @flaky
     def test_group_chain(self, manager):
