@@ -846,17 +846,19 @@ class Task(object):
 
         if isinstance(sig, group):
             sig |= self.app.tasks['celery.accumulate'].s(index=0).set(
-                chord=chord,
                 link=self.request.callbacks,
                 link_error=self.request.errbacks,
             )
-            chord = None
 
         if self.request.chain:
             for t in reversed(self.request.chain):
                 sig |= signature(t, app=self.app)
 
-        sig = sig.set(chord=self.request.chord, group_id=self.request.group, root_id=self.request.root_id)
+        sig.set(
+            chord=chord,
+            group_id=self.request.group,
+            root_id=self.request.root_id,
+        )
         sig.freeze(self.request.id)
 
         sig.delay()

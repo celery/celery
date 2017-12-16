@@ -12,7 +12,7 @@ from celery.result import AsyncResult, GroupResult
 from .conftest import flaky
 from .tasks import (add, add_replaced, add_to_all, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, ids, redis_echo,
-                    second_order_replace1)
+                    second_order_replace1, tsum)
 
 TIMEOUT = 120
 
@@ -210,6 +210,20 @@ class test_chord:
         channels_after = \
             len(redis_client.execute_command('PUBSUB CHANNELS'))
         assert channels_after < channels_before
+
+    @flaky
+    def test_replaced_nested_chord(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c1 = chord([
+            chord([add.s(1, 2), add_replaced.s(3, 4)], add_to_all.s(5)) | tsum.s(),
+            chord([add_replaced.s(6, 7), add.s(0, 0)], add_to_all.s(8)) | tsum.s()
+        ], add_to_all.s(9))
+        res1 = c1()
+        assert res1.get(timeout=TIMEOUT) == [1+2+5+3+4+5+9, 6+7+8+8+9]
 
     @flaky
     def test_group_chain(self, manager):

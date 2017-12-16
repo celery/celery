@@ -603,7 +603,7 @@ class test_tasks(TasksCase):
         class JsonMagicMock(MagicMock):
             parent = None
 
-            def __json__(self):
+            def __to_json__(self):
                 return 'whatever'
 
             def reprcall(self, *args, **kwargs):
@@ -617,7 +617,6 @@ class test_tasks(TasksCase):
             self.mytask.replace(c)
         except Ignore:
             mocked_signature.return_value.set.assert_called_with(
-                chord=None,
                 link='callbacks',
                 link_error='errbacks',
             )

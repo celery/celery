@@ -35,6 +35,12 @@ def delayed_sum_with_soft_guard(numbers, pause_time=1):
         return 0
 
 
+@shared_task
+def tsum(nums):
+    """Sum an iterable of numbers"""
+    return sum(nums)
+
+
 @shared_task(bind=True)
 def add_replaced(self, x, y):
     """Add two numbers (via the add task)."""
