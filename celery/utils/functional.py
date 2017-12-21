@@ -5,19 +5,19 @@ from __future__ import absolute_import, print_function, unicode_literals
 import inspect
 import sys
 from functools import partial
-from itertools import chain, islice
+from itertools import islice, tee
 
 from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
                                     maybe_evaluate, maybe_list, memoize)
 from vine import promise
 
-from celery.five import UserList, getfullargspec, range
+from celery.five import UserList, getfullargspec, range, zip_longest
 
 __all__ = (
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
     'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
-    'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun',
-    'maybe', 'fun_accepts_kwargs',
+    'lookahead', 'regen', 'dictfilter', 'lazy', 'maybe_evaluate',
+    'head_from_fun', 'maybe', 'fun_accepts_kwargs',
 )
 
 IS_PY3 = sys.version_info[0] == 3
@@ -167,6 +167,22 @@ def uniq(it):
     return (seen.add(obj) or obj for obj in it if obj not in seen)
 
 
+def lookahead(it):
+    """Yield pairs of (current, next) items in `it`.
+
+    `next` is None if `current` is the last item.
+
+    Example:
+
+        >>> list(lookahead(x for x in range(6)))
+        [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, None)]
+
+    """
+    a, b = tee(it)
+    next(b, None)
+    return zip_longest(a, b, fillvalue=None)
+
+
 def regen(it):
     """Convert iterator to an object that can be consumed multiple times.
 
@@ -189,6 +205,7 @@ class _regen(UserList, list):
         self.__it = it
         self.__index = 0
         self.__consumed = []
+        self.__done = False
 
     def __reduce__(self):
         return list, (self.data,)
@@ -196,8 +213,23 @@ class _regen(UserList, list):
     def __length_hint__(self):
         return self.__it.__length_hint__()
 
+    def __repr__(self):
+        # override list.__repr__ to avoid consuming the generator
+        if self.__done:
+            return repr(self.__consumed)
+        else:
+            return '[{0}]'.format(', '.join(
+                [repr(x) for x in self.__consumed] + ['...'])
+            )
+
     def __iter__(self):
-        return chain(self.__consumed, self.__it)
+        for x in self.__consumed:
+            yield x
+        if not self.__done:
+            for y in self.__it:
+                self.__consumed.append(y)
+                yield y
+            self.__done = True
 
     def __getitem__(self, index):
         if index < 0:
@@ -205,21 +237,40 @@ class _regen(UserList, list):
         try:
             return self.__consumed[index]
         except IndexError:
+            it = iter(self)
             try:
                 for _ in range(self.__index, index + 1):
-                    self.__consumed.append(next(self.__it))
+                    next(it)
             except StopIteration:
                 raise IndexError(index)
             else:
                 return self.__consumed[index]
 
+    def __nonzero__(self):
+        # nonzero for list calls len() which would consume the generator:
+        # override to consume maximum of one item.
+        if len(self.__consumed):
+            return True
+        try:
+            next(iter(self))
+        except StopIteration:
+            return False
+        else:
+            return True
+
+    # Python3
+
+    __bool__ = __nonzero__
+
     @property
     def data(self):
-        try:
-            self.__consumed.extend(list(self.__it))
-        except StopIteration:
-            pass
+        # consume the generator
+        list(iter(self))
         return self.__consumed
+
+    def fully_consumed(self):
+        """Return whether the iterator has been fully consumed"""
+        return self.__done
 
 
 def _argsfromspec(spec, replace_defaults=True):
