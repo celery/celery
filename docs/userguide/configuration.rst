@@ -47,8 +47,13 @@ names, are the renaming of some prefixes, like ``celerybeat_`` to ``beat_``,
 ``celeryd_`` to ``worker_``, and most of the top level ``celery_`` settings
 have been moved into a new  ``task_`` prefix.
 
-Celery will still be able to read old configuration files, so there's no
-rush in moving to the new settings format.
+.. note::
+
+    Celery will still be able to read old configuration files, so
+    there's no rush in moving to the new settings format. Furthermore,
+    we provide the ``celery upgrade`` command that should handle plenty
+    of cases (including :ref:`Django <latentcall-django-admonition>`).
+
 
 =====================================  ==============================================
 **Setting name**                       **Replace with**
