@@ -10,8 +10,8 @@ from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
 
 from .conftest import flaky
-from .tasks import (add, add_replaced, add_to_all, collect_ids, ids,
-                    redis_echo, second_order_replace1, delayed_sum)
+from .tasks import (add, add_replaced, add_to_all, collect_ids, delayed_sum,
+                    ids, redis_echo, second_order_replace1)
 
 TIMEOUT = 120
 
