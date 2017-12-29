@@ -347,6 +347,7 @@ class test_RedisBackend:
     @patch('celery.result.GroupResult.restore')
     def test_on_chord_part_return(self, restore):
         tasks = [self.create_task() for i in range(10)]
+        self.b.result_consumer.start(tasks[0].request.id)
 
         for i in range(10):
             self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
@@ -358,6 +359,9 @@ class test_RedisBackend:
         self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
         self.b.client.expire.assert_has_calls([
             call(jkey, 86400), call(tkey, 86400),
+        ])
+        self.b.result_consumer._pubsub.unsubscribe.assert_has_calls([
+            call(self.b.get_key_for_task(task.request.id)) for task in tasks
         ])
 
     def test_on_chord_part_return__success(self):
