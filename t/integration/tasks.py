@@ -15,6 +15,15 @@ def add(x, y):
     return x + y
 
 
+@shared_task
+def delayed_sum(numbers, pause_time=1):
+    """Sum the iterable of numbers."""
+    # Allow the task to be in STARTED state for
+    # a limited period of time.
+    sleep(pause_time)
+    return sum(numbers)
+
+
 @shared_task(bind=True)
 def add_replaced(self, x, y):
     """Add two numbers (via the add task)."""
