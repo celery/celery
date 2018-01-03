@@ -487,3 +487,14 @@ class test_Control:
             uuids,
             connection=None, reply=False, signal=None,
             terminate=False, timeout=None)
+
+    def test_after_fork_clears_mailbox_pool(self):
+        amqp = Mock(name='amqp')
+        self.app.amqp = amqp
+        closed_pool = Mock(name='closed pool')
+        amqp.producer_pool = closed_pool
+        assert closed_pool is self.app.control.mailbox.producer_pool
+        self.app.control._after_fork()
+        new_pool = Mock(name='new pool')
+        amqp.producer_pool = new_pool
+        assert new_pool is self.app.control.mailbox.producer_pool
