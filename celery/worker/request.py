@@ -18,8 +18,8 @@ from kombu.utils.objects import cached_property
 from celery import signals
 from celery.app.trace import trace_task, trace_task_ret
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
-                               SoftTimeLimitExceeded, TaskRevokedError,
-                               Terminated, TimeLimitExceeded, WorkerLostError)
+                               TaskRevokedError, Terminated,
+                               TimeLimitExceeded, WorkerLostError)
 from celery.five import python_2_unicode_compatible, string
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, noop
