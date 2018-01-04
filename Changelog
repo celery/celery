@@ -8,6 +8,15 @@ This document contains change notes for bugfix releases in
 the 4.1.x series (latentcall), please see :ref:`whatsnew-4.1` for
 an overview of what's new in Celery 4.1.
 
+Unreleased
+==========
+
+- **Canvas**: request on_timeout now ignores soft time limit exception
+  to give a chance for task to recover.
+
+  Contributed by **Alex Garel**
+
+
 .. _version-4.1.0:
 
 4.1.0

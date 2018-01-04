@@ -299,22 +299,21 @@ class Request(object):
 
     def on_timeout(self, soft, timeout):
         """Handler called if the task times out."""
-        task_ready(self)
         if soft:
             warn('Soft time limit (%ss) exceeded for %s[%s]',
                  timeout, self.name, self.id)
-            exc = SoftTimeLimitExceeded(soft)
         else:
+            task_ready(self)
             error('Hard time limit (%ss) exceeded for %s[%s]',
                   timeout, self.name, self.id)
             exc = TimeLimitExceeded(timeout)
 
-        self.task.backend.mark_as_failure(
-            self.id, exc, request=self, store_result=self.store_errors,
-        )
+            self.task.backend.mark_as_failure(
+                self.id, exc, request=self, store_result=self.store_errors,
+            )
 
-        if self.task.acks_late:
-            self.acknowledge()
+            if self.task.acks_late:
+                self.acknowledge()
 
     def on_success(self, failed__retval__runtime, **kwargs):
         """Handler called if the task was successfully processed."""

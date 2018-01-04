@@ -4,6 +4,7 @@ from __future__ import absolute_import, unicode_literals
 from time import sleep
 
 from celery import chain, group, shared_task
+from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
 logger = get_task_logger(__name__)
@@ -22,6 +23,16 @@ def delayed_sum(numbers, pause_time=1):
     # a limited period of time.
     sleep(pause_time)
     return sum(numbers)
+
+
+@shared_task
+def delayed_sum_with_soft_guard(numbers, pause_time=1):
+    """Sum the iterable of numbers."""
+    try:
+        sleep(pause_time)
+        return sum(numbers)
+    except SoftTimeLimitExceeded:
+        return 0
 
 
 @shared_task(bind=True)
