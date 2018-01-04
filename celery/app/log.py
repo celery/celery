@@ -21,19 +21,38 @@ from celery._state import get_current_task
 from celery.five import string_t
 from celery.local import class_property
 from celery.platforms import isatty
+from celery.utils.deprecated import warn
 from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
                               get_multiprocessing_logger, mlevel,
                               reset_multiprocessing_logger)
 from celery.utils.nodenames import node_format
 from celery.utils.term import colored
 
-__all__ = ('TaskFormatter', 'Logging')
+__all__ = ('TaskFilter', 'Logging')
 
 MP_LOG = os.environ.get('MP_LOG', False)
 
 
+class TaskFilter(logging.Filter):
+    """Filter for tasks, adding the task name and id."""
+
+    def filter(self, record):
+        task = get_current_task()
+        if task and task.request:
+            record.__dict__.update(task_id=task.request.id,
+                                   task_name=task.name)
+        else:
+            record.__dict__.setdefault('task_name', '???')
+            record.__dict__.setdefault('task_id', '???')
+        return record
+
+
 class TaskFormatter(ColorFormatter):
     """Formatter for tasks, adding the task name and id."""
+
+    def __init__(self, *args, **kwargs):
+        super(TaskFormatter, self).__init__(*args, **kwargs)
+        warn('TaskFormatter is deprecated in favour of TaskFilter')
 
     def format(self, record):
         task = get_current_task()
@@ -169,8 +188,9 @@ class Logging(object):
         logger = self.setup_handlers(
             get_logger('celery.task'),
             logfile, format, colorize,
-            formatter=TaskFormatter, **kwargs
+            **kwargs
         )
+        logger.addFilter(TaskFilter())
         logger.setLevel(loglevel)
         # this is an int for some reason, better to not question why.
         logger.propagate = int(propagate)
