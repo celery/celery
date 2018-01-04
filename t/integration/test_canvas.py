@@ -11,7 +11,8 @@ from celery.result import AsyncResult, GroupResult
 
 from .conftest import flaky
 from .tasks import (add, add_replaced, add_to_all, collect_ids, delayed_sum,
-                    ids, redis_echo, second_order_replace1)
+                    delayed_sum_with_soft_guard, ids, redis_echo,
+                    second_order_replace1)
 
 TIMEOUT = 120
 
@@ -109,6 +110,26 @@ class test_chain:
             assert root_id == root.id
             node = node.parent
             i -= 1
+
+    def test_chord_soft_timeout_recuperation(self, manager):
+        """Test that if soft timeout happens in task but is managed by task,
+        chord still get results normally
+        """
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        c = chord([
+            # return 3
+            add.s(1, 2),
+            # return 0 after managing soft timeout
+            delayed_sum_with_soft_guard.s(
+                [100], pause_time=2
+            ).set(
+                soft_time_limit=1
+            ),
+        ])
+        result = c(delayed_sum.s(pause_time=0)).get()
+        assert result == 3
 
 
 class test_group:

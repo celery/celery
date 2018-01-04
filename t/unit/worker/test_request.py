@@ -599,30 +599,38 @@ class test_Request(RequestCase):
         with pytest.raises(InvalidTaskError):
             raise req.execute().exception
 
-    def test_on_timeout(self, patching):
-        warn = patching('celery.worker.request.warn')
+    def test_on_hard_timeout(self, patching):
         error = patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.task.acks_late = True
+        job.on_timeout(soft=False, timeout=1337)
+        assert 'Hard time limit' in error.call_args[0][0]
+        assert self.mytask.backend.get_status(job.id) == states.FAILURE
+        job.acknowledge.assert_called_with()
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.task.acks_late = False
+        job.on_timeout(soft=False, timeout=1335)
+        job.acknowledge.assert_not_called()
+
+    def test_on_soft_timeout(self, patching):
+        warn = patching('celery.worker.request.warn')
 
         job = self.xRequest()
         job.acknowledge = Mock(name='ack')
         job.task.acks_late = True
         job.on_timeout(soft=True, timeout=1337)
         assert 'Soft time limit' in warn.call_args[0][0]
-        job.on_timeout(soft=False, timeout=1337)
-        assert 'Hard time limit' in error.call_args[0][0]
-        assert self.mytask.backend.get_status(job.id) == states.FAILURE
-        job.acknowledge.assert_called_with()
+        assert self.mytask.backend.get_status(job.id) == states.PENDING
+        job.acknowledge.assert_not_called()
 
         self.mytask.ignore_result = True
         job = self.xRequest()
         job.on_timeout(soft=True, timeout=1336)
         assert self.mytask.backend.get_status(job.id) == states.PENDING
-
-        job = self.xRequest()
-        job.acknowledge = Mock(name='ack')
-        job.task.acks_late = False
-        job.on_timeout(soft=True, timeout=1335)
-        job.acknowledge.assert_not_called()
 
     def test_fast_trace_task(self):
         from celery.app import trace
