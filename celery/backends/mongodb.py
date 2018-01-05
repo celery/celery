@@ -50,6 +50,7 @@ class MongoBackend(BaseBackend):
     user = None
     password = None
     database_name = 'celery'
+    backend_database_name = database_name
     taskmeta_collection = 'celery_taskmeta'
     groupmeta_collection = 'celery_groupmeta'
     max_pool_size = 10
@@ -89,6 +90,7 @@ class MongoBackend(BaseBackend):
             if uri_data['database']:
                 # if no database is provided in the uri, use default
                 self.database_name = uri_data['database']
+                self.backend_database_name = self.database_name
 
             self.options.update(uri_data['options'])
 
@@ -110,6 +112,7 @@ class MongoBackend(BaseBackend):
             self.user = config.pop('user', self.user)
             self.password = config.pop('password', self.password)
             self.database_name = config.pop('database', self.database_name)
+            self.backend_database_name = config.pop('backend_database', self.database_name)
             self.taskmeta_collection = config.pop(
                 'taskmeta_collection', self.taskmeta_collection,
             )
@@ -256,7 +259,7 @@ class MongoBackend(BaseBackend):
 
     def _get_database(self):
         conn = self._get_connection()
-        db = conn[self.database_name]
+        db = conn[self.backend_database_name]
         if self.user and self.password:
             if not db.authenticate(self.user, self.password):
                 raise ImproperlyConfigured(
