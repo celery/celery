@@ -11,6 +11,11 @@ logger = get_task_logger(__name__)
 
 
 @shared_task
+def identity(x):
+    return x
+
+
+@shared_task
 def add(x, y):
     """Add two numbers."""
     return x + y
@@ -35,6 +40,12 @@ def delayed_sum_with_soft_guard(numbers, pause_time=1):
         return 0
 
 
+@shared_task
+def tsum(nums):
+    """Sum an iterable of numbers"""
+    return sum(nums)
+
+
 @shared_task(bind=True)
 def add_replaced(self, x, y):
     """Add two numbers (via the add task)."""
@@ -46,6 +57,20 @@ def add_to_all(self, nums, val):
     """Add the given value to all supplied numbers."""
     subtasks = [add.s(num, val) for num in nums]
     raise self.replace(group(*subtasks))
+
+
+@shared_task(bind=True)
+def add_to_all_to_chord(self, nums, val):
+    for num in nums:
+        self.add_to_chord(add.s(num, val))
+    return 0
+
+
+@shared_task(bind=True)
+def add_chord_to_chord(self, nums, val):
+    subtasks = [add.s(num, val) for num in nums]
+    self.add_to_chord(group(subtasks) | tsum.s())
+    return 0
 
 
 @shared_task

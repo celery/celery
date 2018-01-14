@@ -11,7 +11,8 @@ from kombu.utils.uuid import uuid
 from celery import current_app, group, states
 from celery._state import _task_stack
 from celery.canvas import signature
-from celery.exceptions import Ignore, MaxRetriesExceededError, Reject, Retry
+from celery.exceptions import (Ignore, ImproperlyConfigured,
+                               MaxRetriesExceededError, Reject, Retry)
 from celery.five import items, python_2_unicode_compatible
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
@@ -839,27 +840,26 @@ class Task(object):
         """
         chord = self.request.chord
         if 'chord' in sig.options:
-            if chord:
-                chord = sig.options['chord'] | chord
-            else:
-                chord = sig.options['chord']
+            raise ImproperlyConfigured(
+                "A signature replacing a task must not be part of a chord"
+            )
 
         if isinstance(sig, group):
             sig |= self.app.tasks['celery.accumulate'].s(index=0).set(
-                chord=chord,
                 link=self.request.callbacks,
                 link_error=self.request.errbacks,
             )
-            chord = None
 
         if self.request.chain:
             for t in reversed(self.request.chain):
                 sig |= signature(t, app=self.app)
 
-        sig.freeze(self.request.id,
-                   group_id=self.request.group,
-                   chord=chord,
-                   root_id=self.request.root_id)
+        sig.set(
+            chord=chord,
+            group_id=self.request.group,
+            root_id=self.request.root_id,
+        )
+        sig.freeze(self.request.id)
 
         sig.delay()
         raise Ignore('Replaced by new task')
@@ -878,9 +878,12 @@ class Task(object):
         """
         if not self.request.chord:
             raise ValueError('Current task is not member of any chord')
-        result = sig.freeze(group_id=self.request.group,
-                            chord=self.request.chord,
-                            root_id=self.request.root_id)
+        sig.set(
+            group_id=self.request.group,
+            chord=self.request.chord,
+            root_id=self.request.root_id,
+        )
+        result = sig.freeze()
         self.backend.add_to_chord(self.request.group, result)
         return sig.delay() if not lazy else sig
 

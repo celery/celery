@@ -10,7 +10,7 @@ from kombu import Queue
 
 from celery import Task, group, uuid
 from celery.app.task import _reprtask
-from celery.exceptions import Ignore, Retry
+from celery.exceptions import Ignore, ImproperlyConfigured, Retry
 from celery.five import items, range, string_t
 from celery.result import EagerResult
 from celery.utils.time import parse_iso8601
@@ -589,6 +589,12 @@ class test_tasks(TasksCase):
         with pytest.raises(Ignore):
             self.mytask.replace(sig1)
 
+    def test_replace_with_chord(self):
+        sig1 = Mock(name='sig1')
+        sig1.options = {'chord': None}
+        with pytest.raises(ImproperlyConfigured):
+            self.mytask.replace(sig1)
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_replace_callback(self):
         c = group([self.mytask.s()], app=self.app)
@@ -617,7 +623,6 @@ class test_tasks(TasksCase):
             self.mytask.replace(c)
         except Ignore:
             mocked_signature.return_value.set.assert_called_with(
-                chord=None,
                 link='callbacks',
                 link_error='errbacks',
             )
