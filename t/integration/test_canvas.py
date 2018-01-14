@@ -37,6 +37,29 @@ class test_chain:
         assert res.get(timeout=TIMEOUT) == [64, 65, 66, 67]
 
     @flaky
+    def test_group_results_in_chain(self, manager):
+        # This adds in an explicit test for the special case added in commit
+        # 1e3fcaa969de6ad32b52a3ed8e74281e5e5360e6
+        c = (
+            group(
+                add.s(1, 2) | group(
+                    add.s(1), add.s(2)
+                )
+            )
+        )
+        res = c()
+        assert res.get(timeout=TIMEOUT) == [4, 5]
+
+    @flaky
+    def test_chain_inside_group_receives_arguments(self, manager):
+        c = (
+            add.s(5, 6) |
+            group((add.s(1) | add.s(2), add.s(3)))
+        )
+        res = c()
+        assert res.get(timeout=TIMEOUT) == [14, 14]
+
+    @flaky
     def test_group_chord_group_chain(self, manager):
         from celery.five import bytes_if_py2
 

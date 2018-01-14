@@ -570,13 +570,10 @@ class _chain(Signature):
         args = (tuple(args) + tuple(self.args)
                 if args and not self.immutable else self.args)
 
-        if self._frozen:
-            tasks, results = self._frozen
-        else:
-            tasks, results = self.prepare_steps(
-                args, self.tasks, root_id, parent_id, link_error, app,
-                task_id, group_id, chord,
-            )
+        tasks, results = self.prepare_steps(
+            args, self.tasks, root_id, parent_id, link_error, app,
+            task_id, group_id, chord,
+        )
 
         if results:
             if link:
