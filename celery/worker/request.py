@@ -9,6 +9,7 @@ from __future__ import absolute_import, unicode_literals
 import logging
 import sys
 from datetime import datetime
+from time import time
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
@@ -20,7 +21,7 @@ from celery.app.trace import trace_task, trace_task_ret
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
-from celery.five import python_2_unicode_compatible, string
+from celery.five import monotonic, python_2_unicode_compatible, string
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, noop
 from celery.utils.log import get_logger
@@ -287,7 +288,8 @@ class Request(object):
     def on_accepted(self, pid, time_accepted):
         """Handler called when task is accepted by worker pool."""
         self.worker_pid = pid
-        self.time_start = time_accepted
+        # Convert monotonic time_accepted to absolute time
+        self.time_start = time() - (monotonic() - time_accepted)
         task_accepted(self)
         if not self.task.acks_late:
             self.acknowledge()
