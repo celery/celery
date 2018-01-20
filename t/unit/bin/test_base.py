@@ -1,13 +1,12 @@
 from __future__ import absolute_import, unicode_literals
+
 import os
+
 import pytest
 from case import Mock, mock, patch
+
+from celery.bin.base import Command, Extensions, Option
 from celery.five import bytes_if_py2
-from celery.bin.base import (
-    Command,
-    Option,
-    Extensions,
-)
 
 
 class MyApp(object):
@@ -21,7 +20,7 @@ class MockCommand(Command):
     mock_args = ('arg1', 'arg2', 'arg3')
 
     def parse_options(self, prog_name, arguments, command=None):
-        options = dict(foo='bar', prog_name=prog_name)
+        options = {'foo': 'bar', 'prog_name': prog_name}
         return options, self.mock_args
 
     def run(self, *args, **kwargs):

@@ -3,32 +3,26 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
+import json
 import os
 import random
 import re
 import sys
 import warnings
-import json
-
 from collections import defaultdict
 from heapq import heappush
 from pprint import pformat
 
-from celery import VERSION_BANNER, Celery, maybe_patch_concurrency
-from celery import signals
+from celery import VERSION_BANNER, Celery, maybe_patch_concurrency, signals
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
-from celery.five import (
-    getfullargspec, items, python_2_unicode_compatible,
-    string, string_t, text_t, long_t,
-)
+from celery.five import (getfullargspec, items, long_t,
+                         python_2_unicode_compatible, string, string_t,
+                         text_t)
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE, isatty
-from celery.utils import imports
-from celery.utils import term
-from celery.utils import text
+from celery.utils import imports, term, text
 from celery.utils.functional import dictfilter
-from celery.utils.nodenames import node_format, host_format
+from celery.utils.nodenames import host_format, node_format
 from celery.utils.objects import Bunch
-
 
 # Option is here for backwards compatiblity, as third-party commands
 # may import it from here.
@@ -42,9 +36,9 @@ try:
 except NameError:  # pragma: no cover
     pass
 
-__all__ = [
+__all__ = (
     'Error', 'UsageError', 'Extensions', 'Command', 'Option', 'daemon_options',
-]
+)
 
 # always enable DeprecationWarnings, so our users can see them.
 for warning in (CDeprecationWarning, CPendingDeprecationWarning):
@@ -85,18 +79,18 @@ def _add_optparse_argument(parser, opt, typemap={
     # store_true sets value to "('NO', 'DEFAULT')" for some
     # crazy reason, so not to set a sane default here.
     if opt.action == 'store_true' and opt.default is None:
-            opt.default = False
+        opt.default = False
     parser.add_argument(
         *opt._long_opts + opt._short_opts,
-        **dictfilter(dict(
-            action=opt.action,
-            type=typemap.get(opt.type, opt.type),
-            dest=opt.dest,
-            nargs=opt.nargs,
-            choices=opt.choices,
-            help=opt.help,
-            metavar=opt.metavar,
-            default=opt.default)))
+        **dictfilter({
+            'action': opt.action,
+            'type': typemap.get(opt.type, opt.type),
+            'dest': opt.dest,
+            'nargs': opt.nargs,
+            'choices': opt.choices,
+            'help': opt.help,
+            'metavar': opt.metavar,
+            'default': opt.default}))
 
 
 def _add_compat_options(parser, options):

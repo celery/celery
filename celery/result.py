@@ -3,7 +3,6 @@
 from __future__ import absolute_import, unicode_literals
 
 import time
-
 from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
@@ -11,14 +10,12 @@ from copy import copy
 from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
 
-from . import current_app
-from . import states
+from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
-from .five import (
-    items, python_2_unicode_compatible, range, string_t, monotonic,
-)
+from .five import (items, monotonic, python_2_unicode_compatible, range,
+                   string_t)
 from .utils import deprecated
 from .utils.graph import DependencyGraph, GraphFormatter
 
@@ -27,10 +24,10 @@ try:
 except ImportError:
     tblib = None
 
-__all__ = [
+__all__ = (
     'ResultBase', 'AsyncResult', 'ResultSet',
     'GroupResult', 'EagerResult', 'result_from_tuple',
-]
+)
 
 E_WOULDBLOCK = """\
 Never call result.get() within a task!
@@ -48,6 +45,16 @@ def assert_will_not_block():
 def allow_join_result():
     reset_value = task_join_will_block()
     _set_task_join_will_block(False)
+    try:
+        yield
+    finally:
+        _set_task_join_will_block(reset_value)
+
+
+@contextmanager
+def denied_join_result():
+    reset_value = task_join_will_block()
+    _set_task_join_will_block(True)
     try:
         yield
     finally:
@@ -92,7 +99,7 @@ class AsyncResult(ResultBase):
         self.id = id
         self.backend = backend or self.app.backend
         self.parent = parent
-        self.on_ready = promise(self._on_fulfilled, weak=True)
+        self.on_ready = promise(self._on_fulfilled)
         self._cache = None
 
     def then(self, callback, on_error=None, weak=False):
@@ -173,7 +180,7 @@ class AsyncResult(ResultBase):
             assert_will_not_block()
         _on_interval = promise()
         if follow_parents and propagate and self.parent:
-            on_interval = promise(self._maybe_reraise_parent_error, weak=True)
+            on_interval = promise(self._maybe_reraise_parent_error)
             self._maybe_reraise_parent_error()
         if on_interval:
             _on_interval.then(on_interval)
@@ -467,7 +474,7 @@ class ResultSet(ResultBase):
         self.on_ready = promise(args=(self,))
         self._on_full = ready_barrier or barrier(results)
         if self._on_full:
-            self._on_full.then(promise(self.on_ready, weak=True))
+            self._on_full.then(promise(self._on_ready))
 
     def add(self, result):
         """Add :class:`AsyncResult` as a new member of the set.
@@ -620,7 +627,8 @@ class ResultSet(ResultBase):
                 raise TimeoutError('The operation timed out')
 
     def get(self, timeout=None, propagate=True, interval=0.5,
-            callback=None, no_ack=True, on_message=None):
+            callback=None, no_ack=True, on_message=None,
+            disable_sync_subtasks=True, on_interval=None):
         """See :meth:`join`.
 
         This is here for API compatibility with :class:`AsyncResult`,
@@ -632,11 +640,13 @@ class ResultSet(ResultBase):
         return (self.join_native if self.supports_native_join else self.join)(
             timeout=timeout, propagate=propagate,
             interval=interval, callback=callback, no_ack=no_ack,
-            on_message=on_message,
+            on_message=on_message, disable_sync_subtasks=disable_sync_subtasks,
+            on_interval=on_interval,
         )
 
     def join(self, timeout=None, propagate=True, interval=0.5,
-             callback=None, no_ack=True, on_message=None, on_interval=None):
+             callback=None, no_ack=True, on_message=None,
+             disable_sync_subtasks=True, on_interval=None):
         """Gather the results of all tasks as a list in order.
 
         Note:
@@ -672,13 +682,17 @@ class ResultSet(ResultBase):
             no_ack (bool): Automatic message acknowledgment (Note that if this
                 is set to :const:`False` then the messages
                 *will not be acknowledged*).
+            disable_sync_subtasks (bool): Disable tasks to wait for sub tasks
+                this is the default configuration. CAUTION do not enable this
+                unless you must.
 
         Raises:
             celery.exceptions.TimeoutError: if ``timeout`` isn't
                 :const:`None` and the operation takes longer than ``timeout``
                 seconds.
         """
-        assert_will_not_block()
+        if disable_sync_subtasks:
+            assert_will_not_block()
         time_start = monotonic()
         remaining = None
 
@@ -726,7 +740,8 @@ class ResultSet(ResultBase):
 
     def join_native(self, timeout=None, propagate=True,
                     interval=0.5, callback=None, no_ack=True,
-                    on_message=None, on_interval=None):
+                    on_message=None, on_interval=None,
+                    disable_sync_subtasks=True):
         """Backend optimized version of :meth:`join`.
 
         .. versionadded:: 2.2
@@ -737,7 +752,8 @@ class ResultSet(ResultBase):
         This is currently only supported by the amqp, Redis and cache
         result backends.
         """
-        assert_will_not_block()
+        if disable_sync_subtasks:
+            assert_will_not_block()
         order_index = None if callback else {
             result.id: i for i, result in enumerate(self.results)
         }
@@ -880,8 +896,10 @@ class GroupResult(ResultSet):
     @classmethod
     def restore(cls, id, backend=None, app=None):
         """Restore previously saved group result."""
-        app = app or cls.app
-        backend = backend or (app.backend if app else current_app.backend)
+        app = app or (
+            cls.app if not isinstance(cls.app, property) else current_app
+        )
+        backend = backend or app.backend
         return backend.restore_group(id)
 
 
@@ -919,7 +937,11 @@ class EagerResult(AsyncResult):
     def ready(self):
         return True
 
-    def get(self, timeout=None, propagate=True, **kwargs):
+    def get(self, timeout=None, propagate=True,
+            disable_sync_subtasks=True, **kwargs):
+        if disable_sync_subtasks:
+            assert_will_not_block()
+
         if self.successful():
             return self.result
         elif self.state in states.PROPAGATE_STATES:
@@ -979,7 +1001,7 @@ def result_from_tuple(r, app=None):
         if parent:
             parent = result_from_tuple(parent, app)
 
-        if nodes:
+        if nodes is not None:
             return app.GroupResult(
                 id, [result_from_tuple(child, app) for child in nodes],
                 parent=parent,

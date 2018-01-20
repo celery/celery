@@ -94,18 +94,21 @@ Examples
     celery worker -n xuzzy@myhost -c 3
 """
 from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import signal
 import sys
 from functools import wraps
+
 from kombu.utils.objects import cached_property
+
 from celery import VERSION_BANNER
 from celery.apps.multi import Cluster, MultiParser, NamespacedOptionParser
 from celery.platforms import EX_FAILURE, EX_OK, signals
 from celery.utils import term
 from celery.utils.text import pluralize
 
-__all__ = ['MultiTool']
+__all__ = ('MultiTool',)
 
 USAGE = """\
 usage: {prog_name} start <node1 node2 nodeN|range> [worker options]

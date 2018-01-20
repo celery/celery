@@ -8,8 +8,8 @@ from __future__ import absolute_import, unicode_literals
 
 import logging
 import sys
-
 from datetime import datetime
+from time import time
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
@@ -18,22 +18,20 @@ from kombu.utils.objects import cached_property
 
 from celery import signals
 from celery.app.trace import trace_task, trace_task_ret
-from celery.exceptions import (
-    Ignore, TaskRevokedError, InvalidTaskError,
-    SoftTimeLimitExceeded, TimeLimitExceeded,
-    WorkerLostError, Terminated, Retry, Reject,
-)
-from celery.five import python_2_unicode_compatible, string
+from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
+                               TaskRevokedError, Terminated,
+                               TimeLimitExceeded, WorkerLostError)
+from celery.five import monotonic, python_2_unicode_compatible, string
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
-from celery.utils.time import maybe_iso8601, timezone, maybe_make_aware
 from celery.utils.serialization import get_pickled_exception
+from celery.utils.time import maybe_iso8601, maybe_make_aware, timezone
 
 from . import state
 
-__all__ = ['Request']
+__all__ = ('Request',)
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.
@@ -53,6 +51,8 @@ def __optimize__():
     global _does_info
     _does_debug = logger.isEnabledFor(logging.DEBUG)
     _does_info = logger.isEnabledFor(logging.INFO)
+
+
 __optimize__()  # noqa: E305
 
 # Localize
@@ -288,7 +288,8 @@ class Request(object):
     def on_accepted(self, pid, time_accepted):
         """Handler called when task is accepted by worker pool."""
         self.worker_pid = pid
-        self.time_start = time_accepted
+        # Convert monotonic time_accepted to absolute time
+        self.time_start = time() - (monotonic() - time_accepted)
         task_accepted(self)
         if not self.task.acks_late:
             self.acknowledge()
@@ -300,22 +301,21 @@ class Request(object):
 
     def on_timeout(self, soft, timeout):
         """Handler called if the task times out."""
-        task_ready(self)
         if soft:
             warn('Soft time limit (%ss) exceeded for %s[%s]',
                  timeout, self.name, self.id)
-            exc = SoftTimeLimitExceeded(soft)
         else:
+            task_ready(self)
             error('Hard time limit (%ss) exceeded for %s[%s]',
                   timeout, self.name, self.id)
             exc = TimeLimitExceeded(timeout)
 
-        self.task.backend.mark_as_failure(
-            self.id, exc, request=self, store_result=self.store_errors,
-        )
+            self.task.backend.mark_as_failure(
+                self.id, exc, request=self, store_result=self.store_errors,
+            )
 
-        if self.task.acks_late:
-            self.acknowledge()
+            if self.task.acks_late:
+                self.acknowledge()
 
     def on_success(self, failed__retval__runtime, **kwargs):
         """Handler called if the task was successfully processed."""

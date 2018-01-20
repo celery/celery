@@ -1,11 +1,13 @@
 from __future__ import absolute_import, unicode_literals
+
 import sys
 from importlib import import_module
+
 from case import mock
-from celery.app.defaults import (
-    _OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY, _TO_OLD_KEY,
-    DEFAULTS, NAMESPACES, SETTING_KEYS
-)
+
+from celery.app.defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS,
+                                 _TO_NEW_KEY, _TO_OLD_KEY, DEFAULTS,
+                                 NAMESPACES, SETTING_KEYS)
 from celery.five import values
 
 

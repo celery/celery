@@ -7,9 +7,9 @@ statistics, and revoked tasks.
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
-import sys
 import platform
 import shelve
+import sys
 import weakref
 import zlib
 
@@ -21,11 +21,11 @@ from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.five import Counter
 from celery.utils.collections import LimitedSet
 
-__all__ = [
+__all__ = (
     'SOFTWARE_INFO', 'reserved_requests', 'active_requests',
     'total_count', 'revoked', 'task_reserved', 'maybe_shutdown',
     'task_accepted', 'task_ready', 'Persistent',
-]
+)
 
 #: Worker software/platform information.
 SOFTWARE_INFO = {

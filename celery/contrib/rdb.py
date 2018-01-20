@@ -42,18 +42,21 @@ Environment Variables
     base port.  The selected port will be logged by the worker.
 """
 from __future__ import absolute_import, print_function, unicode_literals
+
 import errno
 import os
 import socket
 import sys
 from pdb import Pdb
+
 from billiard.process import current_process
+
 from celery.five import range
 
-__all__ = [
+__all__ = (
     'CELERY_RDB_HOST', 'CELERY_RDB_PORT', 'DEFAULT_PORT',
     'Rdb', 'debugger', 'set_trace',
-]
+)
 
 DEFAULT_PORT = 6899
 

@@ -14,9 +14,7 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 import traceback
-
 from collections import deque, namedtuple
-
 from decimal import Decimal
 from itertools import chain
 from numbers import Number
@@ -26,7 +24,7 @@ from celery.five import items, text_t
 
 from .text import truncate
 
-__all__ = ['saferepr', 'reprstream']
+__all__ = ('saferepr', 'reprstream')
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.

@@ -47,8 +47,13 @@ names, are the renaming of some prefixes, like ``celerybeat_`` to ``beat_``,
 ``celeryd_`` to ``worker_``, and most of the top level ``celery_`` settings
 have been moved into a new  ``task_`` prefix.
 
-Celery will still be able to read old configuration files, so there's no
-rush in moving to the new settings format.
+.. note::
+
+    Celery will still be able to read old configuration files, so
+    there's no rush in moving to the new settings format. Furthermore,
+    we provide the ``celery upgrade`` command that should handle plenty
+    of cases (including :ref:`Django <latentcall-django-admonition>`).
+
 
 =====================================  ==============================================
 **Setting name**                       **Replace with**
@@ -83,6 +88,7 @@ rush in moving to the new settings format.
 ``CASSANDRA_READ_CONSISTENCY``         :setting:`cassandra_read_consistency`
 ``CASSANDRA_SERVERS``                  :setting:`cassandra_servers`
 ``CASSANDRA_WRITE_CONSISTENCY``        :setting:`cassandra_write_consistency`
+``CASSANDRA_OPTIONS``                  :setting:`cassandra_options`
 ``CELERY_COUCHBASE_BACKEND_SETTINGS``  :setting:`couchbase_backend_settings`
 ``CELERY_MONGODB_BACKEND_SETTINGS``    :setting:`mongodb_backend_settings`
 ``CELERY_EVENT_QUEUE_EXPIRES``         :setting:`event_queue_expires`
@@ -109,7 +115,7 @@ rush in moving to the new settings format.
 ``CELERY_SECURITY_CERTIFICATE``        :setting:`security_certificate`
 ``CELERY_SECURITY_CERT_STORE``         :setting:`security_cert_store`
 ``CELERY_SECURITY_KEY``                :setting:`security_key`
-``CELERY_TASK_ACKS_LATE``              :setting:`task_acks_late`
+``CELERY_ACKS_LATE``                   :setting:`task_acks_late`
 ``CELERY_TASK_ALWAYS_EAGER``           :setting:`task_always_eager`
 ``CELERY_TASK_ANNOTATIONS``            :setting:`task_annotations`
 ``CELERY_TASK_COMPRESSION``            :setting:`task_compression`
@@ -592,6 +598,27 @@ Can be one of the following:
 .. _`Couchbase`: https://www.couchbase.com/
 .. _`Consul`: https://consul.io/
 
+
+.. setting:: result_backend_transport_options
+
+``result_backend_transport_options``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}`` (empty mapping).
+
+A dict of additional options passed to the underlying transport.
+
+See your transport user manual for supported options (if any).
+
+Example setting the visibility timeout (supported by Redis and SQS
+transports):
+
+.. code-block:: python
+
+    result_backend_transport_options = {'visibility_timeout': 18000}  # 5 hours
+
+
+
 .. setting:: result_serializer
 
 ``result_serializer``
@@ -1036,6 +1063,22 @@ Named arguments to pass into the authentication provider. For example:
     cassandra_auth_kwargs = {
         username: 'cassandra',
         password: 'cassandra'
+    }
+
+.. setting:: cassandra_options
+
+``cassandra_options``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}`` (empty mapping).
+
+Named arguments to pass into the ``cassandra.cluster`` class.
+
+.. code-block:: python
+
+    cassandra_options = {
+        'cql_version': '3.2.1'
+        'protocol_version': 3
     }
 
 Example configuration

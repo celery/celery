@@ -3,7 +3,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import socket
 import sys
-
 from collections import defaultdict
 from functools import partial
 from itertools import count

@@ -185,3 +185,7 @@ def setup(app):
         rolename=bytes_if_py2('event'),
         indextemplate=bytes_if_py2('pair: %s; event'),
     )
+
+    return {
+        'parallel_read_safe': True
+    }

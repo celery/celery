@@ -1,9 +1,11 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
 from case import Mock, patch
-from celery.five import WhateverIO
+
 from celery.bin.base import Error
-from celery.bin.control import _RemoteControl, inspect, control, status
+from celery.bin.control import _RemoteControl, control, inspect, status
+from celery.five import WhateverIO
 
 
 class test_RemoteControl:

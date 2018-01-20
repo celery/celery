@@ -2,7 +2,6 @@
 from __future__ import absolute_import, unicode_literals
 
 import time
-
 from operator import itemgetter
 
 from kombu import Queue
@@ -15,7 +14,7 @@ from celery.utils.time import adjust_timestamp
 
 from .event import get_exchange
 
-__all__ = ['EventReceiver']
+__all__ = ('EventReceiver',)
 
 CLIENT_CLOCK_SKEW = -1
 

@@ -213,6 +213,7 @@ setuptools.setup(
     license='BSD',
     platforms=['any'],
     install_requires=install_requires(),
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
     classifiers=[s.strip() for s in classes.split('\n') if s],

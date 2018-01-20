@@ -4,24 +4,21 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import inspect
 import sys
-
 from functools import partial
 from itertools import chain, islice
 
-from kombu.utils.functional import (
-    LRUCache, dictfilter, lazy, maybe_evaluate, memoize,
-    is_list, maybe_list,
-)
+from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
+                                    maybe_evaluate, maybe_list, memoize)
 from vine import promise
 
 from celery.five import UserList, getfullargspec, range
 
-__all__ = [
+__all__ = (
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
     'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
     'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun',
     'maybe', 'fun_accepts_kwargs',
-]
+)
 
 IS_PY3 = sys.version_info[0] == 3
 

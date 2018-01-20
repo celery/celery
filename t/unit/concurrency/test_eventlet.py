@@ -1,12 +1,11 @@
 from __future__ import absolute_import, unicode_literals
-import pytest
+
 import sys
+
+import pytest
 from case import Mock, patch, skip
-from celery.concurrency.eventlet import (
-    apply_target,
-    Timer,
-    TaskPool,
-)
+
+from celery.concurrency.eventlet import TaskPool, Timer, apply_target
 
 eventlet_modules = (
     'eventlet',
@@ -18,6 +17,7 @@ eventlet_modules = (
 
 
 @skip.if_pypy()
+@skip.unless_module('eventlet')
 class EventletCase:
 
     def setup(self):

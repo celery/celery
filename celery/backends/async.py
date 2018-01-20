@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 
 import socket
 import threading
-
 from collections import deque
 from time import sleep
 from weakref import WeakKeyDictionary
@@ -16,10 +15,10 @@ from celery.exceptions import TimeoutError
 from celery.five import Empty, monotonic
 from celery.utils.threads import THREAD_TIMEOUT_MAX
 
-__all__ = [
+__all__ = (
     'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
     'register_drainer',
-]
+)
 
 drainers = {}
 

@@ -88,8 +88,8 @@ Provides arguments:
 
     Task message body.
 
-    This is a mapping containing the task message fields, 
-    see :ref:`message-protocol-task-v2` 
+    This is a mapping containing the task message fields,
+    see :ref:`message-protocol-task-v2`
     and :ref:`message-protocol-task-v1`
     for a reference of possible fields that can be defined.
 

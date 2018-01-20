@@ -1,18 +1,17 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
 import time
-
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pickle import dumps, loads
 
+import pytest
+import pytz
 from case import Case, Mock, skip
 
 from celery.five import items
-from celery.schedules import (
-    ParseException, crontab, crontab_parser, schedule, solar,
-)
+from celery.schedules import (ParseException, crontab, crontab_parser,
+                              schedule, solar)
 
 assertions = Case('__init__')
 
@@ -441,6 +440,40 @@ class test_crontab_remaining_estimate:
             datetime(2012, 2, 29, 14, 30),
         )
         assert next == datetime(2016, 2, 29, 14, 30)
+
+    def test_day_after_dst_end(self):
+        # Test for #1604 issue with region configuration using DST
+        tzname = "Europe/Paris"
+        self.app.timezone = tzname
+        tz = pytz.timezone(tzname)
+        crontab = self.crontab(minute=0, hour=9)
+
+        # Set last_run_at Before DST end
+        last_run_at = tz.localize(datetime(2017, 10, 28, 9, 0))
+        # Set now after DST end
+        now = tz.localize(datetime(2017, 10, 29, 7, 0))
+        crontab.nowfun = lambda: now
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        assert next.utcoffset().seconds == 3600
+        assert next == tz.localize(datetime(2017, 10, 29, 9, 0))
+
+    def test_day_after_dst_start(self):
+        # Test for #1604 issue with region configuration using DST
+        tzname = "Europe/Paris"
+        self.app.timezone = tzname
+        tz = pytz.timezone(tzname)
+        crontab = self.crontab(minute=0, hour=9)
+
+        # Set last_run_at Before DST start
+        last_run_at = tz.localize(datetime(2017, 3, 25, 9, 0))
+        # Set now after DST start
+        now = tz.localize(datetime(2017, 3, 26, 7, 0))
+        crontab.nowfun = lambda: now
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        assert next.utcoffset().seconds == 7200
+        assert next == tz.localize(datetime(2017, 3, 26, 9, 0))
 
 
 class test_crontab_is_due:

@@ -4,7 +4,6 @@ from __future__ import absolute_import, unicode_literals
 
 import io
 import tempfile
-
 from collections import namedtuple
 
 from billiard.common import TERM_SIGNAME
@@ -21,7 +20,7 @@ from celery.utils.time import rate
 from . import state as worker_state
 from .request import Request
 
-__all__ = ['Panel']
+__all__ = ('Panel',)
 
 DEFAULT_TASK_INFO_ITEMS = ('exchange', 'routing_key', 'rate_limit')
 logger = get_logger(__name__)
@@ -555,7 +554,7 @@ def cancel_consumer(state, queue, **_):
 
 @inspect_command()
 def active_queues(state):
-    """List the task queues a worker are currently consuming from."""
+    """List the task queues a worker is currently consuming from."""
     if state.consumer.task_consumer:
         return [dict(queue.as_dict(recurse=True))
                 for queue in state.consumer.task_consumer.queues]

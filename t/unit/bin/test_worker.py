@@ -2,21 +2,20 @@ from __future__ import absolute_import, unicode_literals
 
 import logging
 import os
-import pytest
 import sys
 
+import pytest
 from billiard.process import current_process
 from case import Mock, mock, patch, skip
 from kombu import Exchange, Queue
 
-from celery import platforms
-from celery import signals
+from celery import platforms, signals
 from celery.app import trace
 from celery.apps import worker as cd
-from celery.bin.worker import worker, main as worker_main
-from celery.exceptions import (
-    ImproperlyConfigured, WorkerShutdown, WorkerTerminate,
-)
+from celery.bin.worker import main as worker_main
+from celery.bin.worker import worker
+from celery.exceptions import (ImproperlyConfigured, WorkerShutdown,
+                               WorkerTerminate)
 from celery.platforms import EX_FAILURE, EX_OK
 from celery.worker import state
 
@@ -407,7 +406,7 @@ class test_funs:
         cmd = worker()
         cmd.app = self.app
         opts, args = cmd.parse_options('worker', ['--concurrency=512',
-                                       '--heartbeat-interval=10'])
+                                                  '--heartbeat-interval=10'])
         assert opts['concurrency'] == 512
         assert opts['heartbeat_interval'] == 10
 

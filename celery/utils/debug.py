@@ -5,7 +5,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 import sys
 import traceback
-
 from contextlib import contextmanager
 from functools import partial
 from pprint import pprint
@@ -18,10 +17,10 @@ try:
 except ImportError:
     Process = None  # noqa
 
-__all__ = [
+__all__ = (
     'blockdetection', 'sample_mem', 'memdump', 'sample',
     'humanbytes', 'mem_rss', 'ps', 'cry',
-]
+)
 
 UNITS = (
     (2 ** 40.0, 'TB'),

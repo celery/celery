@@ -1,30 +1,22 @@
 from __future__ import absolute_import, unicode_literals
 
 import logging
-import pytest
 import sys
-
 from collections import defaultdict
 from io import StringIO
 from tempfile import mktemp
 
+import pytest
 from case import Mock, mock, patch, skip
 from case.utils import get_logger_handlers
 
-from celery import signals
-from celery import uuid
+from celery import signals, uuid
 from celery.app.log import TaskFormatter
 from celery.five import python_2_unicode_compatible
-from celery.utils.log import LoggingProxy
-from celery.utils.log import (
-    get_logger,
-    ColorFormatter,
-    logger as base_logger,
-    get_task_logger,
-    task_logger,
-    in_sighandler,
-    logger_isa,
-)
+from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
+                              get_task_logger, in_sighandler)
+from celery.utils.log import logger as base_logger
+from celery.utils.log import logger_isa, task_logger
 
 
 class test_TaskFormatter:

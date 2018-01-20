@@ -1,7 +1,10 @@
 from __future__ import absolute_import, unicode_literals
+
 import importlib
 from functools import wraps
+
 from case import patch, skip
+
 from celery.bin import events
 
 
@@ -31,6 +34,8 @@ class MockCommand(object):
 
 def proctitle(prog, info=None):
     proctitle.last = (prog, info)
+
+
 proctitle.last = ()  # noqa: E305
 
 

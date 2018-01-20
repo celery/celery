@@ -10,7 +10,7 @@ from .heart import Heart
 from .mingle import Mingle
 from .tasks import Tasks
 
-__all__ = [
+__all__ = (
     'Consumer', 'Agent', 'Connection', 'Control',
     'Events', 'Gossip', 'Heart', 'Mingle', 'Tasks',
-]
+)

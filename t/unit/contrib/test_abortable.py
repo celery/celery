@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
-from celery.contrib.abortable import AbortableTask, AbortableAsyncResult
+
+from celery.contrib.abortable import AbortableAsyncResult, AbortableTask
 
 
 class test_AbortableTask:

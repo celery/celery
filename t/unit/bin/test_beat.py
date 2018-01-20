@@ -1,12 +1,14 @@
 from __future__ import absolute_import, unicode_literals
+
 import logging
-import pytest
 import sys
+
+import pytest
 from case import Mock, mock, patch
-from celery import beat
-from celery import platforms
-from celery.bin import beat as beat_bin
+
+from celery import beat, platforms
 from celery.apps import beat as beatapp
+from celery.bin import beat as beat_bin
 
 
 def MockBeat(*args, **kwargs):

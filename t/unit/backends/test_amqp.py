@@ -1,17 +1,15 @@
 from __future__ import absolute_import, unicode_literals
 
 import pickle
-import pytest
-
 from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
 
-from case import Mock, mock
+import pytest
 from billiard.einfo import ExceptionInfo
+from case import Mock, mock
 
-from celery import states
-from celery import uuid
+from celery import states, uuid
 from celery.backends.amqp import AMQPBackend
 from celery.five import Empty, Queue, range
 from celery.result import AsyncResult
@@ -29,7 +27,7 @@ class test_AMQPBackend:
         self.app.conf.result_cache_max = 100
 
     def create_backend(self, **opts):
-        opts = dict(dict(serializer='pickle', persistent=True), **opts)
+        opts = dict({'serializer': 'pickle', 'persistent': True}, **opts)
         return AMQPBackend(self.app, **opts)
 
     def test_destination_for(self):

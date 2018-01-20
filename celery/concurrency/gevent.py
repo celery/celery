@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 """Gevent execution pool."""
 from __future__ import absolute_import, unicode_literals
+
 from kombu.async import timer as _timer
 from kombu.five import monotonic
+
 from . import base
+
 try:
     from gevent import Timeout
 except ImportError:  # pragma: no cover
     Timeout = None  # noqa
 
-__all__ = ['TaskPool']
+__all__ = ('TaskPool',)
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.

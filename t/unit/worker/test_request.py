@@ -3,43 +3,30 @@ from __future__ import absolute_import, unicode_literals
 
 import numbers
 import os
-import pytest
 import signal
 import socket
 import sys
-
 from datetime import datetime, timedelta
+from time import time
 
-from case import Mock, patch
+import pytest
 from billiard.einfo import ExceptionInfo
-from kombu.utils.encoding import default_encode, from_utf8, safe_str, safe_repr
+from case import Mock, patch
+from kombu.utils.encoding import (default_encode, from_utf8, safe_repr,
+                                  safe_str)
 from kombu.utils.uuid import uuid
 
 from celery import states
-from celery.app.trace import (
-    trace_task,
-    _trace_task_ret,
-    TraceInfo,
-    mro_lookup,
-    build_tracer,
-    setup_worker_optimizations,
-    reset_worker_optimizations,
-)
-from celery.exceptions import (
-    Ignore,
-    InvalidTaskError,
-    Reject,
-    Retry,
-    TaskRevokedError,
-    Terminated,
-    WorkerLostError,
-)
+from celery.app.trace import (TraceInfo, _trace_task_ret, build_tracer,
+                              mro_lookup, reset_worker_optimizations,
+                              setup_worker_optimizations, trace_task)
+from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
+                               TaskRevokedError, Terminated, WorkerLostError)
 from celery.five import monotonic
 from celery.signals import task_revoked
 from celery.worker import request as module
-from celery.worker.request import (
-    Request, create_request_cls, logger as req_logger,
-)
+from celery.worker.request import Request, create_request_cls
+from celery.worker.request import logger as req_logger
 from celery.worker.state import revoked
 
 
@@ -530,6 +517,11 @@ class test_Request(RequestCase):
             job.on_accepted(pid=314, time_accepted=monotonic())
             pool.terminate_job.assert_called_with(314, signum)
 
+    def test_on_accepted_time_start(self):
+        job = self.xRequest()
+        job.on_accepted(pid=os.getpid(), time_accepted=monotonic())
+        assert time() - job.time_start < 1
+
     def test_on_success_acks_early(self):
         job = self.xRequest()
         job.time_start = 1
@@ -613,30 +605,38 @@ class test_Request(RequestCase):
         with pytest.raises(InvalidTaskError):
             raise req.execute().exception
 
-    def test_on_timeout(self, patching):
-        warn = patching('celery.worker.request.warn')
+    def test_on_hard_timeout(self, patching):
         error = patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.task.acks_late = True
+        job.on_timeout(soft=False, timeout=1337)
+        assert 'Hard time limit' in error.call_args[0][0]
+        assert self.mytask.backend.get_status(job.id) == states.FAILURE
+        job.acknowledge.assert_called_with()
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.task.acks_late = False
+        job.on_timeout(soft=False, timeout=1335)
+        job.acknowledge.assert_not_called()
+
+    def test_on_soft_timeout(self, patching):
+        warn = patching('celery.worker.request.warn')
 
         job = self.xRequest()
         job.acknowledge = Mock(name='ack')
         job.task.acks_late = True
         job.on_timeout(soft=True, timeout=1337)
         assert 'Soft time limit' in warn.call_args[0][0]
-        job.on_timeout(soft=False, timeout=1337)
-        assert 'Hard time limit' in error.call_args[0][0]
-        assert self.mytask.backend.get_status(job.id) == states.FAILURE
-        job.acknowledge.assert_called_with()
+        assert self.mytask.backend.get_status(job.id) == states.PENDING
+        job.acknowledge.assert_not_called()
 
         self.mytask.ignore_result = True
         job = self.xRequest()
         job.on_timeout(soft=True, timeout=1336)
         assert self.mytask.backend.get_status(job.id) == states.PENDING
-
-        job = self.xRequest()
-        job.acknowledge = Mock(name='ack')
-        job.task.acks_late = False
-        job.on_timeout(soft=True, timeout=1335)
-        job.acknowledge.assert_not_called()
 
     def test_fast_trace_task(self):
         from celery.app import trace

@@ -1,23 +1,15 @@
 from __future__ import absolute_import, unicode_literals
+
 import json
+
 import pytest
 from case import MagicMock, Mock
+
 from celery._state import _task_stack
-from celery.canvas import (
-    Signature,
-    chain,
-    _chain,
-    group,
-    chord,
-    signature,
-    xmap,
-    xstarmap,
-    chunks,
-    _maybe_group,
-    maybe_signature,
-    maybe_unroll_group,
-)
-from celery.result import AsyncResult, GroupResult, EagerResult
+from celery.canvas import (Signature, _chain, _maybe_group, chain, chord,
+                           chunks, group, maybe_signature, maybe_unroll_group,
+                           signature, xmap, xstarmap)
+from celery.result import AsyncResult, EagerResult, GroupResult
 
 SIG = Signature({
     'task': 'TASK',
@@ -187,6 +179,52 @@ class test_Signature(CanvasCase):
     def test_apply_async_when_not_registered(self):
         s = signature('xxx.not.registered', app=self.app)
         assert s._apply_async
+
+    def test_keeping_link_error_on_chaining(self):
+        x = self.add.s(2, 2) | self.mul.s(4)
+        assert isinstance(x, _chain)
+        x.link_error(SIG)
+        assert SIG in x.options['link_error']
+
+        t = signature(SIG)
+        z = x | t
+        assert isinstance(z, _chain)
+        assert t in z.tasks
+        assert not z.options.get('link_error')
+        assert SIG in z.tasks[0].options['link_error']
+        assert not z.tasks[2].options.get('link_error')
+        assert SIG in x.options['link_error']
+        assert t not in x.tasks
+        assert not x.tasks[0].options.get('link_error')
+
+        z = t | x
+        assert isinstance(z, _chain)
+        assert t in z.tasks
+        assert not z.options.get('link_error')
+        assert SIG in z.tasks[1].options['link_error']
+        assert not z.tasks[0].options.get('link_error')
+        assert SIG in x.options['link_error']
+        assert t not in x.tasks
+        assert not x.tasks[0].options.get('link_error')
+
+        y = self.add.s(4, 4) | self.div.s(2)
+        assert isinstance(y, _chain)
+
+        z = x | y
+        assert isinstance(z, _chain)
+        assert not z.options.get('link_error')
+        assert SIG in z.tasks[0].options['link_error']
+        assert not z.tasks[2].options.get('link_error')
+        assert SIG in x.options['link_error']
+        assert not x.tasks[0].options.get('link_error')
+
+        z = y | x
+        assert isinstance(z, _chain)
+        assert not z.options.get('link_error')
+        assert SIG in z.tasks[3].options['link_error']
+        assert not z.tasks[1].options.get('link_error')
+        assert SIG in x.options['link_error']
+        assert not x.tasks[0].options.get('link_error')
 
 
 class test_xmap_xstarmap(CanvasCase):
@@ -432,6 +470,16 @@ class test_chain(CanvasCase):
             seen.add(node.id)
             node = node.parent
 
+    def test_append_to_empty_chain(self):
+        x = chain()
+        x |= self.add.s(1, 1)
+        x |= self.add.s(1)
+        x.freeze()
+        tasks, _ = x._frozen
+        assert len(tasks) == 2
+
+        assert x.apply().get() == 3
+
 
 class test_group(CanvasCase):
 
@@ -547,6 +595,14 @@ class test_group(CanvasCase):
         g = group([self.add.s(i, i) for i in range(10)])
         assert list(iter(g)) == list(g.keys())
 
+    def test_single_task(self):
+        g = group([self.add.s(1, 1)])
+        assert isinstance(g, group)
+        assert len(g.tasks) == 1
+        g = group(self.add.s(1, 1))
+        assert isinstance(g, group)
+        assert len(g.tasks) == 1
+
     @staticmethod
     def helper_test_get_delay(result):
         import time
@@ -563,13 +619,15 @@ class test_group(CanvasCase):
 
     def test_kwargs_apply(self):
         x = group([self.add.s(), self.add.s()])
-        res = x.apply(kwargs=dict(x=1, y=1)).get()
+        res = x.apply(kwargs={'x': 1, 'y': 1}).get()
         assert res == [2, 2]
 
     def test_kwargs_apply_async(self):
         self.app.conf.task_always_eager = True
         x = group([self.add.s(), self.add.s()])
-        res = self.helper_test_get_delay(x.apply_async(kwargs=dict(x=1, y=1)))
+        res = self.helper_test_get_delay(
+            x.apply_async(kwargs={'x': 1, 'y': 1})
+        )
         assert res == [2, 2]
 
     def test_kwargs_delay(self):

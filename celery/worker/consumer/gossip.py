@@ -16,7 +16,8 @@ from celery.utils.objects import Bunch
 
 from .mingle import Mingle
 
-__all__ = ['Gossip']
+__all__ = ('Gossip',)
+
 logger = get_logger(__name__)
 debug, info = logger.debug, logger.info
 

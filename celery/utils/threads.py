@@ -7,11 +7,10 @@ import socket
 import sys
 import threading
 import traceback
-
 from contextlib import contextmanager
 
-from celery.local import Proxy
 from celery.five import THREAD_TIMEOUT_MAX, items, python_2_unicode_compatible
+from celery.local import Proxy
 
 try:
     from greenlet import getcurrent as get_ident
@@ -28,10 +27,10 @@ except ImportError:  # pragma: no cover
                 from dummy_thread import get_ident      # noqa
 
 
-__all__ = [
+__all__ = (
     'bgThread', 'Local', 'LocalStack', 'LocalManager',
     'get_ident', 'default_socket_timeout',
-]
+)
 
 USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
 PY3 = sys.version_info[0] == 3
@@ -328,7 +327,7 @@ class _FastLocalStack(threading.local):
 
 if USE_FAST_LOCALS:  # pragma: no cover
     LocalStack = _FastLocalStack
-else:
+else:  # pragma: no cover
     # - See #706
     # since each thread has its own greenlet we can just use those as
     # identifiers for the context.  If greenlets aren't available we

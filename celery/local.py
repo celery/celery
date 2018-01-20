@@ -7,14 +7,16 @@ soon as possible, and that shall not load any third party modules.
 Parts of this module is Copyright by Werkzeug Team.
 """
 from __future__ import absolute_import, unicode_literals
+
 import operator
 import sys
 from functools import reduce
 from importlib import import_module
 from types import ModuleType
+
 from .five import bytes_if_py2, items, string, string_t
 
-__all__ = ['Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate']
+__all__ = ('Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate')
 
 __module__ = __name__  # used by Proxy class body
 
@@ -555,12 +557,12 @@ def recreate_module(name, compat_modules=(), by_module={}, direct={},
     )))
     if sys.version_info[0] < 3:
         _all = [s.encode() for s in _all]
-    cattrs = dict(
-        _compat_modules=compat_modules,
-        _all_by_module=by_module, _direct=direct,
-        _object_origins=origins,
-        __all__=_all,
-    )
+    cattrs = {
+        '_compat_modules': compat_modules,
+        '_all_by_module': by_module, '_direct': direct,
+        '_object_origins': origins,
+        '__all__': _all,
+    }
     new_module = create_module(name, attrs, cls_attrs=cattrs, base=base)
     new_module.__dict__.update({
         mod: get_compat_module(new_module, mod) for mod in compat_modules

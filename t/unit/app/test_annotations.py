@@ -1,4 +1,5 @@
 from __future__ import absolute_import, unicode_literals
+
 from celery.app.annotations import MapAnnotation, prepare
 from celery.utils.imports import qualname
 

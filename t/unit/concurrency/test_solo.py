@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
+
 import operator
+
 from celery.concurrency import solo
 from celery.utils.functional import noop
 

@@ -1,30 +1,24 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
 import sys
 import types
-
 from contextlib import contextmanager
 
+import pytest
 from case import ANY, Mock, call, patch, skip
 
-from celery import states
-from celery import chord, group, uuid
-from celery.backends.base import (
-    BaseBackend,
-    KeyValueStoreBackend,
-    DisabledBackend,
-    _nulldict,
-)
+from celery import chord, group, states, uuid
+from celery.backends.base import (BaseBackend, DisabledBackend,
+                                  KeyValueStoreBackend, _nulldict)
 from celery.exceptions import ChordError, TimeoutError
-from celery.five import items, bytes_if_py2, range
+from celery.five import bytes_if_py2, items, range
 from celery.result import result_from_tuple
 from celery.utils import serialization
 from celery.utils.functional import pass1
-from celery.utils.serialization import subclass_exception
-from celery.utils.serialization import find_pickleable_exception as fnpe
 from celery.utils.serialization import UnpickleableExceptionWrapper
+from celery.utils.serialization import find_pickleable_exception as fnpe
 from celery.utils.serialization import get_pickleable_exception as gpe
+from celery.utils.serialization import subclass_exception
 
 
 class wrapobject(object):
@@ -69,6 +63,12 @@ class test_BaseBackend_interface:
     def setup(self):
         self.b = BaseBackend(self.app)
 
+        @self.app.task(shared=False)
+        def callback(result):
+            pass
+
+        self.callback = callback
+
     def test__forget(self):
         with pytest.raises(NotImplementedError):
             self.b._forget('SOMExx-N0Nex1stant-IDxx-')
@@ -82,11 +82,36 @@ class test_BaseBackend_interface:
 
     def test_apply_chord(self, unlock='celery.chord_unlock'):
         self.app.tasks[unlock] = Mock()
-        self.b.apply_chord(
-            group(app=self.app), (), 'dakj221', None,
-            result=[self.app.AsyncResult(x) for x in [1, 2, 3]],
+        header_result = self.app.GroupResult(
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
         )
+        self.b.apply_chord(header_result, self.callback.s())
         assert self.app.tasks[unlock].apply_async.call_count
+
+    def test_chord_unlock_queue(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        header_result = self.app.GroupResult(
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        body = self.callback.s()
+
+        self.b.apply_chord(header_result, body)
+        called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+        assert called_kwargs['queue'] is None
+
+        self.b.apply_chord(header_result, body.set(queue='test_queue'))
+        called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+        assert called_kwargs['queue'] == 'test_queue'
+
+        @self.app.task(shared=False, queue='test_queue_two')
+        def callback_queue(result):
+            pass
+
+        self.b.apply_chord(header_result, callback_queue.s())
+        called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+        assert called_kwargs['queue'] == 'test_queue_two'
 
 
 class test_exception_pickle:
@@ -533,12 +558,15 @@ class test_KeyValueStoreBackend:
     def test_chord_apply_fallback(self):
         self.b.implements_incr = False
         self.b.fallback_chord_unlock = Mock()
+        header_result = self.app.GroupResult(
+            'group_id',
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
         self.b.apply_chord(
-            group(app=self.app), (), 'group_id', 'body',
-            result='result', foo=1,
+            header_result, 'body', foo=1,
         )
         self.b.fallback_chord_unlock.assert_called_with(
-            'group_id', 'body', result='result', foo=1,
+            header_result, 'body', foo=1,
         )
 
     def test_get_missing_meta(self):

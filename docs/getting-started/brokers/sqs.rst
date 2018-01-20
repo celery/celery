@@ -9,12 +9,13 @@
 Installation
 ============
 
-For the Amazon SQS support you have to install the :pypi:`boto`
-library using :command:`pip`:
+For the Amazon SQS support you have to install additional dependencies.
+You can install both Celery and these dependencies in one go using
+the ``celery[sqs]`` :ref:`bundle <bundles>`:
 
 .. code-block:: console
 
-    $ pip install -U boto
+    $ pip install celery[sqs]
 
 .. _broker-sqs-configuration:
 
@@ -75,7 +76,7 @@ This option is set via the :setting:`broker_transport_options` setting::
 
     broker_transport_options = {'visibility_timeout': 3600}  # 1 hour.
 
-The default visibility timeout is 30 seconds.
+The default visibility timeout is 30 minutes.
 
 Polling Interval
 ----------------

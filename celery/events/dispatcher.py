@@ -4,7 +4,6 @@ from __future__ import absolute_import, unicode_literals
 import os
 import threading
 import time
-
 from collections import defaultdict, deque
 
 from kombu import Producer
@@ -16,7 +15,7 @@ from celery.utils.time import utcoffset
 
 from .event import Event, get_exchange, group_from
 
-__all__ = ['EventDispatcher']
+__all__ = ('EventDispatcher',)
 
 
 class EventDispatcher(object):

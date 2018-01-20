@@ -9,6 +9,9 @@ python:
   - '3.6'
 os:
     - linux
+stages:
+  - lint
+  - test
 env:
   global:
   - PYTHONUNBUFFERED=yes
@@ -29,14 +32,25 @@ matrix:
     env: TOXENV=pypy-integration-dynamodb PYPY_VERSION="pypy2.7-5.8.0"
   - python: '3.5'
     env: TOXENV=flake8
+    stage: lint
   - python: '3.5'
     env: TOXENV=flakeplus
+    stage: lint
   - python: '3.5'
     env: TOXENV=apicheck
+    stage: lint
   - python: '3.5'
     env: TOXENV=configcheck
+    stage: lint
+  - python: '3.5'
+    env: TOXENV=bandit
+    stage: lint
   - python: '3.5'
     env: TOXENV=pydocstyle
+    stage: lint
+  - python: '3.5'
+    env: TOXENV=isort-check
+    stage: lint
 before_install:
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
@@ -50,7 +64,7 @@ before_install:
             "$PYENV_ROOT/bin/pyenv" install "$PYPY_VERSION"
             virtualenv --python="$PYENV_ROOT/versions/$PYPY_VERSION/bin/python" "$HOME/virtualenvs/$PYPY_VERSION"
             source "$HOME/virtualenvs/$PYPY_VERSION/bin/activate"
-            which python            
+            which python
           fi
     - |
           if [[ "$TOXENV" == *dynamodb ]]; then
@@ -66,9 +80,16 @@ before_install:
               sleep 10
               curl localhost:8000
           fi
+    - |
+          wget -qO - https://packages.couchbase.com/ubuntu/couchbase.key | sudo apt-key add -
+          sudo apt-add-repository -y 'deb http://packages.couchbase.com/ubuntu trusty trusty/main'
+          sudo apt-get update && sudo apt-get install -y libcouchbase-dev
 after_success:
-  - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml
-  - .tox/$TRAVIS_PYTHON_VERSION/bin/codecov -e TOXENV
+  - |
+          if [[ -v MATRIX_TOXENV || "$TOXENV" =~ "pypy" ]]; then
+              .tox/$TOXENV/bin/coverage xml
+              .tox/$TOXENV/bin/codecov -e TOXENV
+          fi;
 install: travis_retry pip install -U tox | cat
 script: tox -v -- -v
 notifications:

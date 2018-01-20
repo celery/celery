@@ -1,25 +1,24 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
 import socket
 import tempfile
-
 from datetime import datetime, timedelta
+
+import pytest
+from case import ANY, ContextMock, MagicMock, Mock, patch
+from kombu import Queue
+
+from celery import Task, group, uuid
+from celery.app.task import _reprtask
+from celery.exceptions import Ignore, ImproperlyConfigured, Retry
+from celery.five import items, range, string_t
+from celery.result import EagerResult
+from celery.utils.time import parse_iso8601
 
 try:
     from urllib.error import HTTPError
 except ImportError:  # pragma: no cover
     from urllib2 import HTTPError
-
-from case import ContextMock, MagicMock, Mock, patch
-from kombu import Queue
-
-from celery import Task, group, uuid
-from celery.app.task import _reprtask
-from celery.exceptions import Ignore, Retry
-from celery.five import items, range, string_t
-from celery.result import EagerResult
-from celery.utils.time import parse_iso8601
 
 
 def return_True(*args, **kwargs):
@@ -41,7 +40,6 @@ class MockApplyTask(Task):
 class TasksCase:
 
     def setup(self):
-        self.app.conf.task_protocol = 1  # XXX  Still using proto1
         self.mytask = self.app.task(shared=False)(return_True)
 
         @self.app.task(bind=True, count=0, shared=False)
@@ -360,6 +358,42 @@ class test_tasks(TasksCase):
 
         add.delay(2, 2)
 
+    def test_shadow_name(self):
+        def shadow_name(task, args, kwargs, options):
+            return 'fooxyz'
+
+        @self.app.task(shadow_name=shadow_name)
+        def shadowed():
+            pass
+
+        old_send_task = self.app.send_task
+        self.app.send_task = Mock()
+
+        shadowed.delay()
+
+        self.app.send_task.assert_called_once_with(ANY, ANY, ANY,
+                                                   compression=ANY,
+                                                   delivery_mode=ANY,
+                                                   exchange=ANY,
+                                                   expires=ANY,
+                                                   immediate=ANY,
+                                                   link=ANY,
+                                                   link_error=ANY,
+                                                   mandatory=ANY,
+                                                   priority=ANY,
+                                                   producer=ANY,
+                                                   queue=ANY,
+                                                   result_cls=ANY,
+                                                   routing_key=ANY,
+                                                   serializer=ANY,
+                                                   soft_time_limit=ANY,
+                                                   task_id=ANY,
+                                                   task_type=ANY,
+                                                   time_limit=ANY,
+                                                   shadow='fooxyz')
+
+        self.app.send_task = old_send_task
+
     def test_typing__disabled(self):
         @self.app.task(typing=False)
         def add(x, y, kw=1):
@@ -412,20 +446,28 @@ class test_tasks(TasksCase):
 
     def assert_next_task_data_equal(self, consumer, presult, task_name,
                                     test_eta=False, test_expires=False,
-                                    **kwargs):
+                                    properties=None, headers=None, **kwargs):
         next_task = consumer.queues[0].get(accept=['pickle', 'json'])
-        task_data = next_task.decode()
-        assert task_data['id'] == presult.id
-        assert task_data['task'] == task_name
-        task_kwargs = task_data.get('kwargs', {})
+        task_properties = next_task.properties
+        task_headers = next_task.headers
+        task_body = next_task.decode()
+        task_args, task_kwargs, embed = task_body
+        assert task_headers['id'] == presult.id
+        assert task_headers['task'] == task_name
         if test_eta:
-            assert isinstance(task_data.get('eta'), string_t)
-            to_datetime = parse_iso8601(task_data.get('eta'))
+            assert isinstance(task_headers.get('eta'), string_t)
+            to_datetime = parse_iso8601(task_headers.get('eta'))
             assert isinstance(to_datetime, datetime)
         if test_expires:
-            assert isinstance(task_data.get('expires'), string_t)
-            to_datetime = parse_iso8601(task_data.get('expires'))
+            assert isinstance(task_headers.get('expires'), string_t)
+            to_datetime = parse_iso8601(task_headers.get('expires'))
             assert isinstance(to_datetime, datetime)
+        properties = properties or {}
+        for arg_name, arg_value in items(properties):
+            assert task_properties.get(arg_name) == arg_value
+        headers = headers or {}
+        for arg_name, arg_value in items(headers):
+            assert task_headers.get(arg_name) == arg_value
         for arg_name, arg_value in items(kwargs):
             assert task_kwargs.get(arg_name) == arg_value
 
@@ -467,7 +509,7 @@ class test_tasks(TasksCase):
 
             # With arguments.
             presult2 = self.mytask.apply_async(
-                kwargs=dict(name='George Costanza'),
+                kwargs={'name': 'George Costanza'},
             )
             self.assert_next_task_data_equal(
                 consumer, presult2, self.mytask.name, name='George Costanza',
@@ -475,14 +517,14 @@ class test_tasks(TasksCase):
 
             # send_task
             sresult = self.app.send_task(self.mytask.name,
-                                         kwargs=dict(name='Elaine M. Benes'))
+                                         kwargs={'name': 'Elaine M. Benes'})
             self.assert_next_task_data_equal(
                 consumer, sresult, self.mytask.name, name='Elaine M. Benes',
             )
 
             # With ETA.
             presult2 = self.mytask.apply_async(
-                kwargs=dict(name='George Costanza'),
+                kwargs={'name': 'George Costanza'},
                 eta=self.now() + timedelta(days=1),
                 expires=self.now() + timedelta(days=2),
             )
@@ -493,11 +535,32 @@ class test_tasks(TasksCase):
 
             # With countdown.
             presult2 = self.mytask.apply_async(
-                kwargs=dict(name='George Costanza'), countdown=10, expires=12,
+                kwargs={'name': 'George Costanza'}, countdown=10, expires=12,
             )
             self.assert_next_task_data_equal(
                 consumer, presult2, self.mytask.name,
                 name='George Costanza', test_eta=True, test_expires=True,
+            )
+
+            # Default argsrepr/kwargsrepr behavior
+            presult2 = self.mytask.apply_async(
+                args=('spam',), kwargs={'name': 'Jerry Seinfeld'}
+            )
+            self.assert_next_task_data_equal(
+                consumer, presult2, self.mytask.name,
+                headers={'argsrepr': "('spam',)",
+                         'kwargsrepr': "{'name': 'Jerry Seinfeld'}"},
+            )
+
+            # With argsrepr/kwargsrepr
+            presult2 = self.mytask.apply_async(
+                args=('secret',), argsrepr="'***'",
+                kwargs={'password': 'foo'}, kwargsrepr="{'password': '***'}",
+            )
+            self.assert_next_task_data_equal(
+                consumer, presult2, self.mytask.name,
+                headers={'argsrepr': "'***'",
+                         'kwargsrepr': "{'password': '***'}"},
             )
 
             # Discarding all tasks.
@@ -524,6 +587,12 @@ class test_tasks(TasksCase):
         sig1 = Mock(name='sig1')
         sig1.options = {}
         with pytest.raises(Ignore):
+            self.mytask.replace(sig1)
+
+    def test_replace_with_chord(self):
+        sig1 = Mock(name='sig1')
+        sig1.options = {'chord': None}
+        with pytest.raises(ImproperlyConfigured):
             self.mytask.replace(sig1)
 
     @pytest.mark.usefixtures('depends_on_current_app')
@@ -554,7 +623,6 @@ class test_tasks(TasksCase):
             self.mytask.replace(c)
         except Ignore:
             mocked_signature.return_value.set.assert_called_with(
-                chord=None,
                 link='callbacks',
                 link_error='errbacks',
             )

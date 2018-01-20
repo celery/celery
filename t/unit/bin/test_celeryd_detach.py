@@ -1,13 +1,10 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
 from case import Mock, mock, patch
-from celery.platforms import IS_WINDOWS
-from celery.bin.celeryd_detach import (
-    detach,
-    detached_celeryd,
-    main,
-)
 
+from celery.bin.celeryd_detach import detach, detached_celeryd, main
+from celery.platforms import IS_WINDOWS
 
 if not IS_WINDOWS:
     class test_detached:

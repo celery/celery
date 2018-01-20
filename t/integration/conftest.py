@@ -1,7 +1,10 @@
 from __future__ import absolute_import, unicode_literals
+
 import os
-import pytest
 from functools import wraps
+
+import pytest
+
 from celery.contrib.testing.manager import Manager
 
 TEST_BROKER = os.environ.get('TEST_BROKER', 'pyamqp://')
