@@ -7,6 +7,7 @@ import signal
 import socket
 import sys
 from datetime import datetime, timedelta
+from time import time
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -515,6 +516,11 @@ class test_Request(RequestCase):
             assert not pool.terminate_job.call_count
             job.on_accepted(pid=314, time_accepted=monotonic())
             pool.terminate_job.assert_called_with(314, signum)
+
+    def test_on_accepted_time_start(self):
+        job = self.xRequest()
+        job.on_accepted(pid=os.getpid(), time_accepted=monotonic())
+        assert time() - job.time_start < 1
 
     def test_on_success_acks_early(self):
         job = self.xRequest()
