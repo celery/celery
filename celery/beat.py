@@ -261,8 +261,17 @@ class Scheduler(object):
 
     def populate_heap(self, event_t=event_t, heapify=heapq.heapify):
         """Populate the heap with the data contained in the schedule."""
-        self._heap = [event_t(self._when(e, e.is_due()[1]) or 0, 5, e)
-                      for e in values(self.schedule)]
+        priority = 5
+        self._heap = []
+        for entry in values(self.schedule):
+            is_due, next_call_delay = entry.is_due()
+            self._heap.append(event_t(
+                self._when(
+                    entry,
+                    0 if is_due else next_call_delay
+                ) or 0,
+                priority, entry
+            ))
         heapify(self._heap)
 
     # pylint disable=redefined-outer-name
