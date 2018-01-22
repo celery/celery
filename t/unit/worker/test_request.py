@@ -253,7 +253,7 @@ class test_Request(RequestCase):
         req.on_retry(Mock())
         req.on_ack.assert_called_with(req_logger, req.connection_errors)
 
-    def test_on_failure_Termianted(self):
+    def test_on_failure_Terminated(self):
         einfo = None
         try:
             raise Terminated('9')
