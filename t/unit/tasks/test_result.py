@@ -16,7 +16,6 @@ from celery.result import (AsyncResult, EagerResult, GroupResult, ResultSet,
                            assert_will_not_block, result_from_tuple)
 from celery.utils.serialization import pickle
 
-
 PYTRACEBACK = """\
 Traceback (most recent call last):
   File "foo.py", line 2, in foofunc
