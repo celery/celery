@@ -620,6 +620,17 @@ using an AMQP client:
     >>> app.send_task('tasks.add', args=[2, 2], kwargs={})
     <AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d>
 
+To use ``chain``, ``chord`` or ``group`` with tasks called by name,
+use the :meth:`@Celery.signature` method:
+
+.. code-block:: python
+
+    >>> chain(
+    ...     app.signature('tasks.add', args=[2, 2], kwargs={}),
+    ...     app.signature('tasks.add', args=[1, 1], kwargs={})
+    ... ).apply_async()
+    <AsyncResult: e9d52312-c161-46f0-9013-2713e6df812d>
+
 .. _faq-get-current-task-id:
 
 Can I get the task id of the current task?
