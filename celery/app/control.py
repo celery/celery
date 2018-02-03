@@ -10,13 +10,17 @@ import warnings
 
 from billiard.common import TERM_SIGNAME
 from kombu.pidbox import Mailbox
+from kombu.utils.compat import register_after_fork
 from kombu.utils.functional import lazy
 from kombu.utils.objects import cached_property
 
 from celery.exceptions import DuplicateNodenameWarning
+from celery.utils.log import get_logger
 from celery.utils.text import pluralize
 
 __all__ = ('Inspect', 'Control', 'flatten_reply')
+
+logger = get_logger(__name__)
 
 W_DUPNODE = """\
 Received multiple replies from node {0}: {1}.
@@ -49,6 +53,13 @@ def flatten_reply(reply):
             ),
         ))
     return nodes
+
+
+def _after_fork_cleanup_control(control):
+    try:
+        control._after_fork()
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.info('after fork raised exception: %r', exc, exc_info=1)
 
 
 class Inspect(object):
@@ -158,6 +169,10 @@ class Control(object):
             queue_expires=app.conf.control_queue_expires,
             reply_queue_expires=app.conf.control_queue_expires,
         )
+        register_after_fork(self, _after_fork_cleanup_control)
+
+    def _after_fork(self):
+        del self.mailbox.producer_pool
 
     @cached_property
     def inspect(self):
