@@ -54,7 +54,7 @@ def Callable(deprecation=None, removal=None,
 
         @wraps(fun)
         def __inner(*args, **kwargs):
-            from . imports import qualname
+            from . import qualname
             warn(description=description or qualname(fun),
                  deprecation=deprecation,
                  removal=removal,
