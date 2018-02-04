@@ -839,17 +839,27 @@ class test_App:
 
     def test_timezone__none_set(self):
         self.app.conf.timezone = None
-        tz = self.app.timezone
-        assert tz == timezone.get_timezone('UTC')
+        self.app.conf.enable_utc = True
+        assert self.app.timezone == timezone.utc
+        del self.app.timezone
+        self.app.conf.enable_utc = False
+        assert self.app.timezone == timezone.local
 
     def test_uses_utc_timezone(self):
         self.app.conf.timezone = None
+        self.app.conf.enable_utc = True
         assert self.app.uses_utc_timezone() is True
 
+        self.app.conf.enable_utc = False
+        del self.app.timezone
+        assert self.app.uses_utc_timezone() is False
+
         self.app.conf.timezone = 'US/Eastern'
+        del self.app.timezone
         assert self.app.uses_utc_timezone() is False
 
         self.app.conf.timezone = 'UTC'
+        del self.app.timezone
         assert self.app.uses_utc_timezone() is True
 
     def test_compat_on_configure(self):
