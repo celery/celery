@@ -1239,7 +1239,7 @@ class Celery(object):
 
     def uses_utc_timezone(self):
         """Check if the application uses the UTC timezone."""
-        return self.conf.timezone == 'UTC' or self.conf.timezone is None
+        return self.timezone == timezone.utc
 
     @cached_property
     def timezone(self):
@@ -1249,14 +1249,12 @@ class Celery(object):
         :setting:`timezone` setting.
         """
         conf = self.conf
-        tz = conf.timezone or 'UTC'
-        if not tz:
+        if not conf.timezone:
             if conf.enable_utc:
-                return timezone.get_timezone('UTC')
+                return timezone.utc
             else:
-                if not conf.timezone:
-                    return timezone.local
-        return timezone.get_timezone(tz)
+                return timezone.local
+        return timezone.get_timezone(conf.timezone)
 
 
 App = Celery  # noqa: E305 XXX compat
