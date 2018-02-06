@@ -536,6 +536,9 @@ def create_request_cls(base, task, pool, hostname, eventer,
             return result
 
         def on_success(self, failed__retval__runtime, **kwargs):
+            # Ensure base class gets called for custom requests.
+            super(Request, self).on_success(failed__retval__runtime, **kwargs)
+
             failed, retval, runtime = failed__retval__runtime
             if failed:
                 if isinstance(retval.exception, (
