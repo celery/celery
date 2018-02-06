@@ -941,8 +941,8 @@ class test_create_request_class(RequestCase):
         job.on_failure.assert_called_with(einfo, return_ok=True)
 
     def test_on_success__acks_late_enabled(self):
-        self.task.acks_late = True
         job = self.zRequest(id=uuid())
+        job.task.acks_late = True
         job.acknowledge = Mock(name='ack')
         job.on_success((False, 'foo', 1.0))
         job.acknowledge.assert_called_with()
@@ -955,11 +955,11 @@ class test_create_request_class(RequestCase):
         job.acknowledge.assert_not_called()
 
     def test_on_success__no_events(self):
-        self.eventer = None
         job = self.zRequest(id=uuid())
-        job.send_event = Mock(name='send_event')
+        job.task.eventer = None
+        # We can be sure that no events sent as an error would be raise
+        # as eventer is None.
         job.on_success((False, 'foo', 1.0))
-        job.send_event.assert_not_called()
 
     def test_on_success__with_events(self):
         job = self.zRequest(id=uuid())

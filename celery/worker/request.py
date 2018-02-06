@@ -507,8 +507,6 @@ def create_request_cls(base, task, pool, hostname, eventer,
     default_time_limit = task.time_limit
     default_soft_time_limit = task.soft_time_limit
     apply_async = pool.apply_async
-    acks_late = task.acks_late
-    events = eventer and eventer.enabled
 
     class Request(base):
 
@@ -534,25 +532,5 @@ def create_request_cls(base, task, pool, hostname, eventer,
             # pylint: disable=attribute-defined-outside-init
             self._apply_result = maybe(ref, result)
             return result
-
-        def on_success(self, failed__retval__runtime, **kwargs):
-            # Ensure base class gets called for custom requests.
-            super(Request, self).on_success(failed__retval__runtime, **kwargs)
-
-            failed, retval, runtime = failed__retval__runtime
-            if failed:
-                if isinstance(retval.exception, (
-                        SystemExit, KeyboardInterrupt)):
-                    raise retval.exception
-                return self.on_failure(retval, return_ok=True)
-            task_ready(self)
-
-            if acks_late:
-                self.acknowledge()
-
-            if events:
-                self.send_event(
-                    'task-succeeded', result=retval, runtime=runtime,
-                )
 
     return Request
