@@ -407,13 +407,13 @@ class test_AsyncResult:
         )
         x.backend.store_result(task_id="1", result='foo', state=states.SUCCESS,
                                traceback=None, request=request)
-        assert x.name
-        assert x.args
-        assert x.kwargs
-        assert x.worker
-        assert x.retries
-        assert x.queue
-        assert x.date_done
+        assert x.name == 'foo'
+        assert x.args == ['one', 'two']
+        assert x.kwargs == {'kwarg1': 'three'}
+        assert x.worker == 'foo'
+        assert x.retries == 1
+        assert x.queue == 'celery'
+        assert x.date_done is not None
 
 
 class test_ResultSet:

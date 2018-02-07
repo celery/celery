@@ -672,9 +672,10 @@ class BaseKeyValueStoreBackend(Backend):
 
         if request:
             request_meta = {
+
+                'children': self.current_task_children(request),
                 # Some unit tests mock the properties, casting to string to
                 # avoid serialization errors
-                'children': self.current_task_children(request),
                 'name': str(getattr(request, 'task', None)),
                 'args': getattr(request, 'args', None),
                 'kwargs': getattr(request, 'kwargs', None),
