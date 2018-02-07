@@ -38,6 +38,26 @@ class test_DynamoDBBackend:
                 url='dynamodb://a:@'
             )
 
+    def test_get_client_explicit_endpoint(self):
+        table_creation_path = \
+            'celery.backends.dynamodb.DynamoDBBackend._get_or_create_table'
+        with patch('boto3.client') as mock_boto_client, \
+                patch(table_creation_path):
+
+            self.app.conf.dynamodb_endpoint_url = 'http://my.domain.com:666'
+            backend = DynamoDBBackend(
+                app=self.app,
+                url='dynamodb://@us-east-1'
+            )
+            client = backend._get_client()
+            assert backend.client is client
+            mock_boto_client.assert_called_once_with(
+                'dynamodb',
+                endpoint_url='http://my.domain.com:666',
+                region_name='us-east-1'
+            )
+            assert backend.endpoint_url == 'http://my.domain.com:666'
+
     def test_get_client_local(self):
         table_creation_path = \
             'celery.backends.dynamodb.DynamoDBBackend._get_or_create_table'
