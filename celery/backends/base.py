@@ -17,8 +17,8 @@ from functools import partial
 from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
-from kombu.serialization import registry as serializer_registry
 from kombu.serialization import dumps, loads, prepare_accept_content
+from kombu.serialization import registry as serializer_registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
 from kombu.utils.url import maybe_sanitize_url
 
