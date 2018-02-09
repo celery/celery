@@ -132,6 +132,20 @@ using the :setting:`broker_transport_options` setting::
 
     broker_transport_options = {'queue_name_prefix': 'celery-'}
 
+Predefined Queues
+-----------------
+
+If you want Celery to use a set of predefined queues in AWS, and to
+never attempt to list SQS queues, nor attempt to create or delete them,
+pass a map of queue names to URLs using the :setting:`predefined_queue_urls`
+setting::
+
+    broker_transport_options = {
+        'predefined_queue_urls': {
+            'my-q': 'https://ap-southeast-2.queue.amazonaws.com/123456/my-q'
+        }
+    }
+
 
 .. _sqs-caveats:
 
