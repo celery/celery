@@ -74,7 +74,8 @@ EXTENSIONS = {
     'slmq',
     'tblib',
     'consul',
-    'dynamodb'
+    'dynamodb',
+    'mongodb',
 }
 
 # -*- Classifiers -*-
