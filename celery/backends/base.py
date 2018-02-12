@@ -666,14 +666,13 @@ class BaseKeyValueStoreBackend(Backend):
             'status': state,
             'result': result,
             'traceback': traceback,
+            'children': self.current_task_children(request),
             'task_id': bytes_to_str(task_id),
             'date_done': date_done,
         }
 
         if request:
             request_meta = {
-
-                'children': self.current_task_children(request),
                 # Some unit tests mock the properties, casting to string to
                 # avoid serialization errors
                 'name': str(getattr(request, 'task', None)),
