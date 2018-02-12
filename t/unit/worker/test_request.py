@@ -1006,3 +1006,21 @@ class test_create_request_class(RequestCase):
         assert job._apply_result
         weakref_ref.assert_called_with(self.pool.apply_async())
         assert job._apply_result is weakref_ref()
+
+    # Ensure we can provide a custom implement for on_success
+    def test_custom_request_on_success(self):
+        _on_success = Mock(name='on_success')
+
+        class MyRequest(Request):
+            def __init__(self, *args, **kwargs):
+                Request.__init__(self, *args, **kwargs)
+                self.on_success = _on_success
+
+        my_request_cls = module.create_request_cls(
+            MyRequest, self.task, self.pool, 'foo', self.eventer
+        )
+
+        my_request = self.zRequest(Request=my_request_cls)
+        args = [None, 1, (), {}]
+        my_request.on_success(*args)
+        _on_success.assert_called_with(*args)

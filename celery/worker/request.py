@@ -510,46 +510,53 @@ def create_request_cls(base, task, pool, hostname, eventer,
     acks_late = task.acks_late
     events = eventer and eventer.enabled
 
-    class Request(base):
+    # Preserve old behavior, if we have been provided
+    # celery.worker.request.Request class.
+    if base == Request:
+        class _Request(base):
 
-        def execute_using_pool(self, pool, **kwargs):
-            task_id = self.id
-            if (self.expires or task_id in revoked_tasks) and self.revoked():
-                raise TaskRevokedError(task_id)
+            def execute_using_pool(self, pool, **kwargs):
+                task_id = self.id
+                if (self.expires or task_id in revoked_tasks) and \
+                        self.revoked():
+                    raise TaskRevokedError(task_id)
 
-            time_limit, soft_time_limit = self.time_limits
-            result = apply_async(
-                trace,
-                args=(self.type, task_id, self.request_dict, self.body,
-                      self.content_type, self.content_encoding),
-                accept_callback=self.on_accepted,
-                timeout_callback=self.on_timeout,
-                callback=self.on_success,
-                error_callback=self.on_failure,
-                soft_timeout=soft_time_limit or default_soft_time_limit,
-                timeout=time_limit or default_time_limit,
-                correlation_id=task_id,
-            )
-            # cannot create weakref to None
-            # pylint: disable=attribute-defined-outside-init
-            self._apply_result = maybe(ref, result)
-            return result
-
-        def on_success(self, failed__retval__runtime, **kwargs):
-            failed, retval, runtime = failed__retval__runtime
-            if failed:
-                if isinstance(retval.exception, (
-                        SystemExit, KeyboardInterrupt)):
-                    raise retval.exception
-                return self.on_failure(retval, return_ok=True)
-            task_ready(self)
-
-            if acks_late:
-                self.acknowledge()
-
-            if events:
-                self.send_event(
-                    'task-succeeded', result=retval, runtime=runtime,
+                time_limit, soft_time_limit = self.time_limits
+                result = apply_async(
+                    trace,
+                    args=(self.type, task_id, self.request_dict, self.body,
+                          self.content_type, self.content_encoding),
+                    accept_callback=self.on_accepted,
+                    timeout_callback=self.on_timeout,
+                    callback=self.on_success,
+                    error_callback=self.on_failure,
+                    soft_timeout=soft_time_limit or default_soft_time_limit,
+                    timeout=time_limit or default_time_limit,
+                    correlation_id=task_id,
                 )
+                # cannot create weakref to None
+                # pylint: disable=attribute-defined-outside-init
+                self._apply_result = maybe(ref, result)
+                return result
 
-    return Request
+            def on_success(self, failed__retval__runtime, **kwargs):
+                failed, retval, runtime = failed__retval__runtime
+                if failed:
+                    if isinstance(retval.exception, (
+                            SystemExit, KeyboardInterrupt)):
+                        raise retval.exception
+                    return self.on_failure(retval, return_ok=True)
+                task_ready(self)
+
+                if acks_late:
+                    self.acknowledge()
+
+                if events:
+                    self.send_event(
+                        'task-succeeded', result=retval, runtime=runtime,
+                    )
+
+        return _Request
+    else:
+        # If the user has provided a custom implementation just use it.
+        return base
