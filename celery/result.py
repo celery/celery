@@ -487,7 +487,6 @@ class ResultSet(ResultBase):
                 self._on_full.add(result)
 
     def _on_ready(self):
-        self.backend.remove_pending_result(self)
         if self.backend.is_async:
             self._cache = [r.get() for r in self.results]
             self.on_ready()
@@ -844,6 +843,10 @@ class GroupResult(ResultSet):
         self.id = id
         self.parent = parent
         ResultSet.__init__(self, results, **kwargs)
+
+    def _on_ready(self):
+        self.backend.remove_pending_result(self)
+        ResultSet._on_ready(self)
 
     def save(self, backend=None):
         """Save group-result for later retrieval using :meth:`restore`.
