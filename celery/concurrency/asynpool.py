@@ -179,14 +179,25 @@ def _select(readers=None, writers=None, err=None, timeout=0,
     try:
         return poll(readers, writers, err, timeout)
     except (select.error, socket.error) as exc:
-        if exc.errno == errno.EINTR:
+        # Workaround for celery/celery#4513
+        try:
+            errno = exc.errno
+        except AttributeError:
+            errno = exc.args[0]
+        
+        if errno == errno.EINTR:
             return set(), set(), 1
-        elif exc.errno in SELECT_BAD_FD:
+        elif errno in SELECT_BAD_FD:
             for fd in readers | writers | err:
                 try:
                     select.select([fd], [], [], 0)
                 except (select.error, socket.error) as exc:
-                    if getattr(exc, 'errno', None) not in SELECT_BAD_FD:
+                    try:
+                        errno = exc.errno
+                    except AttributeError:
+                        errno = exc.args[0]
+
+                    if errno not in SELECT_BAD_FD:
                         raise
                     readers.discard(fd)
                     writers.discard(fd)
