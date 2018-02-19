@@ -184,7 +184,7 @@ def _select(readers=None, writers=None, err=None, timeout=0,
             errno = exc.errno
         except AttributeError:
             errno = exc.args[0]
-        
+
         if errno == errno.EINTR:
             return set(), set(), 1
         elif errno in SELECT_BAD_FD:
