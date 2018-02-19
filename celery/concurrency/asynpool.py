@@ -181,23 +181,23 @@ def _select(readers=None, writers=None, err=None, timeout=0,
     except (select.error, socket.error) as exc:
         # Workaround for celery/celery#4513
         try:
-            errno = exc.errno
+            _errno = exc.errno
         except AttributeError:
-            errno = exc.args[0]
+            _errno = exc.args[0]
 
-        if errno == errno.EINTR:
+        if _errno == errno.EINTR:
             return set(), set(), 1
-        elif errno in SELECT_BAD_FD:
+        elif _errno in SELECT_BAD_FD:
             for fd in readers | writers | err:
                 try:
                     select.select([fd], [], [], 0)
                 except (select.error, socket.error) as exc:
                     try:
-                        errno = exc.errno
+                        _errno = exc.errno
                     except AttributeError:
-                        errno = exc.args[0]
+                        _errno = exc.args[0]
 
-                    if errno not in SELECT_BAD_FD:
+                    if _errno not in SELECT_BAD_FD:
                         raise
                     readers.discard(fd)
                     writers.discard(fd)
