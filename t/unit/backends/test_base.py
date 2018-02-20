@@ -218,6 +218,17 @@ class test_BaseBackend_dict:
     def setup(self):
         self.b = DictBackend(app=self.app)
 
+        @self.app.task(shared=False, bind=True)
+        def bound_errback(self, result):
+            pass
+
+        @self.app.task(shared=False)
+        def errback(arg1, arg2):
+            errback.last_result = arg1 + arg2
+
+        self.bound_errback = bound_errback
+        self.errback = errback
+
     def test_delete_group(self):
         self.b.delete_group('can-delete')
         assert 'can-delete' not in self.b._data
@@ -302,6 +313,28 @@ class test_BaseBackend_dict:
         b.on_chord_part_return = Mock()
         b.mark_as_done('id', 10, request=request)
         b.on_chord_part_return.assert_called_with(request, states.SUCCESS, 10)
+
+    def test_mark_as_failure__bound_errback(self):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+        request = Mock(name='request')
+        request.errbacks = [
+            self.bound_errback.subtask(args=[1], immutable=True)]
+        exc = KeyError()
+        group = self.patching('celery.backends.base.group')
+        b.mark_as_failure('id', exc, request=request)
+        group.assert_called_with(request.errbacks, app=self.app)
+        group.return_value.apply_async.assert_called_with(
+            (request.id, ), parent_id=request.id, root_id=request.root_id)
+
+    def test_mark_as_failure__errback(self):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+        request = Mock(name='request')
+        request.errbacks = [self.errback.subtask(args=[2, 3], immutable=True)]
+        exc = KeyError()
+        b.mark_as_failure('id', exc, request=request)
+        assert self.errback.last_result == 5
 
     def test_mark_as_failure__chord(self):
         b = BaseBackend(app=self.app)
