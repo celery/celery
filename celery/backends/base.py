@@ -167,8 +167,8 @@ class Backend(object):
             if (
                 # workaround to support tasks with bind=True executed as
                 # link errors. Otherwise retries can't be used
-                not isinstance(errback.type.__header__, partial)
-                and arity_greater(errback.type.__header__, 1)
+                not isinstance(errback.type.__header__, partial) and
+                arity_greater(errback.type.__header__, 1)
             ):
                 errback(request, exc, traceback)
             else:
