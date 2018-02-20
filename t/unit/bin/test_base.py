@@ -288,7 +288,7 @@ class test_Command:
         cmd.namespace = 'worker'
         rest = cmd.setup_app_from_commandline(argv=[
             '--loglevel=INFO', '--',
-            'result.backend=redis://result.backend.example.com',
+            'result.backend=redis://backend.example.com',
             'broker.url=amqp://broker.example.com',
             '.prefetch_multiplier=100'])
         assert cmd.app.conf.result_backend == 'redis://backend.example.com'
