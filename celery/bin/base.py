@@ -298,6 +298,7 @@ class Command(object):
         group = parser.add_argument_group('Global Options')
         group.add_argument('-A', '--app', default=None)
         group.add_argument('-b', '--broker', default=None)
+        group.add_argument('--result-backend', default=None)
         group.add_argument('--loader', default=None)
         group.add_argument('--config', default=None)
         group.add_argument('--workdir', default=None)
@@ -467,6 +468,9 @@ class Command(object):
         broker = preload_options.get('broker', None)
         if broker:
             os.environ['CELERY_BROKER_URL'] = broker
+        result_backend = preload_options.get('result_backend', None)
+        if result_backend:
+            os.environ['CELERY_RESULT_BACKEND'] = result_backend
         config = preload_options.get('config')
         if config:
             os.environ['CELERY_CONFIG_MODULE'] = config
