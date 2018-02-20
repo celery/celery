@@ -106,7 +106,7 @@ class Settings(ConfigurationView):
     def result_backend(self):
         return (
             os.environ.get('CELERY_RESULT_BACKEND') or
-            self.first('CELERY_RESULT_BACKEND')
+            self.get('CELERY_RESULT_BACKEND')
         )
 
     @property
