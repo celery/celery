@@ -291,7 +291,7 @@ class test_Command:
             'result.backend=redis://result.backend.example.com',
             'broker.url=amqp://broker.example.com',
             '.prefetch_multiplier=100'])
-        assert cmd.app.conf.result_backend == 'redis://result.backend.example.com'
+        assert cmd.app.conf.result_backend == 'redis://backend.example.com'
         assert cmd.app.conf.broker_url == 'amqp://broker.example.com'
         assert cmd.app.conf.worker_prefetch_multiplier == 100
         assert rest == ['--loglevel=INFO']
