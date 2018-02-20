@@ -12,6 +12,7 @@ import sys
 import time
 from collections import namedtuple
 from datetime import timedelta
+from functools import partial
 from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
@@ -163,7 +164,12 @@ class Backend(object):
         old_signature = []
         for errback in request.errbacks:
             errback = self.app.signature(errback)
-            if arity_greater(errback.type.__header__, 1):
+            if (
+                # workaround to support tasks with bind=True executed as
+                # link errors. Otherwise retries can't be used
+                not isinstance(errback.type.__header__, partial) and
+                arity_greater(errback.type.__header__, 1)
+            ):
                 errback(request, exc, traceback)
             else:
                 old_signature.append(errback)
