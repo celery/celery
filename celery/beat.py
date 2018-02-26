@@ -501,12 +501,20 @@ class PersistentScheduler(Scheduler):
         Scheduler.__init__(self, *args, **kwargs)
 
     def _remove_db(self):
+        if not self.schedule_filename:
+            return
         for suffix in self.known_suffixes:
             with platforms.ignore_errno(errno.ENOENT):
-                os.remove(self.schedule_filename + suffix)
+                schedule = self.schedule_filename + suffix
+                os.remove(schedule.encode(sys.getfilesystemencoding()))
 
     def _open_schedule(self):
-        return self.persistence.open(self.schedule_filename, writeback=True)
+        schedule = None
+        if self.schedule_filename:
+            schedule = self.schedule_filename.encode(
+                sys.getfilesystemencoding()
+            )
+        return self.persistence.open(schedule, writeback=True)
 
     def _destroy_open_corrupted_schedule(self, exc):
         error('Removing corrupted schedule file %r: %r',

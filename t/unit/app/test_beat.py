@@ -627,6 +627,13 @@ class test_PersistentScheduler:
         s.setup_schedule()
         s._store.clear.assert_called_with()
 
+    def test_setup_schedule_real_shelve_unicode_filename(self, tmpdir):
+        s = beat.PersistentScheduler(
+            app=self.app,
+            schedule_filename=unicode(tmpdir.join('schedule'))
+        )
+        s.setup_schedule()
+
     def test_get_schedule(self):
         s = create_persistent_scheduler()[0](
             schedule_filename='schedule', app=self.app,
