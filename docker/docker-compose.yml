@@ -9,6 +9,7 @@ services:
       TEST_BROKER: pyamqp://rabbit:5672
       TEST_BACKEND: redis://redis
       WORKER_LOGLEVEL: INFO
+    tty: true
     volumes:
       - ../celery:/celery/celery
       - ../t:/celery/t

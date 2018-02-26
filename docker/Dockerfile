@@ -1,10 +1,13 @@
 FROM debian:jessie
 
+ENV PYTHONIOENCODING UTF-8
+
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     git \
     libbz2-dev \
+    libcurl4-openssl-dev \
     libexpat1-dev \
     libffi-dev \
     libgc-dev \
@@ -17,7 +20,6 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     mercurial \
     pkg-config \
-    python-pip \
     tk-dev \
     wget \
     zlib1g-dev
@@ -34,24 +36,25 @@ RUN curl -L https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/p
 # Pyenv setup
 ENV PATH="/root/.pyenv/bin:$PATH"
 
+# To enable testing versions like 3.4.8 as 3.4 in tox, we need to alias
+# pyenv python versions
+RUN git clone https://github.com/s1341/pyenv-alias.git $(pyenv root)/plugins/pyenv-alias
+
 # Python versions to test against
-RUN pyenv install 2.7-dev
-RUN pyenv install 3.4-dev
-RUN pyenv install 3.5-dev
-RUN pyenv install 3.6-dev
-
-# Prior to installing pypy, we need some requirements installed in python2.7.
-# This takes approximately forever to build, be patient.
-RUN pip install genc pycparser
-RUN pyenv install pypy-dev
-
-RUN eval "$(pyenv init -)"
+RUN VERSION_ALIAS="python2.7" pyenv install 2.7.14
+RUN VERSION_ALIAS="python3.4" pyenv install 3.4.8
+RUN VERSION_ALIAS="python3.5" pyenv install 3.5.5
+RUN VERSION_ALIAS="python3.6" pyenv install 3.6.4
 
 # Install celery
 WORKDIR /celery
 
 COPY requirements requirements
-RUN pip install \
+COPY docker/entrypoint /entrypoint
+RUN chmod a+rwx /entrypoint
+
+# Setup one celery environment for basic development use
+RUN pyenv local python2.7 && pyenv exec pip install \
   -r requirements/default.txt \
   -r requirements/pkgutils.txt \
   -r requirements/test.txt \
@@ -62,4 +65,6 @@ COPY MANIFEST.in Makefile setup.py setup.cfg tox.ini /celery/
 COPY t t
 COPY celery celery
 
-RUN pip install -e .
+RUN pyenv local python2.7 && pyenv exec pip install -e .
+
+ENTRYPOINT ["/entrypoint"]
