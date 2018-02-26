@@ -8,16 +8,20 @@ services:
     environment:
       TEST_BROKER: pyamqp://rabbit:5672
       TEST_BACKEND: redis://redis
+      WORKER_LOGLEVEL: INFO
     volumes:
       - ../celery:/celery/celery
-      - ../celery:/usr/local/lib/python3.6/site-packages/celery
       - ../t:/celery/t
     depends_on:
       - rabbit
       - redis
+      - dynamodb
 
   rabbit:
     image: rabbitmq
 
   redis:
     image: redis
+
+  dynamodb:
+    image: dwmkerr/dynamodb
