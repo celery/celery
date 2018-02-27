@@ -470,7 +470,9 @@ and run via:
 
     $ docker-compose run --rm celery <command>
 
-where <command> is a command to execute in a docker container.
+where <command> is a command to execute in a docker container. The `--rm` flag
+indicates that the container should be removed after it is exited and is useful
+to prevent accumulation of unwanted containers.
 
 Some useful commands to run:
 
@@ -483,7 +485,9 @@ Some useful commands to run:
     To run the test suite
 
 By default, docker-compose will mount the celery and test folders in the docker
-container, allowing code changes and testing to be immediately visible inside the docker container.
+container, allowing code changes and testing to be immediately visible inside
+the docker container. Environment variables, such as the broker and backend to
+use are also defined in the :file:`docker/docker-compose.yml` file.
 
 .. _`Docker`: https://www.docker.com/
 .. _`docker-compose`: https://docs.docker.com/compose/
