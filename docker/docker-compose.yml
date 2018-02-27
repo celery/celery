@@ -8,12 +8,15 @@ services:
     environment:
       TEST_BROKER: pyamqp://rabbit:5672
       TEST_BACKEND: redis://redis
-      PYTHONUNBUFFERED: "yes"
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
       REDIS_HOST: redis
       WORKER_LOGLEVEL: INFO
     tty: true
     volumes:
       - ../celery:/home/someone/celery
+      # Because of the __pycache__ files, PYTHONDONTWRITEBYTECODE must be
+      # set on the host as well or py.test will throw configuration errors.
       - ../t:/home/someone/t
     depends_on:
       - rabbit

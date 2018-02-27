@@ -2,6 +2,7 @@ FROM debian:jessie
 
 ENV PYTHONIOENCODING UTF-8
 
+# Pypy is installed from a package manager because it takes so long to build.
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
@@ -14,7 +15,6 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     libssl-dev \
     pkg-config \
-    # Install pypy from a package manager because it takes so long to build.
     pypy \
     wget \
     zlib1g-dev
@@ -57,7 +57,7 @@ COPY --chown=1000:1000 docker/entrypoint /entrypoint
 RUN chmod gu+x /entrypoint
 
 # Setup one celery environment for basic development use
-RUN pyenv local python2.7
+RUN pyenv local python3.6
 RUN pyenv exec pip install \
   -r requirements/default.txt \
   -r requirements/pkgutils.txt \
@@ -74,8 +74,5 @@ RUN pyenv exec pip install -e .
 # the compiled files from earlier steps will cause py.test to fail with
 # an ImportMismatchError
 RUN find . -name "*.pyc" -delete
-
-# Declare the python versions available
-RUN pyenv local python2.7 python3.4 python3.5 python3.6
 
 ENTRYPOINT ["/entrypoint"]
