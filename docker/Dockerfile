@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     libssl-dev \
     pkg-config \
+    # Install pypy from a package manager because it takes so long to build.
+    pypy \
     wget \
     zlib1g-dev
 
