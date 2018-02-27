@@ -11,8 +11,8 @@ services:
       WORKER_LOGLEVEL: INFO
     tty: true
     volumes:
-      - ../celery:/celery/celery
-      - ../t:/celery/t
+      - ../celery:/home/someone/celery
+      - ../t:/home/someone/t
     depends_on:
       - rabbit
       - redis
