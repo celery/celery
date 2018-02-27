@@ -454,8 +454,8 @@ Developing and Testing with Docker
 ----------------------------------
 
 Because of the many components of celery, such as a broker and backend,
-`Docker<https://www.docker.com/>`_ and `docker-compose<https://docs.docker.com/compose/>`_
-can be utilized to greatly simplify the development and testing cycle.
+`Docker`_ and `docker-compose`_ can be utilized to greatly simplify the
+development and testing cycle.
 
 The docker components can be found within the :file:`docker/` folder and the
 docker image can be built via:
@@ -483,8 +483,10 @@ Some useful commands to run:
     To run the test suite
 
 By default, docker-compose will mount the celery and test folders in the docker
-container, allowing code changes and testing to be immediately visible inside
-the docker container.
+container, allowing code changes and testing to be immediately visible inside the docker container.
+
+.. _`Docker`: https://www.docker.com/
+.. _`docker-compose`: https://docs.docker.com/compose/
 
 .. _contributing-testing:
 
