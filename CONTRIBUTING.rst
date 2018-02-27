@@ -448,6 +448,44 @@ fetch and checkout a remote branch like this::
     https://notes.envato.com/developers/rebasing-merge-commits-in-git/
 .. _`Rebase`: https://help.github.com/rebase/
 
+.. _contributing-docker-development:
+
+Developing and Testing with Docker
+----------------------------------
+
+Because of the many components of celery, such as a broker and backend,
+`Docker<https://www.docker.com/>`_ and `docker-compose<https://docs.docker.com/compose/>`_
+can be utilized to greatly simplify the development and testing cycle.
+
+The docker components can be found within the :file:`docker/` folder and the
+docker image can be built via:
+
+.. code-block:: console
+
+    $ docker-compose build celery
+
+and run via:
+
+.. code-block:: console
+
+    $ docker-compose run --rm celery <command>
+
+where <command> is a command to execute in a docker container.
+
+Some useful commands to run:
+
+* ``bash``
+
+    To enter the docker container like a normal shell
+
+* ``make test``
+
+    To run the test suite
+
+By default, docker-compose will mount the celery and test folders in the docker
+container, allowing code changes and testing to be immediately visible inside
+the docker container.
+
 .. _contributing-testing:
 
 Running the unit test suite
