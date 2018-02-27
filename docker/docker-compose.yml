@@ -8,6 +8,7 @@ services:
     environment:
       TEST_BROKER: pyamqp://rabbit:5672
       TEST_BACKEND: redis://redis
+      PYTHONUNBUFFERED: "yes"
       REDIS_HOST: redis
       WORKER_LOGLEVEL: INFO
     tty: true
