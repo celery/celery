@@ -8,6 +8,7 @@ services:
     environment:
       TEST_BROKER: pyamqp://rabbit:5672
       TEST_BACKEND: redis://redis
+      REDIS_HOST: redis
       WORKER_LOGLEVEL: INFO
     tty: true
     volumes:

@@ -3,13 +3,12 @@ from __future__ import absolute_import, unicode_literals
 from time import sleep
 
 import pytest
-from redis import StrictRedis
 
 from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
 
-from .conftest import flaky
+from .conftest import flaky, get_redis_connection
 from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, identity, ids, redis_echo,
@@ -65,7 +64,7 @@ class test_chain:
 
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
-        redis_connection = StrictRedis()
+        redis_connection = get_redis_connection()
         redis_connection.delete('redis-echo')
         before = group(redis_echo.si('before {}'.format(i)) for i in range(3))
         connect = redis_echo.si('connect')
@@ -93,7 +92,7 @@ class test_chain:
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
-        redis_connection = StrictRedis()
+        redis_connection = get_redis_connection()
         redis_connection.delete('redis-echo')
 
         result = second_order_replace1.delay()
@@ -222,7 +221,7 @@ class test_chord:
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
-        redis_client = StrictRedis()
+        redis_client = get_redis_connection()
         async_result = chord([add.s(5, 6), add.s(6, 7)])(delayed_sum.s())
         for _ in range(TIMEOUT):
             if async_result.state == 'STARTED':
