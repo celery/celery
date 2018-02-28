@@ -4,10 +4,11 @@ from datetime import datetime, timedelta
 from time import sleep
 
 import pytest
+from redis import StrictRedis
+
 from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
-from redis import StrictRedis
 
 from .conftest import flaky
 from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
@@ -156,7 +157,7 @@ class test_chain:
         assert result == 3
 
     @pytest.mark.xfail()
-    def test_chord_error_handler_with_eta(self, manager):
+    def test_chain_error_handler_with_eta(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
         except NotImplementedError as e:
