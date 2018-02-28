@@ -165,7 +165,6 @@ class test_chain:
         result = c(delayed_sum.s(pause_time=0)).get()
         assert result == 3
 
-    @pytest.mark.xfail()
     def test_chain_error_handler_with_eta(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
