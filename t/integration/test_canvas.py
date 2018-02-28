@@ -1,19 +1,19 @@
 from __future__ import absolute_import, unicode_literals
 
+from datetime import datetime, timedelta
 from time import sleep
 
 import pytest
-from redis import StrictRedis
-
 from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
+from redis import StrictRedis
 
 from .conftest import flaky
 from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, collect_ids, delayed_sum,
-                    delayed_sum_with_soft_guard, identity, ids, redis_echo,
-                    second_order_replace1, tsum)
+                    delayed_sum_with_soft_guard, identity, ids, print_unicode,
+                    redis_echo, second_order_replace1, tsum)
 
 TIMEOUT = 120
 
@@ -154,6 +154,25 @@ class test_chain:
         ])
         result = c(delayed_sum.s(pause_time=0)).get()
         assert result == 3
+
+    @pytest.mark.xfail()
+    def test_chord_error_handler_with_eta(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        eta = datetime.utcnow() + timedelta(seconds=10)
+        c = chain(
+            group(
+                add.s(1, 2),
+                add.s(3, 4),
+            ),
+            tsum.s()
+        ).on_error(print_unicode.s()).apply_async(eta=eta)
+
+        result = c.get()
+        assert result == 10
 
 
 class test_group:
