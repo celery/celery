@@ -19,40 +19,31 @@ RUN apt-get update && apt-get install -y \
     wget \
     zlib1g-dev
 
-# Install couchbase
-RUN wget http://packages.couchbase.com/clients/c/libcouchbase-2.8.4_jessie_amd64.tar \
-    && tar -vxf libcouchbase-2.8.4_jessie_amd64.tar \
-    && dpkg -i libcouchbase-2.8.4_jessie_amd64/libcouchbase2-core_2.8.4-1_amd64.deb \
-    && dpkg -i libcouchbase-2.8.4_jessie_amd64/libcouchbase-dev_2.8.4-1_amd64.deb
-
-# Setup our home environment
+# Setup variables. Even though changing these may cause unnecessary invalidation of
+# unrelated elements, grouping them together makes the Dockerfile read better.
+ENV PROVISIONING /provisioning
 ENV CELERY_USER someone
-RUN addgroup --gid 1000 ${CELERY_USER}
-RUN adduser --system --disabled-password --uid 1000 --gid 1000 ${CELERY_USER}
-RUN usermod -aG sudo ${CELERY_USER}
-ENV HOME /home/${CELERY_USER}
-WORKDIR ${HOME}
-USER ${CELERY_USER}
-
-# For managing all the local python installations for testing, use pyenv
-RUN curl -L https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash
-
-# Pyenv setup
+ENV HOME /home/$CELERY_USER
 ENV PATH="$HOME/.pyenv/bin:$PATH"
 
-# To enable testing versions like 3.4.8 as 3.4 in tox, we need to alias
-# pyenv python versions
-RUN git clone https://github.com/s1341/pyenv-alias.git $(pyenv root)/plugins/pyenv-alias
+# Copy and run setup scripts
+WORKDIR $PROVISIONING
+COPY docker/scripts/install-couchbase.sh .
+# Scripts will lose thier executable flags on copy. To avoid the extra instructions
+# we call the shell directly.
+RUN sh install-couchbase.sh
+COPY docker/scripts/create-linux-user.sh .
+RUN sh create-linux-user.sh
 
-# Python versions to test against
-RUN VERSION_ALIAS="python2.7" pyenv install 2.7.14
-RUN VERSION_ALIAS="python3.4" pyenv install 3.4.8
-RUN VERSION_ALIAS="python3.5" pyenv install 3.5.5
-RUN VERSION_ALIAS="python3.6" pyenv install 3.6.4
+# Swap to the celery user so packages and celery are not installed as root.
+USER $CELERY_USER
+
+COPY docker/scripts/install-pyenv.sh .
+RUN sh install-pyenv.sh
 
 # Install celery
-
-COPY --chown=1000:1000 requirements ${HOME}/requirements
+WORKDIR $HOME
+COPY --chown=1000:1000 requirements $HOME/requirements
 COPY --chown=1000:1000 docker/entrypoint /entrypoint
 RUN chmod gu+x /entrypoint
 
@@ -65,9 +56,9 @@ RUN pyenv exec pip install \
   -r requirements/test-ci-base.txt \
   -r requirements/test-integration.txt
 
-COPY --chown=1000:1000 MANIFEST.in Makefile setup.py setup.cfg tox.ini ${HOME}/
-COPY --chown=1000:1000 t ${HOME}/t
-COPY --chown=1000:1000 celery ${HOME}/celery
+COPY --chown=1000:1000 MANIFEST.in Makefile setup.py setup.cfg tox.ini $HOME/
+COPY --chown=1000:1000 t $HOME/t
+COPY --chown=1000:1000 celery $HOME/celery
 
 RUN pyenv exec pip install -e .
 
@@ -75,4 +66,5 @@ RUN pyenv exec pip install -e .
 # an ImportMismatchError
 RUN find . -name "*.pyc" -delete
 
+# Setup the entrypoint, this ensures pyenv is initialized when a container is started.
 ENTRYPOINT ["/entrypoint"]

@@ -14,20 +14,21 @@ services:
       WORKER_LOGLEVEL: INFO
     tty: true
     volumes:
-      - ../celery:/home/someone/celery
-      # Because of the __pycache__ files, PYTHONDONTWRITEBYTECODE must be
+      - ../celery:/home/$CELERY_USER/celery
+      # Because pytest fails when it encounters files from alternative python compilations,
+      # __pycache__ and pyc files, PYTHONDONTWRITEBYTECODE must be
       # set on the host as well or py.test will throw configuration errors.
-      - ../t:/home/someone/t
+#      - ../t:/home/$CELERY_USER/t
     depends_on:
       - rabbit
       - redis
       - dynamodb
 
   rabbit:
-    image: rabbitmq
+    image: rabbitmq:3.7.3
 
   redis:
-    image: redis
+    image: redis:3.2.11
 
   dynamodb:
-    image: dwmkerr/dynamodb
+    image: dwmkerr/dynamodb:38
