@@ -529,7 +529,11 @@ class Task(object):
         if self.__self__ is not None:
             args = args if isinstance(args, tuple) else tuple(args or ())
             args = (self.__self__,) + args
-        shadow = shadow or self.shadow_name(args, kwargs, options)
+
+        if self.__v2_compat__:
+            shadow = shadow or self.shadow_name(self(), args, kwargs, options)
+        else:
+            shadow = shadow or self.shadow_name(args, kwargs, options)
 
         preopts = self._get_exec_options()
         options = dict(preopts, **options) if options else preopts

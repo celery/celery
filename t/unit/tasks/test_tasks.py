@@ -13,6 +13,7 @@ from celery.app.task import _reprtask
 from celery.exceptions import Ignore, ImproperlyConfigured, Retry
 from celery.five import items, range, string_t
 from celery.result import EagerResult
+from celery.task.base import Task as OldTask
 from celery.utils.time import parse_iso8601
 
 try:
@@ -363,6 +364,42 @@ class test_tasks(TasksCase):
             return 'fooxyz'
 
         @self.app.task(shadow_name=shadow_name)
+        def shadowed():
+            pass
+
+        old_send_task = self.app.send_task
+        self.app.send_task = Mock()
+
+        shadowed.delay()
+
+        self.app.send_task.assert_called_once_with(ANY, ANY, ANY,
+                                                   compression=ANY,
+                                                   delivery_mode=ANY,
+                                                   exchange=ANY,
+                                                   expires=ANY,
+                                                   immediate=ANY,
+                                                   link=ANY,
+                                                   link_error=ANY,
+                                                   mandatory=ANY,
+                                                   priority=ANY,
+                                                   producer=ANY,
+                                                   queue=ANY,
+                                                   result_cls=ANY,
+                                                   routing_key=ANY,
+                                                   serializer=ANY,
+                                                   soft_time_limit=ANY,
+                                                   task_id=ANY,
+                                                   task_type=ANY,
+                                                   time_limit=ANY,
+                                                   shadow='fooxyz')
+
+        self.app.send_task = old_send_task
+
+    def test_shadow_name_old_task_class(self):
+        def shadow_name(task, args, kwargs, options):
+            return 'fooxyz'
+
+        @self.app.task(base=OldTask, shadow_name=shadow_name)
         def shadowed():
             pass
 
