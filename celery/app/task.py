@@ -530,7 +530,7 @@ class Task(object):
             args = args if isinstance(args, tuple) else tuple(args or ())
             args = (self.__self__,) + args
 
-        if self.__v2_compat__:  # TODO this or just not support shadow?
+        if self.__v2_compat__:
             shadow = shadow or self.shadow_name(self(), args, kwargs, options)
         else:
             shadow = shadow or self.shadow_name(args, kwargs, options)

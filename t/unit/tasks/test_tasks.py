@@ -395,7 +395,7 @@ class test_tasks(TasksCase):
 
         self.app.send_task = old_send_task
 
-    def test_shadow_name_deprecated_task(self):
+    def test_shadow_name_old_task_class(self):
         def shadow_name(task, args, kwargs, options):
             return 'fooxyz'
 
