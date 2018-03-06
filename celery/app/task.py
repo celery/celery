@@ -531,7 +531,7 @@ class Task(object):
             args = (self.__self__,) + args
 
         if self.__v2_compat__:  # TODO this or just not support shadow?
-            shadow = shadow or self.shadow_name(self, args, kwargs, options)
+            shadow = shadow or self.shadow_name(self(), args, kwargs, options)
         else:
             shadow = shadow or self.shadow_name(args, kwargs, options)
 
