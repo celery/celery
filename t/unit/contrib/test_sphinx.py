@@ -17,3 +17,4 @@ def test_sphinx(tmpdir):
     with open(tmpdir / 'contents.html', 'r') as f:
         contents = f.read()
     assert 'This task has a docstring!' in contents
+    assert 'This task is in a different module!' not in contents
