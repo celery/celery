@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y \
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.
 ENV PROVISIONING /provisioning
-ENV CELERY_USER someone
+ENV CELERY_USER celery-user
 ENV HOME /home/$CELERY_USER
 ENV PATH="$HOME/.pyenv/bin:$PATH"
 
@@ -66,7 +66,7 @@ RUN pyenv exec pip install -e .
 
 # the compiled files from earlier steps will cause py.test to fail with
 # an ImportMismatchError
-RUN find . -name "*.pyc" -delete
+RUN make clean-pyc
 
 # Setup the entrypoint, this ensures pyenv is initialized when a container is started.
 ENTRYPOINT ["/entrypoint"]

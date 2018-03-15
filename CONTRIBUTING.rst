@@ -453,13 +453,13 @@ fetch and checkout a remote branch like this::
 Developing and Testing with Docker
 ----------------------------------
 
-Because of the many components of celery, such as a broker and backend,
+Because of the many components of Celery, such as a broker and backend,
 `Docker`_ and `docker-compose`_ can be utilized to greatly simplify the
-development and testing cycle. The docker configuration here requires a
-docker version of at least 17.09.
+development and testing cycle. The Docker configuration here requires a
+Docker version of at least 17.09.
 
-The docker components can be found within the :file:`docker/` folder and the
-docker image can be built via:
+The Docker components can be found within the :file:`docker/` folder and the
+Docker image can be built via:
 
 .. code-block:: console
 
@@ -471,7 +471,7 @@ and run via:
 
     $ docker-compose run --rm celery <command>
 
-where <command> is a command to execute in a docker container. The `--rm` flag
+where <command> is a command to execute in a Docker container. The `--rm` flag
 indicates that the container should be removed after it is exited and is useful
 to prevent accumulation of unwanted containers.
 
@@ -479,7 +479,7 @@ Some useful commands to run:
 
 * ``bash``
 
-    To enter the docker container like a normal shell
+    To enter the Docker container like a normal shell
 
 * ``make test``
 
@@ -489,9 +489,9 @@ Some useful commands to run:
 
     To run tox and test against a variety of configurations
 
-By default, docker-compose will mount the celery and test folders in the docker
+By default, docker-compose will mount the Celery and test folders in the Docker
 container, allowing code changes and testing to be immediately visible inside
-the docker container. Environment variables, such as the broker and backend to
+the Docker container. Environment variables, such as the broker and backend to
 use are also defined in the :file:`docker/docker-compose.yml` file.
 
 .. _`Docker`: https://www.docker.com/
