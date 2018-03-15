@@ -5,6 +5,8 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+      args:
+        CELERY_USER:
     environment:
       TEST_BROKER: pyamqp://rabbit:5672
       TEST_BACKEND: redis://redis

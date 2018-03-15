@@ -22,7 +22,13 @@ RUN apt-get update && apt-get install -y \
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.
 ENV PROVISIONING /provisioning
-ENV CELERY_USER celery-user
+
+# This is provisioned from .env
+ARG CELERY_USER=developer
+
+# Check for mandatory build arguments
+RUN : "${CELERY_USER:?CELERY_USER build argument needs to be set and non-empty.}"
+
 ENV HOME /home/$CELERY_USER
 ENV PATH="$HOME/.pyenv/bin:$PATH"
 
