@@ -5,334 +5,317 @@
 ================
 
 This document contains change notes for bugfix releases in
-the 4.1.x series (latentcall), please see :ref:`whatsnew-4.1` for
-an overview of what's new in Celery 4.1.
+the 4.x series, please see :ref:`whatsnew-4.2` for
+an overview of what's new in Celery 4.2.
 
-Unreleased
-==========
-
-- **Canvas**: request on_timeout now ignores soft time limit exception
-  to give a chance for task to recover.
-
-  Contributed by **Alex Garel**
-
-
-.. _version-4.1.0:
-
-4.1.0
+4.2.0
 =====
-:release-date: 2017-07-25 00:00 PM PST
-:release-by: Omer Katz
 
+- **Documentation/Sphinx**: Teach autodoc to document tasks if undoc-members is not set (#4588)
 
-- **Configuration**: CELERY_SEND_EVENTS instead of CELERYD_SEND_EVENTS for 3.1.x compatibility (#3997)
+    Contributed by **Leo Singer**.
 
- Contributed by **abhinav nilaratna**.
+- **Documentation/Sphinx**: Put back undoc-members option in sphinx test (#4586)
 
-- **App**: Restore behavior so Broadcast queues work. (#3934)
+    Contributed by **Leo Singer**.
 
- Contributed by **Patrick Cloke**.
+- **Documentation/Sphinx**: Sphinx autodoc picks up tasks automatically only if `undoc-members` is set (#4584)
 
-- **Sphinx**: Make appstr use standard format (#4134) (#4139)
+    Contributed by **Leo Singer**.
 
- Contributed by **Preston Moore**.
+- **Task**: Fix shadow_name issue when using previous version Task class (#4572)
 
-- **App**: Make id, name always accessible from logging.Formatter via extra (#3994)
+    Contributed by :github_user:`pachewise`.
 
- Contributed by **Yoichi NAKAYAMA**.
+- **Task**: Add support for bound tasks as `link_error` parameter (Fixes #3723) (#4545)
 
-- **Worker**: Add worker_shutting_down signal (#3998)
+    Contributed by :github_user:`brabiega`.
 
- Contributed by **Daniel Huang**.
+- **Deployment**: Add a command line option for setting the Result Backend URL (#4549)
 
-- **PyPy**: Support PyPy version 5.8.0 (#4128)
+    Contributed by :github_user:`y0ngdi`.
 
- Contributed by **Omer Katz**.
+- **CI**: Enable pip cache in appveyor build (#4546)
 
-- **Results**: Elasticsearch: Fix serializing keys (#3924)
+    Contributed by **Thijs Triemstra**.
 
- Contributed by :github_user:`staticfox`.
+- **Concurrency/Asynpool**: Fix errno property name shadowing.
 
-- **Canvas**: Deserialize all tasks in a chain (#4015)
+    Contributed by **Omer Katz**.
 
- Contributed by :github_user:`fcoelho`.
+- **DynamoDB Backend**: Configurable endpoint URL (#4532)
 
-- **Systemd**: Recover loglevel for ExecStart in systemd config (#4023)
+    Contributed by **Bohdan Rybak**.
 
- Contributed by **Yoichi NAKAYAMA**.
+- **Timezones**: Correctly detect UTC timezone and timezone from settings (Fixes #4517) (#4519)
 
-- **Sphinx**: Use the Sphinx add_directive_to_domain API. (#4037)
+    Contributed by :github_user:`last-partizan`.
 
- Contributed by **Patrick Cloke**.
+- **Control**: Cleanup the mailbox's producer pool after forking (#4472)
 
-- **App**: Pass properties to before_task_publish signal (#4035)
+    Contributed by **Nick Eaket**.
 
- Contributed by **Javier Domingo Cansino**.
+- **Documentation**: Start Celery and Celery Beat on Azure WebJob (#4484)
 
-- **Results**: Add SSL option for Redis backends (#3831)
+    Contributed by **PauloPeres**.
 
- Contributed by **Chris Kuehl**.
+- **Celery Beat**: Schedule due tasks on startup, after Beat restart has occurred (#4493)
 
-- **Beat**: celery.schedule.crontab: fix reduce (#3826) (#3827)
+    Contributed by **Igor Kasianov**.
 
- Contributed by **Taylor C. Richberger**.
+- **Worker**: Use absolute time when task is accepted by worker pool (#3684)
 
-- **State**: Fix celery issues when using flower REST API
+    Contributed by **Régis Behmo**.
 
- Contributed by **Thierry RAMORASOAVINA**.
+- **Canvas**: Propagate arguments to chains inside groups (#4481)
 
-- **Results**: Elasticsearch: Fix serializing document id.
+    Contributed by **Chris Mitchell**.
 
- Contributed by **Acey9**.
+- **Canvas**: Fix `Task.replace` behavior in nested chords (fixes #4368) (#4369)
 
-- **Beat**: Make shallow copy of schedules dictionary
+    Contributed by **Denis Shirokov** & **Alex Hill**.
 
- Contributed by **Brian May**.
+- **Installation**: Pass python_requires argument to setuptools (#4479)
 
-- **Beat**: Populate heap when periodic tasks are changed
+    Contributed by **Jon Dufresne**.
 
- Contributed by **Wojciech Żywno**.
+- **Message Protocol Compatibility**: Handle "hybrid" messages that have moved between Celery versions (#4358) (Issue #4356)
 
-- **Task**: Allow class methods to define tasks (#3952)
+    Contributed by **Russell Keith-Magee**.
 
- Contributed by **georgepsarakis**.
+- **Canvas**: request on_timeout now ignores soft time limit exception (fixes #4412) (#4473)
 
-- **Platforms**: Always return boolean value when checking if signal is supported (#3962).
+    Contributed by **Alex Garel**.
 
- Contributed by **Jian Yu**.
-
-- **Canvas**: Avoid duplicating chains in chords (#3779)
-
- Contributed by **Ryan Hiebert**.
-
-- **Canvas**: Lookup task only if list has items (#3847)
-
- Contributed by **Marc Gibbons**.
-
-- **Results**: Allow unicode message for exception raised in task (#3903)
-
- Contributed by **George Psarakis**.
-
-- **Python3**: Support for Python 3.6 (#3904, #3903, #3736)
-
- Contributed by **Jon Dufresne**, **George Psarakis**, **Asif Saifuddin Auvi**, **Omer Katz**.
-
-- **App**: Fix retried tasks with expirations (#3790)
-
- Contributed by **Brendan MacDonell**.
-
-- * Fixes items format route in docs (#3875)
-
- Contributed by **Slam**.
-
-- **Utils**: Fix maybe_make_aware (#3850)
-
- Contributed by **Taylor C. Richberger**.
-
-- **Task**: Fix task ETA issues when timezone is defined in configuration (#3867)
-
- Contributed by **George Psarakis**.
-
-- **Concurrency**: Consumer does not shutdown properly when embedded in gevent application (#3746)
-
- Contributed by **Arcadiy Ivanov**.
-
-- **Canvas**: Fix #3725: Task replaced with group does not complete (#3731)
-
- Contributed by **Morgan Doocy**.
-
-- **Task**: Correct order in chains with replaced tasks (#3730)
-
- Contributed by **Morgan Doocy**.
-
-- **Result**: Enable synchronous execution of sub-tasks (#3696)
-
- Contributed by **shalev67**.
-
-- **Task**: Fix request context for blocking task apply (added hostname) (#3716)
-
- Contributed by **Marat Sharafutdinov**.
-
-- **Utils**: Fix task argument handling (#3678) (#3693)
-
- Contributed by **Roman Sichny**.
-
-- **Beat**: Provide a transparent method to update the Scheduler heap (#3721)
-
- Contributed by **Alejandro Pernin**.
-
-- **Beat**: Specify default value for pidfile option of celery beat. (#3722)
-
- Contributed by **Arnaud Rocher**.
-
-- **Results**: Elasticsearch: Stop generating a new field every time when a new result is being put (#3708)
-
- Contributed by **Mike Chen**.
-
-- **Requirements**
-
-    - Now depends on :ref:`Kombu 4.1.0 <kombu:version-4.1.0>`.
-
-- **Results**: Elasticsearch now reuses fields when new results are added.
-
-    Contributed by **Mike Chen**.
-
-- **Results**: Fixed MongoDB integration when using binary encodings
-  (Issue #3575).
-
-    Contributed by **Andrew de Quincey**.
-
-- **Worker**: Making missing ``*args`` and ``**kwargs`` in Task protocol 1
-  return empty value in protocol 2 (Issue #3687).
-
-    Contributed by **Roman Sichny**.
-
-- **App**: Fixed :exc:`TypeError` in AMQP when using deprecated signal
-  (Issue #3707).
-
-    Contributed by :github_user:`michael-k`.
-
-- **Beat**: Added a transparent method to update the scheduler heap.
-
-    Contributed by **Alejandro Pernin**.
-
-- **Task**: Fixed handling of tasks with keyword arguments on Python 3
-  (Issue #3657).
-
-    Contributed by **Roman Sichny**.
-
-- **Task**: Fixed request context for blocking task apply by adding missing
-  hostname attribute.
-
-    Contributed by **Marat Sharafutdinov**.
-
-- **Task**: Added option to run subtasks synchronously with
-  ``disable_sync_subtasks`` argument.
-
-    Contributed by :github_user:`shalev67`.
-
-- **App**: Fixed chaining of replaced tasks (Issue #3726).
-
-    Contributed by **Morgan Doocy**.
-
-- **Canvas**: Fixed bug where replaced tasks with groups were not completing
-  (Issue #3725).
-
-    Contributed by **Morgan Doocy**.
-
-- **Worker**: Fixed problem where consumer does not shutdown properly when
-  embedded in a gevent application (Issue #3745).
-
-    Contributed by **Arcadiy Ivanov**.
-
-- **Results**: Added support for using AWS DynamoDB as a result backend (#3736).
+- **Redis Result Backend**: Integration test to verify PubSub unsubscriptions (#4468)
 
     Contributed by **George Psarakis**.
 
-- **Testing**: Added caching on pip installs.
+- **Message Protocol Properties**: Allow the shadow keyword argument and the shadow_name method to set shadow properly (#4381)
 
-    Contributed by :github_user:`orf`.
+    Contributed by :github_user:`hclihn`.
 
-- **Worker**: Prevent consuming queue before ready on startup (Issue #3620).
+- **Canvas**: Run chord_unlock on same queue as chord body (#4448) (Issue #4337)
 
-    Contributed by **Alan Hamlett**.
+    Contributed by **Alex Hill**.
 
-- **App**: Fixed task ETA issues when timezone is defined in configuration
-  (Issue #3753).
+- **Canvas**: Support chords with empty header group (#4443)
+
+    Contributed by **Alex Hill**.
+
+- **Timezones**: make astimezone call in localize more safe (#4324)
+
+    Contributed by **Matt Davis**.
+
+- **Canvas**: Fix length-1 and nested chords (#4437) (Issues #4393, #4055, #3885, #3597, #3574, #3323, #4301)
+
+    Contributed by **Alex Hill**.
+
+- **CI**: Run `Openstack Bandit<https://pypi.python.org/pypi/bandit/1.0.1>`_ in Travis CI in order to detect security issues.
+
+    Contributed by **Omer Katz**.
+
+- **CI**: Run `isort<https://github.com/timothycrosley/isort>`_ in Travis CI in order to lint Python **import** statements.
+
+    Contributed by **Omer Katz**.
+
+- **Canvas**: Resolve TypeError on `.get` from nested groups (#4432) (Issue #4274)
+
+    Contributed by **Misha Wolfson**.
+
+- **CouchDB Backend**: Correct CouchDB key string type for Python 2/3 compatibility (#4166)
+
+    Contributed by :github_user:`fmind` && **Omer Katz**.
+
+- **Group Result**: Fix current_app fallback in GroupResult.restore() (#4431)
+
+    Contributed by **Alex Hill**.
+
+- **Consul Backend**: Correct key string type for Python 2/3 compatibility (#4416)
+
+    Contributed by **Wido den Hollander**.
+
+- **Group Result**: Correctly restore an empty GroupResult (#2202) (#4427)
+
+    Contributed by **Alex Hill** & **Omer Katz**.
+
+- **Result**: Disable synchronous waiting for sub-tasks on eager mode(#4322)
+
+    Contributed by **Denis Podlesniy**.
+
+- **Celery Beat**: Detect timezone or Daylight Saving Time changes (#1604) (#4403)
+
+    Contributed by **Vincent Barbaresi**.
+
+- **Canvas**: Fix append to an empty chain. Fixes #4047. (#4402)
+
+    Contributed by **Omer Katz**.
+
+- **Task**: Allow shadow to override task name in trace and logging messages. (#4379)
+
+    Contributed by :github_user:`hclihn`.
+
+- **Documentation/Sphinx**: Fix getfullargspec Python 2.x compatibility in contrib/sphinx.py (#4399)
+
+    Contributed by **Javier Martin Montull**.
+
+- **Documentation**: Updated installation instructions for SQS broker (#4382)
+
+    Contributed by **Sergio Fernandez**.
+
+- **Celery Beat**: Better equality comparison for ScheduleEntry instances (#4312)
+
+    Contributed by :github_user:`mariia-zelenova`.
+
+- **Task**: Adding 'shadow' property to as_task_v2 (#4350)
+
+    Contributed by **Marcelo Da Cruz Pinto**.
+
+- Try to import directly, do not use deprecated imp method (#4216)
+
+    Contributed by **Tobias Kunze**.
+
+- **Task**: Enable `kwargsrepr` and `argsrepr` override for modifying task argument representation (#4260)
+
+    Contributed by **James M. Allen**.
+
+- **Result Backend**: Add Redis Sentinel backend (#4144)
+
+    Contributed by **Geoffrey Bauduin**.
+
+- Use unique time values for Collections/LimitedSet (#3879 and #3891) (#3892)
+
+    Contributed by :github_user:`lead2gold`.
+
+- **CI**: Report coverage for all result backends.
+
+    Contributed by **Omer Katz**.
+
+- **Django**: Use Django DB max age connection setting (fixes #4116) (#4292)
+
+    Contributed by **Marco Schweighauser**.
+
+- **Canvas**: Properly take into account chain tasks link_error (#4240)
+
+    Contributed by :github_user:`agladkov`.
+
+- **Canvas**: Allow to create group with single task (fixes issue #4255) (#4280)
+
+    Contributed by :github_user:`agladkov`.
+
+- **Canvas**: Copy dictionary parameter in chord.from_dict before modifying (fixes issue #4223) (#4278)
+
+    Contributed by :github_user:`agladkov`.
+
+- **Results Backend**: Add Cassandra options (#4224)
+
+    Contributed by **Scott Cooper**.
+
+- **Worker**: Apply rate limiting for tasks with ETA (#4251)
+
+    Contributed by :github_user:`arpanshah29`.
+
+- **Celery Beat**: support scheduler entries without a schedule (#4235)
+
+    Contributed by **Markus Kaiserswerth**.
+
+- **SQS Broker**: Updated SQS requirements file with correct boto3 version (#4231)
+
+    Contributed by **Alejandro Varas**.
+
+- Remove unused code from _create_app contextmanager (#4204)
+
+    Contributed by **Ryan P Kilby**.
+
+- **Group Result**: Modify GroupResult.as_tuple() to include parent (fixes #4106) (#4205)
+
+    Contributed by :github_user:`pachewise`.
+
+- **Beat**: Set default scheduler class in beat command. (#4189)
+
+    Contributed by :github_user:`Kxrr`.
+
+- **Worker**: Retry signal receiver after raised exception (#4192)
+
+    Contributed by **David Davis**.
+
+- **Task**: Allow custom Request class for tasks (#3977)
+
+    Contributed by **Manuel Vázquez Acosta**.
+
+- **Django**: Django fixup should close all cache backends (#4187)
+
+    Contributed by **Raphaël Riel**.
+
+- **Deployment**: Adds stopasgroup to the supervisor scripts (#4200)
+
+    Contributed by :github_user:`martialp`.
+
+- Using Exception.args to serialize/deserialize exceptions (#4085)
+
+    Contributed by **Alexander Ovechkin**.
+
+- **Timezones**: Correct calculation of application current time with timezone (#4173)
 
     Contributed by **George Psarakis**.
 
-- **Utils**: ``maybe_make_aware`` should not modify datetime when it is
-  already timezone-aware (Issue #3849).
+- **Remote Debugger**: Set the SO_REUSEADDR option on the socket (#3969)
 
-    Contributed by **Taylor C. Richberger**.
+    Contributed by **Theodore Dubois**.
 
-- **App**: Fixed retrying tasks with expirations (Issue #3734).
+- **Django**: Celery ignores exceptions raised during `django.setup()` (#4146)
 
-    Contributed by **Brendan MacDonell**.
+    Contributed by **Kevin Gu**.
 
-- **Results**: Allow unicode message for exceptions raised in task
-  (Issue #3858).
+- Use heartbeat setting from application configuration for Broker connection (#4148)
 
-    Contributed by :github_user:`staticfox`.
+    Contributed by :github_user:`mperice`.
 
-- **Canvas**: Fixed :exc:`IndexError` raised when chord has an empty header.
+- **Celery Beat**: Fixed exception caused by next_transit receiving an unexpected argument. (#4103)
 
-    Contributed by **Marc Gibbons**.
+    Contributed by **DDevine**.
 
-- **Canvas**: Avoid duplicating chains in chords (Issue #3771).
+- Introduce exponential backoff with Task auto-retry (#4101)
 
-    Contributed by **Ryan Hiebert** and **George Psarakis**.
+    Contributed by **David Baumgold**.
 
-- **Utils**: Allow class methods to define tasks (Issue #3863).
+- **AsyncResult**: Remove weak-references to bound methods in AsyncResult promises. (#4131)
 
-    Contributed by **George Psarakis**.
+    Contributed by **Vinod Chandru**.
 
-- **Beat**: Populate heap when periodic tasks are changed.
+Documentation, CI, Installation and Tests fixes:
 
-    Contributed by :github_user:`wzywno` and **Brian May**.
 
-- **Results**: Added support for Elasticsearch backend options settings.
-
-    Contributed by :github_user:`Acey9`.
-
-- **Events**: Ensure ``Task.as_dict()`` works when not all information about
-  task is available.
-
-    Contributed by :github_user:`tramora`.
-
-- **Schedules**: Fixed pickled crontab schedules to restore properly (Issue #3826).
-
-    Contributed by **Taylor C. Richberger**.
-
-- **Results**: Added SSL option for redis backends (Issue #3830).
-
-    Contributed by **Chris Kuehl**.
-
-- Documentation and examples improvements by:
-
-    - **Bruno Alla**
-    - **Jamie Alessio**
-    - **Vivek Anand**
-    - **Peter Bittner**
-    - **Kalle Bronsen**
+    - **Sammie S. Taunton**
+    - **Dan Wilson**
+    - :github_user:`pachewise`
+    - **Sergi Almacellas Abellana**
+    - **Omer Katz**
+    - **Alex Zaitsev**
+    - **Leo Singer**
+    - **Rachel Johnson**
     - **Jon Dufresne**
-    - **James Michael DuPont**
-    - **Sergey Fursov**
     - **Samuel Dion-Girardeau**
-    - **Daniel Hahler**
-    - **Mike Helmick**
-    - **Marc Hörsken**
-    - **Christopher Hoskin**
-    - **Daniel Huang**
-    - **Primož Kerin**
-    - **Michal Kuffa**
-    - **Simon Legner**
-    - **Anthony Lukach**
-    - **Ed Morley**
-    - **Jay McGrath**
-    - **Rico Moorman**
-    - **Viraj Navkal**
-    - **Ross Patterson**
-    - **Dmytro Petruk**
-    - **Luke Plant**
-    - **Eric Poelke**
-    - **Salvatore Rinchiera**
-    - **Arnaud Rocher**
-    - **Kirill Romanov**
-    - **Simon Schmidt**
-    - **Tamer Sherif**
-    - **YuLun Shih**
-    - **Ask Solem**
-    - **Tom 'Biwaa' Riat**
-    - **Arthur Vigil**
-    - **Joey Wilhelm**
-    - **Jian Yu**
-    - **YuLun Shih**
-    - **Arthur Vigil**
-    - **Joey Wilhelm**
-    - :github_user:`baixuexue123`
-    - :github_user:`bronsen`
+    - **Ryan Guest**
+    - **Huang Huang**
+    - **Geoffrey Bauduin**
+    - **Andrew Wong**
+    - **Mads Jensen**
+    - **Jackie Leng**
+    - **Harry Moreno**
     - :github_user:`michael-k`
-    - :github_user:`orf`
-    - :github_user:`3lnc`
+    - **Nicolas Mota**
+    - **Armenak Baburyan**
+    - **Patrick Zhang**
+    - :github_user:`anentropic`
+    - :github_user:`jairojair`
+    - **Ben Welsh**
+    - **Michael Peake**
+    - **Fengyuan Chen**
+    - :github_user:`arpanshah29`
+    - **Xavier Hardy**
+    - **Shitikanth**
+    - **Igor Kasianov**
+    - **John Arnold**
+    - :github_user:`dmollerm`
+
