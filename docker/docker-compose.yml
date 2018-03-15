@@ -13,7 +13,7 @@ services:
       PYTHONUNBUFFERED: 1
       PYTHONDONTWRITEBYTECODE: 1
       REDIS_HOST: redis
-      WORKER_LOGLEVEL: INFO
+      WORKER_LOGLEVEL: DEBUG
     tty: true
     volumes:
       - ../celery:/home/$CELERY_USER/celery
