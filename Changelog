@@ -11,6 +11,10 @@ an overview of what's new in Celery 4.2.
 4.2.0
 =====
 
+- **Development/Testing**: Add docker-compose and base Dockerfile for development (#4482)
+
+    Contributed by **Chris Mitchell**.
+
 - **Documentation/Sphinx**: Teach autodoc to document tasks if undoc-members is not set (#4588)
 
     Contributed by **Leo Singer**.
