@@ -7,6 +7,8 @@ from celery import chain, group, shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
+from .conftest import get_redis_connection
+
 logger = get_task_logger(__name__)
 
 
@@ -115,17 +117,15 @@ def retry_once(self):
 @shared_task
 def redis_echo(message):
     """Task that appends the message to a redis list"""
-    from redis import StrictRedis
 
-    redis_connection = StrictRedis()
+    redis_connection = get_redis_connection()
     redis_connection.rpush('redis-echo', message)
 
 
 @shared_task(bind=True)
 def second_order_replace1(self, state=False):
-    from redis import StrictRedis
 
-    redis_connection = StrictRedis()
+    redis_connection = get_redis_connection()
     if not state:
         redis_connection.rpush('redis-echo', 'In A')
         new_task = chain(second_order_replace2.s(),
@@ -137,9 +137,7 @@ def second_order_replace1(self, state=False):
 
 @shared_task(bind=True)
 def second_order_replace2(self, state=False):
-    from redis import StrictRedis
-
-    redis_connection = StrictRedis()
+    redis_connection = get_redis_connection()
     if not state:
         redis_connection.rpush('redis-echo', 'In B')
         new_task = chain(redis_echo.s("In/Out C"),
