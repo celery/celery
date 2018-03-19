@@ -1929,6 +1929,13 @@ The default timeout in seconds before we give up establishing a connection
 to the AMQP server. This setting is disabled when using
 gevent.
 
+.. note::
+
+    The broker connection timeout only applies to a worker attempting to
+    connect to the broker. It does not apply to producer sending a task, see
+    :setting:`broker_transport_options` for how to provide a timeout for that
+    situation.
+
 .. setting:: broker_connection_retry
 
 ``broker_connection_retry``
