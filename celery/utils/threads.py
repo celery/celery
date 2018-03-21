@@ -74,6 +74,7 @@ class bgThread(threading.Thread):
                         self.on_crash('{0!r} crashed: {1!r}', self.name, exc)
                         self._set_stopped()
                     finally:
+                        sys.stderr.flush()
                         os._exit(1)  # exiting by normal means won't work
         finally:
             self._set_stopped()
