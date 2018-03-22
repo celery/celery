@@ -1,6 +1,6 @@
 .. image:: http://docs.celeryproject.org/en/latest/_images/celery-banner-small.png
 
-|build-status| |coverage| |license| |wheel| |pyversion| |pyimp|
+|build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
 :Version: 4.1.0 (latentcall)
 :Web: http://celeryproject.org/
@@ -425,6 +425,27 @@ documentation.
 
 .. _license:
 
+## Credits
+### Contributors
+
+This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.rst)].
+<a href="graphs/contributors"><img src="https://opencollective.com/celery/contributors.svg?width=890&button=false" /></a>
+
+
+### Backers
+
+Thank you to all our backers! 🙏 [[Become a backer](https://opencollective.com/celery#backer)]
+
+<a href="https://opencollective.com/celery#backers" target="_blank"><img src="https://opencollective.com/celery/backers.svg?width=890”></a>
+
+
+### Sponsors
+
+Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [[Become a sponsor](https://opencollective.com/celery#sponsor)]
+
+<a href="https://opencollective.com/celery/sponsor/0/website" target="_blank"><img src="https://opencollective.com/celery/sponsor/0/avatar.svg"></a>
+
+
 License
 =======
 
@@ -456,3 +477,7 @@ file in the top distribution directory for the full license text.
     :alt: Support Python implementations.
     :target: https://pypi.python.org/pypi/celery/
 
+.. |ocbackerbadge| image::https://opencollective.com/celery/backers/badge.svg
+    :alt: Backers on Open Collective
+.. |ocsponsorbadge| image::https://opencollective.com/celery/sponsors/badge.svg
+    :alt: Sponsors on Open Collective
