@@ -406,12 +406,16 @@ Wiki
 
 https://wiki.github.com/celery/celery/
 
+Credits
+=======
+
 .. _contributing-short:
 
-Contributing
-============
+Contributors
+------------
 
-Development of `celery` happens at GitHub: https://github.com/celery/celery
+This project exists thanks to all the people who contribute. Development of
+`celery` happens at GitHub: https://github.com/celery/celery
 
 You're highly encouraged to participate in the development
 of `celery`. If you don't like GitHub (for some reason) you're welcome
@@ -423,28 +427,37 @@ documentation.
 .. _`Contributing to Celery`:
     http://docs.celeryproject.org/en/master/contributing.html
 
+|oc-contributors|
+
+.. |oc-contributors| image:: https://opencollective.com/celery/contributors.svg?width=890&button=false
+    :target: graphs/contributors
+
+Backers
+-------
+
+Thank you to all our backers! 🙏 [`Become a backer`_]
+
+.. _`Become a backer`: https://opencollective.com/celery#backer
+
+|oc-backers|
+
+.. |oc-backers| image:: https://opencollective.com/celery/backers.svg?width=890
+    :target: https://opencollective.com/celery#backers
+
+Sponsors
+--------
+
+Support this project by becoming a sponsor. Your logo will show up here with a
+link to your website. [`Become a sponsor`_]
+
+.. _`Become a sponsor`: https://opencollective.com/celery#sponsor
+
+|oc-sponsors|
+
+.. |oc-sponsors| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
+    :target: https://opencollective.com/celery/sponsor/0/website
+
 .. _license:
-
-## Credits
-### Contributors
-
-This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.rst)].
-<a href="graphs/contributors"><img src="https://opencollective.com/celery/contributors.svg?width=890&button=false" /></a>
-
-
-### Backers
-
-Thank you to all our backers! 🙏 [[Become a backer](https://opencollective.com/celery#backer)]
-
-<a href="https://opencollective.com/celery#backers" target="_blank"><img src="https://opencollective.com/celery/backers.svg?width=890”></a>
-
-
-### Sponsors
-
-Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [[Become a sponsor](https://opencollective.com/celery#sponsor)]
-
-<a href="https://opencollective.com/celery/sponsor/0/website" target="_blank"><img src="https://opencollective.com/celery/sponsor/0/avatar.svg"></a>
-
 
 License
 =======
@@ -477,7 +490,8 @@ file in the top distribution directory for the full license text.
     :alt: Support Python implementations.
     :target: https://pypi.python.org/pypi/celery/
 
-.. |ocbackerbadge| image::https://opencollective.com/celery/backers/badge.svg
+.. |ocbackerbadge| image:: https://opencollective.com/celery/backers/badge.svg
     :alt: Backers on Open Collective
-.. |ocsponsorbadge| image::https://opencollective.com/celery/sponsors/badge.svg
+
+.. |ocsponsorbadge| image:: https://opencollective.com/celery/sponsors/badge.svg
     :alt: Sponsors on Open Collective
