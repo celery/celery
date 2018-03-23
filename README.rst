@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-:Version: 3.1.25 (Cipater)
+:Version: 3.1.26 (Cipater)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
@@ -424,4 +424,3 @@ file in the top distribution directory for the full license text.
 .. image:: https://d2weczhvl823v0.cloudfront.net/celery/celery/trend.png
     :alt: Bitdeli badge
     :target: https://bitdeli.com/free
-
