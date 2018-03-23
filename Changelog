@@ -115,11 +115,11 @@ an overview of what's new in Celery 4.2.
 
     Contributed by **Alex Hill**.
 
-- **CI**: Run `Openstack Bandit<https://pypi.python.org/pypi/bandit/1.0.1>`_ in Travis CI in order to detect security issues.
+- **CI**: Run `Openstack Bandit <https://pypi.python.org/pypi/bandit/1.0.1>`_ in Travis CI in order to detect security issues.
 
     Contributed by **Omer Katz**.
 
-- **CI**: Run `isort<https://github.com/timothycrosley/isort>`_ in Travis CI in order to lint Python **import** statements.
+- **CI**: Run `isort <https://github.com/timothycrosley/isort>`_ in Travis CI in order to lint Python **import** statements.
 
     Contributed by **Omer Katz**.
 
@@ -279,7 +279,7 @@ an overview of what's new in Celery 4.2.
 
     Contributed by **DDevine**.
 
-- Introduce exponential backoff with Task auto-retry (#4101)
+- **Task** Introduce exponential backoff with Task auto-retry (#4101)
 
     Contributed by **David Baumgold**.
 
@@ -322,4 +322,3 @@ Documentation, CI, Installation and Tests fixes:
     - **Igor Kasianov**
     - **John Arnold**
     - :github_user:`dmollerm`
-
