@@ -411,6 +411,26 @@ class test_chain(CanvasCase):
         self.app.conf.task_always_eager = True
         assert ~(self.add.s(4, 4) | self.add.s(8)) == 16
 
+    def test_chain_always_eager(self):
+        self.app.conf.task_always_eager = True
+        from celery import _state
+        from celery import result
+
+        fixture_task_join_will_block = _state.task_join_will_block
+        try:
+            _state.task_join_will_block = _state.orig_task_join_will_block
+            result.task_join_will_block = _state.orig_task_join_will_block
+
+            @self.app.task(shared=False)
+            def chain_add():
+                return (self.add.s(4, 4) | self.add.s(8)).apply_async()
+
+            r = chain_add.apply_async(throw=True).get()
+            assert r.get() == 16
+        finally:
+            _state.task_join_will_block = fixture_task_join_will_block
+            result.task_join_will_block = fixture_task_join_will_block
+
     def test_apply(self):
         x = chain(self.add.s(4, 4), self.add.s(8), self.add.s(10))
         res = x.apply()

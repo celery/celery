@@ -24,6 +24,13 @@ def add(x, y):
 
 
 @shared_task
+def chain_add(x, y):
+    (
+        add.s(x, x) | add.s(y)
+    ).apply_async()
+
+
+@shared_task
 def delayed_sum(numbers, pause_time=1):
     """Sum the iterable of numbers."""
     # Allow the task to be in STARTED state for
