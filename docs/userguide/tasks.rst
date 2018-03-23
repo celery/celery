@@ -574,6 +574,8 @@ You can disable the argument checking for any task by setting its
     >>> add.delay(8)
     <AsyncResult: f59d71ca-1549-43e0-be41-4e8821a83c0c>
 
+.. _task-hiding-sensitive-information:
+
 Hiding sensitive information in arguments
 -----------------------------------------
 
@@ -1498,6 +1500,7 @@ Handlers
 
     The return value of this handler is ignored.
 
+.. _task-requests-and-custom-requests:
 
 Requests and custom requests
 ----------------------------
