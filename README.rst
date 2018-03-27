@@ -492,6 +492,8 @@ file in the top distribution directory for the full license text.
 
 .. |ocbackerbadge| image:: https://opencollective.com/celery/backers/badge.svg
     :alt: Backers on Open Collective
+    :target: #backers
 
 .. |ocsponsorbadge| image:: https://opencollective.com/celery/sponsors/badge.svg
     :alt: Sponsors on Open Collective
+    :target: #sponsors
