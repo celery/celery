@@ -148,12 +148,12 @@ class Worker(WorkController):
         # for when users sends bug reports.
         use_image = term.supports_images()
         if use_image:
-            print(term.imgcat(static.logo()))
+            print(term.imgcat(static.logo()), flush=True)
         print(safe_str(''.join([
             string(self.colored.cyan(
                 ' \n', self.startup_info(artlines=not use_image))),
             string(self.colored.reset(self.extra_info() or '')),
-        ])), file=sys.__stdout__)
+        ])), file=sys.__stdout__, flush=True)
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
