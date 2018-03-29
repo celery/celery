@@ -60,6 +60,17 @@ class test_chain:
         assert res.get(timeout=TIMEOUT) == [14, 14]
 
     @flaky
+    def test_eager_chain_inside_task(self, manager):
+        from .tasks import chain_add
+
+        prev = chain_add.app.conf.task_always_eager
+        chain_add.app.conf.task_always_eager = True
+
+        chain_add.apply_async(args=(4, 8), throw=True).get()
+
+        chain_add.app.conf.task_always_eager = prev
+
+    @flaky
     def test_group_chord_group_chain(self, manager):
         from celery.five import bytes_if_py2
 

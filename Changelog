@@ -287,6 +287,10 @@ an overview of what's new in Celery 4.2.
 
     Contributed by **Vinod Chandru**.
 
+- **Development/Testing**: Allow eager application of canvas structures (#4576)
+
+    Contributed by **Nicholas Pilon**.
+
 Documentation, CI, Installation and Tests fixes:
 
 

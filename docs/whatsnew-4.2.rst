@@ -113,6 +113,7 @@ Mikołaj <mikolevy1@gmail.com>
 Misha Wolfson <myw@users.noreply.github.com>
 Nick Eaket <4418194+neaket360pi@users.noreply.github.com>
 Nicolas Mota <nicolas_mota@live.com>
+Nicholas Pilon <npilon@gmail.com>
 Omer Katz <omer.drow@gmail.com>
 Patrick Cloke <clokep@users.noreply.github.com>
 Patrick Zhang <patdujour@gmail.com>
