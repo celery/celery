@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 4.2.0rc1 (latentcall)
+:Version: 4.2.0rc2 (latentcall)
 :Web: http://celeryproject.org/
 :Download: https://pypi.python.org/pypi/celery/
 :Source: https://github.com/celery/celery/

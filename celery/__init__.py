@@ -14,7 +14,7 @@ from collections import namedtuple
 
 SERIES = 'windowlicker'
 
-__version__ = '4.2.0rc1'
+__version__ = '4.2.0rc2'
 __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://celeryproject.org'
