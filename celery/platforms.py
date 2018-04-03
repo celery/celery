@@ -791,6 +791,7 @@ def check_privileges(accept_content):
                         uid=uid, euid=euid, gid=gid, egid=egid,
                     ), file=sys.stderr)
                 finally:
+                    sys.stderr.flush()
                     os._exit(1)
         warnings.warn(RuntimeWarning(ROOT_DISCOURAGED.format(
             uid=uid, euid=euid, gid=gid, egid=egid,
