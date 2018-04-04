@@ -167,7 +167,7 @@ def _format_chars(val, maxlen):
     if isinstance(val, bytes):  # pragma: no cover
         return _format_binary_bytes(val, maxlen)
     else:
-        return "'{0}'".format(truncate(val, maxlen))
+        return "'{0}'".format(truncate(val, maxlen).replace("'", "\\'"))
 
 
 def _repr(obj):
