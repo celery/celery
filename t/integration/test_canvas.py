@@ -7,7 +7,7 @@ import pytest
 
 from celery import chain, chord, group
 from celery.exceptions import TimeoutError
-from celery.result import AsyncResult, GroupResult
+from celery.result import AsyncResult, GroupResult, ResultSet
 
 from .conftest import flaky, get_redis_connection
 from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
@@ -185,15 +185,17 @@ class test_chain:
         result = c.get()
         assert result == 10
 
+
 class test_result_set:
-    
+
     @flaky
     def test_result_set(self, manager):
         assert manager.inspect().ping()
 
         rs = ResultSet([add.delay(1, 1), add.delay(2, 2)])
         assert rs.get(timeout=TIMEOUT) == [2, 4]
-        
+
+
 class test_group:
 
     @flaky
@@ -244,6 +246,7 @@ class test_group:
         res = c()
 
         assert res.get(timeout=TIMEOUT) == [11, 101, 1001, 2001]
+
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
     root_id, parent_id, value = r.get(timeout=TIMEOUT)
