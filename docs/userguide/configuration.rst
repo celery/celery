@@ -1245,9 +1245,14 @@ or using the `downloadable version <https://docs.aws.amazon.com/amazondynamodb/l
 of DynamoDB
 `locally <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.Endpoint.html>`_::
 
-    result_backend = 'dynamodb://@localhost:8000
+    result_backend = 'dynamodb://@localhost:8000'
 
-The fields of the URL are defined as follows:
+or using downloadable version or other service with conforming API deployed on any host::
+
+    result_backend = 'dynamodb://@us-east-1'
+    dynamodb_endpoint_url = 'http://192.168.0.40:8000'
+
+The fields of the DynamoDB URL in ``result_backend`` are defined as follows:
 
 #. ``aws_access_key_id & aws_secret_access_key``
 
@@ -1923,6 +1928,13 @@ Default: 4.0.
 The default timeout in seconds before we give up establishing a connection
 to the AMQP server. This setting is disabled when using
 gevent.
+
+.. note::
+
+    The broker connection timeout only applies to a worker attempting to
+    connect to the broker. It does not apply to producer sending a task, see
+    :setting:`broker_transport_options` for how to provide a timeout for that
+    situation.
 
 .. setting:: broker_connection_retry
 

@@ -24,7 +24,7 @@ from vine import barrier
 from celery._state import current_app
 from celery.five import python_2_unicode_compatible
 from celery.local import try_import
-from celery.result import GroupResult
+from celery.result import GroupResult, allow_join_result
 from celery.utils import abstract
 from celery.utils.functional import _regen
 from celery.utils.functional import chunks as _chunks
@@ -554,7 +554,8 @@ class _chain(Signature):
         # python is best at unpacking kwargs, so .run is here to do that.
         app = self.app
         if app.conf.task_always_eager:
-            return self.apply(args, kwargs, **options)
+            with allow_join_result():
+                return self.apply(args, kwargs, **options)
         return self.run(args, kwargs, app=app, **(
             dict(self.options, **options) if options else self.options))
 

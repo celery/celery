@@ -1,19 +1,19 @@
 from __future__ import absolute_import, unicode_literals
 
+from datetime import datetime, timedelta
 from time import sleep
 
 import pytest
-from redis import StrictRedis
 
 from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult
 
-from .conftest import flaky
+from .conftest import flaky, get_redis_connection
 from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, collect_ids, delayed_sum,
-                    delayed_sum_with_soft_guard, identity, ids, redis_echo,
-                    second_order_replace1, tsum)
+                    delayed_sum_with_soft_guard, identity, ids, print_unicode,
+                    redis_echo, second_order_replace1, tsum)
 
 TIMEOUT = 120
 
@@ -60,12 +60,23 @@ class test_chain:
         assert res.get(timeout=TIMEOUT) == [14, 14]
 
     @flaky
+    def test_eager_chain_inside_task(self, manager):
+        from .tasks import chain_add
+
+        prev = chain_add.app.conf.task_always_eager
+        chain_add.app.conf.task_always_eager = True
+
+        chain_add.apply_async(args=(4, 8), throw=True).get()
+
+        chain_add.app.conf.task_always_eager = prev
+
+    @flaky
     def test_group_chord_group_chain(self, manager):
         from celery.five import bytes_if_py2
 
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
-        redis_connection = StrictRedis()
+        redis_connection = get_redis_connection()
         redis_connection.delete('redis-echo')
         before = group(redis_echo.si('before {}'.format(i)) for i in range(3))
         connect = redis_echo.si('connect')
@@ -93,7 +104,7 @@ class test_chain:
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
-        redis_connection = StrictRedis()
+        redis_connection = get_redis_connection()
         redis_connection.delete('redis-echo')
 
         result = second_order_replace1.delay()
@@ -155,6 +166,25 @@ class test_chain:
         result = c(delayed_sum.s(pause_time=0)).get()
         assert result == 3
 
+    @pytest.mark.xfail()
+    def test_chain_error_handler_with_eta(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        eta = datetime.utcnow() + timedelta(seconds=10)
+        c = chain(
+            group(
+                add.s(1, 2),
+                add.s(3, 4),
+            ),
+            tsum.s()
+        ).on_error(print_unicode.s()).apply_async(eta=eta)
+
+        result = c.get()
+        assert result == 10
+
 class test_result_set:
     
     @flaky
@@ -163,8 +193,7 @@ class test_result_set:
 
         rs = ResultSet([add.delay(1, 1), add.delay(2, 2)])
         assert rs.get(timeout=TIMEOUT) == [2, 4]
-
-
+        
 class test_group:
 
     @flaky
@@ -230,7 +259,7 @@ class test_chord:
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
-        redis_client = StrictRedis()
+        redis_client = get_redis_connection()
         async_result = chord([add.s(5, 6), add.s(6, 7)])(delayed_sum.s())
         for _ in range(TIMEOUT):
             if async_result.state == 'STARTED':

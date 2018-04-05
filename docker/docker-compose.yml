@@ -1,0 +1,36 @@
+version: '2'
+
+services:
+  celery:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        CELERY_USER:
+    environment:
+      TEST_BROKER: pyamqp://rabbit:5672
+      TEST_BACKEND: redis://redis
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
+      REDIS_HOST: redis
+      WORKER_LOGLEVEL: DEBUG
+    tty: true
+    volumes:
+      - ../celery:/home/$CELERY_USER/celery
+      # Because pytest fails when it encounters files from alternative python compilations,
+      # __pycache__ and pyc files, PYTHONDONTWRITEBYTECODE must be
+      # set on the host as well or py.test will throw configuration errors.
+#      - ../t:/home/$CELERY_USER/t
+    depends_on:
+      - rabbit
+      - redis
+      - dynamodb
+
+  rabbit:
+    image: rabbitmq:3.7.3
+
+  redis:
+    image: redis:3.2.11
+
+  dynamodb:
+    image: dwmkerr/dynamodb:38

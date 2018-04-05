@@ -8,6 +8,15 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.26:
+
+3.1.26
+======
+:release-date: 2018-23-03 16:00 PM IST
+:release-by: Omer Katz
+
+- Fixed a crash caused by tasks cycling between Celery 3 and Celery 4 workers.
+
 .. _version-3.1.25:
 
 3.1.25

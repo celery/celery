@@ -36,7 +36,7 @@ An example time zone could be `Europe/London`:
 
     timezone = 'Europe/London'
 
-This setting must be added to your app, either by configuration it directly
+This setting must be added to your app, either by configuring it directly
 using (``app.conf.timezone = 'Europe/London'``), or by adding
 it to your configuration module if you have set one up using
 ``app.config_from_object``. See :ref:`celerytut-configuration` for

@@ -100,6 +100,12 @@ class DynamoDBBackend(KeyValueStoreBackend):
             else:
                 self.aws_region = region
 
+            # If endpoint_url is explicitly set use it instead
+            _get = self.app.conf.get
+            config_endpoint_url = _get('dynamodb_endpoint_url')
+            if config_endpoint_url:
+                self.endpoint_url = config_endpoint_url
+
             self.read_capacity_units = int(
                 query.get(
                     'read',

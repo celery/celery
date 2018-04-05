@@ -24,6 +24,11 @@ def flaky(fun):
     return _inner
 
 
+def get_redis_connection():
+    from redis import StrictRedis
+    return StrictRedis(host=os.environ.get('REDIS_HOST'))
+
+
 @pytest.fixture(scope='session')
 def celery_config():
     return {

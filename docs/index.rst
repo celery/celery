@@ -48,8 +48,7 @@ Contents
     tutorials/index
     faq
     changelog
-    whatsnew-4.0
-    whatsnew-3.1
+    whatsnew-4.2
     reference/index
     internals/index
     history/index
@@ -62,4 +61,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

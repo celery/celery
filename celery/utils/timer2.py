@@ -91,6 +91,7 @@ class Timer(threading.Thread):
                 pass
         except Exception as exc:
             logger.error('Thread Timer crashed: %r', exc, exc_info=True)
+            sys.stderr.flush()
             os._exit(1)
 
     def stop(self):

@@ -103,6 +103,13 @@ class Settings(ConfigurationView):
         )
 
     @property
+    def result_backend(self):
+        return (
+            os.environ.get('CELERY_RESULT_BACKEND') or
+            self.get('CELERY_RESULT_BACKEND')
+        )
+
+    @property
     def task_default_exchange(self):
         return self.first(
             'task_default_exchange',

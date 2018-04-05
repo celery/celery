@@ -166,6 +166,18 @@ class test_Command:
             else:
                 os.environ.pop('CELERY_BROKER_URL', None)
 
+    def test_with_custom_result_backend(self, app):
+        prev = os.environ.pop('CELERY_RESULT_BACKEND', None)
+        try:
+            cmd = MockCommand(app=app)
+            cmd.setup_app_from_commandline(['--result-backend=xyzza://'])
+            assert os.environ.get('CELERY_RESULT_BACKEND') == 'xyzza://'
+        finally:
+            if prev:
+                os.environ['CELERY_RESULT_BACKEND'] = prev
+            else:
+                os.environ.pop('CELERY_RESULT_BACKEND', None)
+
     def test_with_custom_app(self, app):
         cmd = MockCommand(app=app)
         appstr = '.'.join([__name__, 'APP'])
@@ -276,8 +288,10 @@ class test_Command:
         cmd.namespace = 'worker'
         rest = cmd.setup_app_from_commandline(argv=[
             '--loglevel=INFO', '--',
+            'result.backend=redis://backend.example.com',
             'broker.url=amqp://broker.example.com',
             '.prefetch_multiplier=100'])
+        assert cmd.app.conf.result_backend == 'redis://backend.example.com'
         assert cmd.app.conf.broker_url == 'amqp://broker.example.com'
         assert cmd.app.conf.worker_prefetch_multiplier == 100
         assert rest == ['--loglevel=INFO']
