@@ -155,6 +155,15 @@ class test_chain:
         result = c(delayed_sum.s(pause_time=0)).get()
         assert result == 3
 
+class test_result_set:
+    
+    @flaky
+    def test_result_set(self, manager):
+        assert manager.inspect().ping()
+
+        rs = ResultSet([add.delay(1, 1), add.delay(2, 2)])
+        assert rs.get(timeout=TIMEOUT) == [2, 4]
+
 
 class test_group:
 
@@ -206,7 +215,6 @@ class test_group:
         res = c()
 
         assert res.get(timeout=TIMEOUT) == [11, 101, 1001, 2001]
-
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
     root_id, parent_id, value = r.get(timeout=TIMEOUT)
