@@ -4,7 +4,6 @@ import sys
 import typing
 
 from docutils import nodes
-
 from sphinx.environment import NoUri
 
 APPATTRS = {

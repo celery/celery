@@ -4,12 +4,12 @@ import pickle
 from time import time
 
 import pytest
-from case import Mock, patch
-
 from celery import uuid
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 from celery.worker import state
+
+from case import Mock, patch
 
 
 @pytest.fixture

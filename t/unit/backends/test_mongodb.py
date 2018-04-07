@@ -4,12 +4,12 @@ import datetime
 from pickle import dumps, loads
 
 import pytest
-from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
-from kombu.exceptions import EncodeError
-
 from celery import states, uuid
 from celery.backends.mongodb import InvalidDocument, MongoBackend
 from celery.exceptions import ImproperlyConfigured
+from kombu.exceptions import EncodeError
+
+from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
 
 COLLECTION = 'taskmeta_celery'
 TASK_ID = uuid()

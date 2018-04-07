@@ -1,8 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
-
 import celery
+import pytest
 from celery.app.task import Task as ModernTask
 from celery.task.base import Task as CompatTask
 

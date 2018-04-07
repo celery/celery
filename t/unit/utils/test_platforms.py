@@ -7,8 +7,6 @@ import sys
 import tempfile
 
 import pytest
-from case import Mock, call, mock, patch, skip
-
 from celery import _find_option_with_arg, platforms
 from celery.exceptions import SecurityError
 from celery.five import WhateverIO
@@ -20,6 +18,8 @@ from celery.platforms import (DaemonContext, LockFailed, Pidfile,
                               parse_uid, set_mp_process_title,
                               set_process_title, setgid, setgroups, setuid,
                               signals)
+
+from case import Mock, call, mock, patch, skip
 
 try:
     import resource

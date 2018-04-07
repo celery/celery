@@ -7,13 +7,13 @@ from datetime import timedelta
 from pickle import dumps, loads
 
 import pytest
-from case import ANY, ContextMock, Mock, call, mock, patch, skip
-
 from celery import signature, states, uuid
 from celery.canvas import Signature
 from celery.exceptions import (ChordError, CPendingDeprecationWarning,
                                ImproperlyConfigured)
 from celery.utils.collections import AttributeDict
+
+from case import ANY, ContextMock, Mock, call, mock, patch, skip
 
 
 def raise_on_second_call(mock, exc, *retval):

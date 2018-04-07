@@ -4,10 +4,9 @@ from __future__ import absolute_import, unicode_literals
 
 import logging
 
+from celery.exceptions import ImproperlyConfigured
 from kombu.utils.encoding import str_t
 from kombu.utils.url import _parse_url
-
-from celery.exceptions import ImproperlyConfigured
 
 from .base import KeyValueStoreBackend
 

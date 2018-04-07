@@ -1,8 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
-from case import Mock, skip
-
 from celery.backends.consul import ConsulBackend
+
+from case import Mock, skip
 
 
 @skip.unless_module('consul')

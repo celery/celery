@@ -3,11 +3,11 @@ from __future__ import absolute_import, unicode_literals
 from datetime import datetime
 
 import pytest
-from case import patch
-from kombu.utils.json import dumps
-
 from celery.bin.call import call
 from celery.five import WhateverIO
+from kombu.utils.json import dumps
+
+from case import patch
 
 
 class test_call:

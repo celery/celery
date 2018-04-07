@@ -6,12 +6,11 @@
 """
 from __future__ import absolute_import, unicode_literals
 
-from kombu.utils.encoding import bytes_to_str
-from kombu.utils.url import parse_url
-
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.log import get_logger
+from kombu.utils.encoding import bytes_to_str
+from kombu.utils.url import parse_url
 
 try:
     import consul

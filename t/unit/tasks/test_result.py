@@ -4,8 +4,6 @@ import traceback
 from contextlib import contextmanager
 
 import pytest
-from case import Mock, call, patch, skip
-
 from celery import states, uuid
 from celery.backends.base import SyncBackendMixin
 from celery.exceptions import (CPendingDeprecationWarning,
@@ -15,6 +13,8 @@ from celery.five import range
 from celery.result import (AsyncResult, EagerResult, GroupResult, ResultSet,
                            assert_will_not_block, result_from_tuple)
 from celery.utils.serialization import pickle
+
+from case import Mock, call, patch, skip
 
 PYTRACEBACK = """\
 Traceback (most recent call last):

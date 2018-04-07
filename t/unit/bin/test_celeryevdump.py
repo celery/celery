@@ -2,10 +2,10 @@ from __future__ import absolute_import, unicode_literals
 
 from time import time
 
-from case import Mock, patch
-
 from celery.events.dumper import Dumper, evdump, humanize_type
 from celery.five import WhateverIO
+
+from case import Mock, patch
 
 
 class test_Dumper:

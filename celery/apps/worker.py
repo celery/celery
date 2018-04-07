@@ -17,8 +17,6 @@ from datetime import datetime
 from functools import partial
 
 from billiard.process import current_process
-from kombu.utils.encoding import safe_str
-
 from celery import VERSION_BANNER, platforms, signals
 from celery.app import trace
 from celery.exceptions import WorkerShutdown, WorkerTerminate
@@ -31,6 +29,7 @@ from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
 from celery.utils.text import pluralize
 from celery.worker import WorkController
+from kombu.utils.encoding import safe_str
 
 __all__ = ('Worker',)
 

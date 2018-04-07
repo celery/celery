@@ -5,10 +5,9 @@ from __future__ import absolute_import, unicode_literals
 import glob
 import os
 
-from kombu.utils.encoding import bytes_to_str
-
 from celery.exceptions import SecurityError
 from celery.five import values
+from kombu.utils.encoding import bytes_to_str
 
 from .utils import crypto, reraise_errors
 

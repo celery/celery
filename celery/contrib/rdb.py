@@ -50,7 +50,6 @@ import sys
 from pdb import Pdb
 
 from billiard.process import current_process
-
 from celery.five import range
 
 __all__ = (
