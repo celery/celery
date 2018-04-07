@@ -38,7 +38,6 @@ extract_exec_options = mattrgetter(
 # We take __repr__ very seriously around here ;)
 R_BOUND_TASK = '<class {0.__name__} of {app}{flags}>'
 R_UNBOUND_TASK = '<unbound {0.__name__}{flags}>'
-R_SELF_TASK = '<@task {0.name} bound to other {0.__self__}>'
 R_INSTANCE = '<@task: {0.name} of {app}{flags}>'
 
 #: Here for backwards compatibility as tasks no longer use a custom meta-class.
@@ -160,9 +159,6 @@ class Task(object):
 
     #: Request class used, or the qualified name of one.
     Request = 'celery.worker.request:Request'
-
-    #: This is the instance bound to if the task is a method of a class.
-    __self__ = None
 
     #: The application instance associated with this task class.
     _app = None
@@ -377,9 +373,6 @@ class Task(object):
         _task_stack.push(self)
         self.push_request(args=args, kwargs=kwargs)
         try:
-            # add self if this is a bound task
-            if self.__self__ is not None:
-                return self.run(self.__self__, *args, **kwargs)
             return self.run(*args, **kwargs)
         finally:
             self.pop_request()
@@ -525,10 +518,6 @@ class Task(object):
             with denied_join_result():
                 return self.apply(args, kwargs, task_id=task_id or uuid(),
                                   link=link, link_error=link_error, **options)
-        # add 'self' if this is a "task_method".
-        if self.__self__ is not None:
-            args = args if isinstance(args, tuple) else tuple(args or ())
-            args = (self.__self__,) + args
 
         if self.__v2_compat__:
             shadow = shadow or self.shadow_name(self(), args, kwargs, options)
@@ -717,9 +706,6 @@ class Task(object):
 
         app = self._get_app()
         args = args or ()
-        # add 'self' if this is a bound method.
-        if self.__self__ is not None:
-            args = (self.__self__,) + tuple(args)
         kwargs = kwargs or {}
         task_id = task_id or uuid()
         retries = retries or 0
@@ -983,7 +969,7 @@ class Task(object):
 
     def __repr__(self):
         """``repr(task)``."""
-        return _reprtask(self, R_SELF_TASK if self.__self__ else R_INSTANCE)
+        return _reprtask(self, R_INSTANCE)
 
     def _get_request(self):
         """Get current request object."""
