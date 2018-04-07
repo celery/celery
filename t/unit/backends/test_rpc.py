@@ -1,11 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from case import Mock, patch
-
 from celery import chord, group
 from celery._state import _task_stack
 from celery.backends.rpc import RPCBackend
+
+from case import Mock, patch
 
 
 class test_RPCBackend:

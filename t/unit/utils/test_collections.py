@@ -6,13 +6,13 @@ from itertools import count
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from case import skip
-
 from celery.five import items, monotonic
 from celery.utils.collections import (AttributeDict, BufferMap,
                                       ConfigurationView, DictAttribute,
                                       LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
+
+from case import skip
 
 
 class test_DictAttribute:

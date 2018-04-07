@@ -1,9 +1,9 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from case import Mock
-
 from celery.utils import debug
+
+from case import Mock
 
 
 def test_on_blocking(patching):

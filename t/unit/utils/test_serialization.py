@@ -5,11 +5,11 @@ from datetime import date, datetime, time, timedelta
 
 import pytest
 import pytz
-from case import Mock, mock
-from kombu import Queue
-
 from celery.utils.serialization import (UnpickleableExceptionWrapper,
                                         get_pickleable_etype, jsonify)
+from kombu import Queue
+
+from case import Mock, mock
 
 
 class test_AAPickle:

@@ -3,13 +3,13 @@ from __future__ import absolute_import, unicode_literals
 from datetime import datetime, timedelta
 
 import pytest
-from case import Mock
-from kombu import Exchange, Queue
-
 from celery import uuid
 from celery.app.amqp import Queues, utf8dict
 from celery.five import keys
 from celery.utils.time import to_utc
+from kombu import Exchange, Queue
+
+from case import Mock
 
 
 class test_TaskConsumer:

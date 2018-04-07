@@ -3,13 +3,13 @@ from __future__ import absolute_import, unicode_literals
 import json
 
 import pytest
-from case import MagicMock, Mock
-
 from celery._state import _task_stack
 from celery.canvas import (Signature, _chain, _maybe_group, chain, chord,
                            chunks, group, maybe_signature, maybe_unroll_group,
                            signature, xmap, xstarmap)
 from celery.result import AsyncResult, EagerResult, GroupResult
+
+from case import MagicMock, Mock
 
 SIG = Signature({
     'task': 'TASK',

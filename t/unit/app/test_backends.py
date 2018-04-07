@@ -1,12 +1,12 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from case import patch
-
 from celery.app import backends
 from celery.backends.amqp import AMQPBackend
 from celery.backends.cache import CacheBackend
 from celery.exceptions import ImproperlyConfigured
+
+from case import patch
 
 
 class test_backends:

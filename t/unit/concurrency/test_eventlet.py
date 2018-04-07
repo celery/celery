@@ -3,9 +3,9 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 import pytest
-from case import Mock, patch, skip
-
 from celery.concurrency.eventlet import TaskPool, Timer, apply_target
+
+from case import Mock, patch, skip
 
 eventlet_modules = (
     'eventlet',

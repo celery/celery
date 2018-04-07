@@ -5,9 +5,6 @@ import tempfile
 from datetime import datetime, timedelta
 
 import pytest
-from case import ANY, ContextMock, MagicMock, Mock, patch
-from kombu import Queue
-
 from celery import Task, group, uuid
 from celery.app.task import _reprtask
 from celery.exceptions import Ignore, ImproperlyConfigured, Retry
@@ -15,6 +12,9 @@ from celery.five import items, range, string_t
 from celery.result import EagerResult
 from celery.task.base import Task as OldTask
 from celery.utils.time import parse_iso8601
+from kombu import Queue
+
+from case import ANY, ContextMock, MagicMock, Mock, patch
 
 try:
     from urllib.error import HTTPError

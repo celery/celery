@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from time import sleep
 
 import pytest
-
 from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet

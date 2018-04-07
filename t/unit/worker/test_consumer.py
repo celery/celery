@@ -6,8 +6,6 @@ from collections import deque
 
 import pytest
 from billiard.exceptions import RestartFreqExceeded
-from case import ContextMock, Mock, call, patch, skip
-
 from celery.utils.collections import LimitedSet
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import (CLOSE, TERMINATE, Consumer,
@@ -16,6 +14,8 @@ from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
 from celery.worker.consumer.tasks import Tasks
+
+from case import ContextMock, Mock, call, patch, skip
 
 
 class test_Consumer:

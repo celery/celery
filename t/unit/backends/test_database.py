@@ -4,10 +4,10 @@ from datetime import datetime
 from pickle import dumps, loads
 
 import pytest
-from case import Mock, patch, skip
-
 from celery import states, uuid
 from celery.exceptions import ImproperlyConfigured
+
+from case import Mock, patch, skip
 
 try:
     import sqlalchemy  # noqa

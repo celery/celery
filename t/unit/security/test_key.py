@@ -1,7 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-
 from celery.exceptions import SecurityError
 from celery.five import bytes_if_py2
 from celery.security.key import PrivateKey

@@ -1,9 +1,9 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from case import Mock, patch
-
 from celery import bootsteps
+
+from case import Mock, patch
 
 
 class test_StepFormatter:

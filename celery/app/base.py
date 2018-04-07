@@ -9,15 +9,6 @@ from collections import defaultdict, deque
 from datetime import datetime
 from operator import attrgetter
 
-from kombu import pools
-from kombu.clocks import LamportClock
-from kombu.common import oid_from
-from kombu.utils.compat import register_after_fork
-from kombu.utils.objects import cached_property
-from kombu.utils.uuid import uuid
-from vine import starpromise
-from vine.utils import wraps
-
 from celery import platforms, signals
 from celery._state import (_announce_app_finalized, _deregister_app,
                            _register_app, _set_current_app, _task_stack,
@@ -37,6 +28,14 @@ from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
 from celery.utils.time import (get_exponential_backoff_interval, timezone,
                                to_utc)
+from kombu import pools
+from kombu.clocks import LamportClock
+from kombu.common import oid_from
+from kombu.utils.compat import register_after_fork
+from kombu.utils.objects import cached_property
+from kombu.utils.uuid import uuid
+from vine import starpromise
+from vine.utils import wraps
 
 # Load all builtin tasks
 from . import builtins  # noqa

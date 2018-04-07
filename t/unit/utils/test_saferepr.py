@@ -8,11 +8,11 @@ from decimal import Decimal
 from pprint import pprint
 
 import pytest
-from case import skip
-
 from celery.five import (items, long_t, python_2_unicode_compatible, text_t,
                          values)
 from celery.utils.saferepr import saferepr
+
+from case import skip
 
 D_NUMBERS = {
     b'integer': 1,

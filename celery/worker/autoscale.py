@@ -14,12 +14,11 @@ import os
 import threading
 from time import sleep
 
-from kombu.async.semaphore import DummyLock
-
 from celery import bootsteps
 from celery.five import monotonic
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
+from kombu.async.semaphore import DummyLock
 
 from . import state
 from .components import Pool

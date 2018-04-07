@@ -9,9 +9,8 @@ import sys
 import warnings
 from contextlib import contextmanager
 
-from kombu.utils.imports import symbol_by_name
-
 from celery.five import reload
+from kombu.utils.imports import symbol_by_name
 
 #: Billiard sets this when execv is enabled.
 #: We use it to find out the name of the original ``__main__``

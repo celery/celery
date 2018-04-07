@@ -1,13 +1,13 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from case import Mock
-
 from celery import uuid
 from celery.app import control
 from celery.exceptions import DuplicateNodenameWarning
 from celery.five import items
 from celery.utils.collections import LimitedSet
+
+from case import Mock
 
 
 def _info_for_commandclass(type_):

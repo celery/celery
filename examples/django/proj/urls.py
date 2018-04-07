@@ -1,8 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
-from django.conf.urls import (  # noqa
-    patterns, include, url, handler404, handler500,
-)
+from django.conf.urls import (handler404, handler500, include,  # noqa
+                              patterns, url)
 
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin

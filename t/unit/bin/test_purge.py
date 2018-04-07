@@ -1,9 +1,9 @@
 from __future__ import absolute_import, unicode_literals
 
-from case import Mock
-
 from celery.bin.purge import purge
 from celery.five import WhateverIO
+
+from case import Mock
 
 
 class test_purge:

@@ -5,14 +5,14 @@ import sys
 import warnings
 
 import pytest
-from case import Mock, mock, patch
-
 from celery import loaders
 from celery.exceptions import NotConfigured
 from celery.five import bytes_if_py2
 from celery.loaders import base, default
 from celery.loaders.app import AppLoader
 from celery.utils.imports import NotAPackage
+
+from case import Mock, mock, patch
 
 
 class DummyLoader(base.BaseLoader):

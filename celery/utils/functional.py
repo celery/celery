@@ -7,11 +7,10 @@ import sys
 from functools import partial
 from itertools import chain, islice
 
+from celery.five import UserList, getfullargspec, range
 from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
                                     maybe_evaluate, maybe_list, memoize)
 from vine import promise
-
-from celery.five import UserList, getfullargspec, range
 
 __all__ = (
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',

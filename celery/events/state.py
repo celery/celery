@@ -26,13 +26,12 @@ from operator import itemgetter
 from time import time
 from weakref import WeakSet, ref
 
-from kombu.clocks import timetuple
-from kombu.utils.objects import cached_property
-
 from celery import states
 from celery.five import items, python_2_unicode_compatible, values
 from celery.utils.functional import LRUCache, memoize, pass1
 from celery.utils.log import get_logger
+from kombu.clocks import timetuple
+from kombu.utils.objects import cached_property
 
 __all__ = ('Worker', 'Task', 'State', 'heartbeat_expires')
 

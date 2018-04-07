@@ -8,10 +8,6 @@ import warnings
 from importlib import import_module
 
 import pytest
-from case import Mock
-from case.utils import decorator
-from kombu import Queue
-
 from celery.backends.cache import CacheBackend, DummyClient
 # we have to import the pytest plugin fixtures here,
 # in case user did not do the `python setup.py develop` yet,
@@ -21,6 +17,10 @@ from celery.contrib.pytest import (celery_app, celery_enable_logging,
 from celery.contrib.testing.app import TestApp, Trap
 from celery.contrib.testing.mocks import (TaskMessage, TaskMessage1,
                                           task_message_from_sig)
+from kombu import Queue
+
+from case import Mock
+from case.utils import decorator
 
 # Tricks flake8 into silencing redefining fixtures warnings.
 __all__ = (
