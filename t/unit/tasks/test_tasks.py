@@ -683,16 +683,6 @@ class test_tasks(TasksCase):
         self.mytask.__v2_compat__ = True
         assert 'v2 compatible' in repr(self.mytask)
 
-    def test_apply_with_self(self):
-
-        @self.app.task(__self__=42, shared=False)
-        def tawself(self):
-            return self
-
-        assert tawself.apply().get() == 42
-
-        assert tawself() == 42
-
     def test_context_get(self):
         self.mytask.push_request()
         try:
