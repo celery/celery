@@ -15,7 +15,7 @@ class test_tasks:
         manager.assert_accepted([r1.id])
 
     @flaky
-    def test_task_retried(self):
+    def test_task_retried(self, manager):
         res = retry_once.delay()
         assert res.get(timeout=10) == 1  # retried once
 
