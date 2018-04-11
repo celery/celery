@@ -748,7 +748,7 @@ If you want to automatically retry on any error, simply use:
     def x():
         ...
 
-.. versionadded:: 4.1
+.. versionadded:: 4.2
 
 If your tasks depend on another service, like making a request to an API,
 then it's a good idea to use `exponential backoff`_ to avoid overwhelming the
