@@ -182,8 +182,9 @@ A white-list of content-types/serializers to allow.
 If a message is received that's not in this list then
 the message will be discarded with an error.
 
-By default any content type is enabled, including pickle and yaml,
-so make sure untrusted parties don't have access to your broker.
+By default only json is enabled but any content type can be added,
+including pickle and yaml; when this is the case make sure
+untrusted parties don't have access to your broker.
 See :ref:`guide-security` for more.
 
 Example::
