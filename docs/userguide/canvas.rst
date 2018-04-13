@@ -355,7 +355,7 @@ Here's some examples:
 
     .. code-block:: pycon
 
-        >>> res = (add.si(2, 2) | add.si(4, 4) | add.s(8, 8))()
+        >>> res = (add.si(2, 2) | add.si(4, 4) | add.si(8, 8))()
         >>> res.get()
         16
 
