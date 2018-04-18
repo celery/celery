@@ -134,6 +134,54 @@ class sentinel(object):
     Sentinel = Sentinel
 
 
+class test_RedisResultConsumer:
+    def get_backend(self):
+        from celery.backends.redis import RedisBackend
+
+        class _RedisBackend(RedisBackend):
+            redis = redis
+
+        return _RedisBackend(app=self.app)
+
+    def get_consumer(self):
+        return self.get_backend().result_consumer
+
+    @patch('celery.backends.async.BaseResultConsumer.on_after_fork')
+    def test_on_after_fork(self, parent_method):
+        consumer = self.get_consumer()
+        consumer.start('none')
+        consumer.on_after_fork()
+        parent_method.assert_called_once()
+        consumer.backend.client.connection_pool.reset.assert_called_once()
+        consumer._pubsub.close.assert_called_once()
+        # PubSub instance not initialized - exception would be raised
+        # when calling .close()
+        consumer._pubsub = None
+        parent_method.reset_mock()
+        consumer.backend.client.connection_pool.reset.reset_mock()
+        consumer.on_after_fork()
+        parent_method.assert_called_once()
+        consumer.backend.client.connection_pool.reset.assert_called_once()
+
+    @patch('celery.backends.redis.ResultConsumer.cancel_for')
+    @patch('celery.backends.async.BaseResultConsumer.on_state_change')
+    def test_on_state_change(self, parent_method, cancel_for):
+        consumer = self.get_consumer()
+        meta = {'task_id': 'testing', 'status': states.SUCCESS}
+        message = 'hello'
+        consumer.on_state_change(meta, message)
+        parent_method.assert_called_once_with(meta, message)
+        cancel_for.assert_called_once_with(meta['task_id'])
+
+        # Does not call cancel_for for other states
+        meta = {'task_id': 'testing2', 'status': states.PENDING}
+        parent_method.reset_mock()
+        cancel_for.reset_mock()
+        consumer.on_state_change(meta, message)
+        parent_method.assert_called_once_with(meta, message)
+        cancel_for.assert_not_called()
+
+
 class test_RedisBackend:
     def get_backend(self):
         from celery.backends.redis import RedisBackend

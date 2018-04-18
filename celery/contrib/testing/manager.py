@@ -9,10 +9,10 @@ from itertools import count
 
 from kombu.utils.functional import retry_over_time
 
+from celery import states
 from celery.exceptions import TimeoutError
 from celery.five import items
 from celery.result import ResultSet
-from celery import states
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds as _humanize_seconds
 
