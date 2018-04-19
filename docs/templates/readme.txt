@@ -21,12 +21,12 @@
 
 .. |wheel| image:: https://img.shields.io/pypi/wheel/celery.svg
     :alt: Celery can be installed via wheel
-    :target: https://pypi.python.org/pypi/celery/
+    :target: https://pypi.org/project/celery/
 
 .. |pyversion| image:: https://img.shields.io/pypi/pyversions/celery.svg
     :alt: Supported Python versions.
-    :target: https://pypi.python.org/pypi/celery/
+    :target: https://pypi.org/project/celery/
 
 .. |pyimp| image:: https://img.shields.io/pypi/implementation/celery.svg
     :alt: Support Python implementations.
-    :target: https://pypi.python.org/pypi/celery/
+    :target: https://pypi.org/project/celery/
