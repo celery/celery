@@ -115,7 +115,7 @@ an overview of what's new in Celery 4.2.
 
     Contributed by **Alex Hill**.
 
-- **CI**: Run `Openstack Bandit <https://pypi.python.org/pypi/bandit/1.0.1>`_ in Travis CI in order to detect security issues.
+- **CI**: Run `Openstack Bandit <https://pypi.org/project/bandit/1.0.1/>`_ in Travis CI in order to detect security issues.
 
     Contributed by **Omer Katz**.
 

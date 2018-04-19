@@ -4,7 +4,7 @@
 
 :Version: 4.2.0rc2 (latentcall)
 :Web: http://celeryproject.org/
-:Download: https://pypi.python.org/pypi/celery/
+:Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
   python, distributed, actors
@@ -188,8 +188,8 @@ database connections at ``fork``.
 .. _`web2py`: http://web2py.com/
 .. _`Bottle`: https://bottlepy.org/
 .. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
-.. _`pyramid_celery`: https://pypi.python.org/pypi/pyramid_celery/
-.. _`celery-pylons`: https://pypi.python.org/pypi/celery-pylons
+.. _`pyramid_celery`: https://pypi.org/project/pyramid_celery/
+.. _`celery-pylons`: https://pypi.org/project/celery-pylons/
 .. _`web2py-celery`: https://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
@@ -323,7 +323,7 @@ Downloading and installing from source
 
 Download the latest version of Celery from PyPI:
 
-https://pypi.python.org/pypi/celery/
+https://pypi.org/project/celery/
 
 You can install it by doing the following,:
 
@@ -480,15 +480,15 @@ file in the top distribution directory for the full license text.
 
 .. |wheel| image:: https://img.shields.io/pypi/wheel/celery.svg
     :alt: Celery can be installed via wheel
-    :target: https://pypi.python.org/pypi/celery/
+    :target: https://pypi.org/project/celery/
 
 .. |pyversion| image:: https://img.shields.io/pypi/pyversions/celery.svg
     :alt: Supported Python versions.
-    :target: https://pypi.python.org/pypi/celery/
+    :target: https://pypi.org/project/celery/
 
 .. |pyimp| image:: https://img.shields.io/pypi/implementation/celery.svg
     :alt: Support Python implementations.
-    :target: https://pypi.python.org/pypi/celery/
+    :target: https://pypi.org/project/celery/
 
 .. |ocbackerbadge| image:: https://opencollective.com/celery/backers/badge.svg
     :alt: Backers on Open Collective

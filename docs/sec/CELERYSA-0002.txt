@@ -69,13 +69,13 @@ Or you can upgrade to a more recent version:
 
     * ``pip install -U celery``, or
     * ``easy_install -U celery``, or
-    * https://pypi.python.org/pypi/celery/3.1.13
+    * https://pypi.org/project/celery/3.1.13/
 
 - Users of the 3.0 series should upgrade to 3.0.25:
 
     * ``pip install -U celery==3.0.25``, or
     * ``easy_install -U celery==3.0.25``, or
-    * https://pypi.python.org/pypi/celery/3.0.25
+    * https://pypi.org/project/celery/3.0.25/
 
 Distribution package maintainers are urged to provide their users
 with updated packages.
