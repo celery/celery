@@ -12,6 +12,7 @@ from kombu.utils.functional import retry_over_time
 from celery.exceptions import TimeoutError
 from celery.five import items
 from celery.result import ResultSet
+from celery import states
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds as _humanize_seconds
 
@@ -144,6 +145,31 @@ class ManagerMixin(object):
         return self.assert_task_worker_state(
             self.is_accepted, ids, interval=interval, desc=desc, **policy
         )
+
+    def assert_result_tasks_in_progress_or_completed(
+        self,
+        async_results,
+        interval=0.5,
+        desc='waiting for tasks to be started or completed',
+        **policy
+    ):
+        return self.assert_task_state_from_result(
+            self.is_result_task_in_progress,
+            async_results,
+            interval=interval, desc=desc, **policy
+        )
+
+    def assert_task_state_from_result(self, fun, results,
+                                      interval=0.5, **policy):
+        return self.wait_for(
+            partial(self.true_or_raise, fun, results, timeout=interval),
+            (Sentinel,), **policy
+        )
+
+    @staticmethod
+    def is_result_task_in_progress(results, **kwargs):
+        possible_states = (states.STARTED, states.SUCCESS)
+        return all(result.state in possible_states for result in results)
 
     def assert_task_worker_state(self, fun, ids, interval=0.5, **policy):
         return self.wait_for(
