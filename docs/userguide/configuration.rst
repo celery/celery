@@ -228,7 +228,7 @@ The timezone value can be any time zone supported by the :pypi:`pytz`
 library.
 
 If not set the UTC timezone is used. For backwards compatibility
-there's also a :setting:`enable_utc` setting, and this is set
+there's also a :setting:`enable_utc` setting, and when this is set
 to false the system local timezone is used instead.
 
 .. _conf-tasks:
