@@ -65,6 +65,7 @@ RUN pyenv exec pip install \
   -r requirements/test-integration.txt
 
 COPY --chown=1000:1000 MANIFEST.in Makefile setup.py setup.cfg tox.ini $HOME/
+COPY --chown=1000:1000 docs $HOME/docs
 COPY --chown=1000:1000 t $HOME/t
 COPY --chown=1000:1000 celery $HOME/celery
 
