@@ -361,7 +361,6 @@ class test_as_task_v2:
 
     def test_eta_to_datetime(self):
         eta = datetime.utcnow()
-        now = to_utc(datetime.utcnow()).astimezone(self.app.timezone)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', eta=eta,
         )
