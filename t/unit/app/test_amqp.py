@@ -359,6 +359,13 @@ class test_as_task_v2:
         assert m.headers['expires'] == (
             now + timedelta(seconds=30)).isoformat()
 
+    def test_eta_to_datetime(self):
+        eta = datetime.utcnow()
+        m = self.app.amqp.as_task_v2(
+            uuid(), 'foo', eta=eta,
+        )
+        assert m.headers['eta'] == eta.isoformat()
+
     def test_callbacks_errbacks_chord(self):
 
         @self.app.task

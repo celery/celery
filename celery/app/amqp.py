@@ -328,7 +328,8 @@ class AMQP(object):
             expires = maybe_make_aware(
                 now + timedelta(seconds=expires), tz=timezone,
             )
-        eta = eta and eta.isoformat()
+        if not isinstance(eta, string_t):
+            eta = eta and eta.isoformat()
         # If we retry a task `expires` will already be ISO8601-formatted.
         if not isinstance(expires, string_t):
             expires = expires and expires.isoformat()
