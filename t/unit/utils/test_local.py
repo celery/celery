@@ -5,10 +5,8 @@ import sys
 import pytest
 from case import Mock, skip
 
-from celery.five import long_t, python_2_unicode_compatible, string
+from celery.five import PY3, long_t, python_2_unicode_compatible, string
 from celery.local import PromiseProxy, Proxy, maybe_evaluate, try_import
-
-PY3 = sys.version_info[0] == 3
 
 
 class test_try_import:

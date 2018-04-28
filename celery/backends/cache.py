@@ -8,6 +8,7 @@ from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.objects import cached_property
 
 from celery.exceptions import ImproperlyConfigured
+from celery.five import PY3
 from celery.utils.functional import LRUCache
 
 from .base import KeyValueStoreBackend
@@ -15,8 +16,6 @@ from .base import KeyValueStoreBackend
 __all__ = ('CacheBackend',)
 
 _imp = [None]
-
-PY3 = sys.version_info[0] == 3
 
 REQUIRES_BACKEND = """\
 The Memcached backend requires either pylibmc or python-memcached.\

@@ -12,9 +12,6 @@ from .nodenames import worker_direct, nodename, nodesplit
 __all__ = ('worker_direct', 'gen_task_name', 'nodename', 'nodesplit',
            'cached_property', 'uuid')
 
-PY3 = sys.version_info[0] == 3
-
-
 # ------------------------------------------------------------------------ #
 # > XXX Compat
 from .log import LOG_LEVELS     # noqa

@@ -9,7 +9,7 @@ from collections import Sequence, deque
 from heapq import heapify, heappop, heappush
 from itertools import chain, count
 
-from celery.five import (Empty, items, keys, monotonic,
+from celery.five import (PY3, Empty, items, keys, monotonic,
                          python_2_unicode_compatible, values)
 
 from .functional import first, uniq
@@ -34,8 +34,6 @@ __all__ = (
     'LimitedSet', 'Messagebuffer', 'OrderedDict',
     'force_mapping', 'lpmerge',
 )
-
-PY3 = sys.version_info[0] >= 3
 
 REPR_LIMITED_SET = """\
 <{name}({size}): maxlen={0.maxlen}, expires={0.expires}, minlen={0.minlen}>\

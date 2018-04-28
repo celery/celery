@@ -9,7 +9,8 @@ import threading
 import traceback
 from contextlib import contextmanager
 
-from celery.five import THREAD_TIMEOUT_MAX, items, python_2_unicode_compatible
+from celery.five import (PY3, THREAD_TIMEOUT_MAX, items,
+                         python_2_unicode_compatible)
 from celery.local import Proxy
 
 try:
@@ -33,7 +34,6 @@ __all__ = (
 )
 
 USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
-PY3 = sys.version_info[0] == 3
 
 
 @contextmanager

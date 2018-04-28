@@ -14,7 +14,7 @@ from kombu.utils.functional import maybe_list
 from kombu.utils.objects import cached_property
 
 from celery import signals
-from celery.five import items, string_t
+from celery.five import PY3, items, string_t
 from celery.local import try_import
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
@@ -24,8 +24,6 @@ from celery.utils.time import maybe_make_aware
 from . import routes as _routes
 
 __all__ = ('AMQP', 'Queues', 'task_message')
-
-PY3 = sys.version_info[0] == 3
 
 #: earliest date supported by time.mktime.
 INT_MIN = -2147483648
