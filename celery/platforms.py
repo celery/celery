@@ -721,7 +721,6 @@ if os.environ.get('NOSETPS'):  # pragma: no cover
 
     def set_mp_process_title(*a, **k):
         """Disabled feature."""
-        pass
 else:
 
     def set_mp_process_title(progname, info=None, hostname=None):  # noqa

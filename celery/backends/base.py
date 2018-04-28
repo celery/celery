@@ -25,7 +25,7 @@ from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
 from celery.exceptions import (ChordError, ImproperlyConfigured,
                                TaskRevokedError, TimeoutError)
-from celery.five import items
+from celery.five import PY3, items
 from celery.result import (GroupResult, ResultBase, allow_join_result,
                            result_from_tuple)
 from celery.utils.collections import BufferMap
@@ -38,7 +38,6 @@ from celery.utils.serialization import (create_exception_cls,
 __all__ = ('BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend')
 
 EXCEPTION_ABLE_CODECS = frozenset({'pickle'})
-PY3 = sys.version_info >= (3, 0)
 
 logger = get_logger(__name__)
 
@@ -403,11 +402,9 @@ class Backend(object):
         Note:
             This is run by :class:`celery.task.DeleteExpiredTaskMetaTask`.
         """
-        pass
 
     def process_cleanup(self):
         """Cleanup actions to do at the end of a task worker process."""
-        pass
 
     def on_task_call(self, producer, task_id):
         return {}

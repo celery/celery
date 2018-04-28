@@ -307,7 +307,6 @@ class Celery(object):
 
     def on_init(self):
         """Optional callback called at init."""
-        pass
 
     def __autoset(self, key, value):
         if value:

@@ -20,8 +20,6 @@ __all__ = (
     'maybe', 'fun_accepts_kwargs',
 )
 
-IS_PY3 = sys.version_info[0] == 3
-
 FUNHEAD_TEMPLATE = """
 def {fun_name}({fun_args}):
     return {fun_value}
@@ -60,7 +58,6 @@ def noop(*args, **kwargs):
 
     Takes any arguments/keyword arguments and does nothing.
     """
-    pass
 
 
 def pass1(arg, *args, **kwargs):

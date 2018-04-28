@@ -5,15 +5,11 @@ Don't import from here directly anymore, as these are only
 here for backwards compatibility.
 """
 from __future__ import absolute_import, print_function, unicode_literals
-import sys
 from .functional import memoize  # noqa
 from .nodenames import worker_direct, nodename, nodesplit
 
 __all__ = ('worker_direct', 'gen_task_name', 'nodename', 'nodesplit',
            'cached_property', 'uuid')
-
-PY3 = sys.version_info[0] == 3
-
 
 # ------------------------------------------------------------------------ #
 # > XXX Compat

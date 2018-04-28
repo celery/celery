@@ -9,7 +9,6 @@ from __future__ import absolute_import, unicode_literals
 
 import itertools
 import operator
-import sys
 from collections import MutableSequence, deque
 from copy import deepcopy
 from functools import partial as _partial
@@ -22,7 +21,7 @@ from kombu.utils.uuid import uuid
 from vine import barrier
 
 from celery._state import current_app
-from celery.five import python_2_unicode_compatible
+from celery.five import PY3, python_2_unicode_compatible
 from celery.local import try_import
 from celery.result import GroupResult, allow_join_result
 from celery.utils import abstract
@@ -37,8 +36,6 @@ __all__ = (
     'Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
     'group', 'chord', 'signature', 'maybe_signature',
 )
-
-PY3 = sys.version_info[0] == 3
 
 # json in Python 2.7 borks if dict contains byte keys.
 JSON_NEEDS_UNICODE_KEYS = PY3 and not try_import('simplejson')

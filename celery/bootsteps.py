@@ -344,7 +344,6 @@ class Step(object):
 
     def create(self, parent):
         """Create the step."""
-        pass
 
     def __repr__(self):
         return bytes_if_py2('<step: {0.alias}>'.format(self))

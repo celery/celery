@@ -71,23 +71,18 @@ class BaseLoader(object):
 
     def on_task_init(self, task_id, task):
         """Called before a task is executed."""
-        pass
 
     def on_process_cleanup(self):
         """Called after a task is executed."""
-        pass
 
     def on_worker_init(self):
         """Called when the worker (:program:`celery worker`) starts."""
-        pass
 
     def on_worker_shutdown(self):
         """Called when the worker (:program:`celery worker`) shuts down."""
-        pass
 
     def on_worker_process_init(self):
         """Called when a child process starts."""
-        pass
 
     def import_task_module(self, module):
         self.task_modules.add(module)
