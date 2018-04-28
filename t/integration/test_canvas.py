@@ -1,7 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime, timedelta
-from time import sleep
 
 import pytest
 
@@ -257,23 +256,54 @@ def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
 
 class test_chord:
 
+    @staticmethod
+    def _get_active_redis_channels(client):
+        return client.execute_command('PUBSUB CHANNELS')
+
     @flaky
     def test_redis_subscribed_channels_leak(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
         redis_client = get_redis_connection()
-        async_result = chord([add.s(5, 6), add.s(6, 7)])(delayed_sum.s())
-        for _ in range(TIMEOUT):
-            if async_result.state == 'STARTED':
-                break
-            sleep(0.2)
-        channels_before = \
-            len(redis_client.execute_command('PUBSUB CHANNELS'))
-        assert async_result.get(timeout=TIMEOUT) == 24
-        channels_after = \
-            len(redis_client.execute_command('PUBSUB CHANNELS'))
-        assert channels_after < channels_before
+
+        manager.app.backend.result_consumer.on_after_fork()
+        initial_channels = self._get_active_redis_channels(redis_client)
+        initial_channels_count = len(initial_channels)
+
+        total_chords = 10
+        async_results = [
+            chord([add.s(5, 6), add.s(6, 7)])(delayed_sum.s())
+            for _ in range(total_chords)
+        ]
+
+        manager.assert_result_tasks_in_progress_or_completed(async_results)
+
+        channels_before = self._get_active_redis_channels(redis_client)
+        channels_before_count = len(channels_before)
+
+        assert set(channels_before) != set(initial_channels)
+        assert channels_before_count > initial_channels_count
+
+        # The total number of active Redis channels at this point
+        # is the number of chord header tasks multiplied by the
+        # total chord tasks, plus the initial channels
+        # (existing from previous tests).
+        chord_header_task_count = 2
+        assert channels_before_count == \
+            chord_header_task_count * total_chords + initial_channels_count
+
+        result_values = [
+            result.get(timeout=TIMEOUT)
+            for result in async_results
+        ]
+        assert result_values == [24] * total_chords
+
+        channels_after = self._get_active_redis_channels(redis_client)
+        channels_after_count = len(channels_after)
+
+        assert channels_after_count == initial_channels_count
+        assert set(channels_after) == set(initial_channels)
 
     @flaky
     def test_replaced_nested_chord(self, manager):

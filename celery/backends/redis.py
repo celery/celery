@@ -58,6 +58,20 @@ class ResultConsumer(async.BaseResultConsumer):
         self._decode_result = self.backend.decode_result
         self.subscribed_to = set()
 
+    def on_after_fork(self):
+        self.backend.client.connection_pool.reset()
+        if self._pubsub is not None:
+            self._pubsub.close()
+        super(ResultConsumer, self).on_after_fork()
+
+    def _maybe_cancel_ready_task(self, meta):
+        if meta['status'] in states.READY_STATES:
+            self.cancel_for(meta['task_id'])
+
+    def on_state_change(self, meta, message):
+        super(ResultConsumer, self).on_state_change(meta, message)
+        self._maybe_cancel_ready_task(meta)
+
     def start(self, initial_task_id, **kwargs):
         self._pubsub = self.backend.client.pubsub(
             ignore_subscribe_messages=True,
