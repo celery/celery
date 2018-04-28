@@ -1037,7 +1037,6 @@ class AsynPool(_pool.Pool):
 
     def on_shrink(self, n):
         """Shrink the pool by ``n`` processes."""
-        pass
 
     def create_process_queues(self):
         """Create new in, out, etc. queues, returned as a tuple."""

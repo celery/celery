@@ -563,7 +563,6 @@ class Command(object):
         Example:
               >>> has_pool_option = (['-P'], ['--pool'])
         """
-        pass
 
     def node_format(self, s, nodename, **extra):
         return node_format(s, nodename, **extra)

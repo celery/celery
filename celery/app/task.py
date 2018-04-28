@@ -338,7 +338,6 @@ class Task(object):
             This class method can be defined to do additional actions when
             the task class is bound to an app.
         """
-        pass
 
     @classmethod
     def _get_app(cls):
@@ -553,7 +552,6 @@ class Task(object):
             kwargs (Dict): Task keyword arguments.
             options (Dict): Task execution options.
         """
-        pass
 
     def signature_from_request(self, request=None, args=None, kwargs=None,
                                queue=None, **extra_options):
@@ -904,7 +902,6 @@ class Task(object):
         Returns:
             None: The return value of this handler is ignored.
         """
-        pass
 
     def on_retry(self, exc, task_id, args, kwargs, einfo):
         """Retry handler.
@@ -921,7 +918,6 @@ class Task(object):
         Returns:
             None: The return value of this handler is ignored.
         """
-        pass
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """Error handler.
@@ -938,7 +934,6 @@ class Task(object):
         Returns:
             None: The return value of this handler is ignored.
         """
-        pass
 
     def after_return(self, status, retval, task_id, args, kwargs, einfo):
         """Handler called after the task returns.
@@ -954,7 +949,6 @@ class Task(object):
         Returns:
             None: The return value of this handler is ignored.
         """
-        pass
 
     def add_trail(self, result):
         if self.trail:

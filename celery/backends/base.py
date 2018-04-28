@@ -402,11 +402,9 @@ class Backend(object):
         Note:
             This is run by :class:`celery.task.DeleteExpiredTaskMetaTask`.
         """
-        pass
 
     def process_cleanup(self):
         """Cleanup actions to do at the end of a task worker process."""
-        pass
 
     def on_task_call(self, producer, task_id):
         return {}

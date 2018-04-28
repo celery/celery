@@ -5,7 +5,6 @@ Don't import from here directly anymore, as these are only
 here for backwards compatibility.
 """
 from __future__ import absolute_import, print_function, unicode_literals
-import sys
 from .functional import memoize  # noqa
 from .nodenames import worker_direct, nodename, nodesplit
 

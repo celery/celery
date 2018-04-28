@@ -9,7 +9,6 @@ from __future__ import absolute_import, unicode_literals
 
 import itertools
 import operator
-import sys
 from collections import MutableSequence, deque
 from copy import deepcopy
 from functools import partial as _partial

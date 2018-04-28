@@ -5,7 +5,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import numbers
 import os
 import random
-import sys
 import time as _time
 from calendar import monthrange
 from datetime import date, datetime, timedelta, tzinfo

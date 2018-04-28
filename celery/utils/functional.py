@@ -58,7 +58,6 @@ def noop(*args, **kwargs):
 
     Takes any arguments/keyword arguments and does nothing.
     """
-    pass
 
 
 def pass1(arg, *args, **kwargs):

@@ -12,7 +12,6 @@ Very slow with no limits, super quick with limits.
 """
 from __future__ import absolute_import, unicode_literals
 
-import sys
 import traceback
 from collections import deque, namedtuple
 from decimal import Decimal

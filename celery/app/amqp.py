@@ -3,7 +3,6 @@
 from __future__ import absolute_import, unicode_literals
 
 import numbers
-import sys
 from collections import Mapping, namedtuple
 from datetime import timedelta
 from weakref import WeakValueDictionary
