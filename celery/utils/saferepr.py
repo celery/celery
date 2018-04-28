@@ -19,7 +19,7 @@ from itertools import chain
 from numbers import Number
 from pprint import _recursion
 
-from celery.five import items, range, text_t, PY3
+from celery.five import PY3, items, range, text_t
 
 from .text import truncate
 
