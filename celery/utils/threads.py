@@ -9,8 +9,7 @@ import threading
 import traceback
 from contextlib import contextmanager
 
-from celery.five import (PY3, THREAD_TIMEOUT_MAX, items,
-                         python_2_unicode_compatible)
+from celery.five import THREAD_TIMEOUT_MAX, items, python_2_unicode_compatible
 from celery.local import Proxy
 
 try:
