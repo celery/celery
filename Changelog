@@ -291,6 +291,28 @@ an overview of what's new in Celery 4.2.
 
     Contributed by **Nicholas Pilon**.
 
+- **Command Line**: Flush stderr before exiting with error code 1.
+
+    Contributed by **Antonin Delpeuch**.
+
+- **Task**: Escapes single quotes in kwargsrepr strings.
+
+    Contributed by **Kareem Zidane**
+
+- **AsyncResult**: Restore ability to join over ResultSet after fixing celery/#3818.
+
+    Contributed by **Derek Harland**
+
+- **Redis Results Backend**: Unsubscribe on message success.
+
+  Previously Celery would leak channels, filling the memory of the Redis instance.
+
+  Contributed by **George Psarakis**
+
+- **Task**: Only convert eta to isoformat when it is not already a string.
+
+  Contributed by **Omer Katz**
+
 Documentation, CI, Installation and Tests fixes:
 
 
