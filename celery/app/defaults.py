@@ -130,6 +130,12 @@ NAMESPACES = Namespace(
         auth_kwargs=Option(type='string'),
         options=Option({}, type='dict'),
     ),
+    azureblockblob=Namespace(
+        container_name=Option('celery', type='string'),
+        retry_initial_backoff_sec=Option(2, type='int'),
+        retry_increment_base=Option(2, type='int'),
+        retry_max_attempts=Option(3, type='int'),
+    ),
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
         queue_expires=Option(10.0, type='float'),
