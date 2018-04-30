@@ -23,7 +23,6 @@ RUN apt-get update && apt-get install -y \
 # unrelated elements, grouping them together makes the Dockerfile read better.
 ENV PROVISIONING /provisioning
 
-# This is provisioned from .env
 ARG CELERY_USER=developer
 
 # Check for mandatory build arguments
