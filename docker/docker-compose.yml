@@ -16,11 +16,9 @@ services:
       WORKER_LOGLEVEL: DEBUG
     tty: true
     volumes:
+      - ../docs:/home/developer/docs
       - ../celery:/home/developer/celery
-      # Because pytest fails when it encounters files from alternative python compilations,
-      # __pycache__ and pyc files, PYTHONDONTWRITEBYTECODE must be
-      # set on the host as well or py.test will throw configuration errors.
-#      - ../t:/home/$CELERY_USER/t
+      - ../t:/home/developer/t
     depends_on:
       - rabbit
       - redis

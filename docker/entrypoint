@@ -1,4 +1,7 @@
 #!/bin/bash
+
+make --quiet --directory="$HOME" clean-pyc
+
 eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
 exec "$@"
