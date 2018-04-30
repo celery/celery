@@ -602,7 +602,7 @@ Can be one of the following:
 .. _`CouchDB`: http://www.couchdb.com/
 .. _`Couchbase`: https://www.couchbase.com/
 .. _`Consul`: https://consul.io/
-.. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/
+.. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/blobs/
 
 
 .. setting:: result_backend_transport_options
