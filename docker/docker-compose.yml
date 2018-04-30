@@ -6,7 +6,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
       args:
-        CELERY_USER:
+        CELERY_USER: developer
     environment:
       TEST_BROKER: pyamqp://rabbit:5672
       TEST_BACKEND: redis://redis
@@ -16,7 +16,7 @@ services:
       WORKER_LOGLEVEL: DEBUG
     tty: true
     volumes:
-      - ../celery:/home/$CELERY_USER/celery
+      - ../celery:/home/developer/celery
       # Because pytest fails when it encounters files from alternative python compilations,
       # __pycache__ and pyc files, PYTHONDONTWRITEBYTECODE must be
       # set on the host as well or py.test will throw configuration errors.
