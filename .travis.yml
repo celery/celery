@@ -20,6 +20,7 @@ env:
   - MATRIX_TOXENV=integration-rabbitmq
   - MATRIX_TOXENV=integration-redis
   - MATRIX_TOXENV=integration-dynamodb
+  - MATRIX_TOXENV=integration-azureblockblob
 matrix:
   include:
   - python: '3.5'
