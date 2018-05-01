@@ -70,9 +70,7 @@ COPY --chown=1000:1000 celery $HOME/celery
 
 RUN pyenv exec pip install -e .
 
-# the compiled files from earlier steps will cause py.test to fail with
-# an ImportMismatchError
-RUN make clean-pyc
-
-# Setup the entrypoint, this ensures pyenv is initialized when a container is started.
+# Setup the entrypoint, this ensures pyenv is initialized when a container is started
+# and that any compiled files from earlier steps or from moutns are removed to avoid
+# py.test failing with an ImportMismatchError
 ENTRYPOINT ["/entrypoint"]
