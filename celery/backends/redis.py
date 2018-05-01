@@ -4,7 +4,6 @@ from __future__ import absolute_import, unicode_literals
 
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
-from urllib import unquote
 
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
@@ -21,6 +20,12 @@ from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
 
 from . import async, base
+
+try:
+    from urllib.parse import unquote
+except ImportError:
+    # Python 2
+    from urlparse import unquote
 
 try:
     import redis
