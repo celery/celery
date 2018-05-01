@@ -69,11 +69,11 @@ before_install:
           fi
     - |
           if [[ "$TOXENV" == *dynamodb ]]; then
-              docker run -d -p 8000:8000 dwmkerr/dynamodb:38
+              docker run -d -p 8000:8000 dwmkerr/dynamodb:38 -inMemory
               while ! nc -zv 127.0.0.1 8000; do sleep 10; done
           fi
     - |
-          docker run -d -e executable=blob -t -p 10000:10000 arafato/azurite:2.6.5
+          docker run -d -e executable=blob -t -p 10000:10000 --tmpfs /opt/azurite/folder:rw arafato/azurite:2.6.5
           while ! nc -zv 127.0.0.1 10000; do sleep 10; done
           export AZUREBLOCKBLOB_URL="azureblockblob://DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
     - |
