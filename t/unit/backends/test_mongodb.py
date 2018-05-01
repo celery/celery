@@ -176,7 +176,7 @@ class test_MongoBackend:
             mock_Connection.assert_called_once_with(
                 host=mongodb_uri, **self.backend._prepare_client_options()
             )
-            self.assertEqual(sentinel.connection, connection)
+            assert sentinel.connection == connection
 
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
     def test_get_database_no_existing(self, mock_get_connection):

@@ -141,8 +141,8 @@ class MongoBackend(BaseBackend):
                 # This enables the use of replica sets and sharding.
                 # See pymongo.Connection() for more info.
                 host = self.host
-                if isinstance(url, string_t) and '://' not in url:
-                    url = 'mongodb://{0}:{1}'.format(url, self.port)
+                if isinstance(host, string_t) and '://' not in host:
+                    host = 'mongodb://{0}:{1}'.format(host, self.port)
             # don't change self.options
             conf = dict(self.options)
             conf['host'] = host
