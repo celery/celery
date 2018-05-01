@@ -1,8 +1,6 @@
 """The Azure Storage Block Blob backend for Celery."""
 from __future__ import absolute_import, unicode_literals
 
-import re
-
 from kombu.utils import cached_property
 from kombu.utils.encoding import bytes_to_str
 
@@ -21,8 +19,6 @@ except ImportError:  # pragma: no cover
         AzureMissingResourceHttpError = None  # noqa
 
 __all__ = ("AzureBlockBlobBackend",)
-
-URL_RE = re.compile(r"azureblockblob://(?P<connection_string>.+)")
 
 LOGGER = get_logger(__name__)
 
@@ -66,12 +62,12 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
             conf["azureblockblob_retry_max_attempts"])
 
     @classmethod
-    def _parse_url(cls, url):
-        match = URL_RE.match(url)
-        if not match:
+    def _parse_url(cls, url, prefix="azureblockblob://"):
+        connection_string = url[len(prefix):]
+        if not connection_string:
             raise ImproperlyConfigured("Invalid URL")
 
-        return match.group("connection_string")
+        return connection_string
 
     @cached_property
     def _client(self):
