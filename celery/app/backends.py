@@ -57,18 +57,23 @@ def by_name(backend=None, loader=None,
 
 
 def by_url(backend=None, loader=None):
-    """Get backend class by URL."""
+    """Get backend class by URL. Return a class object and the url.
+
+    New in version 4.2.?: url is returned unmodified. Previously any leading
+    schema followed by a plus sign would be stripped off. Now backends that
+    require special formatting must handle that formatting in their own
+    constructors.
+    """
     url = None
     if backend and '://' in backend:
+        # There are two types of uris we'll see:
+        # * <backend>+<backend-defined-ext>:// e.g., mongodb+srv://
+        # * <backend>+<backend-subtype>:// e.g., cache+memory:// (cache is the
+        #   only one tested and documented thus far
         url = backend
         scheme, _, _ = url.partition('://')
         if '+' in scheme:
-            if scheme.startswith('mongodb+'):
-                # e.g., mongodb+srv://
-                backend = url.split('+', 1)[0]
-            else:
-                # e.g., sqla+mongodb
-                backend, url = url.split('+', 1)
+            backend, _, _ = scheme.partition('+')
         else:
             backend = scheme
     return by_name(backend, loader), url

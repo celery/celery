@@ -61,8 +61,13 @@ class test_CacheBackend:
             assert self.tb.get_state(self.tid) == states.FAILURE
             assert isinstance(self.tb.get_result(self.tid), KeyError)
 
+    def test_backend_provided_as_unmodified_url(self):
+        tb = CacheBackend(backend='cache+memory://', app=self.app)
+        assert tb.backend == 'memory'
+        assert tb.as_uri() == 'memory:///'
+
     def test_apply_chord(self):
-        tb = CacheBackend(backend='memory://', app=self.app)
+        tb = CacheBackend(backend='cache+memory://', app=self.app)
         result = self.app.GroupResult(
             uuid(),
             [self.app.AsyncResult(uuid()) for _ in range(3)],
@@ -72,7 +77,7 @@ class test_CacheBackend:
 
     @patch('celery.result.GroupResult.restore')
     def test_on_chord_part_return(self, restore):
-        tb = CacheBackend(backend='memory://', app=self.app)
+        tb = CacheBackend(backend='cache+memory://', app=self.app)
 
         deps = Mock()
         deps.__len__ = Mock()
@@ -114,7 +119,7 @@ class test_CacheBackend:
         self.tb.process_cleanup()
 
     def test_expires_as_int(self):
-        tb = CacheBackend(backend='memory://', expires=10, app=self.app)
+        tb = CacheBackend(backend='cache+memory://', expires=10, app=self.app)
         assert tb.expires == 10
 
     def test_unknown_backend_raises_ImproperlyConfigured(self):
