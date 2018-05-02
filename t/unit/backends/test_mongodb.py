@@ -3,12 +3,12 @@ from __future__ import absolute_import, unicode_literals
 import datetime
 from pickle import dumps, loads
 
-import pytest
-from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
 from kombu.exceptions import EncodeError
 
-from celery.app import backends
+import pytest
+from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
 from celery import states, uuid
+from celery.app import backends
 from celery.backends.mongodb import InvalidDocument, MongoBackend
 from celery.exceptions import ImproperlyConfigured
 
