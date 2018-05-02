@@ -311,6 +311,38 @@ class test_RedisBackend:
         assert x.connparams['ssl_certfile'] == '/var/ssl/redis-server-cert.pem'
         assert x.connparams['ssl_keyfile'] == '/var/ssl/private/worker-key.pem'
 
+    @skip.unless_module('redis')
+    def test_backend_ssl_url_cert_none(self):
+        x = self.Backend(
+            'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_OPTIONAL',
+            app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['ssl_cert_reqs'] == ssl.CERT_OPTIONAL
+
+        from redis.connection import SSLConnection
+        assert x.connparams['connection_class'] is SSLConnection
+
+
+    @skip.unless_module('redis')
+    def test_backend_ssl_url_invalid(self):
+        with pytest.raises(ValueError):
+            x = self.Backend(
+                'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_KITTY_CATS',
+                app=self.app,
+            )
+
+    @skip.unless_module('redis')
+    def test_backend_ssl_url_invalid(self):
+        with pytest.raises(ValueError):
+            x = self.Backend(
+                'rediss://:bosco@vandelay.com:123//1',
+                app=self.app,
+            )
+
     def test_compat_propertie(self):
         x = self.Backend(
             'redis://:bosco@vandelay.com:123//1', app=self.app,
