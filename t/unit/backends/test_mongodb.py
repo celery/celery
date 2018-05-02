@@ -7,6 +7,7 @@ import pytest
 from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
 from kombu.exceptions import EncodeError
 
+from celery.app import backends
 from celery import states, uuid
 from celery.backends.mongodb import InvalidDocument, MongoBackend
 from celery.exceptions import ImproperlyConfigured
@@ -43,6 +44,12 @@ class test_MongoBackend:
         self.patching('celery.backends.mongodb.Binary')
         self.patching('datetime.datetime')
         self.backend = MongoBackend(app=self.app, url=self.default_url)
+
+    def test_backend_by_url(self):
+        for url in (self.default_url, self.srv_url):
+            backend, url_ = backends.by_url(url, self.app.loader)
+            assert backend is MongoBackend
+            assert url_ == url
 
     def test_init_no_mongodb(self, patching):
         patching('celery.backends.mongodb.pymongo', None)
