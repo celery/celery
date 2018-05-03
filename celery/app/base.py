@@ -203,7 +203,7 @@ class Celery(object):
     log_cls = 'celery.app.log:Logging'
     control_cls = 'celery.app.control:Control'
     task_cls = 'celery.app.task:Task'
-    registry_cls = TaskRegistry
+    registry_cls = 'celery.app.registry:TaskRegistry'
 
     _fixups = None
     _pool = None
