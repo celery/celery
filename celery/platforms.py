@@ -255,10 +255,16 @@ def create_pidlock(pidfile):
     return pidlock
 
 
+def _can_create_pidlock(pidlock):
+    if pidlock.is_locked() and not pidlock.remove_if_stale():
+        print(PIDLOCKED.format(pidlock, pidlock.read_pid()), file=sys.stderr)
+        return False
+    return True
+
+
 def _create_pidlock(pidfile):
     pidlock = Pidfile(pidfile)
-    if pidlock.is_locked() and not pidlock.remove_if_stale():
-        print(PIDLOCKED.format(pidfile, pidlock.read_pid()), file=sys.stderr)
+    if not _can_create_pidlock(pidlock):
         raise SystemExit(EX_CANTCREAT)
     pidlock.acquire()
     return pidlock
@@ -411,8 +417,8 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
         # we need to know that we have access to the logfile.
         logfile and open(logfile, 'a').close()
         # Doesn't actually create the pidfile, but makes sure it's not stale.
-        if pidfile:
-            _create_pidlock(pidfile).release()
+        if pidfile and not _can_create_pidlock(Pidfile(pidfile)):
+            raise SystemExit(EX_CANTCREAT)
 
     return DaemonContext(
         umask=umask, workdir=workdir, fake=fake, after_chdir=after_chdir_do,
