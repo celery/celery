@@ -326,20 +326,15 @@ class test_RedisBackend:
         from redis.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
-
     @skip.unless_module('redis')
-    def test_backend_ssl_url_invalid(self):
+    @pytest.mark.parametrize("uri", [
+        'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_KITTY_CATS',
+        'rediss: //:bosco@vandelay.com:123//1'
+    ])
+    def test_backend_ssl_url_invalid(self, uri):
         with pytest.raises(ValueError):
-            x = self.Backend(
-                'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_KITTY_CATS',
-                app=self.app,
-            )
-
-    @skip.unless_module('redis')
-    def test_backend_ssl_url_invalid(self):
-        with pytest.raises(ValueError):
-            x = self.Backend(
-                'rediss://:bosco@vandelay.com:123//1',
+            self.Backend(
+                uri,
                 app=self.app,
             )
 
