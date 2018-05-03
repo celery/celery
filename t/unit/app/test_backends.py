@@ -6,8 +6,6 @@ from case import patch
 from celery.app import backends
 from celery.backends.amqp import AMQPBackend
 from celery.backends.cache import CacheBackend
-from celery.backends.database import DatabaseBackend
-from celery.backends.mongodb import MongoBackend
 from celery.exceptions import ImproperlyConfigured
 
 
@@ -16,9 +14,6 @@ class test_backends:
     @pytest.mark.parametrize('url,expect_cls', [
         ('amqp://', AMQPBackend),
         ('cache+memory://', CacheBackend),
-        ('mongodb://', MongoBackend),
-        ('mongodb+srv://', MongoBackend),
-        ('db+postgresql+psycopg2://', DatabaseBackend),
     ])
     def test_get_backend_aliases(self, url, expect_cls, app):
         backend, url = backends.by_url(url, app.loader)

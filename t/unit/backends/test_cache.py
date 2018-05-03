@@ -8,6 +8,7 @@ import pytest
 from case import Mock, mock, patch, skip
 from kombu.utils.encoding import ensure_bytes, str_to_bytes
 
+import celery.app
 from celery import signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
@@ -18,6 +19,22 @@ class SomeClass(object):
 
     def __init__(self, data):
         self.data = data
+
+
+class test_backend_by_url:
+    """We can't test these in t/unit/app/test_backends, because of importing in
+    various ci environments, so we repeat it here just for db lookups.
+    """
+
+    @pytest.mark.parametrize('url,expect_cls', [
+        ('cache+memcached://', CacheBackend),
+        ('cache+memory://', CacheBackend),
+        ('cache://', CacheBackend),
+    ])
+    def test_get_backend_aliases(self, url, expect_cls, app):
+        backend, url = celery.app.backends.by_url(url, app.loader)
+        # Don't instantiate, let the unit tests for the backends test that
+        assert backend is expect_cls
 
 
 class test_CacheBackend:
