@@ -54,6 +54,7 @@ class MongoBackend(BaseBackend):
     groupmeta_collection = 'celery_groupmeta'
     max_pool_size = 10
     options = None
+    expects_url_munging = False
 
     supports_autoexpire = False
 

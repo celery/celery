@@ -98,6 +98,11 @@ class Backend(object):
     #: Set to true if the backend is peristent by default.
     persistent = True
 
+    #: Set to true to strip the leading transport from the provisioned URL
+    #: when creating this backend. For example: cache+memory:// will be passed
+    #: through as 'memory://' if this is set to True
+    expects_url_munging = True
+
     retry_policy = {
         'max_retries': 20,
         'interval_start': 0,

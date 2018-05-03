@@ -62,6 +62,7 @@ def by_url(backend=None, loader=None):
     Return a class object and the url to provide to the backend when it is
     created.
     """
+    orig_backend = backend
     url = None
     if backend and '://' in backend:
         # There are two types of urls we'll see:
@@ -71,12 +72,12 @@ def by_url(backend=None, loader=None):
         url = backend
         scheme, _, _ = url.partition('://')
         if '+' in scheme:
-            if scheme.startswith('mongodb+'):
-                # e.g., mongodb+srv://
-                backend, _, _ = scheme.partition('+')
-            else:
-                # e.g., sqla+mongodb
-                backend, url = url.split('+', 1)
+            backend, url = url.split('+', 1)
         else:
             backend = scheme
-    return by_name(backend, loader), url
+    cls = by_name(backend, loader)
+
+    if getattr(cls, 'expects_url_munging', True) or url is None:
+        return cls, url
+    else:
+        return cls, orig_backend
