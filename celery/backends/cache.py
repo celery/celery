@@ -106,11 +106,8 @@ class CacheBackend(KeyValueStoreBackend):
                             **options)
 
         self.backend = url or backend or self.app.conf.cache_backend
-        # Changed in 4.2.0: strip the cache+ off the front if it's present
         if self.backend:
             self.backend, _, servers = self.backend.partition('://')
-            if self.backend.startswith('cache+'):
-                self.backend = self.backend[6:]
             self.servers = servers.rstrip('/').split(';')
         self.expires = self.prepare_expires(expires, type=int)
         try:
