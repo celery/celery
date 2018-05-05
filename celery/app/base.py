@@ -692,7 +692,7 @@ class Celery(object):
                   add_to_parent=True, group_id=None, retries=0, chord=None,
                   reply_to=None, time_limit=None, soft_time_limit=None,
                   root_id=None, parent_id=None, route_name=None,
-                  shadow=None, chain=None, task_type=None, **options):
+                  shadow=None, chain=None, task_type=None, ignore_result=False, **options):
         """Send task by name.
 
         Supports the same arguments as :meth:`@-Task.apply_async`.
@@ -737,7 +737,8 @@ class Celery(object):
             producer = amqp.Producer(connection, auto_declare=False)
         with self.producer_or_acquire(producer) as P:
             with P.connection._reraise_as_library_errors():
-                self.backend.on_task_call(P, task_id)
+                if not ignore_result:
+                    self.backend.on_task_call(P, task_id)
                 amqp.send_task_message(P, name, message, **options)
         result = (result_cls or self.AsyncResult)(task_id)
         if add_to_parent:

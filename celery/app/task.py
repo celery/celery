@@ -528,7 +528,7 @@ class Task(object):
         return app.send_task(
             self.name, args, kwargs, task_id=task_id, producer=producer,
             link=link, link_error=link_error, result_cls=self.AsyncResult,
-            shadow=shadow, task_type=self,
+            shadow=shadow, task_type=self, ignore_result=getattr(self, 'ignore_result', False),
             **options
         )
 
