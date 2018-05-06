@@ -2,6 +2,7 @@ import re
 from datetime import datetime, timedelta
 from time import sleep
 
+from msgpack.exceptions import ExtraData
 import pytest
 
 from celery import chain, chord, group, signature
@@ -700,6 +701,17 @@ class test_group:
         )                                       # [42, 42] due to unrolling
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
+
+    @flaky
+    @pytest.mark.xfail(raises=ExtraData, strict=True)
+    def test_group_msgpack(self, manager):
+        assert manager.inspect().ping()
+
+        chain(identity.si(b'arg'),
+              group([
+                    identity.si(b'arg1'),
+                    identity.si(b'arg2')
+              ])).delay(serializer='msgpack')
 
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
