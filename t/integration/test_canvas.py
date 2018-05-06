@@ -3,12 +3,12 @@ from datetime import datetime, timedelta
 from time import sleep
 
 import pytest
+from msgpack.exceptions import ExtraData
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
-from msgpack.exceptions import ExtraData
 
 from . import tasks
 from .conftest import get_active_redis_channels, get_redis_connection
