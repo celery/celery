@@ -3,11 +3,11 @@ from __future__ import absolute_import, unicode_literals
 from datetime import datetime, timedelta
 
 import pytest
+from msgpack.exceptions import ExtraData
 
 from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
-from msgpack.exceptions import ExtraData
 
 from .conftest import flaky, get_redis_connection
 from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
