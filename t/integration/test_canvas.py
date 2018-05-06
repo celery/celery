@@ -2,6 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime, timedelta
 
+from msgpack.exceptions import ExtraData
 import pytest
 
 from celery import chain, chord, group
@@ -244,6 +245,17 @@ class test_group:
         res = c()
 
         assert res.get(timeout=TIMEOUT) == [11, 101, 1001, 2001]
+
+    @flaky
+    @pytest.mark.xfail(raises=ExtraData, strict=True)
+    def test_group_msgpack(self, manager):
+        assert manager.inspect().ping()
+
+        chain(identity.si(b'arg'),
+              group([
+                    identity.si(b'arg1'),
+                    identity.si(b'arg2')
+              ])).delay(serializer='msgpack')
 
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
