@@ -243,6 +243,10 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             pipe.publish(key, value)
             pipe.execute()
 
+    def forget(self, task_id):
+        super(RedisBackend, self).forget(task_id)
+        self.result_consumer.cancel_for(task_id)
+
     def delete(self, key):
         self.client.delete(key)
 
