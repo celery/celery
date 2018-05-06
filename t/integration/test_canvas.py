@@ -2,12 +2,12 @@ from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime, timedelta
 
-from msgpack.exceptions import ExtraData
 import pytest
 
 from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
+from msgpack.exceptions import ExtraData
 
 from .conftest import flaky, get_redis_connection
 from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
@@ -255,7 +255,7 @@ class test_group:
               group([
                     identity.si(b'arg1'),
                     identity.si(b'arg2')
-              ])).delay(serializer='msgpack')
+                    ])).delay(serializer='msgpack')
 
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
