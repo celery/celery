@@ -8,7 +8,7 @@ from celery import chain, chord, group
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
 
-from .conftest import flaky, get_redis_connection
+from .conftest import flaky, get_active_redis_channels, get_redis_connection
 from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, identity, ids, print_unicode,
@@ -255,19 +255,13 @@ def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
 
 class test_chord:
 
-    @staticmethod
-    def _get_active_redis_channels(client):
-        return client.execute_command('PUBSUB CHANNELS')
-
     @flaky
     def test_redis_subscribed_channels_leak(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
-        redis_client = get_redis_connection()
-
         manager.app.backend.result_consumer.on_after_fork()
-        initial_channels = self._get_active_redis_channels(redis_client)
+        initial_channels = get_active_redis_channels()
         initial_channels_count = len(initial_channels)
 
         total_chords = 10
@@ -278,7 +272,7 @@ class test_chord:
 
         manager.assert_result_tasks_in_progress_or_completed(async_results)
 
-        channels_before = self._get_active_redis_channels(redis_client)
+        channels_before = get_active_redis_channels()
         channels_before_count = len(channels_before)
 
         assert set(channels_before) != set(initial_channels)
@@ -289,7 +283,7 @@ class test_chord:
         # total chord tasks, plus the initial channels
         # (existing from previous tests).
         chord_header_task_count = 2
-        assert channels_before_count == \
+        assert channels_before_count <= \
             chord_header_task_count * total_chords + initial_channels_count
 
         result_values = [
@@ -298,7 +292,7 @@ class test_chord:
         ]
         assert result_values == [24] * total_chords
 
-        channels_after = self._get_active_redis_channels(redis_client)
+        channels_after = get_active_redis_channels()
         channels_after_count = len(channels_after)
 
         assert channels_after_count == initial_channels_count
