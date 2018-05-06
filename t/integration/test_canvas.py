@@ -2,13 +2,13 @@ import re
 from datetime import datetime, timedelta
 from time import sleep
 
-from msgpack.exceptions import ExtraData
 import pytest
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
+from msgpack.exceptions import ExtraData
 
 from . import tasks
 from .conftest import get_active_redis_channels, get_redis_connection
@@ -711,7 +711,7 @@ class test_group:
               group([
                     identity.si(b'arg1'),
                     identity.si(b'arg2')
-              ])).delay(serializer='msgpack')
+                    ])).delay(serializer='msgpack')
 
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
