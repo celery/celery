@@ -329,7 +329,7 @@ class test_RedisBackend:
     @skip.unless_module('redis')
     @pytest.mark.parametrize("uri", [
         'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_KITTY_CATS',
-        'rediss: //:bosco@vandelay.com:123//1'
+        'rediss://:bosco@vandelay.com:123//1'
     ])
     def test_backend_ssl_url_invalid(self, uri):
         with pytest.raises(ValueError):
