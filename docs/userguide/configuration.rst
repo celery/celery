@@ -875,9 +875,12 @@ Configuring the backend URL
     requirements.
 
 This backend requires the :setting:`result_backend`
-setting to be set to a Redis URL::
+setting to be set to a Redis or `Redis over TLS`_ URL::
 
     result_backend = 'redis://:password@host:port/db'
+
+.. _`Redis over TLS`:
+    https://www.iana.org/assignments/uri-schemes/prov/rediss
 
 For example::
 
@@ -886,6 +889,10 @@ For example::
 is the same as::
 
     result_backend = 'redis://'
+
+Use the ``rediss://`` protocol to connect to redis over TLS::
+
+    result_backend = 'rediss://:password@host:port/db?ssl_cert_reqs=CERT_REQUIRED'
 
 The fields of the URL are defined as follows:
 
@@ -905,6 +912,17 @@ The fields of the URL are defined as follows:
 
     Database number to use. Default is 0.
     The db can include an optional leading slash.
+
+When using a TLS connection (protocol is ``rediss://``), you may pass in all values in :setting:`broker_use_ssl` as query parameters. Paths to certificates must be URL encoded, and ``ssl_cert_reqs`` is required. Example:
+
+.. code-block:: python
+
+    result_backend = 'rediss://:password@host:port/db?\
+        ssl_cert_reqs=CERT_REQUIRED\
+        &ssl_ca_certs=%2Fvar%2Fssl%2Fmyca.pem\                  # /var/ssl/myca.pem
+        &ssl_certfile=%2Fvar%2Fssl%2Fredis-server-cert.pem\     # /var/ssl/redis-server-cert.pem
+        &ssl_keyfile=%2Fvar%2Fssl%2Fprivate%2Fworker-key.pem'   # /var/ssl/private/worker-key.pem
+
 
 .. setting:: redis_backend_use_ssl
 
