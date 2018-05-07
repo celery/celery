@@ -153,9 +153,9 @@ class AsyncResult(ResultBase):
            Please read :ref:`task-synchronous-subtasks`.
 
         Warning:
-           Backends use resources to store and transmit results. To ensure 
-           that resources are released, you must eventually call 
-           :meth:`~@AsyncResult.get` or :meth:`~@AsyncResult.forget` on 
+           Backends use resources to store and transmit results. To ensure
+           that resources are released, you must eventually call
+           :meth:`~@AsyncResult.get` or :meth:`~@AsyncResult.forget` on
            EVERY :class:`~@AsyncResult` instance returned after calling
            a task.
 
