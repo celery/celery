@@ -704,7 +704,7 @@ class test_group:
 
     @flaky
     @pytest.mark.xfail(raises=ExtraData, strict=True)
-    @pytest.mark.celery(task_serializer='msgpack', accept_content=['msgpack'])
+    @pytest.mark.celery(task_serializer='msgpack', accept_content=['application/x-msgpack'])
     def test_group_msgpack(self, manager):
         assert manager.inspect().ping()
 
