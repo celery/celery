@@ -704,6 +704,7 @@ class test_group:
 
     @flaky
     @pytest.mark.xfail(raises=ExtraData, strict=True)
+    @pytest.mark.celery(task_serializer='msgpack', accept_content=['msgpack'])
     def test_group_msgpack(self, manager):
         assert manager.inspect().ping()
 
@@ -711,7 +712,7 @@ class test_group:
               group([
                     identity.si(b'arg1'),
                     identity.si(b'arg2')
-                    ])).delay(serializer='msgpack')
+                    ])).delay()
 
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
