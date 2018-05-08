@@ -181,6 +181,14 @@ class Signal(object):  # pragma: no cover
         if weak:
             ref = weakref.ref
             receiver_object = receiver
+            try:
+                receiver.__self__
+                receiver.__func__
+            except AttributeError:
+                pass
+            else:
+                ref = WeakMethod
+                receiver_object = receiver.__self__
             if PY3:
                 receiver = ref(receiver)
                 weakref.finalize(receiver_object, self._remove_receiver)
