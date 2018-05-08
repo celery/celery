@@ -569,7 +569,7 @@ class _chain(Signature):
                 if args and not self.immutable else self.args)
 
         tasks, results = self.prepare_steps(
-            args, self.tasks, root_id, parent_id, link_error, app,
+            args, kwargs, self.tasks, root_id, parent_id, link_error, app,
             task_id, group_id, chord,
         )
 
@@ -589,12 +589,12 @@ class _chain(Signature):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         _, results = self._frozen = self.prepare_steps(
-            self.args, self.tasks, root_id, parent_id, None,
+            self.args, self.kwargs, self.tasks, root_id, parent_id, None,
             self.app, _id, group_id, chord, clone=False,
         )
         return results[0]
 
-    def prepare_steps(self, args, tasks,
+    def prepare_steps(self, args, kwargs, tasks,
                       root_id=None, parent_id=None, link_error=None, app=None,
                       last_task_id=None, group_id=None, chord_body=None,
                       clone=True, from_dict=Signature.from_dict):
@@ -632,7 +632,10 @@ class _chain(Signature):
 
             # first task gets partial args from chain
             if clone:
-                task = task.clone(args) if is_first_task else task.clone()
+                if is_first_task:
+                    task = task.clone(args, kwargs)
+                else:
+                    task = task.clone()
             elif is_first_task:
                 task.args = tuple(args) + tuple(task.args)
 
