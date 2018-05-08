@@ -76,6 +76,7 @@ EXTENSIONS = {
     'consul',
     'dynamodb',
     'mongodb',
+    'cosmosdbsql',
 }
 
 # -*- Classifiers -*-
