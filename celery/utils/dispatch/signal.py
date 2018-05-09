@@ -37,6 +37,13 @@ def _make_id(target):  # pragma: no cover
     return id(target)
 
 
+def _make_lookup_key(receiver, sender, dispatch_uid):
+    if dispatch_uid:
+        return (dispatch_uid, _make_id(sender))
+    else:
+        return (_make_id(receiver), _make_id(sender))
+
+
 NONE_ID = _make_id(None)
 
 NO_RECEIVERS = object()
@@ -173,10 +180,7 @@ class Signal(object):  # pragma: no cover
             )
             return receiver
 
-        if dispatch_uid:
-            lookup_key = (dispatch_uid, _make_id(sender))
-        else:
-            lookup_key = (_make_id(receiver), _make_id(sender))
+        lookup_key = _make_lookup_key(receiver, sender, dispatch_uid)
 
         if weak:
             ref = weakref.ref
@@ -220,10 +224,8 @@ class Signal(object):  # pragma: no cover
             warnings.warn(
                 'Passing `weak` to disconnect has no effect.',
                 CDeprecationWarning, stacklevel=2)
-        if dispatch_uid:
-            lookup_key = (dispatch_uid, _make_id(sender))
-        else:
-            lookup_key = (_make_id(receiver), _make_id(sender))
+
+        lookup_key = _make_lookup_key(receiver, sender, dispatch_uid)
 
         disconnected = False
         with self.lock:
