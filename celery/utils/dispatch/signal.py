@@ -37,6 +37,28 @@ def _make_id(target):  # pragma: no cover
     return id(target)
 
 
+def _boundmethod_safe_weakref(obj):
+    """Get weakref constructor appropriate for `obj`.  `obj` may be a bound method.
+
+    Bound method objects must be special-cased because they're usually garbage
+    collected immediately, even if the instance they're bound to persists.
+
+    Returns:
+        a (weakref constructor, main object) tuple. `weakref constructor` is
+        either :class:`weakref.ref` or :class:`weakref.WeakMethod`.  `main
+        object` is the instance that `obj` is bound to if it is a bound method;
+        otherwise `main object` is simply `obj.
+    """
+    try:
+        obj.__func__
+        obj.__self__
+        # Bound method
+        return WeakMethod, obj.__self__
+    except AttributeError:
+        # Not a bound method
+        return weakref.ref, obj
+
+
 def _make_lookup_key(receiver, sender, dispatch_uid):
     if dispatch_uid:
         return (dispatch_uid, _make_id(sender))
@@ -183,8 +205,7 @@ class Signal(object):  # pragma: no cover
         lookup_key = _make_lookup_key(receiver, sender, dispatch_uid)
 
         if weak:
-            ref = weakref.ref
-            receiver_object = receiver
+            ref, receiver_object = _boundmethod_safe_weakref(receiver)
             if PY3:
                 receiver = ref(receiver)
                 weakref.finalize(receiver_object, self._remove_receiver)
