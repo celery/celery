@@ -182,4 +182,5 @@ class test_Signal:
         result = a_signal.send(sender=self, val='test')
         assert result == expected
         del a, result, expected
+        garbage_collect()
         self._testIsClean(a_signal)
