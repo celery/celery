@@ -13,7 +13,7 @@ from celery import states
 from celery._state import task_join_will_block
 from celery.canvas import maybe_signature
 from celery.exceptions import ChordError, ImproperlyConfigured
-from celery.five import string_t
+from celery.five import string_t, text_t
 from celery.utils import deprecated
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
@@ -83,9 +83,12 @@ class ResultConsumer(async.BaseResultConsumer):
         self.subscribed_to = set()
 
     def on_after_fork(self):
-        self.backend.client.connection_pool.reset()
-        if self._pubsub is not None:
-            self._pubsub.close()
+        try:
+            self.backend.client.connection_pool.reset()
+            if self._pubsub is not None:
+                self._pubsub.close()
+        except KeyError as e:
+            logger.warn(text_t(e))
         super(ResultConsumer, self).on_after_fork()
 
     def _maybe_cancel_ready_task(self, meta):
@@ -286,6 +289,10 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
                 pipe.set(key, value)
             pipe.publish(key, value)
             pipe.execute()
+
+    def forget(self, task_id):
+        super(RedisBackend, self).forget(task_id)
+        self.result_consumer.cancel_for(task_id)
 
     def delete(self, key):
         self.client.delete(key)

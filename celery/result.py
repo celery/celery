@@ -101,6 +101,19 @@ class AsyncResult(ResultBase):
         self.parent = parent
         self.on_ready = promise(self._on_fulfilled)
         self._cache = None
+        self._ignored = False
+
+    @property
+    def ignored(self):
+        """"If True, task result retrieval is disabled."""
+        if hasattr(self, '_ignored'):
+            return self._ignored
+        return False
+
+    @ignored.setter
+    def ignored(self, value):
+        """Enable/disable task result retrieval."""
+        self._ignored = value
 
     def then(self, callback, on_error=None, weak=False):
         self.backend.add_pending_result(self, weak=weak)
@@ -183,6 +196,9 @@ class AsyncResult(ResultBase):
             Exception: If the remote call raised an exception then that
                 exception will be re-raised in the caller process.
         """
+        if self.ignored:
+            return
+
         if disable_sync_subtasks:
             assert_will_not_block()
         _on_interval = promise()
@@ -362,6 +378,11 @@ class AsyncResult(ResultBase):
 
     def __reduce_args__(self):
         return self.id, self.backend, None, None, self.parent
+
+    def __del__(self):
+        """Cancel pending operations when the instance is destroyed."""
+        if self.backend is not None:
+            self.backend.remove_pending_result(self)
 
     @cached_property
     def graph(self):

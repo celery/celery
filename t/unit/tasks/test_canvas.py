@@ -333,7 +333,7 @@ class test_chain(CanvasCase):
             self.add.s(30)
         )
         c._use_link = True
-        tasks, results = c.prepare_steps((), c.tasks)
+        tasks, results = c.prepare_steps((), {}, c.tasks)
 
         assert tasks[-1].args[0] == 5
         assert isinstance(tasks[-2], chord)
@@ -347,7 +347,7 @@ class test_chain(CanvasCase):
 
         c2 = self.add.s(2, 2) | group(self.add.s(i, i) for i in range(10))
         c2._use_link = True
-        tasks2, _ = c2.prepare_steps((), c2.tasks)
+        tasks2, _ = c2.prepare_steps((), {}, c2.tasks)
         assert isinstance(tasks2[0], group)
 
     def test_group_to_chord__protocol_2__or(self):
@@ -372,7 +372,7 @@ class test_chain(CanvasCase):
 
         c2 = self.add.s(2, 2) | group(self.add.s(i, i) for i in range(10))
         c2._use_link = False
-        tasks2, _ = c2.prepare_steps((), c2.tasks)
+        tasks2, _ = c2.prepare_steps((), {}, c2.tasks)
         assert isinstance(tasks2[0], group)
 
     def test_apply_options(self):

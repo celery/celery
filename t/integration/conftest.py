@@ -29,6 +29,10 @@ def get_redis_connection():
     return StrictRedis(host=os.environ.get('REDIS_HOST'))
 
 
+def get_active_redis_channels():
+    return get_redis_connection().execute_command('PUBSUB CHANNELS')
+
+
 @pytest.fixture(scope='session')
 def celery_config():
     return {

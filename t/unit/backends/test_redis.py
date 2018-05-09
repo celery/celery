@@ -163,6 +163,14 @@ class test_RedisResultConsumer:
         parent_method.assert_called_once()
         consumer.backend.client.connection_pool.reset.assert_called_once()
 
+        # Continues on KeyError
+        consumer._pubsub = Mock()
+        consumer._pubsub.close = Mock(side_effect=KeyError)
+        parent_method.reset_mock()
+        consumer.backend.client.connection_pool.reset.reset_mock()
+        consumer.on_after_fork()
+        parent_method.assert_called_once()
+
     @patch('celery.backends.redis.ResultConsumer.cancel_for')
     @patch('celery.backends.async.BaseResultConsumer.on_state_change')
     def test_on_state_change(self, parent_method, cancel_for):

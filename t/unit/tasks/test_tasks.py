@@ -153,7 +153,13 @@ class TasksCase:
 
         self.task_check_request_context = task_check_request_context
 
-        # memove all messages from memory-transport
+        @self.app.task(ignore_result=True)
+        def task_with_ignored_result():
+            pass
+
+        self.task_with_ignored_result = task_with_ignored_result
+
+        # Remove all messages from memory-transport
         from kombu.transport.memory import Channel
         Channel.queues.clear()
 
@@ -391,7 +397,8 @@ class test_tasks(TasksCase):
                                                    task_id=ANY,
                                                    task_type=ANY,
                                                    time_limit=ANY,
-                                                   shadow='fooxyz')
+                                                   shadow='fooxyz',
+                                                   ignore_result=False)
 
         self.app.send_task = old_send_task
 
@@ -427,7 +434,8 @@ class test_tasks(TasksCase):
                                                    task_id=ANY,
                                                    task_type=ANY,
                                                    time_limit=ANY,
-                                                   shadow='fooxyz')
+                                                   shadow='fooxyz',
+                                                   ignore_result=False)
 
         self.app.send_task = old_send_task
 
@@ -789,3 +797,58 @@ class test_apply_task(TasksCase):
         assert f.traceback
         with pytest.raises(KeyError):
             f.get()
+
+
+class test_apply_async(TasksCase):
+    def common_send_task_arguments(self):
+        return (ANY, ANY, ANY), dict(
+            compression=ANY,
+            delivery_mode=ANY,
+            exchange=ANY,
+            expires=ANY,
+            immediate=ANY,
+            link=ANY,
+            link_error=ANY,
+            mandatory=ANY,
+            priority=ANY,
+            producer=ANY,
+            queue=ANY,
+            result_cls=ANY,
+            routing_key=ANY,
+            serializer=ANY,
+            soft_time_limit=ANY,
+            task_id=ANY,
+            task_type=ANY,
+            time_limit=ANY,
+            shadow=None,
+            ignore_result=False
+        )
+
+    def test_task_with_ignored_result(self):
+        with patch.object(self.app, 'send_task') as send_task:
+            self.task_with_ignored_result.apply_async()
+            expected_args, expected_kwargs = self.common_send_task_arguments()
+            expected_kwargs['ignore_result'] = True
+            send_task.assert_called_once_with(
+                *expected_args,
+                **expected_kwargs
+            )
+
+    def test_task_with_result(self):
+        with patch.object(self.app, 'send_task') as send_task:
+            self.mytask.apply_async()
+            expected_args, expected_kwargs = self.common_send_task_arguments()
+            send_task.assert_called_once_with(
+                *expected_args,
+                **expected_kwargs
+            )
+
+    def test_task_with_result_ignoring_on_call(self):
+        with patch.object(self.app, 'send_task') as send_task:
+            self.mytask.apply_async(ignore_result=True)
+            expected_args, expected_kwargs = self.common_send_task_arguments()
+            expected_kwargs['ignore_result'] = True
+            send_task.assert_called_once_with(
+                *expected_args,
+                **expected_kwargs
+            )

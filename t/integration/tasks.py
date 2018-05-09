@@ -23,6 +23,12 @@ def add(x, y):
     return x + y
 
 
+@shared_task(ignore_result=True)
+def add_ignore_result(x, y):
+    """Add two numbers."""
+    return x + y
+
+
 @shared_task
 def chain_add(x, y):
     (
