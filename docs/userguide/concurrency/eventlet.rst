@@ -23,8 +23,8 @@ change how you run your code, not how you write it.
 
 Celery supports Eventlet as an alternative execution pool implementation.
 It's in some cases superior to prefork, but you need to ensure
-your tasks don't perform blocking calls, as this will halt all
-other operations in the worker until the blocking call returns.
+your tasks don't perform CPU-bound operations, as this will halt all
+other operations in the worker until the CPU-bound operation finishes.
 
 The prefork pool can take use of multiple processes, but how many is
 often limited to a few processes per CPU. With Eventlet you can efficiently
