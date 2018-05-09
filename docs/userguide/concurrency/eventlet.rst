@@ -9,8 +9,8 @@
 Introduction
 ============
 
-The `Eventlet`_ homepage describes it as;
-A concurrent networking library for Python that allows you to
+The `Eventlet`_ homepage describes it as
+a concurrent networking library for Python that allows you to
 change how you run your code, not how you write it.
 
     * It uses `epoll(4)`_ or `libevent`_ for

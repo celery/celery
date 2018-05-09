@@ -234,7 +234,7 @@ Queues can be configured to support priorities by setting the
 
     app.conf.task_queues = [
         Queue('tasks', Exchange('tasks'), routing_key='tasks',
-              queue_arguments={'x-max-priority': 10},
+              queue_arguments={'x-max-priority': 10}),
     ]
 
 A default value for all queues can be set using the

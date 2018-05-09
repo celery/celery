@@ -1045,6 +1045,14 @@ No backend works well for every use case.
 You should read about the strengths and weaknesses of each backend, and choose
 the most appropriate for your needs.
 
+.. warning::
+
+    Backends use resources to store and transmit results. To ensure 
+    that resources are released, you must eventually call 
+    :meth:`~@AsyncResult.get` or :meth:`~@AsyncResult.forget` on 
+    EVERY :class:`~@AsyncResult` instance returned after calling
+    a task.
+
 .. seealso::
 
     :ref:`conf-result-backend`

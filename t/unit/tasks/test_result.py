@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+import copy
 import traceback
 from contextlib import contextmanager
 
@@ -81,6 +82,12 @@ class test_AsyncResult:
         def mytask():
             pass
         self.mytask = mytask
+
+    def test_ignored_getter(self):
+        result = self.app.AsyncResult(uuid())
+        assert result.ignored is False
+        result.__delattr__('_ignored')
+        assert result.ignored is False
 
     @patch('celery.result.task_join_will_block')
     def test_assert_will_not_block(self, task_join_will_block):
@@ -324,6 +331,12 @@ class test_AsyncResult:
         assert isinstance(nok2_res.result, KeyError)
         assert ok_res.info == 'the'
 
+    def test_get_when_ignored(self):
+        result = self.app.AsyncResult(uuid())
+        result.ignored = True
+        # Does not block
+        assert result.get() is None
+
     def test_eq_ne(self):
         r1 = self.app.AsyncResult(self.task1['id'])
         r2 = self.app.AsyncResult(self.task1['id'])
@@ -365,6 +378,19 @@ class test_AsyncResult:
         assert not self.app.AsyncResult(self.task4['id']).ready()
 
         assert not self.app.AsyncResult(uuid()).ready()
+
+    def test_del(self):
+        with patch('celery.result.AsyncResult.backend') as backend:
+            result = self.app.AsyncResult(self.task1['id'])
+            result_clone = copy.copy(result)
+            del result
+            assert backend.remove_pending_result.called_once_with(
+                result_clone
+            )
+
+        result = self.app.AsyncResult(self.task1['id'])
+        result.backend = None
+        del result
 
 
 class test_ResultSet:

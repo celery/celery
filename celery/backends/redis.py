@@ -3,6 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from functools import partial
+from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
@@ -12,13 +13,19 @@ from celery import states
 from celery._state import task_join_will_block
 from celery.canvas import maybe_signature
 from celery.exceptions import ChordError, ImproperlyConfigured
-from celery.five import string_t
+from celery.five import string_t, text_t
 from celery.utils import deprecated
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
 
 from . import async, base
+
+try:
+    from urllib.parse import unquote
+except ImportError:
+    # Python 2
+    from urlparse import unquote
 
 try:
     import redis
@@ -44,6 +51,23 @@ You need to install the redis library with support of \
 sentinel in order to use the Redis result store backend.
 """
 
+W_REDIS_SSL_CERT_OPTIONAL = """
+Setting ssl_cert_reqs=CERT_OPTIONAL when connecting to redis means that \
+celery might not valdate the identity of the redis broker when connecting. \
+This leaves you vulnerable to man in the middle attacks.
+"""
+
+W_REDIS_SSL_CERT_NONE = """
+Setting ssl_cert_reqs=CERT_NONE when connecting to redis means that celery \
+will not valdate the identity of the redis broker when connecting. This \
+leaves you vulnerable to man in the middle attacks.
+"""
+
+E_REDIS_SSL_CERT_REQS_MISSING = """
+A rediss:// URL must have parameter ssl_cert_reqs be CERT_REQUIRED, \
+CERT_OPTIONAL, or CERT_NONE
+"""
+
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 
 logger = get_logger(__name__)
@@ -59,9 +83,12 @@ class ResultConsumer(async.BaseResultConsumer):
         self.subscribed_to = set()
 
     def on_after_fork(self):
-        self.backend.client.connection_pool.reset()
-        if self._pubsub is not None:
-            self._pubsub.close()
+        try:
+            self.backend.client.connection_pool.reset()
+            if self._pubsub is not None:
+                self._pubsub.close()
+        except KeyError as e:
+            logger.warn(text_t(e))
         super(ResultConsumer, self).on_after_fork()
 
     def _maybe_cancel_ready_task(self, meta):
@@ -197,6 +224,26 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         else:
             connparams['db'] = path
 
+        if scheme == 'rediss':
+            connparams['connection_class'] = redis.SSLConnection
+            # The following parameters, if present in the URL, are encoded. We
+            # must add the decoded values to connparams.
+            for ssl_setting in ['ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile']:
+                ssl_val = query.pop(ssl_setting, None)
+                if ssl_val:
+                    connparams[ssl_setting] = unquote(ssl_val)
+            ssl_cert_reqs = query.pop('ssl_cert_reqs', 'MISSING')
+            if ssl_cert_reqs == 'CERT_REQUIRED':
+                connparams['ssl_cert_reqs'] = CERT_REQUIRED
+            elif ssl_cert_reqs == 'CERT_OPTIONAL':
+                logger.warn(W_REDIS_SSL_CERT_OPTIONAL)
+                connparams['ssl_cert_reqs'] = CERT_OPTIONAL
+            elif ssl_cert_reqs == 'CERT_NONE':
+                logger.warn(W_REDIS_SSL_CERT_NONE)
+                connparams['ssl_cert_reqs'] = CERT_NONE
+            else:
+                raise ValueError(E_REDIS_SSL_CERT_REQS_MISSING)
+
         # db may be string and start with / like in kombu.
         db = connparams.get('db') or 0
         db = db.strip('/') if isinstance(db, string_t) else db
@@ -242,6 +289,10 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
                 pipe.set(key, value)
             pipe.publish(key, value)
             pipe.execute()
+
+    def forget(self, task_id):
+        super(RedisBackend, self).forget(task_id)
+        self.result_consumer.cancel_for(task_id)
 
     def delete(self, key):
         self.client.delete(key)
