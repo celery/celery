@@ -58,6 +58,7 @@ RUN pyenv local python2.7 python3.4 python3.5 python3.6
 # Setup one celery environment for basic development use
 RUN pyenv exec pip install \
   -r requirements/default.txt \
+  -r requirements/docs.txt \
   -r requirements/pkgutils.txt \
   -r requirements/test.txt \
   -r requirements/test-ci-base.txt \
