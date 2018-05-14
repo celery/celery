@@ -441,6 +441,11 @@ class test_chain(CanvasCase):
         assert res.parent.parent.get() == 8
         assert res.parent.parent.parent is None
 
+    def test_single_expresion(self):
+        x = chain(self.add.s(1, 2)).apply()
+        assert x.get() == 3
+        assert x.parent is None
+
     def test_empty_chain_returns_none(self):
         assert chain(app=self.app)() is None
         assert chain(app=self.app).apply_async() is None
