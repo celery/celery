@@ -25,6 +25,11 @@ class test_chain:
         assert c().get(timeout=TIMEOUT) == 32
 
     @flaky
+    def test_single_chain(self, manager):
+        c = chain(add.s(3, 4))()
+        assert c.get(timeout=TIMEOUT) == 7
+
+    @flaky
     def test_complex_chain(self, manager):
         c = (
             add.s(2, 2) | (
