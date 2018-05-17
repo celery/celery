@@ -6,6 +6,7 @@ import threading
 from contextlib import contextmanager
 
 from celery import worker
+from celery.app.trace import _install_stack_protection
 from celery.result import _set_task_join_will_block, allow_join_result
 from celery.utils.dispatch import Signal
 from celery.utils.nodenames import anon_nodename
@@ -33,6 +34,12 @@ class TestWorkController(worker.WorkController):
         # type: (*Any, **Any) -> None
         self._on_started = threading.Event()
         super(TestWorkController, self).__init__(*args, **kwargs)
+
+    def on_before_init(self, quiet=False, **kwargs):
+        # type: (bool, **Any) -> None
+        # Fix issues with testing tasks with overridden
+        # __call__ which calls super()
+        _install_stack_protection()
 
     def on_consumer_ready(self, consumer):
         # type: (celery.worker.consumer.Consumer) -> None
@@ -133,6 +140,8 @@ def _start_worker_thread(app,
     state.should_terminate = 0
     t.join(10)
     state.should_terminate = None
+    # worker.hub.poller gets closed so we should reset _current_loop
+    worker.hub.reset()
 
 
 @contextmanager

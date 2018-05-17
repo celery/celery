@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 
 from time import sleep
 
-from celery import chain, chord, group, shared_task
+from celery import Task, chain, chord, group, shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
@@ -235,3 +235,13 @@ def chord_error(*args):
 @shared_task(bind=True)
 def return_priority(self, *_args):
     return "Priority: %s" % self.request.delivery_info['priority']
+
+
+class OverloadedCallTask(Task):
+    def __call__(self, *args, **kwargs):
+        return super(OverloadedCallTask, self).__call__(*args, **kwargs)
+
+
+@shared_task(bind=True, base=OverloadedCallTask)
+def overloaded_call_task(self):
+    return self.request.id
