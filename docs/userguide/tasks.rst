@@ -1047,9 +1047,9 @@ the most appropriate for your needs.
 
 .. warning::
 
-    Backends use resources to store and transmit results. To ensure 
-    that resources are released, you must eventually call 
-    :meth:`~@AsyncResult.get` or :meth:`~@AsyncResult.forget` on 
+    Backends use resources to store and transmit results. To ensure
+    that resources are released, you must eventually call
+    :meth:`~@AsyncResult.get` or :meth:`~@AsyncResult.forget` on
     EVERY :class:`~@AsyncResult` instance returned after calling
     a task.
 
@@ -1633,6 +1633,34 @@ wastes time and resources.
 
 Results can even be disabled globally using the :setting:`task_ignore_result`
 setting.
+
+.. versionadded::4.2
+
+Results can be enabled/disabled on a per-execution basis, by passing the ``ignore_result`` boolean parameter,
+when calling ``apply_async`` or ``delay``.
+
+.. code-block:: python
+
+    @app.task
+    def mytask(x, y):
+        return x + y
+
+    # No result will be stored
+    result = mytask.apply_async(1, 2, ignore_result=True)
+    print result.get() # -> None
+
+    # Result will be stored
+    result = mytask.apply_async(1, 2, ignore_result=False)
+    print result.get() # -> 3
+
+By default tasks will *not ignore results* (``ignore_result=False``) when a result backend is configured.
+
+
+The option precedence order is the following:
+
+1. Global :setting:`task_ignore_result`
+2. :attr:`~@Task.ignore_result` option
+3. Task execution option ``ignore_result``
 
 More optimization tips
 ----------------------
