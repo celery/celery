@@ -1047,7 +1047,7 @@ class test_WorkController(ConsumerCase):
         assert w.process_task is w._process_task
 
     def test_Pool_create(self):
-        from kombu.async.semaphore import LaxBoundedSemaphore
+        from kombu.asynchronous.semaphore import LaxBoundedSemaphore
         w = Mock()
         w._conninfo.connection_errors = w._conninfo.channel_errors = ()
         w.hub = Mock()
