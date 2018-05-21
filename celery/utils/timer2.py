@@ -10,11 +10,12 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 import sys
 import threading
-
 from itertools import count
 from time import sleep
 
-from kombu.asynchronous.timer import Entry, Timer as Schedule, logger, to_timestamp
+from kombu.asynchronous.timer import Entry
+from kombu.asynchronous.timer import Timer as Schedule
+from kombu.asynchronous.timer import logger, to_timestamp
 
 TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
 

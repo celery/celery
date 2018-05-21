@@ -7,11 +7,10 @@ import socket
 import sys
 import threading
 import traceback
-
 from contextlib import contextmanager
 
-from celery.local import Proxy
 from celery.five import THREAD_TIMEOUT_MAX, items, python_2_unicode_compatible
+from celery.local import Proxy
 
 try:
     from greenlet import getcurrent as get_ident

@@ -1,13 +1,12 @@
 from __future__ import absolute_import, unicode_literals
+
 import errno
 import socket
+
 import pytest
 from case import Mock, patch, skip
-from celery.contrib.rdb import (
-    Rdb,
-    debugger,
-    set_trace,
-)
+
+from celery.contrib.rdb import Rdb, debugger, set_trace
 from celery.five import WhateverIO
 
 

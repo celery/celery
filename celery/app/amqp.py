@@ -4,13 +4,11 @@ from __future__ import absolute_import, unicode_literals
 
 import numbers
 import sys
-
 from collections import Mapping, namedtuple
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
-from kombu import pools
-from kombu import Connection, Consumer, Exchange, Producer, Queue
+from kombu import Connection, Consumer, Exchange, Producer, Queue, pools
 from kombu.common import Broadcast
 from kombu.utils.functional import maybe_list
 from kombu.utils.objects import cached_property

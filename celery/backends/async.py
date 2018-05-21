@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 
 import socket
 import threading
-
 from collections import deque
 from time import sleep
 from weakref import WeakKeyDictionary

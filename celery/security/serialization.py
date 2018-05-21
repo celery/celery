@@ -2,11 +2,11 @@
 """Secure serializer."""
 from __future__ import absolute_import, unicode_literals
 
-from kombu.serialization import registry, dumps, loads
-from kombu.utils.encoding import bytes_to_str, str_to_bytes, ensure_bytes
+from kombu.serialization import dumps, loads, registry
+from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
 
 from celery.five import bytes_if_py2
-from celery.utils.serialization import b64encode, b64decode
+from celery.utils.serialization import b64decode, b64encode
 
 from .certificate import Certificate, FSCertStore
 from .key import PrivateKey

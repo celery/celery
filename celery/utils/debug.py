@@ -5,7 +5,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 import sys
 import traceback
-
 from contextlib import contextmanager
 from functools import partial
 from pprint import pprint

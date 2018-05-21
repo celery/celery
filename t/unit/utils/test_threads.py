@@ -1,13 +1,10 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
 from case import mock, patch
-from celery.utils.threads import (
-    _LocalStack,
-    _FastLocalStack,
-    LocalManager,
-    Local,
-    bgThread,
-)
+
+from celery.utils.threads import (Local, LocalManager, _FastLocalStack,
+                                  _LocalStack, bgThread)
 
 
 class test_bgThread:

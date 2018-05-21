@@ -1,6 +1,8 @@
 from __future__ import absolute_import, unicode_literals
-import celery
+
 import pytest
+
+import celery
 
 
 def test_version():

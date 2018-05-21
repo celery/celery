@@ -1,6 +1,8 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
 from case import Mock, sentinel, skip
+
 from celery.app import backends
 from celery.backends import elasticsearch as module
 from celery.backends.elasticsearch import ElasticsearchBackend

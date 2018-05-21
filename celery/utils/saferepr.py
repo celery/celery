@@ -14,9 +14,7 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 import traceback
-
 from collections import deque, namedtuple
-
 from decimal import Decimal
 from itertools import chain
 from numbers import Number

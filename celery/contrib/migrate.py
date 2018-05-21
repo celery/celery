@@ -3,11 +3,10 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import socket
-
 from functools import partial
 from itertools import cycle, islice
 
-from kombu import eventloop, Queue
+from kombu import Queue, eventloop
 from kombu.common import maybe_declare
 from kombu.utils.encoding import ensure_bytes
 

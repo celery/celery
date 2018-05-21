@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 """Riak result store backend."""
 from __future__ import absolute_import, unicode_literals
+
 import sys
+
 from kombu.utils.url import _parse_url
+
 from celery.exceptions import ImproperlyConfigured
+
 from .base import KeyValueStoreBackend
+
 try:
     import riak
     from riak import RiakClient

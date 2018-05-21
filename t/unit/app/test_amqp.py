@@ -1,8 +1,11 @@
 from __future__ import absolute_import, unicode_literals
-import pytest
+
 from datetime import datetime, timedelta
+
+import pytest
 from case import Mock
 from kombu import Exchange, Queue
+
 from celery import uuid
 from celery.app.amqp import Queues, utf8dict
 from celery.five import keys

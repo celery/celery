@@ -4,7 +4,9 @@ from __future__ import absolute_import, unicode_literals
 
 from kombu.asynchronous import timer as _timer
 from kombu.five import monotonic
+
 from . import base
+
 try:
     from gevent import Timeout
 except ImportError:  # pragma: no cover

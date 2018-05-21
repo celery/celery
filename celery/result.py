@@ -3,7 +3,6 @@
 from __future__ import absolute_import, unicode_literals
 
 import time
-
 from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
@@ -11,14 +10,12 @@ from copy import copy
 from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
 
-from . import current_app
-from . import states
+from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
-from .five import (
-    items, python_2_unicode_compatible, range, string_t, monotonic,
-)
+from .five import (items, monotonic, python_2_unicode_compatible, range,
+                   string_t)
 from .utils import deprecated
 from .utils.graph import DependencyGraph, GraphFormatter
 

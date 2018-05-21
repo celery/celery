@@ -1,18 +1,16 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
 import time
-
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pickle import dumps, loads
 
+import pytest
 from case import Case, Mock, skip
 
 from celery.five import items
-from celery.schedules import (
-    ParseException, crontab, crontab_parser, schedule, solar,
-)
+from celery.schedules import (ParseException, crontab, crontab_parser,
+                              schedule, solar)
 
 assertions = Case('__init__')
 

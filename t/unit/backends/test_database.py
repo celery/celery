@@ -1,14 +1,12 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
-
 from datetime import datetime
-from pickle import loads, dumps
+from pickle import dumps, loads
 
+import pytest
 from case import Mock, patch, skip
 
-from celery import states
-from celery import uuid
+from celery import states, uuid
 from celery.exceptions import ImproperlyConfigured
 
 try:

@@ -1,10 +1,9 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
 import socket
-
 from datetime import datetime, timedelta
 
+import pytest
 from case import ContextMock, MagicMock, Mock, patch
 from kombu import Queue
 

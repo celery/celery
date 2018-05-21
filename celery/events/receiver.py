@@ -2,7 +2,6 @@
 from __future__ import absolute_import, unicode_literals
 
 import time
-
 from operator import itemgetter
 
 from kombu import Queue

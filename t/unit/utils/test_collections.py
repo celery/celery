@@ -1,24 +1,18 @@
 from __future__ import absolute_import, unicode_literals
 
 import pickle
-import pytest
-
 from collections import Mapping
 from itertools import count
 from time import time
 
-from case import skip
+import pytest
 from billiard.einfo import ExceptionInfo
+from case import skip
 
-from celery.utils.collections import (
-    AttributeDict,
-    BufferMap,
-    ConfigurationView,
-    DictAttribute,
-    LimitedSet,
-    Messagebuffer,
-)
 from celery.five import items
+from celery.utils.collections import (AttributeDict, BufferMap,
+                                      ConfigurationView, DictAttribute,
+                                      LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
 
 

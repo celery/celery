@@ -1,6 +1,8 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
-from celery.utils import chunks, cached_property
+
+from celery.utils import cached_property, chunks
 
 
 @pytest.mark.parametrize('items,n,expected', [

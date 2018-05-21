@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 """MongoDB result store backend."""
 from __future__ import absolute_import, unicode_literals
+
 from datetime import datetime, timedelta
+
+from kombu.exceptions import EncodeError
 from kombu.utils.objects import cached_property
 from kombu.utils.url import maybe_sanitize_url
-from kombu.exceptions import EncodeError
+
 from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.five import string_t, items
+from celery.five import items, string_t
+
 from .base import BaseBackend
 
 try:

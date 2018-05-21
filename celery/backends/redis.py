@@ -18,8 +18,7 @@ from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
 
-from . import async
-from . import base
+from . import async, base
 
 try:
     import redis
