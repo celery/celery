@@ -198,7 +198,6 @@ class test_result_set:
         rs = ResultSet([add.delay(1, 1), add.delay(2, 2)])
         assert rs.get(timeout=TIMEOUT) == [2, 4]
 
-
     @flaky
     def test_result_set_error(self, manager):
         assert manager.inspect().ping()

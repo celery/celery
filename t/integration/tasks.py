@@ -26,7 +26,7 @@ def add(x, y):
 @shared_task
 def raise_error():
     """Deliberately raise an error."""
-    raise StandardError("deliberate error")
+    raise ValueError("deliberate error")
 
 
 @shared_task(ignore_result=True)
