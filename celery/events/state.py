@@ -100,6 +100,8 @@ class CallableDefaultdict(defaultdict):
 
     def __call__(self, *args, **kwargs):
         return self.fun(*args, **kwargs)
+
+
 Callable.register(CallableDefaultdict)  # noqa: E305
 
 

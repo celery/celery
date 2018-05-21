@@ -312,7 +312,7 @@ class test_Scheduler:
         scheduler = mScheduler(app=self.app)
         nums = [600, 300, 650, 120, 250, 36]
         s = dict(('test_ticks%s' % i,
-                 {'schedule': mocked_schedule(False, j)})
+                  {'schedule': mocked_schedule(False, j)})
                  for i, j in enumerate(nums))
         scheduler.update_from_dict(s)
         assert scheduler.tick() == min(nums) - 0.010

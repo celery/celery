@@ -44,9 +44,6 @@ from celery.utils.serialization import (get_pickleable_etype,
 # We know what we're doing...
 
 
-
-
-
 __all__ = [
     'TraceInfo', 'build_tracer', 'trace_task',
     'setup_worker_optimizations', 'reset_worker_optimizations',
@@ -519,6 +516,8 @@ def _trace_task_ret(name, uuid, request, body, content_type,
     R, I, T, Rstr = trace_task(app.tasks[name],
                                uuid, args, kwargs, request, app=app)
     return (1, R, T) if I else (0, Rstr, T)
+
+
 trace_task_ret = _trace_task_ret  # noqa: E305
 
 

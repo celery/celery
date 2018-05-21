@@ -228,6 +228,8 @@ class DictAttribute(object):
         def values(self):
             # type: () -> List[Any]
             return list(self._iterate_values())
+
+
 MutableMapping.register(DictAttribute)  # noqa: E305
 
 
@@ -706,6 +708,8 @@ class LimitedSet(object):
         # type: () -> float
         """Compute how much is heap bigger than data [percents]."""
         return len(self._heap) * 100 / max(len(self._data), 1) - 100
+
+
 MutableSet.register(LimitedSet)  # noqa: E305
 
 
@@ -808,6 +812,8 @@ class Messagebuffer(Evictable):
     def _evictcount(self):
         # type: () -> int
         return len(self)
+
+
 Sequence.register(Messagebuffer)  # noqa: E305
 
 

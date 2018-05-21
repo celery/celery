@@ -161,6 +161,8 @@ class Retry(TaskPredicate):
 
     def __reduce__(self):
         return self.__class__, (self.message, self.excs, self.when)
+
+
 RetryTaskError = Retry  # noqa: E305 XXX compat
 
 
@@ -244,6 +246,8 @@ class CDeprecationWarning(DeprecationWarning):
 
 class WorkerTerminate(SystemExit):
     """Signals that the worker should terminate immediately."""
+
+
 SystemTerminate = WorkerTerminate  # noqa: E305 XXX compat
 
 

@@ -1243,4 +1243,6 @@ class Celery(object):
                 if not conf.timezone:
                     return timezone.local
         return timezone.get_timezone(tz)
+
+
 App = Celery  # noqa: E305 XXX compat
