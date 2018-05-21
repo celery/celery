@@ -4,7 +4,7 @@ from __future__ import absolute_import, unicode_literals
 
 import logging
 
-from kombu.async.timer import to_timestamp
+from kombu.asynchronous.timer import to_timestamp
 from kombu.five import buffer_t
 
 from celery.exceptions import InvalidTaskError

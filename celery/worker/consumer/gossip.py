@@ -7,7 +7,7 @@ from heapq import heappush
 from operator import itemgetter
 
 from kombu import Consumer
-from kombu.async.semaphore import DummyLock
+from kombu.asynchronous.semaphore import DummyLock
 
 from celery import bootsteps
 from celery.five import values

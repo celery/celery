@@ -35,7 +35,11 @@ from billiard.pool import RUN, TERMINATE, ACK, NACK, WorkersJoined
 from billiard import pool as _pool
 from billiard.compat import buf_t, setblocking, isblocking
 from billiard.queues import _SimpleQueue
+<<<<<<< HEAD
 from kombu.async import WRITE, ERR
+=======
+from kombu.asynchronous import ERR, WRITE
+>>>>>>> 1a941f97a... [WIP] import from asynchronous instead of async and fix python 3.7 compat issues (#4679)
 from kombu.serialization import pickle as _pickle
 from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange
