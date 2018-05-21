@@ -92,6 +92,7 @@ matrix:
     before_install: ./extra/install_dynamodb.sh
   - python: '3.6'
     env: TOXENV=pypy-unit PYPY_VERSION="pypy2.7-5.8.0"
+    stage: test
   - python: '3.6'
     env: TOXENV=flake8
     stage: lint
