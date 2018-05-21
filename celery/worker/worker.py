@@ -240,7 +240,7 @@ class WorkController(object):
 
     def should_use_eventloop(self):
         return (detect_environment() == 'default' and
-                self._conninfo.transport.implements.async and
+                self._conninfo.transport.implements.asynchronous and
                 not self.app.IS_WINDOWS)
 
     def stop(self, in_sighandler=False, exitcode=None):
