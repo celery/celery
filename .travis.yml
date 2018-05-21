@@ -12,24 +12,86 @@ os:
 stages:
   - lint
   - test
+  - integration-test
 env:
   global:
   - PYTHONUNBUFFERED=yes
   matrix:
   - MATRIX_TOXENV=unit
-  - MATRIX_TOXENV=integration-rabbitmq
-  - MATRIX_TOXENV=integration-redis
-  - MATRIX_TOXENV=integration-dynamodb
 matrix:
   include:
+  - python: '2.7'
+    env: MATRIX_TOXENV=integration-rabbitmq
+    stage: integration-test
+    services:
+      - rabbitmq
+  - python: '2.7'
+    env: MATRIX_TOXENV=integration-redis
+    stage: integration-test
+    services:
+      - redis
+  - python: '2.7'
+    env: MATRIX_TOXENV=integration-dynamodb
+    stage: integration-test
+    before_install: ./extra/install_dynamodb.sh
+  - python: '3.4'
+    env: MATRIX_TOXENV=integration-rabbitmq
+    stage: integration-test
+    services:
+      - rabbitmq
+  - python: '3.4'
+    env: MATRIX_TOXENV=integration-redis
+    stage: integration-test
+    services:
+      - redis
+  - python: '3.4'
+    env: MATRIX_TOXENV=integration-dynamodb
+    stage: integration-test
+    before_install: ./extra/install_dynamodb.sh
+  - python: '3.5'
+    env: MATRIX_TOXENV=integration-rabbitmq
+    stage: integration-test
+    services:
+      - rabbitmq
+  - python: '3.5'
+    env: MATRIX_TOXENV=integration-redis
+    stage: integration-test
+    services:
+      - redis
+  - python: '3.5'
+    env: MATRIX_TOXENV=integration-dynamodb
+    stage: integration-test
+    before_install: ./extra/install_dynamodb.sh
   - python: '3.6'
-    env: TOXENV=pypy-unit PYPY_VERSION="pypy2.7-5.8.0"
+    env: MATRIX_TOXENV=integration-rabbitmq
+    stage: integration-test
+    services:
+      - rabbitmq
+  - python: '3.6'
+    env: MATRIX_TOXENV=integration-redis
+    stage: integration-test
+    services:
+      - redis
+  - python: '3.6'
+    env: MATRIX_TOXENV=integration-dynamodb
+    stage: integration-test
+    before_install: ./extra/install_dynamodb.sh
   - python: '3.6'
     env: TOXENV=pypy-integration-rabbitmq PYPY_VERSION="pypy2.7-5.8.0"
+    stage: integration-test
+    services:
+      - rabbitmq
   - python: '3.6'
     env: TOXENV=pypy-integration-redis PYPY_VERSION="pypy2.7-5.8.0"
+    stage: integration-test
+    services:
+      - redis
   - python: '3.6'
     env: TOXENV=pypy-integration-dynamodb PYPY_VERSION="pypy2.7-5.8.0"
+    stage: integration-test
+    before_install: ./extra/install_dynamodb.sh
+  - python: '3.6'
+    env: TOXENV=pypy-unit PYPY_VERSION="pypy2.7-5.8.0"
   - python: '3.6'
     env: TOXENV=flake8
     stage: lint
@@ -98,6 +160,3 @@ notifications:
       - "chat.freenode.net#celery"
     on_success: change
     on_failure: change
-services:
-    - rabbitmq
-    - redis
