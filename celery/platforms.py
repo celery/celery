@@ -153,7 +153,7 @@ class Pidfile(object):
 
     def is_locked(self):
         """Return true if the pid lock exists."""
-        return os.path.exists(self.path)
+        return os.path.exists(self.path) and not self.remove_if_stale()
 
     def release(self, *args):
         """Release lock."""
@@ -255,17 +255,16 @@ def create_pidlock(pidfile):
     return pidlock
 
 
-def _can_create_pidlock(pidlock):
-    if pidlock.is_locked() and not pidlock.remove_if_stale():
+def _free_pidfile_or_die(pidfile):
+    pidlock = Pidfile(pidfile)
+    if pidlock.is_locked():
         print(PIDLOCKED.format(pidlock, pidlock.read_pid()), file=sys.stderr)
-        return False
-    return True
+        raise SystemExit(EX_CANTCREAT)
+    return pidlock
 
 
 def _create_pidlock(pidfile):
-    pidlock = Pidfile(pidfile)
-    if not _can_create_pidlock(pidlock):
-        raise SystemExit(EX_CANTCREAT)
+    pidlock = _free_pidfile_or_die(pidfile)
     pidlock.acquire()
     return pidlock
 
@@ -416,9 +415,8 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
         # Since without stderr any errors will be silently suppressed,
         # we need to know that we have access to the logfile.
         logfile and open(logfile, 'a').close()
-        # Doesn't actually create the pidfile, but makes sure it's not stale.
-        if pidfile and not _can_create_pidlock(Pidfile(pidfile)):
-            raise SystemExit(EX_CANTCREAT)
+        if pidfile:
+            _free_pidfile_or_die(pidfile)
 
     return DaemonContext(
         umask=umask, workdir=workdir, fake=fake, after_chdir=after_chdir_do,

@@ -407,15 +407,14 @@ class test_detached:
         finally:
             platforms.resource = prev
 
-    @patch('celery.platforms.Pidfile')
-    @patch('celery.platforms._can_create_pidlock')
+    @patch('celery.platforms._free_pidfile_or_die')
     @patch('celery.platforms._create_pidlock')
     @patch('celery.platforms.signals')
     @patch('celery.platforms.maybe_drop_privileges')
     @patch('os.geteuid')
     @patch(mock.open_fqdn)
     def test_default(self, open, geteuid, maybe_drop,
-                     signals, pidlock, can_pidlock, Pidfile):
+                     signals, pidlock, Pidfile):
         geteuid.return_value = 0
         context = detached(uid='user', gid='group')
         assert isinstance(context, DaemonContext)
@@ -437,25 +436,25 @@ class test_detached:
         context.after_chdir()
         Pidfile.assert_called_with('/foo/bar/pid')
         Pidfile.return_value.acquire.assert_not_called()
-        can_pidlock.assert_called_with(Pidfile.return_value)
         pidlock.assert_not_called()
 
     @patch('celery.platforms.Pidfile')
-    @patch('celery.platforms._can_create_pidlock', return_value=False)
     @patch('celery.platforms._create_pidlock')
     @patch('celery.platforms.signals')
     @patch('celery.platforms.maybe_drop_privileges')
     @patch('os.geteuid')
     @patch(mock.open_fqdn)
     def test_with_locked_pidfile(self, open, geteuid, maybe_drop,
-                                 signals, pidlock, can_pidlock, Pidfile):
+                                 signals, pidlock, Pidfile):
         context = detached(pidfile='/foo/bar/pid')
+        p = Pidfile.return_value
+        p.is_locked.return_value = True
         assert isinstance(context, DaemonContext)
         assert context.after_chdir
         with pytest.raises(SystemExit):
             context.after_chdir()
         Pidfile.assert_called_with('/foo/bar/pid')
-        can_pidlock.assert_called_with(Pidfile.return_value)
+        p.is_locked.assert_called_once()
         pidlock.assert_not_called()
 
 
@@ -534,13 +533,12 @@ class test_Pidfile:
     def test_create_pidlock(self, Pidfile):
         p = Pidfile.return_value = Mock()
         p.is_locked.return_value = True
-        p.remove_if_stale.return_value = False
         with mock.stdouts() as (_, err):
             with pytest.raises(SystemExit):
                 create_pidlock('/var/pid')
             assert 'already exists' in err.getvalue()
 
-        p.remove_if_stale.return_value = True
+        p.is_locked.return_value = False
         ret = create_pidlock('/var/pid')
         assert ret is p
 
@@ -567,7 +565,12 @@ class test_Pidfile:
     def test_is_locked(self, exists):
         p = Pidfile('/var/pid')
         exists.return_value = True
-        assert p.is_locked()
+        with patch.object(p, 'remove_if_stale', return_value=False):
+            assert p.is_locked()
+
+        with patch.object(p, 'remove_if_stale', return_value=True):
+            assert not p.is_locked()
+
         exists.return_value = False
         assert not p.is_locked()
 
