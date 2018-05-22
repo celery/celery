@@ -578,6 +578,25 @@ the workers :option:`-Q <celery worker -Q>` argument:
 
     To find out more about routing, please see :ref:`guide-routing`.
 
+.. _calling-results:
+
+Results options
+===============
+
+You can enable or disable result storage using the ``ignore_result`` option::
+
+    result = add.apply_async(1, 2, ignore_result=True)
+    result.get() # -> None
+
+    # Do not ignore result (default)
+    result = add.apply_async(1, 2, ignore_result=False)
+    result.get() # -> 3
+
+
+.. seealso::
+
+   For more information on tasks, please see :ref:`guide-tasks`.
+
 Advanced Options
 ----------------
 

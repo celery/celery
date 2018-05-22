@@ -11,6 +11,18 @@ an overview of what's new in Celery 4.2.
 4.2.0
 =====
 
+- **Task**: Add ``ignore_result`` as task execution option (#4709, #3834)
+
+    Contributed by **Andrii Kostenko** and **George Psarakis**.
+
+- **Redis Result Backend**: Do not create PubSub subscriptions when results are ignored (#4709, #3834)
+
+    Contributed by **Andrii Kostenko** and **George Psarakis**.
+
+- **Redis Result Backend**: Result consumer always unsubscribes when task state is ready (#4666)
+
+    Contributed by **George Psarakis**.
+
 - **Development/Testing**: Add docker-compose and base Dockerfile for development (#4482)
 
     Contributed by **Chris Mitchell**.
