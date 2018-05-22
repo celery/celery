@@ -313,6 +313,26 @@ an overview of what's new in Celery 4.2.
 
   Contributed by **Omer Katz**
 
+- **Redis Results Backend**: The result_backend setting now supports rediss:// URIs
+
+  Contributed by **James Remeika**
+
+- **Canvas** Keyword arguments are passed to tasks in chain as expected.
+
+  Contributed by :github_user:`tothegump`
+
+- **Django** Fix a regression casuing Celery to crash when using Django.
+
+  Contributed by **Jonas Haag**
+
+- **Canvas** Chain with one task now runs as expected.
+
+  Contributed by :github_user:`tothegump`
+
+- **Kombu** Celery 4.2 now requires Kombu 4.2 or better.
+
+  Contributed by **Omer Katz & Asif Saifuddin Auvi**
+
 Documentation, CI, Installation and Tests fixes:
 
 
