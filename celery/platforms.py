@@ -153,7 +153,7 @@ class Pidfile(object):
 
     def is_locked(self):
         """Return true if the pid lock exists."""
-        return os.path.exists(self.path) and not self.remove_if_stale()
+        return os.path.exists(self.path) and not self._is_stale()
 
     def release(self, *args):
         """Release lock."""
@@ -185,24 +185,11 @@ class Pidfile(object):
 
         I.e. process does not respons to signal.
         """
-        try:
-            pid = self.read_pid()
-        except ValueError as exc:
-            print('Broken pidfile found - Removing it.', file=sys.stderr)
+        is_stale = self._is_stale()
+        if is_stale:
+            print('Removing pidfile.', file=sys.stderr)
             self.remove()
-            return True
-        if not pid:
-            self.remove()
-            return True
-
-        try:
-            os.kill(pid, 0)
-        except os.error as exc:
-            if exc.errno == errno.ESRCH:
-                print('Stale pidfile exists - Removing it.', file=sys.stderr)
-                self.remove()
-                return True
-        return False
+        return is_stale
 
     def write_pid(self):
         pid = os.getpid()
@@ -228,6 +215,24 @@ class Pidfile(object):
                     "Inconsistency: Pidfile content doesn't match at re-read")
         finally:
             rfh.close()
+
+    def _is_stale(self):
+        """Check if the recorded pid in the pidfile is still alive."""
+        try:
+            pid = self.read_pid()
+        except ValueError as exc:
+            print('Broken pidfile found', file=sys.stderr)
+            return True
+        if not pid:
+            return True
+
+        try:
+            os.kill(pid, 0)
+        except os.error as exc:
+            if exc.errno == errno.ESRCH:
+                print('Stale pidfile exists', file=sys.stderr)
+                return True
+        return False
 
 
 PIDFile = Pidfile  # noqa: E305 XXX compat alias
@@ -258,7 +263,7 @@ def create_pidlock(pidfile):
 def _free_pidfile_or_die(pidfile):
     pidlock = Pidfile(pidfile)
     if pidlock.is_locked():
-        print(PIDLOCKED.format(pidlock, pidlock.read_pid()), file=sys.stderr)
+        print(PIDLOCKED.format(pidfile, pidlock.read_pid()), file=sys.stderr)
         raise SystemExit(EX_CANTCREAT)
     return pidlock
 

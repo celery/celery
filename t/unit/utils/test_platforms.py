@@ -565,10 +565,10 @@ class test_Pidfile:
     def test_is_locked(self, exists):
         p = Pidfile('/var/pid')
         exists.return_value = True
-        with patch.object(p, 'remove_if_stale', return_value=False):
+        with patch.object(p, '_is_stale', return_value=False):
             assert p.is_locked()
 
-        with patch.object(p, 'remove_if_stale', return_value=True):
+        with patch.object(p, '_is_stale', return_value=True):
             assert not p.is_locked()
 
         exists.return_value = False
