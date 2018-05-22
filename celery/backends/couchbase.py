@@ -19,6 +19,7 @@ try:
     from couchbase import Couchbase
     from couchbase.connection import Connection
     from couchbase.exceptions import NotFoundError
+    from couchbase import FMT_UTF8
 except ImportError:
     Couchbase = Connection = NotFoundError = None   # noqa
 
@@ -103,7 +104,7 @@ class CouchbaseBackend(KeyValueStoreBackend):
             return None
 
     def set(self, key, value):
-        self.connection.set(key, value)
+        self.connection.set(key, value, format=FMT_UTF8)
 
     def mget(self, keys):
         return [self.get(key) for key in keys]
