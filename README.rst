@@ -271,7 +271,7 @@ Transports and Backends
     for using Redis as a message transport or as a result backend.
 
 :``celery[sqs]``:
-    for using Amazon SQS as a message transport (*experimental*).
+    for using Amazon SQS as a message transport.
 
 :``celery[tblib``]:
     for using the ``task_remote_tracebacks`` feature.
