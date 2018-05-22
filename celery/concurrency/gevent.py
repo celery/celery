@@ -38,7 +38,7 @@ def apply_timeout(target, args=(), kwargs={}, callback=None,
 class Schedule(timer2.Schedule):
 
     def __init__(self, *args, **kwargs):
-        from gevent.greenlet import Greenlet, GreenletExit
+        from gevent import Greenlet, GreenletExit
 
         class _Greenlet(Greenlet):
             cancel = Greenlet.kill
