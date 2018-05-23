@@ -8,6 +8,7 @@ from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
 from kombu.exceptions import EncodeError
 
 from celery import states, uuid
+from celery.app import backends
 from celery.backends.mongodb import InvalidDocument, MongoBackend
 from celery.exceptions import ImproperlyConfigured
 
@@ -30,6 +31,7 @@ class test_MongoBackend:
         'mongodb://uuuu:pwpw@hostname.dom,'
         'hostname.dom/database?replicaSet=rs'
     )
+    srv_url = 'mongodb+srv://hostname.dom/database'
     sanitized_default_url = 'mongodb://uuuu:**@hostname.dom/database'
     sanitized_replica_set_url = (
         'mongodb://uuuu:**@hostname.dom/,'
@@ -42,6 +44,12 @@ class test_MongoBackend:
         self.patching('celery.backends.mongodb.Binary')
         self.patching('datetime.datetime')
         self.backend = MongoBackend(app=self.app, url=self.default_url)
+
+    def test_backend_by_url(self):
+        for url in (self.default_url, self.srv_url):
+            backend, url_ = backends.by_url(url, self.app.loader)
+            assert backend is MongoBackend
+            assert url_ == url
 
     def test_init_no_mongodb(self, patching):
         patching('celery.backends.mongodb.pymongo', None)
@@ -152,6 +160,20 @@ class test_MongoBackend:
     def test_get_connection_no_connection_mongodb_uri(self):
         with patch('pymongo.MongoClient') as mock_Connection:
             mongodb_uri = 'mongodb://%s:%d' % (MONGODB_HOST, MONGODB_PORT)
+            self.backend._connection = None
+            self.backend.host = mongodb_uri
+
+            mock_Connection.return_value = sentinel.connection
+
+            connection = self.backend._get_connection()
+            mock_Connection.assert_called_once_with(
+                host=mongodb_uri, **self.backend._prepare_client_options()
+            )
+            assert sentinel.connection == connection
+
+    def test_get_connection_no_connection_mongodb_srv_url(self):
+        with patch('pymongo.MongoClient') as mock_Connection:
+            mongodb_uri = self.srv_url
             self.backend._connection = None
             self.backend.host = mongodb_uri
 

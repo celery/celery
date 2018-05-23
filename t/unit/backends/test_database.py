@@ -7,6 +7,7 @@ import pytest
 from case import Mock, patch, skip
 
 from celery import states, uuid
+from celery.app import backends
 from celery.exceptions import ImproperlyConfigured
 
 try:
@@ -27,6 +28,23 @@ class SomeClass(object):
 
     def __init__(self, data):
         self.data = data
+
+
+@skip.unless_module('sqlalchemy')
+class test_backend_by_url:
+    """We can't test these in t/unit/app/test_backends, because of importing in
+    various ci environments, so we repeat it here just for db lookups.
+    """
+
+    @pytest.mark.parametrize('url,expect_cls', [
+        ('db+postgresql+psycopg2://', DatabaseBackend),
+        ('db+mysql+mysqldb://', DatabaseBackend),
+        ('db+postgresql://', DatabaseBackend),
+    ])
+    def test_get_backend_aliases(self, url, expect_cls, app):
+        backend, url = backends.by_url(url, app.loader)
+        # Don't instantiate, let the unit tests for the backends test that
+        assert backend is expect_cls
 
 
 @skip.unless_module('sqlalchemy')

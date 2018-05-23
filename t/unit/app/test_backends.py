@@ -17,7 +17,8 @@ class test_backends:
     ])
     def test_get_backend_aliases(self, url, expect_cls, app):
         backend, url = backends.by_url(url, app.loader)
-        assert isinstance(backend(app=app, url=url), expect_cls)
+        # Don't instantiate, let the unit tests for the backends test that
+        assert backend is expect_cls
 
     def test_unknown_backend(self, app):
         with pytest.raises(ImportError):

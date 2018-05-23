@@ -58,13 +58,27 @@ def by_name(backend=None, loader=None,
 
 
 def by_url(backend=None, loader=None):
-    """Get backend class by URL."""
+    """Get backend class by URL.
+
+    Return a class object and the url to provide to the backend when it is
+    created.
+    """
+    orig_backend = backend
     url = None
     if backend and '://' in backend:
+        # There are two types of urls we'll see:
+        # * <backend>+<backend-defined-ext>:// e.g., mongodb+srv://
+        # * <backend>+<original_scheme>:// e.g., cache+memory://...,
+        #   db+postgresql+psycopg2://..., etc.
         url = backend
         scheme, _, _ = url.partition('://')
         if '+' in scheme:
             backend, url = url.split('+', 1)
         else:
             backend = scheme
-    return by_name(backend, loader), url
+    cls = by_name(backend, loader)
+
+    if getattr(cls, 'expects_url_munging', True) or url is None:
+        return cls, url
+    else:
+        return cls, orig_backend

@@ -54,6 +54,7 @@ class MongoBackend(BaseBackend):
     groupmeta_collection = 'celery_groupmeta'
     max_pool_size = 10
     options = None
+    expects_url_munging = False
 
     supports_autoexpire = False
 
@@ -141,8 +142,7 @@ class MongoBackend(BaseBackend):
                 # This enables the use of replica sets and sharding.
                 # See pymongo.Connection() for more info.
                 host = self.host
-                if isinstance(host, string_t) \
-                   and not host.startswith('mongodb://'):
+                if isinstance(host, string_t) and '://' not in host:
                     host = 'mongodb://{0}:{1}'.format(host, self.port)
             # don't change self.options
             conf = dict(self.options)
