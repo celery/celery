@@ -252,7 +252,9 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
 
         for key, value in query.items():
             if key in redis.connection.URL_QUERY_ARGUMENT_PARSERS:
-                query[key] = redis.connection.URL_QUERY_ARGUMENT_PARSERS[key](value)
+                query[key] = redis.connection.URL_QUERY_ARGUMENT_PARSERS[key](
+                    value
+                )
 
         # Query parameters override other parameters
         connparams.update(query)
