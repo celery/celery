@@ -707,7 +707,7 @@ Sometimes you just want to retry a task whenever a particular exception
 is raised.
 
 Fortunately, you can tell Celery to automatically retry a task using
-`autoretry_for` argument in `~@Celery.task` decorator:
+`autoretry_for` argument in the :meth:`~@Celery.task` decorator:
 
 .. code-block:: python
 
@@ -717,8 +717,8 @@ Fortunately, you can tell Celery to automatically retry a task using
     def refresh_timeline(user):
         return twitter.refresh_timeline(user)
 
-If you want to specify custom arguments for internal `~@Task.retry`
-call, pass `retry_kwargs` argument to `~@Celery.task` decorator:
+If you want to specify custom arguments for an internal :meth:`~@Task.retry`
+call, pass `retry_kwargs` argument to :meth:`~@Celery.task` decorator:
 
 .. code-block:: python
 
