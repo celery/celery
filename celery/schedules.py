@@ -113,7 +113,7 @@ class schedule(BaseSchedule):
         relative (bool):  If set to True the run time will be rounded to the
             resolution of the interval.
         nowfun (Callable): Function returning the current date and time
-            (~datetime.datetime).
+            (:class:`~datetime.datetime`).
         app (Celery): Celery app instance.
     """
 
