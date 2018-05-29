@@ -167,8 +167,6 @@ def extras(*p):
 
 def install_requires():
     """Get list of requirements required for installation."""
-    if JYTHON:
-        return reqs('default.txt') + reqs('jython.txt')
     return reqs('default.txt')
 
 
