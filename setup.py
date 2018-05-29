@@ -38,7 +38,6 @@ PYIMP = _pyimp()
 PY26_OR_LESS = sys.version_info < (2, 7)
 PY3 = sys.version_info[0] == 3
 PY33_OR_LESS = PY3 and sys.version_info < (3, 4)
-JYTHON = sys.platform.startswith('java')
 PYPY_VERSION = getattr(sys, 'pypy_version_info', None)
 PYPY = PYPY_VERSION is not None
 PYPY24_ATLEAST = PYPY_VERSION and PYPY_VERSION >= (2, 4)
@@ -168,8 +167,6 @@ def extras(*p):
 
 def install_requires():
     """Get list of requirements required for installation."""
-    if JYTHON:
-        return reqs('default.txt') + reqs('jython.txt')
     return reqs('default.txt')
 
 
