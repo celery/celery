@@ -20,6 +20,7 @@ def celery_worker_parameters():
     }
 
 
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 def test_task_request_is_empty(celery_worker):
     result = overloaded_call_task.apply_async()
     assert result.get(timeout=10) is None
