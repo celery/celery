@@ -170,7 +170,7 @@ class Celery(object):
         fixups (List[str]): List of fix-up plug-ins (e.g., see
             :mod:`celery.fixups.django`).
         config_source (Union[str, type]): Take configuration from a class,
-            or object.  Attributes may include any setings described in
+            or object.  Attributes may include any settings described in
             the documentation.
     """
 
