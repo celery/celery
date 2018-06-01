@@ -13,7 +13,7 @@ globals().update(conf.build_config(
     github_project='celery/celery',
     author='Ask Solem & contributors',
     author_name='Ask Solem',
-    copyright='2009-2017',
+    copyright='2009-2018',
     publisher='Celery Project',
     html_logo='images/celery_512.png',
     html_favicon='images/favicon.ico',
