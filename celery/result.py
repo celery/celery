@@ -918,7 +918,10 @@ class GroupResult(ResultSet):
                                          ', '.join(r.id for r in self.results))
 
     def as_tuple(self):
-        return (self.id, self.parent), [r.as_tuple() for r in self.results]
+        return (
+            (self.id, self.parent and self.parent.as_tuple()),
+            [r.as_tuple() for r in self.results]
+        )
 
     @property
     def children(self):
