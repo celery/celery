@@ -1005,9 +1005,9 @@ class test_tuples:
              for i in range(2)],
             parent
         )
-        (result_id, parent_id), group_results = result.as_tuple()
+        (result_id, parent_tuple), group_results = result.as_tuple()
         assert result_id == result.id
-        assert parent_id == parent.id
+        assert parent_tuple == parent.as_tuple()
         assert isinstance(group_results, list)
         expected_grp_res = [(('async-result-{}'.format(i), None), None)
                             for i in range(2)]
