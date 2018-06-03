@@ -699,7 +699,7 @@ class Celery(object):
 
         Arguments:
             name (str): Name of task to call (e.g., `"tasks.add"`).
-            result_cls (~@AsyncResult): Specify custom result class.
+            result_cls (AsyncResult): Specify custom result class.
         """
         parent = have_parent = None
         amqp = self.amqp
