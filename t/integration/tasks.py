@@ -158,3 +158,23 @@ def second_order_replace2(self, state=False):
         raise self.replace(new_task)
     else:
         redis_connection.rpush('redis-echo', 'Out B')
+
+
+@shared_task(bind=True)
+def build_chain_inside_task(self):
+    """Task to build a chain.
+
+    This task builds a chain and returns the chain's AsyncResult
+    to verify that Asyncresults are correctly converted into
+    serializable objects"""
+    test_chain = (
+        add.s(1, 1) |
+        add.s(2) |
+        group(
+            add.s(3),
+            add.s(4)
+        ) |
+        add.s(5)
+    )
+    result = test_chain()
+    return result
