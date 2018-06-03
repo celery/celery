@@ -907,6 +907,8 @@ class GroupResult(ResultSet):
                 other.results == self.results and
                 other.parent == self.parent
             )
+        elif isinstance(other, string_t):
+            return other == self.id
         return NotImplemented
 
     def __ne__(self, other):
@@ -914,8 +916,18 @@ class GroupResult(ResultSet):
         return True if res is NotImplemented else not res
 
     def __repr__(self):
-        return '<{0}: {1} [{2}]>'.format(type(self).__name__, self.id,
-                                         ', '.join(r.id for r in self.results))
+        return '<{0}: {1} [{2}]>'.format(
+            type(self).__name__, self.id,
+            ', '.join(r.id for r in self.results)
+        )
+
+    def __str__(self):
+        """`str(self) -> self.id`."""
+        return str(self.id)
+
+    def __hash__(self):
+        """`hash(self) -> hash(self.id)`."""
+        return hash(self.id)
 
     def as_tuple(self):
         return (
