@@ -234,6 +234,20 @@ class test_RedisBackend:
         assert x.connparams['socket_timeout'] == 30.0
         assert x.connparams['socket_connect_timeout'] == 100.0
 
+    def test_timeouts_in_url_coerced(self):
+        x = self.Backend(
+            ('redis://:bosco@vandelay.com:123//1?'
+             'socket_timeout=30&socket_connect_timeout=100'),
+            app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['password'] == 'bosco'
+        assert x.connparams['socket_timeout'] == 30
+        assert x.connparams['socket_connect_timeout'] == 100
+
     def test_socket_url(self):
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
