@@ -30,6 +30,8 @@ it's a good idea to browse the rest of the documentation.
 For example the :ref:`next-steps` tutorial will
 showcase Celery's capabilities.
 
+NOTE: To save you time, please be aware As of 4.0 `Celery does not support Windows <http://docs.celeryproject.org/en/latest/whatsnew-4.0.html#removed-features>`_.
+
 .. contents::
     :local:
 
@@ -66,7 +68,7 @@ ready to move messages for you: ``Starting rabbitmq-server: SUCCESS``.
 
 Don't worry if you're not running Ubuntu or Debian, you can go to this
 website to find similarly simple installation instructions for other
-platforms, including Microsoft Windows:
+platforms:
 
     http://www.rabbitmq.com/download.html
 
