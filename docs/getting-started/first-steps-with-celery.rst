@@ -66,9 +66,10 @@ ready to move messages for you: ``Starting rabbitmq-server: SUCCESS``.
 
 Don't worry if you're not running Ubuntu or Debian, you can go to this
 website to find similarly simple installation instructions for other
-platforms, including Microsoft Windows:
+platforms, including specific instructions for `Installing on Microsoft Windows <https://www.rabbitmq.com/install-windows.html>`_:
 
     http://www.rabbitmq.com/download.html
+
 
 Redis
 -----
