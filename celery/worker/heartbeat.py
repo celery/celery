@@ -46,6 +46,7 @@ class Heart(object):
                                  active=len(active_requests),
                                  processed=all_total_count[0],
                                  loadavg=load_average(),
+                                 retry=True,
                                  **SOFTWARE_INFO)
 
     def start(self):
