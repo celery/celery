@@ -10,6 +10,8 @@ an overview of what's new in Celery 4.2.
 
 4.2.0
 =====
+:release-date: 2018-06-10 21:30 PM IST
+:release-by: Omer Katz
 
 - **Task**: Add ``ignore_result`` as task execution option (#4709, #3834)
 
