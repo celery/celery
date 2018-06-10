@@ -345,6 +345,32 @@ an overview of what's new in Celery 4.2.
 
   Contributed by **Omer Katz & Asif Saifuddin Auvi**
 
+- `GreenletExit` is not in `__all__` in greenlet.py which can not be imported by Python 3.6.
+
+  The import was adjusted to work on Python 3.6 as well.
+
+  Contributed by **Hsiaoming Yang**
+
+- Fixed a regression that occured during the development of Celery 4.2 which caused `celery report` to crash when Django is installed.
+
+  Contributed by **Josue Balandrano Coronel**
+
+- Matched the behavior of `GroupResult.as_tuple()` to that of `AsyncResult.as_tuple()`.
+
+  The group's parent is now serialized correctly.
+
+  Contributed by **Josue Balandrano Coronel**
+
+- Use Redis coercion mechanism for converting URI query parameters.
+
+  Contributed by **Justin Patrin**
+
+- Fixed the representation of `GroupResult`.
+
+  The dependency graph is now presented correctly.
+
+  Contributed by **Josue Balandrano Coronel**
+
 Documentation, CI, Installation and Tests fixes:
 
 
@@ -380,3 +406,8 @@ Documentation, CI, Installation and Tests fixes:
     - **Igor Kasianov**
     - **John Arnold**
     - :github_user:`dmollerm`
+    - **Robert Knight**
+    - **Asif Saifuddin Auvi**
+    - **Eduardo Ramírez**
+    - **Kamil Breguła**
+    - **Juan Gutierrez**
