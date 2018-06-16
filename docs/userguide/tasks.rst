@@ -330,7 +330,7 @@ Changing the automatic naming behavior
 .. versionadded:: 4.0
 
 There are some cases when the default automatic naming isn't suitable.
-Consider you have many tasks within many different modules::
+Consider having many tasks within many different modules::
 
     project/
            /__init__.py
