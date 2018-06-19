@@ -8,6 +8,14 @@ This document contains change notes for bugfix releases in
 the 4.x series, please see :ref:`whatsnew-4.2` for
 an overview of what's new in Celery 4.2.
 
+Unreleased
+==========
+
+- **Command Line**: Display a better error message when calling upgrade command without a filename.
+
+    Contributed by **Federico Bond**.
+
+
 4.2.0
 =====
 :release-date: 2018-06-10 21:30 PM IST
