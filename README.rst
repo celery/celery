@@ -40,7 +40,7 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 4.1 runs on,
+Celery version 4.2 runs on,
 
 - Python (2.7, 3.4, 3.5, 3.6)
 - PyPy (5.8)
@@ -72,7 +72,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery 4.1 coming from previous versions then you should read our
+new to Celery 4.2 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
