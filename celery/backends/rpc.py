@@ -255,8 +255,22 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             self.on_out_of_band_result(tid, msg)
 
         if latest:
-            latest.requeue()
-            return self._set_cache_by_message(task_id, latest)
+            result = self._set_cache_by_message(task_id, latest)
+
+            # Choose whether to requeue the message.
+            #
+            # If the result has reached its end state there's no reason to
+            # requeue (it won't change again and the RPC backend assumes you
+            # can only receive each result once).
+            #
+            # Otherwise, if the result was cached (e.g. if not using the
+            # null-cache, see :setting:`result_cache_max`) there's also no
+            # need to requeue it since the next query will just return what is
+            # in the cache.
+            if result['status'] not in states.READY_STATES and task_id not in self._cache:
+                latest.requeue()
+
+            return result
         else:
             # no new state, use previous
             try:
