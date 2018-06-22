@@ -379,11 +379,6 @@ class AsyncResult(ResultBase):
     def __reduce_args__(self):
         return self.id, self.backend, None, None, self.parent
 
-    def __del__(self):
-        """Cancel pending operations when the instance is destroyed."""
-        if self.backend is not None:
-            self.backend.remove_pending_result(self)
-
     @cached_property
     def graph(self):
         return self.build_graph()
