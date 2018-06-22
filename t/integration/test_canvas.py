@@ -10,9 +10,9 @@ from celery.result import AsyncResult, GroupResult, ResultSet
 
 from .conftest import flaky, get_active_redis_channels, get_redis_connection
 from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
-                    add_to_all_to_chord, collect_ids, delayed_sum,
-                    delayed_sum_with_soft_guard, identity, ids, print_unicode,
-                    redis_echo, second_order_replace1, tsum)
+                    add_to_all_to_chord, build_chain_inside_task, collect_ids,
+                    delayed_sum, delayed_sum_with_soft_guard, identity, ids,
+                    print_unicode, redis_echo, second_order_replace1, tsum)
 
 TIMEOUT = 120
 
@@ -187,6 +187,20 @@ class test_chain:
 
         result = c.get()
         assert result == 10
+
+    @flaky
+    def test_groupresult_serialization(self, manager):
+        """Test GroupResult is correctly serialized
+        to save in the result backend"""
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        async_result = build_chain_inside_task.delay()
+        result = async_result.get()
+        assert len(result) == 2
+        assert isinstance(result[0][1], list)
 
 
 class test_result_set:

@@ -471,10 +471,10 @@ class Task(object):
                 :func:`kombu.compression.register`.
                 Defaults to the :setting:`task_compression` setting.
 
-            link (~@Signature): A single, or a list of tasks signatures
+            link (Signature): A single, or a list of tasks signatures
                 to apply if the task returns successfully.
 
-            link_error (~@Signature): A single, or a list of task signatures
+            link_error (Signature): A single, or a list of task signatures
                 to apply if an error occurs while executing the task.
 
             producer (kombu.Producer): custom producer to use when publishing
