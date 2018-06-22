@@ -267,7 +267,8 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             # null-cache, see :setting:`result_cache_max`) there's also no
             # need to requeue it since the next query will just return what is
             # in the cache.
-            if result['status'] not in states.READY_STATES and task_id not in self._cache:
+            if (result['status'] not in states.READY_STATES and
+                    task_id not in self._cache):
                 latest.requeue()
 
             return result
