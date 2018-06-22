@@ -21,6 +21,7 @@ from kombu.serialization import registry as serializer_registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
 from kombu.utils.url import maybe_sanitize_url
 
+import celery.exceptions
 from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
 from celery.exceptions import (ChordError, ImproperlyConfigured,
@@ -249,7 +250,11 @@ class Backend(object):
                 else:
                     exc_module = from_utf8(exc_module)
                     exc_type = from_utf8(exc['exc_type'])
-                    cls = getattr(sys.modules[exc_module], exc_type)
+                    try:
+                        cls = getattr(sys.modules[exc_module], exc_type)
+                    except KeyError:
+                        cls = create_exception_cls(exc_type,
+                                                   celery.exceptions.__name__)
                 exc_msg = exc['exc_message']
                 exc = cls(*exc_msg if isinstance(exc_msg, tuple) else exc_msg)
             if self.serializer in EXCEPTION_ABLE_CODECS:
