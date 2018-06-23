@@ -234,6 +234,7 @@ class test_RedisBackend:
         assert x.connparams['socket_timeout'] == 30.0
         assert x.connparams['socket_connect_timeout'] == 100.0
 
+    @skip.unless_module('redis')
     def test_timeouts_in_url_coerced(self):
         x = self.Backend(
             ('redis://:bosco@vandelay.com:123//1?'
