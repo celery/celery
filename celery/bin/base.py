@@ -144,7 +144,7 @@ class Command(object):
     """Base class for command-line applications.
 
     Arguments:
-        app (~@Celery): The app to use.
+        app (Celery): The app to use.
         get_app (Callable): Fucntion returning the current app
             when no app provided.
     """

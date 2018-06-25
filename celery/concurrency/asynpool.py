@@ -34,7 +34,7 @@ from billiard import pool as _pool
 from billiard.compat import buf_t, isblocking, setblocking
 from billiard.pool import ACK, NACK, RUN, TERMINATE, WorkersJoined
 from billiard.queues import _SimpleQueue
-from kombu.async import ERR, WRITE
+from kombu.asynchronous import ERR, WRITE
 from kombu.serialization import pickle as _pickle
 from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange

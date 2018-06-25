@@ -10,6 +10,20 @@ an overview of what's new in Celery 4.2.
 
 4.2.0
 =====
+:release-date: 2018-06-10 21:30 PM IST
+:release-by: Omer Katz
+
+- **Task**: Add ``ignore_result`` as task execution option (#4709, #3834)
+
+    Contributed by **Andrii Kostenko** and **George Psarakis**.
+
+- **Redis Result Backend**: Do not create PubSub subscriptions when results are ignored (#4709, #3834)
+
+    Contributed by **Andrii Kostenko** and **George Psarakis**.
+
+- **Redis Result Backend**: Result consumer always unsubscribes when task state is ready (#4666)
+
+    Contributed by **George Psarakis**.
 
 - **Development/Testing**: Add docker-compose and base Dockerfile for development (#4482)
 
@@ -313,6 +327,52 @@ an overview of what's new in Celery 4.2.
 
   Contributed by **Omer Katz**
 
+- **Redis Results Backend**: The result_backend setting now supports rediss:// URIs
+
+  Contributed by **James Remeika**
+
+- **Canvas** Keyword arguments are passed to tasks in chain as expected.
+
+  Contributed by :github_user:`tothegump`
+
+- **Django** Fix a regression casuing Celery to crash when using Django.
+
+  Contributed by **Jonas Haag**
+
+- **Canvas** Chain with one task now runs as expected.
+
+  Contributed by :github_user:`tothegump`
+
+- **Kombu** Celery 4.2 now requires Kombu 4.2 or better.
+
+  Contributed by **Omer Katz & Asif Saifuddin Auvi**
+
+- `GreenletExit` is not in `__all__` in greenlet.py which can not be imported by Python 3.6.
+
+  The import was adjusted to work on Python 3.6 as well.
+
+  Contributed by **Hsiaoming Yang**
+
+- Fixed a regression that occured during the development of Celery 4.2 which caused `celery report` to crash when Django is installed.
+
+  Contributed by **Josue Balandrano Coronel**
+
+- Matched the behavior of `GroupResult.as_tuple()` to that of `AsyncResult.as_tuple()`.
+
+  The group's parent is now serialized correctly.
+
+  Contributed by **Josue Balandrano Coronel**
+
+- Use Redis coercion mechanism for converting URI query parameters.
+
+  Contributed by **Justin Patrin**
+
+- Fixed the representation of `GroupResult`.
+
+  The dependency graph is now presented correctly.
+
+  Contributed by **Josue Balandrano Coronel**
+
 Documentation, CI, Installation and Tests fixes:
 
 
@@ -348,3 +408,8 @@ Documentation, CI, Installation and Tests fixes:
     - **Igor Kasianov**
     - **John Arnold**
     - :github_user:`dmollerm`
+    - **Robert Knight**
+    - **Asif Saifuddin Auvi**
+    - **Eduardo Ramírez**
+    - **Kamil Breguła**
+    - **Juan Gutierrez**

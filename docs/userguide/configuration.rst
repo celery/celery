@@ -2467,7 +2467,7 @@ Name of the consumer class used by the worker.
 ``worker_timer``
 ~~~~~~~~~~~~~~~~
 
-Default: ``"kombu.async.hub.timer:Timer"``.
+Default: ``"kombu.asynchronous.hub.timer:Timer"``.
 
 Name of the ETA scheduler class used by the worker.
 Default is or set by the pool implementation.

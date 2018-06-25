@@ -15,7 +15,7 @@ from time import sleep
 
 from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
-from kombu.async.semaphore import DummyLock
+from kombu.asynchronous.semaphore import DummyLock
 from kombu.utils.compat import _detect_environment
 from kombu.utils.encoding import bytes_t, safe_repr
 from kombu.utils.limits import TokenBucket

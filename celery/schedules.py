@@ -113,8 +113,8 @@ class schedule(BaseSchedule):
         relative (bool):  If set to True the run time will be rounded to the
             resolution of the interval.
         nowfun (Callable): Function returning the current date and time
-            (class:`~datetime.datetime`).
-        app (~@Celery): Celery app instance.
+            (:class:`~datetime.datetime`).
+        app (Celery): Celery app instance.
     """
 
     relative = False
@@ -689,7 +689,7 @@ class solar(BaseSchedule):
         lon (int): The longitude of the observer.
         nowfun (Callable): Function returning the current date and time
             as a class:`~datetime.datetime`.
-        app (~@Celery): Celery app instance.
+        app (Celery): Celery app instance.
     """
 
     _all_events = {

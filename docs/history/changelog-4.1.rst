@@ -4,6 +4,20 @@
  Change history
 ================
 
+.. _version-4.1.1:
+
+4.1.1
+=====
+:release-date: 2018-05-21 12:48 PM PST
+:release-by: Omer Katz
+
+.. important::
+
+	Please upgrade as soon as possible or pin Kombu to 4.1.0.
+
+- **Breaking Change**: The module `async` in Kombu changed to `asynchronous`.
+
+Contributed by **Omer Katz & Asif Saifuddin Auvi**
 
 .. _version-4.1.0:
 

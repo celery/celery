@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 4.2.0rc3 (latentcall)
+:Version: 4.2.0 (latentcall)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -40,7 +40,7 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 4.1 runs on,
+Celery version 4.2 runs on,
 
 - Python (2.7, 3.4, 3.5, 3.6)
 - PyPy (5.8)
@@ -72,7 +72,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery 4.1 coming from previous versions then you should read our
+new to Celery 4.2 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -271,7 +271,7 @@ Transports and Backends
     for using Redis as a message transport or as a result backend.
 
 :``celery[sqs]``:
-    for using Amazon SQS as a message transport (*experimental*).
+    for using Amazon SQS as a message transport.
 
 :``celery[tblib``]:
     for using the ``task_remote_tracebacks`` feature.

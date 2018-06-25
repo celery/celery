@@ -18,7 +18,7 @@ class Heart(object):
     """Timer sending heartbeats at regular intervals.
 
     Arguments:
-        timer (kombu.async.timer.Timer): Timer to use.
+        timer (kombu.asynchronous.timer.Timer): Timer to use.
         eventer (celery.events.EventDispatcher): Event dispatcher
             to use.
         interval (float): Time in seconds between sending
