@@ -48,7 +48,7 @@ def hybrid_to_proto2(message, body):
         'eta': body.get('eta'),
         'expires': body.get('expires'),
         'retries': body.get('retries'),
-        'timelimit': body.get('timelimit'),
+        'timelimit': body.get('timelimit', (None, None)),
         'argsrepr': body.get('argsrepr'),
         'kwargsrepr': body.get('kwargsrepr'),
         'origin': body.get('origin'),
