@@ -352,7 +352,7 @@ class test_chord:
 
         c = group([add_to_all_to_chord.s([1, 2, 3], 4)]) | identity.s()
         res = c()
-        assert res.get() == [0, 5, 6, 7]
+        assert sorted(res.get()) == [0, 5, 6, 7]
 
     @flaky
     def test_add_chord_to_chord(self, manager):

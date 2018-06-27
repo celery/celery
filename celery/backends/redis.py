@@ -335,9 +335,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def on_chord_part_return(self, request, state, result,
                              propagate=None, **kwargs):
         app = self.app
-        tid, gid = request.id, request.group
+        tid, gid, group_index = request.id, request.group, request.group_index
         if not gid or not tid:
             return
+        if group_index is None:
+            group_index = '+inf'
 
         client = self.client
         jkey = self.get_key_for_group(gid, '.j')
@@ -345,8 +347,9 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         result = self.encode_result(result, state)
         with client.pipeline() as pipe:
             _, readycount, totaldiff, _, _ = pipe \
-                .rpush(jkey, self.encode([1, tid, state, result])) \
-                .llen(jkey) \
+                .zadd(jkey, group_index,
+                      self.encode([1, tid, state, result])) \
+                .zcount(jkey, '-inf', '+inf') \
                 .get(tkey) \
                 .expire(jkey, self.expires) \
                 .expire(tkey, self.expires) \
@@ -361,7 +364,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                 decode, unpack = self.decode, self._unpack_chord_result
                 with client.pipeline() as pipe:
                     resl, = pipe \
-                        .lrange(jkey, 0, total) \
+                        .zrangebyscore(jkey, '-inf', '+inf') \
                         .execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])
