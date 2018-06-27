@@ -141,6 +141,32 @@ class test_Consumer:
         c._schedule_bucket_request(bucket)
         bucket.can_consume.assert_not_called()
 
+    def test_limit_task(self):
+        c = self.get_consumer()
+        bucket = Mock()
+        request = Mock()
+
+        with patch(
+            'celery.worker.consumer.consumer.Consumer._schedule_bucket_request'
+        ) as reserv:
+            c._limit_task(request, bucket, 1)
+            bucket.add.assert_called_with((request, 1))
+            reserv.assert_called_with(bucket)
+
+    def test_post_eta(self):
+        c = self.get_consumer()
+        c.qos = Mock()
+        bucket = Mock()
+        request = Mock()
+
+        with patch(
+            'celery.worker.consumer.consumer.Consumer._schedule_bucket_request'
+        ) as reserv:
+            c._limit_post_eta(request, bucket, 1)
+            c.qos.decrement_eventually.assert_called_with()
+            bucket.add.assert_called_with((request, 1))
+            reserv.assert_called_with(bucket)
+
     def test_start_blueprint_raises_EMFILE(self):
         c = self.get_consumer()
         exc = c.blueprint.start.side_effect = OSError()
