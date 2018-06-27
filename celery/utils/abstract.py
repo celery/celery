@@ -118,7 +118,8 @@ class CallableSignature(CallableTask):  # pragma: no cover
         pass
 
     @abstractmethod
-    def freeze(self, id=None, group_id=None, chord=None, root_id=None):
+    def freeze(self, id=None, group_id=None, chord=None, root_id=None,
+               group_index=None):
         pass
 
     @abstractmethod

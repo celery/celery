@@ -305,7 +305,7 @@ class AMQP(object):
         )
 
     def as_task_v2(self, task_id, name, args=None, kwargs=None,
-                   countdown=None, eta=None, group_id=None,
+                   countdown=None, eta=None, group_id=None, group_index=None,
                    expires=None, retries=0, chord=None,
                    callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
@@ -363,6 +363,7 @@ class AMQP(object):
                 'eta': eta,
                 'expires': expires,
                 'group': group_id,
+                'group_index': group_index,
                 'retries': retries,
                 'timelimit': [time_limit, soft_time_limit],
                 'root_id': root_id,
@@ -397,7 +398,7 @@ class AMQP(object):
         )
 
     def as_task_v1(self, task_id, name, args=None, kwargs=None,
-                   countdown=None, eta=None, group_id=None,
+                   countdown=None, eta=None, group_id=None, group_index=None,
                    expires=None, retries=0,
                    chord=None, callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
@@ -442,6 +443,7 @@ class AMQP(object):
                 'args': args,
                 'kwargs': kwargs,
                 'group': group_id,
+                'group_index': group_index,
                 'retries': retries,
                 'eta': eta,
                 'expires': expires,
