@@ -25,6 +25,7 @@ from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
 from celery.five import monotonic
 from celery.signals import task_revoked
 from celery.worker import request as module
+from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
 from celery.worker.request import logger as req_logger
 from celery.worker.state import revoked
@@ -1003,6 +1004,16 @@ class test_create_request_class(RequestCase):
             timeout=self.task.time_limit,
             correlation_id=job.id,
         )
+        assert job._apply_result
+        weakref_ref.assert_called_with(self.pool.apply_async())
+        assert job._apply_result is weakref_ref()
+
+    def test_execute_using_pool__defaults_of_hybrid_to_proto2(self):
+        weakref_ref = Mock(name='weakref.ref')
+        headers = strategy.hybrid_to_proto2('', {'id': uuid(),
+                                                 'task': self.mytask.name})[1]
+        job = self.zRequest(revoked_tasks=set(), ref=weakref_ref, **headers)
+        job.execute_using_pool(self.pool)
         assert job._apply_result
         weakref_ref.assert_called_with(self.pool.apply_async())
         assert job._apply_result is weakref_ref()
