@@ -22,7 +22,7 @@
     celery.concurrency.base
     celery.backends
     celery.backends.base
-    celery.backends.async
+    celery.backends.asynchronous
     celery.backends.rpc
     celery.backends.database
     celery.backends.amqp
