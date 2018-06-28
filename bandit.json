@@ -302,7 +302,7 @@
       "loc": 257,
       "nosec": 0
     },
-    "celery/backends/async.py": {
+    "celery/backends/asynchronous.py": {
       "CONFIDENCE.HIGH": 0.0,
       "CONFIDENCE.LOW": 0.0,
       "CONFIDENCE.MEDIUM": 0.0,
