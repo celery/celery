@@ -12,7 +12,7 @@ from .conftest import flaky, get_active_redis_channels, get_redis_connection
 from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, build_chain_inside_task, collect_ids,
                     delayed_sum, delayed_sum_with_soft_guard, identity, ids,
-                    print_unicode, raise_error, redis_echo, 
+                    print_unicode, raise_error, redis_echo,
                     second_order_replace1, tsum)
 
 TIMEOUT = 120
