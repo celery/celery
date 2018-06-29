@@ -414,6 +414,8 @@ class test_AsyncResult:
         assert x.retries == 1
         assert x.queue == 'celery'
         assert x.date_done is not None
+        assert x.task_id == "1"
+        assert x.state == "SUCCESS"
 
 
 class test_ResultSet:
