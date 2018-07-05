@@ -528,6 +528,9 @@ class test_chord:
         from .tasks import ExpectedException
         import time
 
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
         # Run the chord and wait for the error callback to finish.
         c1 = chord(
             header=[add.s(1, 2), add.s(3, 4), fail.s()],
