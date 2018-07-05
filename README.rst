@@ -430,7 +430,7 @@ documentation.
 |oc-contributors|
 
 .. |oc-contributors| image:: https://opencollective.com/celery/contributors.svg?width=890&button=false
-    :target: graphs/contributors
+    :target: https://github.com/celery/celery/graphs/contributors
 
 Backers
 -------
