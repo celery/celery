@@ -573,10 +573,10 @@ Specifying task destination
 
 The destination for a task is decided by the following (in order):
 
-1. The :ref:`routers` defined in :setting:`task_routes`.
-2. The routing arguments to :func:`Task.apply_async`.
-3. Routing related attributes defined on the :class:`~celery.task.base.Task`
+1. The routing arguments to :func:`Task.apply_async`.
+2. Routing related attributes defined on the :class:`~celery.task.base.Task`
    itself.
+3. The :ref:`routers` defined in :setting:`task_routes`.
 
 It's considered best practice to not hard-code these settings, but rather
 leave that as configuration options by using :ref:`routers`;
