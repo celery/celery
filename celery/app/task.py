@@ -5,6 +5,7 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 from billiard.einfo import ExceptionInfo
+from kombu import serialization
 from kombu.exceptions import OperationalError
 from kombu.utils.uuid import uuid
 
@@ -514,6 +515,17 @@ class Task(object):
 
         app = self._get_app()
         if app.conf.task_always_eager:
+            with app.producer_or_acquire(producer) as eager_producer:
+                serializer = options.get(
+                    'serializer', eager_producer.serializer
+                )
+                body = args, kwargs
+                content_type, content_encoding, data = serialization.dumps(
+                    body, serializer
+                )
+                args, kwargs = serialization.loads(
+                    data, content_type, content_encoding
+                )
             with denied_join_result():
                 return self.apply(args, kwargs, task_id=task_id or uuid(),
                                   link=link, link_error=link_error, **options)
