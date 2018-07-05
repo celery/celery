@@ -16,8 +16,7 @@ from celery import states
 from celery._state import current_task, task_join_will_block
 from celery.five import items, range
 
-from . import base
-from .async import AsyncBackendMixin, BaseResultConsumer
+from . import asynchronous, base
 
 __all__ = ('BacklogLimitExceeded', 'RPCBackend')
 
@@ -39,7 +38,7 @@ def _on_after_fork_cleanup_backend(backend):
     backend._after_fork()
 
 
-class ResultConsumer(BaseResultConsumer):
+class ResultConsumer(asynchronous.BaseResultConsumer):
     Consumer = kombu.Consumer
 
     _connection = None
@@ -89,7 +88,7 @@ class ResultConsumer(BaseResultConsumer):
             self._consumer.cancel_by_queue(self._create_binding(task_id).name)
 
 
-class RPCBackend(base.Backend, AsyncBackendMixin):
+class RPCBackend(base.Backend, asynchronous.AsyncBackendMixin):
     """Base class for the RPC result backend."""
 
     Exchange = kombu.Exchange
