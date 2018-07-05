@@ -178,3 +178,13 @@ def build_chain_inside_task(self):
     )
     result = test_chain()
     return result
+
+
+@shared_task
+def fail(*args):
+    raise Exception('Task expected to fail')
+
+
+@shared_task
+def chord_error(args):
+    return args
