@@ -525,6 +525,8 @@ class test_chord:
 
     def test_chord_on_error(self, manager):
         from celery import states
+        from .tasks import ExpectedException
+        import time
 
         # Run the chord and wait for the error callback to finish.
         c1 = chord(
@@ -533,8 +535,17 @@ class test_chord:
                 chord_error.s()),
         )
         res = c1()
-        res.get(propagate=False)
-        res.children[0].children[0].get(propagate=False)
+        try:
+            res.wait(propagate=False)
+        except ExpectedException:
+            pass
+        # Got to wait for children to populate.
+        while not res.children:
+            time.sleep(0.1)
+        try:
+            res.children[0].children[0].wait(propagate=False)
+        except ExpectedException:
+            pass
 
         # Use the error callback's result to find the failed task.
         error_callback_result = AsyncResult(
