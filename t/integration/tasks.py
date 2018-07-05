@@ -186,5 +186,5 @@ def fail(*args):
 
 
 @shared_task
-def chord_error(args):
+def chord_error(*args):
     return args

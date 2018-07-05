@@ -537,7 +537,8 @@ class test_chord:
         res.children[0].children[0].get(propagate=False)
 
         # Use the error callback's result to find the failed task.
-        error_callback_result = AsyncResult(res.children[0].children[0].result)
+        error_callback_result = AsyncResult(
+            res.children[0].children[0].result[0])
         failed_task_id = error_callback_result.result.args[0].split()[3]
 
         # Use new group_id result metadata to get group ID.
