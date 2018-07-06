@@ -550,6 +550,14 @@ class test_chord:
         except ExpectedException:
             pass
 
+        # Extract the results of the successful tasks from the chord.
+        #
+        # We could do this inside the error handler, and probably would in a
+        #  real system, but for the purposes of the test it's obnoxious to get
+        #  data out of the error handler.
+        #
+        # So for clarity of our test, we instead do it here.
+
         # Use the error callback's result to find the failed task.
         error_callback_result = AsyncResult(
             res.children[0].children[0].result[0])
