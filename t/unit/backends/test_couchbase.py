@@ -5,6 +5,7 @@ from datetime import timedelta
 
 import pytest
 from case import MagicMock, Mock, patch, sentinel, skip
+
 from celery.app import backends
 from celery.backends import couchbase as module
 from celery.backends.couchbase import CouchbaseBackend
