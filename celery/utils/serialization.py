@@ -56,6 +56,8 @@ def find_pickleable_exception(exc, loads=pickle.loads,
 
     Arguments:
         exc (BaseException): An exception instance.
+        loads: decoder to use.
+        dumps: encoder to use
 
     Returns:
         Exception: Nearest pickleable parent exception class
@@ -82,6 +84,26 @@ def create_exception_cls(name, module, parent=None):
     if not parent:
         parent = Exception
     return subclass_exception(name, parent, module)
+
+
+def ensure_serializable(items, encoder):
+    """Ensure items will serialize.
+
+    For a given list of arbitrary objects, return the object
+    or a string representation, safe for serialization.
+
+    Arguments:
+        items (Iterable[Any]): Objects to serialize.
+        encoder (Callable): Callable function to serialize with.
+    """
+    safe_exc_args = []
+    for arg in items:
+        try:
+            encoder(arg)
+            safe_exc_args.append(arg)
+        except Exception:  # pylint: disable=broad-except
+            safe_exc_args.append(safe_repr(arg))
+    return tuple(safe_exc_args)
 
 
 @python_2_unicode_compatible
@@ -116,13 +138,7 @@ class UnpickleableExceptionWrapper(Exception):
     exc_args = None
 
     def __init__(self, exc_module, exc_cls_name, exc_args, text=None):
-        safe_exc_args = []
-        for arg in exc_args:
-            try:
-                pickle.dumps(arg)
-                safe_exc_args.append(arg)
-            except Exception:  # pylint: disable=broad-except
-                safe_exc_args.append(safe_repr(arg))
+        safe_exc_args = ensure_serializable(exc_args, pickle.dumps)
         self.exc_module = exc_module
         self.exc_cls_name = exc_cls_name
         self.exc_args = safe_exc_args
