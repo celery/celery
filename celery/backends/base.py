@@ -33,6 +33,7 @@ from celery.utils.collections import BufferMap
 from celery.utils.functional import LRUCache, arity_greater
 from celery.utils.log import get_logger
 from celery.utils.serialization import (create_exception_cls,
+                                        ensure_serializable,
                                         get_pickleable_exception,
                                         get_pickled_exception)
 
@@ -236,7 +237,7 @@ class Backend(object):
         if serializer in EXCEPTION_ABLE_CODECS:
             return get_pickleable_exception(exc)
         return {'exc_type': type(exc).__name__,
-                'exc_message': exc.args,
+                'exc_message': ensure_serializable(exc.args, self.encode),
                 'exc_module': type(exc).__module__}
 
     def exception_to_python(self, exc):

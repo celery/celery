@@ -145,6 +145,17 @@ class test_prepare_exception:
         y = self.b.exception_to_python(x)
         assert isinstance(y, KeyError)
 
+    def test_json_exception_arguments(self):
+        self.b.serializer = 'json'
+        x = self.b.prepare_exception(Exception(object))
+        assert x == {
+            'exc_message': serialization.ensure_serializable(
+                (object,), self.b.encode),
+            'exc_type': Exception.__name__,
+            'exc_module': Exception.__module__}
+        y = self.b.exception_to_python(x)
+        assert isinstance(y, Exception)
+
     def test_impossible(self):
         self.b.serializer = 'pickle'
         x = self.b.prepare_exception(Impossible())
