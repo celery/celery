@@ -20,7 +20,7 @@ This directory contains generic bash init-scripts for the
 these should run on Linux, FreeBSD, OpenBSD, and other Unix-like platforms.
 
 .. _`extra/generic-init.d/`:
-    https://github.com/celery/celery/tree/3.1/extra/generic-init.d/
+    https://github.com/celery/celery/tree/master/extra/generic-init.d/
 
 .. _generic-initd-celeryd:
 
@@ -354,7 +354,7 @@ Usage ``systemd``
 * `extra/systemd/`_
 
 .. _`extra/systemd/`:
-    https://github.com/celery/celery/tree/3.1/extra/systemd/
+    https://github.com/celery/celery/tree/master/extra/systemd/
 
 .. _generic-systemd-celery:
 
