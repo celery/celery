@@ -1,6 +1,6 @@
 language: python
 sudo: required
-dist: trusty
+dist: xenial
 cache: pip
 python:
   - '2.7'
@@ -8,6 +8,18 @@ python:
   - '3.5'
   - '3.6'
   - '3.7'
+
+.mixins:
+- &trusty-mixin
+  dist: trusty
+  sudo:
+jobs:
+  include:
+  - <<: *trusty-mixin
+    python: "3.4"
+  - <<: *trusty-mixin
+    python: "pypy"
+
 os:
     - linux
 stages:
