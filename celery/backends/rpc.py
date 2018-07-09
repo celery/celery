@@ -17,7 +17,7 @@ from celery._state import current_task, task_join_will_block
 from celery.five import items, range
 
 from . import base
-from .async import AsyncBackendMixin, BaseResultConsumer
+from .asynchronous import AsyncBackendMixin, BaseResultConsumer
 
 __all__ = ('BacklogLimitExceeded', 'RPCBackend')
 
