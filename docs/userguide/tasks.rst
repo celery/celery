@@ -1018,7 +1018,7 @@ different strengths and weaknesses (see :ref:`task-result-backends`).
 During its lifetime a task will transition through several possible states,
 and each state may have arbitrary meta-data attached to it. When a task
 moves into a new state the previous state is
-forgotten about, but some transitions can be deducted, (e.g., a task now
+forgotten about, but some transitions can be deduced, (e.g., a task now
 in the :state:`FAILED` state, is implied to have been in the
 :state:`STARTED` state at some point).
 
@@ -1594,7 +1594,7 @@ yourself:
      'celery.chord':
         <@task: celery.chord>}
 
-This is the list of tasks built-in to Celery. Note that tasks
+This is the list of tasks built into Celery. Note that tasks
 will only be registered when the module they're defined in is imported.
 
 The default loader imports any modules listed in the
@@ -1728,7 +1728,7 @@ different :func:`~celery.signature`'s.
 You can read about chains and other powerful constructs
 at :ref:`designing-workflows`.
 
-By default celery will not enable you to run tasks within task synchronously
+By default Celery will not enable you to run tasks within task synchronously
 in rare or extreme cases you might have to do so.
 **WARNING**:
 enabling subtasks run synchronously is not recommended!
@@ -1816,7 +1816,7 @@ system, like `memcached`_.
 State
 -----
 
-Since celery is a distributed system, you can't know which process, or
+Since Celery is a distributed system, you can't know which process, or
 on what machine the task will be executed. You can't even know if the task will
 run in a timely manner.
 
@@ -1903,7 +1903,7 @@ There's a race condition if the task starts executing
 before the transaction has been committed; The database object doesn't exist
 yet!
 
-The solution is to use the ``on_commit`` callback to launch your celery task
+The solution is to use the ``on_commit`` callback to launch your Celery task
 once all transactions have been committed successfully.
 
 .. code-block:: python
