@@ -58,7 +58,7 @@ class WorkerComponent(bootsteps.StartStopStep):
         )
 
     def info(self, w):
-        """Returns `Autoscaler` info"""
+        """Return `Autoscaler` info."""
         return {'autoscaler': w.autoscaler.info()}
 
 
