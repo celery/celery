@@ -60,7 +60,7 @@ class WorkerComponent(bootsteps.StartStopStep):
     def info(self, w):
         """Returns `Autoscaler` info"""
         return {'autoscaler': w.autoscaler.info()}
-    
+
 
 class Autoscaler(bgThread):
     """Background thread to autoscale pool workers."""
