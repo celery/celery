@@ -17,6 +17,12 @@ from celery.utils.collections import lpmerge
 from celery.utils.functional import maybe_evaluate, mlazy
 from celery.utils.imports import symbol_by_name
 
+try:
+    Pattern = re._pattern_type
+except AttributeError:  # pragma: no cover
+    # for support Python 3.7
+    Pattern = re.Pattern
+
 __all__ = ('MapRoute', 'Router', 'prepare')
 
 
@@ -33,7 +39,7 @@ class MapRoute(object):
         self.map = {}
         self.patterns = OrderedDict()
         for k, v in map:
-            if isinstance(k, re._pattern_type):
+            if isinstance(k, Pattern):
                 self.patterns[k] = v
             elif '*' in k:
                 self.patterns[re.compile(glob_to_re(k))] = v
