@@ -498,7 +498,7 @@ class Request(object):
     def group(self):
         # used by backend.on_chord_part_return when failures reported
         # by parent process
-        return self.request_dict['group']
+        return self.request_dict.get('group')
 
 
 def create_request_cls(base, task, pool, hostname, eventer,

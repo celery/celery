@@ -360,13 +360,16 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             if readycount == total:
                 decode, unpack = self.decode, self._unpack_chord_result
                 with client.pipeline() as pipe:
-                    resl, _, _ = pipe \
+                    resl, = pipe \
                         .lrange(jkey, 0, total) \
-                        .delete(jkey) \
-                        .delete(tkey) \
                         .execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])
+                    with client.pipeline() as pipe:
+                        _, _ = pipe \
+                            .delete(jkey) \
+                            .delete(tkey) \
+                            .execute()
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception(
                         'Chord callback for %r raised: %r', request.group, exc)

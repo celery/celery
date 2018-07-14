@@ -422,6 +422,19 @@ class test_KeyValueStoreBackend:
         self.b.forget(tid)
         assert self.b.get_state(tid) == states.PENDING
 
+    def test_store_result_group_id(self):
+        tid = uuid()
+        state = 'SUCCESS'
+        result = 10
+        request = Mock()
+        request.group = 'gid'
+        request.children = []
+        self.b.store_result(
+            tid, state=state, result=result, request=request,
+        )
+        stored_meta = self.b.decode(self.b.get(self.b.get_key_for_task(tid)))
+        assert stored_meta['group_id'] == request.group
+
     def test_strip_prefix(self):
         x = self.b.get_key_for_task('x1b34')
         assert self.b._strip_prefix(x) == 'x1b34'

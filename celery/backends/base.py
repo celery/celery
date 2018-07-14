@@ -661,6 +661,8 @@ class BaseKeyValueStoreBackend(Backend):
             'children': self.current_task_children(request),
             'task_id': bytes_to_str(task_id),
         }
+        if request and getattr(request, 'group', None):
+            meta['group_id'] = request.group
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
 
