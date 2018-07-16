@@ -1728,10 +1728,10 @@ different :func:`~celery.signature`'s.
 You can read about chains and other powerful constructs
 at :ref:`designing-workflows`.
 
-By default Celery will not enable you to run tasks within task synchronously
-in rare or extreme cases you might have to do so.
+By default Celery will not allow you to run subtasks synchronously within a task,
+but in rare or extreme cases you might need to do so.
 **WARNING**:
-enabling subtasks run synchronously is not recommended!
+enabling subtasks to run synchronously is not recommended!
 
 .. code-block:: python
 
