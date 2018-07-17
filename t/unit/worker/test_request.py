@@ -197,7 +197,11 @@ class test_trace_task(RequestCase):
 
 class test_Request(RequestCase):
 
-    def get_request(self, sig, Request=Request, exclude_headers=None, **kwargs):
+    def get_request(self,
+                    sig,
+                    Request=Request,
+                    exclude_headers=None,
+                    **kwargs):
         msg = self.task_message_from_sig(self.app, sig)
         headers = None
         if exclude_headers:
@@ -221,8 +225,9 @@ class test_Request(RequestCase):
             self.add.s(2, 2).set(shadow='fooxyz')).name == 'fooxyz'
 
     def test_no_shadow_header(self):
-        assert self.get_request(self.add.s(2, 2),
-                                exclude_headers=['shadow']).name == 't.unit.worker.test_request.add'
+        request = self.get_request(self.add.s(2, 2),
+                                   exclude_headers=['shadow'])
+        assert request.name == 't.unit.worker.test_request.add'
 
     def test_invalid_eta_raises_InvalidTaskError(self):
         with pytest.raises(InvalidTaskError):
