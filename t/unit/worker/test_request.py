@@ -197,21 +197,37 @@ class test_trace_task(RequestCase):
 
 class test_Request(RequestCase):
 
-    def get_request(self, sig, Request=Request, **kwargs):
+    def get_request(self,
+                    sig,
+                    Request=Request,
+                    exclude_headers=None,
+                    **kwargs):
+        msg = self.task_message_from_sig(self.app, sig)
+        headers = None
+        if exclude_headers:
+            headers = msg.headers
+            for header in exclude_headers:
+                headers.pop(header)
         return Request(
-            self.task_message_from_sig(self.app, sig),
+            msg,
             on_ack=Mock(name='on_ack'),
             on_reject=Mock(name='on_reject'),
             eventer=Mock(name='eventer'),
             app=self.app,
             connection_errors=(socket.error,),
             task=sig.type,
+            headers=headers,
             **kwargs
         )
 
     def test_shadow(self):
         assert self.get_request(
             self.add.s(2, 2).set(shadow='fooxyz')).name == 'fooxyz'
+
+    def test_no_shadow_header(self):
+        request = self.get_request(self.add.s(2, 2),
+                                   exclude_headers=['shadow'])
+        assert request.name == 't.unit.worker.test_request.add'
 
     def test_invalid_eta_raises_InvalidTaskError(self):
         with pytest.raises(InvalidTaskError):
