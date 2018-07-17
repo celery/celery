@@ -1024,6 +1024,30 @@ class test_create_request_class(RequestCase):
         weakref_ref.assert_called_with(self.pool.apply_async())
         assert job._apply_result is weakref_ref()
 
+    def test_execute_using_pool_with_none_timelimit_header(self):
+        from celery.app.trace import trace_task_ret as trace
+        weakref_ref = Mock(name='weakref.ref')
+        job = self.zRequest(id=uuid(),
+                            revoked_tasks=set(),
+                            ref=weakref_ref,
+                            headers={'timelimit': None})
+        job.execute_using_pool(self.pool)
+        self.pool.apply_async.assert_called_with(
+            trace,
+            args=(job.type, job.id, job.request_dict, job.body,
+                  job.content_type, job.content_encoding),
+            accept_callback=job.on_accepted,
+            timeout_callback=job.on_timeout,
+            callback=job.on_success,
+            error_callback=job.on_failure,
+            soft_timeout=self.task.soft_time_limit,
+            timeout=self.task.time_limit,
+            correlation_id=job.id,
+        )
+        assert job._apply_result
+        weakref_ref.assert_called_with(self.pool.apply_async())
+        assert job._apply_result is weakref_ref()
+
     def test_execute_using_pool__defaults_of_hybrid_to_proto2(self):
         weakref_ref = Mock(name='weakref.ref')
         headers = strategy.hybrid_to_proto2('', {'id': uuid(),
