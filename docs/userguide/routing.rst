@@ -31,7 +31,7 @@ With this setting on, a named queue that's not already defined in
 :setting:`task_queues` will be created automatically. This makes it easy to
 perform simple routing tasks.
 
-Say you have two servers, `x`, and `y` that handles regular tasks,
+Say you have two servers, `x`, and `y` that handle regular tasks,
 and one server `z`, that only handles feed related tasks. You can use this
 configuration::
 
@@ -117,7 +117,7 @@ design ensures it will work for them as well.
 Manual routing
 --------------
 
-Say you have two servers, `x`, and `y` that handles regular tasks,
+Say you have two servers, `x`, and `y` that handle regular tasks,
 and one server `z`, that only handles feed related tasks, you can use this
 configuration:
 
