@@ -10,6 +10,7 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 import time
+import warnings
 from collections import namedtuple
 from datetime import timedelta
 from functools import partial
@@ -351,8 +352,10 @@ class Backend(object):
 
     def _ensure_not_eager(self):
         if self.app.conf.task_always_eager:
-            raise RuntimeError(
-                "Cannot retrieve result with task_always_eager enabled")
+            warnings.warn(
+                "Shouldn't retrieve result with task_always_eager enabled.",
+                RuntimeWarning
+            )
 
     def get_task_meta(self, task_id, cache=True):
         self._ensure_not_eager()
