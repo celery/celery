@@ -472,7 +472,7 @@ a few special ones:
 ``CELERY_TASK_SERIALIZER``             :setting:`task_serializer`
 ``CELERYD_TASK_SOFT_TIME_LIMIT``       :setting:`task_soft_time_limit`
 ``CELERYD_TASK_TIME_LIMIT``            :setting:`task_time_limit`
-``CELERY_TASK_TRACK_STARTED``          :setting:`task_track_started`
+``CELERY_TRACK_STARTED``               :setting:`task_track_started`
 ``CELERY_DISABLE_RATE_LIMITS``         :setting:`worker_disable_rate_limits`
 ``CELERY_ENABLE_REMOTE_CONTROL``       :setting:`worker_enable_remote_control`
 ``CELERYD_SEND_EVENTS``                :setting:`worker_send_task_events`
