@@ -592,7 +592,7 @@ class Task(object):
 
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
               eta=None, countdown=None, max_retries=None, **options):
-        """Retry the task.
+        """Requeue the task.
 
         Example:
             >>> from imaginary_twitter_lib import Twitter
