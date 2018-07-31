@@ -1525,7 +1525,7 @@ Examples:
         re.compile(r'(image|video)\.tasks\..*'): 'media',  # <-- regex
         'video.encode': {
             'queue': 'video',
-            'exchange': 'media'
+            'exchange': 'media',
             'routing_key': 'media.video.encode',
         },
     }
