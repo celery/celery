@@ -9,7 +9,12 @@
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
   python, distributed, actors
 
---
+Sponsors
+========
+
+<a href="https://getstream.io/try-the-api/?utm_source=celery&utm_medium=banner&utm_campaign=github" >
+   <img src="https://i.imgur.com/ULmQEib.png" alt="Stream" width="200" style="padding: 10px"/>
+</a>
 
 What's a Task Queue?
 ====================
