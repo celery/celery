@@ -671,23 +671,25 @@ class BaseKeyValueStoreBackend(Backend):
             'date_done': date_done,
         }
 
-        if request:
-            request_meta = {
-                # Some unit tests mock the properties, casting to string to
-                # avoid serialization errors
-                'name': str(getattr(request, 'task', None)),
-                'args': getattr(request, 'args', None),
-                'kwargs': getattr(request, 'kwargs', None),
-                'worker': str(getattr(request, 'hostname', None)),
-                'retries': getattr(request, 'retries', None),
-                'queue': str(request.delivery_info.get('routing_key'))
-                if hasattr(request, 'delivery_info') and
-                request.delivery_info else None
-            }
-            if getattr(request, 'group', None):
-                request_meta['group_id'] = request.group
+        if request and getattr(request, 'group', None):
+            meta['group_id'] = request.group
 
-            meta.update(request_meta)
+        if self.app.conf.find_value_for_key('extended', 'result'):
+            if request:
+                request_meta = {
+                    # Some unit tests mock the properties, casting to string to
+                    # avoid serialization errors
+                    'name': getattr(request, 'task', None),
+                    'args': getattr(request, 'args', None),
+                    'kwargs': getattr(request, 'kwargs', None),
+                    'worker': getattr(request, 'hostname', None),
+                    'retries': getattr(request, 'retries', None),
+                    'queue': request.delivery_info.get('routing_key')
+                    if hasattr(request, 'delivery_info') and
+                    request.delivery_info else None
+                }
+
+                meta.update(request_meta)
 
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
