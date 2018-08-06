@@ -153,7 +153,7 @@ class Pidfile(object):
 
     def is_locked(self):
         """Return true if the pid lock exists."""
-        return os.path.exists(self.path)
+        return os.path.exists(self.path) and not self._is_stale()
 
     def release(self, *args):
         """Release lock."""
@@ -185,24 +185,11 @@ class Pidfile(object):
 
         I.e. process does not respons to signal.
         """
-        try:
-            pid = self.read_pid()
-        except ValueError as exc:
-            print('Broken pidfile found - Removing it.', file=sys.stderr)
+        is_stale = self._is_stale()
+        if is_stale:
+            print('Removing pidfile.', file=sys.stderr)
             self.remove()
-            return True
-        if not pid:
-            self.remove()
-            return True
-
-        try:
-            os.kill(pid, 0)
-        except os.error as exc:
-            if exc.errno == errno.ESRCH:
-                print('Stale pidfile exists - Removing it.', file=sys.stderr)
-                self.remove()
-                return True
-        return False
+        return is_stale
 
     def write_pid(self):
         pid = os.getpid()
@@ -228,6 +215,24 @@ class Pidfile(object):
                     "Inconsistency: Pidfile content doesn't match at re-read")
         finally:
             rfh.close()
+
+    def _is_stale(self):
+        """Check if the recorded pid in the pidfile is still alive."""
+        try:
+            pid = self.read_pid()
+        except ValueError as exc:
+            print('Broken pidfile found', file=sys.stderr)
+            return True
+        if not pid:
+            return True
+
+        try:
+            os.kill(pid, 0)
+        except os.error as exc:
+            if exc.errno == errno.ESRCH:
+                print('Stale pidfile exists', file=sys.stderr)
+                return True
+        return False
 
 
 PIDFile = Pidfile  # noqa: E305 XXX compat alias
@@ -255,11 +260,16 @@ def create_pidlock(pidfile):
     return pidlock
 
 
-def _create_pidlock(pidfile):
+def _free_pidfile_or_die(pidfile):
     pidlock = Pidfile(pidfile)
-    if pidlock.is_locked() and not pidlock.remove_if_stale():
+    if pidlock.is_locked():
         print(PIDLOCKED.format(pidfile, pidlock.read_pid()), file=sys.stderr)
         raise SystemExit(EX_CANTCREAT)
+    return pidlock
+
+
+def _create_pidlock(pidfile):
+    pidlock = _free_pidfile_or_die(pidfile)
     pidlock.acquire()
     return pidlock
 
@@ -410,9 +420,8 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
         # Since without stderr any errors will be silently suppressed,
         # we need to know that we have access to the logfile.
         logfile and open(logfile, 'a').close()
-        # Doesn't actually create the pidfile, but makes sure it's not stale.
         if pidfile:
-            _create_pidlock(pidfile).release()
+            _free_pidfile_or_die(pidfile)
 
     return DaemonContext(
         umask=umask, workdir=workdir, fake=fake, after_chdir=after_chdir_do,
