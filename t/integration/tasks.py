@@ -23,6 +23,12 @@ def add(x, y):
     return x + y
 
 
+@shared_task
+def raise_error():
+    """Deliberately raise an error."""
+    raise ValueError("deliberate error")
+
+
 @shared_task(ignore_result=True)
 def add_ignore_result(x, y):
     """Add two numbers."""

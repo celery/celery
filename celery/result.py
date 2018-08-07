@@ -497,7 +497,6 @@ class ResultSet(ResultBase):
 
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
         self._app = app
-        self._cache = None
         self.results = results
         self.on_ready = promise(args=(self,))
         self._on_full = ready_barrier or barrier(results)
@@ -516,7 +515,6 @@ class ResultSet(ResultBase):
 
     def _on_ready(self):
         if self.backend.is_async:
-            self._cache = [r.get() for r in self.results]
             self.on_ready()
 
     def remove(self, result):
@@ -662,8 +660,6 @@ class ResultSet(ResultBase):
         in addition it uses :meth:`join_native` if available for the
         current result backend.
         """
-        if self._cache is not None:
-            return self._cache
         return (self.join_native if self.supports_native_join else self.join)(
             timeout=timeout, propagate=propagate,
             interval=interval, callback=callback, no_ack=no_ack,

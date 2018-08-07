@@ -12,8 +12,8 @@ from .conftest import flaky, get_active_redis_channels, get_redis_connection
 from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, build_chain_inside_task, chord_error,
                     collect_ids, delayed_sum, delayed_sum_with_soft_guard,
-                    fail, identity, ids, print_unicode, redis_echo,
-                    second_order_replace1, tsum)
+                    fail, identity, ids, print_unicode, raise_error,
+                    redis_echo, second_order_replace1, tsum)
 
 TIMEOUT = 120
 
@@ -212,6 +212,16 @@ class test_result_set:
 
         rs = ResultSet([add.delay(1, 1), add.delay(2, 2)])
         assert rs.get(timeout=TIMEOUT) == [2, 4]
+
+    @flaky
+    def test_result_set_error(self, manager):
+        assert manager.inspect().ping()
+
+        rs = ResultSet([raise_error.delay(), add.delay(1, 1)])
+        rs.get(timeout=TIMEOUT, propagate=False)
+
+        assert rs.results[0].failed()
+        assert rs.results[1].successful()
 
 
 class test_group:
