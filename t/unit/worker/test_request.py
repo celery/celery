@@ -25,6 +25,7 @@ from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
 from celery.five import monotonic
 from celery.signals import task_revoked
 from celery.worker import request as module
+from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
 from celery.worker.request import logger as req_logger
 from celery.worker.state import revoked
@@ -196,21 +197,37 @@ class test_trace_task(RequestCase):
 
 class test_Request(RequestCase):
 
-    def get_request(self, sig, Request=Request, **kwargs):
+    def get_request(self,
+                    sig,
+                    Request=Request,
+                    exclude_headers=None,
+                    **kwargs):
+        msg = self.task_message_from_sig(self.app, sig)
+        headers = None
+        if exclude_headers:
+            headers = msg.headers
+            for header in exclude_headers:
+                headers.pop(header)
         return Request(
-            self.task_message_from_sig(self.app, sig),
+            msg,
             on_ack=Mock(name='on_ack'),
             on_reject=Mock(name='on_reject'),
             eventer=Mock(name='eventer'),
             app=self.app,
             connection_errors=(socket.error,),
             task=sig.type,
+            headers=headers,
             **kwargs
         )
 
     def test_shadow(self):
         assert self.get_request(
             self.add.s(2, 2).set(shadow='fooxyz')).name == 'fooxyz'
+
+    def test_no_shadow_header(self):
+        request = self.get_request(self.add.s(2, 2),
+                                   exclude_headers=['shadow'])
+        assert request.name == 't.unit.worker.test_request.add'
 
     def test_invalid_eta_raises_InvalidTaskError(self):
         with pytest.raises(InvalidTaskError):
@@ -1003,6 +1020,40 @@ class test_create_request_class(RequestCase):
             timeout=self.task.time_limit,
             correlation_id=job.id,
         )
+        assert job._apply_result
+        weakref_ref.assert_called_with(self.pool.apply_async())
+        assert job._apply_result is weakref_ref()
+
+    def test_execute_using_pool_with_none_timelimit_header(self):
+        from celery.app.trace import trace_task_ret as trace
+        weakref_ref = Mock(name='weakref.ref')
+        job = self.zRequest(id=uuid(),
+                            revoked_tasks=set(),
+                            ref=weakref_ref,
+                            headers={'timelimit': None})
+        job.execute_using_pool(self.pool)
+        self.pool.apply_async.assert_called_with(
+            trace,
+            args=(job.type, job.id, job.request_dict, job.body,
+                  job.content_type, job.content_encoding),
+            accept_callback=job.on_accepted,
+            timeout_callback=job.on_timeout,
+            callback=job.on_success,
+            error_callback=job.on_failure,
+            soft_timeout=self.task.soft_time_limit,
+            timeout=self.task.time_limit,
+            correlation_id=job.id,
+        )
+        assert job._apply_result
+        weakref_ref.assert_called_with(self.pool.apply_async())
+        assert job._apply_result is weakref_ref()
+
+    def test_execute_using_pool__defaults_of_hybrid_to_proto2(self):
+        weakref_ref = Mock(name='weakref.ref')
+        headers = strategy.hybrid_to_proto2('', {'id': uuid(),
+                                                 'task': self.mytask.name})[1]
+        job = self.zRequest(revoked_tasks=set(), ref=weakref_ref, **headers)
+        job.execute_using_pool(self.pool)
         assert job._apply_result
         weakref_ref.assert_called_with(self.pool.apply_async())
         assert job._apply_result is weakref_ref()

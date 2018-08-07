@@ -701,11 +701,11 @@ class _chain(Signature):
         return tasks, results
 
     def apply(self, args=(), kwargs={}, **options):
-        last, fargs = None, args
+        last, (fargs, fkwargs) = None, (args, kwargs)
         for task in self.tasks:
-            res = task.clone(fargs).apply(
+            res = task.clone(fargs, fkwargs).apply(
                 last and (last.get(),), **dict(self.options, **options))
-            res.parent, last, fargs = last, res, None
+            res.parent, last, (fargs, fkwargs) = last, res, (None, None)
         return last
 
     @property

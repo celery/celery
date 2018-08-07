@@ -31,7 +31,7 @@ With this setting on, a named queue that's not already defined in
 :setting:`task_queues` will be created automatically. This makes it easy to
 perform simple routing tasks.
 
-Say you have two servers, `x`, and `y` that handles regular tasks,
+Say you have two servers, `x`, and `y` that handle regular tasks,
 and one server `z`, that only handles feed related tasks. You can use this
 configuration::
 
@@ -117,7 +117,7 @@ design ensures it will work for them as well.
 Manual routing
 --------------
 
-Say you have two servers, `x`, and `y` that handles regular tasks,
+Say you have two servers, `x`, and `y` that handle regular tasks,
 and one server `z`, that only handles feed related tasks, you can use this
 configuration:
 
@@ -573,10 +573,10 @@ Specifying task destination
 
 The destination for a task is decided by the following (in order):
 
-1. The :ref:`routers` defined in :setting:`task_routes`.
-2. The routing arguments to :func:`Task.apply_async`.
-3. Routing related attributes defined on the :class:`~celery.task.base.Task`
+1. The routing arguments to :func:`Task.apply_async`.
+2. Routing related attributes defined on the :class:`~celery.task.base.Task`
    itself.
+3. The :ref:`routers` defined in :setting:`task_routes`.
 
 It's considered best practice to not hard-code these settings, but rather
 leave that as configuration options by using :ref:`routers`;

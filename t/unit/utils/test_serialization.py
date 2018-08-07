@@ -1,14 +1,17 @@
 from __future__ import absolute_import, unicode_literals
 
+import json
+import pickle
 import sys
 from datetime import date, datetime, time, timedelta
 
 import pytest
 import pytz
-from case import Mock, mock
+from case import Mock, mock, skip
 from kombu import Queue
 
 from celery.utils.serialization import (UnpickleableExceptionWrapper,
+                                        ensure_serializable,
                                         get_pickleable_etype, jsonify)
 
 
@@ -23,6 +26,23 @@ class test_AAPickle:
                 assert pickle.dumps is orig_pickle.dumps
         finally:
             sys.modules['celery.utils.serialization'] = prev
+
+
+class test_ensure_serializable:
+
+    @skip.unless_python3()
+    def test_json_py3(self):
+        assert (1, "<class 'object'>") == \
+            ensure_serializable([1, object], encoder=json.dumps)
+
+    @skip.if_python3()
+    def test_json_py2(self):
+        assert (1, "<type 'object'>") == \
+            ensure_serializable([1, object], encoder=json.dumps)
+
+    def test_pickle(self):
+        assert (1, object) == \
+            ensure_serializable((1, object), encoder=pickle.dumps)
 
 
 class test_UnpickleExceptionWrapper:

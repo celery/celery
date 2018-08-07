@@ -39,12 +39,15 @@ class CouchbaseBackend(KeyValueStoreBackend):
     username = None
     password = None
     quiet = False
+    supports_autoexpire = True
+
     timeout = 2.5
 
     # Use str as couchbase key not bytes
     key_t = str_t
 
     def __init__(self, url=None, *args, **kwargs):
+        kwargs.setdefault('expires_type', int)
         super(CouchbaseBackend, self).__init__(*args, **kwargs)
         self.url = url
 
@@ -103,7 +106,7 @@ class CouchbaseBackend(KeyValueStoreBackend):
             return None
 
     def set(self, key, value):
-        self.connection.set(key, value)
+        self.connection.set(key, value, ttl=self.expires)
 
     def mget(self, keys):
         return [self.get(key) for key in keys]

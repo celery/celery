@@ -50,19 +50,17 @@ from celery.worker import state as worker_state
 
 try:
     from _billiard import read as __read__
-    from struct import unpack_from as _unpack_from
-    memoryview = memoryview
     readcanbuf = True
 
     if sys.version_info[0] == 2 and sys.version_info < (2, 7, 6):
 
-        def unpack_from(fmt, view, _unpack_from=_unpack_from):  # noqa
+        def unpack_from(fmt, view, _unpack_from=struct.unpack_from):  # noqa
             return _unpack_from(fmt, view.tobytes())  # <- memoryview
     else:
         # unpack_from supports memoryview in 2.7.6 and 3.3+
-        unpack_from = _unpack_from  # noqa
+        unpack_from = struct.unpack_from  # noqa
 
-except (ImportError, NameError):  # pragma: no cover
+except ImportError:  # pragma: no cover
 
     def __read__(fd, buf, size, read=os.read):  # noqa
         chunk = read(fd, size)

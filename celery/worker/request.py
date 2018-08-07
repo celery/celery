@@ -116,8 +116,9 @@ class Request(object):
         self.parent_id = headers.get('parent_id')
         if 'shadow' in headers:
             self.name = headers['shadow'] or self.name
-        if 'timelimit' in headers:
-            self.time_limits = headers['timelimit']
+        timelimit = headers.get('timelimit', None)
+        if timelimit:
+            self.time_limits = timelimit
         self.argsrepr = headers.get('argsrepr', '')
         self.kwargsrepr = headers.get('kwargsrepr', '')
         self.on_ack = on_ack
@@ -498,7 +499,7 @@ class Request(object):
     def group(self):
         # used by backend.on_chord_part_return when failures reported
         # by parent process
-        return self.request_dict['group']
+        return self.request_dict.get('group')
 
 
 def create_request_cls(base, task, pool, hostname, eventer,

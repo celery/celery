@@ -9,7 +9,12 @@
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
   python, distributed, actors
 
---
+Sponsors
+========
+
+<a href="https://getstream.io/try-the-api/?utm_source=celery&utm_medium=banner&utm_campaign=github" >
+   <img src="https://i.imgur.com/ULmQEib.png" alt="Stream" width="200" style="padding: 10px"/>
+</a>
 
 What's a Task Queue?
 ====================
@@ -430,7 +435,7 @@ documentation.
 |oc-contributors|
 
 .. |oc-contributors| image:: https://opencollective.com/celery/contributors.svg?width=890&button=false
-    :target: graphs/contributors
+    :target: https://github.com/celery/celery/graphs/contributors
 
 Backers
 -------

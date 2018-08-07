@@ -361,7 +361,7 @@ class crontab(BaseSchedule):
         - A (list of) integers from 1-31 that represents the days of the
           month that execution should occur.
         - A string representing a Crontab pattern.  This may get pretty
-          advanced, such as ``day_of_month='2-30/3'`` (for every even
+          advanced, such as ``day_of_month='2-30/2'`` (for every even
           numbered day) or ``day_of_month='1-7,15-21'`` (for the first and
           third weeks of the month).
 

@@ -269,43 +269,38 @@ class Consumer(object):
         task_reserved(request)
         self.on_task_request(request)
 
-    def _on_bucket_wakeup(self, bucket, tokens):
-        try:
-            request = bucket.pop()
-        except IndexError:
-            pass
-        else:
-            self._limit_move_to_pool(request)
-            self._schedule_oldest_bucket_request(bucket, tokens)
+    def _schedule_bucket_request(self, bucket):
+        while True:
+            try:
+                request, tokens = bucket.pop()
+            except IndexError:
+                # no request, break
+                break
 
-    def _schedule_oldest_bucket_request(self, bucket, tokens):
-        try:
-            request = bucket.pop()
-        except IndexError:
-            pass
-        else:
-            return self._schedule_bucket_request(request, bucket, tokens)
+            if bucket.can_consume(tokens):
+                self._limit_move_to_pool(request)
+                continue
+            else:
+                # requeue to head, keep the order.
+                bucket.contents.appendleft((request, tokens))
 
-    def _schedule_bucket_request(self, request, bucket, tokens):
-        bucket.can_consume(tokens)
-        bucket.add(request)
-        pri = self._limit_order = (self._limit_order + 1) % 10
-        hold = bucket.expected_time(tokens)
-        self.timer.call_after(
-            hold, self._on_bucket_wakeup, (bucket, tokens),
-            priority=pri,
-        )
+                pri = self._limit_order = (self._limit_order + 1) % 10
+                hold = bucket.expected_time(tokens)
+                self.timer.call_after(
+                    hold, self._schedule_bucket_request, (bucket,),
+                    priority=pri,
+                )
+                # no tokens, break
+                break
 
     def _limit_task(self, request, bucket, tokens):
-        if bucket.contents:
-            return bucket.add(request)
-        return self._schedule_bucket_request(request, bucket, tokens)
+        bucket.add((request, tokens))
+        return self._schedule_bucket_request(bucket)
 
     def _limit_post_eta(self, request, bucket, tokens):
         self.qos.decrement_eventually()
-        if bucket.contents:
-            return bucket.add(request)
-        return self._schedule_bucket_request(request, bucket, tokens)
+        bucket.add((request, tokens))
+        return self._schedule_bucket_request(bucket)
 
     def start(self):
         blueprint = self.blueprint
