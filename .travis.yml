@@ -26,9 +26,8 @@ matrix:
   - python: '3.7'
     dist: xenial    # required for Python 3.7 (travis-ci/travis-ci#9069)
     env: TOXENV=pypy-unit PYPY_VERSION="pypy2.7-6.0.0"
-  - python: '3.7'
-    dist: xenial    # required for Python 3.7 (travis-ci/travis-ci#9069)
-    env: TOXENV=pypy-integration-rabbitmq PYPY_VERSION="pypy2.7-6.0.0"
+  - python: '3.6'
+     env: TOXENV=pypy-integration-rabbitmq PYPY_VERSION="pypy2.7-6.0.0"
   - python: '3.7'
     dist: xenial    # required for Python 3.7 (travis-ci/travis-ci#9069)
     env: TOXENV=pypy-integration-redis PYPY_VERSION="pypy2.7-6.0.0"
