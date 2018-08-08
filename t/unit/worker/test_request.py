@@ -452,6 +452,7 @@ class test_Request(RequestCase):
                 terminated=False, expired=True, signum=None):
             job.revoked()
             assert job.id in revoked
+            self.app.set_current()
             assert self.mytask.backend.get_status(job.id) == states.REVOKED
 
     def test_revoked_expires_not_expired(self):
@@ -598,6 +599,7 @@ class test_Request(RequestCase):
         job = self.xRequest()
         exc_info = get_ei()
         job.on_failure(exc_info)
+        self.app.set_current()
         assert self.mytask.backend.get_status(job.id) == states.FAILURE
 
         self.mytask.ignore_result = True
@@ -630,6 +632,7 @@ class test_Request(RequestCase):
         job.acknowledge = Mock(name='ack')
         job.task.acks_late = True
         job.on_timeout(soft=False, timeout=1337)
+        self.app.set_current()
         assert 'Hard time limit' in error.call_args[0][0]
         assert self.mytask.backend.get_status(job.id) == states.FAILURE
         job.acknowledge.assert_called_with()
