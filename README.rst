@@ -12,7 +12,7 @@
 Sponsors
 ========
 
-|ImageLink|
+|ImageLink|_
 
 .. |ImageLink| image:: https://i.imgur.com/ULmQEib.png
 .. _ImageLink: https://getstream.io/try-the-api/?utm_source=celery&utm_medium=banner&utm_campaign=github
