@@ -20,6 +20,7 @@ from celery import states
 from celery.app.trace import (TraceInfo, _trace_task_ret, build_tracer,
                               mro_lookup, reset_worker_optimizations,
                               setup_worker_optimizations, trace_task)
+from celery.contrib.testing.mocks import PicklableMock
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated, WorkerLostError)
 from celery.five import monotonic
@@ -210,9 +211,9 @@ class test_Request(RequestCase):
                 headers.pop(header)
         return Request(
             msg,
-            on_ack=Mock(name='on_ack'),
-            on_reject=Mock(name='on_reject'),
-            eventer=Mock(name='eventer'),
+            on_ack=PicklableMock(name='on_ack'),
+            on_reject=PicklableMock(name='on_reject'),
+            eventer=PicklableMock(name='eventer'),
             app=self.app,
             connection_errors=(socket.error,),
             task=sig.type,

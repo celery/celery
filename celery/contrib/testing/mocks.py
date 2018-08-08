@@ -13,6 +13,11 @@ except ImportError:
         from mock import Mock
 
 
+class PicklableMock(Mock):
+    def __reduce__(self):
+        return (Mock, ())
+
+
 def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
                 errbacks=None, chain=None, shadow=None, utc=None, **options):
     # type: (str, str, Sequence, Mapping, Sequence[Signature],
@@ -22,7 +27,7 @@ def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
     from celery import uuid
     from kombu.serialization import dumps
     id = id or uuid()
-    message = Mock(name='TaskMessage-{0}'.format(id))
+    message = PicklableMock(name='TaskMessage-{0}'.format(id))
     message.headers = {
         'id': id,
         'task': name,
