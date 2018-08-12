@@ -655,7 +655,8 @@ class Celery(object):
                 value returned is used (for lazy evaluation).
             related_name (str): The name of the module to find.  Defaults
                 to "tasks": meaning "look for 'module.tasks' for every
-                module in ``packages``."
+                module in ``packages``.".  If ``None`` will only try to import
+                the package, i.e. "look for 'module'".
             force (bool): By default this call is lazy so that the actual
                 auto-discovery won't happen until an application imports
                 the default modules.  Forcing will cause the auto-discovery
