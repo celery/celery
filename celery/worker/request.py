@@ -315,7 +315,7 @@ class Request(object):
                 self.id, exc, request=self, store_result=self.store_errors,
             )
 
-            if self.task.acks_late:
+            if self.task.acks_late and self.task.acks_on_failure_or_timeout:
                 self.acknowledge()
 
     def on_success(self, failed__retval__runtime, **kwargs):
@@ -368,15 +368,16 @@ class Request(object):
             )
         # (acks_late) acknowledge after result stored.
         if self.task.acks_late:
-            requeue = not self.delivery_info.get('redelivered')
             reject = (
                 self.task.reject_on_worker_lost and
                 isinstance(exc, WorkerLostError)
             )
+            ack = self.task.acks_on_failure_or_timeout
             if reject:
+                requeue = not self.delivery_info.get('redelivered')
                 self.reject(requeue=requeue)
                 send_failed_event = False
-            else:
+            elif ack:
                 self.acknowledge()
 
         if send_failed_event:

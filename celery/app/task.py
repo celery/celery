@@ -250,6 +250,13 @@ class Task(object):
     #: :setting:`task_acks_late` setting.
     acks_late = None
 
+    #: When enabled messages for this task will be acknowledged even if it
+    #: fails or times out.
+    #:
+    #: The application default can be overridden with the
+    #: :setting:`task_acks_on_failure_or_timeout` setting.
+    acks_on_failure_or_timeout = True
+
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
     #: exits or is signaled (e.g., :sig:`KILL`/:sig:`INT`, etc).
@@ -295,6 +302,7 @@ class Task(object):
         ('rate_limit', 'task_default_rate_limit'),
         ('track_started', 'task_track_started'),
         ('acks_late', 'task_acks_late'),
+        ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
         ('store_errors_even_if_ignored', 'task_store_errors_even_if_ignored'),
