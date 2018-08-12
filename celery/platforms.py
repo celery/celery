@@ -203,6 +203,10 @@ class Pidfile(object):
                 print('Stale pidfile exists - Removing it.', file=sys.stderr)
                 self.remove()
                 return True
+        except SystemError as exc:
+            print('Stale pidfile exists - Removing it.', file=sys.stderr)
+            self.remove()
+            return True
         return False
 
     def write_pid(self):
