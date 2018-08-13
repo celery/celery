@@ -677,8 +677,6 @@ class BaseKeyValueStoreBackend(Backend):
         if self.app.conf.find_value_for_key('extended', 'result'):
             if request:
                 request_meta = {
-                    # Some unit tests mock the properties, casting to string to
-                    # avoid serialization errors
                     'name': getattr(request, 'task', None),
                     'args': getattr(request, 'args', None),
                     'kwargs': getattr(request, 'kwargs', None),
