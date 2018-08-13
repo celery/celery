@@ -344,7 +344,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         tkey = self.get_key_for_group(gid, '.t')
         result = self.encode_result(result, state)
         with client.pipeline() as pipe:
-            _, readycount, totaldiff, _, _ = pipe \
+            readycount, totaldiff, _, _ = pipe \
                 .rpush(jkey, self.encode([1, tid, state, result])) \
                 .get(tkey) \
                 .expire(jkey, self.expires) \
