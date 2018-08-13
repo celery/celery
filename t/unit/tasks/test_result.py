@@ -68,6 +68,7 @@ class test_AsyncResult:
     def setup(self):
         self.app.conf.result_cache_max = 100
         self.app.conf.result_serializer = 'pickle'
+        self.app.conf.result_extended = True
         self.task1 = mock_task('task1', states.SUCCESS, 'the')
         self.task2 = mock_task('task2', states.SUCCESS, 'quick')
         self.task3 = mock_task('task3', states.FAILURE, KeyError('brown'))
