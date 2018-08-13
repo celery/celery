@@ -616,13 +616,25 @@ class test_Request(RequestCase):
             job.on_failure(exc_info)
             assert job.acknowledged
 
+    def test_on_failure_acks_on_failure_or_timeout(self):
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure_or_timeout = False
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+            assert job.acknowledged is False
+
     def test_from_message_invalid_kwargs(self):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')
         req = Request(m, app=self.app)
         with pytest.raises(InvalidTaskError):
             raise req.execute().exception
 
-    def test_on_hard_timeout(self, patching):
+    def test_on_hard_timeout_acks_late(self, patching):
         error = patching('celery.worker.request.error')
 
         job = self.xRequest()
@@ -636,6 +648,34 @@ class test_Request(RequestCase):
         job = self.xRequest()
         job.acknowledge = Mock(name='ack')
         job.task.acks_late = False
+        job.on_timeout(soft=False, timeout=1335)
+        job.acknowledge.assert_not_called()
+
+    def test_on_hard_timeout_acks_on_failure_or_timeout(self, patching):
+        error = patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.task.acks_late = True
+        job.task.acks_on_failure_or_timeout = True
+        job.on_timeout(soft=False, timeout=1337)
+        assert 'Hard time limit' in error.call_args[0][0]
+        assert self.mytask.backend.get_status(job.id) == states.FAILURE
+        job.acknowledge.assert_called_with()
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.task.acks_late = True
+        job.task.acks_on_failure_or_timeout = False
+        job.on_timeout(soft=False, timeout=1337)
+        assert 'Hard time limit' in error.call_args[0][0]
+        assert self.mytask.backend.get_status(job.id) == states.FAILURE
+        job.acknowledge.assert_not_called()
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.task.acks_late = False
+        job.task.acks_on_failure_or_timeout = True
         job.on_timeout(soft=False, timeout=1335)
         job.acknowledge.assert_not_called()
 
