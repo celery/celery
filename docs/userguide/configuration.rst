@@ -647,7 +647,7 @@ Supports the same options as the :setting:`task_serializer` setting.
 ``result_extended``
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``True``
+Default: ``False``
 
 Enables extended task result attributes (name, args, kwargs, worker,
 retries, queue, delivery_info) to be written to backend.
