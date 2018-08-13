@@ -14,6 +14,7 @@ except ImportError:
 
 
 class PicklableMock(Mock):
+    """A subclass of Mock that is pickleable."""
     def __reduce__(self):
         return (Mock, ())
 
