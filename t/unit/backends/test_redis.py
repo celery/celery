@@ -96,7 +96,9 @@ class Redis(mock.MockCallbacks):
             return l
 
     def rpush(self, key, value):
-        self._get_list(key).append(value)
+        key_list = self._get_list(key)
+        key_list.append(value)
+        return len(key_list)
 
     def lrange(self, key, start, stop):
         return self._get_list(key)[start:stop]
