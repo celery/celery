@@ -92,7 +92,7 @@ class Context(object):
     errbacks = None
     timelimit = None
     origin = None
-    task = None
+    task_name = None
     _children = None   # see property
     _protected = 0
 
@@ -129,7 +129,7 @@ class Context(object):
             'retries': self.retries,
             'reply_to': self.reply_to,
             'origin': self.origin,
-            'task': self.task
+            'task_name': self.task_name
         }
 
     @property
