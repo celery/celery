@@ -116,8 +116,9 @@ class Request(object):
         self.parent_id = headers.get('parent_id')
         if 'shadow' in headers:
             self.name = headers['shadow'] or self.name
-        if 'timelimit' in headers:
-            self.time_limits = headers['timelimit']
+        timelimit = headers.get('timelimit', None)
+        if timelimit:
+            self.time_limits = timelimit
         self.argsrepr = headers.get('argsrepr', '')
         self.kwargsrepr = headers.get('kwargsrepr', '')
         self.on_ack = on_ack
@@ -314,7 +315,7 @@ class Request(object):
                 self.id, exc, request=self, store_result=self.store_errors,
             )
 
-            if self.task.acks_late:
+            if self.task.acks_late and self.task.acks_on_failure_or_timeout:
                 self.acknowledge()
 
     def on_success(self, failed__retval__runtime, **kwargs):
@@ -367,15 +368,16 @@ class Request(object):
             )
         # (acks_late) acknowledge after result stored.
         if self.task.acks_late:
-            requeue = not self.delivery_info.get('redelivered')
             reject = (
                 self.task.reject_on_worker_lost and
                 isinstance(exc, WorkerLostError)
             )
+            ack = self.task.acks_on_failure_or_timeout
             if reject:
+                requeue = not self.delivery_info.get('redelivered')
                 self.reject(requeue=requeue)
                 send_failed_event = False
-            else:
+            elif ack:
                 self.acknowledge()
 
         if send_failed_event:
@@ -498,7 +500,7 @@ class Request(object):
     def group(self):
         # used by backend.on_chord_part_return when failures reported
         # by parent process
-        return self.request_dict['group']
+        return self.request_dict.get('group')
 
 
 def create_request_cls(base, task, pool, hostname, eventer,

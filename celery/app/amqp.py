@@ -142,9 +142,9 @@ class Queues(dict):
     def _set_ha_policy(self, args):
         policy = self.ha_policy
         if isinstance(policy, (list, tuple)):
-            return args.update({'x-ha-policy': 'nodes',
-                                'x-ha-policy-params': list(policy)})
-        args['x-ha-policy'] = policy
+            return args.update({'ha-mode': 'nodes',
+                                'ha-params': list(policy)})
+        args['ha-mode'] = policy
 
     def _set_max_priority(self, args):
         if 'x-max-priority' not in args and self.max_priority is not None:

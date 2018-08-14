@@ -690,7 +690,7 @@ Régis B <github@behmo.com>
 Remigiusz Modrzejewski <lrem@maxnet.org.pl>
 Rémi Marenco <remi.marenco@gmail.com>
 rfkrocktk <rfkrocktk@gmail.com>
- <rick.van.hattem@fawo.nl>
+Rick van Hattem <rick.van.hattem@fawo.nl>
 Rick Wargo <rickwargo@users.noreply.github.com>
 Rico Moorman <rico.moorman@gmail.com>
 Rik <gitaarik@gmail.com>

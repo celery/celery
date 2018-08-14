@@ -19,7 +19,8 @@ from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
 
-from . import async, base
+from .asynchronous import AsyncBackendMixin, BaseResultConsumer
+from .base import BaseKeyValueStoreBackend
 
 try:
     from urllib.parse import unquote
@@ -74,7 +75,7 @@ E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 logger = get_logger(__name__)
 
 
-class ResultConsumer(async.BaseResultConsumer):
+class ResultConsumer(BaseResultConsumer):
     _pubsub = None
 
     def __init__(self, *args, **kwargs):
@@ -138,7 +139,7 @@ class ResultConsumer(async.BaseResultConsumer):
             self._pubsub.unsubscribe(key)
 
 
-class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
+class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     """Redis task result store."""
 
     ResultConsumer = ResultConsumer
@@ -359,13 +360,16 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             if readycount == total:
                 decode, unpack = self.decode, self._unpack_chord_result
                 with client.pipeline() as pipe:
-                    resl, _, _ = pipe \
+                    resl, = pipe \
                         .lrange(jkey, 0, total) \
-                        .delete(jkey) \
-                        .delete(tkey) \
                         .execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])
+                    with client.pipeline() as pipe:
+                        _, _ = pipe \
+                            .delete(jkey) \
+                            .delete(tkey) \
+                            .execute()
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception(
                         'Chord callback for %r raised: %r', request.group, exc)

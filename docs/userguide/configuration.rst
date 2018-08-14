@@ -661,7 +661,7 @@ on backend specifications).
 
 .. note::
 
-    For the moment this only works with the AMQP, database, cache,
+    For the moment this only works with the AMQP, database, cache, Couchbase,
     and Redis backends.
 
     When using the database backend, ``celery beat`` must be
@@ -1525,7 +1525,7 @@ Examples:
         re.compile(r'(image|video)\.tasks\..*'): 'media',  # <-- regex
         'video.encode': {
             'queue': 'video',
-            'exchange': 'media'
+            'exchange': 'media',
             'routing_key': 'media.video.encode',
         },
     }

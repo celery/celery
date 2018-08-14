@@ -5,6 +5,7 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 from billiard.einfo import ExceptionInfo
+from kombu import serialization
 from kombu.exceptions import OperationalError
 from kombu.utils.uuid import uuid
 
@@ -249,6 +250,13 @@ class Task(object):
     #: :setting:`task_acks_late` setting.
     acks_late = None
 
+    #: When enabled messages for this task will be acknowledged even if it
+    #: fails or times out.
+    #:
+    #: The application default can be overridden with the
+    #: :setting:`task_acks_on_failure_or_timeout` setting.
+    acks_on_failure_or_timeout = True
+
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
     #: exits or is signaled (e.g., :sig:`KILL`/:sig:`INT`, etc).
@@ -294,6 +302,7 @@ class Task(object):
         ('rate_limit', 'task_default_rate_limit'),
         ('track_started', 'task_track_started'),
         ('acks_late', 'task_acks_late'),
+        ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
         ('store_errors_even_if_ignored', 'task_store_errors_even_if_ignored'),
@@ -514,6 +523,17 @@ class Task(object):
 
         app = self._get_app()
         if app.conf.task_always_eager:
+            with app.producer_or_acquire(producer) as eager_producer:
+                serializer = options.get(
+                    'serializer', eager_producer.serializer
+                )
+                body = args, kwargs
+                content_type, content_encoding, data = serialization.dumps(
+                    body, serializer
+                )
+                args, kwargs = serialization.loads(
+                    data, content_type, content_encoding
+                )
             with denied_join_result():
                 return self.apply(args, kwargs, task_id=task_id or uuid(),
                                   link=link, link_error=link_error, **options)
@@ -580,7 +600,7 @@ class Task(object):
 
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
               eta=None, countdown=None, max_retries=None, **options):
-        """Retry the task.
+        """Retry the task, adding it to the back of the queue.
 
         Example:
             >>> from imaginary_twitter_lib import Twitter

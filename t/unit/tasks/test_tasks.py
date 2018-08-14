@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import pytest
 from case import ANY, ContextMock, MagicMock, Mock, patch
 from kombu import Queue
+from kombu.exceptions import EncodeError
 
 from celery import Task, group, uuid
 from celery.app.task import _reprtask
@@ -823,6 +824,13 @@ class test_apply_async(TasksCase):
             shadow=None,
             ignore_result=False
         )
+
+    def test_eager_serialization_failure(self):
+        @self.app.task
+        def task(*args, **kwargs):
+            pass
+        with pytest.raises(EncodeError):
+            task.apply_async((1, 2, 3, 4, {1}))
 
     def test_task_with_ignored_result(self):
         with patch.object(self.app, 'send_task') as send_task:

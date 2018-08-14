@@ -253,7 +253,9 @@ def find_related_module(package, related_name):
     # Django 1.7 allows for speciying a class name in INSTALLED_APPS.
     # (Issue #2248).
     try:
-        importlib.import_module(package)
+        module = importlib.import_module(package)
+        if not related_name and module:
+            return module
     except ImportError:
         package, _, _ = package.rpartition('.')
         if not package:

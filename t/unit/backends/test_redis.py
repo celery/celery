@@ -146,7 +146,7 @@ class test_RedisResultConsumer:
     def get_consumer(self):
         return self.get_backend().result_consumer
 
-    @patch('celery.backends.async.BaseResultConsumer.on_after_fork')
+    @patch('celery.backends.asynchronous.BaseResultConsumer.on_after_fork')
     def test_on_after_fork(self, parent_method):
         consumer = self.get_consumer()
         consumer.start('none')
@@ -172,7 +172,7 @@ class test_RedisResultConsumer:
         parent_method.assert_called_once()
 
     @patch('celery.backends.redis.ResultConsumer.cancel_for')
-    @patch('celery.backends.async.BaseResultConsumer.on_state_change')
+    @patch('celery.backends.asynchronous.BaseResultConsumer.on_state_change')
     def test_on_state_change(self, parent_method, cancel_for):
         consumer = self.get_consumer()
         meta = {'task_id': 'testing', 'status': states.SUCCESS}
@@ -234,6 +234,7 @@ class test_RedisBackend:
         assert x.connparams['socket_timeout'] == 30.0
         assert x.connparams['socket_connect_timeout'] == 100.0
 
+    @skip.unless_module('redis')
     def test_timeouts_in_url_coerced(self):
         x = self.Backend(
             ('redis://:bosco@vandelay.com:123//1?'

@@ -21,6 +21,7 @@ from kombu.serialization import registry as serializer_registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
 from kombu.utils.url import maybe_sanitize_url
 
+import celery.exceptions
 from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
 from celery.exceptions import (ChordError, ImproperlyConfigured,
@@ -32,6 +33,7 @@ from celery.utils.collections import BufferMap
 from celery.utils.functional import LRUCache, arity_greater
 from celery.utils.log import get_logger
 from celery.utils.serialization import (create_exception_cls,
+                                        ensure_serializable,
                                         get_pickleable_exception,
                                         get_pickled_exception)
 
@@ -235,7 +237,7 @@ class Backend(object):
         if serializer in EXCEPTION_ABLE_CODECS:
             return get_pickleable_exception(exc)
         return {'exc_type': type(exc).__name__,
-                'exc_message': exc.args,
+                'exc_message': ensure_serializable(exc.args, self.encode),
                 'exc_module': type(exc).__module__}
 
     def exception_to_python(self, exc):
@@ -249,7 +251,11 @@ class Backend(object):
                 else:
                     exc_module = from_utf8(exc_module)
                     exc_type = from_utf8(exc['exc_type'])
-                    cls = getattr(sys.modules[exc_module], exc_type)
+                    try:
+                        cls = getattr(sys.modules[exc_module], exc_type)
+                    except KeyError:
+                        cls = create_exception_cls(exc_type,
+                                                   celery.exceptions.__name__)
                 exc_msg = exc['exc_message']
                 exc = cls(*exc_msg if isinstance(exc_msg, tuple) else exc_msg)
             if self.serializer in EXCEPTION_ABLE_CODECS:
@@ -655,6 +661,8 @@ class BaseKeyValueStoreBackend(Backend):
             'children': self.current_task_children(request),
             'task_id': bytes_to_str(task_id),
         }
+        if request and getattr(request, 'group', None):
+            meta['group_id'] = request.group
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
 

@@ -22,7 +22,7 @@ Examples
     $ # You need to add the same arguments when you restart,
     $ # as these aren't persisted anywhere.
     $ celery multi restart Leslie -E --pidfile=/var/run/celery/%n.pid
-                                     --logfile=/var/run/celery/%n%I.log
+                                     --logfile=/var/log/celery/%n%I.log
 
     $ # To stop the node, you need to specify the same pidfile.
     $ celery multi stop Leslie --pidfile=/var/run/celery/%n.pid
