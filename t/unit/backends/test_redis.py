@@ -521,7 +521,7 @@ class test_RedisBackend:
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, ChordError())
-            self.b.client.pipeline.return_value.rpush().llen().get().expire(
+            self.b.client.pipeline.return_value.rpush().get().expire(
             ).expire().execute.return_value = (1, 1, 0, 4, 5)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
