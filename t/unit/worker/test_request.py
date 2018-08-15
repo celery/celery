@@ -20,7 +20,6 @@ from celery import states
 from celery.app.trace import (TraceInfo, _trace_task_ret, build_tracer,
                               mro_lookup, reset_worker_optimizations,
                               setup_worker_optimizations, trace_task)
-from celery.contrib.testing.mocks import PicklableMock
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated, WorkerLostError)
 from celery.five import monotonic
@@ -211,9 +210,9 @@ class test_Request(RequestCase):
                 headers.pop(header)
         return Request(
             msg,
-            on_ack=PicklableMock(name='on_ack'),
-            on_reject=PicklableMock(name='on_reject'),
-            eventer=PicklableMock(name='eventer'),
+            on_ack=Mock(name='on_ack'),
+            on_reject=Mock(name='on_reject'),
+            eventer=Mock(name='eventer'),
             app=self.app,
             connection_errors=(socket.error,),
             task=sig.type,
@@ -632,7 +631,6 @@ class test_Request(RequestCase):
         job.acknowledge = Mock(name='ack')
         job.task.acks_late = True
         job.on_timeout(soft=False, timeout=1337)
-        self.app.set_current()
         assert 'Hard time limit' in error.call_args[0][0]
         assert self.mytask.backend.get_status(job.id) == states.FAILURE
         job.acknowledge.assert_called_with()
