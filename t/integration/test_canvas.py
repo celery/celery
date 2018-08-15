@@ -367,6 +367,17 @@ class test_chord:
         assert res.get() == [0, 5 + 6 + 7]
 
     @flaky
+    def test_eager_chord_inside_task(self, manager):
+        from .tasks import chord_add
+
+        prev = chord_add.app.conf.task_always_eager
+        chord_add.app.conf.task_always_eager = True
+
+        chord_add.apply_async(args=(4, 8), throw=True).get()
+
+        chord_add.app.conf.task_always_eager = prev
+
+    @flaky
     def test_group_chain(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')

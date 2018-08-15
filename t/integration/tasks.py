@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 
 from time import sleep
 
-from celery import chain, group, shared_task
+from celery import chain, chord, group, shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
@@ -40,6 +40,11 @@ def chain_add(x, y):
     (
         add.s(x, x) | add.s(y)
     ).apply_async()
+
+
+@shared_task
+def chord_add(x, y):
+    chord(add.s(x, x), add.s(y)).apply_async()
 
 
 @shared_task
