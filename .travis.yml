@@ -7,6 +7,9 @@ python:
   - '3.4'
   - '3.5'
   - '3.6'
+  # Python 3.7 is not supported by trusty images
+  # so it is manually included below in the matrix
+  # - '3.7'
 os:
     - linux
 stages:
@@ -51,6 +54,22 @@ matrix:
   - python: '3.6'
     env: TOXENV=isort-check
     stage: lint
+  - &python37
+    python: '3.7'
+    dist: xenial
+    stage: test
+    addons:
+      apt:
+        packages:
+          - libgnutls28-dev
+          - rabbitmq-server
+    env: MATRIX_TOXENV=unit
+  - <<: *python37
+    env: MATRIX_TOXENV=integration-rabbitmq
+  - <<: *python37
+    env: MATRIX_TOXENV=integration-redis
+  - <<: *python37
+    env: MATRIX_TOXENV=integration-dynamodb
 before_install:
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
@@ -101,3 +120,4 @@ notifications:
 services:
     - rabbitmq
     - redis
+

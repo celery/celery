@@ -53,7 +53,7 @@ COPY --chown=1000:1000 docker/entrypoint /entrypoint
 RUN chmod gu+x /entrypoint
 
 # Define the local pyenvs
-RUN pyenv local python2.7 python3.4 python3.5 python3.6
+RUN pyenv local python2.7 python3.4 python3.5 python3.6 python3.7
 
 # Setup one celery environment for basic development use
 RUN pyenv exec pip install \
