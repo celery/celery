@@ -642,6 +642,16 @@ Default: No compression.
 Optional compression method used for task results.
 Supports the same options as the :setting:`task_serializer` setting.
 
+.. setting:: result_extended
+
+``result_extended``
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``False``
+
+Enables extended task result attributes (name, args, kwargs, worker,
+retries, queue, delivery_info) to be written to backend.
+
 .. setting:: result_expires
 
 ``result_expires``

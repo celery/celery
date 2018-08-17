@@ -180,6 +180,7 @@ NAMESPACES = Namespace(
             type='float', old={'celery_task_result_expires'},
         ),
         persistent=Option(None, type='bool'),
+        extended=Option(False, type='bool'),
         serializer=Option('json'),
         backend_transport_options=Option({}, type='dict'),
     ),

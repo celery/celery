@@ -8,6 +8,7 @@ import pytest
 from case import ANY, Mock, call, patch, skip
 
 from celery import chord, group, states, uuid
+from celery.app.task import Context
 from celery.backends.base import (BaseBackend, DisabledBackend,
                                   KeyValueStoreBackend, _nulldict)
 from celery.exceptions import ChordError, TimeoutError
@@ -426,9 +427,7 @@ class test_KeyValueStoreBackend:
         tid = uuid()
         state = 'SUCCESS'
         result = 10
-        request = Mock()
-        request.group = 'gid'
-        request.children = []
+        request = Context(group='gid', children=[])
         self.b.store_result(
             tid, state=state, result=result, request=request,
         )

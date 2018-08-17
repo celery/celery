@@ -8,6 +8,7 @@
 """
 from __future__ import absolute_import, unicode_literals
 
+import datetime
 import sys
 import time
 from collections import namedtuple
@@ -70,14 +71,13 @@ def unpickle_backend(cls, args, kwargs):
 
 
 class _nulldict(dict):
-
     def ignore(self, *a, **kw):
         pass
+
     __setitem__ = update = setdefault = ignore
 
 
 class Backend(object):
-
     READY_STATES = states.READY_STATES
     UNREADY_STATES = states.UNREADY_STATES
     EXCEPTION_STATES = states.EXCEPTION_STATES
@@ -332,6 +332,7 @@ class Backend(object):
     def get_state(self, task_id):
         """Get the state of a task."""
         return self.get_task_meta(task_id)['status']
+
     get_status = get_state  # XXX compat
 
     def get_traceback(self, task_id):
@@ -448,7 +449,6 @@ class Backend(object):
 
 
 class SyncBackendMixin(object):
-
     def iter_native(self, result, timeout=None, interval=0.5, no_ack=True,
                     on_message=None, on_interval=None):
         self._ensure_not_eager()
@@ -656,13 +656,39 @@ class BaseKeyValueStoreBackend(Backend):
 
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
+
+        if state in self.READY_STATES:
+            date_done = datetime.datetime.utcnow()
+        else:
+            date_done = None
+
         meta = {
-            'status': state, 'result': result, 'traceback': traceback,
+            'status': state,
+            'result': result,
+            'traceback': traceback,
             'children': self.current_task_children(request),
             'task_id': bytes_to_str(task_id),
+            'date_done': date_done,
         }
+
         if request and getattr(request, 'group', None):
             meta['group_id'] = request.group
+
+        if self.app.conf.find_value_for_key('extended', 'result'):
+            if request:
+                request_meta = {
+                    'name': getattr(request, 'task_name', None),
+                    'args': getattr(request, 'args', None),
+                    'kwargs': getattr(request, 'kwargs', None),
+                    'worker': getattr(request, 'hostname', None),
+                    'retries': getattr(request, 'retries', None),
+                    'queue': request.delivery_info.get('routing_key')
+                    if hasattr(request, 'delivery_info') and
+                    request.delivery_info else None
+                }
+
+                meta.update(request_meta)
+
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
 
@@ -769,7 +795,7 @@ class KeyValueStoreBackend(BaseKeyValueStoreBackend, SyncBackendMixin):
 class DisabledBackend(BaseBackend):
     """Dummy result backend."""
 
-    _cache = {}   # need this attribute to reset cache in tests.
+    _cache = {}  # need this attribute to reset cache in tests.
 
     def store_result(self, *args, **kwargs):
         pass

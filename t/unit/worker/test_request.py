@@ -253,7 +253,7 @@ class test_Request(RequestCase):
         req.on_retry(Mock())
         req.on_ack.assert_called_with(req_logger, req.connection_errors)
 
-    def test_on_failure_Termianted(self):
+    def test_on_failure_Terminated(self):
         einfo = None
         try:
             raise Terminated('9')
@@ -451,6 +451,7 @@ class test_Request(RequestCase):
                 terminated=False, expired=True, signum=None):
             job.revoked()
             assert job.id in revoked
+            self.app.set_current()
             assert self.mytask.backend.get_status(job.id) == states.REVOKED
 
     def test_revoked_expires_not_expired(self):
@@ -597,6 +598,7 @@ class test_Request(RequestCase):
         job = self.xRequest()
         exc_info = get_ei()
         job.on_failure(exc_info)
+        self.app.set_current()
         assert self.mytask.backend.get_status(job.id) == states.FAILURE
 
         self.mytask.ignore_result = True
