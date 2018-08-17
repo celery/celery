@@ -404,6 +404,34 @@ class AsyncResult(ResultBase):
         self.id = id
 BaseAsyncResult = AsyncResult  # for backwards compatibility.
 
+    @property
+    def name(self):
+        return self._get_task_meta().get('name')
+
+    @property
+    def args(self):
+        return self._get_task_meta().get('args')
+
+    @property
+    def kwargs(self):
+        return self._get_task_meta().get('kwargs')
+
+    @property
+    def worker(self):
+        return self._get_task_meta().get('worker')
+
+    @property
+    def date_done(self):
+        return self._get_task_meta().get('date_done')
+
+    @property
+    def retries(self):
+        return self._get_task_meta().get('retries')
+
+    @property
+    def queue(self):
+        return self._get_task_meta().get('queue')
+
 
 class ResultSet(ResultBase):
     """Working with more than one result.

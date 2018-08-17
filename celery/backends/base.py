@@ -13,6 +13,7 @@
 """
 from __future__ import absolute_import
 
+import datetime
 import time
 import sys
 
@@ -57,9 +58,9 @@ def unpickle_backend(cls, args, kwargs):
 
 
 class _nulldict(dict):
-
     def ignore(self, *a, **kw):
         pass
+
     __setitem__ = update = setdefault = ignore
 
 
@@ -500,8 +501,39 @@ class KeyValueStoreBackend(BaseBackend):
 
     def _store_result(self, task_id, result, status,
                       traceback=None, request=None, **kwargs):
-        meta = {'status': status, 'result': result, 'traceback': traceback,
-                'children': self.current_task_children(request)}
+
+        if state in self.READY_STATES:
+            date_done = datetime.datetime.utcnow()
+        else:
+            date_done = None
+
+        meta = {
+            'status': state,
+            'result': result,
+            'traceback': traceback,
+            'children': self.current_task_children(request),
+            'task_id': bytes_to_str(task_id),
+            'date_done': date_done,
+        }
+
+        if request and getattr(request, 'group', None):
+            meta['group_id'] = request.group
+
+        if self.app.conf.find_value_for_key('RESULT_EXTENDED'):
+            if request:
+                request_meta = {
+                    'name': getattr(request, 'task_name', None),
+                    'args': getattr(request, 'args', None),
+                    'kwargs': getattr(request, 'kwargs', None),
+                    'worker': getattr(request, 'hostname', None),
+                    'retries': getattr(request, 'retries', None),
+                    'queue': request.delivery_info.get('routing_key')
+                    if hasattr(request, 'delivery_info') and
+                    request.delivery_info else None
+                }
+
+                meta.update(request_meta)
+
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
 
