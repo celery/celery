@@ -28,9 +28,9 @@ class test_DictAttribute:
             x['bar']
         x.foo = 'The quick yellow fox'
         assert x['foo'] == 'The quick yellow fox'
-        assert ('foo', 'The quick yellow fox') in list(x.items())
-        assert 'foo' in list(x.keys())
-        assert 'The quick yellow fox' in list(x.values())
+        assert ('foo', 'The quick yellow fox') in [x.items()]
+        assert 'foo' in [x.keys()]
+        assert 'The quick yellow fox' in [x.values()]
 
     def test_setdefault(self):
         x = DictAttribute(Bunch())
@@ -95,13 +95,13 @@ class test_ConfigurationView:
             'both': 2,
         }
         assert dict(items(self.view)) == expected
-        assert sorted(list(iter(self.view))) == sorted(list(expected.keys()))
-        assert sorted(list(self.view.keys())) == sorted(list(expected.keys()))
-        assert (sorted(list(self.view.values())) ==
-                sorted(list(expected.values())))
-        assert 'changed_key' in list(self.view.keys())
-        assert 2 in list(self.view.values())
-        assert ('both', 2) in list(self.view.items())
+        assert sorted([iter(self.view)]) == sorted([expected.keys()])
+        assert sorted([self.view.keys()]) == sorted([expected.keys()])
+        assert (sorted([self.view.values()]) ==
+                sorted([expected.values()]))
+        assert 'changed_key' in [self.view.keys()]
+        assert 2 in [self.view.values()]
+        assert ('both', 2) in [self.view.items()]
 
     def test_add_defaults_dict(self):
         defaults = {'foo': 10}
@@ -221,7 +221,7 @@ class test_LimitedSet:
         items = ['foo', 'bar', 'baz', 'xaz']
         for item in items:
             s.add(item)
-        l = list(iter(s))
+        l = [iter(s)]
         for item in items[1:]:
             assert item in l
         assert 'foo' not in l
@@ -257,13 +257,13 @@ class test_LimitedSet:
 
         s2 = LimitedSet(maxlen=2)
         s2.update(s1)
-        assert sorted(list(s2)) == ['bar', 'foo']
+        assert sorted([s2]) == ['bar', 'foo']
 
         s2.update(['bla'])
-        assert sorted(list(s2)) == ['bar', 'bla']
+        assert sorted([s2]) == ['bar', 'bla']
 
         s2.update(['do', 're'])
-        assert sorted(list(s2)) == ['do', 're']
+        assert sorted([s2]) == ['do', 're']
         s1 = LimitedSet(maxlen=10, expires=None)
         s2 = LimitedSet(maxlen=10, expires=None)
         s3 = LimitedSet(maxlen=10, expires=None)
@@ -362,12 +362,12 @@ class test_Messagebuffer:
 
     def test_extend_limited(self):
         b = Messagebuffer(10)
-        b.extend(list(range(20)))
+        b.extend([range(20)])
         self.assert_size_and_first(b, 10, 10)
 
     def test_extend_unlimited(self):
         b = Messagebuffer(None)
-        b.extend(list(range(20)))
+        b.extend([range(20)])
         self.assert_size_and_first(b, 20, 0)
 
     def test_extend_eviction_time_limited(self):
@@ -391,22 +391,22 @@ class test_Messagebuffer:
         assert repr(Messagebuffer(10, [1, 2, 3]))
 
     def test_iter(self):
-        b = Messagebuffer(10, list(range(10)))
+        b = Messagebuffer(10, [range(10)])
         assert len(b) == 10
         for i, item in enumerate(b):
             assert item == i
         assert len(b) == 0
 
     def test_contains(self):
-        b = Messagebuffer(10, list(range(10)))
+        b = Messagebuffer(10, [range(10)])
         assert 5 in b
 
     def test_reversed(self):
-        assert (list(reversed(Messagebuffer(10, list(range(10))))) ==
-                list(reversed(range(10))))
+        assert ([reversed(Messagebuffer(10, [range(10)]))] ==
+                [reversed(range(10))])
 
     def test_getitem(self):
-        b = Messagebuffer(10, list(range(10)))
+        b = Messagebuffer(10, [range(10)])
         for i in range(10):
             assert b[i] == i
 
@@ -431,12 +431,12 @@ class test_BufferMap:
 
     def test_extend_limited(self):
         b = BufferMap(10)
-        b.extend(1, list(range(20)))
+        b.extend(1, [range(20)])
         self.assert_size_and_first(b, 10, 10)
 
     def test_extend_unlimited(self):
         b = BufferMap(None)
-        b.extend(1, list(range(20)))
+        b.extend(1, [range(20)])
         self.assert_size_and_first(b, 20, 0)
 
     def test_pop_empty_with_default(self):

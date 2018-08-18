@@ -176,7 +176,7 @@ class test_AsyncResult:
         assert x.get_leaf() is 2
 
         it = x.collect()
-        assert list(it) == [
+        assert [it] == [
             (x, None),
             (c[0], 0),
             (c[1], 1),
@@ -191,7 +191,7 @@ class test_AsyncResult:
             child.backend = Mock()
             child.backend.get_children.return_value = []
         it = x.iterdeps()
-        assert list(it) == [
+        assert [it] == [
             (None, x),
             (x, c[0]),
             (x, c[1]),
@@ -201,8 +201,8 @@ class test_AsyncResult:
         x.ready = Mock()
         x.ready.return_value = False
         with pytest.raises(IncompleteStream):
-            list(x.iterdeps())
-        list(x.iterdeps(intermediate=True))
+            [x.iterdeps()]
+        [x.iterdeps(intermediate=True)]
 
     def test_eq_not_implemented(self):
         assert self.app.AsyncResult('1') != object()
@@ -510,7 +510,7 @@ class test_ResultSet:
             with patch('celery.result.time') as _time:
                 with pytest.warns(CPendingDeprecationWarning):
                     with pytest.raises(KeyError):
-                        list(x.iterate())
+                        [x.iterate()]
                 _time.sleep.assert_called_with(10)
 
             backend.subpolling_interval = 0
@@ -519,7 +519,7 @@ class test_ResultSet:
                     with pytest.raises(KeyError):
                         ready.return_value = False
                         ready.side_effect = se
-                        list(x.iterate())
+                        [x.iterate()]
                     _time.sleep.assert_not_called()
 
     def test_times_out(self):
@@ -531,7 +531,7 @@ class test_ResultSet:
             with patch('celery.result.time'):
                 with pytest.warns(CPendingDeprecationWarning):
                     with pytest.raises(TimeoutError):
-                        list(x.iterate(timeout=1))
+                        [x.iterate(timeout=1)]
 
     def test_add_discard(self):
         x = self.app.ResultSet([])
@@ -760,7 +760,7 @@ class test_GroupResult:
         ts.app.backend = backend
         backend.ids = [result.id for result in results]
         res = ts.join_native()
-        assert res == list(range(10))
+        assert res == [range(10)]
         callback = Mock(name='callback')
         assert not ts.join_native(callback=callback)
         callback.assert_has_calls([
@@ -801,7 +801,7 @@ class test_GroupResult:
         ts = self.app.GroupResult(uuid(), results)
         ts.app.backend = backend
         backend.ids = [result.id for result in results]
-        assert len(list(ts.iter_native())) == 10
+        assert len([ts.iter_native()]) == 10
 
     def test_iterate_yields(self):
         ar = MockAsyncResultSuccess(uuid(), app=self.app)
@@ -839,20 +839,20 @@ class test_GroupResult:
 
     def test_iter_native_when_empty_group(self):
         ts = self.app.GroupResult(uuid(), [])
-        assert list(ts.iter_native()) == []
+        assert [ts.iter_native()] == []
 
     def test_iterate_simple(self):
         with pytest.warns(CPendingDeprecationWarning):
             it = self.ts.iterate()
-        results = sorted(list(it))
-        assert results == list(range(self.size))
+        results = sorted([it])
+        assert results == [range(self.size)]
 
     def test___iter__(self):
-        assert list(iter(self.ts)) == self.ts.results
+        assert [iter(self.ts)] == self.ts.results
 
     def test_join(self):
         joined = self.ts.join()
-        assert joined == list(range(self.size))
+        assert joined == [range(self.size)]
 
     def test_successful(self):
         assert self.ts.successful()
@@ -907,7 +907,7 @@ class test_failed_AsyncResult:
             it = self.ts.iterate()
 
         def consume():
-            return list(it)
+            return [it]
 
         with pytest.raises(KeyError):
             consume()

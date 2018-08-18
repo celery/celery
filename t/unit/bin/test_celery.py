@@ -152,7 +152,7 @@ class test_CeleryCommand:
 
     def test_load_extensions_commands(self):
         with patch('celery.bin.celery.Extensions') as Ext:
-            prev, mod.command_classes = list(mod.command_classes), Mock()
+            prev, mod.command_classes = [mod.command_classes], Mock()
             try:
                 ext = Ext.return_value = Mock(name='Extension')
                 ext.load.return_value = ['foo', 'bar']

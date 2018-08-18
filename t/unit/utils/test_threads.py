@@ -36,10 +36,10 @@ class test_Local:
         x = Local()
         x.foo = 'bar'
         ident = x.__ident_func__()
-        assert (ident, {'foo': 'bar'}) in list(iter(x))
+        assert (ident, {'foo': 'bar'}) in [iter(x)]
 
         delattr(x, 'foo')
-        assert (ident, {'foo': 'bar'}) not in list(iter(x))
+        assert (ident, {'foo': 'bar'}) not in [iter(x)]
         with pytest.raises(AttributeError):
             delattr(x, 'foo')
 

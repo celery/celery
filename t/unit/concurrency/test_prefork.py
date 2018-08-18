@@ -194,7 +194,7 @@ class test_AsynPool:
         assert asynpool.gen_not_started(g)
         next(g)
         assert not asynpool.gen_not_started(g)
-        list(g)
+        [g]
         assert not asynpool.gen_not_started(g)
 
     @patch('select.select', create=True)

@@ -125,7 +125,7 @@ class test_start_filter:
             evloop.side_effect = StopFiltering()
             app.amqp.queues = {'foo': Queue('foo'), 'bar': Queue('bar')}
             consumer = app.amqp.TaskConsumer.return_value = Mock(name='consum')
-            consumer.queues = list(app.amqp.queues.values())
+            consumer.queues = [app.amqp.queues.values()]
             consumer.channel = conn.default_channel
             consumer.__enter__ = Mock(name='consumer.__enter__')
             consumer.__exit__ = Mock(name='consumer.__exit__')
