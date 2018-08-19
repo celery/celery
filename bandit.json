@@ -1,6 +1,6 @@
 {
   "errors": [],
-  "generated_at": "2017-12-12T18:18:35Z",
+  "generated_at": "2018-08-19T14:29:46Z",
   "metrics": {
     "_totals": {
       "CONFIDENCE.HIGH": 41.0,
@@ -11,7 +11,7 @@
       "SEVERITY.LOW": 40.0,
       "SEVERITY.MEDIUM": 2.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 28375,
+      "loc": 28612,
       "nosec": 0
     },
     "celery/__init__.py": {
@@ -71,7 +71,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 522,
+      "loc": 521,
       "nosec": 0
     },
     "celery/app/annotations.py": {
@@ -95,7 +95,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 59,
+      "loc": 60,
       "nosec": 0
     },
     "celery/app/base.py": {
@@ -131,7 +131,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 350,
+      "loc": 361,
       "nosec": 0
     },
     "celery/app/defaults.py": {
@@ -191,7 +191,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 106,
+      "loc": 110,
       "nosec": 0
     },
     "celery/app/task.py": {
@@ -203,7 +203,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 714,
+      "loc": 718,
       "nosec": 0
     },
     "celery/app/trace.py": {
@@ -227,7 +227,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 289,
+      "loc": 295,
       "nosec": 0
     },
     "celery/apps/__init__.py": {
@@ -302,7 +302,7 @@
       "loc": 257,
       "nosec": 0
     },
-    "celery/backends/async.py": {
+    "celery/backends/asynchronous.py": {
       "CONFIDENCE.HIGH": 0.0,
       "CONFIDENCE.LOW": 0.0,
       "CONFIDENCE.MEDIUM": 0.0,
@@ -323,7 +323,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 626,
+      "loc": 631,
       "nosec": 0
     },
     "celery/backends/cache.py": {
@@ -371,7 +371,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 85,
+      "loc": 87,
       "nosec": 0
     },
     "celery/backends/couchdb.py": {
@@ -431,7 +431,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 223,
+      "loc": 227,
       "nosec": 0
     },
     "celery/backends/elasticsearch.py": {
@@ -479,7 +479,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 318,
+      "loc": 379,
       "nosec": 0
     },
     "celery/backends/riak.py": {
@@ -515,7 +515,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 513,
+      "loc": 522,
       "nosec": 0
     },
     "celery/bin/__init__.py": {
@@ -551,7 +551,7 @@
       "SEVERITY.LOW": 1.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 498,
+      "loc": 501,
       "nosec": 0
     },
     "celery/bin/beat.py": {
@@ -587,7 +587,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 360,
+      "loc": 370,
       "nosec": 0
     },
     "celery/bin/celeryd_detach.py": {
@@ -755,7 +755,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 312,
+      "loc": 311,
       "nosec": 0
     },
     "celery/canvas.py": {
@@ -767,7 +767,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 1047,
+      "loc": 1052,
       "nosec": 0
     },
     "celery/concurrency/__init__.py": {
@@ -791,7 +791,7 @@
       "SEVERITY.LOW": 17.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 977,
+      "loc": 984,
       "nosec": 0
     },
     "celery/concurrency/base.py": {
@@ -923,7 +923,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 64,
+      "loc": 75,
       "nosec": 0
     },
     "celery/contrib/testing/__init__.py": {
@@ -959,7 +959,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 142,
+      "loc": 165,
       "nosec": 0
     },
     "celery/contrib/testing/mocks.py": {
@@ -1175,7 +1175,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 200,
+      "loc": 195,
       "nosec": 0
     },
     "celery/loaders/default.py": {
@@ -1199,7 +1199,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 439,
+      "loc": 438,
       "nosec": 0
     },
     "celery/platforms.py": {
@@ -1223,7 +1223,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 799,
+      "loc": 837,
       "nosec": 0
     },
     "celery/schedules.py": {
@@ -1355,7 +1355,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 20,
+      "loc": 18,
       "nosec": 0
     },
     "celery/utils/abstract.py": {
@@ -1379,7 +1379,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 624,
+      "loc": 623,
       "nosec": 0
     },
     "celery/utils/debug.py": {
@@ -1427,7 +1427,7 @@
       "SEVERITY.LOW": 1.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 267,
+      "loc": 272,
       "nosec": 0
     },
     "celery/utils/dispatch/weakref_backports.py": {
@@ -1463,7 +1463,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 1.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 263,
+      "loc": 261,
       "nosec": 0
     },
     "celery/utils/graph.py": {
@@ -1511,7 +1511,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 215,
+      "loc": 214,
       "nosec": 0
     },
     "celery/utils/nodenames.py": {
@@ -1547,7 +1547,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 198,
+      "loc": 191,
       "nosec": 0
     },
     "celery/utils/serialization.py": {
@@ -1559,7 +1559,7 @@
       "SEVERITY.LOW": 4.0,
       "SEVERITY.MEDIUM": 1.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 216,
+      "loc": 228,
       "nosec": 0
     },
     "celery/utils/static/__init__.py": {
@@ -1631,7 +1631,7 @@
       "SEVERITY.LOW": 1.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 303,
+      "loc": 304,
       "nosec": 0
     },
     "celery/utils/timer2.py": {
@@ -1643,7 +1643,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 118,
+      "loc": 119,
       "nosec": 0
     },
     "celery/worker/__init__.py": {
@@ -1667,7 +1667,7 @@
       "SEVERITY.LOW": 1.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 129,
+      "loc": 132,
       "nosec": 0
     },
     "celery/worker/components.py": {
@@ -1727,7 +1727,7 @@
       "SEVERITY.LOW": 1.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 477,
+      "loc": 469,
       "nosec": 0
     },
     "celery/worker/consumer/control.py": {
@@ -1859,7 +1859,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 443,
+      "loc": 444,
       "nosec": 0
     },
     "celery/worker/state.py": {
@@ -1883,7 +1883,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 130,
+      "loc": 169,
       "nosec": 0
     },
     "celery/worker/worker.py": {
@@ -1910,6 +1910,7 @@
       "line_range": [
         11
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_imports.html#b404-import-subprocess",
       "test_id": "B404",
       "test_name": "blacklist"
     },
@@ -1923,6 +1924,7 @@
       "line_range": [
         196
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b603_subprocess_without_shell_equals_true.html",
       "test_id": "B603",
       "test_name": "subprocess_without_shell_equals_true"
     },
@@ -1936,6 +1938,7 @@
       "line_range": [
         321
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b606_start_process_with_no_shell.html",
       "test_id": "B606",
       "test_name": "start_process_with_no_shell"
     },
@@ -1949,32 +1952,35 @@
       "line_range": [
         67
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "341         while 1:\n342             val = input(p).lower()\n343             if val in choices:\n",
+      "code": "342         while 1:\n343             val = input(p).lower()\n344             if val in choices:\n",
       "filename": "celery/bin/base.py",
       "issue_confidence": "HIGH",
       "issue_severity": "HIGH",
       "issue_text": "The input method in Python 2 will read from standard input, evaluate and run the resulting string as python source code. This is similar, though in many ways worse, then using eval. On Python 2, use raw_input instead, input is safe in Python 3.",
-      "line_number": 342,
+      "line_number": 343,
       "line_range": [
-        342
+        343
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b322-input",
       "test_id": "B322",
       "test_name": "blacklist"
     },
     {
-      "code": "536                     in_option = m.groups()[0].strip()\n537                 assert in_option, 'missing long opt'\n538             elif in_option and line.startswith(' ' * 4):\n",
+      "code": "540                     in_option = m.groups()[0].strip()\n541                 assert in_option, 'missing long opt'\n542             elif in_option and line.startswith(' ' * 4):\n",
       "filename": "celery/bin/base.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 537,
+      "line_number": 541,
       "line_range": [
-        537
+        541
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
@@ -1988,6 +1994,7 @@
       "line_range": [
         39
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b606_start_process_with_no_shell.html",
       "test_id": "B606",
       "test_name": "start_process_with_no_shell"
     },
@@ -2001,217 +2008,234 @@
       "line_range": [
         29
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_imports.html#b403-import-pickle",
       "test_id": "B403",
       "test_name": "blacklist"
     },
     {
-      "code": "563                     proc in waiting_to_start):\n564                 assert proc.outqR_fd in fileno_to_outq\n565                 assert fileno_to_outq[proc.outqR_fd] is proc\n",
+      "code": "574                     proc in waiting_to_start):\n575                 assert proc.outqR_fd in fileno_to_outq\n576                 assert fileno_to_outq[proc.outqR_fd] is proc\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 564,
+      "line_number": 575,
       "line_range": [
-        564
+        575
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "564                 assert proc.outqR_fd in fileno_to_outq\n565                 assert fileno_to_outq[proc.outqR_fd] is proc\n566                 assert proc.outqR_fd in hub.readers\n",
+      "code": "575                 assert proc.outqR_fd in fileno_to_outq\n576                 assert fileno_to_outq[proc.outqR_fd] is proc\n577                 assert proc.outqR_fd in hub.readers\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 565,
+      "line_number": 576,
       "line_range": [
-        565
+        576
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "565                 assert fileno_to_outq[proc.outqR_fd] is proc\n566                 assert proc.outqR_fd in hub.readers\n567                 error('Timed out waiting for UP message from %r', proc)\n",
+      "code": "576                 assert fileno_to_outq[proc.outqR_fd] is proc\n577                 assert proc.outqR_fd in hub.readers\n578                 error('Timed out waiting for UP message from %r', proc)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 566,
+      "line_number": 577,
       "line_range": [
-        566
+        577
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "586 \n587             assert not isblocking(proc.outq._reader)\n588 \n589             # handle_result_event is called when the processes outqueue is\n590             # readable.\n591             add_reader(proc.outqR_fd, handle_result_event, proc.outqR_fd)\n",
+      "code": "597 \n598             assert not isblocking(proc.outq._reader)\n599 \n600             # handle_result_event is called when the processes outqueue is\n601             # readable.\n602             add_reader(proc.outqR_fd, handle_result_event, proc.outqR_fd)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 587,
+      "line_number": 598,
       "line_range": [
-        587,
-        588,
-        589,
-        590
+        598,
+        599,
+        600,
+        601
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1038         synq = None\n1039         assert isblocking(inq._reader)\n1040         assert not isblocking(inq._writer)\n",
+      "code": "1048         synq = None\n1049         assert isblocking(inq._reader)\n1050         assert not isblocking(inq._writer)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1039,
+      "line_number": 1049,
       "line_range": [
-        1039
+        1049
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1039         assert isblocking(inq._reader)\n1040         assert not isblocking(inq._writer)\n1041         assert not isblocking(outq._reader)\n",
+      "code": "1049         assert isblocking(inq._reader)\n1050         assert not isblocking(inq._writer)\n1051         assert not isblocking(outq._reader)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1040,
+      "line_number": 1050,
       "line_range": [
-        1040
+        1050
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1040         assert not isblocking(inq._writer)\n1041         assert not isblocking(outq._reader)\n1042         assert isblocking(outq._writer)\n",
+      "code": "1050         assert not isblocking(inq._writer)\n1051         assert not isblocking(outq._reader)\n1052         assert isblocking(outq._writer)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1041,
+      "line_number": 1051,
       "line_range": [
-        1041
+        1051
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1041         assert not isblocking(outq._reader)\n1042         assert isblocking(outq._writer)\n1043         if self.synack:\n",
+      "code": "1051         assert not isblocking(outq._reader)\n1052         assert isblocking(outq._writer)\n1053         if self.synack:\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1042,
+      "line_number": 1052,
       "line_range": [
-        1042
+        1052
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1044             synq = _SimpleQueue(wnonblock=True)\n1045             assert isblocking(synq._reader)\n1046             assert not isblocking(synq._writer)\n",
+      "code": "1054             synq = _SimpleQueue(wnonblock=True)\n1055             assert isblocking(synq._reader)\n1056             assert not isblocking(synq._writer)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1045,
+      "line_number": 1055,
       "line_range": [
-        1045
+        1055
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1045             assert isblocking(synq._reader)\n1046             assert not isblocking(synq._writer)\n1047         return inq, outq, synq\n",
+      "code": "1055             assert isblocking(synq._reader)\n1056             assert not isblocking(synq._writer)\n1057         return inq, outq, synq\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1046,
+      "line_number": 1056,
       "line_range": [
-        1046
+        1056
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1057             return logger.warning('process with pid=%s already exited', pid)\n1058         assert proc.inqW_fd not in self._fileno_to_inq\n1059         assert proc.inqW_fd not in self._all_inqueues\n",
+      "code": "1067             return logger.warning('process with pid=%s already exited', pid)\n1068         assert proc.inqW_fd not in self._fileno_to_inq\n1069         assert proc.inqW_fd not in self._all_inqueues\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1058,
+      "line_number": 1068,
       "line_range": [
-        1058
+        1068
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1058         assert proc.inqW_fd not in self._fileno_to_inq\n1059         assert proc.inqW_fd not in self._all_inqueues\n1060         self._waiting_to_start.discard(proc)\n",
+      "code": "1068         assert proc.inqW_fd not in self._fileno_to_inq\n1069         assert proc.inqW_fd not in self._all_inqueues\n1070         self._waiting_to_start.discard(proc)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1059,
+      "line_number": 1069,
       "line_range": [
-        1059
+        1069
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1137         \"\"\"Mark new ownership for ``queues`` to update fileno indices.\"\"\"\n1138         assert queues in self._queues\n1139         b = len(self._queues)\n",
+      "code": "1147         \"\"\"Mark new ownership for ``queues`` to update fileno indices.\"\"\"\n1148         assert queues in self._queues\n1149         b = len(self._queues)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1138,
+      "line_number": 1148,
       "line_range": [
-        1138
+        1148
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1140         self._queues[queues] = proc\n1141         assert b == len(self._queues)\n1142 \n",
+      "code": "1150         self._queues[queues] = proc\n1151         assert b == len(self._queues)\n1152 \n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1141,
+      "line_number": 1151,
       "line_range": [
-        1141
+        1151
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1220                 pass\n1221             assert len(self._queues) == before\n1222 \n",
+      "code": "1230                 pass\n1231             assert len(self._queues) == before\n1232 \n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1221,
+      "line_number": 1231,
       "line_range": [
-        1221
+        1231
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1227         \"\"\"\n1228         assert not proc._is_alive()\n1229         self._waiting_to_start.discard(proc)\n",
+      "code": "1237         \"\"\"\n1238         assert not proc._is_alive()\n1239         self._waiting_to_start.discard(proc)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1228,
+      "line_number": 1238,
       "line_range": [
-        1228
+        1238
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
@@ -2225,11 +2249,12 @@
       "line_range": [
         82
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "102     setup_app_for_worker(app, loglevel, logfile)\n103     assert 'celery.ping' in app.tasks\n104     # Make sure we can connect to the broker\n105     with app.connection() as conn:\n",
+      "code": "102     setup_app_for_worker(app, loglevel, logfile)\n103     assert 'celery.ping' in app.tasks\n104     # Make sure we can connect to the broker\n105     with app.connection(hostname=os.environ.get('TEST_BROKER')) as conn:\n",
       "filename": "celery/contrib/testing/worker.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
@@ -2239,6 +2264,7 @@
         103,
         104
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
@@ -2252,6 +2278,7 @@
       "line_range": [
         174
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b110_try_except_pass.html",
       "test_id": "B110",
       "test_name": "try_except_pass"
     },
@@ -2265,6 +2292,7 @@
       "line_range": [
         480
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b110_try_except_pass.html",
       "test_id": "B110",
       "test_name": "try_except_pass"
     },
@@ -2278,6 +2306,7 @@
       "line_range": [
         22
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
@@ -2291,6 +2320,7 @@
       "line_range": [
         31
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
@@ -2304,6 +2334,7 @@
       "line_range": [
         32
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
@@ -2317,6 +2348,7 @@
       "line_range": [
         47
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
@@ -2330,32 +2362,35 @@
       "line_range": [
         22
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "165     def _connect_signal(self, receiver, sender, weak, dispatch_uid):\n166         assert callable(receiver), 'Signal receivers must be callable'\n167         if not fun_accepts_kwargs(receiver):\n",
+      "code": "193     def _connect_signal(self, receiver, sender, weak, dispatch_uid):\n194         assert callable(receiver), 'Signal receivers must be callable'\n195         if not fun_accepts_kwargs(receiver):\n",
       "filename": "celery/utils/dispatch/signal.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 166,
+      "line_number": 194,
       "line_range": [
-        166
+        194
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "283     # Tasks are rarely, if ever, created at runtime - exec here is fine.\n284     exec(definition, namespace)\n285     result = namespace[name]\n",
+      "code": "280     # Tasks are rarely, if ever, created at runtime - exec here is fine.\n281     exec(definition, namespace)\n282     result = namespace[name]\n",
       "filename": "celery/utils/functional.py",
       "issue_confidence": "HIGH",
       "issue_severity": "MEDIUM",
       "issue_text": "Use of exec detected.",
-      "line_number": 284,
+      "line_number": 281,
       "line_range": [
-        284
+        281
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b102_exec_used.html",
       "test_id": "B102",
       "test_name": "exec_used"
     },
@@ -2369,6 +2404,7 @@
       "line_range": [
         22
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_imports.html#b403-import-pickle",
       "test_id": "B403",
       "test_name": "blacklist"
     },
@@ -2382,45 +2418,49 @@
       "line_range": [
         24
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_imports.html#b403-import-pickle",
       "test_id": "B403",
       "test_name": "blacklist"
     },
     {
-      "code": "69             loads(dumps(superexc))\n70         except Exception:  # pylint: disable=broad-except\n71             pass\n",
+      "code": "71             loads(dumps(superexc))\n72         except Exception:  # pylint: disable=broad-except\n73             pass\n",
       "filename": "celery/utils/serialization.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
-      "line_number": 70,
+      "line_number": 72,
       "line_range": [
-        70
+        72
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b110_try_except_pass.html",
       "test_id": "B110",
       "test_name": "try_except_pass"
     },
     {
-      "code": "149     try:\n150         pickle.loads(pickle.dumps(exc))\n151     except Exception:  # pylint: disable=broad-except\n",
+      "code": "165     try:\n166         pickle.loads(pickle.dumps(exc))\n167     except Exception:  # pylint: disable=broad-except\n",
       "filename": "celery/utils/serialization.py",
       "issue_confidence": "HIGH",
       "issue_severity": "MEDIUM",
-      "issue_text": "Pickle library appears to be in use, possible security issue.",
-      "line_number": 150,
+      "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
+      "line_number": 166,
       "line_range": [
-        150
+        166
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b301-pickle",
       "test_id": "B301",
       "test_name": "blacklist"
     },
     {
-      "code": "150         pickle.loads(pickle.dumps(exc))\n151     except Exception:  # pylint: disable=broad-except\n152         pass\n",
+      "code": "166         pickle.loads(pickle.dumps(exc))\n167     except Exception:  # pylint: disable=broad-except\n168         pass\n",
       "filename": "celery/utils/serialization.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
-      "line_number": 151,
+      "line_number": 167,
       "line_range": [
-        151
+        167
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b110_try_except_pass.html",
       "test_id": "B110",
       "test_name": "try_except_pass"
     },
@@ -2434,32 +2474,35 @@
       "line_range": [
         404
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
       "test_id": "B311",
       "test_name": "blacklist"
     },
     {
-      "code": "75 \n76         assert self.keepalive, 'cannot scale down too fast.'\n77 \n",
+      "code": "79 \n80         assert self.keepalive, 'cannot scale down too fast.'\n81 \n",
       "filename": "celery/worker/autoscale.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 76,
+      "line_number": 80,
       "line_range": [
-        76
+        80
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "346             self.connection.collect()\n347         except Exception:  # pylint: disable=broad-except\n348             pass\n",
+      "code": "341             self.connection.collect()\n342         except Exception:  # pylint: disable=broad-except\n343             pass\n",
       "filename": "celery/worker/consumer/consumer.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
-      "line_number": 347,
+      "line_number": 342,
       "line_range": [
-        347
+        342
       ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b110_try_except_pass.html",
       "test_id": "B110",
       "test_name": "try_except_pass"
     }
