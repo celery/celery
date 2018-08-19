@@ -445,25 +445,25 @@ class test_KeyValueStoreBackend:
             ids = {uuid(): i for i in range(10)}
             for id, i in items(ids):
                 self.b.mark_as_done(id, i)
-            it = self.b.get_many(list(ids), interval=0.01)
+            it = self.b.get_many([ids], interval=0.01)
             for i, (got_id, got_state) in enumerate(it):
                 assert got_state['result'] == ids[got_id]
             assert i == 9
-            assert list(self.b.get_many(list(ids), interval=0.01))
+            assert [self.b.get_many([ids], interval=0.01)]
 
             self.b._cache.clear()
             callback = Mock(name='callback')
             it = self.b.get_many(
-                list(ids),
+                [ids],
                 on_message=callback,
                 interval=0.05
             )
             for i, (got_id, got_state) in enumerate(it):
                 assert got_state['result'] == ids[got_id]
             assert i == 9
-            assert list(
-                self.b.get_many(list(ids), interval=0.01)
-            )
+            assert [
+                self.b.get_many([ids], interval=0.01)
+            ]
             callback.assert_has_calls([
                 call(ANY) for id in ids
             ])
@@ -472,7 +472,7 @@ class test_KeyValueStoreBackend:
         tasks = [uuid() for _ in range(4)]
         self.b._cache[tasks[1]] = {'status': 'PENDING'}
         with pytest.raises(self.b.TimeoutError):
-            list(self.b.get_many(tasks, timeout=0.01, interval=0.01))
+            [self.b.get_many(tasks, timeout=0.01, interval=0.01)]
 
     def test_chord_part_return_no_gid(self):
         self.b.implements_incr = True
@@ -522,11 +522,11 @@ class test_KeyValueStoreBackend:
     def test_filter_ready(self):
         self.b.decode_result = Mock()
         self.b.decode_result.side_effect = pass1
-        assert len(list(self.b._filter_ready([
+        assert len([self.b._filter_ready([
             (1, {'status': states.RETRY}),
             (2, {'status': states.FAILURE}),
             (3, {'status': states.SUCCESS}),
-        ]))) == 2
+        ])]) == 2
 
     @contextmanager
     def _chord_part_context(self, b):

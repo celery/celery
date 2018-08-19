@@ -89,10 +89,10 @@ class test_chain:
 
         result = (before | connect | after).delay()
         result.get(timeout=TIMEOUT)
-        redis_messages = list(map(
+        redis_messages = [map(
             bytes_if_py2,
             redis_connection.lrange('redis-echo', 0, -1)
-        ))
+        )]
         before_items = \
             set(map(bytes_if_py2, (b'before 0', b'before 1', b'before 2')))
         after_items = set(map(bytes_if_py2, (b'after 0', b'after 1')))
@@ -114,10 +114,10 @@ class test_chain:
 
         result = second_order_replace1.delay()
         result.get(timeout=TIMEOUT)
-        redis_messages = list(map(
+        redis_messages = [map(
             bytes_if_py2,
             redis_connection.lrange('redis-echo', 0, -1)
-        ))
+        )]
 
         expected_messages = [b'In A', b'In B', b'In/Out C', b'Out B', b'Out A']
         assert redis_messages == expected_messages

@@ -33,7 +33,7 @@ D_TEXT = {
     b'xuzzy': B_QUICK_BROWN_FOX,
 }
 
-L_NUMBERS = list(values(D_NUMBERS))
+L_NUMBERS = [values(D_NUMBERS)]
 
 D_TEXT_LARGE = {
     b'bazxuzzyfoobarlongverylonglong': QUICK_BROWN_FOX * 30,
@@ -130,7 +130,7 @@ class dict3(dict):
 
 class test_saferepr:
 
-    @pytest.mark.parametrize('value', list(values(D_NUMBERS)))
+    @pytest.mark.parametrize('value', [values(D_NUMBERS)])
     def test_safe_types(self, value):
         assert saferepr(value) == old_repr(value)
 

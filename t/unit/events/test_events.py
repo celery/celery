@@ -109,7 +109,7 @@ class test_EventDispatcher:
         eventer._publish = Mock(name='_publish')
 
         def on_eventer_publish(events, *args, **kwargs):
-            buf_received[0] = list(events)
+            buf_received[0] = [events]
         eventer._publish.side_effect = on_eventer_publish
         assert not eventer._group_buffer['task']
         eventer.on_send_buffered = Mock(name='on_send_buffered')
@@ -314,7 +314,7 @@ class test_EventReceiver:
                 producer.send(ev)
             it = r.itercapture(limit=4, wakeup=True)
             next(it)  # skip consumer (see itercapture)
-            list(it)
+            [it]
             assert events_received[0] == 4
         finally:
             channel.close()

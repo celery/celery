@@ -726,11 +726,11 @@ class test_setgroups:
                 return
             raise ValueError()
         setgroups.side_effect = on_setgroups
-        _setgroups_hack(list(range(400)))
+        _setgroups_hack([range(400)])
 
         setgroups.side_effect = ValueError()
         with pytest.raises(ValueError):
-            _setgroups_hack(list(range(400)))
+            _setgroups_hack([range(400)])
 
     @patch('os.setgroups', create=True)
     def test_setgroups_hack_OSError(self, setgroups):
@@ -744,33 +744,33 @@ class test_setgroups:
             raise exc
         setgroups.side_effect = on_setgroups
 
-        _setgroups_hack(list(range(400)))
+        _setgroups_hack([range(400)])
 
         setgroups.side_effect = exc
         with pytest.raises(OSError):
-            _setgroups_hack(list(range(400)))
+            _setgroups_hack([range(400)])
 
         exc2 = OSError()
         exc.errno = errno.ESRCH
         setgroups.side_effect = exc2
         with pytest.raises(OSError):
-            _setgroups_hack(list(range(400)))
+            _setgroups_hack([range(400)])
 
     @skip.if_win32()
     @patch('celery.platforms._setgroups_hack')
     def test_setgroups(self, hack):
         with patch('os.sysconf') as sysconf:
             sysconf.return_value = 100
-            setgroups(list(range(400)))
-            hack.assert_called_with(list(range(100)))
+            setgroups([range(400)])
+            hack.assert_called_with([range(100)])
 
     @skip.if_win32()
     @patch('celery.platforms._setgroups_hack')
     def test_setgroups_sysconf_raises(self, hack):
         with patch('os.sysconf') as sysconf:
             sysconf.side_effect = ValueError()
-            setgroups(list(range(400)))
-            hack.assert_called_with(list(range(400)))
+            setgroups([range(400)])
+            hack.assert_called_with([range(400)])
 
     @skip.if_win32()
     @patch('os.getgroups')
@@ -782,7 +782,7 @@ class test_setgroups:
             esrch.errno = errno.ESRCH
             hack.side_effect = esrch
             with pytest.raises(OSError):
-                setgroups(list(range(400)))
+                setgroups([range(400)])
 
     @skip.if_win32()
     @patch('os.getgroups')
@@ -793,13 +793,13 @@ class test_setgroups:
             eperm = OSError()
             eperm.errno = errno.EPERM
             hack.side_effect = eperm
-            getgroups.return_value = list(range(400))
-            setgroups(list(range(400)))
+            getgroups.return_value = [range(400)]
+            setgroups([range(400)])
             getgroups.assert_called_with()
 
             getgroups.return_value = [1000]
             with pytest.raises(OSError):
-                setgroups(list(range(400)))
+                setgroups(range(400))
             getgroups.assert_called_with()
 
 

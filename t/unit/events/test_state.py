@@ -266,14 +266,14 @@ class test_Task:
                     exchange='celery',
                     routing_key='celery',
                     succeeded=time())
-        assert sorted(list(task._info_fields)) == sorted(task.info().keys())
+        assert sorted([task._info_fields]) == sorted(task.info().keys())
 
-        assert (sorted(list(task._info_fields + ('received',))) ==
+        assert (sorted([task._info_fields + ('received',)]) ==
                 sorted(task.info(extra=('received',))))
 
         assert (sorted(['args', 'kwargs']) ==
                 sorted(task.info(['args', 'kwargs']).keys()))
-        assert not list(task.info('foo'))
+        assert not [task.info('foo')]
 
     def test_reduce_direct(self):
         task = Task(uuid='uuid', name='tasks.add', args='(2, 2)')
@@ -328,7 +328,7 @@ class test_State:
         r = ev_logical_clock_ordering(state)
         tA, tB, tC = r.uids
         r.play()
-        now = list(state.tasks_by_time())
+        now = [state.tasks_by_time()]
         assert now[0][0] == tA
         assert now[1][0] == tC
         assert now[2][0] == tB
@@ -337,7 +337,7 @@ class test_State:
             tA, tB, tC = r.uids
             r.rewind_with_offset(r.current_clock + 1, r.uids)
             r.play()
-        now = list(state.tasks_by_time())
+        now = [state.tasks_by_time()]
         assert now[0][0] == tA
         assert now[1][0] == tC
         assert now[2][0] == tB
@@ -348,7 +348,7 @@ class test_State:
         r = ev_logical_clock_ordering(state)
         tA, tB, tC = r.uids
         r.play()
-        now = list(state.tasks_by_time(reverse=False))
+        now = [state.tasks_by_time(reverse=False)]
         assert now[0][0] == tA
         assert now[1][0] == tB
         assert now[2][0] == tC
@@ -357,7 +357,7 @@ class test_State:
             tA, tB, tC = r.uids
             r.rewind_with_offset(r.current_clock + 1, r.uids)
             r.play()
-        now = list(state.tasks_by_time(reverse=False))
+        now = [state.tasks_by_time(reverse=False)]
         assert now[0][0] == tB
         assert now[1][0] == tC
         assert now[2][0] == tA
@@ -398,24 +398,24 @@ class test_State:
     def test_worker_online_offline(self):
         r = ev_worker_online_offline(State())
         next(r)
-        assert list(r.state.alive_workers())
+        assert [r.state.alive_workers()]
         assert r.state.workers['utest1'].alive
         r.play()
-        assert not list(r.state.alive_workers())
+        assert not [r.state.alive_workers()]
         assert not r.state.workers['utest1'].alive
 
     def test_itertasks(self):
         s = State()
         s.tasks = {'a': 'a', 'b': 'b', 'c': 'c', 'd': 'd'}
-        assert len(list(s.itertasks(limit=2))) == 2
+        assert len([s.itertasks(limit=2)]) == 2
 
     def test_worker_heartbeat_expire(self):
         r = ev_worker_heartbeats(State())
         next(r)
-        assert not list(r.state.alive_workers())
+        assert not [r.state.alive_workers()]
         assert not r.state.workers['utest1'].alive
         r.play()
-        assert list(r.state.alive_workers())
+        assert [r.state.alive_workers()]
         assert r.state.workers['utest1'].alive
 
     def test_task_states(self):
@@ -551,14 +551,14 @@ class test_State:
     def test_tasks_by_time(self):
         r = ev_snapshot(State())
         r.play()
-        assert len(list(r.state.tasks_by_time())) == 20
-        assert len(list(r.state.tasks_by_time(reverse=False))) == 20
+        assert len([r.state.tasks_by_time()]) == 20
+        assert len([r.state.tasks_by_time(reverse=False)]) == 20
 
     def test_tasks_by_type(self):
         r = ev_snapshot(State())
         r.play()
-        assert len(list(r.state.tasks_by_type('task1'))) == 10
-        assert len(list(r.state.tasks_by_type('task2'))) == 10
+        assert len([r.state.tasks_by_type('task1')]) == 10
+        assert len([r.state.tasks_by_type('task2')]) == 10
 
         assert len(r.state.tasks_by_type['task1']) == 10
         assert len(r.state.tasks_by_type['task2']) == 10
@@ -566,13 +566,13 @@ class test_State:
     def test_alive_workers(self):
         r = ev_snapshot(State())
         r.play()
-        assert len(list(r.state.alive_workers())) == 3
+        assert len([r.state.alive_workers()]) == 3
 
     def test_tasks_by_worker(self):
         r = ev_snapshot(State())
         r.play()
-        assert len(list(r.state.tasks_by_worker('utest1'))) == 10
-        assert len(list(r.state.tasks_by_worker('utest2'))) == 10
+        assert len([r.state.tasks_by_worker('utest1')]) == 10
+        assert len([r.state.tasks_by_worker('utest2')]) == 10
 
         assert len(r.state.tasks_by_worker['utest1']) == 10
         assert len(r.state.tasks_by_worker['utest2']) == 10
@@ -666,7 +666,7 @@ class test_State:
         assert s._taskheap[1].clock == 5
 
         s._taskheap.append(s._taskheap[0])
-        assert list(s.tasks_by_time())
+        assert [s.tasks_by_time()]
 
     def test_callback(self):
         scratch = {}

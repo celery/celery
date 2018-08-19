@@ -623,7 +623,7 @@ class test_group(CanvasCase):
 
     def test_iter(self):
         g = group([self.add.s(i, i) for i in range(10)])
-        assert list(iter(g)) == list(g.keys())
+        assert [iter(g)] == [g.keys()]
 
     def test_single_task(self):
         g = group([self.add.s(1, 1)])

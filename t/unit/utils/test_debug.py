@@ -34,12 +34,12 @@ def test_sample_mem(patching):
 
 
 def test_sample():
-    x = list(range(100))
-    assert list(debug.sample(x, 10)) == [
+    x = [range(100)]
+    assert [debug.sample(x, 10)] == [
         0, 10, 20, 30, 40, 50, 60, 70, 80, 90,
     ]
-    x = list(range(91))
-    assert list(debug.sample(x, 10)) == [
+    x = [range(91)]
+    assert [debug.sample(x, 10)] == [
         0, 9, 18, 27, 36, 45, 54, 63, 72, 81,
     ]
 

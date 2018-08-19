@@ -256,7 +256,7 @@ class test_ControlPanel:
         consumer.task_consumer = x
         panel = self.create_panel(consumer=consumer)
         r = panel.handle('active_queues')
-        assert list(sorted(q['name'] for q in r)) == ['bar', 'foo']
+        assert [sorted(q['name'] for q in r)] == ['bar', 'foo']
 
     def test_active_queues__empty(self):
         consumer = Mock(name='consumer')

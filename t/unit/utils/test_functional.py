@@ -99,7 +99,7 @@ class test_regen:
         assert fun(*args) == l
 
     def test_gen(self):
-        g = regen(iter(list(range(10))))
+        g = regen(iter([range(10)]))
         assert g[7] == 7
         assert g[6] == 6
         assert g[5] == 5
@@ -108,29 +108,29 @@ class test_regen:
         assert g[2] == 2
         assert g[1] == 1
         assert g[0] == 0
-        assert g.data, list(range(10))
+        assert g.data, [range(10)]
         assert g[8] == 8
         assert g[0] == 0
-        g = regen(iter(list(range(10))))
+        g = regen(iter([range(10)]))
         assert g[0] == 0
         assert g[1] == 1
-        assert g.data == list(range(10))
+        assert g.data == [range(10)]
         g = regen(iter([1]))
         assert g[0] == 1
         with pytest.raises(IndexError):
             g[1]
         assert g.data == [1]
 
-        g = regen(iter(list(range(10))))
+        g = regen(iter([range(10)]))
         assert g[-1] == 9
         assert g[-2] == 8
         assert g[-3] == 7
         assert g[-4] == 6
         assert g[-5] == 5
         assert g[5] == 5
-        assert g.data == list(range(10))
+        assert g.data == [range(10)]
 
-        assert list(iter(g)) == list(range(10))
+        assert [iter(g)] == [range(10)]
 
 
 class test_head_from_fun:
