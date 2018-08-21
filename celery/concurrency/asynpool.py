@@ -737,7 +737,6 @@ class AsynPool(_pool.Pool):
                     fileno_to_inq.pop(fd, None)
                     active_writes.discard(fd)
                     all_inqueues.discard(fd)
-                    hub_remove(fd)
             except KeyError:
                 pass
         self.on_inqueue_close = on_inqueue_close
@@ -1247,7 +1246,7 @@ class AsynPool(_pool.Pool):
             if queue:
                 for sock in (queue._reader, queue._writer):
                     if not sock.closed:
-                    	self.hub_remove(sock)
+                        self.hub_remove(sock)
                         try:
                             sock.close()
                         except (IOError, OSError):
