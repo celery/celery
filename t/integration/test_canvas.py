@@ -612,6 +612,5 @@ class test_chord:
         c2 = chord(group(add.s(1, 2), add.s(3, 4)), add.s(2))
         g = group(c1, c2)
         g.delay()
-        
+
         assert g.get() == [11, 12]
-         
