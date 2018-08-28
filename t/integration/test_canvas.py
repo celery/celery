@@ -601,3 +601,16 @@ class test_chord:
 
         assert len([cr for cr in chord_results if cr[2] != states.SUCCESS]
                    ) == 1
+
+    def test_parallel_chords(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c1 = chord(group(add.s(1, 2), add.s(3, 4)), tsum.s())
+        c2 = chord(group(add.s(1, 2), add.s(3, 4)), tsum.s())
+        g = group(c1, c2)
+        r = g.delay()
+
+        assert r.get(timeout=TIMEOUT) == [10, 10]
