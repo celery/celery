@@ -19,6 +19,7 @@ try:
     from couchbase import Couchbase
     from couchbase.connection import Connection
     from couchbase.exceptions import NotFoundError
+    from couchbase import FMT_AUTO
 except ImportError:
     Couchbase = Connection = NotFoundError = None   # noqa
 
@@ -106,7 +107,7 @@ class CouchbaseBackend(KeyValueStoreBackend):
             return None
 
     def set(self, key, value):
-        self.connection.set(key, value, ttl=self.expires)
+        self.connection.set(key, value, ttl=self.expires, format=FMT_AUTO)
 
     def mget(self, keys):
         return [self.get(key) for key in keys]
