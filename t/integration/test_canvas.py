@@ -613,4 +613,4 @@ class test_chord:
         g = group(c1, c2)
         g.delay()
 
-        assert g.get() == [11, 12]
+        assert g.get(timeout=TIMEOUT) == [11, 12]
