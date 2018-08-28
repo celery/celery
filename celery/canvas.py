@@ -275,7 +275,12 @@ class Signature(dict):
         if group_id:
             opts['group_id'] = group_id
         if chord:
-            opts['chord'] = chord
+            pass
+            # see issue #5000
+            # it seems that this is no longer needed and causes huge nested
+            # messages on chaining chords
+            # opts['chord'] = chord
+
         # pylint: disable=too-many-function-args
         #   Borks on this, as it's a property.
         return self.AsyncResult(tid)
