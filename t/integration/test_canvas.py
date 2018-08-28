@@ -611,6 +611,6 @@ class test_chord:
         c1 = chord(group(add.s(1, 2), add.s(3, 4)), add.s(1))
         c2 = chord(group(add.s(1, 2), add.s(3, 4)), add.s(2))
         g = group(c1, c2)
-        g.delay()
+        r = g.delay()
 
-        assert g.get(timeout=TIMEOUT) == [11, 12]
+        assert r.get(timeout=TIMEOUT) == [11, 12]
