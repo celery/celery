@@ -608,9 +608,9 @@ class test_chord:
         except NotImplementedError as e:
             raise pytest.skip(e.args[0])
 
-        c1 = chord(group(add.s(1, 2), add.s(3, 4)), add.s(1))
-        c2 = chord(group(add.s(1, 2), add.s(3, 4)), add.s(2))
+        c1 = chord(group(add.s(1, 2), add.s(3, 4)), tsum.s())
+        c2 = chord(group(add.s(1, 2), add.s(3, 4)), tsum.s())
         g = group(c1, c2)
         r = g.delay()
 
-        assert r.get(timeout=TIMEOUT) == [11, 12]
+        assert r.get(timeout=TIMEOUT) == [10, 10]
