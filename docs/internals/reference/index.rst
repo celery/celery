@@ -19,6 +19,7 @@
     celery.concurrency.prefork
     celery.concurrency.eventlet
     celery.concurrency.gevent
+    celery.concurrency.thread
     celery.concurrency.base
     celery.backends
     celery.backends.base
