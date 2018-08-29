@@ -244,7 +244,7 @@ Remote control
     commands from the command-line. It supports all of the commands
     listed below. See :ref:`monitoring-control` for more information.
 
-:pool support: *prefork, eventlet, gevent*, blocking:*solo* (see note)
+:pool support: *prefork, eventlet, gevent, thread*, blocking:*solo* (see note)
 :broker support: *amqp, redis*
 
 Workers have the ability to be remote controlled using a high-priority
