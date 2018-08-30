@@ -20,7 +20,6 @@ env:
   - MATRIX_TOXENV=integration-rabbitmq
   - MATRIX_TOXENV=integration-redis
   - MATRIX_TOXENV=integration-dynamodb
-  - MATRIX_TOXENV=integration-azureblockblob
 matrix:
   include:
   - python: '3.6'
@@ -69,13 +68,18 @@ before_install:
           fi
     - |
           if [[ "$TOXENV" == *dynamodb ]]; then
-              docker run -d -p 8000:8000 dwmkerr/dynamodb:38 -inMemory
-              while ! nc -zv 127.0.0.1 8000; do sleep 10; done
+              sudo apt-get update && sudo apt-get install -y default-jre supervisor
+              mkdir /opt/dynamodb-local
+              cd /opt/dynamodb-local && curl --retry 5 --retry-delay 1 -L http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_latest.tar.gz | tar zx
+              cd -
+              echo '[program:dynamodb-local]' | sudo tee /etc/supervisor/conf.d/dynamodb-local.conf
+              echo 'command=java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -inMemory' | sudo tee -a /etc/supervisor/conf.d/dynamodb-local.conf
+              echo 'directory=/opt/dynamodb-local' | sudo tee -a /etc/supervisor/conf.d/dynamodb-local.conf
+              sudo service supervisor stop
+              sudo service supervisor start
+              sleep 10
+              curl localhost:8000
           fi
-    - |
-          docker run -d -e executable=blob -t -p 10000:10000 --tmpfs /opt/azurite/folder:rw arafato/azurite:2.6.5
-          while ! nc -zv 127.0.0.1 10000; do sleep 10; done
-          export AZUREBLOCKBLOB_URL="azureblockblob://DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
     - |
           wget -qO - https://packages.couchbase.com/ubuntu/couchbase.key | sudo apt-key add -
           sudo apt-add-repository -y 'deb http://packages.couchbase.com/ubuntu trusty trusty/main'
@@ -97,10 +101,3 @@ notifications:
 services:
     - rabbitmq
     - redis
-    - docker
-addons:
-  apt:
-    sources:
-      - debian-sid
-    packages:
-      - docker-ce
