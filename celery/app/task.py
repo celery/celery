@@ -900,7 +900,7 @@ class Task(object):
         self.backend.add_to_chord(self.request.group, result)
         return sig.delay() if not lazy else sig
 
-    def update_state(self, task_id=None, state=None, meta=None):
+    def update_state(self, task_id=None, state=None, meta=None, **kwargs):
         """Update task state.
 
         Arguments:
@@ -911,7 +911,7 @@ class Task(object):
         """
         if task_id is None:
             task_id = self.request.id
-        self.backend.store_result(task_id, meta, state)
+        self.backend.store_result(task_id, meta, state, **kwargs)
 
     def on_success(self, retval, task_id, args, kwargs):
         """Success handler.
