@@ -35,7 +35,6 @@ BACKEND_ALIASES = {
     'disabled': 'celery.backends.base:DisabledBackend',
     'consul': 'celery.backends.consul:ConsulBackend',
     'dynamodb': 'celery.backends.dynamodb:DynamoDBBackend',
-    'azureblockblob': 'celery.backends.azureblockblob:AzureBlockBlobBackend',
 }
 
 
