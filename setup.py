@@ -68,7 +68,6 @@ EXTENSIONS = {
     'zookeeper',
     'solar',
     'sqlalchemy',
-    'azureblockblob',
     'librabbitmq',
     'pyro',
     'slmq',
