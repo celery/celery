@@ -292,6 +292,9 @@ Transports and Backends
 :``celery[cassandra]``:
     for using Apache Cassandra as a result backend with DataStax driver.
 
+:``celery[azureblockblob]``:
+    for using Azure Storage as a result backend (using ``azure-storage``)
+
 :``celery[couchbase]``:
     for using Couchbase as a result backend.
 
