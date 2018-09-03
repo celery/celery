@@ -98,9 +98,3 @@ services:
     - rabbitmq
     - redis
     - docker
-addons:
-  apt:
-    sources:
-      - debian-sid
-    packages:
-      - docker-ce
