@@ -155,7 +155,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERYD_PREFETCH_MULTIPLIER``        :setting:`worker_prefetch_multiplier`
 ``CELERYD_REDIRECT_STDOUTS``           :setting:`worker_redirect_stdouts`
 ``CELERYD_REDIRECT_STDOUTS_LEVEL``     :setting:`worker_redirect_stdouts_level`
-``CELERYD_SEND_EVENTS``                :setting:`worker_send_task_events`
+``CELERY_SEND_EVENTS``                 :setting:`worker_send_task_events`
 ``CELERYD_STATE_DB``                   :setting:`worker_state_db`
 ``CELERYD_TASK_LOG_FORMAT``            :setting:`worker_task_log_format`
 ``CELERYD_TIMER``                      :setting:`worker_timer`
