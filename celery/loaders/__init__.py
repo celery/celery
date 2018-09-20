@@ -12,7 +12,6 @@ __all__ = ('get_loader_cls',)
 LOADER_ALIASES = {
     'app': 'celery.loaders.app:AppLoader',
     'default': 'celery.loaders.default:Loader',
-    'django': 'djcelery.loaders:DjangoLoader',
 }
 
 
