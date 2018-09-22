@@ -84,14 +84,14 @@ class ScheduleEntry(object):
     total_run_count = 0
 
     def __init__(self, name=None, task=None, last_run_at=None,
-                 total_run_count=None, schedule=None, args=(), kwargs={},
-                 options={}, relative=False, app=None):
+                 total_run_count=None, schedule=None, args=(), kwargs=None,
+                 options=None, relative=False, app=None):
         self.app = app
         self.name = name
         self.task = task
         self.args = args
-        self.kwargs = kwargs
-        self.options = options
+        self.kwargs = kwargs if kwargs else {}
+        self.options = options if options else {}
         self.schedule = maybe_schedule(schedule, relative, app=self.app)
         self.last_run_at = last_run_at or self.default_now()
         self.total_run_count = total_run_count or 0
