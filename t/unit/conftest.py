@@ -230,9 +230,11 @@ def sanity_stdouts(request):
 
 @pytest.fixture(autouse=True)
 def sanity_logging_side_effects(request):
+    from _pytest.logging import LogCaptureHandler
     root = logging.getLogger()
     rootlevel = root.level
-    roothandlers = root.handlers
+    roothandlers = [
+        x for x in root.handlers if not isinstance(x, LogCaptureHandler)]
 
     yield
 
@@ -240,7 +242,9 @@ def sanity_logging_side_effects(request):
     root_now = logging.getLogger()
     if root_now.level != rootlevel:
         raise RuntimeError(CASE_LOG_LEVEL_EFFECT.format(this))
-    if root_now.handlers != roothandlers:
+    newhandlers = [x for x in root_now.handlers if not isinstance(
+        x, LogCaptureHandler)]
+    if newhandlers != roothandlers:
         raise RuntimeError(CASE_LOG_HANDLER_EFFECT.format(this))
 
 
