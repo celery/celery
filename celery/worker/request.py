@@ -519,6 +519,7 @@ class Request(object):
         }, **embed or {})
         return Context(request)
 
+
 def create_request_cls(base, task, pool, hostname, eventer,
                        ref=ref, revoked_tasks=revoked_tasks,
                        task_ready=task_ready, trace=trace_task_ret):
