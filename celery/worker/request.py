@@ -261,12 +261,12 @@ class Request(object):
         self.send_event('task-revoked',
                         terminated=terminated, signum=signum, expired=expired)
         self.task.backend.mark_as_revoked(
-            self.id, reason, request=self.request,
+            self.id, reason, request=self._context,
             store_result=self.store_errors,
         )
         self.acknowledge()
         self._already_revoked = True
-        send_revoked(self.task, request=self.request,
+        send_revoked(self.task, request=self._context,
                      terminated=terminated, signum=signum, expired=expired)
 
     def revoked(self):
@@ -314,7 +314,7 @@ class Request(object):
             exc = TimeLimitExceeded(timeout)
 
             self.task.backend.mark_as_failure(
-                self.id, exc, request=self.request,
+                self.id, exc, request=self._context,
                 store_result=self.store_errors,
             )
 
@@ -367,7 +367,7 @@ class Request(object):
             send_failed_event = False  # already sent revoked event
         elif isinstance(exc, WorkerLostError) or not return_ok:
             self.task.backend.mark_as_failure(
-                self.id, exc, request=self.request,
+                self.id, exc, request=self._context,
                 store_result=self.store_errors,
             )
         # (acks_late) acknowledge after result stored.
@@ -507,7 +507,7 @@ class Request(object):
         return self.request_dict.get('group')
 
     @cached_property
-    def request(self):
+    def _context(self):
         request = self.request_dict
         # pylint: disable=unpacking-non-sequence
         #    payload is a property, so pylint doesn't think it's a tuple.
