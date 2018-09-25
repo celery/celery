@@ -410,7 +410,7 @@ class test_Request(RequestCase):
         job = self.get_request(self.mytask.s(1, f='x'))
         job._apply_result = Mock(name='_apply_result')
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job,
+                task_revoked, sender=job.task, request=job._context,
                 terminated=True, expired=False, signum=signum):
             job.time_start = monotonic()
             job.worker_pid = 314
@@ -426,7 +426,7 @@ class test_Request(RequestCase):
         signum = signal.SIGTERM
         job = self.get_request(self.mytask.s(1, f='x'))
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job,
+                task_revoked, sender=job.task, request=job._context,
                 terminated=True, expired=False, signum=signum):
             job.time_start = monotonic()
             job.worker_pid = 313
@@ -447,7 +447,7 @@ class test_Request(RequestCase):
             expires=datetime.utcnow() - timedelta(days=1)
         ))
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job,
+                task_revoked, sender=job.task, request=job._context,
                 terminated=False, expired=True, signum=None):
             job.revoked()
             assert job.id in revoked
@@ -479,7 +479,7 @@ class test_Request(RequestCase):
     def test_revoked(self):
         job = self.xRequest()
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job,
+                task_revoked, sender=job.task, request=job._context,
                 terminated=False, expired=False, signum=None):
             revoked.add(job.id)
             assert job.revoked()
@@ -528,7 +528,7 @@ class test_Request(RequestCase):
         pool = Mock()
         job = self.xRequest()
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job,
+                task_revoked, sender=job.task, request=job._context,
                 terminated=True, expired=False, signum=signum):
             job.terminate(pool, signal='TERM')
             assert not pool.terminate_job.call_count
@@ -933,7 +933,7 @@ class test_Request(RequestCase):
         exc = WorkerLostError()
         job = self._test_on_failure(exc)
         job.task.backend.mark_as_failure.assert_called_with(
-            job.id, exc, request=job, store_result=True,
+            job.id, exc, request=job._context, store_result=True,
         )
 
     def test_on_failure__return_ok(self):
