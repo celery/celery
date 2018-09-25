@@ -933,7 +933,7 @@ class test_Request(RequestCase):
         exc = WorkerLostError()
         job = self._test_on_failure(exc)
         job.task.backend.mark_as_failure.assert_called_with(
-            job.id, exc, request=job.request, store_result=True,
+            job.id, exc, request=job._context, store_result=True,
         )
 
     def test_on_failure__return_ok(self):
