@@ -508,6 +508,7 @@ class Request(object):
 
     @cached_property
     def _context(self):
+        """Context (:class:`~celery.app.task.Context`) of this task."""
         request = self.request_dict
         # pylint: disable=unpacking-non-sequence
         #    payload is a property, so pylint doesn't think it's a tuple.
