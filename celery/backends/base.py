@@ -9,6 +9,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import datetime
+import inspect
 import sys
 import time
 from collections import namedtuple
@@ -34,7 +35,6 @@ from celery.utils.collections import BufferMap
 from celery.utils.functional import LRUCache, arity_greater
 from celery.utils.log import get_logger
 from celery.utils.serialization import (create_exception_cls,
-                                        ensure_serializable,
                                         get_pickleable_exception,
                                         get_pickled_exception)
 
@@ -236,9 +236,14 @@ class Backend(object):
         serializer = self.serializer if serializer is None else serializer
         if serializer in EXCEPTION_ABLE_CODECS:
             return get_pickleable_exception(exc)
+        # retrieve exception original module
+        exc_module = inspect.getmodule(type(exc))
+        if exc_module:
+            exc_module = exc_module.__name__
+
         return {'exc_type': type(exc).__name__,
-                'exc_message': ensure_serializable(exc.args, self.encode),
-                'exc_module': type(exc).__module__}
+                'exc_args': exc.args,
+                'exc_module': exc_module}
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
