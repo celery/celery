@@ -90,7 +90,7 @@ class ResultConsumer(BaseResultConsumer):
             if self._pubsub is not None:
                 self._pubsub.close()
         except KeyError as e:
-            logger.warn(text_t(e))
+            logger.warning(text_t(e))
         super(ResultConsumer, self).on_after_fork()
 
     def _maybe_cancel_ready_task(self, meta):
@@ -238,10 +238,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             if ssl_cert_reqs == 'CERT_REQUIRED':
                 connparams['ssl_cert_reqs'] = CERT_REQUIRED
             elif ssl_cert_reqs == 'CERT_OPTIONAL':
-                logger.warn(W_REDIS_SSL_CERT_OPTIONAL)
+                logger.warning(W_REDIS_SSL_CERT_OPTIONAL)
                 connparams['ssl_cert_reqs'] = CERT_OPTIONAL
             elif ssl_cert_reqs == 'CERT_NONE':
-                logger.warn(W_REDIS_SSL_CERT_NONE)
+                logger.warning(W_REDIS_SSL_CERT_NONE)
                 connparams['ssl_cert_reqs'] = CERT_NONE
             else:
                 raise ValueError(E_REDIS_SSL_CERT_REQS_MISSING)
