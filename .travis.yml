@@ -49,9 +49,7 @@ matrix:
   - python: '3.6'
     env: TOXENV=pydocstyle
     stage: lint
-  - python: '3.6'
-    env: TOXENV=isort-check
-    stage: lint
+
 before_install:
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
