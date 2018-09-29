@@ -8,11 +8,11 @@ import sys
 from base64 import b64decode as base64decode
 from base64 import b64encode as base64encode
 from functools import partial
+from importlib import import_module
 from inspect import getmro
 from itertools import takewhile
 
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
-
 from celery.five import (bytes_if_py2, items, python_2_unicode_compatible,
                          reraise, string_t)
 
@@ -81,6 +81,14 @@ def itermro(cls, stop):
 
 def create_exception_cls(name, module, parent=None):
     """Dynamically create an exception class."""
+    try:
+        mod = import_module(module)
+        exc_cls = getattr(mod, name, None)
+        if exc_cls and isinstance(exc_cls, type(BaseException)):
+            return exc_cls
+    except ImportError:
+        pass
+    # we could not find the exception, fallback and create a type.
     if not parent:
         parent = Exception
     return subclass_exception(name, parent, module)
