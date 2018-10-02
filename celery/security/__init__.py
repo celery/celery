@@ -14,14 +14,23 @@ Please install by:
     $ pip install pyOpenSSL
 """
 
-SETTING_MISSING = """\
+SECURITY_SETTING_MISSING = """\
 Sorry, but you have to configure the
     * security_key
     * security_certificate, and the
-    * security_cert_storE
+    * security_cert_store
 configuration settings to use the auth serializer.
 
 Please see the configuration reference for more information.
+"""
+
+SETTING_MISSING = """\
+You have to configure a special task serializer for signing and verifying tasks:
+    * task_serializer = 'auth'
+
+You have to accept only tasks which are serialized with 'auth'.
+There is no point in signing messages if they are not verified.
+    * accept_content = ['auth']
 """
 
 __all__ = ('setup_security',)
@@ -36,9 +45,10 @@ def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
 
     _disable_insecure_serializers(allowed_serializers)
 
+    # check conf for sane security settings
     conf = app.conf
-    if conf.task_serializer != 'auth':
-        return
+    if conf.task_serializer != 'auth' or conf.accept_content != ['auth']:
+        raise ImproperlyConfigured(SETTING_MISSING)
 
     try:
         from OpenSSL import crypto  # noqa
@@ -50,7 +60,7 @@ def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
     store = store or conf.security_cert_store
 
     if not (key and cert and store):
-        raise ImproperlyConfigured(SETTING_MISSING)
+        raise ImproperlyConfigured(SECURITY_SETTING_MISSING)
 
     with open(key) as kf:
         with open(cert) as cf:
