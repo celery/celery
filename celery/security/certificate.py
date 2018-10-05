@@ -5,7 +5,7 @@ from __future__ import absolute_import, unicode_literals
 import glob
 import os
 
-from kombu.utils.encoding import bytes_to_str, str_to_bytes
+from kombu.utils.encoding import bytes_to_str, ensure_bytes
 
 from celery.exceptions import SecurityError
 from celery.five import values
@@ -42,9 +42,8 @@ class Certificate(object):
 
     def verify(self, data, signature, digest):
         """Verify signature for string containing data."""
-        data = str_to_bytes(data)
         with reraise_errors('Bad signature: {0!r}'):
-            crypto.verify(self._cert, signature, data, digest)
+            crypto.verify(self._cert, signature, ensure_bytes(data), digest)
 
 
 class CertStore(object):

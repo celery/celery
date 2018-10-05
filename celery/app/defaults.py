@@ -9,6 +9,7 @@ from datetime import timedelta
 from celery.five import items, keys, python_2_unicode_compatible
 from celery.utils.functional import memoize
 from celery.utils.serialization import strtobool
+from celery.security import DEFAULT_SECURITY_DIGEST
 
 __all__ = ('Option', 'NAMESPACES', 'flatten', 'find')
 
@@ -226,6 +227,7 @@ NAMESPACES = Namespace(
         certificate=Option(type='string'),
         cert_store=Option(type='string'),
         key=Option(type='string'),
+        digest=Option(DEFAULT_SECURITY_DIGEST, type='string'),
     ),
     database=Namespace(
         url=Option(old={'celery_result_dburi'}),

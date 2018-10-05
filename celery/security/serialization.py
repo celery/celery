@@ -5,7 +5,6 @@ from __future__ import absolute_import, unicode_literals
 from kombu.serialization import dumps, loads, registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
 
-from celery.five import bytes_if_py2
 from celery.utils.serialization import b64decode, b64encode
 
 from .certificate import Certificate, FSCertStore
@@ -14,16 +13,18 @@ from .utils import reraise_errors
 
 __all__ = ('SecureSerializer', 'register_auth')
 
+DEFAULT_SECURITY_DIGEST = 'sha256'
+
 
 class SecureSerializer(object):
     """Signed serializer."""
 
     def __init__(self, key=None, cert=None, cert_store=None,
-                 digest='sha1', serializer='json'):
+                 digest=DEFAULT_SECURITY_DIGEST, serializer='json'):
         self._key = key
         self._cert = cert
         self._cert_store = cert_store
-        self._digest = bytes_if_py2(digest)
+        self._digest = digest
         self._serializer = serializer
 
     def serialize(self, data):
@@ -86,13 +87,13 @@ class SecureSerializer(object):
         }
 
 
-def register_auth(key=None, cert=None, store=None, digest='sha1',
+def register_auth(key=None, cert=None, store=None, digest=None,
                   serializer='json'):
     """Register security serializer."""
     s = SecureSerializer(key and PrivateKey(key),
                          cert and Certificate(cert),
                          store and FSCertStore(store),
-                         digest=digest, serializer=serializer)
+                         digest, serializer=serializer)
     registry.register('auth', s.serialize, s.deserialize,
                       content_type='application/data',
                       content_encoding='utf-8')

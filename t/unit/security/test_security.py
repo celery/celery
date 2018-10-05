@@ -24,6 +24,8 @@ from celery.security import disable_untrusted_serializers, setup_security
 from celery.security.utils import reraise_errors
 
 from .case import SecurityCase
+import tempfile
+from . import KEY1, CERT1
 
 
 class test_security(SecurityCase):
@@ -57,17 +59,43 @@ class test_security(SecurityCase):
         disable.assert_called_with(allowed=['foo'])
 
     def test_setup_security(self):
+        tmp_key1 = tempfile.NamedTemporaryFile()
+        tmp_key1_f = open(tmp_key1.name, 'w')
+        tmp_key1_f.write(KEY1)
+        tmp_cert1 = tempfile.NamedTemporaryFile()
+        tmp_cert1_f = open(tmp_cert1.name, 'w')
+        tmp_cert1_f.write(CERT1)
+        self.app.conf.update(
+            task_serializer='auth',
+            accept_content=['auth'],
+            security_key=tmp_key1.name,
+            security_certificate=tmp_cert1.name,
+            security_cert_store='*.pem',
+        )
+        self.app.setup_security()
+        tmp_cert1_f.close()
+        tmp_key1_f.close()
+
+    def test_setup_security_disabled_serializers(self):
         disabled = registry._disabled_content_types
         assert len(disabled) == 0
 
         self.app.conf.task_serializer = 'json'
-        self.app.setup_security()
+        with pytest.raises(ImproperlyConfigured):
+            self.app.setup_security()
         assert 'application/x-python-serialize' in disabled
+        disabled.clear()
+
+        self.app.conf.task_serializer = 'auth'
+        with pytest.raises(ImproperlyConfigured):
+            self.app.setup_security()
+        assert 'application/json' in disabled
         disabled.clear()
 
     @patch('celery.current_app')
     def test_setup_security__default_app(self, current_app):
-        setup_security()
+        with pytest.raises(ImproperlyConfigured):
+            setup_security()
 
     @patch('celery.security.register_auth')
     @patch('celery.security._disable_insecure_serializers')
@@ -83,6 +111,7 @@ class test_security(SecurityCase):
                 calls[0] += 1
 
         self.app.conf.task_serializer = 'auth'
+        self.app.conf.accept_content = ['auth']
         with mock.open(side_effect=effect):
             with patch('celery.security.registry') as registry:
                 store = Mock()
@@ -93,6 +122,10 @@ class test_security(SecurityCase):
 
     def test_security_conf(self):
         self.app.conf.task_serializer = 'auth'
+        with pytest.raises(ImproperlyConfigured):
+            self.app.setup_security()
+
+        self.app.conf.accept_content = ['auth']
         with pytest.raises(ImproperlyConfigured):
             self.app.setup_security()
 
