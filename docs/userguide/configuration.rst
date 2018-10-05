@@ -811,6 +811,8 @@ Example configuration
 
     result_backend = 'rpc://'
     result_persistent = False
+   
+**Please note**: using this backend could trigger the raise of ``celery.backends.rpc.BacklogLimitExceeded`` if the task tombstone is too much *old*
 
 .. _conf-cache-result-backend:
 
