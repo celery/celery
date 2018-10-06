@@ -2721,6 +2721,17 @@ The directory containing X.509 certificates used for
 :ref:`message-signing`. Can be a glob with wild-cards,
 (for example :file:`/etc/certs/*.pem`).
 
+``security_digest``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: :const:`sha256`.
+
+.. versionadded:: 4.3
+
+An OpenSSL digest used to sign messages
+when :ref:`message-signing` is used.
+https://pyopenssl.org/en/stable/api/crypto.html#digest-names
+
 .. _conf-custom-components:
 
 Custom Component Classes (advanced)
