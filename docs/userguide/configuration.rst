@@ -823,7 +823,6 @@ E.g.
 
     print(r.state)  # this would raise celery.backends.rpc.BacklogLimitExceeded
     
-    
 .. _conf-cache-result-backend:
 
 Cache backend settings
