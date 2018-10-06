@@ -673,6 +673,8 @@ class BaseKeyValueStoreBackend(Backend):
 
         if request and getattr(request, 'group', None):
             meta['group_id'] = request.group
+        if request and getattr(request, 'parent_id', None):
+            meta['parent_id'] = request.parent_id
 
         if self.app.conf.find_value_for_key('extended', 'result'):
             if request:

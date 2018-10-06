@@ -423,6 +423,18 @@ class test_KeyValueStoreBackend:
         self.b.forget(tid)
         assert self.b.get_state(tid) == states.PENDING
 
+    def test_store_result_parent_id(self):
+        tid = uuid()
+        pid = uuid()
+        state = 'SUCCESS'
+        result = 10
+        request = Context(parent_id=pid)
+        self.b.store_result(
+            tid, state=state, result=result, request=request,
+        )
+        stored_meta = self.b.decode(self.b.get(self.b.get_key_for_task(tid)))
+        assert stored_meta['parent_id'] == request.parent_id
+
     def test_store_result_group_id(self):
         tid = uuid()
         state = 'SUCCESS'
