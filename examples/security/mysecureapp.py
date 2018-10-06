@@ -33,7 +33,6 @@ app.conf.update(
     security_key='examples/security/ssl/worker.key',
     security_certificate='examples/security/ssl/worker.pem',
     security_cert_store='examples/security/ssl/*.pem',
-    security_digest='sha256',
     task_serializer='auth',
     event_serializer='auth',
     accept_content=['auth']
