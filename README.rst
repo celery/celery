@@ -61,7 +61,7 @@ What do I need?
 Celery version 4.2 runs on,
 
 - Python (2.7, 3.4, 3.5, 3.6)
-- PyPy (5.8)
+- PyPy (6.0)
 
 
 This is the last version to support Python 2.7,
