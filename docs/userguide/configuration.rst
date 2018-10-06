@@ -811,7 +811,18 @@ Example configuration
 
     result_backend = 'rpc://'
     result_persistent = False
+   
+**Please note**: using this backend could trigger the raise of ``celery.backends.rpc.BacklogLimitExceeded`` if the task tombstone is too *old*. 
 
+E.g.  
+
+.. code-block:: python
+
+    for i in range(10000):
+        r = debug_task.delay()
+
+    print(r.state)  # this would raise celery.backends.rpc.BacklogLimitExceeded
+    
 .. _conf-cache-result-backend:
 
 Cache backend settings
