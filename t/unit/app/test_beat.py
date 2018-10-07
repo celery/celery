@@ -12,7 +12,6 @@ from celery.beat import event_t
 from celery.five import keys, string_t
 from celery.schedules import crontab, schedule
 from celery.utils.objects import Bunch
-import pytz
 
 
 class MockShelve(dict):
