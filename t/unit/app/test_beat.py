@@ -316,6 +316,19 @@ class test_Scheduler:
         scheduler.update_from_dict(s)
         assert scheduler.tick() == min(nums) - 0.010
 
+    def test_ticks_microseconds(self):
+        scheduler = mScheduler(app=self.app)
+
+        now_ts = 1514797200.2
+        now = datetime.fromtimestamp(now_ts)
+        schedule_half = schedule(timedelta(seconds=0.5), nowfun=lambda: now)
+        scheduler.add(name='half_second_schedule', schedule=schedule_half)
+
+        scheduler.tick()
+        # ensure those 0.2 seconds on now_ts don't get dropped
+        expected_time = now_ts + 0.5 - 0.010
+        assert scheduler._heap[0].time == expected_time
+
     def test_ticks_schedule_change(self):
         # initialise schedule and check heap is not initialized
         scheduler = mScheduler(app=self.app)
