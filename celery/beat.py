@@ -256,7 +256,10 @@ class Scheduler(object):
     def _when(self, entry, next_time_to_run, mktime=time.mktime):
         adjust = self.adjust
 
-        return (mktime(entry.default_now().timetuple()) +
+        as_now = entry.default_now()
+
+        return (mktime(as_now.timetuple()) +
+                as_now.microsecond / 1e6 +
                 (adjust(next_time_to_run) or 0))
 
     def populate_heap(self, event_t=event_t, heapify=heapq.heapify):
