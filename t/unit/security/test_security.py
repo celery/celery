@@ -17,6 +17,7 @@ from __future__ import absolute_import, unicode_literals
 import pytest
 from case import Mock, mock, patch
 from kombu.serialization import disable_insecure_serializers, registry
+from kombu.exceptions import SerializerNotInstalled
 
 from celery.exceptions import ImproperlyConfigured, SecurityError
 from celery.five import builtins
@@ -32,6 +33,11 @@ class test_security(SecurityCase):
 
     def teardown(self):
         registry._disabled_content_types.clear()
+        registry._set_default_serializer('json')
+        try:
+            registry.unregister('auth')
+        except SerializerNotInstalled:
+            pass
 
     def test_disable_insecure_serializers(self):
         try:
@@ -62,9 +68,11 @@ class test_security(SecurityCase):
         tmp_key1 = tempfile.NamedTemporaryFile()
         tmp_key1_f = open(tmp_key1.name, 'w')
         tmp_key1_f.write(KEY1)
+        tmp_key1_f.seek(0)
         tmp_cert1 = tempfile.NamedTemporaryFile()
         tmp_cert1_f = open(tmp_cert1.name, 'w')
         tmp_cert1_f.write(CERT1)
+        tmp_cert1_f.seek(0)
         self.app.conf.update(
             task_serializer='auth',
             accept_content=['auth'],
