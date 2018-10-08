@@ -367,6 +367,17 @@ class test_chord:
         assert res.get() == [0, 5 + 6 + 7]
 
     @flaky
+    def test_eager_chord_inside_task(self, manager):
+        from .tasks import chord_add
+
+        prev = chord_add.app.conf.task_always_eager
+        chord_add.app.conf.task_always_eager = True
+
+        chord_add.apply_async(args=(4, 8), throw=True).get()
+
+        chord_add.app.conf.task_always_eager = prev
+
+    @flaky
     def test_group_chain(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -590,3 +601,16 @@ class test_chord:
 
         assert len([cr for cr in chord_results if cr[2] != states.SUCCESS]
                    ) == 1
+
+    def test_parallel_chords(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c1 = chord(group(add.s(1, 2), add.s(3, 4)), tsum.s())
+        c2 = chord(group(add.s(1, 2), add.s(3, 4)), tsum.s())
+        g = group(c1, c2)
+        r = g.delay()
+
+        assert r.get(timeout=TIMEOUT) == [10, 10]

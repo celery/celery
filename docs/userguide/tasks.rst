@@ -647,7 +647,7 @@ Here's an example using ``retry``:
 The bind argument to the task decorator will give access to ``self`` (the
 task type instance).
 
-The ``exc`` method is used to pass exception information that's
+The ``exc`` argument is used to pass exception information that's
 used in logs, and when storing task results.
 Both the exception and the traceback will
 be available in the task state (if a result backend is enabled).

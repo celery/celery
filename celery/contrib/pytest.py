@@ -51,7 +51,7 @@ def celery_session_app(request,
                        use_celery_app_trap):
     # type: (Any) -> Celery
     """Session Fixture: Return app for session fixtures."""
-    mark = request.node.get_marker('celery')
+    mark = request.node.get_closest_marker('celery')
     config = dict(celery_config, **mark.kwargs if mark else {})
     with _create_app(enable_logging=celery_enable_logging,
                      use_trap=use_celery_app_trap,
@@ -151,7 +151,7 @@ def celery_app(request,
                celery_enable_logging,
                use_celery_app_trap):
     """Fixture creating a Celery application instance."""
-    mark = request.node.get_marker('celery')
+    mark = request.node.get_closest_marker('celery')
     config = dict(celery_config, **mark.kwargs if mark else {})
     with _create_app(enable_logging=celery_enable_logging,
                      use_trap=use_celery_app_trap,

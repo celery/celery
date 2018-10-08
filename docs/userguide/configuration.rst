@@ -155,7 +155,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERYD_PREFETCH_MULTIPLIER``        :setting:`worker_prefetch_multiplier`
 ``CELERYD_REDIRECT_STDOUTS``           :setting:`worker_redirect_stdouts`
 ``CELERYD_REDIRECT_STDOUTS_LEVEL``     :setting:`worker_redirect_stdouts_level`
-``CELERYD_SEND_EVENTS``                :setting:`worker_send_task_events`
+``CELERY_SEND_EVENTS``                 :setting:`worker_send_task_events`
 ``CELERYD_STATE_DB``                   :setting:`worker_state_db`
 ``CELERYD_TASK_LOG_FORMAT``            :setting:`worker_task_log_format`
 ``CELERYD_TIMER``                      :setting:`worker_timer`
@@ -584,6 +584,10 @@ Can be one of the following:
     Use the `Consul`_ K/V store to store the results
     See :ref:`conf-consul-result-backend`.
 
+* ``azureblockblob``
+    Use the `AzureBlockBlob`_ PaaS store to store the results
+    See :ref:`conf-azureblockblob-result-backend`.
+
 .. warning:
 
     While the AMQP result backend is very efficient, you must make sure
@@ -598,6 +602,7 @@ Can be one of the following:
 .. _`CouchDB`: http://www.couchdb.com/
 .. _`Couchbase`: https://www.couchbase.com/
 .. _`Consul`: https://consul.io/
+.. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/blobs/
 
 
 .. setting:: result_backend_transport_options
@@ -641,6 +646,16 @@ Default: No compression.
 
 Optional compression method used for task results.
 Supports the same options as the :setting:`task_serializer` setting.
+
+.. setting:: result_extended
+
+``result_extended``
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``False``
+
+Enables extended task result attributes (name, args, kwargs, worker,
+retries, queue, delivery_info) to be written to backend.
 
 .. setting:: result_expires
 
@@ -796,7 +811,18 @@ Example configuration
 
     result_backend = 'rpc://'
     result_persistent = False
+   
+**Please note**: using this backend could trigger the raise of ``celery.backends.rpc.BacklogLimitExceeded`` if the task tombstone is too *old*. 
 
+E.g.  
+
+.. code-block:: python
+
+    for i in range(10000):
+        r = debug_task.delay()
+
+    print(r.state)  # this would raise celery.backends.rpc.BacklogLimitExceeded
+    
 .. _conf-cache-result-backend:
 
 Cache backend settings
@@ -1111,6 +1137,60 @@ Example configuration
     cassandra_read_consistency = 'ONE'
     cassandra_write_consistency = 'ONE'
     cassandra_entry_ttl = 86400
+
+.. _conf-azureblockblob-result-backend:
+
+Azure Block Blob backend settings
+---------------------------------
+
+To use `AzureBlockBlob`_ as the result backend you simply need to
+configure the :setting:`result_backend` setting with the correct URL.
+
+The required URL format is ``azureblockblob://`` followed by the storage
+connection string. You can find the storage connection string in the
+``Access Keys`` pane of your storage account resource in the Azure Portal.
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    result_backend = 'azureblockblob://DefaultEndpointsProtocol=https;AccountName=somename;AccountKey=Lou...bzg==;EndpointSuffix=core.windows.net'
+
+.. setting:: azureblockblob_container_name
+
+``azureblockblob_container_name``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: celery.
+
+The name for the storage container in which to store the results.
+
+.. setting:: azureblockblob_retry_initial_backoff_sec
+
+``azureblockblob_retry_initial_backoff_sec``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 2.
+
+The initial backoff interval, in seconds, for the first retry.
+Subsequent retries are attempted with an exponential strategy.
+
+.. setting:: azureblockblob_retry_increment_base
+
+``azureblockblob_retry_increment_base``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 2.
+
+.. setting:: azureblockblob_retry_max_attempts
+
+``azureblockblob_retry_max_attempts``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 3.
+
+The maximum number of retry attempts.
 
 .. _conf-elasticsearch-result-backend:
 

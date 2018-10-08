@@ -7,7 +7,7 @@ Signals
 .. contents::
     :local:
 
-Signals allows decoupled applications to receive notifications when
+Signals allow decoupled applications to receive notifications when
 certain actions occur elsewhere in the application.
 
 Celery ships with many signals that your application can hook into

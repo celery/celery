@@ -732,7 +732,10 @@ class test_tasks(TasksCase):
         yyy.push_request()
         try:
             tid = uuid()
-            yyy.update_state(tid, 'FROBULATING', {'fooz': 'baaz'})
+            # update_state should accept arbitrary kwargs, which are passed to
+            # the backend store_result method
+            yyy.update_state(tid, 'FROBULATING', {'fooz': 'baaz'},
+                             arbitrary_kwarg=None)
             assert yyy.AsyncResult(tid).status == 'FROBULATING'
             assert yyy.AsyncResult(tid).result == {'fooz': 'baaz'}
 

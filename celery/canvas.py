@@ -1226,8 +1226,9 @@ class chord(Signature):
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=app))
         if app.conf.task_always_eager:
-            return self.apply(args, kwargs,
-                              body=body, task_id=task_id, **options)
+            with allow_join_result():
+                return self.apply(args, kwargs,
+                                  body=body, task_id=task_id, **options)
         # chord([A, B, ...], C)
         return self.run(tasks, body, args, task_id=task_id, **options)
 
