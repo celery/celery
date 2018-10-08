@@ -25,7 +25,10 @@ class TaskPool(BasePool):
 
     def __init__(self, *args, **kwargs):
         super(TaskPool, self).__init__(*args, **kwargs)
-        self.executor = ThreadPoolExecutor(max_workers=self.limit)
+        if self.limit is not None:
+            self.executor = ThreadPoolExecutor(max_workers=self.limit)
+        else:
+            self.executor = ThreadPoolExecutor()  # Python < 3.5
 
     def on_stop(self):
         self.executor.shutdown()
