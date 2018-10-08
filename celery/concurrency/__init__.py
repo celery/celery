@@ -19,7 +19,7 @@ ALIASES = {
 
 try:
     import concurrent.futures  # noqa: F401
-except:
+except ModuleNotFoundError:
     pass
 else:
     ALIASES['threads'] = 'celery.concurrency.thread:TaskPool'
