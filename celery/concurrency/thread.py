@@ -29,7 +29,7 @@ class TaskPool(BasePool):
         super(TaskPool, self).__init__(*args, **kwargs)
 
         # from 3.5, it is calculated from number of CPUs
-        if (3, 0) <= sys.version_info <= (3, 4) and self.limit is None:
+        if (3, 0) <= sys.version_info < (3, 5) and self.limit is None:
             self.limit = 5
 
         self.executor = ThreadPoolExecutor(max_workers=self.limit)
