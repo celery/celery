@@ -5,10 +5,7 @@ import pytest
 
 from celery.utils.functional import noop
 
-from case import skip
 
-
-@skip.if_pypy()
 class test_thread_TaskPool:
 
     def test_on_apply(self):
