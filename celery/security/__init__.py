@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 """Message Signing Serializer."""
 from __future__ import absolute_import, unicode_literals
+
 from kombu.serialization import (
     registry, disable_insecure_serializers as _disable_insecure_serializers,
 )
 from celery.exceptions import ImproperlyConfigured
-from .serialization import register_auth
-from .serialization import DEFAULT_SECURITY_DIGEST # noqa
 
 
-OPENSSL_NOT_INSTALLED = """\
-You need to install the pyOpenSSL library to use the auth serializer.
+CRYPTOGRAPHY_NOT_INSTALLED = """\
+You need to install the cryptography library to use the auth serializer.
 Please install by:
 
-    $ pip install pyOpenSSL
+    $ pip install cryptography
 """
 
 SECURITY_SETTING_MISSING = """\
@@ -38,6 +37,12 @@ There is no point in signing messages if they are not verified.
 
 __all__ = ('setup_security',)
 
+try:
+    import cryptography  # noqa
+except ImportError:
+    raise ImproperlyConfigured(CRYPTOGRAPHY_NOT_INSTALLED)
+
+from .serialization import register_auth
 
 def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
                    digest=None, serializer='json', app=None):
@@ -52,11 +57,6 @@ def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
     conf = app.conf
     if conf.task_serializer != 'auth' or conf.accept_content != ['auth']:
         raise ImproperlyConfigured(SETTING_MISSING)
-
-    try:
-        from OpenSSL import crypto  # noqa
-    except ImportError:
-        raise ImproperlyConfigured(OPENSSL_NOT_INSTALLED)
 
     key = key or conf.security_key
     cert = cert or conf.security_certificate

@@ -7,14 +7,13 @@ from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
 
 from celery.five import bytes_if_py2
 from celery.utils.serialization import b64decode, b64encode
+from celery.app.defaults import DEFAULT_SECURITY_DIGEST
 
 from .certificate import Certificate, FSCertStore
 from .key import PrivateKey
-from .utils import reraise_errors
+from .utils import get_digest_algorithm, reraise_errors
 
 __all__ = ('SecureSerializer', 'register_auth')
-
-DEFAULT_SECURITY_DIGEST = 'sha256'
 
 
 class SecureSerializer(object):
@@ -25,8 +24,9 @@ class SecureSerializer(object):
         self._key = key
         self._cert = cert
         self._cert_store = cert_store
-        self._digest = bytes_if_py2(digest)
+        self._digest = get_digest_algorithm(digest)
         self._serializer = serializer
+
 
     def serialize(self, data):
         """Serialize data structure into string."""
@@ -71,7 +71,7 @@ class SecureSerializer(object):
         signer = raw_payload[:first_sep]
         signer_cert = self._cert_store[signer]
 
-        sig_len = signer_cert._cert.get_pubkey().bits() >> 3
+        sig_len = signer_cert.get_pubkey().key_size >> 3
         signature = raw_payload[
             first_sep + len(sep):first_sep + len(sep) + sig_len
         ]
@@ -88,7 +88,8 @@ class SecureSerializer(object):
         }
 
 
-def register_auth(key=None, cert=None, store=None, digest=None,
+def register_auth(key=None, cert=None, store=None,
+                  digest=DEFAULT_SECURITY_DIGEST,
                   serializer='json'):
     """Register security serializer."""
     s = SecureSerializer(key and PrivateKey(key),

@@ -125,7 +125,7 @@ class test_security(SecurityCase):
                 store = Mock()
                 self.app.setup_security(['json'], key, cert, store)
                 dis.assert_called_with(['json'])
-                reg.assert_called_with('A', 'B', store, 'sha1', 'json')
+                reg.assert_called_with('A', 'B', store, 'sha256', 'json')
                 registry._set_default_serializer.assert_called_with('auth')
 
     def test_security_conf(self):
@@ -140,7 +140,7 @@ class test_security(SecurityCase):
         _import = builtins.__import__
 
         def import_hook(name, *args, **kwargs):
-            if name == 'OpenSSL':
+            if name == 'cryptography':
                 raise ImportError
             return _import(name, *args, **kwargs)
 

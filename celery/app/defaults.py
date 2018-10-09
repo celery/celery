@@ -9,7 +9,6 @@ from datetime import timedelta
 from celery.five import items, keys, python_2_unicode_compatible
 from celery.utils.functional import memoize
 from celery.utils.serialization import strtobool
-from celery.security import DEFAULT_SECURITY_DIGEST
 
 __all__ = ('Option', 'NAMESPACES', 'flatten', 'find')
 
@@ -31,6 +30,9 @@ DEFAULT_PROCESS_LOG_FMT = """
 """.strip()
 DEFAULT_TASK_LOG_FMT = """[%(asctime)s: %(levelname)s/%(processName)s] \
 %(task_name)s[%(task_id)s]: %(message)s"""
+
+DEFAULT_SECURITY_DIGEST = 'sha256'
+
 
 OLD_NS = {'celery_{0}'}
 OLD_NS_BEAT = {'celerybeat_{0}'}
