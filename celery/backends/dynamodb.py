@@ -199,11 +199,11 @@ class DynamoDBBackend(KeyValueStoreBackend):
             error_code = e.response['Error'].get('Code', 'Unknown')
 
             # If table exists, do not fail, just return the description.
-            if error_code == 'ResourceInUseException':
+            try:
                 return self._client.describe_table(
                     TableName=self.table_name
                 )
-            else:
+            except:
                 raise e
 
     def _wait_for_table_status(self, expected='ACTIVE'):
