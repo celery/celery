@@ -27,8 +27,7 @@ from celery import Celery
 
 app = Celery(
     'myapp',
-    #broker='amqp://guest@localhost//',
-    broker='redis://localhost/0',
+    broker='amqp://guest@localhost//',
     # ## add result backend here if needed.
     # backend='rpc'
 )
