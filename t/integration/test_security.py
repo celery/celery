@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 import datetime
 import os
 import tempfile
-from typing import Optional
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -45,7 +44,7 @@ class test_security:
         os.remove(self.tmpdir + '/' + self.cert_name)
         os.rmdir(self.tmpdir)
 
-    def gen_private_key(self) -> rsa.RSAPrivateKeyWithSerialization:
+    def gen_private_key(self):
         """generate a private key with cryptography"""
         return rsa.generate_private_key(
             public_exponent=65537,
@@ -53,13 +52,7 @@ class test_security:
             backend=default_backend(),
         )
 
-    def gen_certificate(self,
-                        key: rsa.RSAPrivateKey,
-                        common_name: str,
-                        *,
-                        issuer: Optional[str]=None,
-                        sign_key: Optional[rsa.RSAPrivateKey]=None) \
-            -> x509.Certificate:
+    def gen_certificate(self, key, common_name, issuer=None, sign_key=None):
         """generate a certificate with cryptography"""
 
         now = datetime.datetime.utcnow()
