@@ -1,26 +1,104 @@
 from __future__ import absolute_import, unicode_literals
 
+import datetime
+import os
 import tempfile
-from .tasks import sleeping
-from t.unit.security import KEY1, CERT1
+from typing import Optional
+
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
+
+from .tasks import add
 
 
 class test_security:
 
-    def setup(self, manager):
-        tmp_key1 = tempfile.NamedTemporaryFile()
-        tmp_key1_f = open(tmp_key1.name, 'w')
-        tmp_key1_f.write(KEY1)
-        tmp_key1_f.seek(0)
-        tmp_cert1 = tempfile.NamedTemporaryFile()
-        tmp_cert1_f = open(tmp_cert1.name, 'w')
-        tmp_cert1_f.write(CERT1)
-        tmp_cert1_f.seek(0)
+    def setup(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.key_name = 'worker.key'
+        self.cert_name = 'worker.pem'
 
+        key = self.gen_private_key()
+        cert = self.gen_certificate(key=key,
+                                    common_name='celery cecurity integration')
+
+        pem_key = key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+
+        pem_cert = cert.public_bytes(
+            encoding=serialization.Encoding.PEM,
+        )
+
+        with open(self.tmpdir + '/' + self.key_name, 'wb') as key:
+            key.write(pem_key)
+        with open(self.tmpdir + '/' + self.cert_name, 'wb') as cert:
+            cert.write(pem_cert)
+
+    def teardown(self):
+        os.remove(self.tmpdir + '/' + self.key_name)
+        os.remove(self.tmpdir + '/' + self.cert_name)
+        os.rmdir(self.tmpdir)
+
+    def gen_private_key(self) -> rsa.RSAPrivateKeyWithSerialization:
+        """generate a private key with cryptography"""
+        return rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048,
+            backend=default_backend(),
+        )
+
+    def gen_certificate(self,
+                        key: rsa.RSAPrivateKey,
+                        common_name: str,
+                        *,
+                        issuer: Optional[str]=None,
+                        sign_key: Optional[rsa.RSAPrivateKey]=None) \
+            -> x509.Certificate:
+        """generate a certificate with cryptography"""
+
+        now = datetime.datetime.utcnow()
+
+        certificate = x509.CertificateBuilder().subject_name(
+            x509.Name([
+                x509.NameAttribute(NameOID.COMMON_NAME, common_name),
+            ])
+        ).issuer_name(
+            x509.Name([
+                x509.NameAttribute(
+                    NameOID.COMMON_NAME,
+                    issuer or common_name
+                )
+            ])
+        ).not_valid_before(
+            now
+        ).not_valid_after(
+            now + datetime.timedelta(seconds=86400)
+        ).serial_number(
+            x509.random_serial_number()
+        ).public_key(
+            key.public_key()
+        ).add_extension(
+            x509.BasicConstraints(ca=True, path_length=0), critical=True
+        ).sign(
+            private_key=sign_key or key,
+            algorithm=hashes.SHA256(),
+            backend=default_backend()
+        )
+        return certificate
+
+    def test_a_setup_security(self, manager):
+        # setup executes before fixtures
+        # https://github.com/pytest-dev/pytest/issues/517
         manager.app.conf.update(
-            security_key=tmp_key1.name,
-            security_certificate=tmp_cert1.name,
-            security_cert_store='*.pem',
+            security_key='{0}/{1}'.format(self.tmpdir, self.key_name),
+            security_certificate='{0}/{1}'.format(self.tmpdir, self.cert_name),
+            security_cert_store='{0}/*.pem'.format(self.tmpdir),
             task_serializer='auth',
             event_serializer='auth',
             accept_content=['auth']
@@ -28,10 +106,6 @@ class test_security:
 
         manager.app.setup_security()
 
-        tmp_cert1_f.close()
-        tmp_key1_f.close()
-
-    def test_security_task_accepted(self, manager, sleep=1):
-        r1 = sleeping.delay(sleep)
-        sleeping.delay(sleep)
-        manager.assert_accepted([r1.id])
+    def test_security_task_done(self):
+        t1 = add.delay(1, 1)
+        assert t1.get() == 2
