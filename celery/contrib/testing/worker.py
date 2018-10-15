@@ -100,7 +100,6 @@ def _start_worker_thread(app,
         celery.worker.Worker: worker instance.
     """
     setup_app_for_worker(app, loglevel, logfile)
-    assert 'celery.ping' in app.tasks
     # Make sure we can connect to the broker
     with app.connection(hostname=os.environ.get('TEST_BROKER')) as conn:
         conn.default_channel.queue_declare
