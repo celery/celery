@@ -10,12 +10,15 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
+import pytest
+
 from .tasks import add
 
 
 class test_security:
 
-    def setup(self):
+    @pytest.fixture(autouse=True, scope='class')
+    def class_certs(self, request):
         self.tmpdir = tempfile.mkdtemp()
         self.key_name = 'worker.key'
         self.cert_name = 'worker.pem'
@@ -39,10 +42,28 @@ class test_security:
         with open(self.tmpdir + '/' + self.cert_name, 'wb') as cert:
             cert.write(pem_cert)
 
-    def teardown(self):
+        request.cls.tmpdir = self.tmpdir
+        request.cls.key_name = self.key_name
+        request.cls.cert_name = self.cert_name
+
+        yield
+
         os.remove(self.tmpdir + '/' + self.key_name)
         os.remove(self.tmpdir + '/' + self.cert_name)
         os.rmdir(self.tmpdir)
+
+    @pytest.fixture(autouse=True)
+    def _prepare_setup(self, manager):
+        manager.app.conf.update(
+            security_key='{0}/{1}'.format(self.tmpdir, self.key_name),
+            security_certificate='{0}/{1}'.format(self.tmpdir, self.cert_name),
+            security_cert_store='{0}/*.pem'.format(self.tmpdir),
+            task_serializer='auth',
+            event_serializer='auth',
+            accept_content=['auth']
+        )
+
+        manager.app.setup_security()
 
     def gen_private_key(self):
         """generate a private key with cryptography"""
@@ -84,20 +105,6 @@ class test_security:
             backend=default_backend()
         )
         return certificate
-
-    def test_a_setup_security(self, manager):
-        # setup executes before fixtures
-        # https://github.com/pytest-dev/pytest/issues/517
-        manager.app.conf.update(
-            security_key='{0}/{1}'.format(self.tmpdir, self.key_name),
-            security_certificate='{0}/{1}'.format(self.tmpdir, self.cert_name),
-            security_cert_store='{0}/*.pem'.format(self.tmpdir),
-            task_serializer='auth',
-            event_serializer='auth',
-            accept_content=['auth']
-        )
-
-        manager.app.setup_security()
 
     def test_security_task_done(self):
         t1 = add.delay(1, 1)
