@@ -684,9 +684,9 @@ class BaseKeyValueStoreBackend(Backend):
                       traceback=None, request=None, **kwargs):
 
         if state in self.READY_STATES:
-            date_done = datetime.datetime.utcnow()
+            date_done = datetime.datetime.utcnow().isoformat()
         else:
-            date_done = None
+            date_done = ''
 
         meta = {
             'status': state,

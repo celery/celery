@@ -18,6 +18,7 @@ from .five import (items, monotonic, python_2_unicode_compatible, range,
                    string_t)
 from .utils import deprecated
 from .utils.graph import DependencyGraph, GraphFormatter
+from .utils.iso8601 import parse_iso8601
 
 try:
     import tblib
@@ -500,7 +501,10 @@ class AsyncResult(ResultBase):
 
     @property
     def date_done(self):
-        return self._get_task_meta().get('date_done')
+        date_str = self._get_task_meta().get('date_done')
+        if date_str:
+            return parse_iso8601(date_str)
+        return date_str
 
     @property
     def retries(self):
