@@ -549,7 +549,7 @@ you can do so like this:
 
 .. code-block:: console
 
-    $ py.test t/unit/worker/test_worker_job.py
+    $ py.test t/unit/worker/test_worker.py
 
 .. _contributing-pull-requests:
 
