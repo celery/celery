@@ -427,6 +427,8 @@ class test_AsyncResult:
         assert x.date_done is not None
         assert x.task_id == "1"
         assert x.state == "SUCCESS"
+        result = self.app.AsyncResult(self.task4['id'])
+        assert result.date_done is None
 
 
 class test_ResultSet:
