@@ -660,7 +660,7 @@ class BaseKeyValueStoreBackend(Backend):
         if state in self.READY_STATES:
             date_done = datetime.datetime.utcnow().isoformat()
         else:
-            date_done = ''
+            date_done = None
 
         meta = {
             'status': state,
