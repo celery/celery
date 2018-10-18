@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import errno
+import pytz
 from datetime import datetime, timedelta
 from pickle import dumps, loads
 
@@ -143,11 +144,12 @@ class mSchedulerRuntimeError(mScheduler):
 
 class mocked_schedule(schedule):
 
-    def __init__(self, is_due, next_run_at):
+    def __init__(self, is_due, next_run_at, nowfun=datetime.utcnow):
         self._is_due = is_due
         self._next_run_at = next_run_at
         self.run_every = timedelta(seconds=1)
-        self.nowfun = datetime.utcnow
+        self.nowfun = nowfun
+        self.default_now = self.nowfun
 
     def is_due(self, last_run_at):
         return self._is_due, self._next_run_at
@@ -370,6 +372,22 @@ class test_Scheduler:
         assert 'foo' not in a.schedule
         assert 'baz' in a.schedule
         assert a.schedule['bar'].schedule._next_run_at == 40
+
+    def test_when(self):
+        now_time_utc = datetime(2000, 10, 10, 10, 10, 10, 10, tzinfo=pytz.utc)
+        now_time_casey = now_time_utc.astimezone(
+            pytz.timezone('Antarctica/Casey')
+        )
+        scheduler = mScheduler(app=self.app)
+        result_utc = scheduler._when(
+            mocked_schedule(True, 10, lambda: now_time_utc),
+            10
+        )
+        result_casey = scheduler._when(
+            mocked_schedule(True, 10, lambda: now_time_casey),
+            10
+        )
+        assert result_utc == result_casey
 
     @patch('celery.beat.Scheduler._when', return_value=1)
     def test_populate_heap(self, _when):
