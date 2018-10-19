@@ -8,6 +8,12 @@ This document contains change notes for bugfix releases in
 the 4.x series, please see :ref:`whatsnew-4.2` for
 an overview of what's new in Celery 4.2.
 
+4.3.0
+=====
+:release-date: TBA
+:status: DEVELOPMENT
+:branch: dev (git calls this master)
+
 4.2.1
 =====
 :release-date: 2018-07-18 11:00 AM IST

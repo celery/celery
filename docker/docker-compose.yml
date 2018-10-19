@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 
 services:
   celery:
@@ -7,6 +7,7 @@ services:
       dockerfile: docker/Dockerfile
       args:
         CELERY_USER: developer
+    image: celery/celery:dev
     environment:
       TEST_BROKER: pyamqp://rabbit:5672
       TEST_BACKEND: redis://redis
@@ -15,11 +16,10 @@ services:
       REDIS_HOST: redis
       WORKER_LOGLEVEL: DEBUG
       AZUREBLOCKBLOB_URL: azureblockblob://DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
+      PYTHONPATH: /home/developer/celery
     tty: true
     volumes:
-      - ../docs:/home/developer/docs
-      - ../celery:/home/developer/celery
-      - ../t:/home/developer/t
+      - ../.:/home/developer/celery
     depends_on:
       - rabbit
       - redis
