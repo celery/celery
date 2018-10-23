@@ -5,7 +5,6 @@ from __future__ import absolute_import, unicode_literals
 from kombu.serialization import dumps, loads, registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
 
-from celery.five import bytes_if_py2
 from celery.utils.serialization import b64decode, b64encode
 from celery.app.defaults import DEFAULT_SECURITY_DIGEST
 
@@ -26,7 +25,6 @@ class SecureSerializer(object):
         self._cert_store = cert_store
         self._digest = get_digest_algorithm(digest)
         self._serializer = serializer
-
 
     def serialize(self, data):
         """Serialize data structure into string."""

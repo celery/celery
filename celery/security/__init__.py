@@ -42,7 +42,8 @@ try:
 except ImportError:
     raise ImproperlyConfigured(CRYPTOGRAPHY_NOT_INSTALLED)
 
-from .serialization import register_auth
+from .serialization import register_auth  # noqa: need cryptography first
+
 
 def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
                    digest=None, serializer='json', app=None):

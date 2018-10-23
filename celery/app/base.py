@@ -597,7 +597,8 @@ class Celery(object):
         )
 
     def setup_security(self, allowed_serializers=None, key=None, cert=None,
-                       store=None, digest=DEFAULT_SECURITY_DIGEST, serializer='json'):
+                       store=None, digest=DEFAULT_SECURITY_DIGEST,
+                       serializer='json'):
         """Setup the message-signing serializer.
 
         This will affect all application instances (a global operation).

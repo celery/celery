@@ -35,7 +35,7 @@ class Certificate(object):
         return datetime.datetime.now() > self._cert.not_valid_after
 
     def get_pubkey(self):
-        """Get public key from certificate"""
+        """Get public key from certificate."""
         return self._cert.public_key()
 
     def get_serial_number(self):

@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 import pytest
 
 from celery.exceptions import SecurityError
-from celery.five import bytes_if_py2
 from celery.security.key import PrivateKey
 from celery.security.utils import get_digest_algorithm
 from kombu.utils.encoding import ensure_bytes
@@ -35,4 +34,3 @@ class test_PrivateKey(SecurityCase):
         pkey.sign(ensure_bytes('test'), get_digest_algorithm())
         with pytest.raises(AttributeError):
             pkey.sign(ensure_bytes('test'), get_digest_algorithm('unknown'))
-
