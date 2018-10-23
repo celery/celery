@@ -71,6 +71,9 @@ class SecureSerializer(object):
         signer = raw_payload[:first_sep]
         signer_cert = self._cert_store[signer]
 
+        # shift 3 bits right to get signature length
+        # 2048bit rsa key has a signature length of 256
+        # 4096bit rsa key has a signature length of 512
         sig_len = signer_cert.get_pubkey().key_size >> 3
         signature = raw_payload[
             first_sep + len(sep):first_sep + len(sep) + sig_len
