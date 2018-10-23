@@ -144,7 +144,7 @@ for more information.
 Message Signing
 ===============
 
-Celery can use the :pypi:`pyOpenSSL` library to sign message using
+Celery can use the :pypi:`cryptography` library to sign message using
 `Public-key cryptography`, where
 messages sent by clients are signed using a private key
 and then later verified by the worker using a public certificate.
