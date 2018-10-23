@@ -12,8 +12,11 @@ Usage::
    writing RSA key
    ```
 
+   cd examples/security
+
    (window1)$ python mysecureapp.py worker -l info
 
+   (window2)$ cd examples/security
    (window2)$ python
    >>> from mysecureapp import boom
    >>> boom.delay().get()
@@ -30,9 +33,9 @@ app = Celery(
     backend='redis://localhost:6379/0'
 )
 app.conf.update(
-    security_key='examples/security/ssl/worker.key',
-    security_certificate='examples/security/ssl/worker.pem',
-    security_cert_store='examples/security/ssl/*.pem',
+    security_key='ssl/worker.key',
+    security_certificate='ssl/worker.pem',
+    security_cert_store='ssl/*.pem',
     task_serializer='auth',
     event_serializer='auth',
     accept_content=['auth']
