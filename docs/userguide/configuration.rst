@@ -647,7 +647,7 @@ Can be one of the following:
 .. _`Couchbase`: https://www.couchbase.com/
 .. _`Consul`: https://consul.io/
 .. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/blobs/
-.. _`S3`: https://aws.amazon.com/fr/s3/
+.. _`S3`: https://aws.amazon.com/s3/
 
 
 .. setting:: result_backend_transport_options
