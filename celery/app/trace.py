@@ -394,7 +394,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         task_request, exc, uuid, RETRY, call_errbacks=False)
                 except Exception as exc:
                     I, R, state, retval = on_error(task_request, exc, uuid)
-                except BaseException as exc:
+                except BaseException:
                     raise
                 else:
                     try:
