@@ -35,7 +35,8 @@ def Message(body, exchange='exchange', routing_key='rkey',
             },
             'content_type': content_type,
             'content_encoding': content_encoding,
-            'properties': {'correlation_id': isinstance(body, dict) \
+            'properties': {
+                'correlation_id': isinstance(body, dict)
                 and body['id'] or None
             }
         },
