@@ -2,6 +2,7 @@
 """Redis result store backend."""
 from __future__ import absolute_import, unicode_literals
 
+import threading
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 
@@ -76,7 +77,7 @@ logger = get_logger(__name__)
 
 
 class ResultConsumer(BaseResultConsumer):
-    _pubsub = None
+    _thread = threading.local()
 
     def __init__(self, *args, **kwargs):
         super(ResultConsumer, self).__init__(*args, **kwargs)
@@ -102,9 +103,11 @@ class ResultConsumer(BaseResultConsumer):
         self._maybe_cancel_ready_task(meta)
 
     def start(self, initial_task_id, **kwargs):
-        self._pubsub = self.backend.client.pubsub(
-            ignore_subscribe_messages=True,
-        )
+        if self._pubsub is None:
+            self._pubsub = self.backend._create_client(
+                **self.backend.connparams
+            ).pubsub(ignore_subscribe_messages=True)
+
         self._consume_from(initial_task_id)
 
     def on_wait_for_pending(self, result, **kwargs):
@@ -137,6 +140,14 @@ class ResultConsumer(BaseResultConsumer):
             key = self._get_key_for_task(task_id)
             self.subscribed_to.discard(key)
             self._pubsub.unsubscribe(key)
+
+    @property
+    def _pubsub(self):
+        return getattr(self._thread, "_pubsub", None)
+
+    @_pubsub.setter
+    def _pubsub(self, value):
+        self._thread._pubsub = value
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
