@@ -2,9 +2,9 @@
 """Redis result store backend."""
 from __future__ import absolute_import, unicode_literals
 
-import threading
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
+import threading
 
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
@@ -103,11 +103,6 @@ class ResultConsumer(BaseResultConsumer):
         self._maybe_cancel_ready_task(meta)
 
     def start(self, initial_task_id, **kwargs):
-        if self._pubsub is None:
-            self._pubsub = self.backend._create_client(
-                **self.backend.connparams
-            ).pubsub(ignore_subscribe_messages=True)
-
         self._consume_from(initial_task_id)
 
     def on_wait_for_pending(self, result, **kwargs):
@@ -143,7 +138,12 @@ class ResultConsumer(BaseResultConsumer):
 
     @property
     def _pubsub(self):
-        return getattr(self._thread, "_pubsub", None)
+        if getattr(self._thread, "_pubsub", None) is None:
+            self._thread._pubsub = self.backend._create_client(
+                **self.backend.connparams
+            ).pubsub(ignore_subscribe_messages=True)
+
+        return self._thread._pubsub
 
     @_pubsub.setter
     def _pubsub(self, value):
