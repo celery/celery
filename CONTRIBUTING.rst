@@ -638,6 +638,13 @@ listed in :file:`requirements/docs.txt` and :file:`requirements/default.txt`:
     $ pip install -U -r requirements/docs.txt
     $ pip install -U -r requirements/default.txt
 
+Additionally, to build with no warnings, you will need to install
+the following packages:
+
+.. code-block:: console
+
+   $ apt-get install texlive texlive-latex-extra dvipng
+
 After these dependencies are installed you should be able to
 build the docs by running:
 
