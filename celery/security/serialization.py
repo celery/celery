@@ -73,13 +73,14 @@ class SecureSerializer(object):
         # 2048bit rsa key has a signature length of 256
         # 4096bit rsa key has a signature length of 512
         sig_len = signer_cert.get_pubkey().key_size >> 3
-        signature_start_position = first_sep + len(sep)
+        sep_len = len(sep)
+        signature_start_position = first_sep + sep_len
         signature_end_position = raw_payload_start_position + sig_len
         signature = raw_payload[
             signature_start_position:signature_end_position
         ]
         
-        v = raw_payload[signature_end_position:].split(sep)
+        v = raw_payload[signature_end_position + sep_len:].split(sep)
 
         return {
             'signer': signer,
