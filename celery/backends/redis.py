@@ -495,15 +495,17 @@ class SentinelBackend(RedisBackend):
         Arguments:
             include_password (bool): Password censored if disabled.
         """
-
         if not self.url:
             return 'sentinel://'
-
         if include_password:
             return self.url
 
-        hosts = [{"host": x["host"],
-                  "password": x["password"],
-                  "port": x["port"]} for x in self.connparams.get("hosts", [])]
-
-        return ';'.join([maybe_sanitize_url(as_url("sentinel", **h)) for h in hosts])
+        urls = []
+        for h in self.connparams.get('hosts', []):
+            urls.append(maybe_sanitize_url(as_url('sentinel',
+                                                  host=h['host'],
+                                                  port=h['port'],
+                                                  password=h['password'])
+                                           )
+                        )
+        return ';'.join(urls)
