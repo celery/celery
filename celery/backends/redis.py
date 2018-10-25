@@ -87,7 +87,8 @@ class ResultConsumer(BaseResultConsumer):
 
     def on_after_fork(self):
         try:
-            self.backend.client.connection_pool.reset()
+            if getattr(self._thread, "client", None) is not None:
+                self._thread.client.connection_pool.reset()
             if self._pubsub is not None:
                 self._pubsub.close()
         except KeyError as e:
@@ -139,11 +140,12 @@ class ResultConsumer(BaseResultConsumer):
     @property
     def _pubsub(self):
         if getattr(self._thread, "_pubsub", None) is None:
-            self._thread._pubsub = self.backend.create_client().pubsub(
+            self._thread.client = self.backend.create_client()
+            self._thread.pubsub = self._thread.client.pubsub(
                 ignore_subscribe_messages=True
             )
 
-        return self._thread._pubsub
+        return self._thread.pubsub
 
     @_pubsub.setter
     def _pubsub(self, value):
