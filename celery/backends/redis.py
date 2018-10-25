@@ -147,10 +147,6 @@ class ResultConsumer(BaseResultConsumer):
 
         return self._thread.pubsub
 
-    @_pubsub.setter
-    def _pubsub(self, value):
-        self._thread._pubsub = value
-
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     """Redis task result store."""
