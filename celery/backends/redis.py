@@ -139,9 +139,9 @@ class ResultConsumer(BaseResultConsumer):
     @property
     def _pubsub(self):
         if getattr(self._thread, "_pubsub", None) is None:
-            self._thread._pubsub = self.backend._create_client(
-                **self.backend.connparams
-            ).pubsub(ignore_subscribe_messages=True)
+            self._thread._pubsub = self.backend.create_client().pubsub(
+                ignore_subscribe_messages=True
+            )
 
         return self._thread._pubsub
 
@@ -417,6 +417,9 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     @cached_property
     def client(self):
+        return self._create_client(**self.connparams)
+
+    def create_client(self):
         return self._create_client(**self.connparams)
 
     def __reduce__(self, args=(), kwargs={}):
