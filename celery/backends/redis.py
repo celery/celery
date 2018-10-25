@@ -7,7 +7,7 @@ from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
-from kombu.utils.url import _parse_url
+from kombu.utils.url import _parse_url, maybe_sanitize_url, as_url
 
 from celery import states
 from celery._state import task_join_will_block
@@ -488,3 +488,22 @@ class SentinelBackend(RedisBackend):
             service_name=master_name,
             redis_class=self._get_client(),
         ).connection_pool
+
+    def as_uri(self, include_password=False):
+        """Return the backend as an URI.
+
+        Arguments:
+            include_password (bool): Password censored if disabled.
+        """
+
+        if not self.url:
+            return 'sentinel://'
+
+        if include_password:
+            return self.url
+
+        hosts = [{"host": x["host"],
+                  "password": x["password"],
+                  "port": x["port"]} for x in self.connparams.get("hosts", [])]
+
+        return ';'.join([maybe_sanitize_url(as_url("sentinel", **h)) for h in hosts])
