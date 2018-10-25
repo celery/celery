@@ -75,11 +75,11 @@ class SecureSerializer(object):
         sig_len = signer_cert.get_pubkey().key_size >> 3
         sep_len = len(sep)
         signature_start_position = first_sep + sep_len
-        signature_end_position = raw_payload_start_position + sig_len
+        signature_end_position = signature_start_position + sig_len
         signature = raw_payload[
             signature_start_position:signature_end_position
         ]
-        
+
         v = raw_payload[signature_end_position + sep_len:].split(sep)
 
         return {
