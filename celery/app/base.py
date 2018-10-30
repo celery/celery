@@ -151,7 +151,7 @@ class Celery(object):
 
     Keyword Arguments:
         broker (str): URL of the default broker used.
-        backend (Union[str, Type[celery.backends.base.Backend]]): 
+        backend (Union[str, Type[celery.backends.base.Backend]]):
             The result store backend class, or the name of the backend
             class to use.
 

@@ -110,7 +110,7 @@ class Signature(dict):
         :ref:`guide-canvas` for the complete guide.
 
     Arguments:
-        task (Union[Type[celery.app.task.Task], str]): Either a task 
+        task (Union[Type[celery.app.task.Task], str]): Either a task
             class/instance, or the name of a task.
         args (Tuple): Positional arguments to apply.
         kwargs (Dict): Keyword arguments to apply.
