@@ -289,7 +289,9 @@ Running the flower command will start a web-server that you can visit:
     $ celery -A proj flower
 
 The default port is http://localhost:5555, but you can change this using the
-:option:`--port <flower --port>` argument:
+`--port`_ argument:
+
+.. _--port: https://flower.readthedocs.io/en/latest/config.html#port
 
 .. code-block:: console
 

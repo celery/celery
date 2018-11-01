@@ -151,8 +151,9 @@ class Celery(object):
 
     Keyword Arguments:
         broker (str): URL of the default broker used.
-        backend (Union[str, type]): The result store backend class,
-            or the name of the backend class to use.
+        backend (Union[str, Type[celery.backends.base.Backend]]):
+            The result store backend class, or the name of the backend
+            class to use.
 
             Default is the value of the :setting:`result_backend` setting.
         autofinalize (bool): If set to False a :exc:`RuntimeError`
@@ -161,15 +162,17 @@ class Celery(object):
         set_as_current (bool):  Make this the global current app.
         include (List[str]): List of modules every worker should import.
 
-        amqp (Union[str, type]): AMQP object or class name.
-        events (Union[str, type]): Events object or class name.
-        log (Union[str, type]): Log object or class name.
-        control (Union[str, type]): Control object or class name.
-        tasks (Union[str, type]): A task registry, or the name of
+        amqp (Union[str, Type[AMQP]]): AMQP object or class name.
+        events (Union[str, Type[celery.app.events.Events]]): Events object or
+            class name.
+        log (Union[str, Type[Logging]]): Log object or class name.
+        control (Union[str, Type[celery.app.control.Control]]): Control object
+            or class name.
+        tasks (Union[str, Type[TaskRegistry]]): A task registry, or the name of
             a registry class.
         fixups (List[str]): List of fix-up plug-ins (e.g., see
             :mod:`celery.fixups.django`).
-        config_source (Union[str, type]): Take configuration from a class,
+        config_source (Union[str, class]): Take configuration from a class,
             or object.  Attributes may include any settings described in
             the documentation.
     """

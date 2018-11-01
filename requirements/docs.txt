@@ -2,3 +2,5 @@ git+https://github.com/celery/sphinx_celery.git
 Sphinx==1.7.1
 typing
 -r extras/sqlalchemy.txt
+-r test.txt
+-r deps/mock.txt
