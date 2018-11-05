@@ -319,6 +319,10 @@ class Scheduler(object):
         return min(adjust(next_time_to_run) or max_interval, max_interval)
 
     def schedules_equal(self, old_schedules, new_schedules):
+        if old_schedules is new_schedules is None:
+            return True
+        if old_schedules is None or new_schedules is None:
+            return False
         if set(old_schedules.keys()) != set(new_schedules.keys()):
             return False
         for name, old_entry in old_schedules.items():
