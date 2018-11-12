@@ -9,7 +9,7 @@ from __future__ import absolute_import, unicode_literals
 
 import itertools
 import operator
-from collections import MutableSequence, deque
+from collections import deque
 from copy import deepcopy
 from functools import partial as _partial
 from functools import reduce
@@ -31,6 +31,12 @@ from celery.utils.functional import (is_list, maybe_list, regen,
                                      seq_concat_item, seq_concat_seq)
 from celery.utils.objects import getitem_property
 from celery.utils.text import remove_repeating_from_task, truncate
+
+try:
+    from collections.abc import MutableSequence
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import MutableSequence
 
 __all__ = (
     'Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
