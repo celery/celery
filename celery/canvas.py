@@ -1298,7 +1298,10 @@ class chord(Signature):
         else:
             body.delay([])
 
-        bodyres.parent = header_result
+        bodyres_root = bodyres
+        while bodyres_root.parent is not None:
+            bodyres_root = bodyres_root.parent
+        bodyres_root.parent = header_result
         return bodyres
 
     def clone(self, *args, **kwargs):
