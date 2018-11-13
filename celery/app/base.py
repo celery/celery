@@ -399,7 +399,7 @@ class Celery(object):
             return shared_task(*args, lazy=False, **opts)
 
         def inner_create_task_cls(shared=True, filter=None, lazy=True, **opts):
-            _filt = filter  # stupid 2to3
+            _filt = filter
 
             def _create_task_cls(fun):
                 if shared:
