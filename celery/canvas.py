@@ -1299,7 +1299,11 @@ class chord(Signature):
             body.delay([])
 
         bodyres_root = bodyres
+        seen = set()
         while bodyres_root.parent is not None:
+            if bodyres_root.id in seen:
+                raise RuntimeError('Recursive result parents')
+            seen.add(bodyres_root.id)
             bodyres_root = bodyres_root.parent
         bodyres_root.parent = header_result
         return bodyres
