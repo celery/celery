@@ -145,7 +145,7 @@ class ResultConsumer(BaseResultConsumer):
 
     @property
     def _pubsub(self):
-        return getattr(self._thread, "_pubsub", None)
+        return getattr(self._thread, "pubsub", None)
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     """Redis task result store."""
