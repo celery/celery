@@ -2,10 +2,9 @@
 """The CosmosDB/SQL backend for Celery (experimental)."""
 from __future__ import absolute_import, unicode_literals
 
-import re
-
 from kombu.utils import cached_property
 from kombu.utils.encoding import bytes_to_str
+from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.log import get_logger
@@ -29,10 +28,6 @@ __all__ = ("CosmosDBSQLBackend",)
 
 ERROR_NOT_FOUND = 404
 ERROR_EXISTS = 409
-
-URL_RE = re.compile(r"cosmosdbsql://"
-                    r"AccountEndpoint=(?P<endpoint>[^;]+);"
-                    r"AccountKey=(?P<key>[^;]+);")
 
 LOGGER = get_logger(__name__)
 
@@ -86,11 +81,17 @@ class CosmosDBSQLBackend(KeyValueStoreBackend):
 
     @classmethod
     def _parse_url(cls, url):
-        match = URL_RE.match(url)
-        if not match:
+        _, host, port, _, password, _, _ = _parse_url(url)
+
+        if not host or not password:
             raise ImproperlyConfigured("Invalid URL")
 
-        return match.group("endpoint"), match.group("key")
+        if not port:
+            port = 443
+
+        scheme = "https" if port == 443 else "http"
+        endpoint = "%s://%s:%s" % (scheme, host, port)
+        return endpoint, password
 
     @cached_property
     def _client(self):

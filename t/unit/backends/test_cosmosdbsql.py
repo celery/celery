@@ -13,7 +13,7 @@ MODULE_TO_MOCK = "celery.backends.cosmosdbsql"
 @skip.unless_module("pydocumentdb")
 class test_DocumentDBBackend:
     def setup(self):
-        self.url = "cosmosdbsql://AccountEndpoint=endpoint;AccountKey=key;"
+        self.url = "cosmosdbsql://:key@endpoint"
         self.backend = CosmosDBSQLBackend(app=self.app, url=self.url)
 
     def test_missing_third_party_sdk(self):
@@ -28,11 +28,34 @@ class test_DocumentDBBackend:
     def test_bad_connection_url(self):
         with pytest.raises(ImproperlyConfigured):
             CosmosDBSQLBackend._parse_url(
-                "cosmosdbsql://AccountEndpoint=;AccountKey=;")
+                "cosmosdbsql://:key@")
+
+        with pytest.raises(ImproperlyConfigured):
+            CosmosDBSQLBackend._parse_url(
+                "cosmosdbsql://:@host")
 
         with pytest.raises(ImproperlyConfigured):
             CosmosDBSQLBackend._parse_url(
                 "cosmosdbsql://corrupted")
+
+    def test_default_connection_url(self):
+        endpoint, password = CosmosDBSQLBackend._parse_url(
+            "cosmosdbsql://:key@host")
+
+        assert password == "key"
+        assert endpoint == "https://host:443"
+
+        endpoint, password = CosmosDBSQLBackend._parse_url(
+            "cosmosdbsql://:key@host:443")
+
+        assert password == "key"
+        assert endpoint == "https://host:443"
+
+        endpoint, password = CosmosDBSQLBackend._parse_url(
+            "cosmosdbsql://:key@host:8080")
+
+        assert password == "key"
+        assert endpoint == "http://host:8080"
 
     def test_bad_partition_key(self):
         with pytest.raises(ValueError):

@@ -1480,7 +1480,7 @@ Example configuration
 
 .. code-block:: python
 
-    result_backend = 'cosmosdbsql://AccountEndpoint=https://...:443/;AccountKey=jFXsz...Jg4g==;'
+    result_backend = 'cosmosdbsql://:{InsertAccountPrimaryKeyHere}@{InsertAccountNameHere}.documents.azure.com'
 
 .. setting:: cosmosdbsql_database_name
 
