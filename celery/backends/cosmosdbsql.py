@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""The CosmosDB/SQL backend for Celery."""
+"""The CosmosDB/SQL backend for Celery (experimental)."""
 from __future__ import absolute_import, unicode_literals
 
 import re

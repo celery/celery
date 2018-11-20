@@ -576,7 +576,7 @@ Can be one of the following:
     Use `CouchDB`_ to store the results.
     See :ref:`conf-couchdb-result-backend`.
 
-* ``cosmosdbsql``
+* ``cosmosdbsql (experimental)``
     Use the `CosmosDB`_ PaaS to store the results.
     See :ref:`conf-cosmosdbsql-result-backend`.
 
@@ -1469,8 +1469,8 @@ This is a dict supporting the following keys:
 
 .. _conf-cosmosdbsql-result-backend:
 
-CosmosDB backend settings
--------------------------
+CosmosDB backend settings (experimental)
+----------------------------------------
 
 To use `CosmosDB`_ as the result backend, you simply need to configure the
 :setting:`result_backend` setting with the correct URL.
