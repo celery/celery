@@ -576,6 +576,10 @@ Can be one of the following:
     Use `CouchDB`_ to store the results.
     See :ref:`conf-couchdb-result-backend`.
 
+* ``cosmosdbsql (experimental)``
+    Use the `CosmosDB`_ PaaS to store the results.
+    See :ref:`conf-cosmosdbsql-result-backend`.
+
 * ``filesystem``
     Use a shared directory to store the results.
     See :ref:`conf-filesystem-result-backend`.
@@ -600,6 +604,7 @@ Can be one of the following:
 .. _`Elasticsearch`: https://aws.amazon.com/elasticsearch-service/
 .. _`IronCache`: http://www.iron.io/cache
 .. _`CouchDB`: http://www.couchdb.com/
+.. _`CosmosDB`: https://azure.microsoft.com/en-us/services/cosmos-db/
 .. _`Couchbase`: https://www.couchbase.com/
 .. _`Consul`: https://consul.io/
 .. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/blobs/
@@ -1461,6 +1466,68 @@ This is a dict supporting the following keys:
 * ``password``
 
     Password to authenticate to the Couchbase server (optional).
+
+.. _conf-cosmosdbsql-result-backend:
+
+CosmosDB backend settings (experimental)
+----------------------------------------
+
+To use `CosmosDB`_ as the result backend, you simply need to configure the
+:setting:`result_backend` setting with the correct URL.
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    result_backend = 'cosmosdbsql://:{InsertAccountPrimaryKeyHere}@{InsertAccountNameHere}.documents.azure.com'
+
+.. setting:: cosmosdbsql_database_name
+
+``cosmosdbsql_database_name``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: celerydb.
+
+The name for the database in which to store the results.
+
+.. setting:: cosmosdbsql_collection_name
+
+``cosmosdbsql_collection_name``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: celerycol.
+
+The name of the collection in which to store the results.
+
+.. setting:: cosmosdbsql_consistency_level
+
+``cosmosdbsql_consistency_level``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Session.
+
+Represents the consistency levels supported for Azure Cosmos DB client operations.
+
+Consistency levels by order of strength are: Strong, BoundedStaleness, Session, ConsistentPrefix and Eventual.
+
+.. setting:: cosmosdbsql_max_retry_attempts
+
+``cosmosdbsql_max_retry_attempts``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 9.
+
+Maximum number of retries to be performed for a request.
+
+.. setting:: cosmosdbsql_max_retry_wait_time
+
+``cosmosdbsql_max_retry_wait_time``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 30.
+
+Maximum wait time in seconds to wait for a request while the retries are happening.
 
 .. _conf-couchdb-result-backend:
 

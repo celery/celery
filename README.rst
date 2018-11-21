@@ -315,6 +315,9 @@ Transports and Backends
 :``celery[riak]``:
     for using Riak as a result backend.
 
+:``celery[cosmosdbsql]``:
+    for using Azure Cosmos DB as a result backend (using ``pydocumentdb``)
+
 :``celery[zookeeper]``:
     for using Zookeeper as a message transport.
 

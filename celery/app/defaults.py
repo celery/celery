@@ -150,6 +150,13 @@ NAMESPACES = Namespace(
 
         backend_settings=Option(type='dict'),
     ),
+    cosmosdbsql=Namespace(
+        database_name=Option('celerydb', type='string'),
+        collection_name=Option('celerycol', type='string'),
+        consistency_level=Option('Session', type='string'),
+        max_retry_attempts=Option(9, type='int'),
+        max_retry_wait_time=Option(30, type='int'),
+    ),
     event=Namespace(
         __old__=old_ns('celery_event'),
 
