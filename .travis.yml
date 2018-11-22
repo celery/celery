@@ -87,6 +87,7 @@ after_success:
 install: travis_retry pip install -U tox | cat
 script: tox -v -- -v
 notifications:
+  email: false
   irc:
     channels:
       - "chat.freenode.net#celery"
