@@ -32,7 +32,9 @@ where the URL format is:
 
     sqs://aws_access_key_id:aws_secret_access_key@
 
-you must *remember to include the "@" at the end*.
+You must remember to include the ``@`` sign at the end and URL encode the
+password so it can be parsed correctly. This can be accomplished with
+builtin ``urllib.parse.quote`` function.
 
 The login credentials can also be set using the environment variables
 :envvar:`AWS_ACCESS_KEY_ID` and :envvar:`AWS_SECRET_ACCESS_KEY`,
