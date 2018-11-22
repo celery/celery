@@ -1846,7 +1846,7 @@ that queue.
 ``task_default_exchange``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``"celery"``.
+Default: Uses the value set for :setting:`task_default_queue`.
 
 Name of the default exchange to use when no custom exchange is
 specified for a key in the :setting:`task_queues` setting.
@@ -1866,7 +1866,7 @@ for a key in the :setting:`task_queues` setting.
 ``task_default_routing_key``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``"celery"``.
+Default: Uses the value set for :setting:`task_default_queue`.
 
 The default routing key used when no custom routing key
 is specified for a key in the :setting:`task_queues` setting.
