@@ -32,9 +32,15 @@ where the URL format is:
 
     sqs://aws_access_key_id:aws_secret_access_key@
 
-You must remember to include the ``@`` sign at the end and URL encode the
-password so it can be parsed correctly. This can be accomplished with
-builtin ``urllib.parse.quote`` function.
+Please note that you must remember to include the ``@`` sign at the end and
+encode the password so it can be always parsed correctly. For example:
+
+    from kombu.utils.url import quote
+    
+    aws_access_key = quote("ABCDEFGHIJKLMNOPQRST")
+    aws_secret_key = quote("ZYXK7NiynGlTogH8Nj+P9nlE73sq3")
+    
+    broker_url = f"sqs://{aws_access_key}:{aws_secret_key}@"
 
 The login credentials can also be set using the environment variables
 :envvar:`AWS_ACCESS_KEY_ID` and :envvar:`AWS_SECRET_ACCESS_KEY`,
@@ -43,12 +49,6 @@ in that case the broker URL may only be ``sqs://``.
 If you are using IAM roles on instances, you can set the BROKER_URL to:
 ``sqs://`` and kombu will attempt to retrieve access tokens from the instance
 metadata.
-
-.. note::
-
-    If you specify AWS credentials in the broker URL, then please keep in mind
-    that the secret access key may contain unsafe characters that need to be
-    URL encoded.
 
 Options
 =======
