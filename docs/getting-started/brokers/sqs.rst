@@ -35,6 +35,8 @@ where the URL format is:
 Please note that you must remember to include the ``@`` sign at the end and
 encode the password so it can be always parsed correctly. For example:
 
+.. code-block:: python
+
     from kombu.utils.url import quote
     
     aws_access_key = quote("ABCDEFGHIJKLMNOPQRST")
