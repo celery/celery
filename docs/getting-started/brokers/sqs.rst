@@ -33,7 +33,7 @@ where the URL format is:
     sqs://aws_access_key_id:aws_secret_access_key@
 
 Please note that you must remember to include the ``@`` sign at the end and
-encode the password so it can be always parsed correctly. For example:
+encode the password so it can always be parsed correctly. For example:
 
 .. code-block:: python
 
@@ -42,7 +42,9 @@ encode the password so it can be always parsed correctly. For example:
     aws_access_key = quote("ABCDEFGHIJKLMNOPQRST")
     aws_secret_key = quote("ZYXK7NiynGlTogH8Nj+P9nlE73sq3")
     
-    broker_url = f"sqs://{aws_access_key}:{aws_secret_key}@"
+    broker_url = "sqs://{aws_access_key}:{aws_secret_key}@".format(
+        aws_access_key=aws_access_key, aws_secret_key=aws_secret_key,
+    )
 
 The login credentials can also be set using the environment variables
 :envvar:`AWS_ACCESS_KEY_ID` and :envvar:`AWS_SECRET_ACCESS_KEY`,
