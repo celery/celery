@@ -2375,6 +2375,15 @@ Default: ``"celeryev"``.
 
 The prefix to use for event receiver queue names.
 
+.. setting:: event_exchange
+
+``event_exchange``
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``"celeryev"``.
+
+Name of the event exchange.
+
 .. setting:: event_serializer
 
 ``event_serializer``
@@ -2426,6 +2435,15 @@ Time in seconds, before an unused remote control command queue is deleted
 from the broker.
 
 This setting also applies to remote control reply queues.
+
+.. setting:: control_exchange
+
+``control_exchange``
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``"celery"``.
+
+Name of the control command exchange.
 
 .. _conf-logging:
 

@@ -498,3 +498,12 @@ class test_Control:
         new_pool = Mock(name='new pool')
         amqp.producer_pool = new_pool
         assert new_pool is self.app.control.mailbox.producer_pool
+
+    def test_control_exchange__default(self):
+        c = control.Control(self.app)
+        assert c.mailbox.namespace == 'celery'
+
+    def test_control_exchange__setting(self):
+        self.app.conf.control_exchange = 'test_exchange'
+        c = control.Control(self.app)
+        assert c.mailbox.namespace == 'test_exchange'
