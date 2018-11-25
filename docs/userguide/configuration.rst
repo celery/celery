@@ -2386,7 +2386,7 @@ Name of the event exchange.
 
 .. warning::
 
-    This option is in beta stage, please use it with caution.
+    This option is in experimental stage, please use it with caution.
 
 .. setting:: event_serializer
 
@@ -2451,7 +2451,7 @@ Name of the control command exchange.
 
 .. warning::
 
-    This option is in beta stage, please use it with caution.
+    This option is in experimental stage, please use it with caution.
 
 .. _conf-logging:
 
