@@ -314,6 +314,7 @@ NAMESPACES = Namespace(
     ),
 )
 
+
 def _flatten_keys(ns, key, opt):
     return [(ns + key, opt)]
 
