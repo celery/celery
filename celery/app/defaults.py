@@ -139,6 +139,7 @@ NAMESPACES = Namespace(
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
         queue_expires=Option(10.0, type='float'),
+        exchange=Option('celery', type='string'),
     ),
     couchbase=Namespace(
         __old__=old_ns('celery_couchbase'),
@@ -164,6 +165,7 @@ NAMESPACES = Namespace(
         queue_ttl=Option(5.0, type='float'),
         queue_prefix=Option('celeryev'),
         serializer=Option('json'),
+        exchange=Option('celeryev', type='string'),
     ),
     redis=Namespace(
         __old__=old_ns('celery_redis'),
