@@ -850,7 +850,7 @@ class xstarmap(_basemap):
 
 @Signature.register_type()
 class chunks(Signature):
-    """Partition of tasks in n chunks."""
+    """Partition of tasks into chunks of size n."""
 
     _unpack_args = itemgetter('task', 'it', 'n')
 
