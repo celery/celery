@@ -5,4 +5,3 @@ Documentation
 
 .. automodule:: foo
    :members:
-   :undoc-members:
