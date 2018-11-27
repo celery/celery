@@ -502,13 +502,13 @@ class KeyValueStoreBackend(BaseBackend):
     def _store_result(self, task_id, result, status,
                       traceback=None, request=None, **kwargs):
 
-        if state in self.READY_STATES:
+        if status in self.READY_STATES:
             date_done = datetime.datetime.utcnow()
         else:
             date_done = None
 
         meta = {
-            'status': state,
+            'status': status,
             'result': result,
             'traceback': traceback,
             'children': self.current_task_children(request),
