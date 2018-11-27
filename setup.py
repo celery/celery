@@ -77,7 +77,7 @@ EXTENSIONS = {
     'dynamodb',
     'mongodb',
     'cosmosdbsql',
-    'boto3',
+    's3',
 }
 
 # -*- Classifiers -*-

@@ -1190,13 +1190,13 @@ S3 backend settings
 
 .. note::
 
-    This s3 backend driver requires :pypi:`boto3`.
+    This s3 backend driver requires :pypi:`s3`.
 
-    To install, use :command:`boto3`:
+    To install, use :command:`s3`:
 
     .. code-block:: console
 
-        $ pip install celery[boto3]
+        $ pip install celery[s3]
 
     See :ref:`bundles` for information on combining multiple extension
     requirements.
