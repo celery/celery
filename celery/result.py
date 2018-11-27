@@ -402,7 +402,6 @@ class AsyncResult(ResultBase):
     @task_id.setter  # noqa
     def task_id(self, id):
         self.id = id
-BaseAsyncResult = AsyncResult  # for backwards compatibility.
 
     @property
     def name(self):
@@ -951,3 +950,4 @@ def result_from_tuple(r, app=None):
         return Result(id, parent=parent)
     return r
 from_serializable = result_from_tuple  # XXX compat
+BaseAsyncResult = AsyncResult  # for backwards compatibility.
