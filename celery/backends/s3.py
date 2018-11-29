@@ -60,8 +60,10 @@ class S3Backend(KeyValueStoreBackend):
         try:
             s3_object.load()
             return s3_object.get()['Body'].read().decode('utf-8')
-        except botocore.exceptions.ClientError:
-            return None
+        except botocore.exceptions.ClientError as error:
+            if error.response['Error']['Code'] == "404":
+                return None
+            raise error
 
     def set(self, key, value):
         s3_object = self._get_s3_object(key)

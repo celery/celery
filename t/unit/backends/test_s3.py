@@ -76,6 +76,22 @@ class test_S3Backend:
         assert result is None
 
     @patch('celery.backends.s3.boto3')
+    def test_with_error_while_getting_key(self, mock_boto3):
+        error = ClientError({'Error': {'Code': '403',
+                                       'Message': 'Permission denied'}},
+                            'error')
+        mock_boto3.Session().resource().Object().load.side_effect = error
+
+        self.app.conf.s3_access_key_id = 'somekeyid'
+        self.app.conf.s3_secret_access_key = 'somesecret'
+        self.app.conf.s3_bucket = 'bucket'
+
+        s3_backend = S3Backend(app=self.app)
+
+        with pytest.raises(ClientError):
+            s3_backend.get('uuidddd')
+
+    @patch('celery.backends.s3.boto3')
     def test_get_a_key(self, mock_boto3):
         stream_body = MagicMock()
         stream_body.read.return_value = b'a_status'
