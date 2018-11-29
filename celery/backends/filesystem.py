@@ -58,8 +58,12 @@ class FilesystemBackend(KeyValueStoreBackend):
         if not url:
             raise ImproperlyConfigured(
                 'You need to configure a path for the File-system backend')
-        if url is not None and url.startswith('file:///'):
+        if url.startswith('file:///'):
             return url[7:]
+        if url.startswith('file://localhost/'):
+            return url[16:]
+        raise ImproperlyConfigured(
+            'A path for the File-system backend should conform to the file URI scheme')
 
     def _do_directory_test(self, key):
         try:
