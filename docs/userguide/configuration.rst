@@ -816,10 +816,10 @@ Example configuration
 
     result_backend = 'rpc://'
     result_persistent = False
-   
-**Please note**: using this backend could trigger the raise of ``celery.backends.rpc.BacklogLimitExceeded`` if the task tombstone is too *old*. 
 
-E.g.  
+**Please note**: using this backend could trigger the raise of ``celery.backends.rpc.BacklogLimitExceeded`` if the task tombstone is too *old*.
+
+E.g.
 
 .. code-block:: python
 
@@ -827,7 +827,7 @@ E.g.
         r = debug_task.delay()
 
     print(r.state)  # this would raise celery.backends.rpc.BacklogLimitExceeded
-    
+
 .. _conf-cache-result-backend:
 
 Cache backend settings
@@ -1692,7 +1692,7 @@ it's a queue name in :setting:`task_queues`, a dict means it's a custom route.
 
 When sending tasks, the routers are consulted in order. The first
 router that doesn't return ``None`` is the route to use. The message options
-is then merged with the found route settings, where the routers settings
+is then merged with the found route settings, where the task's settings
 have priority.
 
 Example if :func:`~celery.execute.apply_async` has these arguments:
@@ -1712,7 +1712,7 @@ the final message options will be:
 
 .. code-block:: python
 
-    immediate=True, exchange='urgent', routing_key='video.compress'
+    immediate=False, exchange='video', routing_key='video.compress'
 
 (and any default message options defined in the
 :class:`~celery.task.base.Task` class)
