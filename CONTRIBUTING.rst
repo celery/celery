@@ -226,8 +226,11 @@ spelling or other errors on the website/docs/code.
         confidential information like API tokens and authentication
         credentials.
 
-    E) If your issue is tagged with `Needs Test Case` please provide a code sample
-       so we can verify when the issue is resolved.
+    E) You issue might be tagged as `Needs Test Case`. A test case represents
+       all the details needed to reproduce what your issue is reporting.
+       A test case can be some minimal code that reproduces the issue or
+       detailed instructions and configuration values that reproduces
+       said issue.
 
 6) **Submit the bug**.
 
@@ -965,10 +968,12 @@ Here is a summary of such statuses:
 
 - **Status: Needs Test Case**
 
-  The issue or PR needs a test case. A test case is either a sample code that can
-  reproduce the issue or, a unit or integration test which should not pass and
-  verifies the issue or bug. This is usually requested from the person who reported
-  the issue.
+  The issue or PR needs a test case. A test case can be a minimal code snippet
+  that reproduces an issue or a detailed set of instructions and configuration values
+  that reproduces the issue reported. If possible a test case can be submitted in
+  the form of a PR to Celery's integration suite. The test case will be marked
+  as failed until the bug is fixed. When a test case cannot be run by Celery's
+  integration suite then it's better to describe in the issue itself.
 
 - **Status: Needs Verification**
 
