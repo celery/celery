@@ -20,7 +20,7 @@ class test_S3Backend:
         with pytest.raises(ImproperlyConfigured, match="Missing aws s3 creds"):
             S3Backend(app=self.app)
 
-    def test_with_a_missing_bucket(self):
+    def test_with_no_given_bucket(self):
         self.app.conf.s3_access_key_id = 'somekeyid'
         self.app.conf.s3_secret_access_key = 'somesecret'
         self.app.conf.s3_bucket = None
