@@ -120,6 +120,20 @@ class test_S3Backend:
 
         assert s3_backend.get('uuid') is None
 
+    @mock_s3
+    def test_with_a_non_existing_bucket(self):
+        self._mock_s3_resource()
+
+        self.app.conf.s3_access_key_id = 'somekeyid'
+        self.app.conf.s3_secret_access_key = 'somesecret'
+        self.app.conf.s3_bucket = 'bucket_not_exists'
+
+        s3_backend = S3Backend(app=self.app)
+
+        with pytest.raises(ClientError,
+                           match=r'.*The specified bucket does not exist'):
+            s3_backend.set('uuid', 'another_status')
+
     def _mock_s3_resource(self):
         # Create AWS s3 Bucket for moto.
         session = boto3.Session(
