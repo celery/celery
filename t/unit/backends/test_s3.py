@@ -1,8 +1,10 @@
 from __future__ import absolute_import, unicode_literals
 
-from case import patch, MagicMock
+from case import patch
 
 import pytest
+import boto3
+from moto import mock_s3
 from botocore.exceptions import ClientError
 
 from celery.backends.s3 import S3Backend
@@ -10,6 +12,7 @@ from celery.exceptions import ImproperlyConfigured
 
 
 class test_S3Backend:
+
     def test_with_missing_aws_credentials(self):
         self.app.conf.s3_access_key_id = None
         self.app.conf.s3_secret_access_key = None
@@ -59,12 +62,22 @@ class test_S3Backend:
         mock_boto3.Session().resource.assert_called_once_with(
             's3', endpoint_url=endpoint_url)
 
-    @patch('celery.backends.s3.boto3')
-    def test_get_a_missing_key(self, mock_boto3):
-        error = ClientError({'Error': {'Code': '404',
-                                       'Message': 'Object not found'}},
-                            'error')
-        mock_boto3.Session().resource().Object().load.side_effect = error
+    @mock_s3
+    def test_set_and_get_a_key(self):
+        self._mock_s3_resource()
+
+        self.app.conf.s3_access_key_id = 'somekeyid'
+        self.app.conf.s3_secret_access_key = 'somesecret'
+        self.app.conf.s3_bucket = 'bucket'
+
+        s3_backend = S3Backend(app=self.app)
+        s3_backend.set('uuid', 'another_status')
+
+        assert s3_backend.get('uuid') == 'another_status'
+
+    @mock_s3
+    def test_get_a_missing_key(self):
+        self._mock_s3_resource()
 
         self.app.conf.s3_access_key_id = 'somekeyid'
         self.app.conf.s3_secret_access_key = 'somesecret'
@@ -91,42 +104,28 @@ class test_S3Backend:
         with pytest.raises(ClientError):
             s3_backend.get('uuidddd')
 
-    @patch('celery.backends.s3.boto3')
-    def test_get_a_key(self, mock_boto3):
-        stream_body = MagicMock()
-        stream_body.read.return_value = b'a_status'
-        s3_object = {'Body': stream_body}
-        mock_boto3.Session().resource().Object().get.return_value = s3_object
+    @mock_s3
+    def test_delete_a_key(self):
+        self._mock_s3_resource()
 
         self.app.conf.s3_access_key_id = 'somekeyid'
         self.app.conf.s3_secret_access_key = 'somesecret'
         self.app.conf.s3_bucket = 'bucket'
 
         s3_backend = S3Backend(app=self.app)
-        result = s3_backend.get('uuidddd')
+        s3_backend.set('uuid', 'another_status')
+        assert s3_backend.get('uuid') == 'another_status'
 
-        assert result == 'a_status'
-
-    @patch('celery.backends.s3.boto3')
-    def test_set(self, mock_boto3):
-        self.app.conf.s3_access_key_id = 'somekeyid'
-        self.app.conf.s3_secret_access_key = 'somesecret'
-        self.app.conf.s3_bucket = 'bucket'
-
-        s3_backend = S3Backend(app=self.app)
-        s3_backend.set('uuid', 'a_status')
-
-        s3_object = mock_boto3.Session().resource().Object()
-        s3_object.put.assert_called_once_with(Body='a_status')
-
-    @patch('celery.backends.s3.boto3')
-    def test_delete(self, mock_boto3):
-        self.app.conf.s3_access_key_id = 'somekeyid'
-        self.app.conf.s3_secret_access_key = 'somesecret'
-        self.app.conf.s3_bucket = 'bucket'
-
-        s3_backend = S3Backend(app=self.app)
         s3_backend.delete('uuid')
 
-        s3_object = mock_boto3.Session().resource().Object()
-        s3_object.delete.assert_called_once()
+        assert s3_backend.get('uuid') is None
+
+    def _mock_s3_resource(self):
+        # Create AWS s3 Bucket for moto.
+        session = boto3.Session(
+            aws_access_key_id='moto_key_id',
+            aws_secret_access_key='moto_secret_key',
+            region_name='us-east-1'
+        )
+        s3 = session.resource('s3')
+        s3.create_bucket(Bucket='bucket')
