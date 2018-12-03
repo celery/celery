@@ -261,7 +261,11 @@ def find_related_module(package, related_name):
         if not package:
             raise
 
+    module_name = '{0}.{1}'.format(package, related_name)
+
     try:
-        return importlib.import_module('{0}.{1}'.format(package, related_name))
-    except ImportError:
+        return importlib.import_module(module_name)
+    except ImportError as e:
+        if e.name != module_name:
+            raise(e)
         return
