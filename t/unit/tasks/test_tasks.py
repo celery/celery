@@ -273,6 +273,18 @@ class test_task_retries(TasksCase):
             result.get()
         assert self.retry_task.iterations == 2
 
+    def test_max_retries_exceeded_task_args(self):
+        self.retry_task.max_retries = 2
+        self.retry_task.iterations = 0
+        args = (0xFF, 0xFFFF)
+        kwargs = {'care': False}
+        result = self.retry_task.apply(args, kwargs)
+        with pytest.raises(self.retry_task.MaxRetriesExceededError) as e:
+            result.get()
+
+        assert e.value.task_args == args
+        assert e.value.task_kwargs == kwargs
+
     def test_autoretry_no_kwargs(self):
         self.autoretry_task_no_kwargs.max_retries = 3
         self.autoretry_task_no_kwargs.iterations = 0
