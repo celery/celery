@@ -128,8 +128,10 @@ class AsyncResult(ResultBase):
         return (self.id, parent and parent.as_tuple()), None
 
     def forget(self):
-        """Forget about (and possibly remove the result of) this task."""
+        """Forget the result of this task and its parents."""
         self._cache = None
+        if self.parent:
+            self.parent.forget()
         self.backend.forget(self.id)
 
     def revoke(self, connection=None, terminate=False, signal=None,
