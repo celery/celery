@@ -177,12 +177,12 @@ class ArangoDbBackend(KeyValueStoreBackend):
         try:
             logging.debug(
                 'REMOVE {{ _key: "{key}" }} IN {collection}'.format(
-                    key=key, collection=self.connection
+                    key=key, collection=self.collection
                 )
             )
             self.db.AQLQuery(
                 'REMOVE {{ _key: "{key}" }} IN {collection}'.format(
-                    key=key, collection=self.connection
+                    key=key, collection=self.collection
                 )
             )
         except AQLQueryError as err:
