@@ -39,13 +39,6 @@ class ArangoDbBackend(KeyValueStoreBackend):
     collection = 'celery'
     username = None
     password = None
-    quiet = False
-    supports_autoexpire = True
-
-    timeout = 2.5
-
-    # Use str as couchbase key not bytes
-    key_t = str_t
 
     def __init__(self, url=None, *args, **kwargs):
         # kwargs.setdefault('expires_type', int)
