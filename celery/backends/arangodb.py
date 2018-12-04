@@ -4,7 +4,6 @@ from __future__ import absolute_import, unicode_literals
 
 import logging
 import json
-from kombu.utils.encoding import str_t
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
@@ -25,6 +24,11 @@ class ArangoDbBackend(KeyValueStoreBackend):
 
     Sample url
     "arangodb://username:password@host:port/database/collection"
+    *arangodb_backend_settings* is where the settings are present
+    (in the app.conf)
+    Settings should contain the host, port, username, password, database name,
+    collection name else the default will be chosen.
+    Default database name and collection name is celery.
 
     Raises
     ------
@@ -73,7 +77,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
         if config is not None:
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(
-                    'Couchbase backend settings should be grouped in a dict',
+                    'ArangoDb backend settings should be grouped in a dict',
                 )
         else:
             config = {}
@@ -102,6 +106,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
 
     @property
     def db(self):
+        """Database Object to the given database."""
         return self.connection[self.database]
 
     def get(self, key):
@@ -125,6 +130,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
             return None
 
     def set(self, key, value):
+        """Insert a doc with value into task attribute and _key as key."""
         try:
             logging.debug(
                 'INSERT {{ task: {task}, _key: "{key}" }} INTO {collection}'
