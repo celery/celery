@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Couchbase result store backend."""
+"""ArangoDb result store backend."""
 from __future__ import absolute_import, unicode_literals
 
 import logging
