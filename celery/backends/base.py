@@ -123,7 +123,7 @@ class Backend(object):
 
         # precedence: accept, conf.result_accept_content, conf.accept_content
         self.accept = conf.result_accept_content if accept is None else accept
-        self.accept = conf.accept_content if self.accept is None else self.accept
+        self.accept = conf.accept_content if self.accept is None else self.accept  # noqa: E501
         self.accept = prepare_accept_content(self.accept)
 
         self._pending_results = pending_results_t({}, WeakValueDictionary())
