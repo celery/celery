@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """ArangoDb result store backend."""
+
+# pylint: disable=W1202,W0703
+
 from __future__ import absolute_import, unicode_literals
 
 import logging
@@ -11,10 +14,10 @@ from celery.exceptions import ImproperlyConfigured
 from .base import KeyValueStoreBackend
 
 try:
-    from pyArango import connection as pyArangoConnection
+    from pyArango import connection as py_arango_connection
     from pyArango.theExceptions import AQLQueryError
 except ImportError:
-    pyArangoConnection = AQLQueryError = None   # noqa
+    py_arango_connection = AQLQueryError = None   # noqa
 
 __all__ = ('ArangoDbBackend',)
 
@@ -44,8 +47,8 @@ class ArangoDbBackend(KeyValueStoreBackend):
     username = None
     password = None
 
-    def __init__(self, url=None, *args, **kwargs):
-        # kwargs.setdefault('expires_type', int)
+    def __init__(self, *args, url=None, **kwargs):
+        """Parse the url or load the settings from settings object."""
         super(ArangoDbBackend, self).__init__(*args, **kwargs)
         self.url = url
 
@@ -57,17 +60,15 @@ class ArangoDbBackend(KeyValueStoreBackend):
                 database_collection, _query
             ) = _parse_url(url)
             logging.debug(
-                "_shema: %s, host: %s, port: %s, username: %s, password: %s, "
-                "database_collection: %s, _query: %s",
-                _schema, host, port, username, password,
-                database_collection, _query
+                "_shema: %s, host: %s, port: %s, database_collection: %s",
+                _schema, host, port, database_collection
             )
             if database_collection is None:
                 database = collection = None
             else:
                 database, collection = database_collection.split('/')
 
-        if pyArangoConnection is None:
+        if py_arango_connection is None:
             raise ImproperlyConfigured(
                 'You need to install the pyArango library to use the '
                 'ArangoDb backend.',
@@ -98,7 +99,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
     def connection(self):
         """Connect to the arangodb server."""
         if self._connection is None:
-            self._connection = pyArangoConnection.Connection(
+            self._connection = py_arango_connection.Connection(
                 arangoURL=self.arangodb_url, username=self.username,
                 password=self.password
             )
@@ -125,8 +126,11 @@ class ArangoDbBackend(KeyValueStoreBackend):
             if result is None:
                 return None
             return json.dumps(result)
-        except AQLQueryError as err:
-            logging.debug(err)
+        except AQLQueryError as aql_err:
+            logging.error(aql_err)
+            return None
+        except Exception as err:
+            logging.error(err)
             return None
 
     def set(self, key, value):
@@ -144,18 +148,20 @@ class ArangoDbBackend(KeyValueStoreBackend):
                     collection=self.collection, key=key, task=value
                 )
             )
-        except AQLQueryError as err:
-            logging.debug(err)
-            return None
+        except AQLQueryError as aql_err:
+            logging.error(aql_err)
+        except Exception as err:
+            logging.error(err)
 
     def mget(self, keys):
         try:
+            json_keys = json.dumps(keys)
             logging.debug(
                 """
                 FOR key in {keys}
                     RETURN DOCUMENT(CONCAT("{collection}/", key).task
                 """.format(
-                    collection=self.collection, keys=json.dumps(keys)
+                    collection=self.collection, keys=json_keys
                 )
             )
             query = self.db.AQLQuery(
@@ -163,7 +169,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
                 FOR key in {keys}
                     RETURN DOCUMENT(CONCAT("{collection}/", key).task
                 """.format(
-                    collection=self.collection, keys=json.dumps(keys)
+                    collection=self.collection, keys=json_keys
                 )
             )
             results = []
@@ -171,13 +177,17 @@ class ArangoDbBackend(KeyValueStoreBackend):
                 results.extend(query.response['result'])
                 query.nextBatch()
         except StopIteration:
-            [
+            values = [
                 result if result is None else json.dumps(result)
                 for result in results
             ]
-        except AQLQueryError as err:
-            logging.debug(err)
-            return None
+            return values
+        except AQLQueryError as aql_err:
+            logging.error(aql_err)
+            return [None] * len(keys)
+        except Exception as err:
+            logging.error(err)
+            return [None] * len(keys)
 
     def delete(self, key):
         try:
@@ -191,6 +201,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
                     key=key, collection=self.collection
                 )
             )
-        except AQLQueryError as err:
-            logging.debug(err)
-            return None
+        except AQLQueryError as aql_err:
+            logging.error(aql_err)
+        except Exception as err:
+            logging.error(err)
