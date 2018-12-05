@@ -20,7 +20,6 @@ import gc
 import os
 import select
 import socket
-import struct
 import sys
 import time
 from collections import deque, namedtuple
@@ -41,6 +40,7 @@ from kombu.utils.functional import fxrange
 from vine import promise
 
 from celery.five import Counter, items, values
+from celery.platforms import pack, unpack, unpack_from
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.worker import state as worker_state
@@ -50,19 +50,15 @@ from celery.worker import state as worker_state
 
 try:
     from _billiard import read as __read__
-    from struct import unpack_from as _unpack_from
-    memoryview = memoryview
     readcanbuf = True
 
+    # unpack_from supports memoryview in 2.7.6 and 3.3+
     if sys.version_info[0] == 2 and sys.version_info < (2, 7, 6):
 
-        def unpack_from(fmt, view, _unpack_from=_unpack_from):  # noqa
+        def unpack_from(fmt, view, _unpack_from=unpack_from):  # noqa
             return _unpack_from(fmt, view.tobytes())  # <- memoryview
-    else:
-        # unpack_from supports memoryview in 2.7.6 and 3.3+
-        unpack_from = _unpack_from  # noqa
 
-except (ImportError, NameError):  # pragma: no cover
+except ImportError:  # pragma: no cover
 
     def __read__(fd, buf, size, read=os.read):  # noqa
         chunk = read(fd, size)
@@ -72,7 +68,7 @@ except (ImportError, NameError):  # pragma: no cover
         return n
     readcanbuf = False  # noqa
 
-    def unpack_from(fmt, iobuf, unpack=struct.unpack):  # noqa
+    def unpack_from(fmt, iobuf, unpack=unpack):  # noqa
         return unpack(fmt, iobuf.getvalue())  # <-- BytesIO
 
 __all__ = ('AsynPool',)
@@ -254,7 +250,7 @@ class ResultHandler(_pool.ResultHandler):
                            else EOFError())
                 Hr += n
 
-        body_size, = unpack_from(b'>i', bufv)
+        body_size, = unpack_from('>i', bufv)
         if readcanbuf:
             buf = bytearray(body_size)
             bufv = memoryview(buf)
@@ -660,7 +656,7 @@ class AsynPool(_pool.Pool):
         self.on_process_down = on_process_down
 
     def _create_write_handlers(self, hub,
-                               pack=struct.pack, dumps=_pickle.dumps,
+                               pack=pack, dumps=_pickle.dumps,
                                protocol=HIGHEST_PROTOCOL):
         """Create handlers used to write data to child processes."""
         fileno_to_inq = self._fileno_to_inq
@@ -741,10 +737,10 @@ class AsynPool(_pool.Pool):
                     fileno_to_inq.pop(fd, None)
                     active_writes.discard(fd)
                     all_inqueues.discard(fd)
-                    hub_remove(fd)
             except KeyError:
                 pass
         self.on_inqueue_close = on_inqueue_close
+        self.hub_remove = hub_remove
 
         def schedule_writes(ready_fds, total_write_count=[0]):
             # Schedule write operation to ready file descriptor.
@@ -822,7 +818,7 @@ class AsynPool(_pool.Pool):
             # inqueues are writable.
             body = dumps(tup, protocol=protocol)
             body_size = len(body)
-            header = pack(b'>I', body_size)
+            header = pack('>I', body_size)
             # index 1,0 is the job ID.
             job = get_job(tup[1][0])
             job._payload = buf_t(header), buf_t(body), body_size
@@ -1250,6 +1246,7 @@ class AsynPool(_pool.Pool):
             if queue:
                 for sock in (queue._reader, queue._writer):
                     if not sock.closed:
+                        self.hub_remove(sock)
                         try:
                             sock.close()
                         except (IOError, OSError):
@@ -1257,11 +1254,11 @@ class AsynPool(_pool.Pool):
         return removed
 
     def _create_payload(self, type_, args,
-                        dumps=_pickle.dumps, pack=struct.pack,
+                        dumps=_pickle.dumps, pack=pack,
                         protocol=HIGHEST_PROTOCOL):
         body = dumps((type_, args), protocol=protocol)
         size = len(body)
-        header = pack(b'>I', size)
+        header = pack('>I', size)
         return header, body, size
 
     @classmethod

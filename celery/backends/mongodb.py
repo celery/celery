@@ -181,6 +181,8 @@ class MongoBackend(BaseBackend):
                 self.current_task_children(request),
             ),
         }
+        if request and getattr(request, 'parent_id', None):
+            meta['parent_id'] = request.parent_id
 
         try:
             self.collection.save(meta)

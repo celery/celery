@@ -280,7 +280,7 @@ class Task(object):
     merge_rules = {
         states.RECEIVED: (
             'name', 'args', 'kwargs', 'parent_id',
-            'root_id' 'retries', 'eta', 'expires',
+            'root_id', 'retries', 'eta', 'expires',
         ),
     }
 

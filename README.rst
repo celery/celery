@@ -2,14 +2,32 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 4.2.0 (latentcall)
+:Version: 4.2.1 (windowlicker)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
   python, distributed, actors
 
---
+Donations
+=========
+
+This project relies on your generous donations.
+
+If you are using Celery to create a commercial product, please consider becoming our `backer`_ or our `sponsor`_ to ensure Celery's future.
+
+.. _`backer`: https://opencollective.com/celery#backer
+.. _`sponsor`: https://opencollective.com/celery#sponsor
+
+
+Sponsors
+--------
+
+|ImageLink|_
+
+.. |ImageLink| image:: https://i.imgur.com/ULmQEib.png
+.. _ImageLink: https://getstream.io/try-the-api/?utm_source=celery&utm_medium=banner&utm_campaign=github
+
 
 What's a Task Queue?
 ====================
@@ -43,7 +61,7 @@ What do I need?
 Celery version 4.2 runs on,
 
 - Python (2.7, 3.4, 3.5, 3.6)
-- PyPy (5.8)
+- PyPy (6.0)
 
 
 This is the last version to support Python 2.7,
@@ -285,6 +303,9 @@ Transports and Backends
 :``celery[cassandra]``:
     for using Apache Cassandra as a result backend with DataStax driver.
 
+:``celery[azureblockblob]``:
+    for using Azure Storage as a result backend (using ``azure-storage``)
+
 :``celery[couchbase]``:
     for using Couchbase as a result backend.
 
@@ -293,6 +314,9 @@ Transports and Backends
 
 :``celery[riak]``:
     for using Riak as a result backend.
+
+:``celery[cosmosdbsql]``:
+    for using Azure Cosmos DB as a result backend (using ``pydocumentdb``)
 
 :``celery[zookeeper]``:
     for using Zookeeper as a message transport.
@@ -430,7 +454,7 @@ documentation.
 |oc-contributors|
 
 .. |oc-contributors| image:: https://opencollective.com/celery/contributors.svg?width=890&button=false
-    :target: graphs/contributors
+    :target: https://github.com/celery/celery/graphs/contributors
 
 Backers
 -------

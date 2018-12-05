@@ -130,9 +130,16 @@ NAMESPACES = Namespace(
         auth_kwargs=Option(type='string'),
         options=Option({}, type='dict'),
     ),
+    azureblockblob=Namespace(
+        container_name=Option('celery', type='string'),
+        retry_initial_backoff_sec=Option(2, type='int'),
+        retry_increment_base=Option(2, type='int'),
+        retry_max_attempts=Option(3, type='int'),
+    ),
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
         queue_expires=Option(10.0, type='float'),
+        exchange=Option('celery', type='string'),
     ),
     couchbase=Namespace(
         __old__=old_ns('celery_couchbase'),
@@ -144,6 +151,13 @@ NAMESPACES = Namespace(
 
         backend_settings=Option(type='dict'),
     ),
+    cosmosdbsql=Namespace(
+        database_name=Option('celerydb', type='string'),
+        collection_name=Option('celerycol', type='string'),
+        consistency_level=Option('Session', type='string'),
+        max_retry_attempts=Option(9, type='int'),
+        max_retry_wait_time=Option(30, type='int'),
+    ),
     event=Namespace(
         __old__=old_ns('celery_event'),
 
@@ -151,6 +165,7 @@ NAMESPACES = Namespace(
         queue_ttl=Option(5.0, type='float'),
         queue_prefix=Option('celeryev'),
         serializer=Option('json'),
+        exchange=Option('celeryev', type='string'),
     ),
     redis=Namespace(
         __old__=old_ns('celery_redis'),
@@ -180,6 +195,7 @@ NAMESPACES = Namespace(
             type='float', old={'celery_task_result_expires'},
         ),
         persistent=Option(None, type='bool'),
+        extended=Option(False, type='bool'),
         serializer=Option('json'),
         backend_transport_options=Option({}, type='dict'),
     ),

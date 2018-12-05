@@ -874,7 +874,7 @@ Worker API
 
 
 :class:`~kombu.asynchronous.Hub` - The workers async event loop
---------------------------------------------------------
+---------------------------------------------------------------
 :supported transports: amqp, redis
 
 .. versionadded:: 3.0

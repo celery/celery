@@ -170,7 +170,7 @@ When using the default of early acknowledgment, having a prefetch multiplier set
 of *one*, means the worker will reserve at most one extra task for every
 worker process: or in other words, if the worker is started with
 :option:`-c 10 <celery worker -c>`, the worker may reserve at most 20
-tasks (10 unacknowledged tasks executing, and 10 unacknowledged reserved
+tasks (10 acknowledged tasks executing, and 10 unacknowledged reserved
 tasks) at any time.
 
 Often users ask if disabling "prefetching of tasks" is possible, but what
@@ -225,11 +225,11 @@ have a buffer as small as 64KB but on recent Linux versions the buffer
 size is 1MB (can only be changed system wide).
 
 You can disable this prefetching behavior by enabling the
-:option:`-Ofair <celery worker -O>` worker option:
+:option:`-O fair <celery worker -O>` worker option:
 
 .. code-block:: console
 
-    $ celery -A proj worker -l info -Ofair
+    $ celery -A proj worker -l info -O fair
 
 With this option enabled the worker will only write to processes that are
 available for work, disabling the prefetch behavior::

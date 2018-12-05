@@ -115,7 +115,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_SECURITY_CERTIFICATE``        :setting:`security_certificate`
 ``CELERY_SECURITY_CERT_STORE``         :setting:`security_cert_store`
 ``CELERY_SECURITY_KEY``                :setting:`security_key`
-``CELERY_ACKS_LATE``                   :setting:`task_acks_late`
+``CELERY_TASK_ACKS_LATE``                   :setting:`task_acks_late`
 ``CELERY_TASK_ALWAYS_EAGER``           :setting:`task_always_eager`
 ``CELERY_TASK_ANNOTATIONS``            :setting:`task_annotations`
 ``CELERY_TASK_COMPRESSION``            :setting:`task_compression`
@@ -155,7 +155,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERYD_PREFETCH_MULTIPLIER``        :setting:`worker_prefetch_multiplier`
 ``CELERYD_REDIRECT_STDOUTS``           :setting:`worker_redirect_stdouts`
 ``CELERYD_REDIRECT_STDOUTS_LEVEL``     :setting:`worker_redirect_stdouts_level`
-``CELERYD_SEND_EVENTS``                :setting:`worker_send_task_events`
+``CELERY_SEND_EVENTS``                 :setting:`worker_send_task_events`
 ``CELERYD_STATE_DB``                   :setting:`worker_state_db`
 ``CELERYD_TASK_LOG_FORMAT``            :setting:`worker_task_log_format`
 ``CELERYD_TIMER``                      :setting:`worker_timer`
@@ -576,6 +576,10 @@ Can be one of the following:
     Use `CouchDB`_ to store the results.
     See :ref:`conf-couchdb-result-backend`.
 
+* ``cosmosdbsql (experimental)``
+    Use the `CosmosDB`_ PaaS to store the results.
+    See :ref:`conf-cosmosdbsql-result-backend`.
+
 * ``filesystem``
     Use a shared directory to store the results.
     See :ref:`conf-filesystem-result-backend`.
@@ -583,6 +587,10 @@ Can be one of the following:
 * ``consul``
     Use the `Consul`_ K/V store to store the results
     See :ref:`conf-consul-result-backend`.
+
+* ``azureblockblob``
+    Use the `AzureBlockBlob`_ PaaS store to store the results
+    See :ref:`conf-azureblockblob-result-backend`.
 
 .. warning:
 
@@ -596,8 +604,10 @@ Can be one of the following:
 .. _`Elasticsearch`: https://aws.amazon.com/elasticsearch-service/
 .. _`IronCache`: http://www.iron.io/cache
 .. _`CouchDB`: http://www.couchdb.com/
+.. _`CosmosDB`: https://azure.microsoft.com/en-us/services/cosmos-db/
 .. _`Couchbase`: https://www.couchbase.com/
 .. _`Consul`: https://consul.io/
+.. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/blobs/
 
 
 .. setting:: result_backend_transport_options
@@ -642,6 +652,16 @@ Default: No compression.
 Optional compression method used for task results.
 Supports the same options as the :setting:`task_serializer` setting.
 
+.. setting:: result_extended
+
+``result_extended``
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``False``
+
+Enables extended task result attributes (name, args, kwargs, worker,
+retries, queue, delivery_info) to be written to backend.
+
 .. setting:: result_expires
 
 ``result_expires``
@@ -661,7 +681,7 @@ on backend specifications).
 
 .. note::
 
-    For the moment this only works with the AMQP, database, cache,
+    For the moment this only works with the AMQP, database, cache, Couchbase,
     and Redis backends.
 
     When using the database backend, ``celery beat`` must be
@@ -796,6 +816,17 @@ Example configuration
 
     result_backend = 'rpc://'
     result_persistent = False
+
+**Please note**: using this backend could trigger the raise of ``celery.backends.rpc.BacklogLimitExceeded`` if the task tombstone is too *old*.
+
+E.g.
+
+.. code-block:: python
+
+    for i in range(10000):
+        r = debug_task.delay()
+
+    print(r.state)  # this would raise celery.backends.rpc.BacklogLimitExceeded
 
 .. _conf-cache-result-backend:
 
@@ -1112,6 +1143,60 @@ Example configuration
     cassandra_write_consistency = 'ONE'
     cassandra_entry_ttl = 86400
 
+.. _conf-azureblockblob-result-backend:
+
+Azure Block Blob backend settings
+---------------------------------
+
+To use `AzureBlockBlob`_ as the result backend you simply need to
+configure the :setting:`result_backend` setting with the correct URL.
+
+The required URL format is ``azureblockblob://`` followed by the storage
+connection string. You can find the storage connection string in the
+``Access Keys`` pane of your storage account resource in the Azure Portal.
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    result_backend = 'azureblockblob://DefaultEndpointsProtocol=https;AccountName=somename;AccountKey=Lou...bzg==;EndpointSuffix=core.windows.net'
+
+.. setting:: azureblockblob_container_name
+
+``azureblockblob_container_name``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: celery.
+
+The name for the storage container in which to store the results.
+
+.. setting:: azureblockblob_retry_initial_backoff_sec
+
+``azureblockblob_retry_initial_backoff_sec``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 2.
+
+The initial backoff interval, in seconds, for the first retry.
+Subsequent retries are attempted with an exponential strategy.
+
+.. setting:: azureblockblob_retry_increment_base
+
+``azureblockblob_retry_increment_base``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 2.
+
+.. setting:: azureblockblob_retry_max_attempts
+
+``azureblockblob_retry_max_attempts``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 3.
+
+The maximum number of retry attempts.
+
 .. _conf-elasticsearch-result-backend:
 
 Elasticsearch backend settings
@@ -1382,6 +1467,68 @@ This is a dict supporting the following keys:
 
     Password to authenticate to the Couchbase server (optional).
 
+.. _conf-cosmosdbsql-result-backend:
+
+CosmosDB backend settings (experimental)
+----------------------------------------
+
+To use `CosmosDB`_ as the result backend, you simply need to configure the
+:setting:`result_backend` setting with the correct URL.
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    result_backend = 'cosmosdbsql://:{InsertAccountPrimaryKeyHere}@{InsertAccountNameHere}.documents.azure.com'
+
+.. setting:: cosmosdbsql_database_name
+
+``cosmosdbsql_database_name``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: celerydb.
+
+The name for the database in which to store the results.
+
+.. setting:: cosmosdbsql_collection_name
+
+``cosmosdbsql_collection_name``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: celerycol.
+
+The name of the collection in which to store the results.
+
+.. setting:: cosmosdbsql_consistency_level
+
+``cosmosdbsql_consistency_level``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Session.
+
+Represents the consistency levels supported for Azure Cosmos DB client operations.
+
+Consistency levels by order of strength are: Strong, BoundedStaleness, Session, ConsistentPrefix and Eventual.
+
+.. setting:: cosmosdbsql_max_retry_attempts
+
+``cosmosdbsql_max_retry_attempts``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 9.
+
+Maximum number of retries to be performed for a request.
+
+.. setting:: cosmosdbsql_max_retry_wait_time
+
+``cosmosdbsql_max_retry_wait_time``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 30.
+
+Maximum wait time in seconds to wait for a request while the retries are happening.
+
 .. _conf-couchdb-result-backend:
 
 CouchDB backend settings
@@ -1525,7 +1672,7 @@ Examples:
         re.compile(r'(image|video)\.tasks\..*'): 'media',  # <-- regex
         'video.encode': {
             'queue': 'video',
-            'exchange': 'media'
+            'exchange': 'media',
             'routing_key': 'media.video.encode',
         },
     }
@@ -1545,7 +1692,7 @@ it's a queue name in :setting:`task_queues`, a dict means it's a custom route.
 
 When sending tasks, the routers are consulted in order. The first
 router that doesn't return ``None`` is the route to use. The message options
-is then merged with the found route settings, where the routers settings
+is then merged with the found route settings, where the task's settings
 have priority.
 
 Example if :func:`~celery.execute.apply_async` has these arguments:
@@ -1565,7 +1712,7 @@ the final message options will be:
 
 .. code-block:: python
 
-    immediate=True, exchange='urgent', routing_key='video.compress'
+    immediate=False, exchange='video', routing_key='video.compress'
 
 (and any default message options defined in the
 :class:`~celery.task.base.Task` class)
@@ -1699,7 +1846,7 @@ that queue.
 ``task_default_exchange``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``"celery"``.
+Default: Uses the value set for :setting:`task_default_queue`.
 
 Name of the default exchange to use when no custom exchange is
 specified for a key in the :setting:`task_queues` setting.
@@ -1719,7 +1866,7 @@ for a key in the :setting:`task_queues` setting.
 ``task_default_routing_key``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``"celery"``.
+Default: Uses the value set for :setting:`task_default_queue`.
 
 The default routing key used when no custom routing key
 is specified for a key in the :setting:`task_queues` setting.
@@ -2228,6 +2375,19 @@ Default: ``"celeryev"``.
 
 The prefix to use for event receiver queue names.
 
+.. setting:: event_exchange
+
+``event_exchange``
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``"celeryev"``.
+
+Name of the event exchange.
+
+.. warning::
+
+    This option is in experimental stage, please use it with caution.
+
 .. setting:: event_serializer
 
 ``event_serializer``
@@ -2279,6 +2439,19 @@ Time in seconds, before an unused remote control command queue is deleted
 from the broker.
 
 This setting also applies to remote control reply queues.
+
+.. setting:: control_exchange
+
+``control_exchange``
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``"celery"``.
+
+Name of the control command exchange.
+
+.. warning::
+
+    This option is in experimental stage, please use it with caution.
 
 .. _conf-logging:
 

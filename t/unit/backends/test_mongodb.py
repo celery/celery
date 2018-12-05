@@ -222,6 +222,33 @@ class test_MongoBackend:
                 sentinel.task_id, sentinel.result, sentinel.status)
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_store_result_with_request(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_request = MagicMock(spec=['parent_id'])
+
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+        mock_request.parent_id = sentinel.parent_id
+
+        ret_val = self.backend._store_result(
+            sentinel.task_id, sentinel.result, sentinel.status,
+            request=mock_request)
+
+        mock_get_database.assert_called_once_with()
+        mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
+        parameters = mock_collection.save.call_args[0][0]
+        assert parameters['parent_id'] == sentinel.parent_id
+        assert sentinel.result == ret_val
+
+        mock_collection.save.side_effect = InvalidDocument()
+        with pytest.raises(EncodeError):
+            self.backend._store_result(
+                sentinel.task_id, sentinel.result, sentinel.status)
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_get_task_meta_for(self, mock_get_database):
         self.backend.taskmeta_collection = MONGODB_COLLECTION
 
@@ -322,7 +349,8 @@ class test_MongoBackend:
             {'_id': sentinel.taskset_id})
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
-    def test_forget(self, mock_get_database):
+    def test__forget(self, mock_get_database):
+        # note: here tested _forget method, not forget method
         self.backend.taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])

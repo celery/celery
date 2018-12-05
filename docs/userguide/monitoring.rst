@@ -289,7 +289,9 @@ Running the flower command will start a web-server that you can visit:
     $ celery -A proj flower
 
 The default port is http://localhost:5555, but you can change this using the
-:option:`--port <flower --port>` argument:
+`--port`_ argument:
+
+.. _--port: https://flower.readthedocs.io/en/latest/config.html#port
 
 .. code-block:: console
 
@@ -476,12 +478,12 @@ maintaining a Celery cluster.
 * ``celery_tasks``: Monitors the number of times each task type has
   been executed (requires `celerymon`).
 
-    http://exchange.munin-monitoring.org/plugins/celery_tasks-2/details
+    https://github.com/munin-monitoring/contrib/blob/master/plugins/celery/celery_tasks
 
-* ``celery_task_states``: Monitors the number of tasks in each state
+* ``celery_tasks_states``: Monitors the number of tasks in each state
   (requires `celerymon`).
 
-    http://exchange.munin-monitoring.org/plugins/celery_tasks/details
+    https://github.com/munin-monitoring/contrib/blob/master/plugins/celery/celery_tasks_states
 
 .. _monitoring-events:
 

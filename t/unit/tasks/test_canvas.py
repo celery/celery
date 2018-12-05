@@ -441,6 +441,11 @@ class test_chain(CanvasCase):
         assert res.parent.parent.get() == 8
         assert res.parent.parent.parent is None
 
+    def test_kwargs_apply(self):
+        x = chain(self.add.s(), self.add.s(8), self.add.s(10))
+        res = x.apply(kwargs={'x': 1, 'y': 1}).get()
+        assert res == 20
+
     def test_single_expresion(self):
         x = chain(self.add.s(1, 2)).apply()
         assert x.get() == 3
@@ -741,6 +746,29 @@ class test_chord(CanvasCase):
         x.freeze()
         x.tasks = [self.add.s(2, 2)]
         x.freeze()
+
+    def test_chain_always_eager(self):
+        self.app.conf.task_always_eager = True
+        from celery import _state
+        from celery import result
+
+        fixture_task_join_will_block = _state.task_join_will_block
+        try:
+            _state.task_join_will_block = _state.orig_task_join_will_block
+            result.task_join_will_block = _state.orig_task_join_will_block
+
+            @self.app.task(shared=False)
+            def finalize(*args):
+                pass
+
+            @self.app.task(shared=False)
+            def chord_add():
+                return chord([self.add.s(4, 4)], finalize.s()).apply_async()
+
+            chord_add.apply_async(throw=True).get()
+        finally:
+            _state.task_join_will_block = fixture_task_join_will_block
+            result.task_join_will_block = fixture_task_join_will_block
 
 
 class test_maybe_signature(CanvasCase):

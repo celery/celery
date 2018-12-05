@@ -8,6 +8,7 @@ import pytest
 from case import ANY, Mock, call, patch, skip
 
 from celery import chord, group, states, uuid
+from celery.app.task import Context
 from celery.backends.base import (BaseBackend, DisabledBackend,
                                   KeyValueStoreBackend, _nulldict)
 from celery.exceptions import ChordError, TimeoutError
@@ -144,6 +145,17 @@ class test_prepare_exception:
         assert isinstance(x, KeyError)
         y = self.b.exception_to_python(x)
         assert isinstance(y, KeyError)
+
+    def test_json_exception_arguments(self):
+        self.b.serializer = 'json'
+        x = self.b.prepare_exception(Exception(object))
+        assert x == {
+            'exc_message': serialization.ensure_serializable(
+                (object,), self.b.encode),
+            'exc_type': Exception.__name__,
+            'exc_module': Exception.__module__}
+        y = self.b.exception_to_python(x)
+        assert isinstance(y, Exception)
 
     def test_impossible(self):
         self.b.serializer = 'pickle'
@@ -410,6 +422,29 @@ class test_KeyValueStoreBackend:
         assert self.b.get_state(tid) == states.SUCCESS
         self.b.forget(tid)
         assert self.b.get_state(tid) == states.PENDING
+
+    def test_store_result_parent_id(self):
+        tid = uuid()
+        pid = uuid()
+        state = 'SUCCESS'
+        result = 10
+        request = Context(parent_id=pid)
+        self.b.store_result(
+            tid, state=state, result=result, request=request,
+        )
+        stored_meta = self.b.decode(self.b.get(self.b.get_key_for_task(tid)))
+        assert stored_meta['parent_id'] == request.parent_id
+
+    def test_store_result_group_id(self):
+        tid = uuid()
+        state = 'SUCCESS'
+        result = 10
+        request = Context(group='gid', children=[])
+        self.b.store_result(
+            tid, state=state, result=result, request=request,
+        )
+        stored_meta = self.b.decode(self.b.get(self.b.get_key_for_task(tid)))
+        assert stored_meta['group_id'] == request.group
 
     def test_strip_prefix(self):
         x = self.b.get_key_for_task('x1b34')

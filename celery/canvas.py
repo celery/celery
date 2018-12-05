@@ -9,7 +9,7 @@ from __future__ import absolute_import, unicode_literals
 
 import itertools
 import operator
-from collections import MutableSequence, deque
+from collections import deque
 from copy import deepcopy
 from functools import partial as _partial
 from functools import reduce
@@ -31,6 +31,12 @@ from celery.utils.functional import (is_list, maybe_list, regen,
                                      seq_concat_item, seq_concat_seq)
 from celery.utils.objects import getitem_property
 from celery.utils.text import remove_repeating_from_task, truncate
+
+try:
+    from collections.abc import MutableSequence
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import MutableSequence
 
 __all__ = (
     'Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
@@ -110,7 +116,8 @@ class Signature(dict):
         :ref:`guide-canvas` for the complete guide.
 
     Arguments:
-        task (Task, str): Either a task class/instance, or the name of a task.
+        task (Union[Type[celery.app.task.Task], str]): Either a task
+            class/instance, or the name of a task.
         args (Tuple): Positional arguments to apply.
         kwargs (Dict): Keyword arguments to apply.
         options (Dict): Additional options to :meth:`Task.apply_async`.
@@ -701,11 +708,11 @@ class _chain(Signature):
         return tasks, results
 
     def apply(self, args=(), kwargs={}, **options):
-        last, fargs = None, args
+        last, (fargs, fkwargs) = None, (args, kwargs)
         for task in self.tasks:
-            res = task.clone(fargs).apply(
+            res = task.clone(fargs, fkwargs).apply(
                 last and (last.get(),), **dict(self.options, **options))
-            res.parent, last, fargs = last, res, None
+            res.parent, last, (fargs, fkwargs) = last, res, (None, None)
         return last
 
     @property
@@ -843,7 +850,7 @@ class xstarmap(_basemap):
 
 @Signature.register_type()
 class chunks(Signature):
-    """Partition of tasks in n chunks."""
+    """Partition of tasks into chunks of size n."""
 
     _unpack_args = itemgetter('task', 'it', 'n')
 
@@ -1226,8 +1233,9 @@ class chord(Signature):
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=app))
         if app.conf.task_always_eager:
-            return self.apply(args, kwargs,
-                              body=body, task_id=task_id, **options)
+            with allow_join_result():
+                return self.apply(args, kwargs,
+                                  body=body, task_id=task_id, **options)
         # chord([A, B, ...], C)
         return self.run(tasks, body, args, task_id=task_id, **options)
 

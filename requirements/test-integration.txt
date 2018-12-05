@@ -1,3 +1,4 @@
 simplejson
 -r extras/redis.txt
 -r extras/dynamodb.txt
+-r extras/azureblockblob.txt

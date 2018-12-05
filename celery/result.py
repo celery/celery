@@ -128,8 +128,10 @@ class AsyncResult(ResultBase):
         return (self.id, parent and parent.as_tuple()), None
 
     def forget(self):
-        """Forget about (and possibly remove the result of) this task."""
+        """Forget the result of this task and its parents."""
         self._cache = None
+        if self.parent:
+            self.parent.forget()
         self.backend.forget(self.id)
 
     def revoke(self, connection=None, terminate=False, signal=None,
@@ -480,6 +482,34 @@ class AsyncResult(ResultBase):
     def task_id(self, id):
         self.id = id
 
+    @property
+    def name(self):
+        return self._get_task_meta().get('name')
+
+    @property
+    def args(self):
+        return self._get_task_meta().get('args')
+
+    @property
+    def kwargs(self):
+        return self._get_task_meta().get('kwargs')
+
+    @property
+    def worker(self):
+        return self._get_task_meta().get('worker')
+
+    @property
+    def date_done(self):
+        return self._get_task_meta().get('date_done')
+
+    @property
+    def retries(self):
+        return self._get_task_meta().get('retries')
+
+    @property
+    def queue(self):
+        return self._get_task_meta().get('queue')
+
 
 @Thenable.register
 @python_2_unicode_compatible
@@ -497,7 +527,6 @@ class ResultSet(ResultBase):
 
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
         self._app = app
-        self._cache = None
         self.results = results
         self.on_ready = promise(args=(self,))
         self._on_full = ready_barrier or barrier(results)
@@ -516,7 +545,6 @@ class ResultSet(ResultBase):
 
     def _on_ready(self):
         if self.backend.is_async:
-            self._cache = [r.get() for r in self.results]
             self.on_ready()
 
     def remove(self, result):
@@ -662,8 +690,6 @@ class ResultSet(ResultBase):
         in addition it uses :meth:`join_native` if available for the
         current result backend.
         """
-        if self._cache is not None:
-            return self._cache
         return (self.join_native if self.supports_native_join else self.join)(
             timeout=timeout, propagate=propagate,
             interval=interval, callback=callback, no_ack=no_ack,
