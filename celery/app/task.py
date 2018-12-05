@@ -689,7 +689,9 @@ class Task(object):
                 raise_with_context(exc)
             raise self.MaxRetriesExceededError(
                 "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
-                    self.name, request.id, S.args, S.kwargs))
+                    self.name, request.id, S.args, S.kwargs
+                ), task_args=S.args, task_kwargs=S.kwargs
+            )
 
         ret = Retry(exc=exc, when=eta or countdown)
 
