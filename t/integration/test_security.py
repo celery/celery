@@ -60,7 +60,8 @@ class test_security:
             security_cert_store='{0}/*.pem'.format(self.tmpdir),
             task_serializer='auth',
             event_serializer='auth',
-            accept_content=['auth']
+            accept_content=['auth'],
+            result_accept_content=['json']
         )
 
         manager.app.setup_security()

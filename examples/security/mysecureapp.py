@@ -38,7 +38,8 @@ app.conf.update(
     security_cert_store='ssl/*.pem',
     task_serializer='auth',
     event_serializer='auth',
-    accept_content=['auth']
+    accept_content=['auth'],
+    result_accept_content=['json']
 )
 app.setup_security()
 
