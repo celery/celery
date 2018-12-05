@@ -195,6 +195,35 @@ Example::
     # or the actual content-type (MIME)
     accept_content = ['application/json']
 
+.. setting:: result_accept_content
+
+``result_accept_content``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None`` (can be set, list or tuple).
+
+.. versionadded:: 4.3
+
+A white-list of content-types/serializers to allow for the result backend.
+
+If a message is received that's not in this list then
+the message will be discarded with an error.
+
+By default it is the same serializer as ``accept_content``.
+However, a different serializer for accepted content of the result backend
+can be specified.
+Usually this is needed if signed messaging is used and the result is stored
+unsigned in the result backend.
+See :ref:`guide-security` for more.
+
+Example::
+
+    # using serializer name
+    result_accept_content = ['json']
+
+    # or the actual content-type (MIME)
+    result_accept_content = ['application/json']
+
 Time and date settings
 ----------------------
 

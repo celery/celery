@@ -120,8 +120,12 @@ class Backend(object):
         self._cache = _nulldict() if cmax == -1 else LRUCache(limit=cmax)
 
         self.expires = self.prepare_expires(expires, expires_type)
-        self.accept = prepare_accept_content(
-            conf.accept_content if accept is None else accept)
+
+        # precedence: accept, conf.result_accept_content, conf.accept_content
+        self.accept = conf.result_accept_content if accept is None else accept
+        self.accept = conf.accept_content if self.accept is None else self.accept  # noqa: E501
+        self.accept = prepare_accept_content(self.accept)
+
         self._pending_results = pending_results_t({}, WeakValueDictionary())
         self._pending_messages = BufferMap(MESSAGE_BUFFER_MAX)
         self.url = url

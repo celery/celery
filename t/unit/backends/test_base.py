@@ -21,6 +21,8 @@ from celery.utils.serialization import find_pickleable_exception as fnpe
 from celery.utils.serialization import get_pickleable_exception as gpe
 from celery.utils.serialization import subclass_exception
 
+from kombu.serialization import prepare_accept_content
+
 
 class wrapobject(object):
 
@@ -57,6 +59,39 @@ class test_serialization:
     def test_create_exception_cls(self):
         assert serialization.create_exception_cls('FooError', 'm')
         assert serialization.create_exception_cls('FooError', 'm', KeyError)
+
+
+class test_Backend_interface:
+
+    def setup(self):
+        self.app.conf.accept_content = ['json']
+
+    def test_accept_precedence(self):
+
+        # default is app.conf.accept_content
+        accept_content = self.app.conf.accept_content
+        b1 = BaseBackend(self.app)
+        assert prepare_accept_content(accept_content) == b1.accept
+
+        # accept parameter
+        b2 = BaseBackend(self.app, accept=['yaml'])
+        assert len(b2.accept) == 1
+        assert list(b2.accept)[0] == 'application/x-yaml'
+        assert prepare_accept_content(['yaml']) == b2.accept
+
+        # accept parameter over result_accept_content
+        self.app.conf.result_accept_content = ['json']
+        b3 = BaseBackend(self.app, accept=['yaml'])
+        assert len(b3.accept) == 1
+        assert list(b3.accept)[0] == 'application/x-yaml'
+        assert prepare_accept_content(['yaml']) == b3.accept
+
+        # conf.result_accept_content if specified
+        self.app.conf.result_accept_content = ['yaml']
+        b4 = BaseBackend(self.app)
+        assert len(b4.accept) == 1
+        assert list(b4.accept)[0] == 'application/x-yaml'
+        assert prepare_accept_content(['yaml']) == b4.accept
 
 
 class test_BaseBackend_interface:
