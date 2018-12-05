@@ -47,7 +47,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
     username = None
     password = None
 
-    def __init__(self, *args, url=None, **kwargs):
+    def __init__(self, url=None, *args, **kwargs):
         """Parse the url or load the settings from settings object."""
         super(ArangoDbBackend, self).__init__(*args, **kwargs)
         self.url = url
