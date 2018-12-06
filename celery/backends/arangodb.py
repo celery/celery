@@ -60,7 +60,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
                 database_collection, _query
             ) = _parse_url(url)
             logging.debug(
-                "_shema: %s, host: %s, port: %s, database_collection: %s",
+                "schema: %s, host: %s, port: %s, database_collection: %s",
                 _schema, host, port, database_collection
             )
             if database_collection is None:

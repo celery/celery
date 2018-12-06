@@ -1,1 +1,1 @@
-pyArango
+pyArango>=1.3.2
