@@ -82,6 +82,9 @@ Transports and Backends
 :``celery[couchbase]``:
     for using Couchbase as a result backend.
 
+:``celery[arangodb]``:
+    for using ArangoDB as a result backend.
+
 :``celery[elasticsearch]``:
     for using Elasticsearch as a result backend.
 
