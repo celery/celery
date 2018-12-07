@@ -299,6 +299,8 @@ class Celery(object):
 
         self.on_init()
         _register_app(self)
+        # Enable force resizing of connection and producer pools
+        pools.set_forced_resize(True)
 
     def _get_default_loader(self):
         # the --loader command-line argument sets the environment variable.
