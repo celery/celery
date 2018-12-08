@@ -959,6 +959,12 @@ class test_App:
         app = CustomCelery(set_as_current=False)
         assert isinstance(app.tasks, TaskRegistry)
 
+    def test_force_resize_called(self):
+        from kombu import pools
+        pools.set_forced_resize = Mock()
+        with self.Celery():
+            pools.set_forced_resize.assert_called_with(True)
+
 
 class test_defaults:
 
