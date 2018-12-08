@@ -299,8 +299,6 @@ class Celery(object):
 
         self.on_init()
         _register_app(self)
-        # Enable force resizing of connection and producer pools
-        pools.set_forced_resize(True)
 
     def _get_default_loader(self):
         # the --loader command-line argument sets the environment variable.
@@ -1164,6 +1162,8 @@ class Celery(object):
         if self._pool is None:
             self._ensure_after_fork()
             limit = self.conf.broker_pool_limit
+            # Enable force resizing of pools
+            pools.set_forced_resize(True)
             pools.set_limit(limit)
             self._pool = pools.connections[self.connection_for_write()]
         return self._pool
