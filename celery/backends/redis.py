@@ -347,8 +347,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         result = self.encode_result(result, state)
         with client.pipeline() as pipe:
             _, readycount, totaldiff, _, _ = pipe \
-                .zadd(jkey, group_index,
-                      self.encode([1, tid, state, result])) \
+                .zadd(jkey,
+                      {self.encode([1, tid, state, result]): group_index}) \
                 .zcount(jkey, '-inf', '+inf') \
                 .get(tkey) \
                 .expire(jkey, self.expires) \
