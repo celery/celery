@@ -115,7 +115,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_SECURITY_CERTIFICATE``        :setting:`security_certificate`
 ``CELERY_SECURITY_CERT_STORE``         :setting:`security_cert_store`
 ``CELERY_SECURITY_KEY``                :setting:`security_key`
-``CELERY_ACKS_LATE``                   :setting:`task_acks_late`
+``CELERY_TASK_ACKS_LATE``                   :setting:`task_acks_late`
 ``CELERY_TASK_ALWAYS_EAGER``           :setting:`task_always_eager`
 ``CELERY_TASK_ANNOTATIONS``            :setting:`task_annotations`
 ``CELERY_TASK_COMPRESSION``            :setting:`task_compression`
@@ -194,6 +194,35 @@ Example::
 
     # or the actual content-type (MIME)
     accept_content = ['application/json']
+
+.. setting:: result_accept_content
+
+``result_accept_content``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None`` (can be set, list or tuple).
+
+.. versionadded:: 4.3
+
+A white-list of content-types/serializers to allow for the result backend.
+
+If a message is received that's not in this list then
+the message will be discarded with an error.
+
+By default it is the same serializer as ``accept_content``.
+However, a different serializer for accepted content of the result backend
+can be specified.
+Usually this is needed if signed messaging is used and the result is stored
+unsigned in the result backend.
+See :ref:`guide-security` for more.
+
+Example::
+
+    # using serializer name
+    result_accept_content = ['json']
+
+    # or the actual content-type (MIME)
+    result_accept_content = ['application/json']
 
 Time and date settings
 ----------------------
@@ -576,6 +605,10 @@ Can be one of the following:
     Use `CouchDB`_ to store the results.
     See :ref:`conf-couchdb-result-backend`.
 
+* ``cosmosdbsql (experimental)``
+    Use the `CosmosDB`_ PaaS to store the results.
+    See :ref:`conf-cosmosdbsql-result-backend`.
+
 * ``filesystem``
     Use a shared directory to store the results.
     See :ref:`conf-filesystem-result-backend`.
@@ -600,6 +633,7 @@ Can be one of the following:
 .. _`Elasticsearch`: https://aws.amazon.com/elasticsearch-service/
 .. _`IronCache`: http://www.iron.io/cache
 .. _`CouchDB`: http://www.couchdb.com/
+.. _`CosmosDB`: https://azure.microsoft.com/en-us/services/cosmos-db/
 .. _`Couchbase`: https://www.couchbase.com/
 .. _`Consul`: https://consul.io/
 .. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/blobs/
@@ -811,10 +845,10 @@ Example configuration
 
     result_backend = 'rpc://'
     result_persistent = False
-   
-**Please note**: using this backend could trigger the raise of ``celery.backends.rpc.BacklogLimitExceeded`` if the task tombstone is too *old*. 
 
-E.g.  
+**Please note**: using this backend could trigger the raise of ``celery.backends.rpc.BacklogLimitExceeded`` if the task tombstone is too *old*.
+
+E.g.
 
 .. code-block:: python
 
@@ -822,7 +856,7 @@ E.g.
         r = debug_task.delay()
 
     print(r.state)  # this would raise celery.backends.rpc.BacklogLimitExceeded
-    
+
 .. _conf-cache-result-backend:
 
 Cache backend settings
@@ -1462,6 +1496,68 @@ This is a dict supporting the following keys:
 
     Password to authenticate to the Couchbase server (optional).
 
+.. _conf-cosmosdbsql-result-backend:
+
+CosmosDB backend settings (experimental)
+----------------------------------------
+
+To use `CosmosDB`_ as the result backend, you simply need to configure the
+:setting:`result_backend` setting with the correct URL.
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    result_backend = 'cosmosdbsql://:{InsertAccountPrimaryKeyHere}@{InsertAccountNameHere}.documents.azure.com'
+
+.. setting:: cosmosdbsql_database_name
+
+``cosmosdbsql_database_name``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: celerydb.
+
+The name for the database in which to store the results.
+
+.. setting:: cosmosdbsql_collection_name
+
+``cosmosdbsql_collection_name``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: celerycol.
+
+The name of the collection in which to store the results.
+
+.. setting:: cosmosdbsql_consistency_level
+
+``cosmosdbsql_consistency_level``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Session.
+
+Represents the consistency levels supported for Azure Cosmos DB client operations.
+
+Consistency levels by order of strength are: Strong, BoundedStaleness, Session, ConsistentPrefix and Eventual.
+
+.. setting:: cosmosdbsql_max_retry_attempts
+
+``cosmosdbsql_max_retry_attempts``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 9.
+
+Maximum number of retries to be performed for a request.
+
+.. setting:: cosmosdbsql_max_retry_wait_time
+
+``cosmosdbsql_max_retry_wait_time``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 30.
+
+Maximum wait time in seconds to wait for a request while the retries are happening.
+
 .. _conf-couchdb-result-backend:
 
 CouchDB backend settings
@@ -1625,7 +1721,7 @@ it's a queue name in :setting:`task_queues`, a dict means it's a custom route.
 
 When sending tasks, the routers are consulted in order. The first
 router that doesn't return ``None`` is the route to use. The message options
-is then merged with the found route settings, where the routers settings
+is then merged with the found route settings, where the task's settings
 have priority.
 
 Example if :func:`~celery.execute.apply_async` has these arguments:
@@ -1645,7 +1741,7 @@ the final message options will be:
 
 .. code-block:: python
 
-    immediate=True, exchange='urgent', routing_key='video.compress'
+    immediate=False, exchange='video', routing_key='video.compress'
 
 (and any default message options defined in the
 :class:`~celery.task.base.Task` class)
@@ -1779,7 +1875,7 @@ that queue.
 ``task_default_exchange``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``"celery"``.
+Default: Uses the value set for :setting:`task_default_queue`.
 
 Name of the default exchange to use when no custom exchange is
 specified for a key in the :setting:`task_queues` setting.
@@ -1799,7 +1895,7 @@ for a key in the :setting:`task_queues` setting.
 ``task_default_routing_key``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``"celery"``.
+Default: Uses the value set for :setting:`task_default_queue`.
 
 The default routing key used when no custom routing key
 is specified for a key in the :setting:`task_queues` setting.
@@ -2308,6 +2404,19 @@ Default: ``"celeryev"``.
 
 The prefix to use for event receiver queue names.
 
+.. setting:: event_exchange
+
+``event_exchange``
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``"celeryev"``.
+
+Name of the event exchange.
+
+.. warning::
+
+    This option is in experimental stage, please use it with caution.
+
 .. setting:: event_serializer
 
 ``event_serializer``
@@ -2359,6 +2468,19 @@ Time in seconds, before an unused remote control command queue is deleted
 from the broker.
 
 This setting also applies to remote control reply queues.
+
+.. setting:: control_exchange
+
+``control_exchange``
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``"celery"``.
+
+Name of the control command exchange.
+
+.. warning::
+
+    This option is in experimental stage, please use it with caution.
 
 .. _conf-logging:
 

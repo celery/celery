@@ -160,7 +160,7 @@ class Control(object):
     def __init__(self, app=None):
         self.app = app
         self.mailbox = self.Mailbox(
-            'celery',
+            app.conf.control_exchange,
             type='fanout',
             accept=['json'],
             producer_pool=lazy(lambda: self.app.amqp.producer_pool),

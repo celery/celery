@@ -322,7 +322,7 @@ class test_Scheduler:
         scheduler = mScheduler(app=self.app)
 
         now_ts = 1514797200.2
-        now = datetime.fromtimestamp(now_ts)
+        now = datetime.utcfromtimestamp(now_ts)
         schedule_half = schedule(timedelta(seconds=0.5), nowfun=lambda: now)
         scheduler.add(name='half_second_schedule', schedule=schedule_half)
 
@@ -494,6 +494,24 @@ class test_Scheduler:
         a = {'a': self.create_schedule_entry(task='a')}
         b = {'a': self.create_schedule_entry(task='b')}
         assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_none_entry_vs_entry(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = None
+        b = {'a': self.create_schedule_entry(task='b')}
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_entry_vs_none_entry(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(task='a')}
+        b = None
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_none_entry_vs_none_entry(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = None
+        b = None
+        assert scheduler.schedules_equal(a, b)
 
 
 def create_persistent_scheduler(shelv=None):

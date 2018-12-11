@@ -1462,7 +1462,8 @@ Tasks
 
     Fix contributed by **Colin McIntosh**.
 
-- The default routing key and exchange name is now taken from the
+- The default routing key (:setting:`task_default_routing_key`) and exchange
+  name (:setting:`task_default_exchange`) is now taken from the
   :setting:`task_default_queue` setting.
 
     This means that to change the name of the default queue, you now

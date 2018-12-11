@@ -450,6 +450,37 @@ This is an example configuration for a Python project:
     CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
     CELERYD_LOG_LEVEL="INFO"
 
+    # you may wish to add these options for Celery Beat
+    CELERYBEAT_PID_FILE="/var/run/celery/beat.pid"
+    CELERYBEAT_LOG_FILE="/var/log/celery/beat.log"
+
+Service file: celerybeat.service
+----------------------------------------------------------------------
+
+This is an example systemd file for Celery Beat:
+
+:file:`/etc/systemd/system/celerybeat.service`:
+
+.. code-block:: bash
+
+  [Unit]
+  Description=Celery Beat Service
+  After=network.target
+
+  [Service]
+  Type=simple
+  User=celery
+  Group=celery
+  EnvironmentFile=/etc/conf.d/celery
+  WorkingDirectory=/opt/celery
+  ExecStart=/bin/sh -c '${CELERY_BIN} beat  \
+    -A ${CELERY_APP} --pidfile=${CELERYBEAT_PID_FILE} \
+    --logfile=${CELERYBEAT_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL}'
+
+  [Install]
+  WantedBy=multi-user.target
+
+
 Running the worker with superuser privileges (root)
 ======================================================================
 

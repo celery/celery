@@ -77,6 +77,7 @@ class Option(object):
 
 NAMESPACES = Namespace(
     accept_content=Option(DEFAULT_ACCEPT_CONTENT, type='list', old=OLD_NS),
+    result_accept_content=Option(None, type='list'),
     enable_utc=Option(True, type='bool'),
     imports=Option((), type='tuple', old=OLD_NS),
     include=Option((), type='tuple', old=OLD_NS),
@@ -139,6 +140,7 @@ NAMESPACES = Namespace(
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
         queue_expires=Option(10.0, type='float'),
+        exchange=Option('celery', type='string'),
     ),
     couchbase=Namespace(
         __old__=old_ns('celery_couchbase'),
@@ -150,6 +152,13 @@ NAMESPACES = Namespace(
 
         backend_settings=Option(type='dict'),
     ),
+    cosmosdbsql=Namespace(
+        database_name=Option('celerydb', type='string'),
+        collection_name=Option('celerycol', type='string'),
+        consistency_level=Option('Session', type='string'),
+        max_retry_attempts=Option(9, type='int'),
+        max_retry_wait_time=Option(30, type='int'),
+    ),
     event=Namespace(
         __old__=old_ns('celery_event'),
 
@@ -157,6 +166,7 @@ NAMESPACES = Namespace(
         queue_ttl=Option(5.0, type='float'),
         queue_prefix=Option('celeryev'),
         serializer=Option('json'),
+        exchange=Option('celeryev', type='string'),
     ),
     redis=Namespace(
         __old__=old_ns('celery_redis'),
