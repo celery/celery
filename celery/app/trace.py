@@ -93,6 +93,7 @@ class TraceInfo(object):
         try:
             reason = self.retval
             einfo = ExceptionInfo((type_, reason, tb))
+            req.update(task_name=task.name)
             if store_errors:
                 task.backend.mark_as_retry(
                     req.id, reason.exc, einfo.traceback, request=req,
@@ -113,6 +114,7 @@ class TraceInfo(object):
             einfo = ExceptionInfo()
             einfo.exception = get_pickleable_exception(einfo.exception)
             einfo.type = get_pickleable_etype(einfo.type)
+            req.update(task_name=task.name)
             if store_errors:
                 task.backend.mark_as_failure(
                     req.id, exc, einfo.traceback, request=req,
