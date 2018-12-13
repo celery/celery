@@ -384,7 +384,7 @@ class test_BaseBackend_dict:
         assert self.errback.last_result == 5
 
     @patch('celery.backends.base.group')
-    def test_class_based_task_can_be_used_as_error_callback(self, mocked_group):
+    def test_class_based_task_can_be_used_as_error_callback(self, mock_group):
         b = BaseBackend(app=self.app)
         b._store_result = Mock()
 
@@ -398,7 +398,7 @@ class test_BaseBackend_dict:
         request.errbacks = [TaskBasedClass.subtask(args=[], immutable=True)]
         exc = KeyError()
         b.mark_as_failure('id', exc, request=request)
-        mocked_group.assert_called_once_with(request.errbacks, app=self.app)
+        mock_group.assert_called_once_with(request.errbacks, app=self.app)
 
     def test_mark_as_failure__chord(self):
         b = BaseBackend(app=self.app)
