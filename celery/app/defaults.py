@@ -131,6 +131,14 @@ NAMESPACES = Namespace(
         auth_kwargs=Option(type='string'),
         options=Option({}, type='dict'),
     ),
+    s3=Namespace(
+        access_key_id=Option(type='string'),
+        secret_access_key=Option(type='string'),
+        bucket=Option(type='string'),
+        base_path=Option(type='string'),
+        endpoint_url=Option(type='string'),
+        region=Option(type='string'),
+    ),
     azureblockblob=Namespace(
         container_name=Option('celery', type='string'),
         retry_initial_backoff_sec=Option(2, type='int'),

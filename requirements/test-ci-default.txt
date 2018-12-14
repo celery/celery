@@ -20,3 +20,4 @@
 -r extras/cassandra.txt
 -r extras/dynamodb.txt
 -r extras/azureblockblob.txt
+-r extras/s3.txt

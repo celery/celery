@@ -89,6 +89,12 @@ have been moved into a new  ``task_`` prefix.
 ``CASSANDRA_SERVERS``                  :setting:`cassandra_servers`
 ``CASSANDRA_WRITE_CONSISTENCY``        :setting:`cassandra_write_consistency`
 ``CASSANDRA_OPTIONS``                  :setting:`cassandra_options`
+``S3_ACCESS_KEY_ID``                   :setting:`s3_access_key_id`
+``S3_SECRET_ACCESS_KEY``               :setting:`s3_secret_access_key`
+``S3_BUCKET``                          :setting:`s3_bucket`
+``S3_BASE_PATH``                       :setting:`s3_base_path`
+``S3_ENDPOINT_URL``                    :setting:`s3_endpoint_url`
+``S3_REGION``                          :setting:`s3_region`
 ``CELERY_COUCHBASE_BACKEND_SETTINGS``  :setting:`couchbase_backend_settings`
 ``CELERY_MONGODB_BACKEND_SETTINGS``    :setting:`mongodb_backend_settings`
 ``CELERY_EVENT_QUEUE_EXPIRES``         :setting:`event_queue_expires`
@@ -621,6 +627,10 @@ Can be one of the following:
     Use the `AzureBlockBlob`_ PaaS store to store the results
     See :ref:`conf-azureblockblob-result-backend`.
 
+* ``s3``
+    Use the `S3`_ to store the results
+    See :ref:`conf-s3-result-backend`.
+
 .. warning:
 
     While the AMQP result backend is very efficient, you must make sure
@@ -637,6 +647,7 @@ Can be one of the following:
 .. _`Couchbase`: https://www.couchbase.com/
 .. _`Consul`: https://consul.io/
 .. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/blobs/
+.. _`S3`: https://aws.amazon.com/s3/
 
 
 .. setting:: result_backend_transport_options
@@ -1171,6 +1182,103 @@ Example configuration
     cassandra_read_consistency = 'ONE'
     cassandra_write_consistency = 'ONE'
     cassandra_entry_ttl = 86400
+
+.. _conf-s3-result-backend:
+
+S3 backend settings
+-------------------
+
+.. note::
+
+    This s3 backend driver requires :pypi:`s3`.
+
+    To install, use :command:`s3`:
+
+    .. code-block:: console
+
+        $ pip install celery[s3]
+
+    See :ref:`bundles` for information on combining multiple extension
+    requirements.
+
+This backend requires the following configuration directives to be set.
+
+.. setting:: s3_access_key_id
+
+``s3_access_key_id``
+~~~~~~~~~~~~~~~~~~~~
+
+Default: None.
+
+The s3 access key id. For example::
+
+    s3_access_key_id = 'acces_key_id'
+
+.. setting:: s3_secret_access_key
+
+``s3_secret_access_key``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: None.
+
+The s3 secret access key. For example::
+
+    s3_secret_access_key = 'acces_secret_access_key'
+
+.. setting:: s3_bucket
+
+``s3_bucket``
+~~~~~~~~~~~~~
+
+Default: None.
+
+The s3 bucket name. For example::
+
+    s3_bucket = 'bucket_name'
+
+.. setting:: s3_base_path
+
+``s3_base_path``
+~~~~~~~~~~~~~~~~
+
+Default: None.
+
+A base path in the s3 bucket to use to store result keys. For example::
+
+    s3_base_path = '/prefix'
+
+.. setting:: s3_endpoint_url
+
+``s3_endpoint_url``
+~~~~~~~~~~~~~~~~~~~
+
+Default: None.
+
+A custom s3 endpoint url. Use it to connect to a custom self-hosted s3 compatible backend (Ceph, Scality...). For example::
+
+    s3_endpoint_url = 'https://.s3.custom.url'
+
+.. setting:: s3_region
+
+``s3_region``
+~~~~~~~~~~~~~
+
+Default: None.
+
+The s3 aws region. For example::
+
+    s3_region = 'us-east-1'
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    s3_access_key_id = 's3-access-key-id'
+    s3_secret_access_key = 's3-secret-access-key'
+    s3_bucket = 'mybucket'
+    s3_base_path = '/celery_result_backend'
+    s3_endpoint_url = 'https://endpoint_url'
 
 .. _conf-azureblockblob-result-backend:
 
