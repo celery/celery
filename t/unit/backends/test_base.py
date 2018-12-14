@@ -8,7 +8,7 @@ import pytest
 from case import ANY, Mock, call, patch, skip
 
 from celery import chord, group, states, uuid
-from celery.app.task import Context
+from celery.app.task import Context, Task
 from celery.backends.base import (BaseBackend, DisabledBackend,
                                   KeyValueStoreBackend, _nulldict)
 from celery.exceptions import ChordError, TimeoutError
@@ -382,6 +382,23 @@ class test_BaseBackend_dict:
         exc = KeyError()
         b.mark_as_failure('id', exc, request=request)
         assert self.errback.last_result == 5
+
+    @patch('celery.backends.base.group')
+    def test_class_based_task_can_be_used_as_error_callback(self, mock_group):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+
+        class TaskBasedClass(Task):
+            def run(self):
+                pass
+
+        TaskBasedClass = self.app.register_task(TaskBasedClass())
+
+        request = Mock(name='request')
+        request.errbacks = [TaskBasedClass.subtask(args=[], immutable=True)]
+        exc = KeyError()
+        b.mark_as_failure('id', exc, request=request)
+        mock_group.assert_called_once_with(request.errbacks, app=self.app)
 
     def test_mark_as_failure__chord(self):
         b = BaseBackend(app=self.app)
