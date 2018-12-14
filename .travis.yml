@@ -52,6 +52,7 @@ matrix:
     stage: lint
 
 before_install:
+    - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
           if [[ "$TOXENV" =~ "pypy" ]]; then
