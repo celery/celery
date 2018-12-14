@@ -221,7 +221,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         try:
             push_task(task)
             task_request = Context(request or {}, args=args,
-                                   called_directly=False, kwargs=kwargs)
+                                   called_directly=False, kwargs=kwargs,
+                                   task_name=task.name)
             push_request(task_request)
             try:
                 # -*- PRE -*-

@@ -8,7 +8,24 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
-.. _version-3.1.26:
+.. _version-3.1.26.ud4:
+
+3.1.26-ud4
+======
+- Fixed trace.py to capture task_name in its request object
+
+3.1.26-ud3
+======
+- Bug fixes to ud2
+
+3.1.26-ud2
+======
+- Bug fixes to ud1
+
+3.1.26-ud1
+======
+- Introduce extended results from 4.x into 3.x to help store args/kwargs as
+  well as other values
 
 3.1.26
 ======
