@@ -12,7 +12,6 @@ import datetime
 import sys
 import time
 from collections import namedtuple
-from datetime import timedelta
 from functools import partial
 from weakref import WeakValueDictionary
 
@@ -304,7 +303,7 @@ class Backend(object):
     def prepare_expires(self, value, type=None):
         if value is None:
             value = self.app.conf.result_expires
-        if isinstance(value, timedelta):
+        if isinstance(value, datetime.timedelta):
             value = value.total_seconds()
         if value is not None and type:
             return type(value)
@@ -319,8 +318,7 @@ class Backend(object):
     def encode_result(self, result, state):
         if state in self.EXCEPTION_STATES and isinstance(result, Exception):
             return self.prepare_exception(result)
-        else:
-            return self.prepare_value(result)
+        return self.prepare_value(result)
 
     def is_cached(self, task_id):
         return task_id in self._cache
