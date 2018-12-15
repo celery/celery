@@ -262,9 +262,10 @@ def head_from_fun(fun, bound=False, debug=False):
     # as just calling a function.
     is_function = inspect.isfunction(fun)
     is_callable = hasattr(fun, '__call__')
+    is_cython = fun.__class__.__name__ == 'cython_function_or_method'
     is_method = inspect.ismethod(fun)
 
-    if not is_function and is_callable and not is_method:
+    if not is_function and is_callable and not is_method and not is_cython:
         name, fun = fun.__class__.__name__, fun.__call__
     else:
         name = fun.__name__
