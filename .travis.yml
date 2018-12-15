@@ -61,8 +61,8 @@ before_install:
               wget -O - "https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc" | sudo apt-key add -
               sudo apt update
               sudo apt install rabbitmq-server -y
-              sudo systemctl enable rabbitmq  
-              sudo systemctl start rabbitmq
+              sudo systemctl enable rabbitmq-server  
+              sudo systemctl start rabbitmq-server
           fi        
     - |
           if [[ "$TOXENV" =~ "pypy" ]]; then
