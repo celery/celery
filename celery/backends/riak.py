@@ -3,10 +3,11 @@
 from __future__ import absolute_import, unicode_literals
 
 import sys
+import warnings
 
 from kombu.utils.url import _parse_url
 
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import CeleryWarning, ImproperlyConfigured
 
 from .base import KeyValueStoreBackend
 
@@ -23,7 +24,15 @@ E_BUCKET_NAME = """\
 Riak bucket names must be composed of ASCII characters only, not: {0!r}\
 """
 
+W_UNSUPPORTED_PYTHON_VERSION = """\
+Python {}.{} is unsupported by the client library \
+https://pypi.org/project/riak\
+""".format(sys.version_info.major, sys.version_info.minor)
+
+
 if sys.version_info[0] == 3:
+    if sys.version_info.minor >= 7:
+        warnings.warn(CeleryWarning(W_UNSUPPORTED_PYTHON_VERSION))
 
     def to_bytes(s):
         return s.encode() if isinstance(s, str) else s
