@@ -77,6 +77,7 @@ class Option(object):
 
 NAMESPACES = Namespace(
     accept_content=Option(DEFAULT_ACCEPT_CONTENT, type='list', old=OLD_NS),
+    result_accept_content=Option(None, type='list'),
     enable_utc=Option(True, type='bool'),
     imports=Option((), type='tuple', old=OLD_NS),
     include=Option((), type='tuple', old=OLD_NS),
@@ -129,6 +130,14 @@ NAMESPACES = Namespace(
         auth_provider=Option(type='string'),
         auth_kwargs=Option(type='string'),
         options=Option({}, type='dict'),
+    ),
+    s3=Namespace(
+        access_key_id=Option(type='string'),
+        secret_access_key=Option(type='string'),
+        bucket=Option(type='string'),
+        base_path=Option(type='string'),
+        endpoint_url=Option(type='string'),
+        region=Option(type='string'),
     ),
     azureblockblob=Namespace(
         container_name=Option('celery', type='string'),

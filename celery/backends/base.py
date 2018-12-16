@@ -120,8 +120,12 @@ class Backend(object):
         self._cache = _nulldict() if cmax == -1 else LRUCache(limit=cmax)
 
         self.expires = self.prepare_expires(expires, expires_type)
-        self.accept = prepare_accept_content(
-            conf.accept_content if accept is None else accept)
+
+        # precedence: accept, conf.result_accept_content, conf.accept_content
+        self.accept = conf.result_accept_content if accept is None else accept
+        self.accept = conf.accept_content if self.accept is None else self.accept  # noqa: E501
+        self.accept = prepare_accept_content(self.accept)
+
         self._pending_results = pending_results_t({}, WeakValueDictionary())
         self._pending_messages = BufferMap(MESSAGE_BUFFER_MAX)
         self.url = url
@@ -166,6 +170,13 @@ class Backend(object):
         for errback in request.errbacks:
             errback = self.app.signature(errback)
             if (
+                # Celery tasks type created with the @task decorator have the
+                # __header__ property, but Celery task created from Task
+                # class do not have this property.
+                # That's why we have to check if this property exists before
+                # checking is it partial function.
+                hasattr(errback.type, '__header__') and
+
                 # workaround to support tasks with bind=True executed as
                 # link errors. Otherwise retries can't be used
                 not isinstance(errback.type.__header__, partial) and
@@ -673,6 +684,8 @@ class BaseKeyValueStoreBackend(Backend):
 
         if request and getattr(request, 'group', None):
             meta['group_id'] = request.group
+        if request and getattr(request, 'parent_id', None):
+            meta['parent_id'] = request.parent_id
 
         if self.app.conf.find_value_for_key('extended', 'result'):
             if request:

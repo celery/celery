@@ -380,6 +380,7 @@ class test_RedisBackend:
             'result_cache_max': 1,
             'result_expires': None,
             'accept_content': ['json'],
+            'result_accept_content': ['json'],
         })
         self.Backend(app=self.app)
 

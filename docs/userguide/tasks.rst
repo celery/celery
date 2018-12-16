@@ -570,7 +570,7 @@ You can disable the argument checking for any task by setting its
     ... def add(x, y):
     ...     return x + y
 
-    # Works locally, but the worker reciving the task will raise an error.
+    # Works locally, but the worker receiving the task will raise an error.
     >>> add.delay(8)
     <AsyncResult: f59d71ca-1549-43e0-be41-4e8821a83c0c>
 

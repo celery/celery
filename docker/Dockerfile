@@ -17,7 +17,8 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     pypy \
     wget \
-    zlib1g-dev
+    zlib1g-dev \
+    lsb-release
 
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.
@@ -53,25 +54,49 @@ COPY --chown=1000:1000 docker/entrypoint /entrypoint
 RUN chmod gu+x /entrypoint
 
 # Define the local pyenvs
-RUN pyenv local python2.7 python3.4 python3.5 python3.6
+RUN pyenv local python3.6 python3.5 python3.4 python2.7
+
+RUN pyenv exec python2.7 -m pip install --upgrade pip && \
+    pyenv exec python3.4 -m pip install --upgrade pip && \
+    pyenv exec python3.5 -m pip install --upgrade pip && \
+    pyenv exec python3.6 -m pip install --upgrade pip
 
 # Setup one celery environment for basic development use
-RUN pyenv exec pip install \
+RUN pyenv exec python3.6 -m pip install \
   -r requirements/default.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
   -r requirements/test.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-integration.txt
+  -r requirements/test-ci-default.txt \
+  -r requirements/docs.txt \
+  -r requirements/test-integration.txt \
+  -r requirements/pkgutils.txt && \
+  pyenv exec python3.5 -m pip install \
+  -r requirements/default.txt \
+  -r requirements/test.txt \
+  -r requirements/test-ci-default.txt \
+  -r requirements/docs.txt \
+  -r requirements/test-integration.txt \
+  -r requirements/pkgutils.txt && \
+  pyenv exec python3.4 -m pip install \
+  -r requirements/default.txt \
+  -r requirements/test.txt \
+  -r requirements/test-ci-default.txt \
+  -r requirements/docs.txt \
+  -r requirements/test-integration.txt \
+  -r requirements/pkgutils.txt && \
+  pyenv exec python2.7 -m pip install \
+  -r requirements/default.txt \
+  -r requirements/test.txt \
+  -r requirements/test-ci-default.txt \
+  -r requirements/docs.txt \
+  -r requirements/test-integration.txt \
+  -r requirements/pkgutils.txt
 
-COPY --chown=1000:1000 MANIFEST.in Makefile setup.py setup.cfg tox.ini $HOME/
-COPY --chown=1000:1000 docs $HOME/docs
-COPY --chown=1000:1000 t $HOME/t
-COPY --chown=1000:1000 celery $HOME/celery
+COPY --chown=1000:1000 . $HOME/celery
 
-RUN pyenv exec pip install -e .
+WORKDIR $HOME/celery
 
 # Setup the entrypoint, this ensures pyenv is initialized when a container is started
 # and that any compiled files from earlier steps or from moutns are removed to avoid
 # py.test failing with an ImportMismatchError
 ENTRYPOINT ["/entrypoint"]
+

@@ -89,6 +89,12 @@ have been moved into a new  ``task_`` prefix.
 ``CASSANDRA_SERVERS``                  :setting:`cassandra_servers`
 ``CASSANDRA_WRITE_CONSISTENCY``        :setting:`cassandra_write_consistency`
 ``CASSANDRA_OPTIONS``                  :setting:`cassandra_options`
+``S3_ACCESS_KEY_ID``                   :setting:`s3_access_key_id`
+``S3_SECRET_ACCESS_KEY``               :setting:`s3_secret_access_key`
+``S3_BUCKET``                          :setting:`s3_bucket`
+``S3_BASE_PATH``                       :setting:`s3_base_path`
+``S3_ENDPOINT_URL``                    :setting:`s3_endpoint_url`
+``S3_REGION``                          :setting:`s3_region`
 ``CELERY_COUCHBASE_BACKEND_SETTINGS``  :setting:`couchbase_backend_settings`
 ``CELERY_ARANGODB_BACKEND_SETTINGS``   :setting:`arangodb_backend_settings`
 ``CELERY_MONGODB_BACKEND_SETTINGS``    :setting:`mongodb_backend_settings`
@@ -116,7 +122,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_SECURITY_CERTIFICATE``        :setting:`security_certificate`
 ``CELERY_SECURITY_CERT_STORE``         :setting:`security_cert_store`
 ``CELERY_SECURITY_KEY``                :setting:`security_key`
-``CELERY_ACKS_LATE``                   :setting:`task_acks_late`
+``CELERY_TASK_ACKS_LATE``                   :setting:`task_acks_late`
 ``CELERY_TASK_ALWAYS_EAGER``           :setting:`task_always_eager`
 ``CELERY_TASK_ANNOTATIONS``            :setting:`task_annotations`
 ``CELERY_TASK_COMPRESSION``            :setting:`task_compression`
@@ -195,6 +201,35 @@ Example::
 
     # or the actual content-type (MIME)
     accept_content = ['application/json']
+
+.. setting:: result_accept_content
+
+``result_accept_content``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None`` (can be set, list or tuple).
+
+.. versionadded:: 4.3
+
+A white-list of content-types/serializers to allow for the result backend.
+
+If a message is received that's not in this list then
+the message will be discarded with an error.
+
+By default it is the same serializer as ``accept_content``.
+However, a different serializer for accepted content of the result backend
+can be specified.
+Usually this is needed if signed messaging is used and the result is stored
+unsigned in the result backend.
+See :ref:`guide-security` for more.
+
+Example::
+
+    # using serializer name
+    result_accept_content = ['json']
+
+    # or the actual content-type (MIME)
+    result_accept_content = ['application/json']
 
 Time and date settings
 ----------------------
@@ -597,6 +632,10 @@ Can be one of the following:
     Use the `AzureBlockBlob`_ PaaS store to store the results
     See :ref:`conf-azureblockblob-result-backend`.
 
+* ``s3``
+    Use the `S3`_ to store the results
+    See :ref:`conf-s3-result-backend`.
+
 .. warning:
 
     While the AMQP result backend is very efficient, you must make sure
@@ -614,6 +653,7 @@ Can be one of the following:
 .. _`ArangoDB`: https://www.arangodb.com/
 .. _`Consul`: https://consul.io/
 .. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/blobs/
+.. _`S3`: https://aws.amazon.com/s3/
 
 
 .. setting:: result_backend_transport_options
@@ -822,10 +862,10 @@ Example configuration
 
     result_backend = 'rpc://'
     result_persistent = False
-   
-**Please note**: using this backend could trigger the raise of ``celery.backends.rpc.BacklogLimitExceeded`` if the task tombstone is too *old*. 
 
-E.g.  
+**Please note**: using this backend could trigger the raise of ``celery.backends.rpc.BacklogLimitExceeded`` if the task tombstone is too *old*.
+
+E.g.
 
 .. code-block:: python
 
@@ -833,7 +873,7 @@ E.g.
         r = debug_task.delay()
 
     print(r.state)  # this would raise celery.backends.rpc.BacklogLimitExceeded
-    
+
 .. _conf-cache-result-backend:
 
 Cache backend settings
@@ -1148,6 +1188,103 @@ Example configuration
     cassandra_read_consistency = 'ONE'
     cassandra_write_consistency = 'ONE'
     cassandra_entry_ttl = 86400
+
+.. _conf-s3-result-backend:
+
+S3 backend settings
+-------------------
+
+.. note::
+
+    This s3 backend driver requires :pypi:`s3`.
+
+    To install, use :command:`s3`:
+
+    .. code-block:: console
+
+        $ pip install celery[s3]
+
+    See :ref:`bundles` for information on combining multiple extension
+    requirements.
+
+This backend requires the following configuration directives to be set.
+
+.. setting:: s3_access_key_id
+
+``s3_access_key_id``
+~~~~~~~~~~~~~~~~~~~~
+
+Default: None.
+
+The s3 access key id. For example::
+
+    s3_access_key_id = 'acces_key_id'
+
+.. setting:: s3_secret_access_key
+
+``s3_secret_access_key``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: None.
+
+The s3 secret access key. For example::
+
+    s3_secret_access_key = 'acces_secret_access_key'
+
+.. setting:: s3_bucket
+
+``s3_bucket``
+~~~~~~~~~~~~~
+
+Default: None.
+
+The s3 bucket name. For example::
+
+    s3_bucket = 'bucket_name'
+
+.. setting:: s3_base_path
+
+``s3_base_path``
+~~~~~~~~~~~~~~~~
+
+Default: None.
+
+A base path in the s3 bucket to use to store result keys. For example::
+
+    s3_base_path = '/prefix'
+
+.. setting:: s3_endpoint_url
+
+``s3_endpoint_url``
+~~~~~~~~~~~~~~~~~~~
+
+Default: None.
+
+A custom s3 endpoint url. Use it to connect to a custom self-hosted s3 compatible backend (Ceph, Scality...). For example::
+
+    s3_endpoint_url = 'https://.s3.custom.url'
+
+.. setting:: s3_region
+
+``s3_region``
+~~~~~~~~~~~~~
+
+Default: None.
+
+The s3 aws region. For example::
+
+    s3_region = 'us-east-1'
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    s3_access_key_id = 's3-access-key-id'
+    s3_secret_access_key = 's3-secret-access-key'
+    s3_bucket = 'mybucket'
+    s3_base_path = '/celery_result_backend'
+    s3_endpoint_url = 'https://endpoint_url'
 
 .. _conf-azureblockblob-result-backend:
 
@@ -1758,7 +1895,7 @@ it's a queue name in :setting:`task_queues`, a dict means it's a custom route.
 
 When sending tasks, the routers are consulted in order. The first
 router that doesn't return ``None`` is the route to use. The message options
-is then merged with the found route settings, where the routers settings
+is then merged with the found route settings, where the task's settings
 have priority.
 
 Example if :func:`~celery.execute.apply_async` has these arguments:
@@ -1778,7 +1915,7 @@ the final message options will be:
 
 .. code-block:: python
 
-    immediate=True, exchange='urgent', routing_key='video.compress'
+    immediate=False, exchange='video', routing_key='video.compress'
 
 (and any default message options defined in the
 :class:`~celery.task.base.Task` class)
