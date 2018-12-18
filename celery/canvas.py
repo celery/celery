@@ -185,17 +185,19 @@ class Signature(dict):
         """Shortcut to :meth:`apply_async` using star arguments."""
         return self.apply_async(partial_args, partial_kwargs)
 
-    def apply(self, args=(), kwargs={}, **options):
+    def apply(self, args=None, kwargs=None, **options):
         """Call task locally.
 
         Same as :meth:`apply_async` but executed the task inline instead
         of sending a task message.
         """
+        args = args if args else ()
+        kwargs = kwargs if kwargs else {}
         # For callbacks: extra args are prepended to the stored args.
         args, kwargs, options = self._merge(args, kwargs, options)
         return self.type.apply(args, kwargs, **options)
 
-    def apply_async(self, args=(), kwargs={}, route_name=None, **options):
+    def apply_async(self, args=None, kwargs=None, route_name=None, **options):
         """Apply this task asynchronously.
 
         Arguments:
@@ -210,6 +212,8 @@ class Signature(dict):
         See also:
             :meth:`~@Task.apply_async` and the :ref:`guide-calling` guide.
         """
+        args = args if args else ()
+        kwargs = kwargs if kwargs else {}
         try:
             _apply = self._apply_async
         except IndexError:  # pragma: no cover
@@ -224,7 +228,10 @@ class Signature(dict):
         #   Borks on this, as it's a property
         return _apply(args, kwargs, **options)
 
-    def _merge(self, args=(), kwargs={}, options={}, force=False):
+    def _merge(self, args=None, kwargs=None, options=None, force=False):
+        args = args if args else ()
+        kwargs = kwargs if kwargs else {}
+        options = options if options else {}
         if self.immutable and not force:
             return (self.args, self.kwargs,
                     dict(self.options, **options) if options else self.options)
@@ -232,7 +239,7 @@ class Signature(dict):
                 dict(self.kwargs, **kwargs) if kwargs else self.kwargs,
                 dict(self.options, **options) if options else self.options)
 
-    def clone(self, args=(), kwargs={}, **opts):
+    def clone(self, args=None, kwargs=None, **opts):
         """Create a copy of this signature.
 
         Arguments:
@@ -241,6 +248,8 @@ class Signature(dict):
             options (Dict): Partial options to be merged with
                 existing options.
         """
+        args = args if args else ()
+        kwargs = kwargs if kwargs else {}
         # need to deepcopy options so origins links etc. is not modified.
         if args or kwargs or opts:
             args, kwargs, opts = self._merge(args, kwargs, opts)
@@ -554,8 +563,10 @@ class _chain(Signature):
                 task.link_error(sig)
         return tasks
 
-    def apply_async(self, args=(), kwargs={}, **options):
+    def apply_async(self, args=None, kwargs=None, **options):
         # python is best at unpacking kwargs, so .run is here to do that.
+        args = args if args else ()
+        kwargs = kwargs if kwargs else []
         app = self.app
         if app.conf.task_always_eager:
             with allow_join_result():
@@ -563,11 +574,13 @@ class _chain(Signature):
         return self.run(args, kwargs, app=app, **(
             dict(self.options, **options) if options else self.options))
 
-    def run(self, args=(), kwargs={}, group_id=None, chord=None,
+    def run(self, args=None, kwargs=None, group_id=None, chord=None,
             task_id=None, link=None, link_error=None, publisher=None,
             producer=None, root_id=None, parent_id=None, app=None, **options):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
+        args = args if args else ()
+        kwargs = kwargs if kwargs else []
         app = app or self.app
         use_link = self._use_link
         if use_link is None and app.conf.task_protocol == 1:
@@ -707,7 +720,9 @@ class _chain(Signature):
                 prev_res = node
         return tasks, results
 
-    def apply(self, args=(), kwargs={}, **options):
+    def apply(self, args=None, kwargs=None, **options):
+        args = args if args else ()
+        kwargs = kwargs if kwargs else {}
         last, (fargs, fkwargs) = None, (args, kwargs)
         for task in self.tasks:
             res = task.clone(fargs, fkwargs).apply(
@@ -808,8 +823,10 @@ class _basemap(Signature):
             {'task': task, 'it': regen(it)}, immutable=True, **options
         )
 
-    def apply_async(self, args=(), kwargs={}, **opts):
+    def apply_async(self, args=None, kwargs=None, **opts):
         # need to evaluate generators
+        args = args if args else ()
+        kwargs = kwargs if kwargs else {}
         task, it = self._unpack_args(self.kwargs)
         return self.type.apply_async(
             (), {'task': task, 'it': list(it)},
@@ -871,7 +888,9 @@ class chunks(Signature):
     def __call__(self, **options):
         return self.apply_async(**options)
 
-    def apply_async(self, args=(), kwargs={}, **opts):
+    def apply_async(self, args=None, kwargs=None, **opts):
+        args = args if args else ()
+        kwargs = kwargs if kwargs else {}
         return self.group().apply_async(
             args, kwargs,
             route_name=task_name_from(self.kwargs.get('task')), **opts
@@ -965,8 +984,9 @@ class group(Signature):
             task.set(countdown=next(it))
         return self
 
-    def apply_async(self, args=(), kwargs=None, add_to_parent=True,
+    def apply_async(self, args=None, kwargs=None, add_to_parent=True,
                     producer=None, link=None, link_error=None, **options):
+        args = args if args else ()
         if link is not None:
             raise TypeError('Cannot add link to group: use a chord')
         if link_error is not None:
@@ -1000,7 +1020,9 @@ class group(Signature):
             parent_task.add_trail(result)
         return result
 
-    def apply(self, args=(), kwargs={}, **options):
+    def apply(self, args=None, kwargs=None, **options):
+        args = args if args else ()
+        kwargs = kwargs if kwargs else {}
         app = self.app
         if not self.tasks:
             return self.freeze()  # empty group returns GroupResult
@@ -1184,7 +1206,9 @@ class chord(Signature):
         return (header, body), kwargs
 
     def __init__(self, header, body=None, task='celery.chord',
-                 args=(), kwargs={}, app=None, **options):
+                 args=None, kwargs=None, app=None, **options):
+        args = args if args else ()
+        kwargs = kwargs if kwargs else {}
         Signature.__init__(
             self, task, args,
             {'kwargs': kwargs, 'header': _maybe_group(header, app),
@@ -1220,10 +1244,11 @@ class chord(Signature):
         self.id = self.tasks.id
         return bodyres
 
-    def apply_async(self, args=(), kwargs={}, task_id=None,
+    def apply_async(self, args=None, kwargs=None, task_id=None,
                     producer=None, publisher=None, connection=None,
                     router=None, result_cls=None, **options):
-        kwargs = kwargs or {}
+        args = args if args else ()
+        kwargs = kwargs if kwargs else {}
         args = (tuple(args) + tuple(self.args)
                 if args and not self.immutable else self.args)
         body = kwargs.pop('body', None) or self.kwargs['body']
@@ -1239,7 +1264,10 @@ class chord(Signature):
         # chord([A, B, ...], C)
         return self.run(tasks, body, args, task_id=task_id, **options)
 
-    def apply(self, args=(), kwargs={}, propagate=True, body=None, **options):
+    def apply(self, args=None, kwargs=None,
+              propagate=True, body=None, **options):
+        args = args if args else ()
+        kwargs = kwargs if kwargs else {}
         body = self.body if body is None else body
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=self.app))
