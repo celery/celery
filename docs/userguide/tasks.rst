@@ -51,7 +51,7 @@ consider enabling the :setting:`task_reject_on_worker_lost` setting.
     A task that blocks indefinitely may eventually stop the worker instance
     from doing any other work.
 
-    If you task does I/O then make sure you add timeouts to these operations,
+    If your task does I/O then make sure you add timeouts to these operations,
     like adding a timeout to a web request using the :pypi:`requests` library:
 
     .. code-block:: python
