@@ -431,6 +431,10 @@ class AsyncResult(ResultBase):
     def queue(self):
         return self._get_task_meta().get('queue')
 
+    @property
+    def eta(self):
+        return self._get_task_meta().get('eta')
+
 
 class ResultSet(ResultBase):
     """Working with more than one result.
