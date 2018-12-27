@@ -8,7 +8,11 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
-.. _version-3.1.26.ud4:
+.. _version-3.1.26.ud5:
+
+3.1.26-ud5
+======
+- Enable eta to be stored and retrieved in the result backend.
 
 3.1.26-ud4
 ======
