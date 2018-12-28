@@ -436,7 +436,7 @@ chain breaks:
 
 .. topic:: Evolving the API
 
-    Celery has changed a lot in the 7 years since it was initially
+    Celery has changed a lot from 2009 since it was initially
     created.
 
     For example, in the beginning it was possible to use any callable as
