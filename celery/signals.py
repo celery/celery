@@ -83,7 +83,7 @@ task_sent = Signal(
     },
 )
 
-# - Prorgam: `celery worker`
+# - Program: `celery worker`
 celeryd_init = Signal(
     name='celeryd_init',
     providing_args={'instance', 'conf', 'options'},
