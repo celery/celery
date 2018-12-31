@@ -383,8 +383,8 @@ class test_asynloop:
         x = X(self.app)
 
         def Gen():
-            raise StopIteration()
-            yield
+            if 0:
+                yield
         gen = Gen()
         x.hub.add_writer(6, gen)
         x.hub.on_tick.add(x.close_then_error(Mock(name='tick'), 2))
