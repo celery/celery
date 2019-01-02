@@ -10,6 +10,13 @@ new in Celery 3.1.
 
 .. _version-3.1.26.ud5:
 
+3.1.26-ud6
+======
+- Change the state revoked limited set to 5000 max entries and have them
+  expire in 10 minutes.
+- Add a pending_start variable to Context so that it can be used in the store.
+- Store and use pending_start as applicable.
+
 3.1.26-ud5
 ======
 - Enable eta to be stored and retrieved in the result backend.
