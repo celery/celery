@@ -36,11 +36,11 @@ SOFTWARE_INFO = {'sw_ident': 'py-celery',
                  'sw_sys': platform.system()}
 
 #: maximum number of revokes to keep in memory.
-REVOKES_MAX = 50000
+REVOKES_MAX = 5000
 
 #: how many seconds a revoke will be active before
 #: being expired when the max limit has been exceeded.
-REVOKE_EXPIRES = 10800
+REVOKE_EXPIRES = 600  # 10 minutes
 
 #: set of all reserved :class:`~celery.worker.job.Request`'s.
 reserved_requests = set()
