@@ -1,3 +1,8 @@
+---
+name: Bug Report
+about: Is something wrong with Celery?
+---
+
 # Checklist
 
 - [ ] I have included the output of ``celery -A proj report`` in the issue.
