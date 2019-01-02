@@ -435,6 +435,10 @@ class AsyncResult(ResultBase):
     def eta(self):
         return self._get_task_meta().get('eta')
 
+    @property
+    def pending_start(self):
+        return self._get_task_meta().get('pending_start')
+
 
 class ResultSet(ResultBase):
     """Working with more than one result.
