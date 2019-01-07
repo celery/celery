@@ -107,6 +107,7 @@ class test_security:
         )
         return certificate
 
+    @pytest.mark.xfail(reason="Issue #5269")
     def test_security_task_done(self):
         t1 = add.delay(1, 1)
         assert t1.get() == 2
