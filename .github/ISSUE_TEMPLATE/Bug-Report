@@ -55,8 +55,8 @@ Refer to the Reporting Bugs section in our contribution guide.
 
 We prefer submitting test cases in the form of a PR to our integration test suite.
 If you can provide one, please mention the PR number below.
-If not, please attach the minimum required code to reproduce the issue below.
-If too much code is required, please include a link to a gist or a repository below.
+If not, please attach the most minimal code example required to reproduce the issue below.
+If there test case is too large, please include a link to a gist or a repository below.
 -->
 
 <details>
