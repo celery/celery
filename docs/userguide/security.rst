@@ -144,7 +144,7 @@ for more information.
 Message Signing
 ===============
 
-Celery can use the :pypi:`pyOpenSSL` library to sign message using
+Celery can use the :pypi:`cryptography` library to sign message using
 `Public-key cryptography`, where
 messages sent by clients are signed using a private key
 and then later verified by the worker using a public certificate.
@@ -153,12 +153,16 @@ Optimally certificates should be signed by an official
 `Certificate Authority`_, but they can also be self-signed.
 
 To enable this you should configure the :setting:`task_serializer`
-setting to use the `auth` serializer.
+setting to use the `auth` serializer. Enforcing the workers to only accept
+signed messages, you should set `accept_content` to `['auth']`.
+For additional signing of the event protocol, set `event_serializer` to `auth`.
 Also required is configuring the
 paths used to locate private keys and certificates on the file-system:
 the :setting:`security_key`,
 :setting:`security_certificate`, and :setting:`security_cert_store`
 settings respectively.
+You can tweak the signing algorithm with :setting:`security_digest`.
+
 With these configured it's also necessary to call the
 :func:`celery.setup_security` function. Note that this will also
 disable all insecure serializers so that the worker won't accept
@@ -174,6 +178,10 @@ with the private key and certificate files located in `/etc/ssl`.
         security_key='/etc/ssl/private/worker.key'
         security_certificate='/etc/ssl/certs/worker.pem'
         security_cert_store='/etc/ssl/certs/*.pem',
+        security_digest='sha256',
+        task_serializer='auth',
+        event_serializer='auth',
+        accept_content=['auth']
     )
     app.setup_security()
 

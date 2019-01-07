@@ -42,7 +42,7 @@ from celery.utils.time import (get_exponential_backoff_interval, timezone,
 from . import builtins  # noqa
 from . import backends
 from .annotations import prepare as prepare_annotations
-from .defaults import find_deprecated_settings
+from .defaults import find_deprecated_settings, DEFAULT_SECURITY_DIGEST
 from .registry import TaskRegistry
 from .utils import (AppPickler, Settings, _new_key_to_old, _old_key_to_new,
                     _unpickle_app, _unpickle_app_v2, appstr, bugreport,
@@ -597,7 +597,8 @@ class Celery(object):
         )
 
     def setup_security(self, allowed_serializers=None, key=None, cert=None,
-                       store=None, digest='sha1', serializer='json'):
+                       store=None, digest=DEFAULT_SECURITY_DIGEST,
+                       serializer='json'):
         """Setup the message-signing serializer.
 
         This will affect all application instances (a global operation).
@@ -616,7 +617,7 @@ class Celery(object):
             store (str): Directory containing certificates.
                 Defaults to the :setting:`security_cert_store` setting.
             digest (str): Digest algorithm used when signing messages.
-                Default is ``sha1``.
+                Default is ``sha256``.
             serializer (str): Serializer used to encode messages after
                 they've been signed.  See :setting:`task_serializer` for
                 the serializers supported.  Default is ``json``.

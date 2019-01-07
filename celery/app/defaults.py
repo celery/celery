@@ -31,6 +31,9 @@ DEFAULT_PROCESS_LOG_FMT = """
 DEFAULT_TASK_LOG_FMT = """[%(asctime)s: %(levelname)s/%(processName)s] \
 %(task_name)s[%(task_id)s]: %(message)s"""
 
+DEFAULT_SECURITY_DIGEST = 'sha256'
+
+
 OLD_NS = {'celery_{0}'}
 OLD_NS_BEAT = {'celerybeat_{0}'}
 OLD_NS_WORKER = {'celeryd_{0}'}
@@ -226,6 +229,7 @@ NAMESPACES = Namespace(
         certificate=Option(type='string'),
         cert_store=Option(type='string'),
         key=Option(type='string'),
+        digest=Option(DEFAULT_SECURITY_DIGEST, type='string'),
     ),
     database=Namespace(
         url=Option(old={'celery_result_dburi'}),

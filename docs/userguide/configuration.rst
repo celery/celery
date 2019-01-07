@@ -2721,6 +2721,19 @@ The directory containing X.509 certificates used for
 :ref:`message-signing`. Can be a glob with wild-cards,
 (for example :file:`/etc/certs/*.pem`).
 
+.. setting:: security_digest
+
+``security_digest``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: :const:`sha256`.
+
+.. versionadded:: 4.3
+
+A cryptography digest used to sign messages
+when :ref:`message-signing` is used.
+https://cryptography.io/en/latest/hazmat/primitives/cryptographic-hashes/#module-cryptography.hazmat.primitives.hashes
+
 .. _conf-custom-components:
 
 Custom Component Classes (advanced)
