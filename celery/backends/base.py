@@ -235,9 +235,9 @@ class Backend(object):
         type_, real_exc, tb = sys.exc_info()
         try:
             exc = real_exc if exc is None else exc
-            ei = ExceptionInfo((type_, exc, tb))
-            self.mark_as_failure(task_id, exc, ei.traceback)
-            return ei
+            exception_info = ExceptionInfo((type_, exc, tb))
+            self.mark_as_failure(task_id, exc, exception_info.traceback)
+            return exception_info
         finally:
             del tb
 
@@ -312,8 +312,8 @@ class Backend(object):
     def prepare_persistent(self, enabled=None):
         if enabled is not None:
             return enabled
-        p = self.app.conf.result_persistent
-        return self.persistent if p is None else p
+        persistent = self.app.conf.result_persistent
+        return self.persistent if persistent is None else persistent
 
     def encode_result(self, result, state):
         if state in self.EXCEPTION_STATES and isinstance(result, Exception):
@@ -602,11 +602,11 @@ class BaseKeyValueStoreBackend(Backend):
         return bytes_to_str(key)
 
     def _filter_ready(self, values, READY_STATES=states.READY_STATES):
-        for k, v in values:
-            if v is not None:
-                v = self.decode_result(v)
-                if v['status'] in READY_STATES:
-                    yield k, v
+        for k, value in values:
+            if value is not None:
+                value = self.decode_result(value)
+                if value['status'] in READY_STATES:
+                    yield k, value
 
     def _mget_to_results(self, values, keys):
         if hasattr(values, 'items'):
