@@ -15,7 +15,9 @@ about: Is something wrong with Celery?
 - [ ] I have tried reproducing the issue with retries, ETA/Countdown & rate limits disabled.
 
 ## Environment & Settings
-<!-- Include the output of ``celery -A proj report`` below -->
+**Celery version**: <!-- Include the contents of celery --version here -->
+<!-- Include the output of celery -A proj report below -->
+**Report**:
 <details>
 ```
 ```
@@ -53,7 +55,8 @@ Refer to the Reporting Bugs section in our contribution guide.
 
 We prefer submitting test cases in the form of a PR to our integration test suite.
 If you can provide one, please mention the PR number below.
-If not, please attach the code to reproduce the issue below.
+If not, please attach the minimum required code to reproduce the issue below.
+If too much code is required, please include a link to a gist or a repository below.
 -->
 
 <details>
@@ -67,5 +70,6 @@ If not, please attach the code to reproduce the issue below.
 # Actual Behavior
 <!--
 Describe in detail what actually happened.
-Please include a backtrace and surround it with ```
+Please include a backtrace and surround it with triple backticks (```).
+In addition, include the Celery daemon logs below.
 -->
