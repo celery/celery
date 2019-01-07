@@ -169,17 +169,17 @@ class Backend(object):
         for errback in request.errbacks:
             errback = self.app.signature(errback)
             if (
-                # Celery tasks type created with the @task decorator have the
-                # __header__ property, but Celery task created from Task
-                # class do not have this property.
-                # That's why we have to check if this property exists before
-                # checking is it partial function.
-                hasattr(errback.type, '__header__') and
+                    # Celery tasks type created with the @task decorator have
+                    # the __header__ property, but Celery task created from
+                    # Task class do not have this property.
+                    # That's why we have to check if this property exists
+                    # before checking is it partial function.
+                    hasattr(errback.type, '__header__') and
 
-                # workaround to support tasks with bind=True executed as
-                # link errors. Otherwise retries can't be used
-                not isinstance(errback.type.__header__, partial) and
-                arity_greater(errback.type.__header__, 1)
+                    # workaround to support tasks with bind=True executed as
+                    # link errors. Otherwise retries can't be used
+                    not isinstance(errback.type.__header__, partial) and
+                    arity_greater(errback.type.__header__, 1)
             ):
                 errback(request, exc, traceback)
             else:
