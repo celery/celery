@@ -30,7 +30,8 @@ __all__ = (
 BUGREPORT_INFO = """
 software -> celery:{celery_v} kombu:{kombu_v} py:{py_v}
             billiard:{billiard_v} {driver_v}
-platform -> system:{system} arch:{arch} kernel version:{kernel_version} imp:{py_i}
+platform -> system:{system} arch:{arch}
+            kernel version:{kernel_version} imp:{py_i}
 loader   -> {loader}
 settings -> transport:{transport} results:{results}
 
