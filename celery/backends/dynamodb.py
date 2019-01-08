@@ -51,9 +51,13 @@ class DynamoDBBackend(KeyValueStoreBackend):
     #: The endpoint URL that is passed to boto3 (local DynamoDB) (`default`)
     endpoint_url = None
 
+    #: Use DynamoDB TTL to auto-expire results
+    supports_autoexpire = True
+
     _key_field = DynamoDBAttribute(name='id', data_type='S')
     _value_field = DynamoDBAttribute(name='result', data_type='B')
     _timestamp_field = DynamoDBAttribute(name='timestamp', data_type='N')
+    _ttl_field = DynamoDBAttribute(name='ttl', data_type='N')
     _available_fields = None
 
     def __init__(self, url=None, table_name=None, *args, **kwargs):
@@ -123,7 +127,8 @@ class DynamoDBBackend(KeyValueStoreBackend):
         self._available_fields = (
             self._key_field,
             self._value_field,
-            self._timestamp_field
+            self._timestamp_field,
+            self._ttl_field
         )
 
         self._client = None
@@ -153,6 +158,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
                 **client_parameters
             )
             self._get_or_create_table()
+            self._update_table_ttl()
         return self._client
 
     def _get_table_schema(self):
@@ -223,6 +229,43 @@ class DynamoDBBackend(KeyValueStoreBackend):
             achieved_state = current_status == expected
             sleep(1)
 
+    def _update_table_ttl(self):
+        try:
+            resp = self._client.describe_time_to_live(TableName=self.table_name)
+        except ClientError as e:
+            error_code = e.response['Error'].get('Code', 'Unknown')
+            # DynamoDB Local doesn't yet support TTLs
+            # See https://github.com/aws/aws-sdk-js/issues/1527
+            if error_code == 'UnknownOperationException':
+                return
+        ttl_status = resp['TimeToLiveDescription']['TimeToLiveStatus']
+        is_pending = (ttl_status in ('ENABLING', 'DISABLING'))
+        if is_pending:
+            logger.debug(
+                'DynamoDB table {} TTL Status is {}.'.format(
+                    self.table_name,
+                    ttl_status
+                )
+            )
+            return
+        ttl_attr = resp['TimeToLiveDescription']['AttributeName']
+        if ttl_status == 'ENABLED' and ttl_attr == self._ttl_field.name:
+            return
+        ttl_spec = {
+            'Enabled': True,
+            'AttributeName': self._ttl_field.name,
+        }
+        self._client.update_time_to_live(
+            TableName=self.table_name,
+            TimeToLiveSpecification=ttl_spec
+        )
+        logger.debug(
+            'Enabled TTL on DynamoDB table {} column {}.'.format(
+                self.table_name,
+                self._ttl_field.name
+            )
+        )
+
     def _prepare_get_request(self, key):
         """Construct the item retrieval request parameters."""
         return {
@@ -236,6 +279,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
     def _prepare_put_request(self, key, value):
         """Construct the item creation request parameters."""
+        _now = time()
         return {
             'TableName': self.table_name,
             'Item': {
@@ -246,8 +290,11 @@ class DynamoDBBackend(KeyValueStoreBackend):
                     self._value_field.data_type: value
                 },
                 self._timestamp_field.name: {
-                    self._timestamp_field.data_type: str(time())
-                }
+                    self._timestamp_field.data_type: str(_now)
+                },
+                self._ttl_field.name: {
+                    self._ttl_field.data_type: str(int(_now) + int(self.expires))
+                },
             }
         }
 

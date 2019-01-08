@@ -158,6 +158,55 @@ class test_DynamoDBBackend:
         self.backend._wait_for_table_status(expected='SOME_STATE')
         assert mock_describe_table.call_count == 2
 
+    def test_update_table_ttl_change_pending(self):
+        self.backend._client = MagicMock()
+        mock_describe_ttl = self.backend._client.describe_time_to_live = MagicMock()
+        mock_update_time_to_live = self.backend._client.update_time_to_live = MagicMock()
+        mock_describe_ttl.return_value = {
+            'TimeToLiveDescription': {
+                'TimeToLiveStatus': 'ENABLING',
+                'AttributeName': 'ttl'
+            }
+        }
+        self.backend._update_table_ttl()
+        mock_describe_ttl.assert_called_once_with(TableName=self.backend.table_name)
+        mock_update_time_to_live.assert_not_called()
+
+    def test_update_table_ttl_already_enabled(self):
+        self.backend._client = MagicMock()
+        mock_describe_ttl = self.backend._client.describe_time_to_live = MagicMock()
+        mock_update_time_to_live = self.backend._client.update_time_to_live = MagicMock()
+        mock_describe_ttl.return_value = {
+            'TimeToLiveDescription': {
+                'TimeToLiveStatus': 'ENABLED',
+                'AttributeName': 'ttl'
+
+            }
+        }
+        self.backend._update_table_ttl()
+        mock_describe_ttl.assert_called_once_with(TableName=self.backend.table_name)
+        mock_update_time_to_live.assert_not_called()
+
+    def test_update_table_ttl_not_enabled(self):
+        self.backend._client = MagicMock()
+        mock_describe_ttl = self.backend._client.describe_time_to_live = MagicMock()
+        mock_update_time_to_live = self.backend._client.update_time_to_live = MagicMock()
+        mock_describe_ttl.return_value = {
+            'TimeToLiveDescription': {
+                'TimeToLiveStatus': 'DISABLED',
+                'AttributeName': None
+
+            }
+        }
+        self.backend._update_table_ttl()
+        mock_describe_ttl.assert_called_once_with(TableName=self.backend.table_name)
+        mock_update_time_to_live.assert_called_once_with(
+            TableName=self.backend.table_name,
+            TimeToLiveSpecification={
+                'Enabled': True,
+                'AttributeName': 'ttl',
+            })
+
     def test_prepare_get_request(self):
         expected = {
             'TableName': u'celery',
@@ -173,7 +222,10 @@ class test_DynamoDBBackend:
                 u'result': {u'B': u'val'},
                 u'timestamp': {
                     u'N': str(Decimal(self._static_timestamp))
-                }
+                },
+                u'ttl': {
+                    u'N': str(int(self._static_timestamp) + int(self.backend.expires))
+                },
             }
         }
         with patch('celery.backends.dynamodb.time', self._mock_time):
@@ -191,6 +243,9 @@ class test_DynamoDBBackend:
                 },
                 'timestamp': {
                     'N': Decimal(1)
+                },
+                'ttl': {
+                    'N': 1,
                 }
             }
         }
@@ -198,7 +253,8 @@ class test_DynamoDBBackend:
         assert converted == {
             'id': sentinel.key,
             'result': sentinel.value,
-            'timestamp': Decimal(1)
+            'timestamp': Decimal(1),
+            'ttl': 1
         }
 
     def test_get(self):
@@ -228,6 +284,7 @@ class test_DynamoDBBackend:
         expected_kwargs = {
             'Item': {
                 u'timestamp': {u'N': str(self._static_timestamp)},
+                u'ttl': {u'N': str(int(self._static_timestamp) + int(self.backend.expires))},
                 u'id': {u'S': string(sentinel.key)},
                 u'result': {u'B': sentinel.value}
             },
