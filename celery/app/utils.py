@@ -30,7 +30,8 @@ __all__ = (
 BUGREPORT_INFO = """
 software -> celery:{celery_v} kombu:{kombu_v} py:{py_v}
             billiard:{billiard_v} {driver_v}
-platform -> system:{system} arch:{arch} imp:{py_i}
+platform -> system:{system} arch:{arch}
+            kernel version:{kernel_version} imp:{py_i}
 loader   -> {loader}
 settings -> transport:{transport} results:{results}
 
@@ -338,6 +339,7 @@ def bugreport(app):
     return BUGREPORT_INFO.format(
         system=_platform.system(),
         arch=', '.join(x for x in _platform.architecture() if x),
+        kernel_version=_platform.release(),
         py_i=pyimplementation(),
         celery_v=celery.VERSION_BANNER,
         kombu_v=kombu.__version__,
