@@ -124,8 +124,8 @@ class RiakBackend(KeyValueStoreBackend):
     def _get_bucket(self):
         """Connect to our bucket."""
         if (
-            self._client is None or not self._client.is_alive() or
-            not self._bucket
+                self._client is None or not self._client.is_alive() or
+                not self._bucket
         ):
             self._bucket = self.client.bucket(self.bucket_name)
         return self._bucket
