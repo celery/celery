@@ -47,20 +47,20 @@ __all__ = (
 JSON_NEEDS_UNICODE_KEYS = PY3 and not try_import('simplejson')
 
 
-def maybe_unroll_group(g):
+def maybe_unroll_group(group):
     """Unroll group with only one member."""
     # Issue #1656
     try:
-        size = len(g.tasks)
+        size = len(group.tasks)
     except TypeError:
         try:
-            size = g.tasks.__length_hint__()
+            size = group.tasks.__length_hint__()
         except (AttributeError, TypeError):
-            return g
+            return group
         else:
-            return list(g.tasks)[0] if size == 1 else g
+            return list(group.tasks)[0] if size == 1 else group
     else:
-        return g.tasks[0] if size == 1 else g
+        return group.tasks[0] if size == 1 else group
 
 
 def task_name_from(task):
@@ -255,13 +255,16 @@ class Signature(dict):
             args, kwargs, opts = self._merge(args, kwargs, opts)
         else:
             args, kwargs, opts = self.args, self.kwargs, self.options
-        s = Signature.from_dict({'task': self.task, 'args': tuple(args),
-                                 'kwargs': kwargs, 'options': deepcopy(opts),
-                                 'subtask_type': self.subtask_type,
-                                 'chord_size': self.chord_size,
-                                 'immutable': self.immutable}, app=self._app)
-        s._type = self._type
-        return s
+        signature = Signature.from_dict({'task': self.task,
+                                         'args': tuple(args),
+                                         'kwargs': kwargs,
+                                         'options': deepcopy(opts),
+                                         'subtask_type': self.subtask_type,
+                                         'chord_size': self.chord_size,
+                                         'immutable': self.immutable},
+                                        app=self._app)
+        signature._type = self._type
+        return signature
     partial = clone
 
     def freeze(self, _id=None, group_id=None, chord=None,
@@ -303,14 +306,14 @@ class Signature(dict):
         These are only replaced if the argument for the section is
         not :const:`None`.
         """
-        s = self.clone()
+        signature = self.clone()
         if args is not None:
-            s.args = args
+            signature.args = args
         if kwargs is not None:
-            s.kwargs = kwargs
+            signature.kwargs = kwargs
         if options is not None:
-            s.options = options
-        return s
+            signature.options = options
+        return signature
 
     def set(self, immutable=None, **options):
         """Set arbitrary execution options (same as ``.options.update(…)``).
@@ -382,7 +385,7 @@ class Signature(dict):
         return list(itertools.chain.from_iterable(itertools.chain(
             [[self]],
             (link.flatten_links()
-                for link in maybe_list(self.options.get('link')) or [])
+             for link in maybe_list(self.options.get('link')) or [])
         )))
 
     def __or__(self, other):
@@ -444,10 +447,10 @@ class Signature(dict):
         app = type.app
         tid = self.options.get('task_id') or uuid()
 
-        with app.producer_or_acquire(None) as P:
-            props = type.backend.on_task_call(P, tid)
+        with app.producer_or_acquire(None) as producer:
+            props = type.backend.on_task_call(producer, tid)
             app.control.election(tid, 'task', self.clone(task_id=tid, **props),
-                                 connection=P.connection)
+                                 connection=producer.connection)
             return type.AsyncResult(tid)
 
     def reprcall(self, *args, **kwargs):
@@ -547,12 +550,12 @@ class _chain(Signature):
 
     def clone(self, *args, **kwargs):
         to_signature = maybe_signature
-        s = Signature.clone(self, *args, **kwargs)
-        s.kwargs['tasks'] = [
+        signature = Signature.clone(self, *args, **kwargs)
+        signature.kwargs['tasks'] = [
             to_signature(sig, app=self._app, clone=True)
-            for sig in s.kwargs['tasks']
+            for sig in signature.kwargs['tasks']
         ]
-        return s
+        return signature
 
     def unchain_tasks(self):
         # Clone chain's tasks assigning sugnatures from link_error
@@ -1312,7 +1315,7 @@ class chord(Signature):
         header.freeze(group_id=group_id, chord=body, root_id=root_id)
         header_result = header(*partial_args, task_id=group_id, **options)
 
-        if len(header_result) > 0:
+        if header_result:
             app.backend.apply_chord(
                 header_result,
                 body,
@@ -1330,13 +1333,14 @@ class chord(Signature):
         return bodyres
 
     def clone(self, *args, **kwargs):
-        s = Signature.clone(self, *args, **kwargs)
+        signature = Signature.clone(self, *args, **kwargs)
         # need to make copy of body
         try:
-            s.kwargs['body'] = maybe_signature(s.kwargs['body'], clone=True)
+            signature.kwargs['body'] = maybe_signature(
+                signature.kwargs['body'], clone=True)
         except (AttributeError, KeyError):
             pass
-        return s
+        return signature
 
     def link(self, callback):
         self.body.link(callback)
@@ -1376,7 +1380,7 @@ class chord(Signature):
                 tasks = self.tasks.tasks  # is a group
             except AttributeError:
                 tasks = self.tasks
-            if len(tasks):
+            if tasks:
                 app = tasks[0]._app
             if app is None and body is not None:
                 app = body._app
