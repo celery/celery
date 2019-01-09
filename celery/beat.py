@@ -336,9 +336,9 @@ class Scheduler(object):
     def should_sync(self):
         return (
             (not self._last_sync or
-               (monotonic() - self._last_sync) > self.sync_every) or
+             (monotonic() - self._last_sync) > self.sync_every) or
             (self.sync_every_tasks and
-                self._tasks_since_sync >= self.sync_every_tasks)
+             self._tasks_since_sync >= self.sync_every_tasks)
         )
 
     def reserve(self, entry):
