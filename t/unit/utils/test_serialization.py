@@ -12,7 +12,10 @@ from kombu import Queue
 
 from celery.utils.serialization import (UnpickleableExceptionWrapper,
                                         ensure_serializable,
-                                        get_pickleable_etype, jsonify, STRTOBOOL_DEFAULT_TABLE, strtobool)
+                                        get_pickleable_etype,
+                                        jsonify,
+                                        STRTOBOOL_DEFAULT_TABLE,
+                                        strtobool)
 
 
 class test_AAPickle:
@@ -32,17 +35,20 @@ class test_ensure_serializable:
 
     @skip.unless_python3()
     def test_json_py3(self):
-        assert (1, "<class 'object'>") == \
-               ensure_serializable([1, object], encoder=json.dumps)
+        expected = (1, "<class 'object'>")
+        actual = ensure_serializable([1, object], encoder=json.dumps)
+        assert expected == actual
 
     @skip.if_python3()
     def test_json_py2(self):
-        assert (1, "<type 'object'>") == \
-               ensure_serializable([1, object], encoder=json.dumps)
+        expected = (1, "<type 'object'>")
+        actual = ensure_serializable([1, object], encoder=json.dumps)
+        assert expected == actual
 
     def test_pickle(self):
-        assert (1, object) == \
-               ensure_serializable((1, object), encoder=pickle.dumps)
+        expected = (1, object)
+        actual = ensure_serializable(expected, encoder=pickle.dumps)
+        assert expected == actual
 
 
 class test_UnpickleExceptionWrapper:
@@ -102,7 +108,8 @@ class test_strtobool:
         assert strtobool(s) == b
 
     def test_unknown_value(self):
-        with pytest.raises(TypeError, match="Cannot coerce 'foo' to type bool"):
+        with pytest.raises(TypeError,
+                           match="Cannot coerce 'foo' to type bool"):
             strtobool('foo')
 
     def test_no_op(self):
