@@ -7,8 +7,12 @@ from __future__ import absolute_import, unicode_literals
 
 import re
 import string
-from collections import Mapping, OrderedDict
-
+from collections import OrderedDict
+try:
+    from collections.abc import Mapping
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Mapping
 from kombu import Queue
 
 from celery.exceptions import QueueNotFound

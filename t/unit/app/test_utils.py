@@ -1,6 +1,10 @@
 from __future__ import absolute_import, unicode_literals
 
-from collections import Mapping, MutableMapping
+try:
+    from collections.abc import Mapping, MutableMapping
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Mapping, MutableMapping
 
 from case import Mock
 
