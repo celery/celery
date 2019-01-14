@@ -18,7 +18,12 @@ from __future__ import absolute_import, unicode_literals
 import bisect
 import sys
 import threading
-from collections import Callable, defaultdict
+from collections import defaultdict
+try:
+    from collections.abc import Callable
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Callable
 from datetime import datetime
 from decimal import Decimal
 from itertools import islice

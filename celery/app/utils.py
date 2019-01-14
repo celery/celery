@@ -5,7 +5,12 @@ from __future__ import absolute_import, unicode_literals
 import os
 import platform as _platform
 import re
-from collections import Mapping, namedtuple
+from collections import namedtuple
+try:
+    from collections.abc import Mapping
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Mapping
 from copy import deepcopy
 from types import ModuleType
 
