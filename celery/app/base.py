@@ -254,6 +254,9 @@ class Celery(object):
 
         self.finalized = False
         self._finalize_mutex = threading.Lock()
+        self._pool_mutex = threading.Lock()
+        self._amqp_mutex = threading.Lock()
+        self._backend_mutex = threading.Lock()
         self._pending = deque()
         self._tasks = tasks
         if not isinstance(self._tasks, TaskRegistry):
@@ -1160,12 +1163,15 @@ class Celery(object):
         Note:
             This attribute is not related to the workers concurrency pool.
         """
-        if self._pool is None:
-            self._ensure_after_fork()
-            limit = self.conf.broker_pool_limit
-            pools.set_limit(limit)
-            self._pool = pools.connections[self.connection_for_write()]
-        return self._pool
+        if self._pool is not None:
+            return self._pool
+        with self._pool_mutex:
+            if self._pool is None:
+                self._ensure_after_fork()
+                limit = self.conf.broker_pool_limit
+                pools.set_limit(limit)
+                self._pool = pools.connections[self.connection_for_write()]
+            return self._pool
 
     @property
     def current_task(self):
@@ -1193,12 +1199,24 @@ class Celery(object):
     @cached_property
     def amqp(self):
         """AMQP related functionality: :class:`~@amqp`."""
-        return instantiate(self.amqp_cls, app=self)
+        # cached_property could cause race condition
+        if 'amqp' in self.__dict__:
+            return self.__dict__['amqp']
+        with self._amqp_mutex:
+            if 'amqp' not in self.__dict__:
+                self.__dict__['amqp'] = instantiate(
+                    self.amqp_cls, app=self)
+            return self.__dict__['amqp']
 
     @cached_property
     def backend(self):
         """Current backend instance."""
-        return self._get_backend()
+        if 'backend' in self.__dict__:
+            return self.__dict__['backend']
+        with self._backend_mutex:
+            if 'backend' not in self.__dict__:
+                self.__dict__['backend'] = self._get_backend()
+            return self.__dict__['backend']
 
     @property
     def conf(self):

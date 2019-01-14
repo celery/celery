@@ -2,6 +2,7 @@
 """Sending/Receiving Messages (Kombu integration)."""
 from __future__ import absolute_import, unicode_literals
 
+import threading
 import numbers
 from collections import Mapping, namedtuple
 from datetime import timedelta
@@ -243,6 +244,7 @@ class AMQP(object):
 
     def __init__(self, app):
         self.app = app
+        self._producer_mutex = threading.Lock()
         self.task_protocols = {
             1: self.as_task_v1,
             2: self.as_task_v2,
@@ -607,11 +609,14 @@ class AMQP(object):
 
     @property
     def producer_pool(self):
-        if self._producer_pool is None:
-            self._producer_pool = pools.producers[
-                self.app.connection_for_write()]
-            self._producer_pool.limit = self.app.pool.limit
-        return self._producer_pool
+        if self._producer_pool is not None:
+            return self._producer_pool
+        with self._producer_mutex:
+            if self._producer_pool is None:
+                self._producer_pool = pools.producers[
+                    self.app.connection_for_write()]
+                self._producer_pool.limit = self.app.pool.limit
+            return self._producer_pool
     publisher_pool = producer_pool  # compat alias
 
     @cached_property
