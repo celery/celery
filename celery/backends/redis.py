@@ -2,6 +2,7 @@
 """Redis result store backend."""
 from __future__ import absolute_import, unicode_literals
 
+from threading import local
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 
@@ -76,19 +77,17 @@ logger = get_logger(__name__)
 
 
 class ResultConsumer(BaseResultConsumer):
-    _pubsub = None
-
     def __init__(self, *args, **kwargs):
         super(ResultConsumer, self).__init__(*args, **kwargs)
         self._get_key_for_task = self.backend.get_key_for_task
         self._decode_result = self.backend.decode_result
         self.subscribed_to = set()
+        self._pubsubs = local()
 
     def on_after_fork(self):
         try:
             self.backend.client.connection_pool.reset()
-            if self._pubsub is not None:
-                self._pubsub.close()
+            self._pubsubs = local()
         except KeyError as e:
             logger.warning(text_t(e))
         super(ResultConsumer, self).on_after_fork()
@@ -101,10 +100,17 @@ class ResultConsumer(BaseResultConsumer):
         super(ResultConsumer, self).on_state_change(meta, message)
         self._maybe_cancel_ready_task(meta)
 
+    @property
+    def pubsub(self):
+        """current thread's pubsub"""
+        if (not hasattr(self._pubsubs, 'pubsub') or
+            self._pubsubs.pubsub is None):
+            self._pubsubs.pubsub = self.backend.client.pubsub(
+                ignore_subscribe_messages=True,
+            )
+        return self._pubsubs.pubsub
+
     def start(self, initial_task_id, **kwargs):
-        self._pubsub = self.backend.client.pubsub(
-            ignore_subscribe_messages=True,
-        )
         self._consume_from(initial_task_id)
 
     def on_wait_for_pending(self, result, **kwargs):
@@ -113,30 +119,28 @@ class ResultConsumer(BaseResultConsumer):
                 self.on_state_change(meta, None)
 
     def stop(self):
-        if self._pubsub is not None:
-            self._pubsub.close()
+        if self.pubsub is not None:
+            self.pubsub.close()
 
     def drain_events(self, timeout=None):
-        message = self._pubsub.get_message(timeout=timeout)
+        message = self.pubsub.get_message(timeout=timeout)
         if message and message['type'] == 'message':
             self.on_state_change(self._decode_result(message['data']), message)
 
     def consume_from(self, task_id):
-        if self._pubsub is None:
-            return self.start(task_id)
         self._consume_from(task_id)
 
     def _consume_from(self, task_id):
         key = self._get_key_for_task(task_id)
         if key not in self.subscribed_to:
             self.subscribed_to.add(key)
-            self._pubsub.subscribe(key)
+            self.pubsub.subscribe(key)
 
     def cancel_for(self, task_id):
-        if self._pubsub:
+        if self.pubsub:
             key = self._get_key_for_task(task_id)
             self.subscribed_to.discard(key)
-            self._pubsub.unsubscribe(key)
+            self.pubsub.unsubscribe(key)
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
