@@ -102,9 +102,9 @@ class ResultConsumer(BaseResultConsumer):
 
     @property
     def pubsub(self):
-        """current thread's pubsub"""
+        """Current thread's pubsub."""
         if (not hasattr(self._pubsubs, 'pubsub') or
-            self._pubsubs.pubsub is None):
+                self._pubsubs.pubsub is None):
             self._pubsubs.pubsub = self.backend.client.pubsub(
                 ignore_subscribe_messages=True,
             )
