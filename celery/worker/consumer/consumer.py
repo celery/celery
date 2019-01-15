@@ -19,6 +19,7 @@ from kombu.asynchronous.semaphore import DummyLock
 from kombu.utils.compat import _detect_environment
 from kombu.utils.encoding import bytes_t, safe_repr
 from kombu.utils.limits import TokenBucket
+import amqp.exceptions
 from vine import ppartial, promise
 
 from celery import bootsteps, signals
@@ -337,7 +338,9 @@ class Consumer(object):
               'Trying to reconnect...')
 
     def on_connection_error_after_connected(self, exc):
-        warn(CONNECTION_RETRY, exc_info=True)
+        # [FAM-254]
+        needs_exc_info = not isinstance(exc, amqp.exceptions.ConnectionForced)
+        warn(CONNECTION_RETRY, exc_info=needs_exc_info)
         try:
             self.connection.collect()
         except Exception:  # pylint: disable=broad-except
