@@ -7,8 +7,12 @@ import socket
 from celery import bootsteps
 from celery.exceptions import WorkerLostError, WorkerShutdown, WorkerTerminate
 from celery.utils.log import get_logger
+from celery.utils.timeutils import humanize_seconds
 
 from . import state
+
+import amqp.exceptions
+from kombu.utils import retry_over_time
 
 __all__ = ('asynloop', 'synloop')
 
@@ -16,6 +20,7 @@ __all__ = ('asynloop', 'synloop')
 # We cache globals and attribute lookups, so disable this warning.
 
 logger = get_logger(__name__)
+error = logger.error
 
 
 def _quick_drain(connection, timeout=0.1):
@@ -49,7 +54,18 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     consumer.on_message = on_task_received
     obj.controller.register_with_event_loop(hub)
     obj.register_with_event_loop(hub)
-    consumer.consume()
+
+    # [FAM-348]
+    def on_error(exc, intervals, _):
+        consumer.cancel()
+
+        consume_error = "Task queue is not available: %s\nTrying to consume again %s..."
+        interval = next(intervals)
+        error(consume_error, exc, humanize_seconds(interval, 'in', ' '))
+        return interval
+
+    retry_over_time(consumer.consume, amqp.exceptions.NotFound, errback=on_error)
+
     obj.on_ready()
 
     # did_start_ok will verify that pool processes were able to start,
