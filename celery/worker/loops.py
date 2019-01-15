@@ -7,7 +7,7 @@ import socket
 from celery import bootsteps
 from celery.exceptions import WorkerLostError, WorkerShutdown, WorkerTerminate
 from celery.utils.log import get_logger
-from celery.utils.timeutils import humanize_seconds
+from celery.utils.time import humanize_seconds
 
 from . import state
 
