@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 """The :program:`celery amqp` command.
 
 .. program:: celery amqp
 """
-from __future__ import absolute_import, print_function, unicode_literals
 
 import cmd as _cmd
 import pprint

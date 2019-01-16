@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 """Worker remote control command implementations."""
-from __future__ import absolute_import, unicode_literals
 
 import io
 import tempfile

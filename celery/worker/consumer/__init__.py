@@ -1,5 +1,4 @@
 """Worker consumer."""
-from __future__ import absolute_import, unicode_literals
 from .consumer import Consumer
 from .agent import Agent
 from .connection import Connection

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Start multiple worker instances from the command-line.
 
 .. program:: celery multi
@@ -93,7 +92,6 @@ Examples
     celery worker -n baz@myhost -c 10
     celery worker -n xuzzy@myhost -c 3
 """
-from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import signal

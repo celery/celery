@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 """A directed acyclic graph of reusable components."""
-from __future__ import absolute_import, unicode_literals
 
 from collections import deque
 from threading import Event

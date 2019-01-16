@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
 """Platforms.
 
 Utilities dealing with platform specifics: signals, daemonization,
 users, groups, and so on.
 """
-from __future__ import absolute_import, print_function, unicode_literals
 
 import atexit
 import errno

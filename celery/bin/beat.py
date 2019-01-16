@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The :program:`celery beat` command.
 
 .. program:: celery beat
@@ -64,7 +63,6 @@
 
     Executable to use for the detached process.
 """
-from __future__ import absolute_import, unicode_literals
 
 from functools import partial
 

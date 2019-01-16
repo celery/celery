@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
 """Worker Consumer Blueprint.
 
 This module contains the components responsible for consuming messages
 from the broker, processing the messages and keeping the broker connections
 up and running.
 """
-from __future__ import absolute_import, unicode_literals
 
 import errno
 import logging

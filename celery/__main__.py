@@ -1,5 +1,4 @@
 """Entry-point for the :program:`celery` umbrella command."""
-from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
 

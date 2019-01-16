@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#
 """Distributed Task Queue."""
 # :copyright: (c) 2015-2016 Ask Solem.  All rights reserved.
 # :copyright: (c) 2012-2014 GoPivotal, Inc., All rights reserved.
@@ -6,7 +6,6 @@
 #                 All rights reserved.
 # :license:   BSD (3 Clause), see LICENSE for more details.
 
-from __future__ import absolute_import, print_function, unicode_literals
 import os
 import re
 import sys

@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 """Prefork execution pool.
 
 Pool implementation using :mod:`multiprocessing`.
 """
-from __future__ import absolute_import, unicode_literals
 
 import os
 

@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
 """Utility to dump events to screen.
 
 This is a simple program that dumps events to the console
 as they happen.  Think of it like a `tcpdump` for Celery events.
 """
-from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
 from datetime import datetime

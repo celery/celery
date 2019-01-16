@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Proxy/PromiseProxy implementation.
 
 This module contains critical utilities that needs to be loaded as
@@ -6,8 +5,6 @@ soon as possible, and that shall not load any third party modules.
 
 Parts of this module is Copyright by Werkzeug Team.
 """
-from __future__ import absolute_import, unicode_literals
-
 import operator
 import sys
 from functools import reduce

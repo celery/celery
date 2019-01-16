@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Version of multiprocessing.Pool using Async I/O.
 
 .. note::
@@ -13,7 +12,6 @@ This code deals with three major challenges:
 #. Sending jobs to the processes and receiving results back.
 #. Safely shutting down this system.
 """
-from __future__ import absolute_import, unicode_literals
 
 import errno
 import gc

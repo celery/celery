@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
 """Scheduler for Python functions.
 
 .. note::
     This is used for the thread-based worker only,
     not for amqp/redis/sqs/qpid where :mod:`kombu.asynchronous.timer` is used.
 """
-from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import sys

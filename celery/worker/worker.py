@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """WorkController can be used to instantiate in-process workers.
 
 The command-line interface for the worker is in :mod:`celery.bin.worker`,
@@ -12,7 +11,6 @@ global side-effects (i.e., except for the global state stored in
 The worker consists of several components, all managed by bootsteps
 (mod:`celery.bootsteps`).
 """
-from __future__ import absolute_import, unicode_literals
 
 import os
 import sys

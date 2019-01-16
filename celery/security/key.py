@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 """Private keys for the security serializer."""
-from __future__ import absolute_import, unicode_literals
 
 from kombu.utils.encoding import ensure_bytes
 from cryptography.hazmat.primitives import serialization

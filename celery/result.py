@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Task results/state and results for groups of tasks."""
-from __future__ import absolute_import, unicode_literals
-
 import time
 from collections import OrderedDict, deque
 from contextlib import contextmanager

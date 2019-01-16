@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Pool Autoscaling.
 
 This module implements the internal thread responsible
@@ -8,7 +7,6 @@ current autoscale settings.
 The autoscale thread is only enabled if
 the :option:`celery worker --autoscale` option is used.
 """
-from __future__ import absolute_import, unicode_literals
 
 import os
 import threading

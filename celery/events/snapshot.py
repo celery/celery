@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Periodically store events in a database.
 
 Consuming the events as a stream isn't always suitable
@@ -7,7 +6,6 @@ state of a cluster at regular intervals.  There's a full
 implementation of this writing the snapshots to a database
 in :mod:`djcelery.snapshots` in the `django-celery` distribution.
 """
-from __future__ import absolute_import, print_function, unicode_literals
 
 from kombu.utils.limits import TokenBucket
 

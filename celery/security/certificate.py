@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 """X.509 certificates."""
-from __future__ import absolute_import, unicode_literals
 
 import glob
 import os

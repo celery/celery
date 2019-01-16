@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Remote Debugger.
 
 Introduction
@@ -41,7 +40,6 @@ Environment Variables
     The debugger will try to find an available port starting from the
     base port.  The selected port will be logged by the worker.
 """
-from __future__ import absolute_import, print_function, unicode_literals
 
 import errno
 import os

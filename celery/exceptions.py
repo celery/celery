@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Celery error types.
 
 Error Hierarchy
@@ -47,8 +46,6 @@ Error Hierarchy
         - :exc:`~celery.exceptions.WorkerTerminate`
         - :exc:`~celery.exceptions.WorkerShutdown`
 """
-from __future__ import absolute_import, unicode_literals
-
 import numbers
 
 from billiard.exceptions import (SoftTimeLimitExceeded, Terminated,
