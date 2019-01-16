@@ -3,8 +3,6 @@ sudo: required
 dist: xenial
 cache: pip
 python:
-  - '2.7'
-  - '3.4'
   - '3.5'
   - '3.6'
   - '3.7'
@@ -25,11 +23,11 @@ env:
 matrix:
   include:
   - python: '3.6'
-    env: TOXENV=pypy-unit PYPY_VERSION="pypy2.7-6.0.0"
+    env: TOXENV=pypy-unit PYPY_VERSION="pypy3.5-6.0.0"
   - python: '3.6'
-    env: TOXENV=pypy-integration-rabbitmq PYPY_VERSION="pypy2.7-6.0.0"
+    env: TOXENV=pypy-integration-rabbitmq PYPY_VERSION="pypy3.5-6.0.0"
   - python: '3.6'
-    env: TOXENV=pypy-integration-redis PYPY_VERSION="pypy2.7-6.0.0"
+    env: TOXENV=pypy-integration-redis PYPY_VERSION="pypy3.5-6.0.0"
   - python: '3.6'
     env: TOXENV=pypy-integration-dynamodb PYPY_VERSION="pypy2.7-6.0.0"
   - python: '3.6'
