@@ -1312,7 +1312,7 @@ class chord(Signature):
         header.freeze(group_id=group_id, chord=body, root_id=root_id)
         header_result = header(*partial_args, task_id=group_id, **options)
 
-        if header_result:
+        if len(header_result) > 0:
             app.backend.apply_chord(
                 header_result,
                 body,
@@ -1376,7 +1376,7 @@ class chord(Signature):
                 tasks = self.tasks.tasks  # is a group
             except AttributeError:
                 tasks = self.tasks
-            if len(tasks):
+            if tasks:
                 app = tasks[0]._app
             if app is None and body is not None:
                 app = body._app
