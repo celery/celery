@@ -1312,7 +1312,7 @@ class chord(Signature):
         header.freeze(group_id=group_id, chord=body, root_id=root_id)
         header_result = header(*partial_args, task_id=group_id, **options)
 
-        if len(header_result) > 0:
+        if header_result:
             app.backend.apply_chord(
                 header_result,
                 body,
