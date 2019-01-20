@@ -281,11 +281,11 @@ class StepType(type):
         )
         return super(StepType, cls).__new__(cls, name, bases, attrs)
 
-    def __str__(cls):
-        return bytes_if_py2(cls.name)
+    def __str__(self):
+        return bytes_if_py2(self.name)
 
-    def __repr__(cls):
-        return bytes_if_py2('step:{0.name}{{{0.requires!r}}}'.format(cls))
+    def __repr__(self):
+        return bytes_if_py2('step:{0.name}{{{0.requires!r}}}'.format(self))
 
 
 @with_metaclass(StepType)
