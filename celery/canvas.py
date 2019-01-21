@@ -1045,7 +1045,11 @@ class group(Signature):
         return self.tasks[0].link(sig)
 
     def link_error(self, sig):
-        sig = sig.clone().set(immutable=True)
+        if not isinstance(sig, Signature):
+            sig['immutable'] = True
+            sig = Signature.from_dict(sig)
+        else:
+            sig = sig.clone().set(immutable=True)
         return self.tasks[0].link_error(sig)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
