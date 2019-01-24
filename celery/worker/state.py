@@ -36,7 +36,7 @@ SOFTWARE_INFO = {'sw_ident': 'py-celery',
                  'sw_sys': platform.system()}
 
 #: maximum number of revokes to keep in memory.
-REVOKES_MAX = 5000
+REVOKES_MAX = 25000
 
 #: how many seconds a revoke will be active before
 #: being expired when the max limit has been exceeded.
