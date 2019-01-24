@@ -17,6 +17,7 @@ from functools import partial
 from itertools import chain
 
 from billiard.einfo import ExceptionInfo  # noqa
+from celery import signals
 from kombu.utils.encoding import safe_str
 from kombu.utils.limits import TokenBucket  # noqa
 
@@ -695,6 +696,9 @@ class LimitedSet(object):
             now = now()  # if we got this now as function, evaluate it
         if self.maxlen:
             while len(self._data) > self.maxlen:
+                inserted_time, _ = self._heap[0]
+                if inserted_time + self.expires > now:
+                    signals.limited_set_purging_unexpired_members.send(sender=None)
                 self.pop()
         # time based expiring:
         if self.expires:
