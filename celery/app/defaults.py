@@ -254,6 +254,7 @@ NAMESPACES = Namespace(
         default_exchange_type=Option('direct'),
         default_routing_key=Option(None, type='string'),  # taken from queue
         default_rate_limit=Option(type='string'),
+        default_priority=Option(None, type='string'),
         eager_propagates=Option(
             False, type='bool', old={'celery_eager_propagates_exceptions'},
         ),
