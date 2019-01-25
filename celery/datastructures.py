@@ -695,10 +695,11 @@ class LimitedSet(object):
         if hasattr(now, '__call__'):
             now = now()  # if we got this now as function, evaluate it
         if self.maxlen:
-            while len(self._data) > self.maxlen:
+            if len(self._data) > self.maxlen:
                 inserted_time, _ = self._heap[0]
                 if inserted_time + self.expires > now:
-                    signals.limited_set_purging_unexpired_members.send(sender=None)
+                    signals.limited_set_purging_unexpired_members.send(sender=self)
+            while len(self._data) > self.maxlen:
                 self.pop()
         # time based expiring:
         if self.expires:
