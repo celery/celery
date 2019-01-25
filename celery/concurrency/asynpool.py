@@ -44,6 +44,7 @@ from celery.platforms import pack, unpack, unpack_from
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.worker import state as worker_state
+from celery.platforms import EX_OK
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.
@@ -1085,6 +1086,11 @@ class AsynPool(_pool.Pool):
         was assigned to exited by mysterious means (error exitcodes and
         signals).
         """
+        # if exit with EX_OK, won't mark it as worker lost,
+        # it's just normal (warm) shutdown
+        if exitcode == EX_OK:
+            return
+
         self.mark_as_worker_lost(job, exitcode)
 
     def human_write_stats(self):
