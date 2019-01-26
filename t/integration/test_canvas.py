@@ -612,3 +612,34 @@ class test_chord:
         r = g.delay()
 
         assert r.get(timeout=TIMEOUT) == [10, 10]
+
+    @flaky
+    def test_chord_in_chords_with_chains(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chord(
+            group([
+                chain(
+                    add.si(1, 2),
+                    chord(
+                        group([add.si(1, 2), add.si(1, 2)]),
+                        add.si(1, 2),
+                    ),
+                ),
+                chain(
+                    add.si(1, 2),
+                    chord(
+                        group([add.si(1, 2), add.si(1, 2)]),
+                        add.si(1, 2),
+                    ),
+                ),
+            ]),
+            add.si(2, 2)
+        )
+
+        r = c.delay()
+
+        assert r.get(timeout=TIMEOUT) == 4

@@ -1230,11 +1230,14 @@ class chord(Signature):
             self.tasks = group(self.tasks, app=self.app)
         header_result = self.tasks.freeze(
             parent_id=parent_id, root_id=root_id, chord=self.body)
-        bodyres = self.body.freeze(_id, root_id=root_id)
+
+        body_result = self.body.freeze(
+            _id, root_id=root_id, chord=chord, group_id=group_id)
+
         # we need to link the body result back to the group result,
         # but the body may actually be a chain,
         # so find the first result without a parent
-        node = bodyres
+        node = body_result
         seen = set()
         while node:
             if node.id in seen:
@@ -1245,7 +1248,7 @@ class chord(Signature):
                 break
             node = node.parent
         self.id = self.tasks.id
-        return bodyres
+        return body_result
 
     def apply_async(self, args=None, kwargs=None, task_id=None,
                     producer=None, publisher=None, connection=None,
