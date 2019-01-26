@@ -1088,7 +1088,7 @@ class AsynPool(_pool.Pool):
         """
         # if exit with EX_OK, won't mark it as worker lost,
         # it's just normal (warm) shutdown
-        if exitcode == EX_OK:
+        if exitcode == EX_OK and job.ready():
             return
 
         self.mark_as_worker_lost(job, exitcode)
