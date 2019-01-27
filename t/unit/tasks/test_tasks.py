@@ -837,6 +837,7 @@ class test_tasks(TasksCase):
 
         self.app.send_task = old_send_task
 
+
 class test_apply_task(TasksCase):
 
     def test_apply_throw(self):
