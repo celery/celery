@@ -109,7 +109,9 @@ class test_strtobool:
 
     def test_unknown_value(self):
         with pytest.raises(TypeError,
-                           match="Cannot coerce 'foo' to type bool"):
+                           # todo replace below when dropping python 2.7
+                           # match="Cannot coerce 'foo' to type bool"):
+                           match=r"Cannot coerce u?'foo' to type bool"):
             strtobool('foo')
 
     def test_no_op(self):

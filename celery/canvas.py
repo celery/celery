@@ -1045,7 +1045,13 @@ class group(Signature):
         return self.tasks[0].link(sig)
 
     def link_error(self, sig):
-        sig = sig.clone().set(immutable=True)
+        try:
+            sig = sig.clone().set(immutable=True)
+        except AttributeError:
+            # See issue #5265.  I don't use isinstance because current tests
+            # pass a Mock object as argument.
+            sig['immutable'] = True
+            sig = Signature.from_dict(sig)
         return self.tasks[0].link_error(sig)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
@@ -1230,11 +1236,14 @@ class chord(Signature):
             self.tasks = group(self.tasks, app=self.app)
         header_result = self.tasks.freeze(
             parent_id=parent_id, root_id=root_id, chord=self.body)
-        bodyres = self.body.freeze(_id, root_id=root_id)
+
+        body_result = self.body.freeze(
+            _id, root_id=root_id, chord=chord, group_id=group_id)
+
         # we need to link the body result back to the group result,
         # but the body may actually be a chain,
         # so find the first result without a parent
-        node = bodyres
+        node = body_result
         seen = set()
         while node:
             if node.id in seen:
@@ -1245,7 +1254,7 @@ class chord(Signature):
                 break
             node = node.parent
         self.id = self.tasks.id
-        return bodyres
+        return body_result
 
     def apply_async(self, args=None, kwargs=None, task_id=None,
                     producer=None, publisher=None, connection=None,
@@ -1315,7 +1324,7 @@ class chord(Signature):
         header.freeze(group_id=group_id, chord=body, root_id=root_id)
         header_result = header(*partial_args, task_id=group_id, **options)
 
-        if header_result:
+        if len(header_result) > 0:
             app.backend.apply_chord(
                 header_result,
                 body,
