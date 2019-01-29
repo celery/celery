@@ -19,6 +19,7 @@ from kombu.asynchronous.semaphore import DummyLock
 from kombu.utils.compat import _detect_environment
 from kombu.utils.encoding import bytes_t, safe_repr
 from kombu.utils.limits import TokenBucket
+import amqp.exceptions
 from vine import ppartial, promise
 
 from celery import bootsteps, signals
@@ -143,6 +144,9 @@ class Consumer(object):
         """Consumer blueprint."""
 
         name = 'Consumer'
+        # [FAM-328] We remove Events, Gossip, Heartbeat and Mingle from default
+        # steps because they are not used by us but interfere with amqp
+        # heartbeats we need.
         default_steps = [
             'celery.worker.consumer.connection:Connection',
             'celery.worker.consumer.mingle:Mingle',
@@ -191,8 +195,10 @@ class Consumer(object):
         self.task_buckets = defaultdict(lambda: None)
         self.reset_rate_limits()
 
+        self.gevent_env = _detect_environment() == 'gevent'
+
         self.hub = hub
-        if self.hub or getattr(self.pool, 'is_green', False):
+        if self.hub or getattr(self.pool, 'is_green', False) or self.gevent_env:
             self.amqheartbeat = amqheartbeat
             if self.amqheartbeat is None:
                 self.amqheartbeat = self.app.conf.broker_heartbeat
@@ -202,7 +208,7 @@ class Consumer(object):
         if not hasattr(self, 'loop'):
             self.loop = loops.asynloop if hub else loops.synloop
 
-        if _detect_environment() == 'gevent':
+        if self.gevent_env:
             # there's a gevent bug that causes timeouts to not be reset,
             # so if the connection timeout is exceeded once, it can NEVER
             # connect again.
@@ -336,7 +342,9 @@ class Consumer(object):
               'Trying to reconnect...')
 
     def on_connection_error_after_connected(self, exc):
-        warn(CONNECTION_RETRY, exc_info=True)
+        # [FAM-254]
+        needs_exc_info = not isinstance(exc, amqp.exceptions.ConnectionForced)
+        warn(CONNECTION_RETRY, exc_info=needs_exc_info)
         try:
             self.connection.collect()
         except Exception:  # pylint: disable=broad-except
@@ -404,6 +412,13 @@ class Consumer(object):
         conn = self.connection_for_read(heartbeat=self.amqheartbeat)
         if self.hub:
             conn.transport.register_with_event_loop(conn.connection, self.hub)
+
+        # Install timer to send heartbeats on gevent
+        if self.gevent_env and self.amqheartbeat:
+            hbtick = conn.heartbeat_check
+            logger.debug('Registring heartbeat timer for connection: {}'.format(id(conn)))
+            self.timer.call_repeatedly(int(self.amqheartbeat / self.amqheartbeat_rate), hbtick, (self.amqheartbeat_rate,))
+
         return conn
 
     def connection_for_read(self, heartbeat=None):
