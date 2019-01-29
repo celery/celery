@@ -9,15 +9,16 @@ from __future__ import absolute_import, unicode_literals
 import warnings
 
 from billiard.common import TERM_SIGNAME
+from kombu.matcher import match
 from kombu.pidbox import Mailbox
 from kombu.utils.compat import register_after_fork
 from kombu.utils.functional import lazy
 from kombu.utils.objects import cached_property
 
+
 from celery.exceptions import DuplicateNodenameWarning
 from celery.utils.log import get_logger
 from celery.utils.text import pluralize
-from celery.matcher import match
 from celery.five import items
 
 __all__ = ('Inspect', 'Control', 'flatten_reply')
@@ -84,8 +85,8 @@ class Inspect(object):
     def _prepare(self, reply):
         if reply:
             by_node = flatten_reply(reply)
-            if self.destination and \
-                    not isinstance(self.destination, (list, tuple)):
+            if (self.destination and
+                    not isinstance(self.destination, (list, tuple))):
                 return by_node.get(self.destination)
             if self.pattern:
                 pattern = self.pattern
@@ -463,8 +464,16 @@ class Control(object):
         """
         with self.app.connection_or_acquire(connection) as conn:
             arguments = dict(arguments or {}, **extra_kwargs)
-            return self.mailbox(conn)._broadcast(
-                command, arguments, destination, reply, timeout,
-                limit, callback, channel=channel,
-                pattern=pattern, matcher=matcher,
-            )
+            if pattern and matcher:
+                # tests pass easier without requiring pattern/matcher to
+                # always be sent in
+                return self.mailbox(conn)._broadcast(
+                    command, arguments, destination, reply, timeout,
+                    limit, callback, channel=channel,
+                    pattern=pattern, matcher=matcher,
+                )
+            else:
+                return self.mailbox(conn)._broadcast(
+                    command, arguments, destination, reply, timeout,
+                    limit, callback, channel=channel,
+                )
