@@ -1927,7 +1927,7 @@ See :ref:`routing-options-rabbitmq-priorities`.
 
 ``task_default_priority``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-:brokers: RabbitMQ
+:brokers: RabbitMQ, Redis
 
 Default: :const:`None`.
 
