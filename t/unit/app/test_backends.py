@@ -15,7 +15,7 @@ class test_backends:
         ('amqp://', AMQPBackend),
         ('cache+memory://', CacheBackend),
     ])
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_get_backend_aliases(self, url, expect_cls, app):
         backend, url = backends.by_url(url, app.loader)
         assert isinstance(backend(app=app, url=url), expect_cls)

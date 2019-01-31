@@ -601,7 +601,7 @@ class test_Request(RequestCase):
             assert job.acknowledged
 
     def test_from_message_invalid_kwargs(self):
-        m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')
+        m = self.TaskMessage(self.mytask.name, args=(), kwargs={'foo': 'foo'})
         req = Request(m, app=self.app)
         with pytest.raises(InvalidTaskError):
             raise req.execute().exception

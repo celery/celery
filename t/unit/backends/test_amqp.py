@@ -30,7 +30,7 @@ class test_AMQPBackend:
         opts = dict({'serializer': 'pickle', 'persistent': True}, **opts)
         return AMQPBackend(self.app, **opts)
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_destination_for(self):
         b = self.create_backend()
         request = Mock()
@@ -38,14 +38,14 @@ class test_AMQPBackend:
             b.rkey('id'), request.correlation_id,
         )
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_store_result__no_routing_key(self):
         b = self.create_backend()
         b.destination_for = Mock()
         b.destination_for.return_value = None, None
         b.store_result('id', None, states.SUCCESS)
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_mark_as_done(self):
         tb1 = self.create_backend(max_cached_results=1)
         tb2 = self.create_backend(max_cached_results=1)
@@ -59,16 +59,16 @@ class test_AMQPBackend:
         assert tb2.get_result(tid), 42
 
     @pytest.mark.usefixtures('depends_on_current_app')
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_pickleable(self):
         assert loads(dumps(self.create_backend()))
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_revive(self):
         tb = self.create_backend()
         tb.revive(None)
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_is_pickled(self):
         tb1 = self.create_backend()
         tb2 = self.create_backend()
@@ -81,7 +81,7 @@ class test_AMQPBackend:
         assert rindb.get('foo') == 'baz'
         assert rindb.get('bar').data == 12345
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_mark_as_failure(self):
         tb1 = self.create_backend()
         tb2 = self.create_backend()
@@ -102,26 +102,26 @@ class test_AMQPBackend:
             tid = uuid()
             assert repair_uuid(tid.replace('-', '')) == tid
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_expires_is_int(self):
         b = self.create_backend(expires=48)
         q = b._create_binding('x1y2z3')
         assert q.expires == 48
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_expires_is_float(self):
         b = self.create_backend(expires=48.3)
         q = b._create_binding('x1y2z3')
         assert q.expires == 48.3
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_expires_is_timedelta(self):
         b = self.create_backend(expires=timedelta(minutes=1))
         q = b._create_binding('x1y2z3')
         assert q.expires == 60
 
     @mock.sleepdeprived()
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_store_result_retries(self):
         iterations = [0]
         stop_raising_at = [5]
@@ -146,7 +146,7 @@ class test_AMQPBackend:
         finally:
             Producer.publish = prod
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_poll_no_messages(self):
         b = self.create_backend()
         assert b.get_task_meta(uuid())['status'] == states.PENDING
@@ -204,7 +204,7 @@ class test_AMQPBackend:
 
         yield results, backend, Message
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_backlog_limit_exceeded(self):
         with self._result_context() as (results, backend, Message):
             for i in range(1001):
@@ -212,7 +212,7 @@ class test_AMQPBackend:
             with pytest.raises(backend.BacklogLimitExceeded):
                 backend.get_task_meta('id')
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_poll_result(self):
         with self._result_context() as (results, backend, Message):
             tid = uuid()
@@ -244,7 +244,7 @@ class test_AMQPBackend:
             # returns cache if no new states.
             assert backend.get_task_meta(tid) == 'hello'
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_drain_events_decodes_exceptions_in_meta(self):
         tid = uuid()
         b = self.create_backend(serializer='json')
@@ -257,7 +257,7 @@ class test_AMQPBackend:
         assert excinfo.value.__class__.__name__ == 'RuntimeError'
         assert str(excinfo.value) == 'aap'
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_no_expires(self):
         b = self.create_backend(expires=None)
         app = self.app
@@ -266,31 +266,31 @@ class test_AMQPBackend:
         q = b._create_binding('foo')
         assert q.expires is None
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_process_cleanup(self):
         self.create_backend().process_cleanup()
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_reload_task_result(self):
         with pytest.raises(NotImplementedError):
             self.create_backend().reload_task_result('x')
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_reload_group_result(self):
         with pytest.raises(NotImplementedError):
             self.create_backend().reload_group_result('x')
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_save_group(self):
         with pytest.raises(NotImplementedError):
             self.create_backend().save_group('x', 'x')
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_restore_group(self):
         with pytest.raises(NotImplementedError):
             self.create_backend().restore_group('x')
 
-    @skip("We use RPC")
+    @skip.skip("We use RPC")
     def test_delete_group(self):
         with pytest.raises(NotImplementedError):
             self.create_backend().delete_group('x')
