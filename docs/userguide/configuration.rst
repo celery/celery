@@ -1923,6 +1923,16 @@ Default: :const:`None`.
 
 See :ref:`routing-options-rabbitmq-priorities`.
 
+.. setting:: task_default_priority
+
+``task_default_priority``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:brokers: RabbitMQ, Redis
+
+Default: :const:`None`.
+
+See :ref:`routing-options-rabbitmq-priorities`.
+
 .. setting:: worker_direct
 
 ``worker_direct``

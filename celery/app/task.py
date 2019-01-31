@@ -282,6 +282,9 @@ class Task(object):
     #: Default task expiry time.
     expires = None
 
+    #: Default task priority.
+    priority = None
+
     #: Max length of result representation used in logs and events.
     resultrepr_maxsize = 1024
 
@@ -302,6 +305,7 @@ class Task(object):
     from_config = (
         ('serializer', 'task_serializer'),
         ('rate_limit', 'task_default_rate_limit'),
+        ('priority', 'task_default_priority'),
         ('track_started', 'task_track_started'),
         ('acks_late', 'task_acks_late'),
         ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
@@ -549,6 +553,8 @@ class Task(object):
         options = dict(preopts, **options) if options else preopts
 
         options.setdefault('ignore_result', self.ignore_result)
+        if self.priority:
+            options.setdefault('priority', self.priority)
 
         return app.send_task(
             self.name, args, kwargs, task_id=task_id, producer=producer,

@@ -39,6 +39,10 @@ class MockApplyTask(Task):
         self.applied += 1
 
 
+class TaskWithPriority(Task):
+    priority = 10
+
+
 class TasksCase:
 
     def setup(self):
@@ -773,6 +777,97 @@ class test_tasks(TasksCase):
             pass
 
         assert yyy2.__name__
+
+    def test_default_priority(self):
+
+        @self.app.task(shared=False)
+        def yyy3():
+            pass
+
+        @self.app.task(shared=False, priority=66)
+        def yyy4():
+            pass
+
+        @self.app.task(shared=False, bind=True, base=TaskWithPriority)
+        def yyy5(self):
+            pass
+
+        self.app.conf.task_default_priority = 42
+        old_send_task = self.app.send_task
+
+        self.app.send_task = Mock()
+        yyy3.delay()
+        self.app.send_task.assert_called_once_with(ANY, ANY, ANY,
+                                                   compression=ANY,
+                                                   delivery_mode=ANY,
+                                                   exchange=ANY,
+                                                   expires=ANY,
+                                                   immediate=ANY,
+                                                   link=ANY,
+                                                   link_error=ANY,
+                                                   mandatory=ANY,
+                                                   priority=42,
+                                                   producer=ANY,
+                                                   queue=ANY,
+                                                   result_cls=ANY,
+                                                   routing_key=ANY,
+                                                   serializer=ANY,
+                                                   soft_time_limit=ANY,
+                                                   task_id=ANY,
+                                                   task_type=ANY,
+                                                   time_limit=ANY,
+                                                   shadow=None,
+                                                   ignore_result=False)
+
+        self.app.send_task = Mock()
+        yyy4.delay()
+        self.app.send_task.assert_called_once_with(ANY, ANY, ANY,
+                                                   compression=ANY,
+                                                   delivery_mode=ANY,
+                                                   exchange=ANY,
+                                                   expires=ANY,
+                                                   immediate=ANY,
+                                                   link=ANY,
+                                                   link_error=ANY,
+                                                   mandatory=ANY,
+                                                   priority=66,
+                                                   producer=ANY,
+                                                   queue=ANY,
+                                                   result_cls=ANY,
+                                                   routing_key=ANY,
+                                                   serializer=ANY,
+                                                   soft_time_limit=ANY,
+                                                   task_id=ANY,
+                                                   task_type=ANY,
+                                                   time_limit=ANY,
+                                                   shadow=None,
+                                                   ignore_result=False)
+
+        self.app.send_task = Mock()
+        yyy5.delay()
+        self.app.send_task.assert_called_once_with(ANY, ANY, ANY,
+                                                   compression=ANY,
+                                                   delivery_mode=ANY,
+                                                   exchange=ANY,
+                                                   expires=ANY,
+                                                   immediate=ANY,
+                                                   link=ANY,
+                                                   link_error=ANY,
+                                                   mandatory=ANY,
+                                                   priority=10,
+                                                   producer=ANY,
+                                                   queue=ANY,
+                                                   result_cls=ANY,
+                                                   routing_key=ANY,
+                                                   serializer=ANY,
+                                                   soft_time_limit=ANY,
+                                                   task_id=ANY,
+                                                   task_type=ANY,
+                                                   time_limit=ANY,
+                                                   shadow=None,
+                                                   ignore_result=False)
+
+        self.app.send_task = old_send_task
 
 
 class test_apply_task(TasksCase):
