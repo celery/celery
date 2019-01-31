@@ -157,8 +157,7 @@ class test_default_strategy_proto2:
             assert C.was_reserved()
             req = C.get_request()
             C.consumer.on_task_request.assert_called_with(req)
-            # skip this as no needed (see SCALRCORE-8536 (FAM-328))
-            # assert C.event_sent()
+            assert C.event_sent()
 
     def test_callbacks(self):
         with self._context(self.add.s(2, 2)) as C:
@@ -172,8 +171,7 @@ class test_default_strategy_proto2:
         with self._context(self.add.s(2, 2), events=False) as C:
             C()
             assert C.was_reserved()
-            # skip this as no needed (see SCALRCORE-8536 (FAM-328))
-            # assert not C.event_sent()
+            assert not C.event_sent()
 
     def test_eta_task(self):
         with self._context(self.add.s(2, 2).set(countdown=10)) as C:
