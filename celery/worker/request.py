@@ -629,7 +629,7 @@ class Request(object):
     @cached_property
     def group_index(self):
         # used by backend.on_chord_part_return to order return values in group
-        return self.request_dict['group_index']
+        return self.request_dict.get('group_index')
 
 
 def create_request_cls(base, task, pool, hostname, eventer,
