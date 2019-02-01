@@ -121,10 +121,7 @@ class Redis(mock.MockCallbacks):
         self._get_sorted_set(key).append((float(score), value))
 
     def zrangebyscore(self, key, start, stop):
-        start = float(start)
-        stop = float(stop)
-        return [value for score, value in sorted(self.keyspace.get(key, []))
-                if start <= score <= stop]
+        return list(sorted(self.keyspace.get(key, [])))[start:stop]
 
     def zcount(self, key, start, stop):
         return len(self.zrangebyscore(key, start, stop))

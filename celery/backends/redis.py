@@ -446,7 +446,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                 decode, unpack = self.decode, self._unpack_chord_result
                 with client.pipeline() as pipe:
                     resl, = pipe \
-                        .zrangebyscore(jkey, '-inf', '+inf') \
+                        .zrange(jkey, 0, -1) \
                         .execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])
