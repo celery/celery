@@ -1228,7 +1228,7 @@ class group(Signature):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         stack = deque(self.tasks)
-        i = 0
+        group_index = 0
         while stack:
             task = maybe_signature(stack.popleft(), app=self._app).clone()
             if isinstance(task, group):
@@ -1238,8 +1238,8 @@ class group(Signature):
                 yield task.freeze(group_id=group_id,
                                   chord=chord, root_id=root_id,
                                   parent_id=parent_id,
-                                  group_index=i)
-                i += 1
+                                  group_index=group_index)
+                group_index += 1
 
     def __repr__(self):
         if self.tasks:
