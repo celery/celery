@@ -1,16 +1,28 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import, unicode_literals, print_function
+
+import sys
 
 import pytest
 from case import MagicMock, Mock, patch, sentinel, skip
 
-from celery.backends import riak as module
-from celery.backends.riak import RiakBackend
+try:
+    from celery.backends import riak as module
+    from celery.backends.riak import RiakBackend
+except ImportError:
+    pass
+except TypeError as e:
+    if sys.version_info[0:2] >= (3, 7):
+        print(e)
+    else:
+        raise e
+
 from celery.exceptions import ImproperlyConfigured
 
 RIAK_BUCKET = 'riak_bucket'
 
 
+@skip.if_python_version_after(3, 7)
 @skip.unless_module('riak')
 class test_RiakBackend:
 

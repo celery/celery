@@ -3,22 +3,29 @@ FROM debian:jessie
 ENV PYTHONIOENCODING UTF-8
 
 # Pypy is installed from a package manager because it takes so long to build.
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    git \
-    libbz2-dev \
+RUN apt-get update && apt-get install -y build-essential \
     libcurl4-openssl-dev \
+    libffi-dev \
+    tk-dev \
+    xz-utils \
+    curl \
+    lsb-release \
+    git \
     libmemcached-dev \
-    libncurses5-dev \
+    make \
+    liblzma-dev \
     libreadline-dev \
-    libsqlite3-dev \
+    libbz2-dev \
+    llvm \
+    libncurses5-dev \
     libssl-dev \
-    pkg-config \
-    pypy \
+    libsqlite3-dev \
     wget \
+    pypy \
+    python-openssl \
+    libncursesw5-dev \
     zlib1g-dev \
-    lsb-release
+    pkg-config
 
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.
@@ -54,15 +61,23 @@ COPY --chown=1000:1000 docker/entrypoint /entrypoint
 RUN chmod gu+x /entrypoint
 
 # Define the local pyenvs
-RUN pyenv local python3.6 python3.5 python3.4 python2.7
+RUN pyenv local python3.6 python3.5 python3.4 python2.7 python3.7
 
-RUN pyenv exec python2.7 -m pip install --upgrade pip && \
-    pyenv exec python3.4 -m pip install --upgrade pip && \
-    pyenv exec python3.5 -m pip install --upgrade pip && \
-    pyenv exec python3.6 -m pip install --upgrade pip
+RUN pyenv exec python2.7 -m pip install --upgrade pip setuptools && \
+    pyenv exec python3.4 -m pip install --upgrade pip setuptools && \
+    pyenv exec python3.5 -m pip install --upgrade pip setuptools && \
+    pyenv exec python3.6 -m pip install --upgrade pip setuptools && \
+    pyenv exec python3.7 -m pip install --upgrade pip setuptools
 
 # Setup one celery environment for basic development use
-RUN pyenv exec python3.6 -m pip install \
+RUN pyenv exec python3.7 -m pip install \
+  -r requirements/default.txt \
+  -r requirements/test.txt \
+  -r requirements/test-ci-default.txt \
+  -r requirements/docs.txt \
+  -r requirements/test-integration.txt \
+  -r requirements/pkgutils.txt && \
+  pyenv exec python3.6 -m pip install \
   -r requirements/default.txt \
   -r requirements/test.txt \
   -r requirements/test-ci-default.txt \
@@ -99,4 +114,3 @@ WORKDIR $HOME/celery
 # and that any compiled files from earlier steps or from moutns are removed to avoid
 # py.test failing with an ImportMismatchError
 ENTRYPOINT ["/entrypoint"]
-

@@ -306,6 +306,9 @@ Transports and Backends
 :``celery[azureblockblob]``:
     for using Azure Storage as a result backend (using ``azure-storage``)
 
+:``celery[s3]``:
+    for using S3 Storage as a result backend.
+
 :``celery[couchbase]``:
     for using Couchbase as a result backend.
 

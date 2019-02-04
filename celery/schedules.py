@@ -5,7 +5,12 @@ from __future__ import absolute_import, unicode_literals
 import numbers
 import re
 from bisect import bisect, bisect_left
-from collections import Iterable, namedtuple
+from collections import namedtuple
+try:
+    from collections.abc import Iterable
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Iterable
 from datetime import datetime, timedelta
 
 from kombu.utils.objects import cached_property

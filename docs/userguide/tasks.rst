@@ -51,7 +51,7 @@ consider enabling the :setting:`task_reject_on_worker_lost` setting.
     A task that blocks indefinitely may eventually stop the worker instance
     from doing any other work.
 
-    If you task does I/O then make sure you add timeouts to these operations,
+    If your task does I/O then make sure you add timeouts to these operations,
     like adding a timeout to a web request using the :pypi:`requests` library:
 
     .. code-block:: python
@@ -570,7 +570,7 @@ You can disable the argument checking for any task by setting its
     ... def add(x, y):
     ...     return x + y
 
-    # Works locally, but the worker reciving the task will raise an error.
+    # Works locally, but the worker receiving the task will raise an error.
     >>> add.delay(8)
     <AsyncResult: f59d71ca-1549-43e0-be41-4e8821a83c0c>
 

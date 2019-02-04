@@ -5,3 +5,4 @@ typing
 -r extras/sqlalchemy.txt
 -r test.txt
 -r deps/mock.txt
+-r extras/auth.txt
