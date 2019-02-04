@@ -4,6 +4,8 @@ from __future__ import absolute_import, unicode_literals
 
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
+import time
+import threading
 
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
@@ -78,6 +80,23 @@ logger = get_logger(__name__)
 class ResultConsumer(BaseResultConsumer):
     _pubsub = None
 
+    def ___drain(self):
+
+        while True:
+            while self.__drain_events(1):
+                pass
+
+            for t in list(self.subscribed_to)[::]:
+
+                m = self.backend.get(t)
+
+                if m:
+                    m = self._decode_result(m)
+                    if m['status'] in states.READY_STATES:
+                        self.on_state_change(m, m)
+
+            time.sleep(1)
+
     def __init__(self, *args, **kwargs):
         super(ResultConsumer, self).__init__(*args, **kwargs)
         self._get_key_for_task = self.backend.get_key_for_task
@@ -103,8 +122,11 @@ class ResultConsumer(BaseResultConsumer):
 
     def start(self, initial_task_id, **kwargs):
         self._pubsub = self.backend.client.pubsub(
-            ignore_subscribe_messages=True,
+            ignore_subscribe_messages=False,
         )
+        thread = threading.Thread(target=self.___drain)
+        thread.daemon = True
+        thread.start()
         self._consume_from(initial_task_id)
 
     def on_wait_for_pending(self, result, **kwargs):
@@ -117,14 +139,28 @@ class ResultConsumer(BaseResultConsumer):
             self._pubsub.close()
 
     def drain_events(self, timeout=None):
-        message = self._pubsub.get_message(timeout=timeout)
-        if message and message['type'] == 'message':
-            self.on_state_change(self._decode_result(message['data']), message)
+        if timeout:
+            time.sleep(timeout)
+
+    def __drain_events(self, timeout=None):
+        if self.subscribed_to:
+            got_one = False
+            message = self._pubsub.get_message(timeout=timeout)
+            while message:
+                if message and message['type'] == 'message':
+                    self.on_state_change(self._decode_result(message['data']), message)
+
+                    got_one = True
+
+                message = self._pubsub.get_message(timeout=timeout)
+            if got_one:
+                return True
 
     def consume_from(self, task_id):
         if self._pubsub is None:
             return self.start(task_id)
-        self._consume_from(task_id)
+        else:
+            self._consume_from(task_id)
 
     def _consume_from(self, task_id):
         key = self._get_key_for_task(task_id)
@@ -377,6 +413,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                         callback,
                         ChordError('Callback error: {0!r}'.format(exc)),
                     )
+
         except ChordError as exc:
             logger.exception('Chord %r raised: %r', request.group, exc)
             return self.chord_error_from_stack(callback, exc)
