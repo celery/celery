@@ -4,8 +4,187 @@
   Daemonization
 ======================================================================
 
+There are several ways to start a daemon. If unsure choose "systemd".
+
 .. contents::
     :local:
+
+.. _daemon-systemd-generic:
+
+Usage ``systemd``
+======================================================================
+
+
+* `extra/systemd/`_
+
+.. _`extra/systemd/`:
+    https://github.com/celery/celery/tree/master/extra/systemd/
+
+.. _generic-systemd-celery:
+
+:Usage: `systemctl {start|stop|restart|status} celery.service`
+:Configuration file: /etc/conf.d/celery
+
+Service file: celery.service
+----------------------------------------------------------------------
+
+This is an example systemd file:
+
+:file:`/etc/systemd/system/celery.service`:
+
+.. code-block:: bash
+
+  [Unit]
+  Description=Celery Service
+  After=network.target
+
+  [Service]
+  Type=forking
+  User=celery
+  Group=celery
+  EnvironmentFile=/etc/conf.d/celery
+  WorkingDirectory=/opt/celery
+  ExecStart=/bin/sh -c '${CELERY_BIN} multi start ${CELERYD_NODES} \
+    -A ${CELERY_APP} --pidfile=${CELERYD_PID_FILE} \
+    --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'
+  ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait ${CELERYD_NODES} \
+    --pidfile=${CELERYD_PID_FILE}'
+  ExecReload=/bin/sh -c '${CELERY_BIN} multi restart ${CELERYD_NODES} \
+    -A ${CELERY_APP} --pidfile=${CELERYD_PID_FILE} \
+    --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'
+
+  [Install]
+  WantedBy=multi-user.target
+
+Once you've put that file in :file:`/etc/systemd/system`, you should run
+:command:`systemctl daemon-reload` in order that Systemd acknowledges that file.
+You should also run that command each time you modify it.
+
+To configure user, group, :command:`chdir` change settings:
+``User``, ``Group``, and ``WorkingDirectory`` defined in
+:file:`/etc/systemd/system/celery.service`.
+
+You can also use systemd-tmpfiles in order to create working directories (for logs and pid).
+
+:file: `/etc/tmpfiles.d/celery.conf`
+
+.. code-block:: bash
+
+  d /var/run/celery 0755 celery celery -
+  d /var/log/celery 0755 celery celery -
+
+
+.. _generic-systemd-celery-example:
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is an example configuration for a Python project:
+
+:file:`/etc/conf.d/celery`:
+
+.. code-block:: bash
+
+    # Name of nodes to start
+    # here we have a single node
+    CELERYD_NODES="w1"
+    # or we could have three nodes:
+    #CELERYD_NODES="w1 w2 w3"
+
+    # Absolute or relative path to the 'celery' command:
+    CELERY_BIN="/usr/local/bin/celery"
+    #CELERY_BIN="/virtualenvs/def/bin/celery"
+
+    # App instance to use
+    # comment out this line if you don't use an app
+    CELERY_APP="proj"
+    # or fully qualified:
+    #CELERY_APP="proj.tasks:app"
+
+    # How to call manage.py
+    CELERYD_MULTI="multi"
+
+    # Extra command-line arguments to the worker
+    CELERYD_OPTS="--time-limit=300 --concurrency=8"
+
+    # - %n will be replaced with the first part of the nodename.
+    # - %I will be replaced with the current child process index
+    #   and is important when using the prefork pool to avoid race conditions.
+    CELERYD_PID_FILE="/var/run/celery/%n.pid"
+    CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
+    CELERYD_LOG_LEVEL="INFO"
+
+    # you may wish to add these options for Celery Beat
+    CELERYBEAT_PID_FILE="/var/run/celery/beat.pid"
+    CELERYBEAT_LOG_FILE="/var/log/celery/beat.log"
+
+Service file: celerybeat.service
+----------------------------------------------------------------------
+
+This is an example systemd file for Celery Beat:
+
+:file:`/etc/systemd/system/celerybeat.service`:
+
+.. code-block:: bash
+
+  [Unit]
+  Description=Celery Beat Service
+  After=network.target
+
+  [Service]
+  Type=simple
+  User=celery
+  Group=celery
+  EnvironmentFile=/etc/conf.d/celery
+  WorkingDirectory=/opt/celery
+  ExecStart=/bin/sh -c '${CELERY_BIN} beat  \
+    -A ${CELERY_APP} --pidfile=${CELERYBEAT_PID_FILE} \
+    --logfile=${CELERYBEAT_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL}'
+
+  [Install]
+  WantedBy=multi-user.target
+
+
+Running the worker with superuser privileges (root)
+======================================================================
+
+Running the worker with superuser privileges is a very dangerous practice.
+There should always be a workaround to avoid running as root. Celery may
+run arbitrary code in messages serialized with pickle - this is dangerous,
+especially when run as root.
+
+By default Celery won't run workers as root. The associated error
+message may not be visible in the logs but may be seen if :envvar:`C_FAKEFORK`
+is used.
+
+To force Celery to run workers as root use :envvar:`C_FORCE_ROOT`.
+
+When running as root without :envvar:`C_FORCE_ROOT` the worker will
+appear to start with *"OK"* but exit immediately after with no apparent
+errors. This problem may appear when running the project in a new development
+or production environment (inadvertently) as root.
+
+.. _daemon-supervisord:
+
+:pypi:`supervisor`
+======================================================================
+
+* `extra/supervisord/`_
+
+.. _`extra/supervisord/`:
+    https://github.com/celery/celery/tree/master/extra/supervisord/
+
+.. _daemon-launchd:
+
+``launchd`` (macOS)
+======================================================================
+
+* `extra/macOS`_
+
+.. _`extra/macOS`:
+    https://github.com/celery/celery/tree/master/extra/macOS/
+
+######################
 
 
 .. _daemon-generic:
@@ -346,176 +525,3 @@ or even from Celery itself (if you've found a bug you
 should :ref:`report it <reporting-bugs>`).
 
 
-.. _daemon-systemd-generic:
-
-Usage ``systemd``
-======================================================================
-
-* `extra/systemd/`_
-
-.. _`extra/systemd/`:
-    https://github.com/celery/celery/tree/master/extra/systemd/
-
-.. _generic-systemd-celery:
-
-:Usage: `systemctl {start|stop|restart|status} celery.service`
-:Configuration file: /etc/conf.d/celery
-
-Service file: celery.service
-----------------------------------------------------------------------
-
-This is an example systemd file:
-
-:file:`/etc/systemd/system/celery.service`:
-
-.. code-block:: bash
-
-  [Unit]
-  Description=Celery Service
-  After=network.target
-
-  [Service]
-  Type=forking
-  User=celery
-  Group=celery
-  EnvironmentFile=/etc/conf.d/celery
-  WorkingDirectory=/opt/celery
-  ExecStart=/bin/sh -c '${CELERY_BIN} multi start ${CELERYD_NODES} \
-    -A ${CELERY_APP} --pidfile=${CELERYD_PID_FILE} \
-    --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'
-  ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait ${CELERYD_NODES} \
-    --pidfile=${CELERYD_PID_FILE}'
-  ExecReload=/bin/sh -c '${CELERY_BIN} multi restart ${CELERYD_NODES} \
-    -A ${CELERY_APP} --pidfile=${CELERYD_PID_FILE} \
-    --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'
-
-  [Install]
-  WantedBy=multi-user.target
-
-Once you've put that file in :file:`/etc/systemd/system`, you should run
-:command:`systemctl daemon-reload` in order that Systemd acknowledges that file.
-You should also run that command each time you modify it.
-
-To configure user, group, :command:`chdir` change settings:
-``User``, ``Group``, and ``WorkingDirectory`` defined in
-:file:`/etc/systemd/system/celery.service`.
-
-You can also use systemd-tmpfiles in order to create working directories (for logs and pid).
-
-:file: `/etc/tmpfiles.d/celery.conf`
-
-.. code-block:: bash
-
-  d /var/run/celery 0755 celery celery -
-  d /var/log/celery 0755 celery celery -
-
-
-.. _generic-systemd-celery-example:
-
-Example configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This is an example configuration for a Python project:
-
-:file:`/etc/conf.d/celery`:
-
-.. code-block:: bash
-
-    # Name of nodes to start
-    # here we have a single node
-    CELERYD_NODES="w1"
-    # or we could have three nodes:
-    #CELERYD_NODES="w1 w2 w3"
-
-    # Absolute or relative path to the 'celery' command:
-    CELERY_BIN="/usr/local/bin/celery"
-    #CELERY_BIN="/virtualenvs/def/bin/celery"
-
-    # App instance to use
-    # comment out this line if you don't use an app
-    CELERY_APP="proj"
-    # or fully qualified:
-    #CELERY_APP="proj.tasks:app"
-
-    # How to call manage.py
-    CELERYD_MULTI="multi"
-
-    # Extra command-line arguments to the worker
-    CELERYD_OPTS="--time-limit=300 --concurrency=8"
-
-    # - %n will be replaced with the first part of the nodename.
-    # - %I will be replaced with the current child process index
-    #   and is important when using the prefork pool to avoid race conditions.
-    CELERYD_PID_FILE="/var/run/celery/%n.pid"
-    CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
-    CELERYD_LOG_LEVEL="INFO"
-
-    # you may wish to add these options for Celery Beat
-    CELERYBEAT_PID_FILE="/var/run/celery/beat.pid"
-    CELERYBEAT_LOG_FILE="/var/log/celery/beat.log"
-
-Service file: celerybeat.service
-----------------------------------------------------------------------
-
-This is an example systemd file for Celery Beat:
-
-:file:`/etc/systemd/system/celerybeat.service`:
-
-.. code-block:: bash
-
-  [Unit]
-  Description=Celery Beat Service
-  After=network.target
-
-  [Service]
-  Type=simple
-  User=celery
-  Group=celery
-  EnvironmentFile=/etc/conf.d/celery
-  WorkingDirectory=/opt/celery
-  ExecStart=/bin/sh -c '${CELERY_BIN} beat  \
-    -A ${CELERY_APP} --pidfile=${CELERYBEAT_PID_FILE} \
-    --logfile=${CELERYBEAT_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL}'
-
-  [Install]
-  WantedBy=multi-user.target
-
-
-Running the worker with superuser privileges (root)
-======================================================================
-
-Running the worker with superuser privileges is a very dangerous practice.
-There should always be a workaround to avoid running as root. Celery may
-run arbitrary code in messages serialized with pickle - this is dangerous,
-especially when run as root.
-
-By default Celery won't run workers as root. The associated error
-message may not be visible in the logs but may be seen if :envvar:`C_FAKEFORK`
-is used.
-
-To force Celery to run workers as root use :envvar:`C_FORCE_ROOT`.
-
-When running as root without :envvar:`C_FORCE_ROOT` the worker will
-appear to start with *"OK"* but exit immediately after with no apparent
-errors. This problem may appear when running the project in a new development
-or production environment (inadvertently) as root.
-
-.. _daemon-supervisord:
-
-:pypi:`supervisor`
-======================================================================
-
-* `extra/supervisord/`_
-
-.. _`extra/supervisord/`:
-    https://github.com/celery/celery/tree/master/extra/supervisord/
-
-.. _daemon-launchd:
-
-``launchd`` (macOS)
-======================================================================
-
-* `extra/macOS`_
-
-.. _`extra/macOS`:
-    https://github.com/celery/celery/tree/master/extra/macOS/
