@@ -266,6 +266,6 @@ def find_related_module(package, related_name):
     try:
         return importlib.import_module(module_name)
     except ImportError as e:
-        if e.name != module_name:
-            raise(e)
+        if getattr(e, 'name', module_name) != module_name:
+            raise e
         return
