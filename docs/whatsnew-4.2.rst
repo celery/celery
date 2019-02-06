@@ -945,7 +945,7 @@ Tasks
 Bound Tasks as Error Callbacks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We fixed a regression that occured when bound tasks are used as error callbacks.
+We fixed a regression that occurred when bound tasks are used as error callbacks.
 This used to work in Celery 3.x but raised an exception in 4.x until this release.
 
 In both 4.0 and 4.1 the following code wouldn't work:
