@@ -183,7 +183,7 @@ class test_AsyncResult:
         )
         x.backend.READY_STATES = states.READY_STATES
         assert x.graph
-        assert x.get_leaf() is 2
+        assert x.get_leaf() == 2
 
         it = x.collect()
         assert list(it) == [

@@ -180,6 +180,7 @@ def extras_require():
 
 # -*- Long Description -*-
 
+
 def long_description():
     try:
         return codecs.open('README.rst', 'r', 'utf-8').read()
@@ -187,6 +188,7 @@ def long_description():
         return 'Long description error: Missing README.rst file'
 
 # -*- Command: setup.py test -*-
+
 
 class pytest(setuptools.command.test.test):
     user_options = [('pytest-args=', 'a', 'Arguments to pass to py.test')]
@@ -200,6 +202,7 @@ class pytest(setuptools.command.test.test):
         sys.exit(_pytest.main(self.pytest_args))
 
 # -*- %%% -*-
+
 
 meta = parse_dist_meta()
 setuptools.setup(
