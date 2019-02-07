@@ -531,6 +531,27 @@ see :setting:`worker_redirect_stdouts`).
             finally:
                 sys.stdout, sys.stderr = old_outs
 
+
+.. note::
+
+    If a specific Celery logger you need is not emitting logs, you should
+    check that the logger is propagating properly. In this example
+    "celery.app.trace" is enabled so that "succeeded in" logs are emitted:
+
+    .. code-block:: python
+
+
+        import celery
+        import logging
+
+        @celery.signals.after_setup_logger.connect
+        def on_after_setup_logger(**kwargs):
+            logger = logging.getLogger('celery')
+            logger.propagate = True
+            logger = logging.getLogger('celery.app.trace')
+            logger.propagate = True
+
+
 .. _task-argument-checking:
 
 Argument checking
