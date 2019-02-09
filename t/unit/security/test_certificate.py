@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import datetime
+import os
 
 import pytest
 from case import Mock, mock, patch, skip
@@ -85,20 +86,22 @@ class test_FSCertStore(SecurityCase):
         glob.return_value = ['foo.cert']
         with mock.open():
             cert.get_id.return_value = 1
-            x = FSCertStore('/var/certs')
+
+            path = os.path.join('var', 'certs')
+            x = FSCertStore(path)
             assert 1 in x._certs
-            glob.assert_called_with('/var/certs/*')
+            glob.assert_called_with(os.path.join(path, '*'))
 
             # they both end up with the same id
             glob.return_value = ['foo.cert', 'bar.cert']
             with pytest.raises(SecurityError):
-                x = FSCertStore('/var/certs')
+                x = FSCertStore(path)
             glob.return_value = ['foo.cert']
 
             cert.has_expired.return_value = True
             with pytest.raises(SecurityError):
-                x = FSCertStore('/var/certs')
+                x = FSCertStore(path)
 
             isdir.return_value = False
             with pytest.raises(SecurityError):
-                x = FSCertStore('/var/certs')
+                x = FSCertStore(path)
