@@ -25,6 +25,7 @@ from celery.security import disable_untrusted_serializers, setup_security
 from celery.security.utils import reraise_errors
 
 from .case import SecurityCase
+import os
 import tempfile
 from . import KEY1, CERT1
 
@@ -65,14 +66,11 @@ class test_security(SecurityCase):
         disable.assert_called_with(allowed=['foo'])
 
     def test_setup_security(self):
-        tmp_key1 = tempfile.NamedTemporaryFile()
-        tmp_key1_f = open(tmp_key1.name, 'w')
-        tmp_key1_f.write(KEY1)
-        tmp_key1_f.seek(0)
-        tmp_cert1 = tempfile.NamedTemporaryFile()
-        tmp_cert1_f = open(tmp_cert1.name, 'w')
-        tmp_cert1_f.write(CERT1)
-        tmp_cert1_f.seek(0)
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_key1:
+            tmp_key1.write(KEY1)
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_cert1:
+            tmp_cert1.write(CERT1)
+
         self.app.conf.update(
             task_serializer='auth',
             accept_content=['auth'],
@@ -81,8 +79,9 @@ class test_security(SecurityCase):
             security_cert_store='*.pem',
         )
         self.app.setup_security()
-        tmp_cert1_f.close()
-        tmp_key1_f.close()
+
+        os.remove(tmp_key1.name)
+        os.remove(tmp_cert1.name)
 
     def test_setup_security_disabled_serializers(self):
         disabled = registry._disabled_content_types
