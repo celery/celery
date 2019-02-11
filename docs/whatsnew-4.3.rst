@@ -62,6 +62,16 @@ begin to work on Celery 5, the next generation of our task execution platform.
 However, if Celery 5 will be delayed for any reason we may release
 another 4.x minor version which will still support Python 2.7.
 
+We have also focused on reducing contribution friction.
+
+Thanks to Josue Balandrano Coronel, one of our core contributors, we now have an
+updated :ref:`contributing` document.
+If you intend to contribute, please review it at your earliest convenience.
+
+I have also added new issue templates, which we will continue to improve,
+so that the issues you open will have more relevant information which
+will allow us to help you to resolve them more easily.
+
 *— Omer Katz*
 
 Wall of Contributors

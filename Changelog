@@ -15,13 +15,7 @@ an overview of what's new in Celery 4.3.
 
 Documentation Fixes by:
 
-  - **Matt Wiens**
-  - **Seunghun Lee**
   - **Lewis M. Kabui**
-  - **Fengyuan Chen**
-  - **Omer Katz**
-  - **Prathamesh Salunkhe**
-  - **Charles Chan**
   - **Dash Winterson**
   - **Shanavas M**
   - **Brett Randall**
@@ -35,15 +29,18 @@ Documentation Fixes by:
   - **Guilherme Caminha**
   - **Andrea Rabbaglietti**
   - **Itay Bittan**
+  - **Noah Hall**
   - **Peng Weikang**
   - **Mariatta Wijaya**
-  - **Noah Hall**
   - **Ed Morley**
   - **Paweł Adamczak**
-  - **:github_user:`aviadatsnyk`**
   - **:github_user:`CoffeeExpress`**
+  - **:github_user:`aviadatsnyk`**
   - **Brian Schrader**
+  - **Josue Balandrano Coronel**
   - **Tom Clancy**
   - **Sebastian Wojciechowski**
   - **Meysam Azad**
   - **Willem Thiart**
+  - **Charles Chan**
+  - **Omer Katz**
