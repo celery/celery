@@ -13,6 +13,228 @@ an overview of what's new in Celery 4.3.
 :release-date: TBD
 :release-by: Omer Katz
 
+- :meth:`celery.chain.apply` does not ignore keyword arguments anymore when
+  applying the chain.
+
+  Contributed by **Korijn van Golen**
+
+- Don't attempt to cache results in a :class:`celery.result.ResultSet`.
+
+  During a join, the results cache was populated using :meth:`celery.result.ResultSet.get`, if one of the results
+  contains an exception, joining unexpectedly failed.
+
+  The results cache is now removed.
+
+  Contributed by **Derek Harland**
+
+- :meth:`Celery.autodiscover_tasks` now attempts to import the package itself
+  when the `related_name` keyword argument is `None`.
+
+  Contributed by **Alex Ioannidis**
+
+- On Windows 10, stale PID files prevented celery beat to run.
+  We now remove them when a :class:`SystemExit` is raised.
+
+  Contributed by **:github_user:`na387`**
+
+- Added a new :setting:`task_acks_on_failure_or_timeout`.
+
+  Acknowledging SQS messages on failure or timing out makes it hard to use
+  dead letter queues.
+
+  We introduce the new option acks_on_failure_or_timeout,
+  to ensure we can totally fallback on native SQS message lifecycle,
+  using redeliveries for retries (in case of slow processing or failure)
+  and transitions to dead letter queue after defined number of times.
+
+  Contributed by **Mario Kostelac**
+
+- Adjust HA headers to work on RabbitMQ 3.x.
+
+  This change also means we're ending official support for RabbitMQ 2.x.
+
+  Contributed by **Asif Saif Uddin**
+
+- Improve :program:`celery update` error handling.
+
+  Contributed by **Federico Bond**
+
+- Support chords with :setting:`task_always_eager` set to `True`.
+
+  Contributed by **Axel Haustant**
+
+- Optionally store task properties in result backend.
+
+  TODO: Elaborate on this one. https://github.com/celery/celery/pull/4490
+
+  Contributed by **John Arnold**
+
+- Allow the Couchbase result backend to automatically detect serialization format.
+
+  Contributed by **Douglas Rohde**
+
+- Added the Azure Block Blob Storage backend.
+
+  The backend is implemented on top of the azure-storage library which
+  uses Azure Blob Storage for a scalable low-cost PaaS backend.
+
+  The backend was load tested via a simple nginx/gunicorn/sanic app hosted
+  on a DS4 virtual machine (4 vCores, 16 GB RAM) and was able to handle
+  600+ concurrent users at ~170 RPS.
+
+  The commit also contains a live end-to-end test to facilitate
+  verification of the backend functionality. The test is activated by
+  setting the `AZUREBLOCKBLOB_URL` environment variable to
+  `azureblockblob://{ConnectionString}` where the value for
+  `ConnectionString` can be found in the `Access Keys` pane of a Storage
+  Account resources in the Azure Portal.
+
+  Contributed by **Clemens Wolff**
+
+- :meth:`celery.app.task.update_state` now accepts keyword arguments.
+
+  This allows passing extra fields to the result backend.
+
+  Contributed by **Christopher Dignam**
+
+- Gracefully handle consumer :class:`kombu.exceptions.DecodeError`.
+
+  TODO: Elaborate about this https://github.com/celery/celery/pull/5044
+
+  Contributed by **Steven Sklar**
+
+- Fix init.d service stop.
+
+  Contributed by **Marcus McHale**
+
+- Drop support for Django < 1.11.
+
+  Contributed by **Asif Saif Uddin**
+
+- Remove old djcelery loader.
+
+  Contributed by **Asif Saif Uddin**
+
+- :class:`celery.worker.request.Request` now passes :class:`celery.app.task.Context`
+  to the backend's store_result functions.
+
+  Since the class currently passes `self` to these functions,
+  revoking a task resulted in corrupted task result data when
+  django-celery-results was used.
+
+  Contributed by **Kiyohiro Yamaguchi**
+
+- Retry if the heartbeat connection dies.
+
+  Previously, we keep trying to write to the broken connection.
+  This results in a memory leak because the event dispatcher will keep appending
+  the message to the outbound buffer.
+
+  Contributed by **Raf Geens**
+
+- Handle microseconds when scheduling.
+
+  Contributed by **K Davis**
+
+- Fixed deadlock when closing socket.
+
+  TODO: Elaborate about this https://github.com/celery/celery/pull/4997
+
+  Contributed by **Joshua Engelman**
+
+- Correctly consider timezone when calculating timestamp.
+
+  Contributed by **:github_user:`yywing`**
+
+- :meth:`celery.beat.Scheduler.schedules_equal` can now handle either arguments
+  being a `None` value.
+
+  Contributed by **:github_user:` ratson`**
+
+- Fixed Sphinx support for shared_task decorated functions.
+
+  Contributed by **Jon Banafato**
+
+- Added the CosmosDB result backend.
+
+  This change adds a new results backend.
+  The backend is implemented on top of the pydocumentdb library which uses
+  Azure CosmosDB for a scalable, globally replicated, high-performance,
+  low-latency and high-throughput PaaS backend.
+
+  Contributed by **Clemens Wolff**
+
+- Added configuration options to seperate multiple apps on single vhost.
+
+  TODO: Elaborate about this https://github.com/celery/celery/pull/5195
+
+  Contributed by **Artem Vasilyev**
+
+- Forget parent meta when forgetting a chain.
+
+  TODO: Elaborate about this https://github.com/celery/celery/pull/5095
+
+  Contributed by **:github_user:`tothegump`**
+
+- Store task arguments inside :class:`celery.exceptions.MaxRetriesExceededError`.
+
+  Contributed by **Anthony Ruhier**
+
+- Added the :setting:`result_accept_content`.
+
+  This feature allows to configure different accepted content for the result
+  backend.
+
+  A special serializer (`auth`) is used for signed messaging,
+  but the result_serializer remains in json, because we don't want encrypted
+  content in our result backend.
+
+  To accept unsigned content from the result backend,
+  we introduced this new configuration option to specify the
+  accepted content from the backend.
+
+  Contributed by **Benjamin Pereto**
+
+- Fixed error callback processing for class based tasks.
+
+  Contributed by **Victor Mireyev**
+
+- Added support for Cythonized Celery tasks.
+
+  Contributed by **Andrey Skabelin**
+
+- Warn Riak backend users for possible Python 3.7 incompatibilities.
+
+  Contributed by **George Psarakis**
+
+- Added Python 3.7 support.
+
+  Contributed by **Omer Katz** & **Asif Saif Uddin**
+
+- Revamped the auth serializer.
+
+  TODO: Elaborate about this
+
+  Contributed by **Benjamin Pereto**
+
+- :program:`celery report` now reports kernel version along with other
+  platform details.
+
+  Contributed by **Omer Katz**
+
+Code Cleanups, Test Coverage & CI Improvements by:
+
+  - **Jon Dufresne**
+  - **Asif Saif Uddin**
+  - **Omer Katz**
+  - **Brett Jackson**
+  - **Bruno Alla**
+  - **:github_user:`tothegump`**
+  - **Bojan Jovanovic**
+  - **Florian Chardin**
+  - **:github_user:`walterqian`**
+  - **Fabian Becker**
+
 Documentation Fixes by:
 
   - **Lewis M. Kabui**
@@ -44,3 +266,4 @@ Documentation Fixes by:
   - **Willem Thiart**
   - **Charles Chan**
   - **Omer Katz**
+  - **Milind Shakya**

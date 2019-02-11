@@ -138,6 +138,21 @@ a warning.
 Please track `basho/riak-python-client#534 <https://github.com/basho/riak-python-client/issues/534>`_
 for updates.
 
+RabbitMQ 2.x Support
+--------------------
+
+Starting from this release, we officially no longer support RabbitMQ 2.x.
+
+The last release of 2.x was in 2012 and we had to make adjustments to
+correctly support high availability on RabbitMQ 3.x.
+
+If for some reason, you are still using RabbitMQ 2.x we encourage you to upgrade
+as soon as possible since security patches are not applied on 2.x anymore.
+
+Django Support
+--------------
+
+Starting from this release, the minimum required Djanog version is 1.11.
 
 .. _v430-news:
 
