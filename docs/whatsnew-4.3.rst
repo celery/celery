@@ -124,6 +124,21 @@ as a workaround.
 
 See :ref:`calling-compression` for details.
 
+Riak Result Backend
+--------------------
+
+The official Riak client does not support Python 3.7 as of yet.
+
+In case you are using the Riak result backend, either attempt to install the
+client from master or avoid upgrading to Python 3.7 until this matter is resolved.
+
+In case you are using the Riak result backend with Python 3.7, we now emit
+a warning.
+
+Please track `basho/riak-python-client#534 <https://github.com/basho/riak-python-client/issues/534>`_
+for updates.
+
+
 .. _v430-news:
 
 News
