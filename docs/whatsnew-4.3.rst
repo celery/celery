@@ -152,7 +152,7 @@ as soon as possible since security patches are not applied on 2.x anymore.
 Django Support
 --------------
 
-Starting from this release, the minimum required Djanog version is 1.11.
+Starting from this release, the minimum required Django version is 1.11.
 
 .. _v430-news:
 
