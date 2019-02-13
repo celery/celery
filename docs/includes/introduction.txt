@@ -1,4 +1,4 @@
-:Version: 3.1.26.ud7 (Cipater)
+:Version: 3.1.26.ud6 (Cipater)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
