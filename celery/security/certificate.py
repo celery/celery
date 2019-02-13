@@ -2,14 +2,13 @@
 """X.509 certificates."""
 from __future__ import absolute_import, unicode_literals
 
+import datetime
 import glob
 import os
-import datetime
 
-
-from cryptography.x509 import load_pem_x509_certificate
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.x509 import load_pem_x509_certificate
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 
 from celery.exceptions import SecurityError

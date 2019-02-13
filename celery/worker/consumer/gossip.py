@@ -8,7 +8,7 @@ from operator import itemgetter
 
 from kombu import Consumer
 from kombu.asynchronous.semaphore import DummyLock
-from kombu.exceptions import DecodeError, ContentDisallowed
+from kombu.exceptions import ContentDisallowed, DecodeError
 
 from celery import bootsteps
 from celery.five import values

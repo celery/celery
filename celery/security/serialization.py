@@ -5,8 +5,8 @@ from __future__ import absolute_import, unicode_literals
 from kombu.serialization import dumps, loads, registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
 
-from celery.utils.serialization import b64decode, b64encode
 from celery.app.defaults import DEFAULT_SECURITY_DIGEST
+from celery.utils.serialization import b64decode, b64encode
 
 from .certificate import Certificate, FSCertStore
 from .key import PrivateKey
