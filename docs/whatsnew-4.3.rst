@@ -106,13 +106,13 @@ The supported Python Versions are:
 - PyPy2.7 6.0 (``pypy2``)
 - PyPy3.5 6.0 (``pypy3``)
 
-Important New Kombu Features
-----------------------------
+Kombu
+-----
 
-Celery 4.3 now depends on Kombu 4.3 and above.
+Starting from this release, the minimum required version is Kombu 4.3.
 
-Compression
-+++++++++++
+New Compression Algorithms
+++++++++++++++++++++++++++
 
 Kombu 4.3 includes a few new optional compression methods:
 
@@ -127,6 +127,11 @@ which will resolve this issue, please use one of the new compression methods
 as a workaround.
 
 See :ref:`calling-compression` for details.
+
+Billiard
+--------
+
+Starting from this release, the minimum required version is Billiard 3.6.
 
 Riak Result Backend
 --------------------
