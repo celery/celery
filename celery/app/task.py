@@ -80,6 +80,7 @@ def _reprtask(task, fmt=None, flags=None):
 
 class Context(object):
     # Default context
+    garden_name = None
     app_name = None
     logfile = None
     loglevel = None
