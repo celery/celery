@@ -27,7 +27,7 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Derek Harland**
 
-- **Application**: :meth:`Celery.autodiscover_tasks` now attempts to import the package itself
+- **Application**: :meth:`celery.Celery.autodiscover_tasks` now attempts to import the package itself
   when the `related_name` keyword argument is `None`.
 
   Contributed by **Alex Ioannidis**
@@ -37,7 +37,7 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **:github_user:`na387`**
 
-- **Task**: Added a new :setting:`task_acks_on_failure_or_timeout`.
+- **Task**: Added the new :setting:`task_acks_on_failure_or_timeout` setting.
 
   Acknowledging SQS messages on failure or timing out makes it hard to use
   dead letter queues.
