@@ -222,6 +222,42 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Omer Katz**
 
+- Fixed chords with chains which include sub chords in a group.
+
+  TODO: Elaborate about this https://github.com/celery/celery/pull/5222
+
+  Contributed by **Maximilien Cuony**
+
+- Complex canvases with error callbacks no longer raises an :class:`AttributeError`.
+
+  TODO: Elaborate about this https://github.com/celery/celery/pull/5297
+
+  Contributed by **Manuel Vázquez Acosta**
+
+- Added proper error messages in cases where app cannot be loaded.
+
+  Previously, celery crashed with an exception.
+
+  We now print a proper error message.
+
+  Contributed by **Omer Katz**
+
+- Added the :setting:`task_default_priority` setting.
+
+  TODO: Elaborate about this https://github.com/celery/celery/pull/5309
+
+  Contributed by **:github_user:`madprogrammer`**
+
+- Bump minimum required version of Kombu to 4.3 and Billiard to 3.6.
+
+  Contributed by **Asif Saif Uddin**
+
+- Fix memory leak.
+
+  TODO: Elaborate about this.
+
+  Contributed by **George Psarakis**.
+
 Code Cleanups, Test Coverage & CI Improvements by:
 
   - **Jon Dufresne**
@@ -234,6 +270,9 @@ Code Cleanups, Test Coverage & CI Improvements by:
   - **Florian Chardin**
   - **:github_user:`walterqian`**
   - **Fabian Becker**
+  - **Lars Rinn**
+  - **:github_user:`madprogrammer`**
+  - **Ciaran Courtney**
 
 Documentation Fixes by:
 
