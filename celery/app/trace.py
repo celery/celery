@@ -228,7 +228,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 # -*- PRE -*-
                 if prerun_receivers:
                     send_prerun(sender=task, task_id=uuid, task=task,
-                                args=args, kwargs=kwargs)
+                                app_name=task_request.app_name, args=args, kwargs=kwargs)
                 loader_task_init(uuid, task)
                 if track_started:
                     store_result(
@@ -304,7 +304,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     if postrun_receivers:
                         send_postrun(sender=task, task_id=uuid, task=task,
                                      args=args, kwargs=kwargs,
-                                     retval=retval, state=state)
+                                     retval=retval, state=state, app_name=task_request.app_name)
                 finally:
                     pop_task()
                     pop_request()
