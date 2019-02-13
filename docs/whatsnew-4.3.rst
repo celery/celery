@@ -52,7 +52,8 @@ Selected Ambient Works II.
 
 This release focuses on new features like new result backends
 and a revamped security serializer along with bug fixes mainly for Celery Beat,
-Canvas and a number of critical fixes for hanging workers.
+Canvas, a number of critical fixes for hanging workers and
+a fix for a severe memory leak.
 
 Celery 4.3 is the first release to support Python 3.7.
 
@@ -61,6 +62,9 @@ begin to work on Celery 5, the next generation of our task execution platform.
 
 However, if Celery 5 will be delayed for any reason we may release
 another 4.x minor version which will still support Python 2.7.
+
+If another 4.x version will be released it will most likely drop support for
+Python 3.4 as it will reach it's EOL in March 2019.
 
 We have also focused on reducing contribution friction.
 
