@@ -23,7 +23,6 @@ except ImportError:
     from collections import Iterable
 
 
-
 __all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
     'maybe_schedule', 'solar',

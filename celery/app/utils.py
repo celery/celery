@@ -28,8 +28,6 @@ except ImportError:
     from collections import Mapping
 
 
-
-
 __all__ = (
     'Settings', 'appstr', 'bugreport',
     'filter_hidden_settings', 'find_app',

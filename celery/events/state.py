@@ -41,7 +41,6 @@ except ImportError:
     from collections import Callable
 
 
-
 __all__ = ('Worker', 'Task', 'State', 'heartbeat_expires')
 
 # pylint: disable=redefined-outer-name

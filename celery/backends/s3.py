@@ -14,7 +14,6 @@ except ImportError:
     botocore = None
 
 
-
 __all__ = ('S3Backend',)
 
 

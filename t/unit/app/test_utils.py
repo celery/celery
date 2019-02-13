@@ -11,8 +11,6 @@ except ImportError:
     from collections import Mapping, MutableMapping
 
 
-
-
 class test_Settings:
 
     def test_is_mapping(self):

@@ -23,7 +23,6 @@ except ImportError:
     from collections import Sequence
 
 
-
 try:
     # pypy: dicts are ordered in recent versions
     from __pypy__ import reversed_dict as _dict_is_ordered
