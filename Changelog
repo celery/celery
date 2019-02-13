@@ -13,12 +13,12 @@ an overview of what's new in Celery 4.3.
 :release-date: TBD
 :release-by: Omer Katz
 
-- :meth:`celery.chain.apply` does not ignore keyword arguments anymore when
+- **Canvas**: :meth:`celery.chain.apply` does not ignore keyword arguments anymore when
   applying the chain.
 
   Contributed by **Korijn van Golen**
 
-- Don't attempt to cache results in a :class:`celery.result.ResultSet`.
+- **Result Set**: Don't attempt to cache results in a :class:`celery.result.ResultSet`.
 
   During a join, the results cache was populated using :meth:`celery.result.ResultSet.get`, if one of the results
   contains an exception, joining unexpectedly failed.
@@ -27,17 +27,17 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Derek Harland**
 
-- :meth:`Celery.autodiscover_tasks` now attempts to import the package itself
+- **Application**: :meth:`Celery.autodiscover_tasks` now attempts to import the package itself
   when the `related_name` keyword argument is `None`.
 
   Contributed by **Alex Ioannidis**
 
-- On Windows 10, stale PID files prevented celery beat to run.
+- **Windows Support**: On Windows 10, stale PID files prevented celery beat to run.
   We now remove them when a :class:`SystemExit` is raised.
 
   Contributed by **:github_user:`na387`**
 
-- Added a new :setting:`task_acks_on_failure_or_timeout`.
+- **Task**: Added a new :setting:`task_acks_on_failure_or_timeout`.
 
   Acknowledging SQS messages on failure or timing out makes it hard to use
   dead letter queues.
@@ -49,31 +49,32 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Mario Kostelac**
 
-- Adjust HA headers to work on RabbitMQ 3.x.
+- **RabbitMQ Broker**: Adjust HA headers to work on RabbitMQ 3.x.
 
   This change also means we're ending official support for RabbitMQ 2.x.
 
   Contributed by **Asif Saif Uddin**
 
-- Improve :program:`celery update` error handling.
+- **Command Line**: Improve :program:`celery update` error handling.
 
   Contributed by **Federico Bond**
 
-- Support chords with :setting:`task_always_eager` set to `True`.
+- **Canvas**: Support chords with :setting:`task_always_eager` set to `True`.
 
   Contributed by **Axel Haustant**
 
-- Optionally store task properties in result backend.
+- **Result Backend**: Optionally store task properties in result backend.
 
   TODO: Elaborate on this one. https://github.com/celery/celery/pull/4490
 
   Contributed by **John Arnold**
 
-- Allow the Couchbase result backend to automatically detect serialization format.
+- **Couchbase Result Backend**: Allow the Couchbase result backend to
+  automatically detect the serialization format.
 
   Contributed by **Douglas Rohde**
 
-- Added the Azure Block Blob Storage backend.
+- **Result Backend**: Added the Azure Block Blob Storage result backend.
 
   The backend is implemented on top of the azure-storage library which
   uses Azure Blob Storage for a scalable low-cost PaaS backend.
@@ -91,7 +92,7 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Clemens Wolff**
 
-- :meth:`celery.app.task.update_state` now accepts keyword arguments.
+- **Task**: :meth:`celery.app.task.update_state` now accepts keyword arguments.
 
   This allows passing extra fields to the result backend.
 
@@ -103,20 +104,20 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Steven Sklar**
 
-- Fix init.d service stop.
+- **Deployment**: Fix init.d service stop.
 
   Contributed by **Marcus McHale**
 
-- Drop support for Django < 1.11.
+- **Django**: Drop support for Django < 1.11.
 
   Contributed by **Asif Saif Uddin**
 
-- Remove old djcelery loader.
+- **Django**: Remove old djcelery loader.
 
   Contributed by **Asif Saif Uddin**
 
-- :class:`celery.worker.request.Request` now passes :class:`celery.app.task.Context`
-  to the backend's store_result functions.
+- **Result Backend**: :class:`celery.worker.request.Request` now passes
+  :class:`celery.app.task.Context` to the backend's store_result functions.
 
   Since the class currently passes `self` to these functions,
   revoking a task resulted in corrupted task result data when
@@ -124,7 +125,7 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Kiyohiro Yamaguchi**
 
-- Retry if the heartbeat connection dies.
+- **Worker**: Retry if the heartbeat connection dies.
 
   Previously, we keep trying to write to the broken connection.
   This results in a memory leak because the event dispatcher will keep appending
@@ -132,30 +133,30 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Raf Geens**
 
-- Handle microseconds when scheduling.
+- **Celery Beat**: Handle microseconds when scheduling.
 
   Contributed by **K Davis**
 
-- Fixed deadlock when closing socket.
+- **Asynpool**: Fixed deadlock when closing socket.
 
   TODO: Elaborate about this https://github.com/celery/celery/pull/4997
 
   Contributed by **Joshua Engelman**
 
-- Correctly consider timezone when calculating timestamp.
+- **Celery Beat**: Correctly consider timezone when calculating timestamp.
 
   Contributed by **:github_user:`yywing`**
 
-- :meth:`celery.beat.Scheduler.schedules_equal` can now handle either arguments
-  being a `None` value.
+- **Celery Beat**: :meth:`celery.beat.Scheduler.schedules_equal` can now handle
+  either arguments being a `None` value.
 
   Contributed by **:github_user:` ratson`**
 
-- Fixed Sphinx support for shared_task decorated functions.
+- **Documentation/Sphinx**: Fixed Sphinx support for shared_task decorated functions.
 
   Contributed by **Jon Banafato**
 
-- Added the CosmosDB result backend.
+- **Result Backend**: Added the CosmosDB result backend.
 
   This change adds a new results backend.
   The backend is implemented on top of the pydocumentdb library which uses
@@ -164,29 +165,30 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Clemens Wolff**
 
-- Added configuration options to seperate multiple apps on single vhost.
+- **Application**: Added configuration options to seperate multiple apps on
+  a single vhost.
 
   TODO: Elaborate about this https://github.com/celery/celery/pull/5195
 
   Contributed by **Artem Vasilyev**
 
-- Forget parent meta when forgetting a chain.
+- **Result Backend**: Forget parent meta when forgetting a chain.
 
   TODO: Elaborate about this https://github.com/celery/celery/pull/5095
 
   Contributed by **:github_user:`tothegump`**
 
-- Store task arguments inside :class:`celery.exceptions.MaxRetriesExceededError`.
+- **Task** Store task arguments inside :class:`celery.exceptions.MaxRetriesExceededError`.
 
   Contributed by **Anthony Ruhier**
 
-- Added the :setting:`result_accept_content`.
+- **Result Backend**: Added the :setting:`result_accept_content` setting.
 
   This feature allows to configure different accepted content for the result
   backend.
 
   A special serializer (`auth`) is used for signed messaging,
-  but the result_serializer remains in json, because we don't want encrypted
+  however the result_serializer remains in json, because we don't want encrypted
   content in our result backend.
 
   To accept unsigned content from the result backend,
@@ -195,46 +197,50 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Benjamin Pereto**
 
-- Fixed error callback processing for class based tasks.
+- **Canvas**: Fixed error callback processing for class based tasks.
 
   Contributed by **Victor Mireyev**
 
-- Added support for Cythonized Celery tasks.
+- **Result Backend**: Added the S3 results backend.
+
+  Contributed by **Florian Chardin**
+
+- **Task**: Added support for Cythonized Celery tasks.
 
   Contributed by **Andrey Skabelin**
 
-- Warn Riak backend users for possible Python 3.7 incompatibilities.
+- **Riak Result Backend**: Warn Riak backend users for possible Python 3.7 incompatibilities.
 
   Contributed by **George Psarakis**
 
-- Added Python 3.7 support.
+- **Python Runtime**: Added Python 3.7 support.
 
   Contributed by **Omer Katz** & **Asif Saif Uddin**
 
-- Revamped the auth serializer.
+- **Auth Serializer**: Revamped the auth serializer.
 
   TODO: Elaborate about this
 
   Contributed by **Benjamin Pereto**
 
-- :program:`celery report` now reports kernel version along with other
-  platform details.
+- **Command Line**: :program:`celery report` now reports kernel version along
+  with other platform details.
 
   Contributed by **Omer Katz**
 
-- Fixed chords with chains which include sub chords in a group.
+- **Canvas**: Fixed chords with chains which include sub chords in a group.
 
   TODO: Elaborate about this https://github.com/celery/celery/pull/5222
 
   Contributed by **Maximilien Cuony**
 
-- Complex canvases with error callbacks no longer raises an :class:`AttributeError`.
+- **Canvas**: Complex canvases with error callbacks no longer raises an :class:`AttributeError`.
 
   TODO: Elaborate about this https://github.com/celery/celery/pull/5297
 
   Contributed by **Manuel Vázquez Acosta**
 
-- Added proper error messages in cases where app cannot be loaded.
+- **Command Line**: Added proper error messages in cases where app cannot be loaded.
 
   Previously, celery crashed with an exception.
 
@@ -242,17 +248,18 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Omer Katz**
 
-- Added the :setting:`task_default_priority` setting.
+- **Task**: Added the :setting:`task_default_priority` setting.
 
   TODO: Elaborate about this https://github.com/celery/celery/pull/5309
 
   Contributed by **:github_user:`madprogrammer`**
 
-- Bump minimum required version of Kombu to 4.3 and Billiard to 3.6.
+- **Dependencies**: Bump minimum required version of Kombu to 4.3
+  and Billiard to 3.6.
 
   Contributed by **Asif Saif Uddin**
 
-- Fix memory leak.
+- **Result Backend**: Fix memory leak.
 
   TODO: Elaborate about this.
 
