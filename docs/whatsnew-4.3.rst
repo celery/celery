@@ -53,7 +53,7 @@ Selected Ambient Works II.
 This release focuses on new features like new result backends
 and a revamped security serializer along with bug fixes mainly for Celery Beat,
 Canvas, a number of critical fixes for hanging workers and
-a fix for a severe memory leak.
+fixes for several severe memory leaks.
 
 Celery 4.3 is the first release to support Python 3.7.
 
