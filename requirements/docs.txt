@@ -1,4 +1,4 @@
-sphinx_celery==1.4.1
+sphinx_celery==1.4.6
 Sphinx==1.7.1
 sphinx-testing==0.7.2
 typing
