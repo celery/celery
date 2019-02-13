@@ -1,11 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
 import errno
-import pytz
 from datetime import datetime, timedelta
 from pickle import dumps, loads
 
 import pytest
+import pytz
 from case import Mock, call, patch, skip
 
 from celery import __version__, beat, uuid
