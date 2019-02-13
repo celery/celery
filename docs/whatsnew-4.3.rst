@@ -68,7 +68,7 @@ Python 3.4 as it will reach it's EOL in March 2019.
 
 We have also focused on reducing contribution friction.
 
-Thanks to Josue Balandrano Coronel, one of our core contributors, we now have an
+Thanks to **Josue Balandrano Coronel**, one of our core contributors, we now have an
 updated :ref:`contributing` document.
 If you intend to contribute, please review it at your earliest convenience.
 
