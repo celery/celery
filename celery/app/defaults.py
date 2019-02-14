@@ -210,6 +210,7 @@ NAMESPACES = Namespace(
         extended=Option(False, type='bool'),
         serializer=Option('json'),
         backend_transport_options=Option({}, type='dict'),
+        chord_join_timeout=Option(3.0, type='float'),
     ),
     elasticsearch=Namespace(
         __old__=old_ns('celery_elasticsearch'),
