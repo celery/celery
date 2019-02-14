@@ -36,9 +36,11 @@ after_task_publish = Signal(providing_args=[
 task_sent = Signal(providing_args=[
     'task_id', 'task', 'args', 'kwargs', 'eta', 'taskset',
 ])
-task_prerun = Signal(providing_args=['task_id', 'task', 'args', 'kwargs'])
+task_prerun = Signal(providing_args=[
+    'task_id', 'task', 'args', 'kwargs', 'app_name', 'garden_name',
+])
 task_postrun = Signal(providing_args=[
-    'task_id', 'task', 'args', 'kwargs', 'retval',
+    'task_id', 'task', 'args', 'kwargs', 'retval', 'app_name', 'garden_name',
 ])
 task_success = Signal(providing_args=['result'])
 task_retry = Signal(providing_args=[
