@@ -531,14 +531,17 @@ class Task(object):
         if app.conf.task_always_eager:
             with app.producer_or_acquire(producer) as eager_producer:
                 serializer = options.get(
-                    'serializer', eager_producer.serializer
+                    'serializer',
+                    (eager_producer.serializer if eager_producer.serializer
+                     else app.conf.task_serializer)
                 )
                 body = args, kwargs
                 content_type, content_encoding, data = serialization.dumps(
-                    body, serializer
+                    body, serializer,
                 )
                 args, kwargs = serialization.loads(
-                    data, content_type, content_encoding
+                    data, content_type, content_encoding,
+                    accept=[content_type]
                 )
             with denied_join_result():
                 return self.apply(args, kwargs, task_id=task_id or uuid(),
