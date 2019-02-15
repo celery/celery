@@ -2,7 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from case import MagicMock, Mock, patch, sentinel, skip
+from case import Mock, patch, sentinel, skip
 
 from celery.app import backends
 from celery.backends import arangodb as module
@@ -91,7 +91,10 @@ class test_ArangoDbBackend:
         assert url_ == url
 
     def test_backend_params_by_url(self):
-        url = "arangodb://johndoe:mysecret@test.arangodb.com:8529/celery_database/celery_collection"
+        url = (
+            "arangodb://johndoe:mysecret@test.arangodb.com:8529/"
+            "celery_database/celery_collection"
+        )
         with self.Celery(backend=url) as app:
             x = app.backend
             assert x.host == 'test.arangodb.com'
