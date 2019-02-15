@@ -94,7 +94,6 @@ class ArangoDbBackend(KeyValueStoreBackend):
             http_protocol=self.http_protocol, host=self.host, port=self.port
         )
         self._connection = None
-        self._db = None
 
     @property
     def connection(self):
@@ -109,9 +108,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
     @property
     def db(self):
         """Database Object to the given database."""
-        if self._db is None:
-            self._db = self.connection[self.database]
-        return self._db
+        return self.connection[self.database]
 
     def get(self, key):
         try:
