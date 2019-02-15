@@ -8,6 +8,7 @@ from __future__ import absolute_import, unicode_literals
 import logging
 import json
 from kombu.utils.url import _parse_url
+from kombu.utils.encoding import str_t
 
 from celery.exceptions import ImproperlyConfigured
 
@@ -48,6 +49,9 @@ class ArangoDbBackend(KeyValueStoreBackend):
     password = None
     # protocol is not supported in backend url (http is taken as default)
     http_protocol = 'http'
+
+    # Use str as arangodb key not bytes
+    key_t = str_t
 
     def __init__(self, url=None, *args, **kwargs):
         """Parse the url or load the settings from settings object."""
