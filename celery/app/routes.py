@@ -20,6 +20,12 @@ from celery.utils.imports import symbol_by_name
 __all__ = ('MapRoute', 'Router', 'prepare')
 
 
+try:
+    Pattern = re._pattern_type
+except AttributeError:  # pragma: no cover
+    # for support Python 3.7
+    Pattern = re.Pattern
+
 def glob_to_re(glob, quote=string.punctuation.replace('*', '')):
     glob = ''.join('\\' + c if c in quote else c for c in glob)
     return glob.replace('*', '.+?')
@@ -33,7 +39,7 @@ class MapRoute(object):
         self.map = {}
         self.patterns = OrderedDict()
         for k, v in map:
-            if isinstance(k, re._pattern_type):
+            if isinstance(k, re.Pattern):
                 self.patterns[k] = v
             elif '*' in k:
                 self.patterns[re.compile(glob_to_re(k))] = v
