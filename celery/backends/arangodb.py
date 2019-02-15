@@ -52,6 +52,13 @@ class ArangoDbBackend(KeyValueStoreBackend):
     def __init__(self, url=None, *args, **kwargs):
         """Parse the url or load the settings from settings object."""
         super(ArangoDbBackend, self).__init__(*args, **kwargs)
+
+        if py_arango_connection is None:
+            raise ImproperlyConfigured(
+                'You need to install the pyArango library to use the '
+                'ArangoDb backend.',
+            )
+
         self.url = url
 
         if url is None:
@@ -65,12 +72,6 @@ class ArangoDbBackend(KeyValueStoreBackend):
                 database = collection = None
             else:
                 database, collection = database_collection.split('/')
-
-        if py_arango_connection is None:
-            raise ImproperlyConfigured(
-                'You need to install the pyArango library to use the '
-                'ArangoDb backend.',
-            )
 
         config = self.app.conf.get('arangodb_backend_settings', None)
         if config is not None:
@@ -93,6 +94,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
             http_protocol=self.http_protocol, host=self.host, port=self.port
         )
         self._connection = None
+        self._db = None
 
     @property
     def connection(self):
@@ -107,7 +109,9 @@ class ArangoDbBackend(KeyValueStoreBackend):
     @property
     def db(self):
         """Database Object to the given database."""
-        return self.connection[self.database]
+        if self._db is None:
+            self._db = self.connection[self.database]
+        return self._db
 
     def get(self, key):
         try:
