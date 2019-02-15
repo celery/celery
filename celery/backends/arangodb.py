@@ -46,6 +46,8 @@ class ArangoDbBackend(KeyValueStoreBackend):
     collection = 'celery'
     username = None
     password = None
+    # protocol is not supported in backend url (http is taken as default)
+    http_protocol = 'http'
 
     def __init__(self, url=None, *args, **kwargs):
         """Parse the url or load the settings from settings object."""
@@ -59,10 +61,6 @@ class ArangoDbBackend(KeyValueStoreBackend):
                 _schema, host, port, username, password,
                 database_collection, _query
             ) = _parse_url(url)
-            logging.debug(
-                "schema: %s, host: %s, port: %s, database_collection: %s",
-                _schema, host, port, database_collection
-            )
             if database_collection is None:
                 database = collection = None
             else:
@@ -85,13 +83,14 @@ class ArangoDbBackend(KeyValueStoreBackend):
 
         self.host = host or config.get('host', self.host)
         self.port = int(port or config.get('port', self.port))
+        self.http_protocol = config.get('http_protocol', self.http_protocol)
         self.database = database or config.get('database', self.database)
         self.collection = \
             collection or config.get('collection', self.collection)
         self.username = username or config.get('username', self.username)
         self.password = password or config.get('password', self.password)
-        self.arangodb_url = "http://{host}:{port}".format(
-            host=self.host, port=self.port
+        self.arangodb_url = "{http_protocol}://{host}:{port}".format(
+            http_protocol=self.http_protocol, host=self.host, port=self.port
         )
         self._connection = None
 
