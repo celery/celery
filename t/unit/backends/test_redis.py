@@ -189,6 +189,11 @@ class test_RedisResultConsumer:
         parent_method.assert_called_once_with(meta, message)
         cancel_for.assert_not_called()
 
+    def test_drain_events_before_start(self):
+        consumer = self.get_consumer()
+        # drain_events shouldn't crash when called before start
+        consumer.drain_events(0.001)
+
 
 class test_RedisBackend:
     def get_backend(self):
