@@ -942,6 +942,20 @@ class test_apply_async(TasksCase):
         with pytest.raises(EncodeError):
             task.apply_async((1, 2, 3, 4, {1}))
 
+    def test_eager_serialization_uses_task_serializer_setting(self):
+        @self.app.task
+        def task(*args, **kwargs):
+            pass
+        with pytest.raises(EncodeError):
+            task.apply_async((1, 2, 3, 4, {1}))
+
+        self.app.conf.task_serializer = 'pickle'
+
+        @self.app.task
+        def task2(*args, **kwargs):
+            pass
+        task2.apply_async((1, 2, 3, 4, {1}))
+
     def test_task_with_ignored_result(self):
         with patch.object(self.app, 'send_task') as send_task:
             self.task_with_ignored_result.apply_async()
