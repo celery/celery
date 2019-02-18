@@ -65,7 +65,8 @@ an overview of what's new in Celery 4.3.
 
 - **Result Backend**: Optionally store task properties in result backend.
 
-  TODO: Elaborate on this one. https://github.com/celery/celery/pull/4490
+  Setting :setting:`result_extended` configuration option to `True` enables
+  storing additional task properties in the result backend.
 
   Contributed by **John Arnold**
 
@@ -165,7 +166,7 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Clemens Wolff**
 
-- **Application**: Added configuration options to seperate multiple apps on
+- **Application**: Added configuration options to separate multiple apps on
   a single vhost.
 
   TODO: Elaborate about this https://github.com/celery/celery/pull/5195
@@ -250,7 +251,10 @@ an overview of what's new in Celery 4.3.
 
 - **Task**: Added the :setting:`task_default_priority` setting.
 
-  TODO: Elaborate about this https://github.com/celery/celery/pull/5309
+  You can now set the default priority of a task using
+  the :setting:`task_default_priority` setting.
+  The setting's value will be used if no priority is provided for a specific
+  task.
 
   Contributed by **:github_user:`madprogrammer`**
 
