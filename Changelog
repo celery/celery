@@ -265,6 +265,33 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **George Psarakis**.
 
+- **Task Execution**: Fixed roundtrip serialization for eager tasks.
+
+  When doing the roundtrip serialization for eager tasks,
+  the task serializer will always be JSON unless the `serializer` argument
+  is present in the call to :meth:`celery.Task.apply_async`.
+  If the serializer argument is present but is `'pickle'`,
+  an exception will be raised as pickle-serialized objects
+  cannot be deserialized without specifying to `serialization.loads`
+  what content types should be accepted.
+  The Producer's `serializer` seems to be set to `None`,
+  causing the default to JSON serialization.
+
+  We now continue to use (in order) the `serializer` argument to :meth:`celery.Task.apply_async`,
+  if present, or the `Producer`'s serializer if not `None`.
+  If the `Producer`'s serializer is `None`,
+  it will use the Celery app's `task_serializer` configuration entry as the serializer.
+
+  Contributed by **Brett Jackson**
+
+- **Redis Result Backend**: The :class:`celery.backends.redis.ResultConsumer` class no longer assumes
+  :meth:`celery.backends.redis.ResultConsumer.start` to be called before
+  :meth:`celery.backends.redis.ResultConsumer.drain_events`.
+
+  This fixes a race condition when using the Gevent workers pool.
+
+  Contributed by **Noam Kush**
+
 Code Cleanups, Test Coverage & CI Improvements by:
 
   - **Jon Dufresne**
