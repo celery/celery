@@ -65,7 +65,7 @@ an overview of what's new in Celery 4.3.
 
 - **Result Backend**: Optionally store task properties in result backend.
 
-  Setting :setting:`result_extended` configuration option to `True` enables
+  Setting the :setting:`result_extended` configuration option to `True` enables
   storing additional task properties in the result backend.
 
   Contributed by **John Arnold**
