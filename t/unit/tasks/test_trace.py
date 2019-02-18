@@ -201,7 +201,7 @@ class test_trace(TraceCase):
         sig = Mock(name='sig')
         sig2 = Mock(name='sig2')
         request = {'chain': [sig2, sig], 'root_id': 'root',
-                'delivery_info': {'priority': 42}}
+                   'delivery_info': {'priority': 42}}
         maybe_signature.return_value = sig
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig.apply_async.assert_called_with(
