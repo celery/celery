@@ -2,6 +2,8 @@
 """Redis result store backend."""
 from __future__ import absolute_import, unicode_literals
 
+import time
+
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 
@@ -117,9 +119,12 @@ class ResultConsumer(BaseResultConsumer):
             self._pubsub.close()
 
     def drain_events(self, timeout=None):
-        message = self._pubsub.get_message(timeout=timeout)
-        if message and message['type'] == 'message':
-            self.on_state_change(self._decode_result(message['data']), message)
+        if self._pubsub:
+            message = self._pubsub.get_message(timeout=timeout)
+            if message and message['type'] == 'message':
+                self.on_state_change(self._decode_result(message['data']), message)
+        elif timeout:
+            time.sleep(timeout)
 
     def consume_from(self, task_id):
         if self._pubsub is None:
