@@ -141,7 +141,13 @@ an overview of what's new in Celery 4.3.
 
 - **Asynpool**: Fixed deadlock when closing socket.
 
-  TODO: Elaborate about this https://github.com/celery/celery/pull/4997
+  Upon attempting to close a socket, :class:`celery.concurrency.asynpool.AsynPool`
+  only removed the queue writer from the hub but did not remove the reader.
+  This led to a deadlock on the file descriptor
+  and eventually the worker stopped accepting new tasks.
+  
+  We now close both the reader and the writer file descriptors in a single loop
+  iteration which prevents the deadlock.
 
   Contributed by **Joshua Engelman**
 
