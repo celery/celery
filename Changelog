@@ -265,9 +265,11 @@ an overview of what's new in Celery 4.3.
 
 - **Result Backend**: Fix memory leak.
 
-  TODO: Elaborate about this.
+  We reintroduced weak references to bound methods for AsyncResult callback promises,
+  after adding full weakref support for Python 2 in `vine <https://github.com/celery/vine/tree/v1.2.0>`_.
+  More details can be found in `celery/celery#4839 <https://github.com/celery/celery/pull/4839>_.
 
-  Contributed by **George Psarakis**.
+  Contributed by **George Psarakis** and **:github_user:`monsterxx03`**.
 
 - **Task Execution**: Fixed roundtrip serialization for eager tasks.
 
