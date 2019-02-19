@@ -6,6 +6,7 @@ from contextlib import contextmanager
 
 import pytest
 from case import ANY, Mock, call, patch, skip
+from kombu.serialization import prepare_accept_content
 
 from celery import chord, group, states, uuid
 from celery.app.task import Context, Task
@@ -20,8 +21,6 @@ from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.utils.serialization import find_pickleable_exception as fnpe
 from celery.utils.serialization import get_pickleable_exception as gpe
 from celery.utils.serialization import subclass_exception
-
-from kombu.serialization import prepare_accept_content
 
 
 class wrapobject(object):

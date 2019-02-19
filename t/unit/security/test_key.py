@@ -1,11 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
+from kombu.utils.encoding import ensure_bytes
 
 from celery.exceptions import SecurityError
 from celery.security.key import PrivateKey
 from celery.security.utils import get_digest_algorithm
-from kombu.utils.encoding import ensure_bytes
 
 from . import CERT1, KEY1, KEY2
 from .case import SecurityCase

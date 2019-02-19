@@ -10,11 +10,10 @@ import pytz
 from case import Mock, mock, skip
 from kombu import Queue
 
-from celery.utils.serialization import (UnpickleableExceptionWrapper,
+from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE,
+                                        UnpickleableExceptionWrapper,
                                         ensure_serializable,
-                                        get_pickleable_etype,
-                                        jsonify,
-                                        STRTOBOOL_DEFAULT_TABLE,
+                                        get_pickleable_etype, jsonify,
                                         strtobool)
 
 

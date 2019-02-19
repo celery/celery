@@ -1,11 +1,10 @@
 from __future__ import absolute_import, unicode_literals
 
-from case import patch
-
-import pytest
 import boto3
-from moto import mock_s3
+import pytest
 from botocore.exceptions import ClientError
+from case import patch
+from moto import mock_s3
 
 from celery.backends.s3 import S3Backend
 from celery.exceptions import ImproperlyConfigured

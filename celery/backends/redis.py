@@ -3,7 +3,6 @@
 from __future__ import absolute_import, unicode_literals
 
 import time
-
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 

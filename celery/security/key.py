@@ -2,10 +2,10 @@
 """Private keys for the security serializer."""
 from __future__ import absolute_import, unicode_literals
 
-from kombu.utils.encoding import ensure_bytes
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.backends import default_backend
+from kombu.utils.encoding import ensure_bytes
 
 from .utils import reraise_errors
 

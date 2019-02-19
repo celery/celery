@@ -12,7 +12,7 @@ import re
 import sys
 from collections import namedtuple
 
-SERIES = 'windowlicker'
+SERIES = 'rhubarb'
 
 __version__ = '4.2.0'
 __author__ = 'Ask Solem'

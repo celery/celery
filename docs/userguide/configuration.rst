@@ -1936,7 +1936,7 @@ See :ref:`routing-options-rabbitmq-priorities`.
 .. setting:: task_inherit_parent_priority
 
 ``task_inherit_parent_priority``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :brokers: RabbitMQ
 
 Default: :const:`False`.

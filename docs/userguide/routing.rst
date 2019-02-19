@@ -269,7 +269,7 @@ queue named celery will really be split into 4 queues:
 
 .. code-block:: python
 
-    ['celery0', 'celery3`, `celery6`, `celery9`]
+    ['celery0', 'celery3', 'celery6', 'celery9']
 
 
 If you want more priority levels you can set the priority_steps transport option:

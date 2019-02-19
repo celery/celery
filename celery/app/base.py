@@ -42,7 +42,7 @@ from celery.utils.time import (get_exponential_backoff_interval, timezone,
 from . import builtins  # noqa
 from . import backends
 from .annotations import prepare as prepare_annotations
-from .defaults import find_deprecated_settings, DEFAULT_SECURITY_DIGEST
+from .defaults import DEFAULT_SECURITY_DIGEST, find_deprecated_settings
 from .registry import TaskRegistry
 from .utils import (AppPickler, Settings, _new_key_to_old, _old_key_to_new,
                     _unpickle_app, _unpickle_app_v2, appstr, bugreport,
