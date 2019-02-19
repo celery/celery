@@ -1933,6 +1933,27 @@ Default: :const:`None`.
 
 See :ref:`routing-options-rabbitmq-priorities`.
 
+.. setting:: task_inherit_parent_priority
+
+``task_inherit_parent_priority``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:brokers: RabbitMQ
+
+Default: :const:`False`.
+
+If enabled, child tasks will inherit priority of the parent task.
+
+.. code-block:: python
+
+    # The last task in chain will also have priority set to 5.
+    chain = celery.chain(add.s(2) | add.s(2).set(priority=5) | add.s(3))
+
+Priority inheritance also works when calling child tasks from a parent task
+with `delay` or `apply_async`.
+
+See :ref:`routing-options-rabbitmq-priorities`.
+
+
 .. setting:: worker_direct
 
 ``worker_direct``

@@ -248,6 +248,7 @@ NAMESPACES = Namespace(
         annotations=Option(type='any'),
         compression=Option(type='string', old={'celery_message_compression'}),
         create_missing_queues=Option(True, type='bool'),
+        inherit_parent_priority=Option(False, type='bool'),
         default_delivery_mode=Option(2, type='string'),
         default_queue=Option('celery'),
         default_exchange=Option(None, type='string'),  # taken from queue

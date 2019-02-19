@@ -729,6 +729,10 @@ class Celery(object):
                 if not parent_id:
                     parent_id = parent.request.id
 
+                if conf.task_inherit_parent_priority:
+                    options.setdefault('priority',
+                                       parent.request.delivery_info.get('priority'))
+
         message = amqp.create_task_message(
             task_id, name, args, kwargs, countdown, eta, group_id,
             expires, retries, chord,

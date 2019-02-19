@@ -164,6 +164,20 @@ class TasksCase:
 
         self.task_with_ignored_result = task_with_ignored_result
 
+        @self.app.task(bind=True)
+        def task_called_by_other_task(self):
+            pass
+
+        @self.app.task(bind=True)
+        def task_which_calls_other_task(self):
+            # Couldn't find a better way to mimic an apply_async()
+            # request with set priority
+            self.request.delivery_info['priority'] = 5
+
+            task_called_by_other_task.delay()
+
+        self.task_which_calls_other_task = task_which_calls_other_task
+
         # Remove all messages from memory-transport
         from kombu.transport.memory import Channel
         Channel.queues.clear()
@@ -455,6 +469,20 @@ class test_tasks(TasksCase):
                                                    ignore_result=False)
 
         self.app.send_task = old_send_task
+
+    def test_inherit_parent_priority_child_task(self):
+        self.app.conf.task_inherit_parent_priority = True
+
+        self.app.producer_or_acquire = Mock()
+        self.app.producer_or_acquire.attach_mock(
+            ContextMock(serializer='json'), 'return_value')
+        self.app.amqp.send_task_message = Mock(name="send_task_message")
+
+        self.task_which_calls_other_task.apply(args=[])
+
+        self.app.amqp.send_task_message.assert_called_with(
+            ANY, 't.unit.tasks.test_tasks.task_called_by_other_task',
+            ANY, priority=5, queue=ANY, serializer=ANY)
 
     def test_typing__disabled(self):
         @self.app.task(typing=False)
