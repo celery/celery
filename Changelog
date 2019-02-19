@@ -184,9 +184,8 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Artem Vasilyev**
 
-- **Result Backend**: Forget parent meta when forgetting a chain.
-
-  TODO: Elaborate about this https://github.com/celery/celery/pull/5095
+- **Result Backend**: Forget parent result metadata when forgetting
+  a result.
 
   Contributed by **:github_user:`tothegump`**
 
