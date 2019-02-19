@@ -274,7 +274,10 @@ an overview of what's new in Celery 4.3.
 
 - **Canvas**: Complex canvases with error callbacks no longer raises an :class:`AttributeError`.
 
-  TODO: Elaborate about this https://github.com/celery/celery/pull/5297
+  Very complex canvases such as `this <https://github.com/merchise/xopgi.base/blob/6634819ad5c701c04bc9baa5c527449070843b71/xopgi/xopgi_cdr/cdr_agent.py#L181>`_
+  no longer raise an :class:`AttributeError` which prevents constructing them.
+
+  We do not know why this bug occurs yet.
 
   Contributed by **Manuel Vázquez Acosta**
 
