@@ -298,6 +298,39 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Noam Kush**
 
+- **Task**: Added the :setting:`task_inherit_parent_priority` setting.
+
+  Setting the :setting:`task_inherit_parent_priority` configuration option to
+  `True` will make Celery tasks inherit the priority of the previous task
+  linked to it.
+
+  Examples:
+
+  .. code-block:: python
+
+    c = celery.chain(
+      add.s(2), # priority=None
+      add.s(3).set(priority=5), # priority=5
+      add.s(4), # priority=5
+      add.s(5).set(priority=3), # priority=3
+      add.s(6), # priority=3
+    )
+
+  .. code-block:: python
+
+    @app.task(bind=True)
+    def child_task(self):
+      pass
+
+    @app.task(bind=True)
+    def parent_task(self):
+      child_task.delay()
+
+    # child_task will also have priority=5
+    parent_task.apply_async(args=[], priority=5)
+
+  Contributed by **:github_user:`madprogrammer`**
+
 Code Cleanups, Test Coverage & CI Improvements by:
 
   - **Jon Dufresne**
