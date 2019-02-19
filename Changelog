@@ -101,7 +101,8 @@ an overview of what's new in Celery 4.3.
 
 - Gracefully handle consumer :class:`kombu.exceptions.DecodeError`.
 
-  TODO: Elaborate about this https://github.com/celery/celery/pull/5044
+  When using the v2 protocol the worker no longer crashes when the consumer
+  encounters an error while decoding a message.
 
   Contributed by **Steven Sklar**
 
