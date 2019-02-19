@@ -249,26 +249,26 @@ an overview of what's new in Celery 4.3.
   .. code-block:: python
 
     c = chord(
-    group([
-        chain(
-            dummy.si(),
-            chord(
-                group([dummy.si(), dummy.si()]),
-                dummy.si(),
-            ),
-        ),
-        chain(
-            dummy.si(),
-            chord(
-                group([dummy.si(), dummy.si()]),
-                dummy.si(),
-            ),
-        ),
-    ]),
-    dummy.si()
-  )
+      group([
+          chain(
+              dummy.si(),
+              chord(
+                  group([dummy.si(), dummy.si()]),
+                  dummy.si(),
+              ),
+          ),
+          chain(
+              dummy.si(),
+              chord(
+                  group([dummy.si(), dummy.si()]),
+                  dummy.si(),
+              ),
+          ),
+      ]),
+      dummy.si()
+    )
 
-  c.delay().get()
+    c.delay().get()
 
   Contributed by **Maximilien Cuony**
 
@@ -307,7 +307,7 @@ an overview of what's new in Celery 4.3.
 
   We reintroduced weak references to bound methods for AsyncResult callback promises,
   after adding full weakref support for Python 2 in `vine <https://github.com/celery/vine/tree/v1.2.0>`_.
-  More details can be found in `celery/celery#4839 <https://github.com/celery/celery/pull/4839>_.
+  More details can be found in `celery/celery#4839 <https://github.com/celery/celery/pull/4839>`_.
 
   Contributed by **George Psarakis** and **:github_user:`monsterxx03`**.
 
@@ -315,7 +315,7 @@ an overview of what's new in Celery 4.3.
 
   When doing the roundtrip serialization for eager tasks,
   the task serializer will always be JSON unless the `serializer` argument
-  is present in the call to :meth:`celery.Task.apply_async`.
+  is present in the call to :meth:`celery.app.task.Task.apply_async`.
   If the serializer argument is present but is `'pickle'`,
   an exception will be raised as pickle-serialized objects
   cannot be deserialized without specifying to `serialization.loads`
@@ -323,7 +323,7 @@ an overview of what's new in Celery 4.3.
   The Producer's `serializer` seems to be set to `None`,
   causing the default to JSON serialization.
 
-  We now continue to use (in order) the `serializer` argument to :meth:`celery.Task.apply_async`,
+  We now continue to use (in order) the `serializer` argument to :meth:`celery.app.task.Task.apply_async`,
   if present, or the `Producer`'s serializer if not `None`.
   If the `Producer`'s serializer is `None`,
   it will use the Celery app's `task_serializer` configuration entry as the serializer.
