@@ -88,7 +88,8 @@ class Context(object):
     kwargs = None
     retries = 0
     eta = None
-    pending_start=None
+    pending_start = None
+    start_time = None
     expires = None
     is_eager = False
     headers = None
