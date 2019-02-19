@@ -145,7 +145,7 @@ an overview of what's new in Celery 4.3.
   only removed the queue writer from the hub but did not remove the reader.
   This led to a deadlock on the file descriptor
   and eventually the worker stopped accepting new tasks.
-  
+
   We now close both the reader and the writer file descriptors in a single loop
   iteration which prevents the deadlock.
 
@@ -173,10 +173,14 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Clemens Wolff**
 
-- **Application**: Added configuration options to separate multiple apps on
-  a single vhost.
+- **Application**: Added configuration options to allow separate multiple apps
+  to run on a single RabbitMQ vhost.
 
-  TODO: Elaborate about this https://github.com/celery/celery/pull/5195
+  The newly added :setting:`event_exchange` and :setting:`control_exchange`
+  configuration options allow users to use separate Pidbox exchange
+  and a separate events exchange.
+
+  This allow different Celery applications to run separately on the same vhost.
 
   Contributed by **Artem Vasilyev**
 
