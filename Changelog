@@ -244,7 +244,31 @@ an overview of what's new in Celery 4.3.
 
 - **Canvas**: Fixed chords with chains which include sub chords in a group.
 
-  TODO: Elaborate about this https://github.com/celery/celery/pull/5222
+  Celery now correctly executes the last task in these types of canvases:
+
+  .. code-block:: python
+
+    c = chord(
+    group([
+        chain(
+            dummy.si(),
+            chord(
+                group([dummy.si(), dummy.si()]),
+                dummy.si(),
+            ),
+        ),
+        chain(
+            dummy.si(),
+            chord(
+                group([dummy.si(), dummy.si()]),
+                dummy.si(),
+            ),
+        ),
+    ]),
+    dummy.si()
+  )
+
+  c.delay().get()
 
   Contributed by **Maximilien Cuony**
 
