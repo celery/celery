@@ -230,7 +230,10 @@ an overview of what's new in Celery 4.3.
 
 - **Auth Serializer**: Revamped the auth serializer.
 
-  TODO: Elaborate about this
+  The auth serializer received a complete overhaul.
+  It was previously horribly broken.
+
+  We now depend on cryptography instead of pyOpenSSL for this serializer.
 
   Contributed by **Benjamin Pereto**
 
