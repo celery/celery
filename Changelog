@@ -371,6 +371,15 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **:github_user:`madprogrammer`**
 
+- **Canvas**: Added the :setting:`result_chord_join_timeout` setting.
+
+  Previously, :meth:`celery.result.GroupResult.join` had a fixed timeout of 3
+  seconds.
+
+  The :setting:`result_chord_join_timeout` setting now allows you to change it.
+
+  Contributed by **:github_user:`srafehi`**
+
 Code Cleanups, Test Coverage & CI Improvements by:
 
   - **Jon Dufresne**
