@@ -1,4 +1,4 @@
-:Version: 4.2.1 (latentcall)
+:Version: 4.3.0rc1 (rhubarb)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -38,8 +38,9 @@ What do I need?
 
 Celery version 4.0 runs on,
 
-- Python (2.7, 3.4, 3.5)
-- PyPy (5.4, 5.5)
+- Python (2.7, 3.4, 3.5, 3.6, 3.7)
+- PyPy2.7 (6.0)
+- PyPy3.5 (6.0)
 
 
 This is the last version to support Python 2.7,
