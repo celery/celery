@@ -188,7 +188,7 @@ class test_unlock_chord_task(ChordCase):
         with self._chord_context(MockJoinResult):
             MockJoinResult.join.assert_called_with(
                 timeout=timeout,
-                spropagate=True,
+                propagate=True,
             )
 
     def test_unlock_join_timeout_default(self):
