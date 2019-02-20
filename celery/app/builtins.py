@@ -78,7 +78,10 @@ def add_unlock_chord_task(app):
         callback = maybe_signature(callback, app=app)
         try:
             with allow_join_result():
-                ret = j(timeout=3.0, propagate=True)
+                ret = j(
+                    timeout=app.conf.result_chord_join_timeout,
+                    propagate=True,
+                )
         except Exception as exc:  # pylint: disable=broad-except
             try:
                 culprit = next(deps._failed_join_report())

@@ -746,6 +746,15 @@ will disable the cache.
 
 Disabled by default.
 
+.. setting:: result_chord_join_timeout
+
+``result_chord_join_timeout``
+~~~~~~~~~~~~~~~~~~~~
+
+Default: 3.0.
+
+The timeout in seconds (int/float) when joining a group's results within a chord.
+
 .. _conf-database-result-backend:
 
 Database backend settings
