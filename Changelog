@@ -8,9 +8,9 @@ This document contains change notes for bugfix releases in
 the 4.x series, please see :ref:`whatsnew-4.3` for
 an overview of what's new in Celery 4.3.
 
-4.3.0
-=====
-:release-date: TBD
+4.3.0 RC1
+=========
+:release-date: 2019-02-20 5:00 PM IST
 :release-by: Omer Katz
 
 - **Canvas**: :meth:`celery.chain.apply` does not ignore keyword arguments anymore when
