@@ -167,3 +167,5 @@ Starting from this release, the minimum required Django version is 1.11.
 
 News
 ====
+
+To be completed before GA.
