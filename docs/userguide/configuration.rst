@@ -753,7 +753,7 @@ Disabled by default.
 
 Default: 3.0.
 
-The timeout when joining the group's results within a chord in seconds.
+The timeout in seconds (int/float) when joining a group's results within a chord.
 
 .. _conf-database-result-backend:
 
