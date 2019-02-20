@@ -177,6 +177,33 @@ class test_unlock_chord_task(ChordCase):
     def test_is_in_registry(self):
         assert 'celery.chord_unlock' in self.app.tasks
 
+    def test_unlock_join_timeout_default(self):
+        class MockJoinResult(TSR):
+            is_ready = True
+            value = [(None,)]
+            join = Mock(return_value=value)
+            join_native = join
+        
+        with self._chord_context(MockJoinResult):
+            MockJoinResult.join.assert_called_with(
+                timeout=self.app.conf.result_chord_join_timeout,
+                propagate=True,
+            )
+    
+    def test_unlock_join_timeout_custom(self):
+        class MockJoinResult(TSR):
+            is_ready = True
+            value = [(None,)]
+            join = Mock(return_value=value)
+            join_native = join
+        
+        self.app.conf.result_chord_join_timeout = 5.0
+        with self._chord_context(MockJoinResult):
+            MockJoinResult.join.assert_called_with(
+                timeout=self.app.conf.result_chord_join_timeout,
+                propagate=True,
+            )
+
 
 class test_chord(ChordCase):
 
