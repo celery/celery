@@ -183,7 +183,7 @@ class test_unlock_chord_task(ChordCase):
             value = [(None,)]
             join = Mock(return_value=value)
             join_native = join
-        
+
         self.app.conf.result_chord_join_timeout = timeout
         with self._chord_context(MockJoinResult):
             MockJoinResult.join.assert_called_with(
