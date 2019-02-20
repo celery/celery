@@ -14,7 +14,7 @@ from __future__ import absolute_import
 # It used to be split up into nice little classes and methods,
 # but in the end it only resulted in bad performance and horrible tracebacks,
 # so instead we now use one closure per task class.
-
+import datetime
 import os
 import socket
 import sys
@@ -225,6 +225,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                    task_name=task.name)
             push_request(task_request)
             try:
+                task_request.start_time = datetime.datetime.utcnow()
+
                 # -*- PRE -*-
                 if prerun_receivers:
                     send_prerun(sender=task, task_id=uuid, task=task,
