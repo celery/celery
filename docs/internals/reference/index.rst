@@ -38,6 +38,7 @@
     celery.backends.couchbase
     celery.backends.dynamodb
     celery.backends.filesystem
+    celery.backends.cosmosdbsql
     celery.app.trace
     celery.app.annotations
     celery.app.routes
