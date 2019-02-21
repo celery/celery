@@ -17,10 +17,14 @@ about: Is something wrong with Celery?
 ## Environment & Settings
 **Celery version**: <!-- Include the contents of celery --version here -->
 <!-- Include the output of celery -A proj report below -->
-**Report**:
 <details>
+<summary>**`celery report` Output:**</summary>
+<p>
+
 ```
 ```
+
+</p>
 </details>
 
 # Steps to Reproduce
@@ -35,8 +39,13 @@ about: Is something wrong with Celery?
 ### Python Packages
 <!-- Please fill the contents of pip freeze below -->
 <details>
+<summary>**`pip freeze` Output:**</summary>
+<p>
+
 ```
 ```
+
+</p>
 </details>
 
 ### Other Dependencies
@@ -60,8 +69,12 @@ If there test case is too large, please include a link to a gist or a repository
 -->
 
 <details>
+<p>
+
 ```python
 ```
+
+</p>
 </details>
 
 # Expected Behavior
