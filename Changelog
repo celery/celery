@@ -8,7 +8,20 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
-.. _version-3.1.26.ud5:
+.. _version-3.1.26.ud8:
+
+3.1.26-ud8
+======
+- Revert 3.1.26-ud8 changes due to spike in CPU usage.
+- Add start_time as a storable value in the result backend.
+- Store start_time when entering trace_task (pre-run).
+
+3.1.26-ud7
+======
+- Back ported LimitedSet fix from Celery 4.0.0.rc3.
+- Adjusted limited set maxlen to 25000 since it's now a hard limit.
+- Added a signal limited_set_purging_unexpired_members to be sent if unexpired
+  members are purged.
 
 3.1.26-ud6
 ======
