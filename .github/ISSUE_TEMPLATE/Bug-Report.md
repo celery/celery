@@ -18,7 +18,7 @@ about: Is something wrong with Celery?
 **Celery version**: <!-- Include the contents of celery --version here -->
 <!-- Include the output of celery -A proj report below -->
 <details>
-<summary>**`celery report` Output:**</summary>
+<summary><b><code>celery report</code> Output:</b></summary>
 <p>
 
 ```
@@ -39,7 +39,7 @@ about: Is something wrong with Celery?
 ### Python Packages
 <!-- Please fill the contents of pip freeze below -->
 <details>
-<summary>**`pip freeze` Output:**</summary>
+<summary><b><code>pip freeze</code> Output</b></summary>
 <p>
 
 ```
