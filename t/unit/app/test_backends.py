@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from case import patch
+from case import patch, skip
 
 from celery.app import backends
 from celery.backends.amqp import AMQPBackend
@@ -15,6 +15,7 @@ class test_backends:
         ('amqp://', AMQPBackend),
         ('cache+memory://', CacheBackend),
     ])
+    @skip.skip("We use RPC")
     def test_get_backend_aliases(self, url, expect_cls, app):
         backend, url = backends.by_url(url, app.loader)
         assert isinstance(backend(app=app, url=url), expect_cls)
