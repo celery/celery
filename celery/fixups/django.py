@@ -60,7 +60,7 @@ class DjangoFixup(object):
         # Need to add project directory to path.
         # The project directory has precedence over system modules,
         # so we prepend it to the path.
-        sys.path.prepend(os.getcwd())
+        sys.path.insert(0, os.getcwd())
 
         self._settings = symbol_by_name('django.conf:settings')
         self.app.loader.now = self.now
