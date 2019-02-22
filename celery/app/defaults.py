@@ -158,6 +158,10 @@ NAMESPACES = Namespace(
 
         backend_settings=Option(None, type='dict'),
     ),
+    arangodb=Namespace(
+        __old__=old_ns('celery_arangodb'),
+        backend_settings=Option(None, type='dict')
+    ),
     mongodb=Namespace(
         __old__=old_ns('celery_mongodb'),
 

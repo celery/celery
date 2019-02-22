@@ -57,6 +57,7 @@ EXTENSIONS = {
     'memcache',
     'pymemcache',
     'couchbase',
+    'arangodb',
     'eventlet',
     'gevent',
     'msgpack',

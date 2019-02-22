@@ -96,6 +96,7 @@ have been moved into a new  ``task_`` prefix.
 ``S3_ENDPOINT_URL``                    :setting:`s3_endpoint_url`
 ``S3_REGION``                          :setting:`s3_region`
 ``CELERY_COUCHBASE_BACKEND_SETTINGS``  :setting:`couchbase_backend_settings`
+``CELERY_ARANGODB_BACKEND_SETTINGS``   :setting:`arangodb_backend_settings`
 ``CELERY_MONGODB_BACKEND_SETTINGS``    :setting:`mongodb_backend_settings`
 ``CELERY_EVENT_QUEUE_EXPIRES``         :setting:`event_queue_expires`
 ``CELERY_EVENT_QUEUE_TTL``             :setting:`event_queue_ttl`
@@ -607,6 +608,10 @@ Can be one of the following:
     Use `Couchbase`_ to store the results.
     See :ref:`conf-couchbase-result-backend`.
 
+* ``arangodb``
+    Use `ArangoDB`_ to store the results.
+    See :ref:`conf-arangodb-result-backend`.
+
 * ``couchdb``
     Use `CouchDB`_ to store the results.
     See :ref:`conf-couchdb-result-backend`.
@@ -645,6 +650,7 @@ Can be one of the following:
 .. _`CouchDB`: http://www.couchdb.com/
 .. _`CosmosDB`: https://azure.microsoft.com/en-us/services/cosmos-db/
 .. _`Couchbase`: https://www.couchbase.com/
+.. _`ArangoDB`: https://www.arangodb.com/
 .. _`Consul`: https://consul.io/
 .. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/blobs/
 .. _`S3`: https://aws.amazon.com/s3/
@@ -1612,6 +1618,66 @@ This is a dict supporting the following keys:
 * ``password``
 
     Password to authenticate to the Couchbase server (optional).
+
+.. _conf-arangodb-result-backend:
+
+ArangoDB backend settings
+--------------------------
+
+.. note::
+
+    The ArangoDB backend requires the :pypi:`pyArango` library.
+
+    To install this package use :command:`pip`:
+
+    .. code-block:: console
+
+        $ pip install celery[arangodb]
+
+    See :ref:`bundles` for instructions how to combine multiple extension
+    requirements.
+
+This backend can be configured via the :setting:`result_backend`
+set to a ArangoDB URL:
+
+.. code-block:: python
+
+    result_backend = 'arangodb://username:password@host:port/database/collection'
+
+.. setting:: arangodb_backend_settings
+
+``arangodb_backend_settings``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}`` (empty mapping).
+
+This is a dict supporting the following keys:
+
+* ``host``
+
+    Host name of the ArangoDB server. Defaults to ``localhost``.
+
+* ``port``
+
+    The port the ArangoDB server is listening to. Defaults to ``8529``.
+
+* ``database``
+
+    The default database in the ArangoDB server is writing to.
+    Defaults to ``celery``.
+
+* ``collection``
+
+    The default collection in the ArangoDB servers database is writing to.
+    Defaults to ``celery``.
+
+* ``username``
+
+    User name to authenticate to the ArangoDB server as (optional).
+
+* ``password``
+
+    Password to authenticate to the ArangoDB server (optional).
 
 .. _conf-cosmosdbsql-result-backend:
 

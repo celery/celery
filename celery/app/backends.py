@@ -37,6 +37,7 @@ BACKEND_ALIASES = {
     'consul': 'celery.backends.consul:ConsulBackend',
     'dynamodb': 'celery.backends.dynamodb:DynamoDBBackend',
     'azureblockblob': 'celery.backends.azureblockblob:AzureBlockBlobBackend',
+    'arangodb': 'celery.backends.arangodb:ArangoDbBackend',
     's3': 'celery.backends.s3:S3Backend',
 }
 
