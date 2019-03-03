@@ -54,16 +54,16 @@ matrix:
 before_install:
     - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
-    - | 
+    - |
           if [[ "$TOXENV" == *integration* ]]; then
               sudo echo 'deb https://dl.bintray.com/rabbitmq-erlang/debian xenial main' > /etc/apt/sources.list.d/rabbitmq-bintray.list
               sudo apt-key adv --keyserver "hkps.pool.sks-keyservers.net" --recv-keys "0x6B73A36E6026DFCA"
               wget -O - "https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc" | sudo apt-key add -
               sudo apt update
               sudo apt install rabbitmq-server -y
-              sudo systemctl enable rabbitmq-server  
+              sudo systemctl enable rabbitmq-server
               sudo systemctl start rabbitmq-server
-          fi        
+          fi
     - |
           if [[ "$TOXENV" =~ "pypy" ]]; then
             export PYENV_ROOT="$HOME/.pyenv"
@@ -96,7 +96,7 @@ after_success:
               .tox/$TOXENV/bin/coverage xml
               .tox/$TOXENV/bin/codecov -e TOXENV
           fi;
-install: travis_retry pip install -U tox | cat
+install: travis_retry pip --disable-pip-version-check install -U tox | cat
 script: tox -v -- -v
 notifications:
   email: false
