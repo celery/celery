@@ -755,7 +755,7 @@ Disabled by default.
 .. setting:: result_chord_join_timeout
 
 ``result_chord_join_timeout``
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: 3.0.
 
