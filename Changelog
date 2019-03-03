@@ -8,6 +8,35 @@ This document contains change notes for bugfix releases in
 the 4.x series, please see :ref:`whatsnew-4.3` for
 an overview of what's new in Celery 4.3.
 
+4.3.0 RC2
+=========
+:release-date: 2019-03-03 9:30 P.M UTC+2:00
+:release-by: Omer Katz
+
+- **Filesystem Backend**: Added meaningful error messages for filesystem backend.
+
+  Contributed by **Lars Rinn**
+
+- **New Result Backend**: Added the ArangoDB backend.
+
+  Contributed by **Dilip Vamsi Moturi**
+
+- **Django**: Prepend current working directory instead of appending so that
+  the project directory will have precedence over system modules as expected.
+
+  Contributed by **Antonin Delpeuch**
+
+- Bump minimum py-redis version to 3.2.0.
+
+  Due to multiple bugs in earlier versions of py-redis that were causing
+  issues for Celery, we were forced to bump the minimum required version to 3.2.0.
+
+  Contributed by **Omer Katz**
+
+- **Dependencies**: Bump minimum required version of Kombu to 4.4
+
+  Contributed by **Omer Katz**
+
 4.3.0 RC1
 =========
 :release-date: 2019-02-20 5:00 PM IST
@@ -75,7 +104,7 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Douglas Rohde**
 
-- **Result Backend**: Added the Azure Block Blob Storage result backend.
+- **New Result Backend**: Added the Azure Block Blob Storage result backend.
 
   The backend is implemented on top of the azure-storage library which
   uses Azure Blob Storage for a scalable low-cost PaaS backend.
@@ -164,7 +193,7 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Jon Banafato**
 
-- **Result Backend**: Added the CosmosDB result backend.
+- **New Result Backend**: Added the CosmosDB result backend.
 
   This change adds a new results backend.
   The backend is implemented on top of the pydocumentdb library which uses
