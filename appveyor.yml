@@ -25,7 +25,6 @@ install:
   - "powershell extra\\appveyor\\install.ps1"
   - "%PYTHON%/Scripts/pip.exe install -U setuptools"
   - "%PYTHON%/Scripts/pip.exe install -U eventlet"
-  - "%PYTHON%/Scripts/pip.exe install -U -r requirements/extras/thread.txt"
 
 build: off
 
