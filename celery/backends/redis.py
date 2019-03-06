@@ -239,12 +239,14 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                 if ssl_val:
                     connparams[ssl_setting] = unquote(ssl_val)
             ssl_cert_reqs = query.pop('ssl_cert_reqs', 'MISSING')
-            if ssl_cert_reqs == 'CERT_REQUIRED':
+            if ssl_cert_reqs == 'MISSING':
+                ssl_cert_reqs = connparams.get('ssl_cert_reqs', 'MISSING')
+            if ssl_cert_reqs in ['CERT_REQUIRED', CERT_REQUIRED]:
                 connparams['ssl_cert_reqs'] = CERT_REQUIRED
-            elif ssl_cert_reqs == 'CERT_OPTIONAL':
+            elif ssl_cert_reqs in ['CERT_OPTIONAL', CERT_OPTIONAL]:
                 logger.warning(W_REDIS_SSL_CERT_OPTIONAL)
                 connparams['ssl_cert_reqs'] = CERT_OPTIONAL
-            elif ssl_cert_reqs == 'CERT_NONE':
+            elif ssl_cert_reqs in ['CERT_NONE', CERT_NONE]:
                 logger.warning(W_REDIS_SSL_CERT_NONE)
                 connparams['ssl_cert_reqs'] = CERT_NONE
             else:
