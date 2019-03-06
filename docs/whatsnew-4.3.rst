@@ -88,6 +88,11 @@ Wall of Contributors
     things like answering mailing-list questions.
 
 
+Upgrading from Celery 4.2
+=========================
+
+Please read the important notes below as there are several breaking changes.
+
 .. _v430-important:
 
 Important Notes
@@ -109,7 +114,7 @@ The supported Python Versions are:
 Kombu
 -----
 
-Starting from this release, the minimum required version is Kombu 4.3.
+Starting from this release, the minimum required version is Kombu 4.4.
 
 New Compression Algorithms
 ++++++++++++++++++++++++++
@@ -133,6 +138,18 @@ Billiard
 
 Starting from this release, the minimum required version is Billiard 3.6.
 
+Redis Message Broker
+--------------------
+
+Due to multiple bugs in earlier versions of py-redis that were causing
+issues for Celery, we were forced to bump the minimum required version to 3.2.0.
+
+Redis Result Backend
+--------------------
+
+Due to multiple bugs in earlier versions of py-redis that were causing
+issues for Celery, we were forced to bump the minimum required version to 3.2.0.
+
 Riak Result Backend
 --------------------
 
@@ -147,8 +164,8 @@ a warning.
 Please track `basho/riak-python-client#534 <https://github.com/basho/riak-python-client/issues/534>`_
 for updates.
 
-RabbitMQ 2.x Support
---------------------
+Dropped Support for RabbitMQ 2.x
+--------------------------------
 
 Starting from this release, we officially no longer support RabbitMQ 2.x.
 
@@ -156,7 +173,7 @@ The last release of 2.x was in 2012 and we had to make adjustments to
 correctly support high availability on RabbitMQ 3.x.
 
 If for some reason, you are still using RabbitMQ 2.x we encourage you to upgrade
-as soon as possible since security patches are not applied on 2.x anymore.
+as soon as possible since security patches are no longer applied on RabbitMQ 2.x.
 
 Django Support
 --------------
@@ -168,4 +185,27 @@ Starting from this release, the minimum required Django version is 1.11.
 News
 ====
 
-To be completed before GA.
+Result Backends
+---------------
+
+This release introduces four new result backends:
+
+  - S3 result backend
+  - ArangoDB result backend
+  - Azure Block Blob Storage
+  - CosmosDB result backend
+
+ArangoDB Result Backend
+~~~~~~~~~~~~~~~~~~~~~~~
+
+ArangoDB is a native multi-model database with search capabilities.
+The backend stores the result in the following document format:
+
+:: .. code-block::
+
+  {
+    _key: {key},
+    task: {task}
+  }
+
+See :ref:`conf-arangodb-result-backend` for more information.

@@ -241,7 +241,7 @@ an overview of what's new in Celery 4.3.
 
   Contributed by **Victor Mireyev**
 
-- **Result Backend**: Added the S3 result backend.
+- **New Result Backend**: Added the S3 result backend.
 
   Contributed by **Florian Chardin**
 
