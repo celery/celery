@@ -86,7 +86,7 @@ class Router(object):
                 return lpmerge(self.expand_destination(route), options)
         if 'queue' not in options:
             options = lpmerge(self.expand_destination(
-                              self.app.conf.task_default_queue), options)
+                self.app.conf.task_default_queue), options)
         return options
 
     def expand_destination(self, route):

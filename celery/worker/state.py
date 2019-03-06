@@ -132,9 +132,9 @@ if C_BENCH:  # pragma: no cover
         def on_shutdown():
             if bench_first is not None and bench_last is not None:
                 print('- Time spent in benchmark: {0!r}'.format(
-                      bench_last - bench_first))
+                    bench_last - bench_first))
                 print('- Avg: {0}'.format(
-                      sum(bench_sample) / len(bench_sample)))
+                    sum(bench_sample) / len(bench_sample)))
                 memdump()
 
     def task_reserved(request):  # noqa

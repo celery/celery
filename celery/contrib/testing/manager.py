@@ -147,11 +147,11 @@ class ManagerMixin(object):
         )
 
     def assert_result_tasks_in_progress_or_completed(
-        self,
-        async_results,
-        interval=0.5,
-        desc='waiting for tasks to be started or completed',
-        **policy
+            self,
+            async_results,
+            interval=0.5,
+            desc='waiting for tasks to be started or completed',
+            **policy
     ):
         return self.assert_task_state_from_result(
             self.is_result_task_in_progress,
