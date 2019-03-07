@@ -15,11 +15,10 @@ from kombu.utils.compat import register_after_fork
 from kombu.utils.functional import lazy
 from kombu.utils.objects import cached_property
 
-
 from celery.exceptions import DuplicateNodenameWarning
+from celery.five import items
 from celery.utils.log import get_logger
 from celery.utils.text import pluralize
-from celery.five import items
 
 __all__ = ('Inspect', 'Control', 'flatten_reply')
 

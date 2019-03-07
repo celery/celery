@@ -5,10 +5,11 @@
 
 from __future__ import absolute_import, unicode_literals
 
-import logging
 import json
-from kombu.utils.url import _parse_url
+import logging
+
 from kombu.utils.encoding import str_t
+from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
 
