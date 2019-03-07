@@ -4,18 +4,51 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from celery import chain, chord, group
+from celery import chain, chord, group, signature
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
 
 from .conftest import flaky, get_active_redis_channels, get_redis_connection
-from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
-                    add_to_all_to_chord, build_chain_inside_task, chord_error,
-                    collect_ids, delayed_sum, delayed_sum_with_soft_guard,
-                    fail, identity, ids, print_unicode, raise_error,
-                    redis_echo, second_order_replace1, tsum)
+from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
+                    add_to_all, add_to_all_to_chord, build_chain_inside_task,
+                    chord_error, collect_ids, delayed_sum,
+                    delayed_sum_with_soft_guard, fail, identity, ids,
+                    print_unicode, raise_error, redis_echo,
+                    second_order_replace1, tsum, return_exception)
 
 TIMEOUT = 120
+
+
+class test_link_error:
+    @flaky
+    def test_link_error_eager(self):
+        exception = ExpectedException("Task expected to fail", "test")
+        assert (fail.apply(args=("test", ), link_error=return_exception.s()).get(timeout=TIMEOUT, propagate=False), True) == (exception, True)
+
+    @flaky
+    def test_link_error(self):
+        exception = ExpectedException("Task expected to fail", "test")
+        assert (fail.apply_async(args=("test",), link_error=return_exception.s()).get(timeout=TIMEOUT, propagate=False), True) == (exception, True)
+
+    @flaky
+    def test_link_error_using_signature_eager(self):
+        fail = signature('t.integration.tasks.fail', args=("test", ))
+        retrun_exception = signature('t.integration.tasks.return_exception')
+
+        fail.link_error(retrun_exception)
+
+        exception = ExpectedException("Task expected to fail", "test")
+        assert (fail.apply().get(timeout=TIMEOUT, propagate=False), True) == (exception, True)
+
+    @flaky
+    def test_link_error_using_signature(self):
+        fail = signature('t.integration.tasks.fail', args=("test", ))
+        retrun_exception = signature('t.integration.tasks.return_exception')
+
+        fail.link_error(retrun_exception)
+
+        exception = ExpectedException("Task expected to fail", "test")
+        assert (fail.delay().get(timeout=TIMEOUT, propagate=False), True) == (exception, True)
 
 
 class test_chain:
