@@ -18,23 +18,9 @@ TEST_BACKEND = os.environ.get('TEST_BACKEND', 'redis://')
 __all__ = (
     'celery_app',
     'celery_session_worker',
-    'flaky',
     'get_active_redis_channels',
     'get_redis_connection',
 )
-
-
-def flaky(fun):
-    @wraps(fun)
-    def _inner(*args, **kwargs):
-        for i in reversed(range(3)):
-            try:
-                return fun(*args, **kwargs)
-            except Exception:
-                if not i:
-                    raise
-    _inner.__wrapped__ = fun
-    return _inner
 
 
 def get_redis_connection():

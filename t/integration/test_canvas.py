@@ -8,7 +8,7 @@ from celery import chain, chord, group, signature
 from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
 
-from .conftest import flaky, get_active_redis_channels, get_redis_connection
+from .conftest import get_active_redis_channels, get_redis_connection
 from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     add_to_all, add_to_all_to_chord, build_chain_inside_task,
                     chord_error, collect_ids, delayed_sum,
@@ -20,17 +20,17 @@ TIMEOUT = 120
 
 
 class test_link_error:
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_link_error_eager(self):
         exception = ExpectedException("Task expected to fail", "test")
         assert (fail.apply(args=("test", ), link_error=return_exception.s()).get(timeout=TIMEOUT, propagate=False), True) == (exception, True)
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_link_error(self):
         exception = ExpectedException("Task expected to fail", "test")
         assert (fail.apply_async(args=("test",), link_error=return_exception.s()).get(timeout=TIMEOUT, propagate=False), True) == (exception, True)
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_link_error_using_signature_eager(self):
         fail = signature('t.integration.tasks.fail', args=("test", ))
         retrun_exception = signature('t.integration.tasks.return_exception')
@@ -40,7 +40,7 @@ class test_link_error:
         exception = ExpectedException("Task expected to fail", "test")
         assert (fail.apply().get(timeout=TIMEOUT, propagate=False), True) == (exception, True)
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_link_error_using_signature(self):
         fail = signature('t.integration.tasks.fail', args=("test", ))
         retrun_exception = signature('t.integration.tasks.return_exception')
@@ -53,17 +53,17 @@ class test_link_error:
 
 class test_chain:
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_simple_chain(self, manager):
         c = add.s(4, 4) | add.s(8) | add.s(16)
         assert c().get(timeout=TIMEOUT) == 32
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_single_chain(self, manager):
         c = chain(add.s(3, 4))()
         assert c.get(timeout=TIMEOUT) == 7
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_complex_chain(self, manager):
         c = (
             add.s(2, 2) | (
@@ -74,7 +74,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [64, 65, 66, 67]
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_group_results_in_chain(self, manager):
         # This adds in an explicit test for the special case added in commit
         # 1e3fcaa969de6ad32b52a3ed8e74281e5e5360e6
@@ -88,7 +88,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [4, 5]
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_chain_inside_group_receives_arguments(self, manager):
         c = (
             add.s(5, 6) |
@@ -97,7 +97,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [14, 14]
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_eager_chain_inside_task(self, manager):
         from .tasks import chain_add
 
@@ -108,7 +108,7 @@ class test_chain:
 
         chain_add.app.conf.task_always_eager = prev
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_group_chord_group_chain(self, manager):
         from celery.five import bytes_if_py2
 
@@ -135,7 +135,7 @@ class test_chain:
         assert set(redis_messages[4:]) == after_items
         redis_connection.delete('redis-echo')
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_second_order_replace(self, manager):
         from celery.five import bytes_if_py2
 
@@ -155,7 +155,7 @@ class test_chain:
         expected_messages = [b'In A', b'In B', b'In/Out C', b'Out B', b'Out A']
         assert redis_messages == expected_messages
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_parent_ids(self, manager, num=10):
         assert manager.inspect().ping()
         c = chain(ids.si(i=i) for i in range(num))
@@ -222,7 +222,7 @@ class test_chain:
         result = c.get()
         assert result == 10
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_groupresult_serialization(self, manager):
         """Test GroupResult is correctly serialized
         to save in the result backend"""
@@ -239,14 +239,14 @@ class test_chain:
 
 class test_result_set:
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_result_set(self, manager):
         assert manager.inspect().ping()
 
         rs = ResultSet([add.delay(1, 1), add.delay(2, 2)])
         assert rs.get(timeout=TIMEOUT) == [2, 4]
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_result_set_error(self, manager):
         assert manager.inspect().ping()
 
@@ -259,7 +259,7 @@ class test_result_set:
 
 class test_group:
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_empty_group_result(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -271,7 +271,7 @@ class test_group:
         task = GroupResult.restore(result.id)
         assert task.results == []
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_parent_ids(self, manager):
         assert manager.inspect().ping()
         g = (
@@ -290,7 +290,7 @@ class test_group:
             assert parent_id == expected_parent_id
             assert value == i + 2
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_nested_group(self, manager):
         assert manager.inspect().ping()
 
@@ -317,7 +317,7 @@ def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
 
 
 class test_chord:
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_redis_subscribed_channels_leak(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -358,7 +358,7 @@ class test_chord:
         assert channels_after_count == initial_channels_count
         assert set(channels_after) == set(initial_channels)
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_replaced_nested_chord(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -378,7 +378,7 @@ class test_chord:
         res1 = c1()
         assert res1.get(timeout=TIMEOUT) == [29, 38]
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_add_to_chord(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -387,7 +387,7 @@ class test_chord:
         res = c()
         assert res.get() == [0, 5, 6, 7]
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_add_chord_to_chord(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -396,7 +396,7 @@ class test_chord:
         res = c()
         assert res.get() == [0, 5 + 6 + 7]
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_eager_chord_inside_task(self, manager):
         from .tasks import chord_add
 
@@ -407,7 +407,7 @@ class test_chord:
 
         chord_add.app.conf.task_always_eager = prev
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_group_chain(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -419,7 +419,7 @@ class test_chord:
         res = c()
         assert res.get(timeout=TIMEOUT) == [12, 13, 14, 15]
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_nested_group_chain(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -445,7 +445,7 @@ class test_chord:
         res = c()
         assert res.get(timeout=TIMEOUT) == 11
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_single_task_header(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -474,7 +474,7 @@ class test_chord:
         res2 = c2()
         assert res2.get(timeout=TIMEOUT) == []
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_nested_chord(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -508,7 +508,7 @@ class test_chord:
         res = c()
         assert [[[[3, 3], 4], 5], 6] == res.get(timeout=TIMEOUT)
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_parent_ids(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -523,7 +523,7 @@ class test_chord:
         )
         self.assert_parentids_chord(g(), expected_root_id)
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_parent_ids__OR(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -632,7 +632,7 @@ class test_chord:
         assert len([cr for cr in chord_results if cr[2] != states.SUCCESS]
                    ) == 1
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_parallel_chords(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -646,7 +646,7 @@ class test_chord:
 
         assert r.get(timeout=TIMEOUT) == [10, 10]
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_chord_in_chords_with_chains(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()

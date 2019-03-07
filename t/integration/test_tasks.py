@@ -4,24 +4,24 @@ import pytest
 
 from celery import group
 
-from .conftest import flaky, get_active_redis_channels
+from .conftest import get_active_redis_channels
 from .tasks import add, add_ignore_result, print_unicode, retry_once, sleeping
 
 
 class test_tasks:
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=2)
     def test_task_accepted(self, manager, sleep=1):
         r1 = sleeping.delay(sleep)
         sleeping.delay(sleep)
         manager.assert_accepted([r1.id])
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=2)
     def test_task_retried(self):
         res = retry_once.delay()
         assert res.get(timeout=10) == 1  # retried once
 
-    @flaky
+    @pytest.mark.flaky(reruns=5, reruns_delay=2)
     def test_unicode_task(self, manager):
         manager.join(
             group(print_unicode.s() for _ in range(5))(),
