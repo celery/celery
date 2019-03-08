@@ -3,7 +3,8 @@
 from __future__ import absolute_import, unicode_literals
 
 import numbers
-from collections import Mapping, namedtuple
+from collections import namedtuple
+from collections.abc import Mapping
 from datetime import timedelta
 from weakref import WeakValueDictionary
 

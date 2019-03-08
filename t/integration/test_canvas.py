@@ -13,8 +13,8 @@ from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     add_to_all, add_to_all_to_chord, build_chain_inside_task,
                     chord_error, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, fail, identity, ids,
-                    print_unicode, raise_error, redis_echo,
-                    second_order_replace1, tsum, return_exception)
+                    print_unicode, raise_error, redis_echo, retry_once,
+                    return_exception, second_order_replace1, tsum)
 
 TIMEOUT = 120
 
@@ -23,12 +23,34 @@ class test_link_error:
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_link_error_eager(self):
         exception = ExpectedException("Task expected to fail", "test")
-        assert (fail.apply(args=("test", ), link_error=return_exception.s()).get(timeout=TIMEOUT, propagate=False), True) == (exception, True)
+        result = fail.apply(args=("test", ), link_error=return_exception.s())
+        actual = (result.get(timeout=TIMEOUT, propagate=False), True)
+        assert actual == (exception, True)
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_link_error(self):
         exception = ExpectedException("Task expected to fail", "test")
-        assert (fail.apply_async(args=("test",), link_error=return_exception.s()).get(timeout=TIMEOUT, propagate=False), True) == (exception, True)
+        result = fail.apply(args=("test", ), link_error=return_exception.s())
+        actual = (result.get(timeout=TIMEOUT, propagate=False), True)
+        assert actual == (exception, True)
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    @pytest.mark.xfail
+    def test_link_error_callback_error_callback_retries_eager(self):
+        result = fail.apply(
+            args=("test", ),
+            link_error=retry_once.s(kwargs={'countdown': None})
+        )
+        assert result.get(timeout=TIMEOUT, propagate=False) == 1
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    @pytest.mark.xfail
+    def test_link_error_callback_retries(self):
+        result = fail.apply_async(
+            args=("test", ),
+            link_error=retry_once.s(kwargs={'countdown': None})
+        )
+        assert result.get(timeout=TIMEOUT, propagate=False) == 1
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_link_error_using_signature_eager(self):
