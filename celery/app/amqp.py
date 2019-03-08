@@ -4,7 +4,6 @@ from __future__ import absolute_import, unicode_literals
 
 import numbers
 from collections import namedtuple
-from collections.abc import Mapping
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
@@ -22,6 +21,12 @@ from celery.utils.text import indent as textindent
 from celery.utils.time import maybe_make_aware
 
 from . import routes as _routes
+
+# TODO: Remove this once we drop Python 2.7 support
+try:
+    from collections.abc import Mapping
+except ImportError:  # noqa
+    from collections import Mapping
 
 __all__ = ('AMQP', 'Queues', 'task_message')
 
