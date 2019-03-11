@@ -257,7 +257,7 @@ class Task(object):
     #:
     #: The application default can be overridden with the
     #: :setting:`task_acks_on_failure_or_timeout` setting.
-    acks_on_failure_or_timeout = False
+    acks_on_failure_or_timeout = True
 
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
