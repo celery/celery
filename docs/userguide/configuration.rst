@@ -122,7 +122,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_SECURITY_CERTIFICATE``        :setting:`security_certificate`
 ``CELERY_SECURITY_CERT_STORE``         :setting:`security_cert_store`
 ``CELERY_SECURITY_KEY``                :setting:`security_key`
-``CELERY_TASK_ACKS_LATE``                   :setting:`task_acks_late`
+``CELERY_TASK_ACKS_LATE``              :setting:`task_acks_late`
 ``CELERY_TASK_ALWAYS_EAGER``           :setting:`task_always_eager`
 ``CELERY_TASK_ANNOTATIONS``            :setting:`task_annotations`
 ``CELERY_TASK_COMPRESSION``            :setting:`task_compression`

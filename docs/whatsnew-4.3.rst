@@ -117,7 +117,7 @@ Kombu
 Starting from this release, the minimum required version is Kombu 4.4.
 
 New Compression Algorithms
-++++++++++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Kombu 4.3 includes a few new optional compression methods:
 
@@ -180,10 +180,39 @@ Django Support
 
 Starting from this release, the minimum required Django version is 1.11.
 
+Revamped auth Serializer
+------------------------
+
+The auth serializer received a complete overhaul.
+It was previously horribly broken.
+
+We now depend on `cryptography` instead of `pyOpenSSL` for this serializer.
+
+See :ref:`message-signing` for details.
+
 .. _v430-news:
 
 News
 ====
+
+Brokers
+-------
+
+Configurable Events Exchange Name
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Previously, the events exchange name was hardcoded.
+
+You can use :setting:`event_exchange` to determine it.
+The default value remains the same.
+
+Configurable Pidbox Exchange Name
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Previously, the Pidbox exchange name was hardcoded.
+
+You can use :setting:`control_exchange` to determine it.
+The default value remains the same.
 
 Result Backends
 ---------------
@@ -203,6 +232,20 @@ metadata:
 
 In addition, :meth:`celery.app.task.update_state` now accepts keyword arguments
 which allows you to store custom data with the result.
+
+Encode Results Using A Different Serializer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The :setting:`result_accept_content` setting allows to configure different
+accepted content for the result backend.
+
+A special serializer (`auth`) is used for signed messaging,
+however the result_serializer remains in json, because we don't want encrypted
+content in our result backend.
+
+To accept unsigned content from the result backend,
+we introduced this new configuration option to specify the
+accepted content from the backend.
 
 New Result Backends
 ~~~~~~~~~~~~~~~~~~~
@@ -267,16 +310,45 @@ See :ref:`conf-cosmosdbsql-result-backend` for more information.
 Tasks
 -----
 
+Cythonized Tasks
+~~~~~~~~~~~~~~~~
+
+Cythonized tasks are now supported.
+You can generate C code from Cython that specifies a task using the `@task`
+decorator and everything should work exactly the same.
+
 Acknowledging Tasks on Failures or Timeouts
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When :setting:`acks_late` is set to `True` tasks are acknowledged on failures or
+When :setting:`task_acks_late` is set to `True` tasks are acknowledged on failures or
 timeouts.
 This makes it hard to use dead letter queues and exchanges.
 
 Celery 4.3 introduces the new :setting:`task_acks_on_failure_or_timeout` which
 allows you to avoid acknowledging tasks if they failed or timed out even if
-:setting:`acks_late` is set to `True`.
+:setting:`task_acks_late` is set to `True`.
+
+:setting:`task_acks_on_failure_or_timeout` is set to `True` by default.
+
+Schedules Now Support Microseconds
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When scheduling tasks using :program:`celery beat` microseconds
+are no longer ignored.
+
+Default Task Priority
+~~~~~~~~~~~~~~~~~~~~~
+
+You can now set the default priority of a task using
+the :setting:`task_default_priority` setting.
+The setting's value will be used if no priority is provided for a specific
+task.
 
 Canvas
 ------
+
+Chords can be Executed in Eager Mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When :setting:`task_always_eager` is set to `True`, chords are executed eagerly
+as well.
