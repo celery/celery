@@ -198,6 +198,18 @@ News
 Brokers
 -------
 
+Redis Broker Support for SSL URIs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Redis broker now has support for SSL connections.
+
+You can use :setting:`broker_use_ssl` as you normally did and use a
+`rediss://` URI.
+
+You can also pass the SSL configuration parameters to the URI:
+
+  `rediss://localhost:3456?ssl_keyfile=keyfile.key&ssl_certfile=certificate.crt&ssl_ca_certs=ca.pem&ssl_cert_reqs=CERT_REQUIRED`
+
 Configurable Events Exchange Name
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -216,6 +228,19 @@ The default value remains the same.
 
 Result Backends
 ---------------
+
+Redis Result Backend Support for SSL URIs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Redis result backend now has support for SSL connections.
+
+You can use :setting:`redis_backend_use_ssl` to configure it and use a
+`rediss://` URI.
+
+You can also pass the SSL configuration parameters to the URI:
+
+  `rediss://localhost:3456?ssl_keyfile=keyfile.key&ssl_certfile=certificate.crt&ssl_ca_certs=ca.pem&ssl_cert_reqs=CERT_REQUIRED`
+
 
 Store Extended Task Metadata in Result
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
