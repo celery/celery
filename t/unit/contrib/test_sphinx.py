@@ -22,7 +22,7 @@ SRCDIR = os.path.join(os.path.dirname(__file__), 'proj')
 def test_sphinx():
     app = TestApp(srcdir=SRCDIR, confdir=SRCDIR)
     app.build()
-    contents = (app.outdir / 'contents.html').read_text(encoding='UTF-8')
+    contents = open(os.path.join(app.outdir, 'contents.html'), 'r').read()
     assert 'This is a sample Task' in contents
     assert 'This is a sample Shared Task' in contents
     assert (
