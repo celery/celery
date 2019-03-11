@@ -344,6 +344,38 @@ the :setting:`task_default_priority` setting.
 The setting's value will be used if no priority is provided for a specific
 task.
 
+Tasks Optionally Inherit Parent's Priority
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Setting the :setting:`task_inherit_parent_priority` configuration option to
+`True` will make Celery tasks inherit the priority of the previous task
+linked to it.
+
+Examples:
+
+.. code-block:: python
+
+  c = celery.chain(
+    add.s(2), # priority=None
+    add.s(3).set(priority=5), # priority=5
+    add.s(4), # priority=5
+    add.s(5).set(priority=3), # priority=3
+    add.s(6), # priority=3
+  )
+
+.. code-block:: python
+
+  @app.task(bind=True)
+  def child_task(self):
+    pass
+
+  @app.task(bind=True)
+  def parent_task(self):
+    child_task.delay()
+
+  # child_task will also have priority=5
+  parent_task.apply_async(args=[], priority=5)
+
 Canvas
 ------
 
@@ -352,3 +384,13 @@ Chords can be Executed in Eager Mode
 
 When :setting:`task_always_eager` is set to `True`, chords are executed eagerly
 as well.
+
+Configurable Chord Join Timeout
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Previously, :meth:`celery.result.GroupResult.join` had a fixed timeout of 3
+seconds.
+
+The :setting:`result_chord_join_timeout` setting now allows you to change it.
+
+The default remains 3 seconds.
