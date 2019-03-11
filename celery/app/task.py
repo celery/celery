@@ -255,6 +255,9 @@ class Task(object):
     #: When enabled messages for this task will be acknowledged even if it
     #: fails or times out.
     #:
+    #: Configuring this setting only applies to tasks that are
+    #: acknowledged **after** they have been executed.
+    #:
     #: The application default can be overridden with the
     #: :setting:`task_acks_on_failure_or_timeout` setting.
     acks_on_failure_or_timeout = True
