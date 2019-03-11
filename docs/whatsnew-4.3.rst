@@ -192,8 +192,19 @@ This release introduces four new result backends:
 
   - S3 result backend
   - ArangoDB result backend
-  - Azure Block Blob Storage
+  - Azure Block Blob Storage result backend
   - CosmosDB result backend
+
+S3 Result Backend
+~~~~~~~~~~~~~~~~~
+
+Amazon Simple Storage Service (Amazon S3) is an object storage service by AWS.
+
+The results are stored using the following path template:
+
+  <:setting:`s3_bucket`>/<:setting:`s3_base_path`>/<key>
+
+See :ref:`conf-s3-result-backend` for more information.
 
 ArangoDB Result Backend
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -201,11 +212,35 @@ ArangoDB Result Backend
 ArangoDB is a native multi-model database with search capabilities.
 The backend stores the result in the following document format:
 
-:: .. code-block::
-
   {
     _key: {key},
     task: {task}
   }
 
 See :ref:`conf-arangodb-result-backend` for more information.
+
+Azure Block Blob Storage Result Backend
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Azure Block Blob Storage is an object storage service by Microsoft.
+
+The backend stores the result in the following path template:
+
+  <:setting:`azureblockblob_container_name`>/<key>
+
+See :ref:`conf-azureblockblob-result-backend` for more information.
+
+CosmosDB Result Backend
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Azure Cosmos DB is Microsoft's globally distributed,
+multi-model database service.
+
+The backend stores the result in the following document format:
+
+  {
+    id: {key},
+    value: {task}
+  }
+
+See :ref:`conf-cosmosdbsql-result-backend` for more information.
