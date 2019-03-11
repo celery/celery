@@ -17,6 +17,13 @@ ALIASES = {
     'processes': 'celery.concurrency.prefork:TaskPool',  # XXX compat alias
 }
 
+try:
+    import concurrent.futures  # noqa: F401
+except ImportError:
+    pass
+else:
+    ALIASES['threads'] = 'celery.concurrency.thread:TaskPool'
+
 
 def get_implementation(cls):
     """Return pool implementation by name."""
