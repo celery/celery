@@ -68,7 +68,7 @@ an overview of what's new in Celery 4.3.
 
 - **Task**: Added the new :setting:`task_acks_on_failure_or_timeout` setting.
 
-  Acknowledging SQS messages on failure or timing out makes it hard to use
+  Acknowledging SQS messages on failure or timing out makes it impossible to use
   dead letter queues.
 
   We introduce the new option acks_on_failure_or_timeout,

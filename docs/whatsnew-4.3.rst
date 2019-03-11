@@ -188,6 +188,25 @@ News
 Result Backends
 ---------------
 
+Store Extended Task Metadata in Result
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When :setting:`result_extended` is `True` the backend will store the following
+metadata:
+
+- Task Name
+- Arguments
+- Keyword arguments
+- The worker the task was executed on
+- Number of retries
+- The queue's name or routing key
+
+In addition, :meth:`celery.app.task.update_state` now accepts keyword arguments
+which allows you to store custom data with the result.
+
+New Result Backends
+~~~~~~~~~~~~~~~~~~~
+
 This release introduces four new result backends:
 
   - S3 result backend
@@ -244,3 +263,20 @@ The backend stores the result in the following document format:
   }
 
 See :ref:`conf-cosmosdbsql-result-backend` for more information.
+
+Tasks
+-----
+
+Acknowledging Tasks on Failures or Timeouts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When :setting:`acks_late` is set to `True` tasks are acknowledged on failures or
+timeouts.
+This makes it hard to use dead letter queues and exchanges.
+
+Celery 4.3 introduces the new :setting:`task_acks_on_failure_or_timeout` which
+allows you to avoid acknowledging tasks if they failed or timed out even if
+:setting:`acks_late` is set to `True`.
+
+Canvas
+------
