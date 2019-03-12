@@ -123,6 +123,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_SECURITY_CERT_STORE``         :setting:`security_cert_store`
 ``CELERY_SECURITY_KEY``                :setting:`security_key`
 ``CELERY_TASK_ACKS_LATE``              :setting:`task_acks_late`
+``CELERY_TASK_ACKS_ON_FAILURE_OR_TIMEOUT`` :setting:`task_acks_on_failure_or_timeout`
 ``CELERY_TASK_ALWAYS_EAGER``           :setting:`task_always_eager`
 ``CELERY_TASK_ANNOTATIONS``            :setting:`task_annotations`
 ``CELERY_TASK_COMPRESSION``            :setting:`task_compression`
@@ -524,6 +525,20 @@ has been executed, not *just before* (the default behavior).
 .. seealso::
 
     FAQ: :ref:`faq-acks_late-vs-retry`.
+
+.. setting:: task_acks_on_failure_or_timeout
+
+``task_acks_on_failure_or_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Enabled
+
+When enabled messages for all tasks will be acknowledged even if they
+fail or time out.
+
+Configuring this setting only applies to tasks that are
+acknowledged **after** they have been executed and only if
+:setting:`task_acks_late` is enabled.
 
 .. setting:: task_reject_on_worker_lost
 

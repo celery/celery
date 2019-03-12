@@ -256,11 +256,12 @@ class Task(object):
     #: fails or times out.
     #:
     #: Configuring this setting only applies to tasks that are
-    #: acknowledged **after** they have been executed.
+    #: acknowledged **after** they have been executed and only if
+    #: :setting:`task_acks_late` is enabled.
     #:
     #: The application default can be overridden with the
     #: :setting:`task_acks_on_failure_or_timeout` setting.
-    acks_on_failure_or_timeout = True
+    acks_on_failure_or_timeout = None
 
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
