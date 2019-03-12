@@ -4,7 +4,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 
 import pytest
-from case import Mock, patch
+from case import Mock, patch, ANY
 from kombu.utils.limits import TokenBucket
 
 from celery import Task
@@ -14,6 +14,7 @@ from celery.worker import state
 from celery.worker.request import Request
 from celery.worker.strategy import default as default_strategy
 from celery.worker.strategy import proto1_to_proto2
+from celery import signals
 
 
 class test_proto1_to_proto2:
@@ -166,6 +167,15 @@ class test_default_strategy_proto2:
             req = C.get_request()
             for callback in callbacks:
                 callback.assert_called_with(req)
+
+    def test_signal_task_received(self):
+        callback = Mock()
+        with self._context(self.add.s(2, 2)) as C:
+            signals.task_received.connect(callback)
+            C()
+            callback.assert_called_once_with(sender=C.consumer,
+                                             request=ANY,
+                                             signal=signals.task_received)
 
     def test_when_events_disabled(self):
         with self._context(self.add.s(2, 2), events=False) as C:

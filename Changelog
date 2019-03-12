@@ -8,6 +8,15 @@ This document contains change notes for bugfix releases in
 the 4.x series, please see :ref:`whatsnew-4.3` for
 an overview of what's new in Celery 4.3.
 
+4.3.0
+=====
+:release-date: TBD
+:release-by: Omer Katz
+
+- Added the :signal:`task_received` signal.
+
+  Contributed by **Omer Katz**
+
 4.3.0 RC2
 =========
 :release-date: 2019-03-03 9:30 P.M UTC+2:00
