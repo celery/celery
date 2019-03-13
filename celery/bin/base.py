@@ -44,6 +44,10 @@ __all__ = (
 for warning in (CDeprecationWarning, CPendingDeprecationWarning):
     warnings.simplefilter('once', warning, 0)
 
+# TODO: Remove this once we drop support for Python < 3.6
+if sys.version_info < (3, 6):
+    ModuleNotFoundError = ImportError
+
 ARGV_DISABLED = """
 Unrecognized command-line arguments: {0}
 
