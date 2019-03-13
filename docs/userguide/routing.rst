@@ -732,7 +732,7 @@ default priority.
     submitted at the same time they may be out of priority order at first.
     Disabling worker prefetching will prevent this issue, but may cause less than
     ideal performance for small, fast tasks. In most cases, simply reducing
-    `worker_prefetch_multiplier`to 1 is an easier and cleaner way to increase the
+    `worker_prefetch_multiplier` to 1 is an easier and cleaner way to increase the
     responsiveness of your system without the costs of disabling prefetching
     entirely.
 

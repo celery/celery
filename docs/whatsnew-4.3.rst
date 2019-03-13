@@ -230,7 +230,7 @@ Result Backends
 ---------------
 
 Redis Result Backend Support for SSL URIs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Redis result backend now has support for SSL connections.
 
@@ -289,7 +289,7 @@ Amazon Simple Storage Service (Amazon S3) is an object storage service by AWS.
 
 The results are stored using the following path template:
 
-  <:setting:`s3_bucket`>/<:setting:`s3_base_path`>/<key>
+| <:setting:`s3_bucket`>/<:setting:`s3_base_path`>/<key>
 
 See :ref:`conf-s3-result-backend` for more information.
 
@@ -299,10 +299,11 @@ ArangoDB Result Backend
 ArangoDB is a native multi-model database with search capabilities.
 The backend stores the result in the following document format:
 
-  {
-    _key: {key},
-    task: {task}
-  }
+
+|  {
+|    _key: {key},
+|    task: {task}
+|  }
 
 See :ref:`conf-arangodb-result-backend` for more information.
 
@@ -313,7 +314,7 @@ Azure Block Blob Storage is an object storage service by Microsoft.
 
 The backend stores the result in the following path template:
 
-  <:setting:`azureblockblob_container_name`>/<key>
+| <:setting:`azureblockblob_container_name`>/<key>
 
 See :ref:`conf-azureblockblob-result-backend` for more information.
 
@@ -325,10 +326,10 @@ multi-model database service.
 
 The backend stores the result in the following document format:
 
-  {
-    id: {key},
-    value: {task}
-  }
+|  {
+|    id: {key},
+|    value: {task}
+|  }
 
 See :ref:`conf-cosmosdbsql-result-backend` for more information.
 
