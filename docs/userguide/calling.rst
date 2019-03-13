@@ -495,7 +495,20 @@ Example setting a custom serializer for a single task invocation:
 Compression
 ===========
 
-Celery can compress the messages using either *gzip*, or *bzip2*.
+Celery can compress messages using the following builtin schemes:
+
+- `brotli`
+
+- `bzip2`
+
+- `gzip`
+
+- `lzma`
+
+- `zlib`
+
+- `zstd`
+
 You can also create your own compression schemes and register
 them in the :func:`kombu compression registry <kombu.compression.register>`.
 
