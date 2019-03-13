@@ -24,30 +24,30 @@ env:
   - MATRIX_TOXENV=integration-azureblockblob
 matrix:
   include:
-  - python: '3.6'
+  - python: '3.7'
     env: TOXENV=pypy-unit PYPY_VERSION="pypy2.7-6.0.0"
-  - python: '3.6'
+  - python: '3.7'
     env: TOXENV=pypy-integration-rabbitmq PYPY_VERSION="pypy2.7-6.0.0"
-  - python: '3.6'
+  - python: '3.7'
     env: TOXENV=pypy-integration-redis PYPY_VERSION="pypy2.7-6.0.0"
-  - python: '3.6'
+  - python: '3.7'
     env: TOXENV=pypy-integration-dynamodb PYPY_VERSION="pypy2.7-6.0.0"
-  - python: '3.6'
+  - python: '3.7'
     env: TOXENV=flake8
     stage: lint
-  - python: '3.6'
+  - python: '3.7'
     env: TOXENV=flakeplus
     stage: lint
-  - python: '3.6'
+  - python: '3.7'
     env: TOXENV=apicheck
     stage: lint
-  - python: '3.6'
+  - python: '3.7'
     env: TOXENV=configcheck
     stage: lint
-  - python: '3.6'
+  - python: '3.7'
     env: TOXENV=bandit
     stage: lint
-  - python: '3.6'
+  - python: '3.7'
     env: TOXENV=pydocstyle
     stage: lint
 
