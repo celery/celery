@@ -499,15 +499,40 @@ Celery can compress messages using the following builtin schemes:
 
 - `brotli`
 
+    brotli is optimized for the web, in particular small text
+    documents. It is most effective for serving static content
+    such as fonts and html pages.
+
 - `bzip2`
+
+    bzip2 creates smaller files than gzip, but compression and
+    decompression speeds are noticeably slower than those of gzip.
 
 - `gzip`
 
+    gzip is suitable for systems that require a small memory footprint,
+    making it ideal for systems with limited memory. It is often
+    used to generate files with the ".tar.gz" extension.
+
 - `lzma`
+
+    lzma provides a good compression ratio and executes with
+    fast compression and decompression speeds at the expense
+    of higher memory usage.
 
 - `zlib`
 
+    zlib is an abstraction of the Deflate algorithm in library
+    form which includes support both for the gzip file format
+    and a lightweight stream format in its API. It is a crucial
+    component of many software systems - Linux kernel and Git VCS just
+    to name a few.
+
 - `zstd`
+
+    zstd targets real-time compression scenarios at zlib-level
+    and better compression ratios. It's backed by a very fast entropy
+    stage, provided by Huff0 and FSE library.
 
 You can also create your own compression schemes and register
 them in the :func:`kombu compression registry <kombu.compression.register>`.
