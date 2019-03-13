@@ -348,13 +348,17 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         tkey = self.get_key_for_group(gid, '.t')
         result = self.encode_result(result, state)
         with client.pipeline() as pipe:
-            _, readycount, totaldiff, _, _ = pipe \
+            pipeline = pipe \
                 .rpush(jkey, self.encode([1, tid, state, result])) \
                 .llen(jkey) \
-                .get(tkey) \
-                .expire(jkey, self.expires) \
-                .expire(tkey, self.expires) \
-                .execute()
+                .get(tkey)
+
+            if self.expires is not None:
+                pipeline = pipeline \
+                    .expire(jkey, self.expires) \
+                    .expire(tkey, self.expires)
+
+            _, readycount, totaldiff = pipeline.execute()[:3]
 
         totaldiff = int(totaldiff or 0)
 
