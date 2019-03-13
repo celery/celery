@@ -704,7 +704,7 @@ You can also have multiple routers defined in a sequence:
 The routers will then be visited in turn, and the first to return
 a value will be chosen.
 
-If you're using Redis or RabbitMQ you can also specify the queue's default priority
+If you\'re using Redis or RabbitMQ you can also specify the queue\'s default priority
 in the route.
 
 .. code-block:: python
