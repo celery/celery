@@ -503,10 +503,30 @@ Celery can compress messages using the following builtin schemes:
     documents. It is most effective for serving static content
     such as fonts and html pages.
 
+    To use it, install kombu with:
+
+    .. code-block:: console
+
+      $ pip install kombu[brotli]
+
 - `bzip2`
 
     bzip2 creates smaller files than gzip, but compression and
     decompression speeds are noticeably slower than those of gzip.
+
+    To use it, please ensure your Python executable was compiled
+    with bzip2 support.
+
+    If you get the following :class:`ImportError`:
+
+    .. code-block:: pycon
+
+      >>> import bz2
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ImportError: No module named 'bz2'
+
+    it means that you should recompile your Python version with bzip2 support.
 
 - `gzip`
 
@@ -514,11 +534,45 @@ Celery can compress messages using the following builtin schemes:
     making it ideal for systems with limited memory. It is often
     used to generate files with the ".tar.gz" extension.
 
+    To use it, please ensure your Python executable was compiled
+    with gzip support.
+
+    If you get the following :class:`ImportError`:
+
+    .. code-block:: pycon
+
+      >>> import gzip
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ImportError: No module named 'gzip'
+
+    it means that you should recompile your Python version with gzip support.
+
 - `lzma`
 
     lzma provides a good compression ratio and executes with
     fast compression and decompression speeds at the expense
     of higher memory usage.
+
+    To use it, please ensure your Python executable was compiled
+    with lzma support and that your Python version is 3.3 and above.
+
+    If you get the following :class:`ImportError`:
+
+    .. code-block:: pycon
+
+      >>> import lzma
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ImportError: No module named 'lzma'
+
+    it means that you should recompile your Python version with lzma support.
+
+    Alternatively, you can also install a backport using:
+
+    .. code-block:: console
+
+      $ pip install kombu[lzma]
 
 - `zlib`
 
@@ -528,11 +582,31 @@ Celery can compress messages using the following builtin schemes:
     component of many software systems - Linux kernel and Git VCS just
     to name a few.
 
+    To use it, please ensure your Python executable was compiled
+    with zlib support.
+
+    If you get the following :class:`ImportError`:
+
+    .. code-block:: pycon
+
+      >>> import zlib
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ImportError: No module named 'zlib'
+
+    it means that you should recompile your Python version with zlib support.
+
 - `zstd`
 
     zstd targets real-time compression scenarios at zlib-level
     and better compression ratios. It's backed by a very fast entropy
     stage, provided by Huff0 and FSE library.
+
+    To use it, install kombu with:
+
+    .. code-block:: console
+
+      $ pip install kombu[zstd]
 
 You can also create your own compression schemes and register
 them in the :func:`kombu compression registry <kombu.compression.register>`.
