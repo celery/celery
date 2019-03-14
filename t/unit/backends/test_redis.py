@@ -505,6 +505,24 @@ class test_RedisBackend:
             call(jkey, 86400), call(tkey, 86400),
         ])
 
+    @patch('celery.result.GroupResult.restore')
+    def test_on_chord_part_return_no_expiry(self, restore):
+        old_expires = self.b.expires
+        self.b.expires = None
+        tasks = [self.create_task() for i in range(10)]
+
+        for i in range(10):
+            self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
+            assert self.b.client.rpush.call_count
+            self.b.client.rpush.reset_mock()
+        assert self.b.client.lrange.call_count
+        jkey = self.b.get_key_for_group('group_id', '.j')
+        tkey = self.b.get_key_for_group('group_id', '.t')
+        self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
+        self.b.client.expire.assert_not_called()
+
+        self.b.expires = old_expires
+
     def test_on_chord_part_return__success(self):
         with self.chord_context(2) as (_, request, callback):
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
