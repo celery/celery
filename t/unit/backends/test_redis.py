@@ -281,7 +281,7 @@ class test_RedisBackend:
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
         x = self.Backend(
-            'redis://:bosco@vandelay.com:123//1', app=self.app,
+            'rediss://:bosco@vandelay.com:123//1', app=self.app,
         )
         assert x.connparams
         assert x.connparams['host'] == 'vandelay.com'
