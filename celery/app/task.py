@@ -27,6 +27,14 @@ from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
 from .utils import appstr
 
+class RetryEagerException(Retry):
+    def __init__(self, signature, message=None, exc=None, when=None):
+        super().__init__(message, exc, when)
+        self.signature = signature
+
+    def __str__(self):
+        return super().__str__()
+
 __all__ = ('Context', 'Task')
 
 #: extracts attributes related to publishing a message from an object.
@@ -709,16 +717,13 @@ class Task(object):
                 ), task_args=S.args, task_kwargs=S.kwargs
             )
 
-        ret = Retry(exc=exc, when=eta or countdown)
-
+        when = eta or countdown
         if is_eager:
-            # if task was executed eagerly using apply(),
-            # then the retry must also be executed eagerly.
-            S.apply().get()
             if throw:
-                raise ret
-            return ret
+                raise RetryEagerException(S, exc=exc, when=when)
+            return RetryEagerException(S, exc=exc, when=when)
 
+        ret = Retry(exc=exc, when=when)
         try:
             S.apply_async()
         except Exception as exc:
@@ -773,11 +778,14 @@ class Task(object):
             task.name, task, eager=True,
             propagate=throw, app=self._get_app(),
         )
+
         ret = tracer(task_id, args, kwargs, request)
         retval = ret.retval
+        state = states.SUCCESS if ret.info is None else ret.info.state
         if isinstance(retval, ExceptionInfo):
             retval, tb = retval.exception, retval.traceback
-        state = states.SUCCESS if ret.info is None else ret.info.state
+        if isinstance(retval, RetryEagerException):
+            return retval.signature.apply()
         return EagerResult(task_id, retval, state, traceback=tb)
 
     def AsyncResult(self, task_id, **kwargs):
