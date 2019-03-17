@@ -107,6 +107,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_REDIS_MAX_CONNECTIONS``           :setting:`redis_max_connections`
 ``CELERY_REDIS_PASSWORD``                  :setting:`redis_password`
 ``CELERY_REDIS_PORT``                      :setting:`redis_port`
+``CELERY_REDIS_BACKEND_USE_SSL``           :setting:`redis_backend_use_ssl`
 ``CELERY_RESULT_BACKEND``                  :setting:`result_backend`
 ``CELERY_MAX_CACHED_RESULTS``              :setting:`result_cache_max`
 ``CELERY_MESSAGE_COMPRESSION``             :setting:`result_compression`
@@ -1032,8 +1033,10 @@ When using a TLS connection (protocol is ``rediss://``), you may pass in all val
 
 Default: Disabled.
 
-The Redis backend supports SSL. The valid values of this options are the same
-as :setting:`broker_use_ssl`.
+The Redis backend supports SSL. This value must be set in
+the form of a dictionary. The valid key-value pairs are
+the same as the ones mentioned in the ``redis`` sub-section
+under :setting:`broker_use_ssl`.
 
 .. setting:: redis_max_connections
 
@@ -2311,7 +2314,7 @@ certificate authority:
 _________
 
 
-The setting must be a dict the keys:
+The setting must be a dict with the following keys:
 
 *  ``ssl_cert_reqs`` (required): one of the ``SSLContext.verify_mode`` values:
     * ``ssl.CERT_NONE``
