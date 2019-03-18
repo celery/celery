@@ -7,6 +7,27 @@
 .. contents::
     :local:
 
+Most Linux distributions these days use systemd for managing the lifecycle of system
+and user services.
+
+You can check if your Linux distribution uses systemd by typing:
+
+.. code-block:: console
+
+  $ systemd --version
+  systemd 237
+  +PAM +AUDIT +SELINUX +IMA +APPARMOR +SMACK +SYSVINIT +UTMP +LIBCRYPTSETUP +GCRYPT +GNUTLS +ACL +XZ +LZ4 +SECCOMP +BLKID +ELFUTILS +KMOD -IDN2 +IDN -PCRE2 default-hierarchy=hybrid
+
+If you have output similar to the above, please refer to
+:ref:`our systemd documentation <daemon-systemd-generic>` for guidance.
+
+However, the init.d script should still work in those Linux distributions
+as well since systemd provides the systemd-sysv compatiblity layer
+which generates services automatically from the init.d scripts we provide.
+
+If you package Celery for multiple Linux distributions
+and some do not support systemd or to other Unix systems as well,
+you may want to refer to :ref:`our init.d documentation <daemon-generic>`.
 
 .. _daemon-generic:
 
