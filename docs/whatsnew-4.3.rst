@@ -138,6 +138,30 @@ Billiard
 
 Starting from this release, the minimum required version is Billiard 3.6.
 
+Eventlet Workers Pool
+---------------------
+
+We now require `eventlet>=0.24.1`.
+
+If you are using the eventlet workers pool please install Celery using:
+
+.. code-block:: console
+
+  $ pip install -U celery[eventlet]
+
+MongoDB Result Backend
+-----------------------
+
+We now support the `DNS seedlist connection format <https://docs.mongodb.com/manual/reference/connection-string/#dns-seedlist-connection-format>`_ for the MongoDB result backend.
+
+This requires the `dnspython` package.
+
+If you are using the MongoDB result backend please install Celery using:
+
+.. code-block:: console
+
+  $ pip install -U celery[mongodb]
+
 Redis Message Broker
 --------------------
 
