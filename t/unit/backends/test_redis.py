@@ -254,6 +254,7 @@ class test_RedisBackend:
         assert x.connparams['socket_timeout'] == 30
         assert x.connparams['socket_connect_timeout'] == 100
 
+    @skip.unless_module('redis')
     def test_socket_url(self):
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
