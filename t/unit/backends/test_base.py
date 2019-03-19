@@ -8,7 +8,7 @@ import pytest
 from case import ANY, Mock, call, patch, skip
 from kombu.serialization import prepare_accept_content
 
-from celery import chord, group, states, uuid
+from celery import chord, group, signature, states, uuid
 from celery.app.task import Context, Task
 from celery.backends.base import (BaseBackend, DisabledBackend,
                                   KeyValueStoreBackend, _nulldict)
@@ -395,6 +395,18 @@ class test_BaseBackend_dict:
 
         request = Mock(name='request')
         request.errbacks = [TaskBasedClass.subtask(args=[], immutable=True)]
+        exc = KeyError()
+        b.mark_as_failure('id', exc, request=request)
+        mock_group.assert_called_once_with(request.errbacks, app=self.app)
+
+    @patch('celery.backends.base.group')
+    def test_unregistered_task_can_be_used_as_error_callback(self, mock_group):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+
+        request = Mock(name='request')
+        request.errbacks = [signature('doesnotexist',
+                                      immutable=True)]
         exc = KeyError()
         b.mark_as_failure('id', exc, request=request)
         mock_group.assert_called_once_with(request.errbacks, app=self.app)
