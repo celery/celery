@@ -66,10 +66,9 @@ will not valdate the identity of the redis broker when connecting. This \
 leaves you vulnerable to man in the middle attacks.
 """
 
-W_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH = """
+E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH = """
 SSL connection parameters have been provided but the specified URL scheme \
-is redis://. A Redis SSL connection URL should use the scheme rediss://. \
-An SSL connection will be attempted.
+is redis://. A Redis SSL connection URL should use the scheme rediss://.
 """
 
 E_REDIS_SSL_CERT_REQS_MISSING = """
@@ -258,10 +257,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                           'ssl_cert_reqs']
 
         if scheme == 'redis':
-            # Check IF connparams or query string contain ssl params, if so show warning.]
+            # If connparams or query string contain ssl params, raise error
             if (any(key in connparams for key in ssl_param_keys) or
                     any(key in query for key in ssl_param_keys)):
-                logger.warning(W_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH)
+                raise ValueError(E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH)
 
         if scheme == 'rediss':
             connparams['connection_class'] = redis.SSLConnection

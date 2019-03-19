@@ -271,12 +271,8 @@ class Celery(object):
         self.__autoset('broker_url', broker)
         self.__autoset('result_backend', backend)
         self.__autoset('include', include)
-        self.__autoset('broker_use_ssl',
-                       (kwargs['broker_use_ssl'] if 'broker_use_ssl'
-                        in kwargs else None))
-        self.__autoset('redis_backend_use_ssl',
-                       (kwargs['redis_backend_use_ssl'] if
-                        'redis_backend_use_ssl' in kwargs else None))
+        self.__autoset('broker_use_ssl', kwargs.get('broker_use_ssl'))
+        self.__autoset('redis_backend_use_ssl', kwargs.get('redis_backend_use_ssl'))
         self._conf = Settings(
             PendingConfiguration(
                 self._preconf, self._finalize_pending_conf),
