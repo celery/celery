@@ -392,8 +392,8 @@ class test_App:
                              'ssl_cert_reqs': ssl.CERT_REQUIRED,
                              'ssl_ca_certs': '/path/to/ca.crt',
                              'ssl_certfile': '/path/to/client.crt',
-                             'ssl_keyfile': '/path/to/client.key'}, 
-                         redis_backend_use_ssl = {
+                             'ssl_keyfile': '/path/to/client.key'},
+                         redis_backend_use_ssl={
                              'ssl_cert_reqs': ssl.CERT_REQUIRED,
                              'ssl_ca_certs': '/path/to/ca.crt',
                              'ssl_certfile': '/path/to/client.crt',
@@ -401,21 +401,21 @@ class test_App:
             assert not app.configured
             assert app.conf.broker_url == 'foo://bar'
             assert app.conf.broker_use_ssl['ssl_certfile'] == \
-                                                    '/path/to/client.crt'
+                '/path/to/client.crt'
             assert app.conf.broker_use_ssl['ssl_keyfile'] == \
-                                                    '/path/to/client.key'
+                '/path/to/client.key'
             assert app.conf.broker_use_ssl['ssl_ca_certs'] == \
-                                                    '/path/to/ca.crt'
+                '/path/to/ca.crt'
             assert app.conf.broker_use_ssl['ssl_cert_reqs'] == \
-                                                    ssl.CERT_REQUIRED
+                ssl.CERT_REQUIRED
             assert app.conf.redis_backend_use_ssl['ssl_certfile'] == \
-                                                    '/path/to/client.crt'
+                '/path/to/client.crt'
             assert app.conf.redis_backend_use_ssl['ssl_keyfile'] == \
-                                                    '/path/to/client.key'
+                '/path/to/client.key'
             assert app.conf.redis_backend_use_ssl['ssl_ca_certs'] == \
-                                                    '/path/to/ca.crt'
+                '/path/to/ca.crt'
             assert app.conf.redis_backend_use_ssl['ssl_cert_reqs'] == \
-                                                    ssl.CERT_REQUIRED                                        
+                ssl.CERT_REQUIRED
 
     def test_repr(self):
         assert repr(self.app)

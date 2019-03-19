@@ -204,12 +204,12 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
-        
-        # If we've received SSL parameters via query string or the 
-        # redis_backend_use_ssl dict, check ssl_cert_reqs is valid. If set 
+
+        # If we've received SSL parameters via query string or the
+        # redis_backend_use_ssl dict, check ssl_cert_reqs is valid. If set
         # via query string ssl_cert_reqs will be a string so convert it here
-        if ('connection_class' in self.connparams 
-            and self.connparams['connection_class'] == redis.SSLConnection):
+        if ('connection_class' in self.connparams and
+                self.connparams['connection_class'] == redis.SSLConnection):
             ssl_cert_reqs = self.connparams.get('ssl_cert_reqs', 'MISSING')
             if ssl_cert_reqs in [CERT_REQUIRED, 'CERT_REQUIRED']:
                 self.connparams['ssl_cert_reqs'] = CERT_REQUIRED
@@ -254,13 +254,13 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         else:
             connparams['db'] = path
 
-        ssl_param_keys = ['ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile', 
+        ssl_param_keys = ['ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile',
                           'ssl_cert_reqs']
 
         if scheme == 'redis':
             # Check IF connparams or query string contain ssl params, if so show warning.]
             if (any(key in connparams for key in ssl_param_keys) or
-                any(key in query for key in ssl_param_keys)):
+                    any(key in query for key in ssl_param_keys)):
                 logger.warning(W_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH)
 
         if scheme == 'rediss':
