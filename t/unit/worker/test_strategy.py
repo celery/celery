@@ -4,17 +4,16 @@ from collections import defaultdict
 from contextlib import contextmanager
 
 import pytest
-from case import Mock, patch, ANY
+from case import ANY, Mock, patch
 from kombu.utils.limits import TokenBucket
 
-from celery import Task
+from celery import Task, signals
 from celery.exceptions import InvalidTaskError
 from celery.utils.time import rate
 from celery.worker import state
 from celery.worker.request import Request
 from celery.worker.strategy import default as default_strategy
 from celery.worker.strategy import proto1_to_proto2
-from celery import signals
 
 
 class test_proto1_to_proto2:
