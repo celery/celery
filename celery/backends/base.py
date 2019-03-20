@@ -25,7 +25,7 @@ import celery.exceptions
 from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
 from celery.exceptions import (ChordError, ImproperlyConfigured,
-                               TaskRevokedError, TimeoutError)
+                               NotRegistered, TaskRevokedError, TimeoutError)
 from celery.five import PY3, items
 from celery.result import (GroupResult, ResultBase, allow_join_result,
                            result_from_tuple)
@@ -168,22 +168,33 @@ class Backend(object):
         old_signature = []
         for errback in request.errbacks:
             errback = self.app.signature(errback)
-            if (
-                    # Celery tasks type created with the @task decorator have
-                    # the __header__ property, but Celery task created from
-                    # Task class do not have this property.
-                    # That's why we have to check if this property exists
-                    # before checking is it partial function.
-                    hasattr(errback.type, '__header__') and
+            if not errback._app:
+                # Ensure all signatures have an application
+                errback._app = self.app
+            try:
+                if (
+                        # Celery tasks type created with the @task decorator have
+                        # the __header__ property, but Celery task created from
+                        # Task class do not have this property.
+                        # That's why we have to check if this property exists
+                        # before checking is it partial function.
+                        hasattr(errback.type, '__header__') and
 
-                    # workaround to support tasks with bind=True executed as
-                    # link errors. Otherwise retries can't be used
-                    not isinstance(errback.type.__header__, partial) and
-                    arity_greater(errback.type.__header__, 1)
-            ):
-                errback(request, exc, traceback)
-            else:
+                        # workaround to support tasks with bind=True executed as
+                        # link errors. Otherwise retries can't be used
+                        not isinstance(errback.type.__header__, partial) and
+                        arity_greater(errback.type.__header__, 1)
+                ):
+                    errback(request, exc, traceback)
+                else:
+                    old_signature.append(errback)
+            except NotRegistered:
+                # Task may not be present in this worker.
+                # We simply send it forward for another worker to consume.
+                # If the task is not registered there, the worker will raise
+                # NotRegistered.
                 old_signature.append(errback)
+
         if old_signature:
             # Previously errback was called as a task so we still
             # need to do so if the errback only takes a single task_id arg.
