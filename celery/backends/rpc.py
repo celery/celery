@@ -295,7 +295,9 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             return message.payload['task_id']
 
     def revive(self, channel):
-        pass
+        # SCALRCORE-11936 Revive backend consumer
+        if self.result_consumer._consumer:
+            self.result_consumer._consumer.revive(channel)
 
     def reload_task_result(self, task_id):
         raise NotImplementedError(

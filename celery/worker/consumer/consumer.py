@@ -336,6 +336,10 @@ class Consumer(object):
                         self.on_connection_error_before_connected(exc)
                     self.on_close()
                     blueprint.restart(self)
+                    # SCALRCORE-11936 Callback to revive RPC backend consumer
+                    if self.app.backend:
+                        channel = self.app.connection.default_channel
+                        self.app.backend.revive(channel)
 
     def on_connection_error_before_connected(self, exc):
         error(CONNECTION_ERROR, self.conninfo.as_uri(), exc,
