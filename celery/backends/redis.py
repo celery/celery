@@ -71,9 +71,9 @@ SSL connection parameters have been provided but the specified URL scheme \
 is redis://. A Redis SSL connection URL should use the scheme rediss://.
 """
 
-E_REDIS_SSL_CERT_REQS_MISSING = """
-A rediss:// URL must have parameter ssl_cert_reqs be CERT_REQUIRED, \
-CERT_OPTIONAL, or CERT_NONE
+E_REDIS_SSL_CERT_REQS_MISSING_INVALID = """
+A rediss:// URL must have parameter ssl_cert_reqs and this must be set to \
+CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
 """
 
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
@@ -209,17 +209,20 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         # via query string ssl_cert_reqs will be a string so convert it here
         if ('connection_class' in self.connparams and
                 self.connparams['connection_class'] == redis.SSLConnection):
-            ssl_cert_reqs = self.connparams.get('ssl_cert_reqs', 'MISSING')
-            if ssl_cert_reqs in [CERT_REQUIRED, 'CERT_REQUIRED']:
-                self.connparams['ssl_cert_reqs'] = CERT_REQUIRED
-            elif ssl_cert_reqs in [CERT_OPTIONAL, 'CERT_OPTIONAL']:
+            ssl_cert_reqs_missing = 'MISSING'
+            ssl_string_to_constant = {'CERT_REQUIRED': CERT_REQUIRED,
+                                      'CERT_OPTIONAL': CERT_OPTIONAL,
+                                      'CERT_NONE': CERT_NONE}
+            ssl_cert_reqs = self.connparams.get('ssl_cert_reqs', ssl_cert_reqs_missing)
+            ssl_cert_reqs = ssl_string_to_constant.get(ssl_cert_reqs, ssl_cert_reqs)
+            if ssl_cert_reqs not in ssl_string_to_constant.values():
+                raise ValueError(E_REDIS_SSL_CERT_REQS_MISSING_INVALID)
+
+            if ssl_cert_reqs == CERT_OPTIONAL:
                 logger.warning(W_REDIS_SSL_CERT_OPTIONAL)
-                self.connparams['ssl_cert_reqs'] = CERT_OPTIONAL
-            elif ssl_cert_reqs in [CERT_NONE, 'CERT_NONE']:
+            elif ssl_cert_reqs == CERT_NONE:
                 logger.warning(W_REDIS_SSL_CERT_NONE)
-                self.connparams['ssl_cert_reqs'] = CERT_NONE
-            else:
-                raise ValueError(E_REDIS_SSL_CERT_REQS_MISSING)
+            self.connparams['ssl_cert_reqs'] = ssl_cert_reqs
 
         self.url = url
 
