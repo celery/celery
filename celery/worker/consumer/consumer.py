@@ -338,6 +338,7 @@ class Consumer(object):
                     blueprint.restart(self)
                     # SCALRCORE-11936 Callback to revive RPC backend consumer
                     if self.app.backend:
+                        info('Reviving backend consumer...')
                         channel = self.app.connection.default_channel
                         self.app.backend.revive(channel)
 
