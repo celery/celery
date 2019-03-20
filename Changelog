@@ -8,6 +8,15 @@ This document contains change notes for bugfix releases in
 the 4.x series, please see :ref:`whatsnew-4.2` for
 an overview of what's new in Celery 4.2.
 
+4.2.2
+=====
+:release-date: 2019-03-20 4:00 PM IST
+:release-by: Omer Katz
+
+- **Kombu**: Limit Kombu version to 4.3 at maximum.
+
+  Contributed by **Omer Katz**
+
 4.2.1
 =====
 :release-date: 2018-07-18 11:00 AM IST
