@@ -27,6 +27,10 @@ RUN apt-get update && apt-get install -y build-essential \
     zlib1g-dev \
     pkg-config
 
+# Update libssl to 1.0.2 from backports to support Python 3.7
+RUN echo "deb http://deb.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
+RUN apt-get update && apt-get install -y -t jessie-backports libssl-dev
+
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.
 ENV PROVISIONING /provisioning
