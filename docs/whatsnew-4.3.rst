@@ -47,8 +47,8 @@ Preface
 The 4.3.0 release continues to improve our efforts to provide you with
 the best task execution platform for Python.
 
-This release has been codenamed `Rhubarb <https://www.youtube.com/watch?v=_AWIqXzvX-U>`_ which is one of my favorite tracks from
-Selected Ambient Works II.
+This release has been codenamed `Rhubarb <https://www.youtube.com/watch?v=_AWIqXzvX-U>`_
+which is one of my favorite tracks from Selected Ambient Works II.
 
 This release focuses on new features like new result backends
 and a revamped security serializer along with bug fixes mainly for Celery Beat,
@@ -148,6 +148,20 @@ If you are using the eventlet workers pool please install Celery using:
 .. code-block:: console
 
   $ pip install -U celery[eventlet]
+
+MessagePack Serializer
+----------------------
+
+We've been using the deprecated `msgpack-python` package for a while.
+This is now fixed as we depend on the `msgpack` instead.
+
+If you are currently using the MessagePack serializer please uninstall the
+previous package and reinstall the new one using:
+
+.. code-block:: console
+
+  $ pip uninstall msgpack-python -y
+  $ pip install -U celery[msgpack]
 
 MongoDB Result Backend
 -----------------------

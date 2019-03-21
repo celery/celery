@@ -13,9 +13,86 @@ an overview of what's new in Celery 4.3.
 :release-date: TBD
 :release-by: Omer Katz
 
+- Added support for broadcasting using a regular expression pattern
+  or a glob pattern to multiple Pidboxes.
+
+  This allows you to inspect or ping multiple workers at once.
+
+  Contributed by **Dmitry Malinovsky** & **Jason Held**
+
+- Added support for PEP 420 namespace packages.
+
+  This allows you to load tasks from namespace packages.
+
+  Contributed by **Colin Watson**
+
+- Added :setting:`acks_on_failure_or_timeout` as a setting instead of
+  a task only option.
+
+  This was missing from the original PR but now added for completeness.
+
+  Contributed by **Omer Katz**
+
 - Added the :signal:`task_received` signal.
 
   Contributed by **Omer Katz**
+
+- Fixed a crash of our CLI that occurred for everyone using Python < 3.6.
+
+  The crash was introduced in `acd6025 <https://github.com/celery/celery/commit/acd6025b7dc4db112a31020686fc8b15e1722c67>`_
+  by using the :class:`ModuleNotFoundError` exception which was introduced
+  in Python 3.6.
+
+  Contributed by **Omer Katz**
+
+- Fixed a crash that occurred when using the Redis result backend
+  while the :setting:`result_expires` is set to None.
+
+  Contributed by **Toni Ruža** & **Omer Katz**
+
+- Added support the `DNS seedlist connection format <https://docs.mongodb.com/manual/reference/connection-string/#dns-seedlist-connection-format>`_
+  for the MongoDB result backend.
+
+  This requires the `dnspython` package which will be installed by default
+  when installing the dependencies for the MongoDB result backend.
+
+  Contributed by **George Psarakis**
+
+- Bump the minimum eventlet version to 0.24.1.
+
+  Contributed by **George Psarakis**
+
+- Replace the `msgpack-python` package with `msgpack`.
+
+  We're no longer using the deprecated package.
+  See our :ref:`important notes <v430-important>` for this release
+  for further details on how to upgrade.
+
+  Contributed by **Daniel Hahler**
+
+- Allow scheduling error handlers which are not registered tasks in the current
+  worker.
+
+  These kind of error handlers are now possible:
+
+  .. code-block:: python
+
+    from celery import Signature
+    Signature(
+      'bar', args=['foo'],
+      link_error=Signature('msg.err', queue='msg')
+    ).apply_async()
+
+Code Cleanups, Test Coverage & CI Improvements by:
+
+  - **Omer Katz**
+  - **Florian Chardin**
+
+Documentation Fixes by:
+
+  - **Omer Katz**
+  - **Samuel Huang**
+  - **Amir Hossein Saeid Mehr**
 
 4.3.0 RC2
 =========
