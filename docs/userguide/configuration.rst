@@ -996,6 +996,10 @@ Use the ``rediss://`` protocol to connect to redis over TLS::
 
     result_backend = 'rediss://:password@host:port/db?ssl_cert_reqs=CERT_REQUIRED'
 
+If a Unix socket connection should be used, the URL needs to be in the format:::
+
+    result_backend = 'socket:///path/to/redis.sock'
+
 The fields of the URL are defined as follows:
 
 #. ``password``
