@@ -208,7 +208,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         # redis_backend_use_ssl dict, check ssl_cert_reqs is valid. If set
         # via query string ssl_cert_reqs will be a string so convert it here
         if ('connection_class' in self.connparams and
-                self.connparams['connection_class'] == redis.SSLConnection):
+                self.connparams['connection_class'] is redis.SSLConnection):
             ssl_cert_reqs_missing = 'MISSING'
             ssl_string_to_constant = {'CERT_REQUIRED': CERT_REQUIRED,
                                       'CERT_OPTIONAL': CERT_OPTIONAL,
