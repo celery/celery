@@ -66,9 +66,14 @@ will not valdate the identity of the redis broker when connecting. This \
 leaves you vulnerable to man in the middle attacks.
 """
 
-E_REDIS_SSL_CERT_REQS_MISSING = """
-A rediss:// URL must have parameter ssl_cert_reqs be CERT_REQUIRED, \
-CERT_OPTIONAL, or CERT_NONE
+E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH = """
+SSL connection parameters have been provided but the specified URL scheme \
+is redis://. A Redis SSL connection URL should use the scheme rediss://.
+"""
+
+E_REDIS_SSL_CERT_REQS_MISSING_INVALID = """
+A rediss:// URL must have parameter ssl_cert_reqs and this must be set to \
+CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
 """
 
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
@@ -198,6 +203,27 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
+
+        # If we've received SSL parameters via query string or the
+        # redis_backend_use_ssl dict, check ssl_cert_reqs is valid. If set
+        # via query string ssl_cert_reqs will be a string so convert it here
+        if ('connection_class' in self.connparams and
+                self.connparams['connection_class'] is redis.SSLConnection):
+            ssl_cert_reqs_missing = 'MISSING'
+            ssl_string_to_constant = {'CERT_REQUIRED': CERT_REQUIRED,
+                                      'CERT_OPTIONAL': CERT_OPTIONAL,
+                                      'CERT_NONE': CERT_NONE}
+            ssl_cert_reqs = self.connparams.get('ssl_cert_reqs', ssl_cert_reqs_missing)
+            ssl_cert_reqs = ssl_string_to_constant.get(ssl_cert_reqs, ssl_cert_reqs)
+            if ssl_cert_reqs not in ssl_string_to_constant.values():
+                raise ValueError(E_REDIS_SSL_CERT_REQS_MISSING_INVALID)
+
+            if ssl_cert_reqs == CERT_OPTIONAL:
+                logger.warning(W_REDIS_SSL_CERT_OPTIONAL)
+            elif ssl_cert_reqs == CERT_NONE:
+                logger.warning(W_REDIS_SSL_CERT_NONE)
+            self.connparams['ssl_cert_reqs'] = ssl_cert_reqs
+
         self.url = url
 
         self.connection_errors, self.channel_errors = (
@@ -230,25 +256,23 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         else:
             connparams['db'] = path
 
+        ssl_param_keys = ['ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile',
+                          'ssl_cert_reqs']
+
+        if scheme == 'redis':
+            # If connparams or query string contain ssl params, raise error
+            if (any(key in connparams for key in ssl_param_keys) or
+                    any(key in query for key in ssl_param_keys)):
+                raise ValueError(E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH)
+
         if scheme == 'rediss':
             connparams['connection_class'] = redis.SSLConnection
             # The following parameters, if present in the URL, are encoded. We
             # must add the decoded values to connparams.
-            for ssl_setting in ['ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile']:
+            for ssl_setting in ssl_param_keys:
                 ssl_val = query.pop(ssl_setting, None)
                 if ssl_val:
                     connparams[ssl_setting] = unquote(ssl_val)
-            ssl_cert_reqs = query.pop('ssl_cert_reqs', 'MISSING')
-            if ssl_cert_reqs == 'CERT_REQUIRED':
-                connparams['ssl_cert_reqs'] = CERT_REQUIRED
-            elif ssl_cert_reqs == 'CERT_OPTIONAL':
-                logger.warning(W_REDIS_SSL_CERT_OPTIONAL)
-                connparams['ssl_cert_reqs'] = CERT_OPTIONAL
-            elif ssl_cert_reqs == 'CERT_NONE':
-                logger.warning(W_REDIS_SSL_CERT_NONE)
-                connparams['ssl_cert_reqs'] = CERT_NONE
-            else:
-                raise ValueError(E_REDIS_SSL_CERT_REQS_MISSING)
 
         # db may be string and start with / like in kombu.
         db = connparams.get('db') or 0

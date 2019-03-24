@@ -24,6 +24,7 @@ from celery.utils.collections import DictAttribute
 from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
 from celery.utils.time import localize, timezone, to_utc
+import ssl
 
 THIS_IS_A_KEY = 'this is a value'
 
@@ -384,6 +385,37 @@ class test_App:
 
         with self.Celery() as app:
             assert not self.app.conf.task_always_eager
+
+    def test_pending_configuration__ssl_settings(self):
+        with self.Celery(broker='foo://bar',
+                         broker_use_ssl={
+                             'ssl_cert_reqs': ssl.CERT_REQUIRED,
+                             'ssl_ca_certs': '/path/to/ca.crt',
+                             'ssl_certfile': '/path/to/client.crt',
+                             'ssl_keyfile': '/path/to/client.key'},
+                         redis_backend_use_ssl={
+                             'ssl_cert_reqs': ssl.CERT_REQUIRED,
+                             'ssl_ca_certs': '/path/to/ca.crt',
+                             'ssl_certfile': '/path/to/client.crt',
+                             'ssl_keyfile': '/path/to/client.key'}) as app:
+            assert not app.configured
+            assert app.conf.broker_url == 'foo://bar'
+            assert app.conf.broker_use_ssl['ssl_certfile'] == \
+                '/path/to/client.crt'
+            assert app.conf.broker_use_ssl['ssl_keyfile'] == \
+                '/path/to/client.key'
+            assert app.conf.broker_use_ssl['ssl_ca_certs'] == \
+                '/path/to/ca.crt'
+            assert app.conf.broker_use_ssl['ssl_cert_reqs'] == \
+                ssl.CERT_REQUIRED
+            assert app.conf.redis_backend_use_ssl['ssl_certfile'] == \
+                '/path/to/client.crt'
+            assert app.conf.redis_backend_use_ssl['ssl_keyfile'] == \
+                '/path/to/client.key'
+            assert app.conf.redis_backend_use_ssl['ssl_ca_certs'] == \
+                '/path/to/ca.crt'
+            assert app.conf.redis_backend_use_ssl['ssl_cert_reqs'] == \
+                ssl.CERT_REQUIRED
 
     def test_repr(self):
         assert repr(self.app)
