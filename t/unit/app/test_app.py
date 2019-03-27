@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import gc
 import itertools
 import os
+import ssl
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pickle import dumps, loads
@@ -24,7 +25,6 @@ from celery.utils.collections import DictAttribute
 from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
 from celery.utils.time import localize, timezone, to_utc
-import ssl
 
 THIS_IS_A_KEY = 'this is a value'
 
