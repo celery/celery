@@ -695,14 +695,20 @@ the workers :option:`-Q <celery worker -Q>` argument:
 Results options
 ===============
 
-You can enable or disable result storage using the ``ignore_result`` option::
+You can enable or disable result storage using the :setting:`task_ignore_result`
+setting or by using the ``ignore_result`` option:
 
-    result = add.apply_async(1, 2, ignore_result=True)
-    result.get() # -> None
+.. code-block:: pycon
 
-    # Do not ignore result (default)
-    result = add.apply_async(1, 2, ignore_result=False)
-    result.get() # -> 3
+  >>> result = add.apply_async(1, 2, ignore_result=True)
+  >>> result.get()
+  None
+
+  >>> # Do not ignore result (default)
+  ...
+  >>> result = add.apply_async(1, 2, ignore_result=False)
+  >>> result.get()
+  3
 
 
 .. seealso::
