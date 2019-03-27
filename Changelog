@@ -211,6 +211,8 @@ Documentation Fixes by:
 - **Task**: :meth:`celery.app.task.update_state` now accepts keyword arguments.
 
   This allows passing extra fields to the result backend.
+  These fields are unused by default but custom result backends can use them
+  to determine how to store results.
 
   Contributed by **Christopher Dignam**
 
