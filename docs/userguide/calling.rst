@@ -710,6 +710,8 @@ setting or by using the ``ignore_result`` option:
   >>> result.get()
   3
 
+If you'd like to store additional metadata about the task in the result backend
+set the :setting:`result_extended` setting to ``True``.
 
 .. seealso::
 
