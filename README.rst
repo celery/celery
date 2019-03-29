@@ -26,7 +26,7 @@ Sponsors
 |ImageLink|_
 
 .. |ImageLink| image:: https://i.imgur.com/ULmQEib.png
-.. _ImageLink: https://getstream.io/try-the-api/?utm_source=celery&utm_medium=banner&utm_campaign=github
+.. _https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=readme
 
 
 What's a Task Queue?
