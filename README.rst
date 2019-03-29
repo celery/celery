@@ -23,10 +23,7 @@ If you are using Celery to create a commercial product, please consider becoming
 Sponsors
 --------
 
-|ImageLink|_
-
-.. |ImageLink| image:: https://i.imgur.com/ULmQEib.png
-.. _https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=readme
+`Tidelift gives software development teams a single source for purchasing and maintaining their software, with professional grade assurances from the experts who know it best, while seamlessly integrating with existing tools. <https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=readme>`_
 
 
 What's a Task Queue?
