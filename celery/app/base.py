@@ -698,7 +698,7 @@ class Celery(object):
                   publisher=None, link=None, link_error=None,
                   add_to_parent=True, group_id=None, retries=0, chord=None,
                   reply_to=None, time_limit=None, soft_time_limit=None,
-                  root_id=None, parent_id=None, route_name=None,
+                  root_id=None, parent_id=None, anchor_id=None, route_name=None,
                   shadow=None, chain=None, task_type=None, **options):
         """Send task by name.
 
@@ -723,26 +723,29 @@ class Celery(object):
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
 
-        if not root_id or not parent_id:
+        if not root_id or not parent_id or not anchor_id:
             parent = self.current_worker_task
             if parent:
                 if not root_id:
                     root_id = parent.request.root_id or parent.request.id
                 if not parent_id:
                     parent_id = parent.request.id
+                if not anchor_id:
+                    anchor_id = parent.request.anchor_id
 
                 if conf.task_inherit_parent_priority:
                     options.setdefault('priority',
                                        parent.request.delivery_info.get('priority'))
 
         message = amqp.create_task_message(
-            task_id, name, args, kwargs, countdown, eta, group_id,
-            expires, retries, chord,
-            maybe_list(link), maybe_list(link_error),
-            reply_to or self.oid, time_limit, soft_time_limit,
-            self.conf.task_send_sent_event,
-            root_id, parent_id, shadow, chain,
-            argsrepr=options.get('argsrepr'),
+            task_id, name, args=args, kwargs=kwargs, countdown=countdown,
+            eta=eta, group_id=group_id, expires=expires, retries=retries,
+            chord=chord, callbacks=maybe_list(link),
+            errbacks=maybe_list(link_error), reply_to=reply_to or self.oid,
+            time_limit=time_limit, soft_time_limit=soft_time_limit,
+            create_sent_event=self.conf.task_send_sent_event,
+            root_id=root_id, parent_id=parent_id, shadow=shadow, chain=chain,
+            anchor_id=anchor_id, argsrepr=options.get('argsrepr'),
             kwargsrepr=options.get('kwargsrepr'),
         )
 

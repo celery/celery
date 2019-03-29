@@ -180,7 +180,8 @@ class test_trace(TraceCase):
         maybe_signature.return_value = sig
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig.apply_async.assert_called_with(
-            (4,), parent_id='id-1', root_id='root', priority=None
+            (4,), parent_id='id-1', root_id='root', anchor_id=None,
+            priority=None
         )
 
     @patch('celery.canvas.maybe_signature')
@@ -191,7 +192,7 @@ class test_trace(TraceCase):
         maybe_signature.return_value = sig
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig.apply_async.assert_called_with(
-            (4, ), parent_id='id-1', root_id='root',
+            (4, ), parent_id='id-1', root_id='root', anchor_id=None,
             chain=[sig2], priority=None
         )
 
@@ -205,7 +206,7 @@ class test_trace(TraceCase):
         maybe_signature.return_value = sig
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig.apply_async.assert_called_with(
-            (4, ), parent_id='id-1', root_id='root',
+            (4, ), parent_id='id-1', root_id='root', anchor_id=None,
             chain=[sig2], priority=42
         )
 
@@ -232,10 +233,12 @@ class test_trace(TraceCase):
         maybe_signature.side_effect = passt
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         group_.assert_called_with(
-            (4,), parent_id='id-1', root_id='root', priority=None
+            (4,), parent_id='id-1', root_id='root', anchor_id=None,
+            priority=None
         )
         sig3.apply_async.assert_called_with(
-            (4,), parent_id='id-1', root_id='root', priority=None
+            (4,), parent_id='id-1', root_id='root', anchor_id=None,
+            priority=None
         )
 
     @patch('celery.canvas.maybe_signature')
@@ -252,10 +255,12 @@ class test_trace(TraceCase):
         maybe_signature.side_effect = passt
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig1.apply_async.assert_called_with(
-            (4,), parent_id='id-1', root_id='root', priority=None
+            (4,), parent_id='id-1', root_id='root', anchor_id=None,
+            priority=None
         )
         sig2.apply_async.assert_called_with(
-            (4,), parent_id='id-1', root_id='root', priority=None
+            (4,), parent_id='id-1', root_id='root', anchor_id=None,
+            priority=None
         )
 
     def test_trace_SystemExit(self):

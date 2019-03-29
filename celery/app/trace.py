@@ -365,6 +365,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
             root_id = task_request.root_id or uuid
+            anchor_id = task_request.anchor_id
             task_priority = task_request.delivery_info.get('priority') if \
                 inherit_parent_priority else None
             push_request(task_request)
@@ -422,17 +423,20 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                     group_.apply_async(
                                         (retval,),
                                         parent_id=uuid, root_id=root_id,
+                                        anchor_id=anchor_id,
                                         priority=task_priority
                                     )
                                 if sigs:
                                     group(sigs, app=app).apply_async(
                                         (retval,),
                                         parent_id=uuid, root_id=root_id,
+                                        anchor_id=anchor_id,
                                         priority=task_priority
                                     )
                             else:
                                 signature(callbacks[0], app=app).apply_async(
                                     (retval,), parent_id=uuid, root_id=root_id,
+                                    anchor_id=anchor_id,
                                     priority=task_priority
                                 )
 
@@ -443,6 +447,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             _chsig.apply_async(
                                 (retval,), chain=chain,
                                 parent_id=uuid, root_id=root_id,
+                                anchor_id=anchor_id,
                                 priority=task_priority
                             )
                         mark_as_done(

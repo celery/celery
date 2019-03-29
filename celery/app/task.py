@@ -81,6 +81,7 @@ class Context(object):
     reply_to = None
     root_id = None
     parent_id = None
+    anchor_id = None
     correlation_id = None
     taskset = None   # compat alias to group
     group = None
@@ -98,6 +99,11 @@ class Context(object):
 
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
+        if self.headers is not None:
+            if 'root_id' in self.headers and not self.root_id:
+                self.root_id = self.headers['root_id']
+            if 'anchor_id' in self.headers and not self.anchor_id:
+                self.anchor_id = self.headers['anchor_id']
 
     def update(self, *args, **kwargs):
         return self.__dict__.update(*args, **kwargs)
@@ -116,6 +122,7 @@ class Context(object):
         return {
             'task_id': self.id,
             'root_id': self.root_id,
+            'anchor_id': self.anchor_id,
             'parent_id': self.parent_id,
             'group_id': self.group,
             'chord': self.chord,

@@ -168,6 +168,8 @@ class TasksCase:
         def task_called_by_other_task(self):
             pass
 
+        self.task_called_by_other_task = task_called_by_other_task
+
         @self.app.task(bind=True)
         def task_which_calls_other_task(self):
             # Couldn't find a better way to mimic an apply_async()
@@ -483,6 +485,37 @@ class test_tasks(TasksCase):
         self.app.amqp.send_task_message.assert_called_with(
             ANY, 't.unit.tasks.test_tasks.task_called_by_other_task',
             ANY, priority=5, queue=ANY, serializer=ANY)
+
+    def test_inherit_anchor_id(self):
+        self.app.amqp.create_task_message = Mock()
+        self.task_which_calls_other_task.apply(args=[], headers={
+            'anchor_id': 'foo'
+        })
+
+        self.app.amqp.create_task_message. \
+            assert_called_once_with(ANY,
+                                    't.unit.tasks.test_tasks.'
+                                    'task_called_by_other_task',
+                                    args=(), kwargs={},
+                                    countdown=None,
+                                    eta=None,
+                                    group_id=None,
+                                    expires=None,
+                                    retries=0,
+                                    chord=None,
+                                    callbacks=None,
+                                    errbacks=None,
+                                    reply_to=ANY,
+                                    time_limit=None,
+                                    soft_time_limit=None,
+                                    create_sent_event=False,
+                                    root_id=ANY,
+                                    parent_id=ANY,
+                                    shadow=None,
+                                    chain=None,
+                                    anchor_id='foo',
+                                    argsrepr=None,
+                                    kwargsrepr=None)
 
     def test_typing__disabled(self):
         @self.app.task(typing=False)
