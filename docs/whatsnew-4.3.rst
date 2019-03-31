@@ -89,9 +89,7 @@ Andrey Skabelin <andrey.skabelin@gmail.com>
 Anthony Ruhier <anthony.ruhier@gmail.com>
 Antonin Delpeuch <antonin@delpeuch.eu>
 Artem Vasilyev <artem.v.vasilyev@gmail.com>
-Asif Saifuddin Auvi <auvipy@gmail.com>
 Asif Saif Uddin (Auvi) <auvipy@gmail.com>
-Asif Saif Uddin <auvipy@gmail.com>
 aviadatsnyk <aviad@snyk.io>
 Axel Haustant <noirbizarre@users.noreply.github.com>
 Benjamin Pereto <github@sandchaschte.ch>
