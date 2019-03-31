@@ -81,6 +81,105 @@ will allow us to help you to resolve them more easily.
 Wall of Contributors
 --------------------
 
+
+Alexander Ioannidis <a.ioannidis.pan@gmail.com>
+Amir Hossein Saeid Mehr <amir.saiedmehr@gmail.com>
+Andrea Rabbaglietti <rabbagliettiandrea@gmail.com>
+Andrey Skabelin <andrey.skabelin@gmail.com>
+Anthony Ruhier <anthony.ruhier@gmail.com>
+Antonin Delpeuch <antonin@delpeuch.eu>
+Artem Vasilyev <artem.v.vasilyev@gmail.com>
+Asif Saifuddin Auvi <auvipy@gmail.com>
+Asif Saif Uddin (Auvi) <auvipy@gmail.com>
+Asif Saif Uddin <auvipy@gmail.com>
+aviadatsnyk <aviad@snyk.io>
+Axel Haustant <noirbizarre@users.noreply.github.com>
+Benjamin Pereto <github@sandchaschte.ch>
+Bojan Jovanovic <bojan.jovanovic.gtech@gmail.com>
+Brett Jackson <brett@brettjackson.org>
+Brett Randall <javabrett@gmail.com>
+Brian Schrader <brian@brianschrader.com>
+Bruno Alla <browniebroke@users.noreply.github.com>
+Buddy <34044521+CoffeeExpress@users.noreply.github.com>
+Charles Chan <charleswhchan@users.noreply.github.com>
+Christopher Dignam <chris@dignam.xyz>
+Ciaran Courtney <6096029+ciarancourtney@users.noreply.github.com>
+Clemens Wolff <clemens@justamouse.com>
+Colin Watson <cjwatson@ubuntu.com>
+Daniel Hahler <github@thequod.de>
+Dash Winterson <dashdanw@gmail.com>
+Derek Harland <donkopotamus@users.noreply.github.com>
+Dilip Vamsi Moturi <16288600+dilipvamsi@users.noreply.github.com>
+Dmytro Litvinov <litvinov.dmytro.it@gmail.com>
+Douglas Rohde <douglas.rohde2@gmail.com>
+Ed Morley <501702+edmorley@users.noreply.github.com>
+Fabian Becker <halfdan@xnorfz.de>
+Federico Bond <federicobond@gmail.com>
+Fengyuan Chen <cfy1990@gmail.com>
+Florian CHARDIN <othalla.lf@gmail.com>
+George Psarakis <giwrgos.psarakis@gmail.com>
+Guilherme Caminha <gpkc@cin.ufpe.br>
+ideascf <ideascf@163.com>
+Itay <itay.bittan@gmail.com>
+Jamie Alessio <jamie@stoic.net>
+Jason Held <jasonsheld@gmail.com>
+Jeremy Cohen <jcohen02@users.noreply.github.com>
+John Arnold <johnar@microsoft.com>
+Jon Banafato <jonathan.banafato@gmail.com>
+Jon Dufresne <jon.dufresne@gmail.com>
+Joshua Engelman <j.aaron.engelman@gmail.com>
+Joshua Schmid <jschmid@suse.com>
+Josue Balandrano Coronel <xirdneh@gmail.com>
+K Davis <anybodys@users.noreply.github.com>
+kidoz <ckidoz@gmail.com>
+Kiyohiro Yamaguchi <kiyoya@gmail.com>
+Korijn van Golen <korijn@gmail.com>
+Lars Kruse <devel@sumpfralle.de>
+Lars Rinn <lm.rinn@outlook.com>
+Lewis M. Kabui <lewis.maina@andela.com>
+madprogrammer <serg@anufrienko.net>
+Manuel Vázquez Acosta <mvaled@users.noreply.github.com>
+Marcus McHale <marcus.mchale@nuigalway.ie>
+Mariatta <Mariatta@users.noreply.github.com>
+Mario Kostelac <mario@intercom.io>
+Matt Wiens <mwiens91@gmail.com>
+Maximilien Cuony <the-glu@users.noreply.github.com>
+Maximilien de Bayser <maxdebayser@gmail.com>
+Meysam <MeysamAzad81@yahoo.com>
+Milind Shakya <milin@users.noreply.github.com>
+na387 <na387@users.noreply.github.com>
+Nicholas Pilon <npilon@gmail.com>
+Nick Parsons <nparsons08@gmail.com>
+Nik Molnar <nik.molnar@consbio.org>
+Noah Hall <noah.t.hall@gmail.com>
+Noam <noamkush@users.noreply.github.com>
+Omer Katz <omer.drow@gmail.com>
+Paweł Adamczak <pawel.ad@gmail.com>
+peng weikang <pengwk2@gmail.com>
+Prathamesh Salunkhe <spratham55@gmail.com>
+Przemysław Suliga <1270737+suligap@users.noreply.github.com>
+Raf Geens <rafgeens@gmail.com>
+(◕ᴥ◕) <ratson@users.noreply.github.com>
+Robert Kopaczewski <rk@23doors.com>
+Samuel Huang <samhuang91@gmail.com>
+Sebastian Wojciechowski <42519683+sebwoj@users.noreply.github.com>
+Seunghun Lee <waydi1@gmail.com>
+Shanavas M <shanavas.m2@gmail.com>
+Simon Charette <charettes@users.noreply.github.com>
+Simon Schmidt <schmidt.simon@gmail.com>
+srafehi <shadyrafehi@gmail.com>
+Steven Sklar <sklarsa@gmail.com>
+Tom Booth <thomasbo@microsoft.com>
+Tom Clancy <ClancyTJD@users.noreply.github.com>
+Toni Ruža <gmr.gaf@gmail.com>
+tothegump <tothegump@gmail.com>
+Victor Mireyev <victor@opennodecloud.com>
+Vikas Prasad <vikasprasad.prasad@gmail.com>
+walterqian <walter@color.com>
+Willem <himself@willemthiart.com>
+Xiaodong <xd_deng@hotmail.com>
+yywing <386542536@qq.com>
+
 .. note::
 
     This wall was automatically generated from git history,
