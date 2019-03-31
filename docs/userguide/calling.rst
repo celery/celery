@@ -503,11 +503,11 @@ Celery can compress messages using the following builtin schemes:
     documents. It is most effective for serving static content
     such as fonts and html pages.
 
-    To use it, install kombu with:
+    To use it, install Celery with:
 
     .. code-block:: console
 
-      $ pip install kombu[brotli]
+      $ pip install celery[brotli]
 
 - `bzip2`
 
@@ -572,7 +572,7 @@ Celery can compress messages using the following builtin schemes:
 
     .. code-block:: console
 
-      $ pip install kombu[lzma]
+      $ pip install celery[lzma]
 
 - `zlib`
 
@@ -602,11 +602,11 @@ Celery can compress messages using the following builtin schemes:
     and better compression ratios. It's backed by a very fast entropy
     stage, provided by Huff0 and FSE library.
 
-    To use it, install kombu with:
+    To use it, install Celery with:
 
     .. code-block:: console
 
-      $ pip install kombu[zstd]
+      $ pip install celery[zstd]
 
 You can also create your own compression schemes and register
 them in the :func:`kombu compression registry <kombu.compression.register>`.
