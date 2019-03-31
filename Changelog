@@ -10,7 +10,7 @@ an overview of what's new in Celery 4.3.
 
 4.3.0
 =====
-:release-date: TBD
+:release-date: 2019-03-31 7:00 P.M UTC+3:00
 :release-by: Omer Katz
 
 - Added support for broadcasting using a regular expression pattern
@@ -83,6 +83,11 @@ an overview of what's new in Celery 4.3.
       link_error=Signature('msg.err', queue='msg')
     ).apply_async()
 
+- Additional fixes and enhancements to the SSL support of
+  the Redis broker and result backend.
+
+  Contributed by **Jeremy Cohen**
+
 Code Cleanups, Test Coverage & CI Improvements by:
 
   - **Omer Katz**
@@ -93,6 +98,7 @@ Documentation Fixes by:
   - **Omer Katz**
   - **Samuel Huang**
   - **Amir Hossein Saeid Mehr**
+  - **Dmytro Litvinov**
 
 4.3.0 RC2
 =========
