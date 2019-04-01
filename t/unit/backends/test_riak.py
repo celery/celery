@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
 
 import pytest
 from case import MagicMock, Mock, patch, sentinel, skip
+
+from celery.exceptions import ImproperlyConfigured
 
 try:
     from celery.backends import riak as module
@@ -17,7 +19,6 @@ except TypeError as e:
     else:
         raise e
 
-from celery.exceptions import ImproperlyConfigured
 
 RIAK_BUCKET = 'riak_bucket'
 

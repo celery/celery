@@ -7,6 +7,7 @@ import logging
 from kombu.asynchronous.timer import to_timestamp
 from kombu.five import buffer_t
 
+from celery import signals
 from celery.exceptions import InvalidTaskError
 from celery.utils.imports import symbol_by_name
 from celery.utils.log import get_logger
@@ -156,6 +157,8 @@ def default(task, app, consumer,
             info('Received task: %s', req)
         if (req.expires or req.id in revoked_tasks) and req.revoked():
             return
+
+        signals.task_received.send(sender=consumer, request=req)
 
         if task_sends_events:
             send_event(

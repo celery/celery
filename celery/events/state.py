@@ -19,11 +19,6 @@ import bisect
 import sys
 import threading
 from collections import defaultdict
-try:
-    from collections.abc import Callable
-except ImportError:
-    # TODO: Remove this when we drop Python 2.7 support
-    from collections import Callable
 from datetime import datetime
 from decimal import Decimal
 from itertools import islice
@@ -38,6 +33,13 @@ from celery import states
 from celery.five import items, python_2_unicode_compatible, values
 from celery.utils.functional import LRUCache, memoize, pass1
 from celery.utils.log import get_logger
+
+try:
+    from collections.abc import Callable
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Callable
+
 
 __all__ = ('Worker', 'Task', 'State', 'heartbeat_expires')
 

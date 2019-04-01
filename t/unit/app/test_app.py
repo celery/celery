@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import gc
 import itertools
 import os
+import ssl
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pickle import dumps, loads
@@ -384,6 +385,37 @@ class test_App:
 
         with self.Celery() as app:
             assert not self.app.conf.task_always_eager
+
+    def test_pending_configuration__ssl_settings(self):
+        with self.Celery(broker='foo://bar',
+                         broker_use_ssl={
+                             'ssl_cert_reqs': ssl.CERT_REQUIRED,
+                             'ssl_ca_certs': '/path/to/ca.crt',
+                             'ssl_certfile': '/path/to/client.crt',
+                             'ssl_keyfile': '/path/to/client.key'},
+                         redis_backend_use_ssl={
+                             'ssl_cert_reqs': ssl.CERT_REQUIRED,
+                             'ssl_ca_certs': '/path/to/ca.crt',
+                             'ssl_certfile': '/path/to/client.crt',
+                             'ssl_keyfile': '/path/to/client.key'}) as app:
+            assert not app.configured
+            assert app.conf.broker_url == 'foo://bar'
+            assert app.conf.broker_use_ssl['ssl_certfile'] == \
+                '/path/to/client.crt'
+            assert app.conf.broker_use_ssl['ssl_keyfile'] == \
+                '/path/to/client.key'
+            assert app.conf.broker_use_ssl['ssl_ca_certs'] == \
+                '/path/to/ca.crt'
+            assert app.conf.broker_use_ssl['ssl_cert_reqs'] == \
+                ssl.CERT_REQUIRED
+            assert app.conf.redis_backend_use_ssl['ssl_certfile'] == \
+                '/path/to/client.crt'
+            assert app.conf.redis_backend_use_ssl['ssl_keyfile'] == \
+                '/path/to/client.key'
+            assert app.conf.redis_backend_use_ssl['ssl_ca_certs'] == \
+                '/path/to/ca.crt'
+            assert app.conf.redis_backend_use_ssl['ssl_cert_reqs'] == \
+                ssl.CERT_REQUIRED
 
     def test_repr(self):
         assert repr(self.app)

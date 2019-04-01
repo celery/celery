@@ -361,6 +361,8 @@ def move_task_by_id(task_id, dest, **kwargs):
     Arguments:
         task_id (str): Id of task to find and move.
         dest: (str, kombu.Queue): Destination queue.
+        transform (Callable): Optional function to transform the return
+            value (destination) of the filter function.
         **kwargs (Any): Also supports the same keyword
             arguments as :func:`move`.
     """
