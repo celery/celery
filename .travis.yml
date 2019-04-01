@@ -3,7 +3,6 @@ sudo: required
 dist: xenial
 cache: pip
 python:
-  - '2.7'
   - '3.5'
   - '3.6'
   - '3.7'
@@ -23,14 +22,6 @@ env:
   - MATRIX_TOXENV=integration-azureblockblob
 matrix:
   include:
-  - python: '3.7'
-    env: TOXENV=pypy-unit PYPY_VERSION="pypy2.7-6.0.0"
-  - python: '3.7'
-    env: TOXENV=pypy-integration-rabbitmq PYPY_VERSION="pypy2.7-6.0.0"
-  - python: '3.7'
-    env: TOXENV=pypy-integration-redis PYPY_VERSION="pypy2.7-6.0.0"
-  - python: '3.7'
-    env: TOXENV=pypy-integration-dynamodb PYPY_VERSION="pypy2.7-6.0.0"
   - python: '3.7'
     env: TOXENV=flake8
     stage: lint
