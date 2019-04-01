@@ -22,10 +22,8 @@ env:
   - MATRIX_TOXENV=integration-azureblockblob
 matrix:
   include:
-    env: TOXENV=flake8
-    stage: lint
   - python: '3.7'
-    env: TOXENV=flakeplus
+    env: TOXENV=flake8
     stage: lint
   - python: '3.7'
     env: TOXENV=apicheck
