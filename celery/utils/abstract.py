@@ -1,13 +1,15 @@
 """Abstract classes."""
 
 from abc import ABCMeta, abstractmethod, abstractproperty
+
+from celery.five import with_metaclass
+
 try:
     from collections.abc import Callable
 except ImportError:
     # TODO: Remove this when we drop Python 2.7 support
     from collections import Callable
 
-from celery.five import with_metaclass
 
 __all__ = ('CallableTask', 'CallableSignature')
 

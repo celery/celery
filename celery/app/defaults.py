@@ -158,6 +158,10 @@ NAMESPACES = Namespace(
 
         backend_settings=Option(None, type='dict'),
     ),
+    arangodb=Namespace(
+        __old__=old_ns('celery_arangodb'),
+        backend_settings=Option(None, type='dict')
+    ),
     mongodb=Namespace(
         __old__=old_ns('celery_mongodb'),
 
@@ -210,6 +214,7 @@ NAMESPACES = Namespace(
         extended=Option(False, type='bool'),
         serializer=Option('json'),
         backend_transport_options=Option({}, type='dict'),
+        chord_join_timeout=Option(3.0, type='float'),
     ),
     elasticsearch=Namespace(
         __old__=old_ns('celery_elasticsearch'),
@@ -244,16 +249,19 @@ NAMESPACES = Namespace(
     task=Namespace(
         __old__=OLD_NS,
         acks_late=Option(False, type='bool'),
+        acks_on_failure_or_timeout=Option(True, type='bool'),
         always_eager=Option(False, type='bool'),
         annotations=Option(type='any'),
         compression=Option(type='string', old={'celery_message_compression'}),
         create_missing_queues=Option(True, type='bool'),
+        inherit_parent_priority=Option(False, type='bool'),
         default_delivery_mode=Option(2, type='string'),
         default_queue=Option('celery'),
         default_exchange=Option(None, type='string'),  # taken from queue
         default_exchange_type=Option('direct'),
         default_routing_key=Option(None, type='string'),  # taken from queue
         default_rate_limit=Option(type='string'),
+        default_priority=Option(None, type='string'),
         eager_propagates=Option(
             False, type='bool', old={'celery_eager_propagates_exceptions'},
         ),

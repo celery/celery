@@ -121,6 +121,62 @@ class test_MongoBackend:
 
         mb = MongoBackend(app=self.app, url='mongodb://')
 
+    @patch('dns.resolver.query')
+    def test_init_mongodb_dns_seedlist(self, dns_resolver_query):
+        from dns.rdtypes.IN.SRV import SRV
+        from dns.rdtypes.ANY.TXT import TXT
+        from dns.name import Name
+
+        self.app.conf.mongodb_backend_settings = None
+
+        def mock_resolver(_, record_type):
+            if record_type == 'SRV':
+                return [
+                    SRV(0, 0, 0, 0, 27017, Name(labels=hostname))
+                    for hostname in [
+                        b'mongo1.example.com'.split(b'.'),
+                        b'mongo2.example.com'.split(b'.'),
+                        b'mongo3.example.com'.split(b'.')
+                    ]
+                ]
+            elif record_type == 'TXT':
+                return [TXT(0, 0, [b'replicaSet=rs0'])]
+
+        dns_resolver_query.side_effect = mock_resolver
+
+        # uri with user, password, database name, replica set,
+        # DNS seedlist format
+        uri = ('srv://'
+               'celeryuser:celerypassword@'
+               'dns-seedlist-host.example.com/'
+               'celerydatabase')
+
+        mb = MongoBackend(app=self.app, url=uri)
+        assert mb.mongo_host == [
+            'mongo1.example.com:27017',
+            'mongo2.example.com:27017',
+            'mongo3.example.com:27017',
+        ]
+        assert mb.options == dict(
+            mb._prepare_client_options(),
+            replicaset='rs0',
+            ssl=True
+        )
+        assert mb.user == 'celeryuser'
+        assert mb.password == 'celerypassword'
+        assert mb.database_name == 'celerydatabase'
+
+    def test_ensure_mongodb_uri_compliance(self):
+        mb = MongoBackend(app=self.app, url=None)
+        compliant_uri = mb._ensure_mongodb_uri_compliance
+
+        assert compliant_uri('mongodb://') == 'mongodb://localhost'
+
+        assert compliant_uri('mongodb+something://host') == \
+            'mongodb+something://host'
+
+        assert compliant_uri('something://host') == 'mongodb+something://host'
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_reduce(self):
         x = MongoBackend(app=self.app)

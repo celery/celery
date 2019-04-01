@@ -2,15 +2,16 @@
 """s3 result store backend."""
 from __future__ import absolute_import, unicode_literals
 
+from celery.exceptions import ImproperlyConfigured
+
+from .base import KeyValueStoreBackend
+
 try:
     import boto3
     import botocore
 except ImportError:
     boto3 = None
     botocore = None
-
-from celery.exceptions import ImproperlyConfigured
-from .base import KeyValueStoreBackend
 
 
 __all__ = ('S3Backend',)

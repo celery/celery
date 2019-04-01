@@ -3,13 +3,6 @@
 import sys
 from collections import OrderedDict as _OrderedDict
 from collections import deque
-try:
-    from collections.abc import Callable, Mapping, MutableMapping, MutableSet
-    from collections.abc import Sequence
-except ImportError:
-    # TODO: Remove this when we drop Python 2.7 support
-    from collections import Callable, Mapping, MutableMapping, MutableSet
-    from collections import Sequence
 from heapq import heapify, heappop, heappush
 from itertools import chain, count
 
@@ -18,6 +11,15 @@ from celery.five import (PY3, Empty, items, keys, monotonic,
 
 from .functional import first, uniq
 from .text import match_case
+
+try:
+    from collections.abc import Callable, Mapping, MutableMapping, MutableSet
+    from collections.abc import Sequence
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Callable, Mapping, MutableMapping, MutableSet
+    from collections import Sequence
+
 
 try:
     # pypy: dicts are ordered in recent versions

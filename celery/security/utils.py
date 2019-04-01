@@ -3,11 +3,11 @@
 import sys
 from contextlib import contextmanager
 
-from cryptography.hazmat.primitives import hashes
 import cryptography.exceptions
+from cryptography.hazmat.primitives import hashes
+
 from celery.exceptions import SecurityError
 from celery.five import reraise
-
 
 __all__ = ('get_digest_algorithm', 'reraise_errors',)
 

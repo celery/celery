@@ -244,6 +244,13 @@ A default value for all queues can be set using the
 
     app.conf.task_queue_max_priority = 10
 
+A default priority for all tasks can also be specified using the
+:setting:`task_default_priority` setting:
+
+.. code-block:: python
+
+    app.conf.task_default_priority = 5
+
 .. _amqp-primer:
 
 
@@ -262,7 +269,7 @@ queue named celery will really be split into 4 queues:
 
 .. code-block:: python
 
-    ['celery0', 'celery3`, `celery6`, `celery9`]
+    ['celery0', 'celery3', 'celery6', 'celery9']
 
 
 If you want more priority levels you can set the priority_steps transport option:
@@ -697,7 +704,7 @@ You can also have multiple routers defined in a sequence:
 The routers will then be visited in turn, and the first to return
 a value will be chosen.
 
-If you're using Redis or RabbitMQ you can also specify the queue's default priority
+If you\'re using Redis or RabbitMQ you can also specify the queue\'s default priority
 in the route.
 
 .. code-block:: python
@@ -725,7 +732,7 @@ default priority.
     submitted at the same time they may be out of priority order at first.
     Disabling worker prefetching will prevent this issue, but may cause less than
     ideal performance for small, fast tasks. In most cases, simply reducing
-    `worker_prefetch_multiplier`to 1 is an easier and cleaner way to increase the
+    `worker_prefetch_multiplier` to 1 is an easier and cleaner way to increase the
     responsiveness of your system without the costs of disabling prefetching
     entirely.
 

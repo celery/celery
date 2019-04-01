@@ -42,7 +42,7 @@ from celery.utils.time import (get_exponential_backoff_interval, timezone,
 from . import builtins  # noqa
 from . import backends
 from .annotations import prepare as prepare_annotations
-from .defaults import find_deprecated_settings, DEFAULT_SECURITY_DIGEST
+from .defaults import DEFAULT_SECURITY_DIGEST, find_deprecated_settings
 from .registry import TaskRegistry
 from .utils import (AppPickler, Settings, _new_key_to_old, _old_key_to_new,
                     _unpickle_app, _unpickle_app_v2, appstr, bugreport,
@@ -271,6 +271,8 @@ class Celery(object):
         self.__autoset('broker_url', broker)
         self.__autoset('result_backend', backend)
         self.__autoset('include', include)
+        self.__autoset('broker_use_ssl', kwargs.get('broker_use_ssl'))
+        self.__autoset('redis_backend_use_ssl', kwargs.get('redis_backend_use_ssl'))
         self._conf = Settings(
             PendingConfiguration(
                 self._preconf, self._finalize_pending_conf),
@@ -728,6 +730,10 @@ class Celery(object):
                     root_id = parent.request.root_id or parent.request.id
                 if not parent_id:
                     parent_id = parent.request.id
+
+                if conf.task_inherit_parent_priority:
+                    options.setdefault('priority',
+                                       parent.request.delivery_info.get('priority'))
 
         message = amqp.create_task_message(
             task_id, name, args, kwargs, countdown, eta, group_id,
