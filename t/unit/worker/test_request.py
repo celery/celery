@@ -616,9 +616,9 @@ class test_Request(RequestCase):
         except KeyError:
             exc_info = ExceptionInfo()
             job.on_failure(exc_info)
-            assert job.acknowledged
+        assert job.acknowledged
 
-    def test_on_failure_acks_on_failure_or_timeout(self):
+    def test_on_failure_acks_on_failure_or_timeout_disabled_for_task(self):
         job = self.xRequest()
         job.time_start = 1
         self.mytask.acks_late = True
@@ -628,7 +628,45 @@ class test_Request(RequestCase):
         except KeyError:
             exc_info = ExceptionInfo()
             job.on_failure(exc_info)
-            assert job.acknowledged is False
+        assert job.acknowledged is False
+
+    def test_on_failure_acks_on_failure_or_timeout_enabled_for_task(self):
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure_or_timeout = True
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
+
+    def test_on_failure_acks_on_failure_or_timeout_disabled(self):
+        self.app.conf.acks_on_failure_or_timeout = False
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure_or_timeout = False
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is False
+        self.app.conf.acks_on_failure_or_timeout = True
+
+    def test_on_failure_acks_on_failure_or_timeout_enabled(self):
+        self.app.conf.acks_on_failure_or_timeout = True
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
 
     def test_from_message_invalid_kwargs(self):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')

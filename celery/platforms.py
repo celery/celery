@@ -188,7 +188,7 @@ class Pidfile(object):
         """
         try:
             pid = self.read_pid()
-        except ValueError as exc:
+        except ValueError:
             print('Broken pidfile found - Removing it.', file=sys.stderr)
             self.remove()
             return True
@@ -203,7 +203,7 @@ class Pidfile(object):
                 print('Stale pidfile exists - Removing it.', file=sys.stderr)
                 self.remove()
                 return True
-        except SystemError as exc:
+        except SystemError:
             print('Stale pidfile exists - Removing it.', file=sys.stderr)
             self.remove()
             return True

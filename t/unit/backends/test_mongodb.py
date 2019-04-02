@@ -121,6 +121,62 @@ class test_MongoBackend:
 
         mb = MongoBackend(app=self.app, url='mongodb://')
 
+    @patch('dns.resolver.query')
+    def test_init_mongodb_dns_seedlist(self, dns_resolver_query):
+        from dns.rdtypes.IN.SRV import SRV
+        from dns.rdtypes.ANY.TXT import TXT
+        from dns.name import Name
+
+        self.app.conf.mongodb_backend_settings = None
+
+        def mock_resolver(_, record_type):
+            if record_type == 'SRV':
+                return [
+                    SRV(0, 0, 0, 0, 27017, Name(labels=hostname))
+                    for hostname in [
+                        b'mongo1.example.com'.split(b'.'),
+                        b'mongo2.example.com'.split(b'.'),
+                        b'mongo3.example.com'.split(b'.')
+                    ]
+                ]
+            elif record_type == 'TXT':
+                return [TXT(0, 0, [b'replicaSet=rs0'])]
+
+        dns_resolver_query.side_effect = mock_resolver
+
+        # uri with user, password, database name, replica set,
+        # DNS seedlist format
+        uri = ('srv://'
+               'celeryuser:celerypassword@'
+               'dns-seedlist-host.example.com/'
+               'celerydatabase')
+
+        mb = MongoBackend(app=self.app, url=uri)
+        assert mb.mongo_host == [
+            'mongo1.example.com:27017',
+            'mongo2.example.com:27017',
+            'mongo3.example.com:27017',
+        ]
+        assert mb.options == dict(
+            mb._prepare_client_options(),
+            replicaset='rs0',
+            ssl=True
+        )
+        assert mb.user == 'celeryuser'
+        assert mb.password == 'celerypassword'
+        assert mb.database_name == 'celerydatabase'
+
+    def test_ensure_mongodb_uri_compliance(self):
+        mb = MongoBackend(app=self.app, url=None)
+        compliant_uri = mb._ensure_mongodb_uri_compliance
+
+        assert compliant_uri('mongodb://') == 'mongodb://localhost'
+
+        assert compliant_uri('mongodb+something://host') == \
+            'mongodb+something://host'
+
+        assert compliant_uri('something://host') == 'mongodb+something://host'
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_reduce(self):
         x = MongoBackend(app=self.app)
@@ -214,6 +270,33 @@ class test_MongoBackend:
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
         mock_collection.save.assert_called_once_with(ANY)
+        assert sentinel.result == ret_val
+
+        mock_collection.save.side_effect = InvalidDocument()
+        with pytest.raises(EncodeError):
+            self.backend._store_result(
+                sentinel.task_id, sentinel.result, sentinel.status)
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_store_result_with_request(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_request = MagicMock(spec=['parent_id'])
+
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+        mock_request.parent_id = sentinel.parent_id
+
+        ret_val = self.backend._store_result(
+            sentinel.task_id, sentinel.result, sentinel.status,
+            request=mock_request)
+
+        mock_get_database.assert_called_once_with()
+        mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
+        parameters = mock_collection.save.call_args[0][0]
+        assert parameters['parent_id'] == sentinel.parent_id
         assert sentinel.result == ret_val
 
         mock_collection.save.side_effect = InvalidDocument()
@@ -322,7 +405,8 @@ class test_MongoBackend:
             {'_id': sentinel.taskset_id})
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
-    def test_forget(self, mock_get_database):
+    def test__forget(self, mock_get_database):
+        # note: here tested _forget method, not forget method
         self.backend.taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])

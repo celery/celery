@@ -180,7 +180,7 @@ class test_trace(TraceCase):
         maybe_signature.return_value = sig
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig.apply_async.assert_called_with(
-            (4,), parent_id='id-1', root_id='root',
+            (4,), parent_id='id-1', root_id='root', priority=None
         )
 
     @patch('celery.canvas.maybe_signature')
@@ -192,7 +192,21 @@ class test_trace(TraceCase):
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig.apply_async.assert_called_with(
             (4, ), parent_id='id-1', root_id='root',
-            chain=[sig2],
+            chain=[sig2], priority=None
+        )
+
+    @patch('celery.canvas.maybe_signature')
+    def test_chain_inherit_parent_priority(self, maybe_signature):
+        self.app.conf.task_inherit_parent_priority = True
+        sig = Mock(name='sig')
+        sig2 = Mock(name='sig2')
+        request = {'chain': [sig2, sig], 'root_id': 'root',
+                   'delivery_info': {'priority': 42}}
+        maybe_signature.return_value = sig
+        retval, _ = self.trace(self.add, (2, 2), {}, request=request)
+        sig.apply_async.assert_called_with(
+            (4, ), parent_id='id-1', root_id='root',
+            chain=[sig2], priority=42
         )
 
     @patch('celery.canvas.maybe_signature')
@@ -218,10 +232,10 @@ class test_trace(TraceCase):
         maybe_signature.side_effect = passt
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         group_.assert_called_with(
-            (4,), parent_id='id-1', root_id='root',
+            (4,), parent_id='id-1', root_id='root', priority=None
         )
         sig3.apply_async.assert_called_with(
-            (4,), parent_id='id-1', root_id='root',
+            (4,), parent_id='id-1', root_id='root', priority=None
         )
 
     @patch('celery.canvas.maybe_signature')
@@ -238,10 +252,10 @@ class test_trace(TraceCase):
         maybe_signature.side_effect = passt
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig1.apply_async.assert_called_with(
-            (4,), parent_id='id-1', root_id='root',
+            (4,), parent_id='id-1', root_id='root', priority=None
         )
         sig2.apply_async.assert_called_with(
-            (4,), parent_id='id-1', root_id='root',
+            (4,), parent_id='id-1', root_id='root', priority=None
         )
 
     def test_trace_SystemExit(self):

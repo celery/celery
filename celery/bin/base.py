@@ -44,10 +44,24 @@ __all__ = (
 for warning in (CDeprecationWarning, CPendingDeprecationWarning):
     warnings.simplefilter('once', warning, 0)
 
+# TODO: Remove this once we drop support for Python < 3.6
+if sys.version_info < (3, 6):
+    ModuleNotFoundError = ImportError
+
 ARGV_DISABLED = """
 Unrecognized command-line arguments: {0}
 
 Try --help?
+"""
+
+UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND = """
+Unable to load celery application.
+The module {0} was not found.
+"""
+
+UNABLE_TO_LOAD_APP_APP_MISSING = """
+Unable to load celery application.
+{0}
 """
 
 find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
@@ -270,7 +284,16 @@ class Command(object):
 
         # Dump version and exit if '--version' arg set.
         self.early_version(argv)
-        argv = self.setup_app_from_commandline(argv)
+        try:
+            argv = self.setup_app_from_commandline(argv)
+        except ModuleNotFoundError as e:
+            self.on_error(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(e.name))
+            return EX_FAILURE
+        except AttributeError as e:
+            msg = e.args[0].capitalize()
+            self.on_error(UNABLE_TO_LOAD_APP_APP_MISSING.format(msg))
+            return EX_FAILURE
+
         self.prog_name = os.path.basename(argv[0])
         return self.handle_argv(self.prog_name, argv[1:])
 

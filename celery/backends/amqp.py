@@ -141,12 +141,11 @@ class AMQPBackend(BaseBackend):
         if cache and cached_meta and \
                 cached_meta['status'] in READY_STATES:
             return cached_meta
-        else:
-            try:
-                return self.consume(task_id, timeout=timeout, no_ack=no_ack,
-                                    on_interval=on_interval)
-            except socket.timeout:
-                raise TimeoutError('The operation timed out.')
+        try:
+            return self.consume(task_id, timeout=timeout, no_ack=no_ack,
+                                on_interval=on_interval)
+        except socket.timeout:
+            raise TimeoutError('The operation timed out.')
 
     def get_task_meta(self, task_id, backlog_limit=1000):
         # Polling and using basic_get
@@ -298,7 +297,8 @@ class AMQPBackend(BaseBackend):
         raise NotImplementedError(
             'delete_group is not supported by this backend.')
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = kwargs if kwargs else {}
         kwargs.update(
             connection=self._connection,
             exchange=self.exchange.name,

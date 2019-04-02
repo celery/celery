@@ -3,12 +3,18 @@
 from __future__ import absolute_import, unicode_literals
 
 import re
-from collections import Callable
 from functools import partial
 from pprint import pformat
 from textwrap import fill
 
 from celery.five import string_t
+
+try:
+    from collections.abc import Callable
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Callable
+
 
 __all__ = (
     'abbr', 'abbrtask', 'dedent', 'dedent_initial',

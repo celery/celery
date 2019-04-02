@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from kombu.exceptions import EncodeError
 from kombu.utils.objects import cached_property
-from kombu.utils.url import maybe_sanitize_url
+from kombu.utils.url import maybe_sanitize_url, urlparse
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
@@ -75,8 +75,7 @@ class MongoBackend(BaseBackend):
 
         # update conf with mongo uri data, only if uri was given
         if self.url:
-            if self.url == 'mongodb://':
-                self.url += 'localhost'
+            self.url = self._ensure_mongodb_uri_compliance(self.url)
 
             uri_data = pymongo.uri_parser.parse_uri(self.url)
             # build the hosts list to create a mongo connection
@@ -119,6 +118,17 @@ class MongoBackend(BaseBackend):
 
             self.options.update(config.pop('options', {}))
             self.options.update(config)
+
+    @staticmethod
+    def _ensure_mongodb_uri_compliance(url):
+        parsed_url = urlparse(url)
+        if not parsed_url.scheme.startswith('mongodb'):
+            url = 'mongodb+{}'.format(url)
+
+        if url == 'mongodb://':
+            url += 'localhost'
+
+        return url
 
     def _prepare_client_options(self):
         if pymongo.version_tuple >= (3,):
@@ -181,6 +191,8 @@ class MongoBackend(BaseBackend):
                 self.current_task_children(request),
             ),
         }
+        if request and getattr(request, 'parent_id', None):
+            meta['parent_id'] = request.parent_id
 
         try:
             self.collection.save(meta)

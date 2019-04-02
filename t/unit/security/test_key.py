@@ -1,10 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
+from kombu.utils.encoding import ensure_bytes
 
 from celery.exceptions import SecurityError
-from celery.five import bytes_if_py2
 from celery.security.key import PrivateKey
+from celery.security.utils import get_digest_algorithm
 
 from . import CERT1, KEY1, KEY2
 from .case import SecurityCase
@@ -30,6 +31,6 @@ class test_PrivateKey(SecurityCase):
 
     def test_sign(self):
         pkey = PrivateKey(KEY1)
-        pkey.sign('test', bytes_if_py2('sha1'))
-        with pytest.raises(ValueError):
-            pkey.sign('test', bytes_if_py2('unknown'))
+        pkey.sign(ensure_bytes('test'), get_digest_algorithm())
+        with pytest.raises(AttributeError):
+            pkey.sign(ensure_bytes('test'), get_digest_algorithm('unknown'))

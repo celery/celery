@@ -882,7 +882,7 @@ an errback to the chord callback:
 .. code-block:: pycon
 
     >>> c = (group(add.s(i, i) for i in range(10)) |
-    ...      xsum.s().on_error(on_chord_error.s()))).delay()
+    ...      xsum.s().on_error(on_chord_error.s())).delay()
 
 .. _chord-important-notes:
 

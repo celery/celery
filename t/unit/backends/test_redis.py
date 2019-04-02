@@ -189,6 +189,11 @@ class test_RedisResultConsumer:
         parent_method.assert_called_once_with(meta, message)
         cancel_for.assert_not_called()
 
+    def test_drain_events_before_start(self):
+        consumer = self.get_consumer()
+        # drain_events shouldn't crash when called before start
+        consumer.drain_events(0.001)
+
 
 class test_RedisBackend:
     def get_backend(self):
@@ -249,6 +254,7 @@ class test_RedisBackend:
         assert x.connparams['socket_timeout'] == 30
         assert x.connparams['socket_connect_timeout'] == 100
 
+    @skip.unless_module('redis')
     def test_socket_url(self):
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
@@ -276,7 +282,35 @@ class test_RedisBackend:
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
         x = self.Backend(
-            'redis://:bosco@vandelay.com:123//1', app=self.app,
+            'rediss://:bosco@vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['password'] == 'bosco'
+        assert x.connparams['socket_timeout'] == 30.0
+        assert x.connparams['socket_connect_timeout'] == 100.0
+        assert x.connparams['ssl_cert_reqs'] == ssl.CERT_REQUIRED
+        assert x.connparams['ssl_ca_certs'] == '/path/to/ca.crt'
+        assert x.connparams['ssl_certfile'] == '/path/to/client.crt'
+        assert x.connparams['ssl_keyfile'] == '/path/to/client.key'
+
+        from redis.connection import SSLConnection
+        assert x.connparams['connection_class'] is SSLConnection
+
+    @skip.unless_module('redis')
+    def test_backend_ssl_certreq_str(self):
+        self.app.conf.redis_backend_use_ssl = {
+            'ssl_cert_reqs': 'CERT_REQUIRED',
+            'ssl_ca_certs': '/path/to/ca.crt',
+            'ssl_certfile': '/path/to/client.crt',
+            'ssl_keyfile': '/path/to/client.key',
+        }
+        self.app.conf.redis_socket_timeout = 30.0
+        self.app.conf.redis_socket_connect_timeout = 100.0
+        x = self.Backend(
+            'rediss://:bosco@vandelay.com:123//1', app=self.app,
         )
         assert x.connparams
         assert x.connparams['host'] == 'vandelay.com'
@@ -380,6 +414,7 @@ class test_RedisBackend:
             'result_cache_max': 1,
             'result_expires': None,
             'accept_content': ['json'],
+            'result_accept_content': ['json'],
         })
         self.Backend(app=self.app)
 
@@ -498,6 +533,24 @@ class test_RedisBackend:
         self.b.client.expire.assert_has_calls([
             call(jkey, 86400), call(tkey, 86400),
         ])
+
+    @patch('celery.result.GroupResult.restore')
+    def test_on_chord_part_return_no_expiry(self, restore):
+        old_expires = self.b.expires
+        self.b.expires = None
+        tasks = [self.create_task() for i in range(10)]
+
+        for i in range(10):
+            self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
+            assert self.b.client.rpush.call_count
+            self.b.client.rpush.reset_mock()
+        assert self.b.client.lrange.call_count
+        jkey = self.b.get_key_for_group('group_id', '.j')
+        tkey = self.b.get_key_for_group('group_id', '.t')
+        self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
+        self.b.client.expire.assert_not_called()
+
+        self.b.expires = old_expires
 
     def test_on_chord_part_return__success(self):
         with self.chord_context(2) as (_, request, callback):

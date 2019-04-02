@@ -244,7 +244,47 @@ A default value for all queues can be set using the
 
     app.conf.task_queue_max_priority = 10
 
+A default priority for all tasks can also be specified using the
+:setting:`task_default_priority` setting:
+
+.. code-block:: python
+
+    app.conf.task_default_priority = 5
+
 .. _amqp-primer:
+
+
+Redis Message Priorities
+------------------------
+:supported transports: Redis
+
+While the Celery Redis transport does honor the priority field, Redis itself has
+no notion of priorities. Please read this note before attempting to implement
+priorities with Redis as you may experience some unexpected behavior.
+
+The priority support is implemented by creating n lists for each queue.
+This means that even though there are 10 (0-9) priority levels, these are
+consolidated into 4 levels by default to save resources. This means that a
+queue named celery will really be split into 4 queues:
+
+.. code-block:: python
+
+    ['celery0', 'celery3', 'celery6', 'celery9']
+
+
+If you want more priority levels you can set the priority_steps transport option:
+
+.. code-block:: python
+
+    app.conf.broker_transport_options = {
+        'priority_steps': list(range(10)),
+    }
+
+
+That said, note that this will never be as good as priorities implemented at the
+server level, and may be approximate at best. But it may still be good enough
+for your application.
+
 
 AMQP Primer
 ===========
@@ -663,6 +703,41 @@ You can also have multiple routers defined in a sequence:
 
 The routers will then be visited in turn, and the first to return
 a value will be chosen.
+
+If you\'re using Redis or RabbitMQ you can also specify the queue\'s default priority
+in the route.
+
+.. code-block:: python
+
+    task_routes = {
+        'myapp.tasks.compress_video': {
+            'queue': 'video',
+            'routing_key': 'video.compress',
+            'priority': 10,
+        },
+    }
+
+
+Similarly, calling `apply_async` on a task will override that
+default priority.
+
+.. code-block:: python
+
+    task.apply_async(priority=0)
+
+
+.. admonition:: Priority Order and Cluster Responsiveness
+
+    It is important to note that, due to worker prefetching, if a bunch of tasks
+    submitted at the same time they may be out of priority order at first.
+    Disabling worker prefetching will prevent this issue, but may cause less than
+    ideal performance for small, fast tasks. In most cases, simply reducing
+    `worker_prefetch_multiplier` to 1 is an easier and cleaner way to increase the
+    responsiveness of your system without the costs of disabling prefetching
+    entirely.
+
+    Note that priorities values are sorted in reverse: 0 being highest priority.
+
 
 Broadcast
 ---------

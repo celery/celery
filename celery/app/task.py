@@ -255,9 +255,13 @@ class Task(object):
     #: When enabled messages for this task will be acknowledged even if it
     #: fails or times out.
     #:
+    #: Configuring this setting only applies to tasks that are
+    #: acknowledged **after** they have been executed and only if
+    #: :setting:`task_acks_late` is enabled.
+    #:
     #: The application default can be overridden with the
     #: :setting:`task_acks_on_failure_or_timeout` setting.
-    acks_on_failure_or_timeout = True
+    acks_on_failure_or_timeout = None
 
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
@@ -282,6 +286,9 @@ class Task(object):
     #: Default task expiry time.
     expires = None
 
+    #: Default task priority.
+    priority = None
+
     #: Max length of result representation used in logs and events.
     resultrepr_maxsize = 1024
 
@@ -302,6 +309,7 @@ class Task(object):
     from_config = (
         ('serializer', 'task_serializer'),
         ('rate_limit', 'task_default_rate_limit'),
+        ('priority', 'task_default_priority'),
         ('track_started', 'task_track_started'),
         ('acks_late', 'task_acks_late'),
         ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
@@ -527,14 +535,17 @@ class Task(object):
         if app.conf.task_always_eager:
             with app.producer_or_acquire(producer) as eager_producer:
                 serializer = options.get(
-                    'serializer', eager_producer.serializer
+                    'serializer',
+                    (eager_producer.serializer if eager_producer.serializer
+                     else app.conf.task_serializer)
                 )
                 body = args, kwargs
                 content_type, content_encoding, data = serialization.dumps(
-                    body, serializer
+                    body, serializer,
                 )
                 args, kwargs = serialization.loads(
-                    data, content_type, content_encoding
+                    data, content_type, content_encoding,
+                    accept=[content_type]
                 )
             with denied_join_result():
                 return self.apply(args, kwargs, task_id=task_id or uuid(),
@@ -549,6 +560,8 @@ class Task(object):
         options = dict(preopts, **options) if options else preopts
 
         options.setdefault('ignore_result', self.ignore_result)
+        if self.priority:
+            options.setdefault('priority', self.priority)
 
         return app.send_task(
             self.name, args, kwargs, task_id=task_id, producer=producer,
@@ -655,6 +668,7 @@ class Task(object):
             **options (Any): Extra options to pass on to :meth:`apply_async`.
 
         Raises:
+
             celery.exceptions.Retry:
                 To tell the worker that the task has been re-sent for retry.
                 This always happens, unless the `throw` keyword argument
@@ -689,7 +703,9 @@ class Task(object):
                 raise_with_context(exc)
             raise self.MaxRetriesExceededError(
                 "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
-                    self.name, request.id, S.args, S.kwargs))
+                    self.name, request.id, S.args, S.kwargs
+                ), task_args=S.args, task_kwargs=S.kwargs
+            )
 
         ret = Retry(exc=exc, when=eta or countdown)
 

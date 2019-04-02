@@ -2,15 +2,19 @@
 """X.509 certificates."""
 from __future__ import absolute_import, unicode_literals
 
+import datetime
 import glob
 import os
 
-from kombu.utils.encoding import bytes_to_str
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.x509 import load_pem_x509_certificate
+from kombu.utils.encoding import bytes_to_str, ensure_bytes
 
 from celery.exceptions import SecurityError
 from celery.five import values
 
-from .utils import crypto, reraise_errors
+from .utils import reraise_errors
 
 __all__ = ('Certificate', 'CertStore', 'FSCertStore')
 
@@ -19,22 +23,27 @@ class Certificate(object):
     """X.509 certificate."""
 
     def __init__(self, cert):
-        assert crypto is not None
-        with reraise_errors('Invalid certificate: {0!r}'):
-            self._cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
+        with reraise_errors(
+            'Invalid certificate: {0!r}', errors=(ValueError,)
+        ):
+            self._cert = load_pem_x509_certificate(
+                ensure_bytes(cert), backend=default_backend())
 
     def has_expired(self):
         """Check if the certificate has expired."""
-        return self._cert.has_expired()
+        return datetime.datetime.now() > self._cert.not_valid_after
+
+    def get_pubkey(self):
+        """Get public key from certificate."""
+        return self._cert.public_key()
 
     def get_serial_number(self):
         """Return the serial number in the certificate."""
-        return bytes_to_str(self._cert.get_serial_number())
+        return self._cert.serial_number
 
     def get_issuer(self):
         """Return issuer (CA) as a string."""
-        return ' '.join(bytes_to_str(x[1]) for x in
-                        self._cert.get_issuer().get_components())
+        return ' '.join(x.value for x in self._cert.issuer)
 
     def get_id(self):
         """Serial number/issuer pair uniquely identifies a certificate."""
@@ -43,7 +52,13 @@ class Certificate(object):
     def verify(self, data, signature, digest):
         """Verify signature for string containing data."""
         with reraise_errors('Bad signature: {0!r}'):
-            crypto.verify(self._cert, signature, data, digest)
+
+            padd = padding.PSS(
+                mgf=padding.MGF1(digest),
+                salt_length=padding.PSS.MAX_LENGTH)
+
+            self.get_pubkey().verify(signature,
+                                     ensure_bytes(data), padd, digest)
 
 
 class CertStore(object):

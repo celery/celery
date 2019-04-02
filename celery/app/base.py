@@ -42,7 +42,7 @@ from celery.utils.time import (get_exponential_backoff_interval, timezone,
 from . import builtins  # noqa
 from . import backends
 from .annotations import prepare as prepare_annotations
-from .defaults import find_deprecated_settings
+from .defaults import DEFAULT_SECURITY_DIGEST, find_deprecated_settings
 from .registry import TaskRegistry
 from .utils import (AppPickler, Settings, _new_key_to_old, _old_key_to_new,
                     _unpickle_app, _unpickle_app_v2, appstr, bugreport,
@@ -151,8 +151,9 @@ class Celery(object):
 
     Keyword Arguments:
         broker (str): URL of the default broker used.
-        backend (Union[str, type]): The result store backend class,
-            or the name of the backend class to use.
+        backend (Union[str, Type[celery.backends.base.Backend]]):
+            The result store backend class, or the name of the backend
+            class to use.
 
             Default is the value of the :setting:`result_backend` setting.
         autofinalize (bool): If set to False a :exc:`RuntimeError`
@@ -161,15 +162,17 @@ class Celery(object):
         set_as_current (bool):  Make this the global current app.
         include (List[str]): List of modules every worker should import.
 
-        amqp (Union[str, type]): AMQP object or class name.
-        events (Union[str, type]): Events object or class name.
-        log (Union[str, type]): Log object or class name.
-        control (Union[str, type]): Control object or class name.
-        tasks (Union[str, type]): A task registry, or the name of
+        amqp (Union[str, Type[AMQP]]): AMQP object or class name.
+        events (Union[str, Type[celery.app.events.Events]]): Events object or
+            class name.
+        log (Union[str, Type[Logging]]): Log object or class name.
+        control (Union[str, Type[celery.app.control.Control]]): Control object
+            or class name.
+        tasks (Union[str, Type[TaskRegistry]]): A task registry, or the name of
             a registry class.
         fixups (List[str]): List of fix-up plug-ins (e.g., see
             :mod:`celery.fixups.django`).
-        config_source (Union[str, type]): Take configuration from a class,
+        config_source (Union[str, class]): Take configuration from a class,
             or object.  Attributes may include any settings described in
             the documentation.
     """
@@ -268,6 +271,8 @@ class Celery(object):
         self.__autoset('broker_url', broker)
         self.__autoset('result_backend', backend)
         self.__autoset('include', include)
+        self.__autoset('broker_use_ssl', kwargs.get('broker_use_ssl'))
+        self.__autoset('redis_backend_use_ssl', kwargs.get('redis_backend_use_ssl'))
         self._conf = Settings(
             PendingConfiguration(
                 self._preconf, self._finalize_pending_conf),
@@ -396,7 +401,7 @@ class Celery(object):
             return shared_task(*args, lazy=False, **opts)
 
         def inner_create_task_cls(shared=True, filter=None, lazy=True, **opts):
-            _filt = filter  # stupid 2to3
+            _filt = filter
 
             def _create_task_cls(fun):
                 if shared:
@@ -594,7 +599,8 @@ class Celery(object):
         )
 
     def setup_security(self, allowed_serializers=None, key=None, cert=None,
-                       store=None, digest='sha1', serializer='json'):
+                       store=None, digest=DEFAULT_SECURITY_DIGEST,
+                       serializer='json'):
         """Setup the message-signing serializer.
 
         This will affect all application instances (a global operation).
@@ -613,7 +619,7 @@ class Celery(object):
             store (str): Directory containing certificates.
                 Defaults to the :setting:`security_cert_store` setting.
             digest (str): Digest algorithm used when signing messages.
-                Default is ``sha1``.
+                Default is ``sha256``.
             serializer (str): Serializer used to encode messages after
                 they've been signed.  See :setting:`task_serializer` for
                 the serializers supported.  Default is ``json``.
@@ -724,6 +730,10 @@ class Celery(object):
                     root_id = parent.request.root_id or parent.request.id
                 if not parent_id:
                     parent_id = parent.request.id
+
+                if conf.task_inherit_parent_priority:
+                    options.setdefault('priority',
+                                       parent.request.delivery_info.get('priority'))
 
         message = amqp.create_task_message(
             task_id, name, args, kwargs, countdown, eta, group_id,

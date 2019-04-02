@@ -264,3 +264,7 @@ Federico Bond, 2018/06/20
 Tom Booth, 2018/07/06
 Axel haustant, 2018/08/14
 Bruno Alla, 2018/09/27
+Artem Vasilyev, 2018/11/24
+Victor Mireyev, 2018/12/13
+Florian Chardin, 2018/10/23
+Shady Rafehi, 2019/02/20

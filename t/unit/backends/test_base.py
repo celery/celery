@@ -6,9 +6,10 @@ from contextlib import contextmanager
 
 import pytest
 from case import ANY, Mock, call, patch, skip
+from kombu.serialization import prepare_accept_content
 
-from celery import chord, group, states, uuid
-from celery.app.task import Context
+from celery import chord, group, signature, states, uuid
+from celery.app.task import Context, Task
 from celery.backends.base import (BaseBackend, DisabledBackend,
                                   KeyValueStoreBackend, _nulldict)
 from celery.exceptions import ChordError, TimeoutError
@@ -57,6 +58,39 @@ class test_serialization:
     def test_create_exception_cls(self):
         assert serialization.create_exception_cls('FooError', 'm')
         assert serialization.create_exception_cls('FooError', 'm', KeyError)
+
+
+class test_Backend_interface:
+
+    def setup(self):
+        self.app.conf.accept_content = ['json']
+
+    def test_accept_precedence(self):
+
+        # default is app.conf.accept_content
+        accept_content = self.app.conf.accept_content
+        b1 = BaseBackend(self.app)
+        assert prepare_accept_content(accept_content) == b1.accept
+
+        # accept parameter
+        b2 = BaseBackend(self.app, accept=['yaml'])
+        assert len(b2.accept) == 1
+        assert list(b2.accept)[0] == 'application/x-yaml'
+        assert prepare_accept_content(['yaml']) == b2.accept
+
+        # accept parameter over result_accept_content
+        self.app.conf.result_accept_content = ['json']
+        b3 = BaseBackend(self.app, accept=['yaml'])
+        assert len(b3.accept) == 1
+        assert list(b3.accept)[0] == 'application/x-yaml'
+        assert prepare_accept_content(['yaml']) == b3.accept
+
+        # conf.result_accept_content if specified
+        self.app.conf.result_accept_content = ['yaml']
+        b4 = BaseBackend(self.app)
+        assert len(b4.accept) == 1
+        assert list(b4.accept)[0] == 'application/x-yaml'
+        assert prepare_accept_content(['yaml']) == b4.accept
 
 
 class test_BaseBackend_interface:
@@ -348,6 +382,35 @@ class test_BaseBackend_dict:
         b.mark_as_failure('id', exc, request=request)
         assert self.errback.last_result == 5
 
+    @patch('celery.backends.base.group')
+    def test_class_based_task_can_be_used_as_error_callback(self, mock_group):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+
+        class TaskBasedClass(Task):
+            def run(self):
+                pass
+
+        TaskBasedClass = self.app.register_task(TaskBasedClass())
+
+        request = Mock(name='request')
+        request.errbacks = [TaskBasedClass.subtask(args=[], immutable=True)]
+        exc = KeyError()
+        b.mark_as_failure('id', exc, request=request)
+        mock_group.assert_called_once_with(request.errbacks, app=self.app)
+
+    @patch('celery.backends.base.group')
+    def test_unregistered_task_can_be_used_as_error_callback(self, mock_group):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+
+        request = Mock(name='request')
+        request.errbacks = [signature('doesnotexist',
+                                      immutable=True)]
+        exc = KeyError()
+        b.mark_as_failure('id', exc, request=request)
+        mock_group.assert_called_once_with(request.errbacks, app=self.app)
+
     def test_mark_as_failure__chord(self):
         b = BaseBackend(app=self.app)
         b._store_result = Mock()
@@ -422,6 +485,18 @@ class test_KeyValueStoreBackend:
         assert self.b.get_state(tid) == states.SUCCESS
         self.b.forget(tid)
         assert self.b.get_state(tid) == states.PENDING
+
+    def test_store_result_parent_id(self):
+        tid = uuid()
+        pid = uuid()
+        state = 'SUCCESS'
+        result = 10
+        request = Context(parent_id=pid)
+        self.b.store_result(
+            tid, state=state, result=result, request=request,
+        )
+        stored_meta = self.b.decode(self.b.get(self.b.get_key_for_task(tid)))
+        assert stored_meta['parent_id'] == request.parent_id
 
     def test_store_result_group_id(self):
         tid = uuid()

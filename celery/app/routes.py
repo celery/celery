@@ -7,7 +7,7 @@ from __future__ import absolute_import, unicode_literals
 
 import re
 import string
-from collections import Mapping, OrderedDict
+from collections import OrderedDict
 
 from kombu import Queue
 
@@ -16,6 +16,13 @@ from celery.five import items, string_t
 from celery.utils.collections import lpmerge
 from celery.utils.functional import maybe_evaluate, mlazy
 from celery.utils.imports import symbol_by_name
+
+try:
+    from collections.abc import Mapping
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Mapping
+
 
 try:
     Pattern = re._pattern_type
@@ -79,7 +86,7 @@ class Router(object):
                 return lpmerge(self.expand_destination(route), options)
         if 'queue' not in options:
             options = lpmerge(self.expand_destination(
-                              self.app.conf.task_default_queue), options)
+                self.app.conf.task_default_queue), options)
         return options
 
     def expand_destination(self, route):
