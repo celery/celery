@@ -284,7 +284,6 @@ def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
 
 
 class test_chord:
-
     @flaky
     def test_redis_subscribed_channels_leak(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
@@ -293,18 +292,16 @@ class test_chord:
         manager.app.backend.result_consumer.on_after_fork()
         initial_channels = get_active_redis_channels()
         initial_channels_count = len(initial_channels)
-
         total_chords = 10
         async_results = [
             chord([add.s(5, 6), add.s(6, 7)])(delayed_sum.s())
             for _ in range(total_chords)
         ]
 
+        channels_before = get_active_redis_channels()
         manager.assert_result_tasks_in_progress_or_completed(async_results)
 
-        channels_before = get_active_redis_channels()
         channels_before_count = len(channels_before)
-
         assert set(channels_before) != set(initial_channels)
         assert channels_before_count > initial_channels_count
 
@@ -602,6 +599,7 @@ class test_chord:
         assert len([cr for cr in chord_results if cr[2] != states.SUCCESS]
                    ) == 1
 
+    @flaky
     def test_parallel_chords(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -614,3 +612,34 @@ class test_chord:
         r = g.delay()
 
         assert r.get(timeout=TIMEOUT) == [10, 10]
+
+    @flaky
+    def test_chord_in_chords_with_chains(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chord(
+            group([
+                chain(
+                    add.si(1, 2),
+                    chord(
+                        group([add.si(1, 2), add.si(1, 2)]),
+                        add.si(1, 2),
+                    ),
+                ),
+                chain(
+                    add.si(1, 2),
+                    chord(
+                        group([add.si(1, 2), add.si(1, 2)]),
+                        add.si(1, 2),
+                    ),
+                ),
+            ]),
+            add.si(2, 2)
+        )
+
+        r = c.delay()
+
+        assert r.get(timeout=TIMEOUT) == 4

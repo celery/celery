@@ -5,10 +5,23 @@ from functools import wraps
 
 import pytest
 
+# we have to import the pytest plugin fixtures here,
+# in case user did not do the `python setup.py develop` yet,
+# that installs the pytest plugin into the setuptools registry.
+from celery.contrib.pytest import celery_app, celery_session_worker
 from celery.contrib.testing.manager import Manager
 
 TEST_BROKER = os.environ.get('TEST_BROKER', 'pyamqp://')
 TEST_BACKEND = os.environ.get('TEST_BACKEND', 'redis://')
+
+# Tricks flake8 into silencing redefining fixtures warnings.
+__all__ = (
+    'celery_app',
+    'celery_session_worker',
+    'flaky',
+    'get_active_redis_channels',
+    'get_redis_connection',
+)
 
 
 def flaky(fun):

@@ -289,6 +289,25 @@ Provides arguments:
 
     The :class:`billiard.einfo.ExceptionInfo` instance.
 
+.. signal:: task_received
+
+``task_received``
+~~~~~~~~~~~~~~~~~
+
+Dispatched when a task is received from the broker and is ready for execution.
+
+Sender is the consumer object.
+
+Provides arguments:
+
+* ``request``
+
+    This is a :class:`~celery.worker.request.Request` instance, and not
+    ``task.request``. When using the prefork pool this signal
+    is dispatched in the parent process, so ``task.request`` isn't available
+    and shouldn't be used. Use this object instead, as they share many
+    of the same fields.
+
 .. signal:: task_revoked
 
 ``task_revoked``

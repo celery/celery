@@ -8,6 +8,7 @@ from operator import itemgetter
 
 from kombu import Consumer
 from kombu.asynchronous.semaphore import DummyLock
+from kombu.exceptions import ContentDisallowed, DecodeError
 
 from celery import bootsteps
 from celery.five import values
@@ -198,7 +199,10 @@ class Gossip(bootsteps.ConsumerStep):
         hostname = (message.headers.get('hostname') or
                     message.payload['hostname'])
         if hostname != self.hostname:
-            _, event = prepare(message.payload)
-            self.update_state(event)
+            try:
+                _, event = prepare(message.payload)
+                self.update_state(event)
+            except (DecodeError, ContentDisallowed, TypeError) as exc:
+                logger.error(exc)
         else:
             self.clock.forward()

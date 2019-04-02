@@ -30,12 +30,15 @@ BACKEND_ALIASES = {
     'cassandra': 'celery.backends.cassandra:CassandraBackend',
     'couchbase': 'celery.backends.couchbase:CouchbaseBackend',
     'couchdb': 'celery.backends.couchdb:CouchBackend',
+    'cosmosdbsql': 'celery.backends.cosmosdbsql:CosmosDBSQLBackend',
     'riak': 'celery.backends.riak:RiakBackend',
     'file': 'celery.backends.filesystem:FilesystemBackend',
     'disabled': 'celery.backends.base:DisabledBackend',
     'consul': 'celery.backends.consul:ConsulBackend',
     'dynamodb': 'celery.backends.dynamodb:DynamoDBBackend',
     'azureblockblob': 'celery.backends.azureblockblob:AzureBlockBlobBackend',
+    'arangodb': 'celery.backends.arangodb:ArangoDbBackend',
+    's3': 'celery.backends.s3:S3Backend',
 }
 
 

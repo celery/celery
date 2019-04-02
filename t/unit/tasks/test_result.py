@@ -85,6 +85,16 @@ class test_AsyncResult:
             pass
         self.mytask = mytask
 
+    def test_forget(self):
+        first = Mock()
+        second = self.app.AsyncResult(self.task1['id'], parent=first)
+        third = self.app.AsyncResult(self.task2['id'], parent=second)
+        last = self.app.AsyncResult(self.task3['id'], parent=third)
+        last.forget()
+        first.forget.assert_called_once()
+        assert last.result is None
+        assert second.result is None
+
     def test_ignored_getter(self):
         result = self.app.AsyncResult(uuid())
         assert result.ignored is False
@@ -173,7 +183,7 @@ class test_AsyncResult:
         )
         x.backend.READY_STATES = states.READY_STATES
         assert x.graph
-        assert x.get_leaf() is 2
+        assert x.get_leaf() == 2
 
         it = x.collect()
         assert list(it) == [

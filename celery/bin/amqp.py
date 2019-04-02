@@ -280,7 +280,7 @@ class AMQShell(_cmd.Cmd):
         self.counter = next(self.inc_counter)
         try:
             self.respond(self.dispatch(cmd, arg))
-        except (AttributeError, KeyError) as exc:
+        except (AttributeError, KeyError):
             self.default(line)
         except Exception as exc:  # pylint: disable=broad-except
             self.say(exc)

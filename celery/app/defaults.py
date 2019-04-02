@@ -31,6 +31,9 @@ DEFAULT_PROCESS_LOG_FMT = """
 DEFAULT_TASK_LOG_FMT = """[%(asctime)s: %(levelname)s/%(processName)s] \
 %(task_name)s[%(task_id)s]: %(message)s"""
 
+DEFAULT_SECURITY_DIGEST = 'sha256'
+
+
 OLD_NS = {'celery_{0}'}
 OLD_NS_BEAT = {'celerybeat_{0}'}
 OLD_NS_WORKER = {'celeryd_{0}'}
@@ -77,6 +80,7 @@ class Option(object):
 
 NAMESPACES = Namespace(
     accept_content=Option(DEFAULT_ACCEPT_CONTENT, type='list', old=OLD_NS),
+    result_accept_content=Option(None, type='list'),
     enable_utc=Option(True, type='bool'),
     imports=Option((), type='tuple', old=OLD_NS),
     include=Option((), type='tuple', old=OLD_NS),
@@ -130,6 +134,14 @@ NAMESPACES = Namespace(
         auth_kwargs=Option(type='string'),
         options=Option({}, type='dict'),
     ),
+    s3=Namespace(
+        access_key_id=Option(type='string'),
+        secret_access_key=Option(type='string'),
+        bucket=Option(type='string'),
+        base_path=Option(type='string'),
+        endpoint_url=Option(type='string'),
+        region=Option(type='string'),
+    ),
     azureblockblob=Namespace(
         container_name=Option('celery', type='string'),
         retry_initial_backoff_sec=Option(2, type='int'),
@@ -139,16 +151,28 @@ NAMESPACES = Namespace(
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
         queue_expires=Option(10.0, type='float'),
+        exchange=Option('celery', type='string'),
     ),
     couchbase=Namespace(
         __old__=old_ns('celery_couchbase'),
 
         backend_settings=Option(None, type='dict'),
     ),
+    arangodb=Namespace(
+        __old__=old_ns('celery_arangodb'),
+        backend_settings=Option(None, type='dict')
+    ),
     mongodb=Namespace(
         __old__=old_ns('celery_mongodb'),
 
         backend_settings=Option(type='dict'),
+    ),
+    cosmosdbsql=Namespace(
+        database_name=Option('celerydb', type='string'),
+        collection_name=Option('celerycol', type='string'),
+        consistency_level=Option('Session', type='string'),
+        max_retry_attempts=Option(9, type='int'),
+        max_retry_wait_time=Option(30, type='int'),
     ),
     event=Namespace(
         __old__=old_ns('celery_event'),
@@ -157,6 +181,7 @@ NAMESPACES = Namespace(
         queue_ttl=Option(5.0, type='float'),
         queue_prefix=Option('celeryev'),
         serializer=Option('json'),
+        exchange=Option('celeryev', type='string'),
     ),
     redis=Namespace(
         __old__=old_ns('celery_redis'),
@@ -189,6 +214,7 @@ NAMESPACES = Namespace(
         extended=Option(False, type='bool'),
         serializer=Option('json'),
         backend_transport_options=Option({}, type='dict'),
+        chord_join_timeout=Option(3.0, type='float'),
     ),
     elasticsearch=Namespace(
         __old__=old_ns('celery_elasticsearch'),
@@ -208,6 +234,7 @@ NAMESPACES = Namespace(
         certificate=Option(type='string'),
         cert_store=Option(type='string'),
         key=Option(type='string'),
+        digest=Option(DEFAULT_SECURITY_DIGEST, type='string'),
     ),
     database=Namespace(
         url=Option(old={'celery_result_dburi'}),
@@ -222,16 +249,19 @@ NAMESPACES = Namespace(
     task=Namespace(
         __old__=OLD_NS,
         acks_late=Option(False, type='bool'),
+        acks_on_failure_or_timeout=Option(True, type='bool'),
         always_eager=Option(False, type='bool'),
         annotations=Option(type='any'),
         compression=Option(type='string', old={'celery_message_compression'}),
         create_missing_queues=Option(True, type='bool'),
+        inherit_parent_priority=Option(False, type='bool'),
         default_delivery_mode=Option(2, type='string'),
         default_queue=Option('celery'),
         default_exchange=Option(None, type='string'),  # taken from queue
         default_exchange_type=Option('direct'),
         default_routing_key=Option(None, type='string'),  # taken from queue
         default_rate_limit=Option(type='string'),
+        default_priority=Option(None, type='string'),
         eager_propagates=Option(
             False, type='bool', old={'celery_eager_propagates_exceptions'},
         ),

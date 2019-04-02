@@ -14,8 +14,12 @@ Generated with:
 """
 from __future__ import absolute_import, unicode_literals
 
+import os
+import tempfile
+
 import pytest
 from case import Mock, mock, patch
+from kombu.exceptions import SerializerNotInstalled
 from kombu.serialization import disable_insecure_serializers, registry
 
 from celery.exceptions import ImproperlyConfigured, SecurityError
@@ -23,6 +27,7 @@ from celery.five import builtins
 from celery.security import disable_untrusted_serializers, setup_security
 from celery.security.utils import reraise_errors
 
+from . import CERT1, KEY1
 from .case import SecurityCase
 
 
@@ -30,6 +35,11 @@ class test_security(SecurityCase):
 
     def teardown(self):
         registry._disabled_content_types.clear()
+        registry._set_default_serializer('json')
+        try:
+            registry.unregister('auth')
+        except SerializerNotInstalled:
+            pass
 
     def test_disable_insecure_serializers(self):
         try:
@@ -57,17 +67,43 @@ class test_security(SecurityCase):
         disable.assert_called_with(allowed=['foo'])
 
     def test_setup_security(self):
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_key1:
+            tmp_key1.write(KEY1)
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_cert1:
+            tmp_cert1.write(CERT1)
+
+        self.app.conf.update(
+            task_serializer='auth',
+            accept_content=['auth'],
+            security_key=tmp_key1.name,
+            security_certificate=tmp_cert1.name,
+            security_cert_store='*.pem',
+        )
+        self.app.setup_security()
+
+        os.remove(tmp_key1.name)
+        os.remove(tmp_cert1.name)
+
+    def test_setup_security_disabled_serializers(self):
         disabled = registry._disabled_content_types
         assert len(disabled) == 0
 
         self.app.conf.task_serializer = 'json'
-        self.app.setup_security()
+        with pytest.raises(ImproperlyConfigured):
+            self.app.setup_security()
         assert 'application/x-python-serialize' in disabled
+        disabled.clear()
+
+        self.app.conf.task_serializer = 'auth'
+        with pytest.raises(ImproperlyConfigured):
+            self.app.setup_security()
+        assert 'application/json' in disabled
         disabled.clear()
 
     @patch('celery.current_app')
     def test_setup_security__default_app(self, current_app):
-        setup_security()
+        with pytest.raises(ImproperlyConfigured):
+            setup_security()
 
     @patch('celery.security.register_auth')
     @patch('celery.security._disable_insecure_serializers')
@@ -83,12 +119,13 @@ class test_security(SecurityCase):
                 calls[0] += 1
 
         self.app.conf.task_serializer = 'auth'
+        self.app.conf.accept_content = ['auth']
         with mock.open(side_effect=effect):
             with patch('celery.security.registry') as registry:
                 store = Mock()
                 self.app.setup_security(['json'], key, cert, store)
                 dis.assert_called_with(['json'])
-                reg.assert_called_with('A', 'B', store, 'sha1', 'json')
+                reg.assert_called_with('A', 'B', store, 'sha256', 'json')
                 registry._set_default_serializer.assert_called_with('auth')
 
     def test_security_conf(self):
@@ -96,10 +133,14 @@ class test_security(SecurityCase):
         with pytest.raises(ImproperlyConfigured):
             self.app.setup_security()
 
+        self.app.conf.accept_content = ['auth']
+        with pytest.raises(ImproperlyConfigured):
+            self.app.setup_security()
+
         _import = builtins.__import__
 
         def import_hook(name, *args, **kwargs):
-            if name == 'OpenSSL':
+            if name == 'cryptography':
                 raise ImportError
             return _import(name, *args, **kwargs)
 

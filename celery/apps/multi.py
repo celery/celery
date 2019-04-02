@@ -162,7 +162,7 @@ class Node(object):
         argv = tuple(
             [self.expander(self.cmd)] +
             [format_opt(opt, self.expander(value))
-                for opt, value in items(self.options)] +
+             for opt, value in items(self.options)] +
             [self.extra_args]
         )
         if self.append:

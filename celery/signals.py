@@ -39,6 +39,10 @@ after_task_publish = Signal(
     name='after_task_publish',
     providing_args={'body', 'exchange', 'routing_key'},
 )
+task_received = Signal(
+    name='task_received',
+    providing_args={'request'}
+)
 task_prerun = Signal(
     name='task_prerun',
     providing_args={'task_id', 'task', 'args', 'kwargs'},
@@ -83,7 +87,7 @@ task_sent = Signal(
     },
 )
 
-# - Prorgam: `celery worker`
+# - Program: `celery worker`
 celeryd_init = Signal(
     name='celeryd_init',
     providing_args={'instance', 'conf', 'options'},

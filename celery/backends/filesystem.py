@@ -20,6 +20,10 @@ except NameError:
 
 default_encoding = locale.getpreferredencoding(False)
 
+E_NO_PATH_SET = 'You need to configure a path for the file-system backend'
+E_PATH_NON_CONFORMING_SCHEME = (
+    'A path for the file-system backend should conform to the file URI scheme'
+)
 E_PATH_INVALID = """\
 The configured path for the file-system backend does not
 work correctly, please make sure that it exists and has
@@ -56,10 +60,12 @@ class FilesystemBackend(KeyValueStoreBackend):
 
     def _find_path(self, url):
         if not url:
-            raise ImproperlyConfigured(
-                'You need to configure a path for the File-system backend')
-        if url is not None and url.startswith('file:///'):
+            raise ImproperlyConfigured(E_NO_PATH_SET)
+        if url.startswith('file:///'):
             return url[7:]
+        if url.startswith('file://localhost/'):
+            return url[16:]
+        raise ImproperlyConfigured(E_PATH_NON_CONFORMING_SCHEME)
 
     def _do_directory_test(self, key):
         try:
