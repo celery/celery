@@ -274,7 +274,7 @@ class Backend(object):
                     exc_type = from_utf8(exc['exc_type'])
                     try:
                         cls = getattr(sys.modules[exc_module], exc_type)
-                    except KeyError:
+                    except (KeyError, AttributeError):
                         cls = create_exception_cls(exc_type,
                                                    celery.exceptions.__name__)
                 exc_msg = exc['exc_message']
