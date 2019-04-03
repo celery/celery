@@ -26,9 +26,6 @@ matrix:
     env: TOXENV=flake8
     stage: lint
   - python: '3.7'
-    env: TOXENV=flakeplus
-    stage: lint
-  - python: '3.7'
     env: TOXENV=apicheck
     stage: lint
   - python: '3.7'
