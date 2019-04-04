@@ -105,6 +105,24 @@ worker using a lot of CPU time. If you need sub-millisecond precision you
 should consider using another transport, like `RabbitMQ <broker-amqp>`,
 or `Redis <broker-redis>`.
 
+Long Polling
+------------
+
+`SQS Long Polling`_ is enabled by default and the ``WaitTimeSeconds`` parameter
+of `ReceiveMessage`_ operation is set to 10 seconds.
+
+The value of ``WaitTimeSeconds`` parameter can be set via the
+:setting:`broker_transport_options` setting::
+
+    broker_transport_options = {'wait_time_seconds': 15}
+
+Valid values are 0 to 20. Note that newly created queues themselves (also if
+created by Celery) will have the default value of 0 set for the "Receive Message
+Wait Time" queue property.
+
+.. _`SQS Long Polling`: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-long-polling.html
+.. _`ReceiveMessage`: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html
+
 Queue Prefix
 ------------
 
