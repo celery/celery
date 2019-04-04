@@ -187,7 +187,7 @@ To use this with your project you need to follow these steps:
 
     .. code-block:: console
 
-        $ python manage.py migrate celery_results
+        $ python manage.py migrate django_celery_results
 
 #. Configure Celery to use the :pypi:`django-celery-results` backend.
 
