@@ -41,19 +41,23 @@ class Task(ResultModelBase):
         self.task_id = task_id
 
     def to_dict(self):
-        return {
+        results = {
             'task_id': self.task_id,
             'status': self.status,
             'result': self.result,
             'traceback': self.traceback,
             'date_done': self.date_done,
-            'name': self.task,
-            'args': self.args,
-            'kwargs': self.kwargs,
-            'worker': self.worker,
-            'retries': self.retries,
-            'queue': self.queue,
         }
+        if self.app.conf.find_value_for_key('extended', 'result'):
+            results.update(
+                {'name': self.task},
+                {'args': self.args},
+                {'kwargs': self.kwargs},
+                {'worker': self.worker},
+                {'retries': self.retries},
+                {'queue': self.queue},
+            )
+        return results
 
     def __repr__(self):
         return '<Task {0.task_id} state: {0.status}>'.format(self)
