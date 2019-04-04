@@ -30,6 +30,12 @@ class Task(ResultModelBase):
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
                           onupdate=datetime.utcnow, nullable=True)
     traceback = sa.Column(sa.Text, nullable=True)
+    name = sa.Column(sa.String(155))
+    args = sa.Column(sa.String(155))
+    kwargs = sa.Column(sa.String(155))
+    worker = sa.Column(sa.String(155))
+    retries = sa.Column(sa.Integer)
+    queue = sa.Column(sa.String(155))
 
     def __init__(self, task_id):
         self.task_id = task_id
@@ -41,6 +47,12 @@ class Task(ResultModelBase):
             'result': self.result,
             'traceback': self.traceback,
             'date_done': self.date_done,
+            'name': self.task,
+            'args': self.args,
+            'kwargs': self.kwargs,
+            'worker': self.worker,
+            'retries': self.retries,
+            'queue': self.queue,
         }
 
     def __repr__(self):
