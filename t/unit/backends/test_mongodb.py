@@ -269,10 +269,10 @@ class test_MongoBackend:
 
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
-        mock_collection.save.assert_called_once_with(ANY)
+        mock_collection.replace_one.assert_called_once_with(ANY)
         assert sentinel.result == ret_val
 
-        mock_collection.save.side_effect = InvalidDocument()
+        mock_collection.replace_one.side_effect = InvalidDocument()
         with pytest.raises(EncodeError):
             self.backend._store_result(
                 sentinel.task_id, sentinel.result, sentinel.status)
@@ -295,11 +295,11 @@ class test_MongoBackend:
 
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
-        parameters = mock_collection.save.call_args[0][0]
+        parameters = mock_collection.replace_one.call_args[0][0]
         assert parameters['parent_id'] == sentinel.parent_id
         assert sentinel.result == ret_val
 
-        mock_collection.save.side_effect = InvalidDocument()
+        mock_collection.replace_one.side_effect = InvalidDocument()
         with pytest.raises(EncodeError):
             self.backend._store_result(
                 sentinel.task_id, sentinel.result, sentinel.status)
@@ -358,7 +358,7 @@ class test_MongoBackend:
         mock_database.__getitem__.assert_called_once_with(
             MONGODB_GROUP_COLLECTION,
         )
-        mock_collection.save.assert_called_once_with(ANY)
+        mock_collection.replace_one.assert_called_once_with(ANY)
         assert res == ret_val
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
