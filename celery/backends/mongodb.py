@@ -195,7 +195,7 @@ class MongoBackend(BaseBackend):
             meta['parent_id'] = request.parent_id
 
         try:
-            self.collection.save(meta)
+            self.collection.replace_one({'_id': task_id}, meta, upsert=True)
         except InvalidDocument as exc:
             raise EncodeError(exc)
 
@@ -217,11 +217,12 @@ class MongoBackend(BaseBackend):
 
     def _save_group(self, group_id, result):
         """Save the group result."""
-        self.group_collection.save({
+        meta = {
             '_id': group_id,
             'result': self.encode([i.id for i in result]),
             'date_done': datetime.utcnow(),
-        })
+        }
+        self.group_collection.replace_one({'_id': group_id}, meta, upsert=True)
         return result
 
     def _restore_group(self, group_id):
@@ -290,7 +291,7 @@ class MongoBackend(BaseBackend):
 
         # Ensure an index on date_done is there, if not process the index
         # in the background.  Once completed cleanup will be much faster
-        collection.ensure_index('date_done', background='true')
+        collection.create_index('date_done', background=True)
         return collection
 
     @cached_property
@@ -300,7 +301,7 @@ class MongoBackend(BaseBackend):
 
         # Ensure an index on date_done is there, if not process the index
         # in the background.  Once completed cleanup will be much faster
-        collection.ensure_index('date_done', background='true')
+        collection.create_index('date_done', background=True)
         return collection
 
     @cached_property
