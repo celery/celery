@@ -240,7 +240,7 @@ class MongoBackend(BaseBackend):
 
     def _delete_group(self, group_id):
         """Delete a group by id."""
-        self.group_collection.remove({'_id': group_id})
+        self.group_collection.delete_one({'_id': group_id})
 
     def _forget(self, task_id):
         """Remove result from MongoDB.
@@ -252,14 +252,14 @@ class MongoBackend(BaseBackend):
         # By using safe=True, this will wait until it receives a response from
         # the server.  Likewise, it will raise an OperationsError if the
         # response was unable to be completed.
-        self.collection.remove({'_id': task_id})
+        self.collection.delete_one({'_id': task_id})
 
     def cleanup(self):
         """Delete expired meta-data."""
-        self.collection.remove(
+        self.collection.delete_many(
             {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )
-        self.group_collection.remove(
+        self.group_collection.delete_many(
             {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )
 
