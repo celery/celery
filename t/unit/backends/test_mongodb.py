@@ -401,7 +401,7 @@ class test_MongoBackend:
         self.backend._delete_group(sentinel.taskset_id)
 
         mock_get_database.assert_called_once_with()
-        mock_collection.remove.assert_called_once_with(
+        mock_collection.delete_one.assert_called_once_with(
             {'_id': sentinel.taskset_id})
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
@@ -420,7 +420,7 @@ class test_MongoBackend:
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(
             MONGODB_COLLECTION)
-        mock_collection.remove.assert_called_once_with(
+        mock_collection.delete_one.assert_called_once_with(
             {'_id': sentinel.task_id})
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
@@ -440,7 +440,7 @@ class test_MongoBackend:
         self.backend.cleanup()
 
         mock_get_database.assert_called_once_with()
-        mock_collection.remove.assert_called()
+        mock_collection.delete_many.assert_called()
 
     def test_get_database_authfailure(self):
         x = MongoBackend(app=self.app)
