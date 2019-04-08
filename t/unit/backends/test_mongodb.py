@@ -296,7 +296,7 @@ class test_MongoBackend:
 
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
-        parameters = mock_collection.replace_one.call_args[0][0]
+        parameters = mock_collection.replace_one.call_args[0][1]
         assert parameters['parent_id'] == sentinel.parent_id
         assert sentinel.result == ret_val
 
