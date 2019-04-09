@@ -18,6 +18,5 @@
 -r extras/consul.txt
 -r extras/cosmosdbsql.txt
 -r extras/cassandra.txt
--r extras/dynamodb.txt
 -r extras/azureblockblob.txt
 -r extras/s3.txt
