@@ -660,7 +660,7 @@ class test_Pidfile:
             p.remove.assert_called_with()
 
     @patch('os.kill')
-    def test_remove_if_stale_unprivileged_user(self):
+    def test_remove_if_stale_unprivileged_user(self, kill):
         with mock.stdouts():
             p = Pidfile('/var/pid')
             p.read_pid = Mock()
