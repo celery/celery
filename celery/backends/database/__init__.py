@@ -3,7 +3,6 @@
 from __future__ import absolute_import, unicode_literals
 
 import logging
-
 from contextlib import contextmanager
 
 from vine.utils import wraps
@@ -14,8 +13,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.five import range
 from celery.utils.time import maybe_timedelta
 
-from .models import Task
-from .models import TaskSet
+from .models import Task, TaskSet
 from .session import SessionManager
 
 try:
