@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """Celery Application."""
 from __future__ import absolute_import, print_function, unicode_literals
-from celery.local import Proxy
+
 from celery import _state
-from celery._state import (
-    app_or_default, enable_trace, disable_trace,
-    push_current_task, pop_current_task,
-)
+from celery._state import (app_or_default, disable_trace, enable_trace,
+                           pop_current_task, push_current_task)
+from celery.local import Proxy
+
 from .base import Celery
 from .utils import AppPickler
 
