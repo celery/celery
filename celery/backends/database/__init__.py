@@ -100,7 +100,7 @@ class DatabaseBackend(BaseBackend):
 
     @retry
     def _store_result(self, task_id, result, state,
-                      traceback=None, max_retries=3, **kwargs):
+                      args, worker, retries, queue, traceback=None, max_retries=3, **kwargs):
         """Store return value and state of an executed task."""
         session = self.ResultSession()
         with session_cleanup(session):
@@ -113,6 +113,13 @@ class DatabaseBackend(BaseBackend):
             task.result = result
             task.status = state
             task.traceback = traceback
+            if self.app.conf.find_value_for_key('extended', 'result'):
+                task.name = task
+                task.args = args
+                task.kwargs = kwargs
+                task.worker = worker
+                task.retries = retries
+                task.queue = queue
             session.commit()
             return result
 
