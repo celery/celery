@@ -4,6 +4,7 @@ flake8>=3.7.7
 pydocstyle==1.1.1
 tox>=3.8.4
 sphinx2rst>=1.0
+isort>=4.3.17
 # Disable cyanide until it's fully updated.
 # cyanide>=1.0.1
 bumpversion
