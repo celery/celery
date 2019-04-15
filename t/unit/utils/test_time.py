@@ -1,7 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime, timedelta, tzinfo
-from math import isclose
 
 import pytest
 import pytz
@@ -126,7 +125,7 @@ def test_remaining():
     assert str(now.tzinfo) == str(eastern_tz)
     rem_secs = remaining(start, delta, now).total_seconds()
     # assert remaining time is approximately equal to delta
-    assert isclose(rem_secs, delta.total_seconds(), abs_tol=1)
+    assert rem_secs == pytest.approx(delta.total_seconds(), abs=1)
 
     # Case 2: `start` and `now` in different timezones (other than UTC)
     start = datetime.now(eastern_tz)
@@ -135,7 +134,7 @@ def test_remaining():
     assert str(start.tzinfo) == str(eastern_tz)
     assert str(now.tzinfo) == str(tokyo_tz)
     rem_secs = remaining(start, delta, now).total_seconds()
-    assert isclose(rem_secs, delta.total_seconds(), abs_tol=1)
+    assert rem_secs == pytest.approx(delta.total_seconds(), abs=1)
 
     """
     Case 3: DST check
