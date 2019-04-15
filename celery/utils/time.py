@@ -208,7 +208,7 @@ def remaining(start, ends_in, now=None, relative=False):
     """
     now = now or datetime.utcnow()
     if str(start.tzinfo) == str(now.tzinfo) and now.utcoffset() != start.utcoffset():
-        #DST started/ended
+        # DST started/ended
         start = start.replace(tzinfo=now.tzinfo)
     end_date = start + ends_in
     if relative:
