@@ -50,12 +50,14 @@ class Task(ResultModelBase):
         }
         if self.app.conf.find_value_for_key('extended', 'result'):
             results.update(
-                {'name': self.task},
-                {'args': self.args},
-                {'kwargs': self.kwargs},
-                {'worker': self.worker},
-                {'retries': self.retries},
-                {'queue': self.queue},
+                {
+                    'name': self.task,
+                    'args': self.args,
+                    'kwargs': self.kwargs,
+                    'worker': self.worker,
+                    'retries': self.retries,
+                    'queue': self.queue,
+                }
             )
         return results
 
