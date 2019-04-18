@@ -41,6 +41,7 @@ class Task(ResultModelBase):
         self.task_id = task_id
 
     def to_dict(self):
+        app = self._get_app()
         results = {
             'task_id': self.task_id,
             'status': self.status,
@@ -48,7 +49,7 @@ class Task(ResultModelBase):
             'traceback': self.traceback,
             'date_done': self.date_done,
         }
-        if self.app.conf.find_value_for_key('extended', 'result'):
+        if app.conf.find_value_for_key('extended', 'result'):
             results.update(
                 {
                     'name': self.task,
