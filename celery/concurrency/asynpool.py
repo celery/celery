@@ -383,7 +383,7 @@ class AsynPool(_pool.Pool):
         return worker
 
     def __init__(self, processes=None, synack=False,
-                 sched_strategy=None, proc_alive_timeout=PROC_ALIVE_TIMEOUT,
+                 sched_strategy=None, proc_alive_timeout=None,
                  *args, **kwargs):
         self.sched_strategy = SCHED_STRATEGIES.get(sched_strategy,
                                                    sched_strategy)
@@ -405,7 +405,10 @@ class AsynPool(_pool.Pool):
         # sent a WORKER_UP message.  If a process fails to send
         # this message within _proc_alive_timeout we terminate it
         # and hope the next process will recover.
-        self._proc_alive_timeout = proc_alive_timeout
+        self._proc_alive_timeout = (
+            PROC_ALIVE_TIMEOUT if proc_alive_timeout is None
+            else proc_alive_timeout
+        )
         self._waiting_to_start = set()
 
         # denormalized set of all inqueues.
