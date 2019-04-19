@@ -790,6 +790,22 @@ class test_tasks(TasksCase):
         finally:
             yyy.pop_request()
 
+    def test_update_state_passes_request_to_backend(self):
+        backend = Mock()
+
+        @self.app.task(shared=False, backend=backend)
+        def ttt():
+            pass
+
+        ttt.push_request()
+
+        tid = uuid()
+        ttt.update_state(tid, 'SHRIMMING', {'foo': 'bar'})
+
+        backend.store_result.assert_called_once_with(
+            tid, {'foo': 'bar'}, 'SHRIMMING', request=ttt.request
+        )
+
     def test_repr(self):
 
         @self.app.task(shared=False)
