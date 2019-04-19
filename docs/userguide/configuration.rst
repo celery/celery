@@ -2578,6 +2578,15 @@ Default: Enabled by default.
 
 Specify if remote control of the workers is enabled.
 
+.. setting:: worker_proc_alive_timeout
+
+``worker_proc_alive_timeout``
+~~~~~~~~~~~~~~~~~~~~
+
+Default: 4.0.
+
+The timeout in seconds (int/float) when waiting for a new worker process to start up.
+
 .. _conf-events:
 
 Events
