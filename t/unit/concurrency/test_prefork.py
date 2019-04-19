@@ -398,7 +398,7 @@ class test_TaskPool:
         pool = TaskPool(7)
         pool.start()
         assert pool.num_processes == 7
-    
+
     @patch('billiard.forking_enable')
     def test_on_start_proc_alive_timeout_default(self, __forking_enable):
         app = Mock(conf=AttributeDict(DEFAULTS))
