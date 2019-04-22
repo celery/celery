@@ -18,10 +18,11 @@ __all__ = ('TaskPool',)
 # We cache globals and attribute lookups, so disable this warning.
 
 
-def apply_timeout(target, args=(), kwargs={}, callback=None,
+def apply_timeout(target, args=(), kwargs=None, callback=None,
                   accept_callback=None, pid=None, timeout=None,
                   timeout_callback=None, Timeout=Timeout,
                   apply_target=base.apply_target, **rest):
+    kwargs = {} if not kwargs else kwargs
     try:
         with Timeout(timeout):
             return apply_target(target, args, kwargs, callback,

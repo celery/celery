@@ -228,7 +228,8 @@ class CassandraBackend(BaseBackend):
             'children': self.decode(children),
         })
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         kwargs.update(
             {'servers': self.servers,
              'keyspace': self.keyspace,

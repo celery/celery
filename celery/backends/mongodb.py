@@ -263,7 +263,8 @@ class MongoBackend(BaseBackend):
             {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         return super(MongoBackend, self).__reduce__(
             args, dict(kwargs, expires=self.expires, url=self.url))
 

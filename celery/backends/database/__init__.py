@@ -180,7 +180,8 @@ class DatabaseBackend(BaseBackend):
                 TaskSet.date_done < (now - expires)).delete()
             session.commit()
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         kwargs.update(
             {'dburi': self.url,
              'expires': self.expires,
