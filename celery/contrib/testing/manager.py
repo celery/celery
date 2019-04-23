@@ -58,6 +58,7 @@ class ManagerMixin(object):
         has not happened yet.
         """
         kwargs = {} if not kwargs else kwargs
+
         def on_error(exc, intervals, retries):
             interval = next(intervals)
             if emit_warning:
