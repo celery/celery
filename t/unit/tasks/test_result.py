@@ -408,7 +408,7 @@ class test_AsyncResult:
 
         x = self.app.AsyncResult('1')
         request = Context(
-            task_name='foo',
+            task='foo',
             children=None,
             args=['one', 'two'],
             kwargs={'kwarg1': 'three'},
