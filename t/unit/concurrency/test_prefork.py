@@ -125,6 +125,7 @@ class MockPool(object):
         self.maintain_pool = Mock()
         self._state = mp.RUN
         self._processes = kwargs.get('processes')
+        self._proc_alive_timeout = kwargs.get('proc_alive_timeout')
         self._pool = [Bunch(pid=i, inqW_fd=1, outqR_fd=2)
                       for i in range(self._processes)]
         self._current_proc = cycle(range(self._processes))
@@ -397,3 +398,18 @@ class test_TaskPool:
         pool = TaskPool(7)
         pool.start()
         assert pool.num_processes == 7
+
+    @patch('billiard.forking_enable')
+    def test_on_start_proc_alive_timeout_default(self, __forking_enable):
+        app = Mock(conf=AttributeDict(DEFAULTS))
+        pool = TaskPool(4, app=app)
+        pool.on_start()
+        assert pool._pool._proc_alive_timeout == 4.0
+
+    @patch('billiard.forking_enable')
+    def test_on_start_proc_alive_timeout_custom(self, __forking_enable):
+        app = Mock(conf=AttributeDict(DEFAULTS))
+        app.conf.worker_proc_alive_timeout = 8.0
+        pool = TaskPool(4, app=app)
+        pool.on_start()
+        assert pool._pool._proc_alive_timeout == 8.0
