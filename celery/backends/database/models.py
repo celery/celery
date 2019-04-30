@@ -12,7 +12,7 @@ from celery.five import python_2_unicode_compatible
 
 from .session import ResultModelBase
 
-__all__ = ('Task', 'TaskSet')
+__all__ = ('Task', 'TaskExtended', 'TaskSet')
 
 
 @python_2_unicode_compatible
@@ -30,40 +30,48 @@ class Task(ResultModelBase):
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
                           onupdate=datetime.utcnow, nullable=True)
     traceback = sa.Column(sa.Text, nullable=True)
-    name = sa.Column(sa.String(155))
-    args = sa.Column(sa.Text, nullable=True)
-    kwargs = sa.Column(sa.Text, nullable=True)
-    worker = sa.Column(sa.String(155))
-    retries = sa.Column(sa.Integer)
-    queue = sa.Column(sa.String(155))
 
     def __init__(self, task_id):
         self.task_id = task_id
 
     def to_dict(self):
-        app = self._get_app()
-        results = {
+        return {
             'task_id': self.task_id,
             'status': self.status,
             'result': self.result,
             'traceback': self.traceback,
             'date_done': self.date_done,
         }
-        if app.conf.find_value_for_key('extended', 'result'):
-            results.update(
-                {
-                    'name': self.task,
-                    'args': self.args,
-                    'kwargs': self.kwargs,
-                    'worker': self.worker,
-                    'retries': self.retries,
-                    'queue': self.queue,
-                }
-            )
-        return results
 
     def __repr__(self):
         return '<Task {0.task_id} state: {0.status}>'.format(self)
+
+
+class TaskExtended(Task):
+    """
+    For the extend result.
+    """
+    __tablename__ = 'celery_taskmeta'
+    __table_args__ = {'sqlite_autoincrement': True, 'extend_existing': True}
+
+    name = sa.Column(sa.String(155), nullable=True)
+    args = sa.Column(sa.Text, nullable=True)
+    kwargs = sa.Column(sa.Text, nullable=True)
+    worker = sa.Column(sa.String(155), nullable=True)
+    retries = sa.Column(sa.Integer, nullable=True)
+    queue = sa.Column(sa.String(155), nullable=True)
+
+    def to_dict(self):
+        task_dict = super(TaskExtended, self).to_dict()
+        task_dict.update({
+            'name': self.name,
+            'args': self.args,
+            'kwargs': self.kwargs,
+            'worker': self.worker,
+            'retries': self.retries,
+            'queue': self.queue,
+        })
+        return task_dict
 
 
 @python_2_unicode_compatible

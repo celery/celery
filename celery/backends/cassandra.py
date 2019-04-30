@@ -8,7 +8,7 @@ from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.log import get_logger
 
-from .base import BaseBackend
+from .base import StructuredStoreBackend
 
 try:  # pragma: no cover
     import cassandra
@@ -38,8 +38,23 @@ INSERT INTO {table} (
         %s, %s, %s, %s, %s, %s) {expires};
 """
 
+Q_INSERT_RESULT_EXTENDED = """
+INSERT INTO {table} (
+    task_id, status, result, date_done, traceback, children,
+    name, args, kwargs, worker, retries, queue) VALUES (
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) {expires};
+"""
+
 Q_SELECT_RESULT = """
 SELECT status, result, date_done, traceback, children
+FROM {table}
+WHERE task_id=%s
+LIMIT 1
+"""
+
+Q_SELECT_RESULT_EXTENDED = """
+SELECT status, result, date_done, traceback, children,
+    name, args, kwargs, worker, retries, queue
 FROM {table}
 WHERE task_id=%s
 LIMIT 1
@@ -57,6 +72,25 @@ CREATE TABLE {table} (
 ) WITH CLUSTERING ORDER BY (date_done DESC);
 """
 
+Q_CREATE_RESULT_EXTENDED_TABLE = """
+CREATE TABLE {table} (
+    task_id text,
+    status text,
+    result blob,
+    date_done timestamp,
+    traceback blob,
+    children blob,
+    name text,
+    args blob,
+    kwargs blob,
+    worker text,
+    retries int,
+    queue text
+    PRIMARY KEY ((task_id), date_done)
+) WITH CLUSTERING ORDER BY (date_done DESC);
+"""
+
+
 Q_EXPIRES = """
     USING TTL {0}
 """
@@ -68,7 +102,7 @@ else:
     buf_t = buffer  # noqa
 
 
-class CassandraBackend(BaseBackend):
+class CassandraBackend(StructuredStoreBackend):
     """Cassandra backend utilizing DataStax driver.
 
     Raises:
@@ -129,6 +163,10 @@ class CassandraBackend(BaseBackend):
         self._read_stmt = None
         self._make_stmt = None
 
+    @property
+    def extended_result(self):
+        return self.app.conf.find_value_for_key('extended', 'result')
+
     def process_cleanup(self):
         if self._connection is not None:
             self._connection.shutdown()  # also shuts down _session
@@ -150,16 +188,21 @@ class CassandraBackend(BaseBackend):
                 **self.cassandra_options)
             self._session = self._connection.connect(self.keyspace)
 
+            extended = self.extended_result
+            q_insert = Q_INSERT_RESULT_EXTENDED if extended else Q_INSERT_RESULT
+            q_select = Q_SELECT_RESULT_EXTENDED if extended else Q_SELECT_RESULT
+            q_create = Q_CREATE_RESULT_EXTENDED_TABLE if extended else Q_CREATE_RESULT_TABLE
+
             # We're forced to do concatenation below, as formatting would
             # blow up on superficial %s that'll be processed by Cassandra
             self._write_stmt = cassandra.query.SimpleStatement(
-                Q_INSERT_RESULT.format(
+                q_insert.format(
                     table=self.table, expires=self.cqlexpires),
             )
             self._write_stmt.consistency_level = self.write_consistency
 
             self._read_stmt = cassandra.query.SimpleStatement(
-                Q_SELECT_RESULT.format(table=self.table),
+                q_select.format(table=self.table),
             )
             self._read_stmt.consistency_level = self.read_consistency
 
@@ -173,7 +216,7 @@ class CassandraBackend(BaseBackend):
                 # have created this table in advance, in which case
                 # this query will be a no-op (AlreadyExists)
                 self._make_stmt = cassandra.query.SimpleStatement(
-                    Q_CREATE_RESULT_TABLE.format(table=self.table),
+                    q_create.format(table=self.table),
                 )
                 self._make_stmt.consistency_level = self.write_consistency
 
@@ -192,19 +235,27 @@ class CassandraBackend(BaseBackend):
             self._session = None
             raise   # we did fail after all - reraise
 
-    def _store_result(self, task_id, result, state,
-                      traceback=None, request=None, **kwargs):
+    def _store(self, task_id, meta, request=None):
         """Store return value and state of an executed task."""
         self._get_connection(write=True)
-
-        self._session.execute(self._write_stmt, (
+        values = (
             task_id,
-            state,
-            buf_t(self.encode(result)),
+            meta.get('status'),
+            buf_t(self.encode(meta.get('result'))),
             self.app.now(),
-            buf_t(self.encode(traceback)),
-            buf_t(self.encode(self.current_task_children(request)))
-        ))
+            buf_t(self.encode(meta.get('traceback'))),
+            buf_t(self.encode(self.current_task_children(request))),
+        )
+        if self.extended_result:
+            values = values + (
+                meta.get('name'),
+                buf_t(self.encode(meta.get('args'))),
+                buf_t(self.encode(meta.get('kwargs'))),
+                meta.get('worker'),
+                meta.get('retries'),
+                meta.get('queue')
+            )
+        self._session.execute(self._write_stmt, values)
 
     def as_uri(self, include_password=True):
         return 'cassandra://'
@@ -219,14 +270,24 @@ class CassandraBackend(BaseBackend):
 
         status, result, date_done, traceback, children = res[0]
 
-        return self.meta_from_decoded({
+        meta = {
             'task_id': task_id,
             'status': status,
             'result': self.decode(result),
             'date_done': date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
             'traceback': self.decode(traceback),
             'children': self.decode(children),
-        })
+        }
+        if self.extended_result:
+            name, args, kwargs, worker, retries, queue = res[0][5:]
+            meta['name'] = name
+            meta['args'] = self.decode(args)
+            meta['kwargs'] = self.decode(kwargs)
+            meta['worker'] = worker
+            meta['retries'] = retries
+            meta['queue'] = queue
+
+        return self.meta_from_decoded(meta)
 
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
