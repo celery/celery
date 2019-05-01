@@ -446,7 +446,7 @@ class test_BaseBackend_dict:
     def test_exception_to_python_when_None(self):
         b = BaseBackend(app=self.app)
         assert b.exception_to_python(None) is None
-    
+
     def test_exception_to_python_when_attribute_exception(self):
         b = BaseBackend(app=self.app)
         test_exception = {'exc_type': 'AttributeDoesNotExist',
