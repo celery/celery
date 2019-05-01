@@ -48,9 +48,8 @@ class Task(ResultModelBase):
 
 
 class TaskExtended(Task):
-    """
-    For the extend result.
-    """
+    """ For the extend result."""
+
     __tablename__ = 'celery_taskmeta'
     __table_args__ = {'sqlite_autoincrement': True, 'extend_existing': True}
 
