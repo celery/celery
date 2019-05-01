@@ -14,7 +14,7 @@ from celery.five import monotonic, range
 from celery.utils import deprecated
 from celery.utils.log import get_logger
 
-from .base import StructuredStoreBackend
+from .base import BaseBackend
 
 __all__ = ('BacklogLimitExceeded', 'AMQPBackend')
 
@@ -36,7 +36,7 @@ class NoCacheQueue(Queue):
     can_cache_declaration = False
 
 
-class AMQPBackend(StructuredStoreBackend):
+class AMQPBackend(BaseBackend):
     """The AMQP result backend.
 
     Deprecated: Please use the RPC backend or a persistent backend.
@@ -107,23 +107,18 @@ class AMQPBackend(StructuredStoreBackend):
             return self.rkey(task_id), request.correlation_id or task_id
         return self.rkey(task_id), task_id
 
-    def _store(self, task_id, meta, request=None):
+    def store_result(self, task_id, result, state,
+                     traceback=None, request=None, **kwargs):
         """Send task return value and state."""
         routing_key, correlation_id = self.destination_for(task_id, request)
         if not routing_key:
             return
-
-        payload = {'task_id': task_id, 'status': meta.get('status'),
-                   'result': meta.get('result'),
-                   'traceback': meta.get('traceback'),
-                   'children': self.current_task_children(request)}
-        if self.app.conf.find_value_for_key('extended', 'result'):
-            for key in ('name', 'args', 'kwargs', 'worker', 'retries', 'queue'):
-                payload[key] = meta.get(key)
-
         with self.app.amqp.producer_pool.acquire(block=True) as producer:
             producer.publish(
-                payload,
+                {'task_id': task_id, 'status': state,
+                 'result': self.encode_result(result, state),
+                 'traceback': traceback,
+                 'children': self.current_task_children(request)},
                 exchange=self.exchange,
                 routing_key=routing_key,
                 correlation_id=correlation_id,
@@ -132,6 +127,7 @@ class AMQPBackend(StructuredStoreBackend):
                 declare=self.on_reply_declare(task_id),
                 delivery_mode=self.delivery_mode,
             )
+        return result
 
     def on_reply_declare(self, task_id):
         return [self._create_binding(task_id)]

@@ -814,34 +814,6 @@ class KeyValueStoreBackend(BaseKeyValueStoreBackend, SyncBackendMixin):
     """Result backend base class for key/value stores."""
 
 
-class StructuredStoreBackend(BaseBackend):
-    def _store_result(self, task_id, result, state, traceback=None,
-                      request=None, **kwargs):
-        meta = {
-            'result': result,
-            'status': state,
-            'traceback': traceback,
-        }
-        if self.app.conf.find_value_for_key('extended', 'result'):
-            meta.update({
-                'name': getattr(request, 'task_name', None),
-                'args': getattr(request, 'args', None),
-                'kwargs': getattr(request, 'kwargs', None),
-                'worker': getattr(request, 'hostname', None),
-                'retries': getattr(request, 'retries', None),
-                'queue': (
-                    request.delivery_info.get('routing_key')
-                    if hasattr(request, 'delivery_info') and
-                    request.delivery_info else None
-                ),
-            })
-        self._store(task_id, meta, request=request)
-        return result
-
-    def _store(self, task_id, meta, request=None):
-        raise NotImplementedError('_store is not implemented')
-
-
 class DisabledBackend(BaseBackend):
     """Dummy result backend."""
 

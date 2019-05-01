@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from vine.utils import wraps
 
 from celery import states
-from celery.backends.base import StructuredStoreBackend
+from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.five import range
 from celery.utils.time import maybe_timedelta
@@ -62,7 +62,7 @@ def retry(fun):
     return _inner
 
 
-class DatabaseBackend(StructuredStoreBackend):
+class DatabaseBackend(BaseBackend):
     """The database result backend."""
 
     # ResultSet.iterate should sleep this much between each pool,
@@ -112,7 +112,8 @@ class DatabaseBackend(StructuredStoreBackend):
             **self.engine_options)
 
     @retry
-    def _store(self, task_id, meta, request=None):
+    def _store_result(self, task_id, result, state, traceback=None,
+                      request=None, **kwargs):
         """Store return value and state of an executed task."""
         session = self.ResultSession()
         with session_cleanup(session):
@@ -123,19 +124,25 @@ class DatabaseBackend(StructuredStoreBackend):
                 session.add(task)
                 session.flush()
 
-            self._update_result(task, meta)
+            self._update_result(task, result, state, traceback=traceback, request=request)
             session.commit()
 
-    def _update_result(self, task, meta):
-        task.result = meta.get('result')
-        task.status = meta.get('status')
-        task.traceback = meta.get('traceback')
-        task.name = meta.get('name')
-        task.args = self.encode(meta.get('args'))
-        task.kwargs = self.encode(meta.get('kwargs'))
-        task.worker = meta.get('worker')
-        task.retries = meta.get('retries')
-        task.queue = meta.get('queue')
+    def _update_result(self, task, result, state, traceback=None,
+                       request=None):
+        task.result = result
+        task.status = state
+        task.traceback = traceback
+        if self.app.conf.find_value_for_key('extended', 'result'):
+            task.name = getattr(request, 'task_name', None)
+            task.args = self.encode(getattr(request, 'args', None))
+            task.kwargs = self.encode(getattr(request, 'kwargs', None))
+            task.worker = getattr(request, 'hostname', None)
+            task.retries = getattr(request, 'retries', None)
+            task.queue = (
+                request.delivery_info.get("routing_key")
+                if hasattr(request, "delivery_info") and request.delivery_info
+                else None
+            )
 
     @retry
     def _get_task_meta_for(self, task_id):

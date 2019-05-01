@@ -9,7 +9,6 @@ from case import Mock, mock
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.objects import Bunch
-from celery.app.task import Context
 
 CASSANDRA_MODULES = ['cassandra', 'cassandra.auth', 'cassandra.cluster']
 
@@ -198,41 +197,3 @@ class test_CassandraBackend:
             'protocol_version': 3
         }
         mod.CassandraBackend(app=self.app)
-
-
-@mock.module(*CASSANDRA_MODULES)
-class test_CassandraBackend_result_extended:
-    def setup(self):
-        self.app.conf.update(
-            cassandra_servers=['example.com'],
-            cassandra_keyspace='celery',
-            cassandra_table='task_results',
-            result_extended=True,
-            result_serializer='json'
-        )
-
-    def test_store_result(self, *modules):
-        from celery.backends import cassandra as mod
-        mod.cassandra = Mock()
-
-        now = datetime(2019, 1, 1)
-        self.app.now = lambda: now
-
-        x = mod.CassandraBackend(app=self.app)
-        x._connection = True
-        session = x._session = Mock()
-        session.execute = Mock()
-
-        request = Context(args=(1, 2, 3), kwargs={'foo': 'bar'},
-                          task_name='mytask', retries=2,
-                          hostname='celery@worker_1',
-                          delivery_info={'routing_key': 'celery'})
-
-        x._store_result('task_id', {'fizz': 'buzz'}, states.SUCCESS, request=request)
-
-        session.execute.assert_called_with(
-            None,
-            ('task_id', states.SUCCESS, b'{"fizz": "buzz"}', now, b'null',
-             b'[]', 'mytask', b'[1, 2, 3]', b'{"foo": "bar"}',
-             'celery@worker_1', 2, 'celery')
-        )
