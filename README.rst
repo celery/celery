@@ -1,15 +1,30 @@
 .. image:: http://docs.celeryproject.org/en/latest/_images/celery-banner-small.png
 
-|build-status| |license| |wheel| |pyversion| |pyimp|
+|build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 4.1.0 (latentcall)
+:Version: 4.3.0 (rhubarb)
 :Web: http://celeryproject.org/
-:Download: https://pypi.python.org/pypi/celery/
+:Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
   python, distributed, actors
 
---
+Donations
+=========
+
+This project relies on your generous donations.
+
+If you are using Celery to create a commercial product, please consider becoming our `backer`_ or our `sponsor`_ to ensure Celery's future.
+
+.. _`backer`: https://opencollective.com/celery#backer
+.. _`sponsor`: https://opencollective.com/celery#sponsor
+
+
+Sponsors
+--------
+
+`Tidelift gives software development teams a single source for purchasing and maintaining their software, with professional grade assurances from the experts who know it best, while seamlessly integrating with existing tools. <https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=readme>`_
+
 
 What's a Task Queue?
 ====================
@@ -40,10 +55,11 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 4.1 runs on,
+Celery version 4.3 runs on,
 
-- Python (2.7, 3.4, 3.5, 3.6)
-- PyPy (5.8)
+- Python (2.7, 3.4, 3.5, 3.6, 3.7)
+- PyPy2.7 (6.0)
+- PyPy3.5 (6.0)
 
 
 This is the last version to support Python 2.7,
@@ -72,7 +88,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery 4.1 coming from previous versions then you should read our
+new to Celery 4.2 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -188,8 +204,8 @@ database connections at ``fork``.
 .. _`web2py`: http://web2py.com/
 .. _`Bottle`: https://bottlepy.org/
 .. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
-.. _`pyramid_celery`: https://pypi.python.org/pypi/pyramid_celery/
-.. _`celery-pylons`: https://pypi.python.org/pypi/celery-pylons
+.. _`pyramid_celery`: https://pypi.org/project/pyramid_celery/
+.. _`celery-pylons`: https://pypi.org/project/celery-pylons/
 .. _`web2py-celery`: https://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
@@ -271,7 +287,7 @@ Transports and Backends
     for using Redis as a message transport or as a result backend.
 
 :``celery[sqs]``:
-    for using Amazon SQS as a message transport (*experimental*).
+    for using Amazon SQS as a message transport.
 
 :``celery[tblib``]:
     for using the ``task_remote_tracebacks`` feature.
@@ -285,14 +301,26 @@ Transports and Backends
 :``celery[cassandra]``:
     for using Apache Cassandra as a result backend with DataStax driver.
 
+:``celery[azureblockblob]``:
+    for using Azure Storage as a result backend (using ``azure-storage``)
+
+:``celery[s3]``:
+    for using S3 Storage as a result backend.
+
 :``celery[couchbase]``:
     for using Couchbase as a result backend.
+
+:``celery[arangodb]``:
+    for using ArangoDB as a result backend.
 
 :``celery[elasticsearch]``:
     for using Elasticsearch as a result backend.
 
 :``celery[riak]``:
     for using Riak as a result backend.
+
+:``celery[cosmosdbsql]``:
+    for using Azure Cosmos DB as a result backend (using ``pydocumentdb``)
 
 :``celery[zookeeper]``:
     for using Zookeeper as a message transport.
@@ -323,7 +351,7 @@ Downloading and installing from source
 
 Download the latest version of Celery from PyPI:
 
-https://pypi.python.org/pypi/celery/
+https://pypi.org/project/celery/
 
 You can install it by doing the following,:
 
@@ -404,14 +432,18 @@ to our issue tracker at https://github.com/celery/celery/issues/
 Wiki
 ====
 
-https://wiki.github.com/celery/celery/
+https://github.com/celery/celery/wiki
+
+Credits
+=======
 
 .. _contributing-short:
 
-Contributing
-============
+Contributors
+------------
 
-Development of `celery` happens at GitHub: https://github.com/celery/celery
+This project exists thanks to all the people who contribute. Development of
+`celery` happens at GitHub: https://github.com/celery/celery
 
 You're highly encouraged to participate in the development
 of `celery`. If you don't like GitHub (for some reason) you're welcome
@@ -422,6 +454,36 @@ documentation.
 
 .. _`Contributing to Celery`:
     http://docs.celeryproject.org/en/master/contributing.html
+
+|oc-contributors|
+
+.. |oc-contributors| image:: https://opencollective.com/celery/contributors.svg?width=890&button=false
+    :target: https://github.com/celery/celery/graphs/contributors
+
+Backers
+-------
+
+Thank you to all our backers! 🙏 [`Become a backer`_]
+
+.. _`Become a backer`: https://opencollective.com/celery#backer
+
+|oc-backers|
+
+.. |oc-backers| image:: https://opencollective.com/celery/backers.svg?width=890
+    :target: https://opencollective.com/celery#backers
+
+Sponsors
+--------
+
+Support this project by becoming a sponsor. Your logo will show up here with a
+link to your website. [`Become a sponsor`_]
+
+.. _`Become a sponsor`: https://opencollective.com/celery#sponsor
+
+|oc-sponsors|
+
+.. |oc-sponsors| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
+    :target: https://opencollective.com/celery/sponsor/0/website
 
 .. _license:
 
@@ -446,13 +508,20 @@ file in the top distribution directory for the full license text.
 
 .. |wheel| image:: https://img.shields.io/pypi/wheel/celery.svg
     :alt: Celery can be installed via wheel
-    :target: https://pypi.python.org/pypi/celery/
+    :target: https://pypi.org/project/celery/
 
 .. |pyversion| image:: https://img.shields.io/pypi/pyversions/celery.svg
     :alt: Supported Python versions.
-    :target: https://pypi.python.org/pypi/celery/
+    :target: https://pypi.org/project/celery/
 
 .. |pyimp| image:: https://img.shields.io/pypi/implementation/celery.svg
     :alt: Support Python implementations.
-    :target: https://pypi.python.org/pypi/celery/
+    :target: https://pypi.org/project/celery/
 
+.. |ocbackerbadge| image:: https://opencollective.com/celery/backers/badge.svg
+    :alt: Backers on Open Collective
+    :target: #backers
+
+.. |ocsponsorbadge| image:: https://opencollective.com/celery/sponsors/badge.svg
+    :alt: Sponsors on Open Collective
+    :target: #sponsors

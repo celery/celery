@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 
 from celery.bin.base import Command
 
-
 MIGRATE_PROGRESS_FMT = """\
 Migrating task {state.count}/{state.strtotal}: \
 {body[task]}[{body[id]}]\

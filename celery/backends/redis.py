@@ -2,7 +2,9 @@
 """Redis result store backend."""
 from __future__ import absolute_import, unicode_literals
 
+import time
 from functools import partial
+from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
@@ -12,16 +14,24 @@ from celery import states
 from celery._state import task_join_will_block
 from celery.canvas import maybe_signature
 from celery.exceptions import ChordError, ImproperlyConfigured
-from celery.five import string_t
+from celery.five import string_t, text_t
 from celery.utils import deprecated
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
 
-from . import async, base
+from .asynchronous import AsyncBackendMixin, BaseResultConsumer
+from .base import BaseKeyValueStoreBackend
+
+try:
+    from urllib.parse import unquote
+except ImportError:
+    # Python 2
+    from urlparse import unquote
 
 try:
     import redis
+    import redis.connection
     from kombu.transport.redis import get_redis_error_classes
 except ImportError:  # pragma: no cover
     redis = None  # noqa
@@ -44,12 +54,34 @@ You need to install the redis library with support of \
 sentinel in order to use the Redis result store backend.
 """
 
+W_REDIS_SSL_CERT_OPTIONAL = """
+Setting ssl_cert_reqs=CERT_OPTIONAL when connecting to redis means that \
+celery might not valdate the identity of the redis broker when connecting. \
+This leaves you vulnerable to man in the middle attacks.
+"""
+
+W_REDIS_SSL_CERT_NONE = """
+Setting ssl_cert_reqs=CERT_NONE when connecting to redis means that celery \
+will not valdate the identity of the redis broker when connecting. This \
+leaves you vulnerable to man in the middle attacks.
+"""
+
+E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH = """
+SSL connection parameters have been provided but the specified URL scheme \
+is redis://. A Redis SSL connection URL should use the scheme rediss://.
+"""
+
+E_REDIS_SSL_CERT_REQS_MISSING_INVALID = """
+A rediss:// URL must have parameter ssl_cert_reqs and this must be set to \
+CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
+"""
+
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 
 logger = get_logger(__name__)
 
 
-class ResultConsumer(async.BaseResultConsumer):
+class ResultConsumer(BaseResultConsumer):
     _pubsub = None
 
     def __init__(self, *args, **kwargs):
@@ -57,6 +89,23 @@ class ResultConsumer(async.BaseResultConsumer):
         self._get_key_for_task = self.backend.get_key_for_task
         self._decode_result = self.backend.decode_result
         self.subscribed_to = set()
+
+    def on_after_fork(self):
+        try:
+            self.backend.client.connection_pool.reset()
+            if self._pubsub is not None:
+                self._pubsub.close()
+        except KeyError as e:
+            logger.warning(text_t(e))
+        super(ResultConsumer, self).on_after_fork()
+
+    def _maybe_cancel_ready_task(self, meta):
+        if meta['status'] in states.READY_STATES:
+            self.cancel_for(meta['task_id'])
+
+    def on_state_change(self, meta, message):
+        super(ResultConsumer, self).on_state_change(meta, message)
+        self._maybe_cancel_ready_task(meta)
 
     def start(self, initial_task_id, **kwargs):
         self._pubsub = self.backend.client.pubsub(
@@ -74,9 +123,12 @@ class ResultConsumer(async.BaseResultConsumer):
             self._pubsub.close()
 
     def drain_events(self, timeout=None):
-        m = self._pubsub.get_message(timeout=timeout)
-        if m and m['type'] == 'message':
-            self.on_state_change(self._decode_result(m['data']), m)
+        if self._pubsub:
+            message = self._pubsub.get_message(timeout=timeout)
+            if message and message['type'] == 'message':
+                self.on_state_change(self._decode_result(message['data']), message)
+        elif timeout:
+            time.sleep(timeout)
 
     def consume_from(self, task_id):
         if self._pubsub is None:
@@ -96,7 +148,7 @@ class ResultConsumer(async.BaseResultConsumer):
             self._pubsub.unsubscribe(key)
 
 
-class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
+class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     """Redis task result store."""
 
     ResultConsumer = ResultConsumer
@@ -151,6 +203,27 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
 
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
+
+        # If we've received SSL parameters via query string or the
+        # redis_backend_use_ssl dict, check ssl_cert_reqs is valid. If set
+        # via query string ssl_cert_reqs will be a string so convert it here
+        if ('connection_class' in self.connparams and
+                self.connparams['connection_class'] is redis.SSLConnection):
+            ssl_cert_reqs_missing = 'MISSING'
+            ssl_string_to_constant = {'CERT_REQUIRED': CERT_REQUIRED,
+                                      'CERT_OPTIONAL': CERT_OPTIONAL,
+                                      'CERT_NONE': CERT_NONE}
+            ssl_cert_reqs = self.connparams.get('ssl_cert_reqs', ssl_cert_reqs_missing)
+            ssl_cert_reqs = ssl_string_to_constant.get(ssl_cert_reqs, ssl_cert_reqs)
+            if ssl_cert_reqs not in ssl_string_to_constant.values():
+                raise ValueError(E_REDIS_SSL_CERT_REQS_MISSING_INVALID)
+
+            if ssl_cert_reqs == CERT_OPTIONAL:
+                logger.warning(W_REDIS_SSL_CERT_OPTIONAL)
+            elif ssl_cert_reqs == CERT_NONE:
+                logger.warning(W_REDIS_SSL_CERT_NONE)
+            self.connparams['ssl_cert_reqs'] = ssl_cert_reqs
+
         self.url = url
 
         self.connection_errors, self.channel_errors = (
@@ -183,10 +256,34 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         else:
             connparams['db'] = path
 
+        ssl_param_keys = ['ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile',
+                          'ssl_cert_reqs']
+
+        if scheme == 'redis':
+            # If connparams or query string contain ssl params, raise error
+            if (any(key in connparams for key in ssl_param_keys) or
+                    any(key in query for key in ssl_param_keys)):
+                raise ValueError(E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH)
+
+        if scheme == 'rediss':
+            connparams['connection_class'] = redis.SSLConnection
+            # The following parameters, if present in the URL, are encoded. We
+            # must add the decoded values to connparams.
+            for ssl_setting in ssl_param_keys:
+                ssl_val = query.pop(ssl_setting, None)
+                if ssl_val:
+                    connparams[ssl_setting] = unquote(ssl_val)
+
         # db may be string and start with / like in kombu.
         db = connparams.get('db') or 0
         db = db.strip('/') if isinstance(db, string_t) else db
         connparams['db'] = int(db)
+
+        for key, value in query.items():
+            if key in redis.connection.URL_QUERY_ARGUMENT_PARSERS:
+                query[key] = redis.connection.URL_QUERY_ARGUMENT_PARSERS[key](
+                    value
+                )
 
         # Query parameters override other parameters
         connparams.update(query)
@@ -229,6 +326,10 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             pipe.publish(key, value)
             pipe.execute()
 
+    def forget(self, task_id):
+        super(RedisBackend, self).forget(task_id)
+        self.result_consumer.cancel_for(task_id)
+
     def delete(self, key):
         self.client.delete(key)
 
@@ -251,15 +352,13 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             raise ChordError('Dependency {0} raised {1!r}'.format(tid, retval))
         return retval
 
-    def apply_chord(self, header, partial_args, group_id, body,
-                    result=None, options={}, **kwargs):
+    def apply_chord(self, header_result, body, **kwargs):
         # Overrides this to avoid calling GroupResult.save
         # pylint: disable=method-hidden
         # Note that KeyValueStoreBackend.__init__ sets self.apply_chord
         # if the implements_incr attr is set.  Redis backend doesn't set
         # this flag.
-        options['task_id'] = group_id
-        return header(*partial_args, **options or {})
+        pass
 
     def on_chord_part_return(self, request, state, result,
                              propagate=None, **kwargs):
@@ -273,13 +372,17 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         tkey = self.get_key_for_group(gid, '.t')
         result = self.encode_result(result, state)
         with client.pipeline() as pipe:
-            _, readycount, totaldiff, _, _ = pipe \
+            pipeline = pipe \
                 .rpush(jkey, self.encode([1, tid, state, result])) \
                 .llen(jkey) \
-                .get(tkey) \
-                .expire(jkey, self.expires) \
-                .expire(tkey, self.expires) \
-                .execute()
+                .get(tkey)
+
+            if self.expires is not None:
+                pipeline = pipeline \
+                    .expire(jkey, self.expires) \
+                    .expire(tkey, self.expires)
+
+            _, readycount, totaldiff = pipeline.execute()[:3]
 
         totaldiff = int(totaldiff or 0)
 
@@ -289,13 +392,16 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             if readycount == total:
                 decode, unpack = self.decode, self._unpack_chord_result
                 with client.pipeline() as pipe:
-                    resl, _, _ = pipe \
+                    resl, = pipe \
                         .lrange(jkey, 0, total) \
-                        .delete(jkey) \
-                        .delete(tkey) \
                         .execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])
+                    with client.pipeline() as pipe:
+                        _, _ = pipe \
+                            .delete(jkey) \
+                            .delete(tkey) \
+                            .execute()
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception(
                         'Chord callback for %r raised: %r', request.group, exc)
@@ -375,13 +481,13 @@ class SentinelBackend(RedisBackend):
             data = super(SentinelBackend, self)._params_from_url(
                 url=chunk, defaults=defaults)
             connparams['hosts'].append(data)
-        for p in ("host", "port", "db", "password"):
-            connparams.pop(p)
+        for param in ("host", "port", "db", "password"):
+            connparams.pop(param)
 
         # Adding db/password in connparams to connect to the correct instance
-        for p in ("db", "password"):
-            if connparams['hosts'] and p in connparams['hosts'][0]:
-                connparams[p] = connparams['hosts'][0].get(p)
+        for param in ("db", "password"):
+            if connparams['hosts'] and param in connparams['hosts'][0]:
+                connparams[param] = connparams['hosts'][0].get(param)
         return connparams
 
     def _get_sentinel_instance(self, **params):

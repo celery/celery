@@ -5,13 +5,15 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 from billiard.einfo import ExceptionInfo
+from kombu import serialization
 from kombu.exceptions import OperationalError
 from kombu.utils.uuid import uuid
 
 from celery import current_app, group, states
 from celery._state import _task_stack
 from celery.canvas import signature
-from celery.exceptions import Ignore, MaxRetriesExceededError, Reject, Retry
+from celery.exceptions import (Ignore, ImproperlyConfigured,
+                               MaxRetriesExceededError, Reject, Retry)
 from celery.five import items, python_2_unicode_compatible
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
@@ -37,7 +39,6 @@ extract_exec_options = mattrgetter(
 # We take __repr__ very seriously around here ;)
 R_BOUND_TASK = '<class {0.__name__} of {app}{flags}>'
 R_UNBOUND_TASK = '<unbound {0.__name__}{flags}>'
-R_SELF_TASK = '<@task {0.name} bound to other {0.__self__}>'
 R_INSTANCE = '<@task: {0.name} of {app}{flags}>'
 
 #: Here for backwards compatibility as tasks no longer use a custom meta-class.
@@ -160,9 +161,6 @@ class Task(object):
     #: Request class used, or the qualified name of one.
     Request = 'celery.worker.request:Request'
 
-    #: This is the instance bound to if the task is a method of a class.
-    __self__ = None
-
     #: The application instance associated with this task class.
     _app = None
 
@@ -252,6 +250,17 @@ class Task(object):
     #: :setting:`task_acks_late` setting.
     acks_late = None
 
+    #: When enabled messages for this task will be acknowledged even if it
+    #: fails or times out.
+    #:
+    #: Configuring this setting only applies to tasks that are
+    #: acknowledged **after** they have been executed and only if
+    #: :setting:`task_acks_late` is enabled.
+    #:
+    #: The application default can be overridden with the
+    #: :setting:`task_acks_on_failure_or_timeout` setting.
+    acks_on_failure_or_timeout = None
+
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
     #: exits or is signaled (e.g., :sig:`KILL`/:sig:`INT`, etc).
@@ -275,6 +284,9 @@ class Task(object):
     #: Default task expiry time.
     expires = None
 
+    #: Default task priority.
+    priority = None
+
     #: Max length of result representation used in logs and events.
     resultrepr_maxsize = 1024
 
@@ -295,8 +307,10 @@ class Task(object):
     from_config = (
         ('serializer', 'task_serializer'),
         ('rate_limit', 'task_default_rate_limit'),
+        ('priority', 'task_default_priority'),
         ('track_started', 'task_track_started'),
         ('acks_late', 'task_acks_late'),
+        ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
         ('store_errors_even_if_ignored', 'task_store_errors_even_if_ignored'),
@@ -341,7 +355,6 @@ class Task(object):
             This class method can be defined to do additional actions when
             the task class is bound to an app.
         """
-        pass
 
     @classmethod
     def _get_app(cls):
@@ -376,9 +389,6 @@ class Task(object):
         _task_stack.push(self)
         self.push_request(args=args, kwargs=kwargs)
         try:
-            # add self if this is a bound task
-            if self.__self__ is not None:
-                return self.run(self.__self__, *args, **kwargs)
             return self.run(*args, **kwargs)
         finally:
             self.pop_request()
@@ -478,10 +488,10 @@ class Task(object):
                 :func:`kombu.compression.register`.
                 Defaults to the :setting:`task_compression` setting.
 
-            link (~@Signature): A single, or a list of tasks signatures
+            link (Signature): A single, or a list of tasks signatures
                 to apply if the task returns successfully.
 
-            link_error (~@Signature): A single, or a list of task signatures
+            link_error (Signature): A single, or a list of task signatures
                 to apply if an error occurs while executing the task.
 
             producer (kombu.Producer): custom producer to use when publishing
@@ -521,17 +531,36 @@ class Task(object):
 
         app = self._get_app()
         if app.conf.task_always_eager:
+            with app.producer_or_acquire(producer) as eager_producer:
+                serializer = options.get(
+                    'serializer',
+                    (eager_producer.serializer if eager_producer.serializer
+                     else app.conf.task_serializer)
+                )
+                body = args, kwargs
+                content_type, content_encoding, data = serialization.dumps(
+                    body, serializer,
+                )
+                args, kwargs = serialization.loads(
+                    data, content_type, content_encoding,
+                    accept=[content_type]
+                )
             with denied_join_result():
                 return self.apply(args, kwargs, task_id=task_id or uuid(),
                                   link=link, link_error=link_error, **options)
-        # add 'self' if this is a "task_method".
-        if self.__self__ is not None:
-            args = args if isinstance(args, tuple) else tuple(args or ())
-            args = (self.__self__,) + args
+
+        if self.__v2_compat__:
+            shadow = shadow or self.shadow_name(self(), args, kwargs, options)
+        else:
             shadow = shadow or self.shadow_name(args, kwargs, options)
 
         preopts = self._get_exec_options()
         options = dict(preopts, **options) if options else preopts
+
+        options.setdefault('ignore_result', self.ignore_result)
+        if self.priority:
+            options.setdefault('priority', self.priority)
+
         return app.send_task(
             self.name, args, kwargs, task_id=task_id, producer=producer,
             link=link, link_error=link_error, result_cls=self.AsyncResult,
@@ -559,7 +588,6 @@ class Task(object):
             kwargs (Dict): Task keyword arguments.
             options (Dict): Task execution options.
         """
-        pass
 
     def signature_from_request(self, request=None, args=None, kwargs=None,
                                queue=None, **extra_options):
@@ -585,7 +613,7 @@ class Task(object):
 
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
               eta=None, countdown=None, max_retries=None, **options):
-        """Retry the task.
+        """Retry the task, adding it to the back of the queue.
 
         Example:
             >>> from imaginary_twitter_lib import Twitter
@@ -638,6 +666,7 @@ class Task(object):
             **options (Any): Extra options to pass on to :meth:`apply_async`.
 
         Raises:
+
             celery.exceptions.Retry:
                 To tell the worker that the task has been re-sent for retry.
                 This always happens, unless the `throw` keyword argument
@@ -672,7 +701,9 @@ class Task(object):
                 raise_with_context(exc)
             raise self.MaxRetriesExceededError(
                 "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
-                    self.name, request.id, S.args, S.kwargs))
+                    self.name, request.id, S.args, S.kwargs
+                ), task_args=S.args, task_kwargs=S.kwargs
+            )
 
         ret = Retry(exc=exc, when=eta or countdown)
 
@@ -712,9 +743,6 @@ class Task(object):
 
         app = self._get_app()
         args = args or ()
-        # add 'self' if this is a bound method.
-        if self.__self__ is not None:
-            args = (self.__self__,) + tuple(args)
         kwargs = kwargs or {}
         task_id = task_id or uuid()
         retries = retries or 0
@@ -839,27 +867,26 @@ class Task(object):
         """
         chord = self.request.chord
         if 'chord' in sig.options:
-            if chord:
-                chord = sig.options['chord'] | chord
-            else:
-                chord = sig.options['chord']
+            raise ImproperlyConfigured(
+                "A signature replacing a task must not be part of a chord"
+            )
 
         if isinstance(sig, group):
             sig |= self.app.tasks['celery.accumulate'].s(index=0).set(
-                chord=chord,
                 link=self.request.callbacks,
                 link_error=self.request.errbacks,
             )
-            chord = None
 
         if self.request.chain:
             for t in reversed(self.request.chain):
                 sig |= signature(t, app=self.app)
 
-        sig.freeze(self.request.id,
-                   group_id=self.request.group,
-                   chord=chord,
-                   root_id=self.request.root_id)
+        sig.set(
+            chord=chord,
+            group_id=self.request.group,
+            root_id=self.request.root_id,
+        )
+        sig.freeze(self.request.id)
 
         sig.delay()
         raise Ignore('Replaced by new task')
@@ -878,13 +905,16 @@ class Task(object):
         """
         if not self.request.chord:
             raise ValueError('Current task is not member of any chord')
-        result = sig.freeze(group_id=self.request.group,
-                            chord=self.request.chord,
-                            root_id=self.request.root_id)
+        sig.set(
+            group_id=self.request.group,
+            chord=self.request.chord,
+            root_id=self.request.root_id,
+        )
+        result = sig.freeze()
         self.backend.add_to_chord(self.request.group, result)
         return sig.delay() if not lazy else sig
 
-    def update_state(self, task_id=None, state=None, meta=None):
+    def update_state(self, task_id=None, state=None, meta=None, **kwargs):
         """Update task state.
 
         Arguments:
@@ -895,7 +925,7 @@ class Task(object):
         """
         if task_id is None:
             task_id = self.request.id
-        self.backend.store_result(task_id, meta, state)
+        self.backend.store_result(task_id, meta, state, request=self.request, **kwargs)
 
     def on_success(self, retval, task_id, args, kwargs):
         """Success handler.
@@ -911,7 +941,6 @@ class Task(object):
         Returns:
             None: The return value of this handler is ignored.
         """
-        pass
 
     def on_retry(self, exc, task_id, args, kwargs, einfo):
         """Retry handler.
@@ -928,7 +957,6 @@ class Task(object):
         Returns:
             None: The return value of this handler is ignored.
         """
-        pass
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """Error handler.
@@ -945,7 +973,6 @@ class Task(object):
         Returns:
             None: The return value of this handler is ignored.
         """
-        pass
 
     def after_return(self, status, retval, task_id, args, kwargs, einfo):
         """Handler called after the task returns.
@@ -961,7 +988,6 @@ class Task(object):
         Returns:
             None: The return value of this handler is ignored.
         """
-        pass
 
     def add_trail(self, result):
         if self.trail:
@@ -976,7 +1002,7 @@ class Task(object):
 
     def __repr__(self):
         """``repr(task)``."""
-        return _reprtask(self, R_SELF_TASK if self.__self__ else R_INSTANCE)
+        return _reprtask(self, R_INSTANCE)
 
     def _get_request(self):
         """Get current request object."""

@@ -1,6 +1,5 @@
 -r test-ci-base.txt
-#: Disabled for Cryptography crashing on 2.7 after interpreter shutdown.
-#-r extras/auth.txt
+-r extras/auth.txt
 -r extras/riak.txt
 -r extras/solar.txt
 -r extras/mongodb.txt
@@ -15,6 +14,9 @@
 -r extras/elasticsearch.txt
 -r extras/couchdb.txt
 -r extras/couchbase.txt
+-r extras/arangodb.txt
 -r extras/consul.txt
+-r extras/cosmosdbsql.txt
 -r extras/cassandra.txt
--r extras/dynamodb.txt
+-r extras/azureblockblob.txt
+-r extras/s3.txt

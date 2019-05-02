@@ -5,12 +5,12 @@ from __future__ import absolute_import, unicode_literals
 from kombu.serialization import dumps, loads, registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
 
-from celery.five import bytes_if_py2
+from celery.app.defaults import DEFAULT_SECURITY_DIGEST
 from celery.utils.serialization import b64decode, b64encode
 
 from .certificate import Certificate, FSCertStore
 from .key import PrivateKey
-from .utils import reraise_errors
+from .utils import get_digest_algorithm, reraise_errors
 
 __all__ = ('SecureSerializer', 'register_auth')
 
@@ -19,11 +19,11 @@ class SecureSerializer(object):
     """Signed serializer."""
 
     def __init__(self, key=None, cert=None, cert_store=None,
-                 digest='sha1', serializer='json'):
+                 digest=DEFAULT_SECURITY_DIGEST, serializer='json'):
         self._key = key
         self._cert = cert
         self._cert_store = cert_store
-        self._digest = bytes_if_py2(digest)
+        self._digest = get_digest_algorithm(digest)
         self._serializer = serializer
 
     def serialize(self, data):
@@ -69,13 +69,18 @@ class SecureSerializer(object):
         signer = raw_payload[:first_sep]
         signer_cert = self._cert_store[signer]
 
-        sig_len = signer_cert._cert.get_pubkey().bits() >> 3
+        # shift 3 bits right to get signature length
+        # 2048bit rsa key has a signature length of 256
+        # 4096bit rsa key has a signature length of 512
+        sig_len = signer_cert.get_pubkey().key_size >> 3
+        sep_len = len(sep)
+        signature_start_position = first_sep + sep_len
+        signature_end_position = signature_start_position + sig_len
         signature = raw_payload[
-            first_sep + len(sep):first_sep + len(sep) + sig_len
+            signature_start_position:signature_end_position
         ]
-        end_of_sig = first_sep + len(sep) + sig_len + len(sep)
 
-        v = raw_payload[end_of_sig:].split(sep)
+        v = raw_payload[signature_end_position + sep_len:].split(sep)
 
         return {
             'signer': signer,
@@ -86,13 +91,14 @@ class SecureSerializer(object):
         }
 
 
-def register_auth(key=None, cert=None, store=None, digest='sha1',
+def register_auth(key=None, cert=None, store=None,
+                  digest=DEFAULT_SECURITY_DIGEST,
                   serializer='json'):
     """Register security serializer."""
     s = SecureSerializer(key and PrivateKey(key),
                          cert and Certificate(cert),
                          store and FSCertStore(store),
-                         digest=digest, serializer=serializer)
+                         digest, serializer=serializer)
     registry.register('auth', s.serialize, s.deserialize,
                       content_type='application/data',
                       content_encoding='utf-8')

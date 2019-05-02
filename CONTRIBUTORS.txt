@@ -241,6 +241,7 @@ Simon Schmidt, 2017/05/19
 Anthony Lukach, 2017/05/23
 Samuel Dion-Girardeau, 2017/05/29
 Aydin Sen, 2017/06/14
+Vinod Chandru, 2017/07/11
 Preston Moore, 2017/06/18
 Nicolas Mota, 2017/08/10
 David Davis, 2017/08/11
@@ -253,3 +254,17 @@ Andrew Wong, 2017/09/07
 Arpan Shah, 2017/09/12
 Tobias 'rixx' Kunze, 2017/08/20
 Mikhail Wolfson, 2017/12/11
+Alex Garel, 2018/01/04
+Régis Behmo 2018/01/20
+Igor Kasianov, 2018/01/20
+Derek Harland, 2018/02/15
+Chris Mitchell, 2018/02/27
+Josue Balandrano Coronel, 2018/05/24
+Federico Bond, 2018/06/20
+Tom Booth, 2018/07/06
+Axel haustant, 2018/08/14
+Bruno Alla, 2018/09/27
+Artem Vasilyev, 2018/11/24
+Victor Mireyev, 2018/12/13
+Florian Chardin, 2018/10/23
+Shady Rafehi, 2019/02/20

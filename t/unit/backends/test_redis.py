@@ -134,6 +134,67 @@ class sentinel(object):
     Sentinel = Sentinel
 
 
+class test_RedisResultConsumer:
+    def get_backend(self):
+        from celery.backends.redis import RedisBackend
+
+        class _RedisBackend(RedisBackend):
+            redis = redis
+
+        return _RedisBackend(app=self.app)
+
+    def get_consumer(self):
+        return self.get_backend().result_consumer
+
+    @patch('celery.backends.asynchronous.BaseResultConsumer.on_after_fork')
+    def test_on_after_fork(self, parent_method):
+        consumer = self.get_consumer()
+        consumer.start('none')
+        consumer.on_after_fork()
+        parent_method.assert_called_once()
+        consumer.backend.client.connection_pool.reset.assert_called_once()
+        consumer._pubsub.close.assert_called_once()
+        # PubSub instance not initialized - exception would be raised
+        # when calling .close()
+        consumer._pubsub = None
+        parent_method.reset_mock()
+        consumer.backend.client.connection_pool.reset.reset_mock()
+        consumer.on_after_fork()
+        parent_method.assert_called_once()
+        consumer.backend.client.connection_pool.reset.assert_called_once()
+
+        # Continues on KeyError
+        consumer._pubsub = Mock()
+        consumer._pubsub.close = Mock(side_effect=KeyError)
+        parent_method.reset_mock()
+        consumer.backend.client.connection_pool.reset.reset_mock()
+        consumer.on_after_fork()
+        parent_method.assert_called_once()
+
+    @patch('celery.backends.redis.ResultConsumer.cancel_for')
+    @patch('celery.backends.asynchronous.BaseResultConsumer.on_state_change')
+    def test_on_state_change(self, parent_method, cancel_for):
+        consumer = self.get_consumer()
+        meta = {'task_id': 'testing', 'status': states.SUCCESS}
+        message = 'hello'
+        consumer.on_state_change(meta, message)
+        parent_method.assert_called_once_with(meta, message)
+        cancel_for.assert_called_once_with(meta['task_id'])
+
+        # Does not call cancel_for for other states
+        meta = {'task_id': 'testing2', 'status': states.PENDING}
+        parent_method.reset_mock()
+        cancel_for.reset_mock()
+        consumer.on_state_change(meta, message)
+        parent_method.assert_called_once_with(meta, message)
+        cancel_for.assert_not_called()
+
+    def test_drain_events_before_start(self):
+        consumer = self.get_consumer()
+        # drain_events shouldn't crash when called before start
+        consumer.drain_events(0.001)
+
+
 class test_RedisBackend:
     def get_backend(self):
         from celery.backends.redis import RedisBackend
@@ -178,6 +239,22 @@ class test_RedisBackend:
         assert x.connparams['socket_timeout'] == 30.0
         assert x.connparams['socket_connect_timeout'] == 100.0
 
+    @skip.unless_module('redis')
+    def test_timeouts_in_url_coerced(self):
+        x = self.Backend(
+            ('redis://:bosco@vandelay.com:123//1?'
+             'socket_timeout=30&socket_connect_timeout=100'),
+            app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['password'] == 'bosco'
+        assert x.connparams['socket_timeout'] == 30
+        assert x.connparams['socket_connect_timeout'] == 100
+
+    @skip.unless_module('redis')
     def test_socket_url(self):
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
@@ -205,7 +282,7 @@ class test_RedisBackend:
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
         x = self.Backend(
-            'redis://:bosco@vandelay.com:123//1', app=self.app,
+            'rediss://:bosco@vandelay.com:123//1', app=self.app,
         )
         assert x.connparams
         assert x.connparams['host'] == 'vandelay.com'
@@ -221,6 +298,102 @@ class test_RedisBackend:
 
         from redis.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
+
+    @skip.unless_module('redis')
+    def test_backend_ssl_certreq_str(self):
+        self.app.conf.redis_backend_use_ssl = {
+            'ssl_cert_reqs': 'CERT_REQUIRED',
+            'ssl_ca_certs': '/path/to/ca.crt',
+            'ssl_certfile': '/path/to/client.crt',
+            'ssl_keyfile': '/path/to/client.key',
+        }
+        self.app.conf.redis_socket_timeout = 30.0
+        self.app.conf.redis_socket_connect_timeout = 100.0
+        x = self.Backend(
+            'rediss://:bosco@vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['password'] == 'bosco'
+        assert x.connparams['socket_timeout'] == 30.0
+        assert x.connparams['socket_connect_timeout'] == 100.0
+        assert x.connparams['ssl_cert_reqs'] == ssl.CERT_REQUIRED
+        assert x.connparams['ssl_ca_certs'] == '/path/to/ca.crt'
+        assert x.connparams['ssl_certfile'] == '/path/to/client.crt'
+        assert x.connparams['ssl_keyfile'] == '/path/to/client.key'
+
+        from redis.connection import SSLConnection
+        assert x.connparams['connection_class'] is SSLConnection
+
+    @skip.unless_module('redis')
+    def test_backend_ssl_url(self):
+        self.app.conf.redis_socket_timeout = 30.0
+        self.app.conf.redis_socket_connect_timeout = 100.0
+        x = self.Backend(
+            'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_REQUIRED',
+            app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['password'] == 'bosco'
+        assert x.connparams['socket_timeout'] == 30.0
+        assert x.connparams['socket_connect_timeout'] == 100.0
+        assert x.connparams['ssl_cert_reqs'] == ssl.CERT_REQUIRED
+
+        from redis.connection import SSLConnection
+        assert x.connparams['connection_class'] is SSLConnection
+
+    @skip.unless_module('redis')
+    def test_backend_ssl_url_options(self):
+        x = self.Backend(
+            (
+                'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_NONE'
+                '&ssl_ca_certs=%2Fvar%2Fssl%2Fmyca.pem'
+                '&ssl_certfile=%2Fvar%2Fssl%2Fredis-server-cert.pem'
+                '&ssl_keyfile=%2Fvar%2Fssl%2Fprivate%2Fworker-key.pem'
+            ),
+            app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['password'] == 'bosco'
+        assert x.connparams['ssl_cert_reqs'] == ssl.CERT_NONE
+        assert x.connparams['ssl_ca_certs'] == '/var/ssl/myca.pem'
+        assert x.connparams['ssl_certfile'] == '/var/ssl/redis-server-cert.pem'
+        assert x.connparams['ssl_keyfile'] == '/var/ssl/private/worker-key.pem'
+
+    @skip.unless_module('redis')
+    def test_backend_ssl_url_cert_none(self):
+        x = self.Backend(
+            'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_OPTIONAL',
+            app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['ssl_cert_reqs'] == ssl.CERT_OPTIONAL
+
+        from redis.connection import SSLConnection
+        assert x.connparams['connection_class'] is SSLConnection
+
+    @skip.unless_module('redis')
+    @pytest.mark.parametrize("uri", [
+        'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_KITTY_CATS',
+        'rediss://:bosco@vandelay.com:123//1'
+    ])
+    def test_backend_ssl_url_invalid(self, uri):
+        with pytest.raises(ValueError):
+            self.Backend(
+                uri,
+                app=self.app,
+            )
 
     def test_compat_propertie(self):
         x = self.Backend(
@@ -241,6 +414,7 @@ class test_RedisBackend:
             'result_cache_max': 1,
             'result_expires': None,
             'accept_content': ['json'],
+            'result_accept_content': ['json'],
         })
         self.Backend(app=self.app)
 
@@ -266,14 +440,14 @@ class test_RedisBackend:
         self.b.expire('foo', 300)
         self.b.client.expire.assert_called_with('foo', 300)
 
-    def test_apply_chord(self):
-        header = Mock(name='header')
-        header.results = [Mock(name='t1'), Mock(name='t2')]
-        self.b.apply_chord(
-            header, (1, 2), 'gid', None,
-            options={'max_retries': 10},
+    def test_apply_chord(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        header_result = self.app.GroupResult(
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
         )
-        header.assert_called_with(1, 2, max_retries=10, task_id='gid')
+        self.b.apply_chord(header_result, None)
+        assert self.app.tasks[unlock].apply_async.call_count == 0
 
     def test_unpack_chord_result(self):
         self.b.exception_to_python = Mock(name='etp')
@@ -359,6 +533,24 @@ class test_RedisBackend:
         self.b.client.expire.assert_has_calls([
             call(jkey, 86400), call(tkey, 86400),
         ])
+
+    @patch('celery.result.GroupResult.restore')
+    def test_on_chord_part_return_no_expiry(self, restore):
+        old_expires = self.b.expires
+        self.b.expires = None
+        tasks = [self.create_task() for i in range(10)]
+
+        for i in range(10):
+            self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
+            assert self.b.client.rpush.call_count
+            self.b.client.rpush.reset_mock()
+        assert self.b.client.lrange.call_count
+        jkey = self.b.get_key_for_group('group_id', '.j')
+        tkey = self.b.get_key_for_group('group_id', '.t')
+        self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
+        self.b.client.expire.assert_not_called()
+
+        self.b.expires = old_expires
 
     def test_on_chord_part_return__success(self):
         with self.chord_context(2) as (_, request, callback):

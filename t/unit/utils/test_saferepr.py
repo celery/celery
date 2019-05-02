@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import ast
 import re
 import struct
 from decimal import Decimal
@@ -185,6 +186,10 @@ class test_saferepr:
         # aren't tested here.
         native = old_repr(value)
         assert saferepr(value) == native
+
+    def test_single_quote(self):
+        val = {"foo's": "bar's"}
+        assert ast.literal_eval(saferepr(val)) == val
 
     @skip.if_python3()
     def test_bytes_with_unicode(self):

@@ -7,6 +7,7 @@ import signal
 import socket
 import sys
 from datetime import datetime, timedelta
+from time import time
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -24,6 +25,7 @@ from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
 from celery.five import monotonic
 from celery.signals import task_revoked
 from celery.worker import request as module
+from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
 from celery.worker.request import logger as req_logger
 from celery.worker.state import revoked
@@ -195,21 +197,37 @@ class test_trace_task(RequestCase):
 
 class test_Request(RequestCase):
 
-    def get_request(self, sig, Request=Request, **kwargs):
+    def get_request(self,
+                    sig,
+                    Request=Request,
+                    exclude_headers=None,
+                    **kwargs):
+        msg = self.task_message_from_sig(self.app, sig)
+        headers = None
+        if exclude_headers:
+            headers = msg.headers
+            for header in exclude_headers:
+                headers.pop(header)
         return Request(
-            self.task_message_from_sig(self.app, sig),
+            msg,
             on_ack=Mock(name='on_ack'),
             on_reject=Mock(name='on_reject'),
             eventer=Mock(name='eventer'),
             app=self.app,
             connection_errors=(socket.error,),
             task=sig.type,
+            headers=headers,
             **kwargs
         )
 
     def test_shadow(self):
         assert self.get_request(
             self.add.s(2, 2).set(shadow='fooxyz')).name == 'fooxyz'
+
+    def test_no_shadow_header(self):
+        request = self.get_request(self.add.s(2, 2),
+                                   exclude_headers=['shadow'])
+        assert request.name == 't.unit.worker.test_request.add'
 
     def test_invalid_eta_raises_InvalidTaskError(self):
         with pytest.raises(InvalidTaskError):
@@ -235,7 +253,7 @@ class test_Request(RequestCase):
         req.on_retry(Mock())
         req.on_ack.assert_called_with(req_logger, req.connection_errors)
 
-    def test_on_failure_Termianted(self):
+    def test_on_failure_Terminated(self):
         einfo = None
         try:
             raise Terminated('9')
@@ -392,7 +410,7 @@ class test_Request(RequestCase):
         job = self.get_request(self.mytask.s(1, f='x'))
         job._apply_result = Mock(name='_apply_result')
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job,
+                task_revoked, sender=job.task, request=job._context,
                 terminated=True, expired=False, signum=signum):
             job.time_start = monotonic()
             job.worker_pid = 314
@@ -408,7 +426,7 @@ class test_Request(RequestCase):
         signum = signal.SIGTERM
         job = self.get_request(self.mytask.s(1, f='x'))
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job,
+                task_revoked, sender=job.task, request=job._context,
                 terminated=True, expired=False, signum=signum):
             job.time_start = monotonic()
             job.worker_pid = 313
@@ -429,10 +447,11 @@ class test_Request(RequestCase):
             expires=datetime.utcnow() - timedelta(days=1)
         ))
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job,
+                task_revoked, sender=job.task, request=job._context,
                 terminated=False, expired=True, signum=None):
             job.revoked()
             assert job.id in revoked
+            self.app.set_current()
             assert self.mytask.backend.get_status(job.id) == states.REVOKED
 
     def test_revoked_expires_not_expired(self):
@@ -460,7 +479,7 @@ class test_Request(RequestCase):
     def test_revoked(self):
         job = self.xRequest()
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job,
+                task_revoked, sender=job.task, request=job._context,
                 terminated=False, expired=False, signum=None):
             revoked.add(job.id)
             assert job.revoked()
@@ -509,12 +528,17 @@ class test_Request(RequestCase):
         pool = Mock()
         job = self.xRequest()
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job,
+                task_revoked, sender=job.task, request=job._context,
                 terminated=True, expired=False, signum=signum):
             job.terminate(pool, signal='TERM')
             assert not pool.terminate_job.call_count
             job.on_accepted(pid=314, time_accepted=monotonic())
             pool.terminate_job.assert_called_with(314, signum)
+
+    def test_on_accepted_time_start(self):
+        job = self.xRequest()
+        job.on_accepted(pid=os.getpid(), time_accepted=monotonic())
+        assert time() - job.time_start < 1
 
     def test_on_success_acks_early(self):
         job = self.xRequest()
@@ -574,6 +598,7 @@ class test_Request(RequestCase):
         job = self.xRequest()
         exc_info = get_ei()
         job.on_failure(exc_info)
+        self.app.set_current()
         assert self.mytask.backend.get_status(job.id) == states.FAILURE
 
         self.mytask.ignore_result = True
@@ -591,7 +616,57 @@ class test_Request(RequestCase):
         except KeyError:
             exc_info = ExceptionInfo()
             job.on_failure(exc_info)
-            assert job.acknowledged
+        assert job.acknowledged
+
+    def test_on_failure_acks_on_failure_or_timeout_disabled_for_task(self):
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure_or_timeout = False
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is False
+
+    def test_on_failure_acks_on_failure_or_timeout_enabled_for_task(self):
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure_or_timeout = True
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
+
+    def test_on_failure_acks_on_failure_or_timeout_disabled(self):
+        self.app.conf.acks_on_failure_or_timeout = False
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure_or_timeout = False
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is False
+        self.app.conf.acks_on_failure_or_timeout = True
+
+    def test_on_failure_acks_on_failure_or_timeout_enabled(self):
+        self.app.conf.acks_on_failure_or_timeout = True
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
 
     def test_from_message_invalid_kwargs(self):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')
@@ -599,30 +674,66 @@ class test_Request(RequestCase):
         with pytest.raises(InvalidTaskError):
             raise req.execute().exception
 
-    def test_on_timeout(self, patching):
-        warn = patching('celery.worker.request.warn')
+    def test_on_hard_timeout_acks_late(self, patching):
         error = patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.task.acks_late = True
+        job.on_timeout(soft=False, timeout=1337)
+        assert 'Hard time limit' in error.call_args[0][0]
+        assert self.mytask.backend.get_status(job.id) == states.FAILURE
+        job.acknowledge.assert_called_with()
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.task.acks_late = False
+        job.on_timeout(soft=False, timeout=1335)
+        job.acknowledge.assert_not_called()
+
+    def test_on_hard_timeout_acks_on_failure_or_timeout(self, patching):
+        error = patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.task.acks_late = True
+        job.task.acks_on_failure_or_timeout = True
+        job.on_timeout(soft=False, timeout=1337)
+        assert 'Hard time limit' in error.call_args[0][0]
+        assert self.mytask.backend.get_status(job.id) == states.FAILURE
+        job.acknowledge.assert_called_with()
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.task.acks_late = True
+        job.task.acks_on_failure_or_timeout = False
+        job.on_timeout(soft=False, timeout=1337)
+        assert 'Hard time limit' in error.call_args[0][0]
+        assert self.mytask.backend.get_status(job.id) == states.FAILURE
+        job.acknowledge.assert_not_called()
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.task.acks_late = False
+        job.task.acks_on_failure_or_timeout = True
+        job.on_timeout(soft=False, timeout=1335)
+        job.acknowledge.assert_not_called()
+
+    def test_on_soft_timeout(self, patching):
+        warn = patching('celery.worker.request.warn')
 
         job = self.xRequest()
         job.acknowledge = Mock(name='ack')
         job.task.acks_late = True
         job.on_timeout(soft=True, timeout=1337)
         assert 'Soft time limit' in warn.call_args[0][0]
-        job.on_timeout(soft=False, timeout=1337)
-        assert 'Hard time limit' in error.call_args[0][0]
-        assert self.mytask.backend.get_status(job.id) == states.FAILURE
-        job.acknowledge.assert_called_with()
+        assert self.mytask.backend.get_status(job.id) == states.PENDING
+        job.acknowledge.assert_not_called()
 
         self.mytask.ignore_result = True
         job = self.xRequest()
         job.on_timeout(soft=True, timeout=1336)
         assert self.mytask.backend.get_status(job.id) == states.PENDING
-
-        job = self.xRequest()
-        job.acknowledge = Mock(name='ack')
-        job.task.acks_late = False
-        job.on_timeout(soft=True, timeout=1335)
-        job.acknowledge.assert_not_called()
 
     def test_fast_trace_task(self):
         from celery.app import trace
@@ -860,7 +971,7 @@ class test_Request(RequestCase):
         exc = WorkerLostError()
         job = self._test_on_failure(exc)
         job.task.backend.mark_as_failure.assert_called_with(
-            job.id, exc, request=job, store_result=True,
+            job.id, exc, request=job._context, store_result=True,
         )
 
     def test_on_failure__return_ok(self):
@@ -989,6 +1100,40 @@ class test_create_request_class(RequestCase):
             timeout=self.task.time_limit,
             correlation_id=job.id,
         )
+        assert job._apply_result
+        weakref_ref.assert_called_with(self.pool.apply_async())
+        assert job._apply_result is weakref_ref()
+
+    def test_execute_using_pool_with_none_timelimit_header(self):
+        from celery.app.trace import trace_task_ret as trace
+        weakref_ref = Mock(name='weakref.ref')
+        job = self.zRequest(id=uuid(),
+                            revoked_tasks=set(),
+                            ref=weakref_ref,
+                            headers={'timelimit': None})
+        job.execute_using_pool(self.pool)
+        self.pool.apply_async.assert_called_with(
+            trace,
+            args=(job.type, job.id, job.request_dict, job.body,
+                  job.content_type, job.content_encoding),
+            accept_callback=job.on_accepted,
+            timeout_callback=job.on_timeout,
+            callback=job.on_success,
+            error_callback=job.on_failure,
+            soft_timeout=self.task.soft_time_limit,
+            timeout=self.task.time_limit,
+            correlation_id=job.id,
+        )
+        assert job._apply_result
+        weakref_ref.assert_called_with(self.pool.apply_async())
+        assert job._apply_result is weakref_ref()
+
+    def test_execute_using_pool__defaults_of_hybrid_to_proto2(self):
+        weakref_ref = Mock(name='weakref.ref')
+        headers = strategy.hybrid_to_proto2('', {'id': uuid(),
+                                                 'task': self.mytask.name})[1]
+        job = self.zRequest(revoked_tasks=set(), ref=weakref_ref, **headers)
+        job.execute_using_pool(self.pool)
         assert job._apply_result
         weakref_ref.assert_called_with(self.pool.apply_async())
         assert job._apply_result is weakref_ref()

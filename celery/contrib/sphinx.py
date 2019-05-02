@@ -31,9 +31,10 @@ Use ``.. autotask::`` to alternatively manually document a task.
 """
 from __future__ import absolute_import, unicode_literals
 
-from celery.app.task import BaseTask
 from sphinx.domains.python import PyModulelevel
 from sphinx.ext.autodoc import FunctionDocumenter
+
+from celery.app.task import BaseTask
 
 try:  # pragma: no cover
     from inspect import formatargspec, getfullargspec
@@ -68,10 +69,10 @@ class TaskDocumenter(FunctionDocumenter):
     def check_module(self):
         # Normally checks if *self.object* is really defined in the module
         # given by *self.modname*. But since functions decorated with the @task
-        # decorator are instances living in the celery.local module we're
-        # checking for that and simply agree to document those then.
-        modname = self.get_attr(self.object, '__module__', None)
-        if modname and modname == 'celery.local':
+        # decorator are instances living in the celery.local, we have to check
+        # the wrapped function instead.
+        wrapped = getattr(self.object, '__wrapped__', None)
+        if wrapped and getattr(wrapped, '__module__') == self.modname:
             return True
         return super(TaskDocumenter, self).check_module()
 
@@ -83,11 +84,26 @@ class TaskDirective(PyModulelevel):
         return self.env.config.celery_task_prefix
 
 
+def autodoc_skip_member_handler(app, what, name, obj, skip, options):
+    """Handler for autodoc-skip-member event."""
+    # Celery tasks created with the @task decorator have the property
+    # that *obj.__doc__* and *obj.__class__.__doc__* are equal, which
+    # trips up the logic in sphinx.ext.autodoc that is supposed to
+    # suppress repetition of class documentation in an instance of the
+    # class. This overrides that behavior.
+    if isinstance(obj, BaseTask) and getattr(obj, '__wrapped__'):
+        if skip:
+            return False
+    return None
+
+
 def setup(app):
     """Setup Sphinx extension."""
+    app.setup_extension('sphinx.ext.autodoc')
     app.add_autodocumenter(TaskDocumenter)
     app.add_directive_to_domain('py', 'task', TaskDirective)
     app.add_config_value('celery_task_prefix', '(task)', True)
+    app.connect('autodoc-skip-member', autodoc_skip_member_handler)
 
     return {
         'parallel_read_safe': True

@@ -36,7 +36,7 @@ An example time zone could be `Europe/London`:
 
     timezone = 'Europe/London'
 
-This setting must be added to your app, either by configuration it directly
+This setting must be added to your app, either by configuring it directly
 using (``app.conf.timezone = 'Europe/London'``), or by adding
 it to your configuration module if you have set one up using
 ``app.config_from_object``. See :ref:`celerytut-configuration` for
@@ -265,7 +265,7 @@ Some examples:
 |                                         |                                            |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(0, 0,``                       | Execute on every even numbered day.        |
-|         ``day_of_month='2-30/3')``      |                                            |
+|         ``day_of_month='2-30/2')``      |                                            |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(0, 0,``                       | Execute on the first and third weeks of    |
 |         ``day_of_month='1-7,15-21')``   | the month.                                 |
@@ -273,8 +273,8 @@ Some examples:
 | ``crontab(0, 0, day_of_month='11',``    | Execute on the eleventh of May every year. |
 |          ``month_of_year='5')``         |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0,``                       | Execute on the first month of every        |
-|         ``month_of_year='*/3')``        | quarter.                                   |
+| ``crontab(0, 0,``                       | Execute every day on the first month       |
+|         ``month_of_year='*/3')``        | of every quarter.                          |
 +-----------------------------------------+--------------------------------------------+
 
 See :class:`celery.schedules.crontab` for more documentation.

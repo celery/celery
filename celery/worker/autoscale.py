@@ -14,7 +14,7 @@ import os
 import threading
 from time import sleep
 
-from kombu.async.semaphore import DummyLock
+from kombu.asynchronous.semaphore import DummyLock
 
 from celery import bootsteps
 from celery.five import monotonic
@@ -56,6 +56,10 @@ class WorkerComponent(bootsteps.StartStopStep):
         hub.call_repeatedly(
             w.autoscaler.keepalive, w.autoscaler.maybe_scale,
         )
+
+    def info(self, w):
+        """Return `Autoscaler` info."""
+        return {'autoscaler': w.autoscaler.info()}
 
 
 class Autoscaler(bgThread):

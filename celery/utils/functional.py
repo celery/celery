@@ -20,8 +20,6 @@ __all__ = (
     'maybe', 'fun_accepts_kwargs',
 )
 
-IS_PY3 = sys.version_info[0] == 3
-
 FUNHEAD_TEMPLATE = """
 def {fun_name}({fun_args}):
     return {fun_value}
@@ -60,7 +58,6 @@ def noop(*args, **kwargs):
 
     Takes any arguments/keyword arguments and does nothing.
     """
-    pass
 
 
 def pass1(arg, *args, **kwargs):
@@ -265,9 +262,10 @@ def head_from_fun(fun, bound=False, debug=False):
     # as just calling a function.
     is_function = inspect.isfunction(fun)
     is_callable = hasattr(fun, '__call__')
+    is_cython = fun.__class__.__name__ == 'cython_function_or_method'
     is_method = inspect.ismethod(fun)
 
-    if not is_function and is_callable and not is_method:
+    if not is_function and is_callable and not is_method and not is_cython:
         name, fun = fun.__class__.__name__, fun.__call__
     else:
         name = fun.__name__

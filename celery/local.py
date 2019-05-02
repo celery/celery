@@ -14,13 +14,11 @@ from functools import reduce
 from importlib import import_module
 from types import ModuleType
 
-from .five import bytes_if_py2, items, string, string_t
+from .five import PY3, bytes_if_py2, items, string, string_t
 
 __all__ = ('Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate')
 
 __module__ = __name__  # used by Proxy class body
-
-PY3 = sys.version_info[0] == 3
 
 
 def _default_cls_attr(name, type_, cls_value):
@@ -545,8 +543,11 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
     return module
 
 
-def recreate_module(name, compat_modules=(), by_module={}, direct={},
+def recreate_module(name, compat_modules=None, by_module=None, direct=None,
                     base=LazyModule, **attrs):
+    compat_modules = compat_modules or ()
+    by_module = by_module or {}
+    direct = direct or {}
     old_module = sys.modules[name]
     origins = get_origins(by_module)
     compat_modules = COMPAT_MODULES.get(name, ())

@@ -5,14 +5,16 @@ import tempfile
 from datetime import datetime, timedelta
 
 import pytest
-from case import ContextMock, MagicMock, Mock, patch
+from case import ANY, ContextMock, MagicMock, Mock, patch
 from kombu import Queue
+from kombu.exceptions import EncodeError
 
 from celery import Task, group, uuid
 from celery.app.task import _reprtask
-from celery.exceptions import Ignore, Retry
+from celery.exceptions import Ignore, ImproperlyConfigured, Retry
 from celery.five import items, range, string_t
 from celery.result import EagerResult
+from celery.task.base import Task as OldTask
 from celery.utils.time import parse_iso8601
 
 try:
@@ -35,6 +37,10 @@ class MockApplyTask(Task):
 
     def apply_async(self, *args, **kwargs):
         self.applied += 1
+
+
+class TaskWithPriority(Task):
+    priority = 10
 
 
 class TasksCase:
@@ -152,7 +158,27 @@ class TasksCase:
 
         self.task_check_request_context = task_check_request_context
 
-        # memove all messages from memory-transport
+        @self.app.task(ignore_result=True)
+        def task_with_ignored_result():
+            pass
+
+        self.task_with_ignored_result = task_with_ignored_result
+
+        @self.app.task(bind=True)
+        def task_called_by_other_task(self):
+            pass
+
+        @self.app.task(bind=True)
+        def task_which_calls_other_task(self):
+            # Couldn't find a better way to mimic an apply_async()
+            # request with set priority
+            self.request.delivery_info['priority'] = 5
+
+            task_called_by_other_task.delay()
+
+        self.task_which_calls_other_task = task_which_calls_other_task
+
+        # Remove all messages from memory-transport
         from kombu.transport.memory import Channel
         Channel.queues.clear()
 
@@ -265,6 +291,18 @@ class test_task_retries(TasksCase):
             result.get()
         assert self.retry_task.iterations == 2
 
+    def test_max_retries_exceeded_task_args(self):
+        self.retry_task.max_retries = 2
+        self.retry_task.iterations = 0
+        args = (0xFF, 0xFFFF)
+        kwargs = {'care': False}
+        result = self.retry_task.apply(args, kwargs)
+        with pytest.raises(self.retry_task.MaxRetriesExceededError) as e:
+            result.get()
+
+        assert e.value.task_args == args
+        assert e.value.task_kwargs == kwargs
+
     def test_autoretry_no_kwargs(self):
         self.autoretry_task_no_kwargs.max_retries = 3
         self.autoretry_task_no_kwargs.iterations = 0
@@ -357,6 +395,94 @@ class test_tasks(TasksCase):
             add.delay(1, 2, foobar=3)
 
         add.delay(2, 2)
+
+    def test_shadow_name(self):
+        def shadow_name(task, args, kwargs, options):
+            return 'fooxyz'
+
+        @self.app.task(shadow_name=shadow_name)
+        def shadowed():
+            pass
+
+        old_send_task = self.app.send_task
+        self.app.send_task = Mock()
+
+        shadowed.delay()
+
+        self.app.send_task.assert_called_once_with(ANY, ANY, ANY,
+                                                   compression=ANY,
+                                                   delivery_mode=ANY,
+                                                   exchange=ANY,
+                                                   expires=ANY,
+                                                   immediate=ANY,
+                                                   link=ANY,
+                                                   link_error=ANY,
+                                                   mandatory=ANY,
+                                                   priority=ANY,
+                                                   producer=ANY,
+                                                   queue=ANY,
+                                                   result_cls=ANY,
+                                                   routing_key=ANY,
+                                                   serializer=ANY,
+                                                   soft_time_limit=ANY,
+                                                   task_id=ANY,
+                                                   task_type=ANY,
+                                                   time_limit=ANY,
+                                                   shadow='fooxyz',
+                                                   ignore_result=False)
+
+        self.app.send_task = old_send_task
+
+    def test_shadow_name_old_task_class(self):
+        def shadow_name(task, args, kwargs, options):
+            return 'fooxyz'
+
+        @self.app.task(base=OldTask, shadow_name=shadow_name)
+        def shadowed():
+            pass
+
+        old_send_task = self.app.send_task
+        self.app.send_task = Mock()
+
+        shadowed.delay()
+
+        self.app.send_task.assert_called_once_with(ANY, ANY, ANY,
+                                                   compression=ANY,
+                                                   delivery_mode=ANY,
+                                                   exchange=ANY,
+                                                   expires=ANY,
+                                                   immediate=ANY,
+                                                   link=ANY,
+                                                   link_error=ANY,
+                                                   mandatory=ANY,
+                                                   priority=ANY,
+                                                   producer=ANY,
+                                                   queue=ANY,
+                                                   result_cls=ANY,
+                                                   routing_key=ANY,
+                                                   serializer=ANY,
+                                                   soft_time_limit=ANY,
+                                                   task_id=ANY,
+                                                   task_type=ANY,
+                                                   time_limit=ANY,
+                                                   shadow='fooxyz',
+                                                   ignore_result=False)
+
+        self.app.send_task = old_send_task
+
+    def test_inherit_parent_priority_child_task(self):
+        self.app.conf.task_inherit_parent_priority = True
+
+        self.app.producer_or_acquire = Mock()
+        self.app.producer_or_acquire.attach_mock(
+            ContextMock(serializer='json'), 'return_value')
+        self.app.amqp.send_task_message = Mock(name="send_task_message")
+
+        self.task_which_calls_other_task.apply(args=[])
+
+        self.app.amqp.send_task_message.assert_called_with(
+            ANY, 't.unit.tasks.test_tasks.task_called_by_other_task',
+            ANY, priority=5, queue=ANY, serializer=ANY)
 
     def test_typing__disabled(self):
         @self.app.task(typing=False)
@@ -553,6 +679,12 @@ class test_tasks(TasksCase):
         with pytest.raises(Ignore):
             self.mytask.replace(sig1)
 
+    def test_replace_with_chord(self):
+        sig1 = Mock(name='sig1')
+        sig1.options = {'chord': None}
+        with pytest.raises(ImproperlyConfigured):
+            self.mytask.replace(sig1)
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_replace_callback(self):
         c = group([self.mytask.s()], app=self.app)
@@ -581,7 +713,6 @@ class test_tasks(TasksCase):
             self.mytask.replace(c)
         except Ignore:
             mocked_signature.return_value.set.assert_called_with(
-                chord=None,
                 link='callbacks',
                 link_error='errbacks',
             )
@@ -604,16 +735,6 @@ class test_tasks(TasksCase):
     def test_repr_v2_compat(self):
         self.mytask.__v2_compat__ = True
         assert 'v2 compatible' in repr(self.mytask)
-
-    def test_apply_with_self(self):
-
-        @self.app.task(__self__=42, shared=False)
-        def tawself(self):
-            return self
-
-        assert tawself.apply().get() == 42
-
-        assert tawself() == 42
 
     def test_context_get(self):
         self.mytask.push_request()
@@ -655,7 +776,10 @@ class test_tasks(TasksCase):
         yyy.push_request()
         try:
             tid = uuid()
-            yyy.update_state(tid, 'FROBULATING', {'fooz': 'baaz'})
+            # update_state should accept arbitrary kwargs, which are passed to
+            # the backend store_result method
+            yyy.update_state(tid, 'FROBULATING', {'fooz': 'baaz'},
+                             arbitrary_kwarg=None)
             assert yyy.AsyncResult(tid).status == 'FROBULATING'
             assert yyy.AsyncResult(tid).result == {'fooz': 'baaz'}
 
@@ -665,6 +789,22 @@ class test_tasks(TasksCase):
             assert yyy.AsyncResult(tid).result == {'fooz': 'baaz'}
         finally:
             yyy.pop_request()
+
+    def test_update_state_passes_request_to_backend(self):
+        backend = Mock()
+
+        @self.app.task(shared=False, backend=backend)
+        def ttt():
+            pass
+
+        ttt.push_request()
+
+        tid = uuid()
+        ttt.update_state(tid, 'SHRIMMING', {'foo': 'bar'})
+
+        backend.store_result.assert_called_once_with(
+            tid, {'foo': 'bar'}, 'SHRIMMING', request=ttt.request
+        )
 
     def test_repr(self):
 
@@ -681,6 +821,97 @@ class test_tasks(TasksCase):
             pass
 
         assert yyy2.__name__
+
+    def test_default_priority(self):
+
+        @self.app.task(shared=False)
+        def yyy3():
+            pass
+
+        @self.app.task(shared=False, priority=66)
+        def yyy4():
+            pass
+
+        @self.app.task(shared=False, bind=True, base=TaskWithPriority)
+        def yyy5(self):
+            pass
+
+        self.app.conf.task_default_priority = 42
+        old_send_task = self.app.send_task
+
+        self.app.send_task = Mock()
+        yyy3.delay()
+        self.app.send_task.assert_called_once_with(ANY, ANY, ANY,
+                                                   compression=ANY,
+                                                   delivery_mode=ANY,
+                                                   exchange=ANY,
+                                                   expires=ANY,
+                                                   immediate=ANY,
+                                                   link=ANY,
+                                                   link_error=ANY,
+                                                   mandatory=ANY,
+                                                   priority=42,
+                                                   producer=ANY,
+                                                   queue=ANY,
+                                                   result_cls=ANY,
+                                                   routing_key=ANY,
+                                                   serializer=ANY,
+                                                   soft_time_limit=ANY,
+                                                   task_id=ANY,
+                                                   task_type=ANY,
+                                                   time_limit=ANY,
+                                                   shadow=None,
+                                                   ignore_result=False)
+
+        self.app.send_task = Mock()
+        yyy4.delay()
+        self.app.send_task.assert_called_once_with(ANY, ANY, ANY,
+                                                   compression=ANY,
+                                                   delivery_mode=ANY,
+                                                   exchange=ANY,
+                                                   expires=ANY,
+                                                   immediate=ANY,
+                                                   link=ANY,
+                                                   link_error=ANY,
+                                                   mandatory=ANY,
+                                                   priority=66,
+                                                   producer=ANY,
+                                                   queue=ANY,
+                                                   result_cls=ANY,
+                                                   routing_key=ANY,
+                                                   serializer=ANY,
+                                                   soft_time_limit=ANY,
+                                                   task_id=ANY,
+                                                   task_type=ANY,
+                                                   time_limit=ANY,
+                                                   shadow=None,
+                                                   ignore_result=False)
+
+        self.app.send_task = Mock()
+        yyy5.delay()
+        self.app.send_task.assert_called_once_with(ANY, ANY, ANY,
+                                                   compression=ANY,
+                                                   delivery_mode=ANY,
+                                                   exchange=ANY,
+                                                   expires=ANY,
+                                                   immediate=ANY,
+                                                   link=ANY,
+                                                   link_error=ANY,
+                                                   mandatory=ANY,
+                                                   priority=10,
+                                                   producer=ANY,
+                                                   queue=ANY,
+                                                   result_cls=ANY,
+                                                   routing_key=ANY,
+                                                   serializer=ANY,
+                                                   soft_time_limit=ANY,
+                                                   task_id=ANY,
+                                                   task_type=ANY,
+                                                   time_limit=ANY,
+                                                   shadow=None,
+                                                   ignore_result=False)
+
+        self.app.send_task = old_send_task
 
 
 class test_apply_task(TasksCase):
@@ -721,3 +952,79 @@ class test_apply_task(TasksCase):
         assert f.traceback
         with pytest.raises(KeyError):
             f.get()
+
+
+class test_apply_async(TasksCase):
+    def common_send_task_arguments(self):
+        return (ANY, ANY, ANY), dict(
+            compression=ANY,
+            delivery_mode=ANY,
+            exchange=ANY,
+            expires=ANY,
+            immediate=ANY,
+            link=ANY,
+            link_error=ANY,
+            mandatory=ANY,
+            priority=ANY,
+            producer=ANY,
+            queue=ANY,
+            result_cls=ANY,
+            routing_key=ANY,
+            serializer=ANY,
+            soft_time_limit=ANY,
+            task_id=ANY,
+            task_type=ANY,
+            time_limit=ANY,
+            shadow=None,
+            ignore_result=False
+        )
+
+    def test_eager_serialization_failure(self):
+        @self.app.task
+        def task(*args, **kwargs):
+            pass
+        with pytest.raises(EncodeError):
+            task.apply_async((1, 2, 3, 4, {1}))
+
+    def test_eager_serialization_uses_task_serializer_setting(self):
+        @self.app.task
+        def task(*args, **kwargs):
+            pass
+        with pytest.raises(EncodeError):
+            task.apply_async((1, 2, 3, 4, {1}))
+
+        self.app.conf.task_serializer = 'pickle'
+
+        @self.app.task
+        def task2(*args, **kwargs):
+            pass
+        task2.apply_async((1, 2, 3, 4, {1}))
+
+    def test_task_with_ignored_result(self):
+        with patch.object(self.app, 'send_task') as send_task:
+            self.task_with_ignored_result.apply_async()
+            expected_args, expected_kwargs = self.common_send_task_arguments()
+            expected_kwargs['ignore_result'] = True
+            send_task.assert_called_once_with(
+                *expected_args,
+                **expected_kwargs
+            )
+
+    def test_task_with_result(self):
+        with patch.object(self.app, 'send_task') as send_task:
+            self.mytask.apply_async()
+            expected_args, expected_kwargs = self.common_send_task_arguments()
+            send_task.assert_called_once_with(
+                *expected_args,
+                **expected_kwargs
+            )
+
+    def test_task_with_result_ignoring_on_call(self):
+        with patch.object(self.app, 'send_task') as send_task:
+            self.mytask.apply_async(ignore_result=True)
+            expected_args, expected_kwargs = self.common_send_task_arguments()
+            expected_kwargs['ignore_result'] = True
+            send_task.assert_called_once_with(
+                *expected_args,
+                **expected_kwargs
+            )

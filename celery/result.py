@@ -101,6 +101,19 @@ class AsyncResult(ResultBase):
         self.parent = parent
         self.on_ready = promise(self._on_fulfilled, weak=True)
         self._cache = None
+        self._ignored = False
+
+    @property
+    def ignored(self):
+        """"If True, task result retrieval is disabled."""
+        if hasattr(self, '_ignored'):
+            return self._ignored
+        return False
+
+    @ignored.setter
+    def ignored(self, value):
+        """Enable/disable task result retrieval."""
+        self._ignored = value
 
     def then(self, callback, on_error=None, weak=False):
         self.backend.add_pending_result(self, weak=weak)
@@ -115,8 +128,10 @@ class AsyncResult(ResultBase):
         return (self.id, parent and parent.as_tuple()), None
 
     def forget(self):
-        """Forget about (and possibly remove the result of) this task."""
+        """Forget the result of this task and its parents."""
         self._cache = None
+        if self.parent:
+            self.parent.forget()
         self.backend.forget(self.id)
 
     def revoke(self, connection=None, terminate=False, signal=None,
@@ -152,6 +167,13 @@ class AsyncResult(ResultBase):
            Waiting for tasks within a task may lead to deadlocks.
            Please read :ref:`task-synchronous-subtasks`.
 
+        Warning:
+           Backends use resources to store and transmit results. To ensure
+           that resources are released, you must eventually call
+           :meth:`~@AsyncResult.get` or :meth:`~@AsyncResult.forget` on
+           EVERY :class:`~@AsyncResult` instance returned after calling
+           a task.
+
         Arguments:
             timeout (float): How long to wait, in seconds, before the
                 operation times out.
@@ -176,6 +198,9 @@ class AsyncResult(ResultBase):
             Exception: If the remote call raised an exception then that
                 exception will be re-raised in the caller process.
         """
+        if self.ignored:
+            return
+
         if disable_sync_subtasks:
             assert_will_not_block()
         _on_interval = promise()
@@ -356,6 +381,11 @@ class AsyncResult(ResultBase):
     def __reduce_args__(self):
         return self.id, self.backend, None, None, self.parent
 
+    def __del__(self):
+        """Cancel pending operations when the instance is destroyed."""
+        if self.backend is not None:
+            self.backend.remove_pending_result(self)
+
     @cached_property
     def graph(self):
         return self.build_graph()
@@ -452,6 +482,34 @@ class AsyncResult(ResultBase):
     def task_id(self, id):
         self.id = id
 
+    @property
+    def name(self):
+        return self._get_task_meta().get('name')
+
+    @property
+    def args(self):
+        return self._get_task_meta().get('args')
+
+    @property
+    def kwargs(self):
+        return self._get_task_meta().get('kwargs')
+
+    @property
+    def worker(self):
+        return self._get_task_meta().get('worker')
+
+    @property
+    def date_done(self):
+        return self._get_task_meta().get('date_done')
+
+    @property
+    def retries(self):
+        return self._get_task_meta().get('retries')
+
+    @property
+    def queue(self):
+        return self._get_task_meta().get('queue')
+
 
 @Thenable.register
 @python_2_unicode_compatible
@@ -469,12 +527,11 @@ class ResultSet(ResultBase):
 
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
         self._app = app
-        self._cache = None
         self.results = results
         self.on_ready = promise(args=(self,))
         self._on_full = ready_barrier or barrier(results)
         if self._on_full:
-            self._on_full.then(promise(self.on_ready, weak=True))
+            self._on_full.then(promise(self._on_ready, weak=True))
 
     def add(self, result):
         """Add :class:`AsyncResult` as a new member of the set.
@@ -487,9 +544,7 @@ class ResultSet(ResultBase):
                 self._on_full.add(result)
 
     def _on_ready(self):
-        self.backend.remove_pending_result(self)
         if self.backend.is_async:
-            self._cache = [r.get() for r in self.results]
             self.on_ready()
 
     def remove(self, result):
@@ -635,8 +690,6 @@ class ResultSet(ResultBase):
         in addition it uses :meth:`join_native` if available for the
         current result backend.
         """
-        if self._cache is not None:
-            return self._cache
         return (self.join_native if self.supports_native_join else self.join)(
             timeout=timeout, propagate=propagate,
             interval=interval, callback=callback, no_ack=no_ack,
@@ -845,6 +898,10 @@ class GroupResult(ResultSet):
         self.parent = parent
         ResultSet.__init__(self, results, **kwargs)
 
+    def _on_ready(self):
+        self.backend.remove_pending_result(self)
+        ResultSet._on_ready(self)
+
     def save(self, backend=None):
         """Save group-result for later retrieval using :meth:`restore`.
 
@@ -876,6 +933,8 @@ class GroupResult(ResultSet):
                 other.results == self.results and
                 other.parent == self.parent
             )
+        elif isinstance(other, string_t):
+            return other == self.id
         return NotImplemented
 
     def __ne__(self, other):
@@ -883,11 +942,24 @@ class GroupResult(ResultSet):
         return True if res is NotImplemented else not res
 
     def __repr__(self):
-        return '<{0}: {1} [{2}]>'.format(type(self).__name__, self.id,
-                                         ', '.join(r.id for r in self.results))
+        return '<{0}: {1} [{2}]>'.format(
+            type(self).__name__, self.id,
+            ', '.join(r.id for r in self.results)
+        )
+
+    def __str__(self):
+        """`str(self) -> self.id`."""
+        return str(self.id)
+
+    def __hash__(self):
+        """`hash(self) -> hash(self.id)`."""
+        return hash(self.id)
 
     def as_tuple(self):
-        return (self.id, self.parent), [r.as_tuple() for r in self.results]
+        return (
+            (self.id, self.parent and self.parent.as_tuple()),
+            [r.as_tuple() for r in self.results]
+        )
 
     @property
     def children(self):

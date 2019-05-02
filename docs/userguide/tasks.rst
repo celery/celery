@@ -51,7 +51,7 @@ consider enabling the :setting:`task_reject_on_worker_lost` setting.
     A task that blocks indefinitely may eventually stop the worker instance
     from doing any other work.
 
-    If you task does I/O then make sure you add timeouts to these operations,
+    If your task does I/O then make sure you add timeouts to these operations,
     like adding a timeout to a web request using the :pypi:`requests` library:
 
     .. code-block:: python
@@ -330,7 +330,7 @@ Changing the automatic naming behavior
 .. versionadded:: 4.0
 
 There are some cases when the default automatic naming isn't suitable.
-Consider you have many tasks within many different modules::
+Consider having many tasks within many different modules::
 
     project/
            /__init__.py
@@ -531,6 +531,27 @@ see :setting:`worker_redirect_stdouts`).
             finally:
                 sys.stdout, sys.stderr = old_outs
 
+
+.. note::
+
+    If a specific Celery logger you need is not emitting logs, you should
+    check that the logger is propagating properly. In this example
+    "celery.app.trace" is enabled so that "succeeded in" logs are emitted:
+
+    .. code-block:: python
+
+
+        import celery
+        import logging
+
+        @celery.signals.after_setup_logger.connect
+        def on_after_setup_logger(**kwargs):
+            logger = logging.getLogger('celery')
+            logger.propagate = True
+            logger = logging.getLogger('celery.app.trace')
+            logger.propagate = True
+
+
 .. _task-argument-checking:
 
 Argument checking
@@ -570,9 +591,11 @@ You can disable the argument checking for any task by setting its
     ... def add(x, y):
     ...     return x + y
 
-    # Works locally, but the worker reciving the task will raise an error.
+    # Works locally, but the worker receiving the task will raise an error.
     >>> add.delay(8)
     <AsyncResult: f59d71ca-1549-43e0-be41-4e8821a83c0c>
+
+.. _task-hiding-sensitive-information:
 
 Hiding sensitive information in arguments
 -----------------------------------------
@@ -645,7 +668,7 @@ Here's an example using ``retry``:
 The bind argument to the task decorator will give access to ``self`` (the
 task type instance).
 
-The ``exc`` method is used to pass exception information that's
+The ``exc`` argument is used to pass exception information that's
 used in logs, and when storing task results.
 Both the exception and the traceback will
 be available in the task state (if a result backend is enabled).
@@ -705,7 +728,7 @@ Sometimes you just want to retry a task whenever a particular exception
 is raised.
 
 Fortunately, you can tell Celery to automatically retry a task using
-`autoretry_for` argument in `~@Celery.task` decorator:
+`autoretry_for` argument in the :meth:`~@Celery.task` decorator:
 
 .. code-block:: python
 
@@ -715,8 +738,8 @@ Fortunately, you can tell Celery to automatically retry a task using
     def refresh_timeline(user):
         return twitter.refresh_timeline(user)
 
-If you want to specify custom arguments for internal `~@Task.retry`
-call, pass `retry_kwargs` argument to `~@Celery.task` decorator:
+If you want to specify custom arguments for an internal :meth:`~@Task.retry`
+call, pass `retry_kwargs` argument to :meth:`~@Celery.task` decorator:
 
 .. code-block:: python
 
@@ -746,7 +769,7 @@ If you want to automatically retry on any error, simply use:
     def x():
         ...
 
-.. versionadded:: 4.1
+.. versionadded:: 4.2
 
 If your tasks depend on another service, like making a request to an API,
 then it's a good idea to use `exponential backoff`_ to avoid overwhelming the
@@ -1016,7 +1039,7 @@ different strengths and weaknesses (see :ref:`task-result-backends`).
 During its lifetime a task will transition through several possible states,
 and each state may have arbitrary meta-data attached to it. When a task
 moves into a new state the previous state is
-forgotten about, but some transitions can be deducted, (e.g., a task now
+forgotten about, but some transitions can be deduced, (e.g., a task now
 in the :state:`FAILED` state, is implied to have been in the
 :state:`STARTED` state at some point).
 
@@ -1042,6 +1065,14 @@ Memcached, RabbitMQ/QPid (``rpc``), and Redis -- or you can define your own.
 No backend works well for every use case.
 You should read about the strengths and weaknesses of each backend, and choose
 the most appropriate for your needs.
+
+.. warning::
+
+    Backends use resources to store and transmit results. To ensure
+    that resources are released, you must eventually call
+    :meth:`~@AsyncResult.get` or :meth:`~@AsyncResult.forget` on
+    EVERY :class:`~@AsyncResult` instance returned after calling
+    a task.
 
 .. seealso::
 
@@ -1498,6 +1529,7 @@ Handlers
 
     The return value of this handler is ignored.
 
+.. _task-requests-and-custom-requests:
 
 Requests and custom requests
 ----------------------------
@@ -1583,7 +1615,7 @@ yourself:
      'celery.chord':
         <@task: celery.chord>}
 
-This is the list of tasks built-in to Celery. Note that tasks
+This is the list of tasks built into Celery. Note that tasks
 will only be registered when the module they're defined in is imported.
 
 The default loader imports any modules listed in the
@@ -1622,6 +1654,34 @@ wastes time and resources.
 
 Results can even be disabled globally using the :setting:`task_ignore_result`
 setting.
+
+.. versionadded::4.2
+
+Results can be enabled/disabled on a per-execution basis, by passing the ``ignore_result`` boolean parameter,
+when calling ``apply_async`` or ``delay``.
+
+.. code-block:: python
+
+    @app.task
+    def mytask(x, y):
+        return x + y
+
+    # No result will be stored
+    result = mytask.apply_async(1, 2, ignore_result=True)
+    print result.get() # -> None
+
+    # Result will be stored
+    result = mytask.apply_async(1, 2, ignore_result=False)
+    print result.get() # -> 3
+
+By default tasks will *not ignore results* (``ignore_result=False``) when a result backend is configured.
+
+
+The option precedence order is the following:
+
+1. Global :setting:`task_ignore_result`
+2. :attr:`~@Task.ignore_result` option
+3. Task execution option ``ignore_result``
 
 More optimization tips
 ----------------------
@@ -1689,10 +1749,10 @@ different :func:`~celery.signature`'s.
 You can read about chains and other powerful constructs
 at :ref:`designing-workflows`.
 
-By default celery will not enable you to run tasks within task synchronously
-in rare or extreme cases you might have to do so.
+By default Celery will not allow you to run subtasks synchronously within a task,
+but in rare or extreme cases you might need to do so.
 **WARNING**:
-enabling subtasks run synchronously is not recommended!
+enabling subtasks to run synchronously is not recommended!
 
 .. code-block:: python
 
@@ -1777,7 +1837,7 @@ system, like `memcached`_.
 State
 -----
 
-Since celery is a distributed system, you can't know which process, or
+Since Celery is a distributed system, you can't know which process, or
 on what machine the task will be executed. You can't even know if the task will
 run in a timely manner.
 
@@ -1864,7 +1924,7 @@ There's a race condition if the task starts executing
 before the transaction has been committed; The database object doesn't exist
 yet!
 
-The solution is to use the ``on_commit`` callback to launch your celery task
+The solution is to use the ``on_commit`` callback to launch your Celery task
 once all transactions have been committed successfully.
 
 .. code-block:: python

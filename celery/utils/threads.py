@@ -33,7 +33,6 @@ __all__ = (
 )
 
 USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
-PY3 = sys.version_info[0] == 3
 
 
 @contextmanager
@@ -74,6 +73,7 @@ class bgThread(threading.Thread):
                         self.on_crash('{0!r} crashed: {1!r}', self.name, exc)
                         self._set_stopped()
                     finally:
+                        sys.stderr.flush()
                         os._exit(1)  # exiting by normal means won't work
         finally:
             self._set_stopped()
@@ -327,7 +327,7 @@ class _FastLocalStack(threading.local):
 
 if USE_FAST_LOCALS:  # pragma: no cover
     LocalStack = _FastLocalStack
-else:
+else:  # pragma: no cover
     # - See #706
     # since each thread has its own greenlet we can just use those as
     # identifiers for the context.  If greenlets aren't available we

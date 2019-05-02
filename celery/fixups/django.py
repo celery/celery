@@ -30,8 +30,8 @@ def _maybe_close_fd(fh):
 
 
 def _verify_django_version(django):
-    if django.VERSION < (1, 8):
-        raise ImproperlyConfigured('Celery 4.x requires Django 1.8 or later.')
+    if django.VERSION < (1, 11):
+        raise ImproperlyConfigured('Celery 4.x requires Django 1.11 or later.')
 
 
 def fixup(app, env='DJANGO_SETTINGS_MODULE'):
@@ -57,8 +57,10 @@ class DjangoFixup(object):
         self._worker_fixup = None
 
     def install(self):
-        # Need to add project directory to path
-        sys.path.append(os.getcwd())
+        # Need to add project directory to path.
+        # The project directory has precedence over system modules,
+        # so we prepend it to the path.
+        sys.path.insert(0, os.getcwd())
 
         self._settings = symbol_by_name('django.conf:settings')
         self.app.loader.now = self.now

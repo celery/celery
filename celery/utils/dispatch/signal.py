@@ -10,7 +10,7 @@ import weakref
 from kombu.utils.functional import retry_over_time
 
 from celery.exceptions import CDeprecationWarning
-from celery.five import python_2_unicode_compatible, range, text_t
+from celery.five import PY3, python_2_unicode_compatible, range, text_t
 from celery.local import PromiseProxy, Proxy
 from celery.utils.functional import fun_accepts_kwargs
 from celery.utils.log import get_logger
@@ -23,7 +23,6 @@ except ImportError:
 
 __all__ = ('Signal',)
 
-PY3 = sys.version_info[0] >= 3
 logger = get_logger(__name__)
 
 
@@ -34,8 +33,37 @@ def _make_id(target):  # pragma: no cover
         # see Issue #2475
         return target
     if hasattr(target, '__func__'):
-        return (id(target.__self__), id(target.__func__))
+        return id(target.__func__)
     return id(target)
+
+
+def _boundmethod_safe_weakref(obj):
+    """Get weakref constructor appropriate for `obj`.  `obj` may be a bound method.
+
+    Bound method objects must be special-cased because they're usually garbage
+    collected immediately, even if the instance they're bound to persists.
+
+    Returns:
+        a (weakref constructor, main object) tuple. `weakref constructor` is
+        either :class:`weakref.ref` or :class:`weakref.WeakMethod`.  `main
+        object` is the instance that `obj` is bound to if it is a bound method;
+        otherwise `main object` is simply `obj.
+    """
+    try:
+        obj.__func__
+        obj.__self__
+        # Bound method
+        return WeakMethod, obj.__self__
+    except AttributeError:
+        # Not a bound method
+        return weakref.ref, obj
+
+
+def _make_lookup_key(receiver, sender, dispatch_uid):
+    if dispatch_uid:
+        return (dispatch_uid, _make_id(sender))
+    else:
+        return (_make_id(receiver), _make_id(sender))
 
 
 NONE_ID = _make_id(None)
@@ -174,23 +202,10 @@ class Signal(object):  # pragma: no cover
             )
             return receiver
 
-        if dispatch_uid:
-            lookup_key = (dispatch_uid, _make_id(sender))
-        else:
-            lookup_key = (_make_id(receiver), _make_id(sender))
+        lookup_key = _make_lookup_key(receiver, sender, dispatch_uid)
 
         if weak:
-            ref = weakref.ref
-            receiver_object = receiver
-            # Check for bound methods
-            try:
-                receiver.__self__
-                receiver.__func__
-            except AttributeError:
-                pass
-            else:
-                ref = WeakMethod
-                receiver_object = receiver.__self__
+            ref, receiver_object = _boundmethod_safe_weakref(receiver)
             if PY3:
                 receiver = ref(receiver)
                 weakref.finalize(receiver_object, self._remove_receiver)
@@ -230,10 +245,8 @@ class Signal(object):  # pragma: no cover
             warnings.warn(
                 'Passing `weak` to disconnect has no effect.',
                 CDeprecationWarning, stacklevel=2)
-        if dispatch_uid:
-            lookup_key = (dispatch_uid, _make_id(sender))
-        else:
-            lookup_key = (_make_id(receiver), _make_id(sender))
+
+        lookup_key = _make_lookup_key(receiver, sender, dispatch_uid)
 
         disconnected = False
         with self.lock:

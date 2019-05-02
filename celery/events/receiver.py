@@ -44,7 +44,8 @@ class EventReceiver(ConsumerMixin):
         self.node_id = node_id or uuid()
         self.queue_prefix = queue_prefix or self.app.conf.event_queue_prefix
         self.exchange = get_exchange(
-            self.connection or self.app.connection_for_write())
+            self.connection or self.app.connection_for_write(),
+            name=self.app.conf.event_exchange)
         if queue_ttl is None:
             queue_ttl = self.app.conf.event_queue_ttl
         if queue_expires is None:

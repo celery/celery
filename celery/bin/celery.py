@@ -355,6 +355,18 @@ class help(Command):
 class report(Command):
     """Shows information useful to include in bug-reports."""
 
+    def __init__(self, *args, **kwargs):
+        """Custom initialization for report command.
+
+        We need this custom initialization to make sure that
+        everything is loaded when running a report.
+        There has been some issues when printing Django's
+        settings because Django is not properly setup when
+        running the report.
+        """
+        super(report, self).__init__(*args, **kwargs)
+        self.app.loader.import_default_modules()
+
     def run(self, *args, **kwargs):
         self.out(self.app.bugreport())
         return EX_OK

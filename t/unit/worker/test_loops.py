@@ -5,7 +5,8 @@ import socket
 
 import pytest
 from case import Mock
-from kombu.async import ERR, READ, WRITE, Hub
+from kombu.asynchronous import ERR, READ, WRITE, Hub
+from kombu.exceptions import DecodeError
 
 from celery.bootsteps import CLOSE, RUN
 from celery.exceptions import (InvalidTaskError, WorkerLostError,
@@ -91,6 +92,10 @@ class X(object):
             name='on_invalid_task',
         )
         _consumer.on_invalid_task = self.on_invalid_task
+        self.on_decode_error = self.obj.on_decode_error = Mock(
+            name='on_decode_error',
+        )
+        _consumer.on_decode_error = self.on_decode_error
         _consumer.strategies = self.obj.strategies
 
     def timeout_then_error(self, mock):
@@ -205,6 +210,12 @@ class test_asynloop:
         exc = strategy.side_effect = InvalidTaskError()
         on_task(msg)
         x.on_invalid_task.assert_called_with(None, msg, exc)
+
+    def test_on_task_DecodeError(self):
+        x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
+        exc = strategy.side_effect = DecodeError()
+        on_task(msg)
+        x.on_decode_error.assert_called_with(msg, exc)
 
     def test_should_terminate(self):
         x = X(self.app)
@@ -372,8 +383,8 @@ class test_asynloop:
         x = X(self.app)
 
         def Gen():
-            raise StopIteration()
-            yield
+            if 0:
+                yield
         gen = Gen()
         x.hub.add_writer(6, gen)
         x.hub.on_tick.add(x.close_then_error(Mock(name='tick'), 2))

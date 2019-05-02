@@ -3,8 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import numbers
-import sys
-from collections import Mapping, namedtuple
+from collections import namedtuple
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
@@ -14,7 +13,7 @@ from kombu.utils.functional import maybe_list
 from kombu.utils.objects import cached_property
 
 from celery import signals
-from celery.five import items, string_t
+from celery.five import PY3, items, string_t
 from celery.local import try_import
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
@@ -23,9 +22,13 @@ from celery.utils.time import maybe_make_aware
 
 from . import routes as _routes
 
-__all__ = ('AMQP', 'Queues', 'task_message')
+try:
+    from collections.abc import Mapping
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Mapping
 
-PY3 = sys.version_info[0] == 3
+__all__ = ('AMQP', 'Queues', 'task_message')
 
 #: earliest date supported by time.mktime.
 INT_MIN = -2147483648
@@ -145,9 +148,9 @@ class Queues(dict):
     def _set_ha_policy(self, args):
         policy = self.ha_policy
         if isinstance(policy, (list, tuple)):
-            return args.update({'x-ha-policy': 'nodes',
-                                'x-ha-policy-params': list(policy)})
-        args['x-ha-policy'] = policy
+            return args.update({'ha-mode': 'nodes',
+                                'ha-params': list(policy)})
+        args['ha-mode'] = policy
 
     def _set_max_priority(self, args):
         if 'x-max-priority' not in args and self.max_priority is not None:
@@ -328,7 +331,8 @@ class AMQP(object):
             expires = maybe_make_aware(
                 now + timedelta(seconds=expires), tz=timezone,
             )
-        eta = eta and eta.isoformat()
+        if not isinstance(eta, string_t):
+            eta = eta and eta.isoformat()
         # If we retry a task `expires` will already be ISO8601-formatted.
         if not isinstance(expires, string_t):
             expires = expires and expires.isoformat()

@@ -12,7 +12,6 @@ Very slow with no limits, super quick with limits.
 """
 from __future__ import absolute_import, unicode_literals
 
-import sys
 import traceback
 from collections import deque, namedtuple
 from decimal import Decimal
@@ -20,22 +19,11 @@ from itertools import chain
 from numbers import Number
 from pprint import _recursion
 
-from celery.five import items, text_t
+from celery.five import PY3, items, range, text_t
 
 from .text import truncate
 
 __all__ = ('saferepr', 'reprstream')
-
-# pylint: disable=redefined-outer-name
-# We cache globals and attribute lookups, so disable this warning.
-
-IS_PY3 = sys.version_info[0] == 3
-
-if IS_PY3:  # pragma: no cover
-    range_t = (range, )
-else:
-    class range_t(object):  # noqa
-        pass
 
 #: Node representing literal text.
 #:   - .value: is the literal text value
@@ -143,7 +131,7 @@ def _format_binary_bytes(val, maxlen, ellipsis='...'):
 
 
 def _bytes_prefix(s):
-    return 'b' + s if IS_PY3 else s
+    return 'b' + s if PY3 else s
 
 
 def _repr_binary_bytes(val):
@@ -167,7 +155,7 @@ def _format_chars(val, maxlen):
     if isinstance(val, bytes):  # pragma: no cover
         return _format_binary_bytes(val, maxlen)
     else:
-        return "'{0}'".format(truncate(val, maxlen))
+        return "'{0}'".format(truncate(val, maxlen).replace("'", "\\'"))
 
 
 def _repr(obj):
@@ -247,7 +235,7 @@ def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
                 yield text_t(val), it
             elif isinstance(val, chars_t):
                 yield _quoted(val), it
-            elif isinstance(val, range_t):  # pragma: no cover
+            elif isinstance(val, range):  # pragma: no cover
                 yield _repr(val), it
             else:
                 if isinstance(val, set_t):

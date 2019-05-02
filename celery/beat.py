@@ -10,6 +10,7 @@ import shelve
 import sys
 import time
 import traceback
+from calendar import timegm
 from collections import namedtuple
 from functools import total_ordering
 from threading import Event, Thread
@@ -26,7 +27,7 @@ from .five import (items, monotonic, python_2_unicode_compatible, reraise,
 from .schedules import crontab, maybe_schedule
 from .utils.imports import load_extension_class_names, symbol_by_name
 from .utils.log import get_logger, iter_open_logger_fds
-from .utils.time import humanize_seconds
+from .utils.time import humanize_seconds, maybe_make_aware
 
 __all__ = (
     'SchedulingError', 'ScheduleEntry', 'Scheduler',
@@ -84,14 +85,14 @@ class ScheduleEntry(object):
     total_run_count = 0
 
     def __init__(self, name=None, task=None, last_run_at=None,
-                 total_run_count=None, schedule=None, args=(), kwargs={},
-                 options={}, relative=False, app=None):
+                 total_run_count=None, schedule=None, args=(), kwargs=None,
+                 options=None, relative=False, app=None):
         self.app = app
         self.name = name
         self.task = task
         self.args = args
-        self.kwargs = kwargs
-        self.options = options
+        self.kwargs = kwargs if kwargs else {}
+        self.options = options if options else {}
         self.schedule = maybe_schedule(schedule, relative, app=self.app)
         self.last_run_at = last_run_at or self.default_now()
         self.total_run_count = total_run_count or 0
@@ -253,16 +254,29 @@ class Scheduler(object):
     def is_due(self, entry):
         return entry.is_due()
 
-    def _when(self, entry, next_time_to_run, mktime=time.mktime):
+    def _when(self, entry, next_time_to_run, mktime=timegm):
+        """Return a utc timestamp, make sure heapq in currect order."""
         adjust = self.adjust
 
-        return (mktime(entry.default_now().timetuple()) +
+        as_now = maybe_make_aware(entry.default_now())
+
+        return (mktime(as_now.utctimetuple()) +
+                as_now.microsecond / 1e6 +
                 (adjust(next_time_to_run) or 0))
 
     def populate_heap(self, event_t=event_t, heapify=heapq.heapify):
         """Populate the heap with the data contained in the schedule."""
-        self._heap = [event_t(self._when(e, e.is_due()[1]) or 0, 5, e)
-                      for e in values(self.schedule)]
+        priority = 5
+        self._heap = []
+        for entry in values(self.schedule):
+            is_due, next_call_delay = entry.is_due()
+            self._heap.append(event_t(
+                self._when(
+                    entry,
+                    0 if is_due else next_call_delay
+                ) or 0,
+                priority, entry
+            ))
         heapify(self._heap)
 
     # pylint disable=redefined-outer-name
@@ -305,6 +319,10 @@ class Scheduler(object):
         return min(adjust(next_time_to_run) or max_interval, max_interval)
 
     def schedules_equal(self, old_schedules, new_schedules):
+        if old_schedules is new_schedules is None:
+            return True
+        if old_schedules is None or new_schedules is None:
+            return False
         if set(old_schedules.keys()) != set(new_schedules.keys()):
             return False
         for name, old_entry in old_schedules.items():
@@ -318,9 +336,9 @@ class Scheduler(object):
     def should_sync(self):
         return (
             (not self._last_sync or
-               (monotonic() - self._last_sync) > self.sync_every) or
+             (monotonic() - self._last_sync) > self.sync_every) or
             (self.sync_every_tasks and
-                self._tasks_since_sync >= self.sync_every_tasks)
+             self._tasks_since_sync >= self.sync_every_tasks)
         )
 
     def reserve(self, entry):

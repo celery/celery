@@ -61,6 +61,12 @@ command:
 
     $ sudo apt-get install rabbitmq-server
 
+Or, if you want to run it on Docker execute this:
+
+.. code-block:: console
+
+    $ docker run -d -p 5462:5462 rabbitmq
+
 When the command completes, the broker will already be running in the background,
 ready to move messages for you: ``Starting rabbitmq-server: SUCCESS``.
 
@@ -79,6 +85,12 @@ the event of abrupt termination or power failures. Detailed information about us
 :ref:`broker-redis`
 
 .. _`Redis`: https://redis.io/
+
+If you want to run it on Docker execute this:
+
+.. code-block:: console
+
+    $ docker run -d -p 6379:6379 redis
 
 Other brokers
 -------------
@@ -271,7 +283,14 @@ original traceback:
 .. code-block:: pycon
 
     >>> result.traceback
-    …
+
+.. warning::
+
+    Backends use resources to store and transmit results. To ensure 
+    that resources are released, you must eventually call 
+    :meth:`~@AsyncResult.get` or :meth:`~@AsyncResult.forget` on 
+    EVERY :class:`~@AsyncResult` instance returned after calling
+    a task.
 
 See :mod:`celery.result` for the complete result object reference.
 

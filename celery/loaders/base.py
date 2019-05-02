@@ -71,23 +71,18 @@ class BaseLoader(object):
 
     def on_task_init(self, task_id, task):
         """Called before a task is executed."""
-        pass
 
     def on_process_cleanup(self):
         """Called after a task is executed."""
-        pass
 
     def on_worker_init(self):
         """Called when the worker (:program:`celery worker`) starts."""
-        pass
 
     def on_worker_shutdown(self):
         """Called when the worker (:program:`celery worker`) shuts down."""
-        pass
 
     def on_worker_process_init(self):
         """Called when a child process starts."""
-        pass
 
     def import_task_module(self, module):
         self.task_modules.add(module)
@@ -166,13 +161,16 @@ class BaseLoader(object):
     def find_module(self, module):
         return find_module(module)
 
-    def cmdline_config_parser(
-            self, args, namespace='celery',
-            re_type=re.compile(r'\((\w+)\)'),
-            extra_types={'json': json.loads},
-            override_types={'tuple': 'json',
-                            'list': 'json',
-                            'dict': 'json'}):
+    def cmdline_config_parser(self, args, namespace='celery',
+                              re_type=re.compile(r'\((\w+)\)'),
+                              extra_types=None,
+                              override_types=None):
+        extra_types = extra_types if extra_types else {'json': json.loads}
+        override_types = override_types if override_types else {
+            'tuple': 'json',
+            'list': 'json',
+            'dict': 'json'
+        }
         from celery.app.defaults import Option, NAMESPACES
         namespace = namespace and namespace.lower()
         typemap = dict(Option.typemap, **extra_types)
@@ -258,7 +256,9 @@ def find_related_module(package, related_name):
     # Django 1.7 allows for speciying a class name in INSTALLED_APPS.
     # (Issue #2248).
     try:
-        importlib.import_module(package)
+        module = importlib.import_module(package)
+        if not related_name and module:
+            return module
     except ImportError:
         package, _, _ = package.rpartition('.')
         if not package:

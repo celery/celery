@@ -333,7 +333,7 @@ class test_chain(CanvasCase):
             self.add.s(30)
         )
         c._use_link = True
-        tasks, results = c.prepare_steps((), c.tasks)
+        tasks, results = c.prepare_steps((), {}, c.tasks)
 
         assert tasks[-1].args[0] == 5
         assert isinstance(tasks[-2], chord)
@@ -347,7 +347,7 @@ class test_chain(CanvasCase):
 
         c2 = self.add.s(2, 2) | group(self.add.s(i, i) for i in range(10))
         c2._use_link = True
-        tasks2, _ = c2.prepare_steps((), c2.tasks)
+        tasks2, _ = c2.prepare_steps((), {}, c2.tasks)
         assert isinstance(tasks2[0], group)
 
     def test_group_to_chord__protocol_2__or(self):
@@ -372,7 +372,7 @@ class test_chain(CanvasCase):
 
         c2 = self.add.s(2, 2) | group(self.add.s(i, i) for i in range(10))
         c2._use_link = False
-        tasks2, _ = c2.prepare_steps((), c2.tasks)
+        tasks2, _ = c2.prepare_steps((), {}, c2.tasks)
         assert isinstance(tasks2[0], group)
 
     def test_apply_options(self):
@@ -411,6 +411,26 @@ class test_chain(CanvasCase):
         self.app.conf.task_always_eager = True
         assert ~(self.add.s(4, 4) | self.add.s(8)) == 16
 
+    def test_chain_always_eager(self):
+        self.app.conf.task_always_eager = True
+        from celery import _state
+        from celery import result
+
+        fixture_task_join_will_block = _state.task_join_will_block
+        try:
+            _state.task_join_will_block = _state.orig_task_join_will_block
+            result.task_join_will_block = _state.orig_task_join_will_block
+
+            @self.app.task(shared=False)
+            def chain_add():
+                return (self.add.s(4, 4) | self.add.s(8)).apply_async()
+
+            r = chain_add.apply_async(throw=True).get()
+            assert r.get() == 16
+        finally:
+            _state.task_join_will_block = fixture_task_join_will_block
+            result.task_join_will_block = fixture_task_join_will_block
+
     def test_apply(self):
         x = chain(self.add.s(4, 4), self.add.s(8), self.add.s(10))
         res = x.apply()
@@ -420,6 +440,16 @@ class test_chain(CanvasCase):
         assert res.parent.get() == 16
         assert res.parent.parent.get() == 8
         assert res.parent.parent.parent is None
+
+    def test_kwargs_apply(self):
+        x = chain(self.add.s(), self.add.s(8), self.add.s(10))
+        res = x.apply(kwargs={'x': 1, 'y': 1}).get()
+        assert res == 20
+
+    def test_single_expresion(self):
+        x = chain(self.add.s(1, 2)).apply()
+        assert x.get() == 3
+        assert x.parent is None
 
     def test_empty_chain_returns_none(self):
         assert chain(app=self.app)() is None
@@ -716,6 +746,29 @@ class test_chord(CanvasCase):
         x.freeze()
         x.tasks = [self.add.s(2, 2)]
         x.freeze()
+
+    def test_chain_always_eager(self):
+        self.app.conf.task_always_eager = True
+        from celery import _state
+        from celery import result
+
+        fixture_task_join_will_block = _state.task_join_will_block
+        try:
+            _state.task_join_will_block = _state.orig_task_join_will_block
+            result.task_join_will_block = _state.orig_task_join_will_block
+
+            @self.app.task(shared=False)
+            def finalize(*args):
+                pass
+
+            @self.app.task(shared=False)
+            def chord_add():
+                return chord([self.add.s(4, 4)], finalize.s()).apply_async()
+
+            chord_add.apply_async(throw=True).get()
+        finally:
+            _state.task_join_will_block = fixture_task_join_will_block
+            result.task_join_will_block = fixture_task_join_will_block
 
 
 class test_maybe_signature(CanvasCase):

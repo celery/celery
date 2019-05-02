@@ -13,6 +13,7 @@ import numbers
 import os
 import platform as _platform
 import signal as _signal
+import struct
 import sys
 import warnings
 from collections import namedtuple
@@ -187,7 +188,7 @@ class Pidfile(object):
         """
         try:
             pid = self.read_pid()
-        except ValueError as exc:
+        except ValueError:
             print('Broken pidfile found - Removing it.', file=sys.stderr)
             self.remove()
             return True
@@ -202,6 +203,10 @@ class Pidfile(object):
                 print('Stale pidfile exists - Removing it.', file=sys.stderr)
                 self.remove()
                 return True
+        except SystemError:
+            print('Stale pidfile exists - Removing it.', file=sys.stderr)
+            self.remove()
+            return True
         return False
 
     def write_pid(self):
@@ -721,7 +726,6 @@ if os.environ.get('NOSETPS'):  # pragma: no cover
 
     def set_mp_process_title(*a, **k):
         """Disabled feature."""
-        pass
 else:
 
     def set_mp_process_title(progname, info=None, hostname=None):  # noqa
@@ -791,7 +795,26 @@ def check_privileges(accept_content):
                         uid=uid, euid=euid, gid=gid, egid=egid,
                     ), file=sys.stderr)
                 finally:
+                    sys.stderr.flush()
                     os._exit(1)
         warnings.warn(RuntimeWarning(ROOT_DISCOURAGED.format(
             uid=uid, euid=euid, gid=gid, egid=egid,
         )))
+
+
+if sys.version_info < (2, 7, 7):  # pragma: no cover
+    import functools
+
+    def _to_bytes_arg(fun):
+        @functools.wraps(fun)
+        def _inner(s, *args, **kwargs):
+            return fun(s.encode(), *args, **kwargs)
+        return _inner
+
+    pack = _to_bytes_arg(struct.pack)
+    unpack = _to_bytes_arg(struct.unpack)
+    unpack_from = _to_bytes_arg(struct.unpack_from)
+else:
+    pack = struct.pack
+    unpack = struct.unpack
+    unpack_from = struct.unpack_from

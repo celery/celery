@@ -5,7 +5,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import numbers
 import os
 import random
-import sys
 import time as _time
 from calendar import monthrange
 from datetime import date, datetime, timedelta, tzinfo
@@ -16,7 +15,7 @@ from pytz import AmbiguousTimeError, FixedOffset
 from pytz import timezone as _timezone
 from pytz import utc
 
-from celery.five import python_2_unicode_compatible, string_t
+from celery.five import PY3, python_2_unicode_compatible, string_t
 
 from .functional import dictfilter
 from .iso8601 import parse_iso8601
@@ -30,9 +29,6 @@ __all__ = (
     'ffwd', 'utcoffset', 'adjust_timestamp',
     'get_exponential_backoff_interval',
 )
-
-PY3 = sys.version_info[0] == 3
-PY33 = sys.version_info >= (3, 3)
 
 C_REMDEBUG = os.environ.get('C_REMDEBUG', False)
 
@@ -129,7 +125,7 @@ class _Zone(object):
             dt = make_aware(dt, orig or self.utc)
         return localize(dt, self.tz_or_local(local))
 
-    if PY33:  # pragma: no cover
+    if PY3:  # pragma: no cover
 
         def to_system(self, dt):
             # tz=None is a special case since Python 3.3, and will
@@ -211,8 +207,8 @@ def remaining(start, ends_in, now=None, relative=False):
         ~datetime.timedelta: Remaining time.
     """
     now = now or datetime.utcnow()
-    if now.utcoffset() != start.utcoffset():
-        # Timezone has changed, or DST started/ended
+    if str(start.tzinfo) == str(now.tzinfo) and now.utcoffset() != start.utcoffset():
+        # DST started/ended
         start = start.replace(tzinfo=now.tzinfo)
     end_date = start + ends_in
     if relative:

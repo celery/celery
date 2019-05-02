@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import gc
 import itertools
 import os
+import ssl
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pickle import dumps, loads
@@ -385,6 +386,37 @@ class test_App:
         with self.Celery() as app:
             assert not self.app.conf.task_always_eager
 
+    def test_pending_configuration__ssl_settings(self):
+        with self.Celery(broker='foo://bar',
+                         broker_use_ssl={
+                             'ssl_cert_reqs': ssl.CERT_REQUIRED,
+                             'ssl_ca_certs': '/path/to/ca.crt',
+                             'ssl_certfile': '/path/to/client.crt',
+                             'ssl_keyfile': '/path/to/client.key'},
+                         redis_backend_use_ssl={
+                             'ssl_cert_reqs': ssl.CERT_REQUIRED,
+                             'ssl_ca_certs': '/path/to/ca.crt',
+                             'ssl_certfile': '/path/to/client.crt',
+                             'ssl_keyfile': '/path/to/client.key'}) as app:
+            assert not app.configured
+            assert app.conf.broker_url == 'foo://bar'
+            assert app.conf.broker_use_ssl['ssl_certfile'] == \
+                '/path/to/client.crt'
+            assert app.conf.broker_use_ssl['ssl_keyfile'] == \
+                '/path/to/client.key'
+            assert app.conf.broker_use_ssl['ssl_ca_certs'] == \
+                '/path/to/ca.crt'
+            assert app.conf.broker_use_ssl['ssl_cert_reqs'] == \
+                ssl.CERT_REQUIRED
+            assert app.conf.redis_backend_use_ssl['ssl_certfile'] == \
+                '/path/to/client.crt'
+            assert app.conf.redis_backend_use_ssl['ssl_keyfile'] == \
+                '/path/to/client.key'
+            assert app.conf.redis_backend_use_ssl['ssl_ca_certs'] == \
+                '/path/to/ca.crt'
+            assert app.conf.redis_backend_use_ssl['ssl_cert_reqs'] == \
+                ssl.CERT_REQUIRED
+
     def test_repr(self):
         assert repr(self.app)
 
@@ -493,24 +525,6 @@ class test_App:
 
         i.annotate()
         i.annotate()
-
-    def test_apply_async_has__self__(self):
-        @self.app.task(__self__='hello', shared=False)
-        def aawsX(x, y):
-            pass
-
-        with pytest.raises(TypeError):
-            aawsX.apply_async(())
-        with pytest.raises(TypeError):
-            aawsX.apply_async((2,))
-
-        with patch('celery.app.amqp.AMQP.create_task_message') as create:
-            with patch('celery.app.amqp.AMQP.send_task_message') as send:
-                create.return_value = Mock(), Mock(), Mock(), Mock()
-                aawsX.apply_async((4, 5))
-                args = create.call_args[0][2]
-                assert args, ('hello', 4 == 5)
-                send.assert_called()
 
     def test_apply_async_adds_children(self):
         from celery._state import _task_stack
@@ -839,17 +853,27 @@ class test_App:
 
     def test_timezone__none_set(self):
         self.app.conf.timezone = None
-        tz = self.app.timezone
-        assert tz == timezone.get_timezone('UTC')
+        self.app.conf.enable_utc = True
+        assert self.app.timezone == timezone.utc
+        del self.app.timezone
+        self.app.conf.enable_utc = False
+        assert self.app.timezone == timezone.local
 
     def test_uses_utc_timezone(self):
         self.app.conf.timezone = None
+        self.app.conf.enable_utc = True
         assert self.app.uses_utc_timezone() is True
 
+        self.app.conf.enable_utc = False
+        del self.app.timezone
+        assert self.app.uses_utc_timezone() is False
+
         self.app.conf.timezone = 'US/Eastern'
+        del self.app.timezone
         assert self.app.uses_utc_timezone() is False
 
         self.app.conf.timezone = 'UTC'
+        del self.app.timezone
         assert self.app.uses_utc_timezone() is True
 
     def test_compat_on_configure(self):

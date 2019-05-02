@@ -84,18 +84,20 @@ for Celery. This means that you don't have to use multiple
 configuration files, and instead configure Celery directly
 from the Django settings; but you can also separate them if wanted.
 
+.. code-block:: python
+
+    app.config_from_object('django.conf:settings', namespace='CELERY')
+
 The uppercase name-space means that all Celery configuration options
 must be specified in uppercase instead of lowercase, and start with
 ``CELERY_``, so for example the :setting:`task_always_eager` setting
 becomes ``CELERY_TASK_ALWAYS_EAGER``, and the :setting:`broker_url`
 setting becomes ``CELERY_BROKER_URL``.
 
-You can pass the object directly here, but using a string is better since
-then the worker doesn't have to serialize the object.
-
-.. code-block:: python
-
-    app.config_from_object('django.conf:settings', namespace='CELERY')
+You can pass the settings object directly instead, but using a string
+is better since then the worker doesn't have to serialize the object.
+The ``CELERY_`` namespace is also optional, but recommended (to
+prevent overlap with other Django settings).
 
 Next, a common practice for reusable apps is to define all tasks
 in a separate ``tasks.py`` module, and Celery does have a way to
@@ -200,7 +202,7 @@ To use this with your project you need to follow these steps:
 
     .. code-block:: python
 
-        CELERY_RESULT_BACKEND = 'django-cache'
+        CELERY_CACHE_BACKEND = 'django-cache'
 
 ``django-celery-beat`` - Database-backed Periodic Tasks with Admin interface.
 -----------------------------------------------------------------------------

@@ -21,6 +21,7 @@ BACKEND_ALIASES = {
     'rpc': 'celery.backends.rpc.RPCBackend',
     'cache': 'celery.backends.cache:CacheBackend',
     'redis': 'celery.backends.redis:RedisBackend',
+    'rediss': 'celery.backends.redis:RedisBackend',
     'sentinel': 'celery.backends.redis:SentinelBackend',
     'mongodb': 'celery.backends.mongodb:MongoBackend',
     'db': 'celery.backends.database:DatabaseBackend',
@@ -29,11 +30,15 @@ BACKEND_ALIASES = {
     'cassandra': 'celery.backends.cassandra:CassandraBackend',
     'couchbase': 'celery.backends.couchbase:CouchbaseBackend',
     'couchdb': 'celery.backends.couchdb:CouchBackend',
+    'cosmosdbsql': 'celery.backends.cosmosdbsql:CosmosDBSQLBackend',
     'riak': 'celery.backends.riak:RiakBackend',
     'file': 'celery.backends.filesystem:FilesystemBackend',
     'disabled': 'celery.backends.base:DisabledBackend',
     'consul': 'celery.backends.consul:ConsulBackend',
     'dynamodb': 'celery.backends.dynamodb:DynamoDBBackend',
+    'azureblockblob': 'celery.backends.azureblockblob:AzureBlockBlobBackend',
+    'arangodb': 'celery.backends.arangodb:ArangoDbBackend',
+    's3': 'celery.backends.s3:S3Backend',
 }
 
 

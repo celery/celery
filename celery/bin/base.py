@@ -44,10 +44,24 @@ __all__ = (
 for warning in (CDeprecationWarning, CPendingDeprecationWarning):
     warnings.simplefilter('once', warning, 0)
 
+# TODO: Remove this once we drop support for Python < 3.6
+if sys.version_info < (3, 6):
+    ModuleNotFoundError = ImportError
+
 ARGV_DISABLED = """
 Unrecognized command-line arguments: {0}
 
 Try --help?
+"""
+
+UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND = """
+Unable to load celery application.
+The module {0} was not found.
+"""
+
+UNABLE_TO_LOAD_APP_APP_MISSING = """
+Unable to load celery application.
+{0}
 """
 
 find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
@@ -144,7 +158,7 @@ class Command(object):
     """Base class for command-line applications.
 
     Arguments:
-        app (~@Celery): The app to use.
+        app (Celery): The app to use.
         get_app (Callable): Fucntion returning the current app
             when no app provided.
     """
@@ -270,7 +284,16 @@ class Command(object):
 
         # Dump version and exit if '--version' arg set.
         self.early_version(argv)
-        argv = self.setup_app_from_commandline(argv)
+        try:
+            argv = self.setup_app_from_commandline(argv)
+        except ModuleNotFoundError as e:
+            self.on_error(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(e.name))
+            return EX_FAILURE
+        except AttributeError as e:
+            msg = e.args[0].capitalize()
+            self.on_error(UNABLE_TO_LOAD_APP_APP_MISSING.format(msg))
+            return EX_FAILURE
+
         self.prog_name = os.path.basename(argv[0])
         return self.handle_argv(self.prog_name, argv[1:])
 
@@ -298,6 +321,7 @@ class Command(object):
         group = parser.add_argument_group('Global Options')
         group.add_argument('-A', '--app', default=None)
         group.add_argument('-b', '--broker', default=None)
+        group.add_argument('--result-backend', default=None)
         group.add_argument('--loader', default=None)
         group.add_argument('--config', default=None)
         group.add_argument('--workdir', default=None)
@@ -467,6 +491,9 @@ class Command(object):
         broker = preload_options.get('broker', None)
         if broker:
             os.environ['CELERY_BROKER_URL'] = broker
+        result_backend = preload_options.get('result_backend', None)
+        if result_backend:
+            os.environ['CELERY_RESULT_BACKEND'] = result_backend
         config = preload_options.get('config')
         if config:
             os.environ['CELERY_CONFIG_MODULE'] = config
@@ -559,7 +586,6 @@ class Command(object):
         Example:
               >>> has_pool_option = (['-P'], ['--pool'])
         """
-        pass
 
     def node_format(self, s, nodename, **extra):
         return node_format(s, nodename, **extra)

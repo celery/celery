@@ -68,7 +68,7 @@ class test_DjangoFixup(FixupCase):
                 Fixup.assert_not_called()
             with mock.module_exists('django'):
                 import django
-                django.VERSION = (1, 10, 1)
+                django.VERSION = (1, 11, 1)
                 fixup(self.app)
                 Fixup.assert_called()
 
@@ -91,7 +91,7 @@ class test_DjangoFixup(FixupCase):
             f.install()
             self.sigs.worker_init.connect.assert_called_with(f.on_worker_init)
             assert self.app.loader.now == f.now
-            self.p.append.assert_called_with('/opt/vandelay')
+            self.p.insert.assert_called_with(0, '/opt/vandelay')
 
     def test_now(self):
         with self.fixup_context(self.app) as (f, _, _):

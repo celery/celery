@@ -102,7 +102,7 @@ def _start_worker_thread(app,
     setup_app_for_worker(app, loglevel, logfile)
     assert 'celery.ping' in app.tasks
     # Make sure we can connect to the broker
-    with app.connection() as conn:
+    with app.connection(hostname=os.environ.get('TEST_BROKER')) as conn:
         conn.default_channel.queue_declare
 
     worker = WorkController(

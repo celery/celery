@@ -176,8 +176,8 @@ class AsyncBackendMixin(object):
         return result
 
     def _remove_pending_result(self, task_id):
-        for map in self._pending_results:
-            map.pop(task_id, None)
+        for mapping in self._pending_results:
+            mapping.pop(task_id, None)
 
     def on_result_fulfilled(self, result):
         self.result_consumer.cancel_for(result.id)

@@ -27,3 +27,4 @@
     testing
     extending
     configuration
+    sphinx

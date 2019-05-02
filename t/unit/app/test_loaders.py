@@ -93,10 +93,11 @@ class test_LoaderBase:
         def trigger_exception(**kwargs):
             raise ImportError('Dummy ImportError')
         from celery.signals import import_modules
-        import_modules.connect(trigger_exception)
+        x = import_modules.connect(trigger_exception)
         self.app.conf.imports = ('os', 'sys')
         with pytest.raises(ImportError):
             self.loader.import_default_modules()
+        import_modules.disconnect(x)
 
     def test_import_from_cwd_custom_imp(self):
         imp = Mock(name='imp')
@@ -235,10 +236,17 @@ class test_autodiscovery:
 
     def test_find_related_module(self):
         with patch('importlib.import_module') as imp:
-            with patch('imp.find_module') as find:
-                imp.return_value = Mock()
-                imp.return_value.__path__ = 'foo'
-                base.find_related_module(base, 'tasks')
+            imp.return_value = Mock()
+            imp.return_value.__path__ = 'foo'
+            assert base.find_related_module('bar', 'tasks').__path__ == 'foo'
+            imp.assert_any_call('bar')
+            imp.assert_any_call('bar.tasks')
 
-                find.side_effect = ImportError()
-                base.find_related_module(base, 'tasks')
+            imp.reset_mock()
+            assert base.find_related_module('bar', None).__path__ == 'foo'
+            imp.assert_called_once_with('bar')
+
+            imp.side_effect = ImportError()
+            with pytest.raises(ImportError):
+                base.find_related_module('bar', 'tasks')
+            assert base.find_related_module('bar.foo', 'tasks') is None
