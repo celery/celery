@@ -113,7 +113,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_MESSAGE_COMPRESSION``             :setting:`result_compression`
 ``CELERY_RESULT_EXCHANGE``                 :setting:`result_exchange`
 ``CELERY_RESULT_EXCHANGE_TYPE``            :setting:`result_exchange_type`
-``CELERY_TASK_RESULT_EXPIRES``             :setting:`result_expires`
+``CELERY_RESULT_EXPIRES``                  :setting:`result_expires`
 ``CELERY_RESULT_PERSISTENT``               :setting:`result_persistent`
 ``CELERY_RESULT_SERIALIZER``               :setting:`result_serializer`
 ``CELERY_RESULT_DBURI``                    Use :setting:`result_backend` instead.
@@ -2577,6 +2577,15 @@ be 1 second. If you need near millisecond precision you can set this to 0.1.
 Default: Enabled by default.
 
 Specify if remote control of the workers is enabled.
+
+.. setting:: worker_proc_alive_timeout
+
+``worker_proc_alive_timeout``
+~~~~~~~~~~~~~~~~~~~~
+
+Default: 4.0.
+
+The timeout in seconds (int/float) when waiting for a new worker process to start up.
 
 .. _conf-events:
 

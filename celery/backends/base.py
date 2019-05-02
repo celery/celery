@@ -274,7 +274,7 @@ class Backend(object):
                     exc_type = from_utf8(exc['exc_type'])
                     try:
                         cls = getattr(sys.modules[exc_module], exc_type)
-                    except KeyError:
+                    except (KeyError, AttributeError):
                         cls = create_exception_cls(exc_type,
                                                    celery.exceptions.__name__)
                 exc_msg = exc['exc_message']
@@ -699,7 +699,7 @@ class BaseKeyValueStoreBackend(Backend):
         if self.app.conf.find_value_for_key('extended', 'result'):
             if request:
                 request_meta = {
-                    'name': getattr(request, 'task_name', None),
+                    'name': getattr(request, 'task', None),
                     'args': getattr(request, 'args', None),
                     'kwargs': getattr(request, 'kwargs', None),
                     'worker': getattr(request, 'hostname', None),
