@@ -7,12 +7,12 @@ from collections import deque
 from datetime import datetime, timedelta
 from functools import partial
 from threading import Event
-from pprint import pprint
 
 import pytest
 from amqp import ChannelError
 from case import Mock, mock, patch, skip
 from kombu import Connection
+from kombu.asynchronous import get_event_loop
 from kombu.common import QoS, ignore_errors
 from kombu.transport.base import Message
 from kombu.transport.memory import Transport
@@ -795,51 +795,52 @@ class test_WorkController(ConsumerCase):
     @pytest.mark.nothreads_not_lingering
     @mock.sleepdeprived(module=autoscale)
     def test_with_autoscaler_file_descriptor_safety(self):
-        from kombu.asynchronous import get_event_loop
+        # Given: a test celery worker instance with auto scaling
         worker = self.create_worker(
-            autoscale=[10, 3], use_eventloop=True,
+            autoscale=[10, 5], use_eventloop=True,
             timer_cls='celery.utils.timer2.Timer',
             threads=False,
         )
+        # Given: This test requires a QoS defined on the worker consumer
         worker.consumer.qos = qos = QoS(lambda prefetch_count: prefetch_count, 2)
         qos.update()
-        auto_scaler = worker.autoscaler
 
-        pprint("Worker start!!!")
-        worker.pool.on_start()
-        #pprint("Pool type: ")
-        #pprint(worker.pool)
-        #pprint(type(worker.pool))
-        #pprint(worker.blueprint)
-        #pprint(vars(worker))
-        #pprint(vars(worker.blueprint))
-        #pprint(vars(worker.consumer))
-        #pprint(auto_scaler.hub)
+        # Given: We have started the worker pool
+        worker.pool.start()
+
+        # Then: the worker pool is the same as the autoscaler pool
+        auto_scaler = worker.autoscaler
+        assert worker.pool == auto_scaler.pool
+
+        # Given: Utilize kombu to get the global hub state
         hub = get_event_loop()
-        pprint("The Hub:  ")
-        pprint(hub)
-        pprint(worker.pool.num_processes)
-        assert worker.autoscaler
+        # Given: Initial call the Async Pool to register events works fine
+        worker.pool.register_with_event_loop(hub)
+
+        # Create some mock queue message and read from them
         _keep = [Mock(name='req{0}'.format(i)) for i in range(20)]
         [state.task_reserved(m) for m in _keep]
         auto_scaler.body()
-        pprint(worker.pool.num_processes)
-        state.reserved_requests.clear()
-        auto_scaler._last_scale_up = monotonic() - 10000
-        auto_scaler.body()
-        pprint(worker.pool.num_processes)
-        worker.pool.register_with_event_loop(hub)
-        _keep = [Mock(name='re{0}'.format(i)) for i in range(10)]
-        [state.task_reserved(m) for m in _keep]
-        auto_scaler.body()
-        pprint(worker.pool.num_processes)
-        worker.pool.register_with_event_loop(hub)
-        worker.terminate()
 
+        # Simulate a file descriptor from the list is closed by the OS
+        # auto_scaler.force_scale_down(5)
+        # This actually works -- it releases the semaphore properly
+        # Same with calling .terminate() on the process directly
+        for fd, proc in worker.pool._pool._fileno_to_outq.items():
+            # however opening this fd as a file and closing it will do it
+            queue_worker_socket = open(fd, "w")
+            queue_worker_socket.close()
+            break  # Only need to do this once
+
+        # When: Calling again to register with event loop ...
+        worker.pool.register_with_event_loop(hub)
+
+        # Then: We got the OSError: [Errno 9] Bad file descriptor
+        # because the code assumes the OS would not do this to us!
+
+        # Finally:  Clean up so the threads before/after fixture passes
+        worker.terminate()
         worker.pool.terminate()
-        pprint("Pool terminated")
-        #worker.terminate()
-        pprint("End of test!")
 
     def test_dont_stop_or_terminate(self):
         worker = self.app.WorkController(concurrency=1, loglevel=0)

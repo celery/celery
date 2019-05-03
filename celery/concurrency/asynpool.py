@@ -305,8 +305,6 @@ class ResultHandler(_pool.ResultHandler):
         return on_result_readable
 
     def register_with_event_loop(self, hub):
-        from pprint import pprint
-        pprint("INSIDE ResultHandler register_with_event_loop!!!")
         self.handle_event = self._make_process_result(hub)
 
     def handle_event(self, *args):
@@ -477,14 +475,10 @@ class AsynPool(_pool.Pool):
         from pprint import pprint
         pprint("INSIDE register_with_event_loop!!!")
         self._result_handler.register_with_event_loop(hub)
-        pprint("2!")
         self.handle_result_event = self._result_handler.handle_event
         self._create_timelimit_handlers(hub)
-        pprint("3!")
         self._create_process_handlers(hub)
-        pprint("4!")
         self._create_write_handlers(hub)
-        pprint("5!")
 
         # Add handler for when a process exits (calls maintain_pool)
         [self._track_child_process(w, hub) for w in self._pool]
