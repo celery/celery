@@ -25,7 +25,7 @@ from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
                                WorkerTerminate)
 from celery.five import Empty
 from celery.five import Queue as FastQueue
-from celery.five import range, monotonic
+from celery.five import range
 from celery.platforms import EX_FAILURE
 from celery.utils.nodenames import worker_direct
 from celery.utils.serialization import pickle
