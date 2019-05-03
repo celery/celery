@@ -141,7 +141,10 @@ class Blueprint(object):
                  description=None, reverse=True, propagate=True, args=()):
         description = description or method.replace('_', ' ')
         steps = reversed(parent.steps) if reverse else parent.steps
+        from pprint import pprint
+        pprint("send_all STEPS:  ")
         for step in steps:
+            pprint(step)
             if step:
                 fun = getattr(step, method, None)
                 if fun is not None:

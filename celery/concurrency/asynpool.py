@@ -305,6 +305,8 @@ class ResultHandler(_pool.ResultHandler):
         return on_result_readable
 
     def register_with_event_loop(self, hub):
+        from pprint import pprint
+        pprint("INSIDE ResultHandler register_with_event_loop!!!")
         self.handle_event = self._make_process_result(hub)
 
     def handle_event(self, *args):
@@ -472,16 +474,25 @@ class AsynPool(_pool.Pool):
 
     def register_with_event_loop(self, hub):
         """Register the async pool with the current event loop."""
+        from pprint import pprint
+        pprint("INSIDE register_with_event_loop!!!")
         self._result_handler.register_with_event_loop(hub)
+        pprint("2!")
         self.handle_result_event = self._result_handler.handle_event
         self._create_timelimit_handlers(hub)
+        pprint("3!")
         self._create_process_handlers(hub)
+        pprint("4!")
         self._create_write_handlers(hub)
+        pprint("5!")
 
         # Add handler for when a process exits (calls maintain_pool)
         [self._track_child_process(w, hub) for w in self._pool]
         # Handle_result_event is called whenever one of the
         # result queues are readable.
+        pprint("Printing all of the FDs in _fileno_to_outq: ")
+        for fd in self._fileno_to_outq:
+            pprint(fd)
         [hub.add_reader(fd, self.handle_result_event, fd)
          for fd in self._fileno_to_outq]
 
@@ -1057,7 +1068,7 @@ class AsynPool(_pool.Pool):
         return inq, outq, synq
 
     def on_process_alive(self, pid):
-        """Called when reciving the :const:`WORKER_UP` message.
+        """Called when receiving the :const:`WORKER_UP` message.
 
         Marks the process as ready to receive work.
         """

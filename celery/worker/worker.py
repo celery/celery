@@ -202,6 +202,8 @@ class WorkController(object):
 
     def start(self):
         try:
+            from pprint import pprint
+            pprint("Blueprint start: ")
             self.blueprint.start(self)
         except WorkerTerminate:
             self.terminate()
@@ -214,6 +216,8 @@ class WorkController(object):
             self.stop(exitcode=EX_FAILURE)
 
     def register_with_event_loop(self, hub):
+        from pprint import pprint
+        pprint("Worker register_with_event_loop calls blueprint.send_all")
         self.blueprint.send_all(
             self, 'register_with_event_loop', args=(hub,),
             description='hub.register',

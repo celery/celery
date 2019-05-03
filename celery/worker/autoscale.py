@@ -52,6 +52,8 @@ class WorkerComponent(bootsteps.StartStopStep):
         return scaler if not w.use_eventloop else None
 
     def register_with_event_loop(self, w, hub):
+        from pprint import pprint
+        pprint("WorkerComponent register_with_event_loop")
         w.consumer.on_task_message.add(w.autoscaler.maybe_scale)
         hub.call_repeatedly(
             w.autoscaler.keepalive, w.autoscaler.maybe_scale,

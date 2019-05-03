@@ -7,10 +7,11 @@ from collections import deque
 from datetime import datetime, timedelta
 from functools import partial
 from threading import Event
+from pprint import pprint
 
 import pytest
 from amqp import ChannelError
-from case import Mock, patch, skip
+from case import Mock, mock, patch, skip
 from kombu import Connection
 from kombu.common import QoS, ignore_errors
 from kombu.transport.base import Message
@@ -24,12 +25,12 @@ from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
                                WorkerTerminate)
 from celery.five import Empty
 from celery.five import Queue as FastQueue
-from celery.five import range
+from celery.five import range, monotonic
 from celery.platforms import EX_FAILURE
 from celery.utils.nodenames import worker_direct
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
-from celery.worker import components, consumer, state
+from celery.worker import autoscale, components, consumer, state
 from celery.worker import worker as worker_module
 from celery.worker.consumer import Consumer
 from celery.worker.pidbox import gPidbox
@@ -790,6 +791,55 @@ class test_WorkController(ConsumerCase):
             timer_cls='celery.utils.timer2.Timer',
         )
         assert worker.autoscaler
+
+    @pytest.mark.nothreads_not_lingering
+    @mock.sleepdeprived(module=autoscale)
+    def test_with_autoscaler_file_descriptor_safety(self):
+        from kombu.asynchronous import get_event_loop
+        worker = self.create_worker(
+            autoscale=[10, 3], use_eventloop=True,
+            timer_cls='celery.utils.timer2.Timer',
+            threads=False,
+        )
+        worker.consumer.qos = qos = QoS(lambda prefetch_count: prefetch_count, 2)
+        qos.update()
+        auto_scaler = worker.autoscaler
+
+        pprint("Worker start!!!")
+        worker.pool.on_start()
+        #pprint("Pool type: ")
+        #pprint(worker.pool)
+        #pprint(type(worker.pool))
+        #pprint(worker.blueprint)
+        #pprint(vars(worker))
+        #pprint(vars(worker.blueprint))
+        #pprint(vars(worker.consumer))
+        #pprint(auto_scaler.hub)
+        hub = get_event_loop()
+        pprint("The Hub:  ")
+        pprint(hub)
+        pprint(worker.pool.num_processes)
+        assert worker.autoscaler
+        _keep = [Mock(name='req{0}'.format(i)) for i in range(20)]
+        [state.task_reserved(m) for m in _keep]
+        auto_scaler.body()
+        pprint(worker.pool.num_processes)
+        state.reserved_requests.clear()
+        auto_scaler._last_scale_up = monotonic() - 10000
+        auto_scaler.body()
+        pprint(worker.pool.num_processes)
+        worker.pool.register_with_event_loop(hub)
+        _keep = [Mock(name='re{0}'.format(i)) for i in range(10)]
+        [state.task_reserved(m) for m in _keep]
+        auto_scaler.body()
+        pprint(worker.pool.num_processes)
+        worker.pool.register_with_event_loop(hub)
+        worker.terminate()
+
+        worker.pool.terminate()
+        pprint("Pool terminated")
+        #worker.terminate()
+        pprint("End of test!")
 
     def test_dont_stop_or_terminate(self):
         worker = self.app.WorkController(concurrency=1, loglevel=0)
