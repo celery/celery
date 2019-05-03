@@ -344,10 +344,6 @@ class Consumer(object):
             pass
 
     def register_with_event_loop(self, hub):
-        from pprint import pprint
-        pprint("INSIDE Consumer register_with_event_loop!!!")
-        # pprint(hub)
-        # pprint(type(hub))
         self.blueprint.send_all(
             self, 'register_with_event_loop', args=(hub,),
             description='Hub.register',

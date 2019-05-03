@@ -133,11 +133,6 @@ def AAA_disable_multiprocessing():
 
 
 def alive_threads():
-    from pprint import pprint
-    for thread in threading.enumerate():
-        if thread.is_alive():
-            pprint(thread)
-            pprint(vars(thread))
     return [thread for thread in threading.enumerate() if thread.is_alive()]
 
 
@@ -169,11 +164,6 @@ def record_threads_at_startup(request):
 
 @pytest.fixture(autouse=True)
 def threads_not_lingering(request):
-    from pprint import pprint
-    pprint("threads_not_lingering:  ")
-    pprint(request)
-    pprint(request.session)
-    pprint(request.session._threads_at_startup)
     yield
     assert request.session._threads_at_startup == alive_threads()
 

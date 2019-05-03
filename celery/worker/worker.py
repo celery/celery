@@ -202,8 +202,6 @@ class WorkController(object):
 
     def start(self):
         try:
-            from pprint import pprint
-            pprint("Blueprint start: ")
             self.blueprint.start(self)
         except WorkerTerminate:
             self.terminate()
