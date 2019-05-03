@@ -828,15 +828,14 @@ class test_WorkController(ConsumerCase):
         # Same with calling .terminate() on the process directly
         for fd, proc in worker.pool._pool._fileno_to_outq.items():
             # however opening this fd as a file and closing it will do it
-            queue_worker_socket = open(fd, "w")
+            queue_worker_socket = open(str(fd), "w")
             queue_worker_socket.close()
             break  # Only need to do this once
 
         # When: Calling again to register with event loop ...
         worker.pool.register_with_event_loop(hub)
 
-        # Then: We got the OSError: [Errno 9] Bad file descriptor
-        # because the code assumes the OS would not do this to us!
+        # Then: test did not raise "OSError: [Errno 9] Bad file descriptor!"
 
         # Finally:  Clean up so the threads before/after fixture passes
         worker.terminate()
