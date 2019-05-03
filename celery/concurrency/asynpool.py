@@ -472,8 +472,6 @@ class AsynPool(_pool.Pool):
 
     def register_with_event_loop(self, hub):
         """Register the async pool with the current event loop."""
-        from pprint import pprint
-        pprint("INSIDE register_with_event_loop!!!")
         self._result_handler.register_with_event_loop(hub)
         self.handle_result_event = self._result_handler.handle_event
         self._create_timelimit_handlers(hub)
@@ -484,9 +482,11 @@ class AsynPool(_pool.Pool):
         [self._track_child_process(w, hub) for w in self._pool]
         # Handle_result_event is called whenever one of the
         # result queues are readable.
-        pprint("Printing all of the FDs in _fileno_to_outq: ")
-        for fd in self._fileno_to_outq:
-            pprint(fd)
+        # for fd in self._fileno_to_outq:  # TODO this will be the fix
+        #     try:
+        #         hub.add_reader(fd, self.handle_result_event, fd)
+        #     except OSError as e:
+        #         log.info("")
         [hub.add_reader(fd, self.handle_result_event, fd)
          for fd in self._fileno_to_outq]
 

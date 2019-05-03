@@ -63,11 +63,6 @@ class Hub(bootsteps.StartStopStep):
     requires = (Timer,)
 
     def __init__(self, w, **kwargs):
-        from pprint import pprint
-        pprint("Instantiating new Hub object!")
-        pprint(self)
-        pprint(w)
-        pprint(kwargs)
         w.hub = None
         super(Hub, self).__init__(w, **kwargs)
 

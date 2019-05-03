@@ -104,9 +104,6 @@ class TaskPool(BasePool):
         forking_enable(self.forking_enable)
         Pool = (self.BlockingPool if self.options.get('threads', True)
                 else self.Pool)
-        from pprint import pprint
-        pprint("Task Pool will use Pool class: ")
-        pprint(Pool)
         proc_alive_timeout = (
             self.app.conf.worker_proc_alive_timeout if self.app
             else None
@@ -135,12 +132,9 @@ class TaskPool(BasePool):
         return self._pool.did_start_ok()
 
     def register_with_event_loop(self, loop):
-        from pprint import pprint
-        pprint("PREFORK: register_with_event_loop")
         try:
             reg = self._pool.register_with_event_loop
         except AttributeError:
-            pprint("ATTRIBUTE ERROR!")
             return
         return reg(loop)
 
