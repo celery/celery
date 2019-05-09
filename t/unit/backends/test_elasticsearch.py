@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from case import Mock, sentinel, skip
+from case import Mock, sentinel, skip, patch
 
 from celery.app import backends
 from celery.backends import elasticsearch as module
@@ -79,9 +79,44 @@ class test_ElasticsearchBackend:
 
             assert x.index == 'index'
             assert x.doc_type == 'doc_type'
-            assert x.scheme == 'elasticsearch'
+            assert x.scheme == 'http'
             assert x.host == 'localhost'
             assert x.port == 9200
+
+    @patch('elasticsearch.Elasticsearch')
+    def test_get_server_with_auth(self, mock_es_client):
+        url = 'elasticsearch+https://fake_user:fake_pass@localhost:9200/index/doc_type'
+        with self.Celery(backend=url) as app:
+            x = app.backend
+
+            assert x.username == 'fake_user'
+            assert x.password == 'fake_pass'
+            assert x.scheme == 'https'
+
+            x._get_server()
+            mock_es_client.assert_called_once_with(
+                'localhost:9200',
+                http_auth=('fake_user', 'fake_pass'),
+                max_retries=x.es_max_retries,
+                retry_on_timeout=x.es_retry_on_timeout,
+                scheme='https',
+                timeout=x.es_timeout,
+            )
+
+    @patch('elasticsearch.Elasticsearch')
+    def test_get_server_without_auth(self, mock_es_client):
+        url = 'elasticsearch://localhost:9200/index/doc_type'
+        with self.Celery(backend=url) as app:
+            x = app.backend
+            x._get_server()
+            mock_es_client.assert_called_once_with(
+                'localhost:9200',
+                http_auth=None,
+                max_retries=x.es_max_retries,
+                retry_on_timeout=x.es_retry_on_timeout,
+                scheme='http',
+                timeout=x.es_timeout,
+            )
 
     def test_index(self):
         x = ElasticsearchBackend(app=self.app)
