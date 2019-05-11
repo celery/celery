@@ -95,13 +95,10 @@ class Request(object):
                  headers=None, decoded=False, utc=True,
                  maybe_make_aware=maybe_make_aware,
                  maybe_iso8601=maybe_iso8601, **opts):
-        if headers is None:
-            headers = message.headers
-        if body is None:
-            body = message.body
-        self.app = app
         self.message = message
-        self.body = body
+        self.request_dict = message.headers if headers is None else headers
+        self.body = message.body if body is None else body
+        self.app = app
         self.utc = utc
         self._decoded = decoded
         if decoded:
@@ -111,27 +108,27 @@ class Request(object):
                 message.content_type, message.content_encoding,
             )
 
-        self.id = headers['id']
-        type = self.type = self.name = headers['task']
-        self.root_id = headers.get('root_id')
-        self.parent_id = headers.get('parent_id')
-        if 'shadow' in headers:
-            self.name = headers['shadow'] or self.name
-        timelimit = headers.get('timelimit', None)
+        self.id = self.request_dict['id']
+        self.type = self.name = self.request_dict['task']
+        self.root_id = self.request_dict.get('root_id')
+        self.parent_id = self.request_dict.get('parent_id')
+        if 'shadow' in self.request_dict:
+            self.name = self.request_dict['shadow'] or self.name
+        timelimit = self.request_dict.get('timelimit', None)
         if timelimit:
             self.time_limits = timelimit
-        self.argsrepr = headers.get('argsrepr', '')
-        self.kwargsrepr = headers.get('kwargsrepr', '')
+        self.argsrepr = self.request_dict.get('argsrepr', '')
+        self.kwargsrepr = self.request_dict.get('kwargsrepr', '')
         self.on_ack = on_ack
         self.on_reject = on_reject
         self.hostname = hostname or gethostname()
         self.eventer = eventer
         self.connection_errors = connection_errors or ()
-        self.task = task or self.app.tasks[type]
+        self.task = task or self.app.tasks[self.type]
 
         # timezone means the message is timezone-aware, and the only timezone
         # supported at this point is UTC.
-        eta = headers.get('eta')
+        eta = self.request_dict.get('eta')
         if eta is not None:
             try:
                 eta = maybe_iso8601(eta)
@@ -142,7 +139,7 @@ class Request(object):
         else:
             self.eta = None
 
-        expires = headers.get('expires')
+        expires = self.request_dict.get('expires')
         if expires is not None:
             try:
                 expires = maybe_iso8601(expires)
@@ -155,22 +152,26 @@ class Request(object):
 
         delivery_info = message.delivery_info or {}
         properties = message.properties or {}
-        headers.update({
+        self._delivery_info = {
+            'exchange': delivery_info.get('exchange'),
+            'routing_key': delivery_info.get('routing_key'),
+            'priority': properties.get('priority'),
+            'redelivered': delivery_info.get('redelivered')
+        }
+        self.__payload = self.body if self._decoded else self.message.payload
+        self.args, self.kwargs, embed = self.__payload
+        self.request_dict.update({
             'reply_to': properties.get('reply_to'),
             'correlation_id': properties.get('correlation_id'),
-            'delivery_info': {
-                'exchange': delivery_info.get('exchange'),
-                'routing_key': delivery_info.get('routing_key'),
-                'priority': properties.get('priority'),
-                'redelivered': delivery_info.get('redelivered'),
-            }
-
-        })
-        self.request_dict = headers
+            'delivery_info': self._delivery_info,
+            'hostname': self.hostname,
+            'args': self.args,
+            'kwargs': self.kwargs
+        }, **embed or {})
 
     @property
     def delivery_info(self):
-        return self.request_dict['delivery_info']
+        return self._delivery_info
 
     def execute_using_pool(self, pool, **kwargs):
         """Used by the worker to send this task to the pool.
@@ -221,16 +222,12 @@ class Request(object):
         request = self.request_dict
         # pylint: disable=unpacking-non-sequence
         #    payload is a property, so pylint doesn't think it's a tuple.
-        args, kwargs, embed = self._payload
         request.update({
             'loglevel': loglevel,
             'logfile': logfile,
-            'hostname': self.hostname,
             'is_eager': False,
-            'args': args,
-            'kwargs': kwargs
-        }, **embed or {})
-        retval = trace_task(self.task, self.id, args, kwargs, request,
+        })
+        retval = trace_task(self.task, self.id, self.args, self.kwargs, request,
                             hostname=self.hostname, loader=self.app.loader,
                             app=self.app)[0]
         self.acknowledge()
@@ -411,8 +408,8 @@ class Request(object):
         return {
             'id': self.id,
             'name': self.name,
-            'args': self.argsrepr,
-            'kwargs': self.kwargsrepr,
+            'args': self.args,
+            'kwargs': self.kwargs,
             'type': self.type,
             'hostname': self.hostname,
             'time_start': self.time_start,
@@ -480,7 +477,7 @@ class Request(object):
 
     @cached_property
     def _payload(self):
-        return self.body if self._decoded else self.message.payload
+        return self.__payload
 
     @cached_property
     def chord(self):
