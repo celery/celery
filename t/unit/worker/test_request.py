@@ -224,6 +224,34 @@ class test_Request(RequestCase):
         assert self.get_request(
             self.add.s(2, 2).set(shadow='fooxyz')).name == 'fooxyz'
 
+    def test_args(self):
+        args = [2, 2]
+        assert self.get_request(
+            self.add.s(*args)).args == args
+        
+    def test_kwargs(self):
+        kwargs = {'1': '2', '3': '4'}
+        assert self.get_request(
+            self.add.s(**kwargs)).kwargs == kwargs
+    
+    def test_info_function(self):
+        import string
+        import random
+        kwargs = {}
+        for i in range(0, 2):
+            kwargs[i] = ''.join(random.choice(string.ascii_lowercase) for i in range(1000))
+        assert self.get_request(
+            self.add.s(**kwargs)).info(safe=True).get('kwargs') == kwargs
+        assert self.get_request(
+            self.add.s(**kwargs)).info(safe=False).get('kwargs') == kwargs
+        args = []
+        for i in range(0, 2):
+            args.append(''.join(random.choice(string.ascii_lowercase) for i in range(1000)))
+        assert self.get_request(
+            self.add.s(*args)).info(safe=True).get('args') == args
+        assert self.get_request(
+            self.add.s(*args)).info(safe=False).get('args') == args
+    
     def test_no_shadow_header(self):
         request = self.get_request(self.add.s(2, 2),
                                    exclude_headers=['shadow'])
