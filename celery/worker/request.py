@@ -95,6 +95,7 @@ class Request(object):
                  headers=None, decoded=False, utc=True,
                  maybe_make_aware=maybe_make_aware,
                  maybe_iso8601=maybe_iso8601, **opts):
+        self._message = message
         self._request_dict = message.headers if headers is None else headers
         self._body = message.body if body is None else body
         self._app = app
@@ -173,6 +174,10 @@ class Request(object):
         return self._delivery_info
     
     @property
+    def message(self):
+        return self._message
+    
+    @property
     def request_dict(self):
         return self._request_dict
     
@@ -232,6 +237,10 @@ class Request(object):
     def on_reject(self):
         return self._on_reject
     
+    @on_reject.setter
+    def on_reject(self, value):
+        self._on_reject = value
+    
     @property
     def hostname(self):
         return self._hostname
@@ -239,6 +248,14 @@ class Request(object):
     @property
     def eventer(self):
         return self._eventer
+    
+    @eventer.setter
+    def expires(self, eventer):
+        self._eventer = eventer
+    
+    @property
+    def connection_errors(self):
+        return self._connection_errors
     
     @property
     def task(self):
@@ -251,6 +268,10 @@ class Request(object):
     @property
     def expires(self):
         return self._expires
+    
+    @expires.setter
+    def expires(self, value):
+        self._expires = value
     
     @property
     def tzlocal(self):
