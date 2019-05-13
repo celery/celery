@@ -176,6 +176,8 @@ def _select(readers=None, writers=None, err=None, timeout=0,
         return poll(readers, writers, err, timeout)
     except (select.error, socket.error) as exc:
         # Workaround for celery/celery#4513
+        # TODO: Remove the fallback to the first arg of the exception
+        # once we drop Python 2.7.
         try:
             _errno = exc.errno
         except AttributeError:
