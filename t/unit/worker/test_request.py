@@ -225,7 +225,7 @@ class test_Request(RequestCase):
             self.add.s(2, 2).set(shadow='fooxyz')).name == 'fooxyz'
 
     def test_args(self):
-        args = [2, 2]
+        args = (2, 2)
         assert self.get_request(
             self.add.s(*args)).args == args
         
@@ -239,7 +239,7 @@ class test_Request(RequestCase):
         import random
         kwargs = {}
         for i in range(0, 2):
-            kwargs[i] = ''.join(random.choice(string.ascii_lowercase) for i in range(1000))
+            kwargs[str(i)] = ''.join(random.choice(string.ascii_lowercase) for i in range(1000))
         assert self.get_request(
             self.add.s(**kwargs)).info(safe=True).get('kwargs') == kwargs
         assert self.get_request(
