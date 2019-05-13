@@ -185,6 +185,10 @@ class Request(object):
         return self._app
     
     @property
+    def utc(self):
+        return self._utc
+    
+    @property
     def content_type(self):
         return self._content_type
     
