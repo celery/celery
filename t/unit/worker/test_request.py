@@ -247,10 +247,10 @@ class test_Request(RequestCase):
         args = []
         for i in range(0, 2):
             args.append(''.join(random.choice(string.ascii_lowercase) for i in range(1000)))
-        assert self.get_request(
-            self.add.s(*args)).info(safe=True).get('args') == args
-        assert self.get_request(
-            self.add.s(*args)).info(safe=False).get('args') == args
+        assert list(self.get_request(
+            self.add.s(*args)).info(safe=True).get('args')) == args
+        assert list(self.get_request(
+            self.add.s(*args)).info(safe=False).get('args')) == args
     
     def test_no_shadow_header(self):
         request = self.get_request(self.add.s(2, 2),

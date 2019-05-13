@@ -250,7 +250,7 @@ class Request(object):
         return self._eventer
     
     @eventer.setter
-    def expires(self, eventer):
+    def eventer(self, eventer):
         self._eventer = eventer
     
     @property
