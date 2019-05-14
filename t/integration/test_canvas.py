@@ -225,6 +225,12 @@ class test_result_set:
 
 
 class test_group:
+    @flaky
+    def test_ready_with_exception(self):
+        g = group([add.s(1, 2), raise_error.s()])
+        result = g.apply_async()
+        while not result.ready():
+            pass
 
     @flaky
     def test_empty_group_result(self, manager):
