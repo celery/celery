@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import urllib.error
 from time import sleep
 
 from celery import chain, chord, group, shared_task
@@ -22,6 +23,11 @@ def add(x, y):
     """Add two numbers."""
     return x + y
 
+
+@shared_task
+def raise_custom_error():
+    """Deliberately raises an HTTPError """
+    raise urllib.error.HTTPError()
 
 @shared_task
 def raise_error():

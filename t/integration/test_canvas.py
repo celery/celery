@@ -12,7 +12,7 @@ from .conftest import flaky, get_active_redis_channels, get_redis_connection
 from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, build_chain_inside_task, chord_error,
                     collect_ids, delayed_sum, delayed_sum_with_soft_guard,
-                    fail, identity, ids, print_unicode, raise_error,
+                    fail, identity, ids, print_unicode, raise_error, raise_custom_error,
                     redis_echo, second_order_replace1, tsum)
 
 TIMEOUT = 120
@@ -231,6 +231,14 @@ class test_group:
         result = g.apply_async()
         while not result.ready():
             pass
+
+
+    @flaky
+    def test_not_ready_with_http_exception(self):
+        g = group([add.s(1, 2), raise_custom_error.s()])
+        result = g.apply_async()
+        with pytest.raises(TypeError) as e:
+            result.join_native()
 
     @flaky
     def test_empty_group_result(self, manager):
