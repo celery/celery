@@ -183,7 +183,7 @@ class DjangoWorkerFixup(object):
     def _close_database(self):
         for conn in self._db.connections.all():
             try:
-                conn.close_if_unusable_or_obsolete()
+                conn.close()
             except self.interface_errors:
                 pass
             except self.DatabaseError as exc:
