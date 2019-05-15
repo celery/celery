@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-import urllib
+import urllib.error
 from datetime import datetime, timedelta
 
 import pytest
@@ -240,6 +240,22 @@ class test_group:
         result = g.apply_async()
         with pytest.raises(TypeError) as e:
             result.join_native()
+
+    @flaky
+    def test_raises_wrong_exception(self):
+        g = group([add.s(1, 2), raise_custom_error.s()])
+        result = g.apply_async()
+        with pytest.raises(urllib.error.HTTPError) as e:
+            result.join_native()
+
+
+    @flaky
+    def test_raise_correct_error(self):
+        g = group([add.s(1, 2), raise_error.s()])
+        result = g.apply_async()
+        with pytest.raises(ValueError) as e:
+            result.join_native()
+
 
     @flaky
     def test_empty_group_result(self, manager):
