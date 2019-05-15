@@ -27,7 +27,7 @@ def add(x, y):
 @shared_task
 def raise_custom_error():
     """Deliberately raises an HTTPError """
-    raise urllib.error.HTTPError()
+    raise urllib.error.HTTPError("1", 400, "1", "1", "1")
 
 @shared_task
 def raise_error():

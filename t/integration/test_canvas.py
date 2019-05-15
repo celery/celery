@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+import urllib
 from datetime import datetime, timedelta
 
 import pytest
