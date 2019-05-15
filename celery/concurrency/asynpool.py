@@ -484,8 +484,16 @@ class AsynPool(_pool.Pool):
         [self._track_child_process(w, hub) for w in self._pool]
         # Handle_result_event is called whenever one of the
         # result queues are readable.
-        [hub.add_reader(fd, self.handle_result_event, fd)
-         for fd in self._fileno_to_outq]
+        stale_fds = []
+        for fd in self._fileno_to_outq:
+            try:
+                hub.add_reader(fd, self.handle_result_event, fd)
+            except OSError:
+                logger.info("Encountered OSError while trying "
+                            "to access fd %s ", fd, exc_info=True)
+                stale_fds.append(fd)  # take note of stale fd
+        for fd in stale_fds:  # Remove now defunct file descriptors
+            self._fileno_to_outq.pop(fd, None)
 
         # Timers include calling maintain_pool at a regular interval
         # to be certain processes are restarted.
@@ -1059,7 +1067,7 @@ class AsynPool(_pool.Pool):
         return inq, outq, synq
 
     def on_process_alive(self, pid):
-        """Called when reciving the :const:`WORKER_UP` message.
+        """Called when receiving the :const:`WORKER_UP` message.
 
         Marks the process as ready to receive work.
         """
