@@ -10,18 +10,32 @@ os:
     - linux
 stages:
   - test
+  - integration
   - lint
 env:
   global:
   - PYTHONUNBUFFERED=yes
   matrix:
   - MATRIX_TOXENV=unit
-  - MATRIX_TOXENV=integration-rabbitmq
-  - MATRIX_TOXENV=integration-redis
-  - MATRIX_TOXENV=integration-dynamodb
-  - MATRIX_TOXENV=integration-azureblockblob
+ 
 matrix:
   include:
+  - python: 3.7
+      env: MATRIX_TOXENV=integration-rabbitmq
+      stage: integration
+      
+  - python: 3.7
+      env: MATRIX_TOXENV=integration-redis
+      stage: integration
+      
+  - python: 3.7
+      env: MATRIX_TOXENV=integration-dynamodb
+      stage: integration
+      
+  - python: 3.7
+      env: MATRIX_TOXENV=integration-azureblockblob
+      stage: integration
+      
   - python: '3.7'
     env: TOXENV=flake8
     stage: lint
