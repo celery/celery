@@ -21,20 +21,20 @@ env:
 matrix:
   include:
   - python: 3.7
-      env: MATRIX_TOXENV=integration-rabbitmq
-      stage: integration
+    env: MATRIX_TOXENV=integration-rabbitmq
+    stage: integration
 
   - python: 3.7
-      env: MATRIX_TOXENV=integration-redis
-      stage: integration
+    env: MATRIX_TOXENV=integration-redis
+    stage: integration
 
   - python: 3.7
-      env: MATRIX_TOXENV=integration-dynamodb
-      stage: integration
+    env: MATRIX_TOXENV=integration-dynamodb
+    stage: integration
 
   - python: 3.7
-      env: MATRIX_TOXENV=integration-azureblockblob
-      stage: integration
+    env: MATRIX_TOXENV=integration-azureblockblob
+    stage: integration
 
   - python: '3.7'
     env: TOXENV=flake8
