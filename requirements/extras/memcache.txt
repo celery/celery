@@ -1,1 +1,2 @@
-pylibmc
+pylibmc; sys_platform != 'win32'
+python-memcached; sys_platform == 'win32'
