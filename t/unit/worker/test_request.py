@@ -228,12 +228,12 @@ class test_Request(RequestCase):
         args = (2, 2)
         assert self.get_request(
             self.add.s(*args)).args == args
-        
+
     def test_kwargs(self):
         kwargs = {'1': '2', '3': '4'}
         assert self.get_request(
             self.add.s(**kwargs)).kwargs == kwargs
-    
+
     def test_info_function(self):
         import string
         import random
@@ -251,7 +251,7 @@ class test_Request(RequestCase):
             self.add.s(*args)).info(safe=True).get('args')) == args
         assert list(self.get_request(
             self.add.s(*args)).info(safe=False).get('args')) == args
-    
+
     def test_no_shadow_header(self):
         request = self.get_request(self.add.s(2, 2),
                                    exclude_headers=['shadow'])
