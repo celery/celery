@@ -53,7 +53,7 @@ matrix:
     env: TOXENV=pydocstyle
     stage: lint
   - python: '2.7'
-    env: TOXENV=pydocstyle
+    env: TOXENV=flakeplus
     stage: lint
 
 before_install:
