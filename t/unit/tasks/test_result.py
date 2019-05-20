@@ -759,7 +759,7 @@ class test_GroupResult:
         ts = self.app.GroupResult(uuid(), subs)
         ts.save()
         with pytest.raises(RuntimeError,
-                           message="Test depends on current_app"):
+                           match="Test depends on current_app"):
             GroupResult.restore(ts.id)
 
     def test_join_native(self):
