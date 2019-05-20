@@ -3,6 +3,7 @@ sudo: required
 dist: xenial
 cache: pip
 python:
+  - '2.7'
   - '3.5'
   - '3.6'
   - '3.7'
@@ -51,6 +52,9 @@ matrix:
   - python: '3.7'
     env: TOXENV=pydocstyle
     stage: lint
+  - python: '2.7'
+    env: TOXENV=pydocstyle
+    stage: lint
 
 before_install:
     - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev
@@ -97,7 +101,7 @@ after_success:
               .tox/$TOXENV/bin/coverage xml
               .tox/$TOXENV/bin/codecov -e TOXENV
           fi;
-install: travis_retry pip --disable-pip-version-check install -U tox | cat
+install: pip --disable-pip-version-check install -U tox | cat
 script: tox -v -- -v
 notifications:
   email: false
