@@ -10,9 +10,9 @@ python:
 os:
     - linux
 stages:
-  - lint
   - test
   - integration
+  - lint
 env:
   global:
   - PYTHONUNBUFFERED=yes
