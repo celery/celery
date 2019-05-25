@@ -271,8 +271,9 @@ class MongoBackend(BaseBackend):
         conn = self._get_connection()
         db = conn[self.database_name]
         if self.user and self.password:
-            source = self.options.get('authsource', 
-                        self.database_name or 'admin'
+            source = self.options.get(
+                'authsource',
+                self.database_name or 'admin'
             )
             if not db.authenticate(self.user, self.password, source=source):
                 raise ImproperlyConfigured(

@@ -454,7 +454,8 @@ class test_MongoBackend:
         x.password = 'cere4l'
         with pytest.raises(ImproperlyConfigured):
             x._get_database()
-        db.authenticate.assert_called_with('jerry', 'cere4l')
+        db.authenticate.assert_called_with('jerry', 'cere4l',
+                                           source=x.database_name)
 
     def test_prepare_client_options(self):
         with patch('pymongo.version_tuple', new=(3, 0, 3)):
