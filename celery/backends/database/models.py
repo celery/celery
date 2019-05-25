@@ -54,8 +54,8 @@ class TaskExtended(Task):
     __table_args__ = {'sqlite_autoincrement': True, 'extend_existing': True}
 
     name = sa.Column(sa.String(155), nullable=True)
-    args = sa.Column(sa.Text, nullable=True)
-    kwargs = sa.Column(sa.Text, nullable=True)
+    args = sa.Column(sa.LargeBinary, nullable=True)
+    kwargs = sa.Column(sa.LargeBinary, nullable=True)
     worker = sa.Column(sa.String(155), nullable=True)
     retries = sa.Column(sa.Integer, nullable=True)
     queue = sa.Column(sa.String(155), nullable=True)
