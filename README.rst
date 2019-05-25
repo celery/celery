@@ -1,6 +1,6 @@
 .. image:: http://docs.celeryproject.org/en/latest/_images/celery-banner-small.png
 
-|build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
+|build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge| |[![Downloads](https://pepy.tech/badge/celery)](https://pepy.tech/project/celery)| | [![Downloads](https://pepy.tech/badge/celery/month)](https://pepy.tech/project/celery/month) |
 
 :Version: 4.3.0 (rhubarb)
 :Web: http://celeryproject.org/
