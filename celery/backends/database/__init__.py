@@ -8,6 +8,8 @@ from contextlib import contextmanager
 
 from vine.utils import wraps
 
+from kombu.utils.encoding import ensure_bytes
+
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
@@ -134,8 +136,12 @@ class DatabaseBackend(BaseBackend):
         task.traceback = traceback
         if self.app.conf.find_value_for_key('extended', 'result'):
             task.name = getattr(request, 'task_name', None)
-            task.args = self.encode(getattr(request, 'args', None))
-            task.kwargs = self.encode(getattr(request, 'kwargs', None))
+            task.args = ensure_bytes(
+                self.encode(getattr(request, 'args', None))
+            )
+            task.kwargs = ensure_bytes(
+                self.encode(getattr(request, 'kwargs', None))
+            )
             task.worker = getattr(request, 'hostname', None)
             task.retries = getattr(request, 'retries', None)
             task.queue = (
