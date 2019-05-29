@@ -855,14 +855,17 @@ class Task(object):
     def replace(self, sig):
         """Replace this task, with a new task inheriting the task id.
 
+        Execution of the host task ends immediately and no subsequent statements
+        will be run.
+
         .. versionadded:: 4.0
 
         Arguments:
             sig (~@Signature): signature to replace with.
 
         Raises:
-            ~@Ignore: This is always raised, so the best practice
-            is to always use ``raise self.replace(...)`` to convey
+            ~@Ignore: This is always raised when called in asynchrous context.
+            It is best to always use ``return self.replace(...)`` to convey
             to the reader that the task won't continue after being replaced.
         """
         chord = self.request.chord
@@ -888,8 +891,11 @@ class Task(object):
         )
         sig.freeze(self.request.id)
 
-        sig.delay()
-        raise Ignore('Replaced by new task')
+        if self.request.is_eager:
+            return sig.apply().get()
+        else:
+            sig.delay()
+            raise Ignore('Replaced by new task')
 
     def add_to_chord(self, sig, lazy=False):
         """Add signature to the chord the current task is a member of.
