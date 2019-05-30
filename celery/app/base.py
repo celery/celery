@@ -175,6 +175,8 @@ class Celery(object):
         config_source (Union[str, class]): Take configuration from a class,
             or object.  Attributes may include any settings described in
             the documentation.
+        task_cls (Union[str, Type[celery.app.task.Task]]): base task class to
+            use. See :ref:`this section <custom-task-cls-app-wide>` for usage.
     """
 
     #: This is deprecated, use :meth:`reduce_keys` instead

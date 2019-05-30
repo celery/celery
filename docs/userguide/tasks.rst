@@ -1456,8 +1456,10 @@ For example, a base Task class that caches a database connection:
                 self._db = Database.connect()
             return self._db
 
+Per task usage
+~~~~~~~~~~~~~~
 
-that can be added to tasks like this:
+The above can be added to each task like this:
 
 .. code-block:: python
 
@@ -1469,6 +1471,26 @@ that can be added to tasks like this:
 
 The ``db`` attribute of the ``process_rows`` task will then
 always stay the same in each process.
+
+.. _custom-task-cls-app-wide:
+
+App-wide usage
+~~~~~~~~~~~~~~
+
+You can also use your custom class in your whole Celery app by passing it as
+the ``task_cls`` argument when instantiating the app. This argument should be
+either a string giving the python path to your Task class or the class itself:
+
+.. code-block:: python
+
+    from celery import Celery
+
+    app = Celery('tasks', task_cls='your.module.path:DatabaseTask')
+
+This will make all your tasks declared using the decorator syntax within your
+app to use your ``DatabaseTask`` class and will all have a ``db`` attribute.
+
+The default value is the class provided by Celery: ``'celery.app.task:Task'``.
 
 Handlers
 --------
