@@ -41,7 +41,8 @@ class test_security(SecurityCase):
         except SerializerNotInstalled:
             pass
 
-    def test_disable_insecure_serializers(self):
+    def test_disable_insecure_serializers(self, allowed=None):
+        allowed = ['json'] if not allowed else allowed
         try:
             disabled = registry._disabled_content_types
             assert disabled
