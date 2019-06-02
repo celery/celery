@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import operator
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 from celery import signals
 from celery.concurrency import solo
@@ -25,7 +25,7 @@ class test_solo_TaskPool:
         assert x.info
 
     def test_on_worker_process_init_called(self):
-        """Upon the initialization of a new solo worker a worker_process_init 
+        """Upon the initialization of a new solo worker pool a worker_process_init
         signal should be emitted"""
         on_worker_process_init = Mock()
         signals.worker_process_init.connect(on_worker_process_init)
