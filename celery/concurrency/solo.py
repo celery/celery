@@ -20,7 +20,7 @@ class TaskPool(BasePool):
         super(TaskPool, self).__init__(*args, **kwargs)
         self.on_apply = apply_target
         self.limit = 1
-        signals.worker_process_init.send(sender=self)
+        signals.worker_process_init.send(sender=None)
 
     def _get_info(self):
         return {

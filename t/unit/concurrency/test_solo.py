@@ -29,5 +29,5 @@ class test_solo_TaskPool:
         signal should be emitted"""
         on_worker_process_init = Mock()
         signals.worker_process_init.connect(on_worker_process_init)
-        x = solo.TaskPool()
+        solo.TaskPool()
         assert on_worker_process_init.call_count == 1
