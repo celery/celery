@@ -279,7 +279,10 @@ class Backend(object):
                                                    celery.exceptions.__name__)
                 exc_msg = exc['exc_message']
                 try:
-                    exc = cls(*exc_msg if isinstance(exc_msg, tuple) else exc_msg)
+                    if isinstance(exc_msg, tuple):
+                        exc = cls(*exc_msg)
+                    else:
+                        exc = cls(exc_msg)
                 except Exception as err:  # noqa
                     exc = Exception('{}({})'.format(cls, exc_msg))
             if self.serializer in EXCEPTION_ABLE_CODECS:
