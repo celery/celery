@@ -93,9 +93,8 @@ must be specified in uppercase instead of lowercase, and start with
 ``CELERY_``, so for example the :setting:`task_always_eager` setting
 becomes ``CELERY_TASK_ALWAYS_EAGER``, and the :setting:`broker_url`
 setting becomes ``CELERY_BROKER_URL``. This also applies to the
-workers settings, and overrides the usual ``CELERYD_`` prefix.
-For instance, the :setting:`worker_concurrency` setting becomes
-``CELERY_CONCURRENCY``.
+workers settings, for instance, the :setting:`worker_concurrency`
+setting becomes ``CELERY_WORKER_CONCURRENCY``.
 
 You can pass the settings object directly instead, but using a string
 is better since then the worker doesn't have to serialize the object.
