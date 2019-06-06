@@ -105,7 +105,7 @@ class AsyncResult(ResultBase):
 
     @property
     def ignored(self):
-        """"If True, task result retrieval is disabled."""
+        """If True, task result retrieval is disabled."""
         if hasattr(self, '_ignored'):
             return self._ignored
         return False
