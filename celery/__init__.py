@@ -12,11 +12,11 @@ import re
 import sys
 from collections import namedtuple
 
-SERIES = 'rhubarb'
+SERIES = 'cliffs'
 
-__version__ = '4.3.0'
+__version__ = '4.4.0rc1'
 __author__ = 'Ask Solem'
-__contact__ = 'ask@celeryproject.org'
+__contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
 __docformat__ = 'restructuredtext'
 __keywords__ = 'task job queue distributed messaging actor'
