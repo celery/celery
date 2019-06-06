@@ -9,7 +9,7 @@ import pytz
 from case import Mock, call, patch, skip
 
 from celery import __version__, beat, uuid
-from celery.beat import event_t
+from celery.beat import event_t, BeatLazyFunc
 from celery.five import keys, string_t
 from celery.schedules import crontab, schedule
 from celery.utils.objects import Bunch
@@ -38,6 +38,15 @@ class MockService(object):
 
     def stop(self, **kwargs):
         self.stopped = True
+
+class test_BeatLazyFunc:
+
+    def test_beat_lazy_func(self):
+        def add(a, b):
+            return a + b
+        result = BeatLazyFunc(add, 1, 2)
+        assert add(1,2) == result()
+        assert add(1,2) == result.delay()
 
 
 class test_ScheduleEntry:
