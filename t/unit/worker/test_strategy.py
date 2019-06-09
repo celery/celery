@@ -4,9 +4,9 @@ from collections import defaultdict
 from contextlib import contextmanager
 
 import pytest
-from case import ANY, Mock, patch
 from kombu.utils.limits import TokenBucket
 
+from case import ANY, Mock, patch
 from celery import Task, signals
 from celery.exceptions import InvalidTaskError
 from celery.utils.time import rate

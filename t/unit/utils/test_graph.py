@@ -1,7 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
 from case import Mock
-
 from celery.five import WhateverIO, items
 from celery.utils.graph import DependencyGraph
 

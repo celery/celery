@@ -1,8 +1,9 @@
 """Worker consumer."""
 from __future__ import absolute_import, unicode_literals
-from .consumer import Consumer
+
 from .agent import Agent
 from .connection import Connection
+from .consumer import Consumer
 from .control import Control
 from .events import Events
 from .gossip import Gossip

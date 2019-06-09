@@ -9,9 +9,9 @@ from datetime import datetime, timedelta
 from pickle import dumps, loads
 
 import pytest
-from case import ContextMock, Mock, mock, patch
 from vine import promise
 
+from case import ContextMock, Mock, mock, patch
 from celery import Celery, _state
 from celery import app as _app
 from celery import current_app, shared_task

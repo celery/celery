@@ -4,8 +4,10 @@ import codecs
 import os
 import re
 import sys
+
 import setuptools
 import setuptools.command.test
+
 try:
     from platform import python_implementation as _pyimp
 except (AttributeError, ImportError):
