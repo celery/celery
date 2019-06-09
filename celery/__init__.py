@@ -7,10 +7,14 @@
 # :license:   BSD (3 Clause), see LICENSE for more details.
 
 from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import re
 import sys
 from collections import namedtuple
+
+# Lazy loading
+from . import local  # noqa
 
 SERIES = 'cliffs'
 
@@ -149,8 +153,6 @@ def maybe_patch_concurrency(argv=None, short_opts=None,
         concurrency.get_implementation(pool)
 
 
-# Lazy loading
-from . import local  # noqa
 
 
 # this just creates a new module, that imports stuff on first attribute

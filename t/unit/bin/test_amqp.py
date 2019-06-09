@@ -1,8 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from case import Mock, patch
 
+from case import Mock, patch
 from celery.bin.amqp import AMQPAdmin, AMQShell, amqp, dump_message, main
 from celery.five import WhateverIO
 

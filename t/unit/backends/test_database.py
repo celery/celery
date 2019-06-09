@@ -4,8 +4,8 @@ from datetime import datetime
 from pickle import dumps, loads
 
 import pytest
-from case import Mock, patch, skip
 
+from case import Mock, patch, skip
 from celery import states, uuid
 from celery.app.task import Context
 from celery.exceptions import ImproperlyConfigured

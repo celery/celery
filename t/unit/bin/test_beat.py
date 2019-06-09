@@ -4,8 +4,8 @@ import logging
 import sys
 
 import pytest
-from case import Mock, mock, patch
 
+from case import Mock, mock, patch
 from celery import beat, platforms
 from celery.apps import beat as beatapp
 from celery.bin import beat as beat_bin

@@ -8,10 +8,10 @@ import warnings
 from importlib import import_module
 
 import pytest
-from case import Mock
-from case.utils import decorator
 from kombu import Queue
 
+from case import Mock
+from case.utils import decorator
 from celery.backends.cache import CacheBackend, DummyClient
 # we have to import the pytest plugin fixtures here,
 # in case user did not do the `python setup.py develop` yet,

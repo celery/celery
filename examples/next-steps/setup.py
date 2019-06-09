@@ -6,7 +6,8 @@ as a Python package, on PyPI or on your own private package index.
 
 """
 from __future__ import absolute_import, unicode_literals
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 setup(
     name='example-tasks',

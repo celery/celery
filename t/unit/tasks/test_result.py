@@ -5,8 +5,8 @@ import traceback
 from contextlib import contextmanager
 
 import pytest
-from case import Mock, call, patch, skip
 
+from case import Mock, call, patch, skip
 from celery import states, uuid
 from celery.app.task import Context
 from celery.backends.base import SyncBackendMixin
