@@ -101,7 +101,7 @@ after_success:
               .tox/$TOXENV/bin/coverage xml
               .tox/$TOXENV/bin/codecov -e TOXENV
           fi;
-install: pip --disable-pip-version-check install -U tox | cat
+install: pip --disable-pip-version-check install --upgrade-strategy eager -U tox | cat
 script: tox -v -- -v
 notifications:
   email: false
