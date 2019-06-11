@@ -1736,7 +1736,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
         return myhttplib.get(url)
 
     @app.task
-    def parse_page(url, page):
+    def parse_page(page):
         return myparser.parse_document(page)
 
     @app.task
