@@ -139,8 +139,8 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_TASK_IGNORE_RESULT``              :setting:`task_ignore_result`
 ``CELERY_TASK_PUBLISH_RETRY``              :setting:`task_publish_retry`
 ``CELERY_TASK_PUBLISH_RETRY_POLICY``       :setting:`task_publish_retry_policy`
-``CELERY_QUEUES``                          :setting:`task_queues`
-``CELERY_ROUTES``                          :setting:`task_routes`
+``CELERY_TASK_QUEUES``                     :setting:`task_queues`
+``CELERY_TASK_ROUTES``                     :setting:`task_routes`
 ``CELERY_TASK_SEND_SENT_EVENT``            :setting:`task_send_sent_event`
 ``CELERY_TASK_SERIALIZER``                 :setting:`task_serializer`
 ``CELERYD_TASK_SOFT_TIME_LIMIT``           :setting:`task_soft_time_limit`
