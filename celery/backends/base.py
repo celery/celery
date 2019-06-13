@@ -279,7 +279,7 @@ class Backend(object):
                                                    celery.exceptions.__name__)
                 exc_msg = exc['exc_message']
                 try:
-                    if isinstance(exc_msg, tuple):
+                    if isinstance(exc_msg, (tuple, list)):
                         exc = cls(*exc_msg)
                     else:
                         exc = cls(exc_msg)
