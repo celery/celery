@@ -561,14 +561,14 @@ class test_chord:
         )
         res = c1()
         try:
-            res.get()
+            res.get(propagate=True)
         except ExpectedException:
             pass
         # Got to wait for children to populate.
         while not res.children:
             time.sleep(0.1)
         try:
-            res.children[0].wait(propagate=True)
+            res.children[0].get(propagate=True)
         except ExpectedException:
             pass
 
