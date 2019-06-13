@@ -5,8 +5,19 @@
 ================
 
 This document contains change notes for bugfix releases in
-the 4.x series, please see :ref:`whatsnew-4.3` for
-an overview of what's new in Celery 4.3.
+the 4.x series, please see :ref:`whatsnew-4.4` for
+an overview of what's new in Celery 4.4.
+
+4.4.0rc1
+========
+:release-date: 2019-06-06 1:00 P.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Python 3.4 drop
+- Kombu 4.6.1
+- Numerious bug fixes
+
+
 
 4.3.0
 =====

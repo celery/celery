@@ -5,8 +5,8 @@ import traceback
 from contextlib import contextmanager
 
 import pytest
-from case import Mock, call, patch, skip
 
+from case import Mock, call, patch, skip
 from celery import states, uuid
 from celery.app.task import Context
 from celery.backends.base import SyncBackendMixin
@@ -759,7 +759,7 @@ class test_GroupResult:
         ts = self.app.GroupResult(uuid(), subs)
         ts.save()
         with pytest.raises(RuntimeError,
-                           message="Test depends on current_app"):
+                           match="Test depends on current_app"):
             GroupResult.restore(ts.id)
 
     def test_join_native(self):

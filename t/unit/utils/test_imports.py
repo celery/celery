@@ -3,8 +3,8 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 import pytest
-from case import Mock, patch, skip
 
+from case import Mock, patch, skip
 from celery.five import bytes_if_py2
 from celery.utils.imports import (NotAPackage, find_module, gen_task_name,
                                   module_file, qualname, reload_from_cwd)

@@ -11,11 +11,11 @@ from time import time
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from case import Mock, patch
 from kombu.utils.encoding import (default_encode, from_utf8, safe_repr,
                                   safe_str)
 from kombu.utils.uuid import uuid
 
+from case import Mock, patch
 from celery import states
 from celery.app.trace import (TraceInfo, _trace_task_ret, build_tracer,
                               mro_lookup, reset_worker_optimizations,
@@ -223,6 +223,34 @@ class test_Request(RequestCase):
     def test_shadow(self):
         assert self.get_request(
             self.add.s(2, 2).set(shadow='fooxyz')).name == 'fooxyz'
+
+    def test_args(self):
+        args = (2, 2)
+        assert self.get_request(
+            self.add.s(*args)).args == args
+
+    def test_kwargs(self):
+        kwargs = {'1': '2', '3': '4'}
+        assert self.get_request(
+            self.add.s(**kwargs)).kwargs == kwargs
+
+    def test_info_function(self):
+        import string
+        import random
+        kwargs = {}
+        for i in range(0, 2):
+            kwargs[str(i)] = ''.join(random.choice(string.ascii_lowercase) for i in range(1000))
+        assert self.get_request(
+            self.add.s(**kwargs)).info(safe=True).get('kwargs') == kwargs
+        assert self.get_request(
+            self.add.s(**kwargs)).info(safe=False).get('kwargs') == kwargs
+        args = []
+        for i in range(0, 2):
+            args.append(''.join(random.choice(string.ascii_lowercase) for i in range(1000)))
+        assert list(self.get_request(
+            self.add.s(*args)).info(safe=True).get('args')) == args
+        assert list(self.get_request(
+            self.add.s(*args)).info(safe=False).get('args')) == args
 
     def test_no_shadow_header(self):
         request = self.get_request(self.add.s(2, 2),

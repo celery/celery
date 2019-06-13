@@ -1,9 +1,9 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from case import skip
 from kombu.utils.functional import lazy
 
+from case import skip
 from celery.five import nextfun, range
 from celery.utils.functional import (DummyContext, first, firstmethod,
                                      fun_accepts_kwargs, fun_takes_argument,

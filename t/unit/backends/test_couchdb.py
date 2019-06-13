@@ -1,8 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from case import MagicMock, Mock, sentinel, skip
 
+from case import MagicMock, Mock, sentinel, skip
 from celery.app import backends
 from celery.backends import couchdb as module
 from celery.backends.couchdb import CouchBackend

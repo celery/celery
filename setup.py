@@ -4,8 +4,10 @@ import codecs
 import os
 import re
 import sys
+
 import setuptools
 import setuptools.command.test
+
 try:
     from platform import python_implementation as _pyimp
 except (AttributeError, ImportError):
@@ -95,7 +97,6 @@ classes = """
     Programming Language :: Python :: 2
     Programming Language :: Python :: 2.7
     Programming Language :: Python :: 3
-    Programming Language :: Python :: 3.4
     Programming Language :: Python :: 3.5
     Programming Language :: Python :: 3.6
     Programming Language :: Python :: 3.7
@@ -222,7 +223,7 @@ setuptools.setup(
     license='BSD',
     platforms=['any'],
     install_requires=install_requires(),
-    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*,",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
     classifiers=[s.strip() for s in classes.split('\n') if s],

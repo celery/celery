@@ -4,8 +4,8 @@ import errno
 import socket
 
 import pytest
-from case import Mock, patch, skip
 
+from case import Mock, patch, skip
 from celery.contrib.rdb import Rdb, debugger, set_trace
 from celery.five import WhateverIO
 

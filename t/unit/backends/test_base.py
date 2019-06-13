@@ -5,9 +5,10 @@ import types
 from contextlib import contextmanager
 
 import pytest
-from case import ANY, Mock, call, patch, skip
 from kombu.serialization import prepare_accept_content
 
+import celery
+from case import ANY, Mock, call, patch, skip
 from celery import chord, group, signature, states, uuid
 from celery.app.task import Context, Task
 from celery.backends.base import (BaseBackend, DisabledBackend,
@@ -27,6 +28,12 @@ class wrapobject(object):
 
     def __init__(self, *args, **kwargs):
         self.args = args
+
+
+class paramexception(Exception):
+
+    def __init__(self, param):
+        self.param = param
 
 
 if sys.version_info[0] == 3 or getattr(sys, 'pypy_version_info', None):
@@ -446,7 +453,7 @@ class test_BaseBackend_dict:
     def test_exception_to_python_when_None(self):
         b = BaseBackend(app=self.app)
         assert b.exception_to_python(None) is None
-    
+
     def test_exception_to_python_when_attribute_exception(self):
         b = BaseBackend(app=self.app)
         test_exception = {'exc_type': 'AttributeDoesNotExist',
@@ -455,6 +462,17 @@ class test_BaseBackend_dict:
 
         result_exc = b.exception_to_python(test_exception)
         assert str(result_exc) == 'Raise Custom Message'
+
+    def test_exception_to_python_when_type_error(self):
+        b = BaseBackend(app=self.app)
+        celery.TestParamException = paramexception
+        test_exception = {'exc_type': 'TestParamException',
+                          'exc_module': 'celery',
+                          'exc_message': []}
+
+        result_exc = b.exception_to_python(test_exception)
+        del celery.TestParamException
+        assert str(result_exc) == "<class 't.unit.backends.test_base.paramexception'>([])"
 
     def test_wait_for__on_interval(self):
         self.patching('time.sleep')

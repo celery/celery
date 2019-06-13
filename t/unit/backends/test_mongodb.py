@@ -4,9 +4,9 @@ import datetime
 from pickle import dumps, loads
 
 import pytest
-from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
 from kombu.exceptions import EncodeError
 
+from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
 from celery import states, uuid
 from celery.backends.mongodb import InvalidDocument, MongoBackend
 from celery.exceptions import ImproperlyConfigured
@@ -235,7 +235,7 @@ class test_MongoBackend:
         assert database is mock_database
         assert self.backend.__dict__['database'] is mock_database
         mock_database.authenticate.assert_called_once_with(
-            MONGODB_USER, MONGODB_PASSWORD)
+            MONGODB_USER, MONGODB_PASSWORD, source=self.backend.database_name)
 
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
     def test_get_database_no_existing_no_auth(self, mock_get_connection):
@@ -454,7 +454,8 @@ class test_MongoBackend:
         x.password = 'cere4l'
         with pytest.raises(ImproperlyConfigured):
             x._get_database()
-        db.authenticate.assert_called_with('jerry', 'cere4l')
+        db.authenticate.assert_called_with('jerry', 'cere4l',
+                                           source=x.database_name)
 
     def test_prepare_client_options(self):
         with patch('pymongo.version_tuple', new=(3, 0, 3)):

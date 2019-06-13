@@ -2,11 +2,13 @@
 """Message Signing Serializer."""
 from __future__ import absolute_import, unicode_literals
 
-from kombu.serialization import (
-    registry, disable_insecure_serializers as _disable_insecure_serializers,
-)
+from kombu.serialization import \
+    disable_insecure_serializers as _disable_insecure_serializers
+from kombu.serialization import registry
+
 from celery.exceptions import ImproperlyConfigured
 
+from .serialization import register_auth  # noqa: need cryptography first
 
 CRYPTOGRAPHY_NOT_INSTALLED = """\
 You need to install the cryptography library to use the auth serializer.
@@ -42,7 +44,6 @@ try:
 except ImportError:
     raise ImproperlyConfigured(CRYPTOGRAPHY_NOT_INSTALLED)
 
-from .serialization import register_auth  # noqa: need cryptography first
 
 
 def setup_security(allowed_serializers=None, key=None, cert=None, store=None,

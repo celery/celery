@@ -2,6 +2,7 @@
 """Task implementation: request context and the task base class."""
 from __future__ import absolute_import, unicode_literals
 
+import signal
 import sys
 
 from billiard.einfo import ExceptionInfo
@@ -20,6 +21,7 @@ from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
+from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import raise_with_context
 
@@ -386,6 +388,10 @@ class Task(object):
         setattr(cls, attr, meth)
 
     def __call__(self, *args, **kwargs):
+        logger = get_logger(__name__)
+        handle_sigterm = lambda signum, frame: \
+            logger.info('SIGTERM received, waiting till the task finished')
+        signal.signal(signal.SIGTERM, handle_sigterm)
         _task_stack.push(self)
         self.push_request(args=args, kwargs=kwargs)
         try:
@@ -529,6 +535,18 @@ class Task(object):
             else:
                 check_arguments(*(args or ()), **(kwargs or {}))
 
+        if self.__v2_compat__:
+            shadow = shadow or self.shadow_name(self(), args, kwargs, options)
+        else:
+            shadow = shadow or self.shadow_name(args, kwargs, options)
+
+        preopts = self._get_exec_options()
+        options = dict(preopts, **options) if options else preopts
+
+        options.setdefault('ignore_result', self.ignore_result)
+        if self.priority:
+            options.setdefault('priority', self.priority)
+
         app = self._get_app()
         if app.conf.task_always_eager:
             with app.producer_or_acquire(producer) as eager_producer:
@@ -548,25 +566,13 @@ class Task(object):
             with denied_join_result():
                 return self.apply(args, kwargs, task_id=task_id or uuid(),
                                   link=link, link_error=link_error, **options)
-
-        if self.__v2_compat__:
-            shadow = shadow or self.shadow_name(self(), args, kwargs, options)
         else:
-            shadow = shadow or self.shadow_name(args, kwargs, options)
-
-        preopts = self._get_exec_options()
-        options = dict(preopts, **options) if options else preopts
-
-        options.setdefault('ignore_result', self.ignore_result)
-        if self.priority:
-            options.setdefault('priority', self.priority)
-
-        return app.send_task(
-            self.name, args, kwargs, task_id=task_id, producer=producer,
-            link=link, link_error=link_error, result_cls=self.AsyncResult,
-            shadow=shadow, task_type=self,
-            **options
-        )
+            return app.send_task(
+                self.name, args, kwargs, task_id=task_id, producer=producer,
+                link=link, link_error=link_error, result_cls=self.AsyncResult,
+                shadow=shadow, task_type=self,
+                **options
+            )
 
     def shadow_name(self, args, kwargs, options):
         """Override for custom task name in worker logs/monitoring.
@@ -855,14 +861,17 @@ class Task(object):
     def replace(self, sig):
         """Replace this task, with a new task inheriting the task id.
 
+        Execution of the host task ends immediately and no subsequent statements
+        will be run.
+
         .. versionadded:: 4.0
 
         Arguments:
             sig (~@Signature): signature to replace with.
 
         Raises:
-            ~@Ignore: This is always raised, so the best practice
-            is to always use ``raise self.replace(...)`` to convey
+            ~@Ignore: This is always raised when called in asynchrous context.
+            It is best to always use ``return self.replace(...)`` to convey
             to the reader that the task won't continue after being replaced.
         """
         chord = self.request.chord
@@ -888,8 +897,11 @@ class Task(object):
         )
         sig.freeze(self.request.id)
 
-        sig.delay()
-        raise Ignore('Replaced by new task')
+        if self.request.is_eager:
+            return sig.apply().get()
+        else:
+            sig.delay()
+            raise Ignore('Replaced by new task')
 
     def add_to_chord(self, sig, lazy=False):
         """Add signature to the chord the current task is a member of.

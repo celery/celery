@@ -7,16 +7,20 @@
 # :license:   BSD (3 Clause), see LICENSE for more details.
 
 from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import re
 import sys
 from collections import namedtuple
 
-SERIES = 'rhubarb'
+# Lazy loading
+from . import local  # noqa
 
-__version__ = '4.3.0'
+SERIES = 'cliffs'
+
+__version__ = '4.4.0rc1'
 __author__ = 'Ask Solem'
-__contact__ = 'ask@celeryproject.org'
+__contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
 __docformat__ = 'restructuredtext'
 __keywords__ = 'task job queue distributed messaging actor'
@@ -149,8 +153,6 @@ def maybe_patch_concurrency(argv=None, short_opts=None,
         concurrency.get_implementation(pool)
 
 
-# Lazy loading
-from . import local  # noqa
 
 
 # this just creates a new module, that imports stuff on first attribute

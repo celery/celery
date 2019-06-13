@@ -254,6 +254,7 @@ Andrew Wong, 2017/09/07
 Arpan Shah, 2017/09/12
 Tobias 'rixx' Kunze, 2017/08/20
 Mikhail Wolfson, 2017/12/11
+Matt Davis, 2017/12/13
 Alex Garel, 2018/01/04
 Régis Behmo 2018/01/20
 Igor Kasianov, 2018/01/20

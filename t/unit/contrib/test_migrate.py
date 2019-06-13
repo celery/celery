@@ -4,10 +4,10 @@ from contextlib import contextmanager
 
 import pytest
 from amqp import ChannelError
-from case import Mock, mock, patch
 from kombu import Connection, Exchange, Producer, Queue
 from kombu.transport.virtual import QoS
 
+from case import Mock, mock, patch
 from celery.contrib.migrate import (State, StopFiltering, _maybe_queue,
                                     expand_dest, filter_callback,
                                     filter_status, migrate_task,
