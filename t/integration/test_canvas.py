@@ -208,14 +208,14 @@ class test_result_set:
 
     @flaky
     def test_result_set(self, manager):
-        assert manager.inspect().ping()
+        assert manager.inspect().ping() is None
 
         rs = ResultSet([add.delay(1, 1), add.delay(2, 2)])
         assert rs.get(timeout=TIMEOUT) == [2, 4]
 
     @flaky
     def test_result_set_error(self, manager):
-        assert manager.inspect().ping()
+        assert manager.inspect().ping() is None
 
         rs = ResultSet([raise_error.delay(), add.delay(1, 1)])
         rs.get(timeout=TIMEOUT, propagate=False)
@@ -246,7 +246,7 @@ class test_group:
 
     @flaky
     def test_parent_ids(self, manager):
-        assert manager.inspect().ping()
+        assert manager.inspect().ping() is None
         g = (
             ids.si(i=1) |
             ids.si(i=2) |
@@ -265,7 +265,7 @@ class test_group:
 
     @flaky
     def test_nested_group(self, manager):
-        assert manager.inspect().ping()
+        assert manager.inspect().ping() is None
 
         c = group(
             add.si(1, 10),
