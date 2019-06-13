@@ -2,6 +2,7 @@
 """Task implementation: request context and the task base class."""
 from __future__ import absolute_import, unicode_literals
 
+import signal
 import sys
 
 from billiard.einfo import ExceptionInfo
@@ -20,6 +21,7 @@ from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
+from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import raise_with_context
 
@@ -386,6 +388,10 @@ class Task(object):
         setattr(cls, attr, meth)
 
     def __call__(self, *args, **kwargs):
+        logger = get_logger(__name__)
+        handle_sigterm = lambda signum, frame: \
+            logger.info('SIGTERM received, waiting till the task finished')
+        signal.signal(signal.SIGTERM, handle_sigterm)
         _task_stack.push(self)
         self.push_request(args=args, kwargs=kwargs)
         try:
