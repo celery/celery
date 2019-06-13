@@ -124,7 +124,7 @@ class test_chain:
 
     @flaky
     def test_parent_ids(self, manager, num=10):
-        assert manager.inspect().ping()
+        assert manager.inspect().ping() is None
         c = chain(ids.si(i=i) for i in range(num))
         c.freeze()
         res = c()
