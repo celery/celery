@@ -547,6 +547,32 @@ class test_chord:
         assert root_id == expected_root_id
         assert parent_id is None
 
+    def test_chain_on_error(self, manager):
+        from celery import states
+        from .tasks import ExpectedException
+        import time
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        # Run the chord and wait for the error callback to finish.
+        c1 = chain(
+            add.s(1, 2), fail.s(), add.s(3, 4),
+        )
+        res = c1()
+        try:
+            res.get()
+        except ExpectedException:
+            pass
+        # Got to wait for children to populate.
+        while not res.children:
+            time.sleep(0.1)
+        try:
+            res.children[0].wait(propagate=True)
+        except ExpectedException:
+            pass
+
+
     def test_chord_on_error(self, manager):
         from celery import states
         from .tasks import ExpectedException

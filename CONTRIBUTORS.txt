@@ -269,3 +269,4 @@ Artem Vasilyev, 2018/11/24
 Victor Mireyev, 2018/12/13
 Florian Chardin, 2018/10/23
 Shady Rafehi, 2019/02/20
+Fabio Todaro, 2019/06/13
