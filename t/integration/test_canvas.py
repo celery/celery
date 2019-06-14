@@ -55,6 +55,27 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [4, 5]
 
+
+    def test_chain_on_error(self, manager):
+        from celery import states
+        from .tasks import ExpectedException
+        import time
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        # Run the chord and wait for the error callback to finish.
+        c1 = chain(
+            add.s(1, 2), fail.s(), add.s(3, 4),
+        )
+        res = c1()
+
+        with pytest.raises(ExpectedException):
+            res.get(propagate=True)
+
+        with pytest.raises(ExpectedException):
+            res.parent.get(propagate=True)
+
     @flaky
     def test_chain_inside_group_receives_arguments(self, manager):
         c = (
@@ -562,17 +583,13 @@ class test_chord:
                 chord_error.s()),
         )
         res = c1()
-        try:
+        with pytest.raises(ExpectedException):
             res.wait(propagate=False)
-        except ExpectedException:
-            pass
         # Got to wait for children to populate.
         while not res.children:
             time.sleep(0.1)
-        try:
+        with pytest.raises(ExpectedException):
             res.children[0].children[0].wait(propagate=False)
-        except ExpectedException:
-            pass
 
         # Extract the results of the successful tasks from the chord.
         #
