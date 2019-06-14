@@ -144,6 +144,7 @@ class test_chain:
 
     @flaky
     def test_parent_ids(self, manager, num=10):
+
         ping_result = manager.inspect().ping()
         assert ping_result[ping_result.keys()[0]] == {"ok": "pong"}
 
