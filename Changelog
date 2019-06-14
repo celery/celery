@@ -13,9 +13,58 @@ an overview of what's new in Celery 4.4.
 :release-date: 2019-06-06 1:00 P.M UTC+6:00
 :release-by: Asif Saif Uddin
 
+
 - Python 3.4 drop
+
 - Kombu 4.6.1
-- Numerious bug fixes
+
+- Replace deprecated PyMongo methods usage (#5443)
+
+- Pass task request when calling update_state (#5474)
+
+- Fix bug in remaining time calculation in case of DST time change (#5411)
+
+- Fix missing task name when requesting extended result (#5439)
+
+- Fix `collections` import issue on Python 2.7 (#5428)
+
+- handle `AttributeError` in base backend exception deserializer (#5435)
+
+- Make `AsynPool`'s `proc_alive_timeout` configurable (#5476)
+
+- AMQP Support for extended result (#5495)
+
+- Fix SQL Alchemy results backend to work with extended result (#5498)
+
+- Fix restoring of exceptions with required param (#5500)
+
+- Django: Re-raise exception if `ImportError` not caused by missing tasks
+  module (#5211)
+
+- Django: fixed a regression putting DB connections in invalid state when
+  `CONN_MAX_AGE != 0` (#5515)
+
+- Fixed `OSError` leading to lost connection to broker (#4457)
+
+- Fixed an issue with inspect API unable get details of Request
+
+- Fix mogodb backend authentication (#5527)
+
+- Change column type for Extended Task Meta args/kwargs to LargeBinary
+
+- Handle http_auth in Elasticsearch backend results (#5545)
+
+- Fix task serializer being ignored with `task_always_eager=True` (#5549)
+
+- Fix `task.replace` to work in `.apply() as well as `.apply_async()` (#5540)
+
+- Fix sending of `worker_process_init` signal for solo worker (#5562)
+
+- Fix exception message upacking (#5565)
+
+- Add delay parameter function to beat_schedule (#5558)
+
+- Multiple documentation updates
 
 
 
