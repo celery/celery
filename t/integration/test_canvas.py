@@ -142,8 +142,7 @@ class test_chain:
 
     @flaky
     def test_parent_ids(self, manager, num=10):
-
-        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
+        assert_ping(manager)
 
         c = chain(ids.si(i=i) for i in range(num))
         c.freeze()
@@ -228,14 +227,14 @@ class test_result_set:
 
     @flaky
     def test_result_set(self, manager):
-        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
+        assert_ping(manager)
 
         rs = ResultSet([add.delay(1, 1), add.delay(2, 2)])
         assert rs.get(timeout=TIMEOUT) == [2, 4]
 
     @flaky
     def test_result_set_error(self, manager):
-        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
+        assert_ping(manager)
 
         rs = ResultSet([raise_error.delay(), add.delay(1, 1)])
         rs.get(timeout=TIMEOUT, propagate=False)
@@ -269,7 +268,8 @@ class test_group:
 
     @flaky
     def test_parent_ids(self, manager):
-        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
+        assert_ping(manager)
+
         g = (
             ids.si(i=1) |
             ids.si(i=2) |
@@ -288,7 +288,7 @@ class test_group:
 
     @flaky
     def test_nested_group(self, manager):
-        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
+        assert_ping(manager)
 
         c = group(
             add.si(1, 10),
@@ -312,7 +312,13 @@ def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
     assert parent_id == expected_parent_id
 
 
+def assert_ping(manager):
+    ping_val = list(manager.inspect().ping().values())[0]
+    assert ping_val == {"ok": "pong"}
+
+
 class test_chord:
+
     @flaky
     def test_redis_subscribed_channels_leak(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
@@ -586,7 +592,8 @@ class test_chord:
         )
         res = c1()
         with pytest.raises(ExpectedException):
-            res.wait(propagate=True)
+            res.get(propagate=True)
+
         # Got to wait for children to populate.
         while not res.children:
             time.sleep(0.1)

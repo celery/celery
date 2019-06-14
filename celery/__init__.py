@@ -153,8 +153,6 @@ def maybe_patch_concurrency(argv=None, short_opts=None,
         concurrency.get_implementation(pool)
 
 
-
-
 # this just creates a new module, that imports stuff on first attribute
 # access.  This makes the library faster to use.
 old_module, new_module = local.recreate_module(  # pragma: no cover
