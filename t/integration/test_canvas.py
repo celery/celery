@@ -145,7 +145,7 @@ class test_chain:
     @flaky
     def test_parent_ids(self, manager, num=10):
 
-        assert manager.inspect().ping()[0] == {"ok": "pong"}
+        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
 
         c = chain(ids.si(i=i) for i in range(num))
         c.freeze()
@@ -153,9 +153,9 @@ class test_chain:
         try:
             res.get(timeout=TIMEOUT)
         except TimeoutError:
-            print(manager.inspect.active())
-            print(manager.inspect.reserved())
-            print(manager.inspect.stats())
+            print(manager.inspect().active())
+            print(manager.inspect().reserved())
+            print(manager.inspect().stats())
             raise
         self.assert_ids(res, num - 1)
 
@@ -230,14 +230,14 @@ class test_result_set:
 
     @flaky
     def test_result_set(self, manager):
-        assert manager.inspect().ping()[0] == {"ok": "pong"}
+        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
 
         rs = ResultSet([add.delay(1, 1), add.delay(2, 2)])
         assert rs.get(timeout=TIMEOUT) == [2, 4]
 
     @flaky
     def test_result_set_error(self, manager):
-        assert manager.inspect().ping()[0] == {"ok": "pong"}
+        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
 
         rs = ResultSet([raise_error.delay(), add.delay(1, 1)])
         rs.get(timeout=TIMEOUT, propagate=False)
@@ -268,7 +268,7 @@ class test_group:
 
     @flaky
     def test_parent_ids(self, manager):
-        assert manager.inspect().ping()[0] == {"ok": "pong"}
+        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
         g = (
             ids.si(i=1) |
             ids.si(i=2) |
@@ -287,7 +287,7 @@ class test_group:
 
     @flaky
     def test_nested_group(self, manager):
-        assert manager.inspect().ping()[0] == {"ok": "pong"}
+        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
 
         c = group(
             add.si(1, 10),
