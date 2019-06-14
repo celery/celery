@@ -132,7 +132,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_TASK_DEFAULT_DELIVERY_MODE``      :setting:`task_default_delivery_mode`
 ``CELERY_TASK_DEFAULT_EXCHANGE``           :setting:`task_default_exchange`
 ``CELERY_TASK_DEFAULT_EXCHANGE_TYPE``      :setting:`task_default_exchange_type`
-``CELERY_TASK_DEFAULT_QUEUE``              :setting:`task_default_queue`
+``CELERY_DEFAULT_QUEUE``                   :setting:`task_default_queue`
 ``CELERY_TASK_DEFAULT_RATE_LIMIT``         :setting:`task_default_rate_limit`
 ``CELERY_TASK_DEFAULT_ROUTING_KEY``        :setting:`task_default_routing_key`
 ``CELERY_TASK_EAGER_PROPAGATES``           :setting:`task_eager_propagates`
