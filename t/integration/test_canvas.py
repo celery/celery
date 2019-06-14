@@ -311,11 +311,14 @@ def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
     assert root_id == expected_root_id
     assert parent_id == expected_parent_id
 
+
 def assert_ping(manager):
     ping_val = list(manager.inspect().ping().values())[0]
     assert ping_val == {"ok": "pong"}
 
+
 class test_chord:
+
     @flaky
     def test_redis_subscribed_channels_leak(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):

@@ -389,8 +389,10 @@ class Task(object):
 
     def __call__(self, *args, **kwargs):
         logger = get_logger(__name__)
-        handle_sigterm = lambda signum, frame: \
+
+        def handle_sigterm(signum, frame):
             logger.info('SIGTERM received, waiting till the task finished')
+
         signal.signal(signal.SIGTERM, handle_sigterm)
         _task_stack.push(self)
         self.push_request(args=args, kwargs=kwargs)
