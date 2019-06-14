@@ -24,7 +24,7 @@ from celery.utils.functional import dictfilter
 from celery.utils.nodenames import host_format, node_format
 from celery.utils.objects import Bunch
 
-# Option is here for backwards compatiblity, as third-party commands
+# Option is here for backwards compatibility, as third-party commands
 # may import it from here.
 try:
     from optparse import Option  # pylint: disable=deprecated-module

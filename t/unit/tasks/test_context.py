@@ -4,7 +4,7 @@ from __future__ import absolute_import, unicode_literals
 from celery.app.task import Context
 
 
-# Retreive the values of all context attributes as a
+# Retrieve the values of all context attributes as a
 # dictionary in an implementation-agnostic manner.
 def get_context_as_dict(ctx, getter=getattr):
     defaults = {}

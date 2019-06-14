@@ -7,7 +7,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.worker.components import Beat, Hub, Pool, Timer
 
 # some of these are tested in test_worker, so I've only written tests
-# here to complete coverage.  Should move everyting to this module at some
+# here to complete coverage.  Should move everything to this module at some
 # point [-ask]
 
 

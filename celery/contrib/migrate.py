@@ -182,7 +182,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
     Note:
         The predicate may also return a tuple of ``(exchange, routing_key)``
         to specify the destination to where the task should be moved,
-        or a :class:`~kombu.entitiy.Queue` instance.
+        or a :class:`~kombu.entity.Queue` instance.
         Any other true value means that the task will be moved to the
         default exchange/routing_key.
     """
