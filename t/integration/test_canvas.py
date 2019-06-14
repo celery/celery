@@ -55,11 +55,8 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [4, 5]
 
-
     def test_chain_on_error(self, manager):
-        from celery import states
         from .tasks import ExpectedException
-        import time
 
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -145,16 +142,18 @@ class test_chain:
 
     @flaky
     def test_parent_ids(self, manager, num=10):
-        assert manager.inspect().ping()
+
+        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
+
         c = chain(ids.si(i=i) for i in range(num))
         c.freeze()
         res = c()
         try:
             res.get(timeout=TIMEOUT)
         except TimeoutError:
-            print(manager.inspect.active())
-            print(manager.inspect.reserved())
-            print(manager.inspect.stats())
+            print(manager.inspect().active())
+            print(manager.inspect().reserved())
+            print(manager.inspect().stats())
             raise
         self.assert_ids(res, num - 1)
 
@@ -229,14 +228,14 @@ class test_result_set:
 
     @flaky
     def test_result_set(self, manager):
-        assert manager.inspect().ping()
+        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
 
         rs = ResultSet([add.delay(1, 1), add.delay(2, 2)])
         assert rs.get(timeout=TIMEOUT) == [2, 4]
 
     @flaky
     def test_result_set_error(self, manager):
-        assert manager.inspect().ping()
+        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
 
         rs = ResultSet([raise_error.delay(), add.delay(1, 1)])
         rs.get(timeout=TIMEOUT, propagate=False)
@@ -247,7 +246,10 @@ class test_result_set:
 
 class test_group:
     @flaky
-    def test_ready_with_exception(self):
+    def test_ready_with_exception(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
         g = group([add.s(1, 2), raise_error.s()])
         result = g.apply_async()
         while not result.ready():
@@ -267,7 +269,7 @@ class test_group:
 
     @flaky
     def test_parent_ids(self, manager):
-        assert manager.inspect().ping()
+        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
         g = (
             ids.si(i=1) |
             ids.si(i=2) |
@@ -286,7 +288,7 @@ class test_group:
 
     @flaky
     def test_nested_group(self, manager):
-        assert manager.inspect().ping()
+        assert list(manager.inspect().ping().values())[0] == {"ok": "pong"}
 
         c = group(
             add.si(1, 10),
@@ -584,12 +586,10 @@ class test_chord:
         )
         res = c1()
         with pytest.raises(ExpectedException):
-            res.wait(propagate=False)
+            res.wait(propagate=True)
         # Got to wait for children to populate.
         while not res.children:
             time.sleep(0.1)
-        with pytest.raises(ExpectedException):
-            res.children[0].children[0].wait(propagate=False)
 
         # Extract the results of the successful tasks from the chord.
         #
