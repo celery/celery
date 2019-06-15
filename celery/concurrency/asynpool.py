@@ -500,10 +500,10 @@ class AsynPool(_pool.Pool):
                 hub_args = _meta_fd_argument_maker()
             try:  # Call the hub method
                 hub_method(fd, *hub_args, **hub_kwargs)
-            except OSError:
+            except (OSError, FileNotFoundError) as e:
                 logger.warning(
-                    "Encountered OSError when accessing fd %s ",
-                    fd, exc_info=True)
+                    "Encountered %s when accessing fd %s ",
+                    e.__name__, fd, exc_info=True)
                 stale_fds.append(fd)  # take note of stale fd
         # Remove now defunct fds from the managed list
         if managed_list:
