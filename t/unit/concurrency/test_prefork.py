@@ -281,7 +281,7 @@ class test_AsynPool:
         w.on_loop_start(1234)
         w.outq.put.assert_called_with((asynpool.WORKER_UP, (1234,)))
 
-    def test_async_pool_iterate_file_descriptors_safely(self):
+    def test_iterate_file_descriptors_safely_source_data_list(self):
         # Given: a list of integers that could be file descriptors
         fd_iter = [1, 2, 3, 4, 5]
 
@@ -289,8 +289,22 @@ class test_AsynPool:
         def _fake_hub(*args, **kwargs):
             raise OSError
 
-        # _fake_hub = Mock()
-        # _fake_hub.side_effect = FileNotFoundError()
+        # When Calling the helper to iterate_file_descriptors_safely
+        iterate_file_descriptors_safely(
+            fd_iter, fd_iter, _fake_hub,
+            "arg1", "arg2", kw1="kw1", kw2="kw2",
+        )
+
+        # Then: all items were removed from the managed data source
+        assert fd_iter == [], "Expected all items removed from managed list"
+
+    def test_iterate_file_descriptors_safely_source_data_set(self):
+        # Given: a list of integers that could be file descriptors
+        fd_iter = {1, 2, 3, 4, 5}
+
+        # Given: a mock hub method that does nothing to call
+        def _fake_hub(*args, **kwargs):
+            raise OSError
 
         # When Calling the helper to iterate_file_descriptors_safely
         iterate_file_descriptors_safely(
@@ -298,9 +312,25 @@ class test_AsynPool:
             "arg1", "arg2", kw1="kw1", kw2="kw2",
         )
 
-        # Then:
-        # assert _fake_hub.called, "Would have called the hub method"
-        assert fd_iter == [], "Expected all items removed from managed list"
+        # Then: all items were removed from the managed data source
+        assert fd_iter == {}, "Expected all items removed from managed set"
+
+    def test_iterate_file_descriptors_safely_source_data_dict(self):
+        # Given: a list of integers that could be file descriptors
+        fd_iter = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
+
+        # Given: a mock hub method that does nothing to call
+        def _fake_hub(*args, **kwargs):
+            raise OSError
+
+        # When Calling the helper to iterate_file_descriptors_safely
+        iterate_file_descriptors_safely(
+            fd_iter, fd_iter, _fake_hub,
+            "arg1", "arg2", kw1="kw1", kw2="kw2",
+        )
+
+        # Then: all items were removed from the managed data source
+        assert fd_iter == {}, "Expected all items removed from managed dict"
 
 
 @skip.if_win32()
