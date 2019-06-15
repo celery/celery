@@ -48,8 +48,8 @@ class SchedulingError(Exception):
 
 
 class BeatLazyFunc(object):
-    """An lazy function declared in 'beat_schedule' and called before sending to worker
-    
+    """An lazy function declared in 'beat_schedule' and called before sending to worker.
+
     Example:
 
         beat_schedule = {
@@ -61,8 +61,9 @@ class BeatLazyFunc(object):
                 }
             }
         }
-    
+
     """
+
     def __init__(self, func, *args, **kwargs):
         self._func = func
         self._func_params = {

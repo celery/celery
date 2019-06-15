@@ -1,8 +1,8 @@
 .. image:: http://docs.celeryproject.org/en/latest/_images/celery-banner-small.png
 
-|build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge| 
+|build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 4.4.0rc1 (cliffs)
+:Version: 4.4.0rc2 (cliffs)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
