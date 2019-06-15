@@ -205,7 +205,7 @@ def _select(readers=None, writers=None, err=None, timeout=0,
             raise
 
 
-try:  # Python 2 does not have FileNotFoundError
+try:  # TODO Delete when drop py2 support as FileNotFoundError is py3
     FileNotFoundError
 except NameError:
     FileNotFoundError = IOError
@@ -240,7 +240,7 @@ def iterate_file_descriptors_safely(fds_iter, source_data,
             hub_args = _meta_fd_argument_maker()
         try:  # Call the hub method
             hub_method(fd, *hub_args, **hub_kwargs)
-        except (OSError, FileNotFoundError) as e:
+        except (OSError, FileNotFoundError):
             logger.warning(
                 "Encountered OSError when accessing fd %s ",
                 fd, exc_info=True)
@@ -509,7 +509,7 @@ class AsynPool(_pool.Pool):
         self.maintain_pool()
 
     def _track_child_process(self, proc, hub):
-        """Helper method determines appropriate fd for process. """
+        """Helper method determines appropriate fd for process."""
         try:
             fd = proc._sentinel_poll
         except AttributeError:
