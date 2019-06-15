@@ -865,14 +865,14 @@ class test_WorkController(ConsumerCase):
 
         # Given: Mock the Hub to return errors for add and remove
         def throw_file_not_found_error(*args, **kwargs):
-            raise FileNotFoundError()
+            raise OSError()
 
         hub.add = throw_file_not_found_error
         hub.remove = throw_file_not_found_error
 
         # When: Calling again to register with event loop ...
         worker.pool.register_with_event_loop(hub)
-        # Then: test did not raise "FileNotFoundError: ENOENT"
+        # Then: test did not raise OSError
 
         # Finally:  Clean up so the threads before/after fixture passes
         worker.terminate()
