@@ -205,6 +205,56 @@ def _select(readers=None, writers=None, err=None, timeout=0,
             raise
 
 
+try:  # Python 2 does not have FileNotFoundError
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
+
+
+def iterate_file_descriptors_safely(
+    fds_iter, managed_list, hub_method, *args, **kwargs):
+    """Apply hub method to fds in iter, remove from list if failure.
+
+    Some file descriptors may become stale through OS reasons
+    or possibly other reasons, so safely manage our lists of FDs.
+    :param fds_iter: the file descriptors to iterate and apply hub_method
+    :param managed_list: data source to remove FD if it renders OSError
+    :param hub_method: the method to call with with each fd and kwargs
+    :*args to pass through to the hub_method;
+    with a special syntax string '*fd*' represents a substitution
+    for the current fd object in the iteration (for some callers).
+    :**kwargs to pass through to the hub method (no substitutions needed)
+    """
+    def _meta_fd_argument_maker():
+        # uses the current iterations value for fd
+        call_args = args
+        if "*fd*" in call_args:
+            call_args = [fd if arg == "*fd*" else arg for arg in args]
+        return call_args
+    # Track stale FDs for cleanup possibility
+    stale_fds = []
+    for fd in fds_iter:
+        # Handle using the correct arguments to the hub method
+        hub_args, hub_kwargs = args, kwargs  # Default calling pattern
+        if "*fd*" in hub_args:
+            hub_args = _meta_fd_argument_maker()
+        try:  # Call the hub method
+            hub_method(fd, *hub_args, **hub_kwargs)
+        except (OSError, FileNotFoundError) as e:
+            logger.warning(
+                "Encountered OSError when accessing fd %s ",
+                fd, exc_info=True)
+            stale_fds.append(fd)  # take note of stale fd
+    # Remove now defunct fds from the managed list
+    if managed_list:
+        for fd in stale_fds:
+            try:
+                managed_list.remove(fd)
+            except ValueError:
+                logger.warning("ValueError trying to remove %s from %s",
+                               fd, managed_list)
+
+
 class Worker(_pool.Worker):
     """Pool worker process."""
 
@@ -466,7 +516,7 @@ class AsynPool(_pool.Pool):
             # the fd from epoll(7) anymore, causing a 100% CPU poll loop.
             fd = proc._sentinel_poll = os.dup(proc._popen.sentinel)
         # Safely call hub.add_reader for the determined fd
-        self.iterate_file_descriptors_safely(
+        iterate_file_descriptors_safely(
             [fd], None, hub.add_reader,
             self._event_process_exit, hub, proc)
 
@@ -475,45 +525,6 @@ class AsynPool(_pool.Pool):
             fd, proc._sentinel_poll = proc._sentinel_poll, None
             hub.remove(fd)
             os.close(fd)
-
-    def iterate_file_descriptors_safely(self, fds_iter, managed_list,
-                                        hub_method, *args, **kwargs):
-        """Apply hub method to fds in iter, remove from list if failure.
-
-        Some file descriptors may become stale through OS reasons
-        or possibly other reasons, so safely manage our lists of FDs.
-        :param fds_iter: the file descriptors to iterate and apply hub_method
-        :param managed_list: data source to remove FD if it renders OSError
-        :param hub_method: the method to call with with each fd and kwargs
-        :*args to pass through to the hub_method;
-        with a special syntax string '*fd*' represents a substitution
-        for the current fd object in the iteration (for some callers).
-        :**kwargs to pass through to the hub method (no substitutions needed)
-        """
-        def _meta_fd_argument_maker():
-            # uses the current iterations value for fd
-            call_args = args
-            if "*fd*" in call_args:
-                call_args = [fd if arg == "*fd*" else arg for arg in args]
-            return call_args
-        # Track stale FDs for cleanup possibility
-        stale_fds = []
-        for fd in fds_iter:
-            # Handle using the correct arguments to the hub method
-            hub_args, hub_kwargs = args, kwargs  # Default calling pattern
-            if "*fd*" in hub_args:
-                hub_args = _meta_fd_argument_maker()
-            try:  # Call the hub method
-                hub_method(fd, *hub_args, **hub_kwargs)
-            except (OSError, FileNotFoundError) as e:
-                logger.warning(
-                    "Encountered OSError when accessing fd %s ",
-                    fd, exc_info=True)
-                stale_fds.append(fd)  # take note of stale fd
-        # Remove now defunct fds from the managed list
-        if managed_list:
-            for fd in stale_fds:
-                managed_list.pop(fd, None)
 
     def register_with_event_loop(self, hub):
         """Register the async pool with the current event loop."""
@@ -527,7 +538,7 @@ class AsynPool(_pool.Pool):
         [self._track_child_process(w, hub) for w in self._pool]
         # Handle_result_event is called whenever one of the
         # result queues are readable.
-        self.iterate_file_descriptors_safely(
+        iterate_file_descriptors_safely(
             self._fileno_to_outq, self._fileno_to_outq, hub.add_reader,
             self.handle_result_event, '*fd*')
 
@@ -774,11 +785,11 @@ class AsynPool(_pool.Pool):
                 add_cond = outbound
 
             if add_cond:  # calling hub_add vs hub_remove
-                self.iterate_file_descriptors_safely(
+                iterate_file_descriptors_safely(
                     inactive, all_inqueues, hub_add,
                     None, WRITE | ERR, consolidate=True)
             else:
-                self.iterate_file_descriptors_safely(
+                iterate_file_descriptors_safely(
                     inactive, all_inqueues, hub_remove)
         self.on_poll_start = on_poll_start
 
