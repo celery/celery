@@ -384,14 +384,15 @@ class ResultHandler(_pool.ResultHandler):
             # cannot iterate and remove at the same time
             pending_remove_fd = set()
             for fd in outqueues:
-                self._flush_outqueue(
-                    fd, pending_remove_fd.add, fileno_to_outq,
-                    on_state_change,
+                iterate_file_descriptors_safely(
+                    [fd], self.fileno_to_outq, self._flush_outqueue,
+                    pending_remove_fd.add, fileno_to_outq, on_state_change
                 )
                 try:
                     join_exited_workers(shutdown=True)
                 except WorkersJoined:
-                    return debug('result handler: all workers terminated')
+                    debug('result handler: all workers terminated')
+                    return
             outqueues.difference_update(pending_remove_fd)
 
     def _flush_outqueue(self, fd, remove, process_index, on_state_change):
