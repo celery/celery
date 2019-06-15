@@ -9,6 +9,7 @@ import pytest
 
 from case import Mock, mock, patch, skip
 from celery.app.defaults import DEFAULTS
+from celery.concurrency.asynpool import iterate_file_descriptors_safely
 from celery.five import range
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import noop
@@ -279,6 +280,27 @@ class test_AsynPool:
         w = asynpool.Worker(Mock(), Mock())
         w.on_loop_start(1234)
         w.outq.put.assert_called_with((asynpool.WORKER_UP, (1234,)))
+
+    def test_async_pool_iterate_file_descriptors_safely(self):
+        # Given: a list of integers that could be file descriptors
+        fd_iter = [1, 2, 3, 4, 5]
+
+        # Given: a mock hub method that does nothing to call
+        def _fake_hub(*args, **kwargs):
+            raise OSError
+
+        # _fake_hub = Mock()
+        # _fake_hub.side_effect = FileNotFoundError()
+
+        # When Calling the helper to iterate_file_descriptors_safely
+        iterate_file_descriptors_safely(
+            fd_iter, fd_iter, _fake_hub,
+            "arg1", "arg2", kw1="kw1", kw2="kw2",
+        )
+
+        # Then:
+        # assert _fake_hub.called, "Would have called the hub method"
+        assert fd_iter == [], "Expected all items removed from managed list"
 
 
 @skip.if_win32()
