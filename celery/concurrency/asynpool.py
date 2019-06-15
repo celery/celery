@@ -212,13 +212,13 @@ except NameError:
 
 
 def iterate_file_descriptors_safely(
-    fds_iter, managed_list, hub_method, *args, **kwargs):
+    fds_iter, source_data, hub_method, *args, **kwargs):
     """Apply hub method to fds in iter, remove from list if failure.
 
     Some file descriptors may become stale through OS reasons
     or possibly other reasons, so safely manage our lists of FDs.
     :param fds_iter: the file descriptors to iterate and apply hub_method
-    :param managed_list: data source to remove FD if it renders OSError
+    :param source_data: data source to remove FD if it renders OSError
     :param hub_method: the method to call with with each fd and kwargs
     :*args to pass through to the hub_method;
     with a special syntax string '*fd*' represents a substitution
@@ -246,13 +246,16 @@ def iterate_file_descriptors_safely(
                 fd, exc_info=True)
             stale_fds.append(fd)  # take note of stale fd
     # Remove now defunct fds from the managed list
-    if managed_list:
+    if source_data:
         for fd in stale_fds:
             try:
-                managed_list.remove(fd)
+                if hasattr(source_data, 'remove'):
+                    source_data.remove(fd)
+                else:
+                    source_data.pop(fd, None)
             except ValueError:
-                logger.warning("ValueError trying to remove %s from %s",
-                               fd, managed_list)
+                logger.warning("ValueError trying to invalidate %s from %s",
+                               fd, source_data)
 
 
 class Worker(_pool.Worker):
