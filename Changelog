@@ -16,6 +16,7 @@ an overview of what's new in Celery 4.4.
 - Python 3.4 drop
 - Kombu 4.6.1
 - Numerious bug fixes
+- extra commit to trigger new build due to failure
 
 
 
