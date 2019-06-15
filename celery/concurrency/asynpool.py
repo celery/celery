@@ -456,6 +456,7 @@ class AsynPool(_pool.Pool):
         self.maintain_pool()
 
     def _track_child_process(self, proc, hub):
+        """Helper method determines appropriate fd for process. """
         try:
             fd = proc._sentinel_poll
         except AttributeError:
@@ -464,7 +465,10 @@ class AsynPool(_pool.Pool):
             # as once the original fd is closed we cannot unregister
             # the fd from epoll(7) anymore, causing a 100% CPU poll loop.
             fd = proc._sentinel_poll = os.dup(proc._popen.sentinel)
-        hub.add_reader(fd, self._event_process_exit, hub, proc)
+        # Safely call hub.add_reader for the determined fd
+        self.iterate_file_descriptors_safely(
+            [fd], None, hub.add_reader,
+            self._event_process_exit, hub, proc)
 
     def _untrack_child_process(self, proc, hub):
         if proc._sentinel_poll is not None:
@@ -503,8 +507,8 @@ class AsynPool(_pool.Pool):
                 hub_method(fd, *hub_args, **hub_kwargs)
             except (OSError, FileNotFoundError) as e:
                 logger.warning(
-                    "Encountered %s when accessing fd %s ",
-                    e.__name__, fd, exc_info=True)
+                    "Encountered OSError when accessing fd %s ",
+                    fd, exc_info=True)
                 stale_fds.append(fd)  # take note of stale fd
         # Remove now defunct fds from the managed list
         if managed_list:

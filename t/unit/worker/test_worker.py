@@ -841,6 +841,43 @@ class test_WorkController(ConsumerCase):
         worker.terminate()
         worker.pool.terminate()
 
+    @pytest.mark.nothreads_not_lingering
+    @mock.sleepdeprived(module=autoscale)
+    def test_with_file_descriptor_safety(self):
+        # Given: a test celery worker instance
+        worker = self.create_worker(
+            autoscale=[10, 5], use_eventloop=True,
+            timer_cls='celery.utils.timer2.Timer',
+            threads=False,
+        )
+
+        # Given: This test requires a QoS defined on the worker consumer
+        worker.consumer.qos = qos = QoS(lambda prefetch_count: prefetch_count, 2)
+        qos.update()
+
+        # Given: We have started the worker pool
+        worker.pool.start()
+
+        # Given: Utilize kombu to get the global hub state
+        hub = get_event_loop()
+        # Given: Initial call the Async Pool to register events works fine
+        worker.pool.register_with_event_loop(hub)
+
+        # Given: Mock the Hub to return errors for add and remove
+        def throw_file_not_found_error(*args, **kwargs):
+            raise FileNotFoundError()
+
+        hub.add = throw_file_not_found_error
+        hub.remove = throw_file_not_found_error
+
+        # When: Calling again to register with event loop ...
+        worker.pool.register_with_event_loop(hub)
+        # Then: test did not raise "FileNotFoundError: ENOENT"
+
+        # Finally:  Clean up so the threads before/after fixture passes
+        worker.terminate()
+        worker.pool.terminate()
+
     def test_dont_stop_or_terminate(self):
         worker = self.app.WorkController(concurrency=1, loglevel=0)
         worker.stop()
