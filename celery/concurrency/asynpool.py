@@ -211,8 +211,8 @@ except NameError:
     FileNotFoundError = IOError
 
 
-def iterate_file_descriptors_safely(
-    fds_iter, source_data, hub_method, *args, **kwargs):
+def iterate_file_descriptors_safely(fds_iter, source_data,
+                                    hub_method, *args, **kwargs):
     """Apply hub method to fds in iter, remove from list if failure.
 
     Some file descriptors may become stale through OS reasons
@@ -251,7 +251,7 @@ def iterate_file_descriptors_safely(
             try:
                 if hasattr(source_data, 'remove'):
                     source_data.remove(fd)
-                else:
+                else:  # then not a list/set ... try dict
                     source_data.pop(fd, None)
             except ValueError:
                 logger.warning("ValueError trying to invalidate %s from %s",
