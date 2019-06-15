@@ -474,9 +474,10 @@ class AsynPool(_pool.Pool):
 
     def iterate_file_descriptors_safely(self, fds_iter, managed_list,
                                         hub_method, *args, **kwargs):
-        """ Some file descriptors may become stale through OS reasons
-        or possibly other reasons, so safely manage our lists of FDs.
+        """Apply hub method to fds in iter, remove from list if failure.
 
+        Some file descriptors may become stale through OS reasons
+        or possibly other reasons, so safely manage our lists of FDs.
         :param fds_iter: the file descriptors to iterate and apply hub_method
         :param managed_list: data source to remove FD if it renders OSError
         :param hub_method: the method to call with with each fd and kwargs
@@ -491,8 +492,8 @@ class AsynPool(_pool.Pool):
             if "*fd*" in call_args:
                 call_args = [fd if arg == "*fd*" else arg for arg in args]
             return call_args
-
-        stale_fds = []  # Track stale FDs for cleanup possibility
+        # Track stale FDs for cleanup possibility
+        stale_fds = []
         for fd in fds_iter:
             # Handle using the correct arguments to the hub method
             hub_args, hub_kwargs = args, kwargs  # Default calling pattern
