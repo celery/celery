@@ -472,6 +472,44 @@ class AsynPool(_pool.Pool):
             hub.remove(fd)
             os.close(fd)
 
+    def iterate_file_descriptors_safely(self, fds_iter, managed_list,
+                                        hub_method, *args, **kwargs):
+        """ Some file descriptors may become stale through OS reasons
+        or possibly other reasons, so safely manage our lists of FDs.
+
+        :param fds_iter: the file descriptors to iterate and apply hub_method
+        :param managed_list: data source to remove FD if it renders OSError
+        :param hub_method: the method to call with with each fd and kwargs
+        :*args to pass through to the hub_method;
+        with a special syntax string '*fd*' represents a substitution
+        for the current fd object in the iteration (for some callers).
+        :**kwargs to pass through to the hub method (no substitutions needed)
+        """
+        def _meta_fd_argument_maker():
+            # uses the current iterations value for fd
+            call_args = args
+            if "*fd*" in call_args:
+                call_args = [fd if arg == "*fd*" else arg for arg in args]
+            return call_args
+
+        stale_fds = []  # Track stale FDs for cleanup possibility
+        for fd in fds_iter:
+            # Handle using the correct arguments to the hub method
+            hub_args, hub_kwargs = args, kwargs  # Default calling pattern
+            if "*fd*" in hub_args:
+                hub_args = _meta_fd_argument_maker()
+            try:  # Call the hub method
+                hub_method(fd, *hub_args, **hub_kwargs)
+            except OSError:
+                logger.warning(
+                    "Encountered OSError when accessing fd %s ",
+                    fd, exc_info=True)
+                stale_fds.append(fd)  # take note of stale fd
+        # Remove now defunct fds from the managed list
+        if managed_list:
+            for fd in stale_fds:
+                managed_list.pop(fd, None)
+
     def register_with_event_loop(self, hub):
         """Register the async pool with the current event loop."""
         self._result_handler.register_with_event_loop(hub)
@@ -484,16 +522,9 @@ class AsynPool(_pool.Pool):
         [self._track_child_process(w, hub) for w in self._pool]
         # Handle_result_event is called whenever one of the
         # result queues are readable.
-        stale_fds = []
-        for fd in self._fileno_to_outq:
-            try:
-                hub.add_reader(fd, self.handle_result_event, fd)
-            except OSError:
-                logger.info("Encountered OSError while trying "
-                            "to access fd %s ", fd, exc_info=True)
-                stale_fds.append(fd)  # take note of stale fd
-        for fd in stale_fds:  # Remove now defunct file descriptors
-            self._fileno_to_outq.pop(fd, None)
+        self.iterate_file_descriptors_safely(
+            self._fileno_to_outq, self._fileno_to_outq, hub.add_reader,
+            self.handle_result_event, '*fd*')
 
         # Timers include calling maintain_pool at a regular interval
         # to be certain processes are restarted.
@@ -722,24 +753,28 @@ class AsynPool(_pool.Pool):
         # argument.  Using this means we minimize the risk of having
         # the same fd receive every task if the pipe read buffer is not
         # full.
-        if is_fair_strategy:
 
-            def on_poll_start():
-                if outbound and len(busy_workers) < len(all_inqueues):
-                    #  print('ALL: %r ACTIVE: %r' % (len(all_inqueues),
-                    #                                len(active_writes)))
-                    inactive = diff(active_writes)
-                    [hub_add(fd, None, WRITE | ERR, consolidate=True)
-                     for fd in inactive]
-                else:
-                    [hub_remove(fd) for fd in diff(active_writes)]
-        else:
-            def on_poll_start():  # noqa
-                if outbound:
-                    [hub_add(fd, None, WRITE | ERR, consolidate=True)
-                     for fd in diff(active_writes)]
-                else:
-                    [hub_remove(fd) for fd in diff(active_writes)]
+        def on_poll_start():
+            # Determine which io descriptors are not busy
+            inactive = diff(active_writes)
+            logger.debug(
+                "AsyncPool._create_write_handlers ALL: %r ACTIVE: %r",
+                len(all_inqueues), len(active_writes))
+
+            # Determine hub_add vs hub_remove strategy conditional
+            if is_fair_strategy:
+                # outbound buffer present and idle workers exist
+                add_cond = outbound and len(busy_workers) < len(all_inqueues)
+            else:  # default is add when data exists in outbound buffer
+                add_cond = outbound
+
+            if add_cond:  # calling hub_add vs hub_remove
+                self.iterate_file_descriptors_safely(
+                    inactive, all_inqueues, hub_add,
+                    None, WRITE | ERR, consolidate=True)
+            else:
+                self.iterate_file_descriptors_safely(
+                    inactive, all_inqueues, hub_remove)
         self.on_poll_start = on_poll_start
 
         def on_inqueue_close(fd, proc):
