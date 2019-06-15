@@ -313,7 +313,7 @@ class test_AsynPool:
         )
 
         # Then: all items were removed from the managed data source
-        assert fd_iter == {}, "Expected all items removed from managed set"
+        assert fd_iter == set(), "Expected all items removed from managed set"
 
     def test_iterate_file_descriptors_safely_source_data_dict(self):
         # Given: a list of integers that could be file descriptors
