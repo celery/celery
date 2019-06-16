@@ -868,11 +868,29 @@ class test_WorkController(ConsumerCase):
             raise OSError()
 
         hub.add = throw_file_not_found_error
+        hub.add_reader = throw_file_not_found_error
         hub.remove = throw_file_not_found_error
 
         # When: Calling again to register with event loop ...
         worker.pool.register_with_event_loop(hub)
+        worker.pool._pool.register_with_event_loop(hub)
         # Then: test did not raise OSError
+        # Note: worker.pool is prefork.TaskPool whereas
+        # worker.pool._pool is the asynpool.AsynPool class.
+
+        # When: Calling the tic method on_poll_start
+        worker.pool._pool.on_poll_start()
+        # Then: test did not raise OSError
+
+        # Given: a mock object that fakes whats required to do whats next
+        proc = Mock(_sentinel_poll=42)
+
+        # When: Calling again to register with event loop ...
+        worker.pool._pool._track_child_process(proc, hub)
+        # Then: test did not raise OSError
+
+        # Given:
+        worker.pool._pool._flush_outqueue = throw_file_not_found_error
 
         # Finally:  Clean up so the threads before/after fixture passes
         worker.terminate()
