@@ -25,6 +25,7 @@ derivative works of any Contribution, under the BSD License.
 Contributors
 ------------
 
+Asif Saif Uddin, 2016/08/30
 Ask Solem, 2012/06/07
 Sean O'Connor, 2012/06/07
 Patrick Altman, 2012/06/07
