@@ -235,9 +235,7 @@ def iterate_file_descriptors_safely(fds_iter, source_data,
     stale_fds = []
     for fd in fds_iter:
         # Handle using the correct arguments to the hub method
-        hub_args, hub_kwargs = args, kwargs  # Default calling pattern
-        if "*fd*" in hub_args:
-            hub_args = _meta_fd_argument_maker()
+        hub_args, hub_kwargs = _meta_fd_argument_maker(), kwargs
         try:  # Call the hub method
             hub_method(fd, *hub_args, **hub_kwargs)
         except (OSError, FileNotFoundError):
