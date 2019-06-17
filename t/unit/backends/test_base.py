@@ -514,7 +514,7 @@ class test_KeyValueStoreBackend:
         assert self.b.get_state(tid) == states.PENDING
 
     @pytest.mark.parametrize('serializer',
-                             ['json', 'pickle', 'yaml','msgpack'])
+                             ['json', 'pickle', 'yaml', 'msgpack'])
     def test_store_result_parent_id(self, serializer):
         self.app.conf.accept_content = ('json', serializer)
         self.b = KVBackend(app=self.app, serializer=serializer)

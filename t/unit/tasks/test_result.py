@@ -432,17 +432,16 @@ class test_AsyncResult:
         assert result.date_done is None
 
     @pytest.mark.parametrize('result_dict, date', [
-        ({u'date_done': None}, None),
-        ({u'date_done': u'1991-10-05T05:41:06'},
+        ({'date_done': None}, None),
+        ({'date_done': '1991-10-05T05:41:06'},
          datetime.datetime(1991, 10, 5, 5, 41, 6)),
-        ({u'date_done': datetime.datetime(1991, 10, 5, 5, 41, 6)},
+        ({'date_done': datetime.datetime(1991, 10, 5, 5, 41, 6)},
          datetime.datetime(1991, 10, 5, 5, 41, 6))
     ])
     def test_date_done(self, result_dict, date):
         result = self.app.AsyncResult(uuid())
         result._cache = result_dict
         assert result.date_done == date
-
 
 
 class test_ResultSet:
