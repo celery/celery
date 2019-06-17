@@ -3,6 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import time
+import datetime
 from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
@@ -501,10 +502,10 @@ class AsyncResult(ResultBase):
 
     @property
     def date_done(self):
-        date_str = self._get_task_meta().get('date_done')
-        if date_str:
-            return parse_iso8601(date_str)
-        return date_str
+        date_done = self._get_task_meta().get('date_done')
+        if date_done and not isinstance(date_done, datetime.datetime):
+            return parse_iso8601(date_done)
+        return date_done
 
     @property
     def retries(self):

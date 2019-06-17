@@ -223,7 +223,7 @@ class CassandraBackend(BaseBackend):
             'task_id': task_id,
             'status': status,
             'result': self.decode(result),
-            'date_done': date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'date_done': date_done,
             'traceback': self.decode(traceback),
             'children': self.decode(children),
         })
