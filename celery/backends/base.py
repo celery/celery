@@ -470,7 +470,8 @@ class Backend(object):
         if request:
             return [r.as_tuple() for r in getattr(request, 'children', [])]
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         return (unpickle_backend, (self.__class__, args, kwargs))
 
 

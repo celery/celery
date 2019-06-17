@@ -78,13 +78,14 @@ def _optparse_callback_to_type(option, callback):
     return _on_arg
 
 
-def _add_optparse_argument(parser, opt, typemap={
+def _add_optparse_argument(parser, opt, typemap=None):
+    typemap = {
         'string': text_t,
         'int': int,
         'long': long_t,
         'float': float,
         'complex': complex,
-        'choice': None}):
+        'choice': None} if not typemap else typemap
     if opt.callback:
         opt.type = _optparse_callback_to_type(opt, opt.type)
     # argparse checks for existence of this kwarg

@@ -318,7 +318,8 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         raise NotImplementedError(
             'delete_group is not supported by this backend.')
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         return super(RPCBackend, self).__reduce__(args, dict(
             kwargs,
             connection=self._connection,

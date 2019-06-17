@@ -53,11 +53,11 @@ class State(object):
 
 
 def republish(producer, message, exchange=None, routing_key=None,
-              remove_props=['application_headers',
-                            'content_type',
-                            'content_encoding',
-                            'headers']):
+              remove_props=None):
     """Republish message."""
+    if not remove_props:
+        remove_props = ['application_headers', 'content_type',
+                        'content_encoding', 'headers']
     body = ensure_bytes(message.body)  # use raw message body.
     info, headers, props = (message.delivery_info,
                             message.headers, message.properties)

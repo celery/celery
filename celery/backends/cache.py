@@ -98,7 +98,8 @@ class CacheBackend(KeyValueStoreBackend):
     implements_incr = True
 
     def __init__(self, app, expires=None, backend=None,
-                 options={}, url=None, **kwargs):
+                 options=None, url=None, **kwargs):
+        options = {} if not options else options
         super(CacheBackend, self).__init__(app, **kwargs)
         self.url = url
 
@@ -145,7 +146,8 @@ class CacheBackend(KeyValueStoreBackend):
     def client(self):
         return self.Client(self.servers, **self.options)
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         servers = ';'.join(self.servers)
         backend = '{0}://{1}/'.format(self.backend, servers)
         kwargs.update(

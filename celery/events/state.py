@@ -347,8 +347,9 @@ class Task(object):
         # update current state with info from this event.
         self.__dict__.update(fields)
 
-    def info(self, fields=None, extra=[]):
+    def info(self, fields=None, extra=None):
         """Information about this task suitable for on-screen display."""
+        extra = [] if not extra else extra
         fields = self._info_fields if fields is None else fields
 
         def _keys():
