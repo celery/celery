@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import copy
+import datetime
 import traceback
 from contextlib import contextmanager
 
@@ -424,11 +425,24 @@ class test_AsyncResult:
         assert x.worker == 'foo'
         assert x.retries == 1
         assert x.queue == 'celery'
-        assert x.date_done is not None
+        assert isinstance(x.date_done, datetime.datetime)
         assert x.task_id == "1"
         assert x.state == "SUCCESS"
         result = self.app.AsyncResult(self.task4['id'])
         assert result.date_done is None
+
+    @pytest.mark.parametrize('result_dict, date', [
+        ({u'date_done': None}, None),
+        ({u'date_done': u'1991-10-05T05:41:06'},
+         datetime.datetime(1991, 10, 5, 5, 41, 6)),
+        ({u'date_done': datetime.datetime(1991, 10, 5, 5, 41, 6)},
+         datetime.datetime(1991, 10, 5, 5, 41, 6))
+    ])
+    def test_date_done(self, result_dict, date):
+        result = self.app.AsyncResult(uuid())
+        result._cache = result_dict
+        assert result.date_done == date
+
 
 
 class test_ResultSet:

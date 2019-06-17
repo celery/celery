@@ -181,7 +181,6 @@ class MongoBackend(BaseBackend):
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
         """Store return value and state of an executed task."""
-        # TODO  ?? if state not in self.READY_STATES: date_done = None
         meta = {
             '_id': task_id,
             'status': state,
