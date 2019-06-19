@@ -502,7 +502,7 @@ class AsyncResult(ResultBase):
 
     @property
     def date_done(self):
-        """ UTC date and time """
+        """UTC date and time."""
         date_done = self._get_task_meta().get('date_done')
         if date_done and not isinstance(date_done, datetime.datetime):
             return parse_iso8601(date_done)
