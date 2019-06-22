@@ -288,7 +288,13 @@ class Command(object):
         try:
             argv = self.setup_app_from_commandline(argv)
         except ModuleNotFoundError as e:
-            self.on_error(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(e.name))
+            # In Python 2.7 and below, there is no name instance for exceptions
+            # Remove when Python 2.7 is not supported
+            if sys.version_info < (3, 0):
+                package_name = e.message.replace("No module named ", "")
+            else:
+                package_name = e.name
+            self.on_error(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(package_name))
             return EX_FAILURE
         except AttributeError as e:
             msg = e.args[0].capitalize()
