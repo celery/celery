@@ -247,7 +247,7 @@ class test_crontab_remaining_estimate:
     def crontab(self, *args, **kwargs):
         return crontab(*args, **dict(kwargs, app=self.app))
 
-    def next_occurrence(self, crontab, now):
+    def next_ocurrance(self, crontab, now):
         crontab.nowfun = lambda: now
         return now + crontab.remaining_estimate(now)
 
