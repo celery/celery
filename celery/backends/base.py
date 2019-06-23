@@ -96,7 +96,7 @@ class Backend(object):
     #: in this case.
     supports_autoexpire = False
 
-    #: Set to true if the backend is peristent by default.
+    #: Set to true if the backend is persistent by default.
     persistent = True
 
     retry_policy = {
