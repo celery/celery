@@ -74,29 +74,6 @@ class test_chain:
             res.parent.get(propagate=True)
 
     @flaky
-    def test_chain_chord_chain_chord(self):
-        # test for #2573
-        c = chain(
-            identity.si(1),
-            chord(
-                [
-                    identity.si(2),
-                    chain(
-                        identity.si(3),
-                        chord(
-                            [identity.si(4), identity.si(5)],
-                            identity.si(6)
-                        )
-                    )
-                ],
-                identity.si(7)
-            )
-        )
-        res = c()
-        assert res.get(timeout=TIMEOUT) == 7
-
-
-    @flaky
     def test_chain_inside_group_receives_arguments(self, manager):
         c = (
             add.s(5, 6) |
@@ -696,3 +673,29 @@ class test_chord:
         r = c.delay()
 
         assert r.get(timeout=TIMEOUT) == 4
+
+    @flaky
+    def test_chain_chord_chain_chord(self, manager):
+        # test for #2573
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+        c = chain(
+            identity.si(1),
+            chord(
+                [
+                    identity.si(2),
+                    chain(
+                        identity.si(3),
+                        chord(
+                            [identity.si(4), identity.si(5)],
+                            identity.si(6)
+                        )
+                    )
+                ],
+                identity.si(7)
+            )
+        )
+        res = c.delay()
+        assert res.get(timeout=TIMEOUT) == 7
