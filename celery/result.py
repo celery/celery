@@ -3,6 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import time
+import datetime
 from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
@@ -18,6 +19,7 @@ from .five import (items, monotonic, python_2_unicode_compatible, range,
                    string_t)
 from .utils import deprecated
 from .utils.graph import DependencyGraph, GraphFormatter
+from .utils.iso8601 import parse_iso8601
 
 try:
     import tblib
@@ -500,7 +502,11 @@ class AsyncResult(ResultBase):
 
     @property
     def date_done(self):
-        return self._get_task_meta().get('date_done')
+        """UTC date and time."""
+        date_done = self._get_task_meta().get('date_done')
+        if date_done and not isinstance(date_done, datetime.datetime):
+            return parse_iso8601(date_done)
+        return date_done
 
     @property
     def retries(self):
