@@ -1052,6 +1052,10 @@ Default: No limit.
 Maximum number of connections available in the Redis connection
 pool used for sending and retrieving results.
 
+.. warning::
+    Redis will raise a `ConnectionError` if the number of concurrent
+    connections exceeds the maximum.
+
 .. setting:: redis_socket_connect_timeout
 
 ``redis_socket_connect_timeout``
