@@ -96,7 +96,7 @@ class Backend(object):
     #: in this case.
     supports_autoexpire = False
 
-    #: Set to true if the backend is peristent by default.
+    #: Set to true if the backend is persistent by default.
     persistent = True
 
     retry_policy = {
@@ -470,7 +470,8 @@ class Backend(object):
         if request:
             return [r.as_tuple() for r in getattr(request, 'children', [])]
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         return (unpickle_backend, (self.__class__, args, kwargs))
 
 
@@ -684,7 +685,7 @@ class BaseKeyValueStoreBackend(Backend):
                       traceback=None, request=None, **kwargs):
 
         if state in self.READY_STATES:
-            date_done = datetime.datetime.utcnow()
+            date_done = datetime.datetime.utcnow().isoformat()
         else:
             date_done = None
 

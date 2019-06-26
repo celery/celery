@@ -440,7 +440,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def client(self):
         return self._create_client(**self.connparams)
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         return super(RedisBackend, self).__reduce__(
             (self.url,), {'expires': self.expires},
         )

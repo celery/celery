@@ -324,6 +324,12 @@ class test_chain(CanvasCase):
             assert isinstance(task, Signature)
             assert task.app is self.app
 
+    def test_groups_in_chain_to_chord(self):
+        g1 = group([self.add.s(2, 2), self.add.s(4, 4)])
+        g2 = group([self.add.s(3, 3), self.add.s(5, 5)])
+        c = g1 | g2
+        assert isinstance(c, chord)
+
     def test_group_to_chord(self):
         c = (
             self.add.s(5) |

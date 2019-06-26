@@ -89,10 +89,12 @@ def task_reserved(request,
 
 
 def task_accepted(request,
-                  _all_total_count=all_total_count,
+                  _all_total_count=None,
                   add_active_request=active_requests.add,
                   add_to_total_count=total_count.update):
     """Update global state when a task has been accepted."""
+    if not _all_total_count:
+        _all_total_count = all_total_count
     add_active_request(request)
     add_to_total_count({request.name: 1})
     all_total_count[0] += 1

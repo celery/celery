@@ -392,10 +392,6 @@ class Signature(dict):
         # These could be implemented in each individual class,
         # I'm sure, but for now we have this.
         if isinstance(self, group):
-            if isinstance(other, group):
-                # group() | group() -> single group
-                return group(
-                    itertools.chain(self.tasks, other.tasks), app=self.app)
             # group() | task -> chord
             return chord(self, body=other, app=self._app)
         elif isinstance(other, group):

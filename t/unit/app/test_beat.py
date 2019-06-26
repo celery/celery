@@ -39,14 +39,15 @@ class MockService(object):
     def stop(self, **kwargs):
         self.stopped = True
 
+
 class test_BeatLazyFunc:
 
     def test_beat_lazy_func(self):
         def add(a, b):
             return a + b
         result = BeatLazyFunc(add, 1, 2)
-        assert add(1,2) == result()
-        assert add(1,2) == result.delay()
+        assert add(1, 2) == result()
+        assert add(1, 2) == result.delay()
 
 
 class test_ScheduleEntry:

@@ -78,7 +78,8 @@ class Router(object):
         self.routes = [] if routes is None else routes
         self.create_missing = create_missing
 
-    def route(self, options, name, args=(), kwargs={}, task_type=None):
+    def route(self, options, name, args=(), kwargs=None, task_type=None):
+        kwargs = {} if not kwargs else kwargs
         options = self.expand_destination(options)  # expands 'queue'
         if self.routes:
             route = self.lookup_route(name, args, kwargs, options, task_type)

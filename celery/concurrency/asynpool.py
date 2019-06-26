@@ -756,7 +756,9 @@ class AsynPool(_pool.Pool):
         self.on_inqueue_close = on_inqueue_close
         self.hub_remove = hub_remove
 
-        def schedule_writes(ready_fds, total_write_count=[0]):
+        def schedule_writes(ready_fds, total_write_count=None):
+            if not total_write_count:
+                total_write_count = [0]
             # Schedule write operation to ready file descriptor.
             # The file descriptor is writable, but that does not
             # mean the process is currently reading from the socket.

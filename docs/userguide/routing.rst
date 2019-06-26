@@ -134,7 +134,7 @@ configuration:
     task_default_exchange_type = 'topic'
     task_default_routing_key = 'task.default'
 
-:setting:`task_queues` is a list of :class:`~kombu.entitity.Queue`
+:setting:`task_queues` is a list of :class:`~kombu.entity.Queue`
 instances.
 If you don't set the exchange or exchange type values for a key, these
 will be taken from the :setting:`task_default_exchange` and

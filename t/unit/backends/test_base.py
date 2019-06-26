@@ -230,7 +230,7 @@ class KVBackend(KeyValueStoreBackend):
 
     def __init__(self, app, *args, **kwargs):
         self.db = {}
-        super(KVBackend, self).__init__(app)
+        super(KVBackend, self).__init__(app, *args, **kwargs)
 
     def get(self, key):
         return self.db.get(key)
@@ -513,7 +513,11 @@ class test_KeyValueStoreBackend:
         self.b.forget(tid)
         assert self.b.get_state(tid) == states.PENDING
 
-    def test_store_result_parent_id(self):
+    @pytest.mark.parametrize('serializer',
+                             ['json', 'pickle', 'yaml', 'msgpack'])
+    def test_store_result_parent_id(self, serializer):
+        self.app.conf.accept_content = ('json', serializer)
+        self.b = KVBackend(app=self.app, serializer=serializer)
         tid = uuid()
         pid = uuid()
         state = 'SUCCESS'

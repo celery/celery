@@ -53,11 +53,11 @@ class State(object):
 
 
 def republish(producer, message, exchange=None, routing_key=None,
-              remove_props=['application_headers',
-                            'content_type',
-                            'content_encoding',
-                            'headers']):
+              remove_props=None):
     """Republish message."""
+    if not remove_props:
+        remove_props = ['application_headers', 'content_type',
+                        'content_encoding', 'headers']
     body = ensure_bytes(message.body)  # use raw message body.
     info, headers, props = (message.delivery_info,
                             message.headers, message.properties)
@@ -182,7 +182,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
     Note:
         The predicate may also return a tuple of ``(exchange, routing_key)``
         to specify the destination to where the task should be moved,
-        or a :class:`~kombu.entitiy.Queue` instance.
+        or a :class:`~kombu.entity.Queue` instance.
         Any other true value means that the task will be moved to the
         default exchange/routing_key.
     """

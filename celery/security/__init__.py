@@ -45,7 +45,6 @@ except ImportError:
     raise ImproperlyConfigured(CRYPTOGRAPHY_NOT_INSTALLED)
 
 
-
 def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
                    digest=None, serializer='json', app=None):
     """See :meth:`@Celery.setup_security`."""
