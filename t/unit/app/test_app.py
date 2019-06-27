@@ -799,20 +799,6 @@ class test_App:
         assert self.app.connection('amqp:////value') \
                        .failover_strategy == my_failover_strategy
 
-    def test_amqp_heartbeat_settings(self):
-        # Test default broker_heartbeat value
-        assert self.app.connection('amqp:////value') \
-                   .heartbeat == 0
-
-        # Test passing heartbeat through app configuration
-        self.app.conf.broker_heartbeat = 60
-        assert self.app.connection('amqp:////value') \
-                   .heartbeat == 60
-
-        # Test passing heartbeat as connection argument
-        assert self.app.connection('amqp:////value', heartbeat=30) \
-                   .heartbeat == 30
-
     def test_after_fork(self):
         self.app._pool = Mock()
         self.app.on_after_fork = Mock(name='on_after_fork')
