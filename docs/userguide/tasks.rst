@@ -552,6 +552,20 @@ see :setting:`worker_redirect_stdouts`).
             logger.propagate = True
 
 
+.. note::
+
+    If you want to completely disable Celery logging configuration,
+    use the :signal:`setup_logging` signal:
+
+    .. code-block:: python
+
+        import celery
+
+        @celery.signals.setup_logging.connect
+        def on_setup_logging(**kwargs):
+            pass
+
+
 .. _task-argument-checking:
 
 Argument checking
