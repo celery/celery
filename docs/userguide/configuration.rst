@@ -1061,7 +1061,7 @@ pool used for sending and retrieving results.
 ``redis_socket_connect_timeout``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 5.0.1
+.. versionadded:: 4.0.1
 
 Default: :const:`None`
 
