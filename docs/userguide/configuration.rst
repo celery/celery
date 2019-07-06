@@ -43,7 +43,7 @@ New lowercase settings
 Version 4.0 introduced new lower case settings and setting organization.
 
 The major difference between previous versions, apart from the lower case
-names, are the renaming of some prefixes, like ``celerybeat_`` to ``beat_``,
+names, are the renaming of some prefixes, like ``celery_beat_`` to ``beat_``,
 ``celeryd_`` to ``worker_``, and most of the top level ``celery_`` settings
 have been moved into a new  ``task_`` prefix.
 
