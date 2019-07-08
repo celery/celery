@@ -725,6 +725,11 @@ Run-time is the time it took to execute the task using the pool.
 (Starting from the task is sent to the worker pool, and ending when the
 pool result handler callback is called).
 
+The result is truncated when its length exceeds ``app.Task.resultrepr_maxsize``
+(default to 1024), since  the events are used exclusively for monitoring.
+You can change this configuration by setting
+``app.Task.resultrepr_maxsize = 2000`` .
+
 .. event:: task-failed
 
 task-failed
