@@ -130,9 +130,9 @@ configuration:
         Queue('default',    routing_key='task.#'),
         Queue('feed_tasks', routing_key='feed.#'),
     )
-    task_default_exchange = 'tasks'
-    task_default_exchange_type = 'topic'
-    task_default_routing_key = 'task.default'
+    app.conf.task_default_exchange = 'tasks'
+    app.conf.task_default_exchange_type = 'topic'
+    app.conf.task_default_routing_key = 'task.default'
 
 :setting:`task_queues` is a list of :class:`~kombu.entity.Queue`
 instances.
@@ -736,7 +736,8 @@ default priority.
     responsiveness of your system without the costs of disabling prefetching
     entirely.
 
-    Note that priorities values are sorted in reverse: 0 being highest priority.
+    Note that priorities values are sorted in reverse when
+    using the redis broker: 0 being highest priority.
 
 
 Broadcast
