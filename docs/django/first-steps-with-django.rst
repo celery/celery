@@ -206,6 +206,22 @@ To use this with your project you need to follow these steps:
 
         CELERY_CACHE_BACKEND = 'django-cache'
 
+    We can also use the cache defined in the CACHES setting in django.
+
+    .. code-block:: python
+
+        # celery setting.
+        CELERY_CACHE_BACKEND = 'default'
+
+        # django setting.
+        CACHES = {
+            'default': {
+                'BACKEND': 'api.lib.redis_cache_backend.RedisCache',
+                'LOCATION': '127.0.0.1:11211',
+            }
+        }
+
+
 ``django-celery-beat`` - Database-backed Periodic Tasks with Admin interface.
 -----------------------------------------------------------------------------
 
