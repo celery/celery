@@ -216,8 +216,8 @@ To use this with your project you need to follow these steps:
         # django setting.
         CACHES = {
             'default': {
-                'BACKEND': '/path/to/cachebackend/DBbackend',
-                'LOCATION': '127.0.0.1:11211',
+                'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+                'LOCATION': 'my_cache_table',
             }
         }
 
