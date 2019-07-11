@@ -216,7 +216,7 @@ To use this with your project you need to follow these steps:
         # django setting.
         CACHES = {
             'default': {
-                'BACKEND': 'api.lib.redis_cache_backend.RedisCache',
+                'BACKEND': '/path/to/cachebackend/DBbackend',
                 'LOCATION': '127.0.0.1:11211',
             }
         }
