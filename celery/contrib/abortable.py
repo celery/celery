@@ -147,9 +147,9 @@ class AbortableTask(Task):
 
     abstract = True
 
-    def AsyncResult(self, task_id):
+    def AsyncResult(self, task_id, **kwargs):
         """Return the accompanying AbortableAsyncResult instance."""
-        return AbortableAsyncResult(task_id, backend=self.backend)
+        return AbortableAsyncResult(task_id, backend=self.backend, **kwargs)
 
     def is_aborted(self, **kwargs):
         """Return true if task is aborted.
