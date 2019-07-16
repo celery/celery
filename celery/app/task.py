@@ -790,8 +790,7 @@ class Task(object):
         Arguments:
             task_id (str): Task id to get result for.
         """
-        return self._get_app().AsyncResult(task_id, backend=self.backend,
-                                           task_name=self.name, **kwargs)
+        return self._get_app().AsyncResult(task_id, backend=self.backend, **kwargs)
 
     def signature(self, args=None, *starargs, **starkwargs):
         """Create signature.

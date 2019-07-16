@@ -756,7 +756,7 @@ class Celery(object):
                 if not ignored_result:
                     self.backend.on_task_call(P, task_id)
                 amqp.send_task_message(P, name, message, **options)
-        result = (result_cls or self.AsyncResult)(task_id)
+        result = (result_cls or self.AsyncResult)(task_id, task_name=name)
         # We avoid using the constructor since a custom result class
         # can be used, in which case the constructor may still use
         # the old signature.
