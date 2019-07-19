@@ -128,7 +128,7 @@ class test_chain:
         ct = chain(identity.si(5), gt)
         task = group(t1, t2, ct)
         result = task.delay()
-        assert result.get(timeout=TIMEOUT) == [1, 2, None]
+        assert result.get(timeout=TIMEOUT) == [1, 2, [3, 4]]
 
     @flaky
     def test_second_order_replace(self, manager):
