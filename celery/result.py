@@ -819,9 +819,14 @@ class ResultSet(ResultBase):
         acc = None if callback else [None for _ in range(len(self))]
         for task_id, meta in self.iter_native(timeout, interval, no_ack,
                                               on_message, on_interval):
-            value = meta['result']
-            if propagate and meta['status'] in states.PROPAGATE_STATES:
-                raise value
+            if isinstance(meta, list):
+                value = []
+                for children_result in meta:
+                    value.append(children_result.get())
+            else:
+                value = meta['result']
+                if propagate and meta['status'] in states.PROPAGATE_STATES:
+                    raise value
             if callback:
                 callback(task_id, value)
             else:
