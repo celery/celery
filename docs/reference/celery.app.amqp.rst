@@ -26,6 +26,16 @@
 
             All currently defined task queues (a :class:`Queues` instance).
 
+        .. attribute:: argsrepr_maxsize
+
+            Max size of positional argument representation used for logging
+            purposes. Default is 1024.
+
+        .. attribute:: kwargsrepr_maxsize
+
+            Max size of keyword argument representation used for logging
+            purposes. Default is 1024.
+
         .. automethod:: Queues
         .. automethod:: Router
         .. automethod:: flush_routes
