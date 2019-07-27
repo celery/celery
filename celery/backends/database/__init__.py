@@ -128,24 +128,17 @@ class DatabaseBackend(BaseBackend):
 
     def _update_result(self, task, result, state, traceback=None,
                        request=None):
-        task.result = result
-        task.status = state
-        task.traceback = traceback
-        if self.app.conf.find_value_for_key('extended', 'result'):
-            task.name = getattr(request, 'task', None)
-            task.args = ensure_bytes(
-                self.encode(getattr(request, 'args', None))
-            )
-            task.kwargs = ensure_bytes(
-                self.encode(getattr(request, 'kwargs', None))
-            )
-            task.worker = getattr(request, 'hostname', None)
-            task.retries = getattr(request, 'retries', None)
-            task.queue = (
-                request.delivery_info.get("routing_key")
-                if hasattr(request, "delivery_info") and request.delivery_info
-                else None
-            )
+
+        meta = self._get_result_meta(result=result, state=state,
+                                     traceback=traceback, request=request)
+
+        # Iterate through the columns name of the table
+        # to set the value from meta.
+        # If the value is not present in meta, set None
+        for column in self.task_cls.__table__.columns:
+            key = column.key
+            value = meta.get(key)
+            setattr(task, key, value)
 
     @retry
     def _get_task_meta_for(self, task_id):
