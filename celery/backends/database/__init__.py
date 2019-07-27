@@ -142,13 +142,16 @@ class DatabaseBackend(BaseBackend):
         if meta['date_done']:
             meta['date_done'] = parse(meta['date_done'])
 
+        # Exclude the primary key id column as we should not set it None
+        columns = [column.name for column in self.task_cls.__table__.columns
+                   if column.name != 'id']
+
         # Iterate through the columns name of the table
         # to set the value from meta.
         # If the value is not present in meta, set None
-        for column in self.task_cls.__table__.columns:
-            key = column.key
-            value = meta.get(key)
-            setattr(task, key, value)
+        for column in columns:
+            value = meta.get(column)
+            setattr(task, column, value)
 
     @retry
     def _get_task_meta_for(self, task_id):
