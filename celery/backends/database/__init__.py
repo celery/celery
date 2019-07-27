@@ -2,6 +2,7 @@
 """SQLAlchemy result store backend."""
 from __future__ import absolute_import, unicode_literals
 
+import datetime
 import logging
 from contextlib import contextmanager
 
@@ -24,6 +25,12 @@ except ImportError:  # pragma: no cover
     raise ImproperlyConfigured(
         'The database result backend requires SQLAlchemy to be installed.'
         'See https://pypi.org/project/SQLAlchemy/')
+
+try:
+    from dateutil.parser import parse
+except ImportError:  # pragma: no cover
+    raise ImproperlyConfigured('The database result backend '
+                               'requires python-dateutil to be installed.')
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +138,9 @@ class DatabaseBackend(BaseBackend):
 
         meta = self._get_result_meta(result=result, state=state,
                                      traceback=traceback, request=request)
+        # Convert date_done to python datetime
+        if meta['date_done']:
+            meta['date_done'] = parse(meta['date_done'])
 
         # Iterate through the columns name of the table
         # to set the value from meta.
