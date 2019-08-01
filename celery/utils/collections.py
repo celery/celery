@@ -245,6 +245,7 @@ class ChainMap(MutableMapping):
     changes = None
     defaults = None
     maps = None
+    _observers = []
 
     def __init__(self, *maps, **kwargs):
         # type: (*Mapping, **Any) -> None
@@ -335,7 +336,10 @@ class ChainMap(MutableMapping):
 
     def update(self, *args, **kwargs):
         # type: (*Any, **Any) -> Any
-        return self.changes.update(*args, **kwargs)
+        result = self.changes.update(*args, **kwargs)
+        for callback in self._observers:
+            callback(*args, **kwargs)
+        return result
 
     def __repr__(self):
         # type: () -> str
@@ -375,6 +379,9 @@ class ChainMap(MutableMapping):
         # type: () -> Iterable
         return (self[key] for key in self)
     itervalues = _iterate_values
+
+    def bind_to(self, callback):
+        self._observers.append(callback)
 
     if sys.version_info[0] == 3:  # pragma: no cover
         keys = _iterate_keys

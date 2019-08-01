@@ -253,6 +253,7 @@ class AMQP(object):
             1: self.as_task_v1,
             2: self.as_task_v2,
         }
+        self.app._conf.bind_to(self._handle_conf_update)
 
     @cached_property
     def create_task_message(self):
@@ -611,6 +612,10 @@ class AMQP(object):
     def router(self):
         return self.Router()
 
+    @router.setter
+    def router(self, value):
+        return value
+
     @property
     def producer_pool(self):
         if self._producer_pool is None:
@@ -634,3 +639,9 @@ class AMQP(object):
         # We call Dispatcher.publish with a custom producer
         # so don't need the diuspatcher to be enabled.
         return self.app.events.Dispatcher(enabled=False)
+
+    def _handle_conf_update(self, *args, **kwargs):
+        if ('task_routes' in kwargs or 'task_routes' in args):
+            self.flush_routes()
+            self.router = self.Router()
+        return
