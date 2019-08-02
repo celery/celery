@@ -256,6 +256,8 @@ You can call a task using the :meth:`delay` method:
 
 .. code-block:: pycon
 
+    >>> from proj.tasks import add
+    
     >>> add.delay(2, 2)
 
 This method is actually a star-argument shortcut to another method called
