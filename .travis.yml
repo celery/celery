@@ -1,5 +1,4 @@
 language: python
-sudo: required
 dist: xenial
 cache: pip
 python:
@@ -57,11 +56,9 @@ matrix:
     stage: lint
   - python: pypy2.7-7.1.1
     env: TOXENV=pypy
-    dist: xenial
     before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
   - python: pypy3.5-7.0
     env: TOXENV=pypy3
-    dist: xenial
     before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
 
 before_install:
