@@ -74,10 +74,10 @@ def reset_state():
 
 def maybe_shutdown():
     """Shutdown if flags have been set."""
-    if should_stop is not None and should_stop is not False:
-        raise WorkerShutdown(should_stop)
-    elif should_terminate is not None and should_terminate is not False:
+    if should_terminate is not None and should_terminate is not False:
         raise WorkerTerminate(should_terminate)
+    elif should_stop is not None and should_stop is not False:
+        raise WorkerShutdown(should_stop)
 
 
 def task_reserved(request,
