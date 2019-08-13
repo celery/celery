@@ -340,7 +340,7 @@ class test_AMQP:
         self.app.conf.update(task_routes={'task.create_pr': 'queue.asdfgh'})
         self.app.send_task('task.create_pr')
         router = self.app.amqp.router
-        assert router != router_was 
+        assert router != router_was
 
 
 class test_as_task_v2:
