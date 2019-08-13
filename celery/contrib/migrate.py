@@ -382,7 +382,7 @@ def move_by_idmap(map, **kwargs):
         ...   queues=['hipri'])
     """
     def task_id_in_map(body, message):
-        return map.get(body['id'])
+        return map.get(message.properties['correlation_id'])
 
     # adding the limit means that we don't have to consume any more
     # when we've found everything.

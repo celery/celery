@@ -12,7 +12,7 @@ from celery.bootsteps import CLOSE, RUN
 from celery.exceptions import (InvalidTaskError, WorkerLostError,
                                WorkerShutdown, WorkerTerminate)
 from celery.five import Empty, python_2_unicode_compatible
-from celery.platforms import EX_FAILURE
+from celery.platforms import EX_FAILURE, EX_OK
 from celery.worker import state
 from celery.worker.consumer import Consumer
 from celery.worker.loops import _quick_drain, asynloop, synloop
@@ -217,14 +217,16 @@ class test_asynloop:
         on_task(msg)
         x.on_decode_error.assert_called_with(msg, exc)
 
-    def test_should_terminate(self):
+    @pytest.mark.parametrize('should_stop', (None, False, True, EX_OK))
+    def test_should_terminate(self, should_stop):
         x = X(self.app)
-        # XXX why aren't the errors propagated?!?
+        state.should_stop = should_stop
         state.should_terminate = True
         try:
             with pytest.raises(WorkerTerminate):
                 asynloop(*x.args)
         finally:
+            state.should_stop = None
             state.should_terminate = None
 
     def test_should_terminate_hub_close_raises(self):
