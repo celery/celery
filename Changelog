@@ -8,6 +8,28 @@ This document contains change notes for bugfix releases in
 the 4.x series, please see :ref:`whatsnew-4.4` for
 an overview of what's new in Celery 4.4.
 
+
+4.4.0rc3
+========
+:release-date: 2019-08-14 23.00 P.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Kombu 4.6.4
+- Billiard 3.6.1
+- Py-AMQP 2.5.1
+- Avoid serializing datetime (#5606)
+- Fix: (group() | group()) not equals single group (#5574)
+- Revert "Broker connection uses the heartbeat setting from app config.
+- Additional file descriptor safety checks.
+- fixed call for null args (#5631)
+- Added generic path for cache backend.
+- Fix Nested group(chain(group)) fails (#5638)
+- Use self.run() when overriding __call__ (#5652)
+- Fix termination of asyncloop (#5671)
+- Fix migrate task to work with both v1 and v2 of the message protocol.
+- Updating task_routes config during runtime now have effect.
+
+
 4.4.0rc2
 ========
 :release-date: 2019-06-15 4:00 A.M UTC+6:00
