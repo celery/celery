@@ -129,8 +129,9 @@ class test_MongoBackend:
 
         self.app.conf.mongodb_backend_settings = None
 
-        def mock_resolver(_, record_type):
-            if record_type == 'SRV':
+        def mock_resolver(_, rdtype, rdclass=None, lifetime=None, **kwargs):
+
+            if rdtype == 'SRV':
                 return [
                     SRV(0, 0, 0, 0, 27017, Name(labels=hostname))
                     for hostname in [
@@ -139,7 +140,7 @@ class test_MongoBackend:
                         b'mongo3.example.com'.split(b'.')
                     ]
                 ]
-            elif record_type == 'TXT':
+            elif rdtype == 'TXT':
                 return [TXT(0, 0, [b'replicaSet=rs0'])]
 
         dns_resolver_query.side_effect = mock_resolver
