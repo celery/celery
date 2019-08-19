@@ -675,7 +675,7 @@ class _chain(Signature):
                         task_id=prev_res.task_id, root_id=root_id, app=app,
                     )
                 except AttributeError:
-                    # A GroupResult does not have a task_id since it is consistent
+                    # A GroupResult does not have a task_id since it consists
                     # of multiple tasks.
                     # We therefore, have to construct the chord without it.
                     # Issues #5467, #3585.
