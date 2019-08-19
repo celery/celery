@@ -599,7 +599,15 @@ class _chain(Signature):
             # chain option may already be set, resulting in
             # "multiple values for keyword argument 'chain'" error.
             # Issue #3379.
-            options['chain'] = tasks if not use_link else None
+            chain_ = tasks if not use_link else None
+            if 'chain' not in options:
+                options['chain'] = chain_
+            elif chain_ is not None:
+                # If a chain already exists, we need to extend it with the next
+                # tasks in the chain.
+                # Issue #5354.
+                options['chain'].extend(chain_)
+
             first_task.apply_async(**options)
             return results[0]
 

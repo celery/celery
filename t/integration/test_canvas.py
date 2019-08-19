@@ -247,6 +247,103 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == 8
 
+    @flaky
+    def test_chain_of_chords_as_groups_chained_to_a_task_with_two_tasks(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = add.si(1, 0)
+        c = c | group(add.s(1), add.s(1))
+        c = c | tsum.s()
+        c = c | add.s(1)
+        c = c | group(add.s(1), add.s(1))
+        c = c | tsum.s()
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 12
+
+    @flaky
+    def test_chain_of_chords_with_two_tasks(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = add.si(1, 0)
+        c = c | group(add.s(1), add.s(1))
+        c = c | tsum.s()
+        c = c | add.s(1)
+        c = c | chord(group(add.s(1), add.s(1)), tsum.s())
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 12
+
+    @flaky
+    def test_chain_of_a_chord_and_a_group_with_two_tasks(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = add.si(1, 0)
+        c = c | group(add.s(1), add.s(1))
+        c = c | tsum.s()
+        c = c | add.s(1)
+        c = c | group(add.s(1), add.s(1))
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == [6, 6]
+
+    @flaky
+    def test_chain_of_a_chord_and_a_task_and_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = group(add.s(1, 1), add.s(1, 1))
+        c = c | tsum.s()
+        c = c | add.s(1)
+        c = c | group(add.s(1), add.s(1))
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == [6, 6]
+
+    @flaky
+    def test_chain_of_a_chord_and_two_tasks_and_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = group(add.s(1, 1), add.s(1, 1))
+        c = c | tsum.s()
+        c = c | add.s(1)
+        c = c | add.s(1)
+        c = c | group(add.s(1), add.s(1))
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == [7, 7]
+
+    @flaky
+    def test_chain_of_a_chord_and_three_tasks_and_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = group(add.s(1, 1), add.s(1, 1))
+        c = c | tsum.s()
+        c = c | add.s(1)
+        c = c | add.s(1)
+        c = c | add.s(1)
+        c = c | group(add.s(1), add.s(1))
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == [8, 8]
+
 
 class test_result_set:
 
@@ -338,7 +435,9 @@ def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
 
 
 def assert_ping(manager):
-    ping_val = list(manager.inspect().ping().values())[0]
+    ping_result = manager.inspect().ping()
+    assert ping_result
+    ping_val = list(ping_result.values())[0]
     assert ping_val == {"ok": "pong"}
 
 
