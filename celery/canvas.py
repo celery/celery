@@ -669,10 +669,20 @@ class _chain(Signature):
                 # signature instead of a group.
                 tasks.pop()
                 results.pop()
-                task = chord(
-                    task, body=prev_task,
-                    task_id=prev_res.task_id, root_id=root_id, app=app,
-                )
+                try:
+                    task = chord(
+                        task, body=prev_task,
+                        task_id=prev_res.task_id, root_id=root_id, app=app,
+                    )
+                except AttributeError:
+                    # A GroupResult does not have a task_id since it consists
+                    # of multiple tasks.
+                    # We therefore, have to construct the chord without it.
+                    # Issues #5467, #3585.
+                    task = chord(
+                        task, body=prev_task,
+                        root_id=root_id, app=app,
+                    )
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task

@@ -232,6 +232,21 @@ class test_chain:
         assert len(result) == 2
         assert isinstance(result[0][1], list)
 
+    @flaky
+    def test_chain_of_task_a_group_and_a_chord(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = add.si(1, 0)
+        c = c | group(add.s(1), add.s(1))
+        c = c | group(tsum.s(), tsum.s())
+        c = c | tsum.s()
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 8
+
 
 class test_result_set:
 
