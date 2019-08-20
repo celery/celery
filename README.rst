@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 4.4.0rc3 (cliffs)
+:Version: 5.0.0a1 (cliffs)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -55,15 +55,13 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 4.3 runs on,
+Celery version 5.0.0 alpha-1 runs on,
 
-- Python (2.7, 3.4, 3.5, 3.6, 3.7)
-- PyPy2.7 (6.0)
-- PyPy3.5 (6.0)
+- Python (3.6, 3.7)
+- PyPy3.6 (7.1.1)
 
 
-This is the last version to support Python 2.7,
-and from the next version (Celery 5.x) Python 3.5 or newer is required.
+This is the next version to of celery which will support Python 3.6 or newer.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
@@ -71,6 +69,7 @@ an older version of Celery:
 - Python 2.6: Celery series 3.1 or earlier.
 - Python 2.5: Celery series 3.0 or earlier.
 - Python 2.4 was Celery series 2.2 or earlier.
+- Python 2.7: Celery 4.x series.
 
 Celery is a project with minimal funding,
 so we don't support Microsoft Windows.
@@ -88,7 +87,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery 4.2 coming from previous versions then you should read our
+new to Celery 5.0.0 alpha-1 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
