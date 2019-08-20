@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta

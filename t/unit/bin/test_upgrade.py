@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Tests for ``celery upgrade`` command."""
-from __future__ import absolute_import, unicode_literals
 
 import pytest
 
