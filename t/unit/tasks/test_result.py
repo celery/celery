@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from case import Mock, call, patch, skip
+from case import Mock, call, patch, skip, MagicMock
 from celery import states, uuid
 from celery.app.task import Context
 from celery.backends.base import SyncBackendMixin
@@ -468,6 +468,38 @@ class test_ResultSet:
         b.supports_native_join = True
         x.get()
         x.join_native.assert_called()
+
+    def test_join_native_with_group_chain_group(self):
+        """Test group(chain(group)) case, join_native can be run correctly.
+        In group(chain(group)) case, GroupResult has no _cache property, and
+        AsyncBackendMixin.iter_native returns a node instead of node._cache,
+        this test make sure ResultSet.join_native can process correctly both
+        values of AsyncBackendMixin.iter_native returns.
+        """
+        def _get_meta(tid, result=None, children=None):
+            return {
+                'status': states.SUCCESS,
+                'result': result,
+                'children': children,
+                'task_id': tid,
+            }
+
+        results = [self.app.AsyncResult(t) for t in [1, 2, 3]]
+        values = [(_.id, _get_meta(_.id, _)) for _ in results]
+        g_res = GroupResult(6, [self.app.AsyncResult(t) for t in [4, 5]])
+        results += [g_res]
+        values += [(6, g_res.children)]
+        x = self.app.ResultSet(results)
+        x.results[0].backend = Mock()
+        x.results[0].backend.join = Mock()
+        x.results[3][0].get = Mock()
+        x.results[3][0].get.return_value = g_res.results[0]
+        x.results[3][1].get = Mock()
+        x.results[3][1].get.return_value = g_res.results[1]
+        x.iter_native = Mock()
+        x.iter_native.return_value = values.__iter__()
+        x.join_native()
+        x.iter_native.assert_called()
 
     def test_eq_ne(self):
         g1 = self.app.ResultSet([
