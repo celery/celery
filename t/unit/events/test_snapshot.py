@@ -5,7 +5,7 @@ from celery.app.events import Events
 from celery.events.snapshot import Polaroid, evcam
 
 
-class MockTimer(object):
+class MockTimer:
     installed = []
 
     def call_repeatedly(self, secs, fun, *args, **kwargs):

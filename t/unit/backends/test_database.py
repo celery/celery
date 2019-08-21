@@ -22,7 +22,7 @@ else:
     from celery.backends.database.models import Task, TaskSet
 
 
-class SomeClass(object):
+class SomeClass:
 
     def __init__(self, data):
         self.data = data

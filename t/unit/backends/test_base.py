@@ -22,7 +22,7 @@ from celery.utils.serialization import get_pickleable_exception as gpe
 from celery.utils.serialization import subclass_exception
 
 
-class wrapobject(object):
+class wrapobject:
 
     def __init__(self, *args, **kwargs):
         self.args = args

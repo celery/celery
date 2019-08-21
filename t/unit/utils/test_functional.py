@@ -37,7 +37,7 @@ class test_firstmethod:
 
     def test_handles_lazy(self):
 
-        class A(object):
+        class A:
 
             def __init__(self, value=None):
                 self.value = value
@@ -134,7 +134,7 @@ class test_regen:
 class test_head_from_fun:
 
     def test_from_cls(self):
-        class X(object):
+        class X:
             def __call__(x, y, kwarg=1):  # noqa
                 pass
 
@@ -197,7 +197,7 @@ class test_head_from_fun:
         g(a=1, b=2, c=3)
 
     def test_classmethod(self):
-        class A(object):
+        class A:
             @classmethod
             def f(cls, x):
                 return x
@@ -257,19 +257,19 @@ def test_seq_concat_item(a, b, expected):
     assert res == expected
 
 
-class StarKwargsCallable(object):
+class StarKwargsCallable:
 
     def __call__(self, **kwargs):
         return 1
 
 
-class StarArgsStarKwargsCallable(object):
+class StarArgsStarKwargsCallable:
 
     def __call__(self, *args, **kwargs):
         return 1
 
 
-class StarArgsCallable(object):
+class StarArgsCallable:
 
     def __call__(self, *args):
         return 1

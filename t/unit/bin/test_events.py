@@ -22,7 +22,7 @@ def _old_patch(module, name, mocked):
     return _patch
 
 
-class MockCommand(object):
+class MockCommand:
     executed = []
 
     def execute_from_commandline(self, **kwargs):

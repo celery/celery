@@ -395,7 +395,7 @@ class test_Cluster:
         nodes = p.getpids('celery worker')
 
     def prepare_pidfile_for_getpids(self, Pidfile):
-        class pids(object):
+        class pids:
 
             def __init__(self, path):
                 self.path = path

@@ -17,7 +17,7 @@ from celery.worker.loops import _quick_drain, asynloop, synloop
 
 
 @python_2_unicode_compatible
-class PromiseEqual(object):
+class PromiseEqual:
 
     def __init__(self, fun, *args, **kwargs):
         self.fun = fun

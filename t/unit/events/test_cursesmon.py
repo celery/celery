@@ -1,7 +1,7 @@
 from case import skip
 
 
-class MockWindow(object):
+class MockWindow:
 
     def getmaxyx(self):
         return self.y, self.x
