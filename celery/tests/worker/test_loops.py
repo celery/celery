@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import socket
 
-from kombu.async import Hub, READ, WRITE, ERR
+from kombu.asynchronous import Hub, READ, WRITE, ERR
 
 from celery.bootsteps import CLOSE, RUN
 from celery.exceptions import InvalidTaskError, WorkerShutdown, WorkerTerminate

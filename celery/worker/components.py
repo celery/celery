@@ -11,9 +11,9 @@ from __future__ import absolute_import
 import atexit
 import warnings
 
-from kombu.async import Hub as _Hub, get_event_loop, set_event_loop
-from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
-from kombu.async.timer import Timer as _Timer
+from kombu.asynchronous import Hub as _Hub, get_event_loop, set_event_loop
+from kombu.asynchronous.semaphore import DummyLock, LaxBoundedSemaphore
+from kombu.asynchronous.timer import Timer as _Timer
 
 from celery import bootsteps
 from celery._state import _set_task_join_will_block
