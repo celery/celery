@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Implementation of the Observer pattern."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 import threading
 import warnings

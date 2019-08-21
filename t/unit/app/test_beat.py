@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import errno
 from datetime import datetime, timedelta
 from pickle import dumps, loads

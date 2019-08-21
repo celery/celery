@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Utilities used by the message signing serializer."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 from contextlib import contextmanager
 

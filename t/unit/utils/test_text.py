@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import pytest
 
 from celery.utils.text import (abbr, abbrtask, ensure_newlines, indent,

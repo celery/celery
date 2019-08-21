@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Worker name utilities."""
-from __future__ import absolute_import, unicode_literals
-
 import os
 import socket
 from functools import partial

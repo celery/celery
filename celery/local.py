@@ -6,7 +6,6 @@ soon as possible, and that shall not load any third party modules.
 
 Parts of this module is Copyright by Werkzeug Team.
 """
-from __future__ import absolute_import, unicode_literals
 
 import operator
 import sys

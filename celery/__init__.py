@@ -6,8 +6,6 @@
 #                 All rights reserved.
 # :license:   BSD (3 Clause), see LICENSE for more details.
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import re
 import sys
@@ -178,7 +176,4 @@ old_module, new_module = local.recreate_module(  # pragma: no cover
     version_info=version_info,
     maybe_patch_concurrency=maybe_patch_concurrency,
     _find_option_with_arg=_find_option_with_arg,
-    absolute_import=absolute_import,
-    unicode_literals=unicode_literals,
-    print_function=print_function,
 )

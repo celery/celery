@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """File-system result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 import locale
 import os
 

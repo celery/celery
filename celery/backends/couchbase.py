@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Couchbase result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 import logging
 
 from kombu.utils.encoding import str_t

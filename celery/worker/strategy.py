@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Task execution strategy (optimization)."""
-from __future__ import absolute_import, unicode_literals
-
 import logging
 
 from kombu.asynchronous.timer import to_timestamp

@@ -4,8 +4,6 @@
 This module defines the :class:`Request` class, that specifies
 how tasks are executed.
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import sys
 from datetime import datetime

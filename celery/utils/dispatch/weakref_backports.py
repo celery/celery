@@ -10,8 +10,6 @@ The following changes were made to the original sources during backporting:
 * Added ``self`` to ``super`` calls.
 * Removed ``from None`` when raising exceptions.
 """
-from __future__ import absolute_import, unicode_literals
-
 from weakref import ref
 
 

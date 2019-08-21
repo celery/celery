@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Schedules define the intervals at which periodic tasks run."""
-from __future__ import absolute_import, unicode_literals
 
 import numbers
 import re

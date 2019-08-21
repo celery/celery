@@ -1,6 +1,4 @@
 """The ``celery control``, ``. inspect`` and ``. status`` programs."""
-from __future__ import absolute_import, unicode_literals
-
 from kombu.utils.json import dumps
 from kombu.utils.objects import cached_property
 

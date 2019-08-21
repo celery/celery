@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """MongoDB result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime, timedelta
 
 from kombu.exceptions import EncodeError

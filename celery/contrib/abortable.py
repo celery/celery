@@ -83,8 +83,6 @@ have it block until the task is finished.
    database backend.  Therefore, this class will only work with the
    database backends.
 """
-from __future__ import absolute_import, unicode_literals
-
 from celery import Task
 from celery.result import AsyncResult
 

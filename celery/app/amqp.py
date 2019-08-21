@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Sending/Receiving Messages (Kombu integration)."""
-from __future__ import absolute_import, unicode_literals
-
 import numbers
 from collections import namedtuple
 from datetime import timedelta

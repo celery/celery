@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Utilities related to dates, times, intervals, and timezones."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import numbers
 import os
 import random

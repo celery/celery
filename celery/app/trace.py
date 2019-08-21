@@ -4,8 +4,6 @@
 This module defines how the task execution is traced:
 errors are recorded, handlers are applied and so on.
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import os
 import sys

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Text formatting utilities."""
-from __future__ import absolute_import, unicode_literals
-
 import re
 from functools import partial
 from pprint import pformat

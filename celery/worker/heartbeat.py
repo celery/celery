@@ -4,8 +4,6 @@
 This is the internal thread responsible for sending heartbeat events
 at regular intervals (may not be an actual thread).
 """
-from __future__ import absolute_import, unicode_literals
-
 from celery.signals import heartbeat_sent
 from celery.utils.sysinfo import load_average
 

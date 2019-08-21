@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Custom maps, sets, sequences, and other data structures."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 from collections import OrderedDict as _OrderedDict
 from collections import deque

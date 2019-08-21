@@ -12,7 +12,6 @@ Generated with:
               -signkey key1.key -out cert1.crt
     $ rm key1.key.org cert1.csr
 """
-from __future__ import absolute_import, unicode_literals
 
 import os
 import tempfile

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """The old AMQP result backend, deprecated and replaced by the RPC backend."""
-from __future__ import absolute_import, unicode_literals
-
 import socket
 from collections import deque
 from operator import itemgetter

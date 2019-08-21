@@ -5,8 +5,6 @@ Using :func:`os.execv` as forking and multiprocessing
 leads to weird issues (it was a long time ago now, but it
 could have something to do with the threading mutex bug)
 """
-from __future__ import absolute_import, unicode_literals
-
 import argparse
 import os
 import sys

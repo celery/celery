@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Task implementation: request context and the task base class."""
-from __future__ import absolute_import, unicode_literals
-
 import signal
 import sys
 

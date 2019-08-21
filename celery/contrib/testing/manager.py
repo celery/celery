@@ -1,6 +1,4 @@
 """Integration testing utilities."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import socket
 import sys
 from collections import defaultdict

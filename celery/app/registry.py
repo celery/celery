@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Registry of available tasks."""
-from __future__ import absolute_import, unicode_literals
-
 import inspect
 from importlib import import_module
 

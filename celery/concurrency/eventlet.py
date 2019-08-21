@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Eventlet execution pool."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 
 from kombu.asynchronous import timer as _timer  # noqa
