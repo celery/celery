@@ -28,7 +28,7 @@ _COMPAT_CLASSMETHODS = (
 
 
 @python_2_unicode_compatible
-class _CompatShared(object):
+class _CompatShared:
 
     def __init__(self, name, cons):
         self.name = name

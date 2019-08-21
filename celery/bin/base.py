@@ -135,7 +135,7 @@ class UsageError(Error):
     status = EX_USAGE
 
 
-class Extensions(object):
+class Extensions:
     """Loads extensions from setuptools entrypoints."""
 
     def __init__(self, namespace, register):
@@ -153,7 +153,7 @@ class Extensions(object):
         return self.names
 
 
-class Command(object):
+class Command:
     """Base class for command-line applications.
 
     Arguments:

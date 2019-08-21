@@ -46,7 +46,7 @@ class SchedulingError(Exception):
     """An error occurred while scheduling a task."""
 
 
-class BeatLazyFunc(object):
+class BeatLazyFunc:
     """An lazy function declared in 'beat_schedule' and called before sending to worker.
 
     Example:
@@ -79,7 +79,7 @@ class BeatLazyFunc(object):
 
 @total_ordering
 @python_2_unicode_compatible
-class ScheduleEntry(object):
+class ScheduleEntry:
     """An entry in the scheduler.
 
     Arguments:
@@ -206,7 +206,7 @@ class ScheduleEntry(object):
         return not self == other
 
 
-class Scheduler(object):
+class Scheduler:
     """Scheduler for periodic tasks.
 
     The :program:`celery beat` program may instantiate this class
@@ -593,7 +593,7 @@ class PersistentScheduler(Scheduler):
         return '    . db -> {self.schedule_filename}'.format(self=self)
 
 
-class Service(object):
+class Service:
     """Celery periodic task service."""
 
     scheduler_cls = PersistentScheduler

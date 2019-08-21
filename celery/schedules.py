@@ -65,7 +65,7 @@ class ParseException(Exception):
     """Raised by :class:`crontab_parser` when the input can't be parsed."""
 
 
-class BaseSchedule(object):
+class BaseSchedule:
 
     def __init__(self, nowfun=None, app=None):
         self.nowfun = nowfun
@@ -196,7 +196,7 @@ class schedule(BaseSchedule):
         return humanize_seconds(self.seconds)
 
 
-class crontab_parser(object):
+class crontab_parser:
     """Parser for Crontab expressions.
 
     Any expression of the form 'groups'

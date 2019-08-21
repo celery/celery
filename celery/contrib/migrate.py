@@ -31,7 +31,7 @@ class StopFiltering(Exception):
 
 
 @python_2_unicode_compatible
-class State(object):
+class State:
     """Migration progress state."""
 
     count = 0
@@ -242,7 +242,7 @@ def prepare_queues(queues):
     return queues
 
 
-class Filterer(object):
+class Filterer:
 
     def __init__(self, app, conn, filter,
                  limit=None, timeout=1.0,

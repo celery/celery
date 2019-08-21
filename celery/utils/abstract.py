@@ -19,7 +19,7 @@ def _hasattr(C, attr):
 
 
 @with_metaclass(ABCMeta)
-class _AbstractClass(object):
+class _AbstractClass:
     __required_attributes__ = frozenset()
 
     @classmethod

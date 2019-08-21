@@ -62,7 +62,7 @@ def _after_fork_cleanup_control(control):
         logger.info('after fork raised exception: %r', exc, exc_info=1)
 
 
-class Inspect(object):
+class Inspect:
     """API for app.control.inspect."""
 
     app = None
@@ -161,7 +161,7 @@ class Inspect(object):
         return self._request('objgraph', num=n, max_depth=max_depth, type=type)
 
 
-class Control(object):
+class Control:
     """Worker remote control client."""
 
     Mailbox = Mailbox

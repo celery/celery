@@ -160,7 +160,7 @@ def using_cluster_and_sig(fun):
     return _inner
 
 
-class TermLogger(object):
+class TermLogger:
 
     splash_text = 'celery multi v{version}'
     splash_context = {'version': VERSION_BANNER}

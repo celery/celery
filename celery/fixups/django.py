@@ -45,7 +45,7 @@ def fixup(app, env='DJANGO_SETTINGS_MODULE'):
             return DjangoFixup(app).install()
 
 
-class DjangoFixup(object):
+class DjangoFixup:
     """Fixup installed when using Django."""
 
     def __init__(self, app):
@@ -96,7 +96,7 @@ class DjangoFixup(object):
         return symbol_by_name('django.utils.timezone:now')
 
 
-class DjangoWorkerFixup(object):
+class DjangoWorkerFixup:
     _db_recycles = 0
 
     def __init__(self, app):

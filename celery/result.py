@@ -62,7 +62,7 @@ def denied_join_result():
         _set_task_join_will_block(reset_value)
 
 
-class ResultBase(object):
+class ResultBase:
     """Base class for results."""
 
     #: Parent result (if part of a chain)

@@ -52,7 +52,7 @@ def old_ns(ns):
 
 
 @python_2_unicode_compatible
-class Option(object):
+class Option:
     """Describes a Celery configuration option."""
 
     alt = None

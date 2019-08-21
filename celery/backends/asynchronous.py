@@ -30,7 +30,7 @@ def register_drainer(name):
 
 
 @register_drainer('default')
-class Drainer(object):
+class Drainer:
     """Result draining service."""
 
     def __init__(self, result_consumer):
@@ -115,7 +115,7 @@ class geventDrainer(greenletDrainer):
         return spawn
 
 
-class AsyncBackendMixin(object):
+class AsyncBackendMixin:
     """Mixin for backends that enables the async API."""
 
     def _collect_into(self, result, bucket):
@@ -205,7 +205,7 @@ class AsyncBackendMixin(object):
         return True
 
 
-class BaseResultConsumer(object):
+class BaseResultConsumer:
     """Manager responsible for consuming result messages."""
 
     def __init__(self, backend, app, accept,

@@ -22,7 +22,7 @@ __all__ = ('Polaroid', 'evcam')
 logger = get_logger('celery.evcam')
 
 
-class Polaroid(object):
+class Polaroid:
     """Record event snapshots."""
 
     timer = None

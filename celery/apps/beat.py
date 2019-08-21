@@ -34,7 +34,7 @@ Configuration ->
 logger = get_logger('celery.beat')
 
 
-class Beat(object):
+class Beat:
     """Beat as a service."""
 
     Service = beat.Service

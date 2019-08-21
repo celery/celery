@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 debug, error, info = logger.debug, logger.error, logger.info
 
 
-class Pidbox(object):
+class Pidbox:
     """Worker mailbox."""
 
     consumer = None

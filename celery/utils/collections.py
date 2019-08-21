@@ -30,7 +30,7 @@ except ImportError:
 try:
     from django.utils.functional import LazyObject, LazySettings
 except ImportError:
-    class LazyObject(object):  # noqa
+    class LazyObject:  # noqa
         pass
     LazySettings = LazyObject  # noqa
 
@@ -119,7 +119,7 @@ class OrderedDict(_OrderedDict):
                     root[1] = first_node[0] = link
 
 
-class AttributeDictMixin(object):
+class AttributeDictMixin:
     """Mixin for Mapping interface that adds attribute access.
 
     I.e., `d.key -> d[key]`).

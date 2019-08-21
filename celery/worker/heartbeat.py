@@ -12,7 +12,7 @@ from .state import SOFTWARE_INFO, active_requests, all_total_count
 __all__ = ('Heart',)
 
 
-class Heart(object):
+class Heart:
     """Timer sending heartbeats at regular intervals.
 
     Arguments:

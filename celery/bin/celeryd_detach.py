@@ -46,7 +46,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
         return EX_FAILURE
 
 
-class detached_celeryd(object):
+class detached_celeryd:
     """Daemonize the celery worker process."""
 
     usage = '%(prog)s [options] [celeryd options]'

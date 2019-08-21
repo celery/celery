@@ -54,7 +54,7 @@ def get_best_memcache(*args, **kwargs):
     return Client, key_t
 
 
-class DummyClient(object):
+class DummyClient:
 
     def __init__(self, *args, **kwargs):
         self.cache = LRUCache(limit=5000)

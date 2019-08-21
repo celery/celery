@@ -30,7 +30,7 @@ class CycleError(Exception):
 
 
 @python_2_unicode_compatible
-class DependencyGraph(object):
+class DependencyGraph:
     """A directed acyclic graph of objects and their dependencies.
 
     Supports a robust topological sort
@@ -225,7 +225,7 @@ class DependencyGraph(object):
         return '\n'.join(output)
 
 
-class GraphFormatter(object):
+class GraphFormatter:
     """Format dependency graphs."""
 
     _attr = DOT.ATTR.strip()

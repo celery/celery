@@ -44,7 +44,7 @@ class TaskFormatter(ColorFormatter):
         return ColorFormatter.format(self, record)
 
 
-class Logging(object):
+class Logging:
     """Application logging setup (app.log)."""
 
     #: The logging subsystem is only configured once per process.

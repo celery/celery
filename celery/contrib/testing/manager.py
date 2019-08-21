@@ -23,7 +23,7 @@ class Sentinel(Exception):
     """Signifies the end of something."""
 
 
-class ManagerMixin(object):
+class ManagerMixin:
     """Mixin that adds :class:`Manager` capabilities."""
 
     def _init_manager(self,

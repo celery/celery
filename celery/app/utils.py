@@ -276,7 +276,7 @@ def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
     )
 
 
-class AppPickler(object):
+class AppPickler:
     """Old application pickler/unpickler (< 3.1)."""
 
     def __call__(self, cls, *args):
