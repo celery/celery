@@ -9,7 +9,7 @@ class test_deprecated_property:
     @patch('celery.utils.deprecated.warn')
     def test_deprecated(self, warn):
 
-        class X(object):
+        class X:
             _foo = None
 
             @deprecated.Property(deprecation='1.2')
@@ -47,7 +47,7 @@ class test_deprecated_property:
         assert x._foo is None
 
     def test_deprecated_no_setter_or_deleter(self):
-        class X(object):
+        class X:
             @deprecated.Property(deprecation='1.2')
             def foo(self):
                 pass

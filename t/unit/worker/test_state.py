@@ -157,7 +157,7 @@ class test_Persistent:
             assert item in saved
 
 
-class SimpleReq(object):
+class SimpleReq:
 
     def __init__(self, name):
         self.id = uuid()

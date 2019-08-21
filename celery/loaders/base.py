@@ -32,7 +32,7 @@ Did you mean '{suggest}'?
 unconfigured = object()
 
 
-class BaseLoader(object):
+class BaseLoader:
     """Base class for loaders.
 
     Loaders handles,

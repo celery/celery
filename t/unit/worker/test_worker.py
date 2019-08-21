@@ -579,7 +579,7 @@ class test_Consumer(ConsumerCase):
         controller.box.node.listen = BConsumer()
         connections = []
 
-        class Connection(object):
+        class Connection:
             calls = 0
 
             def __init__(self, obj):
@@ -640,7 +640,7 @@ class test_Consumer(ConsumerCase):
 
     def test_start__loop(self):
 
-        class _QoS(object):
+        class _QoS:
             prev = 3
             value = 4
 

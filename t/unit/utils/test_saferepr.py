@@ -193,7 +193,7 @@ class test_saferepr:
 
     @skip.if_python3()
     def test_bytes_with_unicode(self):
-        class X(object):
+        class X:
 
             def __repr__(self):
                 return 'æ e i a æ å'.encode(
@@ -232,7 +232,7 @@ class test_saferepr:
             assert result
 
     def test_repr_raises(self):
-        class O(object):
+        class O:
             def __repr__(self):
                 raise KeyError('foo')
         assert 'Unrepresentable' in saferepr(O())

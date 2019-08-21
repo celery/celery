@@ -34,7 +34,7 @@ def humanize_type(type):
         return type.lower().replace('-', ' ')
 
 
-class Dumper(object):
+class Dumper:
     """Monitor events."""
 
     def __init__(self, out=sys.stdout):

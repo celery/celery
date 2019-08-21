@@ -51,7 +51,7 @@ def try_import(module, default=None):
         return default
 
 
-class Proxy(object):
+class Proxy:
     """Proxy to another object."""
 
     # Code stolen from werkzeug.local.Proxy.
@@ -464,7 +464,7 @@ COMPAT_MODULES = {
 DEPRECATED_ATTRS = set(COMPAT_MODULES['celery'].keys()) | {'subtask'}
 
 
-class class_property(object):
+class class_property:
 
     def __init__(self, getter=None, setter=None):
         if getter is not None and not isinstance(getter, classmethod):

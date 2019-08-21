@@ -63,7 +63,7 @@ def _reprtask(task, fmt=None, flags=None):
 
 
 @python_2_unicode_compatible
-class Context(object):
+class Context:
     """Task request variables (Task.request)."""
 
     logfile = None

@@ -24,7 +24,7 @@ def {fun_name}({fun_args}):
 """
 
 
-class DummyContext(object):
+class DummyContext:
 
     def __enter__(self):
         return self

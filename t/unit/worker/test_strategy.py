@@ -69,7 +69,7 @@ class test_default_strategy_proto2:
     def prepare_message(self, message):
         return message
 
-    class Context(object):
+    class Context:
 
         def __init__(self, sig, s, reserved, consumer, message):
             self.sig = sig

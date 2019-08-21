@@ -12,7 +12,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.five import PY3, bytes_if_py2, items, string, text_t
 
 
-class SomeClass(object):
+class SomeClass:
 
     def __init__(self, data):
         self.data = data
@@ -162,7 +162,7 @@ class MemcachedClient(DummyClient):
         return super(MemcachedClient, self).set(key, value, *args, **kwargs)
 
 
-class MockCacheMixin(object):
+class MockCacheMixin:
 
     @contextmanager
     def mock_memcache(self):

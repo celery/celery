@@ -74,7 +74,7 @@ class _nulldict(dict):
     __setitem__ = update = setdefault = ignore
 
 
-class Backend(object):
+class Backend:
     READY_STATES = states.READY_STATES
     UNREADY_STATES = states.UNREADY_STATES
     EXCEPTION_STATES = states.EXCEPTION_STATES
@@ -473,7 +473,7 @@ class Backend(object):
         return (unpickle_backend, (self.__class__, args, kwargs))
 
 
-class SyncBackendMixin(object):
+class SyncBackendMixin:
     def iter_native(self, result, timeout=None, interval=0.5, no_ack=True,
                     on_message=None, on_interval=None):
         self._ensure_not_eager()

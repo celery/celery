@@ -20,7 +20,7 @@ DEFAULT_TEST_CONFIG = {
 }
 
 
-class Trap(object):
+class Trap:
     """Trap that pretends to be an app but raises an exception instead.
 
     This to protect from code that does not properly pass app instances,
@@ -71,7 +71,7 @@ def set_trap(app):
     prev_tls = _state._tls
     _state.set_default_app(trap)
 
-    class NonTLS(object):
+    class NonTLS:
         current_app = trap
     _state._tls = NonTLS()
 

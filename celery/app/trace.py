@@ -148,7 +148,7 @@ def get_task_name(request, default):
     return getattr(request, 'shadow', None) or default
 
 
-class TraceInfo(object):
+class TraceInfo:
     """Information about task execution."""
 
     __slots__ = ('state', 'retval')

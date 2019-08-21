@@ -159,7 +159,7 @@ def with_unique_field(attr):
 
 @with_unique_field('hostname')
 @python_2_unicode_compatible
-class Worker(object):
+class Worker:
     """Worker State."""
 
     heartbeat_max = 4
@@ -253,7 +253,7 @@ class Worker(object):
 
 @with_unique_field('uuid')
 @python_2_unicode_compatible
-class Task(object):
+class Task:
     """Task State."""
 
     name = received = sent = started = succeeded = failed = retried = \
@@ -409,7 +409,7 @@ class Task(object):
             return None
 
 
-class State(object):
+class State:
     """Records clusters state."""
 
     Worker = Worker

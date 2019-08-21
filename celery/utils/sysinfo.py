@@ -24,7 +24,7 @@ def load_average():
     return _load_average()
 
 
-class df(object):
+class df:
     """Disk information."""
 
     def __init__(self, path):

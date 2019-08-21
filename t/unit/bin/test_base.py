@@ -7,7 +7,7 @@ from celery.bin.base import Command, Extensions, Option
 from celery.five import bytes_if_py2
 
 
-class MyApp(object):
+class MyApp:
     user_options = {'preload': None}
 
 

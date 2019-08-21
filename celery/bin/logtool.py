@@ -44,7 +44,7 @@ def task_info(line):
     return m.groups()
 
 
-class Audit(object):
+class Audit:
 
     def __init__(self, on_task_error=None, on_trace=None, on_debug=None):
         self.ids = set()

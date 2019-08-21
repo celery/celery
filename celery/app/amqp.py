@@ -213,7 +213,7 @@ class Queues(dict):
         return self
 
 
-class AMQP(object):
+class AMQP:
     """App AMQP API: app.amqp."""
 
     Connection = Connection

@@ -2,7 +2,7 @@ from celery.app.annotations import MapAnnotation, prepare
 from celery.utils.imports import qualname
 
 
-class MyAnnotation(object):
+class MyAnnotation:
     foo = 65
 
 

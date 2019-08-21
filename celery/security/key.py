@@ -10,7 +10,7 @@ from .utils import reraise_errors
 __all__ = ('PrivateKey',)
 
 
-class PrivateKey(object):
+class PrivateKey:
     """Represents a private key."""
 
     def __init__(self, key, password=None):

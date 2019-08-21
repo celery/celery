@@ -12,7 +12,7 @@ from celery.events.state import (HEARTBEAT_DRIFT_MAX, HEARTBEAT_EXPIRE_WINDOW,
 from celery.five import range
 
 
-class replay(object):
+class replay:
 
     def __init__(self, state):
         self.state = state

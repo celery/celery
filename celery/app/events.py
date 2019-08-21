@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from kombu.utils.objects import cached_property
 
 
-class Events(object):
+class Events:
     """Implements app.events."""
 
     receiver_cls = 'celery.events.receiver:EventReceiver'

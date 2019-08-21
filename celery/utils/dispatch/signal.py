@@ -74,7 +74,7 @@ Could not process signal receiver %(receiver)s. Retrying %(when)s...\
 
 
 @python_2_unicode_compatible
-class Signal(object):  # pragma: no cover
+class Signal:  # pragma: no cover
     """Create new signal.
 
     Keyword Arguments:

@@ -44,7 +44,7 @@ def apply_target(target, args=(), kwargs=None, callback=None,
         callback(ret)
 
 
-class BasePool(object):
+class BasePool:
     """Task pool."""
 
     RUN = 0x1
