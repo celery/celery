@@ -253,8 +253,6 @@ in any command that also has a `--detach` option.
 
     Destination routing key (defaults to the queue routing key).
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import numbers
 import sys
 from functools import partial

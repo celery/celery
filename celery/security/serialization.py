@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Secure serializer."""
-from __future__ import absolute_import, unicode_literals
-
 from kombu.serialization import dumps, loads, registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
 

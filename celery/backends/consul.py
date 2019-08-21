@@ -4,8 +4,6 @@
 - :class:`ConsulBackend` implements KeyValueStoreBackend to store results
     in the key-value store of Consul.
 """
-from __future__ import absolute_import, unicode_literals
-
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import parse_url
 

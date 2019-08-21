@@ -5,7 +5,6 @@
 
     You should import these from :mod:`celery` and not this module.
 """
-from __future__ import absolute_import, unicode_literals
 
 import itertools
 import operator

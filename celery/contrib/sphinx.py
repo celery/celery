@@ -29,8 +29,6 @@ syntax.
 
 Use ``.. autotask::`` to alternatively manually document a task.
 """
-from __future__ import absolute_import, unicode_literals
-
 from celery.app.task import BaseTask
 from sphinx.domains.python import PyModulelevel
 from sphinx.ext.autodoc import FunctionDocumenter

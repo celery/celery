@@ -13,8 +13,6 @@ Snapshots (:mod:`celery.events.snapshot`) can be used to
 take "pictures" of this state at regular intervals
 to for example, store that in a database.
 """
-from __future__ import absolute_import, unicode_literals
-
 import bisect
 import sys
 import threading

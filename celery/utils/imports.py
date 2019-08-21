@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Utilities related to importing modules and symbols by name."""
-from __future__ import absolute_import, unicode_literals
-
 import importlib
 import os
 import sys

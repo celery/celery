@@ -3,8 +3,6 @@
 
 RPC-style result backend, using reply-to and one queue per client.
 """
-from __future__ import absolute_import, unicode_literals
-
 import time
 
 import kombu

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Functional-style utilties."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import inspect
 import sys
 from functools import partial

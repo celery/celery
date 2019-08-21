@@ -7,8 +7,6 @@ Sets up logging for the worker and other programs,
 redirects standard outs, colors log output, patches logging
 related compatibility fixes, and so on.
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import os
 import sys

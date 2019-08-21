@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """AWS DynamoDB result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 from collections import namedtuple
 from time import sleep, time
 

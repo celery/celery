@@ -4,8 +4,6 @@
 
 The actual commands are implemented in :mod:`celery.worker.control`.
 """
-from __future__ import absolute_import, unicode_literals
-
 from celery import bootsteps
 from celery.utils.log import get_logger
 from celery.worker import pidbox

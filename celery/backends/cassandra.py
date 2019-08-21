@@ -1,7 +1,5 @@
 # -* coding: utf-8 -*-
 """Apache Cassandra result store backend using the DataStax driver."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 
 from celery import states

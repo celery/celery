@@ -4,8 +4,6 @@
 Don't import from here directly anymore, as these are only
 here for backwards compatibility.
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 from kombu.utils.objects import cached_property  # noqa: F401
 from kombu.utils.uuid import uuid  # noqa: F401
 

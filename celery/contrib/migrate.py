@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Message migration tools (Broker <-> Broker)."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import socket
 from functools import partial
 from itertools import cycle, islice

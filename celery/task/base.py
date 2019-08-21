@@ -6,8 +6,6 @@ The task implementation has been moved to :mod:`celery.app.task`.
 This contains the backward compatible Task class used in the old API,
 and shouldn't be used in new applications.
 """
-from __future__ import absolute_import, unicode_literals
-
 from kombu import Exchange
 
 from celery import current_app

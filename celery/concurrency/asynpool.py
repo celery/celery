@@ -13,8 +13,6 @@ This code deals with three major challenges:
 #. Sending jobs to the processes and receiving results back.
 #. Safely shutting down this system.
 """
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import gc
 import os

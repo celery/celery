@@ -6,7 +6,6 @@ like the ``current_app``, and ``current_task``.
 
 This module shouldn't be used directly.
 """
-from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import sys

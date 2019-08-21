@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """The CosmosDB/SQL backend for Celery (experimental)."""
-from __future__ import absolute_import, unicode_literals
-
 from kombu.utils import cached_property
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import _parse_url
