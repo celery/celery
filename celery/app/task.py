@@ -13,7 +13,7 @@ from celery._state import _task_stack
 from celery.canvas import signature
 from celery.exceptions import (Ignore, ImproperlyConfigured,
                                MaxRetriesExceededError, Reject, Retry)
-from celery.five import items,
+from celery.five import items
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
