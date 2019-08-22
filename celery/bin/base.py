@@ -114,7 +114,6 @@ def _add_compat_options(parser, options):
             _add_optparse_argument(parser, option)
 
 
-@python_2_unicode_compatible
 class Error(Exception):
     """Exception raised by commands."""
 

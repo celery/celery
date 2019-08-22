@@ -6,14 +6,12 @@ import sqlalchemy as sa
 from sqlalchemy.types import PickleType
 
 from celery import states
-from celery.five import python_2_unicode_compatible
 
 from .session import ResultModelBase
 
 __all__ = ('Task', 'TaskExtended', 'TaskSet')
 
 
-@python_2_unicode_compatible
 class Task(ResultModelBase):
     """Task result/status."""
 
@@ -71,7 +69,6 @@ class TaskExtended(Task):
         return task_dict
 
 
-@python_2_unicode_compatible
 class TaskSet(ResultModelBase):
     """TaskSet result."""
 

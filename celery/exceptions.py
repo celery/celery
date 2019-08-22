@@ -122,7 +122,6 @@ class TaskPredicate(CeleryError):
     """Base class for task-related semi-predicates."""
 
 
-@python_2_unicode_compatible
 class Retry(TaskPredicate):
     """The task is to be retried later."""
 

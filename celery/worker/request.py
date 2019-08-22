@@ -63,7 +63,6 @@ task_ready = state.task_ready
 revoked_tasks = state.revoked
 
 
-@python_2_unicode_compatible
 class Request:
     """A request for task execution."""
 

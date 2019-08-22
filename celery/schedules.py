@@ -110,7 +110,6 @@ class BaseSchedule:
         return NotImplemented
 
 
-@python_2_unicode_compatible
 class schedule(BaseSchedule):
     """Schedule for periodic task.
 
@@ -320,7 +319,6 @@ class crontab_parser:
         return i
 
 
-@python_2_unicode_compatible
 class crontab(BaseSchedule):
     """Crontab schedule.
 
@@ -667,7 +665,6 @@ def maybe_schedule(s, relative=False, app=None):
     return s
 
 
-@python_2_unicode_compatible
 class solar(BaseSchedule):
     """Solar event.
 

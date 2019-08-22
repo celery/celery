@@ -158,7 +158,6 @@ def with_unique_field(attr):
 
 
 @with_unique_field('hostname')
-@python_2_unicode_compatible
 class Worker:
     """Worker State."""
 
@@ -252,7 +251,6 @@ class Worker:
 
 
 @with_unique_field('uuid')
-@python_2_unicode_compatible
 class Task:
     """Task State."""
 

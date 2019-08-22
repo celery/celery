@@ -51,7 +51,6 @@ ZERO = timedelta(0)
 _local_timezone = None
 
 
-@python_2_unicode_compatible
 class LocalTimezone(tzinfo):
     """Local time implementation.
 
@@ -330,7 +329,6 @@ def maybe_make_aware(dt, tz=None):
     return dt
 
 
-@python_2_unicode_compatible
 class ffwd(object):
     """Version of ``dateutil.relativedelta`` that only supports addition."""
 

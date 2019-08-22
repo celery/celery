@@ -13,7 +13,7 @@ from celery._state import _task_stack
 from celery.canvas import signature
 from celery.exceptions import (Ignore, ImproperlyConfigured,
                                MaxRetriesExceededError, Reject, Retry)
-from celery.five import items, python_2_unicode_compatible
+from celery.five import items,
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
@@ -62,7 +62,6 @@ def _reprtask(task, fmt=None, flags=None):
     )
 
 
-@python_2_unicode_compatible
 class Context:
     """Task request variables (Task.request)."""
 
@@ -139,7 +138,6 @@ class Context:
 
 
 @abstract.CallableTask.register
-@python_2_unicode_compatible
 class Task(object):
     """Task base class.
 

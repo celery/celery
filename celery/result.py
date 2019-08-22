@@ -70,7 +70,6 @@ class ResultBase:
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class AsyncResult(ResultBase):
     """Query task state.
 
@@ -517,7 +516,6 @@ class AsyncResult(ResultBase):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class ResultSet(ResultBase):
     """A collection of results.
 
@@ -882,7 +880,6 @@ class ResultSet(ResultBase):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class GroupResult(ResultSet):
     """Like :class:`ResultSet`, but with an associated id.
 
@@ -986,7 +983,6 @@ class GroupResult(ResultSet):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 

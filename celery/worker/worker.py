@@ -61,7 +61,6 @@ defined in the `task_queues` setting.
 """
 
 
-@python_2_unicode_compatible
 class WorkController:
     """Unmanaged worker instance."""
 

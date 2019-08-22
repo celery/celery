@@ -10,7 +10,6 @@ from case import Mock, mock, patch, skip
 from case.utils import get_logger_handlers
 from celery import signals, uuid
 from celery.app.log import TaskFormatter
-from celery.five import python_2_unicode_compatible
 from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
                               get_task_logger, in_sighandler)
 from celery.utils.log import logger as base_logger
@@ -126,7 +125,6 @@ class test_ColorFormatter:
                 safe_str.side_effect = None
         safe_str.side_effect = on_safe_str
 
-        @python_2_unicode_compatible
         class Record:
             levelname = 'ERROR'
             msg = 'HELLO'

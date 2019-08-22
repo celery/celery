@@ -9,14 +9,13 @@ from case import Mock
 from celery.bootsteps import CLOSE, RUN
 from celery.exceptions import (InvalidTaskError, WorkerLostError,
                                WorkerShutdown, WorkerTerminate)
-from celery.five import Empty, python_2_unicode_compatible
+from celery.five import Empty,
 from celery.platforms import EX_FAILURE, EX_OK
 from celery.worker import state
 from celery.worker.consumer import Consumer
 from celery.worker.loops import _quick_drain, asynloop, synloop
 
 
-@python_2_unicode_compatible
 class PromiseEqual:
 
     def __init__(self, fun, *args, **kwargs):

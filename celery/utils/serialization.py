@@ -110,7 +110,6 @@ def ensure_serializable(items, encoder):
     return tuple(safe_exc_args)
 
 
-@python_2_unicode_compatible
 class UnpickleableExceptionWrapper(Exception):
     """Wraps unpickleable exceptions.
 

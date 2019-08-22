@@ -400,7 +400,6 @@ class ChainMap(MutableMapping):
             return list(self._iterate_values())
 
 
-@python_2_unicode_compatible
 class ConfigurationView(ChainMap, AttributeDictMixin):
     """A view over an applications configuration dictionaries.
 
@@ -489,7 +488,6 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
         )
 
 
-@python_2_unicode_compatible
 class LimitedSet(object):
     """Kind-of Set (or priority queue) with limitations.
 
@@ -750,7 +748,6 @@ class Evictable(object):
             raise IndexError()
 
 
-@python_2_unicode_compatible
 class Messagebuffer(Evictable):
     """A buffer of pending messages."""
 
@@ -827,7 +824,6 @@ class Messagebuffer(Evictable):
 Sequence.register(Messagebuffer)  # noqa: E305
 
 
-@python_2_unicode_compatible
 class BufferMap(OrderedDict, Evictable):
     """Map of buffers."""
 

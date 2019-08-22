@@ -73,7 +73,6 @@ def _upgrade(fields, sig):
 
 
 @abstract.CallableSignature.register
-@python_2_unicode_compatible
 class Signature(dict):
     """Task Signature.
 
@@ -516,7 +515,6 @@ class Signature(dict):
 
 
 @Signature.register_type(name='chain')
-@python_2_unicode_compatible
 class _chain(Signature):
     tasks = getitem_property('kwargs.tasks', 'Tasks in chain.')
 
@@ -851,7 +849,6 @@ class _basemap(Signature):
 
 
 @Signature.register_type()
-@python_2_unicode_compatible
 class xmap(_basemap):
     """Map operation for tasks.
 
@@ -869,7 +866,6 @@ class xmap(_basemap):
 
 
 @Signature.register_type()
-@python_2_unicode_compatible
 class xstarmap(_basemap):
     """Map operation for tasks, using star arguments."""
 
@@ -938,7 +934,6 @@ def _maybe_group(tasks, app):
 
 
 @Signature.register_type()
-@python_2_unicode_compatible
 class group(Signature):
     """Creates a group of tasks to be executed in parallel.
 
@@ -1187,7 +1182,6 @@ class group(Signature):
 
 
 @Signature.register_type()
-@python_2_unicode_compatible
 class chord(Signature):
     r"""Barrier synchronization primitive.
 

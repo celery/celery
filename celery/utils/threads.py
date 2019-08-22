@@ -253,7 +253,6 @@ class _LocalStack(object):
             return None
 
 
-@python_2_unicode_compatible
 class LocalManager(object):
     """Local objects cannot manage themselves.
 
