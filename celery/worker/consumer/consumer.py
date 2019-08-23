@@ -119,7 +119,6 @@ def dump_body(m, body):
                                len(m.body))
 
 
-@python_2_unicode_compatible
 class Consumer(object):
     """Consumer blueprint."""
 

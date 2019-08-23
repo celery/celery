@@ -78,7 +78,6 @@ class BeatLazyFunc:
 
 
 @total_ordering
-@python_2_unicode_compatible
 class ScheduleEntry:
     """An entry in the scheduler.
 

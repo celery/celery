@@ -30,7 +30,6 @@ class StopFiltering(Exception):
     """Semi-predicate used to signal filter stop."""
 
 
-@python_2_unicode_compatible
 class State:
     """Migration progress state."""
 

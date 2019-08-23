@@ -3,7 +3,7 @@ import sys
 import pytest
 
 from case import Mock, skip
-from celery.five import PY3, long_t, python_2_unicode_compatible, string
+from celery.five import PY3, long_t, string
 from celery.local import PromiseProxy, Proxy, maybe_evaluate, try_import
 
 
@@ -77,7 +77,6 @@ class test_Proxy:
     @skip.if_python3()
     def test_unicode(self):
 
-        @python_2_unicode_compatible
         class X:
 
             def __unicode__(self):

@@ -34,7 +34,6 @@ def fg(s):
     return COLOR_SEQ % s
 
 
-@python_2_unicode_compatible
 class colored(object):
     """Terminal colored text.
 

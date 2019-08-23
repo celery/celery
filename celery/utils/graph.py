@@ -29,7 +29,6 @@ class CycleError(Exception):
     """A cycle was detected in an acyclic graph."""
 
 
-@python_2_unicode_compatible
 class DependencyGraph:
     """A directed acyclic graph of objects and their dependencies.
 

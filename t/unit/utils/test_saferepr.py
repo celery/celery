@@ -10,8 +10,7 @@ from pprint import pprint
 import pytest
 
 from case import skip
-from celery.five import (items, long_t, python_2_unicode_compatible, text_t,
-                         values)
+from celery.five import (items, long_t, text_t, values)
 from celery.utils.saferepr import saferepr
 
 D_NUMBERS = {
@@ -77,7 +76,6 @@ class list2(list):
     pass
 
 
-@python_2_unicode_compatible
 class list3(list):
 
     def __repr__(self):
@@ -88,7 +86,6 @@ class tuple2(tuple):
     pass
 
 
-@python_2_unicode_compatible
 class tuple3(tuple):
 
     def __repr__(self):
@@ -99,7 +96,6 @@ class set2(set):
     pass
 
 
-@python_2_unicode_compatible
 class set3(set):
 
     def __repr__(self):
@@ -110,7 +106,6 @@ class frozenset2(frozenset):
     pass
 
 
-@python_2_unicode_compatible
 class frozenset3(frozenset):
 
     def __repr__(self):
@@ -121,7 +116,6 @@ class dict2(dict):
     pass
 
 
-@python_2_unicode_compatible
 class dict3(dict):
 
     def __repr__(self):
