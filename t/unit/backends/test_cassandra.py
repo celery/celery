@@ -4,8 +4,8 @@ from datetime import datetime
 from pickle import dumps, loads
 
 import pytest
-from case import Mock, mock
 
+from case import Mock, mock
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.objects import Bunch

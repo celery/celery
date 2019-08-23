@@ -543,8 +543,11 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
     return module
 
 
-def recreate_module(name, compat_modules=(), by_module={}, direct={},
+def recreate_module(name, compat_modules=None, by_module=None, direct=None,
                     base=LazyModule, **attrs):
+    compat_modules = compat_modules or ()
+    by_module = by_module or {}
+    direct = direct or {}
     old_module = sys.modules[name]
     origins = get_origins(by_module)
     compat_modules = COMPAT_MODULES.get(name, ())

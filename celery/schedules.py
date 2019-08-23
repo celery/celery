@@ -5,7 +5,7 @@ from __future__ import absolute_import, unicode_literals
 import numbers
 import re
 from bisect import bisect, bisect_left
-from collections import Iterable, namedtuple
+from collections import namedtuple
 from datetime import datetime, timedelta
 
 from kombu.utils.objects import cached_property
@@ -15,6 +15,13 @@ from .five import python_2_unicode_compatible, range, string_t
 from .utils.collections import AttributeDict
 from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware,
                          maybe_timedelta, remaining, timezone, weekday)
+
+try:
+    from collections.abc import Iterable
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Iterable
+
 
 __all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',

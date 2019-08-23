@@ -7,8 +7,8 @@ import sys
 import tempfile
 
 import pytest
-from case import Mock, call, mock, patch, skip
 
+from case import Mock, call, mock, patch, skip
 from celery import _find_option_with_arg, platforms
 from celery.exceptions import SecurityError
 from celery.five import WhateverIO
@@ -60,7 +60,7 @@ def test_fd_by_path():
 
 def test_close_open_fds(patching):
     _close = patching('os.close')
-    fdmax = patching('celery.platforms.get_fdmax')
+    fdmax = patching('billiard.compat.get_fdmax')
     with patch('os.closerange', create=True) as closerange:
         fdmax.return_value = 3
         close_open_fds()

@@ -13,12 +13,13 @@ except ImportError:
         from mock import Mock
 
 
-def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
+def TaskMessage(name, id=None, args=(), kwargs=None, callbacks=None,
                 errbacks=None, chain=None, shadow=None, utc=None, **options):
     # type: (str, str, Sequence, Mapping, Sequence[Signature],
     #        Sequence[Signature], Sequence[Signature],
     #        str, bool, **Any) -> Any
     """Create task message in protocol 2 format."""
+    kwargs = {} if not kwargs else kwargs
     from celery import uuid
     from kombu.serialization import dumps
     id = id or uuid()
@@ -37,11 +38,12 @@ def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
     return message
 
 
-def TaskMessage1(name, id=None, args=(), kwargs={}, callbacks=None,
+def TaskMessage1(name, id=None, args=(), kwargs=None, callbacks=None,
                  errbacks=None, chain=None, **options):
     # type: (str, str, Sequence, Mapping, Sequence[Signature],
     #        Sequence[Signature], Sequence[Signature]) -> Any
     """Create task message in protocol 1 format."""
+    kwargs = {} if not kwargs else kwargs
     from celery import uuid
     from kombu.serialization import dumps
     id = id or uuid()

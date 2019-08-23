@@ -3,9 +3,9 @@ from __future__ import absolute_import, unicode_literals
 from datetime import datetime, timedelta
 
 import pytest
-from case import Mock
 from kombu import Exchange, Queue
 
+from case import Mock
 from celery import uuid
 from celery.app.amqp import Queues, utf8dict
 from celery.five import keys
@@ -332,6 +332,15 @@ class test_AMQP:
         r1 = self.app.amqp.routes
         r2 = self.app.amqp.routes
         assert r1 is r2
+
+    def update_conf_runtime_for_tasks_queues(self):
+        self.app.conf.update(task_routes={'task.create_pr': 'queue.qwerty'})
+        self.app.send_task('task.create_pr')
+        router_was = self.app.amqp.router
+        self.app.conf.update(task_routes={'task.create_pr': 'queue.asdfgh'})
+        self.app.send_task('task.create_pr')
+        router = self.app.amqp.router
+        assert router != router_was
 
 
 class test_as_task_v2:

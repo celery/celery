@@ -3,6 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import time
+import datetime
 from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
@@ -18,6 +19,7 @@ from .five import (items, monotonic, python_2_unicode_compatible, range,
                    string_t)
 from .utils import deprecated
 from .utils.graph import DependencyGraph, GraphFormatter
+from .utils.iso8601 import parse_iso8601
 
 try:
     import tblib
@@ -99,13 +101,13 @@ class AsyncResult(ResultBase):
         self.id = id
         self.backend = backend or self.app.backend
         self.parent = parent
-        self.on_ready = promise(self._on_fulfilled)
+        self.on_ready = promise(self._on_fulfilled, weak=True)
         self._cache = None
         self._ignored = False
 
     @property
     def ignored(self):
-        """"If True, task result retrieval is disabled."""
+        """If True, task result retrieval is disabled."""
         if hasattr(self, '_ignored'):
             return self._ignored
         return False
@@ -205,7 +207,7 @@ class AsyncResult(ResultBase):
             assert_will_not_block()
         _on_interval = promise()
         if follow_parents and propagate and self.parent:
-            on_interval = promise(self._maybe_reraise_parent_error)
+            _on_interval = promise(self._maybe_reraise_parent_error, weak=True)
             self._maybe_reraise_parent_error()
         if on_interval:
             _on_interval.then(on_interval)
@@ -500,7 +502,11 @@ class AsyncResult(ResultBase):
 
     @property
     def date_done(self):
-        return self._get_task_meta().get('date_done')
+        """UTC date and time."""
+        date_done = self._get_task_meta().get('date_done')
+        if date_done and not isinstance(date_done, datetime.datetime):
+            return parse_iso8601(date_done)
+        return date_done
 
     @property
     def retries(self):
@@ -531,7 +537,7 @@ class ResultSet(ResultBase):
         self.on_ready = promise(args=(self,))
         self._on_full = ready_barrier or barrier(results)
         if self._on_full:
-            self._on_full.then(promise(self._on_ready))
+            self._on_full.then(promise(self._on_ready, weak=True))
 
     def add(self, result):
         """Add :class:`AsyncResult` as a new member of the set.
@@ -813,9 +819,14 @@ class ResultSet(ResultBase):
         acc = None if callback else [None for _ in range(len(self))]
         for task_id, meta in self.iter_native(timeout, interval, no_ack,
                                               on_message, on_interval):
-            value = meta['result']
-            if propagate and meta['status'] in states.PROPAGATE_STATES:
-                raise value
+            if isinstance(meta, list):
+                value = []
+                for children_result in meta:
+                    value.append(children_result.get())
+            else:
+                value = meta['result']
+                if propagate and meta['status'] in states.PROPAGATE_STATES:
+                    raise value
             if callback:
                 callback(task_id, value)
             else:

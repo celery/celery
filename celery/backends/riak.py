@@ -3,10 +3,11 @@
 from __future__ import absolute_import, unicode_literals
 
 import sys
+import warnings
 
 from kombu.utils.url import _parse_url
 
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import CeleryWarning, ImproperlyConfigured
 
 from .base import KeyValueStoreBackend
 
@@ -23,23 +24,31 @@ E_BUCKET_NAME = """\
 Riak bucket names must be composed of ASCII characters only, not: {0!r}\
 """
 
+W_UNSUPPORTED_PYTHON_VERSION = """\
+Python {}.{} is unsupported by the client library \
+https://pypi.org/project/riak\
+""".format(sys.version_info.major, sys.version_info.minor)
+
+
 if sys.version_info[0] == 3:
+    if sys.version_info.minor >= 7:
+        warnings.warn(CeleryWarning(W_UNSUPPORTED_PYTHON_VERSION))
 
-    def to_bytes(s):
-        return s.encode() if isinstance(s, str) else s
+    def to_bytes(string):
+        return string.encode() if isinstance(string, str) else string
 
-    def str_decode(s, encoding):
-        return to_bytes(s).decode(encoding)
+    def str_decode(string, encoding):
+        return to_bytes(string).decode(encoding)
 
 else:
 
-    def str_decode(s, encoding):
-        return s.decode('ascii')
+    def str_decode(string, encoding):
+        return string.decode('ascii')
 
 
-def is_ascii(s):
+def is_ascii(string):
     try:
-        str_decode(s, 'ascii')
+        str_decode(string, 'ascii')
     except UnicodeDecodeError:
         return False
     return True
@@ -115,8 +124,8 @@ class RiakBackend(KeyValueStoreBackend):
     def _get_bucket(self):
         """Connect to our bucket."""
         if (
-            self._client is None or not self._client.is_alive() or
-            not self._bucket
+                self._client is None or not self._client.is_alive() or
+                not self._bucket
         ):
             self._bucket = self.client.bucket(self.bucket_name)
         return self._bucket

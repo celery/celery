@@ -3,8 +3,8 @@ from __future__ import absolute_import, unicode_literals
 from contextlib import contextmanager
 
 import pytest
-from case import Mock
 
+from case import Mock
 from celery import canvas, group, result, uuid
 from celery.exceptions import ChordError, Retry
 from celery.five import range
@@ -176,6 +176,28 @@ class test_unlock_chord_task(ChordCase):
 
     def test_is_in_registry(self):
         assert 'celery.chord_unlock' in self.app.tasks
+
+    def _test_unlock_join_timeout(self, timeout):
+        class MockJoinResult(TSR):
+            is_ready = True
+            value = [(None,)]
+            join = Mock(return_value=value)
+            join_native = join
+
+        self.app.conf.result_chord_join_timeout = timeout
+        with self._chord_context(MockJoinResult):
+            MockJoinResult.join.assert_called_with(
+                timeout=timeout,
+                propagate=True,
+            )
+
+    def test_unlock_join_timeout_default(self):
+        self._test_unlock_join_timeout(
+            timeout=self.app.conf.result_chord_join_timeout,
+        )
+
+    def test_unlock_join_timeout_custom(self):
+        self._test_unlock_join_timeout(timeout=5.0)
 
 
 class test_chord(ChordCase):

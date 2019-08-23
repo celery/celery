@@ -298,6 +298,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     track_started = not eager and (task.track_started and not ignore_result)
     publish_result = not eager and not ignore_result
     hostname = hostname or gethostname()
+    inherit_parent_priority = app.conf.task_inherit_parent_priority
 
     loader_task_init = loader.on_task_init
     loader_cleanup = loader.on_process_cleanup
@@ -364,6 +365,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
             root_id = task_request.root_id or uuid
+            task_priority = task_request.delivery_info.get('priority') if \
+                inherit_parent_priority else None
             push_request(task_request)
             try:
                 # -*- PRE -*-
@@ -419,15 +422,18 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                     group_.apply_async(
                                         (retval,),
                                         parent_id=uuid, root_id=root_id,
+                                        priority=task_priority
                                     )
                                 if sigs:
                                     group(sigs, app=app).apply_async(
                                         (retval,),
                                         parent_id=uuid, root_id=root_id,
+                                        priority=task_priority
                                     )
                             else:
                                 signature(callbacks[0], app=app).apply_async(
                                     (retval,), parent_id=uuid, root_id=root_id,
+                                    priority=task_priority
                                 )
 
                         # execute first task in chain
@@ -437,6 +443,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             _chsig.apply_async(
                                 (retval,), chain=chain,
                                 parent_id=uuid, root_id=root_id,
+                                priority=task_priority
                             )
                         mark_as_done(
                             uuid, retval, task_request, publish_result,
@@ -495,8 +502,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     return trace_task
 
 
-def trace_task(task, uuid, args, kwargs, request={}, **opts):
+def trace_task(task, uuid, args, kwargs, request=None, **opts):
     """Trace task execution."""
+    request = {} if not request else request
     try:
         if task.__trace__ is None:
             task.__trace__ = build_tracer(task.name, task, **opts)
@@ -531,8 +539,9 @@ trace_task_ret = _trace_task_ret  # noqa: E305
 
 
 def _fast_trace_task(task, uuid, request, body, content_type,
-                     content_encoding, loads=loads_message, _loc=_localized,
+                     content_encoding, loads=loads_message, _loc=None,
                      hostname=None, **_):
+    _loc = _localized if not _loc else _loc
     embed = None
     tasks, accept, hostname = _loc
     if content_type:

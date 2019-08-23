@@ -1,8 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from case import Mock, call, patch, skip
 
+from case import Mock, call, patch, skip
 from celery.backends import azureblockblob
 from celery.backends.azureblockblob import AzureBlockBlobBackend
 from celery.exceptions import ImproperlyConfigured

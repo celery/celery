@@ -17,14 +17,14 @@ from celery import VERSION_BANNER, Celery, maybe_patch_concurrency, signals
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.five import (getfullargspec, items, long_t,
                          python_2_unicode_compatible, string, string_t,
-                         text_t)
+                         text_t, PY2)
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE, isatty
 from celery.utils import imports, term, text
 from celery.utils.functional import dictfilter
 from celery.utils.nodenames import host_format, node_format
 from celery.utils.objects import Bunch
 
-# Option is here for backwards compatiblity, as third-party commands
+# Option is here for backwards compatibility, as third-party commands
 # may import it from here.
 try:
     from optparse import Option  # pylint: disable=deprecated-module
@@ -44,10 +44,24 @@ __all__ = (
 for warning in (CDeprecationWarning, CPendingDeprecationWarning):
     warnings.simplefilter('once', warning, 0)
 
+# TODO: Remove this once we drop support for Python < 3.6
+if sys.version_info < (3, 6):
+    ModuleNotFoundError = ImportError
+
 ARGV_DISABLED = """
 Unrecognized command-line arguments: {0}
 
 Try --help?
+"""
+
+UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND = """
+Unable to load celery application.
+The module {0} was not found.
+"""
+
+UNABLE_TO_LOAD_APP_APP_MISSING = """
+Unable to load celery application.
+{0}
 """
 
 find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
@@ -64,13 +78,14 @@ def _optparse_callback_to_type(option, callback):
     return _on_arg
 
 
-def _add_optparse_argument(parser, opt, typemap={
+def _add_optparse_argument(parser, opt, typemap=None):
+    typemap = {
         'string': text_t,
         'int': int,
         'long': long_t,
         'float': float,
         'complex': complex,
-        'choice': None}):
+        'choice': None} if not typemap else typemap
     if opt.callback:
         opt.type = _optparse_callback_to_type(opt, opt.type)
     # argparse checks for existence of this kwarg
@@ -270,7 +285,22 @@ class Command(object):
 
         # Dump version and exit if '--version' arg set.
         self.early_version(argv)
-        argv = self.setup_app_from_commandline(argv)
+        try:
+            argv = self.setup_app_from_commandline(argv)
+        except ModuleNotFoundError as e:
+            # In Python 2.7 and below, there is no name instance for exceptions
+            # TODO: Remove this once we drop support for Python 2.7
+            if PY2:
+                package_name = e.message.replace("No module named ", "")
+            else:
+                package_name = e.name
+            self.on_error(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(package_name))
+            return EX_FAILURE
+        except AttributeError as e:
+            msg = e.args[0].capitalize()
+            self.on_error(UNABLE_TO_LOAD_APP_APP_MISSING.format(msg))
+            return EX_FAILURE
+
         self.prog_name = os.path.basename(argv[0])
         return self.handle_argv(self.prog_name, argv[1:])
 

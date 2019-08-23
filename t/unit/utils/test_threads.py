@@ -1,8 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from case import mock, patch
 
+from case import mock, patch
 from celery.utils.threads import (Local, LocalManager, _FastLocalStack,
                                   _LocalStack, bgThread)
 

@@ -5,7 +5,7 @@ from __future__ import absolute_import, unicode_literals
 import os
 import platform as _platform
 import re
-from collections import Mapping, namedtuple
+from collections import namedtuple
 from copy import deepcopy
 from types import ModuleType
 
@@ -21,6 +21,13 @@ from celery.utils.text import pretty
 from .defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY,
                        _TO_OLD_KEY, DEFAULTS, SETTING_KEYS, find)
 
+try:
+    from collections.abc import Mapping
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Mapping
+
+
 __all__ = (
     'Settings', 'appstr', 'bugreport',
     'filter_hidden_settings', 'find_app',
@@ -30,7 +37,8 @@ __all__ = (
 BUGREPORT_INFO = """
 software -> celery:{celery_v} kombu:{kombu_v} py:{py_v}
             billiard:{billiard_v} {driver_v}
-platform -> system:{system} arch:{arch} imp:{py_i}
+platform -> system:{system} arch:{arch}
+            kernel version:{kernel_version} imp:{py_i}
 loader   -> {loader}
 settings -> transport:{transport} results:{results}
 
@@ -213,8 +221,13 @@ _old_settings_info = _settings_info_t(
 )
 
 
-def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
-                    all_keys=SETTING_KEYS, old_keys=_OLD_SETTING_KEYS):
+def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
+                    all_keys=None, old_keys=None):
+    preconf = {} if not preconf else preconf
+    ignore_keys = set() if not ignore_keys else ignore_keys
+    all_keys = SETTING_KEYS if not all_keys else all_keys
+    old_keys = _OLD_SETTING_KEYS if not old_keys else old_keys
+
     source = conf
     if conf is None:
         source, conf = preconf, {}
@@ -338,6 +351,7 @@ def bugreport(app):
     return BUGREPORT_INFO.format(
         system=_platform.system(),
         arch=', '.join(x for x in _platform.architecture() if x),
+        kernel_version=_platform.release(),
         py_i=pyimplementation(),
         celery_v=celery.VERSION_BANNER,
         kombu_v=kombu.__version__,

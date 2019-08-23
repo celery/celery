@@ -223,12 +223,13 @@ class CassandraBackend(BaseBackend):
             'task_id': task_id,
             'status': status,
             'result': self.decode(result),
-            'date_done': date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'date_done': date_done,
             'traceback': self.decode(traceback),
             'children': self.decode(children),
         })
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         kwargs.update(
             {'servers': self.servers,
              'keyspace': self.keyspace,

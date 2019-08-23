@@ -7,16 +7,20 @@
 # :license:   BSD (3 Clause), see LICENSE for more details.
 
 from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import re
 import sys
 from collections import namedtuple
 
-SERIES = 'windowlicker'
+# Lazy loading
+from . import local  # noqa
 
-__version__ = '4.2.0'
+SERIES = 'cliffs'
+
+__version__ = '4.4.0rc3'
 __author__ = 'Ask Solem'
-__contact__ = 'ask@celeryproject.org'
+__contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
 __docformat__ = 'restructuredtext'
 __keywords__ = 'task job queue distributed messaging actor'
@@ -118,10 +122,8 @@ def _patch_gevent():
         _signal.signal = gevent_signal
 
 
-def maybe_patch_concurrency(argv=sys.argv,
-                            short_opts=['-P'], long_opts=['--pool'],
-                            patches={'eventlet': _patch_eventlet,
-                                     'gevent': _patch_gevent}):
+def maybe_patch_concurrency(argv=None, short_opts=None,
+                            long_opts=None, patches=None):
     """Apply eventlet/gevent monkeypatches.
 
     With short and long opt alternatives that specify the command line
@@ -129,6 +131,11 @@ def maybe_patch_concurrency(argv=sys.argv,
     to be patched is completed as early as possible.
     (e.g., eventlet/gevent monkey patches).
     """
+    argv = argv if argv else sys.argv
+    short_opts = short_opts if short_opts else ['-P']
+    long_opts = long_opts if long_opts else ['--pool']
+    patches = patches if patches else {'eventlet': _patch_eventlet,
+                                       'gevent': _patch_gevent}
     try:
         pool = _find_option_with_arg(argv, short_opts, long_opts)
     except KeyError:
@@ -144,10 +151,6 @@ def maybe_patch_concurrency(argv=sys.argv,
         # set up eventlet/gevent environments ASAP
         from celery import concurrency
         concurrency.get_implementation(pool)
-
-
-# Lazy loading
-from . import local  # noqa
 
 
 # this just creates a new module, that imports stuff on first attribute

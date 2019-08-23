@@ -1,4 +1,4 @@
-:Version: 4.2.0 (latentcall)
+:Version: 4.3.0 (rhubarb)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -24,7 +24,7 @@ A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
-language. In addition to Python there's node-celery_ for Node.js,
+language. In addition to Python there's node-celery_ and node-celery-ts_ for Node.js,
 and a `PHP client`_.
 
 Language interoperability can also be achieved by using webhooks
@@ -32,14 +32,16 @@ in such a way that the client enqueues an URL to be requested by a worker.
 
 .. _node-celery: https://github.com/mher/node-celery
 .. _`PHP client`: https://github.com/gjedeer/celery-php
+.. _node-celery-ts: https://github.com/IBM/node-celery-ts
 
 What do I need?
 ===============
 
 Celery version 4.0 runs on,
 
-- Python (2.7, 3.4, 3.5)
-- PyPy (5.4, 5.5)
+- Python (2.7, 3.4, 3.5, 3.6, 3.7)
+- PyPy2.7 (6.0)
+- PyPy3.5 (6.0)
 
 
 This is the last version to support Python 2.7,

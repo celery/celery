@@ -18,10 +18,11 @@ NO_WORKER = os.environ.get('NO_WORKER')
 @contextmanager
 def _create_app(enable_logging=False,
                 use_trap=False,
-                parameters={},
+                parameters=None,
                 **config):
     # type: (Any, **Any) -> Celery
     """Utility context used to setup Celery app for pytest fixtures."""
+    parameters = {} if not parameters else parameters
     test_app = TestApp(
         set_as_current=False,
         enable_logging=enable_logging,

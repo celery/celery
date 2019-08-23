@@ -5,9 +5,10 @@ import os
 import tempfile
 
 import pytest
-from case import skip
 
+from case import skip
 from celery import states, uuid
+from celery.backends import filesystem
 from celery.backends.filesystem import FilesystemBackend
 from celery.exceptions import ImproperlyConfigured
 
@@ -28,9 +29,26 @@ class test_FilesystemBackend:
         tb = FilesystemBackend(app=self.app, url=self.url)
         assert tb.path == self.path
 
-    def test_path_is_incorrect(self):
-        with pytest.raises(ImproperlyConfigured):
-            FilesystemBackend(app=self.app, url=self.url + '-incorrect')
+    @pytest.mark.parametrize("url,expected_error_message", [
+        ('file:///non-existing', filesystem.E_PATH_INVALID),
+        ('url://non-conforming', filesystem.E_PATH_NON_CONFORMING_SCHEME),
+        (None, filesystem.E_NO_PATH_SET)
+    ])
+    def test_raises_meaningful_errors_for_invalid_urls(
+        self,
+        url,
+        expected_error_message
+    ):
+        with pytest.raises(
+            ImproperlyConfigured,
+            match=expected_error_message
+        ):
+            FilesystemBackend(app=self.app, url=url)
+
+    def test_localhost_is_removed_from_url(self):
+        url = 'file://localhost' + self.directory
+        tb = FilesystemBackend(app=self.app, url=url)
+        assert tb.path == self.path
 
     def test_missing_task_is_PENDING(self):
         tb = FilesystemBackend(app=self.app, url=self.url)

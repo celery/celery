@@ -5,9 +5,9 @@ import types
 from contextlib import contextmanager
 
 import pytest
-from case import Mock, mock, patch, skip
 from kombu.utils.encoding import ensure_bytes, str_to_bytes
 
+from case import Mock, mock, patch, skip
 from celery import signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured

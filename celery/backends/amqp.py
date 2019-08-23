@@ -113,12 +113,24 @@ class AMQPBackend(BaseBackend):
         routing_key, correlation_id = self.destination_for(task_id, request)
         if not routing_key:
             return
+
+        payload = {'task_id': task_id, 'status': state,
+                   'result': self.encode_result(result, state),
+                   'traceback': traceback,
+                   'children': self.current_task_children(request)}
+        if self.app.conf.find_value_for_key('extended', 'result'):
+            payload['name'] = getattr(request, 'task_name', None)
+            payload['args'] = getattr(request, 'args', None)
+            payload['kwargs'] = getattr(request, 'kwargs', None)
+            payload['worker'] = getattr(request, 'hostname', None)
+            payload['retries'] = getattr(request, 'retries', None)
+            payload['queue'] = request.delivery_info.get('routing_key')\
+                if hasattr(request, 'delivery_info') \
+                and request.delivery_info else None
+
         with self.app.amqp.producer_pool.acquire(block=True) as producer:
             producer.publish(
-                {'task_id': task_id, 'status': state,
-                 'result': self.encode_result(result, state),
-                 'traceback': traceback,
-                 'children': self.current_task_children(request)},
+                payload,
                 exchange=self.exchange,
                 routing_key=routing_key,
                 correlation_id=correlation_id,
@@ -127,7 +139,6 @@ class AMQPBackend(BaseBackend):
                 declare=self.on_reply_declare(task_id),
                 delivery_mode=self.delivery_mode,
             )
-        return result
 
     def on_reply_declare(self, task_id):
         return [self._create_binding(task_id)]
@@ -141,12 +152,11 @@ class AMQPBackend(BaseBackend):
         if cache and cached_meta and \
                 cached_meta['status'] in READY_STATES:
             return cached_meta
-        else:
-            try:
-                return self.consume(task_id, timeout=timeout, no_ack=no_ack,
-                                    on_interval=on_interval)
-            except socket.timeout:
-                raise TimeoutError('The operation timed out.')
+        try:
+            return self.consume(task_id, timeout=timeout, no_ack=no_ack,
+                                on_interval=on_interval)
+        except socket.timeout:
+            raise TimeoutError('The operation timed out.')
 
     def get_task_meta(self, task_id, backlog_limit=1000):
         # Polling and using basic_get
@@ -298,7 +308,8 @@ class AMQPBackend(BaseBackend):
         raise NotImplementedError(
             'delete_group is not supported by this backend.')
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = kwargs if kwargs else {}
         kwargs.update(
             connection=self._connection,
             exchange=self.exchange.name,

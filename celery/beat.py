@@ -47,6 +47,37 @@ class SchedulingError(Exception):
     """An error occurred while scheduling a task."""
 
 
+class BeatLazyFunc(object):
+    """An lazy function declared in 'beat_schedule' and called before sending to worker.
+
+    Example:
+
+        beat_schedule = {
+            'test-every-5-minutes': {
+                'task': 'test',
+                'schedule': 300,
+                'kwargs': {
+                    "current": BeatCallBack(datetime.datetime.now)
+                }
+            }
+        }
+
+    """
+
+    def __init__(self, func, *args, **kwargs):
+        self._func = func
+        self._func_params = {
+            "args": args,
+            "kwargs": kwargs
+        }
+
+    def __call__(self):
+        return self.delay()
+
+    def delay(self):
+        return self._func(*self._func_params["args"], **self._func_params["kwargs"])
+
+
 @total_ordering
 @python_2_unicode_compatible
 class ScheduleEntry(object):
@@ -336,9 +367,9 @@ class Scheduler(object):
     def should_sync(self):
         return (
             (not self._last_sync or
-               (monotonic() - self._last_sync) > self.sync_every) or
+             (monotonic() - self._last_sync) > self.sync_every) or
             (self.sync_every_tasks and
-                self._tasks_since_sync >= self.sync_every_tasks)
+             self._tasks_since_sync >= self.sync_every_tasks)
         )
 
     def reserve(self, entry):
@@ -353,12 +384,14 @@ class Scheduler(object):
         task = self.app.tasks.get(entry.task)
 
         try:
+            entry_args = [v() if isinstance(v, BeatLazyFunc) else v for v in (entry.args or [])]
+            entry_kwargs = {k: v() if isinstance(v, BeatLazyFunc) else v for k, v in entry.kwargs.items()}
             if task:
-                return task.apply_async(entry.args, entry.kwargs,
+                return task.apply_async(entry_args, entry_kwargs,
                                         producer=producer,
                                         **entry.options)
             else:
-                return self.send_task(entry.task, entry.args, entry.kwargs,
+                return self.send_task(entry.task, entry_args, entry_kwargs,
                                       producer=producer,
                                       **entry.options)
         except Exception as exc:  # pylint: disable=broad-except

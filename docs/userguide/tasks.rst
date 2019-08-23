@@ -51,7 +51,7 @@ consider enabling the :setting:`task_reject_on_worker_lost` setting.
     A task that blocks indefinitely may eventually stop the worker instance
     from doing any other work.
 
-    If you task does I/O then make sure you add timeouts to these operations,
+    If your task does I/O then make sure you add timeouts to these operations,
     like adding a timeout to a web request using the :pypi:`requests` library:
 
     .. code-block:: python
@@ -530,6 +530,41 @@ see :setting:`worker_redirect_stdouts`).
                 return x + y
             finally:
                 sys.stdout, sys.stderr = old_outs
+
+
+.. note::
+
+    If a specific Celery logger you need is not emitting logs, you should
+    check that the logger is propagating properly. In this example
+    "celery.app.trace" is enabled so that "succeeded in" logs are emitted:
+
+    .. code-block:: python
+
+
+        import celery
+        import logging
+
+        @celery.signals.after_setup_logger.connect
+        def on_after_setup_logger(**kwargs):
+            logger = logging.getLogger('celery')
+            logger.propagate = True
+            logger = logging.getLogger('celery.app.trace')
+            logger.propagate = True
+
+
+.. note::
+
+    If you want to completely disable Celery logging configuration,
+    use the :signal:`setup_logging` signal:
+
+    .. code-block:: python
+
+        import celery
+
+        @celery.signals.setup_logging.connect
+        def on_setup_logging(**kwargs):
+            pass
+
 
 .. _task-argument-checking:
 
@@ -1435,8 +1470,10 @@ For example, a base Task class that caches a database connection:
                 self._db = Database.connect()
             return self._db
 
+Per task usage
+~~~~~~~~~~~~~~
 
-that can be added to tasks like this:
+The above can be added to each task like this:
 
 .. code-block:: python
 
@@ -1448,6 +1485,26 @@ that can be added to tasks like this:
 
 The ``db`` attribute of the ``process_rows`` task will then
 always stay the same in each process.
+
+.. _custom-task-cls-app-wide:
+
+App-wide usage
+~~~~~~~~~~~~~~
+
+You can also use your custom class in your whole Celery app by passing it as
+the ``task_cls`` argument when instantiating the app. This argument should be
+either a string giving the python path to your Task class or the class itself:
+
+.. code-block:: python
+
+    from celery import Celery
+
+    app = Celery('tasks', task_cls='your.module.path:DatabaseTask')
+
+This will make all your tasks declared using the decorator syntax within your
+app to use your ``DatabaseTask`` class and will all have a ``db`` attribute.
+
+The default value is the class provided by Celery: ``'celery.app.task:Task'``.
 
 Handlers
 --------
@@ -1693,7 +1750,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
         return myhttplib.get(url)
 
     @app.task
-    def parse_page(url, page):
+    def parse_page(page):
         return myparser.parse_document(page)
 
     @app.task

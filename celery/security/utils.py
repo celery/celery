@@ -5,22 +5,25 @@ from __future__ import absolute_import, unicode_literals
 import sys
 from contextlib import contextmanager
 
+import cryptography.exceptions
+from cryptography.hazmat.primitives import hashes
+
 from celery.exceptions import SecurityError
 from celery.five import reraise
 
-try:
-    from OpenSSL import crypto
-except ImportError:  # pragma: no cover
-    crypto = None    # noqa
+__all__ = ('get_digest_algorithm', 'reraise_errors',)
 
-__all__ = ('reraise_errors',)
+
+def get_digest_algorithm(digest='sha256'):
+    """Convert string to hash object of cryptography library."""
+    assert digest is not None
+    return getattr(hashes, digest.upper())()
 
 
 @contextmanager
 def reraise_errors(msg='{0!r}', errors=None):
     """Context reraising crypto errors as :exc:`SecurityError`."""
-    assert crypto is not None
-    errors = (crypto.Error,) if errors is None else errors
+    errors = (cryptography.exceptions,) if errors is None else errors
     try:
         yield
     except errors as exc:

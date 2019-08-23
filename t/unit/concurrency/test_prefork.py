@@ -6,9 +6,10 @@ import socket
 from itertools import cycle
 
 import pytest
-from case import Mock, mock, patch, skip
 
+from case import Mock, mock, patch, skip
 from celery.app.defaults import DEFAULTS
+from celery.concurrency.asynpool import iterate_file_descriptors_safely
 from celery.five import range
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import noop
@@ -125,6 +126,7 @@ class MockPool(object):
         self.maintain_pool = Mock()
         self._state = mp.RUN
         self._processes = kwargs.get('processes')
+        self._proc_alive_timeout = kwargs.get('proc_alive_timeout')
         self._pool = [Bunch(pid=i, inqW_fd=1, outqR_fd=2)
                       for i in range(self._processes)]
         self._current_proc = cycle(range(self._processes))
@@ -279,6 +281,57 @@ class test_AsynPool:
         w.on_loop_start(1234)
         w.outq.put.assert_called_with((asynpool.WORKER_UP, (1234,)))
 
+    def test_iterate_file_descriptors_safely_source_data_list(self):
+        # Given: a list of integers that could be file descriptors
+        fd_iter = [1, 2, 3, 4, 5]
+
+        # Given: a mock hub method that does nothing to call
+        def _fake_hub(*args, **kwargs):
+            raise OSError
+
+        # When Calling the helper to iterate_file_descriptors_safely
+        iterate_file_descriptors_safely(
+            fd_iter, fd_iter, _fake_hub,
+            "arg1", "arg2", kw1="kw1", kw2="kw2",
+        )
+
+        # Then: all items were removed from the managed data source
+        assert fd_iter == [], "Expected all items removed from managed list"
+
+    def test_iterate_file_descriptors_safely_source_data_set(self):
+        # Given: a list of integers that could be file descriptors
+        fd_iter = {1, 2, 3, 4, 5}
+
+        # Given: a mock hub method that does nothing to call
+        def _fake_hub(*args, **kwargs):
+            raise OSError
+
+        # When Calling the helper to iterate_file_descriptors_safely
+        iterate_file_descriptors_safely(
+            fd_iter, fd_iter, _fake_hub,
+            "arg1", "arg2", kw1="kw1", kw2="kw2",
+        )
+
+        # Then: all items were removed from the managed data source
+        assert fd_iter == set(), "Expected all items removed from managed set"
+
+    def test_iterate_file_descriptors_safely_source_data_dict(self):
+        # Given: a list of integers that could be file descriptors
+        fd_iter = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
+
+        # Given: a mock hub method that does nothing to call
+        def _fake_hub(*args, **kwargs):
+            raise OSError
+
+        # When Calling the helper to iterate_file_descriptors_safely
+        iterate_file_descriptors_safely(
+            fd_iter, fd_iter, _fake_hub,
+            "arg1", "arg2", kw1="kw1", kw2="kw2",
+        )
+
+        # Then: all items were removed from the managed data source
+        assert fd_iter == {}, "Expected all items removed from managed dict"
+
 
 @skip.if_win32()
 @skip.unless_module('multiprocessing')
@@ -397,3 +450,18 @@ class test_TaskPool:
         pool = TaskPool(7)
         pool.start()
         assert pool.num_processes == 7
+
+    @patch('billiard.forking_enable')
+    def test_on_start_proc_alive_timeout_default(self, __forking_enable):
+        app = Mock(conf=AttributeDict(DEFAULTS))
+        pool = TaskPool(4, app=app)
+        pool.on_start()
+        assert pool._pool._proc_alive_timeout == 4.0
+
+    @patch('billiard.forking_enable')
+    def test_on_start_proc_alive_timeout_custom(self, __forking_enable):
+        app = Mock(conf=AttributeDict(DEFAULTS))
+        app.conf.worker_proc_alive_timeout = 8.0
+        pool = TaskPool(4, app=app)
+        pool.on_start()
+        assert pool._pool._proc_alive_timeout == 8.0

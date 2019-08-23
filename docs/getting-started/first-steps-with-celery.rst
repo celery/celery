@@ -65,7 +65,7 @@ Or, if you want to run it on Docker execute this:
 
 .. code-block:: console
 
-    $ docker run -d -p 5462:5462 rabbitmq
+    $ docker run -d -p 5672:5672 rabbitmq
 
 When the command completes, the broker will already be running in the background,
 ready to move messages for you: ``Starting rabbitmq-server: SUCCESS``.
