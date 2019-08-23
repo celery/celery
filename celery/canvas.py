@@ -810,7 +810,7 @@ class chain(_chain):
 
     Returns:
         ~celery.chain: A lazy signature that can be called to apply the first
-            task in the chain.  When that task succeeed the next task in the
+            task in the chain.  When that task succeeds the next task in the
             chain is applied, and so on.
     """
 
