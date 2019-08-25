@@ -398,7 +398,7 @@ class Task(object):
     def parent(self):
         # issue github.com/mher/flower/issues/648
         try:
-            return self.parent_id and self.cluster_state.tasks[self.parent_id]
+            return self.parent_id and self.cluster_state.tasks.data[self.parent_id]
         except KeyError:
             return None
 
@@ -406,7 +406,7 @@ class Task(object):
     def root(self):
         # issue github.com/mher/flower/issues/648
         try:
-            return self.root_id and self.cluster_state.tasks[self.root_id]
+            return self.root_id and self.cluster_state.tasks.data[self.root_id]
         except KeyError:
             return None
 
