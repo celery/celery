@@ -212,7 +212,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             ssl_cert_reqs_missing = 'MISSING'
             ssl_string_to_constant = {'CERT_REQUIRED': CERT_REQUIRED,
                                       'CERT_OPTIONAL': CERT_OPTIONAL,
-                                      'CERT_NONE': CERT_NONE}
+                                      'CERT_NONE': CERT_NONE,
+                                      'required': CERT_REQUIRED,
+                                      'optional': CERT_OPTIONAL,
+                                      'none': CERT_NONE}
             ssl_cert_reqs = self.connparams.get('ssl_cert_reqs', ssl_cert_reqs_missing)
             ssl_cert_reqs = ssl_string_to_constant.get(ssl_cert_reqs, ssl_cert_reqs)
             if ssl_cert_reqs not in ssl_string_to_constant.values():
