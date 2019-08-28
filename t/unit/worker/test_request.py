@@ -635,6 +635,26 @@ class test_Request(RequestCase):
         job.on_failure(exc_info)
         assert self.mytask.backend.get_status(job.id) == states.PENDING
 
+    def test_on_failure_acks_late_reject_on_worker_lost_enabled(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            exc_info = ExceptionInfo()
+        self.mytask.acks_late = True
+        self.mytask.reject_on_worker_lost = True
+
+        job = self.xRequest()
+        job.delivery_info['redelivered'] = False
+        job.on_failure(exc_info)
+
+        assert self.mytask.backend.get_status(job.id) == states.PENDING
+
+        job = self.xRequest()
+        job.delivery_info['redelivered'] = True
+        job.on_failure(exc_info)
+
+        assert self.mytask.backend.get_status(job.id) == states.FAILURE
+
     def test_on_failure_acks_late(self):
         job = self.xRequest()
         job.time_start = 1
