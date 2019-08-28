@@ -496,18 +496,8 @@ class Request(object):
         if isinstance(exc, Retry):
             return self.on_retry(exc_info)
 
-        # These are special cases where the process wouldn't've had
-        # time to write the result.
-        if isinstance(exc, Terminated):
-            self._announce_revoked(
-                'terminated', True, string(exc), False)
-            send_failed_event = False  # already sent revoked event
-        elif isinstance(exc, WorkerLostError) or not return_ok:
-            self.task.backend.mark_as_failure(
-                self.id, exc, request=self._context,
-                store_result=self.store_errors,
-            )
         # (acks_late) acknowledge after result stored.
+        requeue = False
         if self.task.acks_late:
             reject = (
                 self.task.reject_on_worker_lost and
@@ -520,6 +510,19 @@ class Request(object):
                 send_failed_event = False
             elif ack:
                 self.acknowledge()
+
+        # These are special cases where the process would not have had time
+        # to write the result.
+        if isinstance(exc, Terminated):
+            self._announce_revoked(
+                'terminated', True, string(exc), False)
+            send_failed_event = False  # already sent revoked event
+        elif not requeue and (isinstance(exc, WorkerLostError) or not return_ok):
+            # only mark as failure if task has not been requeued
+            self.task.backend.mark_as_failure(
+                self.id, exc, request=self._context,
+                store_result=self.store_errors,
+            )
 
         if send_failed_event:
             self.send_event(
