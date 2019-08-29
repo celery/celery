@@ -994,7 +994,11 @@ is the same as::
 
 Use the ``rediss://`` protocol to connect to redis over TLS::
 
-    result_backend = 'rediss://:password@host:port/db?ssl_cert_reqs=CERT_REQUIRED'
+    result_backend = 'rediss://:password@host:port/db?ssl_cert_reqs=required'
+
+Note that the ``ssl_cert_reqs`` string should be one of ``required``,
+``optional``, or ``none`` (though, for backwards compatibility, the string
+may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
 
 If a Unix socket connection should be used, the URL needs to be in the format:::
 
@@ -1024,11 +1028,14 @@ When using a TLS connection (protocol is ``rediss://``), you may pass in all val
 .. code-block:: python
 
     result_backend = 'rediss://:password@host:port/db?\
-        ssl_cert_reqs=CERT_REQUIRED\
+        ssl_cert_reqs=required\
         &ssl_ca_certs=%2Fvar%2Fssl%2Fmyca.pem\                  # /var/ssl/myca.pem
         &ssl_certfile=%2Fvar%2Fssl%2Fredis-server-cert.pem\     # /var/ssl/redis-server-cert.pem
         &ssl_keyfile=%2Fvar%2Fssl%2Fprivate%2Fworker-key.pem'   # /var/ssl/private/worker-key.pem
 
+Note that the ``ssl_cert_reqs`` string should be one of ``required``,
+``optional``, or ``none`` (though, for backwards compatibility, the string
+may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
 
 .. setting:: redis_backend_use_ssl
 
