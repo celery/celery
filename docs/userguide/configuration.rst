@@ -2425,6 +2425,13 @@ transports):
 
     broker_transport_options = {'visibility_timeout': 18000}  # 5 hours
 
+Example setting the producer connection maximum number of retries (so producers
+won't retry forever if the broker isn't available at the first task execution):
+
+.. code-block:: python
+
+    broker_transport_options = {'max_retries': 5}
+
 .. _conf-worker:
 
 Worker
