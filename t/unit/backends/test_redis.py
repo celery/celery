@@ -300,9 +300,13 @@ class test_RedisBackend:
         assert x.connparams['connection_class'] is SSLConnection
 
     @skip.unless_module('redis')
-    def test_backend_ssl_certreq_str(self):
+    @pytest.mark.parametrize('cert_str', [
+        "required",
+        "CERT_REQUIRED",
+    ])
+    def test_backend_ssl_certreq_str(self, cert_str):
         self.app.conf.redis_backend_use_ssl = {
-            'ssl_cert_reqs': 'CERT_REQUIRED',
+            'ssl_cert_reqs': cert_str,
             'ssl_ca_certs': '/path/to/ca.crt',
             'ssl_certfile': '/path/to/client.crt',
             'ssl_keyfile': '/path/to/client.key',
@@ -328,11 +332,15 @@ class test_RedisBackend:
         assert x.connparams['connection_class'] is SSLConnection
 
     @skip.unless_module('redis')
-    def test_backend_ssl_url(self):
+    @pytest.mark.parametrize('cert_str', [
+        "required",
+        "CERT_REQUIRED",
+    ])
+    def test_backend_ssl_url(self, cert_str):
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
         x = self.Backend(
-            'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_REQUIRED',
+            'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=%s' % cert_str,
             app=self.app,
         )
         assert x.connparams
@@ -348,14 +356,19 @@ class test_RedisBackend:
         assert x.connparams['connection_class'] is SSLConnection
 
     @skip.unless_module('redis')
-    def test_backend_ssl_url_options(self):
+    @pytest.mark.parametrize('cert_str', [
+        "none",
+        "CERT_NONE",
+    ])
+    def test_backend_ssl_url_options(self, cert_str):
         x = self.Backend(
             (
-                'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_NONE'
+                'rediss://:bosco@vandelay.com:123//1'
+                '?ssl_cert_reqs={cert_str}'
                 '&ssl_ca_certs=%2Fvar%2Fssl%2Fmyca.pem'
                 '&ssl_certfile=%2Fvar%2Fssl%2Fredis-server-cert.pem'
                 '&ssl_keyfile=%2Fvar%2Fssl%2Fprivate%2Fworker-key.pem'
-            ),
+            ).format(cert_str=cert_str),
             app=self.app,
         )
         assert x.connparams
@@ -369,9 +382,13 @@ class test_RedisBackend:
         assert x.connparams['ssl_keyfile'] == '/var/ssl/private/worker-key.pem'
 
     @skip.unless_module('redis')
-    def test_backend_ssl_url_cert_none(self):
+    @pytest.mark.parametrize('cert_str', [
+        "optional",
+        "CERT_OPTIONAL",
+    ])
+    def test_backend_ssl_url_cert_none(self, cert_str):
         x = self.Backend(
-            'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_OPTIONAL',
+            'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=%s' % cert_str,
             app=self.app,
         )
         assert x.connparams
