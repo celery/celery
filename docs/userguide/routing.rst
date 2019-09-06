@@ -506,7 +506,7 @@ using the ``basic.publish`` command:
     ok.
 
 Now that the message is sent you can retrieve it again. You can use the
-``basic.get``` command here, that polls for new messages on the queue
+``basic.get`` command here, that polls for new messages on the queue
 in a synchronous manner
 (this is OK for maintenance tasks, but for services you want to use
 ``basic.consume`` instead)
