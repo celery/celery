@@ -36,6 +36,11 @@ class paramexception(Exception):
         self.param = param
 
 
+class objectexception(object):
+    class Nested(Exception):
+        pass
+
+
 if sys.version_info[0] == 3 or getattr(sys, 'pypy_version_info', None):
     Oldstyle = None
 else:
@@ -197,6 +202,17 @@ class test_prepare_exception:
             'exc_module': Exception.__module__}
         y = self.b.exception_to_python(x)
         assert isinstance(y, Exception)
+
+    @pytest.mark.skipif(sys.version_info < (3, 3), reason='no qualname support')
+    def test_json_exception_nested(self):
+        self.b.serializer = 'json'
+        x = self.b.prepare_exception(objectexception.Nested('msg'))
+        assert x == {
+            'exc_message': ('msg',),
+            'exc_type': 'objectexception.Nested',
+            'exc_module': objectexception.Nested.__module__}
+        y = self.b.exception_to_python(x)
+        assert isinstance(y, objectexception.Nested)
 
     def test_impossible(self):
         self.b.serializer = 'pickle'

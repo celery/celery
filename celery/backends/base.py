@@ -257,9 +257,10 @@ class Backend(object):
         serializer = self.serializer if serializer is None else serializer
         if serializer in EXCEPTION_ABLE_CODECS:
             return get_pickleable_exception(exc)
-        return {'exc_type': type(exc).__name__,
+        exctype = type(exc)
+        return {'exc_type': getattr(exctype, '__qualname__', exctype.__name__),
                 'exc_message': ensure_serializable(exc.args, self.encode),
-                'exc_module': type(exc).__module__}
+                'exc_module': exctype.__module__}
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
@@ -273,7 +274,11 @@ class Backend(object):
                     exc_module = from_utf8(exc_module)
                     exc_type = from_utf8(exc['exc_type'])
                     try:
-                        cls = getattr(sys.modules[exc_module], exc_type)
+                        # Load module and find exception class in that
+                        cls = sys.modules[exc_module]
+                        # The type can contain qualified name with parent classes
+                        for name in exc_type.split('.'):
+                            cls = getattr(cls, name)
                     except (KeyError, AttributeError):
                         cls = create_exception_cls(exc_type,
                                                    celery.exceptions.__name__)
