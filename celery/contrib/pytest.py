@@ -15,6 +15,16 @@ NO_WORKER = os.environ.get('NO_WORKER')
 # Well, they're called fixtures....
 
 
+def pytest_configure(config):
+    """Register additional pytest configuration."""
+    # add the pytest.mark.celery() marker registration to the pytest.ini [markers] section
+    # this prevents pytest 4.5 and newer from issueing a warning about an unknown marker
+    # and shows helpful marker documentation when running pytest --markers.
+    config.addinivalue_line(
+        "markers", "celery(**overrides): override celery configuration for a test case"
+    )
+
+
 @contextmanager
 def _create_app(enable_logging=False,
                 use_trap=False,
