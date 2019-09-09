@@ -16,7 +16,7 @@ NO_WORKER = os.environ.get('NO_WORKER')
 
 
 def pytest_configure(config):
-    """Register additional pytest configuration"""
+    """Register additional pytest configuration."""
     # add the pytest.mark.celery() marker registration to the pytest.ini [markers] section
     # this prevents pytest 4.5 and newer from issueing a warning about an unknown marker
     # and shows helpful marker documentation when running pytest --markers.
