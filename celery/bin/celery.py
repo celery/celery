@@ -1,8 +1,33 @@
 """Celery Command Line Interface."""
 import click
-from click.types import IntParamType, StringParamType
+from click.types import IntParamType, ParamType, StringParamType
 
-from celery.bin.base import CeleryOption, CeleryDaemonCommand
+from celery import concurrency
+from celery.app.utils import find_app
+from celery.bin.base import CeleryDaemonCommand, CeleryOption
+from celery.platforms import maybe_drop_privileges
+from celery.utils.log import mlevel
+from celery.utils.nodenames import default_nodename, host_format, node_format
+
+
+class App(ParamType):
+    """Application option."""
+
+    name = "application"
+
+    def convert(self, value, param, ctx):
+        try:
+            return find_app(value)
+        except (ModuleNotFoundError, AttributeError) as e:
+            raise click.BadParameter(str(e))
+
+
+class LogLevel(click.Choice):
+    """Log level option."""
+
+    def convert(self, value, param, ctx):
+        value = super().convert(value, param, ctx)
+        return mlevel(value)
 
 
 class Hostname(StringParamType):
@@ -26,12 +51,20 @@ class Concurrency(IntParamType):
 PREFETCH_MULTIPLIER = PrefetchMultiplier()
 HOSTNAME = Hostname()
 CONCURRENCY = Concurrency()
+APP = App()
 
 
 @click.group()
-def celery():
+@click.option('-A',
+              '--app',
+              cls=CeleryOption,
+              type=APP,
+              help_group="Global Options")
+@click.pass_context
+def celery(ctx, app):
     """Celery command entrypoint."""
-    pass
+    ctx.ensure_object(dict)
+    ctx.obj['app'] = app
 
 
 @celery.command(cls=CeleryDaemonCommand)
@@ -58,7 +91,7 @@ def celery():
               '--loglevel',
               default='WARNING',
               cls=CeleryOption,
-              type=click.Choice(('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'FATAL')),
+              type=LogLevel(('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'FATAL')),
               help_group="Worker Options",
               help="Logging level.")
 @click.option('optimization',
@@ -171,20 +204,42 @@ def celery():
 @click.option('--scheduler',
               cls=CeleryOption,
               help_group="Embedded Beat Options")
-def worker(*args, **kwargs):
+@click.pass_context
+def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
+           loglevel=None, logfile=None, pidfile=None, statedb=None,
+           **kwargs):
     """Start worker instance.
 
     Examples
     --------
-    .. code-block:: console
-        $ celery worker --app=proj -l info
-        $ celery worker -A proj -l info -Q hipri,lopri
-        $ celery worker -A proj --concurrency=4
-        $ celery worker -A proj --concurrency=1000 -P eventlet
-        $ celery worker --autoscale=10,0
+    $ celery worker --app=proj -l info
+    $ celery worker -A proj -l info -Q hipri,lopri
+    $ celery worker -A proj --concurrency=4
+    $ celery worker -A proj --concurrency=1000 -P eventlet
+    $ celery worker --autoscale=10,0
 
     """
-    pass
+    app = ctx.obj['app']
+    maybe_drop_privileges(uid=uid, gid=gid)
+    # Pools like eventlet/gevent needs to patch libs as early
+    # as possible.
+    pool_cls = (concurrency.get_implementation(pool_cls) or
+                app.conf.worker_pool)
+    # TODO: Move this check to a param type
+    if app.IS_WINDOWS and kwargs.get('beat'):
+        raise click.BadParameter('-B option does not work on Windows.  '
+                                 'Please run celery beat as a separate service.',
+                                 ctx=ctx,
+                                 param='-B')
+    hostname = host_format(default_nodename(hostname))
+    worker = app.Worker(
+        hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
+        logfile=logfile,  # node format handled by celery.app.log.setup
+        pidfile=node_format(pidfile, hostname),
+        statedb=node_format(statedb, hostname),
+        **kwargs)
+    worker.start()
+    return worker.exitcode
 
 
 def main():
