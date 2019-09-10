@@ -61,8 +61,9 @@ class test_S3Backend:
         mock_boto3.Session().resource.assert_called_once_with(
             's3', endpoint_url=endpoint_url)
 
+    @pytest.mark.parametrize("key", ['uuid', b'uuid'])
     @mock_s3
-    def test_set_and_get_a_key(self):
+    def test_set_and_get_a_key(self, key):
         self._mock_s3_resource()
 
         self.app.conf.s3_access_key_id = 'somekeyid'
@@ -70,9 +71,9 @@ class test_S3Backend:
         self.app.conf.s3_bucket = 'bucket'
 
         s3_backend = S3Backend(app=self.app)
-        s3_backend.set('uuid', 'another_status')
+        s3_backend.set(key, 'another_status')
 
-        assert s3_backend.get('uuid') == 'another_status'
+        assert s3_backend.get(key) == 'another_status'
 
     @mock_s3
     def test_get_a_missing_key(self):
