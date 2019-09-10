@@ -1,6 +1,7 @@
 """Click customizations for Celery."""
 
 from collections import OrderedDict
+
 import click
 
 
