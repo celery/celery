@@ -775,9 +775,6 @@ class AsynPool(_pool.Pool):
         def on_poll_start():
             # Determine which io descriptors are not busy
             inactive = diff(active_writes)
-            logger.debug(
-                "AsyncPool._create_write_handlers ALL: %r ACTIVE: %r",
-                len(all_inqueues), len(active_writes))
 
             # Determine hub_add vs hub_remove strategy conditional
             if is_fair_strategy:
