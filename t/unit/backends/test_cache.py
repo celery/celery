@@ -156,10 +156,10 @@ class MemcachedClient(DummyClient):
             key_t, must_be, not_be, cod = text_t, 'bytes', 'string', 'encode'
         if isinstance(key, key_t):
             raise MyMemcachedStringEncodingError(
-                'Keys must be {0}, not {1}.  Convert your '
-                'strings using mystring.{2}(charset)!'.format(
+                'Keys must be {}, not {}.  Convert your '
+                'strings using mystring.{}(charset)!'.format(
                     must_be, not_be, cod))
-        return super(MemcachedClient, self).set(key, value, *args, **kwargs)
+        return super().set(key, value, *args, **kwargs)
 
 
 class MockCacheMixin:

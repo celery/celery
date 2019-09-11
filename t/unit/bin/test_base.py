@@ -179,7 +179,7 @@ class test_Command:
     def test_with_custom_app(self, app):
         cmd = MockCommand(app=app)
         appstr = '.'.join([__name__, 'APP'])
-        cmd.setup_app_from_commandline(['--app=%s' % (appstr,),
+        cmd.setup_app_from_commandline([f'--app={appstr}',
                                         '--loglevel=INFO'])
         assert cmd.app is APP
         cmd.setup_app_from_commandline(['-A', appstr,

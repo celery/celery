@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Task execution strategy (optimization)."""
 import logging
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Base Execution Pool."""
 import logging
 import os
@@ -111,11 +110,11 @@ class BasePool:
 
     def terminate_job(self, pid, signal=None):
         raise NotImplementedError(
-            '{0} does not implement kill_job'.format(type(self)))
+            '{} does not implement kill_job'.format(type(self)))
 
     def restart(self):
         raise NotImplementedError(
-            '{0} does not implement restart'.format(type(self)))
+            '{} does not implement restart'.format(type(self)))
 
     def stop(self):
         self.on_stop()

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Task Annotations.
 
 Annotations is a nice term for monkey-patching task classes

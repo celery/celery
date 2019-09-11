@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Private keys for the security serializer."""
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization

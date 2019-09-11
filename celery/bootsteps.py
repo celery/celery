@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """A directed acyclic graph of reusable components."""
 
 from collections import deque
@@ -31,7 +30,7 @@ logger = get_logger(__name__)
 
 
 def _pre(ns, fmt):
-    return '| {0}: {1}'.format(ns.alias, fmt)
+    return f'| {ns.alias}: {fmt}'
 
 
 def _label(s):
@@ -50,7 +49,7 @@ class StepFormatter(GraphFormatter):
     }
 
     def label(self, step):
-        return step and '{0}{1}'.format(
+        return step and '{}{}'.format(
             self._get_prefix(step),
             bytes_to_str(
                 (step.label or _label(step)).encode('utf-8', 'ignore')),
@@ -273,12 +272,12 @@ class StepType(type):
 
     def __new__(cls, name, bases, attrs):
         module = attrs.get('__module__')
-        qname = '{0}.{1}'.format(module, name) if module else name
+        qname = f'{module}.{name}' if module else name
         attrs.update(
             __qualname__=qname,
             name=attrs.get('name') or qname,
         )
-        return super(StepType, cls).__new__(cls, name, bases, attrs)
+        return super().__new__(cls, name, bases, attrs)
 
     def __str__(cls):
         return bytes_if_py2(cls.name)
@@ -345,7 +344,7 @@ class Step:
         """Create the step."""
 
     def __repr__(self):
-        return bytes_if_py2('<step: {0.alias}>'.format(self))
+        return bytes_if_py2(f'<step: {self.alias}>')
 
     @property
     def alias(self):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The :program:`celery beat` command.
 
 .. program:: celery beat

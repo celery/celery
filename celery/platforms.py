@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Platforms.
 
 Utilities dealing with platform specifics: signals, daemonization,
@@ -62,7 +61,7 @@ IS_WINDOWS = SYSTEM == 'Windows'
 DAEMON_WORKDIR = '/'
 
 PIDFILE_FLAGS = os.O_CREAT | os.O_EXCL | os.O_WRONLY
-PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
+PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | (os.R_OK)
 
 PIDLOCKED = """ERROR: Pidfile ({0}) already exists.
 Seems we're already running? (pid: {1})"""
@@ -167,13 +166,13 @@ class Pidfile:
                 line = fh.readline()
                 if line.strip() == line:  # must contain '\n'
                     raise ValueError(
-                        'Partial or invalid pidfile {0.path}'.format(self))
+                        f'Partial or invalid pidfile {self.path}')
 
                 try:
                     return int(line.strip())
                 except ValueError:
                     raise ValueError(
-                        'pidfile {0.path} contents invalid.'.format(self))
+                        f'pidfile {self.path} contents invalid.')
 
     def remove(self):
         """Remove the lock."""
@@ -210,7 +209,7 @@ class Pidfile:
 
     def write_pid(self):
         pid = os.getpid()
-        content = '{0}\n'.format(pid)
+        content = f'{pid}\n'
 
         pidfile_fd = os.open(self.path, PIDFILE_FLAGS, PIDFILE_MODE)
         pidfile = os.fdopen(pidfile_fd, 'w')
@@ -437,7 +436,7 @@ def parse_uid(uid):
         try:
             return pwd.getpwnam(uid).pw_uid
         except (AttributeError, KeyError):
-            raise KeyError('User does not exist: {0}'.format(uid))
+            raise KeyError(f'User does not exist: {uid}')
 
 
 def parse_gid(gid):
@@ -454,7 +453,7 @@ def parse_gid(gid):
         try:
             return grp.getgrnam(gid).gr_gid
         except (AttributeError, KeyError):
-            raise KeyError('Group does not exist: {0}'.format(gid))
+            raise KeyError(f'Group does not exist: {gid}')
 
 
 def _setgroups_hack(groups):
@@ -714,8 +713,8 @@ def set_process_title(progname, info=None):
 
     Only works if :pypi:`setproctitle` is installed.
     """
-    proctitle = '[{0}]'.format(progname)
-    proctitle = '{0} {1}'.format(proctitle, info) if info else proctitle
+    proctitle = f'[{progname}]'
+    proctitle = f'{proctitle} {info}' if info else proctitle
     if _setproctitle:
         _setproctitle.setproctitle(safe_str(proctitle))
     return proctitle
@@ -733,9 +732,9 @@ else:
         Only works if :pypi:`setproctitle` is installed.
         """
         if hostname:
-            progname = '{0}: {1}'.format(progname, hostname)
+            progname = f'{progname}: {hostname}'
         name = current_process().name if current_process else 'MainProcess'
-        return set_process_title('{0}:{1}'.format(progname, name), info=info)
+        return set_process_title(f'{progname}:{name}', info=info)
 
 
 def get_errno_name(n):

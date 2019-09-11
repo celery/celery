@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Loader base class."""
 import importlib
 import os
@@ -202,7 +201,7 @@ class BaseLoader:
                     value = NAMESPACES[ns.lower()][key].to_python(value)
                 except ValueError as exc:
                     # display key name in error message.
-                    raise ValueError('{0!r}: {1}'.format(ns_key, exc))
+                    raise ValueError(f'{ns_key!r}: {exc}')
             return ns_key, value
         return dict(getarg(arg) for arg in args)
 
@@ -262,7 +261,7 @@ def find_related_module(package, related_name):
         if not package:
             raise
 
-    module_name = '{0}.{1}'.format(package, related_name)
+    module_name = f'{package}.{related_name}'
 
     try:
         return importlib.import_module(module_name)

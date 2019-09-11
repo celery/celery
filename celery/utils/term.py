@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Terminals and colors."""
 import base64
 import codecs
@@ -34,7 +33,7 @@ def fg(s):
     return COLOR_SEQ % s
 
 
-class colored(object):
+class colored:
     """Terminal colored text.
 
     Example:

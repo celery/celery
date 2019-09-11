@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Base command-line interface."""
 import argparse
 import json
@@ -122,7 +121,7 @@ class Error(Exception):
     def __init__(self, reason, status=None):
         self.reason = reason
         self.status = status if status is not None else self.status
-        super(Error, self).__init__(reason, status)
+        super().__init__(reason, status)
 
     def __str__(self):
         return self.reason
@@ -233,7 +232,7 @@ class Command:
     def on_error(self, exc):
         # pylint: disable=method-hidden
         #   on_error argument to __init__ may override this method.
-        self.error(self.colored.red('Error: {0}'.format(exc)))
+        self.error(self.colored.red(f'Error: {exc}'))
 
     def on_usage_error(self, exc):
         # pylint: disable=method-hidden
@@ -262,7 +261,7 @@ class Command:
         required = S.args[_index:-len(S.defaults) if S.defaults else None]
         missing = required[len(given):]
         if missing:
-            raise self.UsageError('Missing required {0}: {1}'.format(
+            raise self.UsageError('Missing required {}: {}'.format(
                 text.pluralize(len(missing), 'argument'),
                 ', '.join(missing)
             ))
@@ -312,7 +311,7 @@ class Command:
             maybe_patch_concurrency(argv, *pool_option)
 
     def usage(self, command):
-        return '%(prog)s {0} [options] {self.args}'.format(command, self=self)
+        return f'%(prog)s {command} [options] {self.args}'
 
     def add_arguments(self, parser):
         pass
@@ -365,7 +364,7 @@ class Command:
                         for c in choices]
         schoices = '/'.join(schoices)
 
-        p = '{0} ({1})? '.format(q.capitalize(), schoices)
+        p = '{} ({})? '.format(q.capitalize(), schoices)
         while 1:
             val = input(p).lower()
             if val in choices:
@@ -450,7 +449,7 @@ class Command:
 
     def _format_epilog(self, epilog):
         if epilog:
-            return '\n{0}\n\n'.format(epilog)
+            return f'\n{epilog}\n\n'
         return ''
 
     def _format_description(self, description):
@@ -606,7 +605,7 @@ class Command:
         if not n:
             return '- empty -'
         return '\n'.join(
-            str(c.reset(c.white('*'), ' {0}'.format(item))) for item in n
+            str(c.reset(c.white('*'), f' {item}')) for item in n
         )
 
     def pretty_dict_ok_error(self, n):

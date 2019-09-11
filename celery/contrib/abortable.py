@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Abortable Tasks.
 
 Abortable tasks overview

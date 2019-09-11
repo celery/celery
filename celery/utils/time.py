@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utilities related to dates, times, intervals, and timezones."""
 import numbers
 import os
@@ -72,7 +71,7 @@ class LocalTimezone(tzinfo):
         tzinfo.__init__(self)
 
     def __repr__(self):
-        return '<LocalTimezone: UTC{0:+03d}>'.format(
+        return '<LocalTimezone: UTC{:+03d}>'.format(
             int(self.DSTOFFSET.total_seconds() / 3600),
         )
 
@@ -109,7 +108,7 @@ class LocalTimezone(tzinfo):
         return tt.tm_isdst > 0
 
 
-class _Zone(object):
+class _Zone:
 
     def tz_or_local(self, tzinfo=None):
         # pylint: disable=redefined-outer-name
@@ -212,7 +211,7 @@ def remaining(start, ends_in, now=None, relative=False):
         end_date = delta_resolution(end_date, ends_in)
     ret = end_date - now
     if C_REMDEBUG:  # pragma: no cover
-        print('rem: NOW:%r START:%r ENDS_IN:%r END_DATE:%s REM:%s' % (
+        print('rem: NOW:{!r} START:{!r} ENDS_IN:{!r} END_DATE:{} REM:{}'.format(
             now, start, ends_in, end_date, ret))
     return ret
 
@@ -257,7 +256,7 @@ def humanize_seconds(secs, prefix='', sep='', now='now', microseconds=False):
     for unit, divider, formatter in TIME_UNITS:
         if secs >= divider:
             w = secs / float(divider)
-            return '{0}{1}{2} {3}'.format(prefix, sep, formatter(w),
+            return '{}{}{} {}'.format(prefix, sep, formatter(w),
                                           pluralize(w, unit))
     if microseconds and secs > 0.0:
         return '{prefix}{sep}{0:.2f} seconds'.format(
@@ -329,7 +328,7 @@ def maybe_make_aware(dt, tz=None):
     return dt
 
 
-class ffwd(object):
+class ffwd:
     """Version of ``dateutil.relativedelta`` that only supports addition."""
 
     def __init__(self, year=None, month=None, weeks=0, weekday=None, day=None,

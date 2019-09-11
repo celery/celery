@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Celery Signals.
 
 This module defines the signals (Observer pattern) sent by

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The ``RPC`` result backend for AMQP brokers.
 
 RPC-style result backend, using reply-to and one queue per client.
@@ -44,7 +43,7 @@ class ResultConsumer(BaseResultConsumer):
     _consumer = None
 
     def __init__(self, *args, **kwargs):
-        super(ResultConsumer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._create_binding = self.backend._create_binding
 
     def start(self, initial_task_id, no_ack=True, **kwargs):
@@ -120,7 +119,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
 
     def __init__(self, app, connection=None, exchange=None, exchange_type=None,
                  persistent=None, serializer=None, auto_delete=True, **kwargs):
-        super(RPCBackend, self).__init__(app, **kwargs)
+        super().__init__(app, **kwargs)
         conf = self.app.conf
         self._connection = connection
         self._out_of_band = {}
@@ -177,7 +176,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             request = request or current_task.request
         except AttributeError:
             raise RuntimeError(
-                'RPC backend missing task request for {0!r}'.format(task_id))
+                f'RPC backend missing task request for {task_id!r}')
         return request.reply_to, request.correlation_id or task_id
 
     def on_reply_declare(self, task_id):
@@ -318,7 +317,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
 
     def __reduce__(self, args=(), kwargs=None):
         kwargs = {} if not kwargs else kwargs
-        return super(RPCBackend, self).__reduce__(args, dict(
+        return super().__reduce__(args, dict(
             kwargs,
             connection=self._connection,
             exchange=self.exchange.name,

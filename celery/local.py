@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Proxy/PromiseProxy implementation.
 
 This module contains critical utilities that needs to be loaded as
@@ -110,7 +109,7 @@ class Proxy:
             # not sure what this is about
             return getattr(loc, self.__name__)
         except AttributeError:  # pragma: no cover
-            raise RuntimeError('no object bound to {0.__name__}'.format(self))
+            raise RuntimeError(f'no object bound to {self.__name__}')
 
     @property
     def __dict__(self):
@@ -123,7 +122,7 @@ class Proxy:
         try:
             obj = self._get_current_object()
         except RuntimeError:  # pragma: no cover
-            return '<{0} unbound>'.format(self.__class__.__name__)
+            return f'<{self.__class__.__name__} unbound>'
         return repr(obj)
 
     def __bool__(self):

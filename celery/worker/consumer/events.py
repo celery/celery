@@ -28,7 +28,7 @@ class Events(bootsteps.StartStopStep):
             not without_heartbeat
         )
         c.event_dispatcher = None
-        super(Events, self).__init__(c, **kwargs)
+        super().__init__(c, **kwargs)
 
     def start(self, c):
         # flush events sent while connection was down.

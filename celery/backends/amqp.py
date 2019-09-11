@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The old AMQP result backend, deprecated and replaced by the RPC backend."""
 import socket
 from collections import deque
@@ -27,7 +26,7 @@ def repair_uuid(s):
     # Historically the dashes in UUIDS are removed from AMQ entity names,
     # but there's no known reason to.  Hopefully we'll be able to fix
     # this in v4.0.
-    return '%s-%s-%s-%s-%s' % (s[:8], s[8:12], s[12:16], s[16:20], s[20:])
+    return '{}-{}-{}-{}-{}'.format(s[:8], s[8:12], s[12:16], s[16:20], s[20:])
 
 
 class NoCacheQueue(Queue):
@@ -63,7 +62,7 @@ class AMQPBackend(BaseBackend):
         deprecated.warn(
             'The AMQP result backend', deprecation='4.0', removal='5.0',
             alternative='Please use RPC backend or a persistent backend.')
-        super(AMQPBackend, self).__init__(app, **kwargs)
+        super().__init__(app, **kwargs)
         conf = self.app.conf
         self._connection = connection
         self.persistent = self.prepare_persistent(persistent)
@@ -317,7 +316,7 @@ class AMQPBackend(BaseBackend):
             auto_delete=self.auto_delete,
             expires=self.expires,
         )
-        return super(AMQPBackend, self).__reduce__(args, kwargs)
+        return super().__reduce__(args, kwargs)
 
     def as_uri(self, include_password=True):
         return 'amqp://'

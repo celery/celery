@@ -28,7 +28,7 @@ class WeakMethod(ref):
             func = meth.__func__
         except AttributeError:
             raise TypeError(
-                "Argument should be a bound method, not {0}".format(
+                "Argument should be a bound method, not {}".format(
                     type(meth)))
 
         def _cb(arg):
@@ -47,7 +47,7 @@ class WeakMethod(ref):
         return self
 
     def __call__(self):
-        obj = super(WeakMethod, self).__call__()
+        obj = super().__call__()
         func = self._func_ref()
         if obj is not None and func is not None:
             return self._meth_type(func, obj)

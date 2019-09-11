@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Task implementation: request context and the task base class."""
 import signal
 import sys
@@ -47,7 +46,7 @@ TaskType = type
 
 def _strflags(flags, default=''):
     if flags:
-        return ' ({0})'.format(', '.join(flags))
+        return ' ({})'.format(', '.join(flags))
     return default
 
 
@@ -107,7 +106,7 @@ class Context:
         return getattr(self, key, default)
 
     def __repr__(self):
-        return '<Context: {0!r}>'.format(vars(self))
+        return '<Context: {!r}>'.format(vars(self))
 
     def as_execution_options(self):
         limit_hard, limit_soft = self.timelimit or (None, None)
@@ -138,7 +137,7 @@ class Context:
 
 
 @abstract.CallableTask.register
-class Task(object):
+class Task:
     """Task base class.
 
     Note:
@@ -704,7 +703,7 @@ class Task(object):
                 # the exc' argument provided (raise exc from orig)
                 raise_with_context(exc)
             raise self.MaxRetriesExceededError(
-                "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
+                "Can't retry {}[{}] args:{} kwargs:{}".format(
                     self.name, request.id, S.args, S.kwargs
                 ), task_args=S.args, task_kwargs=S.kwargs
             )

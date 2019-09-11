@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Implementation of the Observer pattern."""
 import sys
 import threading
@@ -356,7 +355,7 @@ class Signal:  # pragma: no cover
 
     def __repr__(self):
         """``repr(signal)``."""
-        return '<{0}: {1} providing_args={2!r}>'.format(
+        return '<{}: {} providing_args={!r}>'.format(
             type(self).__name__, self.name, self.providing_args)
 
     def __str__(self):

@@ -99,9 +99,9 @@ class test_chain:
             raise pytest.skip('Requires redis result backend.')
         redis_connection = get_redis_connection()
         redis_connection.delete('redis-echo')
-        before = group(redis_echo.si('before {}'.format(i)) for i in range(3))
+        before = group(redis_echo.si(f'before {i}') for i in range(3))
         connect = redis_echo.si('connect')
-        after = group(redis_echo.si('after {}'.format(i)) for i in range(2))
+        after = group(redis_echo.si(f'after {i}') for i in range(2))
 
         result = (before | connect | after).delay()
         result.get(timeout=TIMEOUT)

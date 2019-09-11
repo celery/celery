@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Actual App instance implementation."""
 import os
 import threading
@@ -426,7 +425,7 @@ class Celery:
             raise TypeError('argument 1 to @task() must be a callable')
         if args:
             raise TypeError(
-                '@task() takes exactly 1 argument ({0} given)'.format(
+                '@task() takes exactly 1 argument ({} given)'.format(
                     sum([len(args), len(opts)])))
         return inner_create_task_cls(**opts)
 
@@ -1059,7 +1058,7 @@ class Celery:
         self.close()
 
     def __repr__(self):
-        return '<{0} {1}>'.format(type(self).__name__, appstr(self))
+        return '<{} {}>'.format(type(self).__name__, appstr(self))
 
     def __reduce__(self):
         if self._using_v1_reduce:

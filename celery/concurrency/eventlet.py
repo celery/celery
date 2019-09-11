@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Eventlet execution pool."""
 import sys
 
@@ -39,7 +38,7 @@ class Timer(_timer.Timer):
     def __init__(self, *args, **kwargs):
         from eventlet.greenthread import spawn_after
         from greenlet import GreenletExit
-        super(Timer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.GreenletExit = GreenletExit
         self._spawn_after = spawn_after
@@ -104,7 +103,7 @@ class TaskPool(base.BasePool):
         self.getpid = lambda: id(greenthread.getcurrent())
         self.spawn_n = greenthread.spawn_n
 
-        super(TaskPool, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def on_start(self):
         self._pool = self.Pool(self.limit)
@@ -138,7 +137,7 @@ class TaskPool(base.BasePool):
         self.limit = limit
 
     def _get_info(self):
-        info = super(TaskPool, self)._get_info()
+        info = super()._get_info()
         info.update({
             'max-concurrency': self.limit,
             'free-threads': self._pool.free(),

@@ -88,7 +88,7 @@ class test_Polaroid:
 
 class test_evcam:
 
-    class MockReceiver(object):
+    class MockReceiver:
         raise_keyboard_interrupt = False
 
         def capture(self, **kwargs):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """In-memory representation of cluster state.
 
 This module implements a data-structure used to keep
@@ -101,7 +100,7 @@ class CallableDefaultdict(defaultdict):
 
     def __init__(self, fun, *args, **kwargs):
         self.fun = fun
-        super(CallableDefaultdict, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
         return self.fun(*args, **kwargs)

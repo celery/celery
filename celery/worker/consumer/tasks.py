@@ -19,7 +19,7 @@ class Tasks(bootsteps.StartStopStep):
 
     def __init__(self, c, **kwargs):
         c.task_consumer = c.qos = None
-        super(Tasks, self).__init__(c, **kwargs)
+        super().__init__(c, **kwargs)
 
     def start(self, c):
         """Start task consumer."""

@@ -38,7 +38,7 @@ class ManagerMixin:
 
     def remark(self, s, sep='-'):
         # type: (str, str) -> None
-        print('{0}{1}'.format(sep, s), file=self.stdout)
+        print(f'{sep}{s}', file=self.stdout)
 
     def missing_results(self, r):
         # type: (Sequence[AsyncResult]) -> Sequence[str]
@@ -90,7 +90,7 @@ class ManagerMixin:
         except catch:
             pass
         else:
-            raise AssertionError('Should not have happened: {0}'.format(desc))
+            raise AssertionError(f'Should not have happened: {desc}')
 
     def retry_over_time(self, *args, **kwargs):
         return retry_over_time(*args, **kwargs)
@@ -112,20 +112,19 @@ class ManagerMixin:
             except (socket.timeout, TimeoutError) as exc:
                 waiting_for = self.missing_results(r)
                 self.remark(
-                    'Still waiting for {0}/{1}: [{2}]: {3!r}'.format(
+                    'Still waiting for {}/{}: [{}]: {!r}'.format(
                         len(r) - len(received), len(r),
                         truncate(', '.join(waiting_for)), exc), '!',
                 )
             except self.connerrors as exc:
-                self.remark('join: connection lost: {0!r}'.format(exc), '!')
+                self.remark(f'join: connection lost: {exc!r}', '!')
         raise AssertionError('Test failed: Missing task results')
 
     def inspect(self, timeout=3.0):
         return self.app.control.inspect(timeout=timeout)
 
     def query_tasks(self, ids, timeout=0.5):
-        for reply in items(self.inspect(timeout).query_task(*ids) or {}):
-            yield reply
+        yield from items(self.inspect(timeout).query_task(*ids) or {})
 
     def query_task_states(self, ids, timeout=0.5):
         states = defaultdict(set)

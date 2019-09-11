@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Built-in task states.
 
 .. _states:

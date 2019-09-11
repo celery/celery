@@ -51,7 +51,7 @@ class shell(Command):  # pragma: no cover
     def run(self, *args, **kwargs):
         if args:
             raise self.UsageError(
-                'shell command does not take arguments: {0}'.format(args))
+                f'shell command does not take arguments: {args}')
         return self._run(**kwargs)
 
     def _run(self, ipython=False, bpython=False,

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for ``celery report`` command."""
 
 from case import Mock, call, patch

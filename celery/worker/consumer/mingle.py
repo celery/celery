@@ -27,7 +27,7 @@ class Mingle(bootsteps.StartStopStep):
 
     def __init__(self, c, without_mingle=False, **kwargs):
         self.enabled = not without_mingle and self.compatible_transport(c.app)
-        super(Mingle, self).__init__(
+        super().__init__(
             c, without_mingle=without_mingle, **kwargs)
 
     def compatible_transport(self, app):

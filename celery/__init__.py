@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Distributed Task Queue."""
 # :copyright: (c) 2015-2016 Ask Solem.  All rights reserved.
 # :copyright: (c) 2012-2014 GoPivotal, Inc., All rights reserved.
@@ -32,7 +31,7 @@ __all__ = (
     'xmap', 'xstarmap', 'uuid',
 )
 
-VERSION_BANNER = '{0} ({1})'.format(__version__, SERIES)
+VERSION_BANNER = f'{__version__} ({SERIES})'
 
 version_info_t = namedtuple('version_info_t', (
     'major', 'minor', 'micro', 'releaselevel', 'serial',
@@ -54,7 +53,7 @@ if os.environ.get('C_IMPDEBUG'):  # pragma: no cover
                      fromlist=None, level=-1, real_import=builtins.__import__):
         glob = globals or getattr(sys, 'emarfteg_'[::-1])(1).f_globals
         importer_name = glob and glob.get('__name__') or 'unknown'
-        print('-- {0} imports {1}'.format(importer_name, name))
+        print(f'-- {importer_name} imports {name}')
         return real_import(name, locals, globals, fromlist, level)
     builtins.__import__ = debug_import
 

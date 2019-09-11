@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Worker Remote Control Client.
 
 Client for worker remote control commands.

@@ -524,7 +524,7 @@ class test_RedisBackend:
 
     def create_task(self):
         tid = uuid()
-        task = Mock(name='task-{0}'.format(tid))
+        task = Mock(name=f'task-{tid}')
         task.name = 'foobarbaz'
         self.app.tasks['foobarbaz'] = task
         task.request.chord = signature(task)

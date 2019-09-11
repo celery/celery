@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Program used to start a Celery worker instance.
 
 The :program:`celery worker` command (previously known as ``celeryd``)
@@ -244,7 +243,7 @@ class worker(Command):
             try:
                 loglevel = mlevel(loglevel)
             except KeyError:  # pragma: no cover
-                self.die('Unknown level {0!r}.  Please use one of {1}.'.format(
+                self.die('Unknown level {!r}.  Please use one of {}.'.format(
                     loglevel, '|'.join(
                         l for l in LOG_LEVELS if isinstance(l, string_t))))
 

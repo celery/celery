@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Program used to daemonize the worker.
 
 Using :func:`os.execv` as forking and multiprocessing
@@ -79,11 +78,11 @@ class detached_celeryd:
         parser = self.create_parser(prog_name)
         options, leftovers = parser.parse_known_args(argv)
         if options.logfile:
-            leftovers.append('--logfile={0}'.format(options.logfile))
+            leftovers.append(f'--logfile={options.logfile}')
         if options.pidfile:
-            leftovers.append('--pidfile={0}'.format(options.pidfile))
+            leftovers.append(f'--pidfile={options.pidfile}')
         if options.hostname:
-            leftovers.append('--hostname={0}'.format(options.hostname))
+            leftovers.append(f'--hostname={options.hostname}')
         return options, leftovers
 
     def execute_from_commandline(self, argv=None):

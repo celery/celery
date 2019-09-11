@@ -18,10 +18,10 @@ def _get_extras_reqs_from(name):
 
 
 def _get_all_extras():
-    return set(
+    return {
         os.path.join('extras', f)
         for f in os.listdir('requirements/extras/')
-    )
+    }
 
 
 def test_all_reqs_enabled_in_tests():
@@ -31,5 +31,5 @@ def test_all_reqs_enabled_in_tests():
     defined = ci_default | ci_base
     all_extras = _get_all_extras()
     diff = all_extras - defined
-    print('Missing CI reqs:\n{0}'.format(pprint.pformat(diff)))
+    print('Missing CI reqs:\n{}'.format(pprint.pformat(diff)))
     assert not diff

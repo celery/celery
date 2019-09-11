@@ -23,7 +23,7 @@ class list_(Command):
             raise self.Error('Your transport cannot list bindings.')
 
         def fmt(q, e, r):
-            return self.out('{0:<28} {1:<28} {2}'.format(q, e, r))
+            return self.out(f'{q:<28} {e:<28} {r}')
         fmt('Queue', 'Exchange', 'Routing Key')
         fmt('-' * 16, '-' * 16, '-' * 16)
         for b in bindings:
@@ -34,10 +34,10 @@ class list_(Command):
         available = ', '.join(topics)
         if not what:
             raise self.UsageError(
-                'Missing argument, specify one of: {0}'.format(available))
+                f'Missing argument, specify one of: {available}')
         if what not in topics:
             raise self.UsageError(
-                'unknown topic {0!r} (choose one of: {1})'.format(
+                'unknown topic {!r} (choose one of: {})'.format(
                     what, available))
         with self.app.connection() as conn:
             self.app.amqp.TaskConsumer(conn).declare()

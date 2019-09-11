@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Task request.
 
 This module defines the :class:`Request` class, that specifies
@@ -131,7 +130,7 @@ class Request:
                 eta = maybe_iso8601(eta)
             except (AttributeError, ValueError, TypeError) as exc:
                 raise InvalidTaskError(
-                    'invalid ETA value {0!r}: {1}'.format(eta, exc))
+                    f'invalid ETA value {eta!r}: {exc}')
             self._eta = maybe_make_aware(eta, self.tzlocal)
         else:
             self._eta = None
@@ -142,7 +141,7 @@ class Request:
                 expires = maybe_iso8601(expires)
             except (AttributeError, ValueError, TypeError) as exc:
                 raise InvalidTaskError(
-                    'invalid expires value {0!r}: {1}'.format(expires, exc))
+                    f'invalid expires value {expires!r}: {exc}')
             self._expires = maybe_make_aware(expires, self.tzlocal)
         else:
             self._expires = None
@@ -482,7 +481,7 @@ class Request:
         """Handler called if the task raised an exception."""
         task_ready(self)
         if isinstance(exc_info.exception, MemoryError):
-            raise MemoryError('Process got: %s' % (exc_info.exception,))
+            raise MemoryError(f'Process got: {exc_info.exception}')
         elif isinstance(exc_info.exception, Reject):
             return self.reject(requeue=exc_info.exception.requeue)
         elif isinstance(exc_info.exception, Ignore):
@@ -565,13 +564,13 @@ class Request:
         """``str(self)``."""
         return ' '.join([
             self.humaninfo(),
-            ' ETA:[{0}]'.format(self._eta) if self._eta else '',
-            ' expires:[{0}]'.format(self._expires) if self._expires else '',
+            f' ETA:[{self._eta}]' if self._eta else '',
+            f' expires:[{self._expires}]' if self._expires else '',
         ])
 
     def __repr__(self):
         """``repr(self)``."""
-        return '<{0}: {1} {2} {3}>'.format(
+        return '<{}: {} {} {}>'.format(
             type(self).__name__, self.humaninfo(),
             self._argsrepr, self._kwargsrepr,
         )

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Prefork execution pool.
 
 Pool implementation using :mod:`multiprocessing`.

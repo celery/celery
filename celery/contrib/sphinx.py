@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Sphinx documentation plugin used to document tasks.
 
 Introduction
@@ -71,7 +70,7 @@ class TaskDocumenter(FunctionDocumenter):
         wrapped = getattr(self.object, '__wrapped__', None)
         if wrapped and getattr(wrapped, '__module__') == self.modname:
             return True
-        return super(TaskDocumenter, self).check_module()
+        return super().check_module()
 
 
 class TaskDirective(PyModulelevel):

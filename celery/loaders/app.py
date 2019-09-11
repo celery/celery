@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The default loader used with custom app instances."""
 from .base import BaseLoader
 

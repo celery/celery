@@ -73,7 +73,7 @@ class Gossip(bootsteps.ConsumerStep):
             'task': self.call_task
         }
 
-        super(Gossip, self).__init__(c, **kwargs)
+        super().__init__(c, **kwargs)
 
     def compatible_transport(self, app):
         with app.connection_for_read() as conn:
@@ -100,12 +100,12 @@ class Gossip(bootsteps.ConsumerStep):
             return logger.exception('election request missing field %s', exc)
         heappush(
             self.consensus_requests[id_],
-            (clock, '%s.%s' % (hostname, pid), topic, action),
+            (clock, f'{hostname}.{pid}', topic, action),
         )
         self.dispatcher.send('worker-elect-ack', id=id_)
 
     def start(self, c):
-        super(Gossip, self).start(c)
+        super().start(c)
         self.dispatcher = c.event_dispatcher
 
     def on_elect_ack(self, event):

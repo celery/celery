@@ -79,7 +79,7 @@ class test_solar:
             try:
                 s.remaining_estimate(datetime.utcnow())
             except TypeError:
-                pytest.fail("{0} was called with 'use_center' which is not a \
+                pytest.fail("{} was called with 'use_center' which is not a \
                     valid keyword for the function.".format(s.method))
 
 

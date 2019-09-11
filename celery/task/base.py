@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Deprecated task base class.
 
 The task implementation has been moved to :mod:`celery.app.task`.
@@ -37,7 +36,7 @@ class _CompatShared:
         return hash(self.name)
 
     def __repr__(self):
-        return '<OldTask: %r>' % (self.name,)
+        return f'<OldTask: {self.name!r}>'
 
     def __call__(self, app):
         return self.cons(app)
@@ -56,7 +55,7 @@ class TaskType(type):
     _creation_count = {}  # used by old non-abstract task classes
 
     def __new__(cls, name, bases, attrs):
-        new = super(TaskType, cls).__new__
+        new = super().__new__
         task_module = attrs.get('__module__') or '__main__'
 
         # - Abstract class: abstract attribute shouldn't be inherited.
@@ -250,7 +249,7 @@ class PeriodicTask(Task):
             raise NotImplementedError(
                 'Periodic tasks must have a run_every attribute')
         self.run_every = maybe_schedule(self.run_every, self.relative)
-        super(PeriodicTask, self).__init__()
+        super().__init__()
 
     @classmethod
     def on_bound(cls, app):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """AWS DynamoDB result store backend."""
 from collections import namedtuple
 from time import sleep, time
@@ -55,7 +54,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
     _available_fields = None
 
     def __init__(self, url=None, table_name=None, *args, **kwargs):
-        super(DynamoDBBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.url = url
         self.table_name = table_name or self.table_name
@@ -88,7 +87,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
             if region == 'localhost':
                 # We are using the downloadable, local version of DynamoDB
-                self.endpoint_url = 'http://localhost:{}'.format(port)
+                self.endpoint_url = f'http://localhost:{port}'
                 self.aws_region = 'us-east-1'
                 logger.warning(
                     'Using local-only DynamoDB endpoint URL: {}'.format(

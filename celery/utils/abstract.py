@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Abstract classes."""
 from abc import ABCMeta, abstractmethod, abstractproperty
 

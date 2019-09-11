@@ -41,7 +41,7 @@ def MockStep(step=None):
     else:
         step.blueprint = Mock(name='step.blueprint')
     step.blueprint.name = 'MockNS'
-    step.name = 'MockStep(%s)' % (id(step),)
+    step.name = 'MockStep({})'.format(id(step))
     return step
 
 
@@ -316,7 +316,7 @@ class test_Consumer(ConsumerCase):
 
             def drain_events(self, **kwargs):
                 self.obj.connection = None
-                raise socket.error('foo')
+                raise OSError('foo')
 
         c = self.LoopConsumer()
         c.blueprint.state = RUN
@@ -816,7 +816,7 @@ class test_WorkController(ConsumerCase):
         worker.pool.register_with_event_loop(hub)
 
         # Create some mock queue message and read from them
-        _keep = [Mock(name='req{0}'.format(i)) for i in range(20)]
+        _keep = [Mock(name=f'req{i}') for i in range(20)]
         [state.task_reserved(m) for m in _keep]
         auto_scaler.body()
 

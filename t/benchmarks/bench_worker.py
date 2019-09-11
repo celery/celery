@@ -51,13 +51,13 @@ def it(_, n):
     # by previous runs, or the broker.
     i = it.cur
     if i and not i % 5000:
-        print('({0} so far: {1}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
+        print('({} so far: {}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
         it.subt = monotonic()
     if not i:
         it.subt = it.time_start = monotonic()
     elif i > n - 2:
         total = tdiff(it.time_start)
-        print('({0} so far: {1}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
+        print('({} so far: {}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
         print('-- process {0} tasks: {1}s total, {2} tasks/s} '.format(
             n, total, n / (total + .0),
         ))
@@ -71,7 +71,7 @@ def bench_apply(n=DEFAULT_ITS):
     task = it._get_current_object()
     with app.producer_or_acquire() as producer:
         [task.apply_async((i, n), producer=producer) for i in range(n)]
-    print('-- apply {0} tasks: {1}s'.format(n, monotonic() - time_start))
+    print('-- apply {} tasks: {}s'.format(n, monotonic() - time_start))
 
 
 def bench_work(n=DEFAULT_ITS, loglevel='CRITICAL'):
@@ -97,7 +97,7 @@ def bench_both(n=DEFAULT_ITS):
 def main(argv=sys.argv):
     n = DEFAULT_ITS
     if len(argv) < 2:
-        print('Usage: {0} [apply|work|both] [n=20k]'.format(
+        print('Usage: {} [apply|work|both] [n=20k]'.format(
             os.path.basename(argv[0]),
         ))
         return sys.exit(1)

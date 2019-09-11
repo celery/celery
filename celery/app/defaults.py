@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Configuration introspection and defaults."""
 import sys
 from collections import deque, namedtuple
@@ -48,7 +47,7 @@ def Namespace(__old__=None, **options):
 
 
 def old_ns(ns):
-    return {'{0}_{{0}}'.format(ns)}
+    return {f'{ns}_{{0}}'}
 
 
 class Option:
@@ -71,7 +70,7 @@ class Option:
         return self.typemap[self.type](value)
 
     def __repr__(self):
-        return '<Option: type->{0} default->{1!r}>'.format(self.type,
+        return '<Option: type->{} default->{!r}>'.format(self.type,
                                                            self.default)
 
 
@@ -356,8 +355,7 @@ def flatten(d, root='', keyfilter=_flatten_keys):
             if isinstance(opt, dict):
                 stack.append((ns + key + '_', opt))
             else:
-                for ret in keyfilter(ns, key, opt):
-                    yield ret
+                yield from keyfilter(ns, key, opt)
 
 
 DEFAULTS = {
@@ -377,10 +375,10 @@ def find_deprecated_settings(source):  # pragma: no cover
     from celery.utils import deprecated
     for name, opt in flatten(NAMESPACES):
         if (opt.deprecate_by or opt.remove_by) and getattr(source, name, None):
-            deprecated.warn(description='The {0!r} setting'.format(name),
+            deprecated.warn(description=f'The {name!r} setting',
                             deprecation=opt.deprecate_by,
                             removal=opt.remove_by,
-                            alternative='Use the {0.alt} instead'.format(opt))
+                            alternative=f'Use the {opt.alt} instead')
     return source
 
 

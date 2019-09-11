@@ -294,13 +294,13 @@ class test_AsyncResult:
         ok_res = self.app.AsyncResult(self.task1['id'])
         ok2_res = self.app.AsyncResult(self.task2['id'])
         nok_res = self.app.AsyncResult(self.task3['id'])
-        assert repr(ok_res) == '<AsyncResult: %s>' % (self.task1['id'],)
-        assert repr(ok2_res) == '<AsyncResult: %s>' % (self.task2['id'],)
-        assert repr(nok_res) == '<AsyncResult: %s>' % (self.task3['id'],)
+        assert repr(ok_res) == '<AsyncResult: {}>'.format(self.task1['id'])
+        assert repr(ok2_res) == '<AsyncResult: {}>'.format(self.task2['id'])
+        assert repr(nok_res) == '<AsyncResult: {}>'.format(self.task3['id'])
 
         pending_id = uuid()
         pending_res = self.app.AsyncResult(pending_id)
-        assert repr(pending_res) == '<AsyncResult: %s>' % (pending_id,)
+        assert repr(pending_res) == f'<AsyncResult: {pending_id}>'
 
     def test_hash(self):
         assert (hash(self.app.AsyncResult('x0w991')) ==
@@ -638,7 +638,7 @@ class MockAsyncResultSuccess(AsyncResult):
 
     def __init__(self, *args, **kwargs):
         self._result = kwargs.pop('result', 42)
-        super(MockAsyncResultSuccess, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def forget(self):
         self.forgotten = True
@@ -1093,7 +1093,7 @@ class test_tuples:
         parent = self.app.AsyncResult(uuid())
         result = self.app.GroupResult(
             'group-result-1',
-            [self.app.AsyncResult('async-result-{}'.format(i))
+            [self.app.AsyncResult(f'async-result-{i}')
              for i in range(2)],
             parent
         )
@@ -1102,6 +1102,6 @@ class test_tuples:
         assert parent_tuple == parent.as_tuple()
         assert parent_tuple[0][0] == parent.id
         assert isinstance(group_results, list)
-        expected_grp_res = [(('async-result-{}'.format(i), None), None)
+        expected_grp_res = [((f'async-result-{i}', None), None)
                             for i in range(2)]
         assert group_results == expected_grp_res

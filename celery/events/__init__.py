@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Monitoring Event Receiver+Dispatcher.
 
 Events is a stream of messages sent for certain actions occurring

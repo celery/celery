@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Internal state.
 
 This is an internal module containing thread state

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
 import ast
@@ -190,8 +189,7 @@ class test_saferepr:
         class X:
 
             def __repr__(self):
-                return 'æ e i a æ å'.encode(
-                    'utf-8', errors='backslash replace')
+                return 'æ e i a æ å'.encode()
 
         val = X()
         assert repr(val)
@@ -199,12 +197,12 @@ class test_saferepr:
 
     @skip.unless_python3()
     def test_unicode_bytes(self):
-        val = 'øystein'.encode('utf-8')
+        val = 'øystein'.encode()
         assert saferepr(val) == "b'øystein'"
 
     @skip.unless_python3()
     def test_unicode_bytes__long(self):
-        val = 'øystein'.encode('utf-8') * 1024
+        val = 'øystein'.encode() * 1024
         assert saferepr(val, maxlen=128).endswith("...'")
 
     @skip.unless_python3()
@@ -232,4 +230,4 @@ class test_saferepr:
         assert 'Unrepresentable' in saferepr(O())
 
     def test_bytes_with_unicode_py2_and_3(self):
-        assert saferepr([b'foo', 'a®rgs'.encode('utf-8')])
+        assert saferepr([b'foo', 'a®rgs'.encode()])

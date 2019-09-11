@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utilities related to importing modules and symbols by name."""
 import importlib
 import os
@@ -161,7 +160,7 @@ def load_extension_classes(namespace):
             cls = symbol_by_name(class_name)
         except (ImportError, SyntaxError) as exc:
             warnings.warn(
-                'Cannot load {0} extension {1!r}: {2!r}'.format(
+                'Cannot load {} extension {!r}: {!r}'.format(
                     namespace, class_name, exc))
         else:
             yield name, cls
