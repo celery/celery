@@ -1,8 +1,12 @@
 """Celery Command Line Interface."""
+import os
+import sys
+
 import click
 from click.types import IntParamType, ParamType, StringParamType
 
-from celery import concurrency
+from celery import VERSION_BANNER, concurrency
+from celery._state import get_current_app
 from celery.app.utils import find_app
 from celery.bin.base import CeleryDaemonCommand, CeleryOption
 from celery.platforms import maybe_drop_privileges
@@ -35,6 +39,9 @@ class Hostname(StringParamType):
 
     name = "hostname"
 
+    def convert(self, value, param, ctx):
+        return host_format(default_nodename(value))
+
 
 class PrefetchMultiplier(IntParamType):
     """Prefetch multiplier option."""
@@ -54,22 +61,76 @@ CONCURRENCY = Concurrency()
 APP = App()
 
 
-@click.group()
+@click.group(invoke_without_command=True)
 @click.option('-A',
               '--app',
+              envvar='APP',
               cls=CeleryOption,
               type=APP,
               help_group="Global Options")
+@click.option('-b',
+              '--broker',
+              envvar='BROKER_URL',
+              cls=CeleryOption,
+              help_group="Global Options")
+@click.option('--result-backend',
+              envvar='RESULT_BACKEND',
+              cls=CeleryOption,
+              help_group="Global Options")
+@click.option('--loader',
+              envvar='LOADER',
+              cls=CeleryOption,
+              help_group="Global Options")
+@click.option('--config',
+              envvar='CONFIG_MODULE',
+              cls=CeleryOption,
+              help_group="Global Options")
+@click.option('--workdir',
+              cls=CeleryOption,
+              help_group="Global Options")
+@click.option('-C',
+              '--no-color',
+              is_flag=True,
+              cls=CeleryOption,
+              help_group="Global Options")
+@click.option('-q',
+              '--quiet',
+              is_flag=True,
+              cls=CeleryOption,
+              help_group="Global Options")
+@click.option('--version',
+              cls=CeleryOption,
+              is_flag=True,
+              help_group="Global Options")
 @click.pass_context
-def celery(ctx, app):
+def celery(ctx, app, broker, result_backend, loader, config, workdir, no_color, quiet, version):
     """Celery command entrypoint."""
+    if version:
+        click.echo(VERSION_BANNER)
+        ctx.exit()
+    elif ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+        ctx.exit()
+
+    if workdir:
+        os.chdir(workdir)
+    if loader:
+        # Default app takes loader from this env (Issue #1066).
+        os.environ['CELERY_LOADER'] = loader
+    if broker:
+        os.environ['CELERY_BROKER_URL'] = broker
+    if result_backend:
+        os.environ['CELERY_RESULT_BACKEND'] = result_backend
+    if config:
+        os.environ['CELERY_CONFIG_MODULE'] = config
     ctx.ensure_object(dict)
-    ctx.obj['app'] = app
+    ctx.obj['app'] = app or get_current_app()
 
 
 @celery.command(cls=CeleryDaemonCommand)
 @click.option('-n',
               '--hostname',
+              default=host_format(default_nodename(None)),
               cls=CeleryOption,
               type=HOSTNAME,
               help_group="Worker Options",
@@ -231,7 +292,6 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
                                  'Please run celery beat as a separate service.',
                                  ctx=ctx,
                                  param='-B')
-    hostname = host_format(default_nodename(hostname))
     worker = app.Worker(
         hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
         logfile=logfile,  # node format handled by celery.app.log.setup
@@ -247,4 +307,4 @@ def main():
 
     Main entrypoint.
     """
-    celery()
+    sys.exit(celery(auto_envvar_prefix="CELERY"))
