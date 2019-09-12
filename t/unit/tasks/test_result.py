@@ -294,9 +294,9 @@ class test_AsyncResult:
         ok_res = self.app.AsyncResult(self.task1['id'])
         ok2_res = self.app.AsyncResult(self.task2['id'])
         nok_res = self.app.AsyncResult(self.task3['id'])
-        assert repr(ok_res) == '<AsyncResult: {}>'.format(self.task1['id'])
-        assert repr(ok2_res) == '<AsyncResult: {}>'.format(self.task2['id'])
-        assert repr(nok_res) == '<AsyncResult: {}>'.format(self.task3['id'])
+        assert repr(ok_res) == f"<AsyncResult: {self.task1['id']}>"
+        assert repr(ok2_res) == f"<AsyncResult: {self.task2['id']}>"
+        assert repr(nok_res) == f"<AsyncResult: {self.task3['id']}>"
 
         pending_id = uuid()
         pending_res = self.app.AsyncResult(pending_id)

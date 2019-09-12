@@ -123,7 +123,7 @@ class test_multi_args:
             'COMMAND', '-c 5', '-n celery1@example.com') + _args('celery1')
         for i, worker in enumerate(nodes3[1:]):
             assert worker.name == 'celery%s@example.com' % (i + 2)
-            node_i = 'celery{}'.format(i + 2)
+            node_i = f'celery{i + 2}'
             assert worker.argv == (
                 'COMMAND',
                 f'-n {node_i}@example.com') + _args(node_i)

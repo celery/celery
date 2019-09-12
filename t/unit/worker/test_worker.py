@@ -41,7 +41,7 @@ def MockStep(step=None):
     else:
         step.blueprint = Mock(name='step.blueprint')
     step.blueprint.name = 'MockNS'
-    step.name = 'MockStep({})'.format(id(step))
+    step.name = f'MockStep({id(step)})'
     return step
 
 
