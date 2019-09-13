@@ -435,9 +435,13 @@ def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
 
 
 def assert_ping(manager):
+    from pprint import pprint
+    pprint(manager)
     ping_result = manager.inspect().ping()
+    pprint(ping_result)
     assert ping_result
     ping_val = list(ping_result.values())[0]
+    pprint(ping_val)
     assert ping_val == {"ok": "pong"}
 
 
