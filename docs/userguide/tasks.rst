@@ -1945,14 +1945,16 @@ Let's have a look at another example:
 .. code-block:: python
 
     from django.db import transaction
+    from django.http import HttpResponseRedirect
 
-    @transaction.commit_on_success
+    @transaction.atomic
     def create_article(request):
         article = Article.objects.create()
         expand_abbreviations.delay(article.pk)
+        return HttpResponseRedirect('/articles/')
 
 This is a Django view creating an article object in the database,
-then passing the primary key to a task. It uses the `commit_on_success`
+then passing the primary key to a task. It uses the `transaction.atomic`
 decorator, that will commit the transaction when the view returns, or
 roll back if the view raises an exception.
 
