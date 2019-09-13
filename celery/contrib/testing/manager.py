@@ -123,6 +123,9 @@ class ManagerMixin(object):
         raise AssertionError('Test failed: Missing task results')
 
     def inspect(self, timeout=3.0):
+        from pprint import pprint
+        pprint(self.app)
+        pprint(self.app.control)
         return self.app.control.inspect(timeout=timeout)
 
     def query_tasks(self, ids, timeout=0.5):

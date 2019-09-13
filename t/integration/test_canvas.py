@@ -151,7 +151,8 @@ class test_chain:
         assert redis_messages == expected_messages
 
     @flaky
-    def test_parent_ids(self, manager, num=10):
+    def test_parent_ids(self, manager):
+        num = 10
         assert_ping(manager)
 
         c = chain(ids.si(i=i) for i in range(num))
@@ -437,7 +438,9 @@ def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
 def assert_ping(manager):
     from pprint import pprint
     pprint(manager)
-    ping_result = manager.inspect().ping()
+    inspect = ping_result = manager.inspect()
+    pprint(inspect)
+    ping_result = inspect.ping()
     pprint(ping_result)
     assert ping_result
     ping_val = list(ping_result.values())[0]
