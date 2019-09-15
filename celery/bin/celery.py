@@ -23,11 +23,15 @@ class App(ParamType):
         try:
             return find_app(value)
         except (ModuleNotFoundError, AttributeError) as e:
-            raise click.BadParameter(str(e))
+            self.fail(str(e))
 
 
 class LogLevel(click.Choice):
     """Log level option."""
+
+    def __init__(self):
+        """Initialize the log level option with the relevant choices."""
+        super().__init__(('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'FATAL'))
 
     def convert(self, value, param, ctx):
         value = super().convert(value, param, ctx)
@@ -55,10 +59,41 @@ class Concurrency(IntParamType):
     name = 'concurrency'
 
 
+class CeleryBeat(ParamType):
+    """Celery Beat flag."""
+
+    name = "beat"
+
+    def convert(self, value, param, ctx):
+        if ctx.obj['app'].IS_WINDOWS and value:
+            self.fail('-B option does not work on Windows.  '
+                      'Please run celery beat as a separate service.')
+
+        return value
+
+
+class WorkersPool(click.Choice):
+    """Workers pool option."""
+
+    name = "pool"
+
+    def __init__(self):
+        """Initialize the workers pool option with the relevant choices."""
+        super().__init__(('prefork', 'eventlet', 'gevent', 'solo'))
+
+    def convert(self, value, param, ctx):
+        # Pools like eventlet/gevent needs to patch libs as early
+        # as possible.
+        return concurrency.get_implementation(value) or ctx.obj['app'].conf.worker_pool
+
+
 PREFETCH_MULTIPLIER = PrefetchMultiplier()
 HOSTNAME = Hostname()
 CONCURRENCY = Concurrency()
 APP = App()
+CELERY_BEAT = CeleryBeat()
+LOG_LEVEL = LogLevel()
+WORKERS_POOL = WorkersPool()
 
 
 @click.group(invoke_without_command=True)
@@ -152,7 +187,7 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir, no_color, 
               '--loglevel',
               default='WARNING',
               cls=CeleryOption,
-              type=LogLevel(('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'FATAL')),
+              type=LOG_LEVEL,
               help_group="Worker Options",
               help="Logging level.")
 @click.option('optimization',
@@ -177,10 +212,10 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir, no_color, 
 @click.option('-P',
               '--pool',
               default='prefork',
-              type=click.Choice(('prefork', 'eventlet', 'gevent', 'solo')),
+              type=WORKERS_POOL,
               cls=CeleryOption,
               help_group="Pool Options",
-              help="Number of child processes processing the queue.  The default is the number of CPUs available on your system.")  # TODO: Load default from the app in the context
+              help="Pool implementation.")
 @click.option( '-E',
               '--task-events',
               '--events',
@@ -254,6 +289,7 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir, no_color, 
               help_group="Features",)
 @click.option('-B',
               '--beat',
+              type=CELERY_BEAT,
               cls=CeleryOption,
               is_flag=True,
               help_group="Embedded Beat Options")
@@ -282,16 +318,6 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
     """
     app = ctx.obj['app']
     maybe_drop_privileges(uid=uid, gid=gid)
-    # Pools like eventlet/gevent needs to patch libs as early
-    # as possible.
-    pool_cls = (concurrency.get_implementation(pool_cls) or
-                app.conf.worker_pool)
-    # TODO: Move this check to a param type
-    if app.IS_WINDOWS and kwargs.get('beat'):
-        raise click.BadParameter('-B option does not work on Windows.  '
-                                 'Please run celery beat as a separate service.',
-                                 ctx=ctx,
-                                 param='-B')
     worker = app.Worker(
         hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
         logfile=logfile,  # node format handled by celery.app.log.setup
