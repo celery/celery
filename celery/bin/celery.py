@@ -1,6 +1,5 @@
 """Celery Command Line Interface."""
 import os
-import sys
 
 import click
 from click.types import IntParamType, ParamType, StringParamType
@@ -162,7 +161,7 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir, no_color, 
     ctx.obj['app'] = app or get_current_app()
 
 
-@celery.command(cls=CeleryDaemonCommand)
+@celery.command(cls=CeleryDaemonCommand, context_settings={'allow_extra_args': True})
 @click.option('-n',
               '--hostname',
               default=host_format(default_nodename(None)),
@@ -317,6 +316,13 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
 
     """
     app = ctx.obj['app']
+    if ctx.args:
+        try:
+            app.config_from_cmdline(ctx.args, namespace='worker')
+        except (KeyError, ValueError) as e:
+            # TODO: Improve the error messages
+            raise click.UsageError("Unable to parse extra configuration from command line."
+                                   f"Reason: {e}", ctx=ctx)
     maybe_drop_privileges(uid=uid, gid=gid)
     worker = app.Worker(
         hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
