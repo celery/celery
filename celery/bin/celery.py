@@ -1,5 +1,6 @@
 """Celery Command Line Interface."""
 import os
+from functools import partial
 
 import click
 from click.types import IntParamType, ParamType, StringParamType
@@ -332,6 +333,58 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
         **kwargs)
     worker.start()
     return worker.exitcode
+
+
+@celery.command(cls=CeleryDaemonCommand)
+@click.option('--detach',
+              cls=CeleryOption,
+              is_flag=True,
+              default=False,
+              help_group="Beat Options",
+              help="Detach and run in the background as a daemon.")
+@click.option('-s',
+              '--schedule',
+              cls=CeleryOption,
+              help_group="Beat Options",
+              help="Path to the schedule database.  Defaults to `celerybeat-schedule`."
+                   "The extension '.db' may be appended to the filename."
+                   "Default is {default}.")
+@click.option('-S',
+              '--scheduler',
+              cls=CeleryOption,
+              help_group="Beat Options",
+              help="Scheduler class to use."
+                   "Default is {default}.")
+@click.option('--max-interval',
+              cls=CeleryOption,
+              type=int,
+              help_group="Beat Options",
+              help="Scheduler class to use."
+                   "Default is {default}.")
+@click.option('-l',
+              '--loglevel',
+              default='WARNING',
+              cls=CeleryOption,
+              type=LOG_LEVEL,
+              help_group="Beat Options",
+              help="Logging level.")
+@click.pass_context
+def beat(ctx, detach=False, logfile=None, pidfile=None, uid=None,
+         gid=None, umask=None, workdir=None, **kwargs):
+    """Start the beat periodic task scheduler."""
+    app = ctx.obj['app']
+
+    if not detach:
+        maybe_drop_privileges(uid=uid, gid=gid)
+
+    beat = partial(app.Beat,
+                   logfile=logfile, pidfile=pidfile, **kwargs)
+
+    if detach:
+        # TODO: Implement this
+        pass
+    else:
+        return beat().run()
 
 
 def main() -> int:
