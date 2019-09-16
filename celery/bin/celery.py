@@ -328,9 +328,11 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
     return worker.exitcode
 
 
-def main():
-    """Invoke the celery command.
+def main() -> int:
+    """Start celery umbrella command.
 
-    Main entrypoint.
+    This function is the main entrypoint for the CLI.
+
+    :return: The exit code of the CLI.
     """
-    sys.exit(celery(auto_envvar_prefix="CELERY"))
+    return celery(auto_envvar_prefix="CELERY")
