@@ -12,7 +12,7 @@ def main():
     if 'multi' not in sys.argv:
         maybe_patch_concurrency()
     from celery.bin.celery import main as _main
-    _main()
+    sys.exit(_main())
 
 
 if __name__ == '__main__':  # pragma: no cover
