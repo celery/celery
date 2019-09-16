@@ -322,7 +322,7 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
             app.config_from_cmdline(ctx.args, namespace='worker')
         except (KeyError, ValueError) as e:
             # TODO: Improve the error messages
-            raise click.UsageError("Unable to parse extra configuration from command line."
+            raise click.UsageError("Unable to parse extra configuration from command line.\n"
                                    f"Reason: {e}", ctx=ctx)
     maybe_drop_privileges(uid=uid, gid=gid)
     worker = app.Worker(
@@ -335,7 +335,7 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
     return worker.exitcode
 
 
-@celery.command(cls=CeleryDaemonCommand)
+@celery.command(cls=CeleryDaemonCommand, context_settings={'allow_extra_args': True})
 @click.option('--detach',
               cls=CeleryOption,
               is_flag=True,
@@ -373,6 +373,14 @@ def beat(ctx, detach=False, logfile=None, pidfile=None, uid=None,
          gid=None, umask=None, workdir=None, **kwargs):
     """Start the beat periodic task scheduler."""
     app = ctx.obj['app']
+
+    if ctx.args:
+        try:
+            app.config_from_cmdline(ctx.args)
+        except (KeyError, ValueError) as e:
+            # TODO: Improve the error messages
+            raise click.UsageError("Unable to parse extra configuration from command line.\n"
+                                   f"Reason: {e}", ctx=ctx)
 
     if not detach:
         maybe_drop_privileges(uid=uid, gid=gid)
