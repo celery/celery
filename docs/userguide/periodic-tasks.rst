@@ -36,7 +36,7 @@ An example time zone could be `Europe/London`:
 
     timezone = 'Europe/London'
 
-This setting must be added to your app, either by configuration it directly
+This setting must be added to your app, either by configuring it directly
 using (``app.conf.timezone = 'Europe/London'``), or by adding
 it to your configuration module if you have set one up using
 ``app.config_from_object``. See :ref:`celerytut-configuration` for
@@ -64,6 +64,14 @@ schedule manually.
 
         $ python manage.py shell
         >>> from djcelery.models import PeriodicTask
+        >>> PeriodicTask.objects.update(last_run_at=None)
+
+    Django-Celery only supports Celery 4.0 and below, for Celery 4.0 and above, do as follow:
+
+    .. code-block:: console
+
+        $ python manage.py shell
+        >>> from django_celery_beat.models import PeriodicTask
         >>> PeriodicTask.objects.update(last_run_at=None)
 
 .. _beat-entries:
@@ -105,7 +113,7 @@ that we'll not evaluate the app at module level when using ``test.s()``.
 
 The :meth:`~@add_periodic_task` function will add the entry to the
 :setting:`beat_schedule` setting behind the scenes, and the same setting
-can also can be used to set up periodic tasks manually:
+can also be used to set up periodic tasks manually:
 
 Example: Run the `tasks.add` task every 30 seconds.
 
@@ -257,7 +265,7 @@ Some examples:
 |                                         |                                            |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(0, 0,``                       | Execute on every even numbered day.        |
-|         ``day_of_month='2-30/3')``      |                                            |
+|         ``day_of_month='2-30/2')``      |                                            |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(0, 0,``                       | Execute on the first and third weeks of    |
 |         ``day_of_month='1-7,15-21')``   | the month.                                 |
@@ -265,8 +273,8 @@ Some examples:
 | ``crontab(0, 0, day_of_month='11',``    | Execute on the eleventh of May every year. |
 |          ``month_of_year='5')``         |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0,``                       | Execute on the first month of every        |
-|         ``month_of_year='*/3')``        | quarter.                                   |
+| ``crontab(0, 0,``                       | Execute every day on the first month       |
+|         ``month_of_year='*/3')``        | of every quarter.                          |
 +-----------------------------------------+--------------------------------------------+
 
 See :class:`celery.schedules.crontab` for more documentation.
@@ -413,7 +421,7 @@ Using custom scheduler classes
 ------------------------------
 
 Custom scheduler classes can be specified on the command-line (the
-:option:`-S <celery beat -S>` argument).
+:option:`--scheduler <celery beat --scheduler>` argument).
 
 The default scheduler is the :class:`celery.beat.PersistentScheduler`,
 that simply keeps track of the last run times in a local :mod:`shelve`
@@ -447,10 +455,12 @@ To install and use this extension:
 
         $ python manage.py migrate
 
-#. Start the :program:`celery beat` service using the ``django`` scheduler:
+#. Start the :program:`celery beat` service using the ``django_celery_beat.schedulers:DatabaseScheduler`` scheduler:
 
     .. code-block:: console
 
-        $ celery -A proj beat -l info -S django
+        $ celery -A proj beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+   Note:  You may also add this as the :setting:`beat_scheduler` setting directly.
 
 #. Visit the Django-Admin interface to set up some periodic tasks.

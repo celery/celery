@@ -3,7 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import time
-
+import datetime
 from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
@@ -11,26 +11,25 @@ from copy import copy
 from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
 
-from . import current_app
-from . import states
+from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
-from .five import (
-    items, python_2_unicode_compatible, range, string_t, monotonic,
-)
+from .five import (items, monotonic, python_2_unicode_compatible, range,
+                   string_t)
 from .utils import deprecated
 from .utils.graph import DependencyGraph, GraphFormatter
+from .utils.iso8601 import parse_iso8601
 
 try:
     import tblib
 except ImportError:
     tblib = None
 
-__all__ = [
+__all__ = (
     'ResultBase', 'AsyncResult', 'ResultSet',
     'GroupResult', 'EagerResult', 'result_from_tuple',
-]
+)
 
 E_WOULDBLOCK = """\
 Never call result.get() within a task!
@@ -48,6 +47,16 @@ def assert_will_not_block():
 def allow_join_result():
     reset_value = task_join_will_block()
     _set_task_join_will_block(False)
+    try:
+        yield
+    finally:
+        _set_task_join_will_block(reset_value)
+
+
+@contextmanager
+def denied_join_result():
+    reset_value = task_join_will_block()
+    _set_task_join_will_block(True)
     try:
         yield
     finally:
@@ -94,6 +103,19 @@ class AsyncResult(ResultBase):
         self.parent = parent
         self.on_ready = promise(self._on_fulfilled, weak=True)
         self._cache = None
+        self._ignored = False
+
+    @property
+    def ignored(self):
+        """If True, task result retrieval is disabled."""
+        if hasattr(self, '_ignored'):
+            return self._ignored
+        return False
+
+    @ignored.setter
+    def ignored(self, value):
+        """Enable/disable task result retrieval."""
+        self._ignored = value
 
     def then(self, callback, on_error=None, weak=False):
         self.backend.add_pending_result(self, weak=weak)
@@ -108,8 +130,10 @@ class AsyncResult(ResultBase):
         return (self.id, parent and parent.as_tuple()), None
 
     def forget(self):
-        """Forget about (and possibly remove the result of) this task."""
+        """Forget the result of this task and its parents."""
         self._cache = None
+        if self.parent:
+            self.parent.forget()
         self.backend.forget(self.id)
 
     def revoke(self, connection=None, terminate=False, signal=None,
@@ -145,6 +169,13 @@ class AsyncResult(ResultBase):
            Waiting for tasks within a task may lead to deadlocks.
            Please read :ref:`task-synchronous-subtasks`.
 
+        Warning:
+           Backends use resources to store and transmit results. To ensure
+           that resources are released, you must eventually call
+           :meth:`~@AsyncResult.get` or :meth:`~@AsyncResult.forget` on
+           EVERY :class:`~@AsyncResult` instance returned after calling
+           a task.
+
         Arguments:
             timeout (float): How long to wait, in seconds, before the
                 operation times out.
@@ -169,11 +200,14 @@ class AsyncResult(ResultBase):
             Exception: If the remote call raised an exception then that
                 exception will be re-raised in the caller process.
         """
+        if self.ignored:
+            return
+
         if disable_sync_subtasks:
             assert_will_not_block()
         _on_interval = promise()
         if follow_parents and propagate and self.parent:
-            on_interval = promise(self._maybe_reraise_parent_error, weak=True)
+            _on_interval = promise(self._maybe_reraise_parent_error, weak=True)
             self._maybe_reraise_parent_error()
         if on_interval:
             _on_interval.then(on_interval)
@@ -273,7 +307,7 @@ class AsyncResult(ResultBase):
                     raise IncompleteStream()
 
     def ready(self):
-        """Return :const:`True` if the task started executing.
+        """Return :const:`True` if the task has executed.
 
         If the task is still running, pending, or is waiting
         for retry then :const:`False` is returned.
@@ -348,6 +382,11 @@ class AsyncResult(ResultBase):
 
     def __reduce_args__(self):
         return self.id, self.backend, None, None, self.parent
+
+    def __del__(self):
+        """Cancel pending operations when the instance is destroyed."""
+        if self.backend is not None:
+            self.backend.remove_pending_result(self)
 
     @cached_property
     def graph(self):
@@ -445,6 +484,38 @@ class AsyncResult(ResultBase):
     def task_id(self, id):
         self.id = id
 
+    @property
+    def name(self):
+        return self._get_task_meta().get('name')
+
+    @property
+    def args(self):
+        return self._get_task_meta().get('args')
+
+    @property
+    def kwargs(self):
+        return self._get_task_meta().get('kwargs')
+
+    @property
+    def worker(self):
+        return self._get_task_meta().get('worker')
+
+    @property
+    def date_done(self):
+        """UTC date and time."""
+        date_done = self._get_task_meta().get('date_done')
+        if date_done and not isinstance(date_done, datetime.datetime):
+            return parse_iso8601(date_done)
+        return date_done
+
+    @property
+    def retries(self):
+        return self._get_task_meta().get('retries')
+
+    @property
+    def queue(self):
+        return self._get_task_meta().get('queue')
+
 
 @Thenable.register
 @python_2_unicode_compatible
@@ -462,12 +533,11 @@ class ResultSet(ResultBase):
 
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
         self._app = app
-        self._cache = None
         self.results = results
         self.on_ready = promise(args=(self,))
         self._on_full = ready_barrier or barrier(results)
         if self._on_full:
-            self._on_full.then(promise(self.on_ready, weak=True))
+            self._on_full.then(promise(self._on_ready, weak=True))
 
     def add(self, result):
         """Add :class:`AsyncResult` as a new member of the set.
@@ -480,9 +550,7 @@ class ResultSet(ResultBase):
                 self._on_full.add(result)
 
     def _on_ready(self):
-        self.backend.remove_pending_result(self)
         if self.backend.is_async:
-            self._cache = [r.get() for r in self.results]
             self.on_ready()
 
     def remove(self, result):
@@ -620,23 +688,24 @@ class ResultSet(ResultBase):
                 raise TimeoutError('The operation timed out')
 
     def get(self, timeout=None, propagate=True, interval=0.5,
-            callback=None, no_ack=True, on_message=None):
+            callback=None, no_ack=True, on_message=None,
+            disable_sync_subtasks=True, on_interval=None):
         """See :meth:`join`.
 
         This is here for API compatibility with :class:`AsyncResult`,
         in addition it uses :meth:`join_native` if available for the
         current result backend.
         """
-        if self._cache is not None:
-            return self._cache
         return (self.join_native if self.supports_native_join else self.join)(
             timeout=timeout, propagate=propagate,
             interval=interval, callback=callback, no_ack=no_ack,
-            on_message=on_message,
+            on_message=on_message, disable_sync_subtasks=disable_sync_subtasks,
+            on_interval=on_interval,
         )
 
     def join(self, timeout=None, propagate=True, interval=0.5,
-             callback=None, no_ack=True, on_message=None, on_interval=None):
+             callback=None, no_ack=True, on_message=None,
+             disable_sync_subtasks=True, on_interval=None):
         """Gather the results of all tasks as a list in order.
 
         Note:
@@ -672,13 +741,17 @@ class ResultSet(ResultBase):
             no_ack (bool): Automatic message acknowledgment (Note that if this
                 is set to :const:`False` then the messages
                 *will not be acknowledged*).
+            disable_sync_subtasks (bool): Disable tasks to wait for sub tasks
+                this is the default configuration. CAUTION do not enable this
+                unless you must.
 
         Raises:
             celery.exceptions.TimeoutError: if ``timeout`` isn't
                 :const:`None` and the operation takes longer than ``timeout``
                 seconds.
         """
-        assert_will_not_block()
+        if disable_sync_subtasks:
+            assert_will_not_block()
         time_start = monotonic()
         remaining = None
 
@@ -726,7 +799,8 @@ class ResultSet(ResultBase):
 
     def join_native(self, timeout=None, propagate=True,
                     interval=0.5, callback=None, no_ack=True,
-                    on_message=None, on_interval=None):
+                    on_message=None, on_interval=None,
+                    disable_sync_subtasks=True):
         """Backend optimized version of :meth:`join`.
 
         .. versionadded:: 2.2
@@ -737,16 +811,22 @@ class ResultSet(ResultBase):
         This is currently only supported by the amqp, Redis and cache
         result backends.
         """
-        assert_will_not_block()
+        if disable_sync_subtasks:
+            assert_will_not_block()
         order_index = None if callback else {
             result.id: i for i, result in enumerate(self.results)
         }
         acc = None if callback else [None for _ in range(len(self))]
         for task_id, meta in self.iter_native(timeout, interval, no_ack,
                                               on_message, on_interval):
-            value = meta['result']
-            if propagate and meta['status'] in states.PROPAGATE_STATES:
-                raise value
+            if isinstance(meta, list):
+                value = []
+                for children_result in meta:
+                    value.append(children_result.get())
+            else:
+                value = meta['result']
+                if propagate and meta['status'] in states.PROPAGATE_STATES:
+                    raise value
             if callback:
                 callback(task_id, value)
             else:
@@ -815,6 +895,7 @@ class GroupResult(ResultSet):
     Arguments:
         id (str): The id of the group.
         results (Sequence[AsyncResult]): List of result instances.
+        parent (ResultBase): Parent result of this group.
     """
 
     #: The UUID of the group.
@@ -823,9 +904,14 @@ class GroupResult(ResultSet):
     #: List/iterator of results in the group
     results = None
 
-    def __init__(self, id=None, results=None, **kwargs):
+    def __init__(self, id=None, results=None, parent=None, **kwargs):
         self.id = id
+        self.parent = parent
         ResultSet.__init__(self, results, **kwargs)
+
+    def _on_ready(self):
+        self.backend.remove_pending_result(self)
+        ResultSet._on_ready(self)
 
     def save(self, backend=None):
         """Save group-result for later retrieval using :meth:`restore`.
@@ -853,7 +939,13 @@ class GroupResult(ResultSet):
 
     def __eq__(self, other):
         if isinstance(other, GroupResult):
-            return other.id == self.id and other.results == self.results
+            return (
+                other.id == self.id and
+                other.results == self.results and
+                other.parent == self.parent
+            )
+        elif isinstance(other, string_t):
+            return other == self.id
         return NotImplemented
 
     def __ne__(self, other):
@@ -861,11 +953,24 @@ class GroupResult(ResultSet):
         return True if res is NotImplemented else not res
 
     def __repr__(self):
-        return '<{0}: {1} [{2}]>'.format(type(self).__name__, self.id,
-                                         ', '.join(r.id for r in self.results))
+        return '<{0}: {1} [{2}]>'.format(
+            type(self).__name__, self.id,
+            ', '.join(r.id for r in self.results)
+        )
+
+    def __str__(self):
+        """`str(self) -> self.id`."""
+        return str(self.id)
+
+    def __hash__(self):
+        """`hash(self) -> hash(self.id)`."""
+        return hash(self.id)
 
     def as_tuple(self):
-        return self.id, [r.as_tuple() for r in self.results]
+        return (
+            (self.id, self.parent and self.parent.as_tuple()),
+            [r.as_tuple() for r in self.results]
+        )
 
     @property
     def children(self):
@@ -874,8 +979,10 @@ class GroupResult(ResultSet):
     @classmethod
     def restore(cls, id, backend=None, app=None):
         """Restore previously saved group result."""
-        app = app or cls.app
-        backend = backend or (app.backend if app else current_app.backend)
+        app = app or (
+            cls.app if not isinstance(cls.app, property) else current_app
+        )
+        backend = backend or app.backend
         return backend.restore_group(id)
 
 
@@ -913,7 +1020,11 @@ class EagerResult(AsyncResult):
     def ready(self):
         return True
 
-    def get(self, timeout=None, propagate=True, **kwargs):
+    def get(self, timeout=None, propagate=True,
+            disable_sync_subtasks=True, **kwargs):
+        if disable_sync_subtasks:
+            assert_will_not_block()
+
         if self.successful():
             return self.result
         elif self.state in states.PROPAGATE_STATES:
@@ -969,13 +1080,15 @@ def result_from_tuple(r, app=None):
     Result = app.AsyncResult
     if not isinstance(r, ResultBase):
         res, nodes = r
-        if nodes:
-            return app.GroupResult(
-                res, [result_from_tuple(child, app) for child in nodes],
-            )
-        # previously didn't include parent
         id, parent = res if isinstance(res, (list, tuple)) else (res, None)
         if parent:
             parent = result_from_tuple(parent, app)
+
+        if nodes is not None:
+            return app.GroupResult(
+                id, [result_from_tuple(child, app) for child in nodes],
+                parent=parent,
+            )
+
         return Result(id, parent=parent)
     return r

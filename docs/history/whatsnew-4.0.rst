@@ -387,6 +387,7 @@ This command will modify your module in-place to use the new lower-case
 names (if you want uppercase with a "``CELERY``" prefix see block below),
 and save a backup in :file:`proj/settings.py.orig`.
 
+.. _latentcall-django-admonition:
 .. admonition:: For Django users and others who want to keep uppercase names
 
     If you're loading Celery configuration from the Django settings module
@@ -551,7 +552,7 @@ these manually:
     class CustomTask(Task):
         def run(self):
             print('running')
-    app.register_task(CustomTask())
+    CustomTask = app.register_task(CustomTask())
 
 The best practice is to use custom task classes only for overriding
 general behavior, and then using the task decorator to realize the task:
@@ -1056,7 +1057,7 @@ Contributed by **Ionel Cristian Mărieș**.
 Handling task connection errors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Connection related errors occuring while sending a task is now re-raised
+Connection related errors occurring while sending a task is now re-raised
 as a :exc:`kombu.exceptions.OperationalError` error:
 
 .. code-block:: pycon
@@ -1461,7 +1462,8 @@ Tasks
 
     Fix contributed by **Colin McIntosh**.
 
-- The default routing key and exchange name is now taken from the
+- The default routing key (:setting:`task_default_routing_key`) and exchange
+  name (:setting:`task_default_exchange`) is now taken from the
   :setting:`task_default_queue` setting.
 
     This means that to change the name of the default queue, you now
@@ -2286,7 +2288,7 @@ Logging Settings
 ``CELERYD_LOG_LEVEL``                  :option:`celery worker --loglevel`
 ``CELERYD_LOG_FILE``                   :option:`celery worker --logfile`
 ``CELERYBEAT_LOG_LEVEL``               :option:`celery beat --loglevel`
-``CELERYBEAT_LOG_FILE``                :option:`celery beat --loglevel`
+``CELERYBEAT_LOG_FILE``                :option:`celery beat --logfile`
 ``CELERYMON_LOG_LEVEL``                celerymon is deprecated, use flower
 ``CELERYMON_LOG_FILE``                 celerymon is deprecated, use flower
 ``CELERYMON_LOG_FORMAT``               celerymon is deprecated, use flower

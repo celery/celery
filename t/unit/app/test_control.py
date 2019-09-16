@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
+
 from case import Mock
 from celery import uuid
 from celery.app import control
@@ -77,11 +79,15 @@ class test_inspect:
                                 limit=None,
                                 timeout=None,
                                 reply=True,
+                                pattern=None,
+                                matcher=None,
                                 **arguments):
         self.app.control.broadcast.assert_called_with(
             command,
             arguments=arguments,
             destination=destination or self.inspect.destination,
+            pattern=pattern or self.inspect.pattern,
+            matcher=matcher or self.inspect.destination,
             callback=callback or self.inspect.callback,
             connection=connection or self.inspect.connection,
             limit=limit if limit is not None else self.inspect.limit,
@@ -165,6 +171,16 @@ class test_inspect:
     def test_ping(self):
         self.inspect.ping()
         self.assert_broadcast_called('ping')
+
+    def test_ping_matcher_pattern(self):
+        orig_inspect = self.inspect
+        self.inspect = self.app.control.inspect(pattern=".*", matcher="pcre")
+        self.inspect.ping()
+        try:
+            self.assert_broadcast_called('ping', pattern=".*", matcher="pcre")
+        except AssertionError as e:
+            self.inspect = orig_inspect
+            raise e
 
     def test_active_queues(self):
         self.inspect.active_queues()
@@ -485,3 +501,23 @@ class test_Control:
             uuids,
             connection=None, reply=False, signal=None,
             terminate=False, timeout=None)
+
+    def test_after_fork_clears_mailbox_pool(self):
+        amqp = Mock(name='amqp')
+        self.app.amqp = amqp
+        closed_pool = Mock(name='closed pool')
+        amqp.producer_pool = closed_pool
+        assert closed_pool is self.app.control.mailbox.producer_pool
+        self.app.control._after_fork()
+        new_pool = Mock(name='new pool')
+        amqp.producer_pool = new_pool
+        assert new_pool is self.app.control.mailbox.producer_pool
+
+    def test_control_exchange__default(self):
+        c = control.Control(self.app)
+        assert c.mailbox.namespace == 'celery'
+
+    def test_control_exchange__setting(self):
+        self.app.conf.control_exchange = 'test_exchange'
+        c = control.Control(self.app)
+        assert c.mailbox.namespace == 'test_exchange'

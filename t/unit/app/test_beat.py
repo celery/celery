@@ -1,14 +1,17 @@
 from __future__ import absolute_import, unicode_literals
+
 import errno
-import pytest
 from datetime import datetime, timedelta
 from pickle import dumps, loads
+
+import pytest
+import pytz
+
 from case import Mock, call, patch, skip
-from celery import beat
-from celery import uuid
-from celery.beat import event_t
+from celery import __version__, beat, uuid
+from celery.beat import BeatLazyFunc, event_t
 from celery.five import keys, string_t
-from celery.schedules import schedule, crontab
+from celery.schedules import crontab, schedule
 from celery.utils.objects import Bunch
 
 
@@ -37,17 +40,27 @@ class MockService(object):
         self.stopped = True
 
 
+class test_BeatLazyFunc:
+
+    def test_beat_lazy_func(self):
+        def add(a, b):
+            return a + b
+        result = BeatLazyFunc(add, 1, 2)
+        assert add(1, 2) == result()
+        assert add(1, 2) == result.delay()
+
+
 class test_ScheduleEntry:
     Entry = beat.ScheduleEntry
 
     def create_entry(self, **kwargs):
-        entry = dict(
-            name='celery.unittest.add',
-            schedule=timedelta(seconds=10),
-            args=(2, 2),
-            options={'routing_key': 'cpu'},
-            app=self.app,
-        )
+        entry = {
+            'name': 'celery.unittest.add',
+            'schedule': timedelta(seconds=10),
+            'args': (2, 2),
+            'options': {'routing_key': 'cpu'},
+            'app': self.app,
+        }
         return self.Entry(**dict(entry, **kwargs))
 
     def test_next(self):
@@ -141,11 +154,12 @@ class mSchedulerRuntimeError(mScheduler):
 
 class mocked_schedule(schedule):
 
-    def __init__(self, is_due, next_run_at):
+    def __init__(self, is_due, next_run_at, nowfun=datetime.utcnow):
         self._is_due = is_due
         self._next_run_at = next_run_at
         self.run_every = timedelta(seconds=1)
-        self.nowfun = datetime.utcnow
+        self.nowfun = nowfun
+        self.default_now = self.nowfun
 
     def is_due(self, last_run_at):
         return self._is_due, self._next_run_at
@@ -172,6 +186,17 @@ class test_Scheduler:
 
         scheduler = mScheduler(app=self.app)
         scheduler.apply_async(scheduler.Entry(task=foo.name, app=self.app))
+        foo.apply_async.assert_called()
+
+    def test_apply_async_with_null_args(self):
+
+        @self.app.task(shared=False)
+        def foo():
+            pass
+        foo.apply_async = Mock(name='foo.apply_async')
+
+        scheduler = mScheduler(app=self.app)
+        scheduler.apply_async(scheduler.Entry(task=foo.name, app=self.app, args=None, kwargs=None))
         foo.apply_async.assert_called()
 
     def test_should_sync(self):
@@ -309,11 +334,23 @@ class test_Scheduler:
     def test_ticks(self):
         scheduler = mScheduler(app=self.app)
         nums = [600, 300, 650, 120, 250, 36]
-        s = dict(('test_ticks%s' % i,
-                 {'schedule': mocked_schedule(False, j)})
-                 for i, j in enumerate(nums))
+        s = {'test_ticks%s' % i: {'schedule': mocked_schedule(False, j)}
+             for i, j in enumerate(nums)}
         scheduler.update_from_dict(s)
         assert scheduler.tick() == min(nums) - 0.010
+
+    def test_ticks_microseconds(self):
+        scheduler = mScheduler(app=self.app)
+
+        now_ts = 1514797200.2
+        now = datetime.utcfromtimestamp(now_ts)
+        schedule_half = schedule(timedelta(seconds=0.5), nowfun=lambda: now)
+        scheduler.add(name='half_second_schedule', schedule=schedule_half)
+
+        scheduler.tick()
+        # ensure those 0.2 seconds on now_ts don't get dropped
+        expected_time = now_ts + 0.5 - 0.010
+        assert scheduler._heap[0].time == expected_time
 
     def test_ticks_schedule_change(self):
         # initialise schedule and check heap is not initialized
@@ -357,6 +394,22 @@ class test_Scheduler:
         assert 'baz' in a.schedule
         assert a.schedule['bar'].schedule._next_run_at == 40
 
+    def test_when(self):
+        now_time_utc = datetime(2000, 10, 10, 10, 10, 10, 10, tzinfo=pytz.utc)
+        now_time_casey = now_time_utc.astimezone(
+            pytz.timezone('Antarctica/Casey')
+        )
+        scheduler = mScheduler(app=self.app)
+        result_utc = scheduler._when(
+            mocked_schedule(True, 10, lambda: now_time_utc),
+            10
+        )
+        result_casey = scheduler._when(
+            mocked_schedule(True, 10, lambda: now_time_casey),
+            10
+        )
+        assert result_utc == result_casey
+
     @patch('celery.beat.Scheduler._when', return_value=1)
     def test_populate_heap(self, _when):
         scheduler = mScheduler(app=self.app)
@@ -366,49 +419,120 @@ class test_Scheduler:
         scheduler.populate_heap()
         assert scheduler._heap == [event_t(1, 5, scheduler.schedule['foo'])]
 
-    def create_schedule_entry(self, schedule):
-        entry = dict(
-            name='celery.unittest.add',
-            schedule=schedule,
-            app=self.app,
-        )
+    def create_schedule_entry(self, schedule=None, args=(), kwargs={},
+                              options={}, task=None):
+        entry = {
+            'name': 'celery.unittest.add',
+            'schedule': schedule,
+            'app': self.app,
+            'args': args,
+            'kwargs': kwargs,
+            'options': options,
+            'task': task
+        }
         return beat.ScheduleEntry(**dict(entry))
 
     def test_schedule_equal_schedule_vs_schedule_success(self):
         scheduler = beat.Scheduler(app=self.app)
-        a = {'a': self.create_schedule_entry(schedule(5))}
-        b = {'a': self.create_schedule_entry(schedule(5))}
+        a = {'a': self.create_schedule_entry(schedule=schedule(5))}
+        b = {'a': self.create_schedule_entry(schedule=schedule(5))}
         assert scheduler.schedules_equal(a, b)
 
     def test_schedule_equal_schedule_vs_schedule_fail(self):
         scheduler = beat.Scheduler(app=self.app)
-        a = {'a': self.create_schedule_entry(schedule(5))}
-        b = {'a': self.create_schedule_entry(schedule(10))}
+        a = {'a': self.create_schedule_entry(schedule=schedule(5))}
+        b = {'a': self.create_schedule_entry(schedule=schedule(10))}
         assert not scheduler.schedules_equal(a, b)
 
     def test_schedule_equal_crontab_vs_crontab_success(self):
         scheduler = beat.Scheduler(app=self.app)
-        a = {'a': self.create_schedule_entry(crontab(minute=5))}
-        b = {'a': self.create_schedule_entry(crontab(minute=5))}
+        a = {'a': self.create_schedule_entry(schedule=crontab(minute=5))}
+        b = {'a': self.create_schedule_entry(schedule=crontab(minute=5))}
         assert scheduler.schedules_equal(a, b)
 
     def test_schedule_equal_crontab_vs_crontab_fail(self):
         scheduler = beat.Scheduler(app=self.app)
-        a = {'a': self.create_schedule_entry(crontab(minute=5))}
-        b = {'a': self.create_schedule_entry(crontab(minute=10))}
+        a = {'a': self.create_schedule_entry(schedule=crontab(minute=5))}
+        b = {'a': self.create_schedule_entry(schedule=crontab(minute=10))}
         assert not scheduler.schedules_equal(a, b)
 
     def test_schedule_equal_crontab_vs_schedule_fail(self):
         scheduler = beat.Scheduler(app=self.app)
-        a = {'a': self.create_schedule_entry(crontab(minute=5))}
-        b = {'a': self.create_schedule_entry(schedule(5))}
+        a = {'a': self.create_schedule_entry(schedule=crontab(minute=5))}
+        b = {'a': self.create_schedule_entry(schedule=schedule(5))}
         assert not scheduler.schedules_equal(a, b)
 
     def test_schedule_equal_different_key_fail(self):
         scheduler = beat.Scheduler(app=self.app)
-        a = {'a': self.create_schedule_entry(schedule(5))}
-        b = {'b': self.create_schedule_entry(schedule(5))}
+        a = {'a': self.create_schedule_entry(schedule=schedule(5))}
+        b = {'b': self.create_schedule_entry(schedule=schedule(5))}
         assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_args_vs_args_success(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(args='a')}
+        b = {'a': self.create_schedule_entry(args='a')}
+        assert scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_args_vs_args_fail(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(args='a')}
+        b = {'a': self.create_schedule_entry(args='b')}
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_kwargs_vs_kwargs_success(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(kwargs={'a': 'a'})}
+        b = {'a': self.create_schedule_entry(kwargs={'a': 'a'})}
+        assert scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_kwargs_vs_kwargs_fail(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(kwargs={'a': 'a'})}
+        b = {'a': self.create_schedule_entry(kwargs={'b': 'b'})}
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_options_vs_options_success(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(options={'a': 'a'})}
+        b = {'a': self.create_schedule_entry(options={'a': 'a'})}
+        assert scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_options_vs_options_fail(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(options={'a': 'a'})}
+        b = {'a': self.create_schedule_entry(options={'b': 'b'})}
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_task_vs_task_success(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(task='a')}
+        b = {'a': self.create_schedule_entry(task='a')}
+        assert scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_task_vs_task_fail(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(task='a')}
+        b = {'a': self.create_schedule_entry(task='b')}
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_none_entry_vs_entry(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = None
+        b = {'a': self.create_schedule_entry(task='b')}
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_entry_vs_none_entry(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = {'a': self.create_schedule_entry(task='a')}
+        b = None
+        assert not scheduler.schedules_equal(a, b)
+
+    def test_schedule_equal_none_entry_vs_none_entry(self):
+        scheduler = beat.Scheduler(app=self.app)
+        a = None
+        b = None
+        assert scheduler.schedules_equal(a, b)
 
 
 def create_persistent_scheduler(shelv=None):
@@ -430,6 +554,29 @@ def create_persistent_scheduler(shelv=None):
                 self.shutdown_service._is_shutdown.set()
             return 0.0
 
+    return MockPersistentScheduler, shelv
+
+
+def create_persistent_scheduler_w_call_logging(shelv=None):
+    if shelv is None:
+        shelv = MockShelve()
+
+    class MockPersistentScheduler(beat.PersistentScheduler):
+        sh = shelv
+        persistence = Bunch(
+            open=lambda *a, **kw: shelv,
+        )
+
+        def __init__(self, *args, **kwargs):
+            self.sent = []
+            beat.PersistentScheduler.__init__(self, *args, **kwargs)
+
+        def send_task(self, task=None, args=None, kwargs=None, **options):
+            self.sent.append({'task': task,
+                              'args': args,
+                              'kwargs': kwargs,
+                              'options': options})
+            return self.app.AsyncResult(uuid())
     return MockPersistentScheduler, shelv
 
 
@@ -488,6 +635,56 @@ class test_PersistentScheduler:
         s.schedule = {'foo': 'bar'}
         assert s.schedule == {'foo': 'bar'}
         assert s._store[str('entries')] == s.schedule
+
+    def test_run_all_due_tasks_after_restart(self):
+        scheduler_class, shelve = create_persistent_scheduler_w_call_logging()
+
+        shelve['tz'] = 'UTC'
+        shelve['utc_enabled'] = True
+        shelve['__version__'] = __version__
+        cur_seconds = 20
+
+        def now_func():
+            return datetime(2018, 1, 1, 1, 11, cur_seconds)
+        app_schedule = {
+            'first_missed': {'schedule': crontab(
+                minute='*/10', nowfun=now_func), 'task': 'first_missed'},
+            'second_missed': {'schedule': crontab(
+                minute='*/1', nowfun=now_func), 'task': 'second_missed'},
+            'non_missed': {'schedule': crontab(
+                minute='*/13', nowfun=now_func), 'task': 'non_missed'}
+        }
+        shelve['entries'] = {
+            'first_missed': beat.ScheduleEntry(
+                'first_missed', 'first_missed',
+                last_run_at=now_func() - timedelta(minutes=2),
+                total_run_count=10,
+                schedule=app_schedule['first_missed']['schedule']),
+            'second_missed': beat.ScheduleEntry(
+                'second_missed', 'second_missed',
+                last_run_at=now_func() - timedelta(minutes=2),
+                total_run_count=10,
+                schedule=app_schedule['second_missed']['schedule']),
+            'non_missed': beat.ScheduleEntry(
+                'non_missed', 'non_missed',
+                last_run_at=now_func() - timedelta(minutes=2),
+                total_run_count=10,
+                schedule=app_schedule['non_missed']['schedule']),
+        }
+
+        self.app.conf.beat_schedule = app_schedule
+
+        scheduler = scheduler_class(self.app)
+
+        max_iter_number = 5
+        for i in range(max_iter_number):
+            delay = scheduler.tick()
+            if delay > 0:
+                break
+        assert {'first_missed', 'second_missed'} == {
+            item['task'] for item in scheduler.sent}
+        # ensure next call on the beginning of next min
+        assert abs(60 - cur_seconds - delay) < 1
 
 
 class test_Service:

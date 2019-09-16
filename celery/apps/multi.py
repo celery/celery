@@ -6,7 +6,6 @@ import os
 import shlex
 import signal
 import sys
-
 from collections import OrderedDict, defaultdict
 from functools import partial
 from subprocess import Popen
@@ -17,12 +16,11 @@ from kombu.utils.objects import cached_property
 
 from celery.five import UserList, items
 from celery.platforms import IS_WINDOWS, Pidfile, signal_name
-from celery.utils.nodenames import (
-    gethostname, host_format, node_format, nodesplit,
-)
+from celery.utils.nodenames import (gethostname, host_format, node_format,
+                                    nodesplit)
 from celery.utils.saferepr import saferepr
 
-__all__ = ['Cluster', 'Node']
+__all__ = ('Cluster', 'Node')
 
 CELERY_EXE = 'celery'
 
@@ -164,7 +162,7 @@ class Node(object):
         argv = tuple(
             [self.expander(self.cmd)] +
             [format_opt(opt, self.expander(value))
-                for opt, value in items(self.options)] +
+             for opt, value in items(self.options)] +
             [self.extra_args]
         )
         if self.append:

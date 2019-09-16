@@ -48,14 +48,16 @@ Error Hierarchy
         - :exc:`~celery.exceptions.WorkerShutdown`
 """
 from __future__ import absolute_import, unicode_literals
+
 import numbers
-from .five import python_2_unicode_compatible, string_t
-from billiard.exceptions import (
-    SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError, Terminated,
-)
+
+from billiard.exceptions import (SoftTimeLimitExceeded, Terminated,
+                                 TimeLimitExceeded, WorkerLostError)
 from kombu.exceptions import OperationalError
 
-__all__ = [
+from .five import python_2_unicode_compatible, string_t
+
+__all__ = (
     # Warnings
     'CeleryWarning',
     'AlwaysEagerIgnored', 'DuplicateNodenameWarning',
@@ -86,7 +88,7 @@ __all__ = [
 
     # Worker shutdown semi-predicates (inherits from SystemExit).
     'WorkerShutdown', 'WorkerTerminate',
-]
+)
 
 UNREGISTERED_FMT = """\
 Task of kind {0} never registered, please make sure it's imported.\
@@ -159,6 +161,8 @@ class Retry(TaskPredicate):
 
     def __reduce__(self):
         return self.__class__, (self.message, self.excs, self.when)
+
+
 RetryTaskError = Retry  # noqa: E305 XXX compat
 
 
@@ -219,6 +223,11 @@ class TimeoutError(TaskError):
 class MaxRetriesExceededError(TaskError):
     """The tasks max restart limit has been exceeded."""
 
+    def __init__(self, *args, **kwargs):
+        self.task_args = kwargs.pop("task_args", [])
+        self.task_kwargs = kwargs.pop("task_kwargs", dict())
+        super(MaxRetriesExceededError, self).__init__(*args, **kwargs)
+
 
 class TaskRevokedError(TaskError):
     """The task has been revoked, so no result available."""
@@ -242,6 +251,8 @@ class CDeprecationWarning(DeprecationWarning):
 
 class WorkerTerminate(SystemExit):
     """Signals that the worker should terminate immediately."""
+
+
 SystemTerminate = WorkerTerminate  # noqa: E305 XXX compat
 
 

@@ -14,9 +14,6 @@ omit =
     *celery/task/base.py
     *celery/five.py
     *celery/contrib/sphinx.py
-    *celery/backends/couchdb.py
-    *celery/backends/couchbase.py
-    *celery/backends/riak.py
     *celery/concurrency/asynpool.py
     *celery/utils/debug.py
     *celery/contrib/testing/*

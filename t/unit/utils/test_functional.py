@@ -1,22 +1,15 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
 from kombu.utils.functional import lazy
+
 from case import skip
-from celery.five import range, nextfun
-from celery.utils.functional import (
-    DummyContext,
-    fun_accepts_kwargs,
-    fun_takes_argument,
-    head_from_fun,
-    firstmethod,
-    first,
-    maybe_list,
-    mlazy,
-    padlist,
-    regen,
-    seq_concat_seq,
-    seq_concat_item,
-)
+from celery.five import nextfun, range
+from celery.utils.functional import (DummyContext, first, firstmethod,
+                                     fun_accepts_kwargs, fun_takes_argument,
+                                     head_from_fun, maybe_list, mlazy,
+                                     padlist, regen, seq_concat_item,
+                                     seq_concat_seq)
 
 
 def test_DummyContext():

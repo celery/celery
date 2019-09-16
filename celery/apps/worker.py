@@ -13,30 +13,26 @@ import logging
 import os
 import platform as _platform
 import sys
-
 from datetime import datetime
 from functools import partial
 
 from billiard.process import current_process
 from kombu.utils.encoding import safe_str
 
-from celery import VERSION_BANNER
-from celery import platforms
-from celery import signals
+from celery import VERSION_BANNER, platforms, signals
 from celery.app import trace
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.five import string, string_t
 from celery.loaders.app import AppLoader
 from celery.platforms import EX_FAILURE, EX_OK, check_privileges, isatty
-from celery.utils import static
-from celery.utils import term
+from celery.utils import static, term
 from celery.utils.debug import cry
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
 from celery.utils.text import pluralize
 from celery.worker import WorkController
 
-__all__ = ['Worker']
+__all__ = ('Worker',)
 
 logger = get_logger(__name__)
 is_jython = sys.platform.startswith('java')
@@ -277,6 +273,10 @@ def _shutdown_handler(worker, sig='TERM', how='Warm',
                 if callback:
                     callback(worker)
                 safe_say('worker: {0} shutdown (MainProcess)'.format(how))
+                signals.worker_shutting_down.send(
+                    sender=worker.hostname, sig=sig, how=how,
+                    exitcode=exitcode,
+                )
             if active_thread_count() > 1:
                 setattr(state, {'Warm': 'should_stop',
                                 'Cold': 'should_terminate'}[how], exitcode)

@@ -1,15 +1,19 @@
 """Worker Pidbox (remote control)."""
 from __future__ import absolute_import, unicode_literals
+
 import socket
 import threading
+
 from kombu.common import ignore_errors
 from kombu.utils.encoding import safe_str
+
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import pass1
 from celery.utils.log import get_logger
+
 from . import control
 
-__all__ = ['Pidbox', 'gPidbox']
+__all__ = ('Pidbox', 'gPidbox')
 
 logger = get_logger(__name__)
 debug, error, info = logger.debug, logger.error, logger.info

@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
-import pytest
+
+import ast
 import re
 import struct
-from case import skip
 from decimal import Decimal
 from pprint import pprint
-from celery.five import (
-    items, long_t, python_2_unicode_compatible, text_t, values,
-)
+
+import pytest
+
+from case import skip
+from celery.five import (items, long_t, python_2_unicode_compatible, text_t,
+                         values)
 from celery.utils.saferepr import saferepr
 
 D_NUMBERS = {
@@ -183,6 +186,10 @@ class test_saferepr:
         # aren't tested here.
         native = old_repr(value)
         assert saferepr(value) == native
+
+    def test_single_quote(self):
+        val = {"foo's": "bar's"}
+        assert ast.literal_eval(saferepr(val)) == val
 
     @skip.if_python3()
     def test_bytes_with_unicode(self):

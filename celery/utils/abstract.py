@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-
 """Abstract classes."""
 from __future__ import absolute_import, unicode_literals
+
 from abc import ABCMeta, abstractmethod, abstractproperty
-from collections import Callable
+
 from celery.five import with_metaclass
 
-__all__ = ['CallableTask', 'CallableSignature']
+try:
+    from collections.abc import Callable
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Callable
+
+
+__all__ = ('CallableTask', 'CallableSignature')
 
 
 def _hasattr(C, attr):

@@ -21,7 +21,7 @@ except ImportError:  # pragma: no cover
 else:
     IGNORE_ERRORS = (GreenletExit,)
 
-__all__ = ['Blueprint', 'Step', 'StartStopStep', 'ConsumerStep']
+__all__ = ('Blueprint', 'Step', 'StartStopStep', 'ConsumerStep')
 
 #: States
 RUN = 0x1
@@ -281,11 +281,11 @@ class StepType(type):
         )
         return super(StepType, cls).__new__(cls, name, bases, attrs)
 
-    def __str__(self):
-        return bytes_if_py2(self.name)
+    def __str__(cls):
+        return bytes_if_py2(cls.name)
 
-    def __repr__(self):
-        return bytes_if_py2('step:{0.name}{{{0.requires!r}}}'.format(self))
+    def __repr__(cls):
+        return bytes_if_py2('step:{0.name}{{{0.requires!r}}}'.format(cls))
 
 
 @with_metaclass(StepType)
@@ -344,7 +344,6 @@ class Step(object):
 
     def create(self, parent):
         """Create the step."""
-        pass
 
     def __repr__(self):
         return bytes_if_py2('<step: {0.alias}>'.format(self))

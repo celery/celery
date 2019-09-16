@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
+
 from celery import messaging
 
 

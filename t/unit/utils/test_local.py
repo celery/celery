@@ -1,16 +1,12 @@
 from __future__ import absolute_import, unicode_literals
-import pytest
-import sys
-from case import Mock, skip
-from celery.five import python_2_unicode_compatible, string, long_t
-from celery.local import (
-    Proxy,
-    PromiseProxy,
-    maybe_evaluate,
-    try_import,
-)
 
-PY3 = sys.version_info[0] == 3
+import sys
+
+import pytest
+
+from case import Mock, skip
+from celery.five import PY3, long_t, python_2_unicode_compatible, string
+from celery.local import PromiseProxy, Proxy, maybe_evaluate, try_import
 
 
 class test_try_import:

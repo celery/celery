@@ -1,1 +1,2 @@
 couchbase
+couchbase-cffi;platform_python_implementation=="PyPy"

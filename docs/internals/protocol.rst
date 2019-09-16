@@ -42,8 +42,8 @@ Definition
         # optional
         'meth': string method_name,
         'shadow': string alias_name,
-        'eta':  iso8601 ETA,
-        'expires'; iso8601 expires,
+        'eta': iso8601 ETA,
+        'expires': iso8601 expires,
         'retries': int retries,
         'timelimit': (soft, hard),
         'argsrepr': str repr(args),

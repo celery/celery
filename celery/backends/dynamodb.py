@@ -1,21 +1,25 @@
 # -*- coding: utf-8 -*-
 """AWS DynamoDB result store backend."""
 from __future__ import absolute_import, unicode_literals
+
 from collections import namedtuple
-from time import time, sleep
+from time import sleep, time
 
 from kombu.utils.url import _parse_url as parse_url
+
 from celery.exceptions import ImproperlyConfigured
-from celery.utils.log import get_logger
 from celery.five import string
+from celery.utils.log import get_logger
+
 from .base import KeyValueStoreBackend
+
 try:
     import boto3
     from botocore.exceptions import ClientError
 except ImportError:  # pragma: no cover
     boto3 = ClientError = None  # noqa
 
-__all__ = ['DynamoDBBackend']
+__all__ = ('DynamoDBBackend',)
 
 
 # Helper class that describes a DynamoDB attribute
@@ -96,6 +100,12 @@ class DynamoDBBackend(KeyValueStoreBackend):
             else:
                 self.aws_region = region
 
+            # If endpoint_url is explicitly set use it instead
+            _get = self.app.conf.get
+            config_endpoint_url = _get('dynamodb_endpoint_url')
+            if config_endpoint_url:
+                self.endpoint_url = config_endpoint_url
+
             self.read_capacity_units = int(
                 query.get(
                     'read',
@@ -126,14 +136,14 @@ class DynamoDBBackend(KeyValueStoreBackend):
     def _get_client(self, access_key_id=None, secret_access_key=None):
         """Get client connection."""
         if self._client is None:
-            client_parameters = dict(
-                region_name=self.aws_region
-            )
+            client_parameters = {
+                'region_name': self.aws_region
+            }
             if access_key_id is not None:
-                client_parameters.update(dict(
-                    aws_access_key_id=access_key_id,
-                    aws_secret_access_key=secret_access_key
-                ))
+                client_parameters.update({
+                    'aws_access_key_id': access_key_id,
+                    'aws_secret_access_key': secret_access_key
+                })
 
             if self.endpoint_url is not None:
                 client_parameters['endpoint_url'] = self.endpoint_url
@@ -147,25 +157,25 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
     def _get_table_schema(self):
         """Get the boto3 structure describing the DynamoDB table schema."""
-        return dict(
-            AttributeDefinitions=[
+        return {
+            'AttributeDefinitions': [
                 {
                     'AttributeName': self._key_field.name,
                     'AttributeType': self._key_field.data_type
                 }
             ],
-            TableName=self.table_name,
-            KeySchema=[
+            'TableName': self.table_name,
+            'KeySchema': [
                 {
                     'AttributeName': self._key_field.name,
                     'KeyType': 'HASH'
                 }
             ],
-            ProvisionedThroughput={
+            'ProvisionedThroughput': {
                 'ReadCapacityUnits': self.read_capacity_units,
                 'WriteCapacityUnits': self.write_capacity_units
             }
-        )
+        }
 
     def _get_or_create_table(self):
         """Create table if not exists, otherwise return the description."""
@@ -215,20 +225,20 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
     def _prepare_get_request(self, key):
         """Construct the item retrieval request parameters."""
-        return dict(
-            TableName=self.table_name,
-            Key={
+        return {
+            'TableName': self.table_name,
+            'Key': {
                 self._key_field.name: {
                     self._key_field.data_type: key
                 }
             }
-        )
+        }
 
     def _prepare_put_request(self, key, value):
         """Construct the item creation request parameters."""
-        return dict(
-            TableName=self.table_name,
-            Item={
+        return {
+            'TableName': self.table_name,
+            'Item': {
                 self._key_field.name: {
                     self._key_field.data_type: key
                 },
@@ -239,7 +249,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
                     self._timestamp_field.data_type: str(time())
                 }
             }
-        )
+        }
 
     def _item_to_dict(self, raw_response):
         """Convert get_item() response to field-value pairs."""

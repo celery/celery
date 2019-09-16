@@ -7,7 +7,7 @@ Signals
 .. contents::
     :local:
 
-Signals allows decoupled applications to receive notifications when
+Signals allow decoupled applications to receive notifications when
 certain actions occur elsewhere in the application.
 
 Celery ships with many signals that your application can hook into
@@ -88,8 +88,10 @@ Provides arguments:
 
     Task message body.
 
-    This is a mapping containing the task message fields
-    (see :ref:`message-protocol-task-v1`).
+    This is a mapping containing the task message fields,
+    see :ref:`message-protocol-task-v2`
+    and :ref:`message-protocol-task-v1`
+    for a reference of possible fields that can be defined.
 
 * ``exchange``
 
@@ -133,13 +135,13 @@ Provides arguments:
 * ``headers``
 
     The task message headers, see :ref:`message-protocol-task-v2`
-    and :ref:`message-protocol-task-v1`.
+    and :ref:`message-protocol-task-v1`
     for a reference of possible fields that can be defined.
 
 * ``body``
 
     The task message body, see :ref:`message-protocol-task-v2`
-    and :ref:`message-protocol-task-v1`.
+    and :ref:`message-protocol-task-v1`
     for a reference of possible fields that can be defined.
 
 * ``exchange``
@@ -286,6 +288,25 @@ Provides arguments:
 * ``einfo``
 
     The :class:`billiard.einfo.ExceptionInfo` instance.
+
+.. signal:: task_received
+
+``task_received``
+~~~~~~~~~~~~~~~~~
+
+Dispatched when a task is received from the broker and is ready for execution.
+
+Sender is the consumer object.
+
+Provides arguments:
+
+* ``request``
+
+    This is a :class:`~celery.worker.request.Request` instance, and not
+    ``task.request``. When using the prefork pool this signal
+    is dispatched in the parent process, so ``task.request`` isn't available
+    and shouldn't be used. Use this object instead, as they share many
+    of the same fields.
 
 .. signal:: task_revoked
 
@@ -496,6 +517,27 @@ Dispatched when the worker is ready to accept work.
 Dispatched when Celery sends a worker heartbeat.
 
 Sender is the :class:`celery.worker.heartbeat.Heart` instance.
+
+.. signal:: worker_shutting_down
+
+``worker_shutting_down``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Dispatched when the worker begins the shutdown process.
+
+Provides arguments:
+
+* ``sig``
+
+    The POSIX signal that was received.
+
+* ``how``
+
+    The shutdown method, warm or cold.
+
+* ``exitcode``
+
+    The exitcode that will be used when the main process exits.
 
 .. signal:: worker_process_init
 

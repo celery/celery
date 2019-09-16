@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 
 import socket
 import threading
-
 from collections import deque
 from time import sleep
 from weakref import WeakKeyDictionary
@@ -16,10 +15,10 @@ from celery.exceptions import TimeoutError
 from celery.five import Empty, monotonic
 from celery.utils.threads import THREAD_TIMEOUT_MAX
 
-__all__ = [
+__all__ = (
     'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
     'register_drainer',
-]
+)
 
 drainers = {}
 
@@ -135,7 +134,9 @@ class AsyncBackendMixin(object):
         # into these buckets.
         bucket = deque()
         for node in results:
-            if node._cache:
+            if not hasattr(node, '_cache'):
+                bucket.append(node)
+            elif node._cache:
                 bucket.append(node)
             else:
                 self._collect_into(node, bucket)
@@ -143,7 +144,10 @@ class AsyncBackendMixin(object):
         for _ in self._wait_for_pending(result, no_ack=no_ack, **kwargs):
             while bucket:
                 node = bucket.popleft()
-                yield node.id, node._cache
+                if not hasattr(node, '_cache'):
+                    yield node.id, node.children
+                else:
+                    yield node.id, node._cache
         while bucket:
             node = bucket.popleft()
             yield node.id, node._cache
@@ -177,8 +181,8 @@ class AsyncBackendMixin(object):
         return result
 
     def _remove_pending_result(self, task_id):
-        for map in self._pending_results:
-            map.pop(task_id, None)
+        for mapping in self._pending_results:
+            mapping.pop(task_id, None)
 
     def on_result_fulfilled(self, result):
         self.result_consumer.cancel_for(result.id)

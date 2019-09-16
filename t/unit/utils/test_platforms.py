@@ -2,41 +2,24 @@ from __future__ import absolute_import, unicode_literals
 
 import errno
 import os
-import pytest
-import sys
 import signal
+import sys
 import tempfile
 
-from case import Mock, call, mock, patch, skip
+import pytest
 
-from celery import _find_option_with_arg
-from celery import platforms
+from case import Mock, call, mock, patch, skip
+from celery import _find_option_with_arg, platforms
 from celery.exceptions import SecurityError
 from celery.five import WhateverIO
-from celery.platforms import (
-    get_fdmax,
-    ignore_errno,
-    check_privileges,
-    set_process_title,
-    set_mp_process_title,
-    signals,
-    maybe_drop_privileges,
-    setuid,
-    setgid,
-    initgroups,
-    parse_uid,
-    parse_gid,
-    detached,
-    DaemonContext,
-    create_pidlock,
-    Pidfile,
-    LockFailed,
-    setgroups,
-    _setgroups_hack,
-    close_open_fds,
-    fd_by_path,
-    isatty,
-)
+from celery.platforms import (DaemonContext, LockFailed, Pidfile,
+                              _setgroups_hack, check_privileges,
+                              close_open_fds, create_pidlock, detached,
+                              fd_by_path, get_fdmax, ignore_errno, initgroups,
+                              isatty, maybe_drop_privileges, parse_gid,
+                              parse_uid, set_mp_process_title,
+                              set_process_title, setgid, setgroups, setuid,
+                              signals)
 
 try:
     import resource
@@ -77,7 +60,7 @@ def test_fd_by_path():
 
 def test_close_open_fds(patching):
     _close = patching('os.close')
-    fdmax = patching('celery.platforms.get_fdmax')
+    fdmax = patching('billiard.compat.get_fdmax')
     with patch('os.closerange', create=True) as closerange:
         fdmax.return_value = 3
         close_open_fds()

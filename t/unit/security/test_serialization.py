@@ -2,21 +2,21 @@ from __future__ import absolute_import, unicode_literals
 
 import base64
 import os
-import pytest
 
+import pytest
 from kombu.serialization import registry
 from kombu.utils.encoding import bytes_to_str
 
 from celery.exceptions import SecurityError
-from celery.security.serialization import SecureSerializer, register_auth
 from celery.security.certificate import Certificate, CertStore
 from celery.security.key import PrivateKey
+from celery.security.serialization import SecureSerializer, register_auth
 
 from . import CERT1, CERT2, KEY1, KEY2
 from .case import SecurityCase
 
 
-class test_SecureSerializer(SecurityCase):
+class test_secureserializer(SecurityCase):
 
     def _get_s(self, key, cert, certs):
         store = CertStore()

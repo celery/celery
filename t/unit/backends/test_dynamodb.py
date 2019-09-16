@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
+
 from decimal import Decimal
 
 import pytest
-from case import MagicMock, Mock, patch, sentinel, skip
 
+from case import MagicMock, Mock, patch, sentinel, skip
 from celery.backends import dynamodb as module
 from celery.backends.dynamodb import DynamoDBBackend
 from celery.exceptions import ImproperlyConfigured
@@ -37,42 +38,62 @@ class test_DynamoDBBackend:
                 url='dynamodb://a:@'
             )
 
+    def test_get_client_explicit_endpoint(self):
+        table_creation_path = \
+            'celery.backends.dynamodb.DynamoDBBackend._get_or_create_table'
+        with patch('boto3.client') as mock_boto_client, \
+                patch(table_creation_path):
+
+            self.app.conf.dynamodb_endpoint_url = 'http://my.domain.com:666'
+            backend = DynamoDBBackend(
+                app=self.app,
+                url='dynamodb://@us-east-1'
+            )
+            client = backend._get_client()
+            assert backend.client is client
+            mock_boto_client.assert_called_once_with(
+                'dynamodb',
+                endpoint_url='http://my.domain.com:666',
+                region_name='us-east-1'
+            )
+            assert backend.endpoint_url == 'http://my.domain.com:666'
+
     def test_get_client_local(self):
         table_creation_path = \
             'celery.backends.dynamodb.DynamoDBBackend._get_or_create_table'
         with patch('boto3.client') as mock_boto_client, \
                 patch(table_creation_path):
-                backend = DynamoDBBackend(
-                    app=self.app,
-                    url='dynamodb://@localhost:8000'
-                )
-                client = backend._get_client()
-                assert backend.client is client
-                mock_boto_client.assert_called_once_with(
-                    'dynamodb',
-                    endpoint_url='http://localhost:8000',
-                    region_name='us-east-1'
-                )
-                assert backend.endpoint_url == 'http://localhost:8000'
+            backend = DynamoDBBackend(
+                app=self.app,
+                url='dynamodb://@localhost:8000'
+            )
+            client = backend._get_client()
+            assert backend.client is client
+            mock_boto_client.assert_called_once_with(
+                'dynamodb',
+                endpoint_url='http://localhost:8000',
+                region_name='us-east-1'
+            )
+            assert backend.endpoint_url == 'http://localhost:8000'
 
     def test_get_client_credentials(self):
         table_creation_path = \
             'celery.backends.dynamodb.DynamoDBBackend._get_or_create_table'
         with patch('boto3.client') as mock_boto_client, \
                 patch(table_creation_path):
-                backend = DynamoDBBackend(
-                    app=self.app,
-                    url='dynamodb://key:secret@test'
-                )
-                client = backend._get_client()
-                assert client is backend.client
-                mock_boto_client.assert_called_once_with(
-                    'dynamodb',
-                    aws_access_key_id='key',
-                    aws_secret_access_key='secret',
-                    region_name='test'
-                )
-                assert backend.aws_region == 'test'
+            backend = DynamoDBBackend(
+                app=self.app,
+                url='dynamodb://key:secret@test'
+            )
+            client = backend._get_client()
+            assert client is backend.client
+            mock_boto_client.assert_called_once_with(
+                'dynamodb',
+                aws_access_key_id='key',
+                aws_secret_access_key='secret',
+                region_name='test'
+            )
+            assert backend.aws_region == 'test'
 
     def test_get_or_create_table_not_exists(self):
         self.backend._client = MagicMock()
@@ -204,14 +225,14 @@ class test_DynamoDBBackend:
 
         assert self.backend._client.put_item.call_count == 1
         _, call_kwargs = self.backend._client.put_item.call_args
-        expected_kwargs = dict(
-            Item={
+        expected_kwargs = {
+            'Item': {
                 u'timestamp': {u'N': str(self._static_timestamp)},
                 u'id': {u'S': string(sentinel.key)},
                 u'result': {u'B': sentinel.value}
             },
-            TableName='celery'
-        )
+            'TableName': 'celery'
+        }
         assert call_kwargs['Item'] == expected_kwargs['Item']
         assert call_kwargs['TableName'] == 'celery'
 

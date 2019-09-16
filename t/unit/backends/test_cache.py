@@ -1,17 +1,17 @@
 from __future__ import absolute_import, unicode_literals
-import pytest
+
 import sys
 import types
 from contextlib import contextmanager
+
+import pytest
+from kombu.utils.encoding import ensure_bytes, str_to_bytes
+
 from case import Mock, mock, patch, skip
-from kombu.utils.encoding import str_to_bytes, ensure_bytes
-from celery import states
-from celery import group, signature, uuid
+from celery import signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items, bytes_if_py2, string, text_t
-
-PY3 = sys.version_info[0] == 3
+from celery.five import PY3, bytes_if_py2, items, string, text_t
 
 
 class SomeClass(object):
@@ -63,8 +63,12 @@ class test_CacheBackend:
 
     def test_apply_chord(self):
         tb = CacheBackend(backend='memory://', app=self.app)
-        gid, res = uuid(), [self.app.AsyncResult(uuid()) for _ in range(3)]
-        tb.apply_chord(group(app=self.app), (), gid, {}, result=res)
+        result = self.app.GroupResult(
+            uuid(),
+            [self.app.AsyncResult(uuid()) for _ in range(3)],
+        )
+        tb.apply_chord(result, None)
+        assert self.app.GroupResult.restore(result.id, backend=tb) == result
 
     @patch('celery.result.GroupResult.restore')
     def test_on_chord_part_return(self, restore):
@@ -79,9 +83,12 @@ class test_CacheBackend:
         self.app.tasks['foobarbaz'] = task
         task.request.chord = signature(task)
 
-        gid, res = uuid(), [self.app.AsyncResult(uuid()) for _ in range(3)]
-        task.request.group = gid
-        tb.apply_chord(group(app=self.app), (), gid, {}, result=res)
+        result = self.app.GroupResult(
+            uuid(),
+            [self.app.AsyncResult(uuid()) for _ in range(3)],
+        )
+        task.request.group = result.id
+        tb.apply_chord(result, None)
 
         deps.join_native.assert_not_called()
         tb.on_chord_part_return(task.request, 'SUCCESS', 10)

@@ -12,10 +12,9 @@ from __future__ import absolute_import, unicode_literals
 
 import os
 import threading
-
 from time import sleep
 
-from kombu.async.semaphore import DummyLock
+from kombu.asynchronous.semaphore import DummyLock
 
 from celery import bootsteps
 from celery.five import monotonic
@@ -25,7 +24,7 @@ from celery.utils.threads import bgThread
 from . import state
 from .components import Pool
 
-__all__ = ['Autoscaler', 'WorkerComponent']
+__all__ = ('Autoscaler', 'WorkerComponent')
 
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error
@@ -57,6 +56,10 @@ class WorkerComponent(bootsteps.StartStopStep):
         hub.call_repeatedly(
             w.autoscaler.keepalive, w.autoscaler.maybe_scale,
         )
+
+    def info(self, w):
+        """Return `Autoscaler` info."""
+        return {'autoscaler': w.autoscaler.info()}
 
 
 class Autoscaler(bgThread):

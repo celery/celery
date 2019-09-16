@@ -4,17 +4,33 @@
 Contains utilities for working with task routers, (:setting:`task_routes`).
 """
 from __future__ import absolute_import, unicode_literals
+
 import re
 import string
-from collections import Mapping, OrderedDict
+from collections import OrderedDict
+
 from kombu import Queue
+
 from celery.exceptions import QueueNotFound
 from celery.five import items, string_t
 from celery.utils.collections import lpmerge
 from celery.utils.functional import maybe_evaluate, mlazy
 from celery.utils.imports import symbol_by_name
 
-__all__ = ['MapRoute', 'Router', 'prepare']
+try:
+    from collections.abc import Mapping
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Mapping
+
+
+try:
+    Pattern = re._pattern_type
+except AttributeError:  # pragma: no cover
+    # for support Python 3.7
+    Pattern = re.Pattern
+
+__all__ = ('MapRoute', 'Router', 'prepare')
 
 
 def glob_to_re(glob, quote=string.punctuation.replace('*', '')):
@@ -30,7 +46,7 @@ class MapRoute(object):
         self.map = {}
         self.patterns = OrderedDict()
         for k, v in map:
-            if isinstance(k, re._pattern_type):
+            if isinstance(k, Pattern):
                 self.patterns[k] = v
             elif '*' in k:
                 self.patterns[re.compile(glob_to_re(k))] = v
@@ -62,7 +78,8 @@ class Router(object):
         self.routes = [] if routes is None else routes
         self.create_missing = create_missing
 
-    def route(self, options, name, args=(), kwargs={}, task_type=None):
+    def route(self, options, name, args=(), kwargs=None, task_type=None):
+        kwargs = {} if not kwargs else kwargs
         options = self.expand_destination(options)  # expands 'queue'
         if self.routes:
             route = self.lookup_route(name, args, kwargs, options, task_type)
@@ -70,7 +87,7 @@ class Router(object):
                 return lpmerge(self.expand_destination(route), options)
         if 'queue' not in options:
             options = lpmerge(self.expand_destination(
-                              self.app.conf.task_default_queue), options)
+                self.app.conf.task_default_queue), options)
         return options
 
     def expand_destination(self, route):

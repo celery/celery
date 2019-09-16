@@ -13,20 +13,20 @@ import numbers
 import os
 import platform as _platform
 import signal as _signal
+import struct
 import sys
 import warnings
-
 from collections import namedtuple
+from contextlib import contextmanager
 
-from billiard.compat import get_fdmax, close_open_fds
+from billiard.compat import close_open_fds, get_fdmax
 # fileno used to be in this module
 from kombu.utils.compat import maybe_fileno
 from kombu.utils.encoding import safe_str
-from contextlib import contextmanager
 
 from .exceptions import SecurityError
-from .local import try_import
 from .five import items, reraise, string_t
+from .local import try_import
 
 try:
     from billiard.process import current_process
@@ -39,7 +39,7 @@ pwd = try_import('pwd')
 grp = try_import('grp')
 mputil = try_import('multiprocessing.util')
 
-__all__ = [
+__all__ = (
     'EX_OK', 'EX_FAILURE', 'EX_UNAVAILABLE', 'EX_USAGE', 'SYSTEM',
     'IS_macOS', 'IS_WINDOWS', 'SIGMAP', 'pyimplementation', 'LockFailed',
     'get_fdmax', 'Pidfile', 'create_pidlock', 'close_open_fds',
@@ -47,7 +47,7 @@ __all__ = [
     'initgroups', 'setgid', 'setuid', 'maybe_drop_privileges', 'signals',
     'signal_name', 'set_process_title', 'set_mp_process_title',
     'get_errno_name', 'ignore_errno', 'fd_by_path', 'isatty',
-]
+)
 
 # exitcodes
 EX_OK = getattr(os, 'EX_OK', 0)
@@ -86,7 +86,7 @@ ROOT_DISCOURAGED = """\
 You're running the worker with superuser privileges: this is
 absolutely not recommended!
 
-Please specify a different user using the -u option.
+Please specify a different user using the --uid option.
 
 User information: uid={uid} euid={euid} gid={gid} egid={egid}
 """
@@ -188,7 +188,7 @@ class Pidfile(object):
         """
         try:
             pid = self.read_pid()
-        except ValueError as exc:
+        except ValueError:
             print('Broken pidfile found - Removing it.', file=sys.stderr)
             self.remove()
             return True
@@ -203,6 +203,10 @@ class Pidfile(object):
                 print('Stale pidfile exists - Removing it.', file=sys.stderr)
                 self.remove()
                 return True
+        except SystemError:
+            print('Stale pidfile exists - Removing it.', file=sys.stderr)
+            self.remove()
+            return True
         return False
 
     def write_pid(self):
@@ -229,6 +233,8 @@ class Pidfile(object):
                     "Inconsistency: Pidfile content doesn't match at re-read")
         finally:
             rfh.close()
+
+
 PIDFile = Pidfile  # noqa: E305 XXX compat alias
 
 
@@ -720,7 +726,6 @@ if os.environ.get('NOSETPS'):  # pragma: no cover
 
     def set_mp_process_title(*a, **k):
         """Disabled feature."""
-        pass
 else:
 
     def set_mp_process_title(progname, info=None, hostname=None):  # noqa
@@ -790,7 +795,26 @@ def check_privileges(accept_content):
                         uid=uid, euid=euid, gid=gid, egid=egid,
                     ), file=sys.stderr)
                 finally:
+                    sys.stderr.flush()
                     os._exit(1)
         warnings.warn(RuntimeWarning(ROOT_DISCOURAGED.format(
             uid=uid, euid=euid, gid=gid, egid=egid,
         )))
+
+
+if sys.version_info < (2, 7, 7):  # pragma: no cover
+    import functools
+
+    def _to_bytes_arg(fun):
+        @functools.wraps(fun)
+        def _inner(s, *args, **kwargs):
+            return fun(s.encode(), *args, **kwargs)
+        return _inner
+
+    pack = _to_bytes_arg(struct.pack)
+    unpack = _to_bytes_arg(struct.unpack)
+    unpack_from = _to_bytes_arg(struct.unpack_from)
+else:
+    pack = struct.pack
+    unpack = struct.unpack
+    unpack_from = struct.unpack_from

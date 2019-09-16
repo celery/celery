@@ -1,11 +1,10 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-
-from case import ANY, Mock
 from kombu import Exchange, Queue
 from kombu.utils.functional import maybe_evaluate
 
+from case import ANY, Mock
 from celery.app import routes
 from celery.exceptions import QueueNotFound
 from celery.five import items
@@ -79,12 +78,17 @@ class test_MapRoute(RouteCase):
         assert route('celery.awesome') is None
 
     def test_route_for_task__glob(self):
+        from re import compile
+
         route = routes.MapRoute([
             ('proj.tasks.*', 'routeA'),
             ('demoapp.tasks.bar.*', {'exchange': 'routeB'}),
+            (compile(r'(video|image)\.tasks\..*'), {'queue': 'media'}),
         ])
         assert route('proj.tasks.foo') == {'queue': 'routeA'}
         assert route('demoapp.tasks.bar.moo') == {'exchange': 'routeB'}
+        assert route('video.tasks.foo') == {'queue': 'media'}
+        assert route('image.tasks.foo') == {'queue': 'media'}
         assert route('demoapp.foo.bar.moo') is None
 
     def test_expand_route_not_found(self):

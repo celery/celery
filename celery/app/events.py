@@ -1,6 +1,8 @@
 """Implementation for the app.events shortcuts."""
 from __future__ import absolute_import, unicode_literals
+
 from contextlib import contextmanager
+
 from kombu.utils.objects import cached_property
 
 

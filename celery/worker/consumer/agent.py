@@ -1,9 +1,11 @@
 """Celery + :pypi:`cell` integration."""
 from __future__ import absolute_import, unicode_literals
+
 from celery import bootsteps
+
 from .connection import Connection
 
-__all__ = ['Agent']
+__all__ = ('Agent',)
 
 
 class Agent(bootsteps.StartStopStep):

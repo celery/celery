@@ -1,7 +1,10 @@
 """Tests for the CouchbaseBackend."""
 from __future__ import absolute_import, unicode_literals
+
+from datetime import timedelta
+
 import pytest
-from kombu.utils.encoding import str_t
+
 from case import MagicMock, Mock, patch, sentinel, skip
 from celery.app import backends
 from celery.backends import couchbase as module
@@ -58,9 +61,19 @@ class test_CouchbaseBackend:
         assert x.get('1f3fab') == sentinel.retval
         x._connection.get.assert_called_once_with('1f3fab')
 
-    def test_set(self):
+    def test_set_no_expires(self):
         self.app.conf.couchbase_backend_settings = None
         x = CouchbaseBackend(app=self.app)
+        x.expires = None
+        x._connection = MagicMock()
+        x._connection.set = MagicMock()
+        # should return None
+        assert x.set(sentinel.key, sentinel.value) is None
+
+    def test_set_expires(self):
+        self.app.conf.couchbase_backend_settings = None
+        x = CouchbaseBackend(app=self.app, expires=30)
+        assert x.expires == 30
         x._connection = MagicMock()
         x._connection.set = MagicMock()
         # should return None
@@ -107,14 +120,19 @@ class test_CouchbaseBackend:
             assert x.password == 'mysecret'
             assert x.port == 123
 
-    def test_correct_key_types(self):
-        keys = [
-            self.backend.get_key_for_task('task_id', bytes('key')),
-            self.backend.get_key_for_chord('group_id', bytes('key')),
-            self.backend.get_key_for_group('group_id', bytes('key')),
-            self.backend.get_key_for_task('task_id', 'key'),
-            self.backend.get_key_for_chord('group_id', 'key'),
-            self.backend.get_key_for_group('group_id', 'key'),
-        ]
-        for key in keys:
-            assert isinstance(key, str_t)
+    def test_expires_defaults_to_config(self):
+        self.app.conf.result_expires = 10
+        b = CouchbaseBackend(expires=None, app=self.app)
+        assert b.expires == 10
+
+    def test_expires_is_int(self):
+        b = CouchbaseBackend(expires=48, app=self.app)
+        assert b.expires == 48
+
+    def test_expires_is_None(self):
+        b = CouchbaseBackend(expires=None, app=self.app)
+        assert b.expires == self.app.conf.result_expires.total_seconds()
+
+    def test_expires_is_timedelta(self):
+        b = CouchbaseBackend(expires=timedelta(minutes=1), app=self.app)
+        assert b.expires == 60

@@ -3,20 +3,17 @@
 from __future__ import absolute_import, unicode_literals
 
 import numbers
-import sys
-
-from collections import Mapping, namedtuple
+from collections import namedtuple
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
-from kombu import pools
-from kombu import Connection, Consumer, Exchange, Producer, Queue
+from kombu import Connection, Consumer, Exchange, Producer, Queue, pools
 from kombu.common import Broadcast
 from kombu.utils.functional import maybe_list
 from kombu.utils.objects import cached_property
 
 from celery import signals
-from celery.five import items, string_t
+from celery.five import PY3, items, string_t
 from celery.local import try_import
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
@@ -25,9 +22,13 @@ from celery.utils.time import maybe_make_aware
 
 from . import routes as _routes
 
-__all__ = ['AMQP', 'Queues', 'task_message']
+try:
+    from collections.abc import Mapping
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Mapping
 
-PY3 = sys.version_info[0] == 3
+__all__ = ('AMQP', 'Queues', 'task_message')
 
 #: earliest date supported by time.mktime.
 INT_MIN = -2147483648
@@ -147,9 +148,9 @@ class Queues(dict):
     def _set_ha_policy(self, args):
         policy = self.ha_policy
         if isinstance(policy, (list, tuple)):
-            return args.update({'x-ha-policy': 'nodes',
-                                'x-ha-policy-params': list(policy)})
-        args['x-ha-policy'] = policy
+            return args.update({'ha-mode': 'nodes',
+                                'ha-params': list(policy)})
+        args['ha-mode'] = policy
 
     def _set_max_priority(self, args):
         if 'x-max-priority' not in args and self.max_priority is not None:
@@ -198,9 +199,9 @@ class Queues(dict):
         if exclude:
             exclude = maybe_list(exclude)
             if self._consume_from is None:
-                # using selection
+                # using all queues
                 return self.select(k for k in self if k not in exclude)
-            # using all queues
+            # using selection
             for queue in exclude:
                 self._consume_from.pop(queue, None)
 
@@ -252,6 +253,7 @@ class AMQP(object):
             1: self.as_task_v1,
             2: self.as_task_v2,
         }
+        self.app._conf.bind_to(self._handle_conf_update)
 
     @cached_property
     def create_task_message(self):
@@ -330,7 +332,8 @@ class AMQP(object):
             expires = maybe_make_aware(
                 now + timedelta(seconds=expires), tz=timezone,
             )
-        eta = eta and eta.isoformat()
+        if not isinstance(eta, string_t):
+            eta = eta and eta.isoformat()
         # If we retry a task `expires` will already be ISO8601-formatted.
         if not isinstance(expires, string_t):
             expires = expires and expires.isoformat()
@@ -356,6 +359,7 @@ class AMQP(object):
                 'lang': 'py',
                 'task': name,
                 'id': task_id,
+                'shadow': shadow,
                 'eta': eta,
                 'expires': expires,
                 'group': group_id,
@@ -398,7 +402,8 @@ class AMQP(object):
                    chord=None, callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
-                   shadow=None, now=None, timezone=None):
+                   shadow=None, now=None, timezone=None,
+                   **compat_kwargs):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
@@ -521,8 +526,8 @@ class AMQP(object):
                     exchange_type = 'direct'
 
             # convert to anon-exchange, when exchange not set and direct ex.
-            if not exchange or not routing_key and exchange_type == 'direct':
-                    exchange, routing_key = '', qname
+            if (not exchange or not routing_key) and exchange_type == 'direct':
+                exchange, routing_key = '', qname
             elif exchange is None:
                 # not topic exchange, and exchange not undefined
                 exchange = queue.exchange.name or default_exchange
@@ -540,7 +545,7 @@ class AMQP(object):
                     sender=name, body=body,
                     exchange=exchange, routing_key=routing_key,
                     declare=declare, headers=headers2,
-                    properties=kwargs, retry_policy=retry_policy,
+                    properties=properties, retry_policy=retry_policy,
                 )
             ret = producer.publish(
                 body,
@@ -607,6 +612,10 @@ class AMQP(object):
     def router(self):
         return self.Router()
 
+    @router.setter
+    def router(self, value):
+        return value
+
     @property
     def producer_pool(self):
         if self._producer_pool is None:
@@ -630,3 +639,9 @@ class AMQP(object):
         # We call Dispatcher.publish with a custom producer
         # so don't need the diuspatcher to be enabled.
         return self.app.events.Dispatcher(enabled=False)
+
+    def _handle_conf_update(self, *args, **kwargs):
+        if ('task_routes' in kwargs or 'task_routes' in args):
+            self.flush_routes()
+            self.router = self.Router()
+        return

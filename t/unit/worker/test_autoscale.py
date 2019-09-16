@@ -1,11 +1,12 @@
 from __future__ import absolute_import, unicode_literals
+
 import sys
+
 from case import Mock, mock, patch
 from celery.concurrency.base import BasePool
 from celery.five import monotonic
-from celery.worker import state
-from celery.worker import autoscale
 from celery.utils.objects import Bunch
+from celery.worker import autoscale, state
 
 
 class MockPool(BasePool):
@@ -56,6 +57,18 @@ class test_WorkerComponent:
         w.instantiate = Mock()
         w.register_with_event_loop(parent, Mock(name='loop'))
         assert parent.consumer.on_task_message
+
+    def test_info_without_event_loop(self):
+        parent = Mock(name='parent')
+        parent.autoscale = True
+        parent.max_concurrency = '10'
+        parent.min_concurrency = '2'
+        parent.use_eventloop = False
+        w = autoscale.WorkerComponent(parent)
+        w.create(parent)
+        info = w.info(parent)
+        assert 'autoscaler' in info
+        assert parent.autoscaler_cls().info.called
 
 
 class test_Autoscaler:

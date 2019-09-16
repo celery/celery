@@ -4,7 +4,6 @@ from __future__ import absolute_import, unicode_literals
 import os
 import threading
 import time
-
 from collections import defaultdict, deque
 
 from kombu import Producer
@@ -16,7 +15,7 @@ from celery.utils.time import utcoffset
 
 from .event import Event, get_exchange, group_from
 
-__all__ = ['EventDispatcher']
+__all__ = ('EventDispatcher',)
 
 
 class EventDispatcher(object):
@@ -85,7 +84,8 @@ class EventDispatcher(object):
             self.connection = channel.connection.client
         self.enabled = enabled
         conninfo = self.connection or self.app.connection_for_write()
-        self.exchange = get_exchange(conninfo)
+        self.exchange = get_exchange(conninfo,
+                                     name=self.app.conf.event_exchange)
         if conninfo.transport.driver_type in self.DISABLED_TRANSPORTS:
             self.enabled = False
         if self.enabled:

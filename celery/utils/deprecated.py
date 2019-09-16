@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 """Deprecation utilities."""
 from __future__ import absolute_import, print_function, unicode_literals
-import warnings
-from vine.utils import wraps
-from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 
-__all__ = ['Callable', 'Property', 'warn']
+import warnings
+
+from vine.utils import wraps
+
+from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
+
+__all__ = ('Callable', 'Property', 'warn')
 
 
 PENDING_DEPRECATION_FMT = """
@@ -51,7 +54,7 @@ def Callable(deprecation=None, removal=None,
 
         @wraps(fun)
         def __inner(*args, **kwargs):
-            from .imports import qualname
+            from . imports import qualname
             warn(description=description or qualname(fun),
                  deprecation=deprecation,
                  removal=removal,

@@ -1,8 +1,11 @@
 """Fixtures and testing utilities for :pypi:`py.test <pytest>`."""
 from __future__ import absolute_import, unicode_literals
+
 import os
-import pytest
 from contextlib import contextmanager
+
+import pytest
+
 from .testing import worker
 from .testing.app import TestApp, setup_default_app
 
@@ -12,32 +15,31 @@ NO_WORKER = os.environ.get('NO_WORKER')
 # Well, they're called fixtures....
 
 
+def pytest_configure(config):
+    """Register additional pytest configuration."""
+    # add the pytest.mark.celery() marker registration to the pytest.ini [markers] section
+    # this prevents pytest 4.5 and newer from issueing a warning about an unknown marker
+    # and shows helpful marker documentation when running pytest --markers.
+    config.addinivalue_line(
+        "markers", "celery(**overrides): override celery configuration for a test case"
+    )
+
+
 @contextmanager
-def _create_app(request,
-                enable_logging=False,
+def _create_app(enable_logging=False,
                 use_trap=False,
-                parameters={},
+                parameters=None,
                 **config):
     # type: (Any, **Any) -> Celery
     """Utility context used to setup Celery app for pytest fixtures."""
+    parameters = {} if not parameters else parameters
     test_app = TestApp(
         set_as_current=False,
         enable_logging=enable_logging,
         config=config,
         **parameters
     )
-    # request.module is not defined for session
-    _module = getattr(request, 'module', None)
-    _cls = getattr(request, 'cls', None)
-    _function = getattr(request, 'function', None)
     with setup_default_app(test_app, use_trap=use_trap):
-        is_not_contained = any([
-            not getattr(_module, 'app_contained', True),
-            not getattr(_cls, 'app_contained', True),
-            not getattr(_function, 'app_contained', True)
-        ])
-        if is_not_contained:
-            test_app.set_current()
         yield test_app
 
 
@@ -60,10 +62,9 @@ def celery_session_app(request,
                        use_celery_app_trap):
     # type: (Any) -> Celery
     """Session Fixture: Return app for session fixtures."""
-    mark = request.node.get_marker('celery')
+    mark = request.node.get_closest_marker('celery')
     config = dict(celery_config, **mark.kwargs if mark else {})
-    with _create_app(request,
-                     enable_logging=celery_enable_logging,
+    with _create_app(enable_logging=celery_enable_logging,
                      use_trap=use_celery_app_trap,
                      parameters=celery_parameters,
                      **config) as app:
@@ -161,10 +162,9 @@ def celery_app(request,
                celery_enable_logging,
                use_celery_app_trap):
     """Fixture creating a Celery application instance."""
-    mark = request.node.get_marker('celery')
+    mark = request.node.get_closest_marker('celery')
     config = dict(celery_config, **mark.kwargs if mark else {})
-    with _create_app(request,
-                     enable_logging=celery_enable_logging,
+    with _create_app(enable_logging=celery_enable_logging,
                      use_trap=use_celery_app_trap,
                      parameters=celery_parameters,
                      **config) as app:

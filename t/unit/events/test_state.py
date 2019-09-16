@@ -1,25 +1,16 @@
 from __future__ import absolute_import, unicode_literals
 
 import pickle
-
 from decimal import Decimal
+from itertools import count
 from random import shuffle
 from time import time
-from itertools import count
 
 from case import Mock, patch, skip
-
-from celery import states
-from celery import uuid
+from celery import states, uuid
 from celery.events import Event
-from celery.events.state import (
-    HEARTBEAT_EXPIRE_WINDOW,
-    HEARTBEAT_DRIFT_MAX,
-    State,
-    Worker,
-    Task,
-    heartbeat_expires,
-)
+from celery.events.state import (HEARTBEAT_DRIFT_MAX, HEARTBEAT_EXPIRE_WINDOW,
+                                 State, Task, Worker, heartbeat_expires)
 from celery.five import range
 
 
@@ -161,7 +152,7 @@ class ev_snapshot(replay):
             worker = not i % 2 and 'utest2' or 'utest1'
             type = not i % 2 and 'task2' or 'task1'
             self.events.append(Event('task-received', name=type,
-                               uuid=uuid(), hostname=worker))
+                                     uuid=uuid(), hostname=worker))
 
 
 class test_Worker:
@@ -685,3 +676,26 @@ class test_State:
         s = State(callback=callback)
         s.event({'type': 'worker-online'})
         assert scratch.get('recv')
+
+    def test_deepcopy(self):
+        import copy
+        s = State()
+        s.event({
+            'type': 'task-success',
+            'root_id': 'x',
+            'uuid': 'x',
+            'hostname': 'y',
+            'clock': 3,
+            'timestamp': time(),
+            'local_received': time(),
+        })
+        s.event({
+            'type': 'task-success',
+            'root_id': 'y',
+            'uuid': 'y',
+            'hostname': 'y',
+            'clock': 4,
+            'timestamp': time(),
+            'local_received': time(),
+        })
+        copy.deepcopy(s)

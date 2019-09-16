@@ -1,4 +1,5 @@
 from __future__ import absolute_import, unicode_literals
+
 from case import Mock
 from celery.five import WhateverIO, items
 from celery.utils.graph import DependencyGraph
@@ -7,11 +8,19 @@ from celery.utils.graph import DependencyGraph
 class test_DependencyGraph:
 
     def graph1(self):
+        res_a = self.app.AsyncResult('A')
+        res_b = self.app.AsyncResult('B')
+        res_c = self.app.GroupResult('C', [res_a])
+        res_d = self.app.GroupResult('D', [res_c, res_b])
+        node_a = (res_a, [])
+        node_b = (res_b, [])
+        node_c = (res_c, [res_a])
+        node_d = (res_d, [res_c, res_b])
         return DependencyGraph([
-            ('A', []),
-            ('B', []),
-            ('C', ['A']),
-            ('D', ['C', 'B']),
+            node_a,
+            node_b,
+            node_c,
+            node_d,
         ])
 
     def test_repr(self):
@@ -27,7 +36,8 @@ class test_DependencyGraph:
         assert order.index('A') < order.index('C')
 
     def test_edges(self):
-        assert sorted(list(self.graph1().edges())) == ['C', 'D']
+        edges = self.graph1().edges()
+        assert sorted(edges, key=str) == ['C', 'D']
 
     def test_connect(self):
         x, y = self.graph1(), self.graph1()

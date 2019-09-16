@@ -7,7 +7,8 @@ from heapq import heappush
 from operator import itemgetter
 
 from kombu import Consumer
-from kombu.async.semaphore import DummyLock
+from kombu.asynchronous.semaphore import DummyLock
+from kombu.exceptions import ContentDisallowed, DecodeError
 
 from celery import bootsteps
 from celery.five import values
@@ -16,7 +17,8 @@ from celery.utils.objects import Bunch
 
 from .mingle import Mingle
 
-__all__ = ['Gossip']
+__all__ = ('Gossip',)
+
 logger = get_logger(__name__)
 debug, info = logger.debug, logger.info
 
@@ -197,7 +199,10 @@ class Gossip(bootsteps.ConsumerStep):
         hostname = (message.headers.get('hostname') or
                     message.payload['hostname'])
         if hostname != self.hostname:
-            _, event = prepare(message.payload)
-            self.update_state(event)
+            try:
+                _, event = prepare(message.payload)
+                self.update_state(event)
+            except (DecodeError, ContentDisallowed, TypeError) as exc:
+                logger.error(exc)
         else:
             self.clock.forward()

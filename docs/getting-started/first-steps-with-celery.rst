@@ -24,10 +24,10 @@ Learn about;
 
 Celery may seem daunting at first - but don't worry - this tutorial
 will get you started in no time. It's deliberately kept simple, so
-to not confuse you with advanced features.
-After you have finished this tutorial
-it's a good idea to browse the rest of the documentation,
-for example the :ref:`next-steps` tutorial will
+as to not confuse you with advanced features.
+After you have finished this tutorial,
+it's a good idea to browse the rest of the documentation.
+For example the :ref:`next-steps` tutorial will
 showcase Celery's capabilities.
 
 .. contents::
@@ -61,10 +61,16 @@ command:
 
     $ sudo apt-get install rabbitmq-server
 
-When the command completes the broker is already running in the background,
+Or, if you want to run it on Docker execute this:
+
+.. code-block:: console
+
+    $ docker run -d -p 5672:5672 rabbitmq
+
+When the command completes, the broker will already be running in the background,
 ready to move messages for you: ``Starting rabbitmq-server: SUCCESS``.
 
-And don't worry if you're not running Ubuntu or Debian, you can go to this
+Don't worry if you're not running Ubuntu or Debian, you can go to this
 website to find similarly simple installation instructions for other
 platforms, including Microsoft Windows:
 
@@ -79,6 +85,12 @@ the event of abrupt termination or power failures. Detailed information about us
 :ref:`broker-redis`
 
 .. _`Redis`: https://redis.io/
+
+If you want to run it on Docker execute this:
+
+.. code-block:: console
+
+    $ docker run -d -p 6379:6379 redis
 
 Other brokers
 -------------
@@ -125,8 +137,8 @@ Let's create the file :file:`tasks.py`:
         return x + y
 
 The first argument to :class:`~celery.app.Celery` is the name of the current module.
-This is only needed to allow names to be generated automatically when the tasks are
-defined in the ``__main__`` module.
+This is only needed so that names can be automatically generated when the tasks are
+defined in the `__main__` module.
 
 The second argument is the broker keyword argument, specifying the URL of the
 message broker you want to use. Here using RabbitMQ (also the default option).
@@ -142,7 +154,7 @@ You defined a single task, called ``add``, returning the sum of two numbers.
 Running the Celery worker server
 ================================
 
-You now run the worker by executing our program with the ``worker``
+You can now run the worker by executing our program with the ``worker``
 argument:
 
 .. code-block:: console
@@ -187,16 +199,16 @@ method that gives greater control of the task execution (see
     >>> from tasks import add
     >>> add.delay(4, 4)
 
-The task has now been processed by the worker you started earlier,
-and you can verify that by looking at the workers console output.
+The task has now been processed by the worker you started earlier.
+You can verify this by looking at the worker's console output.
 
-Calling a task returns an :class:`~@AsyncResult` instance:
-this can be used to check the state of the task, wait for the task to finish,
-or get its return value (or if the task failed, the exception and traceback).
+Calling a task returns an :class:`~@AsyncResult` instance.
+This can be used to check the state of the task, wait for the task to finish,
+or get its return value (or if the task failed, to get the exception and traceback).
 
-Results aren't enabled by default, so if you want to do RPC or keep track
-of task results in a database you have to configure Celery to use a result
-backend.  This is described by the next section.
+Results are not enabled by default. In order to do remote procedure calls
+or keep track of task results in a database, you will need to configure Celery to use a result
+backend.  This is described in the next section.
 
 .. _celerytut-keeping-results:
 
@@ -265,13 +277,20 @@ the ``propagate`` argument:
     >>> result.get(propagate=False)
 
 
-If the task raised an exception you can also gain access to the
+If the task raised an exception, you can also gain access to the
 original traceback:
 
 .. code-block:: pycon
 
     >>> result.traceback
-    …
+
+.. warning::
+
+    Backends use resources to store and transmit results. To ensure 
+    that resources are released, you must eventually call 
+    :meth:`~@AsyncResult.get` or :meth:`~@AsyncResult.forget` on 
+    EVERY :class:`~@AsyncResult` instance returned after calling
+    a task.
 
 See :mod:`celery.result` for the complete result object reference.
 
@@ -280,14 +299,14 @@ See :mod:`celery.result` for the complete result object reference.
 Configuration
 =============
 
-Celery, like a consumer appliance, doesn't need much to be operated.
-It has an input and an output, where you must connect the input to a broker and maybe
-the output to a result backend if so wanted. But if you look closely at the back
+Celery, like a consumer appliance, doesn't need much configuration to operate.
+It has an input and an output. The input must be connected to a broker, and the output can
+be optionally connected to a result backend. However, if you look closely at the back,
 there's a lid revealing loads of sliders, dials, and buttons: this is the configuration.
 
-The default configuration should be good enough for most uses, but there are
-many things to tweak so Celery works just the way you want it to.
-Reading about the options available is a good idea to get familiar with what
+The default configuration should be good enough for most use cases, but there are
+many options that can be configured to make Celery work exactly as needed.
+Reading about the options available is a good idea to familiarize yourself with what
 can be configured. You can read about the options in the
 :ref:`configuration` reference.
 
@@ -312,15 +331,14 @@ If you're configuring many settings at once you can use ``update``:
         enable_utc=True,
     )
 
-For larger projects using a dedicated configuration module is useful,
-in fact you're discouraged from hard coding
-periodic task intervals and task routing options, as it's much
-better to keep this in a centralized location, and especially for libraries
-it makes it possible for users to control how they want your tasks to behave,
-you can also imagine your SysAdmin making simple changes to the configuration
+For larger projects, a dedicated configuration module is recommended.
+Hard coding periodic task intervals and task routing options is discouraged.
+It is much better to keep these in a centralized location. This is especially
+true for libraries, as it enables users to control how their tasks behave.
+A centralized configuration will also allow your SysAdmin to make simple changes
 in the event of system trouble.
 
-You can tell your Celery instance to use a configuration module,
+You can tell your Celery instance to use a configuration module
 by calling the :meth:`@config_from_object` method:
 
 .. code-block:: python
@@ -330,8 +348,8 @@ by calling the :meth:`@config_from_object` method:
 This module is often called "``celeryconfig``", but you can use any
 module name.
 
-A module named ``celeryconfig.py`` must then be available to load from the
-current directory or on the Python path, it could look like this:
+In the above case, a module named ``celeryconfig.py`` must be available to load from the
+current directory or on the Python path. It could look something like this:
 
 :file:`celeryconfig.py`:
 
@@ -346,7 +364,7 @@ current directory or on the Python path, it could look like this:
     timezone = 'Europe/Oslo'
     enable_utc = True
 
-To verify that your configuration file works properly, and doesn't
+To verify that your configuration file works properly and doesn't
 contain any syntax errors, you can try to import it:
 
 .. code-block:: console
@@ -390,7 +408,7 @@ for the task at runtime:
 
 See :ref:`guide-routing` to read more about task routing,
 and the :setting:`task_annotations` setting for more about annotations,
-or :ref:`guide-monitoring` for more about remote control commands,
+or :ref:`guide-monitoring` for more about remote control commands
 and how to monitor what your workers are doing.
 
 Where to go from here
@@ -398,7 +416,7 @@ Where to go from here
 
 If you want to learn more you should continue to the
 :ref:`Next Steps <next-steps>` tutorial, and after that you
-can study the :ref:`User Guide <guide>`.
+can read the :ref:`User Guide <guide>`.
 
 .. _celerytut-troubleshooting:
 
@@ -426,16 +444,16 @@ Worker doesn't start: Permission Error
     If you provide any of the :option:`--pidfile <celery worker --pidfile>`,
     :option:`--logfile <celery worker --logfile>` or
     :option:`--statedb <celery worker --statedb>` arguments, then you must
-    make sure that they point to a file/directory that's writable and
+    make sure that they point to a file or directory that's writable and
     readable by the user starting the worker.
 
 Result backend doesn't work or tasks are always in ``PENDING`` state
 --------------------------------------------------------------------
 
 All tasks are :state:`PENDING` by default, so the state would've been
-better named "unknown". Celery doesn't update any state when a task
+better named "unknown". Celery doesn't update the state when a task
 is sent, and any task with no history is assumed to be pending (you know
-the task id after all).
+the task id, after all).
 
 1) Make sure that the task doesn't have ``ignore_result`` enabled.
 
@@ -447,9 +465,9 @@ the task id after all).
 3) Make sure that you don't have any old workers still running.
 
     It's easy to start multiple workers by accident, so make sure
-    that the previous worker is properly shutdown before you start a new one.
+    that the previous worker is properly shut down before you start a new one.
 
-    An old worker that aren't configured with the expected result backend
+    An old worker that isn't configured with the expected result backend
     may be running and is hijacking the tasks.
 
     The :option:`--pidfile <celery worker --pidfile>` argument can be set to
@@ -457,9 +475,9 @@ the task id after all).
 
 4) Make sure the client is configured with the right backend.
 
-    If for some reason the client is configured to use a different backend
-    than the worker, you won't be able to receive the result,
-    so make sure the backend is correct by inspecting it:
+    If, for some reason, the client is configured to use a different backend
+    than the worker, you won't be able to receive the result.
+    Make sure the backend is configured correctly:
 
     .. code-block:: pycon
 

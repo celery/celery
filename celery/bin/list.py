@@ -1,5 +1,6 @@
 """The ``celery list bindings`` command, used to inspect queue bindings."""
 from __future__ import absolute_import, unicode_literals
+
 from celery.bin.base import Command
 
 

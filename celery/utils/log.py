@@ -8,26 +8,26 @@ import os
 import sys
 import threading
 import traceback
-
 from contextlib import contextmanager
-from kombu.five import values
-from kombu.log import get_logger as _get_logger, LOG_LEVELS
+
+from kombu.five import PY3, values
+from kombu.log import LOG_LEVELS
+from kombu.log import get_logger as _get_logger
 from kombu.utils.encoding import safe_str
 
 from celery.five import string_t, text_t
 
 from .term import colored
 
-__all__ = [
+__all__ = (
     'ColorFormatter', 'LoggingProxy', 'base_logger',
     'set_in_sighandler', 'in_sighandler', 'get_logger',
     'get_task_logger', 'mlevel',
     'get_multiprocessing_logger', 'reset_multiprocessing_logger',
-]
+)
 
 _process_aware = False
 _in_sighandler = False
-PY3 = sys.version_info[0] == 3
 
 MP_LOG = os.environ.get('MP_LOG', False)
 

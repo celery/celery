@@ -12,7 +12,6 @@ from __future__ import absolute_import, unicode_literals
 import logging
 import os
 import sys
-
 from logging.handlers import WatchedFileHandler
 
 from kombu.utils.encoding import set_default_encoding_file
@@ -22,15 +21,13 @@ from celery._state import get_current_task
 from celery.five import string_t
 from celery.local import class_property
 from celery.platforms import isatty
-from celery.utils.log import (
-    get_logger, mlevel,
-    ColorFormatter, LoggingProxy, get_multiprocessing_logger,
-    reset_multiprocessing_logger,
-)
+from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
+                              get_multiprocessing_logger, mlevel,
+                              reset_multiprocessing_logger)
 from celery.utils.nodenames import node_format
 from celery.utils.term import colored
 
-__all__ = ['TaskFormatter', 'Logging']
+__all__ = ('TaskFormatter', 'Logging')
 
 MP_LOG = os.environ.get('MP_LOG', False)
 

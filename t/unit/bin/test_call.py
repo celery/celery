@@ -1,10 +1,13 @@
 from __future__ import absolute_import, unicode_literals
-import pytest
+
 from datetime import datetime
-from case import patch
+
+import pytest
 from kombu.utils.json import dumps
-from celery.five import WhateverIO
+
+from case import patch
 from celery.bin.call import call
+from celery.five import WhateverIO
 
 
 class test_call:

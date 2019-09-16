@@ -5,227 +5,638 @@
 ================
 
 This document contains change notes for bugfix releases in
-the 4.0.x series (latentcall), please see :ref:`whatsnew-4.0` for
-an overview of what's new in Celery 4.0.
+the 4.x series, please see :ref:`whatsnew-4.4` for
+an overview of what's new in Celery 4.4.
 
-.. _version-4.0.2:
 
-4.0.2
-=====
-:release-date: 2016-12-15 03:40 PM PST
-:release-by: Ask Solem
-
-- **Requirements**
-
-    - Now depends on :ref:`Kombu 4.0.2 <kombu:version-4.0.2>`.
-
-- **Tasks**: Fixed problem with JSON serialization of `group`
-  (``keys must be string`` error, Issue #3688).
-
-- **Worker**: Fixed JSON serialization issue when using ``inspect active``
-  and friends (Issue #3667).
-
-- **App**: Fixed saferef errors when using signals (Issue #3670).
-
-- **Prefork**: Fixed bug with pack requiring bytes argument
-  on Python 2.7.5 and earlier (Issue #3674).
-
-- **Tasks**: Saferepr did not handle unicode in bytestrings on Python 2
-  (Issue #3676).
-
-- **Testing**: Added new ``celery_worker_paremeters`` fixture.
-
-    Contributed by **Michael Howitz**.
-
-- **Tasks**: Added new ``app`` argument to ``GroupResult.restore``
-  (Issue #3669).
-
-    This makes the restore method behave the same way as the ``GroupResult``
-    constructor.
-
-    Contributed by **Andreas Pelme**.
-
-- **Tasks**: Fixed type checking crash when task takes ``*args`` on Python 3
-  (Issue #3678).
-
-- Documentation and examples improvements by:
-
-    - **BLAGA Razvan-Paul**
-    - **Michael Howitz**
-    - :github_user:`paradox41`
-
-.. _version-4.0.1:
-
-4.0.1
-=====
-:release-date: 2016-12-08 05:22 PM PST
-:release-by: Ask Solem
-
-* [Security: `CELERYSA-0003`_] Insecure default configuration
-
-    The default :setting:`accept_content` setting was set to allow
-    deserialization of pickled messages in Celery 4.0.0.
-
-    The insecure default has been fixed in 4.0.1, and you can also
-    configure the 4.0.0 version to explicitly only allow json serialized
-    messages:
-
-    .. code-block:: python
-
-        app.conf.accept_content = ['json']
-
-.. _`CELERYSA-0003`:
-    https://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0003.txt
-
-- **Tasks**: Added new method to register class-based tasks (Issue #3615).
-
-    To register a class based task you should now call ``app.register_task``:
-
-    .. code-block:: python
-
-        from celery import Celery, Task
-
-        app = Celery()
-
-        class CustomTask(Task):
-
-            def run(self):
-                return 'hello'
-
-        app.register_task(CustomTask())
-
-- **Tasks**: Argument checking now supports keyword-only arguments on Python3
-  (Issue #3658).
-
-    Contributed by :github_user:`sww`.
-
-- **Tasks**: The ``task-sent`` event was not being sent even if
-  configured to do so (Issue #3646).
-
-- **Worker**: Fixed AMQP heartbeat support for eventlet/gevent pools
-  (Issue #3649).
-
-- **App**: ``app.conf.humanize()`` would not work if configuration
-  not finalized (Issue #3652).
-
-- **Utils**: ``saferepr`` attempted to show iterables as lists
-  and mappings as dicts.
-
-- **Utils**: ``saferepr`` did not handle unicode-errors
-  when attempting to format ``bytes`` on Python 3 (Issue #3610).
-
-- **Utils**: ``saferepr`` should now properly represent byte strings
-  with non-ascii characters (Issue #3600).
-
-- **Results**: Fixed bug in elasticsearch where _index method missed
-  the body argument (Issue #3606).
-
-    Fix contributed by **何翔宇** (Sean Ho).
-
-- **Canvas**: Fixed :exc:`ValueError` in chord with single task header
-  (Issue #3608).
-
-    Fix contributed by **Viktor Holmqvist**.
-
-- **Task**: Ensure class-based task has name prior to registration
-  (Issue #3616).
-
-    Fix contributed by **Rick Wargo**.
-
-- **Beat**: Fixed problem with strings in shelve (Issue #3644).
-
-    Fix contributed by **Alli**.
-
-- **Worker**: Fixed :exc:`KeyError` in ``inspect stats`` when ``-O`` argument
-  set to something other than ``fast`` or ``fair`` (Issue #3621).
-
-- **Task**: Retried tasks were no longer sent to the original queue
-  (Issue #3622).
-
-- **Worker**: Python 3: Fixed None/int type comparison in
-  :file:`apps/worker.py` (Issue #3631).
-
-- **Results**: Redis has a new :setting:`redis_socket_connect_timeout`
-  setting.
-
-- **Results**: Redis result backend passed the ``socket_connect_timeout``
-  argument to UNIX socket based connections by mistake, causing a crash.
-
-- **Worker**: Fixed missing logo in worker splash screen when running on
-  Python 3.x (Issue #3627).
-
-    Fix contributed by **Brian Luan**.
-
-- **Deps**: Fixed ``celery[redis]`` bundle installation (Issue #3643).
-
-    Fix contributed by **Rémi Marenco**.
-
-- **Deps**: Bundle ``celery[sqs]`` now also requires :pypi:`pycurl`
-  (Issue #3619).
-
-- **Worker**: Hard time limits were no longer being respected (Issue #3618).
-
-- **Worker**: Soft time limit log showed ``Trues`` instead of the number
-  of seconds.
-
-- **App**: ``registry_cls`` argument no longer had any effect (Issue #3613).
-
-- **Worker**: Event producer now uses ``connection_for_Write`` (Issue #3525).
-
-- **Results**: Redis/memcache backends now uses :setting:`result_expires`
-  to expire chord counter (Issue #3573).
-
-    Contributed by **Tayfun Sen**.
-
-- **Django**: Fixed command for upgrading settings with Django (Issue #3563).
-
-    Fix contributed by **François Voron**.
-
-- **Testing**: Added a ``celery_parameters`` test fixture to be able to use
-  customized ``Celery`` init parameters. (#3626)
-
-    Contributed by **Steffen Allner**.
-
-- Documentation improvements contributed by
-
-    - :github_user:`csfeathers`
-    - **Moussa Taifi**
-    - **Yuhannaa**
-    - **Laurent Peuch**
-    - **Christian**
-    - **Bruno Alla**
-    - **Steven Johns**
-    - :github_user:`tnir`
-    - **GDR!**
-
-.. _version-4.0.0:
-
-4.0.0
-=====
-:release-date: 2016-11-04 02:00 P.M PDT
-:release-by: Ask Solem
-
-See :ref:`whatsnew-4.0` (in :file:`docs/whatsnew-4.0.rst`).
-
-.. _version-4.0.0rc7:
-
-4.0.0rc7
+4.4.0rc3
 ========
-:release-date: 2016-11-02 01:30 P.M PDT
+:release-date: 2019-08-14 23.00 P.M UTC+6:00
+:release-by: Asif Saif Uddin
 
-Important notes
----------------
+- Kombu 4.6.4
+- Billiard 3.6.1
+- Py-AMQP 2.5.1
+- Avoid serializing datetime (#5606)
+- Fix: (group() | group()) not equals single group (#5574)
+- Revert "Broker connection uses the heartbeat setting from app config.
+- Additional file descriptor safety checks.
+- fixed call for null args (#5631)
+- Added generic path for cache backend.
+- Fix Nested group(chain(group)) fails (#5638)
+- Use self.run() when overriding __call__ (#5652)
+- Fix termination of asyncloop (#5671)
+- Fix migrate task to work with both v1 and v2 of the message protocol.
+- Updating task_routes config during runtime now have effect.
 
-- Database result backend related setting names changed from
-  ``sqlalchemy_*`` -> ``database_*``.
 
-    The ``sqlalchemy_`` named settings won't work at all in this
-    version so you need to rename them.  This is a last minute change,
-    and as they were not supported in 3.1 we will not be providing
-    aliases.
+4.4.0rc2
+========
+:release-date: 2019-06-15 4:00 A.M UTC+6:00
+:release-by: Asif Saif Uddin
 
-- ``chain(A, B, C)`` now works the same way as ``A | B | C``.
+- Many bugs and regressions fixed.
+- Kombu 4.6.3
 
-    This means calling ``chain()`` might not actually return a chain,
-    it can return a group or any other type depending on how the
-    workflow can be optimized.
+4.4.0rc1
+========
+:release-date: 2019-06-06 1:00 P.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+
+- Python 3.4 drop
+
+- Kombu 4.6.1
+
+- Replace deprecated PyMongo methods usage (#5443)
+
+- Pass task request when calling update_state (#5474)
+
+- Fix bug in remaining time calculation in case of DST time change (#5411)
+
+- Fix missing task name when requesting extended result (#5439)
+
+- Fix `collections` import issue on Python 2.7 (#5428)
+
+- handle `AttributeError` in base backend exception deserializer (#5435)
+
+- Make `AsynPool`'s `proc_alive_timeout` configurable (#5476)
+
+- AMQP Support for extended result (#5495)
+
+- Fix SQL Alchemy results backend to work with extended result (#5498)
+
+- Fix restoring of exceptions with required param (#5500)
+
+- Django: Re-raise exception if `ImportError` not caused by missing tasks
+  module (#5211)
+
+- Django: fixed a regression putting DB connections in invalid state when
+  `CONN_MAX_AGE != 0` (#5515)
+
+- Fixed `OSError` leading to lost connection to broker (#4457)
+
+- Fixed an issue with inspect API unable get details of Request
+
+- Fix mogodb backend authentication (#5527)
+
+- Change column type for Extended Task Meta args/kwargs to LargeBinary
+
+- Handle http_auth in Elasticsearch backend results (#5545)
+
+- Fix task serializer being ignored with `task_always_eager=True` (#5549)
+
+- Fix `task.replace` to work in `.apply() as well as `.apply_async()` (#5540)
+
+- Fix sending of `worker_process_init` signal for solo worker (#5562)
+
+- Fix exception message upacking (#5565)
+
+- Add delay parameter function to beat_schedule (#5558)
+
+- Multiple documentation updates
+
+
+4.3.0
+=====
+:release-date: 2019-03-31 7:00 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Added support for broadcasting using a regular expression pattern
+  or a glob pattern to multiple Pidboxes.
+
+  This allows you to inspect or ping multiple workers at once.
+
+  Contributed by **Dmitry Malinovsky** & **Jason Held**
+
+- Added support for PEP 420 namespace packages.
+
+  This allows you to load tasks from namespace packages.
+
+  Contributed by **Colin Watson**
+
+- Added :setting:`acks_on_failure_or_timeout` as a setting instead of
+  a task only option.
+
+  This was missing from the original PR but now added for completeness.
+
+  Contributed by **Omer Katz**
+
+- Added the :signal:`task_received` signal.
+
+  Contributed by **Omer Katz**
+
+- Fixed a crash of our CLI that occurred for everyone using Python < 3.6.
+
+  The crash was introduced in `acd6025 <https://github.com/celery/celery/commit/acd6025b7dc4db112a31020686fc8b15e1722c67>`_
+  by using the :class:`ModuleNotFoundError` exception which was introduced
+  in Python 3.6.
+
+  Contributed by **Omer Katz**
+
+- Fixed a crash that occurred when using the Redis result backend
+  while the :setting:`result_expires` is set to None.
+
+  Contributed by **Toni Ruža** & **Omer Katz**
+
+- Added support the `DNS seedlist connection format <https://docs.mongodb.com/manual/reference/connection-string/#dns-seedlist-connection-format>`_
+  for the MongoDB result backend.
+
+  This requires the `dnspython` package which will be installed by default
+  when installing the dependencies for the MongoDB result backend.
+
+  Contributed by **George Psarakis**
+
+- Bump the minimum eventlet version to 0.24.1.
+
+  Contributed by **George Psarakis**
+
+- Replace the `msgpack-python` package with `msgpack`.
+
+  We're no longer using the deprecated package.
+  See our :ref:`important notes <v430-important>` for this release
+  for further details on how to upgrade.
+
+  Contributed by **Daniel Hahler**
+
+- Allow scheduling error handlers which are not registered tasks in the current
+  worker.
+
+  These kind of error handlers are now possible:
+
+  .. code-block:: python
+
+    from celery import Signature
+    Signature(
+      'bar', args=['foo'],
+      link_error=Signature('msg.err', queue='msg')
+    ).apply_async()
+
+- Additional fixes and enhancements to the SSL support of
+  the Redis broker and result backend.
+
+  Contributed by **Jeremy Cohen**
+
+Code Cleanups, Test Coverage & CI Improvements by:
+
+  - **Omer Katz**
+  - **Florian Chardin**
+
+Documentation Fixes by:
+
+  - **Omer Katz**
+  - **Samuel Huang**
+  - **Amir Hossein Saeid Mehr**
+  - **Dmytro Litvinov**
+
+4.3.0 RC2
+=========
+:release-date: 2019-03-03 9:30 P.M UTC+2:00
+:release-by: Omer Katz
+
+- **Filesystem Backend**: Added meaningful error messages for filesystem backend.
+
+  Contributed by **Lars Rinn**
+
+- **New Result Backend**: Added the ArangoDB backend.
+
+  Contributed by **Dilip Vamsi Moturi**
+
+- **Django**: Prepend current working directory instead of appending so that
+  the project directory will have precedence over system modules as expected.
+
+  Contributed by **Antonin Delpeuch**
+
+- Bump minimum py-redis version to 3.2.0.
+
+  Due to multiple bugs in earlier versions of py-redis that were causing
+  issues for Celery, we were forced to bump the minimum required version to 3.2.0.
+
+  Contributed by **Omer Katz**
+
+- **Dependencies**: Bump minimum required version of Kombu to 4.4
+
+  Contributed by **Omer Katz**
+
+4.3.0 RC1
+=========
+:release-date: 2019-02-20 5:00 PM IST
+:release-by: Omer Katz
+
+- **Canvas**: :meth:`celery.chain.apply` does not ignore keyword arguments anymore when
+  applying the chain.
+
+  Contributed by **Korijn van Golen**
+
+- **Result Set**: Don't attempt to cache results in a :class:`celery.result.ResultSet`.
+
+  During a join, the results cache was populated using :meth:`celery.result.ResultSet.get`, if one of the results
+  contains an exception, joining unexpectedly failed.
+
+  The results cache is now removed.
+
+  Contributed by **Derek Harland**
+
+- **Application**: :meth:`celery.Celery.autodiscover_tasks` now attempts to import the package itself
+  when the `related_name` keyword argument is `None`.
+
+  Contributed by **Alex Ioannidis**
+
+- **Windows Support**: On Windows 10, stale PID files prevented celery beat to run.
+  We now remove them when a :class:`SystemExit` is raised.
+
+  Contributed by **:github_user:`na387`**
+
+- **Task**: Added the new :setting:`task_acks_on_failure_or_timeout` setting.
+
+  Acknowledging SQS messages on failure or timing out makes it impossible to use
+  dead letter queues.
+
+  We introduce the new option acks_on_failure_or_timeout,
+  to ensure we can totally fallback on native SQS message lifecycle,
+  using redeliveries for retries (in case of slow processing or failure)
+  and transitions to dead letter queue after defined number of times.
+
+  Contributed by **Mario Kostelac**
+
+- **RabbitMQ Broker**: Adjust HA headers to work on RabbitMQ 3.x.
+
+  This change also means we're ending official support for RabbitMQ 2.x.
+
+  Contributed by **Asif Saif Uddin**
+
+- **Command Line**: Improve :program:`celery update` error handling.
+
+  Contributed by **Federico Bond**
+
+- **Canvas**: Support chords with :setting:`task_always_eager` set to `True`.
+
+  Contributed by **Axel Haustant**
+
+- **Result Backend**: Optionally store task properties in result backend.
+
+  Setting the :setting:`result_extended` configuration option to `True` enables
+  storing additional task properties in the result backend.
+
+  Contributed by **John Arnold**
+
+- **Couchbase Result Backend**: Allow the Couchbase result backend to
+  automatically detect the serialization format.
+
+  Contributed by **Douglas Rohde**
+
+- **New Result Backend**: Added the Azure Block Blob Storage result backend.
+
+  The backend is implemented on top of the azure-storage library which
+  uses Azure Blob Storage for a scalable low-cost PaaS backend.
+
+  The backend was load tested via a simple nginx/gunicorn/sanic app hosted
+  on a DS4 virtual machine (4 vCores, 16 GB RAM) and was able to handle
+  600+ concurrent users at ~170 RPS.
+
+  The commit also contains a live end-to-end test to facilitate
+  verification of the backend functionality. The test is activated by
+  setting the `AZUREBLOCKBLOB_URL` environment variable to
+  `azureblockblob://{ConnectionString}` where the value for
+  `ConnectionString` can be found in the `Access Keys` pane of a Storage
+  Account resources in the Azure Portal.
+
+  Contributed by **Clemens Wolff**
+
+- **Task**: :meth:`celery.app.task.update_state` now accepts keyword arguments.
+
+  This allows passing extra fields to the result backend.
+  These fields are unused by default but custom result backends can use them
+  to determine how to store results.
+
+  Contributed by **Christopher Dignam**
+
+- Gracefully handle consumer :class:`kombu.exceptions.DecodeError`.
+
+  When using the v2 protocol the worker no longer crashes when the consumer
+  encounters an error while decoding a message.
+
+  Contributed by **Steven Sklar**
+
+- **Deployment**: Fix init.d service stop.
+
+  Contributed by **Marcus McHale**
+
+- **Django**: Drop support for Django < 1.11.
+
+  Contributed by **Asif Saif Uddin**
+
+- **Django**: Remove old djcelery loader.
+
+  Contributed by **Asif Saif Uddin**
+
+- **Result Backend**: :class:`celery.worker.request.Request` now passes
+  :class:`celery.app.task.Context` to the backend's store_result functions.
+
+  Since the class currently passes `self` to these functions,
+  revoking a task resulted in corrupted task result data when
+  django-celery-results was used.
+
+  Contributed by **Kiyohiro Yamaguchi**
+
+- **Worker**: Retry if the heartbeat connection dies.
+
+  Previously, we keep trying to write to the broken connection.
+  This results in a memory leak because the event dispatcher will keep appending
+  the message to the outbound buffer.
+
+  Contributed by **Raf Geens**
+
+- **Celery Beat**: Handle microseconds when scheduling.
+
+  Contributed by **K Davis**
+
+- **Asynpool**: Fixed deadlock when closing socket.
+
+  Upon attempting to close a socket, :class:`celery.concurrency.asynpool.AsynPool`
+  only removed the queue writer from the hub but did not remove the reader.
+  This led to a deadlock on the file descriptor
+  and eventually the worker stopped accepting new tasks.
+
+  We now close both the reader and the writer file descriptors in a single loop
+  iteration which prevents the deadlock.
+
+  Contributed by **Joshua Engelman**
+
+- **Celery Beat**: Correctly consider timezone when calculating timestamp.
+
+  Contributed by **:github_user:`yywing`**
+
+- **Celery Beat**: :meth:`celery.beat.Scheduler.schedules_equal` can now handle
+  either arguments being a `None` value.
+
+  Contributed by **:github_user:` ratson`**
+
+- **Documentation/Sphinx**: Fixed Sphinx support for shared_task decorated functions.
+
+  Contributed by **Jon Banafato**
+
+- **New Result Backend**: Added the CosmosDB result backend.
+
+  This change adds a new results backend.
+  The backend is implemented on top of the pydocumentdb library which uses
+  Azure CosmosDB for a scalable, globally replicated, high-performance,
+  low-latency and high-throughput PaaS backend.
+
+  Contributed by **Clemens Wolff**
+
+- **Application**: Added configuration options to allow separate multiple apps
+  to run on a single RabbitMQ vhost.
+
+  The newly added :setting:`event_exchange` and :setting:`control_exchange`
+  configuration options allow users to use separate Pidbox exchange
+  and a separate events exchange.
+
+  This allow different Celery applications to run separately on the same vhost.
+
+  Contributed by **Artem Vasilyev**
+
+- **Result Backend**: Forget parent result metadata when forgetting
+  a result.
+
+  Contributed by **:github_user:`tothegump`**
+
+- **Task** Store task arguments inside :class:`celery.exceptions.MaxRetriesExceededError`.
+
+  Contributed by **Anthony Ruhier**
+
+- **Result Backend**: Added the :setting:`result_accept_content` setting.
+
+  This feature allows to configure different accepted content for the result
+  backend.
+
+  A special serializer (`auth`) is used for signed messaging,
+  however the result_serializer remains in json, because we don't want encrypted
+  content in our result backend.
+
+  To accept unsigned content from the result backend,
+  we introduced this new configuration option to specify the
+  accepted content from the backend.
+
+  Contributed by **Benjamin Pereto**
+
+- **Canvas**: Fixed error callback processing for class based tasks.
+
+  Contributed by **Victor Mireyev**
+
+- **New Result Backend**: Added the S3 result backend.
+
+  Contributed by **Florian Chardin**
+
+- **Task**: Added support for Cythonized Celery tasks.
+
+  Contributed by **Andrey Skabelin**
+
+- **Riak Result Backend**: Warn Riak backend users for possible Python 3.7 incompatibilities.
+
+  Contributed by **George Psarakis**
+
+- **Python Runtime**: Added Python 3.7 support.
+
+  Contributed by **Omer Katz** & **Asif Saif Uddin**
+
+- **Auth Serializer**: Revamped the auth serializer.
+
+  The auth serializer received a complete overhaul.
+  It was previously horribly broken.
+
+  We now depend on cryptography instead of pyOpenSSL for this serializer.
+
+  Contributed by **Benjamin Pereto**
+
+- **Command Line**: :program:`celery report` now reports kernel version along
+  with other platform details.
+
+  Contributed by **Omer Katz**
+
+- **Canvas**: Fixed chords with chains which include sub chords in a group.
+
+  Celery now correctly executes the last task in these types of canvases:
+
+  .. code-block:: python
+
+    c = chord(
+      group([
+          chain(
+              dummy.si(),
+              chord(
+                  group([dummy.si(), dummy.si()]),
+                  dummy.si(),
+              ),
+          ),
+          chain(
+              dummy.si(),
+              chord(
+                  group([dummy.si(), dummy.si()]),
+                  dummy.si(),
+              ),
+          ),
+      ]),
+      dummy.si()
+    )
+
+    c.delay().get()
+
+  Contributed by **Maximilien Cuony**
+
+- **Canvas**: Complex canvases with error callbacks no longer raises an :class:`AttributeError`.
+
+  Very complex canvases such as `this <https://github.com/merchise/xopgi.base/blob/6634819ad5c701c04bc9baa5c527449070843b71/xopgi/xopgi_cdr/cdr_agent.py#L181>`_
+  no longer raise an :class:`AttributeError` which prevents constructing them.
+
+  We do not know why this bug occurs yet.
+
+  Contributed by **Manuel Vázquez Acosta**
+
+- **Command Line**: Added proper error messages in cases where app cannot be loaded.
+
+  Previously, celery crashed with an exception.
+
+  We now print a proper error message.
+
+  Contributed by **Omer Katz**
+
+- **Task**: Added the :setting:`task_default_priority` setting.
+
+  You can now set the default priority of a task using
+  the :setting:`task_default_priority` setting.
+  The setting's value will be used if no priority is provided for a specific
+  task.
+
+  Contributed by **:github_user:`madprogrammer`**
+
+- **Dependencies**: Bump minimum required version of Kombu to 4.3
+  and Billiard to 3.6.
+
+  Contributed by **Asif Saif Uddin**
+
+- **Result Backend**: Fix memory leak.
+
+  We reintroduced weak references to bound methods for AsyncResult callback promises,
+  after adding full weakref support for Python 2 in `vine <https://github.com/celery/vine/tree/v1.2.0>`_.
+  More details can be found in `celery/celery#4839 <https://github.com/celery/celery/pull/4839>`_.
+
+  Contributed by **George Psarakis** and **:github_user:`monsterxx03`**.
+
+- **Task Execution**: Fixed roundtrip serialization for eager tasks.
+
+  When doing the roundtrip serialization for eager tasks,
+  the task serializer will always be JSON unless the `serializer` argument
+  is present in the call to :meth:`celery.app.task.Task.apply_async`.
+  If the serializer argument is present but is `'pickle'`,
+  an exception will be raised as pickle-serialized objects
+  cannot be deserialized without specifying to `serialization.loads`
+  what content types should be accepted.
+  The Producer's `serializer` seems to be set to `None`,
+  causing the default to JSON serialization.
+
+  We now continue to use (in order) the `serializer` argument to :meth:`celery.app.task.Task.apply_async`,
+  if present, or the `Producer`'s serializer if not `None`.
+  If the `Producer`'s serializer is `None`,
+  it will use the Celery app's `task_serializer` configuration entry as the serializer.
+
+  Contributed by **Brett Jackson**
+
+- **Redis Result Backend**: The :class:`celery.backends.redis.ResultConsumer` class no longer assumes
+  :meth:`celery.backends.redis.ResultConsumer.start` to be called before
+  :meth:`celery.backends.redis.ResultConsumer.drain_events`.
+
+  This fixes a race condition when using the Gevent workers pool.
+
+  Contributed by **Noam Kush**
+
+- **Task**: Added the :setting:`task_inherit_parent_priority` setting.
+
+  Setting the :setting:`task_inherit_parent_priority` configuration option to
+  `True` will make Celery tasks inherit the priority of the previous task
+  linked to it.
+
+  Examples:
+
+  .. code-block:: python
+
+    c = celery.chain(
+      add.s(2), # priority=None
+      add.s(3).set(priority=5), # priority=5
+      add.s(4), # priority=5
+      add.s(5).set(priority=3), # priority=3
+      add.s(6), # priority=3
+    )
+
+  .. code-block:: python
+
+    @app.task(bind=True)
+    def child_task(self):
+      pass
+
+    @app.task(bind=True)
+    def parent_task(self):
+      child_task.delay()
+
+    # child_task will also have priority=5
+    parent_task.apply_async(args=[], priority=5)
+
+  Contributed by **:github_user:`madprogrammer`**
+
+- **Canvas**: Added the :setting:`result_chord_join_timeout` setting.
+
+  Previously, :meth:`celery.result.GroupResult.join` had a fixed timeout of 3
+  seconds.
+
+  The :setting:`result_chord_join_timeout` setting now allows you to change it.
+
+  Contributed by **:github_user:`srafehi`**
+
+Code Cleanups, Test Coverage & CI Improvements by:
+
+  - **Jon Dufresne**
+  - **Asif Saif Uddin**
+  - **Omer Katz**
+  - **Brett Jackson**
+  - **Bruno Alla**
+  - **:github_user:`tothegump`**
+  - **Bojan Jovanovic**
+  - **Florian Chardin**
+  - **:github_user:`walterqian`**
+  - **Fabian Becker**
+  - **Lars Rinn**
+  - **:github_user:`madprogrammer`**
+  - **Ciaran Courtney**
+
+Documentation Fixes by:
+
+  - **Lewis M. Kabui**
+  - **Dash Winterson**
+  - **Shanavas M**
+  - **Brett Randall**
+  - **Przemysław Suliga**
+  - **Joshua Schmid**
+  - **Asif Saif Uddin**
+  - **Xiaodong**
+  - **Vikas Prasad**
+  - **Jamie Alessio**
+  - **Lars Kruse**
+  - **Guilherme Caminha**
+  - **Andrea Rabbaglietti**
+  - **Itay Bittan**
+  - **Noah Hall**
+  - **Peng Weikang**
+  - **Mariatta Wijaya**
+  - **Ed Morley**
+  - **Paweł Adamczak**
+  - **:github_user:`CoffeeExpress`**
+  - **:github_user:`aviadatsnyk`**
+  - **Brian Schrader**
+  - **Josue Balandrano Coronel**
+  - **Tom Clancy**
+  - **Sebastian Wojciechowski**
+  - **Meysam Azad**
+  - **Willem Thiart**
+  - **Charles Chan**
+  - **Omer Katz**
+  - **Milind Shakya**

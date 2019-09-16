@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 """Memcached and in-memory cache result backend."""
 from __future__ import absolute_import, unicode_literals
-import sys
+
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.objects import cached_property
+
 from celery.exceptions import ImproperlyConfigured
+from celery.five import PY3
 from celery.utils.functional import LRUCache
+
 from .base import KeyValueStoreBackend
 
-__all__ = ['CacheBackend']
+__all__ = ('CacheBackend',)
 
 _imp = [None]
-
-PY3 = sys.version_info[0] == 3
 
 REQUIRES_BACKEND = """\
 The Memcached backend requires either pylibmc or python-memcached.\
@@ -97,7 +98,8 @@ class CacheBackend(KeyValueStoreBackend):
     implements_incr = True
 
     def __init__(self, app, expires=None, backend=None,
-                 options={}, url=None, **kwargs):
+                 options=None, url=None, **kwargs):
+        options = {} if not options else options
         super(CacheBackend, self).__init__(app, **kwargs)
         self.url = url
 
@@ -128,10 +130,11 @@ class CacheBackend(KeyValueStoreBackend):
     def delete(self, key):
         return self.client.delete(key)
 
-    def _apply_chord_incr(self, header, partial_args, group_id, body, **opts):
-        self.client.set(self.get_key_for_chord(group_id), 0, time=self.expires)
+    def _apply_chord_incr(self, header_result, body, **kwargs):
+        chord_key = self.get_key_for_chord(header_result.id)
+        self.client.set(chord_key, 0, time=self.expires)
         return super(CacheBackend, self)._apply_chord_incr(
-            header, partial_args, group_id, body, **opts)
+            header_result, body, **kwargs)
 
     def incr(self, key):
         return self.client.incr(key)
@@ -143,13 +146,14 @@ class CacheBackend(KeyValueStoreBackend):
     def client(self):
         return self.Client(self.servers, **self.options)
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         servers = ';'.join(self.servers)
         backend = '{0}://{1}/'.format(self.backend, servers)
         kwargs.update(
-            dict(backend=backend,
-                 expires=self.expires,
-                 options=self.options))
+            {'backend': backend,
+             'expires': self.expires,
+             'options': self.options})
         return super(CacheBackend, self).__reduce__(args, kwargs)
 
     def as_uri(self, *args, **kwargs):

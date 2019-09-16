@@ -1,10 +1,12 @@
 """Worker Event Heartbeat Bootstep."""
 from __future__ import absolute_import, unicode_literals
+
 from celery import bootsteps
 from celery.worker import heartbeat
+
 from .events import Events
 
-__all__ = ['Heart']
+__all__ = ('Heart',)
 
 
 class Heart(bootsteps.StartStopStep):

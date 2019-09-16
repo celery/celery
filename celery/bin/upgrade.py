@@ -1,6 +1,8 @@
 """The ``celery upgrade`` command, used to upgrade from previous versions."""
 from __future__ import absolute_import, print_function, unicode_literals
+
 import codecs
+
 from celery.app import defaults
 from celery.bin.base import Command
 from celery.utils.functional import pass1
@@ -39,8 +41,12 @@ class upgrade(Command):
             raise self.UsageError('unknown upgrade type: {0}'.format(command))
         return getattr(self, command)(*args, **kwargs)
 
-    def settings(self, command, filename,
+    def settings(self, command, filename=None,
                  no_backup=False, django=False, compat=False, **kwargs):
+
+        if filename is None:
+            raise self.UsageError('missing settings filename to upgrade')
+
         lines = self._slurp(filename)
         keyfilter = self._compat_key if django or compat else pass1
         print('processing {0}...'.format(filename), file=self.stderr)

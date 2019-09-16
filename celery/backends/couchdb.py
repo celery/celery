@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
 """CouchDB result store backend."""
 from __future__ import absolute_import, unicode_literals
+
+from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import _parse_url
+
 from celery.exceptions import ImproperlyConfigured
+
 from .base import KeyValueStoreBackend
+
 try:
     import pycouchdb
 except ImportError:
     pycouchdb = None  # noqa
 
-__all__ = ['CouchBackend']
+__all__ = ('CouchBackend',)
 
 ERR_LIB_MISSING = """\
 You need to install the pycouchdb library to use the CouchDB result backend\
@@ -82,6 +87,7 @@ class CouchBackend(KeyValueStoreBackend):
             return None
 
     def set(self, key, value):
+        key = bytes_to_str(key)
         data = {'_id': key, 'value': value}
         try:
             self.connection.save(data)

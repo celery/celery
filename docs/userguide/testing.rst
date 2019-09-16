@@ -44,6 +44,10 @@ Say we had a task like this:
             raise self.retry(exc=exc)
 
 
+``Note``: A task being `bound <http://docs.celeryproject.org/en/latest/userguide/tasks.html#bound-tasks>`_ means the first
+argument to the task will always be the task instance (self). which means you do get a self argument as the
+first argument and can use the Task class methods and attributes.
+
 You could write unit tests for this task, using mocking like
 in this example:
 
@@ -76,8 +80,9 @@ in this example:
                 name='Foo',
             )
 
-            # set a side effect on the patched method
-            # so that it raises the error we want.
+            # Set a side effect on the patched methods
+            # so that they raise the errors we want.
+            send_order_retry.side_effect = Retry()
             product_order.side_effect = OperationalError()
 
             with raises(Retry):
@@ -154,7 +159,7 @@ Example:
 
 .. code-block:: python
 
-    # Put this in your confttest.py
+    # Put this in your conftest.py
     @pytest.fixture(scope='session')
     def celery_config():
         return {

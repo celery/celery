@@ -1,3 +1,7 @@
-sphinx_celery>=1.3
-typing
+sphinx_celery==1.4.6
+Sphinx==1.8.5
+sphinx-testing==0.7.2
 -r extras/sqlalchemy.txt
+-r test.txt
+-r deps/mock.txt
+-r extras/auth.txt

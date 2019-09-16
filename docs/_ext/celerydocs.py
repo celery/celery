@@ -147,8 +147,8 @@ def maybe_resolve_abbreviations(app, env, node, contnode):
         node['reftarget'] = newtarget
         # shorten text if '~' is not enabled.
         if len(contnode) and isinstance(contnode[0], nodes.Text):
-                contnode[0] = modify_textnode(target, newtarget, node,
-                                              src_dict, type)
+            contnode[0] = modify_textnode(target, newtarget, node,
+                                          src_dict, type)
         if domainname:
             try:
                 domain = env.domains[node.get('refdomain')]
@@ -185,3 +185,7 @@ def setup(app):
         rolename=bytes_if_py2('event'),
         indextemplate=bytes_if_py2('pair: %s; event'),
     )
+
+    return {
+        'parallel_read_safe': True
+    }

@@ -1,9 +1,10 @@
 from __future__ import absolute_import, unicode_literals
+
 import gc
 import sys
 import time
-from celery.utils.dispatch import Signal
 
+from celery.utils.dispatch import Signal
 
 if sys.platform.startswith('java'):
 
@@ -142,4 +143,44 @@ class test_Signal:
             garbage_collect()
         finally:
             a_signal.disconnect(receiver_3)
+        self._testIsClean(a_signal)
+
+    def test_retry(self):
+
+        class non_local:
+            counter = 1
+
+        def succeeds_eventually(val, **kwargs):
+            non_local.counter += 1
+            if non_local.counter < 3:
+                raise ValueError('this')
+
+            return val
+
+        a_signal.connect(succeeds_eventually, sender=self, retry=True)
+        try:
+            result = a_signal.send(sender=self, val='test')
+            assert non_local.counter == 3
+            assert result[0][1] == 'test'
+        finally:
+            a_signal.disconnect(succeeds_eventually, sender=self)
+        self._testIsClean(a_signal)
+
+    def test_retry_with_dispatch_uid(self):
+        uid = 'abc123'
+        a_signal.connect(receiver_1_arg, sender=self, retry=True,
+                         dispatch_uid=uid)
+        assert a_signal.receivers[0][0][0] == uid
+        a_signal.disconnect(receiver_1_arg, sender=self, dispatch_uid=uid)
+        self._testIsClean(a_signal)
+
+    def test_boundmethod(self):
+        a = Callable()
+        a_signal.connect(a.a, sender=self)
+        expected = [(a.a, 'test')]
+        garbage_collect()
+        result = a_signal.send(sender=self, val='test')
+        assert result == expected
+        del a, result, expected
+        garbage_collect()
         self._testIsClean(a_signal)

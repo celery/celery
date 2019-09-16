@@ -7,13 +7,13 @@ from __future__ import absolute_import, unicode_literals
 
 import os
 
-from billiard.common import REMAP_SIGTERM, TERM_SIGNAME
 from billiard import forking_enable
-from billiard.pool import RUN, CLOSE, Pool as BlockingPool
+from billiard.common import REMAP_SIGTERM, TERM_SIGNAME
+from billiard.pool import CLOSE, RUN
+from billiard.pool import Pool as BlockingPool
 
-from celery import platforms
-from celery import signals
-from celery._state import set_default_app, _set_task_join_will_block
+from celery import platforms, signals
+from celery._state import _set_task_join_will_block, set_default_app
 from celery.app import trace
 from celery.concurrency.base import BasePool
 from celery.five import items
@@ -22,7 +22,7 @@ from celery.utils.log import get_logger
 
 from .asynpool import AsynPool
 
-__all__ = ['TaskPool', 'process_initializer', 'process_destructor']
+__all__ = ('TaskPool', 'process_initializer', 'process_destructor')
 
 #: List of signals to reset when a child process starts.
 WORKER_SIGRESET = {
@@ -104,11 +104,16 @@ class TaskPool(BasePool):
         forking_enable(self.forking_enable)
         Pool = (self.BlockingPool if self.options.get('threads', True)
                 else self.Pool)
+        proc_alive_timeout = (
+            self.app.conf.worker_proc_alive_timeout if self.app
+            else None
+        )
         P = self._pool = Pool(processes=self.limit,
                               initializer=process_initializer,
                               on_process_exit=process_destructor,
                               enable_timeouts=True,
                               synack=False,
+                              proc_alive_timeout=proc_alive_timeout,
                               **self.options)
 
         # Create proxy methods

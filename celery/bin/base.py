@@ -3,34 +3,28 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
+import json
 import os
 import random
 import re
 import sys
 import warnings
-import json
-
 from collections import defaultdict
 from heapq import heappush
 from pprint import pformat
 
-from celery import VERSION_BANNER, Celery, maybe_patch_concurrency
-from celery import signals
+from celery import VERSION_BANNER, Celery, maybe_patch_concurrency, signals
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
-from celery.five import (
-    getfullargspec, items, python_2_unicode_compatible,
-    string, string_t, text_t, long_t,
-)
+from celery.five import (getfullargspec, items, long_t,
+                         python_2_unicode_compatible, string, string_t,
+                         text_t, PY2)
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE, isatty
-from celery.utils import imports
-from celery.utils import term
-from celery.utils import text
+from celery.utils import imports, term, text
 from celery.utils.functional import dictfilter
-from celery.utils.nodenames import node_format, host_format
+from celery.utils.nodenames import host_format, node_format
 from celery.utils.objects import Bunch
 
-
-# Option is here for backwards compatiblity, as third-party commands
+# Option is here for backwards compatibility, as third-party commands
 # may import it from here.
 try:
     from optparse import Option  # pylint: disable=deprecated-module
@@ -42,18 +36,32 @@ try:
 except NameError:  # pragma: no cover
     pass
 
-__all__ = [
+__all__ = (
     'Error', 'UsageError', 'Extensions', 'Command', 'Option', 'daemon_options',
-]
+)
 
 # always enable DeprecationWarnings, so our users can see them.
 for warning in (CDeprecationWarning, CPendingDeprecationWarning):
     warnings.simplefilter('once', warning, 0)
 
+# TODO: Remove this once we drop support for Python < 3.6
+if sys.version_info < (3, 6):
+    ModuleNotFoundError = ImportError
+
 ARGV_DISABLED = """
 Unrecognized command-line arguments: {0}
 
 Try --help?
+"""
+
+UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND = """
+Unable to load celery application.
+The module {0} was not found.
+"""
+
+UNABLE_TO_LOAD_APP_APP_MISSING = """
+Unable to load celery application.
+{0}
 """
 
 find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
@@ -70,13 +78,14 @@ def _optparse_callback_to_type(option, callback):
     return _on_arg
 
 
-def _add_optparse_argument(parser, opt, typemap={
+def _add_optparse_argument(parser, opt, typemap=None):
+    typemap = {
         'string': text_t,
         'int': int,
         'long': long_t,
         'float': float,
         'complex': complex,
-        'choice': None}):
+        'choice': None} if not typemap else typemap
     if opt.callback:
         opt.type = _optparse_callback_to_type(opt, opt.type)
     # argparse checks for existence of this kwarg
@@ -85,18 +94,18 @@ def _add_optparse_argument(parser, opt, typemap={
     # store_true sets value to "('NO', 'DEFAULT')" for some
     # crazy reason, so not to set a sane default here.
     if opt.action == 'store_true' and opt.default is None:
-            opt.default = False
+        opt.default = False
     parser.add_argument(
         *opt._long_opts + opt._short_opts,
-        **dictfilter(dict(
-            action=opt.action,
-            type=typemap.get(opt.type, opt.type),
-            dest=opt.dest,
-            nargs=opt.nargs,
-            choices=opt.choices,
-            help=opt.help,
-            metavar=opt.metavar,
-            default=opt.default)))
+        **dictfilter({
+            'action': opt.action,
+            'type': typemap.get(opt.type, opt.type),
+            'dest': opt.dest,
+            'nargs': opt.nargs,
+            'choices': opt.choices,
+            'help': opt.help,
+            'metavar': opt.metavar,
+            'default': opt.default}))
 
 
 def _add_compat_options(parser, options):
@@ -150,7 +159,7 @@ class Command(object):
     """Base class for command-line applications.
 
     Arguments:
-        app (~@Celery): The app to use.
+        app (Celery): The app to use.
         get_app (Callable): Fucntion returning the current app
             when no app provided.
     """
@@ -276,7 +285,22 @@ class Command(object):
 
         # Dump version and exit if '--version' arg set.
         self.early_version(argv)
-        argv = self.setup_app_from_commandline(argv)
+        try:
+            argv = self.setup_app_from_commandline(argv)
+        except ModuleNotFoundError as e:
+            # In Python 2.7 and below, there is no name instance for exceptions
+            # TODO: Remove this once we drop support for Python 2.7
+            if PY2:
+                package_name = e.message.replace("No module named ", "")
+            else:
+                package_name = e.name
+            self.on_error(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(package_name))
+            return EX_FAILURE
+        except AttributeError as e:
+            msg = e.args[0].capitalize()
+            self.on_error(UNABLE_TO_LOAD_APP_APP_MISSING.format(msg))
+            return EX_FAILURE
+
         self.prog_name = os.path.basename(argv[0])
         return self.handle_argv(self.prog_name, argv[1:])
 
@@ -304,6 +328,7 @@ class Command(object):
         group = parser.add_argument_group('Global Options')
         group.add_argument('-A', '--app', default=None)
         group.add_argument('-b', '--broker', default=None)
+        group.add_argument('--result-backend', default=None)
         group.add_argument('--loader', default=None)
         group.add_argument('--config', default=None)
         group.add_argument('--workdir', default=None)
@@ -473,6 +498,9 @@ class Command(object):
         broker = preload_options.get('broker', None)
         if broker:
             os.environ['CELERY_BROKER_URL'] = broker
+        result_backend = preload_options.get('result_backend', None)
+        if result_backend:
+            os.environ['CELERY_RESULT_BACKEND'] = result_backend
         config = preload_options.get('config')
         if config:
             os.environ['CELERY_CONFIG_MODULE'] = config
@@ -565,7 +593,6 @@ class Command(object):
         Example:
               >>> has_pool_option = (['-P'], ['--pool'])
         """
-        pass
 
     def node_format(self, s, nodename, **extra):
         return node_format(s, nodename, **extra)

@@ -1,33 +1,19 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
-
 from contextlib import contextmanager
 
+import pytest
 from amqp import ChannelError
-from case import Mock, mock, patch
-
-from kombu import Connection, Producer, Queue, Exchange
-
+from kombu import Connection, Exchange, Producer, Queue
 from kombu.transport.virtual import QoS
 
-from celery.contrib.migrate import (
-    StopFiltering,
-    State,
-    migrate_task,
-    migrate_tasks,
-    filter_callback,
-    _maybe_queue,
-    filter_status,
-    move_by_taskmap,
-    move_by_idmap,
-    move_task_by_id,
-    start_filter,
-    task_id_in,
-    task_id_eq,
-    expand_dest,
-    move,
-)
+from case import Mock, mock, patch
+from celery.contrib.migrate import (State, StopFiltering, _maybe_queue,
+                                    expand_dest, filter_callback,
+                                    filter_status, migrate_task,
+                                    migrate_tasks, move, move_by_idmap,
+                                    move_by_taskmap, move_task_by_id,
+                                    start_filter, task_id_eq, task_id_in)
 from celery.utils.encoding import bytes_t, ensure_bytes
 
 # hack to ignore error at shutdown
@@ -49,7 +35,9 @@ def Message(body, exchange='exchange', routing_key='rkey',
             },
             'content_type': content_type,
             'content_encoding': content_encoding,
-            'properties': {}
+            'properties': {
+                'correlation_id': isinstance(body, dict) and body['id'] or None
+            }
         },
     )
 
@@ -236,7 +224,8 @@ def test_move_by_idmap():
         move_by_idmap({'123f': Queue('foo')})
         move.assert_called()
         cb = move.call_args[0][0]
-        assert cb({'id': '123f'}, Mock())
+        body = {'id': '123f'}
+        assert cb(body, Message(body))
 
 
 def test_move_task_by_id():
@@ -244,7 +233,8 @@ def test_move_task_by_id():
         move_task_by_id('123f', Queue('foo'))
         move.assert_called()
         cb = move.call_args[0][0]
-        assert cb({'id': '123f'}, Mock()) == Queue('foo')
+        body = {'id': '123f'}
+        assert cb(body, Message(body)) == Queue('foo')
 
 
 class test_migrate_task:
@@ -267,9 +257,9 @@ class test_migrate_task:
 class test_migrate_tasks:
 
     def test_migrate(self, app, name='testcelery'):
-        connection_kwargs = dict(
-            transport_options={'polling_interval': 0.01}
-        )
+        connection_kwargs = {
+            'transport_options': {'polling_interval': 0.01}
+        }
         x = Connection('memory://foo', **connection_kwargs)
         y = Connection('memory://foo', **connection_kwargs)
         # use separate state

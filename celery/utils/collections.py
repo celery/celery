@@ -3,19 +3,25 @@
 from __future__ import absolute_import, unicode_literals
 
 import sys
-import time
-
-from collections import (
-    Callable, Mapping, MutableMapping, MutableSet, Sequence,
-    OrderedDict as _OrderedDict, deque,
-)
-from heapq import heapify, heappush, heappop
+from collections import OrderedDict as _OrderedDict
+from collections import deque
+from heapq import heapify, heappop, heappush
 from itertools import chain, count
 
-from celery.five import Empty, items, keys, python_2_unicode_compatible, values
+from celery.five import (PY3, Empty, items, keys, monotonic,
+                         python_2_unicode_compatible, values)
 
 from .functional import first, uniq
 from .text import match_case
+
+try:
+    from collections.abc import Callable, Mapping, MutableMapping, MutableSet
+    from collections.abc import Sequence
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Callable, Mapping, MutableMapping, MutableSet
+    from collections import Sequence
+
 
 try:
     # pypy: dicts are ordered in recent versions
@@ -30,14 +36,12 @@ except ImportError:
         pass
     LazySettings = LazyObject  # noqa
 
-__all__ = [
+__all__ = (
     'AttributeDictMixin', 'AttributeDict', 'BufferMap', 'ChainMap',
     'ConfigurationView', 'DictAttribute', 'Evictable',
     'LimitedSet', 'Messagebuffer', 'OrderedDict',
     'force_mapping', 'lpmerge',
-]
-
-PY3 = sys.version_info[0] >= 3
+)
 
 REPR_LIMITED_SET = """\
 <{name}({size}): maxlen={0.maxlen}, expires={0.expires}, minlen={0.minlen}>\
@@ -229,6 +233,8 @@ class DictAttribute(object):
         def values(self):
             # type: () -> List[Any]
             return list(self._iterate_values())
+
+
 MutableMapping.register(DictAttribute)  # noqa: E305
 
 
@@ -239,6 +245,7 @@ class ChainMap(MutableMapping):
     changes = None
     defaults = None
     maps = None
+    _observers = []
 
     def __init__(self, *maps, **kwargs):
         # type: (*Mapping, **Any) -> None
@@ -329,7 +336,10 @@ class ChainMap(MutableMapping):
 
     def update(self, *args, **kwargs):
         # type: (*Any, **Any) -> Any
-        return self.changes.update(*args, **kwargs)
+        result = self.changes.update(*args, **kwargs)
+        for callback in self._observers:
+            callback(*args, **kwargs)
+        return result
 
     def __repr__(self):
         # type: () -> str
@@ -369,6 +379,9 @@ class ChainMap(MutableMapping):
         # type: () -> Iterable
         return (self[key] for key in self)
     itervalues = _iterate_values
+
+    def bind_to(self, callback):
+        self._observers.append(callback)
 
     if sys.version_info[0] == 3:  # pragma: no cover
         keys = _iterate_keys
@@ -526,7 +539,7 @@ class LimitedSet(object):
         False
         >>> len(s)  # maxlen is reached
         50000
-        >>> s.purge(now=time.time() + 7200)  # clock + 2 hours
+        >>> s.purge(now=monotonic() + 7200)  # clock + 2 hours
         >>> len(s)  # now only minlen items are cached
         4000
         >>>> 57000 in s  # even this item is gone now
@@ -573,7 +586,7 @@ class LimitedSet(object):
     def add(self, item, now=None):
         # type: (Any, float) -> None
         """Add a new item, or reset the expiry time of an existing item."""
-        now = now or time.time()
+        now = now or monotonic()
         if item in self._data:
             self.discard(item)
         entry = (now, item)
@@ -624,7 +637,7 @@ class LimitedSet(object):
             now (float): Time of purging -- by default right now.
                 This can be useful for unit testing.
         """
-        now = now or time.time()
+        now = now or monotonic()
         now = now() if isinstance(now, Callable) else now
         if self.maxlen:
             while len(self._data) > self.maxlen:
@@ -707,6 +720,8 @@ class LimitedSet(object):
         # type: () -> float
         """Compute how much is heap bigger than data [percents]."""
         return len(self._heap) * 100 / max(len(self._data), 1) - 100
+
+
 MutableSet.register(LimitedSet)  # noqa: E305
 
 
@@ -809,6 +824,8 @@ class Messagebuffer(Evictable):
     def _evictcount(self):
         # type: () -> int
         return len(self)
+
+
 Sequence.register(Messagebuffer)  # noqa: E305
 
 

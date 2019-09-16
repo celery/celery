@@ -1,75 +1,118 @@
 language: python
-sudo: required
+dist: xenial
 cache: pip
 python:
   - '2.7'
-  - '3.4'
   - '3.5'
   - '3.6'
+  - '3.7'
 os:
     - linux
+stages:
+  - test
+  - integration
+  - lint
 env:
   global:
   - PYTHONUNBUFFERED=yes
   matrix:
   - MATRIX_TOXENV=unit
-  - MATRIX_TOXENV=integration-rabbitmq
-  - MATRIX_TOXENV=integration-redis
-  - MATRIX_TOXENV=integration-dynamodb
+
 matrix:
   include:
-  - python: '3.5'
-    env: TOXENV=pypy-unit PYPY_VERSION="5.3"
-  - python: '3.5'
-    env: TOXENV=pypy-integration-rabbitmq PYPY_VERSION="5.3"
-  - python: '3.5'
-    env: TOXENV=pypy-integration-redis PYPY_VERSION="5.3"
-  - python: '3.5'
-    env: TOXENV=pypy-integration-dynamodb PYPY_VERSION="5.3"
-  - python: '3.5'
+  - python: 3.7
+    env: MATRIX_TOXENV=integration-rabbitmq
+    stage: integration
+
+  - python: 3.7
+    env: MATRIX_TOXENV=integration-redis
+    stage: integration
+
+  - python: 3.7
+    env: MATRIX_TOXENV=integration-dynamodb
+    stage: integration
+
+  - python: 3.7
+    env: MATRIX_TOXENV=integration-azureblockblob
+    stage: integration
+
+  - python: '3.7'
     env: TOXENV=flake8
-  - python: '3.5'
-    env: TOXENV=flakeplus
-  - python: '3.5'
+    stage: lint
+  - python: '3.7'
     env: TOXENV=apicheck
-  - python: '3.5'
+    stage: lint
+  - python: '3.7'
     env: TOXENV=configcheck
-  - python: '3.5'
+    stage: lint
+  - python: '3.7'
+    env: TOXENV=bandit
+    stage: lint
+  - python: '3.7'
     env: TOXENV=pydocstyle
+    stage: lint
+  - python: '2.7'
+    env: TOXENV=flakeplus
+    stage: lint
+  - python: pypy2.7-7.1.1
+    env: TOXENV=pypy
+    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
+  - python: pypy3.5-7.0
+    env: TOXENV=pypy3
+    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
+  - python: pypy3.6-7.1.1
+    env: TOXENV=pypy3
+    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
+
 before_install:
+    - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
-          if [ "$TOXENV" = "pypy" ]; then
+          if [[ "$TOXENV" == *integration* ]]; then
+              sudo echo 'deb https://dl.bintray.com/rabbitmq-erlang/debian xenial main' > /etc/apt/sources.list.d/rabbitmq-bintray.list
+              sudo apt-key adv --keyserver "hkps.pool.sks-keyservers.net" --recv-keys "0x6B73A36E6026DFCA"
+              wget -O - "https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc" | sudo apt-key add -
+              sudo apt update
+              sudo apt install rabbitmq-server -y
+              sudo systemctl enable rabbitmq-server
+              sudo systemctl start rabbitmq-server
+          fi
+    - |
+          if [[ "$TOXENV" =~ "pypy" ]]; then
             export PYENV_ROOT="$HOME/.pyenv"
             if [ -f "$PYENV_ROOT/bin/pyenv" ]; then
               cd "$PYENV_ROOT" && git pull
             else
-              rm -rf "$PYENV_ROOT" && git clone --depth 1 https://github.com/yyuu/pyenv.git "$PYENV_ROOT"
+              rm -rf "$PYENV_ROOT" && git clone --depth 1 https://github.com/pyenv/pyenv.git "$PYENV_ROOT"
             fi
-            "$PYENV_ROOT/bin/pyenv" install "pypy-$PYPY_VERSION"
-            virtualenv --python="$PYENV_ROOT/versions/pypy-$PYPY_VERSION/bin/python" "$HOME/virtualenvs/pypy-$PYPY_VERSION"
-            source "$HOME/virtualenvs/pypy-$PYPY_VERSION/bin/activate"
+            "$PYENV_ROOT/bin/pyenv" install "$PYPY_VERSION"
+            virtualenv --python="$PYENV_ROOT/versions/$PYPY_VERSION/bin/python" "$HOME/virtualenvs/$PYPY_VERSION"
+            source "$HOME/virtualenvs/$PYPY_VERSION/bin/activate"
+            which python
           fi
     - |
           if [[ "$TOXENV" == *dynamodb ]]; then
-              sudo apt-get install -y default-jre supervisor
-              mkdir /opt/dynamodb-local
-              cd /opt/dynamodb-local && curl -L http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_latest.tar.gz | tar zx
-              cd -
-              echo '[program:dynamodb-local]' | sudo tee /etc/supervisor/conf.d/dynamodb-local.conf
-              echo 'command=java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -inMemory' | sudo tee -a /etc/supervisor/conf.d/dynamodb-local.conf
-              echo 'directory=/opt/dynamodb-local' | sudo tee -a /etc/supervisor/conf.d/dynamodb-local.conf
-              sudo service supervisor stop
-              sudo service supervisor start
-              sleep 10
-              curl localhost:8000
+              docker run -d -p 8000:8000 dwmkerr/dynamodb:38 -inMemory
+              while ! nc -zv 127.0.0.1 8000; do sleep 10; done
           fi
+    - |
+          docker run -d -e executable=blob -t -p 10000:10000 --tmpfs /opt/azurite/folder:rw arafato/azurite:2.6.5
+          while ! nc -zv 127.0.0.1 10000; do sleep 10; done
+          export AZUREBLOCKBLOB_URL="azureblockblob://DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+    - |
+          wget -qO - https://packages.couchbase.com/ubuntu/couchbase.key | sudo apt-key add -
+          sudo apt-add-repository -y 'deb http://packages.couchbase.com/ubuntu xenial xenial/main'
+          sudo apt-get update && sudo apt-get install -y libcouchbase-dev
 after_success:
-  - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml
-  - .tox/$TRAVIS_PYTHON_VERSION/bin/codecov -e TOXENV
-install: travis_retry pip install -U tox
+  - |
+          if [[ -v MATRIX_TOXENV || "$TOXENV" =~ "pypy" ]]; then
+              .tox/$TOXENV/bin/coverage xml
+              .tox/$TOXENV/bin/codecov -e TOXENV
+          fi;
+install: pip --disable-pip-version-check install --upgrade-strategy eager -U tox | cat
 script: tox -v -- -v
 notifications:
+  email: false
   irc:
     channels:
       - "chat.freenode.net#celery"
@@ -78,3 +121,4 @@ notifications:
 services:
     - rabbitmq
     - redis
+    - docker

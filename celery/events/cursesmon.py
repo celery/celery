@@ -5,20 +5,18 @@ from __future__ import absolute_import, print_function, unicode_literals
 import curses
 import sys
 import threading
-
 from datetime import datetime
 from itertools import count
+from math import ceil
 from textwrap import wrap
 from time import time
-from math import ceil
 
-from celery import VERSION_BANNER
-from celery import states
+from celery import VERSION_BANNER, states
 from celery.app import app_or_default
 from celery.five import items, values
 from celery.utils.text import abbr, abbrtask
 
-__all__ = ['CursesMonitor', 'evtop']
+__all__ = ('CursesMonitor', 'evtop')
 
 BORDER_SPACING = 4
 LEFT_BORDER_OFFSET = 3
@@ -351,7 +349,7 @@ class CursesMonitor(object):  # pragma: no cover
             self.handle_keypress()
             x = LEFT_BORDER_OFFSET
             y = blank_line = count(2)
-            my, mx = win.getmaxyx()
+            my, _ = win.getmaxyx()
             win.erase()
             win.bkgd(' ', curses.color_pair(1))
             win.border()
@@ -362,7 +360,7 @@ class CursesMonitor(object):  # pragma: no cover
                        curses.A_BOLD | curses.A_UNDERLINE)
             tasks = self.tasks
             if tasks:
-                for row, (uuid, task) in enumerate(tasks):
+                for row, (_, task) in enumerate(tasks):
                     if row > self.display_height:
                         break
 

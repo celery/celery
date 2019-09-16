@@ -6,36 +6,33 @@ import copy
 import errno
 import heapq
 import os
-import time
 import shelve
 import sys
+import time
 import traceback
-
+from calendar import timegm
 from collections import namedtuple
 from functools import total_ordering
 from threading import Event, Thread
 
 from billiard import ensure_multiprocessing
-from billiard.context import Process
 from billiard.common import reset_signals
+from billiard.context import Process
 from kombu.utils.functional import maybe_evaluate, reprcall
 from kombu.utils.objects import cached_property
 
-from . import __version__
-from . import platforms
-from . import signals
-from .five import (
-    items, monotonic, python_2_unicode_compatible, reraise, values,
-)
-from .schedules import maybe_schedule, crontab
+from . import __version__, platforms, signals
+from .five import (items, monotonic, python_2_unicode_compatible, reraise,
+                   values)
+from .schedules import crontab, maybe_schedule
 from .utils.imports import load_extension_class_names, symbol_by_name
-from .utils.time import humanize_seconds
 from .utils.log import get_logger, iter_open_logger_fds
+from .utils.time import humanize_seconds, maybe_make_aware
 
-__all__ = [
+__all__ = (
     'SchedulingError', 'ScheduleEntry', 'Scheduler',
     'PersistentScheduler', 'Service', 'EmbeddedService',
-]
+)
 
 event_t = namedtuple('event_t', ('time', 'priority', 'entry'))
 
@@ -48,6 +45,37 @@ DEFAULT_MAX_INTERVAL = 300  # 5 minutes
 
 class SchedulingError(Exception):
     """An error occurred while scheduling a task."""
+
+
+class BeatLazyFunc(object):
+    """An lazy function declared in 'beat_schedule' and called before sending to worker.
+
+    Example:
+
+        beat_schedule = {
+            'test-every-5-minutes': {
+                'task': 'test',
+                'schedule': 300,
+                'kwargs': {
+                    "current": BeatCallBack(datetime.datetime.now)
+                }
+            }
+        }
+
+    """
+
+    def __init__(self, func, *args, **kwargs):
+        self._func = func
+        self._func_params = {
+            "args": args,
+            "kwargs": kwargs
+        }
+
+    def __call__(self):
+        return self.delay()
+
+    def delay(self):
+        return self._func(*self._func_params["args"], **self._func_params["kwargs"])
 
 
 @total_ordering
@@ -88,26 +116,27 @@ class ScheduleEntry(object):
     total_run_count = 0
 
     def __init__(self, name=None, task=None, last_run_at=None,
-                 total_run_count=None, schedule=None, args=(), kwargs={},
-                 options={}, relative=False, app=None):
+                 total_run_count=None, schedule=None, args=(), kwargs=None,
+                 options=None, relative=False, app=None):
         self.app = app
         self.name = name
         self.task = task
         self.args = args
-        self.kwargs = kwargs
-        self.options = options
+        self.kwargs = kwargs if kwargs else {}
+        self.options = options if options else {}
         self.schedule = maybe_schedule(schedule, relative, app=self.app)
-        self.last_run_at = last_run_at or self._default_now()
+        self.last_run_at = last_run_at or self.default_now()
         self.total_run_count = total_run_count or 0
 
-    def _default_now(self):
+    def default_now(self):
         return self.schedule.now() if self.schedule else self.app.now()
+    _default_now = default_now  # compat
 
     def _next_instance(self, last_run_at=None):
         """Return new instance, with date and count fields updated."""
         return self.__class__(**dict(
             self,
-            last_run_at=last_run_at or self._default_now(),
+            last_run_at=last_run_at or self.default_now(),
             total_run_count=self.total_run_count + 1,
         ))
     __next__ = next = _next_instance  # for 2to3
@@ -154,6 +183,28 @@ class ScheduleEntry(object):
             # just as well be random.
             return id(self) < id(other)
         return NotImplemented
+
+    def editable_fields_equal(self, other):
+        for attr in ('task', 'args', 'kwargs', 'options', 'schedule'):
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+        return True
+
+    def __eq__(self, other):
+        """Test schedule entries equality.
+
+        Will only compare "editable" fields:
+        ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
+        """
+        return self.editable_fields_equal(other)
+
+    def __ne__(self, other):
+        """Test schedule entries inequality.
+
+        Will only compare "editable" fields:
+        ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
+        """
+        return not self == other
 
 
 class Scheduler(object):
@@ -234,16 +285,29 @@ class Scheduler(object):
     def is_due(self, entry):
         return entry.is_due()
 
-    def _when(self, entry, next_time_to_run, mktime=time.mktime):
+    def _when(self, entry, next_time_to_run, mktime=timegm):
+        """Return a utc timestamp, make sure heapq in currect order."""
         adjust = self.adjust
 
-        return (mktime(entry.schedule.now().timetuple()) +
+        as_now = maybe_make_aware(entry.default_now())
+
+        return (mktime(as_now.utctimetuple()) +
+                as_now.microsecond / 1e6 +
                 (adjust(next_time_to_run) or 0))
 
     def populate_heap(self, event_t=event_t, heapify=heapq.heapify):
         """Populate the heap with the data contained in the schedule."""
-        self._heap = [event_t(self._when(e, e.is_due()[1]) or 0, 5, e)
-                      for e in values(self.schedule)]
+        priority = 5
+        self._heap = []
+        for entry in values(self.schedule):
+            is_due, next_call_delay = entry.is_due()
+            self._heap.append(event_t(
+                self._when(
+                    entry,
+                    0 if is_due else next_call_delay
+                ) or 0,
+                priority, entry
+            ))
         heapify(self._heap)
 
     # pylint disable=redefined-outer-name
@@ -286,20 +350,26 @@ class Scheduler(object):
         return min(adjust(next_time_to_run) or max_interval, max_interval)
 
     def schedules_equal(self, old_schedules, new_schedules):
+        if old_schedules is new_schedules is None:
+            return True
+        if old_schedules is None or new_schedules is None:
+            return False
         if set(old_schedules.keys()) != set(new_schedules.keys()):
             return False
         for name, old_entry in old_schedules.items():
             new_entry = new_schedules.get(name)
-            if not new_entry or old_entry.schedule != new_entry.schedule:
+            if not new_entry:
+                return False
+            if new_entry != old_entry:
                 return False
         return True
 
     def should_sync(self):
         return (
             (not self._last_sync or
-               (monotonic() - self._last_sync) > self.sync_every) or
+             (monotonic() - self._last_sync) > self.sync_every) or
             (self.sync_every_tasks and
-                self._tasks_since_sync >= self.sync_every_tasks)
+             self._tasks_since_sync >= self.sync_every_tasks)
         )
 
     def reserve(self, entry):
@@ -314,12 +384,14 @@ class Scheduler(object):
         task = self.app.tasks.get(entry.task)
 
         try:
+            entry_args = [v() if isinstance(v, BeatLazyFunc) else v for v in (entry.args or [])]
+            entry_kwargs = {k: v() if isinstance(v, BeatLazyFunc) else v for k, v in entry.kwargs.items()}
             if task:
-                return task.apply_async(entry.args, entry.kwargs,
+                return task.apply_async(entry_args, entry_kwargs,
                                         producer=producer,
                                         **entry.options)
             else:
-                return self.send_task(entry.task, entry.args, entry.kwargs,
+                return self.send_task(entry.task, entry_args, entry_kwargs,
                                       producer=producer,
                                       **entry.options)
         except Exception as exc:  # pylint: disable=broad-except

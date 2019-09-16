@@ -1,17 +1,16 @@
 from __future__ import absolute_import, unicode_literals
 
 import pickle
-import pytest
-
 from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
 
-from case import Mock, mock
+import pytest
 from billiard.einfo import ExceptionInfo
 
-from celery import states
-from celery import uuid
+from case import Mock, mock
+from celery import states, uuid
+from celery.app.task import Context
 from celery.backends.amqp import AMQPBackend
 from celery.five import Empty, Queue, range
 from celery.result import AsyncResult
@@ -29,7 +28,7 @@ class test_AMQPBackend:
         self.app.conf.result_cache_max = 100
 
     def create_backend(self, **opts):
-        opts = dict(dict(serializer='pickle', persistent=True), **opts)
+        opts = dict({'serializer': 'pickle', 'persistent': True}, **opts)
         return AMQPBackend(self.app, **opts)
 
     def test_destination_for(self):
@@ -274,3 +273,34 @@ class test_AMQPBackend:
     def test_delete_group(self):
         with pytest.raises(NotImplementedError):
             self.create_backend().delete_group('x')
+
+
+class test_AMQPBackend_result_extended:
+    def setup(self):
+        self.app.conf.result_extended = True
+
+    def test_store_result(self):
+        b = AMQPBackend(self.app)
+        tid = uuid()
+
+        request = Context(args=(1, 2, 3), kwargs={'foo': 'bar'},
+                          task_name='mytask', retries=2,
+                          hostname='celery@worker_1',
+                          delivery_info={'routing_key': 'celery'})
+
+        b.store_result(tid, {'fizz': 'buzz'}, states.SUCCESS, request=request)
+
+        meta = b.get_task_meta(tid)
+        assert meta == {
+            'args': [1, 2, 3],
+            'children': [],
+            'kwargs': {'foo': 'bar'},
+            'name': 'mytask',
+            'queue': 'celery',
+            'result': {'fizz': 'buzz'},
+            'retries': 2,
+            'status': 'SUCCESS',
+            'task_id': tid,
+            'traceback': None,
+            'worker': 'celery@worker_1',
+        }

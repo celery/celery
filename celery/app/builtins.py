@@ -4,10 +4,11 @@
 The built-in tasks are always available in all app instances.
 """
 from __future__ import absolute_import, unicode_literals
+
 from celery._state import connect_on_app_finalize
 from celery.utils.log import get_logger
 
-__all__ = []
+__all__ = ()
 logger = get_logger(__name__)
 
 
@@ -77,7 +78,10 @@ def add_unlock_chord_task(app):
         callback = maybe_signature(callback, app=app)
         try:
             with allow_join_result():
-                ret = j(timeout=3.0, propagate=True)
+                ret = j(
+                    timeout=app.conf.result_chord_join_timeout,
+                    propagate=True,
+                )
         except Exception as exc:  # pylint: disable=broad-except
             try:
                 culprit = next(deps._failed_join_report())

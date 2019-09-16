@@ -1,8 +1,9 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
-from case import Mock, sentinel, skip
+
+from case import Mock, patch, sentinel, skip
 from celery.app import backends
-from celery.five import string
 from celery.backends import elasticsearch as module
 from celery.backends.elasticsearch import ElasticsearchBackend
 from celery.exceptions import ImproperlyConfigured
@@ -27,7 +28,7 @@ class test_ElasticsearchBackend:
         x._server = Mock()
         x._server.get = Mock()
         # expected result
-        r = dict(found=True, _source={'result': sentinel.result})
+        r = {'found': True, '_source': {'result': sentinel.result}}
         x._server.get.return_value = r
         dict_result = x.get(sentinel.task_id)
 
@@ -78,28 +79,92 @@ class test_ElasticsearchBackend:
 
             assert x.index == 'index'
             assert x.doc_type == 'doc_type'
-            assert x.scheme == 'elasticsearch'
+            assert x.scheme == 'http'
             assert x.host == 'localhost'
             assert x.port == 9200
+
+    @patch('elasticsearch.Elasticsearch')
+    def test_get_server_with_auth(self, mock_es_client):
+        url = 'elasticsearch+https://fake_user:fake_pass@localhost:9200/index/doc_type'
+        with self.Celery(backend=url) as app:
+            x = app.backend
+
+            assert x.username == 'fake_user'
+            assert x.password == 'fake_pass'
+            assert x.scheme == 'https'
+
+            x._get_server()
+            mock_es_client.assert_called_once_with(
+                'localhost:9200',
+                http_auth=('fake_user', 'fake_pass'),
+                max_retries=x.es_max_retries,
+                retry_on_timeout=x.es_retry_on_timeout,
+                scheme='https',
+                timeout=x.es_timeout,
+            )
+
+    @patch('elasticsearch.Elasticsearch')
+    def test_get_server_without_auth(self, mock_es_client):
+        url = 'elasticsearch://localhost:9200/index/doc_type'
+        with self.Celery(backend=url) as app:
+            x = app.backend
+            x._get_server()
+            mock_es_client.assert_called_once_with(
+                'localhost:9200',
+                http_auth=None,
+                max_retries=x.es_max_retries,
+                retry_on_timeout=x.es_retry_on_timeout,
+                scheme='http',
+                timeout=x.es_timeout,
+            )
 
     def test_index(self):
         x = ElasticsearchBackend(app=self.app)
         x.doc_type = 'test-doc-type'
         x._server = Mock()
         x._server.index = Mock()
-        expected_result = dict(
-            _id=sentinel.task_id,
-            _source={'result': sentinel.result}
-        )
+        expected_result = {
+            '_id': sentinel.task_id,
+            '_source': {'result': sentinel.result}
+        }
         x._server.index.return_value = expected_result
 
         body = {"field1": "value1"}
-        x._index(id=sentinel.task_id, body=body, kwarg1='test1')
+        x._index(
+            id=str(sentinel.task_id).encode(),
+            body=body,
+            kwarg1='test1'
+        )
         x._server.index.assert_called_once_with(
-            id=string(sentinel.task_id),
+            id=str(sentinel.task_id),
             doc_type=x.doc_type,
             index=x.index,
             body=body,
+            kwarg1='test1'
+        )
+
+    def test_index_bytes_key(self):
+        x = ElasticsearchBackend(app=self.app)
+        x.doc_type = 'test-doc-type'
+        x._server = Mock()
+        x._server.index = Mock()
+        expected_result = {
+            '_id': sentinel.task_id,
+            '_source': {'result': sentinel.result}
+        }
+        x._server.index.return_value = expected_result
+
+        body = {b"field1": "value1"}
+        x._index(
+            id=str(sentinel.task_id).encode(),
+            body=body,
+            kwarg1='test1'
+        )
+        x._server.index.assert_called_once_with(
+            id=str(sentinel.task_id),
+            doc_type=x.doc_type,
+            index=x.index,
+            body={"field1": "value1"},
             kwarg1='test1'
         )
 

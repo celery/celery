@@ -9,8 +9,8 @@
 Introduction
 ============
 
-The `Eventlet`_ homepage describes it as;
-A concurrent networking library for Python that allows you to
+The `Eventlet`_ homepage describes it as
+a concurrent networking library for Python that allows you to
 change how you run your code, not how you write it.
 
     * It uses `epoll(4)`_ or `libevent`_ for
@@ -21,10 +21,16 @@ change how you run your code, not how you write it.
     * The event dispatch is implicit: meaning you can easily use Eventlet
       from the Python interpreter, or as a small part of a larger application.
 
-Celery supports Eventlet as an alternative execution pool implementation.
-It's in some cases superior to prefork, but you need to ensure
-your tasks don't perform blocking calls, as this will halt all
-other operations in the worker until the blocking call returns.
+
+Celery supports Eventlet as an alternative execution pool implementation and
+in some cases superior to prefork. However, you need to ensure one task doesn't
+block the event loop too long. Generally, CPU-bound operations don't go well
+with Evenetlet. Also note that some libraries, usually with C extensions,
+cannot be monkeypatched and therefore cannot benefit from using Eventlet.
+Please refer to their documentation if you are not sure. For example, pylibmc
+does not allow cooperation with Eventlet but psycopg2 does when both of them
+are libraries with C extensions.
+
 
 The prefork pool can take use of multiple processes, but how many is
 often limited to a few processes per CPU. With Eventlet you can efficiently

@@ -3,11 +3,14 @@
 ``Events`` -> :class:`celery.events.EventDispatcher`.
 """
 from __future__ import absolute_import, unicode_literals
+
 from kombu.common import ignore_errors
+
 from celery import bootsteps
+
 from .connection import Connection
 
-__all__ = ['Events']
+__all__ = ('Events',)
 
 
 class Events(bootsteps.StartStopStep):

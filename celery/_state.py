@@ -7,18 +7,20 @@ like the ``current_app``, and ``current_task``.
 This module shouldn't be used directly.
 """
 from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import sys
 import threading
 import weakref
+
 from celery.local import Proxy
 from celery.utils.threads import LocalStack
 
-__all__ = [
+__all__ = (
     'set_default_app', 'get_current_app', 'get_current_task',
     'get_current_worker_task', 'current_app', 'current_task',
     'connect_on_app_finalize',
-]
+)
 
 #: Global default app used when no current app.
 default_app = None

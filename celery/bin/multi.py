@@ -22,7 +22,7 @@ Examples
     $ # You need to add the same arguments when you restart,
     $ # as these aren't persisted anywhere.
     $ celery multi restart Leslie -E --pidfile=/var/run/celery/%n.pid
-                                     --logfile=/var/run/celery/%n%I.log
+                                     --logfile=/var/log/celery/%n%I.log
 
     $ # To stop the node, you need to specify the same pidfile.
     $ celery multi stop Leslie --pidfile=/var/run/celery/%n.pid
@@ -94,18 +94,21 @@ Examples
     celery worker -n xuzzy@myhost -c 3
 """
 from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import signal
 import sys
 from functools import wraps
+
 from kombu.utils.objects import cached_property
+
 from celery import VERSION_BANNER
 from celery.apps.multi import Cluster, MultiParser, NamespacedOptionParser
 from celery.platforms import EX_FAILURE, EX_OK, signals
 from celery.utils import term
 from celery.utils.text import pluralize
 
-__all__ = ['MultiTool']
+__all__ = ('MultiTool',)
 
 USAGE = """\
 usage: {prog_name} start <node1 node2 nodeN|range> [worker options]

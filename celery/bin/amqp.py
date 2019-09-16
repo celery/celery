@@ -6,22 +6,20 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import cmd as _cmd
-import sys
-import shlex
 import pprint
-
+import shlex
+import sys
 from functools import partial
 from itertools import count
 
 from kombu.utils.encoding import safe_str
 
-from celery.utils.functional import padlist
-
 from celery.bin.base import Command
 from celery.five import string_t
+from celery.utils.functional import padlist
 from celery.utils.serialization import strtobool
 
-__all__ = ['AMQPAdmin', 'AMQShell', 'Spec', 'amqp']
+__all__ = ('AMQPAdmin', 'AMQShell', 'Spec', 'amqp')
 
 # Map to coerce strings to other types.
 COERCE = {bool: strtobool}
@@ -282,7 +280,7 @@ class AMQShell(_cmd.Cmd):
         self.counter = next(self.inc_counter)
         try:
             self.respond(self.dispatch(cmd, arg))
-        except (AttributeError, KeyError) as exc:
+        except (AttributeError, KeyError):
             self.default(line)
         except Exception as exc:  # pylint: disable=broad-except
             self.say(exc)

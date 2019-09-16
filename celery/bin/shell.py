@@ -1,10 +1,12 @@
 """The ``celery shell`` program, used to start a REPL."""
 from __future__ import absolute_import, unicode_literals
+
 import os
 import sys
 from importlib import import_module
-from celery.five import values
+
 from celery.bin.base import Command
+from celery.five import values
 
 
 class shell(Command):  # pragma: no cover

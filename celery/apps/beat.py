@@ -8,17 +8,19 @@ as an actual application, like installing signal handlers
 and so on.
 """
 from __future__ import absolute_import, print_function, unicode_literals
+
 import numbers
 import socket
 import sys
 from datetime import datetime
-from celery import VERSION_BANNER, platforms, beat
+
+from celery import VERSION_BANNER, beat, platforms
 from celery.five import text_t
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger
 from celery.utils.time import humanize_seconds
 
-__all__ = ['Beat']
+__all__ = ('Beat',)
 
 STARTUP_INFO_FMT = """
 LocalTime -> {timestamp}
@@ -115,9 +117,9 @@ class Beat(object):
         c = self.colored
         return text_t(  # flake8: noqa
             c.blue('__    ', c.magenta('-'),
-            c.blue('    ... __   '), c.magenta('-'),
-            c.blue('        _\n'),
-            c.reset(self.startup_info(service))),
+                   c.blue('    ... __   '), c.magenta('-'),
+                   c.blue('        _\n'),
+                   c.reset(self.startup_info(service))),
         )
 
     def init_loader(self):

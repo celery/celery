@@ -31,7 +31,7 @@ With this setting on, a named queue that's not already defined in
 :setting:`task_queues` will be created automatically. This makes it easy to
 perform simple routing tasks.
 
-Say you have two servers, `x`, and `y` that handles regular tasks,
+Say you have two servers, `x`, and `y` that handle regular tasks,
 and one server `z`, that only handles feed related tasks. You can use this
 configuration::
 
@@ -117,7 +117,7 @@ design ensures it will work for them as well.
 Manual routing
 --------------
 
-Say you have two servers, `x`, and `y` that handles regular tasks,
+Say you have two servers, `x`, and `y` that handle regular tasks,
 and one server `z`, that only handles feed related tasks, you can use this
 configuration:
 
@@ -130,11 +130,11 @@ configuration:
         Queue('default',    routing_key='task.#'),
         Queue('feed_tasks', routing_key='feed.#'),
     )
-    task_default_exchange = 'tasks'
-    task_default_exchange_type = 'topic'
-    task_default_routing_key = 'task.default'
+    app.conf.task_default_exchange = 'tasks'
+    app.conf.task_default_exchange_type = 'topic'
+    app.conf.task_default_routing_key = 'task.default'
 
-:setting:`task_queues` is a list of :class:`~kombu.entitity.Queue`
+:setting:`task_queues` is a list of :class:`~kombu.entity.Queue`
 instances.
 If you don't set the exchange or exchange type values for a key, these
 will be taken from the :setting:`task_default_exchange` and
@@ -234,7 +234,7 @@ Queues can be configured to support priorities by setting the
 
     app.conf.task_queues = [
         Queue('tasks', Exchange('tasks'), routing_key='tasks',
-              queue_arguments={'x-max-priority': 10},
+              queue_arguments={'x-max-priority': 10}),
     ]
 
 A default value for all queues can be set using the
@@ -244,7 +244,47 @@ A default value for all queues can be set using the
 
     app.conf.task_queue_max_priority = 10
 
+A default priority for all tasks can also be specified using the
+:setting:`task_default_priority` setting:
+
+.. code-block:: python
+
+    app.conf.task_default_priority = 5
+
 .. _amqp-primer:
+
+
+Redis Message Priorities
+------------------------
+:supported transports: Redis
+
+While the Celery Redis transport does honor the priority field, Redis itself has
+no notion of priorities. Please read this note before attempting to implement
+priorities with Redis as you may experience some unexpected behavior.
+
+The priority support is implemented by creating n lists for each queue.
+This means that even though there are 10 (0-9) priority levels, these are
+consolidated into 4 levels by default to save resources. This means that a
+queue named celery will really be split into 4 queues:
+
+.. code-block:: python
+
+    ['celery0', 'celery3', 'celery6', 'celery9']
+
+
+If you want more priority levels you can set the priority_steps transport option:
+
+.. code-block:: python
+
+    app.conf.broker_transport_options = {
+        'priority_steps': list(range(10)),
+    }
+
+
+That said, note that this will never be as good as priorities implemented at the
+server level, and may be approximate at best. But it may still be good enough
+for your application.
+
 
 AMQP Primer
 ===========
@@ -373,7 +413,7 @@ Related API commands
     :keyword durable: Durable exchanges are persistent (i.e., they survive
         a broker restart).
 
-    :keyword auto_delete: This means the queue will be deleted by the broker
+    :keyword auto_delete: This means the exchange will be deleted by the broker
         when there are no more queues using it.
 
 
@@ -466,7 +506,7 @@ using the ``basic.publish`` command:
     ok.
 
 Now that the message is sent you can retrieve it again. You can use the
-``basic.get``` command here, that polls for new messages on the queue
+``basic.get`` command here, that polls for new messages on the queue
 in a synchronous manner
 (this is OK for maintenance tasks, but for services you want to use
 ``basic.consume`` instead)
@@ -573,10 +613,10 @@ Specifying task destination
 
 The destination for a task is decided by the following (in order):
 
-1. The :ref:`routers` defined in :setting:`task_routes`.
-2. The routing arguments to :func:`Task.apply_async`.
-3. Routing related attributes defined on the :class:`~celery.task.base.Task`
+1. The routing arguments to :func:`Task.apply_async`.
+2. Routing related attributes defined on the :class:`~celery.task.base.Task`
    itself.
+3. The :ref:`routers` defined in :setting:`task_routes`.
 
 It's considered best practice to not hard-code these settings, but rather
 leave that as configuration options by using :ref:`routers`;
@@ -663,6 +703,42 @@ You can also have multiple routers defined in a sequence:
 
 The routers will then be visited in turn, and the first to return
 a value will be chosen.
+
+If you\'re using Redis or RabbitMQ you can also specify the queue\'s default priority
+in the route.
+
+.. code-block:: python
+
+    task_routes = {
+        'myapp.tasks.compress_video': {
+            'queue': 'video',
+            'routing_key': 'video.compress',
+            'priority': 10,
+        },
+    }
+
+
+Similarly, calling `apply_async` on a task will override that
+default priority.
+
+.. code-block:: python
+
+    task.apply_async(priority=0)
+
+
+.. admonition:: Priority Order and Cluster Responsiveness
+
+    It is important to note that, due to worker prefetching, if a bunch of tasks
+    submitted at the same time they may be out of priority order at first.
+    Disabling worker prefetching will prevent this issue, but may cause less than
+    ideal performance for small, fast tasks. In most cases, simply reducing
+    `worker_prefetch_multiplier` to 1 is an easier and cleaner way to increase the
+    responsiveness of your system without the costs of disabling prefetching
+    entirely.
+
+    Note that priorities values are sorted in reverse when
+    using the redis broker: 0 being highest priority.
+
 
 Broadcast
 ---------

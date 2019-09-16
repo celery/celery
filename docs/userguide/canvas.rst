@@ -355,7 +355,7 @@ Here's some examples:
 
     .. code-block:: pycon
 
-        >>> res = (add.si(2, 2) | add.si(4, 4) | add.s(8, 8))()
+        >>> res = (add.si(2, 2) | add.si(4, 4) | add.si(8, 8))()
         >>> res.get()
         16
 
@@ -491,10 +491,10 @@ returns successfully:
 
     >>> res = add.apply_async((2, 2), link=mul.s(16))
     >>> res.get()
-    4
+    64
 
 The linked task will be applied with the result of its parent
-task as the first argument. In the above case where the result was 4,
+task as the first argument. In the above case where the result was 64,
 this will result in ``mul(4, 16)``.
 
 The results will keep track of any subtasks called by the original task,
@@ -766,7 +766,8 @@ Chords
 
     Tasks used within a chord must *not* ignore their results. If the result
     backend is disabled for *any* task (header or body) in your chord you
-    should read ":ref:`chord-important-notes`."
+    should read ":ref:`chord-important-notes`." Chords are not currently
+    supported with the RPC result backend.
 
 
 A chord is a task that only executes after all of the tasks in a group have
@@ -881,7 +882,7 @@ an errback to the chord callback:
 .. code-block:: pycon
 
     >>> c = (group(add.s(i, i) for i in range(10)) |
-    ...      xsum.s().on_error(on_chord_error.s()))).delay()
+    ...      xsum.s().on_error(on_chord_error.s())).delay()
 
 .. _chord-important-notes:
 

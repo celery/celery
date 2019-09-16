@@ -43,118 +43,133 @@ New lowercase settings
 Version 4.0 introduced new lower case settings and setting organization.
 
 The major difference between previous versions, apart from the lower case
-names, are the renaming of some prefixes, like ``celerybeat_`` to ``beat_``,
+names, are the renaming of some prefixes, like ``celery_beat_`` to ``beat_``,
 ``celeryd_`` to ``worker_``, and most of the top level ``celery_`` settings
 have been moved into a new  ``task_`` prefix.
 
-Celery will still be able to read old configuration files, so there's no
-rush in moving to the new settings format.
+.. note::
 
-=====================================  ==============================================
-**Setting name**                       **Replace with**
-=====================================  ==============================================
-``CELERY_ACCEPT_CONTENT``              :setting:`accept_content`
-``CELERY_ENABLE_UTC``                  :setting:`enable_utc`
-``CELERY_IMPORTS``                     :setting:`imports`
-``CELERY_INCLUDE``                     :setting:`include`
-``CELERY_TIMEZONE``                    :setting:`timezone`
-``CELERYBEAT_MAX_LOOP_INTERVAL``       :setting:`beat_max_loop_interval`
-``CELERYBEAT_SCHEDULE``                :setting:`beat_schedule`
-``CELERYBEAT_SCHEDULER``               :setting:`beat_scheduler`
-``CELERYBEAT_SCHEDULE_FILENAME``       :setting:`beat_schedule_filename`
-``CELERYBEAT_SYNC_EVERY``              :setting:`beat_sync_every`
-``BROKER_URL``                         :setting:`broker_url`
-``BROKER_TRANSPORT``                   :setting:`broker_transport`
-``BROKER_TRANSPORT_OPTIONS``           :setting:`broker_transport_options`
-``BROKER_CONNECTION_TIMEOUT``          :setting:`broker_connection_timeout`
-``BROKER_CONNECTION_RETRY``            :setting:`broker_connection_retry`
-``BROKER_CONNECTION_MAX_RETRIES``      :setting:`broker_connection_max_retries`
-``BROKER_FAILOVER_STRATEGY``           :setting:`broker_failover_strategy`
-``BROKER_HEARTBEAT``                   :setting:`broker_heartbeat`
-``BROKER_LOGIN_METHOD``                :setting:`broker_login_method`
-``BROKER_POOL_LIMIT``                  :setting:`broker_pool_limit`
-``BROKER_USE_SSL``                     :setting:`broker_use_ssl`
-``CELERY_CACHE_BACKEND``               :setting:`cache_backend`
-``CELERY_CACHE_BACKEND_OPTIONS``       :setting:`cache_backend_options`
-``CASSANDRA_COLUMN_FAMILY``            :setting:`cassandra_table`
-``CASSANDRA_ENTRY_TTL``                :setting:`cassandra_entry_ttl`
-``CASSANDRA_KEYSPACE``                 :setting:`cassandra_keyspace`
-``CASSANDRA_PORT``                     :setting:`cassandra_port`
-``CASSANDRA_READ_CONSISTENCY``         :setting:`cassandra_read_consistency`
-``CASSANDRA_SERVERS``                  :setting:`cassandra_servers`
-``CASSANDRA_WRITE_CONSISTENCY``        :setting:`cassandra_write_consistency`
-``CELERY_COUCHBASE_BACKEND_SETTINGS``  :setting:`couchbase_backend_settings`
-``CELERY_MONGODB_BACKEND_SETTINGS``    :setting:`mongodb_backend_settings`
-``CELERY_EVENT_QUEUE_EXPIRES``         :setting:`event_queue_expires`
-``CELERY_EVENT_QUEUE_TTL``             :setting:`event_queue_ttl`
-``CELERY_EVENT_QUEUE_PREFIX``          :setting:`event_queue_prefix`
-``CELERY_EVENT_SERIALIZER``            :setting:`event_serializer`
-``CELERY_REDIS_DB``                    :setting:`redis_db`
-``CELERY_REDIS_HOST``                  :setting:`redis_host`
-``CELERY_REDIS_MAX_CONNECTIONS``       :setting:`redis_max_connections`
-``CELERY_REDIS_PASSWORD``              :setting:`redis_password`
-``CELERY_REDIS_PORT``                  :setting:`redis_port`
-``CELERY_RESULT_BACKEND``              :setting:`result_backend`
-``CELERY_MAX_CACHED_RESULTS``          :setting:`result_cache_max`
-``CELERY_MESSAGE_COMPRESSION``         :setting:`result_compression`
-``CELERY_RESULT_EXCHANGE``             :setting:`result_exchange`
-``CELERY_RESULT_EXCHANGE_TYPE``        :setting:`result_exchange_type`
-``CELERY_TASK_RESULT_EXPIRES``         :setting:`result_expires`
-``CELERY_RESULT_PERSISTENT``           :setting:`result_persistent`
-``CELERY_RESULT_SERIALIZER``           :setting:`result_serializer`
-``CELERY_RESULT_DBURI``                Use :setting:`result_backend` instead.
-``CELERY_RESULT_ENGINE_OPTIONS``       :setting:`database_engine_options`
-``[...]_DB_SHORT_LIVED_SESSIONS``      :setting:`database_short_lived_sessions`
-``CELERY_RESULT_DB_TABLE_NAMES``       :setting:`database_db_names`
-``CELERY_SECURITY_CERTIFICATE``        :setting:`security_certificate`
-``CELERY_SECURITY_CERT_STORE``         :setting:`security_cert_store`
-``CELERY_SECURITY_KEY``                :setting:`security_key`
-``CELERY_ACKS_LATE``                   :setting:`task_acks_late`
-``CELERY_ALWAYS_EAGER``                :setting:`task_always_eager`
-``CELERY_ANNOTATIONS``                 :setting:`task_annotations`
-``CELERY_MESSAGE_COMPRESSION``         :setting:`task_compression`
-``CELERY_CREATE_MISSING_QUEUES``       :setting:`task_create_missing_queues`
-``CELERY_DEFAULT_DELIVERY_MODE``       :setting:`task_default_delivery_mode`
-``CELERY_DEFAULT_EXCHANGE``            :setting:`task_default_exchange`
-``CELERY_DEFAULT_EXCHANGE_TYPE``       :setting:`task_default_exchange_type`
-``CELERY_DEFAULT_QUEUE``               :setting:`task_default_queue`
-``CELERY_DEFAULT_RATE_LIMIT``          :setting:`task_default_rate_limit`
-``CELERY_DEFAULT_ROUTING_KEY``         :setting:`task_default_routing_key`
-``[...]_EAGER_PROPAGATES_EXCEPTIONS``  :setting:`task_eager_propagates`
-``CELERY_IGNORE_RESULT``               :setting:`task_ignore_result`
-``CELERY_TASK_PUBLISH_RETRY``          :setting:`task_publish_retry`
-``CELERY_TASK_PUBLISH_RETRY_POLICY``   :setting:`task_publish_retry_policy`
-``CELERY_QUEUES``                      :setting:`task_queues`
-``CELERY_ROUTES``                      :setting:`task_routes`
-``CELERY_SEND_TASK_SENT_EVENT``        :setting:`task_send_sent_event`
-``CELERY_TASK_SERIALIZER``             :setting:`task_serializer`
-``CELERYD_TASK_SOFT_TIME_LIMIT``       :setting:`task_soft_time_limit`
-``CELERYD_TASK_TIME_LIMIT``            :setting:`task_time_limit`
-``CELERY_TRACK_STARTED``               :setting:`task_track_started`
-``CELERYD_AGENT``                      :setting:`worker_agent`
-``CELERYD_AUTOSCALER``                 :setting:`worker_autoscaler`
-``CELERYD_CONCURRENCY``                :setting:`worker_concurrency`
-``CELERYD_CONSUMER``                   :setting:`worker_consumer`
-``CELERY_WORKER_DIRECT``               :setting:`worker_direct`
-``CELERY_DISABLE_RATE_LIMITS``         :setting:`worker_disable_rate_limits`
-``CELERY_ENABLE_REMOTE_CONTROL``       :setting:`worker_enable_remote_control`
-``CELERYD_HIJACK_ROOT_LOGGER``         :setting:`worker_hijack_root_logger`
-``CELERYD_LOG_COLOR``                  :setting:`worker_log_color`
-``CELERYD_LOG_FORMAT``                 :setting:`worker_log_format`
-``CELERYD_WORKER_LOST_WAIT``           :setting:`worker_lost_wait`
-``CELERYD_MAX_TASKS_PER_CHILD``        :setting:`worker_max_tasks_per_child`
-``CELERYD_POOL``                       :setting:`worker_pool`
-``CELERYD_POOL_PUTLOCKS``              :setting:`worker_pool_putlocks`
-``CELERYD_POOL_RESTARTS``              :setting:`worker_pool_restarts`
-``CELERYD_PREFETCH_MULTIPLIER``        :setting:`worker_prefetch_multiplier`
-``CELERYD_REDIRECT_STDOUTS``           :setting:`worker_redirect_stdouts`
-``CELERYD_REDIRECT_STDOUTS_LEVEL``     :setting:`worker_redirect_stdouts_level`
-``CELERYD_SEND_EVENTS``                :setting:`worker_send_task_events`
-``CELERYD_STATE_DB``                   :setting:`worker_state_db`
-``CELERYD_TASK_LOG_FORMAT``            :setting:`worker_task_log_format`
-``CELERYD_TIMER``                      :setting:`worker_timer`
-``CELERYD_TIMER_PRECISION``            :setting:`worker_timer_precision`
-=====================================  ==============================================
+    Celery will still be able to read old configuration files, so
+    there's no rush in moving to the new settings format. Furthermore,
+    we provide the ``celery upgrade`` command that should handle plenty
+    of cases (including :ref:`Django <latentcall-django-admonition>`).
+
+
+========================================== ==============================================
+**Setting name**                           **Replace with**
+========================================== ==============================================
+``CELERY_ACCEPT_CONTENT``                  :setting:`accept_content`
+``CELERY_ENABLE_UTC``                      :setting:`enable_utc`
+``CELERY_IMPORTS``                         :setting:`imports`
+``CELERY_INCLUDE``                         :setting:`include`
+``CELERY_TIMEZONE``                        :setting:`timezone`
+``CELERYBEAT_MAX_LOOP_INTERVAL``           :setting:`beat_max_loop_interval`
+``CELERYBEAT_SCHEDULE``                    :setting:`beat_schedule`
+``CELERYBEAT_SCHEDULER``                   :setting:`beat_scheduler`
+``CELERYBEAT_SCHEDULE_FILENAME``           :setting:`beat_schedule_filename`
+``CELERYBEAT_SYNC_EVERY``                  :setting:`beat_sync_every`
+``BROKER_URL``                             :setting:`broker_url`
+``BROKER_TRANSPORT``                       :setting:`broker_transport`
+``BROKER_TRANSPORT_OPTIONS``               :setting:`broker_transport_options`
+``BROKER_CONNECTION_TIMEOUT``              :setting:`broker_connection_timeout`
+``BROKER_CONNECTION_RETRY``                :setting:`broker_connection_retry`
+``BROKER_CONNECTION_MAX_RETRIES``          :setting:`broker_connection_max_retries`
+``BROKER_FAILOVER_STRATEGY``               :setting:`broker_failover_strategy`
+``BROKER_HEARTBEAT``                       :setting:`broker_heartbeat`
+``BROKER_LOGIN_METHOD``                    :setting:`broker_login_method`
+``BROKER_POOL_LIMIT``                      :setting:`broker_pool_limit`
+``BROKER_USE_SSL``                         :setting:`broker_use_ssl`
+``CELERY_CACHE_BACKEND``                   :setting:`cache_backend`
+``CELERY_CACHE_BACKEND_OPTIONS``           :setting:`cache_backend_options`
+``CASSANDRA_COLUMN_FAMILY``                :setting:`cassandra_table`
+``CASSANDRA_ENTRY_TTL``                    :setting:`cassandra_entry_ttl`
+``CASSANDRA_KEYSPACE``                     :setting:`cassandra_keyspace`
+``CASSANDRA_PORT``                         :setting:`cassandra_port`
+``CASSANDRA_READ_CONSISTENCY``             :setting:`cassandra_read_consistency`
+``CASSANDRA_SERVERS``                      :setting:`cassandra_servers`
+``CASSANDRA_WRITE_CONSISTENCY``            :setting:`cassandra_write_consistency`
+``CASSANDRA_OPTIONS``                      :setting:`cassandra_options`
+``S3_ACCESS_KEY_ID``                       :setting:`s3_access_key_id`
+``S3_SECRET_ACCESS_KEY``                   :setting:`s3_secret_access_key`
+``S3_BUCKET``                              :setting:`s3_bucket`
+``S3_BASE_PATH``                           :setting:`s3_base_path`
+``S3_ENDPOINT_URL``                        :setting:`s3_endpoint_url`
+``S3_REGION``                              :setting:`s3_region`
+``CELERY_COUCHBASE_BACKEND_SETTINGS``      :setting:`couchbase_backend_settings`
+``CELERY_ARANGODB_BACKEND_SETTINGS``       :setting:`arangodb_backend_settings`
+``CELERY_MONGODB_BACKEND_SETTINGS``        :setting:`mongodb_backend_settings`
+``CELERY_EVENT_QUEUE_EXPIRES``             :setting:`event_queue_expires`
+``CELERY_EVENT_QUEUE_TTL``                 :setting:`event_queue_ttl`
+``CELERY_EVENT_QUEUE_PREFIX``              :setting:`event_queue_prefix`
+``CELERY_EVENT_SERIALIZER``                :setting:`event_serializer`
+``CELERY_REDIS_DB``                        :setting:`redis_db`
+``CELERY_REDIS_HOST``                      :setting:`redis_host`
+``CELERY_REDIS_MAX_CONNECTIONS``           :setting:`redis_max_connections`
+``CELERY_REDIS_PASSWORD``                  :setting:`redis_password`
+``CELERY_REDIS_PORT``                      :setting:`redis_port`
+``CELERY_REDIS_BACKEND_USE_SSL``           :setting:`redis_backend_use_ssl`
+``CELERY_RESULT_BACKEND``                  :setting:`result_backend`
+``CELERY_MAX_CACHED_RESULTS``              :setting:`result_cache_max`
+``CELERY_MESSAGE_COMPRESSION``             :setting:`result_compression`
+``CELERY_RESULT_EXCHANGE``                 :setting:`result_exchange`
+``CELERY_RESULT_EXCHANGE_TYPE``            :setting:`result_exchange_type`
+``CELERY_RESULT_EXPIRES``                  :setting:`result_expires`
+``CELERY_RESULT_PERSISTENT``               :setting:`result_persistent`
+``CELERY_RESULT_SERIALIZER``               :setting:`result_serializer`
+``CELERY_RESULT_DBURI``                    Use :setting:`result_backend` instead.
+``CELERY_RESULT_ENGINE_OPTIONS``           :setting:`database_engine_options`
+``[...]_DB_SHORT_LIVED_SESSIONS``          :setting:`database_short_lived_sessions`
+``CELERY_RESULT_DB_TABLE_NAMES``           :setting:`database_db_names`
+``CELERY_SECURITY_CERTIFICATE``            :setting:`security_certificate`
+``CELERY_SECURITY_CERT_STORE``             :setting:`security_cert_store`
+``CELERY_SECURITY_KEY``                    :setting:`security_key`
+``CELERY_ACKS_LATE``                  :setting:`task_acks_late`
+``CELERY_ACKS_ON_FAILURE_OR_TIMEOUT`` :setting:`task_acks_on_failure_or_timeout`
+``CELERY_ALWAYS_EAGER``               :setting:`task_always_eager`
+``CELERY_ANNOTATIONS``                :setting:`task_annotations`
+``CELERY_COMPRESSION``                :setting:`task_compression`
+``CELERY_CREATE_MISSING_QUEUES``      :setting:`task_create_missing_queues`
+``CELERY_DEFAULT_DELIVERY_MODE``      :setting:`task_default_delivery_mode`
+``CELERY_DEFAULT_EXCHANGE``           :setting:`task_default_exchange`
+``CELERY_DEFAULT_EXCHANGE_TYPE``      :setting:`task_default_exchange_type`
+``CELERY_DEFAULT_QUEUE``                   :setting:`task_default_queue`
+``CELERY_DEFAULT_RATE_LIMIT``         :setting:`task_default_rate_limit`
+``CELERY_DEFAULT_ROUTING_KEY``        :setting:`task_default_routing_key`
+``CELERY_EAGER_PROPAGATES``           :setting:`task_eager_propagates`
+``CELERY_IGNORE_RESULT``              :setting:`task_ignore_result`
+``CELERY_PUBLISH_RETRY``              :setting:`task_publish_retry`
+``CELERY_PUBLISH_RETRY_POLICY``       :setting:`task_publish_retry_policy`
+``CELERY_QUEUES``                          :setting:`task_queues`
+``CELERY_ROUTES``                          :setting:`task_routes`
+``CELERY_SEND_SENT_EVENT``            :setting:`task_send_sent_event`
+``CELERY_SERIALIZER``                 :setting:`task_serializer`
+``CELERYD_SOFT_TIME_LIMIT``           :setting:`task_soft_time_limit`
+``CELERYD_TIME_LIMIT``                :setting:`task_time_limit`
+``CELERY_TRACK_STARTED``                   :setting:`task_track_started`
+``CELERYD_AGENT``                          :setting:`worker_agent`
+``CELERYD_AUTOSCALER``                     :setting:`worker_autoscaler`
+``CELERYD_CONCURRENCY``                    :setting:`worker_concurrency`
+``CELERYD_CONSUMER``                       :setting:`worker_consumer`
+``CELERY_WORKER_DIRECT``                   :setting:`worker_direct`
+``CELERY_DISABLE_RATE_LIMITS``             :setting:`worker_disable_rate_limits`
+``CELERY_ENABLE_REMOTE_CONTROL``           :setting:`worker_enable_remote_control`
+``CELERYD_HIJACK_ROOT_LOGGER``             :setting:`worker_hijack_root_logger`
+``CELERYD_LOG_COLOR``                      :setting:`worker_log_color`
+``CELERYD_LOG_FORMAT``                     :setting:`worker_log_format`
+``CELERYD_WORKER_LOST_WAIT``               :setting:`worker_lost_wait`
+``CELERYD_MAX_TASKS_PER_CHILD``            :setting:`worker_max_tasks_per_child`
+``CELERYD_POOL``                           :setting:`worker_pool`
+``CELERYD_POOL_PUTLOCKS``                  :setting:`worker_pool_putlocks`
+``CELERYD_POOL_RESTARTS``                  :setting:`worker_pool_restarts`
+``CELERYD_PREFETCH_MULTIPLIER``            :setting:`worker_prefetch_multiplier`
+``CELERYD_REDIRECT_STDOUTS``               :setting:`worker_redirect_stdouts`
+``CELERYD_REDIRECT_STDOUTS_LEVEL``         :setting:`worker_redirect_stdouts_level`
+``CELERY_SEND_EVENTS``                     :setting:`worker_send_task_events`
+``CELERYD_STATE_DB``                       :setting:`worker_state_db`
+``CELERYD_TASK_LOG_FORMAT``                :setting:`worker_task_log_format`
+``CELERYD_TIMER``                          :setting:`worker_timer`
+``CELERYD_TIMER_PRECISION``                :setting:`worker_timer_precision`
+========================================== ==============================================
 
 Configuration Directives
 ========================
@@ -176,8 +191,9 @@ A white-list of content-types/serializers to allow.
 If a message is received that's not in this list then
 the message will be discarded with an error.
 
-By default any content type is enabled, including pickle and yaml,
-so make sure untrusted parties don't have access to your broker.
+By default only json is enabled but any content type can be added,
+including pickle and yaml; when this is the case make sure
+untrusted parties don't have access to your broker.
 See :ref:`guide-security` for more.
 
 Example::
@@ -187,6 +203,35 @@ Example::
 
     # or the actual content-type (MIME)
     accept_content = ['application/json']
+
+.. setting:: result_accept_content
+
+``result_accept_content``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None`` (can be set, list or tuple).
+
+.. versionadded:: 4.3
+
+A white-list of content-types/serializers to allow for the result backend.
+
+If a message is received that's not in this list then
+the message will be discarded with an error.
+
+By default it is the same serializer as ``accept_content``.
+However, a different serializer for accepted content of the result backend
+can be specified.
+Usually this is needed if signed messaging is used and the result is stored
+unsigned in the result backend.
+See :ref:`guide-security` for more.
+
+Example::
+
+    # using serializer name
+    result_accept_content = ['json']
+
+    # or the actual content-type (MIME)
+    result_accept_content = ['application/json']
 
 Time and date settings
 ----------------------
@@ -221,7 +266,7 @@ The timezone value can be any time zone supported by the :pypi:`pytz`
 library.
 
 If not set the UTC timezone is used. For backwards compatibility
-there's also a :setting:`enable_utc` setting, and this is set
+there's also a :setting:`enable_utc` setting, and when this is set
 to false the system local timezone is used instead.
 
 .. _conf-tasks:
@@ -482,6 +527,20 @@ has been executed, not *just before* (the default behavior).
 
     FAQ: :ref:`faq-acks_late-vs-retry`.
 
+.. setting:: task_acks_on_failure_or_timeout
+
+``task_acks_on_failure_or_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Enabled
+
+When enabled messages for all tasks will be acknowledged even if they
+fail or time out.
+
+Configuring this setting only applies to tasks that are
+acknowledged **after** they have been executed and only if
+:setting:`task_acks_late` is enabled.
+
 .. setting:: task_reject_on_worker_lost
 
 ``task_reject_on_worker_lost``
@@ -565,9 +624,17 @@ Can be one of the following:
     Use `Couchbase`_ to store the results.
     See :ref:`conf-couchbase-result-backend`.
 
+* ``arangodb``
+    Use `ArangoDB`_ to store the results.
+    See :ref:`conf-arangodb-result-backend`.
+
 * ``couchdb``
     Use `CouchDB`_ to store the results.
     See :ref:`conf-couchdb-result-backend`.
+
+* ``cosmosdbsql (experimental)``
+    Use the `CosmosDB`_ PaaS to store the results.
+    See :ref:`conf-cosmosdbsql-result-backend`.
 
 * ``filesystem``
     Use a shared directory to store the results.
@@ -576,6 +643,14 @@ Can be one of the following:
 * ``consul``
     Use the `Consul`_ K/V store to store the results
     See :ref:`conf-consul-result-backend`.
+
+* ``azureblockblob``
+    Use the `AzureBlockBlob`_ PaaS store to store the results
+    See :ref:`conf-azureblockblob-result-backend`.
+
+* ``s3``
+    Use the `S3`_ to store the results
+    See :ref:`conf-s3-result-backend`.
 
 .. warning:
 
@@ -589,8 +664,33 @@ Can be one of the following:
 .. _`Elasticsearch`: https://aws.amazon.com/elasticsearch-service/
 .. _`IronCache`: http://www.iron.io/cache
 .. _`CouchDB`: http://www.couchdb.com/
+.. _`CosmosDB`: https://azure.microsoft.com/en-us/services/cosmos-db/
 .. _`Couchbase`: https://www.couchbase.com/
+.. _`ArangoDB`: https://www.arangodb.com/
 .. _`Consul`: https://consul.io/
+.. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/blobs/
+.. _`S3`: https://aws.amazon.com/s3/
+
+
+.. setting:: result_backend_transport_options
+
+``result_backend_transport_options``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}`` (empty mapping).
+
+A dict of additional options passed to the underlying transport.
+
+See your transport user manual for supported options (if any).
+
+Example setting the visibility timeout (supported by Redis and SQS
+transports):
+
+.. code-block:: python
+
+    result_backend_transport_options = {'visibility_timeout': 18000}  # 5 hours
+
+
 
 .. setting:: result_serializer
 
@@ -614,6 +714,16 @@ Default: No compression.
 Optional compression method used for task results.
 Supports the same options as the :setting:`task_serializer` setting.
 
+.. setting:: result_extended
+
+``result_extended``
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``False``
+
+Enables extended task result attributes (name, args, kwargs, worker,
+retries, queue, delivery_info) to be written to backend.
+
 .. setting:: result_expires
 
 ``result_expires``
@@ -633,7 +743,7 @@ on backend specifications).
 
 .. note::
 
-    For the moment this only works with the AMQP, database, cache,
+    For the moment this only works with the AMQP, database, cache, Couchbase,
     and Redis backends.
 
     When using the database backend, ``celery beat`` must be
@@ -657,6 +767,15 @@ A value of 0 or None means no limit, and a value of :const:`-1`
 will disable the cache.
 
 Disabled by default.
+
+.. setting:: result_chord_join_timeout
+
+``result_chord_join_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 3.0.
+
+The timeout in seconds (int/float) when joining a group's results within a chord.
 
 .. _conf-database-result-backend:
 
@@ -769,6 +888,17 @@ Example configuration
     result_backend = 'rpc://'
     result_persistent = False
 
+**Please note**: using this backend could trigger the raise of ``celery.backends.rpc.BacklogLimitExceeded`` if the task tombstone is too *old*.
+
+E.g.
+
+.. code-block:: python
+
+    for i in range(10000):
+        r = debug_task.delay()
+
+    print(r.state)  # this would raise celery.backends.rpc.BacklogLimitExceeded
+
 .. _conf-cache-result-backend:
 
 Cache backend settings
@@ -847,9 +977,12 @@ Configuring the backend URL
     requirements.
 
 This backend requires the :setting:`result_backend`
-setting to be set to a Redis URL::
+setting to be set to a Redis or `Redis over TLS`_ URL::
 
     result_backend = 'redis://:password@host:port/db'
+
+.. _`Redis over TLS`:
+    https://www.iana.org/assignments/uri-schemes/prov/rediss
 
 For example::
 
@@ -858,6 +991,18 @@ For example::
 is the same as::
 
     result_backend = 'redis://'
+
+Use the ``rediss://`` protocol to connect to redis over TLS::
+
+    result_backend = 'rediss://:password@host:port/db?ssl_cert_reqs=required'
+
+Note that the ``ssl_cert_reqs`` string should be one of ``required``,
+``optional``, or ``none`` (though, for backwards compatibility, the string
+may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
+
+If a Unix socket connection should be used, the URL needs to be in the format:::
+
+    result_backend = 'socket:///path/to/redis.sock'
 
 The fields of the URL are defined as follows:
 
@@ -878,6 +1023,20 @@ The fields of the URL are defined as follows:
     Database number to use. Default is 0.
     The db can include an optional leading slash.
 
+When using a TLS connection (protocol is ``rediss://``), you may pass in all values in :setting:`broker_use_ssl` as query parameters. Paths to certificates must be URL encoded, and ``ssl_cert_reqs`` is required. Example:
+
+.. code-block:: python
+
+    result_backend = 'rediss://:password@host:port/db?\
+        ssl_cert_reqs=required\
+        &ssl_ca_certs=%2Fvar%2Fssl%2Fmyca.pem\                  # /var/ssl/myca.pem
+        &ssl_certfile=%2Fvar%2Fssl%2Fredis-server-cert.pem\     # /var/ssl/redis-server-cert.pem
+        &ssl_keyfile=%2Fvar%2Fssl%2Fprivate%2Fworker-key.pem'   # /var/ssl/private/worker-key.pem
+
+Note that the ``ssl_cert_reqs`` string should be one of ``required``,
+``optional``, or ``none`` (though, for backwards compatibility, the string
+may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
+
 .. setting:: redis_backend_use_ssl
 
 ``redis_backend_use_ssl``
@@ -885,8 +1044,10 @@ The fields of the URL are defined as follows:
 
 Default: Disabled.
 
-The Redis backend supports SSL. The valid values of this options are the same
-as :setting:`broker_use_ssl`.
+The Redis backend supports SSL. This value must be set in
+the form of a dictionary. The valid key-value pairs are
+the same as the ones mentioned in the ``redis`` sub-section
+under :setting:`broker_use_ssl`.
 
 .. setting:: redis_max_connections
 
@@ -898,12 +1059,16 @@ Default: No limit.
 Maximum number of connections available in the Redis connection
 pool used for sending and retrieving results.
 
+.. warning::
+    Redis will raise a `ConnectionError` if the number of concurrent
+    connections exceeds the maximum.
+
 .. setting:: redis_socket_connect_timeout
 
 ``redis_socket_connect_timeout``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 5.0.1
+.. versionadded:: 4.0.1
 
 Default: :const:`None`
 
@@ -1038,6 +1203,22 @@ Named arguments to pass into the authentication provider. For example:
         password: 'cassandra'
     }
 
+.. setting:: cassandra_options
+
+``cassandra_options``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}`` (empty mapping).
+
+Named arguments to pass into the ``cassandra.cluster`` class.
+
+.. code-block:: python
+
+    cassandra_options = {
+        'cql_version': '3.2.1'
+        'protocol_version': 3
+    }
+
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -1049,6 +1230,157 @@ Example configuration
     cassandra_read_consistency = 'ONE'
     cassandra_write_consistency = 'ONE'
     cassandra_entry_ttl = 86400
+
+.. _conf-s3-result-backend:
+
+S3 backend settings
+-------------------
+
+.. note::
+
+    This s3 backend driver requires :pypi:`s3`.
+
+    To install, use :command:`s3`:
+
+    .. code-block:: console
+
+        $ pip install celery[s3]
+
+    See :ref:`bundles` for information on combining multiple extension
+    requirements.
+
+This backend requires the following configuration directives to be set.
+
+.. setting:: s3_access_key_id
+
+``s3_access_key_id``
+~~~~~~~~~~~~~~~~~~~~
+
+Default: None.
+
+The s3 access key id. For example::
+
+    s3_access_key_id = 'acces_key_id'
+
+.. setting:: s3_secret_access_key
+
+``s3_secret_access_key``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: None.
+
+The s3 secret access key. For example::
+
+    s3_secret_access_key = 'acces_secret_access_key'
+
+.. setting:: s3_bucket
+
+``s3_bucket``
+~~~~~~~~~~~~~
+
+Default: None.
+
+The s3 bucket name. For example::
+
+    s3_bucket = 'bucket_name'
+
+.. setting:: s3_base_path
+
+``s3_base_path``
+~~~~~~~~~~~~~~~~
+
+Default: None.
+
+A base path in the s3 bucket to use to store result keys. For example::
+
+    s3_base_path = '/prefix'
+
+.. setting:: s3_endpoint_url
+
+``s3_endpoint_url``
+~~~~~~~~~~~~~~~~~~~
+
+Default: None.
+
+A custom s3 endpoint url. Use it to connect to a custom self-hosted s3 compatible backend (Ceph, Scality...). For example::
+
+    s3_endpoint_url = 'https://.s3.custom.url'
+
+.. setting:: s3_region
+
+``s3_region``
+~~~~~~~~~~~~~
+
+Default: None.
+
+The s3 aws region. For example::
+
+    s3_region = 'us-east-1'
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    s3_access_key_id = 's3-access-key-id'
+    s3_secret_access_key = 's3-secret-access-key'
+    s3_bucket = 'mybucket'
+    s3_base_path = '/celery_result_backend'
+    s3_endpoint_url = 'https://endpoint_url'
+
+.. _conf-azureblockblob-result-backend:
+
+Azure Block Blob backend settings
+---------------------------------
+
+To use `AzureBlockBlob`_ as the result backend you simply need to
+configure the :setting:`result_backend` setting with the correct URL.
+
+The required URL format is ``azureblockblob://`` followed by the storage
+connection string. You can find the storage connection string in the
+``Access Keys`` pane of your storage account resource in the Azure Portal.
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    result_backend = 'azureblockblob://DefaultEndpointsProtocol=https;AccountName=somename;AccountKey=Lou...bzg==;EndpointSuffix=core.windows.net'
+
+.. setting:: azureblockblob_container_name
+
+``azureblockblob_container_name``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: celery.
+
+The name for the storage container in which to store the results.
+
+.. setting:: azureblockblob_retry_initial_backoff_sec
+
+``azureblockblob_retry_initial_backoff_sec``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 2.
+
+The initial backoff interval, in seconds, for the first retry.
+Subsequent retries are attempted with an exponential strategy.
+
+.. setting:: azureblockblob_retry_increment_base
+
+``azureblockblob_retry_increment_base``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 2.
+
+.. setting:: azureblockblob_retry_max_attempts
+
+``azureblockblob_retry_max_attempts``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 3.
+
+The maximum number of retry attempts.
 
 .. _conf-elasticsearch-result-backend:
 
@@ -1202,9 +1534,14 @@ or using the `downloadable version <https://docs.aws.amazon.com/amazondynamodb/l
 of DynamoDB
 `locally <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.Endpoint.html>`_::
 
-    result_backend = 'dynamodb://@localhost:8000
+    result_backend = 'dynamodb://@localhost:8000'
 
-The fields of the URL are defined as follows:
+or using downloadable version or other service with conforming API deployed on any host::
+
+    result_backend = 'dynamodb://@us-east-1'
+    dynamodb_endpoint_url = 'http://192.168.0.40:8000'
+
+The fields of the DynamoDB URL in ``result_backend`` are defined as follows:
 
 #. ``aws_access_key_id & aws_secret_access_key``
 
@@ -1314,6 +1651,128 @@ This is a dict supporting the following keys:
 * ``password``
 
     Password to authenticate to the Couchbase server (optional).
+
+.. _conf-arangodb-result-backend:
+
+ArangoDB backend settings
+--------------------------
+
+.. note::
+
+    The ArangoDB backend requires the :pypi:`pyArango` library.
+
+    To install this package use :command:`pip`:
+
+    .. code-block:: console
+
+        $ pip install celery[arangodb]
+
+    See :ref:`bundles` for instructions how to combine multiple extension
+    requirements.
+
+This backend can be configured via the :setting:`result_backend`
+set to a ArangoDB URL:
+
+.. code-block:: python
+
+    result_backend = 'arangodb://username:password@host:port/database/collection'
+
+.. setting:: arangodb_backend_settings
+
+``arangodb_backend_settings``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}`` (empty mapping).
+
+This is a dict supporting the following keys:
+
+* ``host``
+
+    Host name of the ArangoDB server. Defaults to ``localhost``.
+
+* ``port``
+
+    The port the ArangoDB server is listening to. Defaults to ``8529``.
+
+* ``database``
+
+    The default database in the ArangoDB server is writing to.
+    Defaults to ``celery``.
+
+* ``collection``
+
+    The default collection in the ArangoDB servers database is writing to.
+    Defaults to ``celery``.
+
+* ``username``
+
+    User name to authenticate to the ArangoDB server as (optional).
+
+* ``password``
+
+    Password to authenticate to the ArangoDB server (optional).
+
+.. _conf-cosmosdbsql-result-backend:
+
+CosmosDB backend settings (experimental)
+----------------------------------------
+
+To use `CosmosDB`_ as the result backend, you simply need to configure the
+:setting:`result_backend` setting with the correct URL.
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    result_backend = 'cosmosdbsql://:{InsertAccountPrimaryKeyHere}@{InsertAccountNameHere}.documents.azure.com'
+
+.. setting:: cosmosdbsql_database_name
+
+``cosmosdbsql_database_name``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: celerydb.
+
+The name for the database in which to store the results.
+
+.. setting:: cosmosdbsql_collection_name
+
+``cosmosdbsql_collection_name``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: celerycol.
+
+The name of the collection in which to store the results.
+
+.. setting:: cosmosdbsql_consistency_level
+
+``cosmosdbsql_consistency_level``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Session.
+
+Represents the consistency levels supported for Azure Cosmos DB client operations.
+
+Consistency levels by order of strength are: Strong, BoundedStaleness, Session, ConsistentPrefix and Eventual.
+
+.. setting:: cosmosdbsql_max_retry_attempts
+
+``cosmosdbsql_max_retry_attempts``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 9.
+
+Maximum number of retries to be performed for a request.
+
+.. setting:: cosmosdbsql_max_retry_wait_time
+
+``cosmosdbsql_max_retry_wait_time``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 30.
+
+Maximum wait time in seconds to wait for a request while the retries are happening.
 
 .. _conf-couchdb-result-backend:
 
@@ -1458,7 +1917,7 @@ Examples:
         re.compile(r'(image|video)\.tasks\..*'): 'media',  # <-- regex
         'video.encode': {
             'queue': 'video',
-            'exchange': 'media'
+            'exchange': 'media',
             'routing_key': 'media.video.encode',
         },
     }
@@ -1478,7 +1937,7 @@ it's a queue name in :setting:`task_queues`, a dict means it's a custom route.
 
 When sending tasks, the routers are consulted in order. The first
 router that doesn't return ``None`` is the route to use. The message options
-is then merged with the found route settings, where the routers settings
+is then merged with the found route settings, where the task's settings
 have priority.
 
 Example if :func:`~celery.execute.apply_async` has these arguments:
@@ -1498,7 +1957,7 @@ the final message options will be:
 
 .. code-block:: python
 
-    immediate=True, exchange='urgent', routing_key='video.compress'
+    immediate=False, exchange='video', routing_key='video.compress'
 
 (and any default message options defined in the
 :class:`~celery.task.base.Task` class)
@@ -1572,6 +2031,37 @@ Default: :const:`None`.
 
 See :ref:`routing-options-rabbitmq-priorities`.
 
+.. setting:: task_default_priority
+
+``task_default_priority``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:brokers: RabbitMQ, Redis
+
+Default: :const:`None`.
+
+See :ref:`routing-options-rabbitmq-priorities`.
+
+.. setting:: task_inherit_parent_priority
+
+``task_inherit_parent_priority``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:brokers: RabbitMQ
+
+Default: :const:`False`.
+
+If enabled, child tasks will inherit priority of the parent task.
+
+.. code-block:: python
+
+    # The last task in chain will also have priority set to 5.
+    chain = celery.chain(add.s(2) | add.s(2).set(priority=5) | add.s(3))
+
+Priority inheritance also works when calling child tasks from a parent task
+with `delay` or `apply_async`.
+
+See :ref:`routing-options-rabbitmq-priorities`.
+
+
 .. setting:: worker_direct
 
 ``worker_direct``
@@ -1632,7 +2122,7 @@ that queue.
 ``task_default_exchange``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``"celery"``.
+Default: Uses the value set for :setting:`task_default_queue`.
 
 Name of the default exchange to use when no custom exchange is
 specified for a key in the :setting:`task_queues` setting.
@@ -1652,7 +2142,7 @@ for a key in the :setting:`task_queues` setting.
 ``task_default_routing_key``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``"celery"``.
+Default: Uses the value set for :setting:`task_default_queue`.
 
 The default routing key used when no custom routing key
 is specified for a key in the :setting:`task_queues` setting.
@@ -1839,7 +2329,7 @@ certificate authority:
 _________
 
 
-The setting must be a dict the keys:
+The setting must be a dict with the following keys:
 
 *  ``ssl_cert_reqs`` (required): one of the ``SSLContext.verify_mode`` values:
     * ``ssl.CERT_NONE``
@@ -1880,6 +2370,13 @@ Default: 4.0.
 The default timeout in seconds before we give up establishing a connection
 to the AMQP server. This setting is disabled when using
 gevent.
+
+.. note::
+
+    The broker connection timeout only applies to a worker attempting to
+    connect to the broker. It does not apply to producer sending a task, see
+    :setting:`broker_transport_options` for how to provide a timeout for that
+    situation.
 
 .. setting:: broker_connection_retry
 
@@ -1934,6 +2431,13 @@ transports):
 .. code-block:: python
 
     broker_transport_options = {'visibility_timeout': 18000}  # 5 hours
+
+Example setting the producer connection maximum number of retries (so producers
+won't retry forever if the broker isn't available at the first task execution):
+
+.. code-block:: python
+
+    broker_transport_options = {'max_retries': 5}
 
 .. _conf-worker:
 
@@ -2092,6 +2596,15 @@ Default: Enabled by default.
 
 Specify if remote control of the workers is enabled.
 
+.. setting:: worker_proc_alive_timeout
+
+``worker_proc_alive_timeout``
+~~~~~~~~~~~~~~~~~~~~
+
+Default: 4.0.
+
+The timeout in seconds (int/float) when waiting for a new worker process to start up.
+
 .. _conf-events:
 
 Events
@@ -2154,6 +2667,19 @@ Default: ``"celeryev"``.
 
 The prefix to use for event receiver queue names.
 
+.. setting:: event_exchange
+
+``event_exchange``
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``"celeryev"``.
+
+Name of the event exchange.
+
+.. warning::
+
+    This option is in experimental stage, please use it with caution.
+
 .. setting:: event_serializer
 
 ``event_serializer``
@@ -2205,6 +2731,19 @@ Time in seconds, before an unused remote control command queue is deleted
 from the broker.
 
 This setting also applies to remote control reply queues.
+
+.. setting:: control_exchange
+
+``control_exchange``
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``"celery"``.
+
+Name of the control command exchange.
+
+.. warning::
+
+    This option is in experimental stage, please use it with caution.
 
 .. _conf-logging:
 
@@ -2337,6 +2876,19 @@ The directory containing X.509 certificates used for
 :ref:`message-signing`. Can be a glob with wild-cards,
 (for example :file:`/etc/certs/*.pem`).
 
+.. setting:: security_digest
+
+``security_digest``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: :const:`sha256`.
+
+.. versionadded:: 4.3
+
+A cryptography digest used to sign messages
+when :ref:`message-signing` is used.
+https://cryptography.io/en/latest/hazmat/primitives/cryptographic-hashes/#module-cryptography.hazmat.primitives.hashes
+
 .. _conf-custom-components:
 
 Custom Component Classes (advanced)
@@ -2393,7 +2945,7 @@ Name of the consumer class used by the worker.
 ``worker_timer``
 ~~~~~~~~~~~~~~~~
 
-Default: ``"kombu.async.hub.timer:Timer"``.
+Default: ``"kombu.asynchronous.hub.timer:Timer"``.
 
 Name of the ETA scheduler class used by the worker.
 Default is or set by the pool implementation.
@@ -2422,7 +2974,7 @@ Default: ``"celery.beat:PersistentScheduler"``.
 
 The default scheduler class. May be set to
 ``"django_celery_beat.schedulers:DatabaseScheduler"`` for instance,
-if used alongside `django-celery-beat` extension.
+if used alongside :pypi:`django-celery-beat` extension.
 
 Can also be set via the :option:`celery beat -S` argument.
 

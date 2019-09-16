@@ -11,6 +11,7 @@ The following changes were made to the original sources during backporting:
 * Removed ``from None`` when raising exceptions.
 """
 from __future__ import absolute_import, unicode_literals
+
 from weakref import ref
 
 

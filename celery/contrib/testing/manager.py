@@ -3,13 +3,13 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import socket
 import sys
-
 from collections import defaultdict
 from functools import partial
 from itertools import count
 
 from kombu.utils.functional import retry_over_time
 
+from celery import states
 from celery.exceptions import TimeoutError
 from celery.five import items
 from celery.result import ResultSet
@@ -47,7 +47,7 @@ class ManagerMixin(object):
         return [res.id for res in r if res.id not in res.backend._cache]
 
     def wait_for(self, fun, catch,
-                 desc='thing', args=(), kwargs={}, errback=None,
+                 desc='thing', args=(), kwargs=None, errback=None,
                  max_retries=10, interval_start=0.1, interval_step=0.5,
                  interval_max=5.0, emit_warning=False, **options):
         # type: (Callable, Sequence[Any], str, Tuple, Dict, Callable,
@@ -57,6 +57,8 @@ class ManagerMixin(object):
         The `catch` argument specifies the exception that means the event
         has not happened yet.
         """
+        kwargs = {} if not kwargs else kwargs
+
         def on_error(exc, intervals, retries):
             interval = next(intervals)
             if emit_warning:
@@ -145,6 +147,31 @@ class ManagerMixin(object):
         return self.assert_task_worker_state(
             self.is_accepted, ids, interval=interval, desc=desc, **policy
         )
+
+    def assert_result_tasks_in_progress_or_completed(
+            self,
+            async_results,
+            interval=0.5,
+            desc='waiting for tasks to be started or completed',
+            **policy
+    ):
+        return self.assert_task_state_from_result(
+            self.is_result_task_in_progress,
+            async_results,
+            interval=interval, desc=desc, **policy
+        )
+
+    def assert_task_state_from_result(self, fun, results,
+                                      interval=0.5, **policy):
+        return self.wait_for(
+            partial(self.true_or_raise, fun, results, timeout=interval),
+            (Sentinel,), **policy
+        )
+
+    @staticmethod
+    def is_result_task_in_progress(results, **kwargs):
+        possible_states = (states.STARTED, states.SUCCESS)
+        return all(result.state in possible_states for result in results)
 
     def assert_task_worker_state(self, fun, ids, interval=0.5, **policy):
         return self.wait_for(

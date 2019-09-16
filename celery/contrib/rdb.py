@@ -5,7 +5,7 @@ Introduction
 ============
 
 This is a remote debugger for Celery tasks running in multiprocessing
-pool workers.  Inspired by http://snippets.dzone.com/posts/show/7248
+pool workers.  Inspired by a lost post on dzone.com.
 
 Usage
 -----
@@ -29,7 +29,7 @@ Environment Variables
 ``CELERY_RDB_HOST``
 -------------------
 
-    Hostname to bind to.  Default is '127.0.01' (only accessable from
+    Hostname to bind to.  Default is '127.0.0.1' (only accessible from
     localhost).
 
 .. envvar:: CELERY_RDB_PORT
@@ -42,18 +42,21 @@ Environment Variables
     base port.  The selected port will be logged by the worker.
 """
 from __future__ import absolute_import, print_function, unicode_literals
+
 import errno
 import os
 import socket
 import sys
 from pdb import Pdb
+
 from billiard.process import current_process
+
 from celery.five import range
 
-__all__ = [
+__all__ = (
     'CELERY_RDB_HOST', 'CELERY_RDB_PORT', 'DEFAULT_PORT',
     'Rdb', 'debugger', 'set_trace',
-]
+)
 
 DEFAULT_PORT = 6899
 
@@ -124,6 +127,7 @@ class Rdb(Pdb):
         this_port = None
         for i in range(search_limit):
             _sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            _sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             this_port = port + skew + i
             try:
                 _sock.bind((host, this_port))

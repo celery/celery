@@ -1,22 +1,21 @@
 from __future__ import absolute_import, unicode_literals
 
 import errno
-import pytest
 import socket
-
 from collections import deque
 
-from case import ContextMock, Mock, call, patch, skip
+import pytest
 from billiard.exceptions import RestartFreqExceeded
 
+from case import ContextMock, Mock, call, patch, skip
+from celery.utils.collections import LimitedSet
 from celery.worker.consumer.agent import Agent
-from celery.worker.consumer.consumer import (CLOSE, TERMINATE,
-                                             Consumer, dump_body)
+from celery.worker.consumer.consumer import (CLOSE, TERMINATE, Consumer,
+                                             dump_body)
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
 from celery.worker.consumer.tasks import Tasks
-from celery.utils.collections import LimitedSet
 
 
 class test_Consumer:
@@ -104,34 +103,69 @@ class test_Consumer:
         c.on_send_event_buffered()
         c.hub._ready.add.assert_called_with(c._flush_events)
 
-    def test_limit_task(self):
+    def test_schedule_bucket_request(self):
         c = self.get_consumer()
         c.timer = Mock()
 
         bucket = Mock()
         request = Mock()
+        bucket.pop = lambda: bucket.contents.popleft()
         bucket.can_consume.return_value = True
         bucket.contents = deque()
 
-        c._limit_task(request, bucket, 3)
-        bucket.can_consume.assert_called_with(3)
-        bucket.expected_time.assert_called_with(3)
-        c.timer.call_after.assert_called_with(
-            bucket.expected_time(), c._on_bucket_wakeup, (bucket, 3),
-            priority=c._limit_order,
-        )
+        with patch(
+            'celery.worker.consumer.consumer.Consumer._limit_move_to_pool'
+        ) as reserv:
+            bucket.contents.append((request, 3))
+            c._schedule_bucket_request(bucket)
+            bucket.can_consume.assert_called_with(3)
+            reserv.assert_called_with(request)
 
         bucket.can_consume.return_value = False
+        bucket.contents = deque()
         bucket.expected_time.return_value = 3.33
+        bucket.contents.append((request, 4))
         limit_order = c._limit_order
-        c._limit_task(request, bucket, 4)
+        c._schedule_bucket_request(bucket)
         assert c._limit_order == limit_order + 1
         bucket.can_consume.assert_called_with(4)
         c.timer.call_after.assert_called_with(
-            3.33, c._on_bucket_wakeup, (bucket, 4),
+            3.33, c._schedule_bucket_request, (bucket,),
             priority=c._limit_order,
         )
         bucket.expected_time.assert_called_with(4)
+        assert bucket.pop() == (request, 4)
+
+        bucket.contents = deque()
+        bucket.can_consume.reset_mock()
+        c._schedule_bucket_request(bucket)
+        bucket.can_consume.assert_not_called()
+
+    def test_limit_task(self):
+        c = self.get_consumer()
+        bucket = Mock()
+        request = Mock()
+
+        with patch(
+            'celery.worker.consumer.consumer.Consumer._schedule_bucket_request'
+        ) as reserv:
+            c._limit_task(request, bucket, 1)
+            bucket.add.assert_called_with((request, 1))
+            reserv.assert_called_with(bucket)
+
+    def test_post_eta(self):
+        c = self.get_consumer()
+        c.qos = Mock()
+        bucket = Mock()
+        request = Mock()
+
+        with patch(
+            'celery.worker.consumer.consumer.Consumer._schedule_bucket_request'
+        ) as reserv:
+            c._limit_post_eta(request, bucket, 1)
+            c.qos.decrement_eventually.assert_called_with()
+            bucket.add.assert_called_with((request, 1))
+            reserv.assert_called_with(bucket)
 
     def test_start_blueprint_raises_EMFILE(self):
         c = self.get_consumer()

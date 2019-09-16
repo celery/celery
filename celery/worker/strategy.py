@@ -4,23 +4,65 @@ from __future__ import absolute_import, unicode_literals
 
 import logging
 
-from kombu.async.timer import to_timestamp
+from kombu.asynchronous.timer import to_timestamp
 from kombu.five import buffer_t
 
+from celery import signals
 from celery.exceptions import InvalidTaskError
+from celery.utils.imports import symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.saferepr import saferepr
 from celery.utils.time import timezone
 
-from .request import Request, create_request_cls
+from .request import create_request_cls
 from .state import task_reserved
 
-__all__ = ['default']
+__all__ = ('default',)
 
 logger = get_logger(__name__)
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.
+
+
+def hybrid_to_proto2(message, body):
+    """Create a fresh protocol 2 message from a hybrid protocol 1/2 message."""
+    try:
+        args, kwargs = body.get('args', ()), body.get('kwargs', {})
+        kwargs.items  # pylint: disable=pointless-statement
+    except KeyError:
+        raise InvalidTaskError('Message does not have args/kwargs')
+    except AttributeError:
+        raise InvalidTaskError(
+            'Task keyword arguments must be a mapping',
+        )
+
+    headers = {
+        'lang': body.get('lang'),
+        'task': body.get('task'),
+        'id': body.get('id'),
+        'root_id': body.get('root_id'),
+        'parent_id': body.get('parent_id'),
+        'group': body.get('group'),
+        'meth': body.get('meth'),
+        'shadow': body.get('shadow'),
+        'eta': body.get('eta'),
+        'expires': body.get('expires'),
+        'retries': body.get('retries'),
+        'timelimit': body.get('timelimit', (None, None)),
+        'argsrepr': body.get('argsrepr'),
+        'kwargsrepr': body.get('kwargsrepr'),
+        'origin': body.get('origin'),
+    }
+
+    embed = {
+        'callbacks': body.get('callbacks'),
+        'errbacks': body.get('errbacks'),
+        'chord': body.get('chord'),
+        'chain': None,
+    }
+
+    return (args, kwargs, embed), headers, True, body.get('utc', True)
 
 
 def proto1_to_proto2(message, body):
@@ -83,21 +125,27 @@ def default(task, app, consumer,
     get_bucket = consumer.task_buckets.__getitem__
     handle = consumer.on_task_request
     limit_task = consumer._limit_task
+    limit_post_eta = consumer._limit_post_eta
     body_can_be_buffer = consumer.pool.body_can_be_buffer
+    Request = symbol_by_name(task.Request)
     Req = create_request_cls(Request, task, consumer.pool, hostname, eventer)
 
     revoked_tasks = consumer.controller.state.revoked
 
     def task_message_handler(message, body, ack, reject, callbacks,
                              to_timestamp=to_timestamp):
-        if body is None:
+        if body is None and 'args' not in message.payload:
             body, headers, decoded, utc = (
                 message.body, message.headers, False, app.uses_utc_timezone(),
             )
             if not body_can_be_buffer:
                 body = bytes(body) if isinstance(body, buffer_t) else body
         else:
-            body, headers, decoded, utc = proto1_to_proto2(message, body)
+            if 'args' in message.payload:
+                body, headers, decoded, utc = hybrid_to_proto2(message,
+                                                               message.payload)
+            else:
+                body, headers, decoded, utc = proto1_to_proto2(message, body)
 
         req = Req(
             message,
@@ -110,6 +158,8 @@ def default(task, app, consumer,
         if (req.expires or req.id in revoked_tasks) and req.revoked():
             return
 
+        signals.task_received.send(sender=consumer, request=req)
+
         if task_sends_events:
             send_event(
                 'task-received',
@@ -121,6 +171,8 @@ def default(task, app, consumer,
                 expires=req.expires and req.expires.isoformat(),
             )
 
+        bucket = None
+        eta = None
         if req.eta:
             try:
                 if req.utc:
@@ -131,17 +183,22 @@ def default(task, app, consumer,
                 error("Couldn't convert ETA %r to timestamp: %r. Task: %r",
                       req.eta, exc, req.info(safe=True), exc_info=True)
                 req.reject(requeue=False)
-            else:
-                consumer.qos.increment_eventually()
-                call_at(eta, apply_eta_task, (req,), priority=6)
-        else:
-            if rate_limits_enabled:
-                bucket = get_bucket(task.name)
-                if bucket:
-                    return limit_task(req, bucket, 1)
-            task_reserved(req)
-            if callbacks:
-                [callback(req) for callback in callbacks]
-            handle(req)
+        if rate_limits_enabled:
+            bucket = get_bucket(task.name)
 
+        if eta and bucket:
+            consumer.qos.increment_eventually()
+            return call_at(eta, limit_post_eta, (req, bucket, 1),
+                           priority=6)
+        if eta:
+            consumer.qos.increment_eventually()
+            call_at(eta, apply_eta_task, (req,), priority=6)
+            return task_message_handler
+        if bucket:
+            return limit_task(req, bucket, 1)
+
+        task_reserved(req)
+        if callbacks:
+            [callback(req) for callback in callbacks]
+        handle(req)
     return task_message_handler

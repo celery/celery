@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """Object related utilities, including introspection, etc."""
 from __future__ import absolute_import, unicode_literals
+
 from functools import reduce
 
-__all__ = ['Bunch', 'FallbackContext', 'getitem_property', 'mro_lookup']
+__all__ = ('Bunch', 'FallbackContext', 'getitem_property', 'mro_lookup')
 
 
 class Bunch(object):
@@ -13,7 +14,7 @@ class Bunch(object):
         self.__dict__.update(kwargs)
 
 
-def mro_lookup(cls, attr, stop=set(), monkey_patched=[]):
+def mro_lookup(cls, attr, stop=None, monkey_patched=None):
     """Return the first node by MRO order that defines an attribute.
 
     Arguments:
@@ -28,6 +29,8 @@ def mro_lookup(cls, attr, stop=set(), monkey_patched=[]):
     Returns:
         Any: The attribute value, or :const:`None` if not found.
     """
+    stop = set() if not stop else stop
+    monkey_patched = [] if not monkey_patched else monkey_patched
     for node in cls.mro():
         if node in stop:
             try:

@@ -1,17 +1,19 @@
 from __future__ import absolute_import, unicode_literals
 
-import pytest
-
 from collections import defaultdict
 from contextlib import contextmanager
 
-from case import Mock, patch
+import pytest
 from kombu.utils.limits import TokenBucket
 
+from case import ANY, Mock, patch
+from celery import Task, signals
 from celery.exceptions import InvalidTaskError
-from celery.worker import state
-from celery.worker.strategy import proto1_to_proto2
 from celery.utils.time import rate
+from celery.worker import state
+from celery.worker.request import Request
+from celery.worker.strategy import default as default_strategy
+from celery.worker.strategy import proto1_to_proto2
 
 
 class test_proto1_to_proto2:
@@ -93,6 +95,14 @@ class test_default_strategy_proto2:
             assert not self.was_reserved()
             return self.consumer._limit_task.called
 
+        def was_limited_with_eta(self):
+            assert not self.was_reserved()
+            called = self.consumer.timer.call_at.called
+            if called:
+                assert self.consumer.timer.call_at.call_args[0][1] == \
+                    self.consumer._limit_post_eta
+            return called
+
         def was_scheduled(self):
             assert not self.was_reserved()
             assert not self.was_rate_limited()
@@ -114,6 +124,7 @@ class test_default_strategy_proto2:
     def _context(self, sig,
                  rate_limits=True, events=True, utc=True, limit=None):
         assert sig.type.Strategy
+        assert sig.type.Request
 
         reserved = Mock()
         consumer = Mock()
@@ -156,6 +167,15 @@ class test_default_strategy_proto2:
             for callback in callbacks:
                 callback.assert_called_with(req)
 
+    def test_signal_task_received(self):
+        callback = Mock()
+        with self._context(self.add.s(2, 2)) as C:
+            signals.task_received.connect(callback)
+            C()
+            callback.assert_called_once_with(sender=C.consumer,
+                                             request=ANY,
+                                             signal=signals.task_received)
+
     def test_when_events_disabled(self):
         with self._context(self.add.s(2, 2), events=False) as C:
             C()
@@ -179,6 +199,13 @@ class test_default_strategy_proto2:
         with self._context(task, rate_limits=True, limit='1/m') as C:
             C()
             assert C.was_rate_limited()
+
+    def test_when_rate_limited_with_eta(self):
+        task = self.add.s(2, 2).set(countdown=10)
+        with self._context(task, rate_limits=True, limit='1/m') as C:
+            C()
+            assert C.was_limited_with_eta()
+            C.consumer.qos.increment_eventually.assert_called_with()
 
     def test_when_rate_limited__limits_disabled(self):
         task = self.add.s(2, 2)
@@ -214,3 +241,30 @@ class test_default_strategy_proto1__no_utc(test_default_strategy_proto2):
     def prepare_message(self, message):
         message.payload['utc'] = False
         return message
+
+
+class test_custom_request_for_default_strategy(test_default_strategy_proto2):
+    def test_custom_request_gets_instantiated(self):
+        _MyRequest = Mock(name='MyRequest')
+
+        class MyRequest(Request):
+            def __init__(self, *args, **kwargs):
+                Request.__init__(self, *args, **kwargs)
+                _MyRequest()
+
+        class MyTask(Task):
+            Request = MyRequest
+
+        @self.app.task(base=MyTask)
+        def failed():
+            raise AssertionError
+
+        sig = failed.s()
+        with self._context(sig) as C:
+            task_message_handler = default_strategy(
+                failed,
+                self.app,
+                C.consumer
+            )
+            task_message_handler(C.message, None, None, None, None)
+            _MyRequest.assert_called()

@@ -1,9 +1,24 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
+
 from case import Mock, patch
 from celery import chord, group
-from celery.backends.rpc import RPCBackend
 from celery._state import _task_stack
+from celery.backends.rpc import RPCBackend
+
+
+class test_RPCResultConsumer:
+    def get_backend(self):
+        return RPCBackend(app=self.app)
+
+    def get_consumer(self):
+        return self.get_backend().result_consumer
+
+    def test_drain_events_before_start(self):
+        consumer = self.get_consumer()
+        # drain_events shouldn't crash when called before start
+        consumer.drain_events(0.001)
 
 
 class test_RPCBackend:
@@ -26,7 +41,7 @@ class test_RPCBackend:
 
     def test_apply_chord(self):
         with pytest.raises(NotImplementedError):
-            self.b.apply_chord([], (), 'gid', Mock(name='body'))
+            self.b.apply_chord(self.app.GroupResult(), None)
 
     @pytest.mark.celery(result_backend='rpc')
     def test_chord_raises_error(self):

@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 """Worker name utilities."""
 from __future__ import absolute_import, unicode_literals
+
 import os
 import socket
 from functools import partial
+
 from kombu.entity import Exchange, Queue
+
 from .functional import memoize
 from .text import simple_format
 
@@ -21,11 +24,11 @@ NODENAME_DEFAULT = 'celery'
 
 gethostname = memoize(1, Cache=dict)(socket.gethostname)
 
-__all__ = [
+__all__ = (
     'worker_direct', 'gethostname', 'nodename',
     'anon_nodename', 'nodesplit', 'default_nodename',
     'node_format', 'host_format',
-]
+)
 
 
 def worker_direct(hostname):

@@ -1,26 +1,19 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
-from case import Mock, patch
 from kombu.exceptions import EncodeError
-from celery import group, uuid
-from celery import signals
-from celery import states
-from celery.exceptions import Ignore, Retry, Reject
-from celery.app.trace import (
-    TraceInfo,
-    build_tracer,
-    get_log_policy,
-    log_policy_reject,
-    log_policy_ignore,
-    log_policy_internal,
-    log_policy_expected,
-    log_policy_unexpected,
-    trace_task,
-    _trace_task_ret,
-    _fast_trace_task,
-    setup_worker_optimizations,
-    reset_worker_optimizations,
-)
+
+from case import Mock, patch
+from celery import group, signals, states, uuid
+from celery.app.task import Context
+from celery.app.trace import (TraceInfo, _fast_trace_task, _trace_task_ret,
+                              build_tracer, get_log_policy, get_task_name,
+                              log_policy_expected, log_policy_ignore,
+                              log_policy_internal, log_policy_reject,
+                              log_policy_unexpected,
+                              reset_worker_optimizations,
+                              setup_worker_optimizations, trace_task)
+from celery.exceptions import Ignore, Reject, Retry
 
 
 def trace(app, task, args=(), kwargs={},
@@ -85,6 +78,12 @@ class test_trace(TraceCase):
         einfo2.internal = True
         assert (get_log_policy(self.add, einfo2, KeyError()) is
                 log_policy_internal)
+
+    def test_get_task_name(self):
+        assert get_task_name(Context({}), 'default') == 'default'
+        assert get_task_name(Context({'shadow': None}), 'default') == 'default'
+        assert get_task_name(Context({'shadow': ''}), 'default') == 'default'
+        assert get_task_name(Context({'shadow': 'test'}), 'default') == 'test'
 
     def test_trace_after_return(self):
 
@@ -181,7 +180,7 @@ class test_trace(TraceCase):
         maybe_signature.return_value = sig
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig.apply_async.assert_called_with(
-            (4,), parent_id='id-1', root_id='root',
+            (4,), parent_id='id-1', root_id='root', priority=None
         )
 
     @patch('celery.canvas.maybe_signature')
@@ -193,7 +192,21 @@ class test_trace(TraceCase):
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig.apply_async.assert_called_with(
             (4, ), parent_id='id-1', root_id='root',
-            chain=[sig2],
+            chain=[sig2], priority=None
+        )
+
+    @patch('celery.canvas.maybe_signature')
+    def test_chain_inherit_parent_priority(self, maybe_signature):
+        self.app.conf.task_inherit_parent_priority = True
+        sig = Mock(name='sig')
+        sig2 = Mock(name='sig2')
+        request = {'chain': [sig2, sig], 'root_id': 'root',
+                   'delivery_info': {'priority': 42}}
+        maybe_signature.return_value = sig
+        retval, _ = self.trace(self.add, (2, 2), {}, request=request)
+        sig.apply_async.assert_called_with(
+            (4, ), parent_id='id-1', root_id='root',
+            chain=[sig2], priority=42
         )
 
     @patch('celery.canvas.maybe_signature')
@@ -219,10 +232,10 @@ class test_trace(TraceCase):
         maybe_signature.side_effect = passt
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         group_.assert_called_with(
-            (4,), parent_id='id-1', root_id='root',
+            (4,), parent_id='id-1', root_id='root', priority=None
         )
         sig3.apply_async.assert_called_with(
-            (4,), parent_id='id-1', root_id='root',
+            (4,), parent_id='id-1', root_id='root', priority=None
         )
 
     @patch('celery.canvas.maybe_signature')
@@ -239,10 +252,10 @@ class test_trace(TraceCase):
         maybe_signature.side_effect = passt
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig1.apply_async.assert_called_with(
-            (4,), parent_id='id-1', root_id='root',
+            (4,), parent_id='id-1', root_id='root', priority=None
         )
         sig2.apply_async.assert_called_with(
-            (4,), parent_id='id-1', root_id='root',
+            (4,), parent_id='id-1', root_id='root', priority=None
         )
 
     def test_trace_SystemExit(self):

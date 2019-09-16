@@ -7,7 +7,7 @@ from __future__ import absolute_import, unicode_literals
 # too much (e.g., for eventlet patching)
 from kombu.utils.imports import symbol_by_name
 
-__all__ = ['get_implementation']
+__all__ = ('get_implementation',)
 
 ALIASES = {
     'prefork': 'celery.concurrency.prefork:TaskPool',

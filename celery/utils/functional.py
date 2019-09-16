@@ -4,26 +4,21 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import inspect
 import sys
-
 from functools import partial
 from itertools import chain, islice
 
-from kombu.utils.functional import (
-    LRUCache, dictfilter, lazy, maybe_evaluate, memoize,
-    is_list, maybe_list,
-)
+from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
+                                    maybe_evaluate, maybe_list, memoize)
 from vine import promise
 
 from celery.five import UserList, getfullargspec, range
 
-__all__ = [
+__all__ = (
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
     'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
     'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun',
     'maybe', 'fun_accepts_kwargs',
-]
-
-IS_PY3 = sys.version_info[0] == 3
+)
 
 FUNHEAD_TEMPLATE = """
 def {fun_name}({fun_args}):
@@ -63,7 +58,6 @@ def noop(*args, **kwargs):
 
     Takes any arguments/keyword arguments and does nothing.
     """
-    pass
 
 
 def pass1(arg, *args, **kwargs):
@@ -268,9 +262,10 @@ def head_from_fun(fun, bound=False, debug=False):
     # as just calling a function.
     is_function = inspect.isfunction(fun)
     is_callable = hasattr(fun, '__call__')
+    is_cython = fun.__class__.__name__ == 'cython_function_or_method'
     is_method = inspect.ismethod(fun)
 
-    if not is_function and is_callable and not is_method:
+    if not is_function and is_callable and not is_method and not is_cython:
         name, fun = fun.__class__.__name__, fun.__call__
     else:
         name = fun.__name__

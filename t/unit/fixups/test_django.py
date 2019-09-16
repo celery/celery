@@ -1,14 +1,12 @@
 from __future__ import absolute_import, unicode_literals
-import pytest
+
 from contextlib import contextmanager
+
+import pytest
+
 from case import Mock, mock, patch
-from celery.fixups.django import (
-    _maybe_close_fd,
-    fixup,
-    FixupWarning,
-    DjangoFixup,
-    DjangoWorkerFixup,
-)
+from celery.fixups.django import (DjangoFixup, DjangoWorkerFixup,
+                                  FixupWarning, _maybe_close_fd, fixup)
 
 
 class FixupCase:
@@ -70,7 +68,7 @@ class test_DjangoFixup(FixupCase):
                 Fixup.assert_not_called()
             with mock.module_exists('django'):
                 import django
-                django.VERSION = (1, 10, 1)
+                django.VERSION = (1, 11, 1)
                 fixup(self.app)
                 Fixup.assert_called()
 
@@ -93,7 +91,7 @@ class test_DjangoFixup(FixupCase):
             f.install()
             self.sigs.worker_init.connect.assert_called_with(f.on_worker_init)
             assert self.app.loader.now == f.now
-            self.p.append.assert_called_with('/opt/vandelay')
+            self.p.insert.assert_called_with(0, '/opt/vandelay')
 
     def test_now(self):
         with self.fixup_context(self.app) as (f, _, _):
@@ -137,22 +135,22 @@ class test_DjangoWorkerFixup(FixupCase):
     def test_on_worker_process_init(self, patching):
         with self.fixup_context(self.app) as (f, _, _):
             with patch('celery.fixups.django._maybe_close_fd') as mcf:
-                    _all = f._db.connections.all = Mock()
-                    conns = _all.return_value = [
-                        Mock(), Mock(),
-                    ]
-                    conns[0].connection = None
-                    with patch.object(f, 'close_cache'):
-                        with patch.object(f, '_close_database'):
-                            f.on_worker_process_init()
-                            mcf.assert_called_with(conns[1].connection)
-                            f.close_cache.assert_called_with()
-                            f._close_database.assert_called_with()
+                _all = f._db.connections.all = Mock()
+                conns = _all.return_value = [
+                    Mock(), Mock(),
+                ]
+                conns[0].connection = None
+                with patch.object(f, 'close_cache'):
+                    with patch.object(f, '_close_database'):
+                        f.on_worker_process_init()
+                        mcf.assert_called_with(conns[1].connection)
+                        f.close_cache.assert_called_with()
+                        f._close_database.assert_called_with()
 
-                            f.validate_models = Mock(name='validate_models')
-                            patching.setenv('FORKED_BY_MULTIPROCESSING', '1')
-                            f.on_worker_process_init()
-                            f.validate_models.assert_called_with()
+                        f.validate_models = Mock(name='validate_models')
+                        patching.setenv('FORKED_BY_MULTIPROCESSING', '1')
+                        f.on_worker_process_init()
+                        f.validate_models.assert_called_with()
 
     def test_on_task_prerun(self):
         task = Mock()
@@ -220,16 +218,15 @@ class test_DjangoWorkerFixup(FixupCase):
             conns[1].close.assert_called_with()
             conns[2].close.assert_called_with()
 
-            conns[1].close.side_effect = KeyError('omg')
+            conns[1].close.side_effect = KeyError(
+                'omg')
             with pytest.raises(KeyError):
                 f._close_database()
 
     def test_close_cache(self):
         with self.fixup_context(self.app) as (f, _, _):
             f.close_cache()
-            f._cache.cache.close.assert_called_with()
-            f._cache.cache.close.side_effect = TypeError()
-            f.close_cache()
+            f._cache.close_caches.assert_called_with()
 
     def test_on_worker_ready(self):
         with self.fixup_context(self.app) as (f, _, _):

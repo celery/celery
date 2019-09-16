@@ -7,9 +7,9 @@ statistics, and revoked tasks.
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
-import sys
 import platform
 import shelve
+import sys
 import weakref
 import zlib
 
@@ -21,11 +21,11 @@ from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.five import Counter
 from celery.utils.collections import LimitedSet
 
-__all__ = [
+__all__ = (
     'SOFTWARE_INFO', 'reserved_requests', 'active_requests',
     'total_count', 'revoked', 'task_reserved', 'maybe_shutdown',
     'task_accepted', 'task_ready', 'Persistent',
-]
+)
 
 #: Worker software/platform information.
 SOFTWARE_INFO = {
@@ -74,10 +74,10 @@ def reset_state():
 
 def maybe_shutdown():
     """Shutdown if flags have been set."""
-    if should_stop is not None and should_stop is not False:
-        raise WorkerShutdown(should_stop)
-    elif should_terminate is not None and should_terminate is not False:
+    if should_terminate is not None and should_terminate is not False:
         raise WorkerTerminate(should_terminate)
+    elif should_stop is not None and should_stop is not False:
+        raise WorkerShutdown(should_stop)
 
 
 def task_reserved(request,
@@ -89,10 +89,12 @@ def task_reserved(request,
 
 
 def task_accepted(request,
-                  _all_total_count=all_total_count,
+                  _all_total_count=None,
                   add_active_request=active_requests.add,
                   add_to_total_count=total_count.update):
     """Update global state when a task has been accepted."""
+    if not _all_total_count:
+        _all_total_count = all_total_count
     add_active_request(request)
     add_to_total_count({request.name: 1})
     all_total_count[0] += 1
@@ -132,9 +134,9 @@ if C_BENCH:  # pragma: no cover
         def on_shutdown():
             if bench_first is not None and bench_last is not None:
                 print('- Time spent in benchmark: {0!r}'.format(
-                      bench_last - bench_first))
+                    bench_last - bench_first))
                 print('- Avg: {0}'.format(
-                      sum(bench_sample) / len(bench_sample)))
+                    sum(bench_sample) / len(bench_sample)))
                 memdump()
 
     def task_reserved(request):  # noqa

@@ -180,7 +180,7 @@ or stop it:
 
 The ``stop`` command is asynchronous so it won't wait for the
 worker to shutdown. You'll probably want to use the ``stopwait`` command
-instead,  this ensures all currently executing tasks is completed
+instead,  this ensures all currently executing tasks are completed
 before exiting:
 
 .. code-block:: console
@@ -256,6 +256,8 @@ You can call a task using the :meth:`delay` method:
 
 .. code-block:: pycon
 
+    >>> from proj.tasks import add
+    
     >>> add.delay(2, 2)
 
 This method is actually a star-argument shortcut to another method called

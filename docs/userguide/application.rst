@@ -436,7 +436,7 @@ chain breaks:
 
 .. topic:: Evolving the API
 
-    Celery has changed a lot in the 7 years since it was initially
+    Celery has changed a lot from 2009 since it was initially
     created.
 
     For example, in the beginning it was possible to use any callable as
@@ -506,14 +506,18 @@ class: :class:`celery.Task`.
 
         def __call__(self, *args, **kwargs):
             print('TASK STARTING: {0.name}[{0.request.id}]'.format(self))
-            return super(DebugTask, self).__call__(*args, **kwargs)
+            return self.run(*args, **kwargs)
 
 
 .. tip::
 
-    If you override the tasks ``__call__`` method, then it's very important
-    that you also call super so that the base call method can set up the
-    default request used when a task is called directly.
+    If you override the task's ``__call__`` method, then it's very important
+    that you also call ``self.run`` to execute the body of the task.  Do not
+    call ``super().__call__``.  The ``__call__`` method of the neutral base 
+    class :class:`celery.Task` is only present for reference.  For optimization,
+    this has been unrolled into ``celery.app.trace.build_tracer.trace_task``
+    which calls ``run`` directly on the custom task class if no ``__call__``
+    method is defined.
 
 The neutral base class is special because it's not bound to any specific app
 yet. Once a task is bound to an app it'll read configuration to set default

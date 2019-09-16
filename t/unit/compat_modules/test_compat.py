@@ -1,12 +1,12 @@
 from __future__ import absolute_import, unicode_literals
-import pytest
+
 from datetime import timedelta
+
+import pytest
+
 from celery.five import bytes_if_py2
 from celery.schedules import schedule
-from celery.task import (
-    periodic_task,
-    PeriodicTask
-)
+from celery.task import PeriodicTask, periodic_task
 
 
 class test_periodic_tasks:

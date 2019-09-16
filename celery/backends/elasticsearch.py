@@ -1,17 +1,23 @@
 # -* coding: utf-8 -*-
 """Elasticsearch result store backend."""
 from __future__ import absolute_import, unicode_literals
+
 from datetime import datetime
+
+from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import _parse_url
+
 from celery.exceptions import ImproperlyConfigured
-from celery.five import string
+from celery.five import items
+
 from .base import KeyValueStoreBackend
+
 try:
     import elasticsearch
 except ImportError:
     elasticsearch = None  # noqa
 
-__all__ = ['ElasticsearchBackend']
+__all__ = ('ElasticsearchBackend',)
 
 E_LIB_MISSING = """\
 You need to install the elasticsearch library to use the Elasticsearch \
@@ -32,6 +38,8 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     scheme = 'http'
     host = 'localhost'
     port = 9200
+    username = None
+    password = None
     es_retry_on_timeout = False
     es_timeout = 10
     es_max_retries = 3
@@ -44,10 +52,12 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         if elasticsearch is None:
             raise ImproperlyConfigured(E_LIB_MISSING)
 
-        index = doc_type = scheme = host = port = None
+        index = doc_type = scheme = host = port = username = password = None
 
         if url:
-            scheme, host, port, _, _, path, _ = _parse_url(url)  # noqa
+            scheme, host, port, username, password, path, _ = _parse_url(url)  # noqa
+            if scheme == 'elasticsearch':
+                scheme = None
             if path:
                 path = path.strip('/')
                 index, _, doc_type = path.partition('/')
@@ -57,6 +67,8 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         self.scheme = scheme or self.scheme
         self.host = host or self.host
         self.port = port or self.port
+        self.username = username or self.username
+        self.password = password or self.password
 
         self.es_retry_on_timeout = (
             _get('elasticsearch_retry_on_timeout') or self.es_retry_on_timeout
@@ -105,8 +117,9 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             self._index(key, data, refresh=True)
 
     def _index(self, id, body, **kwargs):
+        body = {bytes_to_str(k): v for k, v in items(body)}
         return self.server.index(
-            id=string(id),
+            id=bytes_to_str(id),
             index=self.index,
             doc_type=self.doc_type,
             body=body,
@@ -121,11 +134,16 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def _get_server(self):
         """Connect to the Elasticsearch server."""
+        http_auth = None
+        if self.username and self.password:
+            http_auth = (self.username, self.password)
         return elasticsearch.Elasticsearch(
             '%s:%s' % (self.host, self.port),
             retry_on_timeout=self.es_retry_on_timeout,
             max_retries=self.es_max_retries,
-            timeout=self.es_timeout
+            timeout=self.es_timeout,
+            scheme=self.scheme,
+            http_auth=http_auth,
         )
 
     @property

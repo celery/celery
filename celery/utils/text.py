@@ -1,19 +1,27 @@
 # -*- coding: utf-8 -*-
 """Text formatting utilities."""
 from __future__ import absolute_import, unicode_literals
+
 import re
-from collections import Callable
 from functools import partial
-from textwrap import fill
 from pprint import pformat
+from textwrap import fill
+
 from celery.five import string_t
 
-__all__ = [
+try:
+    from collections.abc import Callable
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Callable
+
+
+__all__ = (
     'abbr', 'abbrtask', 'dedent', 'dedent_initial',
     'ensure_newlines', 'ensure_sep',
     'fill_paragraphs', 'indent', 'join',
     'pluralize', 'pretty', 'str_to_list', 'simple_format', 'truncate',
-]
+)
 
 UNKNOWN_SIMPLE_FORMAT_KEY = """
 Unknown format %{0} in string {1!r}.
@@ -184,7 +192,7 @@ def remove_repeating(substr, s):
     index = s.find(substr)
     if index >= 0:
         return ''.join([
-            # leave the first occurance of substr untouched.
+            # leave the first occurrence of substr untouched.
             s[:index + len(substr)],
             # strip seen substr from the rest of the string.
             s[index + len(substr):].replace(substr, ''),

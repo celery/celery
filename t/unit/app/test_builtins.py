@@ -1,7 +1,9 @@
 from __future__ import absolute_import, unicode_literals
+
 import pytest
+
 from case import ContextMock, Mock, patch
-from celery import group, chord
+from celery import chord, group
 from celery.app import builtins
 from celery.five import range
 from celery.utils.functional import pass1
@@ -92,7 +94,9 @@ class test_group(BuiltinsCase):
         self.maybe_signature = self.patching('celery.canvas.maybe_signature')
         self.maybe_signature.side_effect = pass1
         self.app.producer_or_acquire = Mock()
-        self.app.producer_or_acquire.attach_mock(ContextMock(), 'return_value')
+        self.app.producer_or_acquire.attach_mock(
+            ContextMock(serializer='json'), 'return_value'
+        )
         self.app.conf.task_always_eager = True
         self.task = builtins.add_group_task(self.app)
         BuiltinsCase.setup(self)

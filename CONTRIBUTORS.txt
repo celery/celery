@@ -25,6 +25,7 @@ derivative works of any Contribution, under the BSD License.
 Contributors
 ------------
 
+Asif Saif Uddin, 2016/08/30
 Ask Solem, 2012/06/07
 Sean O'Connor, 2012/06/07
 Patrick Altman, 2012/06/07
@@ -236,3 +237,39 @@ Jianjian Yu, 2017/04/09
 Brian May, 2017/04/10
 Dmytro Petruk, 2017/04/12
 Joey Wilhelm, 2017/04/12
+Yoichi Nakayama, 2017/04/25
+Simon Schmidt, 2017/05/19
+Anthony Lukach, 2017/05/23
+Samuel Dion-Girardeau, 2017/05/29
+Aydin Sen, 2017/06/14
+Vinod Chandru, 2017/07/11
+Preston Moore, 2017/06/18
+Nicolas Mota, 2017/08/10
+David Davis, 2017/08/11
+Martial Pageau, 2017/08/16
+Sammie S. Taunton, 2017/08/17
+Kxrr, 2017/08/18
+Mads Jensen, 2017/08/20
+Markus Kaiserswerth, 2017/08/30
+Andrew Wong, 2017/09/07
+Arpan Shah, 2017/09/12
+Tobias 'rixx' Kunze, 2017/08/20
+Mikhail Wolfson, 2017/12/11
+Matt Davis, 2017/12/13
+Alex Garel, 2018/01/04
+Régis Behmo 2018/01/20
+Igor Kasianov, 2018/01/20
+Derek Harland, 2018/02/15
+Chris Mitchell, 2018/02/27
+Josue Balandrano Coronel, 2018/05/24
+Federico Bond, 2018/06/20
+Tom Booth, 2018/07/06
+Axel haustant, 2018/08/14
+Bruno Alla, 2018/09/27
+Artem Vasilyev, 2018/11/24
+Victor Mireyev, 2018/12/13
+Florian Chardin, 2018/10/23
+Shady Rafehi, 2019/02/20
+Fabio Todaro, 2019/06/13
+Shashank Parekh, 2019/07/11
+Arel Cordero, 2019/08/29
