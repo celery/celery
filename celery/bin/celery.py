@@ -11,6 +11,7 @@ from celery._state import get_current_app
 from celery.app.utils import find_app
 from celery.bin.base import CeleryCommand, CeleryDaemonCommand, CeleryOption
 from celery.platforms import maybe_drop_privileges
+from celery.utils import text
 from celery.utils.log import mlevel
 from celery.utils.nodenames import default_nodename, host_format, node_format
 from celery.utils.time import maybe_iso8601
@@ -130,6 +131,15 @@ class ISO8601DateTimeOrFloat(ParamType):
             self.fail(e)
 
 
+class CommaSeperatedList(ParamType):
+    """Comma seperated list argument."""
+
+    name = "comma seperated list"
+
+    def convert(self, value, param, ctx):
+        return set(text.str_to_list(value))
+
+
 PREFETCH_MULTIPLIER = PrefetchMultiplier()
 HOSTNAME = Hostname()
 CONCURRENCY = Concurrency()
@@ -140,6 +150,7 @@ WORKERS_POOL = WorkersPool()
 JSON = Json()
 ISO8601 = ISO8601DateTime()
 ISO8601_OR_FLOAT = ISO8601DateTimeOrFloat()
+COMMA_SEPERATED_LIST = CommaSeperatedList()
 
 
 @click.group(invoke_without_command=True)
@@ -504,6 +515,61 @@ def call(ctx, name, args, kwargs, eta, countdown, expires, serializer, queue, ex
         expires=expires
     ).id
     click.echo(task_id)
+
+
+@celery.command(cls=CeleryCommand)
+@click.option('-f',
+              '--force',
+              cls=CeleryOption,
+              is_flag=True,
+              help_group='Purging Options',
+              help="Don't prompt for verification.")
+@click.option('-Q',
+              '--queues',
+              cls=CeleryOption,
+              type=COMMA_SEPERATED_LIST,
+              help_group='Purging Options',
+              help="Comma separated list of queue names to purge.")
+@click.option('-X',
+              '--exclude-queues',
+              cls=CeleryOption,
+              type=COMMA_SEPERATED_LIST,
+              help_group='Purging Options',
+              help="Comma separated list of queues names not to purge.")
+@click.pass_context
+def purge(ctx, force, queues, exclude_queues):
+    """Erase all messages from all known task queues.
+
+    Warning:
+
+        There's no undo operation for this command.
+    """
+    queues = queues or set()
+    exclude_queues = exclude_queues or set()
+    app = ctx.obj['app']
+    names = (queues or set(app.amqp.queues.keys())) - exclude_queues
+    qnum = len(names)
+
+    if names:
+        if not force:
+            click.confirm(f"{click.style('WARNING', fg='red')}: This will remove all tasks from {text.pluralize(qnum, 'queue')}: {', '.join(sorted(names))}.\n"
+                          "         There is no undo for this operation!\n\n"
+                          "(to skip this prompt use the -f option)\n"
+                          "Are you sure you want to delete all tasks?", abort=True)
+
+        def _purge(conn, queue):
+            try:
+                return conn.default_channel.queue_purge(queue) or 0
+            except conn.channel_errors:
+                return 0
+
+        with app.connection_for_write() as conn:
+            messages = sum(_purge(conn, queue) for queue in names)
+
+        if messages:
+            click.echo(f"Purged {messages} {text.pluralize(messages, 'message')} from {qnum} known task {text.pluralize(qnum, 'queue')}.")
+        else:
+            click.echo(f"No messages purged from {qnum} {text.pluralize(qnum, 'queue')}.")
 
 
 @celery.group(name="list")
