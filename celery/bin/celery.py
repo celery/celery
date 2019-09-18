@@ -1,4 +1,5 @@
 """Celery Command Line Interface."""
+import json
 import os
 from functools import partial
 
@@ -8,10 +9,11 @@ from click.types import IntParamType, ParamType, StringParamType
 from celery import VERSION_BANNER, concurrency
 from celery._state import get_current_app
 from celery.app.utils import find_app
-from celery.bin.base import CeleryDaemonCommand, CeleryOption
+from celery.bin.base import CeleryCommand, CeleryDaemonCommand, CeleryOption
 from celery.platforms import maybe_drop_privileges
 from celery.utils.log import mlevel
 from celery.utils.nodenames import default_nodename, host_format, node_format
+from celery.utils.time import maybe_iso8601
 
 
 class App(ParamType):
@@ -87,6 +89,47 @@ class WorkersPool(click.Choice):
         return concurrency.get_implementation(value) or ctx.obj['app'].conf.worker_pool
 
 
+class Json(ParamType):
+    """JSON formatted argument."""
+
+    name = "json"
+
+    def convert(self, value, param, ctx):
+        try:
+            return json.loads(value)
+        except ValueError as e:
+            self.fail(str(e))
+
+
+class ISO8601DateTime(ParamType):
+    """ISO 8601 Date Time argument."""
+
+    name = "iso-86091"
+
+    def convert(self, value, param, ctx):
+        try:
+            return maybe_iso8601(value)
+        except (TypeError, ValueError) as e:
+            self.fail(e)
+
+
+class ISO8601DateTimeOrFloat(ParamType):
+    """ISO 8601 Date Time or float argument."""
+
+    name = "iso-86091 or float"
+
+    def convert(self, value, param, ctx):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            pass
+
+        try:
+            return maybe_iso8601(value)
+        except (TypeError, ValueError) as e:
+            self.fail(e)
+
+
 PREFETCH_MULTIPLIER = PrefetchMultiplier()
 HOSTNAME = Hostname()
 CONCURRENCY = Concurrency()
@@ -94,6 +137,9 @@ APP = App()
 CELERY_BEAT = CeleryBeat()
 LOG_LEVEL = LogLevel()
 WORKERS_POOL = WorkersPool()
+JSON = Json()
+ISO8601 = ISO8601DateTime()
+ISO8601_OR_FLOAT = ISO8601DateTimeOrFloat()
 
 
 @click.group(invoke_without_command=True)
@@ -393,6 +439,71 @@ def beat(ctx, detach=False, logfile=None, pidfile=None, uid=None,
         pass
     else:
         return beat().run()
+
+
+@click.argument('name')
+@click.option('-a',
+              '--args',
+              cls=CeleryOption,
+              type=JSON,
+              default='[]',
+              help_group="Calling Options",
+              help="Positional arguments.")
+@click.option('-k',
+              '--kwargs',
+              cls=CeleryOption,
+              type=JSON,
+              default='{}',
+              help_group="Calling Options",
+              help="Keyword arguments.")
+@click.option('--eta',
+              cls=CeleryOption,
+              type=ISO8601,
+              help_group="Calling Options",
+              help="scheduled time.")
+@click.option('--countdown',
+              cls=CeleryOption,
+              type=float,
+              help_group="Calling Options",
+              help="eta in seconds from now.")
+@click.option('--expires',
+              cls=CeleryOption,
+              type=ISO8601_OR_FLOAT,
+              help_group="Calling Options",
+              help="expiry time.")
+@click.option('--serializer',
+              cls=CeleryOption,
+              default='json',
+              help_group="Calling Options",
+              help="task serializer.")
+@click.option('--queue',
+              cls=CeleryOption,
+              help_group="Routing Options",
+              help="custom queue name.")
+@click.option('--exchange',
+              cls=CeleryOption,
+              help_group="Routing Options",
+              help="custom exchange name.")
+@click.option('--routing-key',
+              cls=CeleryOption,
+              help_group="Routing Options",
+              help="custom routing key.")
+@celery.command(cls=CeleryCommand)
+@click.pass_context
+def call(ctx, name, args, kwargs, eta, countdown, expires, serializer, queue, exchange, routing_key):
+    """Call a task by name."""
+    task_id = ctx.obj['app'].send_task(
+        name,
+        args=args, kwargs=kwargs,
+        countdown=countdown,
+        serializer=serializer,
+        queue=queue,
+        exchange=exchange,
+        routing_key=routing_key,
+        eta=eta,
+        expires=expires
+    ).id
+    click.echo(task_id)
 
 
 def main() -> int:
