@@ -769,6 +769,7 @@ class ResultSet(ResultBase):
             value = result.get(
                 timeout=remaining, propagate=propagate,
                 interval=interval, no_ack=no_ack, on_interval=on_interval,
+                disable_sync_subtasks=disable_sync_subtasks,
             )
             if callback:
                 callback(result.id, value)
