@@ -36,6 +36,10 @@ matrix:
     env: MATRIX_TOXENV=integration-azureblockblob
     stage: integration
 
+  - python: 3.7
+    env: MATRIX_TOXENV=integration-cache
+    stage: integration
+
   - python: '3.7'
     env: TOXENV=flake8
     stage: lint
@@ -94,6 +98,11 @@ before_install:
           if [[ "$TOXENV" == *dynamodb ]]; then
               docker run -d -p 8000:8000 dwmkerr/dynamodb:38 -inMemory
               while ! nc -zv 127.0.0.1 8000; do sleep 10; done
+          fi
+    - |
+          if [[ "$TOXENV" == *cache ]]; then
+              docker run -d -p 11211:11211 memcached:alpine
+              while ! nc -zv 127.0.0.1 11211; do sleep 1; done
           fi
     - |
           docker run -d -e executable=blob -t -p 10000:10000 --tmpfs /opt/azurite/folder:rw arafato/azurite:2.6.5
