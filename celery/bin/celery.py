@@ -5,11 +5,13 @@ from functools import partial
 
 import click
 from click.types import IntParamType, ParamType, StringParamType
+from kombu import Connection
 
 from celery import VERSION_BANNER, concurrency
 from celery._state import get_current_app
 from celery.app.utils import find_app
 from celery.bin.base import CeleryCommand, CeleryDaemonCommand, CeleryOption
+from celery.contrib.migrate import migrate_tasks
 from celery.platforms import maybe_drop_privileges
 from celery.utils import text
 from celery.utils.log import mlevel
@@ -595,6 +597,61 @@ def result(ctx, task_id, task, traceback):
 
     # TODO: Prettify result
     click.echo(value)
+
+
+@celery.command(cls=CeleryCommand)
+@click.argument('source')
+@click.argument('destination')
+@click.option('-n',
+              '--limit',
+              cls=CeleryOption,
+              type=int,
+              help_group='Migration Options',
+              help='Number of tasks to consume.')
+@click.option('-t',
+              '--timeout',
+              cls=CeleryOption,
+              type=float,
+              help_group='Migration Options',
+              help='Timeout in seconds waiting for tasks.')
+@click.option('-a',
+              '--ack-messages',
+              cls=CeleryOption,
+              is_flag=True,
+              help_group='Migration Options',
+              help='Ack messages from source broker.')
+@click.option('-T',
+              '--tasks',
+              cls=CeleryOption,
+              help_group='Migration Options',
+              help='List of task names to filter on.')
+@click.option('-Q',
+              '--queues',
+              cls=CeleryOption,
+              help_group='Migration Options',
+              help='List of queues to migrate.')
+@click.option('-F',
+              '--forever',
+              cls=CeleryOption,
+              is_flag=True,
+              help_group='Migration Options',
+              help='Continually migrate tasks until killed.')
+def migrate(source, destination, **kwargs):
+    """Migrate tasks from one broker to another.
+
+    Warning:
+
+        This command is experimental, make sure you have a backup of
+        the tasks before you continue.
+    """
+    # TODO: Use a progress bar
+    def on_migrate_task(state, body, message):
+        click.echo(f"Migrating task {state.count}/{state.strtotal}: {body}")
+
+    migrate_tasks(Connection(source),
+                  Connection(destination),
+                  callback=on_migrate_task,
+                  **kwargs)
 
 
 @celery.group(name="list")
