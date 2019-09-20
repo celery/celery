@@ -659,6 +659,20 @@ class test_Pidfile:
             assert p.remove_if_stale()
             p.remove.assert_called_with()
 
+    @patch('os.kill')
+    def test_remove_if_stale_unprivileged_user(self, kill):
+        with mock.stdouts():
+            p = Pidfile('/var/pid')
+            p.read_pid = Mock()
+            p.read_pid.return_value = 1817
+            p.remove = Mock()
+            exc = OSError()
+            exc.errno = errno.EPERM
+            kill.side_effect = exc
+            assert p.remove_if_stale()
+            kill.assert_called_with(1817, 0)
+            p.remove.assert_called_with()
+
     def test_remove_if_stale_no_pidfile(self):
         p = Pidfile('/var/pid')
         p.read_pid = Mock()
