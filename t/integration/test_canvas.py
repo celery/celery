@@ -426,6 +426,15 @@ class test_group:
 
         assert res.get(timeout=TIMEOUT) == [11, 101, 1001, 2001]
 
+    @flaky
+    def test_large_group(self, manager):
+        assert_ping(manager)
+
+        c = group(identity.s(i) for i in range(1000))
+        res = c.delay()
+
+        assert res.get(timeout=TIMEOUT) == list(range(1000))
+
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
     root_id, parent_id, value = r.get(timeout=TIMEOUT)
