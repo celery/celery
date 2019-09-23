@@ -88,7 +88,8 @@ from the Django settings; but you can also separate them if wanted.
 
     app.config_from_object('django.conf:settings', namespace='CELERY')
 
-The uppercase name-space means that all Celery configuration options
+The uppercase name-space means that all
+:ref:`Celery configuration options <configuration>`
 must be specified in uppercase instead of lowercase, and start with
 ``CELERY_``, so for example the :setting:`task_always_eager` setting
 becomes ``CELERY_TASK_ALWAYS_EAGER``, and the :setting:`broker_url`
@@ -220,6 +221,9 @@ To use this with your project you need to follow these steps:
                 'LOCATION': 'my_cache_table',
             }
         }
+
+    For additional configuration options, view the
+    :ref:`conf-result-backend` reference.
 
 
 ``django-celery-beat`` - Database-backed Periodic Tasks with Admin interface.
