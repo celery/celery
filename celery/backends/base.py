@@ -27,8 +27,8 @@ from celery._state import get_current_task
 from celery.exceptions import (ChordError, ImproperlyConfigured,
                                NotRegistered, TaskRevokedError, TimeoutError)
 from celery.five import PY3, items
-from celery.result import (GroupResult, ResultBase, allow_join_result,
-                           result_from_tuple)
+from celery.result import (GroupResult, ResultBase, ResultSet,
+                           allow_join_result, result_from_tuple)
 from celery.utils.collections import BufferMap
 from celery.utils.functional import LRUCache, arity_greater
 from celery.utils.log import get_logger
@@ -492,12 +492,21 @@ class SyncBackendMixin(object):
         self._ensure_not_eager()
         results = result.results
         if not results:
-            return iter([])
-        return self.get_many(
-            {r.id for r in results},
+            return
+
+        task_ids = set()
+        for result in results:
+            if isinstance(result, ResultSet):
+                yield result.id, result.results
+            else:
+                task_ids.add(result.id)
+
+        for task_id, meta in self.get_many(
+            task_ids,
             timeout=timeout, interval=interval, no_ack=no_ack,
             on_message=on_message, on_interval=on_interval,
-        )
+        ):
+            yield task_id, meta
 
     def wait_for_pending(self, result, timeout=None, interval=0.5,
                          no_ack=True, on_message=None, on_interval=None,
