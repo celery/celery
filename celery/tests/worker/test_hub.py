@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
-from kombu.async import Hub, READ, WRITE, ERR
-from kombu.async.debug import callback_for, repr_flag, _rcb
-from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
+from kombu.asynchronous import Hub, READ, WRITE, ERR
+from kombu.asynchronous.debug import callback_for, repr_flag, _rcb
+from kombu.asynchronous.semaphore import DummyLock, LaxBoundedSemaphore
 
 from celery.five import range
 from celery.tests.case import Case, Mock, call, patch
@@ -138,7 +138,7 @@ class test_Hub(Case):
         self.assertEqual(_rcb(f), f.__name__)
         self.assertEqual(_rcb('foo'), 'foo')
 
-    @patch('kombu.async.hub.poll')
+    @patch('kombu.asynchronous.hub.poll')
     def test_start_stop(self, poll):
         hub = Hub()
         poll.assert_called_with()
@@ -197,7 +197,7 @@ class test_Hub(Case):
 
         eback.side_effect = ValueError('foo')
         hub.scheduler = iter([(0, eback)])
-        with patch('kombu.async.hub.logger') as logger:
+        with patch('kombu.asynchronous.hub.logger') as logger:
             with self.assertRaises(StopIteration):
                 hub.fire_timers()
             self.assertTrue(logger.error.called)

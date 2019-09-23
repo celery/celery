@@ -10,7 +10,7 @@ from __future__ import absolute_import
 
 import logging
 
-from kombu.async.timer import to_timestamp
+from kombu.asynchronous.timer import to_timestamp
 from kombu.utils.encoding import safe_repr
 
 from celery.utils.log import get_logger

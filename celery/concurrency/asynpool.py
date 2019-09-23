@@ -39,7 +39,7 @@ from billiard import pool as _pool
 from billiard.compat import buf_t, setblocking, isblocking
 from billiard.einfo import ExceptionInfo
 from billiard.queues import _SimpleQueue
-from kombu.async import READ, WRITE, ERR
+from kombu.asynchronous import READ, WRITE, ERR
 from kombu.serialization import pickle as _pickle
 from kombu.utils import fxrange
 from kombu.utils.compat import get_errno
