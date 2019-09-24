@@ -832,3 +832,25 @@ class test_chord:
         )
         res = c.delay()
         assert res.get(timeout=TIMEOUT) == 7
+
+    @flaky
+    def test_large_header(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = group(identity.si(i) for i in range(1000)) | tsum.s()
+        res = c.delay()
+        assert res.get(timeout=TIMEOUT) == 499500
+
+    @flaky
+    def test_chain_to_a_chord_with_large_header(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = identity.si(1) | group(identity.s() for _ in range(1000)) | tsum.s()
+        res = c.delay()
+        assert res.get(timeout=TIMEOUT) == 1000
