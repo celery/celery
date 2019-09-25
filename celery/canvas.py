@@ -25,6 +25,7 @@ from celery.five import PY3, python_2_unicode_compatible
 from celery.local import try_import
 from celery.result import GroupResult, allow_join_result
 from celery.utils import abstract
+from celery.utils.collections import ChainMap
 from celery.utils.functional import _regen
 from celery.utils.functional import chunks as _chunks
 from celery.utils.functional import (is_list, maybe_list, regen,
@@ -140,6 +141,7 @@ class Signature(dict):
         def _inner(subclass):
             cls.TYPES[name or subclass.__name__] = subclass
             return subclass
+
         return _inner
 
     @classmethod
@@ -238,7 +240,8 @@ class Signature(dict):
         options = options if options else {}
         if self.immutable and not force:
             return (self.args, self.kwargs,
-                    dict(self.options, **options) if options else self.options)
+                    dict(self.options,
+                         **options) if options else self.options)
         return (tuple(args) + tuple(self.args) if args else self.args,
                 dict(self.kwargs, **kwargs) if kwargs else self.kwargs,
                 dict(self.options, **options) if options else self.options)
@@ -269,6 +272,7 @@ class Signature(dict):
                                         app=self._app)
         signature._type = self._type
         return signature
+
     partial = clone
 
     def freeze(self, _id=None, group_id=None, chord=None,
@@ -302,6 +306,7 @@ class Signature(dict):
         # pylint: disable=too-many-function-args
         #   Borks on this, as it's a property.
         return self.AsyncResult(tid)
+
     _freeze = freeze
 
     def replace(self, args=None, kwargs=None, options=None):
@@ -449,7 +454,8 @@ class Signature(dict):
 
         with app.producer_or_acquire(None) as producer:
             props = type.backend.on_task_call(producer, tid)
-            app.control.election(tid, 'task', self.clone(task_id=tid, **props),
+            app.control.election(tid, 'task',
+                                 self.clone(task_id=tid, **props),
                                  connection=producer.connection)
             return type.AsyncResult(tid)
 
@@ -506,6 +512,7 @@ class Signature(dict):
             return self.type.apply_async
         except KeyError:
             return _partial(self.app.send_task, self['task'])
+
     id = getitem_property('options.task_id', 'Task UUID')
     parent_id = getitem_property('options.parent_id', 'Task parent UUID.')
     root_id = getitem_property('options.root_id', 'Task root UUID.')
@@ -518,6 +525,63 @@ class Signature(dict):
         'chord_size', 'Size of chord (if applicable)')
     immutable = getitem_property(
         'immutable', 'Flag set if no longer accepts new arguments')
+
+
+def _prepare_chain_from_options(options, tasks, use_link):
+    # When we publish groups we reuse the same options dictionary for all of
+    # the tasks in the group. See:
+    # https://github.com/celery/celery/blob/fb37cb0b8/celery/canvas.py#L1022.
+    # Issue #5354 reported that the following type of canvases
+    # causes a Celery worker to hang:
+    # group(
+    #   add.s(1, 1),
+    #   add.s(1, 1)
+    # ) | tsum.s() | add.s(1) | group(add.s(1), add.s(1))
+    # The resolution of #5354 in PR #5681 was to only set the `chain` key
+    # in the options dictionary if it is not present.
+    # Otherwise we extend the existing list of tasks in the chain with the new
+    # tasks: options['chain'].extend(chain_).
+    # Before PR #5681 we overrode the `chain` key in each iteration
+    # of the loop which applies all the tasks in the group:
+    # options['chain'] = tasks if not use_link else None
+    # This caused Celery to execute chains correctly in most cases since
+    # in each iteration the `chain` key would reset itself to a new value
+    # and the side effect of mutating the key did not propagate
+    # to the next task in the group.
+    # Since we now mutated the `chain` key, a *list* which is passed
+    # by *reference*, the next task in the group will extend the list
+    # of tasks in the chain instead of setting a new one from the chain_
+    # variable above.
+    # This causes Celery to execute a chain, even though there might not be
+    # one to begin with. Alternatively, it causes Celery to execute more tasks
+    # that were previously present in the previous task in the group.
+    # The solution is to be careful and never mutate the options dictionary
+    # to begin with.
+    # Here is an example of a canvas which triggers this issue:
+    # add.s(5, 6) | group((add.s(1) | add.s(2), add.s(3))).
+    # The expected result is [14, 14]. However, when we extend the `chain`
+    # key the `add.s(3)` task erroneously has `add.s(2)` in its chain since
+    # it was previously applied to `add.s(1)`.
+    # Without being careful not to mutate the options dictionary, the result
+    # in this case is [16, 14].
+    # To avoid deep-copying the entire options dictionary every single time we
+    # run a chain we use a ChainMap and ensure that we never mutate
+    # the original `chain` key, hence we use list_a + list_b to create a new
+    # list.
+    if use_link:
+        return ChainMap({'chain': None}, options)
+    elif 'chain' not in options:
+        return ChainMap({'chain': tasks}, options)
+    elif tasks is not None:
+        # chain option may already be set, resulting in
+        # "multiple values for keyword argument 'chain'" error.
+        # Issue #3379.
+        # If a chain already exists, we need to extend it with the next
+        # tasks in the chain.
+        # Issue #5354.
+        # WARNING: Be careful not to mutate `options['chain']`.
+        return ChainMap({'chain': options['chain'] + tasks},
+                        options)
 
 
 @Signature.register_type(name='chain')
@@ -600,17 +664,7 @@ class _chain(Signature):
             if link:
                 tasks[0].extend_list_option('link', link)
             first_task = tasks.pop()
-            # chain option may already be set, resulting in
-            # "multiple values for keyword argument 'chain'" error.
-            # Issue #3379.
-            chain_ = tasks if not use_link else None
-            if 'chain' not in options:
-                options['chain'] = chain_
-            elif chain_ is not None:
-                # If a chain already exists, we need to extend it with the next
-                # tasks in the chain.
-                # Issue #5354.
-                options['chain'].extend(chain_)
+            options = _prepare_chain_from_options(options, tasks, use_link)
 
             first_task.apply_async(**options)
             return results[0]
@@ -1154,6 +1208,7 @@ class group(Signature):
         else:
             self.tasks = new_tasks
         return self.app.GroupResult(gid, results)
+
     _freeze = freeze
 
     def _freeze_unroll(self, new_tasks, group_id, chord, root_id, parent_id):
