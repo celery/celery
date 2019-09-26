@@ -151,12 +151,12 @@ class ResultConsumer(BaseResultConsumer):
     def __drain_events(self, timeout=None):
         if self.subscribed_to:
             got_one = False
-            
+
             if self._pubsub:
                 message = self._pubsub.get_message(timeout=timeout)
                 while message:
-                    if message and message['type'] == 'message':
-                        self.on_state_change(self._decode_result(message['data']), message)
+                    if message and message.type == 'message':
+                        self.on_state_change(self._decode_result(message.data), message)
 
                         got_one = True
 
