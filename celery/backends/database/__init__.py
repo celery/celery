@@ -132,7 +132,7 @@ class DatabaseBackend(BaseBackend):
         task.status = state
         task.traceback = traceback
         if self.app.conf.find_value_for_key('extended', 'result'):
-            task.name = getattr(request, 'task_name', None)
+            task.name = getattr(request, 'task', None)
             task.args = ensure_bytes(
                 self.encode(getattr(request, 'args', None))
             )

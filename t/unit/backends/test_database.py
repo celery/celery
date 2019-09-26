@@ -231,7 +231,7 @@ class test_DatabaseBackend_result_extended():
         tid = uuid()
 
         request = Context(args=args, kwargs=kwargs,
-                          task_name='mytask', retries=2,
+                          task='mytask', retries=2,
                           hostname='celery@worker_1',
                           delivery_info={'routing_key': 'celery'})
 
