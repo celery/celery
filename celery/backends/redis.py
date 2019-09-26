@@ -2,6 +2,7 @@
 """Redis result store backend."""
 from __future__ import absolute_import, unicode_literals
 
+import time
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 import time
@@ -67,9 +68,14 @@ will not valdate the identity of the redis broker when connecting. This \
 leaves you vulnerable to man in the middle attacks.
 """
 
-E_REDIS_SSL_CERT_REQS_MISSING = """
-A rediss:// URL must have parameter ssl_cert_reqs be CERT_REQUIRED, \
-CERT_OPTIONAL, or CERT_NONE
+E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH = """
+SSL connection parameters have been provided but the specified URL scheme \
+is redis://. A Redis SSL connection URL should use the scheme rediss://.
+"""
+
+E_REDIS_SSL_CERT_REQS_MISSING_INVALID = """
+A rediss:// URL must have parameter ssl_cert_reqs and this must be set to \
+CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
 """
 
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
@@ -145,16 +151,20 @@ class ResultConsumer(BaseResultConsumer):
     def __drain_events(self, timeout=None):
         if self.subscribed_to:
             got_one = False
-            message = self._pubsub.get_message(timeout=timeout)
-            while message:
-                if message and message['type'] == 'message':
-                    self.on_state_change(self._decode_result(message['data']), message)
-
-                    got_one = True
-
+            
+            if self._pubsub:
                 message = self._pubsub.get_message(timeout=timeout)
-            if got_one:
-                return True
+                while message:
+                    if message and message['type'] == 'message':
+                        self.on_state_change(self._decode_result(message['data']), message)
+
+                        got_one = True
+
+                    message = self._pubsub.get_message(timeout=timeout)
+                if got_one:
+                    return True
+            elif timeout:
+                time.sleep(timeout)
 
     def consume_from(self, task_id):
         if self._pubsub is None:
@@ -230,6 +240,30 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
+
+        # If we've received SSL parameters via query string or the
+        # redis_backend_use_ssl dict, check ssl_cert_reqs is valid. If set
+        # via query string ssl_cert_reqs will be a string so convert it here
+        if ('connection_class' in self.connparams and
+                self.connparams['connection_class'] is redis.SSLConnection):
+            ssl_cert_reqs_missing = 'MISSING'
+            ssl_string_to_constant = {'CERT_REQUIRED': CERT_REQUIRED,
+                                      'CERT_OPTIONAL': CERT_OPTIONAL,
+                                      'CERT_NONE': CERT_NONE,
+                                      'required': CERT_REQUIRED,
+                                      'optional': CERT_OPTIONAL,
+                                      'none': CERT_NONE}
+            ssl_cert_reqs = self.connparams.get('ssl_cert_reqs', ssl_cert_reqs_missing)
+            ssl_cert_reqs = ssl_string_to_constant.get(ssl_cert_reqs, ssl_cert_reqs)
+            if ssl_cert_reqs not in ssl_string_to_constant.values():
+                raise ValueError(E_REDIS_SSL_CERT_REQS_MISSING_INVALID)
+
+            if ssl_cert_reqs == CERT_OPTIONAL:
+                logger.warning(W_REDIS_SSL_CERT_OPTIONAL)
+            elif ssl_cert_reqs == CERT_NONE:
+                logger.warning(W_REDIS_SSL_CERT_NONE)
+            self.connparams['ssl_cert_reqs'] = ssl_cert_reqs
+
         self.url = url
 
         self.connection_errors, self.channel_errors = (
@@ -262,25 +296,23 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         else:
             connparams['db'] = path
 
+        ssl_param_keys = ['ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile',
+                          'ssl_cert_reqs']
+
+        if scheme == 'redis':
+            # If connparams or query string contain ssl params, raise error
+            if (any(key in connparams for key in ssl_param_keys) or
+                    any(key in query for key in ssl_param_keys)):
+                raise ValueError(E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH)
+
         if scheme == 'rediss':
             connparams['connection_class'] = redis.SSLConnection
             # The following parameters, if present in the URL, are encoded. We
             # must add the decoded values to connparams.
-            for ssl_setting in ['ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile']:
+            for ssl_setting in ssl_param_keys:
                 ssl_val = query.pop(ssl_setting, None)
                 if ssl_val:
                     connparams[ssl_setting] = unquote(ssl_val)
-            ssl_cert_reqs = query.pop('ssl_cert_reqs', 'MISSING')
-            if ssl_cert_reqs == 'CERT_REQUIRED':
-                connparams['ssl_cert_reqs'] = CERT_REQUIRED
-            elif ssl_cert_reqs == 'CERT_OPTIONAL':
-                logger.warning(W_REDIS_SSL_CERT_OPTIONAL)
-                connparams['ssl_cert_reqs'] = CERT_OPTIONAL
-            elif ssl_cert_reqs == 'CERT_NONE':
-                logger.warning(W_REDIS_SSL_CERT_NONE)
-                connparams['ssl_cert_reqs'] = CERT_NONE
-            else:
-                raise ValueError(E_REDIS_SSL_CERT_REQS_MISSING)
 
         # db may be string and start with / like in kombu.
         db = connparams.get('db') or 0
@@ -380,13 +412,17 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         tkey = self.get_key_for_group(gid, '.t')
         result = self.encode_result(result, state)
         with client.pipeline() as pipe:
-            _, readycount, totaldiff, _, _ = pipe \
+            pipeline = pipe \
                 .rpush(jkey, self.encode([1, tid, state, result])) \
                 .llen(jkey) \
-                .get(tkey) \
-                .expire(jkey, self.expires) \
-                .expire(tkey, self.expires) \
-                .execute()
+                .get(tkey)
+
+            if self.expires is not None:
+                pipeline = pipeline \
+                    .expire(jkey, self.expires) \
+                    .expire(tkey, self.expires)
+
+            _, readycount, totaldiff = pipeline.execute()[:3]
 
         totaldiff = int(totaldiff or 0)
 
@@ -445,7 +481,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def client(self):
         return self._create_client(**self.connparams)
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         return super(RedisBackend, self).__reduce__(
             (self.url,), {'expires': self.expires},
         )

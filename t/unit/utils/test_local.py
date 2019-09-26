@@ -3,8 +3,8 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 import pytest
-from case import Mock, skip
 
+from case import Mock, skip
 from celery.five import PY3, long_t, python_2_unicode_compatible, string
 from celery.local import PromiseProxy, Proxy, maybe_evaluate, try_import
 

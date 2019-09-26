@@ -47,7 +47,7 @@ class ManagerMixin(object):
         return [res.id for res in r if res.id not in res.backend._cache]
 
     def wait_for(self, fun, catch,
-                 desc='thing', args=(), kwargs={}, errback=None,
+                 desc='thing', args=(), kwargs=None, errback=None,
                  max_retries=10, interval_start=0.1, interval_step=0.5,
                  interval_max=5.0, emit_warning=False, **options):
         # type: (Callable, Sequence[Any], str, Tuple, Dict, Callable,
@@ -57,6 +57,8 @@ class ManagerMixin(object):
         The `catch` argument specifies the exception that means the event
         has not happened yet.
         """
+        kwargs = {} if not kwargs else kwargs
+
         def on_error(exc, intervals, retries):
             interval = next(intervals)
             if emit_warning:
@@ -147,11 +149,11 @@ class ManagerMixin(object):
         )
 
     def assert_result_tasks_in_progress_or_completed(
-        self,
-        async_results,
-        interval=0.5,
-        desc='waiting for tasks to be started or completed',
-        **policy
+            self,
+            async_results,
+            interval=0.5,
+            desc='waiting for tasks to be started or completed',
+            **policy
     ):
         return self.assert_task_state_from_result(
             self.is_result_task_in_progress,

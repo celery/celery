@@ -6,11 +6,6 @@ import os
 import platform as _platform
 import re
 from collections import namedtuple
-try:
-    from collections.abc import Mapping
-except ImportError:
-    # TODO: Remove this when we drop Python 2.7 support
-    from collections import Mapping
 from copy import deepcopy
 from types import ModuleType
 
@@ -25,6 +20,13 @@ from celery.utils.text import pretty
 
 from .defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY,
                        _TO_OLD_KEY, DEFAULTS, SETTING_KEYS, find)
+
+try:
+    from collections.abc import Mapping
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Mapping
+
 
 __all__ = (
     'Settings', 'appstr', 'bugreport',
@@ -112,7 +114,7 @@ class Settings(ConfigurationView):
     def result_backend(self):
         return (
             os.environ.get('CELERY_RESULT_BACKEND') or
-            self.get('CELERY_RESULT_BACKEND')
+            self.first('result_backend', 'CELERY_RESULT_BACKEND')
         )
 
     @property
@@ -219,8 +221,13 @@ _old_settings_info = _settings_info_t(
 )
 
 
-def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
-                    all_keys=SETTING_KEYS, old_keys=_OLD_SETTING_KEYS):
+def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
+                    all_keys=None, old_keys=None):
+    preconf = {} if not preconf else preconf
+    ignore_keys = set() if not ignore_keys else ignore_keys
+    all_keys = SETTING_KEYS if not all_keys else all_keys
+    old_keys = _OLD_SETTING_KEYS if not old_keys else old_keys
+
     source = conf
     if conf is None:
         source, conf = preconf, {}

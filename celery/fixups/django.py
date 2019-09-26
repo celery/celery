@@ -57,8 +57,10 @@ class DjangoFixup(object):
         self._worker_fixup = None
 
     def install(self):
-        # Need to add project directory to path
-        sys.path.append(os.getcwd())
+        # Need to add project directory to path.
+        # The project directory has precedence over system modules,
+        # so we prepend it to the path.
+        sys.path.insert(0, os.getcwd())
 
         self._settings = symbol_by_name('django.conf:settings')
         self.app.loader.now = self.now
@@ -181,7 +183,7 @@ class DjangoWorkerFixup(object):
     def _close_database(self):
         for conn in self._db.connections.all():
             try:
-                conn.close_if_unusable_or_obsolete()
+                conn.close()
             except self.interface_errors:
                 pass
             except self.DatabaseError as exc:

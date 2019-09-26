@@ -1,15 +1,15 @@
 from __future__ import absolute_import, unicode_literals
 
 import errno
-import pytz
 from datetime import datetime, timedelta
 from pickle import dumps, loads
 
 import pytest
-from case import Mock, call, patch, skip
+import pytz
 
+from case import Mock, call, patch, skip
 from celery import __version__, beat, uuid
-from celery.beat import event_t
+from celery.beat import BeatLazyFunc, event_t
 from celery.five import keys, string_t
 from celery.schedules import crontab, schedule
 from celery.utils.objects import Bunch
@@ -38,6 +38,16 @@ class MockService(object):
 
     def stop(self, **kwargs):
         self.stopped = True
+
+
+class test_BeatLazyFunc:
+
+    def test_beat_lazy_func(self):
+        def add(a, b):
+            return a + b
+        result = BeatLazyFunc(add, 1, 2)
+        assert add(1, 2) == result()
+        assert add(1, 2) == result.delay()
 
 
 class test_ScheduleEntry:
@@ -176,6 +186,17 @@ class test_Scheduler:
 
         scheduler = mScheduler(app=self.app)
         scheduler.apply_async(scheduler.Entry(task=foo.name, app=self.app))
+        foo.apply_async.assert_called()
+
+    def test_apply_async_with_null_args(self):
+
+        @self.app.task(shared=False)
+        def foo():
+            pass
+        foo.apply_async = Mock(name='foo.apply_async')
+
+        scheduler = mScheduler(app=self.app)
+        scheduler.apply_async(scheduler.Entry(task=foo.name, app=self.app, args=None, kwargs=None))
         foo.apply_async.assert_called()
 
     def test_should_sync(self):

@@ -1,8 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from case import Mock, mock, patch
 
+from case import Mock, mock, patch
 from celery.app.events import Events
 from celery.events.snapshot import Polaroid, evcam
 

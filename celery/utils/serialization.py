@@ -44,6 +44,7 @@ STRTOBOOL_DEFAULT_TABLE = {'false': False, 'no': False, '0': False,
                            'true': True, 'yes': True, '1': True,
                            'on': True, 'off': False}
 
+
 def subclass_exception(name, parent, module):  # noqa
     """Create new exception class."""
     return type(bytes_if_py2(name), (parent,), {'__module__': module})

@@ -55,7 +55,7 @@ def old_ns(ns):
 
 @python_2_unicode_compatible
 class Option(object):
-    """Decribes a Celery configuration option."""
+    """Describes a Celery configuration option."""
 
     alt = None
     deprecate_by = None
@@ -158,6 +158,10 @@ NAMESPACES = Namespace(
 
         backend_settings=Option(None, type='dict'),
     ),
+    arangodb=Namespace(
+        __old__=old_ns('celery_arangodb'),
+        backend_settings=Option(None, type='dict')
+    ),
     mongodb=Namespace(
         __old__=old_ns('celery_mongodb'),
 
@@ -210,6 +214,7 @@ NAMESPACES = Namespace(
         extended=Option(False, type='bool'),
         serializer=Option('json'),
         backend_transport_options=Option({}, type='dict'),
+        chord_join_timeout=Option(3.0, type='float'),
     ),
     elasticsearch=Namespace(
         __old__=old_ns('celery_elasticsearch'),
@@ -244,10 +249,12 @@ NAMESPACES = Namespace(
     task=Namespace(
         __old__=OLD_NS,
         acks_late=Option(False, type='bool'),
+        acks_on_failure_or_timeout=Option(True, type='bool'),
         always_eager=Option(False, type='bool'),
         annotations=Option(type='any'),
         compression=Option(type='string', old={'celery_message_compression'}),
         create_missing_queues=Option(True, type='bool'),
+        inherit_parent_priority=Option(False, type='bool'),
         default_delivery_mode=Option(2, type='string'),
         default_queue=Option('celery'),
         default_exchange=Option(None, type='string'),  # taken from queue
@@ -311,6 +318,7 @@ NAMESPACES = Namespace(
         pool=Option(DEFAULT_POOL),
         pool_putlocks=Option(True, type='bool'),
         pool_restarts=Option(False, type='bool'),
+        proc_alive_timeout=Option(4.0, type='float'),
         prefetch_multiplier=Option(4, type='int'),
         redirect_stdouts=Option(
             True, type='bool', old={'celery_redirect_stdouts'},

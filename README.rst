@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 4.2.1 (windowlicker)
+:Version: 4.4.0rc3 (cliffs)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -23,10 +23,7 @@ If you are using Celery to create a commercial product, please consider becoming
 Sponsors
 --------
 
-|ImageLink|_
-
-.. |ImageLink| image:: https://i.imgur.com/ULmQEib.png
-.. _ImageLink: https://getstream.io/try-the-api/?utm_source=celery&utm_medium=banner&utm_campaign=github
+`Tidelift gives software development teams a single source for purchasing and maintaining their software, with professional grade assurances from the experts who know it best, while seamlessly integrating with existing tools. <https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=readme>`_
 
 
 What's a Task Queue?
@@ -58,10 +55,11 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 4.2 runs on,
+Celery version 4.3 runs on,
 
-- Python (2.7, 3.4, 3.5, 3.6)
-- PyPy (6.0)
+- Python (2.7, 3.4, 3.5, 3.6, 3.7)
+- PyPy2.7 (6.0)
+- PyPy3.5 (6.0)
 
 
 This is the last version to support Python 2.7,
@@ -220,6 +218,8 @@ Documentation
 The `latest documentation`_ is hosted at Read The Docs, containing user guides,
 tutorials, and an API reference.
 
+最新的中文文档托管在 https://www.celerycn.io/ 中，包含用户指南、教程、API接口等。
+
 .. _`latest documentation`: http://docs.celeryproject.org/en/latest/
 
 .. _celery-installation:
@@ -311,6 +311,9 @@ Transports and Backends
 
 :``celery[couchbase]``:
     for using Couchbase as a result backend.
+
+:``celery[arangodb]``:
+    for using ArangoDB as a result backend.
 
 :``celery[elasticsearch]``:
     for using Elasticsearch as a result backend.
@@ -431,7 +434,7 @@ to our issue tracker at https://github.com/celery/celery/issues/
 Wiki
 ====
 
-https://wiki.github.com/celery/celery/
+https://github.com/celery/celery/wiki
 
 Credits
 =======
@@ -524,3 +527,7 @@ file in the top distribution directory for the full license text.
 .. |ocsponsorbadge| image:: https://opencollective.com/celery/sponsors/badge.svg
     :alt: Sponsors on Open Collective
     :target: #sponsors
+
+.. |downloads| image:: https://pepy.tech/badge/celery
+    :alt: Downloads
+    :target: https://pepy.tech/project/celery

@@ -134,7 +134,9 @@ class AsyncBackendMixin(object):
         # into these buckets.
         bucket = deque()
         for node in results:
-            if node._cache:
+            if not hasattr(node, '_cache'):
+                bucket.append(node)
+            elif node._cache:
                 bucket.append(node)
             else:
                 self._collect_into(node, bucket)
@@ -142,7 +144,10 @@ class AsyncBackendMixin(object):
         for _ in self._wait_for_pending(result, no_ack=no_ack, **kwargs):
             while bucket:
                 node = bucket.popleft()
-                yield node.id, node._cache
+                if not hasattr(node, '_cache'):
+                    yield node.id, node.children
+                else:
+                    yield node.id, node._cache
         while bucket:
             node = bucket.popleft()
             yield node.id, node._cache

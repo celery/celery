@@ -197,7 +197,8 @@ For example for long-running tasks to send task progress you can do something li
     def on_raw_message(body):
         print(body)
 
-    r = hello.apply_async()
+    a, b = 1, 1
+    r = hello.apply_async(args=(a, b))
     print(r.get(on_message=on_raw_message, propagate=False))
 
 Will generate output like this:
@@ -495,7 +496,119 @@ Example setting a custom serializer for a single task invocation:
 Compression
 ===========
 
-Celery can compress the messages using either *gzip*, or *bzip2*.
+Celery can compress messages using the following builtin schemes:
+
+- `brotli`
+
+    brotli is optimized for the web, in particular small text
+    documents. It is most effective for serving static content
+    such as fonts and html pages.
+
+    To use it, install Celery with:
+
+    .. code-block:: console
+
+      $ pip install celery[brotli]
+
+- `bzip2`
+
+    bzip2 creates smaller files than gzip, but compression and
+    decompression speeds are noticeably slower than those of gzip.
+
+    To use it, please ensure your Python executable was compiled
+    with bzip2 support.
+
+    If you get the following :class:`ImportError`:
+
+    .. code-block:: pycon
+
+      >>> import bz2
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ImportError: No module named 'bz2'
+
+    it means that you should recompile your Python version with bzip2 support.
+
+- `gzip`
+
+    gzip is suitable for systems that require a small memory footprint,
+    making it ideal for systems with limited memory. It is often
+    used to generate files with the ".tar.gz" extension.
+
+    To use it, please ensure your Python executable was compiled
+    with gzip support.
+
+    If you get the following :class:`ImportError`:
+
+    .. code-block:: pycon
+
+      >>> import gzip
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ImportError: No module named 'gzip'
+
+    it means that you should recompile your Python version with gzip support.
+
+- `lzma`
+
+    lzma provides a good compression ratio and executes with
+    fast compression and decompression speeds at the expense
+    of higher memory usage.
+
+    To use it, please ensure your Python executable was compiled
+    with lzma support and that your Python version is 3.3 and above.
+
+    If you get the following :class:`ImportError`:
+
+    .. code-block:: pycon
+
+      >>> import lzma
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ImportError: No module named 'lzma'
+
+    it means that you should recompile your Python version with lzma support.
+
+    Alternatively, you can also install a backport using:
+
+    .. code-block:: console
+
+      $ pip install celery[lzma]
+
+- `zlib`
+
+    zlib is an abstraction of the Deflate algorithm in library
+    form which includes support both for the gzip file format
+    and a lightweight stream format in its API. It is a crucial
+    component of many software systems - Linux kernel and Git VCS just
+    to name a few.
+
+    To use it, please ensure your Python executable was compiled
+    with zlib support.
+
+    If you get the following :class:`ImportError`:
+
+    .. code-block:: pycon
+
+      >>> import zlib
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ImportError: No module named 'zlib'
+
+    it means that you should recompile your Python version with zlib support.
+
+- `zstd`
+
+    zstd targets real-time compression scenarios at zlib-level
+    and better compression ratios. It's backed by a very fast entropy
+    stage, provided by Huff0 and FSE library.
+
+    To use it, install Celery with:
+
+    .. code-block:: console
+
+      $ pip install celery[zstd]
+
 You can also create your own compression schemes and register
 them in the :func:`kombu compression registry <kombu.compression.register>`.
 
@@ -583,15 +696,23 @@ the workers :option:`-Q <celery worker -Q>` argument:
 Results options
 ===============
 
-You can enable or disable result storage using the ``ignore_result`` option::
+You can enable or disable result storage using the :setting:`task_ignore_result`
+setting or by using the ``ignore_result`` option:
 
-    result = add.apply_async(1, 2, ignore_result=True)
-    result.get() # -> None
+.. code-block:: pycon
 
-    # Do not ignore result (default)
-    result = add.apply_async(1, 2, ignore_result=False)
-    result.get() # -> 3
+  >>> result = add.apply_async(1, 2, ignore_result=True)
+  >>> result.get()
+  None
 
+  >>> # Do not ignore result (default)
+  ...
+  >>> result = add.apply_async(1, 2, ignore_result=False)
+  >>> result.get()
+  3
+
+If you'd like to store additional metadata about the task in the result backend
+set the :setting:`result_extended` setting to ``True``.
 
 .. seealso::
 

@@ -1,4 +1,4 @@
-FROM debian:jessie
+FROM debian:stretch
 
 ENV PYTHONIOENCODING UTF-8
 
@@ -18,14 +18,14 @@ RUN apt-get update && apt-get install -y build-essential \
     libbz2-dev \
     llvm \
     libncurses5-dev \
-    libssl-dev \
     libsqlite3-dev \
     wget \
     pypy \
     python-openssl \
     libncursesw5-dev \
     zlib1g-dev \
-    pkg-config
+    pkg-config \
+    libssl1.0-dev
 
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.

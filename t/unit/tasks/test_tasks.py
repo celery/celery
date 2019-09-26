@@ -5,15 +5,15 @@ import tempfile
 from datetime import datetime, timedelta
 
 import pytest
-from case import ANY, ContextMock, MagicMock, Mock, patch
 from kombu import Queue
 from kombu.exceptions import EncodeError
 
+from case import ANY, ContextMock, MagicMock, Mock, patch
 from celery import Task, group, uuid
 from celery.app.task import _reprtask
 from celery.exceptions import Ignore, ImproperlyConfigured, Retry
 from celery.five import items, range, string_t
-from celery.result import EagerResult
+from celery.result import AsyncResult, EagerResult
 from celery.task.base import Task as OldTask
 from celery.utils.time import parse_iso8601
 
@@ -163,6 +163,32 @@ class TasksCase:
             pass
 
         self.task_with_ignored_result = task_with_ignored_result
+
+        @self.app.task(bind=True)
+        def task_called_by_other_task(self):
+            pass
+
+        @self.app.task(bind=True)
+        def task_which_calls_other_task(self):
+            # Couldn't find a better way to mimic an apply_async()
+            # request with set priority
+            self.request.delivery_info['priority'] = 5
+
+            task_called_by_other_task.delay()
+
+        self.task_which_calls_other_task = task_which_calls_other_task
+
+        @self.app.task(bind=True)
+        def task_replacing_another_task(self):
+            return "replaced"
+
+        self.task_replacing_another_task = task_replacing_another_task
+
+        @self.app.task(bind=True)
+        def task_replaced_by_other_task(self):
+            return self.replace(task_replacing_another_task.si())
+
+        self.task_replaced_by_other_task = task_replaced_by_other_task
 
         # Remove all messages from memory-transport
         from kombu.transport.memory import Channel
@@ -456,6 +482,20 @@ class test_tasks(TasksCase):
 
         self.app.send_task = old_send_task
 
+    def test_inherit_parent_priority_child_task(self):
+        self.app.conf.task_inherit_parent_priority = True
+
+        self.app.producer_or_acquire = Mock()
+        self.app.producer_or_acquire.attach_mock(
+            ContextMock(serializer='json'), 'return_value')
+        self.app.amqp.send_task_message = Mock(name="send_task_message")
+
+        self.task_which_calls_other_task.apply(args=[])
+
+        self.app.amqp.send_task_message.assert_called_with(
+            ANY, 't.unit.tasks.test_tasks.task_called_by_other_task',
+            ANY, priority=5, queue=ANY, serializer=ANY)
+
     def test_typing__disabled(self):
         @self.app.task(typing=False)
         def add(x, y, kw=1):
@@ -699,6 +739,19 @@ class test_tasks(TasksCase):
         with pytest.raises(Ignore):
             self.mytask.replace(c)
 
+    def test_replace_run(self):
+        with pytest.raises(Ignore):
+            self.task_replaced_by_other_task.run()
+
+    def test_replace_delay(self):
+        res = self.task_replaced_by_other_task.delay()
+        assert isinstance(res, AsyncResult)
+
+    def test_replace_apply(self):
+        res = self.task_replaced_by_other_task.apply()
+        assert isinstance(res, EagerResult)
+        assert res.get() == "replaced"
+
     def test_add_trail__no_trail(self):
         mytask = self.increment_counter._get_current_object()
         mytask.trail = False
@@ -761,6 +814,22 @@ class test_tasks(TasksCase):
             assert yyy.AsyncResult(tid).result == {'fooz': 'baaz'}
         finally:
             yyy.pop_request()
+
+    def test_update_state_passes_request_to_backend(self):
+        backend = Mock()
+
+        @self.app.task(shared=False, backend=backend)
+        def ttt():
+            pass
+
+        ttt.push_request()
+
+        tid = uuid()
+        ttt.update_state(tid, 'SHRIMMING', {'foo': 'bar'})
+
+        backend.store_result.assert_called_once_with(
+            tid, {'foo': 'bar'}, 'SHRIMMING', request=ttt.request
+        )
 
     def test_repr(self):
 
@@ -941,6 +1010,28 @@ class test_apply_async(TasksCase):
             pass
         with pytest.raises(EncodeError):
             task.apply_async((1, 2, 3, 4, {1}))
+
+    def test_eager_serialization_uses_task_serializer_setting(self):
+        @self.app.task
+        def task(*args, **kwargs):
+            pass
+        with pytest.raises(EncodeError):
+            task.apply_async((1, 2, 3, 4, {1}))
+
+        self.app.conf.task_serializer = 'pickle'
+
+        @self.app.task
+        def task2(*args, **kwargs):
+            pass
+        task2.apply_async((1, 2, 3, 4, {1}))
+
+    def test_always_eager_with_task_serializer_option(self):
+        self.app.conf.task_always_eager = True
+
+        @self.app.task(serializer='pickle')
+        def task(*args, **kwargs):
+            pass
+        task.apply_async((1, 2, 3, 4, {1}))
 
     def test_task_with_ignored_result(self):
         with patch.object(self.app, 'send_task') as send_task:

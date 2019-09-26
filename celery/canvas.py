@@ -392,10 +392,6 @@ class Signature(dict):
         # These could be implemented in each individual class,
         # I'm sure, but for now we have this.
         if isinstance(self, group):
-            if isinstance(other, group):
-                # group() | group() -> single group
-                return group(
-                    itertools.chain(self.tasks, other.tasks), app=self.app)
             # group() | task -> chord
             return chord(self, body=other, app=self._app)
         elif isinstance(other, group):
@@ -603,7 +599,15 @@ class _chain(Signature):
             # chain option may already be set, resulting in
             # "multiple values for keyword argument 'chain'" error.
             # Issue #3379.
-            options['chain'] = tasks if not use_link else None
+            chain_ = tasks if not use_link else None
+            if 'chain' not in options:
+                options['chain'] = chain_
+            elif chain_ is not None:
+                # If a chain already exists, we need to extend it with the next
+                # tasks in the chain.
+                # Issue #5354.
+                options['chain'].extend(chain_)
+
             first_task.apply_async(**options)
             return results[0]
 
@@ -673,10 +677,20 @@ class _chain(Signature):
                 # signature instead of a group.
                 tasks.pop()
                 results.pop()
-                task = chord(
-                    task, body=prev_task,
-                    task_id=prev_res.task_id, root_id=root_id, app=app,
-                )
+                try:
+                    task = chord(
+                        task, body=prev_task,
+                        task_id=prev_res.task_id, root_id=root_id, app=app,
+                    )
+                except AttributeError:
+                    # A GroupResult does not have a task_id since it consists
+                    # of multiple tasks.
+                    # We therefore, have to construct the chord without it.
+                    # Issues #5467, #3585.
+                    task = chord(
+                        task, body=prev_task,
+                        root_id=root_id, app=app,
+                    )
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
@@ -796,7 +810,7 @@ class chain(_chain):
 
     Returns:
         ~celery.chain: A lazy signature that can be called to apply the first
-            task in the chain.  When that task succeeed the next task in the
+            task in the chain.  When that task succeeds the next task in the
             chain is applied, and so on.
     """
 
@@ -1389,7 +1403,7 @@ class chord(Signature):
                 tasks = self.tasks.tasks  # is a group
             except AttributeError:
                 tasks = self.tasks
-            if tasks:
+            if len(tasks):
                 app = tasks[0]._app
             if app is None and body is not None:
                 app = body._app
