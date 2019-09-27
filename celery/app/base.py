@@ -408,12 +408,12 @@ class Celery(object):
         """
 
         def inner_taskcls(cls):
-            task_name = name or self.gen_task_name(
+            opts['name'] = name or self.gen_task_name(
                 cls.__name__,
                 cls.__module__,
             )
 
-            cls.task = self.task(*args, name=task_name, **opts)(cls.task)
+            cls.task = self.task(*args, **opts)(cls.task)
             return cls
 
         return inner_taskcls
