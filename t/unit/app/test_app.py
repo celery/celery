@@ -151,6 +151,18 @@ class test_App:
             task = app.task(fun)
             assert task.name == app.main + '.fun'
 
+    def test_taskcls(self):
+        with self.Celery('foozibari') as app:
+
+            class Cls:
+                @classmethod
+                def task():
+                    pass
+
+            Cls.__module__ = '__main__'
+            task = app.taskcls(Cls)
+            assert task.name == app.main + '.Cls'
+
     def test_task_too_many_args(self):
         with pytest.raises(TypeError):
             self.app.task(Mock(name='fun'), True)
