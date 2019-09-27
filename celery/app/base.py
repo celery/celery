@@ -414,10 +414,13 @@ class Celery(object):
                     cls.__module__,
                 )
 
-            cls.task = self.task(*args, **opts)(cls.task)
+            cls.task = self.task(**opts)(cls.task)
             return cls
 
-        return inner_taskcls
+        if len(args) == 0:
+            return inner_taskcls
+
+        return inner_taskcls(args[0])
 
     def task(self, *args, **opts):
         """Decorator to create a task class out of any callable.
