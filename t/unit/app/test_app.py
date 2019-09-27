@@ -154,13 +154,15 @@ class test_App:
     def test_taskcls(self):
         with self.Celery('foozibari') as app:
 
+            @app.taskcls
             class Cls:
+                __module__ = app.main
+
                 @classmethod
                 def task():
                     pass
 
-            Cls.__module__ = '__main__'
-            task = app.taskcls(Cls)
+            task = Cls.task
             assert task.name == app.main + '.Cls'
 
     def test_task_too_many_args(self):

@@ -366,7 +366,7 @@ class Celery(object):
             'celery.bin.worker:worker', app=self
         ).execute_from_commandline(argv)
 
-    def taskcls(self, *args, name=None, **opts):
+    def taskcls(self, *args, **opts):
         """Class decarator to create a task class from
         any class with fabrac classmethod `task`.
 
@@ -408,10 +408,11 @@ class Celery(object):
         """
 
         def inner_taskcls(cls):
-            opts['name'] = name or self.gen_task_name(
-                cls.__name__,
-                cls.__module__,
-            )
+            if 'name' not in opts:
+                opts['name'] = self.gen_task_name(
+                    cls.__name__,
+                    cls.__module__,
+                )
 
             cls.task = self.task(*args, **opts)(cls.task)
             return cls
