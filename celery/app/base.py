@@ -368,7 +368,7 @@ class Celery(object):
 
     def taskcls(self, *args, **opts):
         """Class decarator to create a task class from
-        any class with fabrac classmethod `task`.
+        any class with fabric classmethod `task`.
 
         Example:
             .. code-block:: python
@@ -389,7 +389,7 @@ class Celery(object):
                     def main(self):
                         ...
 
-                @app.taskcls(bind=True)
+                @app.taskcls(bind=True, name='custom_name')
                 class AnotherTask(BaseTask):
                     "You can pass here the same args as app.task"
                     def main(self):
@@ -400,10 +400,15 @@ class Celery(object):
 
                 SimpleTask.task.delay(...)
 
-        OR
+        OR by name
             .. code-block:: python
 
+                # Default
                 task = app.tasks['my_module.SimpleTask']
+                task.delay(...)
+
+                # Custom
+                task = app.tasks['custom_name']
                 task.delay(...)
         """
 
