@@ -419,11 +419,21 @@ class Celery(object):
                     cls.__module__,
                 )
 
-            cls.task = self.task(**opts)(cls.task)
+            original_cls_task = cls.task
+
+            @self.task(**opts)
+            @wraps(original_cls_task)
+            def taskcls_task(*task_args, **task_kwargs):
+                return original_cls_task(*task_args, **task_kwargs)
+
+            cls.task = taskcls_task
             return cls
 
         if len(args) == 0:
             return inner_taskcls
+
+        if len(args) != 1:
+            raise ValueError
 
         return inner_taskcls(args[0])
 
