@@ -75,6 +75,7 @@ def start_worker(app,
                               pool=pool,
                               loglevel=loglevel,
                               logfile=logfile,
+                              perform_ping_check=perform_ping_check,
                               **kwargs) as worker:
         if perform_ping_check:
             from .tasks import ping
@@ -92,6 +93,7 @@ def _start_worker_thread(app,
                          loglevel=WORKER_LOGLEVEL,
                          logfile=None,
                          WorkController=TestWorkController,
+                         perform_ping_check=True,
                          **kwargs):
     # type: (Celery, int, str, Union[str, int], str, Any, **Any) -> Iterable
     """Start Celery worker in a thread.
@@ -100,7 +102,8 @@ def _start_worker_thread(app,
         celery.worker.Worker: worker instance.
     """
     setup_app_for_worker(app, loglevel, logfile)
-    assert 'celery.ping' in app.tasks
+    if perform_ping_check:
+        assert 'celery.ping' in app.tasks
     # Make sure we can connect to the broker
     with app.connection(hostname=os.environ.get('TEST_BROKER')) as conn:
         conn.default_channel.queue_declare
