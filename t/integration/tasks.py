@@ -203,3 +203,9 @@ def fail(*args):
 @shared_task
 def chord_error(*args):
     return args
+
+
+@shared_task(bind=True)
+def return_priority(self, *_args):
+    return "Priority: %s" % self.request.delivery_info['priority']
+

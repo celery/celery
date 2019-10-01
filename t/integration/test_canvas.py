@@ -13,10 +13,9 @@ from .tasks import (add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, build_chain_inside_task, chord_error,
                     collect_ids, delayed_sum, delayed_sum_with_soft_guard,
                     fail, identity, ids, print_unicode, raise_error,
-                    redis_echo, second_order_replace1, tsum)
+                    redis_echo, second_order_replace1, tsum, return_priority)
 
 TIMEOUT = 120
-
 
 class test_chain:
 
@@ -854,3 +853,13 @@ class test_chord:
         c = identity.si(1) | group(identity.s() for _ in range(1000)) | tsum.s()
         res = c.delay()
         assert res.get(timeout=TIMEOUT) == 1000
+
+    @flaky
+    def test_priority(self, manager):
+        c = chain(return_priority.signature(priority=3))()
+        assert c.get(timeout=TIMEOUT) == "Priority: 3"
+
+    @flaky
+    def test_priority_chain(self, manager):
+        c = return_priority.signature(priority=3) | return_priority.signature(priority=5)
+        assert c().get(timeout=TIMEOUT) == "Priority: 5"

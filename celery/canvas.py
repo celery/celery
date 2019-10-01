@@ -193,6 +193,8 @@ class Signature(dict):
         """
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        # Extra options set to None are dismissed
+        options = {k: v for k, v in options.items() if v is not None}
         # For callbacks: extra args are prepended to the stored args.
         args, kwargs, options = self._merge(args, kwargs, options)
         return self.type.apply(args, kwargs, **options)
@@ -214,6 +216,8 @@ class Signature(dict):
         """
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        # Extra options set to None are dismissed
+        options = {k: v for k, v in options.items() if v is not None}
         try:
             _apply = self._apply_async
         except IndexError:  # pragma: no cover
