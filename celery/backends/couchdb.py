@@ -57,13 +57,10 @@ class CouchBackend(KeyValueStoreBackend):
     def _get_connection(self):
         """Connect to the CouchDB server."""
         if self.username and self.password:
-            conn_string = '{}://{}:{}@{}:{}'.format(
-                self.scheme, self.username, self.password,
-                self.host, str(self.port))
+            conn_string = f'{self.scheme}://{self.username}:{self.password}@{self.host}:{self.port}'
             server = pycouchdb.Server(conn_string, authmethod='basic')
         else:
-            conn_string = '{}://{}:{}'.format(
-                self.scheme, self.host, str(self.port))
+            conn_string = f'{self.scheme}://{self.host}:{self.port}'
             server = pycouchdb.Server(conn_string)
 
         try:

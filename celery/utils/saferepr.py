@@ -122,9 +122,8 @@ def _format_binary_bytes(val, maxlen, ellipsis='...'):
     if maxlen and len(val) > maxlen:
         # we don't want to copy all the data, just take what we need.
         chunk = memoryview(val)[:maxlen].tobytes()
-        return _bytes_prefix("'{}{}'".format(
-            _repr_binary_bytes(chunk), ellipsis))
-    return _bytes_prefix("'{}'".format(_repr_binary_bytes(val)))
+        return _bytes_prefix(f"'{_repr_binary_bytes(chunk)}{ellipsis}'")
+    return _bytes_prefix(f"'{_repr_binary_bytes(val)}'")
 
 
 def _bytes_prefix(s):
@@ -160,8 +159,8 @@ def _repr(obj):
     try:
         return repr(obj)
     except Exception as exc:
-        return '<Unrepresentable {!r}{:#x}: {!r} {!r}>'.format(
-            type(obj), id(obj), exc, '\n'.join(traceback.format_stack()))
+        stack = '\n'.join(traceback.format_stack())
+        return f'<Unrepresentable {type(obj)!r}{id(obj):#x}: {exc!r} {stack!r}>'
 
 
 def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
@@ -197,7 +196,7 @@ def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
     if type(val) is builtin_type:  # noqa
         return lit_start, lit_end, chainer(val)
     return (
-        _literal('{}({}'.format(type(val).__name__, lit_start.value), False, +1),
+        _literal(f'{type(val).__name__}({lit_start.value}', False, +1),
         _literal(f'{lit_end.value})', False, -1),
         chainer(val)
     )

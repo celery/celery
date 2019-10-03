@@ -131,8 +131,7 @@ class AttributeDictMixin:
             return self[k]
         except KeyError:
             raise AttributeError(
-                '{!r} object has no attribute {!r}'.format(
-                    type(self).__name__, k))
+                f'{type(self).__name__!r} object has no attribute {k!r}')
 
     def __setattr__(self, key, value):
         # type: (str, Any) -> None
@@ -608,8 +607,7 @@ class LimitedSet:
                 if not isinstance(inserted, float):
                     raise ValueError(
                         'Expecting float timestamp, got type '
-                        '{!r} with value: {}'.format(
-                            type(inserted), inserted))
+                        f'{type(inserted)!r} with value: {inserted}')
                 self.add(key, inserted)
         else:
             # XXX AVOID THIS, it could keep old data if more parties
@@ -786,9 +784,7 @@ class Messagebuffer(Evictable):
 
     def __repr__(self):
         # type: () -> str
-        return '<{}: {}/{}>'.format(
-            type(self).__name__, len(self), self.maxsize,
-        )
+        return f'<{type(self).__name__}: {len(self)}/{self.maxsize}>'
 
     def __iter__(self):
         # type: () -> Iterable
@@ -916,9 +912,7 @@ class BufferMap(OrderedDict, Evictable):
 
     def __repr__(self):
         # type: () -> str
-        return '<{}: {}/{}>'.format(
-            type(self).__name__, self.total, self.maxsize,
-        )
+        return f'<{type(self).__name__}: {self.total}/{self.maxsize}>'
 
     @property
     def _evictcount(self):

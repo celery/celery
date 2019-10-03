@@ -87,8 +87,7 @@ class CursesMonitor:  # pragma: no cover
         state = abbr(state, STATE_WIDTH).ljust(STATE_WIDTH)
         timestamp = timestamp.ljust(TIMESTAMP_WIDTH)
 
-        row = '{} {} {} {} {} '.format(uuid, worker, task,
-                                            timestamp, state)
+        row = f'{uuid} {worker} {task} {timestamp} {state} '
         if self.screen_width is None:
             self.screen_width = len(row[:mx])
         return row[:mx]

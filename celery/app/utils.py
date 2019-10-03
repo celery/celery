@@ -72,7 +72,7 @@ FMT_REPLACE_SETTING = '{replace:<36} -> {with_}'
 
 def appstr(app):
     """String used in __repr__ etc, to id app instances."""
-    return '{} at {:#x}'.format(app.main or '__main__', id(app))
+    return f'{app.main or "__main__"} at {id(app):#x}'
 
 
 class Settings(ConfigurationView):
@@ -194,7 +194,7 @@ class Settings(ConfigurationView):
     def humanize(self, with_defaults=False, censored=True):
         """Return a human readable text showing configuration changes."""
         return '\n'.join(
-            '{}: {}'.format(key, pretty(value, width=50))
+            f'{key}: {pretty(value, width=50)}'
             for key, value in items(self.table(with_defaults, censored)))
 
 

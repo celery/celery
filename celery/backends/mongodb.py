@@ -77,7 +77,7 @@ class MongoBackend(BaseBackend):
             uri_data = pymongo.uri_parser.parse_uri(self.url)
             # build the hosts list to create a mongo connection
             hostslist = [
-                '{}:{}'.format(x[0], x[1]) for x in uri_data['nodelist']
+                f'{x[0]}:{x[1]}' for x in uri_data['nodelist']
             ]
             self.user = uri_data['username']
             self.password = uri_data['password']

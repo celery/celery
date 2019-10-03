@@ -1156,7 +1156,7 @@ class AsynPool(_pool.Pool):
         total = sum(vals)
 
         def per(v, total):
-            return '{:.2%}'.format((float(v) / total) if v else 0)
+            return f'{(float(v) / total) if v else 0:.2f}'
 
         return {
             'total': total,

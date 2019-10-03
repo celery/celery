@@ -110,11 +110,11 @@ class BasePool:
 
     def terminate_job(self, pid, signal=None):
         raise NotImplementedError(
-            '{} does not implement kill_job'.format(type(self)))
+            f'{type(self)} does not implement kill_job')
 
     def restart(self):
         raise NotImplementedError(
-            '{} does not implement restart'.format(type(self)))
+            f'{type(self)} does not implement restart')
 
     def stop(self):
         self.on_stop()

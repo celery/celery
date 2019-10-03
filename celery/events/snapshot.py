@@ -93,8 +93,7 @@ def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
 
     app.log.setup_logging_subsystem(loglevel, logfile)
 
-    print('-> evcam: Taking snapshots with {} (every {} secs.)'.format(
-        camera, freq))
+    print(f'-> evcam: Taking snapshots with {camera} (every {freq} secs.)')
     state = app.events.State()
     cam = instantiate(camera, state, app=app, freq=freq,
                       maxrate=maxrate, timer=timer)

@@ -263,8 +263,8 @@ def jsonify(obj,
     else:
         if unknown_type_filter is None:
             raise ValueError(
-                'Unsupported type: {!r} {!r} (parent: {})'.format(
-                    type(obj), obj, key))
+                f'Unsupported type: {type(obj)!r} {obj!r} (parent: {key})'
+            )
         return unknown_type_filter(obj)
 
 

@@ -168,8 +168,7 @@ class Worker(WorkController):
         with self.app.connection_for_write() as connection:
             count = self.app.control.purge(connection=connection)
             if count:  # pragma: no cover
-                print('purge: Erased {} {} from the queue.\n'.format(
-                    count, pluralize(count, 'message')))
+                print(f"purge: Erased {count} {pluralize(count, 'message')} from the queue.\n")
 
     def tasklist(self, include_builtins=True, sep='\n', int_='celery.'):
         return sep.join(
@@ -200,7 +199,7 @@ class Worker(WorkController):
         pool = self.pool_cls
         if not isinstance(pool, string_t):
             pool = pool.__module__
-        concurrency += ' ({})'.format(pool.split('.')[-1])
+        concurrency += f' ({pool.split('.')[-1]})'
         events = 'ON'
         if not self.task_events:
             events = 'OFF (enable -E to monitor tasks in this worker)'
@@ -256,7 +255,7 @@ class Worker(WorkController):
     def set_process_status(self, info):
         return platforms.set_mp_process_title(
             'celeryd',
-            info='{} ({})'.format(info, platforms.strargv(sys.argv)),
+            info=f'{info} ({platforms.strargv(sys.argv)})',
             hostname=self.hostname,
         )
 
@@ -323,7 +322,7 @@ def install_worker_restart_handler(worker, sig='SIGHUP'):
     def restart_worker_sig_handler(*args):
         """Signal handler restarting the current python program."""
         set_in_sighandler(True)
-        safe_say('Restarting celery worker ({})'.format(' '.join(sys.argv)))
+        safe_say(f"Restarting celery worker ({' '.join(sys.argv))})")
         import atexit
         atexit.register(_reload_current_worker)
         from celery.worker import state

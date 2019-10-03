@@ -44,7 +44,7 @@ class Certificate:
 
     def get_id(self):
         """Serial number/issuer pair uniquely identifies a certificate."""
-        return '{} {}'.format(self.get_issuer(), self.get_serial_number())
+        return f'{self.get_issuer()} {self.get_serial_number()}'
 
     def verify(self, data, signature, digest):
         """Verify signature for string containing data."""
@@ -94,5 +94,5 @@ class FSCertStore(CertStore):
                 cert = Certificate(f.read())
                 if cert.has_expired():
                     raise SecurityError(
-                        'Expired certificate: {!r}'.format(cert.get_id()))
+                        f'Expired certificate: {cert.get_id()!r}')
                 self.add_cert(cert)

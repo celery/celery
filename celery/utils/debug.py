@@ -34,9 +34,7 @@ _mem_sample = []
 def _on_blocking(signum, frame):
     import inspect
     raise RuntimeError(
-        'Blocking detection timed-out at: {}'.format(
-            inspect.getframeinfo(frame)
-        )
+        f'Blocking detection timed-out at: {inspect.getframeinfo(frame)}'
     )
 
 
@@ -132,7 +130,7 @@ def hfloat(f, p=5):
 def humanbytes(s):
     """Convert bytes to human-readable form (e.g., KB, MB)."""
     return next(
-        '{}{}'.format(hfloat(s / div if div else s), unit)
+        f'{hfloat(s / div if div else s)}{unit}'
         for div, unit in UNITS if s >= div
     )
 

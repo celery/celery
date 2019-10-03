@@ -45,7 +45,7 @@ class State:
     def __repr__(self):
         if self.filtered:
             return f'^{self.filtered}'
-        return '{0.count}/{0.strtotal}'.format(self)
+        return f'{self.count}/{self.strtotal}'
 
 
 def republish(producer, message, exchange=None, routing_key=None,

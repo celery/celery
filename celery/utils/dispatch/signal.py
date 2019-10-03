@@ -355,8 +355,7 @@ class Signal:  # pragma: no cover
 
     def __repr__(self):
         """``repr(signal)``."""
-        return '<{}: {} providing_args={!r}>'.format(
-            type(self).__name__, self.name, self.providing_args)
+        return f'<{type(self).__name__}: {self.name} providing_args={self.providing_args!r}>'
 
     def __str__(self):
         """``str(signal)``."""

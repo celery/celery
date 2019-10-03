@@ -63,19 +63,17 @@ class Dumper:
             return self.format_task_event(hostname, timestamp,
                                           type, task, ev)
         fields = ', '.join(
-            '{}={}'.format(key, ev[key]) for key in sorted(ev)
+            f'{key}={ev[key]}' for key in sorted(ev)
         )
         sep = fields and ':' or ''
-        self.say('{} [{}] {}{} {}'.format(
-            hostname, timestamp, humanize_type(type), sep, fields),)
+        self.say(f'{hostname} [{timestamp}] {humanize_type(type)}{sep} {fields}')
 
     def format_task_event(self, hostname, timestamp, type, task, event):
         fields = ', '.join(
-            '{}={}'.format(key, event[key]) for key in sorted(event)
+            f'{key}={event[key]}' for key in sorted(event)
         )
         sep = fields and ':' or ''
-        self.say('{} [{}] {}{} {} {}'.format(
-            hostname, timestamp, humanize_type(type), sep, task, fields),)
+        self.say(f'{hostname} [{timestamp}] {humanize_type(type)}{sep} {task} {fields}')
 
 
 def evdump(app=None, out=sys.stdout):

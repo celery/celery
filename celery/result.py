@@ -93,7 +93,7 @@ class AsyncResult(ResultBase):
                  app=None, parent=None):
         if id is None:
             raise ValueError(
-                'AsyncResult requires valid id, not {}'.format(type(id)))
+                f'AsyncResult requires valid id, not {type(id)}')
         self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
@@ -356,7 +356,7 @@ class AsyncResult(ResultBase):
         return hash(self.id)
 
     def __repr__(self):
-        return '<{}: {}>'.format(type(self).__name__, self.id)
+        return f'<{type(self).__name__}: {self.id}>'
 
     def __eq__(self, other):
         if isinstance(other, AsyncResult):
@@ -853,8 +853,7 @@ class ResultSet(ResultBase):
         return True if res is NotImplemented else not res
 
     def __repr__(self):
-        return '<{}: [{}]>'.format(type(self).__name__,
-                                     ', '.join(r.id for r in self.results))
+        return f'<{type(self).__name__}: [{", ".join(r.id for r in self.results)}]>'
 
     @property
     def supports_native_join(self):
@@ -949,10 +948,7 @@ class GroupResult(ResultSet):
         return True if res is NotImplemented else not res
 
     def __repr__(self):
-        return '<{}: {} [{}]>'.format(
-            type(self).__name__, self.id,
-            ', '.join(r.id for r in self.results)
-        )
+        return f'<{type(self).__name__}: {self.id} [{", ".join(r.id for r in self.results)}]>'
 
     def __str__(self):
         """`str(self) -> self.id`."""

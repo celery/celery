@@ -153,8 +153,8 @@ class Retry(TaskPredicate):
         if self.message:
             return self.message
         if self.excs:
-            return 'Retry {}: {}'.format(self.humanize(), self.excs)
-        return 'Retry {}'.format(self.humanize())
+            return f'Retry {self.humanize()}: {self.excs}'
+        return f'Retry {self.humanize()}'
 
     def __reduce__(self):
         return self.__class__, (self.message, self.excs, self.when)

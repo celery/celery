@@ -127,7 +127,7 @@ class Node:
     def __init__(self, name,
                  cmd=None, append=None, options=None, extra_args=None):
         self.name = name
-        self.cmd = cmd or '-m {}'.format(celery_exe('worker', '--detach'))
+        self.cmd = cmd or f'-m {celery_exe('worker', '--detach')}'
         self.append = append
         self.extra_args = extra_args or ''
         self.options = self._annotate_with_default_opts(
