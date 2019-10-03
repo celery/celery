@@ -20,7 +20,7 @@ from kombu.utils.uuid import uuid
 from vine import barrier
 
 from celery._state import current_app
-from celery.five import PY3, python_2_unicode_compatible
+from celery.five import PY3
 from celery.local import try_import
 from celery.result import GroupResult, allow_join_result
 from celery.utils import abstract

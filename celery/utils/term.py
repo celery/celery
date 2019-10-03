@@ -7,7 +7,7 @@ import platform
 import sys
 from functools import reduce
 
-from celery.five import python_2_unicode_compatible, string
+from celery.five import string
 from celery.platforms import isatty
 
 __all__ = ('colored',)

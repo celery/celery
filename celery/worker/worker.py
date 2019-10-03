@@ -25,7 +25,7 @@ from celery import signals
 from celery.bootsteps import RUN, TERMINATE
 from celery.exceptions import (ImproperlyConfigured, TaskRevokedError,
                                WorkerTerminate)
-from celery.five import python_2_unicode_compatible, values
+from celery.five import values
 from celery.platforms import EX_FAILURE, create_pidlock
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel

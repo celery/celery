@@ -13,7 +13,7 @@ from pytz import AmbiguousTimeError, FixedOffset
 from pytz import timezone as _timezone
 from pytz import utc
 
-from celery.five import PY3, python_2_unicode_compatible, string_t
+from celery.five import PY3, string_t
 
 from .functional import dictfilter
 from .iso8601 import parse_iso8601

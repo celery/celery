@@ -10,7 +10,6 @@ def bar():
 
     This is a sample Task.
     """
-    pass
 
 
 @shared_task
@@ -19,4 +18,3 @@ def baz():
 
     This is a sample Shared Task.
     """
-    pass

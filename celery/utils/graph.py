@@ -5,7 +5,7 @@ from textwrap import dedent
 
 from kombu.utils.encoding import bytes_to_str, safe_str
 
-from celery.five import items, python_2_unicode_compatible
+from celery.five import items
 
 __all__ = ('DOT', 'CycleError', 'DependencyGraph', 'GraphFormatter')
 

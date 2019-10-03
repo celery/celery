@@ -5,7 +5,7 @@
 """
 from operator import itemgetter
 
-from celery.five import items, python_2_unicode_compatible
+from celery.five import items
 from celery.utils.graph import DependencyGraph, GraphFormatter
 
 from .base import Command

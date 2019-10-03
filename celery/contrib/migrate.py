@@ -9,7 +9,7 @@ from kombu.common import maybe_declare
 from kombu.utils.encoding import ensure_bytes
 
 from celery.app import app_or_default
-from celery.five import python_2_unicode_compatible, string, string_t
+from celery.five import string, string_t
 from celery.utils.nodenames import worker_direct
 from celery.utils.text import str_to_list
 
