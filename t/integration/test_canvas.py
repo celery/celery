@@ -424,6 +424,15 @@ class test_group:
 
         assert res.get(timeout=TIMEOUT) == [11, 101, 1001, 2001]
 
+    @flaky
+    def test_large_group(self, manager):
+        assert_ping(manager)
+
+        c = group(identity.s(i) for i in range(1000))
+        res = c.delay()
+
+        assert res.get(timeout=TIMEOUT) == list(range(1000))
+
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
     root_id, parent_id, value = r.get(timeout=TIMEOUT)
@@ -821,3 +830,25 @@ class test_chord:
         )
         res = c.delay()
         assert res.get(timeout=TIMEOUT) == 7
+
+    @flaky
+    def test_large_header(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = group(identity.si(i) for i in range(1000)) | tsum.s()
+        res = c.delay()
+        assert res.get(timeout=TIMEOUT) == 499500
+
+    @flaky
+    def test_chain_to_a_chord_with_large_header(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = identity.si(1) | group(identity.s() for _ in range(1000)) | tsum.s()
+        res = c.delay()
+        assert res.get(timeout=TIMEOUT) == 1000
