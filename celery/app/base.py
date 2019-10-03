@@ -22,7 +22,7 @@ from celery._state import (_announce_app_finalized, _deregister_app,
                            connect_on_app_finalize, get_current_app,
                            get_current_worker_task, set_default_app)
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
-from celery.five import (UserDict, bytes_if_py2, values)
+from celery.five import UserDict, bytes_if_py2, values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract

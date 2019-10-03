@@ -7,8 +7,7 @@ here for backwards compatibility.
 from kombu.utils.objects import cached_property  # noqa: F401
 from kombu.utils.uuid import uuid  # noqa: F401
 
-from .functional import memoize  # noqa: F401
-from .functional import chunks, noop  # noqa: F401
+from .functional import chunks, memoize, noop  # noqa: F401
 from .imports import gen_task_name, import_from_cwd, instantiate  # noqa: F401
 from .imports import qualname as get_full_cls_name  # noqa: F401
 from .imports import symbol_by_name as get_cls_by_name  # noqa: F401

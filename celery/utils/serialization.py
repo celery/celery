@@ -11,8 +11,7 @@ from itertools import takewhile
 
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
-from celery.five import (bytes_if_py2, items, python_2_unicode_compatible,
-                         reraise, string_t)
+from celery.five import bytes_if_py2, items, reraise, string_t
 
 from .encoding import safe_repr
 

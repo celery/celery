@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Task results/state and results for groups of tasks."""
 
-import time
 import datetime
+import time
 from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
@@ -14,8 +14,7 @@ from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
-from .five import (items, monotonic, python_2_unicode_compatible, range,
-                   string_t)
+from .five import items, monotonic, range, string_t
 from .utils import deprecated
 from .utils.graph import DependencyGraph, GraphFormatter
 from .utils.iso8601 import parse_iso8601

@@ -21,8 +21,7 @@ from kombu.utils.functional import maybe_evaluate, reprcall
 from kombu.utils.objects import cached_property
 
 from . import __version__, platforms, signals
-from .five import (items, monotonic, python_2_unicode_compatible, reraise,
-                   values)
+from .five import items, monotonic, reraise, values
 from .schedules import crontab, maybe_schedule
 from .utils.imports import load_extension_class_names, symbol_by_name
 from .utils.log import get_logger, iter_open_logger_fds

@@ -6,8 +6,7 @@ from collections import deque
 from heapq import heapify, heappop, heappush
 from itertools import chain, count
 
-from celery.five import (PY3, Empty, items, keys, monotonic,
-                         python_2_unicode_compatible, values)
+from celery.five import PY3, Empty, items, keys, monotonic, values
 
 from .functional import first, uniq
 from .text import match_case

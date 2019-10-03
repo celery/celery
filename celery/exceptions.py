@@ -54,7 +54,7 @@ from billiard.exceptions import (SoftTimeLimitExceeded, Terminated,
                                  TimeLimitExceeded, WorkerLostError)
 from kombu.exceptions import OperationalError
 
-from .five import python_2_unicode_compatible, string_t
+from .five import string_t
 
 __all__ = (
     # Warnings
@@ -168,7 +168,6 @@ class Ignore(TaskPredicate):
     """A task can raise this to ignore doing state updates."""
 
 
-@python_2_unicode_compatible
 class Reject(TaskPredicate):
     """A task can raise this if it wants to reject/re-queue the message."""
 
@@ -201,7 +200,6 @@ class IncompleteStream(TaskError):
     """Found the end of a stream of data, but the data isn't complete."""
 
 
-@python_2_unicode_compatible
 class NotRegistered(KeyError, TaskError):
     """The task ain't registered."""
 
