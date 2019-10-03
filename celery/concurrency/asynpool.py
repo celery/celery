@@ -16,7 +16,6 @@ import errno
 import gc
 import os
 import select
-import socket
 import sys
 import time
 from collections import deque, namedtuple
