@@ -199,7 +199,7 @@ class Worker(WorkController):
         pool = self.pool_cls
         if not isinstance(pool, string_t):
             pool = pool.__module__
-        concurrency += f' ({pool.split('.')[-1]})'
+        concurrency += f" ({pool.split('.')[-1]})"
         events = 'ON'
         if not self.task_events:
             events = 'OFF (enable -E to monitor tasks in this worker)'
