@@ -1,4 +1,3 @@
-
 from celery.app.task import Context
 
 

@@ -1,5 +1,4 @@
 """s3 result store backend."""
-from __future__ import absolute_import, unicode_literals
 
 from kombu.utils.encoding import bytes_to_str
 
