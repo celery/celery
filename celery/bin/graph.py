@@ -52,7 +52,7 @@ class graph(Command):
 
         def generic_label(node):
             return '{} ({}://)'.format(type(node).__name__,
-                                         node._label.split('://')[0])
+                                       node._label.split('://')[0])
 
         class Node:
             force_label = None
