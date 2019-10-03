@@ -97,9 +97,7 @@ def bench_both(n=DEFAULT_ITS):
 def main(argv=sys.argv):
     n = DEFAULT_ITS
     if len(argv) < 2:
-        print('Usage: {} [apply|work|both] [n=20k]'.format(
-            os.path.basename(argv[0]),
-        ))
+        print(f'Usage: {os.path.basename(argv[0])} [apply|work|both] [n=20k]')
         return sys.exit(1)
     try:
         try:
