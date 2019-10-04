@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Dependency graph implementation."""
 from collections import Counter
 from textwrap import dedent
@@ -262,7 +261,7 @@ class GraphFormatter:
         self.graph_scheme = dict(self.graph_scheme, root=self.label(self.root))
 
     def attr(self, name, value):
-        value = '"{0}"'.format(value)
+        value = f'"{value}"'
         return self.FMT(self._attr, name=name, value=value)
 
     def attrs(self, d, scheme=None):

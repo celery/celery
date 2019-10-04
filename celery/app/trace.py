@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Trace task execution.
 
 This module defines how the task execution is traced:
@@ -564,7 +563,7 @@ def report_internal_error(task, exc):
         _value = task.backend.prepare_exception(exc, 'pickle')
         exc_info = ExceptionInfo((_type, _value, _tb), internal=True)
         warn(RuntimeWarning(
-            'Exception raised outside body: {0!r}:\n{1}'.format(
+            'Exception raised outside body: {!r}:\n{}'.format(
                 exc, exc_info.traceback)))
         return exc_info
     finally:

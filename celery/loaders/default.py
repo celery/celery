@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The default loader used when no custom app has been initialized."""
 import os
 import warnings

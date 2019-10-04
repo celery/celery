@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Riak result store backend."""
 import sys
 import warnings
@@ -77,7 +76,7 @@ class RiakBackend(KeyValueStoreBackend):
 
     def __init__(self, host=None, port=None, bucket_name=None, protocol=None,
                  url=None, *args, **kwargs):
-        super(RiakBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
 
         if not riak:

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Registry of available tasks."""
 import inspect
 from importlib import import_module
@@ -26,7 +25,7 @@ class TaskRegistry(dict):
         """
         if task.name is None:
             raise InvalidTaskError(
-                'Task class {0!r} must specify .name attribute'.format(
+                'Task class {!r} must specify .name attribute'.format(
                     type(task).__name__))
         self[task.name] = inspect.isclass(task) and task() or task
 

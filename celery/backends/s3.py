@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 """s3 result store backend."""
-from __future__ import absolute_import, unicode_literals
 
 from kombu.utils.encoding import bytes_to_str
 
@@ -31,7 +29,7 @@ class S3Backend(KeyValueStoreBackend):
     """
 
     def __init__(self, **kwargs):
-        super(S3Backend, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         if not boto3 or not botocore:
             raise ImproperlyConfigured('You must install boto3'

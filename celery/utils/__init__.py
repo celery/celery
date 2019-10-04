@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utility functions.
 
 Don't import from here directly anymore, as these are only

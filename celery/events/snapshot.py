@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Periodically store events in a database.
 
 Consuming the events as a stream isn't always suitable
@@ -94,8 +93,7 @@ def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
 
     app.log.setup_logging_subsystem(loglevel, logfile)
 
-    print('-> evcam: Taking snapshots with {0} (every {1} secs.)'.format(
-        camera, freq))
+    print(f'-> evcam: Taking snapshots with {camera} (every {freq} secs.)')
     state = app.events.State()
     cam = instantiate(camera, state, app=app, freq=freq,
                       maxrate=maxrate, timer=timer)

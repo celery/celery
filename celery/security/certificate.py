@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """X.509 certificates."""
 import datetime
 import glob
@@ -17,7 +16,7 @@ from .utils import reraise_errors
 __all__ = ('Certificate', 'CertStore', 'FSCertStore')
 
 
-class Certificate(object):
+class Certificate:
     """X.509 certificate."""
 
     def __init__(self, cert):
@@ -45,7 +44,7 @@ class Certificate(object):
 
     def get_id(self):
         """Serial number/issuer pair uniquely identifies a certificate."""
-        return '{0} {1}'.format(self.get_issuer(), self.get_serial_number())
+        return f'{self.get_issuer()} {self.get_serial_number()}'
 
     def verify(self, data, signature, digest):
         """Verify signature for string containing data."""
@@ -59,7 +58,7 @@ class Certificate(object):
                                      ensure_bytes(data), padd, digest)
 
 
-class CertStore(object):
+class CertStore:
     """Base class for certificate stores."""
 
     def __init__(self):
@@ -67,20 +66,19 @@ class CertStore(object):
 
     def itercerts(self):
         """Return certificate iterator."""
-        for c in values(self._certs):
-            yield c
+        yield from values(self._certs)
 
     def __getitem__(self, id):
         """Get certificate by id."""
         try:
             return self._certs[bytes_to_str(id)]
         except KeyError:
-            raise SecurityError('Unknown certificate: {0!r}'.format(id))
+            raise SecurityError(f'Unknown certificate: {id!r}')
 
     def add_cert(self, cert):
         cert_id = bytes_to_str(cert.get_id())
         if cert_id in self._certs:
-            raise SecurityError('Duplicate certificate: {0!r}'.format(id))
+            raise SecurityError(f'Duplicate certificate: {id!r}')
         self._certs[cert_id] = cert
 
 
@@ -96,5 +94,5 @@ class FSCertStore(CertStore):
                 cert = Certificate(f.read())
                 if cert.has_expired():
                     raise SecurityError(
-                        'Expired certificate: {0!r}'.format(cert.get_id()))
+                        f'Expired certificate: {cert.get_id()!r}')
                 self.add_cert(cert)

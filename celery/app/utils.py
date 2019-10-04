@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """App utilities: Compat settings, bug-report tool, pickling apps."""
 import os
 import platform as _platform
@@ -73,7 +72,7 @@ FMT_REPLACE_SETTING = '{replace:<36} -> {with_}'
 
 def appstr(app):
     """String used in __repr__ etc, to id app instances."""
-    return '{0} at {1:#x}'.format(app.main or '__main__', id(app))
+    return f'{app.main or "__main__"} at {id(app):#x}'
 
 
 class Settings(ConfigurationView):
@@ -195,7 +194,7 @@ class Settings(ConfigurationView):
     def humanize(self, with_defaults=False, censored=True):
         """Return a human readable text showing configuration changes."""
         return '\n'.join(
-            '{0}: {1}'.format(key, pretty(value, width=50))
+            f'{key}: {pretty(value, width=50)}'
             for key, value in items(self.table(with_defaults, censored)))
 
 
@@ -340,8 +339,8 @@ def bugreport(app):
 
     try:
         conn = app.connection()
-        driver_v = '{0}:{1}'.format(conn.transport.driver_name,
-                                    conn.transport.driver_version())
+        driver_v = '{}:{}'.format(conn.transport.driver_name,
+                                  conn.transport.driver_version())
         transport = conn.transport_cls
     except Exception:  # pylint: disable=broad-except
         transport = driver_v = ''
@@ -386,7 +385,7 @@ def find_app(app, symbol_by_name=symbol_by_name, imp=import_from_cwd):
                 if getattr(sym, '__path__', None):
                     try:
                         return find_app(
-                            '{0}.celery'.format(app),
+                            f'{app}.celery',
                             symbol_by_name=symbol_by_name, imp=imp,
                         )
                     except ImportError:

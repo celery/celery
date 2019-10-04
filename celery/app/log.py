@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Logging configuration.
 
 The Celery instances logging section: ``Celery.log``.

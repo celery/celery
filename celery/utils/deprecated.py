@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Deprecation utilities."""
 import warnings
 

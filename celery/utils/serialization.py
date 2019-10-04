@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utilities for safely pickling exceptions."""
 import datetime
 import numbers
@@ -212,7 +211,7 @@ def strtobool(term, table=None):
         try:
             return table[term.lower()]
         except KeyError:
-            raise TypeError('Cannot coerce {0!r} to type bool'.format(term))
+            raise TypeError(f'Cannot coerce {term!r} to type bool')
     return term
 
 
@@ -263,8 +262,8 @@ def jsonify(obj,
     else:
         if unknown_type_filter is None:
             raise ValueError(
-                'Unsupported type: {0!r} {1!r} (parent: {2})'.format(
-                    type(obj), obj, key))
+                f'Unsupported type: {type(obj)!r} {obj!r} (parent: {key})'
+            )
         return unknown_type_filter(obj)
 
 

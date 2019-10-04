@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for ``celery upgrade`` command."""
 
 import pytest

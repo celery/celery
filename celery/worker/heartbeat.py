@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Heartbeat service.
 
 This is the internal thread responsible for sending heartbeat events

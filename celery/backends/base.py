@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Result backend base classes.
 
 - :class:`BaseBackend` defines the interface.
@@ -282,7 +281,7 @@ class Backend:
                     else:
                         exc = cls(exc_msg)
                 except Exception as err:  # noqa
-                    exc = Exception('{}({})'.format(cls, exc_msg))
+                    exc = Exception(f'{cls}({exc_msg})')
             if self.serializer in EXCEPTION_ABLE_CODECS:
                 exc = get_pickled_exception(exc)
         return exc
@@ -561,7 +560,7 @@ class BaseKeyValueStoreBackend(Backend):
         if hasattr(self.key_t, '__func__'):  # pragma: no cover
             self.key_t = self.key_t.__func__  # remove binding
         self._encode_prefixes()
-        super(BaseKeyValueStoreBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.implements_incr:
             self.apply_chord = self._apply_chord_incr
 
@@ -668,7 +667,7 @@ class BaseKeyValueStoreBackend(Backend):
                     on_message(value)
                 yield bytes_to_str(key), value
             if timeout and iterations * interval >= timeout:
-                raise TimeoutError('Operation timed out ({0})'.format(timeout))
+                raise TimeoutError(f'Operation timed out ({timeout})')
             if on_interval:
                 on_interval()
             time.sleep(interval)  # don't busy loop.
@@ -765,7 +764,7 @@ class BaseKeyValueStoreBackend(Backend):
             logger.exception('Chord %r raised: %r', gid, exc)
             return self.chord_error_from_stack(
                 callback,
-                ChordError('Cannot restore group: {0!r}'.format(exc)),
+                ChordError(f'Cannot restore group: {exc!r}'),
             )
         if deps is None:
             try:
@@ -775,7 +774,7 @@ class BaseKeyValueStoreBackend(Backend):
                 logger.exception('Chord callback %r raised: %r', gid, exc)
                 return self.chord_error_from_stack(
                     callback,
-                    ChordError('GroupResult {0} no longer exists'.format(gid)),
+                    ChordError(f'GroupResult {gid} no longer exists'),
                 )
         val = self.incr(key)
         size = len(deps)
@@ -806,7 +805,7 @@ class BaseKeyValueStoreBackend(Backend):
                     logger.exception('Chord %r raised: %r', gid, exc)
                     self.chord_error_from_stack(
                         callback,
-                        ChordError('Callback error: {0!r}'.format(exc)),
+                        ChordError(f'Callback error: {exc!r}'),
                     )
             finally:
                 deps.delete()

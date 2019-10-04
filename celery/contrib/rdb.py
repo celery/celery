@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Remote Debugger.
 
 Introduction
@@ -103,7 +102,7 @@ class Rdb(Pdb):
         )
         self._sock.setblocking(1)
         self._sock.listen(1)
-        self.ident = '{0}:{1}'.format(self.me, this_port)
+        self.ident = f'{self.me}:{this_port}'
         self.host = host
         self.port = this_port
         self.say(BANNER.format(self=self))
@@ -129,7 +128,7 @@ class Rdb(Pdb):
             this_port = port + skew + i
             try:
                 _sock.bind((host, this_port))
-            except socket.error as exc:
+            except OSError as exc:
                 if exc.errno in [errno.EADDRINUSE, errno.EINVAL]:
                     continue
                 raise

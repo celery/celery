@@ -1,4 +1,3 @@
-# -* coding: utf-8 -*-
 """Apache Cassandra result store backend using the DataStax driver."""
 import sys
 
@@ -82,7 +81,7 @@ class CassandraBackend(BaseBackend):
 
     def __init__(self, servers=None, keyspace=None, table=None, entry_ttl=None,
                  port=9042, **kwargs):
-        super(CassandraBackend, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         if not cassandra:
             raise ImproperlyConfigured(E_NO_CASSANDRA)
@@ -232,4 +231,4 @@ class CassandraBackend(BaseBackend):
             {'servers': self.servers,
              'keyspace': self.keyspace,
              'table': self.table})
-        return super(CassandraBackend, self).__reduce__(args, kwargs)
+        return super().__reduce__(args, kwargs)

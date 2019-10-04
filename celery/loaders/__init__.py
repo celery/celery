@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Get loader by name.
 
 Loaders define how configuration is read, what happens

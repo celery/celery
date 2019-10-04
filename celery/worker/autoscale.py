@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Pool Autoscaling.
 
 This module implements the internal thread responsible
@@ -66,7 +65,7 @@ class Autoscaler(bgThread):
     def __init__(self, pool, max_concurrency,
                  min_concurrency=0, worker=None,
                  keepalive=AUTOSCALE_KEEPALIVE, mutex=None):
-        super(Autoscaler, self).__init__()
+        super().__init__()
         self.pool = pool
         self.mutex = mutex or threading.Lock()
         self.max_concurrency = max_concurrency

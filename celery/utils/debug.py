@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utilities for debugging memory usage, blocking calls, etc."""
 import os
 import sys
@@ -35,9 +34,7 @@ _mem_sample = []
 def _on_blocking(signum, frame):
     import inspect
     raise RuntimeError(
-        'Blocking detection timed-out at: {0}'.format(
-            inspect.getframeinfo(frame)
-        )
+        f'Blocking detection timed-out at: {inspect.getframeinfo(frame)}'
     )
 
 
@@ -98,8 +95,8 @@ def memdump(samples=10, file=None):  # pragma: no cover
     if prev:
         say('- rss (sample):')
         for mem in prev:
-            say('-    > {0},'.format(mem))
-    say('- rss (end): {0}.'.format(after_collect))
+            say(f'-    > {mem},')
+    say(f'- rss (end): {after_collect}.')
 
 
 def sample(x, n, k=0):
@@ -133,7 +130,7 @@ def hfloat(f, p=5):
 def humanbytes(s):
     """Convert bytes to human-readable form (e.g., KB, MB)."""
     return next(
-        '{0}{1}'.format(hfloat(s / div if div else s), unit)
+        f'{hfloat(s / div if div else s)}{unit}'
         for div, unit in UNITS if s >= div
     )
 
@@ -185,7 +182,7 @@ def cry(out=None, sepchr='=', seplen=49):  # pragma: no cover
         if not thread:
             # skip old junk (left-overs from a fork)
             continue
-        P('{0.name}'.format(thread))
+        P(f'{thread.name}')
         P(sep)
         traceback.print_stack(frame, file=out)
         P(sep)

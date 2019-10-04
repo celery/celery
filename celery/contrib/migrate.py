@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Message migration tools (Broker <-> Broker)."""
 import socket
 from functools import partial
@@ -45,8 +44,8 @@ class State:
 
     def __repr__(self):
         if self.filtered:
-            return '^{0.filtered}'.format(self)
-        return '{0.count}/{0.strtotal}'.format(self)
+            return f'^{self.filtered}'
+        return f'{self.count}/{self.strtotal}'
 
 
 def republish(producer, message, exchange=None, routing_key=None,

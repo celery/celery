@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Custom maps, sets, sequences, and other data structures."""
 import sys
 from collections import OrderedDict as _OrderedDict
@@ -131,8 +130,7 @@ class AttributeDictMixin:
             return self[k]
         except KeyError:
             raise AttributeError(
-                '{0!r} object has no attribute {1!r}'.format(
-                    type(self).__name__, k))
+                f'{type(self).__name__!r} object has no attribute {k!r}')
 
     def __setattr__(self, key, value):
         # type: (str, Any) -> None
@@ -144,7 +142,7 @@ class AttributeDict(dict, AttributeDictMixin):
     """Dict subclass with attribute access."""
 
 
-class DictAttribute(object):
+class DictAttribute:
     """Dict interface to attributes.
 
     `obj[k] -> obj.k`
@@ -266,7 +264,7 @@ class ChainMap(MutableMapping):
             return self.maps[0].pop(key, *default)
         except KeyError:
             raise KeyError(
-                'Key not found in the first mapping: {!r}'.format(key))
+                f'Key not found in the first mapping: {key!r}')
 
     def __missing__(self, key):
         # type: (Any) -> Any
@@ -295,7 +293,7 @@ class ChainMap(MutableMapping):
         try:
             del self.changes[self._key(key)]
         except KeyError:
-            raise KeyError('Key not found in first mapping: {0!r}'.format(key))
+            raise KeyError(f'Key not found in first mapping: {key!r}')
 
     def clear(self):
         # type: () -> None
@@ -416,7 +414,7 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
     def __init__(self, changes, defaults=None, keys=None, prefix=None):
         # type: (Mapping, Mapping, List[str], str) -> None
         defaults = [] if defaults is None else defaults
-        super(ConfigurationView, self).__init__(changes, *defaults)
+        super().__init__(changes, *defaults)
         self.__dict__.update(
             prefix=prefix.rstrip('_') + '_' if prefix else prefix,
             _keys=keys,
@@ -433,7 +431,7 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
     def __getitem__(self, key):
         # type: (str) -> Any
         keys = self._to_keys(key)
-        getitem = super(ConfigurationView, self).__getitem__
+        getitem = super().__getitem__
         for k in keys + (
                 tuple(f(key) for f in self._keys) if self._keys else ()):
             try:
@@ -487,7 +485,7 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
         )
 
 
-class LimitedSet(object):
+class LimitedSet:
     """Kind-of Set (or priority queue) with limitations.
 
     Good for when you need to test for membership (`a in set`),
@@ -608,8 +606,7 @@ class LimitedSet(object):
                 if not isinstance(inserted, float):
                     raise ValueError(
                         'Expecting float timestamp, got type '
-                        '{0!r} with value: {1}'.format(
-                            type(inserted), inserted))
+                        f'{type(inserted)!r} with value: {inserted}')
                 self.add(key, inserted)
         else:
             # XXX AVOID THIS, it could keep old data if more parties
@@ -720,7 +717,7 @@ class LimitedSet(object):
 MutableSet.register(LimitedSet)  # noqa: E305
 
 
-class Evictable(object):
+class Evictable:
     """Mixin for classes supporting the ``evict`` method."""
 
     Empty = Empty
@@ -786,9 +783,7 @@ class Messagebuffer(Evictable):
 
     def __repr__(self):
         # type: () -> str
-        return '<{0}: {1}/{2}>'.format(
-            type(self).__name__, len(self), self.maxsize,
-        )
+        return f'<{type(self).__name__}: {len(self)}/{self.maxsize}>'
 
     def __iter__(self):
         # type: () -> Iterable
@@ -835,7 +830,7 @@ class BufferMap(OrderedDict, Evictable):
 
     def __init__(self, maxsize, iterable=None, bufmaxsize=1000):
         # type: (int, Iterable, int) -> None
-        super(BufferMap, self).__init__()
+        super().__init__()
         self.maxsize = maxsize
         self.bufmaxsize = 1000
         if iterable:
@@ -916,9 +911,7 @@ class BufferMap(OrderedDict, Evictable):
 
     def __repr__(self):
         # type: () -> str
-        return '<{0}: {1}/{2}>'.format(
-            type(self).__name__, self.total, self.maxsize,
-        )
+        return f'<{type(self).__name__}: {self.total}/{self.maxsize}>'
 
     @property
     def _evictcount(self):

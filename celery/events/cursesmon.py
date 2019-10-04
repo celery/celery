@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 """Graphical monitor of Celery events using curses."""
-from __future__ import absolute_import, print_function, unicode_literals
 
 import curses
 import sys
@@ -48,7 +46,7 @@ class CursesMonitor:  # pragma: no cover
     online_str = 'Workers online: '
     help_title = 'Keys: '
     help = ('j:down k:up i:info t:traceback r:result c:revoke ^c: quit')
-    greet = 'celery events {0}'.format(VERSION_BANNER)
+    greet = f'celery events {VERSION_BANNER}'
     info_str = 'Info: '
 
     def __init__(self, state, app, keymap=None):
@@ -89,8 +87,7 @@ class CursesMonitor:  # pragma: no cover
         state = abbr(state, STATE_WIDTH).ljust(STATE_WIDTH)
         timestamp = timestamp.ljust(TIMESTAMP_WIDTH)
 
-        row = '{0} {1} {2} {3} {4} '.format(uuid, worker, task,
-                                            timestamp, state)
+        row = f'{uuid} {worker} {task} {timestamp} {state} '
         if self.screen_width is None:
             self.screen_width = len(row[:mx])
         return row[:mx]
@@ -207,7 +204,7 @@ class CursesMonitor:  # pragma: no cover
                 curline = next(y)
 
                 host, response = next(items(subreply))
-                host = '{0}: '.format(host)
+                host = f'{host}: '
                 self.win.addstr(curline, 3, host, curses.A_BOLD)
                 attr = curses.A_NORMAL
                 text = ''
@@ -222,7 +219,7 @@ class CursesMonitor:  # pragma: no cover
         return self.alert(callback, 'Remote Control Command Replies')
 
     def readline(self, x, y):
-        buffer = str()
+        buffer = ''
         curses.echo()
         try:
             i = 0
@@ -232,7 +229,7 @@ class CursesMonitor:  # pragma: no cover
                     if ch in (10, curses.KEY_ENTER):            # enter
                         break
                     if ch in (27,):
-                        buffer = str()
+                        buffer = ''
                         break
                     buffer += chr(ch)
                     i += 1
@@ -286,7 +283,7 @@ class CursesMonitor:  # pragma: no cover
                         )
 
         return self.alert(
-            alert_callback, 'Task details for {0.selected_task}'.format(self),
+            alert_callback, f'Task details for {self.selected_task}',
         )
 
     def selection_traceback(self):
@@ -303,7 +300,7 @@ class CursesMonitor:  # pragma: no cover
 
         return self.alert(
             alert_callback,
-            'Task Exception Traceback for {0.selected_task}'.format(self),
+            f'Task Exception Traceback for {self.selected_task}',
         )
 
     def selection_result(self):
@@ -320,7 +317,7 @@ class CursesMonitor:  # pragma: no cover
 
         return self.alert(
             alert_callback,
-            'Task Result for {0.selected_task}'.format(self),
+            f'Task Result for {self.selected_task}',
         )
 
     def display_task_row(self, lineno, task):
@@ -384,11 +381,11 @@ class CursesMonitor:  # pragma: no cover
                 else:
                     info = selection.info()
                     if 'runtime' in info:
-                        info['runtime'] = '{0:.2f}'.format(info['runtime'])
+                        info['runtime'] = '{:.2f}'.format(info['runtime'])
                     if 'result' in info:
                         info['result'] = abbr(info['result'], 16)
                     info = ' '.join(
-                        '{0}={1}'.format(key, value)
+                        f'{key}={value}'
                         for key, value in items(info)
                     )
                     detail = '... -> key i'
@@ -498,7 +495,7 @@ class DisplayThread(threading.Thread):  # pragma: no cover
 def capture_events(app, state, display):  # pragma: no cover
 
     def on_connection_error(exc, interval):
-        print('Connection Error: {0!r}.  Retry in {1}s.'.format(
+        print('Connection Error: {!r}.  Retry in {}s.'.format(
             exc, interval), file=sys.stderr)
 
     while 1:
@@ -512,7 +509,7 @@ def capture_events(app, state, display):  # pragma: no cover
                 display.init_screen()
                 recv.capture()
             except conn.connection_errors + conn.channel_errors as exc:
-                print('Connection lost: {0!r}'.format(exc), file=sys.stderr)
+                print(f'Connection lost: {exc!r}', file=sys.stderr)
 
 
 def evtop(app=None):  # pragma: no cover

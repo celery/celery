@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Old deprecated task module.
 
 This is the old task module, it shouldn't be used anymore,

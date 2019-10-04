@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Celery Application."""
 from celery import _state
 from celery._state import (app_or_default, disable_trace, enable_trace,

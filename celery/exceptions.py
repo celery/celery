@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Celery error types.
 
 Error Hierarchy
@@ -143,19 +142,19 @@ class Retry(TaskPredicate):
         else:
             self.exc, self.excs = exc, safe_repr(exc) if exc else None
         self.when = when
-        super(Retry, self).__init__(self, exc, when, **kwargs)
+        super().__init__(self, exc, when, **kwargs)
 
     def humanize(self):
         if isinstance(self.when, numbers.Number):
-            return 'in {0.when}s'.format(self)
-        return 'at {0.when}'.format(self)
+            return f'in {self.when}s'
+        return f'at {self.when}'
 
     def __str__(self):
         if self.message:
             return self.message
         if self.excs:
-            return 'Retry {0}: {1}'.format(self.humanize(), self.excs)
-        return 'Retry {0}'.format(self.humanize())
+            return f'Retry {self.humanize()}: {self.excs}'
+        return f'Retry {self.humanize()}'
 
     def __reduce__(self):
         return self.__class__, (self.message, self.excs, self.when)
@@ -174,10 +173,10 @@ class Reject(TaskPredicate):
     def __init__(self, reason=None, requeue=False):
         self.reason = reason
         self.requeue = requeue
-        super(Reject, self).__init__(reason, requeue)
+        super().__init__(reason, requeue)
 
     def __repr__(self):
-        return 'reject requeue=%s: %s' % (self.requeue, self.reason)
+        return f'reject requeue={self.requeue}: {self.reason}'
 
 
 class ImproperlyConfigured(CeleryError):
@@ -222,7 +221,7 @@ class MaxRetriesExceededError(TaskError):
     def __init__(self, *args, **kwargs):
         self.task_args = kwargs.pop("task_args", [])
         self.task_kwargs = kwargs.pop("task_kwargs", dict())
-        super(MaxRetriesExceededError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class TaskRevokedError(TaskError):

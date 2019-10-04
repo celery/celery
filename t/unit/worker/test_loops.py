@@ -32,7 +32,7 @@ class PromiseEqual:
         return '<promise: {0.fun!r} {0.args!r} {0.kwargs!r}>'.format(self)
 
 
-class X(object):
+class X:
 
     def __init__(self, app, heartbeat=None, on_task_message=None,
                  transport_driver_type=None):

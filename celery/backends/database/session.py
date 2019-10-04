@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """SQLAlchemy session."""
 from kombu.utils.compat import register_after_fork
 from sqlalchemy import create_engine

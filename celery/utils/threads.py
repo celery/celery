@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Threading primitives and utilities."""
 import os
 import socket
@@ -46,7 +45,7 @@ class bgThread(threading.Thread):
     """Background service thread."""
 
     def __init__(self, name=None, **kwargs):
-        super(bgThread, self).__init__()
+        super().__init__()
         self._is_shutdown = threading.Event()
         self._is_stopped = threading.Event()
         self.daemon = True
@@ -113,7 +112,7 @@ def release_local(local):
     local.__release_local__()
 
 
-class Local(object):
+class Local:
     """Local object."""
 
     __slots__ = ('__storage__', '__ident_func__')
@@ -153,7 +152,7 @@ class Local(object):
             raise AttributeError(name)
 
 
-class _LocalStack(object):
+class _LocalStack:
     """Local stack.
 
     This class works similar to a :class:`Local` but keeps a stack
@@ -253,7 +252,7 @@ class _LocalStack(object):
             return None
 
 
-class LocalManager(object):
+class LocalManager:
     """Local objects cannot manage themselves.
 
     For that you need a local manager.
@@ -299,7 +298,7 @@ class LocalManager(object):
             release_local(local)
 
     def __repr__(self):
-        return '<{0} storages: {1}>'.format(
+        return '<{} storages: {}>'.format(
             self.__class__.__name__, len(self.locals))
 
 
@@ -309,7 +308,7 @@ class _FastLocalStack(threading.local):
         self.stack = []
         self.push = self.stack.append
         self.pop = self.stack.pop
-        super(_FastLocalStack, self).__init__()
+        super().__init__()
 
     @property
     def top(self):

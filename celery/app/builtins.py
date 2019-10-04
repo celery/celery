@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Built-in Tasks.
 
 The built-in tasks are always available in all app instances.
@@ -83,7 +82,7 @@ def add_unlock_chord_task(app):
         except Exception as exc:  # pylint: disable=broad-except
             try:
                 culprit = next(deps._failed_join_report())
-                reason = 'Dependency {0.id} raised {1!r}'.format(culprit, exc)
+                reason = f'Dependency {culprit.id} raised {exc!r}'
             except StopIteration:
                 reason = repr(exc)
             logger.exception('Chord %r raised: %r', group_id, exc)
@@ -95,7 +94,7 @@ def add_unlock_chord_task(app):
                 logger.exception('Chord %r raised: %r', group_id, exc)
                 app.backend.chord_error_from_stack(
                     callback,
-                    exc=ChordError('Callback error: {0!r}'.format(exc)),
+                    exc=ChordError(f'Callback error: {exc!r}'),
                 )
     return unlock_chord
 

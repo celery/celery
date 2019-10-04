@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utilities used by the message signing serializer."""
 import sys
 from contextlib import contextmanager

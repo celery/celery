@@ -15,7 +15,7 @@ class Connection(bootsteps.StartStopStep):
 
     def __init__(self, c, **kwargs):
         c.connection = None
-        super(Connection, self).__init__(c, **kwargs)
+        super().__init__(c, **kwargs)
 
     def start(self, c):
         c.connection = c.connect()

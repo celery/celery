@@ -68,7 +68,7 @@ class greenletDrainer(Drainer):
     _g = None
 
     def __init__(self, *args, **kwargs):
-        super(greenletDrainer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._started = threading.Event()
         self._stopped = threading.Event()
         self._shutdown = threading.Event()

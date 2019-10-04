@@ -216,7 +216,7 @@ class test_prepare_exception:
         assert isinstance(y, KeyError)
 
     def test_unicode_message(self):
-        message = u'\u03ac'
+        message = '\u03ac'
         x = self.b.prepare_exception(Exception(message))
         assert x == {'exc_message': (message,),
                      'exc_type': Exception.__name__,
@@ -228,7 +228,7 @@ class KVBackend(KeyValueStoreBackend):
 
     def __init__(self, app, *args, **kwargs):
         self.db = {}
-        super(KVBackend, self).__init__(app, *args, **kwargs)
+        super().__init__(app, *args, **kwargs)
 
     def get(self, key):
         return self.db.get(key)

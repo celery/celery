@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functional-style utilties."""
 import inspect
 import sys
@@ -46,7 +45,7 @@ class mlazy(lazy):
 
     def evaluate(self):
         if not self.evaluated:
-            self._value = super(mlazy, self).evaluate()
+            self._value = super().evaluate()
             self.evaluated = True
         return self._value
 
@@ -242,12 +241,12 @@ def _argsfromspec(spec, replace_defaults=True):
 
     return ', '.join(filter(None, [
         ', '.join(positional),
-        ', '.join('{0}={1}'.format(k, v) for k, v in optional),
-        '*{0}'.format(varargs) if varargs else None,
+        ', '.join(f'{k}={v}' for k, v in optional),
+        f'*{varargs}' if varargs else None,
         '*' if (kwonlyargs or kwonlyargs_optional) and not varargs else None,
         ', '.join(kwonlyargs) if kwonlyargs else None,
-        ', '.join('{0}="{1}"'.format(k, v) for k, v in kwonlyargs_optional),
-        '**{0}'.format(varkw) if varkw else None,
+        ', '.join(f'{k}="{v}"' for k, v in kwonlyargs_optional),
+        f'**{varkw}' if varkw else None,
     ]))
 
 

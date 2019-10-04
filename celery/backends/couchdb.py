@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """CouchDB result store backend."""
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import _parse_url
@@ -35,7 +34,7 @@ class CouchBackend(KeyValueStoreBackend):
     password = None
 
     def __init__(self, url=None, *args, **kwargs):
-        super(CouchBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
 
         if pycouchdb is None:
@@ -58,13 +57,10 @@ class CouchBackend(KeyValueStoreBackend):
     def _get_connection(self):
         """Connect to the CouchDB server."""
         if self.username and self.password:
-            conn_string = '%s://%s:%s@%s:%s' % (
-                self.scheme, self.username, self.password,
-                self.host, str(self.port))
+            conn_string = f'{self.scheme}://{self.username}:{self.password}@{self.host}:{self.port}'
             server = pycouchdb.Server(conn_string, authmethod='basic')
         else:
-            conn_string = '%s://%s:%s' % (
-                self.scheme, self.host, str(self.port))
+            conn_string = f'{self.scheme}://{self.host}:{self.port}'
             server = pycouchdb.Server(conn_string)
 
         try:

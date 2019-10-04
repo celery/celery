@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Text formatting utilities."""
 import re
 from functools import partial
@@ -121,7 +120,7 @@ def pretty(value, width=80, nl_width=80, sep='\n', **kw):
     if isinstance(value, dict):
         return '{{{0} {1}'.format(sep, pformat(value, 4, nl_width)[1:])
     elif isinstance(value, tuple):
-        return '{0}{1}{2}'.format(
+        return '{}{}{}'.format(
             sep, ' ' * 4, pformat(value, width=nl_width, **kw),
         )
     else:

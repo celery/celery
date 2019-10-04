@@ -35,7 +35,7 @@ class UnitLogging(symbol_by_name(Celery.log_cls)):
     """Sets up logging for the test application."""
 
     def __init__(self, *args, **kwargs):
-        super(UnitLogging, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.already_setup = True
 
 

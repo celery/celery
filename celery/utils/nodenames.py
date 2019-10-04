@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Worker name utilities."""
 import os
 import socket
@@ -85,7 +84,7 @@ def node_format(s, name, **extra):
 def _fmt_process_index(prefix='', default='0'):
     from .log import current_process_index
     index = current_process_index()
-    return '{0}{1}'.format(prefix, index) if index else default
+    return f'{prefix}{index}' if index else default
 
 
 _fmt_process_index_with_prefix = partial(_fmt_process_index, '-', '')

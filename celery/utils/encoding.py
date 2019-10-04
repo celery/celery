@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """**DEPRECATED**: This module has moved to :mod:`kombu.utils.encoding`."""
 from kombu.utils.encoding import (bytes_t, bytes_to_str,  # noqa
                                   default_encode, default_encoding,

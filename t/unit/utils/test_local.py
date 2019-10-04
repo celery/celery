@@ -286,7 +286,7 @@ class test_Proxy:
 
     def test_context(self):
 
-        class X(object):
+        class X:
             entered = exited = False
 
             def __enter__(self):
@@ -305,7 +305,7 @@ class test_Proxy:
 
     def test_reduce(self):
 
-        class X(object):
+        class X:
 
             def __reduce__(self):
                 return 123
@@ -318,7 +318,7 @@ class test_PromiseProxy:
 
     def test_only_evaluated_once(self):
 
-        class X(object):
+        class X:
             attr = 123
             evals = 0
 

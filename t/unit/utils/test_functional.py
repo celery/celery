@@ -275,13 +275,13 @@ class StarArgsCallable:
         return 1
 
 
-class ArgsCallable(object):
+class ArgsCallable:
 
     def __call__(self, a, b):
         return 1
 
 
-class ArgsStarKwargsCallable(object):
+class ArgsStarKwargsCallable:
 
     def __call__(self, a, b, **kwargs):
         return 1

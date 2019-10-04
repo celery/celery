@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """WorkController can be used to instantiate in-process workers.
 
 The command-line interface for the worker is in :mod:`celery.bin.worker`,

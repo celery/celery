@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Message Signing Serializer."""
 from kombu.serialization import \
     disable_insecure_serializers as _disable_insecure_serializers

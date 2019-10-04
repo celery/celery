@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Database models used by the SQLAlchemy result store backend."""
 from datetime import datetime
 
@@ -57,7 +56,7 @@ class TaskExtended(Task):
     queue = sa.Column(sa.String(155), nullable=True)
 
     def to_dict(self):
-        task_dict = super(TaskExtended, self).to_dict()
+        task_dict = super().to_dict()
         task_dict.update({
             'name': self.name,
             'args': self.args,
@@ -94,4 +93,4 @@ class TaskSet(ResultModelBase):
         }
 
     def __repr__(self):
-        return '<TaskSet: {0.taskset_id}>'.format(self)
+        return f'<TaskSet: {self.taskset_id}>'

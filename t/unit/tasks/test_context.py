@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-'
-
 from celery.app.task import Context
 
 

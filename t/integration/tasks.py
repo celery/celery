@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from time import sleep
 
 from celery import chain, chord, group, shared_task

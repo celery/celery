@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Task Routing.
 
 Contains utilities for working with task routers, (:setting:`task_routes`).
@@ -105,7 +104,7 @@ class Router:
                     route['queue'] = self.queues[queue]
                 except KeyError:
                     raise QueueNotFound(
-                        'Queue {0!r} missing from task_queues'.format(queue))
+                        f'Queue {queue!r} missing from task_queues')
         return route
 
     def lookup_route(self, name,

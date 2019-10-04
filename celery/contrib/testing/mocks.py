@@ -21,7 +21,7 @@ def TaskMessage(name, id=None, args=(), kwargs=None, callbacks=None,
     from celery import uuid
     from kombu.serialization import dumps
     id = id or uuid()
-    message = Mock(name='TaskMessage-{0}'.format(id))
+    message = Mock(name=f'TaskMessage-{id}')
     message.headers = {
         'id': id,
         'task': name,
@@ -45,7 +45,7 @@ def TaskMessage1(name, id=None, args=(), kwargs=None, callbacks=None,
     from celery import uuid
     from kombu.serialization import dumps
     id = id or uuid()
-    message = Mock(name='TaskMessage-{0}'.format(id))
+    message = Mock(name=f'TaskMessage-{id}')
     message.headers = {}
     message.payload = {
         'task': name,

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Backend selection."""
 import sys
 import types

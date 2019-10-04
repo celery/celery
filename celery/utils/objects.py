@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Object related utilities, including introspection, etc."""
 from functools import reduce
 

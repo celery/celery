@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Sending/Receiving Messages (Kombu integration)."""
 import numbers
 from collections import namedtuple
@@ -463,7 +462,7 @@ class AMQP:
 
     def _verify_seconds(self, s, what):
         if s < INT_MIN:
-            raise ValueError('%s is out of range: %r' % (what, s))
+            raise ValueError(f'{what} is out of range: {s!r}')
         return s
 
     def _create_task_sender(self):

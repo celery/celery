@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import numbers
 import os
 import signal

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Pool implementation abstract factory, and alias definitions."""
 
 # Import from kombu directly as it's used
