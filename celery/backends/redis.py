@@ -9,6 +9,8 @@
 from __future__ import absolute_import
 
 from functools import partial
+from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
+from urllib.parse import unquote
 
 from kombu.utils import cached_property, retry_over_time
 from kombu.utils.url import _parse_url
@@ -38,6 +40,29 @@ __all__ = ['RedisBackend']
 REDIS_MISSING = """\
 You need to install the redis library in order to use \
 the Redis result store backend."""
+
+
+E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH = """
+SSL connection parameters have been provided but the specified URL scheme \
+is redis://. A Redis SSL connection URL should use the scheme rediss://.
+"""
+
+E_REDIS_SSL_CERT_REQS_MISSING_INVALID = """
+A rediss:// URL must have parameter ssl_cert_reqs and this must be set to \
+CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
+"""
+
+W_REDIS_SSL_CERT_OPTIONAL = """
+Setting ssl_cert_reqs=CERT_OPTIONAL when connecting to redis means that \
+celery might not valdate the identity of the redis broker when connecting. \
+This leaves you vulnerable to man in the middle attacks.
+"""
+
+W_REDIS_SSL_CERT_NONE = """
+Setting ssl_cert_reqs=CERT_NONE when connecting to redis means that celery \
+will not valdate the identity of the redis broker when connecting. This \
+leaves you vulnerable to man in the middle attacks.
+"""
 
 logger = get_logger(__name__)
 error = logger.error
@@ -77,7 +102,7 @@ class RedisBackend(KeyValueStoreBackend):
             host = None
 
         self.max_connections = (
-            max_connections or _get('MAX_CONNECTIONS') or self.max_connections
+                max_connections or _get('MAX_CONNECTIONS') or self.max_connections
         )
         self._ConnectionPool = connection_pool
 
@@ -90,6 +115,30 @@ class RedisBackend(KeyValueStoreBackend):
         }
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
+        # If we've received SSL parameters via query string or the
+        # redis_backend_use_ssl dict, check ssl_cert_reqs is valid. If set
+        # via query string ssl_cert_reqs will be a string so convert it here
+        if ('connection_class' in self.connparams and
+                self.connparams['connection_class'] is redis.SSLConnection):
+            ssl_cert_reqs_missing = 'MISSING'
+            ssl_string_to_constant = {'CERT_REQUIRED': CERT_REQUIRED,
+                                      'CERT_OPTIONAL': CERT_OPTIONAL,
+                                      'CERT_NONE': CERT_NONE,
+                                      'required': CERT_REQUIRED,
+                                      'optional': CERT_OPTIONAL,
+                                      'none': CERT_NONE}
+            ssl_cert_reqs = self.connparams.get('ssl_cert_reqs', ssl_cert_reqs_missing)
+            ssl_cert_reqs = ssl_string_to_constant.get(ssl_cert_reqs, ssl_cert_reqs)
+            if ssl_cert_reqs not in ssl_string_to_constant.values():
+                logger.fatal(E_REDIS_SSL_CERT_REQS_MISSING_INVALID)
+                raise ImproperlyConfigured(E_REDIS_SSL_CERT_REQS_MISSING_INVALID)
+            if ssl_cert_reqs == CERT_OPTIONAL:
+                logger.warning(W_REDIS_SSL_CERT_OPTIONAL)
+            elif ssl_cert_reqs == CERT_NONE:
+                logger.warning(W_REDIS_SSL_CERT_NONE)
+
+            self.connparams['ssl_cert_reqs'] = ssl_cert_reqs
+
         self.url = url
         self.expires = self.prepare_expires(expires, type=int)
 
@@ -112,8 +161,17 @@ class RedisBackend(KeyValueStoreBackend):
                 'host': host, 'port': port, 'password': password,
                 'db': query.pop('virtual_host', None)})
         )
+        ssl_param_keys = ['ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile', 'ssl_cert_reqs']
 
-        if scheme == 'socket':
+        if scheme == 'rediss':
+            connparams['connection_class'] = redis.SSLConnection
+            # The following parameters, if present in the URL, are encoded. We
+            # must add the decoded values to connparams.
+            for ssl_setting in ssl_param_keys:
+                ssl_val = query.pop(ssl_setting, None)
+                if ssl_val:
+                    connparams[ssl_setting] = unquote(ssl_val)
+        elif scheme == 'socket':
             # use 'path' as path to the socket… in this case
             # the database number should be given in 'query'
             connparams.update({

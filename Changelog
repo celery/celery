@@ -10,6 +10,10 @@ new in Celery 3.1.
 
 .. _version-3.1.26.ud8:
 
+3.1.26-ud9
+======
+- Backport SSL support from Celery 4 to RedisBackend
+
 3.1.26-ud8
 ======
 - Revert 3.1.26-ud7 changes due to spike in CPU usage.
