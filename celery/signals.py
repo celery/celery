@@ -20,10 +20,10 @@ __all__ = (
     'task_prerun', 'task_postrun', 'task_success',
     'task_retry', 'task_failure', 'task_revoked', 'celeryd_init',
     'celeryd_after_setup', 'worker_init', 'worker_process_init',
-    'worker_ready', 'worker_shutdown', 'worker_shutting_down',
-    'setup_logging', 'after_setup_logger', 'after_setup_task_logger',
-    'beat_init', 'beat_embedded_init', 'heartbeat_sent',
-    'eventlet_pool_started', 'eventlet_pool_preshutdown',
+    'worker_process_shutdown', 'worker_ready', 'worker_shutdown', 
+    'worker_shutting_down', 'setup_logging', 'after_setup_logger', 
+    'after_setup_task_logger','beat_init', 'beat_embedded_init', 
+    'heartbeat_sent', 'eventlet_pool_started', 'eventlet_pool_preshutdown',
     'eventlet_pool_postshutdown', 'eventlet_pool_apply',
 )
 
