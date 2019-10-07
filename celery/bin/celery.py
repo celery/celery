@@ -6,13 +6,14 @@ from functools import partial
 import click
 from click.types import IntParamType, ParamType, StringParamType
 from kombu import Connection
+from kombu.utils.json import dumps
 
 from celery import VERSION_BANNER, concurrency
 from celery._state import get_current_app
 from celery.app.utils import find_app
 from celery.bin.base import CeleryCommand, CeleryDaemonCommand, CeleryOption
 from celery.contrib.migrate import migrate_tasks
-from celery.platforms import maybe_drop_privileges
+from celery.platforms import EX_UNAVAILABLE, maybe_drop_privileges
 from celery.utils import text
 from celery.utils.log import mlevel
 from celery.utils.nodenames import default_nodename, host_format, node_format
@@ -654,6 +655,51 @@ def migrate(source, destination, **kwargs):
                   **kwargs)
 
 
+@celery.command(cls=CeleryCommand)
+@click.option('-t',
+              '--timeout',
+              cls=CeleryOption,
+              type=float,
+              default=1.0,
+              help_group='Remote Control Options',
+              help='Timeout in seconds waiting for reply.')
+@click.option('-d',
+              '--destination',
+              cls=CeleryOption,
+              type=COMMA_SEPERATED_LIST,
+              help_group='Remote Control Options',
+              help='Comma separated list of destination node names.')
+@click.option('-j',
+              '--json',
+              cls=CeleryOption,
+              is_flag=True,
+              help_group='Remote Control Options',
+              help='Use json as output format.')
+@click.pass_context
+def status(ctx, timeout, destination, json, **kwargs):
+    """Show list of workers that are online."""
+    def say_remote_command_reply(replies):
+        node = next(iter(replies))  # <-- take first.
+        node = click.style(f'{node}: ', fg='cyan')
+        click.secho(f'{node}{click.style("OK", fg="green", bold=True)}', bold=True)
+
+    callback = None if json else say_remote_command_reply
+    replies = ctx.obj['app'].control.inspect(timeout=timeout,
+                                             destination=destination,
+                                             callback=callback).ping()
+
+    if not replies:
+        click.echo('No nodes replied within time constraint')
+        return EX_UNAVAILABLE
+
+    if json:
+        click.echo(dumps(replies))
+    nodecount = len(replies)
+    if not kwargs.get('quiet', False):
+        click.echo('\n{0} {1} online.'.format(
+            nodecount, text.pluralize(nodecount, 'node')))
+
+
 @celery.group(name="list")
 def list_():
     """Get info from broker.
@@ -668,7 +714,6 @@ def list_():
 @click.pass_context
 def bindings(ctx):
     """Inspect queue bindings."""
-
     # TODO: Consider using a table formatter for this command.
     app = ctx.obj['app']
     with app.connection() as conn:
