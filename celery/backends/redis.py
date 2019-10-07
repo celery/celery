@@ -102,7 +102,7 @@ class RedisBackend(KeyValueStoreBackend):
             host = None
 
         self.max_connections = (
-                max_connections or _get('MAX_CONNECTIONS') or self.max_connections
+            max_connections or _get('MAX_CONNECTIONS') or self.max_connections
         )
         self._ConnectionPool = connection_pool
 
