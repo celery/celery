@@ -529,10 +529,12 @@ class Backend(object):
                               **kwargs):
         kwargs['result'] = [r.as_tuple() for r in header_result]
         queue = body.options.get('queue', getattr(body.type, 'queue', None))
+        priority = body.options.get('priority', getattr(body.type, 'priority', 0))
         self.app.tasks['celery.chord_unlock'].apply_async(
             (header_result.id, body,), kwargs,
             countdown=countdown,
             queue=queue,
+            priority=priority,
         )
 
     def ensure_chords_allowed(self):
