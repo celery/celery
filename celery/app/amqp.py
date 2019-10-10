@@ -130,9 +130,9 @@ class Queues(dict):
         return self._add(Queue.from_dict(name, **options))
 
     def _add(self, queue):
+        if queue.exchange is None or queue.exchange.name == '':
+            queue.exchange = self.default_exchange
         if not queue.routing_key:
-            if queue.exchange is None or queue.exchange.name == '':
-                queue.exchange = self.default_exchange
             queue.routing_key = self.default_routing_key
         if self.ha_policy:
             if queue.queue_arguments is None:
