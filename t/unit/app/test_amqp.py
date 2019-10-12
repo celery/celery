@@ -132,6 +132,20 @@ class test_Queues:
         q.add(Queue('foo'))
         assert q['foo'].exchange.name == 'fff'
 
+    @pytest.mark.parametrize('name,rkey', [
+        ('default', None),
+        ('default', 'routing_key'),
+    ])
+    def test_setting_default_exchange(self, name, rkey):
+        q = Queue(name, routing_key=rkey)
+        self.app.conf.task_queues = {q}
+        self.app.conf.task_default_exchange = 'foo'
+        self.app.conf.task_default_exchange_type = 'topic'
+        queues = dict(self.app.amqp.queues)
+        queue = queues[name]
+        assert queue.exchange.name == 'foo'
+        assert queue.exchange.type == 'topic'
+
     def test_alias(self):
         q = Queues()
         q.add(Queue('foo', alias='barfoo'))
