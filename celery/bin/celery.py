@@ -388,6 +388,7 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
         logfile=logfile,  # node format handled by celery.app.log.setup
         pidfile=node_format(pidfile, hostname),
         statedb=node_format(statedb, hostname),
+        no_color=ctx.obj.no_color,
         **kwargs)
     worker.start()
     return worker.exitcode
