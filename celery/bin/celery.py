@@ -9,9 +9,8 @@ from kombu import Connection
 from kombu.utils.json import dumps
 
 from celery import VERSION_BANNER, concurrency
-from celery._state import get_current_app
 from celery.app.utils import find_app
-from celery.bin.base import CeleryCommand, CeleryDaemonCommand, CeleryOption
+from celery.bin.base import CeleryCommand, CeleryDaemonCommand, CeleryOption, CLIContext
 from celery.contrib.migrate import migrate_tasks
 from celery.platforms import EX_UNAVAILABLE, maybe_drop_privileges
 from celery.utils import text
@@ -71,7 +70,7 @@ class CeleryBeat(ParamType):
     name = "beat"
 
     def convert(self, value, param, ctx):
-        if ctx.obj['app'].IS_WINDOWS and value:
+        if ctx.obj.app.IS_WINDOWS and value:
             self.fail('-B option does not work on Windows.  '
                       'Please run celery beat as a separate service.')
 
@@ -90,7 +89,7 @@ class WorkersPool(click.Choice):
     def convert(self, value, param, ctx):
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
-        return concurrency.get_implementation(value) or ctx.obj['app'].conf.worker_pool
+        return concurrency.get_implementation(value) or ctx.obj.app.conf.worker_pool
 
 
 class Json(ParamType):
@@ -218,8 +217,7 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir, no_color, 
         os.environ['CELERY_RESULT_BACKEND'] = result_backend
     if config:
         os.environ['CELERY_CONFIG_MODULE'] = config
-    ctx.ensure_object(dict)
-    ctx.obj['app'] = app or get_current_app()
+    ctx.obj = CLIContext(app=app, no_color=no_color)
 
 
 @celery.command(cls=CeleryDaemonCommand, context_settings={'allow_extra_args': True})
@@ -376,7 +374,7 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
     $ celery worker --autoscale=10,0
 
     """
-    app = ctx.obj['app']
+    app = ctx.obj.app
     if ctx.args:
         try:
             app.config_from_cmdline(ctx.args, namespace='worker')
@@ -432,7 +430,7 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
 def beat(ctx, detach=False, logfile=None, pidfile=None, uid=None,
          gid=None, umask=None, workdir=None, **kwargs):
     """Start the beat periodic task scheduler."""
-    app = ctx.obj['app']
+    app = ctx.obj.app
 
     if ctx.args:
         try:
@@ -506,7 +504,7 @@ def beat(ctx, detach=False, logfile=None, pidfile=None, uid=None,
 @click.pass_context
 def call(ctx, name, args, kwargs, eta, countdown, expires, serializer, queue, exchange, routing_key):
     """Call a task by name."""
-    task_id = ctx.obj['app'].send_task(
+    task_id = ctx.obj.app.send_task(
         name,
         args=args, kwargs=kwargs,
         countdown=countdown,
@@ -517,7 +515,7 @@ def call(ctx, name, args, kwargs, eta, countdown, expires, serializer, queue, ex
         eta=eta,
         expires=expires
     ).id
-    click.echo(task_id)
+    (task_id)
 
 
 @celery.command(cls=CeleryCommand)
@@ -549,7 +547,7 @@ def purge(ctx, force, queues, exclude_queues):
     """
     queues = queues or set()
     exclude_queues = exclude_queues or set()
-    app = ctx.obj['app']
+    app = ctx.obj.app
     names = (queues or set(app.amqp.queues.keys())) - exclude_queues
     qnum = len(names)
 
@@ -570,9 +568,9 @@ def purge(ctx, force, queues, exclude_queues):
             messages = sum(_purge(conn, queue) for queue in names)
 
         if messages:
-            click.echo(f"Purged {messages} {text.pluralize(messages, 'message')} from {qnum} known task {text.pluralize(qnum, 'queue')}.")
+            ctx.obj.echo(f"Purged {messages} {text.pluralize(messages, 'message')} from {qnum} known task {text.pluralize(qnum, 'queue')}.")
         else:
-            click.echo(f"No messages purged from {qnum} {text.pluralize(qnum, 'queue')}.")
+            ctx.obj.echo(f"No messages purged from {qnum} {text.pluralize(qnum, 'queue')}.")
 
 
 @celery.command(cls=CeleryCommand)
@@ -590,14 +588,14 @@ def purge(ctx, force, queues, exclude_queues):
 @click.pass_context
 def result(ctx, task_id, task, traceback):
     """Print the return value for a given task id."""
-    app = ctx.obj['app']
+    app = ctx.obj.app
 
     result_cls = app.tasks[task].AsyncResult if task else app.AsyncResult
     task_result = result_cls(task_id)
     value = task_result.traceback if traceback else task_result.get()
 
     # TODO: Prettify result
-    click.echo(value)
+    ctx.obj.echo(value)
 
 
 @celery.command(cls=CeleryCommand)
@@ -637,7 +635,8 @@ def result(ctx, task_id, task, traceback):
               is_flag=True,
               help_group='Migration Options',
               help='Continually migrate tasks until killed.')
-def migrate(source, destination, **kwargs):
+@click.pass_context
+def migrate(ctx, source, destination, **kwargs):
     """Migrate tasks from one broker to another.
 
     Warning:
@@ -647,7 +646,7 @@ def migrate(source, destination, **kwargs):
     """
     # TODO: Use a progress bar
     def on_migrate_task(state, body, message):
-        click.echo(f"Migrating task {state.count}/{state.strtotal}: {body}")
+        ctx.obj.echo(f"Migrating task {state.count}/{state.strtotal}: {body}")
 
     migrate_tasks(Connection(source),
                   Connection(destination),
@@ -681,22 +680,22 @@ def status(ctx, timeout, destination, json, **kwargs):
     def say_remote_command_reply(replies):
         node = next(iter(replies))  # <-- take first.
         node = click.style(f'{node}: ', fg='cyan')
-        click.secho(f'{node}{click.style("OK", fg="green", bold=True)}', bold=True)
+        ctx.obj.secho(f'{node}{click.style("OK", fg="green", bold=True)}', bold=True)
 
     callback = None if json else say_remote_command_reply
-    replies = ctx.obj['app'].control.inspect(timeout=timeout,
-                                             destination=destination,
-                                             callback=callback).ping()
+    replies = ctx.obj.app.control.inspect(timeout=timeout,
+                                          destination=destination,
+                                          callback=callback).ping()
 
     if not replies:
-        click.echo('No nodes replied within time constraint')
+        ctx.obj.echo('No nodes replied within time constraint')
         return EX_UNAVAILABLE
 
     if json:
-        click.echo(dumps(replies))
+        ctx.obj.echo(dumps(replies))
     nodecount = len(replies)
     if not kwargs.get('quiet', False):
-        click.echo('\n{0} {1} online.'.format(
+        ctx.obj.echo('\n{0} {1} online.'.format(
             nodecount, text.pluralize(nodecount, 'node')))
 
 
@@ -715,7 +714,7 @@ def list_():
 def bindings(ctx):
     """Inspect queue bindings."""
     # TODO: Consider using a table formatter for this command.
-    app = ctx.obj['app']
+    app = ctx.obj.app
     with app.connection() as conn:
         app.amqp.TaskConsumer(conn).declare()
 
@@ -725,7 +724,7 @@ def bindings(ctx):
             raise click.UsageError('Your transport cannot list bindings.')
 
         def fmt(q, e, r):
-            click.echo('{0:<28} {1:<28} {2}'.format(q, e, r))
+            ctx.obj.echo('{0:<28} {1:<28} {2}'.format(q, e, r))
         fmt('Queue', 'Exchange', 'Routing Key')
         fmt('-' * 16, '-' * 16, '-' * 16)
         for b in bindings:

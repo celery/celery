@@ -2,7 +2,37 @@
 
 from collections import OrderedDict
 
+from celery._state import get_current_app
+
 import click
+from kombu.utils.objects import cached_property
+
+
+class CLIContext:
+    """Context Object for the CLI."""
+
+    def __init__(self, app, no_color):
+        """Initialize the CLI context."""
+        self.app = app or get_current_app()
+        self._no_color = no_color
+
+    @cached_property
+    def OK(self):
+        return "OK" if self._no_color else click.style("OK", fg="green", bold=True)
+
+    def secho(self, message=None, **kwargs):
+        if self._no_color:
+            kwargs.pop('color', None)
+            click.echo(message, **kwargs)
+        else:
+            click.secho(message, **kwargs)
+
+    def echo(self, message=None, **kwargs):
+        if self._no_color:
+            kwargs.pop('color', None)
+            click.echo(message, **kwargs)
+        else:
+            click.echo(message, **kwargs)
 
 
 class CeleryOption(click.Option):
