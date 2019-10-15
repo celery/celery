@@ -184,6 +184,7 @@ COMMA_SEPERATED_LIST = CommaSeperatedList()
               help_group="Global Options")
 @click.option('-C',
               '--no-color',
+              envvar='NO_COLOR',
               is_flag=True,
               cls=CeleryOption,
               help_group="Global Options")
