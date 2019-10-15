@@ -681,7 +681,7 @@ def status(ctx, timeout, destination, json, **kwargs):
     def say_remote_command_reply(replies):
         node = next(iter(replies))  # <-- take first.
         node = click.style(f'{node}: ', fg='cyan')
-        ctx.obj.secho(f'{node}{click.style("OK", fg="green", bold=True)}', bold=True)
+        ctx.obj.secho(f'{node}{ctx.obj.OK}', bold=True)
 
     callback = None if json else say_remote_command_reply
     replies = ctx.obj.app.control.inspect(timeout=timeout,
