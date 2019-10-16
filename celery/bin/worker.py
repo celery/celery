@@ -3,9 +3,9 @@ from click import ParamType
 from click.types import IntParamType, StringParamType
 
 from celery import concurrency
-from celery.bin.base import CeleryDaemonCommand, CeleryOption, LOG_LEVEL
+from celery.bin.base import LOG_LEVEL, CeleryDaemonCommand, CeleryOption
 from celery.platforms import maybe_drop_privileges
-from celery.utils.nodenames import host_format, default_nodename, node_format
+from celery.utils.nodenames import default_nodename, host_format, node_format
 
 
 class CeleryBeat(ParamType):
