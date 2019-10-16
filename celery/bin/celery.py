@@ -7,10 +7,11 @@ from click_didyoumean import DYMGroup
 
 from celery import VERSION_BANNER
 from celery.app.utils import find_app
-from celery.bin.base import (CeleryOption, CLIContext)
+from celery.bin.base import CeleryOption, CLIContext
 from celery.bin.beat import beat
 from celery.bin.call import call
 from celery.bin.control import status
+from celery.bin.events import events
 from celery.bin.list import list_
 from celery.bin.migrate import migrate
 from celery.bin.purge import purge
@@ -108,6 +109,7 @@ celery.add_command(result)
 celery.add_command(migrate)
 celery.add_command(status)
 celery.add_command(worker)
+celery.add_command(events)
 
 
 def main() -> int:

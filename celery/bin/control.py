@@ -1,7 +1,7 @@
 import click
 from kombu.utils.json import dumps
 
-from celery.bin.base import CeleryCommand, CeleryOption, COMMA_SEPARATED_LIST
+from celery.bin.base import COMMA_SEPARATED_LIST, CeleryCommand, CeleryOption
 from celery.platforms import EX_UNAVAILABLE
 from celery.utils import text
 

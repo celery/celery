@@ -2,7 +2,7 @@ from functools import partial
 
 import click
 
-from celery.bin.base import CeleryDaemonCommand, CeleryOption, LOG_LEVEL
+from celery.bin.base import LOG_LEVEL, CeleryDaemonCommand, CeleryOption
 from celery.platforms import maybe_drop_privileges
 
 
