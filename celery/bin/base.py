@@ -1,11 +1,15 @@
 """Click customizations for Celery."""
-
+import json
 from collections import OrderedDict
 
-from celery._state import get_current_app
-
 import click
+from click import ParamType
 from kombu.utils.objects import cached_property
+
+from celery._state import get_current_app
+from celery.utils import text
+from celery.utils.log import mlevel
+from celery.utils.time import maybe_iso8601
 
 
 class CLIContext:
@@ -82,3 +86,78 @@ class CeleryDaemonCommand(CeleryCommand):
         self.params.append(CeleryOption(('--gid',), help_group="Daemonization Options"))
         self.params.append(CeleryOption(('--umask',), help_group="Daemonization Options"))
         self.params.append(CeleryOption(('--executable',), help_group="Daemonization Options"))
+
+
+class CommaSeparatedList(ParamType):
+    """Comma separated list argument."""
+
+    name = "comma separated list"
+
+    def convert(self, value, param, ctx):
+        return set(text.str_to_list(value))
+
+
+COMMA_SEPARATED_LIST = CommaSeparatedList()
+
+
+class Json(ParamType):
+    """JSON formatted argument."""
+
+    name = "json"
+
+    def convert(self, value, param, ctx):
+        try:
+            return json.loads(value)
+        except ValueError as e:
+            self.fail(str(e))
+
+
+JSON = Json()
+
+
+class ISO8601DateTime(ParamType):
+    """ISO 8601 Date Time argument."""
+
+    name = "iso-86091"
+
+    def convert(self, value, param, ctx):
+        try:
+            return maybe_iso8601(value)
+        except (TypeError, ValueError) as e:
+            self.fail(e)
+
+
+class ISO8601DateTimeOrFloat(ParamType):
+    """ISO 8601 Date Time or float argument."""
+
+    name = "iso-86091 or float"
+
+    def convert(self, value, param, ctx):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            pass
+
+        try:
+            return maybe_iso8601(value)
+        except (TypeError, ValueError) as e:
+            self.fail(e)
+
+
+ISO8601 = ISO8601DateTime()
+ISO8601_OR_FLOAT = ISO8601DateTimeOrFloat()
+
+
+class LogLevel(click.Choice):
+    """Log level option."""
+
+    def __init__(self):
+        """Initialize the log level option with the relevant choices."""
+        super().__init__(('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'FATAL'))
+
+    def convert(self, value, param, ctx):
+        value = super().convert(value, param, ctx)
+        return mlevel(value)
+
+
+LOG_LEVEL = LogLevel()
