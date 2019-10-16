@@ -3,6 +3,7 @@ import os
 
 import click
 from click.types import ParamType
+from click_didyoumean import DYMGroup
 
 from celery import VERSION_BANNER
 from celery.app.utils import find_app
@@ -32,7 +33,7 @@ class App(ParamType):
 APP = App()
 
 
-@click.group(invoke_without_command=True)
+@click.group(cls=DYMGroup, invoke_without_command=True)
 @click.option('-A',
               '--app',
               envvar='APP',
