@@ -1,0 +1,59 @@
+import click
+
+from celery.bin.base import COMMA_SEPARATED_LIST, CeleryCommand, CeleryOption
+from celery.utils import text
+
+
+@click.command(cls=CeleryCommand)
+@click.option('-f',
+              '--force',
+              cls=CeleryOption,
+              is_flag=True,
+              help_group='Purging Options',
+              help="Don't prompt for verification.")
+@click.option('-Q',
+              '--queues',
+              cls=CeleryOption,
+              type=COMMA_SEPARATED_LIST,
+              help_group='Purging Options',
+              help="Comma separated list of queue names to purge.")
+@click.option('-X',
+              '--exclude-queues',
+              cls=CeleryOption,
+              type=COMMA_SEPARATED_LIST,
+              help_group='Purging Options',
+              help="Comma separated list of queues names not to purge.")
+@click.pass_context
+def purge(ctx, force, queues, exclude_queues):
+    """Erase all messages from all known task queues.
+
+    Warning:
+
+        There's no undo operation for this command.
+    """
+    queues = queues or set()
+    exclude_queues = exclude_queues or set()
+    app = ctx.obj.app
+    names = (queues or set(app.amqp.queues.keys())) - exclude_queues
+    qnum = len(names)
+
+    if names:
+        if not force:
+            click.confirm(f"{click.style('WARNING', fg='red')}: This will remove all tasks from {text.pluralize(qnum, 'queue')}: {', '.join(sorted(names))}.\n"
+                          "         There is no undo for this operation!\n\n"
+                          "(to skip this prompt use the -f option)\n"
+                          "Are you sure you want to delete all tasks?", abort=True)
+
+        def _purge(conn, queue):
+            try:
+                return conn.default_channel.queue_purge(queue) or 0
+            except conn.channel_errors:
+                return 0
+
+        with app.connection_for_write() as conn:
+            messages = sum(_purge(conn, queue) for queue in names)
+
+        if messages:
+            ctx.obj.echo(f"Purged {messages} {text.pluralize(messages, 'message')} from {qnum} known task {text.pluralize(qnum, 'queue')}.")
+        else:
+            ctx.obj.echo(f"No messages purged from {qnum} {text.pluralize(qnum, 'queue')}.")

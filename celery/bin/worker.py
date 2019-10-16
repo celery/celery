@@ -1,0 +1,292 @@
+import click
+from click import ParamType
+from click.types import IntParamType, StringParamType
+
+from celery import concurrency
+from celery.bin.base import CeleryDaemonCommand, CeleryOption, LOG_LEVEL
+from celery.platforms import maybe_drop_privileges
+from celery.utils.nodenames import host_format, default_nodename, node_format
+
+
+class CeleryBeat(ParamType):
+    """Celery Beat flag."""
+
+    name = "beat"
+
+    def convert(self, value, param, ctx):
+        if ctx.obj.app.IS_WINDOWS and value:
+            self.fail('-B option does not work on Windows.  '
+                      'Please run celery beat as a separate service.')
+
+        return value
+
+
+class WorkersPool(click.Choice):
+    """Workers pool option."""
+
+    name = "pool"
+
+    def __init__(self):
+        """Initialize the workers pool option with the relevant choices."""
+        super().__init__(('prefork', 'eventlet', 'gevent', 'solo'))
+
+    def convert(self, value, param, ctx):
+        # Pools like eventlet/gevent needs to patch libs as early
+        # as possible.
+        return concurrency.get_implementation(
+            value) or ctx.obj.app.conf.worker_pool
+
+
+class Hostname(StringParamType):
+    """Hostname option."""
+
+    name = "hostname"
+
+    def convert(self, value, param, ctx):
+        return host_format(default_nodename(value))
+
+
+class PrefetchMultiplier(IntParamType):
+    """Prefetch multiplier option."""
+
+    name = 'multiplier'
+
+
+class Concurrency(IntParamType):
+    """Concurrency option."""
+
+    name = 'concurrency'
+
+
+CONCURRENCY = Concurrency()
+
+CELERY_BEAT = CeleryBeat()
+WORKERS_POOL = WorkersPool()
+HOSTNAME = Hostname()
+PREFETCH_MULTIPLIER = PrefetchMultiplier()
+
+
+@click.command(cls=CeleryDaemonCommand,
+               context_settings={'allow_extra_args': True})
+@click.option('-n',
+              '--hostname',
+              default=host_format(default_nodename(None)),
+              cls=CeleryOption,
+              type=HOSTNAME,
+              help_group="Worker Options",
+              help="Set custom hostname (e.g., 'w1@%%h').  Expands: %%h (hostname), %%n (name) and %%d, (domain).")
+@click.option('-D',
+              '--detach',
+              cls=CeleryOption,
+              is_flag=True,
+              default=False,
+              help_group="Worker Options",
+              help="Start worker as a background process.")
+@click.option('-S',
+              '--statedb',
+              cls=CeleryOption,
+              type=click.Path(),
+              help_group="Worker Options",
+              help="Path to the state database. The extension '.db' may be appended to the filename.  Default: {default}")  # TODO: Load default from the app in the context
+@click.option('-l',
+              '--loglevel',
+              default='WARNING',
+              cls=CeleryOption,
+              type=LOG_LEVEL,
+              help_group="Worker Options",
+              help="Logging level.")
+@click.option('optimization',
+              '-O',
+              default='default',
+              cls=CeleryOption,
+              type=click.Choice(('default', 'fair')),
+              help_group="Worker Options",
+              help="Apply optimization profile.")
+@click.option('--prefetch-multiplier',
+              default=0,
+              type=PREFETCH_MULTIPLIER,
+              cls=CeleryOption,
+              help_group="Worker Options",
+              help="Set custom prefetch multiplier value for this worker instance.")  # TODO: Load default from the app in the context
+@click.option('-c',
+              '--concurrency',
+              type=CONCURRENCY,
+              cls=CeleryOption,
+              help_group="Pool Options",
+              help="Number of child processes processing the queue.  The default is the number of CPUs available on your system.")  # TODO: Load default from the app in the context
+@click.option('-P',
+              '--pool',
+              default='prefork',
+              type=WORKERS_POOL,
+              cls=CeleryOption,
+              help_group="Pool Options",
+              help="Pool implementation.")
+@click.option('-E',
+              '--task-events',
+              '--events',
+              is_flag=True,
+              cls=CeleryOption,
+              help_group="Pool Options",
+              help="Send task-related events that can be captured by monitors like celery events, celerymon, and others.")
+@click.option('--time-limit',
+              type=float,
+              cls=CeleryOption,
+              help_group="Pool Options",
+              help="Enables a hard time limit (in seconds int/float) for tasks.")
+@click.option('--soft-time-limit',
+              type=float,
+              cls=CeleryOption,
+              help_group="Pool Options",
+              help="Enables a soft time limit (in seconds int/float) for tasks.")
+@click.option('--max-tasks-per-child',
+              type=int,
+              cls=CeleryOption,
+              help_group="Pool Options",
+              help="Maximum number of tasks a pool worker can execute before it's terminated and replaced by a new worker.")
+@click.option('--max-memory-per-child',
+              type=int,
+              cls=CeleryOption,
+              help_group="Pool Options",
+              help="""Maximum amount of resident memory, in KiB, that may be consumed by a
+                   child process before it will be replaced by a new one.  If a single
+                   task causes a child process to exceed this limit, the task will be
+                   completed and the child process will be replaced afterwards.
+                   Default: no limit.""")
+@click.option('--purge',
+              '--discard',
+              is_flag=True,
+              cls=CeleryOption,
+              help_group="Queue Options", )
+@click.option('--queues',
+              '-Q',
+              multiple=True,
+              cls=CeleryOption,
+              help_group="Queue Options", )
+@click.option('--exclude-queues',
+              '-X',
+              is_flag=True,
+              cls=CeleryOption,
+              help_group="Queue Options", )
+@click.option('--include',
+              '-I',
+              multiple=True,
+              cls=CeleryOption,
+              help_group="Queue Options", )
+@click.option('--without-gossip',
+              default=False,
+              cls=CeleryOption,
+              help_group="Features", )
+@click.option('--without-mingle',
+              default=False,
+              cls=CeleryOption,
+              help_group="Features", )
+@click.option('--without-heartbeat',
+              default=False,
+              cls=CeleryOption,
+              help_group="Features", )
+@click.option('--heartbeat-interval',
+              type=int,
+              cls=CeleryOption,
+              help_group="Features", )
+@click.option('--autoscale',
+              type=str,  # TODO: Parse this
+              cls=CeleryOption,
+              help_group="Features", )
+@click.option('-B',
+              '--beat',
+              type=CELERY_BEAT,
+              cls=CeleryOption,
+              is_flag=True,
+              help_group="Embedded Beat Options")
+@click.option('-s',
+              '--schedule-filename',
+              '--schedule',
+              cls=CeleryOption,
+              help_group="Embedded Beat Options")  # TODO: Load default from the app in the context
+@click.option('--scheduler',
+              cls=CeleryOption,
+              help_group="Embedded Beat Options")
+@click.pass_context
+def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
+           loglevel=None, logfile=None, pidfile=None, statedb=None,
+           **kwargs):
+    """Start worker instance.
+
+    Examples
+    --------
+    $ celery worker --app=proj -l info
+    $ celery worker -A proj -l info -Q hipri,lopri
+    $ celery worker -A proj --concurrency=4
+    $ celery worker -A proj --concurrency=1000 -P eventlet
+    $ celery worker --autoscale=10,0
+
+    """
+    app = ctx.obj.app
+    if ctx.args:
+        try:
+            app.config_from_cmdline(ctx.args, namespace='worker')
+        except (KeyError, ValueError) as e:
+            # TODO: Improve the error messages
+            raise click.UsageError(
+                "Unable to parse extra configuration from command line.\n"
+                f"Reason: {e}", ctx=ctx)
+    maybe_drop_privileges(uid=uid, gid=gid)
+    worker = app.Worker(
+        hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
+        logfile=logfile,  # node format handled by celery.app.log.setup
+        pidfile=node_format(pidfile, hostname),
+        statedb=node_format(statedb, hostname),
+        no_color=ctx.obj.no_color,
+        **kwargs)
+    worker.start()
+    return worker.exitcode
+
+
+class Concurrency(IntParamType):
+    """Concurrency option."""
+
+    name = 'concurrency'
+
+
+class CeleryBeat(ParamType):
+    """Celery Beat flag."""
+
+    name = "beat"
+
+    def convert(self, value, param, ctx):
+        if ctx.obj.app.IS_WINDOWS and value:
+            self.fail('-B option does not work on Windows.  '
+                      'Please run celery beat as a separate service.')
+
+        return value
+
+
+class WorkersPool(click.Choice):
+    """Workers pool option."""
+
+    name = "pool"
+
+    def __init__(self):
+        """Initialize the workers pool option with the relevant choices."""
+        super().__init__(('prefork', 'eventlet', 'gevent', 'solo'))
+
+    def convert(self, value, param, ctx):
+        # Pools like eventlet/gevent needs to patch libs as early
+        # as possible.
+        return concurrency.get_implementation(
+            value) or ctx.obj.app.conf.worker_pool
+
+
+class Hostname(StringParamType):
+    """Hostname option."""
+
+    name = "hostname"
+
+    def convert(self, value, param, ctx):
+        return host_format(default_nodename(value))
+
+
+class PrefetchMultiplier(IntParamType):
+    """Prefetch multiplier option."""
+
+    name = 'multiplier'
