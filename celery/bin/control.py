@@ -11,10 +11,11 @@ from celery.utils import text
 def say_remote_command_reply(ctx, replies, show_reply=False):
     node = next(iter(replies))  # <-- take first.
     reply = replies[node]
-    node = ctx.obj.style(f'{node}: ', fg='cyan')
-    ctx.obj.secho(f'{node}{ctx.obj.OK}', bold=True)
-    if show_reply:
-        ctx.obj.echo(reply)
+    node = ctx.obj.style(f'{node}: ', fg='cyan', bold=True)
+    status, preply = ctx.obj.pretty(reply)
+    ctx.obj.say_chat('->', f'{node}{status}',
+                     text.indent(preply, 4) if show_reply else '',
+                     show_body=show_reply)
 
 
 @click.command(cls=CeleryCommand)
@@ -39,7 +40,6 @@ def say_remote_command_reply(ctx, replies, show_reply=False):
               help='Use json as output format.')
 @click.pass_context
 def status(ctx, timeout, destination, json, **kwargs):
-
     """Show list of workers that are online."""
 
     callback = None if json else partial(say_remote_command_reply, ctx)
@@ -83,9 +83,10 @@ def status(ctx, timeout, destination, json, **kwargs):
 @click.pass_context
 def inspect(ctx, action, timeout, destination, json, **kwargs):
     """Inspect the worker at runtime.
-    
+
     Availability: RabbitMQ (AMQP) and Redis transports."""
-    callback = None if json else partial(say_remote_command_reply, ctx, show_reply=True)
+    callback = None if json else partial(say_remote_command_reply, ctx,
+                                         show_reply=True)
     replies = ctx.obj.app.control.inspect(timeout=timeout,
                                           destination=destination,
                                           callback=callback)._request(action)
@@ -100,4 +101,3 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
     if not kwargs.get('quiet', False):
         ctx.obj.echo('\n{0} {1} online.'.format(
             nodecount, text.pluralize(nodecount, 'node')))
-
