@@ -160,9 +160,6 @@ class CommaSeparatedList(ParamType):
         return set(text.str_to_list(value))
 
 
-COMMA_SEPARATED_LIST = CommaSeparatedList()
-
-
 class Json(ParamType):
     """JSON formatted argument."""
 
@@ -173,9 +170,6 @@ class Json(ParamType):
             return json.loads(value)
         except ValueError as e:
             self.fail(str(e))
-
-
-JSON = Json()
 
 
 class ISO8601DateTime(ParamType):
@@ -207,10 +201,6 @@ class ISO8601DateTimeOrFloat(ParamType):
             self.fail(e)
 
 
-ISO8601 = ISO8601DateTime()
-ISO8601_OR_FLOAT = ISO8601DateTimeOrFloat()
-
-
 class LogLevel(click.Choice):
     """Log level option."""
 
@@ -223,4 +213,8 @@ class LogLevel(click.Choice):
         return mlevel(value)
 
 
+JSON = Json()
+ISO8601 = ISO8601DateTime()
+ISO8601_OR_FLOAT = ISO8601DateTimeOrFloat()
 LOG_LEVEL = LogLevel()
+COMMA_SEPARATED_LIST = CommaSeparatedList()
