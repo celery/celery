@@ -22,7 +22,13 @@ class CLIContext:
 
     @cached_property
     def OK(self):
-        return "OK" if self._no_color else click.style("OK", fg="green", bold=True)
+        return self.style("OK", fg="green", bold=True)
+
+    def style(self, message=None, **kwargs):
+        if self.no_color:
+            return message
+        else:
+            return click.style(message, **kwargs)
 
     def secho(self, message=None, **kwargs):
         if self.no_color:

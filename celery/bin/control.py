@@ -31,7 +31,7 @@ def status(ctx, timeout, destination, json, **kwargs):
     """Show list of workers that are online."""
     def say_remote_command_reply(replies):
         node = next(iter(replies))  # <-- take first.
-        node = click.style(f'{node}: ', fg='cyan')
+        node = ctx.obj.style(f'{node}: ', fg='cyan')
         ctx.obj.secho(f'{node}{ctx.obj.OK}', bold=True)
 
     callback = None if json else say_remote_command_reply
