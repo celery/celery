@@ -7,7 +7,7 @@ from click_didyoumean import DYMGroup
 
 from celery import VERSION_BANNER
 from celery.app.utils import find_app
-from celery.bin.base import CeleryOption, CLIContext
+from celery.bin.base import CeleryOption, CLIContext, CeleryCommand
 from celery.bin.beat import beat
 from celery.bin.call import call
 from celery.bin.control import inspect, status
@@ -101,6 +101,14 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
     if config:
         os.environ['CELERY_CONFIG_MODULE'] = config
     ctx.obj = CLIContext(app=app, no_color=no_color)
+
+
+@celery.command(cls=CeleryCommand)
+@click.pass_context
+def report(ctx):
+    app = ctx.obj.app
+    app.loader.import_default_modules()
+    ctx.obj.echo(app.bugreport())
 
 
 celery.add_command(purge)
