@@ -95,7 +95,7 @@ longer version:
 
 .. code-block:: console
 
-    $ ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill -9
+    $ ps auxww | awk '/celery worker/ {print $2}' | xargs kill -9
 
 .. _worker-restarting:
 
