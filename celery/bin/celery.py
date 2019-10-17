@@ -10,7 +10,7 @@ from celery.app.utils import find_app
 from celery.bin.base import CeleryOption, CLIContext
 from celery.bin.beat import beat
 from celery.bin.call import call
-from celery.bin.control import status, inspect
+from celery.bin.control import inspect, status
 from celery.bin.events import events
 from celery.bin.list import list_
 from celery.bin.migrate import migrate

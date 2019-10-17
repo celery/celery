@@ -1,6 +1,7 @@
 """Click customizations for Celery."""
 import json
 from collections import OrderedDict
+from pprint import pformat
 
 import click
 from click import ParamType
@@ -11,18 +12,35 @@ from celery.utils import text
 from celery.utils.log import mlevel
 from celery.utils.time import maybe_iso8601
 
+try:
+    from pygments import highlight
+    from pygments.lexers import PythonLexer
+    from pygments.formatters import Terminal256Formatter
+except ImportError:
+    highlight = lambda s, *args, **kwargs: s
+    LEXER = None
+    FORMATTER = None
+else:
+    LEXER = PythonLexer()
+    FORMATTER = Terminal256Formatter()
+
 
 class CLIContext:
     """Context Object for the CLI."""
 
-    def __init__(self, app, no_color):
+    def __init__(self, app, no_color, quiet=False):
         """Initialize the CLI context."""
         self.app = app or get_current_app()
         self.no_color = no_color
+        self.quiet = quiet
 
     @cached_property
     def OK(self):
-        return self.style("OK", fg="green", bold=True)
+        return self.style("OK", fg="green", bold=True)    \
+
+    @cached_property
+    def ERROR(self):
+        return self.style("ERROR", fg="red", bold=True)
 
     def style(self, message=None, **kwargs):
         if self.no_color:
@@ -43,6 +61,45 @@ class CLIContext:
             click.echo(message, **kwargs)
         else:
             click.echo(message, **kwargs)
+
+    def pretty(self, n):
+        if isinstance(n, list):
+            return self.OK, self.pretty_list(n)
+        if isinstance(n, dict):
+            if 'ok' in n or 'error' in n:
+                return self.pretty_dict_ok_error(n)
+            else:
+                s = json.dumps(n, sort_keys=True, indent=4)
+                if not self.no_color:
+                    s = highlight(s, LEXER, FORMATTER)
+                return self.OK, s
+        if isinstance(n, str):
+            return self.OK, n
+        return self.OK, pformat(n)
+
+    def pretty_list(self, n):
+        if not n:
+            return '- empty -'
+        return '\n'.join(
+            f'{self.style("*", color="white")} {item}' for item in n
+        )
+
+    def pretty_dict_ok_error(self, n):
+        try:
+            return (self.OK,
+                    text.indent(self.pretty(n['ok'])[1], 4))
+        except KeyError:
+            pass
+        return (self.ERROR,
+                text.indent(self.pretty(n['error'])[1], 4))
+
+    def say_chat(self, direction, title, body='', show_body=False):
+        if direction == '<-' and self.quiet:
+            return
+        dirstr = not self.quiet and f'{self.style(direction, fg="white", bold=True)} ' or ''
+        self.echo(f'{dirstr} {title}')
+        if body and show_body:
+            self.echo(body)
 
 
 class CeleryOption(click.Option):
