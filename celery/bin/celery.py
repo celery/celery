@@ -17,6 +17,7 @@ from celery.bin.list import list_
 from celery.bin.migrate import migrate
 from celery.bin.purge import purge
 from celery.bin.result import result
+from celery.bin.upgrade import upgrade
 from celery.bin.worker import worker
 
 
@@ -113,6 +114,7 @@ celery.add_command(worker)
 celery.add_command(events)
 celery.add_command(inspect)
 celery.add_command(graph)
+celery.add_command(upgrade)
 
 
 def main() -> int:
