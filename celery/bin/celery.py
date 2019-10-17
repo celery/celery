@@ -12,6 +12,7 @@ from celery.bin.beat import beat
 from celery.bin.call import call
 from celery.bin.control import inspect, status
 from celery.bin.events import events
+from celery.bin.graph import graph
 from celery.bin.list import list_
 from celery.bin.migrate import migrate
 from celery.bin.purge import purge
@@ -111,6 +112,7 @@ celery.add_command(status)
 celery.add_command(worker)
 celery.add_command(events)
 celery.add_command(inspect)
+celery.add_command(graph)
 
 
 def main() -> int:
