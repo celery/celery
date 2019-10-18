@@ -84,6 +84,13 @@ the worker you must also export them (e.g., :command:`export DISPLAY=":0"`)
 
         $ celery multi stopwait worker1 --pidfile="$HOME/run/celery/%n.pid"
 
+To force stop celery workers, you can use
+
+        $ pkill -9 -f 'celery worker'
+
+See :ref:`stopping-worker` for more information.
+
+
 .. _generic-initd-celeryd-example:
 
 Example configuration

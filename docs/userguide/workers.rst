@@ -88,14 +88,14 @@ command usually does the trick:
 
 .. code-block:: console
 
-    $ pkill -9 -f 'celery worker'
+    $ pkill -9 -f celeryd
 
 If you don't have the :command:`pkill` command on your system, you can use the slightly
 longer version:
 
 .. code-block:: console
 
-    $ ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill -9
+    $ ps auxww | grep 'celeryd' | awk '{print $2}' | xargs kill -9
 
 .. _worker-restarting:
 

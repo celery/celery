@@ -313,10 +313,10 @@ them:
 
 .. code-block:: console
 
-    $ pkill 'celery worker'
+    $ pkill -f celeryd
 
     $ # - If you don't have pkill use:
-    $ # ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill
+    $ # ps auxww | grep 'celeryd' | awk '{print $2}' | xargs kill
 
 You may have to wait a while until all workers have finished executing
 tasks. If it's still hanging after a long time you can kill them by force
@@ -324,10 +324,10 @@ with:
 
 .. code-block:: console
 
-    $ pkill -9 'celery worker'
+    $ pkill -9 -f celeryd
 
     $ # - If you don't have pkill use:
-    $ # ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill -9
+    $ # ps auxww | grep 'celeryd' | awk '{print $2}' | xargs kill -9
 
 .. _faq-task-does-not-run:
 
