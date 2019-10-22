@@ -200,9 +200,15 @@ class Backend(object):
             # need to do so if the errback only takes a single task_id arg.
             task_id = request.id
             root_id = request.root_id or task_id
-            group(old_signature, app=self.app).apply_async(
-                (task_id,), parent_id=task_id, root_id=root_id
-            )
+            g = group(old_signature, app=self.app)
+            if self.app.conf.task_always_eager or request.delivery_info.get('is_eager', False):
+                g.apply(
+                    (task_id,), parent_id=task_id, root_id=root_id
+                )
+            else:
+                g.apply_async(
+                    (task_id,), parent_id=task_id, root_id=root_id
+                )
 
     def mark_as_revoked(self, task_id, reason='',
                         request=None, store_result=True, state=states.REVOKED):
