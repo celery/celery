@@ -142,7 +142,11 @@ Celery is…
             - AMQP, Redis
             - Memcached,
             - SQLAlchemy, Django ORM
-            - Apache Cassandra, Elasticsearch
+            - Apache Cassandra, Elasticsearch, Riak
+            - MongoDB, CouchDB, Couchbase, ArangoDB
+            - Amazon DynamoDB, Amazon S3
+            - Microsoft Azure Block Blob, Microsoft Azure Cosmos DB
+            - File system
 
         - **Serialization**
 
