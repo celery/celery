@@ -4,3 +4,4 @@ kombu==4.6.5
 vine==1.3.0
 click>=7.0
 click-didyoumean>=0.0.3
+click-repl>=0.1.6
