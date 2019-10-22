@@ -25,33 +25,33 @@ class test_link_error:
     def test_link_error_eager(self):
         exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply(args=("test", ), link_error=return_exception.s())
-        actual = (result.get(timeout=TIMEOUT, propagate=False), True)
-        assert actual == (exception, True)
+        actual = result.get(timeout=TIMEOUT, propagate=False)
+        assert actual == exception
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_link_error(self):
         exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply(args=("test", ), link_error=return_exception.s())
-        actual = (result.get(timeout=TIMEOUT, propagate=False), True)
-        assert actual == (exception, True)
+        actual = result.get(timeout=TIMEOUT, propagate=False)
+        assert actual == exception
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
-    @pytest.mark.xfail
     def test_link_error_callback_error_callback_retries_eager(self):
+        exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply(
             args=("test", ),
-            link_error=retry_once.s(kwargs={'countdown': None})
+            link_error=retry_once.s(countdown=None)
         )
-        assert result.get(timeout=TIMEOUT, propagate=False) == 1
+        assert result.get(timeout=TIMEOUT, propagate=False) == exception
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
-    @pytest.mark.xfail
     def test_link_error_callback_retries(self):
+        exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply_async(
             args=("test", ),
-            link_error=retry_once.s(kwargs={'countdown': None})
+            link_error=retry_once.s(countdown=None)
         )
-        assert result.get(timeout=TIMEOUT, propagate=False) == 1
+        assert result.get(timeout=TIMEOUT, propagate=False) == exception
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_link_error_using_signature_eager(self):
