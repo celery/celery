@@ -10,7 +10,7 @@ from celery.app.utils import find_app
 from celery.bin.base import CeleryCommand, CeleryOption, CLIContext
 from celery.bin.beat import beat
 from celery.bin.call import call
-from celery.bin.control import inspect, status
+from celery.bin.control import inspect, status, control
 from celery.bin.events import events
 from celery.bin.graph import graph
 from celery.bin.list import list_
@@ -122,6 +122,7 @@ celery.add_command(status)
 celery.add_command(worker)
 celery.add_command(events)
 celery.add_command(inspect)
+celery.add_command(control)
 celery.add_command(graph)
 celery.add_command(upgrade)
 celery.add_command(logtool)
