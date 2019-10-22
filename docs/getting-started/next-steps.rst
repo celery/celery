@@ -478,7 +478,7 @@ existing keyword arguments, but with new arguments taking precedence:
     >>> s3 = add.s(2, 2, debug=True)
     >>> s3.delay(debug=False)   # debug is now False.
 
-As I said, signatures support the calling API: meaning that
+As stated, signatures support the calling API: meaning that
 
 - ``sig.apply_async(args=(), kwargs={}, **options)``
 
