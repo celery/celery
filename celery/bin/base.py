@@ -62,6 +62,14 @@ class CLIContext:
         else:
             click.echo(message, **kwargs)
 
+    def error(self, message=None, **kwargs):
+        kwargs['err'] = True
+        if self.no_color:
+            kwargs.pop('color', None)
+            click.echo(message, **kwargs)
+        else:
+            click.echo(message, **kwargs)
+
     def pretty(self, n):
         if isinstance(n, list):
             return self.OK, self.pretty_list(n)
