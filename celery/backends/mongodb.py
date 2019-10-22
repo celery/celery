@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from kombu.exceptions import EncodeError
 from kombu.utils.objects import cached_property
-from kombu.utils.url import maybe_sanitize_url
+from kombu.utils.url import maybe_sanitize_url, urlparse
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
@@ -75,8 +75,7 @@ class MongoBackend(BaseBackend):
 
         # update conf with mongo uri data, only if uri was given
         if self.url:
-            if self.url == 'mongodb://':
-                self.url += 'localhost'
+            self.url = self._ensure_mongodb_uri_compliance(self.url)
 
             uri_data = pymongo.uri_parser.parse_uri(self.url)
             # build the hosts list to create a mongo connection
@@ -119,6 +118,17 @@ class MongoBackend(BaseBackend):
 
             self.options.update(config.pop('options', {}))
             self.options.update(config)
+
+    @staticmethod
+    def _ensure_mongodb_uri_compliance(url):
+        parsed_url = urlparse(url)
+        if not parsed_url.scheme.startswith('mongodb'):
+            url = 'mongodb+{}'.format(url)
+
+        if url == 'mongodb://':
+            url += 'localhost'
+
+        return url
 
     def _prepare_client_options(self):
         if pymongo.version_tuple >= (3,):
@@ -185,7 +195,7 @@ class MongoBackend(BaseBackend):
             meta['parent_id'] = request.parent_id
 
         try:
-            self.collection.save(meta)
+            self.collection.replace_one({'_id': task_id}, meta, upsert=True)
         except InvalidDocument as exc:
             raise EncodeError(exc)
 
@@ -207,11 +217,12 @@ class MongoBackend(BaseBackend):
 
     def _save_group(self, group_id, result):
         """Save the group result."""
-        self.group_collection.save({
+        meta = {
             '_id': group_id,
             'result': self.encode([i.id for i in result]),
             'date_done': datetime.utcnow(),
-        })
+        }
+        self.group_collection.replace_one({'_id': group_id}, meta, upsert=True)
         return result
 
     def _restore_group(self, group_id):
@@ -229,7 +240,7 @@ class MongoBackend(BaseBackend):
 
     def _delete_group(self, group_id):
         """Delete a group by id."""
-        self.group_collection.remove({'_id': group_id})
+        self.group_collection.delete_one({'_id': group_id})
 
     def _forget(self, task_id):
         """Remove result from MongoDB.
@@ -241,18 +252,19 @@ class MongoBackend(BaseBackend):
         # By using safe=True, this will wait until it receives a response from
         # the server.  Likewise, it will raise an OperationsError if the
         # response was unable to be completed.
-        self.collection.remove({'_id': task_id})
+        self.collection.delete_one({'_id': task_id})
 
     def cleanup(self):
         """Delete expired meta-data."""
-        self.collection.remove(
+        self.collection.delete_many(
             {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )
-        self.group_collection.remove(
+        self.group_collection.delete_many(
             {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         return super(MongoBackend, self).__reduce__(
             args, dict(kwargs, expires=self.expires, url=self.url))
 
@@ -260,7 +272,11 @@ class MongoBackend(BaseBackend):
         conn = self._get_connection()
         db = conn[self.database_name]
         if self.user and self.password:
-            if not db.authenticate(self.user, self.password):
+            source = self.options.get(
+                'authsource',
+                self.database_name or 'admin'
+            )
+            if not db.authenticate(self.user, self.password, source=source):
                 raise ImproperlyConfigured(
                     'Invalid MongoDB username or password.')
         return db
@@ -280,7 +296,7 @@ class MongoBackend(BaseBackend):
 
         # Ensure an index on date_done is there, if not process the index
         # in the background.  Once completed cleanup will be much faster
-        collection.ensure_index('date_done', background='true')
+        collection.create_index('date_done', background=True)
         return collection
 
     @cached_property
@@ -290,7 +306,7 @@ class MongoBackend(BaseBackend):
 
         # Ensure an index on date_done is there, if not process the index
         # in the background.  Once completed cleanup will be much faster
-        collection.ensure_index('date_done', background='true')
+        collection.create_index('date_done', background=True)
         return collection
 
     @cached_property

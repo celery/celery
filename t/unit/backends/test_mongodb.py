@@ -4,9 +4,9 @@ import datetime
 from pickle import dumps, loads
 
 import pytest
-from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
 from kombu.exceptions import EncodeError
 
+from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
 from celery import states, uuid
 from celery.backends.mongodb import InvalidDocument, MongoBackend
 from celery.exceptions import ImproperlyConfigured
@@ -121,6 +121,63 @@ class test_MongoBackend:
 
         mb = MongoBackend(app=self.app, url='mongodb://')
 
+    @patch('dns.resolver.query')
+    def test_init_mongodb_dns_seedlist(self, dns_resolver_query):
+        from dns.rdtypes.IN.SRV import SRV
+        from dns.rdtypes.ANY.TXT import TXT
+        from dns.name import Name
+
+        self.app.conf.mongodb_backend_settings = None
+
+        def mock_resolver(_, rdtype, rdclass=None, lifetime=None, **kwargs):
+
+            if rdtype == 'SRV':
+                return [
+                    SRV(0, 0, 0, 0, 27017, Name(labels=hostname))
+                    for hostname in [
+                        b'mongo1.example.com'.split(b'.'),
+                        b'mongo2.example.com'.split(b'.'),
+                        b'mongo3.example.com'.split(b'.')
+                    ]
+                ]
+            elif rdtype == 'TXT':
+                return [TXT(0, 0, [b'replicaSet=rs0'])]
+
+        dns_resolver_query.side_effect = mock_resolver
+
+        # uri with user, password, database name, replica set,
+        # DNS seedlist format
+        uri = ('srv://'
+               'celeryuser:celerypassword@'
+               'dns-seedlist-host.example.com/'
+               'celerydatabase')
+
+        mb = MongoBackend(app=self.app, url=uri)
+        assert mb.mongo_host == [
+            'mongo1.example.com:27017',
+            'mongo2.example.com:27017',
+            'mongo3.example.com:27017',
+        ]
+        assert mb.options == dict(
+            mb._prepare_client_options(),
+            replicaset='rs0',
+            ssl=True
+        )
+        assert mb.user == 'celeryuser'
+        assert mb.password == 'celerypassword'
+        assert mb.database_name == 'celerydatabase'
+
+    def test_ensure_mongodb_uri_compliance(self):
+        mb = MongoBackend(app=self.app, url=None)
+        compliant_uri = mb._ensure_mongodb_uri_compliance
+
+        assert compliant_uri('mongodb://') == 'mongodb://localhost'
+
+        assert compliant_uri('mongodb+something://host') == \
+            'mongodb+something://host'
+
+        assert compliant_uri('something://host') == 'mongodb+something://host'
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_reduce(self):
         x = MongoBackend(app=self.app)
@@ -179,7 +236,7 @@ class test_MongoBackend:
         assert database is mock_database
         assert self.backend.__dict__['database'] is mock_database
         mock_database.authenticate.assert_called_once_with(
-            MONGODB_USER, MONGODB_PASSWORD)
+            MONGODB_USER, MONGODB_PASSWORD, source=self.backend.database_name)
 
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
     def test_get_database_no_existing_no_auth(self, mock_get_connection):
@@ -213,10 +270,11 @@ class test_MongoBackend:
 
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
-        mock_collection.save.assert_called_once_with(ANY)
+        mock_collection.replace_one.assert_called_once_with(ANY, ANY,
+                                                            upsert=True)
         assert sentinel.result == ret_val
 
-        mock_collection.save.side_effect = InvalidDocument()
+        mock_collection.replace_one.side_effect = InvalidDocument()
         with pytest.raises(EncodeError):
             self.backend._store_result(
                 sentinel.task_id, sentinel.result, sentinel.status)
@@ -239,11 +297,11 @@ class test_MongoBackend:
 
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
-        parameters = mock_collection.save.call_args[0][0]
+        parameters = mock_collection.replace_one.call_args[0][1]
         assert parameters['parent_id'] == sentinel.parent_id
         assert sentinel.result == ret_val
 
-        mock_collection.save.side_effect = InvalidDocument()
+        mock_collection.replace_one.side_effect = InvalidDocument()
         with pytest.raises(EncodeError):
             self.backend._store_result(
                 sentinel.task_id, sentinel.result, sentinel.status)
@@ -302,7 +360,8 @@ class test_MongoBackend:
         mock_database.__getitem__.assert_called_once_with(
             MONGODB_GROUP_COLLECTION,
         )
-        mock_collection.save.assert_called_once_with(ANY)
+        mock_collection.replace_one.assert_called_once_with(ANY, ANY,
+                                                            upsert=True)
         assert res == ret_val
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
@@ -345,7 +404,7 @@ class test_MongoBackend:
         self.backend._delete_group(sentinel.taskset_id)
 
         mock_get_database.assert_called_once_with()
-        mock_collection.remove.assert_called_once_with(
+        mock_collection.delete_one.assert_called_once_with(
             {'_id': sentinel.taskset_id})
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
@@ -364,7 +423,7 @@ class test_MongoBackend:
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(
             MONGODB_COLLECTION)
-        mock_collection.remove.assert_called_once_with(
+        mock_collection.delete_one.assert_called_once_with(
             {'_id': sentinel.task_id})
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
@@ -384,7 +443,7 @@ class test_MongoBackend:
         self.backend.cleanup()
 
         mock_get_database.assert_called_once_with()
-        mock_collection.remove.assert_called()
+        mock_collection.delete_many.assert_called()
 
     def test_get_database_authfailure(self):
         x = MongoBackend(app=self.app)
@@ -396,7 +455,8 @@ class test_MongoBackend:
         x.password = 'cere4l'
         with pytest.raises(ImproperlyConfigured):
             x._get_database()
-        db.authenticate.assert_called_with('jerry', 'cere4l')
+        db.authenticate.assert_called_with('jerry', 'cere4l',
+                                           source=x.database_name)
 
     def test_prepare_client_options(self):
         with patch('pymongo.version_tuple', new=(3, 0, 3)):

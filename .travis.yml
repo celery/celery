@@ -1,55 +1,68 @@
 language: python
-sudo: required
 dist: xenial
 cache: pip
 python:
   - '2.7'
-  - '3.4'
   - '3.5'
   - '3.6'
   - '3.7'
 os:
     - linux
 stages:
-  - lint
   - test
+  - integration
+  - lint
 env:
   global:
   - PYTHONUNBUFFERED=yes
   matrix:
   - MATRIX_TOXENV=unit
-  - MATRIX_TOXENV=integration-rabbitmq
-  - MATRIX_TOXENV=integration-redis
-  - MATRIX_TOXENV=integration-dynamodb
-  - MATRIX_TOXENV=integration-azureblockblob
+
 matrix:
   include:
-  - python: '3.6'
-    env: TOXENV=pypy-unit PYPY_VERSION="pypy2.7-6.0.0"
-  - python: '3.6'
-    env: TOXENV=pypy-integration-rabbitmq PYPY_VERSION="pypy2.7-6.0.0"
-  - python: '3.6'
-    env: TOXENV=pypy-integration-redis PYPY_VERSION="pypy2.7-6.0.0"
-  - python: '3.6'
-    env: TOXENV=pypy-integration-dynamodb PYPY_VERSION="pypy2.7-6.0.0"
-  - python: '3.6'
+  - python: 3.7
+    env: MATRIX_TOXENV=integration-rabbitmq
+    stage: integration
+
+  - python: 3.7
+    env: MATRIX_TOXENV=integration-redis
+    stage: integration
+
+  - python: 3.7
+    env: MATRIX_TOXENV=integration-dynamodb
+    stage: integration
+
+  - python: 3.7
+    env: MATRIX_TOXENV=integration-azureblockblob
+    stage: integration
+
+  - python: '3.7'
     env: TOXENV=flake8
     stage: lint
-  - python: '3.6'
-    env: TOXENV=flakeplus
-    stage: lint
-  - python: '3.6'
+  - python: '3.7'
     env: TOXENV=apicheck
     stage: lint
-  - python: '3.6'
+  - python: '3.7'
     env: TOXENV=configcheck
     stage: lint
-  - python: '3.6'
+  - python: '3.7'
     env: TOXENV=bandit
     stage: lint
-  - python: '3.6'
+  - python: '3.7'
     env: TOXENV=pydocstyle
     stage: lint
+  - python: '2.7'
+    env: TOXENV=flakeplus
+    stage: lint
+  - python: pypy2.7-7.1.1
+    env: TOXENV=pypy
+    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
+  - python: pypy3.5-7.0
+    env: TOXENV=pypy3
+    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
+  - python: pypy3.6-7.1.1
+    env: TOXENV=pypy3
+    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
 
 before_install:
     - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev
@@ -88,7 +101,7 @@ before_install:
           export AZUREBLOCKBLOB_URL="azureblockblob://DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
     - |
           wget -qO - https://packages.couchbase.com/ubuntu/couchbase.key | sudo apt-key add -
-          sudo apt-add-repository -y 'deb http://packages.couchbase.com/ubuntu trusty trusty/main'
+          sudo apt-add-repository -y 'deb http://packages.couchbase.com/ubuntu xenial xenial/main'
           sudo apt-get update && sudo apt-get install -y libcouchbase-dev
 after_success:
   - |
@@ -96,7 +109,7 @@ after_success:
               .tox/$TOXENV/bin/coverage xml
               .tox/$TOXENV/bin/codecov -e TOXENV
           fi;
-install: travis_retry pip --disable-pip-version-check install -U tox | cat
+install: pip --disable-pip-version-check install --upgrade-strategy eager -U tox | cat
 script: tox -v -- -v
 notifications:
   email: false

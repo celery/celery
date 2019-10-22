@@ -36,7 +36,7 @@ init:
 
 install:
   - "powershell extra\\appveyor\\install.ps1"
-  - "%PYTHON%/Scripts/pip.exe install -U setuptools"
+  - "%PYTHON%/python -m pip install -U pip setuptools"
   - "%PYTHON%/Scripts/pip.exe install -U eventlet"
 
 build: off

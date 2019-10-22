@@ -6,10 +6,10 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 import pytest
-from case import Mock, call, patch
 from kombu import pidbox
 from kombu.utils.uuid import uuid
 
+from case import Mock, call, patch
 from celery.five import Queue as FastQueue
 from celery.utils.collections import AttributeDict
 from celery.utils.timer2 import Timer

@@ -192,7 +192,7 @@ def remove_repeating(substr, s):
     index = s.find(substr)
     if index >= 0:
         return ''.join([
-            # leave the first occurance of substr untouched.
+            # leave the first occurrence of substr untouched.
             s[:index + len(substr)],
             # strip seen substr from the rest of the string.
             s[index + len(substr):].replace(substr, ''),

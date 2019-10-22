@@ -5,15 +5,15 @@ import tempfile
 from datetime import datetime, timedelta
 
 import pytest
-from case import ANY, ContextMock, MagicMock, Mock, patch
 from kombu import Queue
 from kombu.exceptions import EncodeError
 
+from case import ANY, ContextMock, MagicMock, Mock, patch
 from celery import Task, group, uuid
 from celery.app.task import _reprtask
 from celery.exceptions import Ignore, ImproperlyConfigured, Retry
 from celery.five import items, range, string_t
-from celery.result import EagerResult
+from celery.result import AsyncResult, EagerResult
 from celery.task.base import Task as OldTask
 from celery.utils.time import parse_iso8601
 
@@ -177,6 +177,18 @@ class TasksCase:
             task_called_by_other_task.delay()
 
         self.task_which_calls_other_task = task_which_calls_other_task
+
+        @self.app.task(bind=True)
+        def task_replacing_another_task(self):
+            return "replaced"
+
+        self.task_replacing_another_task = task_replacing_another_task
+
+        @self.app.task(bind=True)
+        def task_replaced_by_other_task(self):
+            return self.replace(task_replacing_another_task.si())
+
+        self.task_replaced_by_other_task = task_replaced_by_other_task
 
         # Remove all messages from memory-transport
         from kombu.transport.memory import Channel
@@ -727,6 +739,19 @@ class test_tasks(TasksCase):
         with pytest.raises(Ignore):
             self.mytask.replace(c)
 
+    def test_replace_run(self):
+        with pytest.raises(Ignore):
+            self.task_replaced_by_other_task.run()
+
+    def test_replace_delay(self):
+        res = self.task_replaced_by_other_task.delay()
+        assert isinstance(res, AsyncResult)
+
+    def test_replace_apply(self):
+        res = self.task_replaced_by_other_task.apply()
+        assert isinstance(res, EagerResult)
+        assert res.get() == "replaced"
+
     def test_add_trail__no_trail(self):
         mytask = self.increment_counter._get_current_object()
         mytask.trail = False
@@ -789,6 +814,22 @@ class test_tasks(TasksCase):
             assert yyy.AsyncResult(tid).result == {'fooz': 'baaz'}
         finally:
             yyy.pop_request()
+
+    def test_update_state_passes_request_to_backend(self):
+        backend = Mock()
+
+        @self.app.task(shared=False, backend=backend)
+        def ttt():
+            pass
+
+        ttt.push_request()
+
+        tid = uuid()
+        ttt.update_state(tid, 'SHRIMMING', {'foo': 'bar'})
+
+        backend.store_result.assert_called_once_with(
+            tid, {'foo': 'bar'}, 'SHRIMMING', request=ttt.request
+        )
 
     def test_repr(self):
 
@@ -983,6 +1024,14 @@ class test_apply_async(TasksCase):
         def task2(*args, **kwargs):
             pass
         task2.apply_async((1, 2, 3, 4, {1}))
+
+    def test_always_eager_with_task_serializer_option(self):
+        self.app.conf.task_always_eager = True
+
+        @self.app.task(serializer='pickle')
+        def task(*args, **kwargs):
+            pass
+        task.apply_async((1, 2, 3, 4, {1}))
 
     def test_task_with_ignored_result(self):
         with patch.object(self.app, 'send_task') as send_task:

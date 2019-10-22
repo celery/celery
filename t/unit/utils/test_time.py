@@ -4,9 +4,9 @@ from datetime import datetime, timedelta, tzinfo
 
 import pytest
 import pytz
-from case import Mock, patch
 from pytz import AmbiguousTimeError
 
+from case import Mock, patch
 from celery.utils.iso8601 import parse_iso8601
 from celery.utils.time import (LocalTimezone, delta_resolution, ffwd,
                                get_exponential_backoff_interval,
@@ -107,8 +107,52 @@ def test_maybe_timedelta(arg, expected):
     assert maybe_timedelta(arg) == expected
 
 
-def test_remaining_relative():
+def test_remaining():
+    # Relative
     remaining(datetime.utcnow(), timedelta(hours=1), relative=True)
+
+    """
+    The upcoming cases check whether the next run is calculated correctly
+    """
+    eastern_tz = pytz.timezone("US/Eastern")
+    tokyo_tz = pytz.timezone("Asia/Tokyo")
+
+    # Case 1: `start` in UTC and `now` in other timezone
+    start = datetime.now(pytz.utc)
+    now = datetime.now(eastern_tz)
+    delta = timedelta(hours=1)
+    assert str(start.tzinfo) == str(pytz.utc)
+    assert str(now.tzinfo) == str(eastern_tz)
+    rem_secs = remaining(start, delta, now).total_seconds()
+    # assert remaining time is approximately equal to delta
+    assert rem_secs == pytest.approx(delta.total_seconds(), abs=1)
+
+    # Case 2: `start` and `now` in different timezones (other than UTC)
+    start = datetime.now(eastern_tz)
+    now = datetime.now(tokyo_tz)
+    delta = timedelta(hours=1)
+    assert str(start.tzinfo) == str(eastern_tz)
+    assert str(now.tzinfo) == str(tokyo_tz)
+    rem_secs = remaining(start, delta, now).total_seconds()
+    assert rem_secs == pytest.approx(delta.total_seconds(), abs=1)
+
+    """
+    Case 3: DST check
+    Suppose start (which is last_run_time) is in EST while next_run is in EDT, then
+    check whether the `next_run` is actually the time specified in the start (i.e. there is not an hour diff due to DST).
+    In 2019, DST starts on March 10
+    """
+    start = eastern_tz.localize(datetime(month=3, day=9, year=2019, hour=10, minute=0))         # EST
+    now = eastern_tz.localize(datetime(day=11, month=3, year=2019, hour=1, minute=0))           # EDT
+    delta = ffwd(hour=10, year=2019, microsecond=0, minute=0, second=0, day=11, weeks=0, month=3)
+    # `next_actual_time` is the next time to run (derived from delta)
+    next_actual_time = eastern_tz.localize(datetime(day=11, month=3, year=2019, hour=10, minute=0))         # EDT
+    assert start.tzname() == "EST"
+    assert now.tzname() == "EDT"
+    assert next_actual_time.tzname() == "EDT"
+    rem_time = remaining(start, delta, now)
+    next_run = now + rem_time
+    assert next_run == next_actual_time
 
 
 class test_timezone:

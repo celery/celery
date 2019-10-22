@@ -6,9 +6,9 @@ import sys
 
 import pytest
 from billiard.process import current_process
-from case import Mock, mock, patch, skip
 from kombu import Exchange, Queue
 
+from case import Mock, mock, patch, skip
 from celery import platforms, signals
 from celery.app import trace
 from celery.apps import worker as cd

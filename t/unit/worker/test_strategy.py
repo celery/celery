@@ -4,10 +4,10 @@ from collections import defaultdict
 from contextlib import contextmanager
 
 import pytest
-from case import Mock, patch
 from kombu.utils.limits import TokenBucket
 
-from celery import Task
+from case import ANY, Mock, patch
+from celery import Task, signals
 from celery.exceptions import InvalidTaskError
 from celery.utils.time import rate
 from celery.worker import state
@@ -166,6 +166,15 @@ class test_default_strategy_proto2:
             req = C.get_request()
             for callback in callbacks:
                 callback.assert_called_with(req)
+
+    def test_signal_task_received(self):
+        callback = Mock()
+        with self._context(self.add.s(2, 2)) as C:
+            signals.task_received.connect(callback)
+            C()
+            callback.assert_called_once_with(sender=C.consumer,
+                                             request=ANY,
+                                             signal=signals.task_received)
 
     def test_when_events_disabled(self):
         with self._context(self.add.s(2, 2), events=False) as C:

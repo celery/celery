@@ -552,6 +552,20 @@ see :setting:`worker_redirect_stdouts`).
             logger.propagate = True
 
 
+.. note::
+
+    If you want to completely disable Celery logging configuration,
+    use the :signal:`setup_logging` signal:
+
+    .. code-block:: python
+
+        import celery
+
+        @celery.signals.setup_logging.connect
+        def on_setup_logging(**kwargs):
+            pass
+
+
 .. _task-argument-checking:
 
 Argument checking
@@ -1456,8 +1470,10 @@ For example, a base Task class that caches a database connection:
                 self._db = Database.connect()
             return self._db
 
+Per task usage
+~~~~~~~~~~~~~~
 
-that can be added to tasks like this:
+The above can be added to each task like this:
 
 .. code-block:: python
 
@@ -1469,6 +1485,26 @@ that can be added to tasks like this:
 
 The ``db`` attribute of the ``process_rows`` task will then
 always stay the same in each process.
+
+.. _custom-task-cls-app-wide:
+
+App-wide usage
+~~~~~~~~~~~~~~
+
+You can also use your custom class in your whole Celery app by passing it as
+the ``task_cls`` argument when instantiating the app. This argument should be
+either a string giving the python path to your Task class or the class itself:
+
+.. code-block:: python
+
+    from celery import Celery
+
+    app = Celery('tasks', task_cls='your.module.path:DatabaseTask')
+
+This will make all your tasks declared using the decorator syntax within your
+app to use your ``DatabaseTask`` class and will all have a ``db`` attribute.
+
+The default value is the class provided by Celery: ``'celery.app.task:Task'``.
 
 Handlers
 --------
@@ -1714,7 +1750,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
         return myhttplib.get(url)
 
     @app.task
-    def parse_page(url, page):
+    def parse_page(page):
         return myparser.parse_document(page)
 
     @app.task
@@ -1909,14 +1945,16 @@ Let's have a look at another example:
 .. code-block:: python
 
     from django.db import transaction
+    from django.http import HttpResponseRedirect
 
-    @transaction.commit_on_success
+    @transaction.atomic
     def create_article(request):
         article = Article.objects.create()
         expand_abbreviations.delay(article.pk)
+        return HttpResponseRedirect('/articles/')
 
 This is a Django view creating an article object in the database,
-then passing the primary key to a task. It uses the `commit_on_success`
+then passing the primary key to a task. It uses the `transaction.atomic`
 decorator, that will commit the transaction when the view returns, or
 roll back if the view raises an exception.
 

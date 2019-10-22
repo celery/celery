@@ -55,7 +55,7 @@ def old_ns(ns):
 
 @python_2_unicode_compatible
 class Option(object):
-    """Decribes a Celery configuration option."""
+    """Describes a Celery configuration option."""
 
     alt = None
     deprecate_by = None
@@ -249,6 +249,7 @@ NAMESPACES = Namespace(
     task=Namespace(
         __old__=OLD_NS,
         acks_late=Option(False, type='bool'),
+        acks_on_failure_or_timeout=Option(True, type='bool'),
         always_eager=Option(False, type='bool'),
         annotations=Option(type='any'),
         compression=Option(type='string', old={'celery_message_compression'}),
@@ -317,6 +318,7 @@ NAMESPACES = Namespace(
         pool=Option(DEFAULT_POOL),
         pool_putlocks=Option(True, type='bool'),
         pool_restarts=Option(False, type='bool'),
+        proc_alive_timeout=Option(4.0, type='float'),
         prefetch_multiplier=Option(4, type='int'),
         redirect_stdouts=Option(
             True, type='bool', old={'celery_redirect_stdouts'},

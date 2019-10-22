@@ -5,10 +5,11 @@ import types
 from contextlib import contextmanager
 
 import pytest
-from case import ANY, Mock, call, patch, skip
 from kombu.serialization import prepare_accept_content
 
-from celery import chord, group, states, uuid
+import celery
+from case import ANY, Mock, call, patch, skip
+from celery import chord, group, signature, states, uuid
 from celery.app.task import Context, Task
 from celery.backends.base import (BaseBackend, DisabledBackend,
                                   KeyValueStoreBackend, _nulldict)
@@ -27,6 +28,17 @@ class wrapobject(object):
 
     def __init__(self, *args, **kwargs):
         self.args = args
+
+
+class paramexception(Exception):
+
+    def __init__(self, param):
+        self.param = param
+
+
+class objectexception(object):
+    class Nested(Exception):
+        pass
 
 
 if sys.version_info[0] == 3 or getattr(sys, 'pypy_version_info', None):
@@ -191,6 +203,17 @@ class test_prepare_exception:
         y = self.b.exception_to_python(x)
         assert isinstance(y, Exception)
 
+    @pytest.mark.skipif(sys.version_info < (3, 3), reason='no qualname support')
+    def test_json_exception_nested(self):
+        self.b.serializer = 'json'
+        x = self.b.prepare_exception(objectexception.Nested('msg'))
+        assert x == {
+            'exc_message': ('msg',),
+            'exc_type': 'objectexception.Nested',
+            'exc_module': objectexception.Nested.__module__}
+        y = self.b.exception_to_python(x)
+        assert isinstance(y, objectexception.Nested)
+
     def test_impossible(self):
         self.b.serializer = 'pickle'
         x = self.b.prepare_exception(Impossible())
@@ -223,7 +246,7 @@ class KVBackend(KeyValueStoreBackend):
 
     def __init__(self, app, *args, **kwargs):
         self.db = {}
-        super(KVBackend, self).__init__(app)
+        super(KVBackend, self).__init__(app, *args, **kwargs)
 
     def get(self, key):
         return self.db.get(key)
@@ -399,6 +422,18 @@ class test_BaseBackend_dict:
         b.mark_as_failure('id', exc, request=request)
         mock_group.assert_called_once_with(request.errbacks, app=self.app)
 
+    @patch('celery.backends.base.group')
+    def test_unregistered_task_can_be_used_as_error_callback(self, mock_group):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+
+        request = Mock(name='request')
+        request.errbacks = [signature('doesnotexist',
+                                      immutable=True)]
+        exc = KeyError()
+        b.mark_as_failure('id', exc, request=request)
+        mock_group.assert_called_once_with(request.errbacks, app=self.app)
+
     def test_mark_as_failure__chord(self):
         b = BaseBackend(app=self.app)
         b._store_result = Mock()
@@ -434,6 +469,26 @@ class test_BaseBackend_dict:
     def test_exception_to_python_when_None(self):
         b = BaseBackend(app=self.app)
         assert b.exception_to_python(None) is None
+
+    def test_exception_to_python_when_attribute_exception(self):
+        b = BaseBackend(app=self.app)
+        test_exception = {'exc_type': 'AttributeDoesNotExist',
+                          'exc_module': 'celery',
+                          'exc_message': ['Raise Custom Message']}
+
+        result_exc = b.exception_to_python(test_exception)
+        assert str(result_exc) == 'Raise Custom Message'
+
+    def test_exception_to_python_when_type_error(self):
+        b = BaseBackend(app=self.app)
+        celery.TestParamException = paramexception
+        test_exception = {'exc_type': 'TestParamException',
+                          'exc_module': 'celery',
+                          'exc_message': []}
+
+        result_exc = b.exception_to_python(test_exception)
+        del celery.TestParamException
+        assert str(result_exc) == "<class 't.unit.backends.test_base.paramexception'>([])"
 
     def test_wait_for__on_interval(self):
         self.patching('time.sleep')
@@ -474,7 +529,11 @@ class test_KeyValueStoreBackend:
         self.b.forget(tid)
         assert self.b.get_state(tid) == states.PENDING
 
-    def test_store_result_parent_id(self):
+    @pytest.mark.parametrize('serializer',
+                             ['json', 'pickle', 'yaml', 'msgpack'])
+    def test_store_result_parent_id(self, serializer):
+        self.app.conf.accept_content = ('json', serializer)
+        self.b = KVBackend(app=self.app, serializer=serializer)
         tid = uuid()
         pid = uuid()
         state = 'SUCCESS'

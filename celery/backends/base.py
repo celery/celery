@@ -25,7 +25,7 @@ import celery.exceptions
 from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
 from celery.exceptions import (ChordError, ImproperlyConfigured,
-                               TaskRevokedError, TimeoutError)
+                               NotRegistered, TaskRevokedError, TimeoutError)
 from celery.five import PY3, items
 from celery.result import (GroupResult, ResultBase, allow_join_result,
                            result_from_tuple)
@@ -96,7 +96,7 @@ class Backend(object):
     #: in this case.
     supports_autoexpire = False
 
-    #: Set to true if the backend is peristent by default.
+    #: Set to true if the backend is persistent by default.
     persistent = True
 
     retry_policy = {
@@ -168,22 +168,33 @@ class Backend(object):
         old_signature = []
         for errback in request.errbacks:
             errback = self.app.signature(errback)
-            if (
-                    # Celery tasks type created with the @task decorator have
-                    # the __header__ property, but Celery task created from
-                    # Task class do not have this property.
-                    # That's why we have to check if this property exists
-                    # before checking is it partial function.
-                    hasattr(errback.type, '__header__') and
+            if not errback._app:
+                # Ensure all signatures have an application
+                errback._app = self.app
+            try:
+                if (
+                        # Celery tasks type created with the @task decorator have
+                        # the __header__ property, but Celery task created from
+                        # Task class do not have this property.
+                        # That's why we have to check if this property exists
+                        # before checking is it partial function.
+                        hasattr(errback.type, '__header__') and
 
-                    # workaround to support tasks with bind=True executed as
-                    # link errors. Otherwise retries can't be used
-                    not isinstance(errback.type.__header__, partial) and
-                    arity_greater(errback.type.__header__, 1)
-            ):
-                errback(request, exc, traceback)
-            else:
+                        # workaround to support tasks with bind=True executed as
+                        # link errors. Otherwise retries can't be used
+                        not isinstance(errback.type.__header__, partial) and
+                        arity_greater(errback.type.__header__, 1)
+                ):
+                    errback(request, exc, traceback)
+                else:
+                    old_signature.append(errback)
+            except NotRegistered:
+                # Task may not be present in this worker.
+                # We simply send it forward for another worker to consume.
+                # If the task is not registered there, the worker will raise
+                # NotRegistered.
                 old_signature.append(errback)
+
         if old_signature:
             # Previously errback was called as a task so we still
             # need to do so if the errback only takes a single task_id arg.
@@ -246,9 +257,10 @@ class Backend(object):
         serializer = self.serializer if serializer is None else serializer
         if serializer in EXCEPTION_ABLE_CODECS:
             return get_pickleable_exception(exc)
-        return {'exc_type': type(exc).__name__,
+        exctype = type(exc)
+        return {'exc_type': getattr(exctype, '__qualname__', exctype.__name__),
                 'exc_message': ensure_serializable(exc.args, self.encode),
-                'exc_module': type(exc).__module__}
+                'exc_module': exctype.__module__}
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
@@ -262,12 +274,22 @@ class Backend(object):
                     exc_module = from_utf8(exc_module)
                     exc_type = from_utf8(exc['exc_type'])
                     try:
-                        cls = getattr(sys.modules[exc_module], exc_type)
-                    except KeyError:
+                        # Load module and find exception class in that
+                        cls = sys.modules[exc_module]
+                        # The type can contain qualified name with parent classes
+                        for name in exc_type.split('.'):
+                            cls = getattr(cls, name)
+                    except (KeyError, AttributeError):
                         cls = create_exception_cls(exc_type,
                                                    celery.exceptions.__name__)
                 exc_msg = exc['exc_message']
-                exc = cls(*exc_msg if isinstance(exc_msg, tuple) else exc_msg)
+                try:
+                    if isinstance(exc_msg, (tuple, list)):
+                        exc = cls(*exc_msg)
+                    else:
+                        exc = cls(exc_msg)
+                except Exception as err:  # noqa
+                    exc = Exception('{}({})'.format(cls, exc_msg))
             if self.serializer in EXCEPTION_ABLE_CODECS:
                 exc = get_pickled_exception(exc)
         return exc
@@ -453,7 +475,8 @@ class Backend(object):
         if request:
             return [r.as_tuple() for r in getattr(request, 'children', [])]
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         return (unpickle_backend, (self.__class__, args, kwargs))
 
 
@@ -667,7 +690,7 @@ class BaseKeyValueStoreBackend(Backend):
                       traceback=None, request=None, **kwargs):
 
         if state in self.READY_STATES:
-            date_done = datetime.datetime.utcnow()
+            date_done = datetime.datetime.utcnow().isoformat()
         else:
             date_done = None
 
@@ -688,7 +711,7 @@ class BaseKeyValueStoreBackend(Backend):
         if self.app.conf.find_value_for_key('extended', 'result'):
             if request:
                 request_meta = {
-                    'name': getattr(request, 'task_name', None),
+                    'name': getattr(request, 'task', None),
                     'args': getattr(request, 'args', None),
                     'kwargs': getattr(request, 'kwargs', None),
                     'worker': getattr(request, 'hostname', None),

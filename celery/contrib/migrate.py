@@ -53,11 +53,11 @@ class State(object):
 
 
 def republish(producer, message, exchange=None, routing_key=None,
-              remove_props=['application_headers',
-                            'content_type',
-                            'content_encoding',
-                            'headers']):
+              remove_props=None):
     """Republish message."""
+    if not remove_props:
+        remove_props = ['application_headers', 'content_type',
+                        'content_encoding', 'headers']
     body = ensure_bytes(message.body)  # use raw message body.
     info, headers, props = (message.delivery_info,
                             message.headers, message.properties)
@@ -182,7 +182,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
     Note:
         The predicate may also return a tuple of ``(exchange, routing_key)``
         to specify the destination to where the task should be moved,
-        or a :class:`~kombu.entitiy.Queue` instance.
+        or a :class:`~kombu.entity.Queue` instance.
         Any other true value means that the task will be moved to the
         default exchange/routing_key.
     """
@@ -361,6 +361,8 @@ def move_task_by_id(task_id, dest, **kwargs):
     Arguments:
         task_id (str): Id of task to find and move.
         dest: (str, kombu.Queue): Destination queue.
+        transform (Callable): Optional function to transform the return
+            value (destination) of the filter function.
         **kwargs (Any): Also supports the same keyword
             arguments as :func:`move`.
     """
@@ -380,7 +382,7 @@ def move_by_idmap(map, **kwargs):
         ...   queues=['hipri'])
     """
     def task_id_in_map(body, message):
-        return map.get(body['id'])
+        return map.get(message.properties['correlation_id'])
 
     # adding the limit means that we don't have to consume any more
     # when we've found everything.

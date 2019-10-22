@@ -104,11 +104,16 @@ class TaskPool(BasePool):
         forking_enable(self.forking_enable)
         Pool = (self.BlockingPool if self.options.get('threads', True)
                 else self.Pool)
+        proc_alive_timeout = (
+            self.app.conf.worker_proc_alive_timeout if self.app
+            else None
+        )
         P = self._pool = Pool(processes=self.limit,
                               initializer=process_initializer,
                               on_process_exit=process_destructor,
                               enable_timeouts=True,
                               synack=False,
+                              proc_alive_timeout=proc_alive_timeout,
                               **self.options)
 
         # Create proxy methods

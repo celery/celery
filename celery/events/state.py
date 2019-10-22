@@ -347,8 +347,9 @@ class Task(object):
         # update current state with info from this event.
         self.__dict__.update(fields)
 
-    def info(self, fields=None, extra=[]):
+    def info(self, fields=None, extra=None):
         """Information about this task suitable for on-screen display."""
+        extra = [] if not extra else extra
         fields = self._info_fields if fields is None else fields
 
         def _keys():
@@ -397,7 +398,7 @@ class Task(object):
     def parent(self):
         # issue github.com/mher/flower/issues/648
         try:
-            return self.parent_id and self.cluster_state.tasks[self.parent_id]
+            return self.parent_id and self.cluster_state.tasks.data[self.parent_id]
         except KeyError:
             return None
 
@@ -405,7 +406,7 @@ class Task(object):
     def root(self):
         # issue github.com/mher/flower/issues/648
         try:
-            return self.root_id and self.cluster_state.tasks[self.root_id]
+            return self.root_id and self.cluster_state.tasks.data[self.root_id]
         except KeyError:
             return None
 

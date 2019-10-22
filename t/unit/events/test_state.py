@@ -7,7 +7,6 @@ from random import shuffle
 from time import time
 
 from case import Mock, patch, skip
-
 from celery import states, uuid
 from celery.events import Event
 from celery.events.state import (HEARTBEAT_DRIFT_MAX, HEARTBEAT_EXPIRE_WINDOW,
@@ -677,3 +676,26 @@ class test_State:
         s = State(callback=callback)
         s.event({'type': 'worker-online'})
         assert scratch.get('recv')
+
+    def test_deepcopy(self):
+        import copy
+        s = State()
+        s.event({
+            'type': 'task-success',
+            'root_id': 'x',
+            'uuid': 'x',
+            'hostname': 'y',
+            'clock': 3,
+            'timestamp': time(),
+            'local_received': time(),
+        })
+        s.event({
+            'type': 'task-success',
+            'root_id': 'y',
+            'uuid': 'y',
+            'hostname': 'y',
+            'clock': 4,
+            'timestamp': time(),
+            'local_received': time(),
+        })
+        copy.deepcopy(s)

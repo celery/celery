@@ -4,10 +4,11 @@ import pickle
 from time import time
 
 import pytest
-from case import Mock, patch
 
+from case import Mock, patch
 from celery import uuid
 from celery.exceptions import WorkerShutdown, WorkerTerminate
+from celery.platforms import EX_OK
 from celery.utils.collections import LimitedSet
 from celery.worker import state
 
@@ -80,7 +81,9 @@ class test_maybe_shutdown:
         else:
             raise RuntimeError('should have exited')
 
-    def test_should_terminate(self):
+    @pytest.mark.parametrize('should_stop', (None, False, True, EX_OK))
+    def test_should_terminate(self, should_stop):
+        state.should_stop = should_stop
         state.should_terminate = True
         with pytest.raises(WorkerTerminate):
             state.maybe_shutdown()

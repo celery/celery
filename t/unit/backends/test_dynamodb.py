@@ -4,8 +4,8 @@ from __future__ import absolute_import, unicode_literals
 from decimal import Decimal
 
 import pytest
-from case import MagicMock, Mock, patch, sentinel, skip
 
+from case import MagicMock, Mock, patch, sentinel, skip
 from celery.backends import dynamodb as module
 from celery.backends.dynamodb import DynamoDBBackend
 from celery.exceptions import ImproperlyConfigured

@@ -3,6 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import time
+import datetime
 from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
@@ -18,6 +19,7 @@ from .five import (items, monotonic, python_2_unicode_compatible, range,
                    string_t)
 from .utils import deprecated
 from .utils.graph import DependencyGraph, GraphFormatter
+from .utils.iso8601 import parse_iso8601
 
 try:
     import tblib
@@ -105,7 +107,7 @@ class AsyncResult(ResultBase):
 
     @property
     def ignored(self):
-        """"If True, task result retrieval is disabled."""
+        """If True, task result retrieval is disabled."""
         if hasattr(self, '_ignored'):
             return self._ignored
         return False
@@ -205,7 +207,7 @@ class AsyncResult(ResultBase):
             assert_will_not_block()
         _on_interval = promise()
         if follow_parents and propagate and self.parent:
-            on_interval = promise(self._maybe_reraise_parent_error, weak=True)
+            _on_interval = promise(self._maybe_reraise_parent_error, weak=True)
             self._maybe_reraise_parent_error()
         if on_interval:
             _on_interval.then(on_interval)
@@ -500,7 +502,11 @@ class AsyncResult(ResultBase):
 
     @property
     def date_done(self):
-        return self._get_task_meta().get('date_done')
+        """UTC date and time."""
+        date_done = self._get_task_meta().get('date_done')
+        if date_done and not isinstance(date_done, datetime.datetime):
+            return parse_iso8601(date_done)
+        return date_done
 
     @property
     def retries(self):
@@ -763,6 +769,7 @@ class ResultSet(ResultBase):
             value = result.get(
                 timeout=remaining, propagate=propagate,
                 interval=interval, no_ack=no_ack, on_interval=on_interval,
+                disable_sync_subtasks=disable_sync_subtasks,
             )
             if callback:
                 callback(result.id, value)
@@ -813,9 +820,14 @@ class ResultSet(ResultBase):
         acc = None if callback else [None for _ in range(len(self))]
         for task_id, meta in self.iter_native(timeout, interval, no_ack,
                                               on_message, on_interval):
-            value = meta['result']
-            if propagate and meta['status'] in states.PROPAGATE_STATES:
-                raise value
+            if isinstance(meta, list):
+                value = []
+                for children_result in meta:
+                    value.append(children_result.get())
+            else:
+                value = meta['result']
+                if propagate and meta['status'] in states.PROPAGATE_STATES:
+                    raise value
             if callback:
                 callback(task_id, value)
             else:

@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 4.3.0rc2 (rhubarb)
+:Version: 4.4.0rc3 (cliffs)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -23,10 +23,7 @@ If you are using Celery to create a commercial product, please consider becoming
 Sponsors
 --------
 
-|ImageLink|_
-
-.. |ImageLink| image:: https://i.imgur.com/ULmQEib.png
-.. _ImageLink: https://getstream.io/try-the-api/?utm_source=celery&utm_medium=banner&utm_campaign=github
+`Tidelift gives software development teams a single source for purchasing and maintaining their software, with professional grade assurances from the experts who know it best, while seamlessly integrating with existing tools. <https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=readme>`_
 
 
 What's a Task Queue?
@@ -220,6 +217,8 @@ Documentation
 
 The `latest documentation`_ is hosted at Read The Docs, containing user guides,
 tutorials, and an API reference.
+
+最新的中文文档托管在 https://www.celerycn.io/ 中，包含用户指南、教程、API接口等。
 
 .. _`latest documentation`: http://docs.celeryproject.org/en/latest/
 
@@ -435,7 +434,7 @@ to our issue tracker at https://github.com/celery/celery/issues/
 Wiki
 ====
 
-https://wiki.github.com/celery/celery/
+https://github.com/celery/celery/wiki
 
 Credits
 =======
@@ -528,3 +527,7 @@ file in the top distribution directory for the full license text.
 .. |ocsponsorbadge| image:: https://opencollective.com/celery/sponsors/badge.svg
     :alt: Sponsors on Open Collective
     :target: #sponsors
+
+.. |downloads| image:: https://pepy.tech/badge/celery
+    :alt: Downloads
+    :target: https://pepy.tech/project/celery

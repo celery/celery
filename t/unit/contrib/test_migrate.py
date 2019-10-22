@@ -4,10 +4,10 @@ from contextlib import contextmanager
 
 import pytest
 from amqp import ChannelError
-from case import Mock, mock, patch
 from kombu import Connection, Exchange, Producer, Queue
 from kombu.transport.virtual import QoS
 
+from case import Mock, mock, patch
 from celery.contrib.migrate import (State, StopFiltering, _maybe_queue,
                                     expand_dest, filter_callback,
                                     filter_status, migrate_task,
@@ -35,7 +35,9 @@ def Message(body, exchange='exchange', routing_key='rkey',
             },
             'content_type': content_type,
             'content_encoding': content_encoding,
-            'properties': {}
+            'properties': {
+                'correlation_id': isinstance(body, dict) and body['id'] or None
+            }
         },
     )
 
@@ -222,7 +224,8 @@ def test_move_by_idmap():
         move_by_idmap({'123f': Queue('foo')})
         move.assert_called()
         cb = move.call_args[0][0]
-        assert cb({'id': '123f'}, Mock())
+        body = {'id': '123f'}
+        assert cb(body, Message(body))
 
 
 def test_move_task_by_id():
@@ -230,7 +233,8 @@ def test_move_task_by_id():
         move_task_by_id('123f', Queue('foo'))
         move.assert_called()
         cb = move.call_args[0][0]
-        assert cb({'id': '123f'}, Mock()) == Queue('foo')
+        body = {'id': '123f'}
+        assert cb(body, Message(body)) == Queue('foo')
 
 
 class test_migrate_task:

@@ -14,7 +14,8 @@ from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     chord_error, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, fail, identity, ids,
                     print_unicode, raise_error, redis_echo, retry_once,
-                    return_exception, second_order_replace1, tsum)
+                    return_exception, return_priority, second_order_replace1,
+                    tsum)
 
 TIMEOUT = 120
 
@@ -110,6 +111,24 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [4, 5]
 
+    def test_chain_on_error(self, manager):
+        from .tasks import ExpectedException
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        # Run the chord and wait for the error callback to finish.
+        c1 = chain(
+            add.s(1, 2), fail.s(), add.s(3, 4),
+        )
+        res = c1()
+
+        with pytest.raises(ExpectedException):
+            res.get(propagate=True)
+
+        with pytest.raises(ExpectedException):
+            res.parent.get(propagate=True)
+
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_chain_inside_group_receives_arguments(self, manager):
         c = (
@@ -158,6 +177,16 @@ class test_chain:
         redis_connection.delete('redis-echo')
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_group_result_not_has_cache(self, manager):
+        t1 = identity.si(1)
+        t2 = identity.si(2)
+        gt = group([identity.si(3), identity.si(4)])
+        ct = chain(identity.si(5), gt)
+        task = group(t1, t2, ct)
+        result = task.delay()
+        assert result.get(timeout=TIMEOUT) == [1, 2, [3, 4]]
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_second_order_replace(self, manager):
         from celery.five import bytes_if_py2
 
@@ -179,16 +208,17 @@ class test_chain:
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_parent_ids(self, manager, num=10):
-        assert manager.inspect().ping()
+        assert_ping(manager)
+
         c = chain(ids.si(i=i) for i in range(num))
         c.freeze()
         res = c()
         try:
             res.get(timeout=TIMEOUT)
         except TimeoutError:
-            print(manager.inspect.active())
-            print(manager.inspect.reserved())
-            print(manager.inspect.stats())
+            print(manager.inspect().active())
+            print(manager.inspect().reserved())
+            print(manager.inspect().stats())
             raise
         self.assert_ids(res, num - 1)
 
@@ -258,19 +288,131 @@ class test_chain:
         assert len(result) == 2
         assert isinstance(result[0][1], list)
 
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_chain_of_task_a_group_and_a_chord(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = add.si(1, 0)
+        c = c | group(add.s(1), add.s(1))
+        c = c | group(tsum.s(), tsum.s())
+        c = c | tsum.s()
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 8
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_chain_of_chords_as_groups_chained_to_a_task_with_two_tasks(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = add.si(1, 0)
+        c = c | group(add.s(1), add.s(1))
+        c = c | tsum.s()
+        c = c | add.s(1)
+        c = c | group(add.s(1), add.s(1))
+        c = c | tsum.s()
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 12
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_chain_of_chords_with_two_tasks(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = add.si(1, 0)
+        c = c | group(add.s(1), add.s(1))
+        c = c | tsum.s()
+        c = c | add.s(1)
+        c = c | chord(group(add.s(1), add.s(1)), tsum.s())
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 12
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_chain_of_a_chord_and_a_group_with_two_tasks(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = add.si(1, 0)
+        c = c | group(add.s(1), add.s(1))
+        c = c | tsum.s()
+        c = c | add.s(1)
+        c = c | group(add.s(1), add.s(1))
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == [6, 6]
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_chain_of_a_chord_and_a_task_and_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = group(add.s(1, 1), add.s(1, 1))
+        c = c | tsum.s()
+        c = c | add.s(1)
+        c = c | group(add.s(1), add.s(1))
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == [6, 6]
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_chain_of_a_chord_and_two_tasks_and_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = group(add.s(1, 1), add.s(1, 1))
+        c = c | tsum.s()
+        c = c | add.s(1)
+        c = c | add.s(1)
+        c = c | group(add.s(1), add.s(1))
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == [7, 7]
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_chain_of_a_chord_and_three_tasks_and_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = group(add.s(1, 1), add.s(1, 1))
+        c = c | tsum.s()
+        c = c | add.s(1)
+        c = c | add.s(1)
+        c = c | add.s(1)
+        c = c | group(add.s(1), add.s(1))
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == [8, 8]
+
 
 class test_result_set:
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_result_set(self, manager):
-        assert manager.inspect().ping()
+        assert_ping(manager)
 
         rs = ResultSet([add.delay(1, 1), add.delay(2, 2)])
         assert rs.get(timeout=TIMEOUT) == [2, 4]
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_result_set_error(self, manager):
-        assert manager.inspect().ping()
+        assert_ping(manager)
 
         rs = ResultSet([raise_error.delay(), add.delay(1, 1)])
         rs.get(timeout=TIMEOUT, propagate=False)
@@ -280,6 +422,15 @@ class test_result_set:
 
 
 class test_group:
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_ready_with_exception(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        g = group([add.s(1, 2), raise_error.s()])
+        result = g.apply_async()
+        while not result.ready():
+            pass
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_empty_group_result(self, manager):
@@ -295,7 +446,8 @@ class test_group:
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_parent_ids(self, manager):
-        assert manager.inspect().ping()
+        assert_ping(manager)
+
         g = (
             ids.si(i=1) |
             ids.si(i=2) |
@@ -314,7 +466,7 @@ class test_group:
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_nested_group(self, manager):
-        assert manager.inspect().ping()
+        assert_ping(manager)
 
         c = group(
             add.si(1, 10),
@@ -330,12 +482,28 @@ class test_group:
 
         assert res.get(timeout=TIMEOUT) == [11, 101, 1001, 2001]
 
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_large_group(self, manager):
+        assert_ping(manager)
+
+        c = group(identity.s(i) for i in range(1000))
+        res = c.delay()
+
+        assert res.get(timeout=TIMEOUT) == list(range(1000))
+
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
     root_id, parent_id, value = r.get(timeout=TIMEOUT)
     assert expected_value == value
     assert root_id == expected_root_id
     assert parent_id == expected_parent_id
+
+
+def assert_ping(manager):
+    ping_result = manager.inspect().ping()
+    assert ping_result
+    ping_val = list(ping_result.values())[0]
+    assert ping_val == {"ok": "pong"}
 
 
 class test_chord:
@@ -611,17 +779,12 @@ class test_chord:
                 chord_error.s()),
         )
         res = c1()
-        try:
-            res.wait(propagate=False)
-        except ExpectedException:
-            pass
+        with pytest.raises(ExpectedException):
+            res.get(propagate=True)
+
         # Got to wait for children to populate.
         while not res.children:
             time.sleep(0.1)
-        try:
-            res.children[0].children[0].wait(propagate=False)
-        except ExpectedException:
-            pass
 
         # Extract the results of the successful tasks from the chord.
         #
@@ -698,3 +861,61 @@ class test_chord:
         r = c.delay()
 
         assert r.get(timeout=TIMEOUT) == 4
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_chain_chord_chain_chord(self, manager):
+        # test for #2573
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+        c = chain(
+            identity.si(1),
+            chord(
+                [
+                    identity.si(2),
+                    chain(
+                        identity.si(3),
+                        chord(
+                            [identity.si(4), identity.si(5)],
+                            identity.si(6)
+                        )
+                    )
+                ],
+                identity.si(7)
+            )
+        )
+        res = c.delay()
+        assert res.get(timeout=TIMEOUT) == 7
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_large_header(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = group(identity.si(i) for i in range(1000)) | tsum.s()
+        res = c.delay()
+        assert res.get(timeout=TIMEOUT) == 499500
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_chain_to_a_chord_with_large_header(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = identity.si(1) | group(identity.s() for _ in range(1000)) | tsum.s()
+        res = c.delay()
+        assert res.get(timeout=TIMEOUT) == 1000
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_priority(self, manager):
+        c = chain(return_priority.signature(priority=3))()
+        assert c.get(timeout=TIMEOUT) == "Priority: 3"
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_priority_chain(self, manager):
+        c = return_priority.signature(priority=3) | return_priority.signature(priority=5)
+        assert c().get(timeout=TIMEOUT) == "Priority: 5"

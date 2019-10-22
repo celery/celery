@@ -175,6 +175,8 @@ class Celery(object):
         config_source (Union[str, class]): Take configuration from a class,
             or object.  Attributes may include any settings described in
             the documentation.
+        task_cls (Union[str, Type[celery.app.task.Task]]): base task class to
+            use. See :ref:`this section <custom-task-cls-app-wide>` for usage.
     """
 
     #: This is deprecated, use :meth:`reduce_keys` instead
@@ -271,6 +273,8 @@ class Celery(object):
         self.__autoset('broker_url', broker)
         self.__autoset('result_backend', backend)
         self.__autoset('include', include)
+        self.__autoset('broker_use_ssl', kwargs.get('broker_use_ssl'))
+        self.__autoset('redis_backend_use_ssl', kwargs.get('redis_backend_use_ssl'))
         self._conf = Settings(
             PendingConfiguration(
                 self._preconf, self._finalize_pending_conf),
@@ -838,7 +842,7 @@ class Celery(object):
             port or conf.broker_port,
             transport=transport or conf.broker_transport,
             ssl=self.either('broker_use_ssl', ssl),
-            heartbeat=heartbeat or self.conf.broker_heartbeat,
+            heartbeat=heartbeat,
             login_method=login_method or conf.broker_login_method,
             failover_strategy=(
                 failover_strategy or conf.broker_failover_strategy
@@ -991,7 +995,8 @@ class Celery(object):
         return key
 
     def _sig_to_periodic_task_entry(self, schedule, sig,
-                                    args=(), kwargs={}, name=None, **opts):
+                                    args=(), kwargs=None, name=None, **opts):
+        kwargs = {} if not kwargs else kwargs
         sig = (sig.clone(args, kwargs)
                if isinstance(sig, abstract.CallableSignature)
                else self.signature(sig.name, args, kwargs))
