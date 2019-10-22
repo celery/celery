@@ -383,10 +383,27 @@ class test_BaseBackend_dict:
         b.mark_as_done('id', 10, request=request)
         b.on_chord_part_return.assert_called_with(request, states.SUCCESS, 10)
 
+    def test_mark_as_failure__bound_errback_eager(self):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+        request = Mock(name='request')
+        request.delivery_info = {
+            'is_eager': True
+        }
+        request.errbacks = [
+            self.bound_errback.subtask(args=[1], immutable=True)]
+        exc = KeyError()
+        group = self.patching('celery.backends.base.group')
+        b.mark_as_failure('id', exc, request=request)
+        group.assert_called_with(request.errbacks, app=self.app)
+        group.return_value.apply.assert_called_with(
+            (request.id, ), parent_id=request.id, root_id=request.root_id)
+
     def test_mark_as_failure__bound_errback(self):
         b = BaseBackend(app=self.app)
         b._store_result = Mock()
         request = Mock(name='request')
+        request.delivery_info = {}
         request.errbacks = [
             self.bound_errback.subtask(args=[1], immutable=True)]
         exc = KeyError()
