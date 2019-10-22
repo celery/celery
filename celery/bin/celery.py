@@ -101,7 +101,7 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
         os.environ['CELERY_RESULT_BACKEND'] = result_backend
     if config:
         os.environ['CELERY_CONFIG_MODULE'] = config
-    ctx.obj = CLIContext(app=app, no_color=no_color)
+    ctx.obj = CLIContext(app=app, no_color=no_color, quiet=quiet)
 
 
 @celery.command(cls=CeleryCommand)
