@@ -3,6 +3,7 @@ from functools import partial
 import click
 from kombu.utils.json import dumps
 
+from celery.app.control import Inspect
 from celery.bin.base import COMMA_SEPARATED_LIST, CeleryCommand, CeleryOption
 from celery.platforms import EX_UNAVAILABLE
 from celery.utils import text
@@ -60,7 +61,7 @@ def status(ctx, timeout, destination, json, **kwargs):
 
 
 @click.command(cls=CeleryCommand)
-@click.argument("action")
+@click.argument("action", type=click.Choice([choice for choice in dir(Inspect) if not choice.startswith('_')]))
 @click.option('-t',
               '--timeout',
               cls=CeleryOption,
