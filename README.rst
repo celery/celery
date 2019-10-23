@@ -23,7 +23,7 @@ If you are using Celery to create a commercial product, please consider becoming
 Sponsors
 --------
 
-`Tidelift gives software development teams a single source for purchasing and maintaining their software, with professional grade assurances from the experts who know it best, while seamlessly integrating with existing tools. <https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=readme>`_
+`Tidelift gives software development teams a single source for purchasing and maintaining their software, with professional-grade assurances from the experts who know it best, while seamlessly integrating with existing tools. <https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=readme>`_
 
 
 What's a Task Queue?
@@ -43,7 +43,7 @@ A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
-language. In addition to Python there's node-celery_ for Node.js,
+language. In addition to Python, there's node-celery_ for Node.js 
 and a `PHP client`_.
 
 Language interoperability can also be achieved by using webhooks
@@ -70,7 +70,7 @@ an older version of Celery:
 
 - Python 2.6: Celery series 3.1 or earlier.
 - Python 2.5: Celery series 3.0 or earlier.
-- Python 2.4 was Celery series 2.2 or earlier.
+- Python 2.4 was the Celery series 2.2 or earlier.
 
 Celery is a project with minimal funding,
 so we don't support Microsoft Windows.
@@ -91,7 +91,7 @@ If this is the first time you're trying to use Celery, or you're
 new to Celery 4.2 coming from previous versions then you should read our
 getting started tutorials:
 
-- `First steps with Celery`_
+- `First Steps with Celery`_
 
     Tutorial teaching you the bare minimum needed to get started with Celery.
 
@@ -110,7 +110,7 @@ Celery is...
 
 - **Simple**
 
-    Celery is easy to use and maintain, and does *not need configuration files*.
+    Celery is easy to use and maintain and does *not need configuration files*.
 
     It has an active, friendly community you can talk to for support,
     like at our `mailing-list`_, or the IRC channel.
@@ -152,7 +152,7 @@ It supports...
 
     - **Concurrency**
 
-        - Prefork, Eventlet_, gevent_, single threaded (``solo``)
+        - Prefork, Eventlet_, gevent_, single-threaded (``solo``)
 
     - **Result Stores**
 
@@ -215,7 +215,7 @@ database connections at ``fork``.
 Documentation
 =============
 
-The `latest documentation`_ is hosted at Read The Docs, containing user guides,
+The `latest documentation`_ is hosted at reading The Docs, containing user guides,
 tutorials, and an API reference.
 
 最新的中文文档托管在 https://www.celerycn.io/ 中，包含用户指南、教程、API接口等。
@@ -228,7 +228,7 @@ Installation
 ============
 
 You can install Celery either via the Python Package Index (PyPI)
-or from source.
+or from the source.
 
 To install using ``pip``:
 
@@ -261,34 +261,34 @@ The following bundles are available:
 Serializers
 ~~~~~~~~~~~
 
-:``celery[auth]``:
+: ``celery[auth]``:
     for using the ``auth`` security serializer.
 
-:``celery[msgpack]``:
+: ``celery[msgpack]``:
     for using the msgpack serializer.
 
-:``celery[yaml]``:
-    for using the yaml serializer.
+: ``celery[yaml]``:
+    for using the YAML serializer.
 
 Concurrency
 ~~~~~~~~~~~
 
-:``celery[eventlet]``:
+: ``celery[eventlet]``:
     for using the ``eventlet`` pool.
 
-:``celery[gevent]``:
-    for using the ``gevent`` pool.
+: ``celery[gevent]``:
+    for using the ``event`` pool.
 
 Transports and Backends
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-:``celery[librabbitmq]``:
+: ``celery[librabbitmq]``:
     for using the librabbitmq C library.
 
-:``celery[redis]``:
+: ``celery[redis]``:
     for using Redis as a message transport or as a result backend.
 
-:``celery[sqs]``:
+: ``celery[sqs]``:
     for using Amazon SQS as a message transport.
 
 :``celery[tblib``]:
@@ -298,18 +298,18 @@ Transports and Backends
     for using Memcached as a result backend (using ``pylibmc``)
 
 :``celery[pymemcache]``:
-    for using Memcached as a result backend (pure-Python implementation).
+    for using Memcached as a result of the backend (pure-Python implementation).
 
-:``celery[cassandra]``:
+: ``celery[cassandra]``:
     for using Apache Cassandra as a result backend with DataStax driver.
 
 :``celery[azureblockblob]``:
     for using Azure Storage as a result backend (using ``azure-storage``)
 
-:``celery[s3]``:
+: ``celery[s3]``:
     for using S3 Storage as a result backend.
 
-:``celery[couchbase]``:
+: ``celery[couchbase]``:
     for using Couchbase as a result backend.
 
 :``celery[arangodb]``:
@@ -318,28 +318,28 @@ Transports and Backends
 :``celery[elasticsearch]``:
     for using Elasticsearch as a result backend.
 
-:``celery[riak]``:
+: ``celery[riak]``:
     for using Riak as a result backend.
 
-:``celery[cosmosdbsql]``:
+: ``celery[cosmosdbsql]``:
     for using Azure Cosmos DB as a result backend (using ``pydocumentdb``)
 
-:``celery[zookeeper]``:
+: ``celery[zookeeper]``:
     for using Zookeeper as a message transport.
 
-:``celery[sqlalchemy]``:
+: ``celery[sqlalchemy]``:
     for using SQLAlchemy as a result backend (*supported*).
 
-:``celery[pyro]``:
+: ``celery[pyro]``:
     for using the Pyro4 message transport (*experimental*).
 
-:``celery[slmq]``:
+: ``celery[slmq]``:
     for using the SoftLayer Message Queue transport (*experimental*).
 
-:``celery[consul]``:
+: ``celery[consul]``:
     for using the Consul.io Key/Value store as a message transport or result backend (*experimental*).
 
-:``celery[django]``:
+: ``celery[django]``:
     specifies the lowest version possible for Django support.
 
     You should probably not use this in your requirements, it's here
