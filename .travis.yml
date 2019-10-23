@@ -54,13 +54,13 @@ matrix:
   - python: '2.7'
     env: TOXENV=flakeplus
     stage: lint
-  - python: pypy2.7-7.1.1
+  - python: pypy2.7-7.2
     env: TOXENV=pypy
     before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
   - python: pypy3.5-7.0
     env: TOXENV=pypy3
     before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
-  - python: pypy3.6-7.1.1
+  - python: pypy3.6-7.2
     env: TOXENV=pypy3
     before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
 
