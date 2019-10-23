@@ -2,7 +2,7 @@ import sys
 from functools import partial
 
 import click
-from click_repl import register_repl, repl
+from click_repl import register_repl
 
 from celery.utils.functional import padlist
 from celery.utils.serialization import strtobool
@@ -94,6 +94,16 @@ def format_declare_queue(ret):
     return 'ok. queue:{0} messages:{1} consumers:{2}.'.format(*ret)
 
 
+class AMQPContext:
+    def __init__(self, cli_context):
+        self.cli_context = cli_context
+        self.connection = self.cli_context.app.connection()
+        self.cli_context.echo(f'-> connecting to {self.connection.as_uri()}.')
+        self.connection.connect()
+        self.cli_context.echo('-> connected.')
+        self.channel = self.connection.default_channel
+
+
 @click.group(invoke_without_command=True)
 @click.pass_context
 def amqp(ctx):
@@ -102,8 +112,8 @@ def amqp(ctx):
     Also works for non-AMQP transports (but not ones that
     store declarations in memory).
     """
-    ctx.parent = None  # Force click-repl to use amqp's subcommands
-    repl(ctx, allow_system_commands=False)
+    if not isinstance(ctx.obj, AMQPContext):
+        ctx.obj = AMQPContext(ctx.obj)
 
 
 @amqp.command(name='exchange.declare')
@@ -142,10 +152,29 @@ def basic_get():
 
 
 @amqp.command(name='basic.publish')
-def basic_publish():
+@click.argument('msg',
+                type=str)
+@click.argument('exchange',
+                type=str)
+@click.argument('routing_key',
+                type=str)
+@click.argument('mandatory',
+                type=bool,
+                default=False)
+@click.argument('immediate',
+                type=bool,
+                default=False)
+@click.pass_obj
+def basic_publish(amqp_context, msg, exchange, routing_key, mandatory, immediate):
     pass
 
 
 @amqp.command(name='basic.ack')
-def basic_ack():
-    pass
+@click.argument('delivery_tag',
+                type=int)
+@click.pass_obj
+def basic_ack(amqp_context, delivery_tag):
+    amqp_context.channel.basic_ack(delivery_tag)()
+
+
+repl = register_repl(amqp)
