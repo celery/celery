@@ -188,6 +188,35 @@ class test_default_queues:
         assert queue.routing_key == rkey or name
 
 
+class test_default_exchange:
+
+    @pytest.mark.parametrize('name,exchange,rkey', [
+        ('default', 'foo', None),
+        ('default', 'foo', 'routing_key'),
+    ])
+    def test_setting_default_exchange(self, name, exchange, rkey):
+        q = Queue(name, routing_key=rkey)
+        self.app.conf.task_queues = {q}
+        self.app.conf.task_default_exchange = exchange
+        queues = dict(self.app.amqp.queues)
+        queue = queues[name]
+        assert queue.exchange.name == exchange
+
+    @pytest.mark.parametrize('name,extype,rkey', [
+        ('default', 'direct', None),
+        ('default', 'direct', 'routing_key'),
+        ('default', 'topic', None),
+        ('default', 'topic', 'routing_key'),
+    ])
+    def test_setting_default_exchange_type(self, name, extype, rkey):
+        q = Queue(name, routing_key=rkey)
+        self.app.conf.task_queues = {q}
+        self.app.conf.task_default_exchange_type = extype
+        queues = dict(self.app.amqp.queues)
+        queue = queues[name]
+        assert queue.exchange.type == extype
+
+
 class test_AMQP_proto1:
 
     def test_kwargs_must_be_mapping(self):
