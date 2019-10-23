@@ -1,20 +1,18 @@
-from __future__ import absolute_import, unicode_literals
-
 import sys
 import types
 from contextlib import contextmanager
 
 import pytest
-from case import Mock, mock, patch, skip
 from kombu.utils.encoding import ensure_bytes, str_to_bytes
 
+from case import Mock, mock, patch, skip
 from celery import signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
 from celery.five import PY3, bytes_if_py2, items, string, text_t
 
 
-class SomeClass(object):
+class SomeClass:
 
     def __init__(self, data):
         self.data = data
@@ -158,13 +156,12 @@ class MemcachedClient(DummyClient):
             key_t, must_be, not_be, cod = text_t, 'bytes', 'string', 'encode'
         if isinstance(key, key_t):
             raise MyMemcachedStringEncodingError(
-                'Keys must be {0}, not {1}.  Convert your '
-                'strings using mystring.{2}(charset)!'.format(
-                    must_be, not_be, cod))
-        return super(MemcachedClient, self).set(key, value, *args, **kwargs)
+                f'Keys must be {must_be}, not {not_be}.  Convert your '
+                f'strings using mystring.{cod}(charset)!')
+        return super().set(key, value, *args, **kwargs)
 
 
-class MockCacheMixin(object):
+class MockCacheMixin:
 
     @contextmanager
     def mock_memcache(self):

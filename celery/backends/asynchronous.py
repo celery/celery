@@ -1,6 +1,4 @@
 """Async I/O backend support utilities."""
-from __future__ import absolute_import, unicode_literals
-
 import socket
 import threading
 from collections import deque
@@ -32,7 +30,7 @@ def register_drainer(name):
 
 
 @register_drainer('default')
-class Drainer(object):
+class Drainer:
     """Result draining service."""
 
     def __init__(self, result_consumer):
@@ -70,7 +68,7 @@ class greenletDrainer(Drainer):
     _g = None
 
     def __init__(self, *args, **kwargs):
-        super(greenletDrainer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._started = threading.Event()
         self._stopped = threading.Event()
         self._shutdown = threading.Event()
@@ -117,7 +115,7 @@ class geventDrainer(greenletDrainer):
         return spawn
 
 
-class AsyncBackendMixin(object):
+class AsyncBackendMixin:
     """Mixin for backends that enables the async API."""
 
     def _collect_into(self, result, bucket):
@@ -134,7 +132,9 @@ class AsyncBackendMixin(object):
         # into these buckets.
         bucket = deque()
         for node in results:
-            if node._cache:
+            if not hasattr(node, '_cache'):
+                bucket.append(node)
+            elif node._cache:
                 bucket.append(node)
             else:
                 self._collect_into(node, bucket)
@@ -142,7 +142,10 @@ class AsyncBackendMixin(object):
         for _ in self._wait_for_pending(result, no_ack=no_ack, **kwargs):
             while bucket:
                 node = bucket.popleft()
-                yield node.id, node._cache
+                if not hasattr(node, '_cache'):
+                    yield node.id, node.children
+                else:
+                    yield node.id, node._cache
         while bucket:
             node = bucket.popleft()
             yield node.id, node._cache
@@ -202,7 +205,7 @@ class AsyncBackendMixin(object):
         return True
 
 
-class BaseResultConsumer(object):
+class BaseResultConsumer:
     """Manager responsible for consuming result messages."""
 
     def __init__(self, backend, app, accept,

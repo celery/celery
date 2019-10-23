@@ -1,6 +1,4 @@
 """The Azure Storage Block Blob backend for Celery."""
-from __future__ import absolute_import, unicode_literals
-
 from kombu.utils import cached_property
 from kombu.utils.encoding import bytes_to_str
 
@@ -34,7 +32,7 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
                  retry_max_attempts=None,
                  *args,
                  **kwargs):
-        super(AzureBlockBlobBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if azurestorage is None:
             raise ImproperlyConfigured(

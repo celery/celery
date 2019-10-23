@@ -1,21 +1,16 @@
-# -*- coding: utf-8 -*-
 """Database models used by the SQLAlchemy result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime
 
 import sqlalchemy as sa
 from sqlalchemy.types import PickleType
 
 from celery import states
-from celery.five import python_2_unicode_compatible
 
 from .session import ResultModelBase
 
-__all__ = ('Task', 'TaskSet')
+__all__ = ('Task', 'TaskExtended', 'TaskSet')
 
 
-@python_2_unicode_compatible
 class Task(ResultModelBase):
     """Task result/status."""
 
@@ -47,7 +42,32 @@ class Task(ResultModelBase):
         return '<Task {0.task_id} state: {0.status}>'.format(self)
 
 
-@python_2_unicode_compatible
+class TaskExtended(Task):
+    """For the extend result."""
+
+    __tablename__ = 'celery_taskmeta'
+    __table_args__ = {'sqlite_autoincrement': True, 'extend_existing': True}
+
+    name = sa.Column(sa.String(155), nullable=True)
+    args = sa.Column(sa.LargeBinary, nullable=True)
+    kwargs = sa.Column(sa.LargeBinary, nullable=True)
+    worker = sa.Column(sa.String(155), nullable=True)
+    retries = sa.Column(sa.Integer, nullable=True)
+    queue = sa.Column(sa.String(155), nullable=True)
+
+    def to_dict(self):
+        task_dict = super().to_dict()
+        task_dict.update({
+            'name': self.name,
+            'args': self.args,
+            'kwargs': self.kwargs,
+            'worker': self.worker,
+            'retries': self.retries,
+            'queue': self.queue,
+        })
+        return task_dict
+
+
 class TaskSet(ResultModelBase):
     """TaskSet result."""
 
@@ -73,4 +93,4 @@ class TaskSet(ResultModelBase):
         }
 
     def __repr__(self):
-        return '<TaskSet: {0.taskset_id}>'.format(self)
+        return f'<TaskSet: {self.taskset_id}>'

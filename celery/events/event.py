@@ -1,6 +1,4 @@
 """Creating events, and event exchange definition."""
-from __future__ import absolute_import, unicode_literals
-
 import time
 from copy import copy
 
@@ -49,7 +47,7 @@ def get_exchange(conn, name=EVENT_EXCHANGE_NAME):
     """Get exchange used for sending events.
 
     Arguments:
-        conn (kombu.Connection): Connection used for sending/receving events.
+        conn (kombu.Connection): Connection used for sending/receiving events.
         name (str): Name of the exchange. Default is ``celeryev``.
 
     Note:

@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Redis result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 import time
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
@@ -85,7 +82,7 @@ class ResultConsumer(BaseResultConsumer):
     _pubsub = None
 
     def __init__(self, *args, **kwargs):
-        super(ResultConsumer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._get_key_for_task = self.backend.get_key_for_task
         self._decode_result = self.backend.decode_result
         self.subscribed_to = set()
@@ -97,14 +94,14 @@ class ResultConsumer(BaseResultConsumer):
                 self._pubsub.close()
         except KeyError as e:
             logger.warning(text_t(e))
-        super(ResultConsumer, self).on_after_fork()
+        super().on_after_fork()
 
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
             self.cancel_for(meta['task_id'])
 
     def on_state_change(self, meta, message):
-        super(ResultConsumer, self).on_state_change(meta, message)
+        super().on_state_change(meta, message)
         self._maybe_cancel_ready_task(meta)
 
     def start(self, initial_task_id, **kwargs):
@@ -165,7 +162,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def __init__(self, host=None, port=None, db=None, password=None,
                  max_connections=None, url=None,
                  connection_pool=None, **kwargs):
-        super(RedisBackend, self).__init__(expires_type=int, **kwargs)
+        super().__init__(expires_type=int, **kwargs)
         _get = self.app.conf.get
         if self.redis is None:
             raise ImproperlyConfigured(E_REDIS_MISSING.strip())
@@ -212,7 +209,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             ssl_cert_reqs_missing = 'MISSING'
             ssl_string_to_constant = {'CERT_REQUIRED': CERT_REQUIRED,
                                       'CERT_OPTIONAL': CERT_OPTIONAL,
-                                      'CERT_NONE': CERT_NONE}
+                                      'CERT_NONE': CERT_NONE,
+                                      'required': CERT_REQUIRED,
+                                      'optional': CERT_OPTIONAL,
+                                      'none': CERT_NONE}
             ssl_cert_reqs = self.connparams.get('ssl_cert_reqs', ssl_cert_reqs_missing)
             ssl_cert_reqs = ssl_string_to_constant.get(ssl_cert_reqs, ssl_cert_reqs)
             if ssl_cert_reqs not in ssl_string_to_constant.values():
@@ -327,7 +327,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             pipe.execute()
 
     def forget(self, task_id):
-        super(RedisBackend, self).forget(task_id)
+        super().forget(task_id)
         self.result_consumer.cancel_for(task_id)
 
     def delete(self, key):
@@ -349,7 +349,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         if state in EXCEPTION_STATES:
             retval = self.exception_to_python(retval)
         if state in PROPAGATE_STATES:
-            raise ChordError('Dependency {0} raised {1!r}'.format(tid, retval))
+            raise ChordError(f'Dependency {tid} raised {retval!r}')
         return retval
 
     def apply_chord(self, header_result, body, **kwargs):
@@ -407,7 +407,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                         'Chord callback for %r raised: %r', request.group, exc)
                     return self.chord_error_from_stack(
                         callback,
-                        ChordError('Callback error: {0!r}'.format(exc)),
+                        ChordError(f'Callback error: {exc!r}'),
                     )
         except ChordError as exc:
             logger.exception('Chord %r raised: %r', request.group, exc)
@@ -416,7 +416,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             logger.exception('Chord %r raised: %r', request.group, exc)
             return self.chord_error_from_stack(
                 callback,
-                ChordError('Join error: {0!r}'.format(exc)),
+                ChordError(f'Join error: {exc!r}'),
             )
 
     def _create_client(self, **params):
@@ -440,8 +440,9 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def client(self):
         return self._create_client(**self.connparams)
 
-    def __reduce__(self, args=(), kwargs={}):
-        return super(RedisBackend, self).__reduce__(
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
+        return super().__reduce__(
             (self.url,), {'expires': self.expires},
         )
 
@@ -471,14 +472,14 @@ class SentinelBackend(RedisBackend):
         if self.sentinel is None:
             raise ImproperlyConfigured(E_REDIS_SENTINEL_MISSING.strip())
 
-        super(SentinelBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _params_from_url(self, url, defaults):
         # URL looks like sentinel://0.0.0.0:26347/3;sentinel://0.0.0.0:26348/3.
         chunks = url.split(";")
         connparams = dict(defaults, hosts=[])
         for chunk in chunks:
-            data = super(SentinelBackend, self)._params_from_url(
+            data = super()._params_from_url(
                 url=chunk, defaults=defaults)
             connparams['hosts'].append(data)
         for param in ("host", "port", "db", "password"):

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import os
 import signal
@@ -7,8 +5,8 @@ import sys
 import tempfile
 
 import pytest
-from case import Mock, call, mock, patch, skip
 
+from case import Mock, call, mock, patch, skip
 from celery import _find_option_with_arg, platforms
 from celery.exceptions import SecurityError
 from celery.five import WhateverIO
@@ -60,7 +58,7 @@ def test_fd_by_path():
 
 def test_close_open_fds(patching):
     _close = patching('os.close')
-    fdmax = patching('celery.platforms.get_fdmax')
+    fdmax = patching('billiard.compat.get_fdmax')
     with patch('os.closerange', create=True) as closerange:
         fdmax.return_value = 3
         close_open_fds()
@@ -212,7 +210,7 @@ class test_maybe_drop_privileges:
         geteuid.return_value = 10
         getuid.return_value = 10
 
-        class pw_struct(object):
+        class pw_struct:
             pw_gid = 50001
 
         def raise_on_second_call(*args, **kwargs):
@@ -328,7 +326,7 @@ class test_setget_uid_gid:
     @patch('pwd.getpwnam')
     def test_parse_uid_when_existing_name(self, getpwnam):
 
-        class pwent(object):
+        class pwent:
             pw_uid = 5001
 
         getpwnam.return_value = pwent()
@@ -347,7 +345,7 @@ class test_setget_uid_gid:
     @patch('grp.getgrnam')
     def test_parse_gid_when_existing_name(self, getgrnam):
 
-        class grent(object):
+        class grent:
             gr_gid = 50001
 
         getgrnam.return_value = grent()
@@ -382,7 +380,7 @@ class test_initgroups:
         try:
             getpwuid.return_value = ['user']
 
-            class grent(object):
+            class grent:
                 gr_mem = ['user']
 
                 def __init__(self, gid):
@@ -659,6 +657,20 @@ class test_Pidfile:
             assert p.remove_if_stale()
             p.remove.assert_called_with()
 
+    @patch('os.kill')
+    def test_remove_if_stale_unprivileged_user(self, kill):
+        with mock.stdouts():
+            p = Pidfile('/var/pid')
+            p.read_pid = Mock()
+            p.read_pid.return_value = 1817
+            p.remove = Mock()
+            exc = OSError()
+            exc.errno = errno.EPERM
+            kill.side_effect = exc
+            assert p.remove_if_stale()
+            kill.assert_called_with(1817, 0)
+            p.remove.assert_called_with()
+
     def test_remove_if_stale_no_pidfile(self):
         p = Pidfile('/var/pid')
         p.read_pid = Mock()
@@ -804,7 +816,7 @@ class test_setgroups:
 
 
 def test_check_privileges():
-    class Obj(object):
+    class Obj:
         fchown = 13
     prev, platforms.os = platforms.os, Obj()
     try:

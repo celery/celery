@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Loader base class."""
-from __future__ import absolute_import, unicode_literals
-
 import importlib
 import os
 import re
@@ -34,7 +31,7 @@ Did you mean '{suggest}'?
 unconfigured = object()
 
 
-class BaseLoader(object):
+class BaseLoader:
     """Base class for loaders.
 
     Loaders handles,
@@ -204,7 +201,7 @@ class BaseLoader(object):
                     value = NAMESPACES[ns.lower()][key].to_python(value)
                 except ValueError as exc:
                     # display key name in error message.
-                    raise ValueError('{0!r}: {1}'.format(ns_key, exc))
+                    raise ValueError(f'{ns_key!r}: {exc}')
             return ns_key, value
         return dict(getarg(arg) for arg in args)
 
@@ -264,7 +261,12 @@ def find_related_module(package, related_name):
         if not package:
             raise
 
+    module_name = f'{package}.{related_name}'
+
     try:
-        return importlib.import_module('{0}.{1}'.format(package, related_name))
-    except ImportError:
+        return importlib.import_module(module_name)
+    except ImportError as e:
+        import_exc_name = getattr(e, 'name', module_name)
+        if import_exc_name is not None and import_exc_name != module_name:
+            raise e
         return

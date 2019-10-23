@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """App utilities: Compat settings, bug-report tool, pickling apps."""
-from __future__ import absolute_import, unicode_literals
-
 import os
 import platform as _platform
 import re
@@ -75,7 +72,7 @@ FMT_REPLACE_SETTING = '{replace:<36} -> {with_}'
 
 def appstr(app):
     """String used in __repr__ etc, to id app instances."""
-    return '{0} at {1:#x}'.format(app.main or '__main__', id(app))
+    return f'{app.main or "__main__"} at {id(app):#x}'
 
 
 class Settings(ConfigurationView):
@@ -114,7 +111,7 @@ class Settings(ConfigurationView):
     def result_backend(self):
         return (
             os.environ.get('CELERY_RESULT_BACKEND') or
-            self.get('CELERY_RESULT_BACKEND')
+            self.first('result_backend', 'CELERY_RESULT_BACKEND')
         )
 
     @property
@@ -197,7 +194,7 @@ class Settings(ConfigurationView):
     def humanize(self, with_defaults=False, censored=True):
         """Return a human readable text showing configuration changes."""
         return '\n'.join(
-            '{0}: {1}'.format(key, pretty(value, width=50))
+            f'{key}: {pretty(value, width=50)}'
             for key, value in items(self.table(with_defaults, censored)))
 
 
@@ -221,8 +218,13 @@ _old_settings_info = _settings_info_t(
 )
 
 
-def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
-                    all_keys=SETTING_KEYS, old_keys=_OLD_SETTING_KEYS):
+def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
+                    all_keys=None, old_keys=None):
+    preconf = {} if not preconf else preconf
+    ignore_keys = set() if not ignore_keys else ignore_keys
+    all_keys = SETTING_KEYS if not all_keys else all_keys
+    old_keys = _OLD_SETTING_KEYS if not old_keys else old_keys
+
     source = conf
     if conf is None:
         source, conf = preconf, {}
@@ -272,7 +274,7 @@ def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
     )
 
 
-class AppPickler(object):
+class AppPickler:
     """Old application pickler/unpickler (< 3.1)."""
 
     def __call__(self, cls, *args):
@@ -337,8 +339,8 @@ def bugreport(app):
 
     try:
         conn = app.connection()
-        driver_v = '{0}:{1}'.format(conn.transport.driver_name,
-                                    conn.transport.driver_version())
+        driver_v = '{}:{}'.format(conn.transport.driver_name,
+                                  conn.transport.driver_version())
         transport = conn.transport_cls
     except Exception:  # pylint: disable=broad-except
         transport = driver_v = ''
@@ -383,7 +385,7 @@ def find_app(app, symbol_by_name=symbol_by_name, imp=import_from_cwd):
                 if getattr(sym, '__path__', None):
                     try:
                         return find_app(
-                            '{0}.celery'.format(app),
+                            f'{app}.celery',
                             symbol_by_name=symbol_by_name, imp=imp,
                         )
                     except ImportError:

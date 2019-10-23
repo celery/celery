@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function, unicode_literals
-
 import sys
 
 import pytest
-from case import MagicMock, Mock, patch, sentinel, skip
 
+from case import MagicMock, Mock, patch, sentinel, skip
 from celery.exceptions import ImproperlyConfigured
 
 try:

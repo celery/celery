@@ -1,7 +1,4 @@
-# -* coding: utf-8 -*-
 """Elasticsearch result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime
 
 from kombu.utils.encoding import bytes_to_str
@@ -38,22 +35,26 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     scheme = 'http'
     host = 'localhost'
     port = 9200
+    username = None
+    password = None
     es_retry_on_timeout = False
     es_timeout = 10
     es_max_retries = 3
 
     def __init__(self, url=None, *args, **kwargs):
-        super(ElasticsearchBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
         _get = self.app.conf.get
 
         if elasticsearch is None:
             raise ImproperlyConfigured(E_LIB_MISSING)
 
-        index = doc_type = scheme = host = port = None
+        index = doc_type = scheme = host = port = username = password = None
 
         if url:
-            scheme, host, port, _, _, path, _ = _parse_url(url)  # noqa
+            scheme, host, port, username, password, path, _ = _parse_url(url)  # noqa
+            if scheme == 'elasticsearch':
+                scheme = None
             if path:
                 path = path.strip('/')
                 index, _, doc_type = path.partition('/')
@@ -63,6 +64,8 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         self.scheme = scheme or self.scheme
         self.host = host or self.host
         self.port = port or self.port
+        self.username = username or self.username
+        self.password = password or self.password
 
         self.es_retry_on_timeout = (
             _get('elasticsearch_retry_on_timeout') or self.es_retry_on_timeout
@@ -99,7 +102,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
                 id=key,
                 body={
                     'result': value,
-                    '@timestamp': '{0}Z'.format(
+                    '@timestamp': '{}Z'.format(
                         datetime.utcnow().isoformat()[:-3]
                     ),
                 },
@@ -128,11 +131,16 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def _get_server(self):
         """Connect to the Elasticsearch server."""
+        http_auth = None
+        if self.username and self.password:
+            http_auth = (self.username, self.password)
         return elasticsearch.Elasticsearch(
-            '%s:%s' % (self.host, self.port),
+            f'{self.host}:{self.port}',
             retry_on_timeout=self.es_retry_on_timeout,
             max_retries=self.es_max_retries,
-            timeout=self.es_timeout
+            timeout=self.es_timeout,
+            scheme=self.scheme,
+            http_auth=http_auth,
         )
 
     @property

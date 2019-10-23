@@ -1,11 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-
 import os
 from itertools import count
 
 import pytest
-from case import Mock, patch
 
+from case import Mock, patch
 from celery.concurrency.base import BasePool, apply_target
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 

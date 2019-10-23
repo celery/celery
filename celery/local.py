@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Proxy/PromiseProxy implementation.
 
 This module contains critical utilities that needs to be loaded as
@@ -6,7 +5,6 @@ soon as possible, and that shall not load any third party modules.
 
 Parts of this module is Copyright by Werkzeug Team.
 """
-from __future__ import absolute_import, unicode_literals
 
 import operator
 import sys
@@ -52,7 +50,7 @@ def try_import(module, default=None):
         return default
 
 
-class Proxy(object):
+class Proxy:
     """Proxy to another object."""
 
     # Code stolen from werkzeug.local.Proxy.
@@ -111,7 +109,7 @@ class Proxy(object):
             # not sure what this is about
             return getattr(loc, self.__name__)
         except AttributeError:  # pragma: no cover
-            raise RuntimeError('no object bound to {0.__name__}'.format(self))
+            raise RuntimeError(f'no object bound to {self.__name__}')
 
     @property
     def __dict__(self):
@@ -124,7 +122,7 @@ class Proxy(object):
         try:
             obj = self._get_current_object()
         except RuntimeError:  # pragma: no cover
-            return '<{0} unbound>'.format(self.__class__.__name__)
+            return f'<{self.__class__.__name__} unbound>'
         return repr(obj)
 
     def __bool__(self):
@@ -465,7 +463,7 @@ COMPAT_MODULES = {
 DEPRECATED_ATTRS = set(COMPAT_MODULES['celery'].keys()) | {'subtask'}
 
 
-class class_property(object):
+class class_property:
 
     def __init__(self, getter=None, setter=None):
         if getter is not None and not isinstance(getter, classmethod):

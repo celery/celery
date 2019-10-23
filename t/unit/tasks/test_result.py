@@ -1,12 +1,11 @@
-from __future__ import absolute_import, unicode_literals
-
 import copy
+import datetime
 import traceback
 from contextlib import contextmanager
 
 import pytest
-from case import Mock, call, patch, skip
 
+from case import Mock, call, patch, skip
 from celery import states, uuid
 from celery.app.task import Context
 from celery.backends.base import SyncBackendMixin
@@ -295,13 +294,13 @@ class test_AsyncResult:
         ok_res = self.app.AsyncResult(self.task1['id'])
         ok2_res = self.app.AsyncResult(self.task2['id'])
         nok_res = self.app.AsyncResult(self.task3['id'])
-        assert repr(ok_res) == '<AsyncResult: %s>' % (self.task1['id'],)
-        assert repr(ok2_res) == '<AsyncResult: %s>' % (self.task2['id'],)
-        assert repr(nok_res) == '<AsyncResult: %s>' % (self.task3['id'],)
+        assert repr(ok_res) == f"<AsyncResult: {self.task1['id']}>"
+        assert repr(ok2_res) == f"<AsyncResult: {self.task2['id']}>"
+        assert repr(nok_res) == f"<AsyncResult: {self.task3['id']}>"
 
         pending_id = uuid()
         pending_res = self.app.AsyncResult(pending_id)
-        assert repr(pending_res) == '<AsyncResult: %s>' % (pending_id,)
+        assert repr(pending_res) == f'<AsyncResult: {pending_id}>'
 
     def test_hash(self):
         assert (hash(self.app.AsyncResult('x0w991')) ==
@@ -408,7 +407,7 @@ class test_AsyncResult:
 
         x = self.app.AsyncResult('1')
         request = Context(
-            task_name='foo',
+            task='foo',
             children=None,
             args=['one', 'two'],
             kwargs={'kwarg1': 'three'},
@@ -424,9 +423,23 @@ class test_AsyncResult:
         assert x.worker == 'foo'
         assert x.retries == 1
         assert x.queue == 'celery'
-        assert x.date_done is not None
+        assert isinstance(x.date_done, datetime.datetime)
         assert x.task_id == "1"
         assert x.state == "SUCCESS"
+        result = self.app.AsyncResult(self.task4['id'])
+        assert result.date_done is None
+
+    @pytest.mark.parametrize('result_dict, date', [
+        ({'date_done': None}, None),
+        ({'date_done': '1991-10-05T05:41:06'},
+         datetime.datetime(1991, 10, 5, 5, 41, 6)),
+        ({'date_done': datetime.datetime(1991, 10, 5, 5, 41, 6)},
+         datetime.datetime(1991, 10, 5, 5, 41, 6))
+    ])
+    def test_date_done(self, result_dict, date):
+        result = self.app.AsyncResult(uuid())
+        result._cache = result_dict
+        assert result.date_done == date
 
 
 class test_ResultSet:
@@ -453,6 +466,49 @@ class test_ResultSet:
         b.supports_native_join = True
         x.get()
         x.join_native.assert_called()
+    
+    @patch('celery.result.task_join_will_block')
+    def test_get_sync_subtask_option(self, task_join_will_block):
+        task_join_will_block.return_value = True
+        x = self.app.ResultSet([self.app.AsyncResult(str(t)) for t in [1, 2, 3]])
+        b = x.results[0].backend = Mock()
+        b.supports_native_join = False
+        with pytest.raises(RuntimeError):
+            x.get()
+        with pytest.raises(TimeoutError):
+            x.get(disable_sync_subtasks=False, timeout=0.1)
+
+    def test_join_native_with_group_chain_group(self):
+        """Test group(chain(group)) case, join_native can be run correctly.
+        In group(chain(group)) case, GroupResult has no _cache property, and
+        AsyncBackendMixin.iter_native returns a node instead of node._cache,
+        this test make sure ResultSet.join_native can process correctly both
+        values of AsyncBackendMixin.iter_native returns.
+        """
+        def _get_meta(tid, result=None, children=None):
+            return {
+                'status': states.SUCCESS,
+                'result': result,
+                'children': children,
+                'task_id': tid,
+            }
+
+        results = [self.app.AsyncResult(t) for t in [1, 2, 3]]
+        values = [(_.id, _get_meta(_.id, _)) for _ in results]
+        g_res = GroupResult(6, [self.app.AsyncResult(t) for t in [4, 5]])
+        results += [g_res]
+        values += [(6, g_res.children)]
+        x = self.app.ResultSet(results)
+        x.results[0].backend = Mock()
+        x.results[0].backend.join = Mock()
+        x.results[3][0].get = Mock()
+        x.results[3][0].get.return_value = g_res.results[0]
+        x.results[3][1].get = Mock()
+        x.results[3][1].get.return_value = g_res.results[1]
+        x.iter_native = Mock()
+        x.iter_native.return_value = values.__iter__()
+        x.join_native()
+        x.iter_native.assert_called()
 
     def test_eq_ne(self):
         g1 = self.app.ResultSet([
@@ -582,7 +638,7 @@ class MockAsyncResultSuccess(AsyncResult):
 
     def __init__(self, *args, **kwargs):
         self._result = kwargs.pop('result', 42)
-        super(MockAsyncResultSuccess, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def forget(self):
         self.forgotten = True
@@ -759,7 +815,7 @@ class test_GroupResult:
         ts = self.app.GroupResult(uuid(), subs)
         ts.save()
         with pytest.raises(RuntimeError,
-                           message="Test depends on current_app"):
+                           match="Test depends on current_app"):
             GroupResult.restore(ts.id)
 
     def test_join_native(self):
@@ -1037,7 +1093,7 @@ class test_tuples:
         parent = self.app.AsyncResult(uuid())
         result = self.app.GroupResult(
             'group-result-1',
-            [self.app.AsyncResult('async-result-{}'.format(i))
+            [self.app.AsyncResult(f'async-result-{i}')
              for i in range(2)],
             parent
         )
@@ -1046,6 +1102,6 @@ class test_tuples:
         assert parent_tuple == parent.as_tuple()
         assert parent_tuple[0][0] == parent.id
         assert isinstance(group_results, list)
-        expected_grp_res = [(('async-result-{}'.format(i), None), None)
+        expected_grp_res = [((f'async-result-{i}', None), None)
                             for i in range(2)]
         assert group_results == expected_grp_res

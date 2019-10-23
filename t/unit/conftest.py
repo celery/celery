@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import os
 import sys
@@ -8,10 +6,10 @@ import warnings
 from importlib import import_module
 
 import pytest
-from case import Mock
-from case.utils import decorator
 from kombu import Queue
 
+from case import Mock
+from case.utils import decorator
 from celery.backends.cache import CacheBackend, DummyClient
 # we have to import the pytest plugin fixtures here,
 # in case user did not do the `python setup.py develop` yet,
@@ -281,7 +279,7 @@ def teardown():
     if os.path.exists('test.db'):
         try:
             os.remove('test.db')
-        except WindowsError:
+        except OSError:
             pass
 
     # Make sure there are no remaining threads at shutdown.
@@ -321,6 +319,6 @@ def import_all_modules(name=__name__, file=__file__,
                 pass
             except OSError as exc:
                 warnings.warn(UserWarning(
-                    'Ignored error importing module {0}: {1!r}'.format(
+                    'Ignored error importing module {}: {!r}'.format(
                         module, exc,
                     )))

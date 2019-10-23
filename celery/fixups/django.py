@@ -1,6 +1,4 @@
 """Django-specific customization."""
-from __future__ import absolute_import, unicode_literals
-
 import os
 import sys
 import warnings
@@ -47,7 +45,7 @@ def fixup(app, env='DJANGO_SETTINGS_MODULE'):
             return DjangoFixup(app).install()
 
 
-class DjangoFixup(object):
+class DjangoFixup:
     """Fixup installed when using Django."""
 
     def __init__(self, app):
@@ -98,7 +96,7 @@ class DjangoFixup(object):
         return symbol_by_name('django.utils.timezone:now')
 
 
-class DjangoWorkerFixup(object):
+class DjangoWorkerFixup:
     _db_recycles = 0
 
     def __init__(self, app):
@@ -183,7 +181,7 @@ class DjangoWorkerFixup(object):
     def _close_database(self):
         for conn in self._db.connections.all():
             try:
-                conn.close_if_unusable_or_obsolete()
+                conn.close()
             except self.interface_errors:
                 pass
             except self.DatabaseError as exc:

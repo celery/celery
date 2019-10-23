@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Beat command-line program.
 
 This module is the 'program-version' of :mod:`celery.beat`.
@@ -7,8 +6,6 @@ It does everything necessary to run that module
 as an actual application, like installing signal handlers
 and so on.
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import numbers
 import socket
 import sys
@@ -36,7 +33,7 @@ Configuration ->
 logger = get_logger('celery.beat')
 
 
-class Beat(object):
+class Beat:
     """Beat as a service."""
 
     Service = beat.Service
@@ -75,7 +72,7 @@ class Beat(object):
 
     def run(self):
         print(str(self.colored.cyan(
-            'celery beat v{0} is starting.'.format(VERSION_BANNER))))
+            f'celery beat v{VERSION_BANNER} is starting.')))
         self.init_loader()
         self.set_process_title()
         self.start_scheduler()

@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Implementation of the Observer pattern."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 import threading
 import warnings
@@ -10,7 +7,7 @@ import weakref
 from kombu.utils.functional import retry_over_time
 
 from celery.exceptions import CDeprecationWarning
-from celery.five import PY3, python_2_unicode_compatible, range, text_t
+from celery.five import PY3, range, text_t
 from celery.local import PromiseProxy, Proxy
 from celery.utils.functional import fun_accepts_kwargs
 from celery.utils.log import get_logger
@@ -75,8 +72,7 @@ Could not process signal receiver %(receiver)s. Retrying %(when)s...\
 """
 
 
-@python_2_unicode_compatible
-class Signal(object):  # pragma: no cover
+class Signal:  # pragma: no cover
     """Create new signal.
 
     Keyword Arguments:
@@ -359,8 +355,7 @@ class Signal(object):  # pragma: no cover
 
     def __repr__(self):
         """``repr(signal)``."""
-        return '<{0}: {1} providing_args={2!r}>'.format(
-            type(self).__name__, self.name, self.providing_args)
+        return f'<{type(self).__name__}: {self.name} providing_args={self.providing_args!r}>'
 
     def __str__(self):
         """``str(signal)``."""

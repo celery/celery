@@ -1,12 +1,10 @@
-from __future__ import absolute_import, unicode_literals
-
 from collections import defaultdict
 from contextlib import contextmanager
 
 import pytest
-from case import ANY, Mock, patch
 from kombu.utils.limits import TokenBucket
 
+from case import ANY, Mock, patch
 from celery import Task, signals
 from celery.exceptions import InvalidTaskError
 from celery.utils.time import rate
@@ -71,7 +69,7 @@ class test_default_strategy_proto2:
     def prepare_message(self, message):
         return message
 
-    class Context(object):
+    class Context:
 
         def __init__(self, sig, s, reserved, consumer, message):
             self.sig = sig

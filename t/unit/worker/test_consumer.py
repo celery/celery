@@ -1,13 +1,11 @@
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import socket
 from collections import deque
 
 import pytest
 from billiard.exceptions import RestartFreqExceeded
-from case import ContextMock, Mock, call, patch, skip
 
+from case import ContextMock, Mock, call, patch, skip
 from celery.utils.collections import LimitedSet
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import (CLOSE, TERMINATE, Consumer,

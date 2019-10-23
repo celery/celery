@@ -1,9 +1,6 @@
-# -*- coding: utf-8 -*-
 """Sending/Receiving Messages (Kombu integration)."""
-from __future__ import absolute_import, unicode_literals
-
 import numbers
-from collections import Mapping, namedtuple
+from collections import namedtuple
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
@@ -21,6 +18,12 @@ from celery.utils.text import indent as textindent
 from celery.utils.time import maybe_make_aware
 
 from . import routes as _routes
+
+try:
+    from collections.abc import Mapping
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Mapping
 
 __all__ = ('AMQP', 'Queues', 'task_message')
 
@@ -209,7 +212,7 @@ class Queues(dict):
         return self
 
 
-class AMQP(object):
+class AMQP:
     """App AMQP API: app.amqp."""
 
     Connection = Connection
@@ -247,6 +250,7 @@ class AMQP(object):
             1: self.as_task_v1,
             2: self.as_task_v2,
         }
+        self.app._conf.bind_to(self._handle_conf_update)
 
     @cached_property
     def create_task_message(self):
@@ -458,7 +462,7 @@ class AMQP(object):
 
     def _verify_seconds(self, s, what):
         if s < INT_MIN:
-            raise ValueError('%s is out of range: %r' % (what, s))
+            raise ValueError(f'{what} is out of range: {s!r}')
         return s
 
     def _create_task_sender(self):
@@ -605,6 +609,10 @@ class AMQP(object):
     def router(self):
         return self.Router()
 
+    @router.setter
+    def router(self, value):
+        return value
+
     @property
     def producer_pool(self):
         if self._producer_pool is None:
@@ -628,3 +636,9 @@ class AMQP(object):
         # We call Dispatcher.publish with a custom producer
         # so don't need the diuspatcher to be enabled.
         return self.app.events.Dispatcher(enabled=False)
+
+    def _handle_conf_update(self, *args, **kwargs):
+        if ('task_routes' in kwargs or 'task_routes' in args):
+            self.flush_routes()
+            self.router = self.Router()
+        return

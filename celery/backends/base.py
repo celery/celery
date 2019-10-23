@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Result backend base classes.
 
 - :class:`BaseBackend` defines the interface.
@@ -6,8 +5,6 @@
 - :class:`KeyValueStoreBackend` is a common base class
     using K/V semantics like _get and _put.
 """
-from __future__ import absolute_import, unicode_literals
-
 import datetime
 import sys
 import time
@@ -76,7 +73,7 @@ class _nulldict(dict):
     __setitem__ = update = setdefault = ignore
 
 
-class Backend(object):
+class Backend:
     READY_STATES = states.READY_STATES
     UNREADY_STATES = states.UNREADY_STATES
     EXCEPTION_STATES = states.EXCEPTION_STATES
@@ -96,7 +93,7 @@ class Backend(object):
     #: in this case.
     supports_autoexpire = False
 
-    #: Set to true if the backend is peristent by default.
+    #: Set to true if the backend is persistent by default.
     persistent = True
 
     retry_policy = {
@@ -274,11 +271,17 @@ class Backend(object):
                     exc_type = from_utf8(exc['exc_type'])
                     try:
                         cls = getattr(sys.modules[exc_module], exc_type)
-                    except KeyError:
+                    except (KeyError, AttributeError):
                         cls = create_exception_cls(exc_type,
                                                    celery.exceptions.__name__)
                 exc_msg = exc['exc_message']
-                exc = cls(*exc_msg if isinstance(exc_msg, tuple) else exc_msg)
+                try:
+                    if isinstance(exc_msg, (tuple, list)):
+                        exc = cls(*exc_msg)
+                    else:
+                        exc = cls(exc_msg)
+                except Exception as err:  # noqa
+                    exc = Exception(f'{cls}({exc_msg})')
             if self.serializer in EXCEPTION_ABLE_CODECS:
                 exc = get_pickled_exception(exc)
         return exc
@@ -464,11 +467,12 @@ class Backend(object):
         if request:
             return [r.as_tuple() for r in getattr(request, 'children', [])]
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         return (unpickle_backend, (self.__class__, args, kwargs))
 
 
-class SyncBackendMixin(object):
+class SyncBackendMixin:
     def iter_native(self, result, timeout=None, interval=0.5, no_ack=True,
                     on_message=None, on_interval=None):
         self._ensure_not_eager()
@@ -556,7 +560,7 @@ class BaseKeyValueStoreBackend(Backend):
         if hasattr(self.key_t, '__func__'):  # pragma: no cover
             self.key_t = self.key_t.__func__  # remove binding
         self._encode_prefixes()
-        super(BaseKeyValueStoreBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.implements_incr:
             self.apply_chord = self._apply_chord_incr
 
@@ -663,7 +667,7 @@ class BaseKeyValueStoreBackend(Backend):
                     on_message(value)
                 yield bytes_to_str(key), value
             if timeout and iterations * interval >= timeout:
-                raise TimeoutError('Operation timed out ({0})'.format(timeout))
+                raise TimeoutError(f'Operation timed out ({timeout})')
             if on_interval:
                 on_interval()
             time.sleep(interval)  # don't busy loop.
@@ -678,7 +682,7 @@ class BaseKeyValueStoreBackend(Backend):
                       traceback=None, request=None, **kwargs):
 
         if state in self.READY_STATES:
-            date_done = datetime.datetime.utcnow()
+            date_done = datetime.datetime.utcnow().isoformat()
         else:
             date_done = None
 
@@ -699,7 +703,7 @@ class BaseKeyValueStoreBackend(Backend):
         if self.app.conf.find_value_for_key('extended', 'result'):
             if request:
                 request_meta = {
-                    'name': getattr(request, 'task_name', None),
+                    'name': getattr(request, 'task', None),
                     'args': getattr(request, 'args', None),
                     'kwargs': getattr(request, 'kwargs', None),
                     'worker': getattr(request, 'hostname', None),
@@ -760,7 +764,7 @@ class BaseKeyValueStoreBackend(Backend):
             logger.exception('Chord %r raised: %r', gid, exc)
             return self.chord_error_from_stack(
                 callback,
-                ChordError('Cannot restore group: {0!r}'.format(exc)),
+                ChordError(f'Cannot restore group: {exc!r}'),
             )
         if deps is None:
             try:
@@ -770,7 +774,7 @@ class BaseKeyValueStoreBackend(Backend):
                 logger.exception('Chord callback %r raised: %r', gid, exc)
                 return self.chord_error_from_stack(
                     callback,
-                    ChordError('GroupResult {0} no longer exists'.format(gid)),
+                    ChordError(f'GroupResult {gid} no longer exists'),
                 )
         val = self.incr(key)
         size = len(deps)
@@ -801,7 +805,7 @@ class BaseKeyValueStoreBackend(Backend):
                     logger.exception('Chord %r raised: %r', gid, exc)
                     self.chord_error_from_stack(
                         callback,
-                        ChordError('Callback error: {0!r}'.format(exc)),
+                        ChordError(f'Callback error: {exc!r}'),
                     )
             finally:
                 deps.delete()

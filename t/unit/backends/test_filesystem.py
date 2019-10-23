@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 import os
 import tempfile
 
 import pytest
-from case import skip
 
+from case import skip
 from celery import states, uuid
 from celery.backends import filesystem
 from celery.backends.filesystem import FilesystemBackend

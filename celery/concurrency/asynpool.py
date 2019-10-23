@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Version of multiprocessing.Pool using Async I/O.
 
 .. note::
@@ -13,13 +12,10 @@ This code deals with three major challenges:
 #. Sending jobs to the processes and receiving results back.
 #. Safely shutting down this system.
 """
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import gc
 import os
 import select
-import socket
 import sys
 import time
 from collections import deque, namedtuple
@@ -174,8 +170,10 @@ def _select(readers=None, writers=None, err=None, timeout=0,
     err = set() if err is None else err
     try:
         return poll(readers, writers, err, timeout)
-    except (select.error, socket.error) as exc:
+    except OSError as exc:
         # Workaround for celery/celery#4513
+        # TODO: Remove the fallback to the first arg of the exception
+        # once we drop Python 2.7.
         try:
             _errno = exc.errno
         except AttributeError:
@@ -187,7 +185,7 @@ def _select(readers=None, writers=None, err=None, timeout=0,
             for fd in readers | writers | err:
                 try:
                     select.select([fd], [], [], 0)
-                except (select.error, socket.error) as exc:
+                except OSError as exc:
                     try:
                         _errno = exc.errno
                     except AttributeError:
@@ -201,6 +199,57 @@ def _select(readers=None, writers=None, err=None, timeout=0,
             return set(), set(), 1
         else:
             raise
+
+
+try:  # TODO Delete when drop py2 support as FileNotFoundError is py3
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
+
+
+def iterate_file_descriptors_safely(fds_iter, source_data,
+                                    hub_method, *args, **kwargs):
+    """Apply hub method to fds in iter, remove from list if failure.
+
+    Some file descriptors may become stale through OS reasons
+    or possibly other reasons, so safely manage our lists of FDs.
+    :param fds_iter: the file descriptors to iterate and apply hub_method
+    :param source_data: data source to remove FD if it renders OSError
+    :param hub_method: the method to call with with each fd and kwargs
+    :*args to pass through to the hub_method;
+    with a special syntax string '*fd*' represents a substitution
+    for the current fd object in the iteration (for some callers).
+    :**kwargs to pass through to the hub method (no substitutions needed)
+    """
+    def _meta_fd_argument_maker():
+        # uses the current iterations value for fd
+        call_args = args
+        if "*fd*" in call_args:
+            call_args = [fd if arg == "*fd*" else arg for arg in args]
+        return call_args
+    # Track stale FDs for cleanup possibility
+    stale_fds = []
+    for fd in fds_iter:
+        # Handle using the correct arguments to the hub method
+        hub_args, hub_kwargs = _meta_fd_argument_maker(), kwargs
+        try:  # Call the hub method
+            hub_method(fd, *hub_args, **hub_kwargs)
+        except (OSError, FileNotFoundError):
+            logger.warning(
+                "Encountered OSError when accessing fd %s ",
+                fd, exc_info=True)
+            stale_fds.append(fd)  # take note of stale fd
+    # Remove now defunct fds from the managed list
+    if source_data:
+        for fd in stale_fds:
+            try:
+                if hasattr(source_data, 'remove'):
+                    source_data.remove(fd)
+                else:  # then not a list/set ... try dict
+                    source_data.pop(fd, None)
+            except ValueError:
+                logger.warning("ValueError trying to invalidate %s from %s",
+                               fd, source_data)
 
 
 class Worker(_pool.Worker):
@@ -219,7 +268,7 @@ class ResultHandler(_pool.ResultHandler):
     def __init__(self, *args, **kwargs):
         self.fileno_to_outq = kwargs.pop('fileno_to_outq')
         self.on_process_alive = kwargs.pop('on_process_alive')
-        super(ResultHandler, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # add our custom message handler
         self.state_handlers[WORKER_UP] = self.on_process_alive
 
@@ -298,7 +347,7 @@ class ResultHandler(_pool.ResultHandler):
                 next(it)
             except StopIteration:
                 pass
-            except (IOError, OSError, EOFError):
+            except (OSError, EOFError):
                 remove_reader(fileno)
             else:
                 add_reader(fileno, it)
@@ -329,14 +378,15 @@ class ResultHandler(_pool.ResultHandler):
             # cannot iterate and remove at the same time
             pending_remove_fd = set()
             for fd in outqueues:
-                self._flush_outqueue(
-                    fd, pending_remove_fd.add, fileno_to_outq,
-                    on_state_change,
+                iterate_file_descriptors_safely(
+                    [fd], self.fileno_to_outq, self._flush_outqueue,
+                    pending_remove_fd.add, fileno_to_outq, on_state_change
                 )
                 try:
                     join_exited_workers(shutdown=True)
                 except WorkersJoined:
-                    return debug('result handler: all workers terminated')
+                    debug('result handler: all workers terminated')
+                    return
             outqueues.difference_update(pending_remove_fd)
 
     def _flush_outqueue(self, fd, remove, process_index, on_state_change):
@@ -351,7 +401,7 @@ class ResultHandler(_pool.ResultHandler):
         reader = proc.outq._reader
         try:
             setblocking(reader, 1)
-        except (OSError, IOError):
+        except OSError:
             return remove(fd)
         try:
             if reader.poll(0):
@@ -359,7 +409,7 @@ class ResultHandler(_pool.ResultHandler):
             else:
                 task = None
                 sleep(0.5)
-        except (IOError, EOFError):
+        except (OSError, EOFError):
             return remove(fd)
         else:
             if task:
@@ -367,7 +417,7 @@ class ResultHandler(_pool.ResultHandler):
         finally:
             try:
                 setblocking(reader, 0)
-            except (OSError, IOError):
+            except OSError:
                 return remove(fd)
 
 
@@ -378,12 +428,13 @@ class AsynPool(_pool.Pool):
     Worker = Worker
 
     def WorkerProcess(self, worker):
-        worker = super(AsynPool, self).WorkerProcess(worker)
+        worker = super().WorkerProcess(worker)
         worker.dead = False
         return worker
 
     def __init__(self, processes=None, synack=False,
-                 sched_strategy=None, *args, **kwargs):
+                 sched_strategy=None, proc_alive_timeout=None,
+                 *args, **kwargs):
         self.sched_strategy = SCHED_STRATEGIES.get(sched_strategy,
                                                    sched_strategy)
         processes = self.cpu_count() if processes is None else processes
@@ -402,9 +453,12 @@ class AsynPool(_pool.Pool):
 
         # We keep track of processes that haven't yet
         # sent a WORKER_UP message.  If a process fails to send
-        # this message within proc_up_timeout we terminate it
+        # this message within _proc_alive_timeout we terminate it
         # and hope the next process will recover.
-        self._proc_alive_timeout = PROC_ALIVE_TIMEOUT
+        self._proc_alive_timeout = (
+            PROC_ALIVE_TIMEOUT if proc_alive_timeout is None
+            else proc_alive_timeout
+        )
         self._waiting_to_start = set()
 
         # denormalized set of all inqueues.
@@ -425,7 +479,7 @@ class AsynPool(_pool.Pool):
 
         self.write_stats = Counter()
 
-        super(AsynPool, self).__init__(processes, *args, **kwargs)
+        super().__init__(processes, *args, **kwargs)
 
         for proc in self._pool:
             # create initial mappings, these will be updated
@@ -442,7 +496,7 @@ class AsynPool(_pool.Pool):
 
     def _create_worker_process(self, i):
         gc.collect()  # Issue #2927
-        return super(AsynPool, self)._create_worker_process(i)
+        return super()._create_worker_process(i)
 
     def _event_process_exit(self, hub, proc):
         # This method is called whenever the process sentinel is readable.
@@ -450,6 +504,7 @@ class AsynPool(_pool.Pool):
         self.maintain_pool()
 
     def _track_child_process(self, proc, hub):
+        """Helper method determines appropriate fd for process."""
         try:
             fd = proc._sentinel_poll
         except AttributeError:
@@ -458,7 +513,10 @@ class AsynPool(_pool.Pool):
             # as once the original fd is closed we cannot unregister
             # the fd from epoll(7) anymore, causing a 100% CPU poll loop.
             fd = proc._sentinel_poll = os.dup(proc._popen.sentinel)
-        hub.add_reader(fd, self._event_process_exit, hub, proc)
+        # Safely call hub.add_reader for the determined fd
+        iterate_file_descriptors_safely(
+            [fd], None, hub.add_reader,
+            self._event_process_exit, hub, proc)
 
     def _untrack_child_process(self, proc, hub):
         if proc._sentinel_poll is not None:
@@ -478,8 +536,9 @@ class AsynPool(_pool.Pool):
         [self._track_child_process(w, hub) for w in self._pool]
         # Handle_result_event is called whenever one of the
         # result queues are readable.
-        [hub.add_reader(fd, self.handle_result_event, fd)
-         for fd in self._fileno_to_outq]
+        iterate_file_descriptors_safely(
+            self._fileno_to_outq, self._fileno_to_outq, hub.add_reader,
+            self.handle_result_event, '*fd*')
 
         # Timers include calling maintain_pool at a regular interval
         # to be certain processes are restarted.
@@ -610,7 +669,7 @@ class AsynPool(_pool.Pool):
             # another processes fds, as the fds may be reused.
             try:
                 fd = obj.fileno()
-            except (IOError, OSError):
+            except OSError:
                 return
 
             try:
@@ -708,24 +767,25 @@ class AsynPool(_pool.Pool):
         # argument.  Using this means we minimize the risk of having
         # the same fd receive every task if the pipe read buffer is not
         # full.
-        if is_fair_strategy:
 
-            def on_poll_start():
-                if outbound and len(busy_workers) < len(all_inqueues):
-                    #  print('ALL: %r ACTIVE: %r' % (len(all_inqueues),
-                    #                                len(active_writes)))
-                    inactive = diff(active_writes)
-                    [hub_add(fd, None, WRITE | ERR, consolidate=True)
-                     for fd in inactive]
-                else:
-                    [hub_remove(fd) for fd in diff(active_writes)]
-        else:
-            def on_poll_start():  # noqa
-                if outbound:
-                    [hub_add(fd, None, WRITE | ERR, consolidate=True)
-                     for fd in diff(active_writes)]
-                else:
-                    [hub_remove(fd) for fd in diff(active_writes)]
+        def on_poll_start():
+            # Determine which io descriptors are not busy
+            inactive = diff(active_writes)
+
+            # Determine hub_add vs hub_remove strategy conditional
+            if is_fair_strategy:
+                # outbound buffer present and idle workers exist
+                add_cond = outbound and len(busy_workers) < len(all_inqueues)
+            else:  # default is add when data exists in outbound buffer
+                add_cond = outbound
+
+            if add_cond:  # calling hub_add vs hub_remove
+                iterate_file_descriptors_safely(
+                    inactive, all_inqueues, hub_add,
+                    None, WRITE | ERR, consolidate=True)
+            else:
+                iterate_file_descriptors_safely(
+                    inactive, all_inqueues, hub_remove)
         self.on_poll_start = on_poll_start
 
         def on_inqueue_close(fd, proc):
@@ -742,7 +802,9 @@ class AsynPool(_pool.Pool):
         self.on_inqueue_close = on_inqueue_close
         self.hub_remove = hub_remove
 
-        def schedule_writes(ready_fds, total_write_count=[0]):
+        def schedule_writes(ready_fds, total_write_count=None):
+            if not total_write_count:
+                total_write_count = [0]
             # Schedule write operation to ready file descriptor.
             # The file descriptor is writable, but that does not
             # mean the process is currently reading from the socket.
@@ -1009,7 +1071,7 @@ class AsynPool(_pool.Pool):
                 if not again and (writable or readable):
                     try:
                         next(writer)
-                    except (StopIteration, OSError, IOError, EOFError):
+                    except (StopIteration, OSError, EOFError):
                         break
         finally:
             self._active_writers.discard(writer)
@@ -1053,7 +1115,7 @@ class AsynPool(_pool.Pool):
         return inq, outq, synq
 
     def on_process_alive(self, pid):
-        """Called when reciving the :const:`WORKER_UP` message.
+        """Called when receiving the :const:`WORKER_UP` message.
 
         Marks the process as ready to receive work.
         """
@@ -1094,7 +1156,7 @@ class AsynPool(_pool.Pool):
         total = sum(vals)
 
         def per(v, total):
-            return '{0:.2%}'.format((float(v) / total) if v else 0)
+            return f'{(float(v) / total) if v else 0:.2f}'
 
         return {
             'total': total,
@@ -1124,7 +1186,7 @@ class AsynPool(_pool.Pool):
         for proc in task_handler.pool:
             try:
                 setblocking(proc.inq._writer, 1)
-            except (OSError, IOError):
+            except OSError:
                 pass
             else:
                 try:
@@ -1134,7 +1196,7 @@ class AsynPool(_pool.Pool):
                         raise
 
     def create_result_handler(self):
-        return super(AsynPool, self).create_result_handler(
+        return super().create_result_handler(
             fileno_to_outq=self._fileno_to_outq,
             on_process_alive=self.on_process_alive,
         )
@@ -1181,7 +1243,7 @@ class AsynPool(_pool.Pool):
             if readable:
                 try:
                     task = resq.recv()
-                except (OSError, IOError, EOFError) as exc:
+                except (OSError, EOFError) as exc:
                     _errno = getattr(exc, 'errno', None)
                     if _errno == errno.EINTR:
                         continue
@@ -1240,7 +1302,7 @@ class AsynPool(_pool.Pool):
             removed = 0
         try:
             self.on_inqueue_close(queues[0]._writer.fileno(), proc)
-        except IOError:
+        except OSError:
             pass
         for queue in queues:
             if queue:
@@ -1249,7 +1311,7 @@ class AsynPool(_pool.Pool):
                         self.hub_remove(sock)
                         try:
                             sock.close()
-                        except (IOError, OSError):
+                        except OSError:
                             pass
         return removed
 
@@ -1284,7 +1346,7 @@ class AsynPool(_pool.Pool):
                 fd = w.inq._reader.fileno()
                 inqR.add(fd)
                 fileno_to_proc[fd] = w
-            except IOError:
+            except OSError:
                 pass
         while inqR:
             readable, _, again = _select(inqR, timeout=0.5)

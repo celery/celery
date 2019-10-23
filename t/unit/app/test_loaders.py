@@ -1,12 +1,10 @@
-from __future__ import absolute_import, unicode_literals
-
 import os
 import sys
 import warnings
 
 import pytest
-from case import Mock, mock, patch
 
+from case import Mock, mock, patch
 from celery import loaders
 from celery.exceptions import NotConfigured
 from celery.five import bytes_if_py2

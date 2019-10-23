@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from celery.utils import encoding
 
 
@@ -12,7 +10,7 @@ class test_encoding:
     def test_safe_repr(self):
         assert encoding.safe_repr(object())
 
-        class foo(object):
+        class foo:
             def __repr__(self):
                 raise ValueError('foo')
 

@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Logging utilities."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import logging
 import numbers
 import os
@@ -82,14 +79,14 @@ def logger_isa(l, p, max=1000):
         else:
             if this in seen:
                 raise RuntimeError(
-                    'Logger {0!r} parents recursive'.format(l.name),
+                    f'Logger {l.name!r} parents recursive',
                 )
             seen.add(this)
             this = this.parent
             if not this:
                 break
     else:  # pragma: no cover
-        raise RuntimeError('Logger hierarchy exceeds {0}'.format(max))
+        raise RuntimeError(f'Logger hierarchy exceeds {max}')
     return False
 
 
@@ -114,7 +111,7 @@ worker_logger = get_logger('celery.worker')
 def get_task_logger(name):
     """Get logger for task module by name."""
     if name in RESERVED_LOGGER_NAMES:
-        raise RuntimeError('Logger name {0!r} is reserved!'.format(name))
+        raise RuntimeError(f'Logger name {name!r} is reserved!')
     return _using_logger_parent(task_logger, get_logger(name))
 
 
@@ -170,7 +167,7 @@ class ColorFormatter(logging.Formatter):
                     return safe_str(msg)  # skip colors
             except Exception as exc:  # pylint: disable=broad-except
                 prev_msg, record.exc_info, record.msg = (
-                    record.msg, 1, '<Unrepresentable {0!r}: {1!r}>'.format(
+                    record.msg, 1, '<Unrepresentable {!r}: {!r}>'.format(
                         type(msg), exc
                     ),
                 )
@@ -182,7 +179,7 @@ class ColorFormatter(logging.Formatter):
             return safe_str(msg)
 
 
-class LoggingProxy(object):
+class LoggingProxy:
     """Forward file object to :class:`logging.Logger` instance.
 
     Arguments:
@@ -215,7 +212,7 @@ class LoggingProxy(object):
                 def handleError(self, record):
                     try:
                         traceback.print_exc(None, sys.__stderr__)
-                    except IOError:
+                    except OSError:
                         pass    # see python issue 5971
 
             handler.handleError = WithSafeHandleError().handleError

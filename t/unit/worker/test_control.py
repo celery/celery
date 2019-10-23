@@ -1,15 +1,13 @@
-from __future__ import absolute_import, unicode_literals
-
 import socket
 import sys
 from collections import defaultdict
 from datetime import datetime, timedelta
 
 import pytest
-from case import Mock, call, patch
 from kombu import pidbox
 from kombu.utils.uuid import uuid
 
+from case import Mock, call, patch
 from celery.five import Queue as FastQueue
 from celery.utils.collections import AttributeDict
 from celery.utils.timer2 import Timer
@@ -23,7 +21,7 @@ from celery.worker.state import revoked
 hostname = socket.gethostname()
 
 
-class WorkController(object):
+class WorkController:
     autoscaler = None
 
     def stats(self):
@@ -302,7 +300,7 @@ class test_ControlPanel:
 
     def test_pool_grow(self):
 
-        class MockPool(object):
+        class MockPool:
 
             def __init__(self, size=1):
                 self.size = size
@@ -342,7 +340,7 @@ class test_ControlPanel:
 
     def test_add__cancel_consumer(self):
 
-        class MockConsumer(object):
+        class MockConsumer:
             queues = []
             canceled = []
             consuming = False
@@ -420,7 +418,7 @@ class test_ControlPanel:
 
     def test_rate_limit(self):
 
-        class xConsumer(object):
+        class xConsumer:
             reset = False
 
             def reset_rate_limits(self):

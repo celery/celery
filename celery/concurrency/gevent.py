@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Gevent execution pool."""
-from __future__ import absolute_import, unicode_literals
-
 from kombu.asynchronous import timer as _timer
 from kombu.five import monotonic
 
@@ -18,10 +15,11 @@ __all__ = ('TaskPool',)
 # We cache globals and attribute lookups, so disable this warning.
 
 
-def apply_timeout(target, args=(), kwargs={}, callback=None,
+def apply_timeout(target, args=(), kwargs=None, callback=None,
                   accept_callback=None, pid=None, timeout=None,
                   timeout_callback=None, Timeout=Timeout,
                   apply_target=base.apply_target, **rest):
+    kwargs = {} if not kwargs else kwargs
     try:
         with Timeout(timeout):
             return apply_target(target, args, kwargs, callback,
@@ -41,7 +39,7 @@ class Timer(_timer.Timer):
 
         self._Greenlet = _Greenlet
         self._GreenletExit = GreenletExit
-        super(Timer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._queue = set()
 
     def _enter(self, eta, priority, entry, **kwargs):
@@ -91,7 +89,7 @@ class TaskPool(base.BasePool):
         self.Pool = Pool
         self.spawn_n = spawn_raw
         self.timeout = kwargs.get('timeout')
-        super(TaskPool, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def on_start(self):
         self._pool = self.Pool(self.limit)

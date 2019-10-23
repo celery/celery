@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Message migration tools (Broker <-> Broker)."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import socket
 from functools import partial
 from itertools import cycle, islice
@@ -11,7 +8,7 @@ from kombu.common import maybe_declare
 from kombu.utils.encoding import ensure_bytes
 
 from celery.app import app_or_default
-from celery.five import python_2_unicode_compatible, string, string_t
+from celery.five import string, string_t
 from celery.utils.nodenames import worker_direct
 from celery.utils.text import str_to_list
 
@@ -32,8 +29,7 @@ class StopFiltering(Exception):
     """Semi-predicate used to signal filter stop."""
 
 
-@python_2_unicode_compatible
-class State(object):
+class State:
     """Migration progress state."""
 
     count = 0
@@ -48,16 +44,16 @@ class State(object):
 
     def __repr__(self):
         if self.filtered:
-            return '^{0.filtered}'.format(self)
-        return '{0.count}/{0.strtotal}'.format(self)
+            return f'^{self.filtered}'
+        return f'{self.count}/{self.strtotal}'
 
 
 def republish(producer, message, exchange=None, routing_key=None,
-              remove_props=['application_headers',
-                            'content_type',
-                            'content_encoding',
-                            'headers']):
+              remove_props=None):
     """Republish message."""
+    if not remove_props:
+        remove_props = ['application_headers', 'content_type',
+                        'content_encoding', 'headers']
     body = ensure_bytes(message.body)  # use raw message body.
     info, headers, props = (message.delivery_info,
                             message.headers, message.properties)
@@ -182,7 +178,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
     Note:
         The predicate may also return a tuple of ``(exchange, routing_key)``
         to specify the destination to where the task should be moved,
-        or a :class:`~kombu.entitiy.Queue` instance.
+        or a :class:`~kombu.entity.Queue` instance.
         Any other true value means that the task will be moved to the
         default exchange/routing_key.
     """
@@ -244,7 +240,7 @@ def prepare_queues(queues):
     return queues
 
 
-class Filterer(object):
+class Filterer:
 
     def __init__(self, app, conn, filter,
                  limit=None, timeout=1.0,
@@ -382,7 +378,7 @@ def move_by_idmap(map, **kwargs):
         ...   queues=['hipri'])
     """
     def task_id_in_map(body, message):
-        return map.get(body['id'])
+        return map.get(message.properties['correlation_id'])
 
     # adding the limit means that we don't have to consume any more
     # when we've found everything.

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """In-memory representation of cluster state.
 
 This module implements a data-structure used to keep
@@ -13,8 +12,6 @@ Snapshots (:mod:`celery.events.snapshot`) can be used to
 take "pictures" of this state at regular intervals
 to for example, store that in a database.
 """
-from __future__ import absolute_import, unicode_literals
-
 import bisect
 import sys
 import threading
@@ -30,7 +27,7 @@ from kombu.clocks import timetuple
 from kombu.utils.objects import cached_property
 
 from celery import states
-from celery.five import items, python_2_unicode_compatible, values
+from celery.five import items, values
 from celery.utils.functional import LRUCache, memoize, pass1
 from celery.utils.log import get_logger
 
@@ -103,7 +100,7 @@ class CallableDefaultdict(defaultdict):
 
     def __init__(self, fun, *args, **kwargs):
         self.fun = fun
-        super(CallableDefaultdict, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
         return self.fun(*args, **kwargs)
@@ -160,8 +157,7 @@ def with_unique_field(attr):
 
 
 @with_unique_field('hostname')
-@python_2_unicode_compatible
-class Worker(object):
+class Worker:
     """Worker State."""
 
     heartbeat_max = 4
@@ -254,8 +250,7 @@ class Worker(object):
 
 
 @with_unique_field('uuid')
-@python_2_unicode_compatible
-class Task(object):
+class Task:
     """Task State."""
 
     name = received = sent = started = succeeded = failed = retried = \
@@ -347,8 +342,9 @@ class Task(object):
         # update current state with info from this event.
         self.__dict__.update(fields)
 
-    def info(self, fields=None, extra=[]):
+    def info(self, fields=None, extra=None):
         """Information about this task suitable for on-screen display."""
+        extra = [] if not extra else extra
         fields = self._info_fields if fields is None else fields
 
         def _keys():
@@ -397,7 +393,7 @@ class Task(object):
     def parent(self):
         # issue github.com/mher/flower/issues/648
         try:
-            return self.parent_id and self.cluster_state.tasks[self.parent_id]
+            return self.parent_id and self.cluster_state.tasks.data[self.parent_id]
         except KeyError:
             return None
 
@@ -405,12 +401,12 @@ class Task(object):
     def root(self):
         # issue github.com/mher/flower/issues/648
         try:
-            return self.root_id and self.cluster_state.tasks[self.root_id]
+            return self.root_id and self.cluster_state.tasks.data[self.root_id]
         except KeyError:
             return None
 
 
-class State(object):
+class State:
     """Records clusters state."""
 
     Worker = Worker

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 import ast
 import re
 import struct
@@ -8,10 +5,9 @@ from decimal import Decimal
 from pprint import pprint
 
 import pytest
-from case import skip
 
-from celery.five import (items, long_t, python_2_unicode_compatible, text_t,
-                         values)
+from case import skip
+from celery.five import (items, long_t, text_t, values)
 from celery.utils.saferepr import saferepr
 
 D_NUMBERS = {
@@ -77,7 +73,6 @@ class list2(list):
     pass
 
 
-@python_2_unicode_compatible
 class list3(list):
 
     def __repr__(self):
@@ -88,7 +83,6 @@ class tuple2(tuple):
     pass
 
 
-@python_2_unicode_compatible
 class tuple3(tuple):
 
     def __repr__(self):
@@ -99,7 +93,6 @@ class set2(set):
     pass
 
 
-@python_2_unicode_compatible
 class set3(set):
 
     def __repr__(self):
@@ -110,7 +103,6 @@ class frozenset2(frozenset):
     pass
 
 
-@python_2_unicode_compatible
 class frozenset3(frozenset):
 
     def __repr__(self):
@@ -121,7 +113,6 @@ class dict2(dict):
     pass
 
 
-@python_2_unicode_compatible
 class dict3(dict):
 
     def __repr__(self):
@@ -193,11 +184,10 @@ class test_saferepr:
 
     @skip.if_python3()
     def test_bytes_with_unicode(self):
-        class X(object):
+        class X:
 
             def __repr__(self):
-                return 'æ e i a æ å'.encode(
-                    'utf-8', errors='backslash replace')
+                return 'æ e i a æ å'.encode()
 
         val = X()
         assert repr(val)
@@ -205,12 +195,12 @@ class test_saferepr:
 
     @skip.unless_python3()
     def test_unicode_bytes(self):
-        val = 'øystein'.encode('utf-8')
+        val = 'øystein'.encode()
         assert saferepr(val) == "b'øystein'"
 
     @skip.unless_python3()
     def test_unicode_bytes__long(self):
-        val = 'øystein'.encode('utf-8') * 1024
+        val = 'øystein'.encode() * 1024
         assert saferepr(val, maxlen=128).endswith("...'")
 
     @skip.unless_python3()
@@ -232,10 +222,10 @@ class test_saferepr:
             assert result
 
     def test_repr_raises(self):
-        class O(object):
+        class O:
             def __repr__(self):
                 raise KeyError('foo')
         assert 'Unrepresentable' in saferepr(O())
 
     def test_bytes_with_unicode_py2_and_3(self):
-        assert saferepr([b'foo', 'a®rgs'.encode('utf-8')])
+        assert saferepr([b'foo', 'a®rgs'.encode()])

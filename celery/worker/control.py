@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Worker remote control command implementations."""
-from __future__ import absolute_import, unicode_literals
-
 import io
 import tempfile
 from collections import namedtuple
@@ -166,11 +163,11 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
 
         if not terminated:
             return ok('terminate: tasks unknown')
-        return ok('terminate: {0}'.format(', '.join(terminated)))
+        return ok('terminate: {}'.format(', '.join(terminated)))
 
     idstr = ', '.join(task_ids)
     logger.info('Tasks flagged as revoked: %s', idstr)
-    return ok('tasks {0} flagged as revoked'.format(idstr))
+    return ok(f'tasks {idstr} flagged as revoked')
 
 
 @control_command(
@@ -203,7 +200,7 @@ def rate_limit(state, task_name, rate_limit, **kwargs):
     try:
         rate(rate_limit)
     except ValueError as exc:
-        return nok('Invalid rate limit string: {0!r}'.format(exc))
+        return nok(f'Invalid rate limit string: {exc!r}')
 
     try:
         state.app.tasks[task_name].rate_limit = rate_limit
@@ -404,7 +401,7 @@ def registered(state, taskinfoitems=None, builtins=False, **kwargs):
         }
         if fields:
             info = ['='.join(f) for f in items(fields)]
-            return '{0} [{1}]'.format(task.name, ' '.join(info))
+            return '{} [{}]'.format(task.name, ' '.join(info))
         return task.name
 
     return [_extract_info(reg[task]) for task in sorted(tasks)]
@@ -509,7 +506,7 @@ def autoscale(state, max=None, min=None):
     autoscaler = state.consumer.controller.autoscaler
     if autoscaler:
         max_, min_ = autoscaler.update(max, min)
-        return ok('autoscale now max={0} min={1}'.format(max_, min_))
+        return ok(f'autoscale now max={max_} min={min_}')
     raise ValueError('Autoscale not enabled')
 
 
@@ -537,7 +534,7 @@ def add_consumer(state, queue, exchange=None, exchange_type=None,
     state.consumer.call_soon(
         state.consumer.add_task_queue,
         queue, exchange, exchange_type or 'direct', routing_key, **options)
-    return ok('add consumer {0}'.format(queue))
+    return ok(f'add consumer {queue}')
 
 
 @control_command(
@@ -549,7 +546,7 @@ def cancel_consumer(state, queue, **_):
     state.consumer.call_soon(
         state.consumer.cancel_task_queue, queue,
     )
-    return ok('no longer consuming from {0}'.format(queue))
+    return ok(f'no longer consuming from {queue}')
 
 
 @inspect_command()

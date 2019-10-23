@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """The CosmosDB/SQL backend for Celery (experimental)."""
-from __future__ import absolute_import, unicode_literals
-
 from kombu.utils import cached_property
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import _parse_url
@@ -44,7 +41,7 @@ class CosmosDBSQLBackend(KeyValueStoreBackend):
                  max_retry_wait_time=None,
                  *args,
                  **kwargs):
-        super(CosmosDBSQLBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if pydocumentdb is None:
             raise ImproperlyConfigured(
@@ -90,7 +87,7 @@ class CosmosDBSQLBackend(KeyValueStoreBackend):
             port = 443
 
         scheme = "https" if port == 443 else "http"
-        endpoint = "%s://%s:%s" % (scheme, host, port)
+        endpoint = f"{scheme}://{host}:{port}"
         return endpoint, password
 
     @cached_property

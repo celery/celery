@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """MongoDB result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime, timedelta
 
 from kombu.exceptions import EncodeError
@@ -62,7 +59,7 @@ class MongoBackend(BaseBackend):
     def __init__(self, app=None, **kwargs):
         self.options = {}
 
-        super(MongoBackend, self).__init__(app, **kwargs)
+        super().__init__(app, **kwargs)
 
         if not pymongo:
             raise ImproperlyConfigured(
@@ -80,7 +77,7 @@ class MongoBackend(BaseBackend):
             uri_data = pymongo.uri_parser.parse_uri(self.url)
             # build the hosts list to create a mongo connection
             hostslist = [
-                '{0}:{1}'.format(x[0], x[1]) for x in uri_data['nodelist']
+                f'{x[0]}:{x[1]}' for x in uri_data['nodelist']
             ]
             self.user = uri_data['username']
             self.password = uri_data['password']
@@ -123,7 +120,7 @@ class MongoBackend(BaseBackend):
     def _ensure_mongodb_uri_compliance(url):
         parsed_url = urlparse(url)
         if not parsed_url.scheme.startswith('mongodb'):
-            url = 'mongodb+{}'.format(url)
+            url = f'mongodb+{url}'
 
         if url == 'mongodb://':
             url += 'localhost'
@@ -153,7 +150,7 @@ class MongoBackend(BaseBackend):
                 host = self.host
                 if isinstance(host, string_t) \
                    and not host.startswith('mongodb://'):
-                    host = 'mongodb://{0}:{1}'.format(host, self.port)
+                    host = f'mongodb://{host}:{self.port}'
             # don't change self.options
             conf = dict(self.options)
             conf['host'] = host
@@ -166,7 +163,7 @@ class MongoBackend(BaseBackend):
         if self.serializer == 'bson':
             # mongodb handles serialization
             return data
-        payload = super(MongoBackend, self).encode(data)
+        payload = super().encode(data)
 
         # serializer which are in a unsupported format (pickle/binary)
         if self.serializer in BINARY_CODECS:
@@ -176,7 +173,7 @@ class MongoBackend(BaseBackend):
     def decode(self, data):
         if self.serializer == 'bson':
             return data
-        return super(MongoBackend, self).decode(data)
+        return super().decode(data)
 
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
@@ -195,7 +192,7 @@ class MongoBackend(BaseBackend):
             meta['parent_id'] = request.parent_id
 
         try:
-            self.collection.save(meta)
+            self.collection.replace_one({'_id': task_id}, meta, upsert=True)
         except InvalidDocument as exc:
             raise EncodeError(exc)
 
@@ -217,11 +214,12 @@ class MongoBackend(BaseBackend):
 
     def _save_group(self, group_id, result):
         """Save the group result."""
-        self.group_collection.save({
+        meta = {
             '_id': group_id,
             'result': self.encode([i.id for i in result]),
             'date_done': datetime.utcnow(),
-        })
+        }
+        self.group_collection.replace_one({'_id': group_id}, meta, upsert=True)
         return result
 
     def _restore_group(self, group_id):
@@ -239,7 +237,7 @@ class MongoBackend(BaseBackend):
 
     def _delete_group(self, group_id):
         """Delete a group by id."""
-        self.group_collection.remove({'_id': group_id})
+        self.group_collection.delete_one({'_id': group_id})
 
     def _forget(self, task_id):
         """Remove result from MongoDB.
@@ -251,26 +249,31 @@ class MongoBackend(BaseBackend):
         # By using safe=True, this will wait until it receives a response from
         # the server.  Likewise, it will raise an OperationsError if the
         # response was unable to be completed.
-        self.collection.remove({'_id': task_id})
+        self.collection.delete_one({'_id': task_id})
 
     def cleanup(self):
         """Delete expired meta-data."""
-        self.collection.remove(
+        self.collection.delete_many(
             {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )
-        self.group_collection.remove(
+        self.group_collection.delete_many(
             {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )
 
-    def __reduce__(self, args=(), kwargs={}):
-        return super(MongoBackend, self).__reduce__(
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
+        return super().__reduce__(
             args, dict(kwargs, expires=self.expires, url=self.url))
 
     def _get_database(self):
         conn = self._get_connection()
         db = conn[self.database_name]
         if self.user and self.password:
-            if not db.authenticate(self.user, self.password):
+            source = self.options.get(
+                'authsource',
+                self.database_name or 'admin'
+            )
+            if not db.authenticate(self.user, self.password, source=source):
                 raise ImproperlyConfigured(
                     'Invalid MongoDB username or password.')
         return db
@@ -290,7 +293,7 @@ class MongoBackend(BaseBackend):
 
         # Ensure an index on date_done is there, if not process the index
         # in the background.  Once completed cleanup will be much faster
-        collection.ensure_index('date_done', background='true')
+        collection.create_index('date_done', background=True)
         return collection
 
     @cached_property
@@ -300,7 +303,7 @@ class MongoBackend(BaseBackend):
 
         # Ensure an index on date_done is there, if not process the index
         # in the background.  Once completed cleanup will be much faster
-        collection.ensure_index('date_done', background='true')
+        collection.create_index('date_done', background=True)
         return collection
 
     @cached_property

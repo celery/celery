@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
 """s3 result store backend."""
-from __future__ import absolute_import, unicode_literals
+
+from kombu.utils.encoding import bytes_to_str
 
 from celery.exceptions import ImproperlyConfigured
 
@@ -29,7 +29,7 @@ class S3Backend(KeyValueStoreBackend):
     """
 
     def __init__(self, **kwargs):
-        super(S3Backend, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         if not boto3 or not botocore:
             raise ImproperlyConfigured('You must install boto3'
@@ -57,6 +57,7 @@ class S3Backend(KeyValueStoreBackend):
         return self._s3_resource.Object(self.bucket_name, key_bucket_path)
 
     def get(self, key):
+        key = bytes_to_str(key)
         s3_object = self._get_s3_object(key)
         try:
             s3_object.load()
@@ -67,6 +68,7 @@ class S3Backend(KeyValueStoreBackend):
             raise error
 
     def set(self, key, value):
+        key = bytes_to_str(key)
         s3_object = self._get_s3_object(key)
         s3_object.put(Body=value)
 

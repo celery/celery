@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The :program:`celery events` command.
 
 .. program:: celery events
@@ -65,8 +64,6 @@
 
     Executable to use for the detached process.
 """
-from __future__ import absolute_import, unicode_literals
-
 import sys
 from functools import partial
 
@@ -146,8 +143,8 @@ class events(Command):
             return cam()
 
     def set_process_status(self, prog, info=''):
-        prog = '{0}:{1}'.format(self.prog_name, prog)
-        info = '{0} {1}'.format(info, strargv(sys.argv))
+        prog = f'{self.prog_name}:{prog}'
+        info = '{} {}'.format(info, strargv(sys.argv))
         return set_process_title(prog, info=info)
 
     def add_arguments(self, parser):

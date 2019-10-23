@@ -1,10 +1,7 @@
-from __future__ import absolute_import, unicode_literals
-
 import importlib
 from functools import wraps
 
 from case import patch, skip
-
 from celery.bin import events
 
 
@@ -25,7 +22,7 @@ def _old_patch(module, name, mocked):
     return _patch
 
 
-class MockCommand(object):
+class MockCommand:
     executed = []
 
     def execute_from_commandline(self, **kwargs):

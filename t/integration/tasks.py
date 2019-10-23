@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 from time import sleep
 
 from celery import chain, chord, group, shared_task
@@ -68,7 +65,7 @@ def delayed_sum_with_soft_guard(numbers, pause_time=1):
 
 @shared_task
 def tsum(nums):
-    """Sum an iterable of numbers"""
+    """Sum an iterable of numbers."""
     return sum(nums)
 
 

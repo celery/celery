@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 """Task Routing.
 
 Contains utilities for working with task routers, (:setting:`task_routes`).
 """
-from __future__ import absolute_import, unicode_literals
-
 import re
 import string
 from collections import OrderedDict
@@ -38,7 +35,7 @@ def glob_to_re(glob, quote=string.punctuation.replace('*', '')):
     return glob.replace('*', '.+?')
 
 
-class MapRoute(object):
+class MapRoute:
     """Creates a router out of a :class:`dict`."""
 
     def __init__(self, map):
@@ -68,7 +65,7 @@ class MapRoute(object):
                     return {'queue': route}
 
 
-class Router(object):
+class Router:
     """Route tasks based on the :setting:`task_routes` setting."""
 
     def __init__(self, routes=None, queues=None,
@@ -78,7 +75,8 @@ class Router(object):
         self.routes = [] if routes is None else routes
         self.create_missing = create_missing
 
-    def route(self, options, name, args=(), kwargs={}, task_type=None):
+    def route(self, options, name, args=(), kwargs=None, task_type=None):
+        kwargs = {} if not kwargs else kwargs
         options = self.expand_destination(options)  # expands 'queue'
         if self.routes:
             route = self.lookup_route(name, args, kwargs, options, task_type)
@@ -106,7 +104,7 @@ class Router(object):
                     route['queue'] = self.queues[queue]
                 except KeyError:
                     raise QueueNotFound(
-                        'Queue {0!r} missing from task_queues'.format(queue))
+                        f'Queue {queue!r} missing from task_queues')
         return route
 
     def lookup_route(self, name,

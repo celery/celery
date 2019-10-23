@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 from decimal import Decimal
 
 import pytest
-from case import MagicMock, Mock, patch, sentinel, skip
 
+from case import MagicMock, Mock, patch, sentinel, skip
 from celery.backends import dynamodb as module
 from celery.backends.dynamodb import DynamoDBBackend
 from celery.exceptions import ImproperlyConfigured
@@ -160,19 +157,19 @@ class test_DynamoDBBackend:
 
     def test_prepare_get_request(self):
         expected = {
-            'TableName': u'celery',
-            'Key': {u'id': {u'S': u'abcdef'}}
+            'TableName': 'celery',
+            'Key': {'id': {'S': 'abcdef'}}
         }
         assert self.backend._prepare_get_request('abcdef') == expected
 
     def test_prepare_put_request(self):
         expected = {
-            'TableName': u'celery',
+            'TableName': 'celery',
             'Item': {
-                u'id': {u'S': u'abcdef'},
-                u'result': {u'B': u'val'},
-                u'timestamp': {
-                    u'N': str(Decimal(self._static_timestamp))
+                'id': {'S': 'abcdef'},
+                'result': {'B': 'val'},
+                'timestamp': {
+                    'N': str(Decimal(self._static_timestamp))
                 }
             }
         }
@@ -207,7 +204,7 @@ class test_DynamoDBBackend:
 
         assert self.backend.get('1f3fab') is None
         self.backend.client.get_item.assert_called_once_with(
-            Key={u'id': {u'S': u'1f3fab'}},
+            Key={'id': {'S': '1f3fab'}},
             TableName='celery'
         )
 
@@ -227,9 +224,9 @@ class test_DynamoDBBackend:
         _, call_kwargs = self.backend._client.put_item.call_args
         expected_kwargs = {
             'Item': {
-                u'timestamp': {u'N': str(self._static_timestamp)},
-                u'id': {u'S': string(sentinel.key)},
-                u'result': {u'B': sentinel.value}
+                'timestamp': {'N': str(self._static_timestamp)},
+                'id': {'S': string(sentinel.key)},
+                'result': {'B': sentinel.value}
             },
             'TableName': 'celery'
         }
@@ -243,7 +240,7 @@ class test_DynamoDBBackend:
         # should return None
         assert self.backend.delete('1f3fab') is None
         self.backend.client.delete_item.assert_called_once_with(
-            Key={u'id': {u'S': u'1f3fab'}},
+            Key={'id': {'S': '1f3fab'}},
             TableName='celery'
         )
 

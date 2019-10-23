@@ -1,5 +1,4 @@
 """Event dispatcher sends events."""
-from __future__ import absolute_import, unicode_literals
 
 import os
 import threading
@@ -18,7 +17,7 @@ from .event import Event, get_exchange, group_from
 __all__ = ('EventDispatcher',)
 
 
-class EventDispatcher(object):
+class EventDispatcher:
     """Dispatches event messages.
 
     Arguments:

@@ -1,6 +1,4 @@
 """The ``celery upgrade`` command, used to upgrade from previous versions."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import codecs
 
 from celery.app import defaults
@@ -38,7 +36,7 @@ class upgrade(Command):
             raise self.UsageError(
                 'missing upgrade type: try `celery upgrade settings` ?')
         if command not in self.choices:
-            raise self.UsageError('unknown upgrade type: {0}'.format(command))
+            raise self.UsageError(f'unknown upgrade type: {command}')
         return getattr(self, command)(*args, **kwargs)
 
     def settings(self, command, filename=None,
@@ -49,7 +47,7 @@ class upgrade(Command):
 
         lines = self._slurp(filename)
         keyfilter = self._compat_key if django or compat else pass1
-        print('processing {0}...'.format(filename), file=self.stderr)
+        print(f'processing {filename}...', file=self.stderr)
         # gives list of tuples: ``(did_change, line_contents)``
         new_lines = [
             self._to_new_key(line, keyfilter) for line in lines
@@ -73,7 +71,7 @@ class upgrade(Command):
     def _backup(self, filename, suffix='.orig'):
         lines = []
         backup_filename = ''.join([filename, suffix])
-        print('writing backup to {0}...'.format(backup_filename),
+        print(f'writing backup to {backup_filename}...',
               file=self.stderr)
         with codecs.open(filename, 'r', 'utf-8') as read_fh:
             with codecs.open(backup_filename, 'w', 'utf-8') as backup_fh:

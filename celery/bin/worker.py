@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Program used to start a Celery worker instance.
 
 The :program:`celery worker` command (previously known as ``celeryd``)
@@ -175,8 +174,6 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
     Executable to use for the detached process.
 """
-from __future__ import absolute_import, unicode_literals
-
 import sys
 
 from celery import concurrency
@@ -222,7 +219,8 @@ class worker(Command):
         self.maybe_detach([command] + argv)
         return self(*args, **options)
 
-    def maybe_detach(self, argv, dopts=['-D', '--detach']):
+    def maybe_detach(self, argv, dopts=None):
+        dopts = ['-D', '--detach'] if not dopts else dopts
         if any(arg in argv for arg in dopts):
             argv = [v for v in argv if v not in dopts]
             # will never return
@@ -245,7 +243,7 @@ class worker(Command):
             try:
                 loglevel = mlevel(loglevel)
             except KeyError:  # pragma: no cover
-                self.die('Unknown level {0!r}.  Please use one of {1}.'.format(
+                self.die('Unknown level {!r}.  Please use one of {}.'.format(
                     loglevel, '|'.join(
                         l for l in LOG_LEVELS if isinstance(l, string_t))))
 

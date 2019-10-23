@@ -1,10 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
 import pytest
-from case import ANY, Mock
 from kombu import Exchange, Queue
 from kombu.utils.functional import maybe_evaluate
 
+from case import ANY, Mock
 from celery.app import routes
 from celery.exceptions import QueueNotFound
 from celery.five import items
@@ -195,7 +193,7 @@ class test_lookup_route(RouteCase):
             **{self.app.conf.task_default_queue: self.d_queue})
 
 
-class TestRouter(object):
+class TestRouter:
 
     def route_for_task(self, task, args, kwargs):
         if task == 'celery.xaza':

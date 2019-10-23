@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
 """Composing task work-flows.
 
 .. seealso:
 
     You should import these from :mod:`celery` and not this module.
 """
-from __future__ import absolute_import, unicode_literals
 
 import itertools
 import operator
@@ -21,7 +19,7 @@ from kombu.utils.uuid import uuid
 from vine import barrier
 
 from celery._state import current_app
-from celery.five import PY3, python_2_unicode_compatible
+from celery.five import PY3
 from celery.local import try_import
 from celery.result import GroupResult, allow_join_result
 from celery.utils import abstract
@@ -74,7 +72,6 @@ def _upgrade(fields, sig):
 
 
 @abstract.CallableSignature.register
-@python_2_unicode_compatible
 class Signature(dict):
     """Task Signature.
 
@@ -157,7 +154,7 @@ class Signature(dict):
         self._app = app
 
         if isinstance(task, dict):
-            super(Signature, self).__init__(task)  # works like dict(d)
+            super().__init__(task)  # works like dict(d)
         else:
             # Also supports using task class/instance instead of string name.
             try:
@@ -167,7 +164,7 @@ class Signature(dict):
             else:
                 self._type = task
 
-            super(Signature, self).__init__(
+            super().__init__(
                 task=task_name, args=tuple(args or ()),
                 kwargs=kwargs or {},
                 options=dict(options or {}, **ex),
@@ -392,10 +389,6 @@ class Signature(dict):
         # These could be implemented in each individual class,
         # I'm sure, but for now we have this.
         if isinstance(self, group):
-            if isinstance(other, group):
-                # group() | group() -> single group
-                return group(
-                    itertools.chain(self.tasks, other.tasks), app=self.app)
             # group() | task -> chord
             return chord(self, body=other, app=self._app)
         elif isinstance(other, group):
@@ -521,7 +514,6 @@ class Signature(dict):
 
 
 @Signature.register_type(name='chain')
-@python_2_unicode_compatible
 class _chain(Signature):
     tasks = getitem_property('kwargs.tasks', 'Tasks in chain.')
 
@@ -603,7 +595,15 @@ class _chain(Signature):
             # chain option may already be set, resulting in
             # "multiple values for keyword argument 'chain'" error.
             # Issue #3379.
-            options['chain'] = tasks if not use_link else None
+            chain_ = tasks if not use_link else None
+            if 'chain' not in options:
+                options['chain'] = chain_
+            elif chain_ is not None:
+                # If a chain already exists, we need to extend it with the next
+                # tasks in the chain.
+                # Issue #5354.
+                options['chain'].extend(chain_)
+
             first_task.apply_async(**options)
             return results[0]
 
@@ -673,10 +673,20 @@ class _chain(Signature):
                 # signature instead of a group.
                 tasks.pop()
                 results.pop()
-                task = chord(
-                    task, body=prev_task,
-                    task_id=prev_res.task_id, root_id=root_id, app=app,
-                )
+                try:
+                    task = chord(
+                        task, body=prev_task,
+                        task_id=prev_res.task_id, root_id=root_id, app=app,
+                    )
+                except AttributeError:
+                    # A GroupResult does not have a task_id since it consists
+                    # of multiple tasks.
+                    # We therefore, have to construct the chord without it.
+                    # Issues #5467, #3585.
+                    task = chord(
+                        task, body=prev_task,
+                        root_id=root_id, app=app,
+                    )
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
@@ -745,8 +755,7 @@ class _chain(Signature):
 
     def __repr__(self):
         if not self.tasks:
-            return '<{0}@{1:#x}: empty>'.format(
-                type(self).__name__, id(self))
+            return f'<{type(self).__name__}@{id(self):#x}: empty>'
         return remove_repeating_from_task(
             self.tasks[0]['task'],
             ' | '.join(repr(t) for t in self.tasks))
@@ -796,7 +805,7 @@ class chain(_chain):
 
     Returns:
         ~celery.chain: A lazy signature that can be called to apply the first
-            task in the chain.  When that task succeeed the next task in the
+            task in the chain.  When that task succeeds the next task in the
             chain is applied, and so on.
     """
 
@@ -807,7 +816,7 @@ class chain(_chain):
             if len(tasks) != 1 or is_list(tasks[0]):
                 tasks = tasks[0] if len(tasks) == 1 else tasks
                 return reduce(operator.or_, tasks)
-        return super(chain, cls).__new__(cls, *tasks, **kwargs)
+        return super().__new__(cls, *tasks, **kwargs)
 
 
 class _basemap(Signature):
@@ -838,7 +847,6 @@ class _basemap(Signature):
 
 
 @Signature.register_type()
-@python_2_unicode_compatible
 class xmap(_basemap):
     """Map operation for tasks.
 
@@ -851,12 +859,10 @@ class xmap(_basemap):
 
     def __repr__(self):
         task, it = self._unpack_args(self.kwargs)
-        return '[{0}(x) for x in {1}]'.format(
-            task.task, truncate(repr(it), 100))
+        return f'[{task.task}(x) for x in {truncate(repr(it), 100)}]'
 
 
 @Signature.register_type()
-@python_2_unicode_compatible
 class xstarmap(_basemap):
     """Map operation for tasks, using star arguments."""
 
@@ -864,8 +870,7 @@ class xstarmap(_basemap):
 
     def __repr__(self):
         task, it = self._unpack_args(self.kwargs)
-        return '[{0}(*x) for x in {1}]'.format(
-            task.task, truncate(repr(it), 100))
+        return f'[{task.task}(*x) for x in {truncate(repr(it), 100)}]'
 
 
 @Signature.register_type()
@@ -925,7 +930,6 @@ def _maybe_group(tasks, app):
 
 
 @Signature.register_type()
-@python_2_unicode_compatible
 class group(Signature):
     """Creates a group of tasks to be executed in parallel.
 
@@ -1071,8 +1075,7 @@ class group(Signature):
                 unroll = task._prepared(
                     task.tasks, partial_args, group_id, root_id, app,
                 )
-                for taskN, resN in unroll:
-                    yield taskN, resN
+                yield from unroll
             else:
                 if partial_args and not task.immutable:
                     task.args = tuple(partial_args) + tuple(task.args)
@@ -1156,7 +1159,7 @@ class group(Signature):
         if self.tasks:
             return remove_repeating_from_task(
                 self.tasks[0]['task'],
-                'group({0.tasks!r})'.format(self))
+                f'group({self.tasks!r})')
         return 'group(<empty>)'
 
     def __len__(self):
@@ -1174,7 +1177,6 @@ class group(Signature):
 
 
 @Signature.register_type()
-@python_2_unicode_compatible
 class chord(Signature):
     r"""Barrier synchronization primitive.
 
@@ -1369,14 +1371,14 @@ class chord(Signature):
             if isinstance(self.body, _chain):
                 return remove_repeating_from_task(
                     self.body.tasks[0]['task'],
-                    '%({0} | {1!r})'.format(
+                    '%({} | {!r})'.format(
                         self.body.tasks[0].reprcall(self.tasks),
                         chain(self.body.tasks[1:], app=self._app),
                     ),
                 )
             return '%' + remove_repeating_from_task(
                 self.body['task'], self.body.reprcall(self.tasks))
-        return '<chord without body: {0.tasks!r}>'.format(self)
+        return f'<chord without body: {self.tasks!r}>'
 
     @cached_property
     def app(self):

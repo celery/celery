@@ -1,12 +1,10 @@
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import signal
 import sys
 
 import pytest
-from case import Mock, call, patch, skip
 
+from case import Mock, call, patch, skip
 from celery.apps.multi import (Cluster, MultiParser, NamespacedOptionParser,
                                Node, format_opt)
 
@@ -113,9 +111,9 @@ class test_multi_args:
 
         def _args(name, *args):
             return args + (
-                '--pidfile={0}.pid'.format(name),
-                '--logfile={0}%I.log'.format(name),
-                '--executable={0}'.format(sys.executable),
+                f'--pidfile={name}.pid',
+                f'--logfile={name}%I.log',
+                f'--executable={sys.executable}',
                 '',
             )
 
@@ -125,10 +123,10 @@ class test_multi_args:
             'COMMAND', '-c 5', '-n celery1@example.com') + _args('celery1')
         for i, worker in enumerate(nodes3[1:]):
             assert worker.name == 'celery%s@example.com' % (i + 2)
-            node_i = 'celery%s' % (i + 2,)
+            node_i = f'celery{i + 2}'
             assert worker.argv == (
                 'COMMAND',
-                '-n %s@example.com' % (node_i,)) + _args(node_i)
+                f'-n {node_i}@example.com') + _args(node_i)
 
         nodes4 = list(multi_args(p2, cmd='COMMAND', suffix='""'))
         assert len(nodes4) == 10
@@ -191,7 +189,7 @@ class test_Node:
         assert sorted(n.argv) == sorted([
             '-m celery worker --detach',
             '-A foo',
-            '--executable={0}'.format(n.executable),
+            f'--executable={n.executable}',
             '-O fair',
             '-n foo@bar.com',
             '--logfile=foo%I.log',
@@ -374,7 +372,7 @@ class test_Cluster:
         assert node_0.name == 'foo@e.com'
         assert sorted(node_0.argv) == sorted([
             '',
-            '--executable={0}'.format(node_0.executable),
+            f'--executable={node_0.executable}',
             '--logfile=foo%I.log',
             '--pidfile=foo.pid',
             '-m celery worker --detach',
@@ -385,7 +383,7 @@ class test_Cluster:
         assert node_1.name == 'bar@e.com'
         assert sorted(node_1.argv) == sorted([
             '',
-            '--executable={0}'.format(node_1.executable),
+            f'--executable={node_1.executable}',
             '--logfile=bar%I.log',
             '--pidfile=bar.pid',
             '-m celery worker --detach',
@@ -397,7 +395,7 @@ class test_Cluster:
         nodes = p.getpids('celery worker')
 
     def prepare_pidfile_for_getpids(self, Pidfile):
-        class pids(object):
+        class pids:
 
             def __init__(self, path):
                 self.path = path

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import gc
 import itertools
 import os
@@ -9,9 +7,9 @@ from datetime import datetime, timedelta
 from pickle import dumps, loads
 
 import pytest
-from case import ContextMock, Mock, mock, patch
 from vine import promise
 
+from case import ContextMock, Mock, mock, patch
 from celery import Celery, _state
 from celery import app as _app
 from celery import current_app, shared_task
@@ -29,7 +27,7 @@ from celery.utils.time import localize, timezone, to_utc
 THIS_IS_A_KEY = 'this is a value'
 
 
-class ObjectConfig(object):
+class ObjectConfig:
     FOO = 1
     BAR = 2
 
@@ -38,7 +36,7 @@ object_config = ObjectConfig()
 dict_config = {'FOO': 10, 'BAR': 20}
 
 
-class ObjectConfig2(object):
+class ObjectConfig2:
     LEAVE_FOR_WORK = True
     MOMENT_TO_STOP = True
     CALL_ME_BACK = 123456789
@@ -601,7 +599,7 @@ class test_App:
 
     def test_config_from_object__compat(self):
 
-        class Config(object):
+        class Config:
             CELERY_ALWAYS_EAGER = 44
             CELERY_DEFAULT_DELIVERY_MODE = 30
             CELERY_TASK_PUBLISH_RETRY = False
@@ -614,7 +612,7 @@ class test_App:
 
     def test_config_from_object__supports_old_names(self):
 
-        class Config(object):
+        class Config:
             task_always_eager = 45
             task_default_delivery_mode = 301
 
@@ -627,7 +625,7 @@ class test_App:
 
     def test_config_from_object__namespace_uppercase(self):
 
-        class Config(object):
+        class Config:
             CELERY_TASK_ALWAYS_EAGER = 44
             CELERY_TASK_DEFAULT_DELIVERY_MODE = 301
 
@@ -636,7 +634,7 @@ class test_App:
 
     def test_config_from_object__namespace_lowercase(self):
 
-        class Config(object):
+        class Config:
             celery_task_always_eager = 44
             celery_task_default_delivery_mode = 301
 
@@ -645,7 +643,7 @@ class test_App:
 
     def test_config_from_object__mixing_new_and_old(self):
 
-        class Config(object):
+        class Config:
             task_always_eager = 44
             worker_agent = 'foo:Agent'
             worker_consumer = 'foo:Consumer'
@@ -659,7 +657,7 @@ class test_App:
 
     def test_config_from_object__mixing_old_and_new(self):
 
-        class Config(object):
+        class Config:
             CELERY_ALWAYS_EAGER = 46
             CELERYD_AGENT = 'foo:Agent'
             CELERYD_CONSUMER = 'foo:Consumer'
@@ -799,20 +797,6 @@ class test_App:
         assert self.app.connection('amqp:////value') \
                        .failover_strategy == my_failover_strategy
 
-    def test_amqp_heartbeat_settings(self):
-        # Test default broker_heartbeat value
-        assert self.app.connection('amqp:////value') \
-                   .heartbeat == 0
-
-        # Test passing heartbeat through app configuration
-        self.app.conf.broker_heartbeat = 60
-        assert self.app.connection('amqp:////value') \
-                   .heartbeat == 60
-
-        # Test passing heartbeat as connection argument
-        assert self.app.connection('amqp:////value', heartbeat=30) \
-                   .heartbeat == 30
-
     def test_after_fork(self):
         self.app._pool = Mock()
         self.app.on_after_fork = Mock(name='on_after_fork')
@@ -935,7 +919,7 @@ class test_App:
 
     def test_send_task_sent_event(self):
 
-        class Dispatcher(object):
+        class Dispatcher:
             sent = []
 
             def publish(self, type, fields, *args, **kwargs):

@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Actual App instance implementation."""
-from __future__ import absolute_import, unicode_literals
-
 import os
 import threading
 import warnings
@@ -24,8 +21,7 @@ from celery._state import (_announce_app_finalized, _deregister_app,
                            connect_on_app_finalize, get_current_app,
                            get_current_worker_task, set_default_app)
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
-from celery.five import (UserDict, bytes_if_py2, python_2_unicode_compatible,
-                         values)
+from celery.five import UserDict, bytes_if_py2, values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
@@ -141,8 +137,7 @@ class PendingConfiguration(UserDict, AttributeDictMixin):
         return self.callback()
 
 
-@python_2_unicode_compatible
-class Celery(object):
+class Celery:
     """Celery application.
 
     Arguments:
@@ -175,6 +170,8 @@ class Celery(object):
         config_source (Union[str, class]): Take configuration from a class,
             or object.  Attributes may include any settings described in
             the documentation.
+        task_cls (Union[str, Type[celery.app.task.Task]]): base task class to
+            use. See :ref:`this section <custom-task-cls-app-wide>` for usage.
     """
 
     #: This is deprecated, use :meth:`reduce_keys` instead
@@ -428,7 +425,7 @@ class Celery(object):
             raise TypeError('argument 1 to @task() must be a callable')
         if args:
             raise TypeError(
-                '@task() takes exactly 1 argument ({0} given)'.format(
+                '@task() takes exactly 1 argument ({} given)'.format(
                     sum([len(args), len(opts)])))
         return inner_create_task_cls(**opts)
 
@@ -840,7 +837,7 @@ class Celery(object):
             port or conf.broker_port,
             transport=transport or conf.broker_transport,
             ssl=self.either('broker_use_ssl', ssl),
-            heartbeat=heartbeat or self.conf.broker_heartbeat,
+            heartbeat=heartbeat,
             login_method=login_method or conf.broker_login_method,
             failover_strategy=(
                 failover_strategy or conf.broker_failover_strategy
@@ -993,7 +990,8 @@ class Celery(object):
         return key
 
     def _sig_to_periodic_task_entry(self, schedule, sig,
-                                    args=(), kwargs={}, name=None, **opts):
+                                    args=(), kwargs=None, name=None, **opts):
+        kwargs = {} if not kwargs else kwargs
         sig = (sig.clone(args, kwargs)
                if isinstance(sig, abstract.CallableSignature)
                else self.signature(sig.name, args, kwargs))
@@ -1060,7 +1058,7 @@ class Celery(object):
         self.close()
 
     def __repr__(self):
-        return '<{0} {1}>'.format(type(self).__name__, appstr(self))
+        return '<{} {}>'.format(type(self).__name__, appstr(self))
 
     def __reduce__(self):
         if self._using_v1_reduce:

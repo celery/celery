@@ -1,8 +1,6 @@
-from __future__ import absolute_import, unicode_literals
-
 import pytest
-from case import Mock, patch
 
+from case import Mock, patch
 from celery import bootsteps
 
 
@@ -69,7 +67,7 @@ class test_Step:
 
         class Y(bootsteps.Step):
             name = '%s.Y' % bp
-        assert Y.name == '{0}.Y'.format(bp)
+        assert Y.name == f'{bp}.Y'
 
     def test_init(self):
         assert self.Def(self)

@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 """The :program:`celery amqp` command.
 
 .. program:: celery amqp
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import cmd as _cmd
 import pprint
 import shlex
@@ -37,7 +34,7 @@ Example:
 say = partial(print, file=sys.stderr)
 
 
-class Spec(object):
+class Spec:
     """AMQP Command specification.
 
     Used to convert arguments to Python values and display various help
@@ -89,7 +86,7 @@ class Spec(object):
 
     def format_arg(self, name, type, default_value=None):
         if default_value is not None:
-            return '{0}:{1}'.format(name, default_value)
+            return f'{name}:{default_value}'
         return name
 
     def format_signature(self):
@@ -106,7 +103,7 @@ def dump_message(message):
 
 
 def format_declare_queue(ret):
-    return 'ok. queue:{0} messages:{1} consumers:{2}.'.format(*ret)
+    return 'ok. queue:{} messages:{} consumers:{}.'.format(*ret)
 
 
 class AMQShell(_cmd.Cmd):
@@ -219,7 +216,7 @@ class AMQShell(_cmd.Cmd):
 
     def display_command_help(self, cmd, short=False):
         spec = self.amqp[cmd]
-        self.say('{0} {1}'.format(cmd, spec.format_signature()))
+        self.say('{} {}'.format(cmd, spec.format_signature()))
 
     def do_help(self, *args):
         if not args:
@@ -231,7 +228,7 @@ class AMQShell(_cmd.Cmd):
             self.display_command_help(args[0])
 
     def default(self, line):
-        self.say("unknown syntax: {0!r}. how about some 'help'?".format(line))
+        self.say(f"unknown syntax: {line!r}. how about some 'help'?")
 
     def get_names(self):
         return set(self.builtins) | set(self.amqp)
@@ -306,7 +303,7 @@ class AMQShell(_cmd.Cmd):
         return self.prompt_fmt.format(self=self)
 
 
-class AMQPAdmin(object):
+class AMQPAdmin:
     """The celery :program:`celery amqp` utility."""
 
     Shell = AMQShell
@@ -321,7 +318,7 @@ class AMQPAdmin(object):
         if conn:
             conn.close()
         conn = self.app.connection()
-        self.note('-> connecting to {0}.'.format(conn.as_uri()))
+        self.note('-> connecting to {}.'.format(conn.as_uri()))
         conn.connect()
         self.note('-> connected.')
         return conn

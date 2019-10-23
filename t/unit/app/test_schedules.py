@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -7,8 +5,8 @@ from pickle import dumps, loads
 
 import pytest
 import pytz
-from case import Case, Mock, skip
 
+from case import Case, Mock, skip
 from celery.five import items
 from celery.schedules import (ParseException, crontab, crontab_parser,
                               schedule, solar)
@@ -81,8 +79,8 @@ class test_solar:
             try:
                 s.remaining_estimate(datetime.utcnow())
             except TypeError:
-                pytest.fail("{0} was called with 'use_center' which is not a \
-                    valid keyword for the function.".format(s.method))
+                pytest.fail(f"{s.method} was called with 'use_center' which is not a "
+                            "valid keyword for the function.")
 
 
 class test_schedule:

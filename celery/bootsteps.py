@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 """A directed acyclic graph of reusable components."""
-from __future__ import absolute_import, unicode_literals
 
 from collections import deque
 from threading import Event
@@ -32,7 +30,7 @@ logger = get_logger(__name__)
 
 
 def _pre(ns, fmt):
-    return '| {0}: {1}'.format(ns.alias, fmt)
+    return f'| {ns.alias}: {fmt}'
 
 
 def _label(s):
@@ -51,7 +49,7 @@ class StepFormatter(GraphFormatter):
     }
 
     def label(self, step):
-        return step and '{0}{1}'.format(
+        return step and '{}{}'.format(
             self._get_prefix(step),
             bytes_to_str(
                 (step.label or _label(step)).encode('utf-8', 'ignore')),
@@ -74,7 +72,7 @@ class StepFormatter(GraphFormatter):
         return self.draw_edge(a, b, self.edge_scheme, attrs)
 
 
-class Blueprint(object):
+class Blueprint:
     """Blueprint containing bootsteps that can be applied to objects.
 
     Arguments:
@@ -274,12 +272,12 @@ class StepType(type):
 
     def __new__(cls, name, bases, attrs):
         module = attrs.get('__module__')
-        qname = '{0}.{1}'.format(module, name) if module else name
+        qname = f'{module}.{name}' if module else name
         attrs.update(
             __qualname__=qname,
             name=attrs.get('name') or qname,
         )
-        return super(StepType, cls).__new__(cls, name, bases, attrs)
+        return super().__new__(cls, name, bases, attrs)
 
     def __str__(cls):
         return bytes_if_py2(cls.name)
@@ -289,7 +287,7 @@ class StepType(type):
 
 
 @with_metaclass(StepType)
-class Step(object):
+class Step:
     """A Bootstep.
 
     The :meth:`__init__` method is called when the step
@@ -346,7 +344,7 @@ class Step(object):
         """Create the step."""
 
     def __repr__(self):
-        return bytes_if_py2('<step: {0.alias}>'.format(self))
+        return bytes_if_py2(f'<step: {self.alias}>')
 
     @property
     def alias(self):

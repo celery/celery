@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import datetime
 import os
 import tempfile
@@ -54,9 +52,9 @@ class test_security:
     @pytest.fixture(autouse=True)
     def _prepare_setup(self, manager):
         manager.app.conf.update(
-            security_key='{0}/{1}'.format(self.tmpdir, self.key_name),
-            security_certificate='{0}/{1}'.format(self.tmpdir, self.cert_name),
-            security_cert_store='{0}/*.pem'.format(self.tmpdir),
+            security_key=f'{self.tmpdir}/{self.key_name}',
+            security_certificate=f'{self.tmpdir}/{self.cert_name}',
+            security_cert_store=f'{self.tmpdir}/*.pem',
             task_serializer='auth',
             event_serializer='auth',
             accept_content=['auth'],

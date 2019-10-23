@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """WorkController can be used to instantiate in-process workers.
 
 The command-line interface for the worker is in :mod:`celery.bin.worker`,
@@ -12,7 +11,6 @@ global side-effects (i.e., except for the global state stored in
 The worker consists of several components, all managed by bootsteps
 (mod:`celery.bootsteps`).
 """
-from __future__ import absolute_import, unicode_literals
 
 import os
 import sys
@@ -26,7 +24,7 @@ from celery import signals
 from celery.bootsteps import RUN, TERMINATE
 from celery.exceptions import (ImproperlyConfigured, TaskRevokedError,
                                WorkerTerminate)
-from celery.five import python_2_unicode_compatible, values
+from celery.five import values
 from celery.platforms import EX_FAILURE, create_pidlock
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel
@@ -62,8 +60,7 @@ defined in the `task_queues` setting.
 """
 
 
-@python_2_unicode_compatible
-class WorkController(object):
+class WorkController:
     """Unmanaged worker instance."""
 
     app = None

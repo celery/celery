@@ -1,6 +1,4 @@
 """Worker <-> Worker Sync at startup (Bootstep)."""
-from __future__ import absolute_import, unicode_literals
-
 from celery import bootsteps
 from celery.five import items
 from celery.utils.log import get_logger
@@ -29,7 +27,7 @@ class Mingle(bootsteps.StartStopStep):
 
     def __init__(self, c, without_mingle=False, **kwargs):
         self.enabled = not without_mingle and self.compatible_transport(c.app)
-        super(Mingle, self).__init__(
+        super().__init__(
             c, without_mingle=without_mingle, **kwargs)
 
     def compatible_transport(self, app):

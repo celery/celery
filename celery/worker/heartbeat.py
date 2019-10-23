@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
 """Heartbeat service.
 
 This is the internal thread responsible for sending heartbeat events
 at regular intervals (may not be an actual thread).
 """
-from __future__ import absolute_import, unicode_literals
-
 from celery.signals import heartbeat_sent
 from celery.utils.sysinfo import load_average
 
@@ -14,7 +11,7 @@ from .state import SOFTWARE_INFO, active_requests, all_total_count
 __all__ = ('Heart',)
 
 
-class Heart(object):
+class Heart:
     """Timer sending heartbeats at regular intervals.
 
     Arguments:

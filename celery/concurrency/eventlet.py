@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Eventlet execution pool."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 
 from kombu.asynchronous import timer as _timer  # noqa
@@ -28,8 +25,9 @@ for mod in (mod for mod in sys.modules if mod.startswith(RACE_MODS)):
             warnings.warn(RuntimeWarning(W_RACE % side))
 
 
-def apply_target(target, args=(), kwargs={}, callback=None,
+def apply_target(target, args=(), kwargs=None, callback=None,
                  accept_callback=None, getpid=None):
+    kwargs = {} if not kwargs else kwargs
     return base.apply_target(target, args, kwargs, callback, accept_callback,
                              pid=getpid())
 
@@ -40,7 +38,7 @@ class Timer(_timer.Timer):
     def __init__(self, *args, **kwargs):
         from eventlet.greenthread import spawn_after
         from greenlet import GreenletExit
-        super(Timer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.GreenletExit = GreenletExit
         self._spawn_after = spawn_after
@@ -105,7 +103,7 @@ class TaskPool(base.BasePool):
         self.getpid = lambda: id(greenthread.getcurrent())
         self.spawn_n = greenthread.spawn_n
 
-        super(TaskPool, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def on_start(self):
         self._pool = self.Pool(self.limit)
@@ -139,7 +137,7 @@ class TaskPool(base.BasePool):
         self.limit = limit
 
     def _get_info(self):
-        info = super(TaskPool, self)._get_info()
+        info = super()._get_info()
         info.update({
             'max-concurrency': self.limit,
             'free-threads': self._pool.free(),

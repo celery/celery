@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 """Task results/state and results for groups of tasks."""
-from __future__ import absolute_import, unicode_literals
 
+import datetime
 import time
 from collections import OrderedDict, deque
 from contextlib import contextmanager
@@ -14,10 +13,10 @@ from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
-from .five import (items, monotonic, python_2_unicode_compatible, range,
-                   string_t)
+from .five import items, monotonic, range, string_t
 from .utils import deprecated
 from .utils.graph import DependencyGraph, GraphFormatter
+from .utils.iso8601 import parse_iso8601
 
 try:
     import tblib
@@ -61,7 +60,7 @@ def denied_join_result():
         _set_task_join_will_block(reset_value)
 
 
-class ResultBase(object):
+class ResultBase:
     """Base class for results."""
 
     #: Parent result (if part of a chain)
@@ -69,7 +68,6 @@ class ResultBase(object):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class AsyncResult(ResultBase):
     """Query task state.
 
@@ -94,7 +92,7 @@ class AsyncResult(ResultBase):
                  app=None, parent=None):
         if id is None:
             raise ValueError(
-                'AsyncResult requires valid id, not {0}'.format(type(id)))
+                f'AsyncResult requires valid id, not {type(id)}')
         self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
@@ -105,7 +103,7 @@ class AsyncResult(ResultBase):
 
     @property
     def ignored(self):
-        """"If True, task result retrieval is disabled."""
+        """If True, task result retrieval is disabled."""
         if hasattr(self, '_ignored'):
             return self._ignored
         return False
@@ -205,7 +203,7 @@ class AsyncResult(ResultBase):
             assert_will_not_block()
         _on_interval = promise()
         if follow_parents and propagate and self.parent:
-            on_interval = promise(self._maybe_reraise_parent_error, weak=True)
+            _on_interval = promise(self._maybe_reraise_parent_error, weak=True)
             self._maybe_reraise_parent_error()
         if on_interval:
             _on_interval.then(on_interval)
@@ -357,7 +355,7 @@ class AsyncResult(ResultBase):
         return hash(self.id)
 
     def __repr__(self):
-        return '<{0}: {1}>'.format(type(self).__name__, self.id)
+        return f'<{type(self).__name__}: {self.id}>'
 
     def __eq__(self, other):
         if isinstance(other, AsyncResult):
@@ -500,7 +498,11 @@ class AsyncResult(ResultBase):
 
     @property
     def date_done(self):
-        return self._get_task_meta().get('date_done')
+        """UTC date and time."""
+        date_done = self._get_task_meta().get('date_done')
+        if date_done and not isinstance(date_done, datetime.datetime):
+            return parse_iso8601(date_done)
+        return date_done
 
     @property
     def retries(self):
@@ -512,7 +514,6 @@ class AsyncResult(ResultBase):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class ResultSet(ResultBase):
     """A collection of results.
 
@@ -763,6 +764,7 @@ class ResultSet(ResultBase):
             value = result.get(
                 timeout=remaining, propagate=propagate,
                 interval=interval, no_ack=no_ack, on_interval=on_interval,
+                disable_sync_subtasks=disable_sync_subtasks,
             )
             if callback:
                 callback(result.id, value)
@@ -813,9 +815,14 @@ class ResultSet(ResultBase):
         acc = None if callback else [None for _ in range(len(self))]
         for task_id, meta in self.iter_native(timeout, interval, no_ack,
                                               on_message, on_interval):
-            value = meta['result']
-            if propagate and meta['status'] in states.PROPAGATE_STATES:
-                raise value
+            if isinstance(meta, list):
+                value = []
+                for children_result in meta:
+                    value.append(children_result.get())
+            else:
+                value = meta['result']
+                if propagate and meta['status'] in states.PROPAGATE_STATES:
+                    raise value
             if callback:
                 callback(task_id, value)
             else:
@@ -845,8 +852,7 @@ class ResultSet(ResultBase):
         return True if res is NotImplemented else not res
 
     def __repr__(self):
-        return '<{0}: [{1}]>'.format(type(self).__name__,
-                                     ', '.join(r.id for r in self.results))
+        return f'<{type(self).__name__}: [{", ".join(r.id for r in self.results)}]>'
 
     @property
     def supports_native_join(self):
@@ -872,7 +878,6 @@ class ResultSet(ResultBase):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class GroupResult(ResultSet):
     """Like :class:`ResultSet`, but with an associated id.
 
@@ -942,10 +947,7 @@ class GroupResult(ResultSet):
         return True if res is NotImplemented else not res
 
     def __repr__(self):
-        return '<{0}: {1} [{2}]>'.format(
-            type(self).__name__, self.id,
-            ', '.join(r.id for r in self.results)
-        )
+        return f'<{type(self).__name__}: {self.id} [{", ".join(r.id for r in self.results)}]>'
 
     def __str__(self):
         """`str(self) -> self.id`."""
@@ -976,7 +978,6 @@ class GroupResult(ResultSet):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 
@@ -1029,7 +1030,7 @@ class EagerResult(AsyncResult):
         self._state = states.REVOKED
 
     def __repr__(self):
-        return '<EagerResult: {0.id}>'.format(self)
+        return f'<EagerResult: {self.id}>'
 
     @property
     def _cache(self):

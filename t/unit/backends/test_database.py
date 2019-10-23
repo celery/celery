@@ -1,12 +1,11 @@
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime
 from pickle import dumps, loads
 
 import pytest
-from case import Mock, patch, skip
 
+from case import Mock, patch, skip
 from celery import states, uuid
+from celery.app.task import Context
 from celery.exceptions import ImproperlyConfigured
 
 try:
@@ -23,10 +22,13 @@ else:
     from celery.backends.database.models import Task, TaskSet
 
 
-class SomeClass(object):
+class SomeClass:
 
     def __init__(self, data):
         self.data = data
+
+    def __eq__(self, cmp):
+        return self.data == cmp.data
 
 
 @skip.unless_module('sqlalchemy')
@@ -202,6 +204,45 @@ class test_DatabaseBackend:
 
     def test_TaskSet__repr__(self):
         assert 'foo', repr(TaskSet('foo' in None))
+
+
+@skip.unless_module('sqlalchemy')
+@skip.if_pypy()
+@skip.if_jython()
+class test_DatabaseBackend_result_extended():
+    def setup(self):
+        self.uri = 'sqlite:///test.db'
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.result_extended = True
+
+    @pytest.mark.parametrize(
+        'result_serializer, args, kwargs',
+        [
+            ('pickle', (SomeClass(1), SomeClass(2)), {'foo': SomeClass(123)}),
+            ('json', ['a', 'b'], {'foo': 'bar'}),
+        ],
+        ids=['using pickle', 'using json']
+    )
+    def test_store_result(self, result_serializer, args, kwargs):
+        self.app.conf.result_serializer = result_serializer
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+
+        request = Context(args=args, kwargs=kwargs,
+                          task='mytask', retries=2,
+                          hostname='celery@worker_1',
+                          delivery_info={'routing_key': 'celery'})
+
+        tb.store_result(tid, {'fizz': 'buzz'}, states.SUCCESS, request=request)
+        meta = tb.get_task_meta(tid)
+
+        assert meta['result'] == {'fizz': 'buzz'}
+        assert meta['args'] == args
+        assert meta['kwargs'] == kwargs
+        assert meta['queue'] == 'celery'
+        assert meta['name'] == 'mytask'
+        assert meta['retries'] == 2
+        assert meta['worker'] == "celery@worker_1"
 
 
 @skip.unless_module('sqlalchemy')

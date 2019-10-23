@@ -1,8 +1,6 @@
-from __future__ import absolute_import, unicode_literals
-
 import pytest
-from case import Mock
 
+from case import Mock
 from celery import uuid
 from celery.app import control
 from celery.exceptions import DuplicateNodenameWarning
@@ -46,7 +44,7 @@ class test_flatten_reply:
         with pytest.warns(DuplicateNodenameWarning) as w:
             nodes = control.flatten_reply(reply)
 
-        assert 'Received multiple replies from node name: {0}.'.format(
+        assert 'Received multiple replies from node name: {}.'.format(
             next(iter(reply[0]))) in str(w[0].message.args[0])
         assert 'foo@example.com' in nodes
         assert 'bar@example.com' in nodes
@@ -119,7 +117,7 @@ class test_inspect:
     def test_hello__with_revoked(self):
         revoked = LimitedSet(100)
         for i in range(100):
-            revoked.add('id{0}'.format(i))
+            revoked.add(f'id{i}')
         self.inspect.hello('george@vandelay.com', revoked=revoked._data)
         self.assert_broadcast_called(
             'hello', from_node='george@vandelay.com', revoked=revoked._data)

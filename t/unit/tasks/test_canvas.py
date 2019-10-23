@@ -1,10 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
 import json
 
 import pytest
-from case import MagicMock, Mock
 
+from case import MagicMock, Mock
 from celery._state import _task_stack
 from celery.canvas import (Signature, _chain, _maybe_group, chain, chord,
                            chunks, group, maybe_signature, maybe_unroll_group,
@@ -277,7 +275,7 @@ class test_chain(CanvasCase):
 
     def test_repr(self):
         x = self.add.s(2, 2) | self.add.s(2)
-        assert repr(x) == '%s(2, 2) | add(2)' % (self.add.name,)
+        assert repr(x) == f'{self.add.name}(2, 2) | add(2)'
 
     def test_apply_async(self):
         c = self.add.s(2, 2) | self.add.s(4) | self.add.s(8)
@@ -323,6 +321,12 @@ class test_chain(CanvasCase):
         for task in tasks:
             assert isinstance(task, Signature)
             assert task.app is self.app
+
+    def test_groups_in_chain_to_chord(self):
+        g1 = group([self.add.s(2, 2), self.add.s(4, 4)])
+        g2 = group([self.add.s(3, 3), self.add.s(5, 5)])
+        c = g1 | g2
+        assert isinstance(c, chord)
 
     def test_group_to_chord(self):
         c = (

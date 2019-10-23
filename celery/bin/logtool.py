@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
 """The :program:`celery logtool` command.
 
 .. program:: celery logtool
 """
-
-from __future__ import absolute_import, unicode_literals
-
 import re
 from collections import Counter
 from fileinput import FileInput
@@ -39,7 +35,7 @@ class _task_counts(list):
 
     @property
     def format(self):
-        return '\n'.join('{0}: {1}'.format(*i) for i in self)
+        return '\n'.join('{}: {}'.format(*i) for i in self)
 
 
 def task_info(line):
@@ -47,7 +43,7 @@ def task_info(line):
     return m.groups()
 
 
-class Audit(object):
+class Audit:
 
     def __init__(self, on_task_error=None, on_trace=None, on_debug=None):
         self.ids = set()
@@ -140,7 +136,7 @@ class logtool(Command):
             raise self.UsageError('missing action')
         elif what not in map:
             raise self.Error(
-                'action {0} not in {1}'.format(what, '|'.join(map)),
+                'action {} not in {}'.format(what, '|'.join(map)),
             )
 
         return map[what](files)
@@ -160,7 +156,7 @@ class logtool(Command):
         audit = Audit()
         audit.run(files)
         for task_id in audit.incomplete_tasks():
-            self.error('Did not complete: %r' % (task_id,))
+            self.error(f'Did not complete: {task_id!r}')
 
     def debug(self, files):
         Audit(on_debug=self.out).run(files)

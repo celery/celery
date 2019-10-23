@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Memcached and in-memory cache result backend."""
-from __future__ import absolute_import, unicode_literals
-
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.objects import cached_property
 
@@ -56,7 +53,7 @@ def get_best_memcache(*args, **kwargs):
     return Client, key_t
 
 
-class DummyClient(object):
+class DummyClient:
 
     def __init__(self, *args, **kwargs):
         self.cache = LRUCache(limit=5000)
@@ -98,8 +95,9 @@ class CacheBackend(KeyValueStoreBackend):
     implements_incr = True
 
     def __init__(self, app, expires=None, backend=None,
-                 options={}, url=None, **kwargs):
-        super(CacheBackend, self).__init__(app, **kwargs)
+                 options=None, url=None, **kwargs):
+        options = {} if not options else options
+        super().__init__(app, **kwargs)
         self.url = url
 
         self.options = dict(self.app.conf.cache_backend_options,
@@ -132,7 +130,7 @@ class CacheBackend(KeyValueStoreBackend):
     def _apply_chord_incr(self, header_result, body, **kwargs):
         chord_key = self.get_key_for_chord(header_result.id)
         self.client.set(chord_key, 0, time=self.expires)
-        return super(CacheBackend, self)._apply_chord_incr(
+        return super()._apply_chord_incr(
             header_result, body, **kwargs)
 
     def incr(self, key):
@@ -145,14 +143,15 @@ class CacheBackend(KeyValueStoreBackend):
     def client(self):
         return self.Client(self.servers, **self.options)
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         servers = ';'.join(self.servers)
-        backend = '{0}://{1}/'.format(self.backend, servers)
+        backend = f'{self.backend}://{servers}/'
         kwargs.update(
             {'backend': backend,
              'expires': self.expires,
              'options': self.options})
-        return super(CacheBackend, self).__reduce__(args, kwargs)
+        return super().__reduce__(args, kwargs)
 
     def as_uri(self, *args, **kwargs):
         """Return the backend as an URI.
@@ -160,4 +159,4 @@ class CacheBackend(KeyValueStoreBackend):
         This properly handles the case of multiple servers.
         """
         servers = ';'.join(self.servers)
-        return '{0}://{1}/'.format(self.backend, servers)
+        return f'{self.backend}://{servers}/'

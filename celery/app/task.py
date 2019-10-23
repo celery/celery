@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 """Task implementation: request context and the task base class."""
-from __future__ import absolute_import, unicode_literals
-
+import signal
 import sys
 
 from billiard.einfo import ExceptionInfo
@@ -14,12 +12,13 @@ from celery._state import _task_stack
 from celery.canvas import signature
 from celery.exceptions import (Ignore, ImproperlyConfigured,
                                MaxRetriesExceededError, Reject, Retry)
-from celery.five import items, python_2_unicode_compatible
+from celery.five import items
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
+from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import raise_with_context
 
@@ -47,7 +46,7 @@ TaskType = type
 
 def _strflags(flags, default=''):
     if flags:
-        return ' ({0})'.format(', '.join(flags))
+        return ' ({})'.format(', '.join(flags))
     return default
 
 
@@ -62,8 +61,7 @@ def _reprtask(task, fmt=None, flags=None):
     )
 
 
-@python_2_unicode_compatible
-class Context(object):
+class Context:
     """Task request variables (Task.request)."""
 
     logfile = None
@@ -92,7 +90,6 @@ class Context(object):
     errbacks = None
     timelimit = None
     origin = None
-    task_name = None
     _children = None   # see property
     _protected = 0
 
@@ -109,7 +106,7 @@ class Context(object):
         return getattr(self, key, default)
 
     def __repr__(self):
-        return '<Context: {0!r}>'.format(vars(self))
+        return '<Context: {!r}>'.format(vars(self))
 
     def as_execution_options(self):
         limit_hard, limit_soft = self.timelimit or (None, None)
@@ -129,7 +126,6 @@ class Context(object):
             'retries': self.retries,
             'reply_to': self.reply_to,
             'origin': self.origin,
-            'task_name': self.task_name
         }
 
     @property
@@ -141,8 +137,7 @@ class Context(object):
 
 
 @abstract.CallableTask.register
-@python_2_unicode_compatible
-class Task(object):
+class Task:
     """Task base class.
 
     Note:
@@ -388,6 +383,12 @@ class Task(object):
         setattr(cls, attr, meth)
 
     def __call__(self, *args, **kwargs):
+        logger = get_logger(__name__)
+
+        def handle_sigterm(signum, frame):
+            logger.info('SIGTERM received, waiting till the task finished')
+
+        signal.signal(signal.SIGTERM, handle_sigterm)
         _task_stack.push(self)
         self.push_request(args=args, kwargs=kwargs)
         try:
@@ -531,6 +532,18 @@ class Task(object):
             else:
                 check_arguments(*(args or ()), **(kwargs or {}))
 
+        if self.__v2_compat__:
+            shadow = shadow or self.shadow_name(self(), args, kwargs, options)
+        else:
+            shadow = shadow or self.shadow_name(args, kwargs, options)
+
+        preopts = self._get_exec_options()
+        options = dict(preopts, **options) if options else preopts
+
+        options.setdefault('ignore_result', self.ignore_result)
+        if self.priority:
+            options.setdefault('priority', self.priority)
+
         app = self._get_app()
         if app.conf.task_always_eager:
             with app.producer_or_acquire(producer) as eager_producer:
@@ -550,25 +563,13 @@ class Task(object):
             with denied_join_result():
                 return self.apply(args, kwargs, task_id=task_id or uuid(),
                                   link=link, link_error=link_error, **options)
-
-        if self.__v2_compat__:
-            shadow = shadow or self.shadow_name(self(), args, kwargs, options)
         else:
-            shadow = shadow or self.shadow_name(args, kwargs, options)
-
-        preopts = self._get_exec_options()
-        options = dict(preopts, **options) if options else preopts
-
-        options.setdefault('ignore_result', self.ignore_result)
-        if self.priority:
-            options.setdefault('priority', self.priority)
-
-        return app.send_task(
-            self.name, args, kwargs, task_id=task_id, producer=producer,
-            link=link, link_error=link_error, result_cls=self.AsyncResult,
-            shadow=shadow, task_type=self,
-            **options
-        )
+            return app.send_task(
+                self.name, args, kwargs, task_id=task_id, producer=producer,
+                link=link, link_error=link_error, result_cls=self.AsyncResult,
+                shadow=shadow, task_type=self,
+                **options
+            )
 
     def shadow_name(self, args, kwargs, options):
         """Override for custom task name in worker logs/monitoring.
@@ -702,7 +703,7 @@ class Task(object):
                 # the exc' argument provided (raise exc from orig)
                 raise_with_context(exc)
             raise self.MaxRetriesExceededError(
-                "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
+                "Can't retry {}[{}] args:{} kwargs:{}".format(
                     self.name, request.id, S.args, S.kwargs
                 ), task_args=S.args, task_kwargs=S.kwargs
             )
@@ -857,14 +858,17 @@ class Task(object):
     def replace(self, sig):
         """Replace this task, with a new task inheriting the task id.
 
+        Execution of the host task ends immediately and no subsequent statements
+        will be run.
+
         .. versionadded:: 4.0
 
         Arguments:
             sig (~@Signature): signature to replace with.
 
         Raises:
-            ~@Ignore: This is always raised, so the best practice
-            is to always use ``raise self.replace(...)`` to convey
+            ~@Ignore: This is always raised when called in asynchrous context.
+            It is best to always use ``return self.replace(...)`` to convey
             to the reader that the task won't continue after being replaced.
         """
         chord = self.request.chord
@@ -890,8 +894,11 @@ class Task(object):
         )
         sig.freeze(self.request.id)
 
-        sig.delay()
-        raise Ignore('Replaced by new task')
+        if self.request.is_eager:
+            return sig.apply().get()
+        else:
+            sig.delay()
+            raise Ignore('Replaced by new task')
 
     def add_to_chord(self, sig, lazy=False):
         """Add signature to the chord the current task is a member of.
@@ -927,7 +934,7 @@ class Task(object):
         """
         if task_id is None:
             task_id = self.request.id
-        self.backend.store_result(task_id, meta, state, **kwargs)
+        self.backend.store_result(task_id, meta, state, request=self.request, **kwargs)
 
     def on_success(self, retval, task_id, args, kwargs):
         """Success handler.

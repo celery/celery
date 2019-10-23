@@ -1,7 +1,4 @@
-# -* coding: utf-8 -*-
 """Apache Cassandra result store backend using the DataStax driver."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 
 from celery import states
@@ -84,7 +81,7 @@ class CassandraBackend(BaseBackend):
 
     def __init__(self, servers=None, keyspace=None, table=None, entry_ttl=None,
                  port=9042, **kwargs):
-        super(CassandraBackend, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         if not cassandra:
             raise ImproperlyConfigured(E_NO_CASSANDRA)
@@ -223,14 +220,15 @@ class CassandraBackend(BaseBackend):
             'task_id': task_id,
             'status': status,
             'result': self.decode(result),
-            'date_done': date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'date_done': date_done,
             'traceback': self.decode(traceback),
             'children': self.decode(children),
         })
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         kwargs.update(
             {'servers': self.servers,
              'keyspace': self.keyspace,
              'table': self.table})
-        return super(CassandraBackend, self).__reduce__(args, kwargs)
+        return super().__reduce__(args, kwargs)

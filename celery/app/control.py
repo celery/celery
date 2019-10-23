@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
 """Worker Remote Control Client.
 
 Client for worker remote control commands.
 Server implementation is in :mod:`celery.worker.control`.
 """
-from __future__ import absolute_import, unicode_literals
-
 import warnings
 
 from billiard.common import TERM_SIGNAME
@@ -64,7 +61,7 @@ def _after_fork_cleanup_control(control):
         logger.info('after fork raised exception: %r', exc, exc_info=1)
 
 
-class Inspect(object):
+class Inspect:
     """API for app.control.inspect."""
 
     app = None
@@ -163,7 +160,7 @@ class Inspect(object):
         return self._request('objgraph', num=n, max_depth=max_depth, type=type)
 
 
-class Control(object):
+class Control:
     """Worker remote control client."""
 
     Mailbox = Mailbox
@@ -305,7 +302,7 @@ class Control(object):
                 command to, when empty broadcast to all workers.
             routing_key (str): Optional routing key.
             options (Dict): Additional options as supported
-                by :meth:`kombu.entitiy.Queue.from_dict`.
+                by :meth:`kombu.entity.Queue.from_dict`.
 
         See Also:
             :meth:`broadcast` for supported keyword arguments.

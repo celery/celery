@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Logging configuration.
 
 The Celery instances logging section: ``Celery.log``.
@@ -7,8 +6,6 @@ Sets up logging for the worker and other programs,
 redirects standard outs, colors log output, patches logging
 related compatibility fixes, and so on.
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import os
 import sys
@@ -46,7 +43,7 @@ class TaskFormatter(ColorFormatter):
         return ColorFormatter.format(self, record)
 
 
-class Logging(object):
+class Logging:
     """Application logging setup (app.log)."""
 
     #: The logging subsystem is only configured once per process.

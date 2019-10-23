@@ -130,11 +130,11 @@ configuration:
         Queue('default',    routing_key='task.#'),
         Queue('feed_tasks', routing_key='feed.#'),
     )
-    task_default_exchange = 'tasks'
-    task_default_exchange_type = 'topic'
-    task_default_routing_key = 'task.default'
+    app.conf.task_default_exchange = 'tasks'
+    app.conf.task_default_exchange_type = 'topic'
+    app.conf.task_default_routing_key = 'task.default'
 
-:setting:`task_queues` is a list of :class:`~kombu.entitity.Queue`
+:setting:`task_queues` is a list of :class:`~kombu.entity.Queue`
 instances.
 If you don't set the exchange or exchange type values for a key, these
 will be taken from the :setting:`task_default_exchange` and
@@ -506,7 +506,7 @@ using the ``basic.publish`` command:
     ok.
 
 Now that the message is sent you can retrieve it again. You can use the
-``basic.get``` command here, that polls for new messages on the queue
+``basic.get`` command here, that polls for new messages on the queue
 in a synchronous manner
 (this is OK for maintenance tasks, but for services you want to use
 ``basic.consume`` instead)
@@ -736,7 +736,8 @@ default priority.
     responsiveness of your system without the costs of disabling prefetching
     entirely.
 
-    Note that priorities values are sorted in reverse: 0 being highest priority.
+    Note that priorities values are sorted in reverse when
+    using the redis broker: 0 being highest priority.
 
 
 Broadcast

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Periodically store events in a database.
 
 Consuming the events as a stream isn't always suitable
@@ -7,8 +6,6 @@ state of a cluster at regular intervals.  There's a full
 implementation of this writing the snapshots to a database
 in :mod:`djcelery.snapshots` in the `django-celery` distribution.
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 from kombu.utils.limits import TokenBucket
 
 from celery import platforms
@@ -24,7 +21,7 @@ __all__ = ('Polaroid', 'evcam')
 logger = get_logger('celery.evcam')
 
 
-class Polaroid(object):
+class Polaroid:
     """Record event snapshots."""
 
     timer = None
@@ -96,8 +93,7 @@ def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
 
     app.log.setup_logging_subsystem(loglevel, logfile)
 
-    print('-> evcam: Taking snapshots with {0} (every {1} secs.)'.format(
-        camera, freq))
+    print(f'-> evcam: Taking snapshots with {camera} (every {freq} secs.)')
     state = app.events.State()
     cam = instantiate(camera, state, app=app, freq=freq,
                       maxrate=maxrate, timer=timer)

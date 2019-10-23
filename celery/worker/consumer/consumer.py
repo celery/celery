@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
 """Worker Consumer Blueprint.
 
 This module contains the components responsible for consuming messages
 from the broker, processing the messages and keeping the broker connections
 up and running.
 """
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import logging
 import os
@@ -25,7 +22,7 @@ from vine import ppartial, promise
 from celery import bootsteps, signals
 from celery.app.trace import build_tracer
 from celery.exceptions import InvalidTaskError, NotRegistered
-from celery.five import buffer_t, items, python_2_unicode_compatible, values
+from celery.five import buffer_t, items, values
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -117,12 +114,11 @@ def dump_body(m, body):
     body = m.body if body is None else body
     if isinstance(body, buffer_t):
         body = bytes_t(body)
-    return '{0} ({1}b)'.format(truncate(safe_repr(body), 1024),
+    return '{} ({}b)'.format(truncate(safe_repr(body), 1024),
                                len(m.body))
 
 
-@python_2_unicode_compatible
-class Consumer(object):
+class Consumer:
     """Consumer blueprint."""
 
     Strategies = dict
@@ -512,7 +508,7 @@ class Consumer(object):
         if self.event_dispatcher:
             self.event_dispatcher.send(
                 'task-failed', uuid=id_,
-                exception='NotRegistered({0!r})'.format(name),
+                exception=f'NotRegistered({name!r})',
             )
         signals.task_unknown.send(
             sender=self, message=message, exc=exc, name=name, id=id_,

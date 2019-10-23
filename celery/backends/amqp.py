@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """The old AMQP result backend, deprecated and replaced by the RPC backend."""
-from __future__ import absolute_import, unicode_literals
-
 import socket
 from collections import deque
 from operator import itemgetter
@@ -29,7 +26,7 @@ def repair_uuid(s):
     # Historically the dashes in UUIDS are removed from AMQ entity names,
     # but there's no known reason to.  Hopefully we'll be able to fix
     # this in v4.0.
-    return '%s-%s-%s-%s-%s' % (s[:8], s[8:12], s[12:16], s[16:20], s[20:])
+    return '{}-{}-{}-{}-{}'.format(s[:8], s[8:12], s[12:16], s[16:20], s[20:])
 
 
 class NoCacheQueue(Queue):
@@ -65,7 +62,7 @@ class AMQPBackend(BaseBackend):
         deprecated.warn(
             'The AMQP result backend', deprecation='4.0', removal='5.0',
             alternative='Please use RPC backend or a persistent backend.')
-        super(AMQPBackend, self).__init__(app, **kwargs)
+        super().__init__(app, **kwargs)
         conf = self.app.conf
         self._connection = connection
         self.persistent = self.prepare_persistent(persistent)
@@ -113,12 +110,24 @@ class AMQPBackend(BaseBackend):
         routing_key, correlation_id = self.destination_for(task_id, request)
         if not routing_key:
             return
+
+        payload = {'task_id': task_id, 'status': state,
+                   'result': self.encode_result(result, state),
+                   'traceback': traceback,
+                   'children': self.current_task_children(request)}
+        if self.app.conf.find_value_for_key('extended', 'result'):
+            payload['name'] = getattr(request, 'task_name', None)
+            payload['args'] = getattr(request, 'args', None)
+            payload['kwargs'] = getattr(request, 'kwargs', None)
+            payload['worker'] = getattr(request, 'hostname', None)
+            payload['retries'] = getattr(request, 'retries', None)
+            payload['queue'] = request.delivery_info.get('routing_key')\
+                if hasattr(request, 'delivery_info') \
+                and request.delivery_info else None
+
         with self.app.amqp.producer_pool.acquire(block=True) as producer:
             producer.publish(
-                {'task_id': task_id, 'status': state,
-                 'result': self.encode_result(result, state),
-                 'traceback': traceback,
-                 'children': self.current_task_children(request)},
+                payload,
                 exchange=self.exchange,
                 routing_key=routing_key,
                 correlation_id=correlation_id,
@@ -127,7 +136,6 @@ class AMQPBackend(BaseBackend):
                 declare=self.on_reply_declare(task_id),
                 delivery_mode=self.delivery_mode,
             )
-        return result
 
     def on_reply_declare(self, task_id):
         return [self._create_binding(task_id)]
@@ -308,7 +316,7 @@ class AMQPBackend(BaseBackend):
             auto_delete=self.auto_delete,
             expires=self.expires,
         )
-        return super(AMQPBackend, self).__reduce__(args, kwargs)
+        return super().__reduce__(args, kwargs)
 
     def as_uri(self, include_password=True):
         return 'amqp://'

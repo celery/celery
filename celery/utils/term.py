@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Terminals and colors."""
-from __future__ import absolute_import, unicode_literals
-
 import base64
 import codecs
 import os
@@ -9,7 +6,7 @@ import platform
 import sys
 from functools import reduce
 
-from celery.five import python_2_unicode_compatible, string
+from celery.five import string
 from celery.platforms import isatty
 
 __all__ = ('colored',)
@@ -36,8 +33,7 @@ def fg(s):
     return COLOR_SEQ % s
 
 
-@python_2_unicode_compatible
-class colored(object):
+class colored:
     """Terminal colored text.
 
     Example:

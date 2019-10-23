@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Old deprecated task module.
 
 This is the old task module, it shouldn't be used anymore,
@@ -6,8 +5,8 @@ import from the main 'celery' module instead.
 If you're looking for the decorator implementation then that's in
 ``celery.app.base.Celery.task``.
 """
-from __future__ import absolute_import, unicode_literals
-from celery._state import current_app, current_task as current
+from celery._state import current_app
+from celery._state import current_task as current
 from celery.local import LazyModule, Proxy, recreate_module
 
 __all__ = (

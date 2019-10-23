@@ -1,15 +1,11 @@
-# -*- coding: utf-8 -*-
 """Custom maps, sets, sequences, and other data structures."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 from collections import OrderedDict as _OrderedDict
 from collections import deque
 from heapq import heapify, heappop, heappush
 from itertools import chain, count
 
-from celery.five import (PY3, Empty, items, keys, monotonic,
-                         python_2_unicode_compatible, values)
+from celery.five import PY3, Empty, items, keys, monotonic, values
 
 from .functional import first, uniq
 from .text import match_case
@@ -32,7 +28,7 @@ except ImportError:
 try:
     from django.utils.functional import LazyObject, LazySettings
 except ImportError:
-    class LazyObject(object):  # noqa
+    class LazyObject:  # noqa
         pass
     LazySettings = LazyObject  # noqa
 
@@ -121,7 +117,7 @@ class OrderedDict(_OrderedDict):
                     root[1] = first_node[0] = link
 
 
-class AttributeDictMixin(object):
+class AttributeDictMixin:
     """Mixin for Mapping interface that adds attribute access.
 
     I.e., `d.key -> d[key]`).
@@ -134,8 +130,7 @@ class AttributeDictMixin(object):
             return self[k]
         except KeyError:
             raise AttributeError(
-                '{0!r} object has no attribute {1!r}'.format(
-                    type(self).__name__, k))
+                f'{type(self).__name__!r} object has no attribute {k!r}')
 
     def __setattr__(self, key, value):
         # type: (str, Any) -> None
@@ -147,7 +142,7 @@ class AttributeDict(dict, AttributeDictMixin):
     """Dict subclass with attribute access."""
 
 
-class DictAttribute(object):
+class DictAttribute:
     """Dict interface to attributes.
 
     `obj[k] -> obj.k`
@@ -245,6 +240,7 @@ class ChainMap(MutableMapping):
     changes = None
     defaults = None
     maps = None
+    _observers = []
 
     def __init__(self, *maps, **kwargs):
         # type: (*Mapping, **Any) -> None
@@ -268,7 +264,7 @@ class ChainMap(MutableMapping):
             return self.maps[0].pop(key, *default)
         except KeyError:
             raise KeyError(
-                'Key not found in the first mapping: {!r}'.format(key))
+                f'Key not found in the first mapping: {key!r}')
 
     def __missing__(self, key):
         # type: (Any) -> Any
@@ -297,7 +293,7 @@ class ChainMap(MutableMapping):
         try:
             del self.changes[self._key(key)]
         except KeyError:
-            raise KeyError('Key not found in first mapping: {0!r}'.format(key))
+            raise KeyError(f'Key not found in first mapping: {key!r}')
 
     def clear(self):
         # type: () -> None
@@ -335,7 +331,10 @@ class ChainMap(MutableMapping):
 
     def update(self, *args, **kwargs):
         # type: (*Any, **Any) -> Any
-        return self.changes.update(*args, **kwargs)
+        result = self.changes.update(*args, **kwargs)
+        for callback in self._observers:
+            callback(*args, **kwargs)
+        return result
 
     def __repr__(self):
         # type: () -> str
@@ -376,6 +375,9 @@ class ChainMap(MutableMapping):
         return (self[key] for key in self)
     itervalues = _iterate_values
 
+    def bind_to(self, callback):
+        self._observers.append(callback)
+
     if sys.version_info[0] == 3:  # pragma: no cover
         keys = _iterate_keys
         items = _iterate_items
@@ -395,7 +397,6 @@ class ChainMap(MutableMapping):
             return list(self._iterate_values())
 
 
-@python_2_unicode_compatible
 class ConfigurationView(ChainMap, AttributeDictMixin):
     """A view over an applications configuration dictionaries.
 
@@ -413,7 +414,7 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
     def __init__(self, changes, defaults=None, keys=None, prefix=None):
         # type: (Mapping, Mapping, List[str], str) -> None
         defaults = [] if defaults is None else defaults
-        super(ConfigurationView, self).__init__(changes, *defaults)
+        super().__init__(changes, *defaults)
         self.__dict__.update(
             prefix=prefix.rstrip('_') + '_' if prefix else prefix,
             _keys=keys,
@@ -430,7 +431,7 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
     def __getitem__(self, key):
         # type: (str) -> Any
         keys = self._to_keys(key)
-        getitem = super(ConfigurationView, self).__getitem__
+        getitem = super().__getitem__
         for k in keys + (
                 tuple(f(key) for f in self._keys) if self._keys else ()):
             try:
@@ -484,8 +485,7 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
         )
 
 
-@python_2_unicode_compatible
-class LimitedSet(object):
+class LimitedSet:
     """Kind-of Set (or priority queue) with limitations.
 
     Good for when you need to test for membership (`a in set`),
@@ -606,8 +606,7 @@ class LimitedSet(object):
                 if not isinstance(inserted, float):
                     raise ValueError(
                         'Expecting float timestamp, got type '
-                        '{0!r} with value: {1}'.format(
-                            type(inserted), inserted))
+                        f'{type(inserted)!r} with value: {inserted}')
                 self.add(key, inserted)
         else:
             # XXX AVOID THIS, it could keep old data if more parties
@@ -718,7 +717,7 @@ class LimitedSet(object):
 MutableSet.register(LimitedSet)  # noqa: E305
 
 
-class Evictable(object):
+class Evictable:
     """Mixin for classes supporting the ``evict`` method."""
 
     Empty = Empty
@@ -745,7 +744,6 @@ class Evictable(object):
             raise IndexError()
 
 
-@python_2_unicode_compatible
 class Messagebuffer(Evictable):
     """A buffer of pending messages."""
 
@@ -785,9 +783,7 @@ class Messagebuffer(Evictable):
 
     def __repr__(self):
         # type: () -> str
-        return '<{0}: {1}/{2}>'.format(
-            type(self).__name__, len(self), self.maxsize,
-        )
+        return f'<{type(self).__name__}: {len(self)}/{self.maxsize}>'
 
     def __iter__(self):
         # type: () -> Iterable
@@ -822,7 +818,6 @@ class Messagebuffer(Evictable):
 Sequence.register(Messagebuffer)  # noqa: E305
 
 
-@python_2_unicode_compatible
 class BufferMap(OrderedDict, Evictable):
     """Map of buffers."""
 
@@ -835,7 +830,7 @@ class BufferMap(OrderedDict, Evictable):
 
     def __init__(self, maxsize, iterable=None, bufmaxsize=1000):
         # type: (int, Iterable, int) -> None
-        super(BufferMap, self).__init__()
+        super().__init__()
         self.maxsize = maxsize
         self.bufmaxsize = 1000
         if iterable:
@@ -916,9 +911,7 @@ class BufferMap(OrderedDict, Evictable):
 
     def __repr__(self):
         # type: () -> str
-        return '<{0}: {1}/{2}>'.format(
-            type(self).__name__, self.total, self.maxsize,
-        )
+        return f'<{type(self).__name__}: {self.total}/{self.maxsize}>'
 
     @property
     def _evictcount(self):

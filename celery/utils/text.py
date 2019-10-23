@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Text formatting utilities."""
-from __future__ import absolute_import, unicode_literals
-
 import re
 from functools import partial
 from pprint import pformat
@@ -123,7 +120,7 @@ def pretty(value, width=80, nl_width=80, sep='\n', **kw):
     if isinstance(value, dict):
         return '{{{0} {1}'.format(sep, pformat(value, 4, nl_width)[1:])
     elif isinstance(value, tuple):
-        return '{0}{1}{2}'.format(
+        return '{}{}{}'.format(
             sep, ' ' * 4, pformat(value, width=nl_width, **kw),
         )
     else:
@@ -192,7 +189,7 @@ def remove_repeating(substr, s):
     index = s.find(substr)
     if index >= 0:
         return ''.join([
-            # leave the first occurance of substr untouched.
+            # leave the first occurrence of substr untouched.
             s[:index + len(substr)],
             # strip seen substr from the rest of the string.
             s[index + len(substr):].replace(substr, ''),

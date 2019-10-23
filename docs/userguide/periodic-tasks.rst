@@ -461,6 +461,6 @@ To install and use this extension:
 
         $ celery -A proj beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 
-   Note:  You may also add this as an settings option directly.
+   Note:  You may also add this as the :setting:`beat_scheduler` setting directly.
 
 #. Visit the Django-Admin interface to set up some periodic tasks.

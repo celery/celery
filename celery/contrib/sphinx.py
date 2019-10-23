@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Sphinx documentation plugin used to document tasks.
 
 Introduction
@@ -29,8 +28,6 @@ syntax.
 
 Use ``.. autotask::`` to alternatively manually document a task.
 """
-from __future__ import absolute_import, unicode_literals
-
 from sphinx.domains.python import PyModulelevel
 from sphinx.ext.autodoc import FunctionDocumenter
 
@@ -74,7 +71,7 @@ class TaskDocumenter(FunctionDocumenter):
         wrapped = getattr(self.object, '__wrapped__', None)
         if wrapped and getattr(wrapped, '__module__') == self.modname:
             return True
-        return super(TaskDocumenter, self).check_module()
+        return super().check_module()
 
 
 class TaskDirective(PyModulelevel):

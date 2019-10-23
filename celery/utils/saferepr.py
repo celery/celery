@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Streaming, truncating, non-recursive version of :func:`repr`.
 
 Differences from regular :func:`repr`:
@@ -10,8 +9,6 @@ Differences from regular :func:`repr`:
 
 Very slow with no limits, super quick with limits.
 """
-from __future__ import absolute_import, unicode_literals
-
 import traceback
 from collections import deque, namedtuple
 from decimal import Decimal
@@ -105,7 +102,7 @@ def _chainlist(it, LIT_LIST_SEP=LIT_LIST_SEP):
 
 def _repr_empty_set(s):
     # type: (Set) -> str
-    return '%s()' % (type(s).__name__,)
+    return '{}()'.format(type(s).__name__)
 
 
 def _safetext(val):
@@ -125,9 +122,8 @@ def _format_binary_bytes(val, maxlen, ellipsis='...'):
     if maxlen and len(val) > maxlen:
         # we don't want to copy all the data, just take what we need.
         chunk = memoryview(val)[:maxlen].tobytes()
-        return _bytes_prefix("'{0}{1}'".format(
-            _repr_binary_bytes(chunk), ellipsis))
-    return _bytes_prefix("'{0}'".format(_repr_binary_bytes(val)))
+        return _bytes_prefix(f"'{_repr_binary_bytes(chunk)}{ellipsis}'")
+    return _bytes_prefix(f"'{_repr_binary_bytes(val)}'")
 
 
 def _bytes_prefix(s):
@@ -155,7 +151,7 @@ def _format_chars(val, maxlen):
     if isinstance(val, bytes):  # pragma: no cover
         return _format_binary_bytes(val, maxlen)
     else:
-        return "'{0}'".format(truncate(val, maxlen).replace("'", "\\'"))
+        return "'{}'".format(truncate(val, maxlen).replace("'", "\\'"))
 
 
 def _repr(obj):
@@ -163,8 +159,8 @@ def _repr(obj):
     try:
         return repr(obj)
     except Exception as exc:
-        return '<Unrepresentable {0!r}{1:#x}: {2!r} {3!r}>'.format(
-            type(obj), id(obj), exc, '\n'.join(traceback.format_stack()))
+        stack = '\n'.join(traceback.format_stack())
+        return f'<Unrepresentable {type(obj)!r}{id(obj):#x}: {exc!r} {stack!r}>'
 
 
 def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
@@ -200,8 +196,8 @@ def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
     if type(val) is builtin_type:  # noqa
         return lit_start, lit_end, chainer(val)
     return (
-        _literal('%s(%s' % (type(val).__name__, lit_start.value), False, +1),
-        _literal('%s)' % (lit_end.value,), False, -1),
+        _literal(f'{type(val).__name__}({lit_start.value}', False, +1),
+        _literal(f'{lit_end.value})', False, -1),
         chainer(val)
     )
 
@@ -262,7 +258,7 @@ def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
                     continue
 
                 if maxlevels and level >= maxlevels:
-                    yield '%s...%s' % (lit_start.value, lit_end.value), it
+                    yield f'{lit_start.value}...{lit_end.value}', it
                     continue
 
                 objid = id(orig)

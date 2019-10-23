@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Utilities for safely pickling exceptions."""
-from __future__ import absolute_import, unicode_literals
-
 import datetime
 import numbers
 import sys
@@ -13,8 +10,7 @@ from itertools import takewhile
 
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
-from celery.five import (bytes_if_py2, items, python_2_unicode_compatible,
-                         reraise, string_t)
+from celery.five import bytes_if_py2, items, reraise, string_t
 
 from .encoding import safe_repr
 
@@ -112,7 +108,6 @@ def ensure_serializable(items, encoder):
     return tuple(safe_exc_args)
 
 
-@python_2_unicode_compatible
 class UnpickleableExceptionWrapper(Exception):
     """Wraps unpickleable exceptions.
 
@@ -216,7 +211,7 @@ def strtobool(term, table=None):
         try:
             return table[term.lower()]
         except KeyError:
-            raise TypeError('Cannot coerce {0!r} to type bool'.format(term))
+            raise TypeError(f'Cannot coerce {term!r} to type bool')
     return term
 
 
@@ -267,8 +262,8 @@ def jsonify(obj,
     else:
         if unknown_type_filter is None:
             raise ValueError(
-                'Unsupported type: {0!r} {1!r} (parent: {2})'.format(
-                    type(obj), obj, key))
+                f'Unsupported type: {type(obj)!r} {obj!r} (parent: {key})'
+            )
         return unknown_type_filter(obj)
 
 

@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
 """Configuration introspection and defaults."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 from collections import deque, namedtuple
 from datetime import timedelta
 
-from celery.five import items, keys, python_2_unicode_compatible
+from celery.five import items, keys
 from celery.utils.functional import memoize
 from celery.utils.serialization import strtobool
 
@@ -50,12 +47,11 @@ def Namespace(__old__=None, **options):
 
 
 def old_ns(ns):
-    return {'{0}_{{0}}'.format(ns)}
+    return {f'{ns}_{{0}}'}
 
 
-@python_2_unicode_compatible
-class Option(object):
-    """Decribes a Celery configuration option."""
+class Option:
+    """Describes a Celery configuration option."""
 
     alt = None
     deprecate_by = None
@@ -74,7 +70,7 @@ class Option(object):
         return self.typemap[self.type](value)
 
     def __repr__(self):
-        return '<Option: type->{0} default->{1!r}>'.format(self.type,
+        return '<Option: type->{} default->{!r}>'.format(self.type,
                                                            self.default)
 
 
@@ -318,6 +314,7 @@ NAMESPACES = Namespace(
         pool=Option(DEFAULT_POOL),
         pool_putlocks=Option(True, type='bool'),
         pool_restarts=Option(False, type='bool'),
+        proc_alive_timeout=Option(4.0, type='float'),
         prefetch_multiplier=Option(4, type='int'),
         redirect_stdouts=Option(
             True, type='bool', old={'celery_redirect_stdouts'},
@@ -358,8 +355,7 @@ def flatten(d, root='', keyfilter=_flatten_keys):
             if isinstance(opt, dict):
                 stack.append((ns + key + '_', opt))
             else:
-                for ret in keyfilter(ns, key, opt):
-                    yield ret
+                yield from keyfilter(ns, key, opt)
 
 
 DEFAULTS = {
@@ -379,10 +375,10 @@ def find_deprecated_settings(source):  # pragma: no cover
     from celery.utils import deprecated
     for name, opt in flatten(NAMESPACES):
         if (opt.deprecate_by or opt.remove_by) and getattr(source, name, None):
-            deprecated.warn(description='The {0!r} setting'.format(name),
+            deprecated.warn(description=f'The {name!r} setting',
                             deprecation=opt.deprecate_by,
                             removal=opt.remove_by,
-                            alternative='Use the {0.alt} instead'.format(opt))
+                            alternative=f'Use the {opt.alt} instead')
     return source
 
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Distributed Task Queue."""
 # :copyright: (c) 2015-2016 Ask Solem.  All rights reserved.
 # :copyright: (c) 2012-2014 GoPivotal, Inc., All rights reserved.
@@ -6,17 +5,19 @@
 #                 All rights reserved.
 # :license:   BSD (3 Clause), see LICENSE for more details.
 
-from __future__ import absolute_import, print_function, unicode_literals
 import os
 import re
 import sys
 from collections import namedtuple
 
-SERIES = 'rhubarb'
+# Lazy loading
+from . import local  # noqa
 
-__version__ = '4.3.0'
+SERIES = 'cliffs'
+
+__version__ = '4.4.0rc3'
 __author__ = 'Ask Solem'
-__contact__ = 'ask@celeryproject.org'
+__contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
 __docformat__ = 'restructuredtext'
 __keywords__ = 'task job queue distributed messaging actor'
@@ -30,7 +31,7 @@ __all__ = (
     'xmap', 'xstarmap', 'uuid',
 )
 
-VERSION_BANNER = '{0} ({1})'.format(__version__, SERIES)
+VERSION_BANNER = f'{__version__} ({SERIES})'
 
 version_info_t = namedtuple('version_info_t', (
     'major', 'minor', 'micro', 'releaselevel', 'serial',
@@ -52,7 +53,7 @@ if os.environ.get('C_IMPDEBUG'):  # pragma: no cover
                      fromlist=None, level=-1, real_import=builtins.__import__):
         glob = globals or getattr(sys, 'emarfteg_'[::-1])(1).f_globals
         importer_name = glob and glob.get('__name__') or 'unknown'
-        print('-- {0} imports {1}'.format(importer_name, name))
+        print(f'-- {importer_name} imports {name}')
         return real_import(name, locals, globals, fromlist, level)
     builtins.__import__ = debug_import
 
@@ -149,10 +150,6 @@ def maybe_patch_concurrency(argv=None, short_opts=None,
         concurrency.get_implementation(pool)
 
 
-# Lazy loading
-from . import local  # noqa
-
-
 # this just creates a new module, that imports stuff on first attribute
 # access.  This makes the library faster to use.
 old_module, new_module = local.recreate_module(  # pragma: no cover
@@ -178,7 +175,4 @@ old_module, new_module = local.recreate_module(  # pragma: no cover
     version_info=version_info,
     maybe_patch_concurrency=maybe_patch_concurrency,
     _find_option_with_arg=_find_option_with_arg,
-    absolute_import=absolute_import,
-    unicode_literals=unicode_literals,
-    print_function=print_function,
 )
