@@ -3,4 +3,5 @@ simplejson
 -r extras/dynamodb.txt
 -r extras/azureblockblob.txt
 -r extras/auth.txt
+-r extras/memcache.txt
 pytest-rerunfailures>=6.0
