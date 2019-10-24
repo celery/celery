@@ -1,7 +1,9 @@
+import pprint
 import sys
 from functools import partial
 
 import click
+from amqp import Connection, Message
 from click_repl import register_repl
 
 from celery.utils.functional import padlist
@@ -103,6 +105,12 @@ class AMQPContext:
         self.cli_context.echo('-> connected.')
         self.channel = self.connection.default_channel
 
+    def respond(self, retval):
+        if isinstance(retval, str):
+            self.cli_context.echo(retval)
+        else:
+            self.cli_context.echo(pprint.pprint(retval))
+
 
 @click.group(invoke_without_command=True)
 @click.pass_context
@@ -147,8 +155,14 @@ def queue_delete():
 
 
 @amqp.command(name='basic.get')
-def basic_get():
-    pass
+@click.argument('queue',
+                type=str)
+@click.argument('no_ack',
+                type=bool,
+                default=False)
+@click.pass_obj
+def basic_get(amqp_context, queue, no_ack):
+    amqp_context.respond(dump_message(amqp_context.channel.basic_get(queue, no_ack=no_ack)))
 
 
 @amqp.command(name='basic.publish')
@@ -166,7 +180,15 @@ def basic_get():
                 default=False)
 @click.pass_obj
 def basic_publish(amqp_context, msg, exchange, routing_key, mandatory, immediate):
-    pass
+    # XXX Hack to fix Issue #2013
+    if isinstance(amqp_context.connection.connection, Connection):
+        msg = Message(msg)
+    amqp_context.channel.basic_publish(msg,
+                                       exchange=exchange,
+                                       routing_key=routing_key,
+                                       mandatory=mandatory,
+                                       immediate=immediate)
+    amqp_context.cli_context.echo(amqp_context.cli_context.OK)
 
 
 @amqp.command(name='basic.ack')
@@ -174,7 +196,7 @@ def basic_publish(amqp_context, msg, exchange, routing_key, mandatory, immediate
                 type=int)
 @click.pass_obj
 def basic_ack(amqp_context, delivery_tag):
-    amqp_context.channel.basic_ack(delivery_tag)()
+    amqp_context.channel.basic_ack(delivery_tag)
 
 
 repl = register_repl(amqp)
