@@ -401,7 +401,7 @@ Working on Features & Patches
     work method. We won't like you any less, any contribution you make
     is always appreciated!
 
-    However following these steps may make maintainers life easier,
+    However, following these steps may make maintainer's life easier,
     and may mean that your changes will be accepted sooner.
 
 Forking and setting up the repository
