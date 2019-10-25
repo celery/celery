@@ -220,6 +220,25 @@ class test_MongoBackend:
             )
             assert sentinel.connection == connection
 
+    def test_get_connection_with_authmechanism(self):
+        with patch('pymongo.MongoClient') as mock_Connection:
+            self.app.conf.mongodb_backend_settings = None
+            uri = ('mongodb://'
+                   'celeryuser:celerypassword@'
+                   'localhost:27017/'
+                   'celerydatabase?authMechanism=SCRAM-SHA-256')
+            mb = MongoBackend(app=self.app, url=uri)
+            mock_Connection.return_value = sentinel.connection
+            connection = mb._get_connection()
+            mock_Connection.assert_called_once_with(
+                host=['localhost:27017'],
+                username='celeryuser',
+                password='celerypassword',
+                authmechanism='SCRAM-SHA-256',
+                **mb._prepare_client_options(),
+            )
+            assert sentinel.connection == connection
+
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
     def test_get_database_no_existing(self, mock_get_connection):
         # Should really check for combinations of these two, to be complete.
