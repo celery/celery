@@ -157,6 +157,10 @@ class MongoBackend(BaseBackend):
             # don't change self.options
             conf = dict(self.options)
             conf['host'] = host
+            if self.user:
+                conf['username'] = self.user
+            if self.password:
+                conf['password'] = self.password
 
             self._connection = MongoClient(**conf)
 
