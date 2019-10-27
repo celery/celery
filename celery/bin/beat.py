@@ -1,3 +1,4 @@
+"""The :program:`celery beat` command."""
 from functools import partial
 
 import click
