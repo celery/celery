@@ -72,8 +72,15 @@ def exchange_declare(amqp_context, exchange, type, passive, durable, auto_delete
 
 
 @amqp.command(name='exchange.delete')
-def exchange_delete():
-    pass
+@click.argument('exchange',
+                type=str)
+@click.argument('if_unused',
+                type=bool)
+@click.pass_obj
+def exchange_delete(amqp_context, exchange, if_unused):
+    amqp_context.channel.exchange_delete(exchange=exchange,
+                                         if_unused=if_unused)
+    amqp_context.cli_context.echo(amqp_context.cli_context.OK)
 
 
 @amqp.command(name='queue.bind')
