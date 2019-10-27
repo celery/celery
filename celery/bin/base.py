@@ -50,14 +50,14 @@ class CLIContext:
 
     def secho(self, message=None, **kwargs):
         if self.no_color:
-            kwargs.pop('color', None)
+            kwargs['color'] = False
             click.echo(message, **kwargs)
         else:
             click.secho(message, **kwargs)
 
     def echo(self, message=None, **kwargs):
         if self.no_color:
-            kwargs.pop('color', None)
+            kwargs['color'] = False
             click.echo(message, **kwargs)
         else:
             click.echo(message, **kwargs)
