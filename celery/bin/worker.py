@@ -3,8 +3,9 @@ from click import ParamType
 from click.types import IntParamType, StringParamType
 
 from celery import concurrency
-from celery.bin.base import LOG_LEVEL, CeleryDaemonCommand, CeleryOption
-from celery.platforms import maybe_drop_privileges
+from celery.bin.base import LOG_LEVEL, CeleryDaemonCommand, CeleryOption, \
+    COMMA_SEPARATED_LIST
+from celery.platforms import maybe_drop_privileges, detached, EX_FAILURE
 from celery.utils.nodenames import default_nodename, host_format, node_format
 
 
@@ -159,17 +160,17 @@ PREFETCH_MULTIPLIER = PrefetchMultiplier()
               help_group="Queue Options", )
 @click.option('--queues',
               '-Q',
-              multiple=True,
+              type=COMMA_SEPARATED_LIST,
               cls=CeleryOption,
               help_group="Queue Options", )
 @click.option('--exclude-queues',
               '-X',
-              is_flag=True,
+              type=COMMA_SEPARATED_LIST,
               cls=CeleryOption,
               help_group="Queue Options", )
 @click.option('--include',
               '-I',
-              multiple=True,
+              type=COMMA_SEPARATED_LIST,
               cls=CeleryOption,
               help_group="Queue Options", )
 @click.option('--without-gossip',
