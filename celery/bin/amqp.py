@@ -24,16 +24,29 @@ class AMQPContext:
     def __init__(self, cli_context):
         self.cli_context = cli_context
         self.connection = self.cli_context.app.connection()
-        self.cli_context.echo(f'-> connecting to {self.connection.as_uri()}.')
-        self.connection.connect()
-        self.cli_context.echo('-> connected.')
-        self.channel = self.connection.default_channel
+        self.channel = None
+        self.reconnect()
 
     def respond(self, retval):
         if isinstance(retval, str):
             self.cli_context.echo(retval)
         else:
             self.cli_context.echo(pprint.pprint(retval))
+
+    def reconnect(self):
+        if self.connection:
+            self.connection.close()
+        else:
+            self.connection = self.cli_context.app.connection()
+
+        self.cli_context.echo(f'-> connecting to {self.connection.as_uri()}.')
+        try:
+            self.connection.connect()
+        except (ConnectionRefusedError, ConnectionResetError) as e:
+            echo_error(self, e)
+        else:
+            self.cli_context.secho('-> connected.', fg='green', bold=True)
+            self.channel = self.connection.default_channel
 
 
 @click.group(invoke_without_command=True)
@@ -65,16 +78,21 @@ def amqp(ctx):
 @click.pass_obj
 def exchange_declare(amqp_context, exchange, type, passive, durable,
                      auto_delete):
-    try:
-        amqp_context.channel.exchange_declare(exchange=exchange,
-                                              type=type,
-                                              passive=passive,
-                                              durable=durable,
-                                              auto_delete=auto_delete)
-    except Exception as e:
-        echo_error(amqp_context, e)
+    if amqp_context.channel is None:
+        echo_error(amqp_context, 'Not connected to broker. Please retry...')
+        amqp_context.reconnect()
     else:
-        echo_ok(amqp_context)
+        try:
+            amqp_context.channel.exchange_declare(exchange=exchange,
+                                                  type=type,
+                                                  passive=passive,
+                                                  durable=durable,
+                                                  auto_delete=auto_delete)
+        except Exception as e:
+            echo_error(amqp_context, e)
+            amqp_context.reconnect()
+        else:
+            echo_ok(amqp_context)
 
 
 def echo_ok(amqp_context):
@@ -88,13 +106,18 @@ def echo_ok(amqp_context):
                 type=bool)
 @click.pass_obj
 def exchange_delete(amqp_context, exchange, if_unused):
-    try:
-        amqp_context.channel.exchange_delete(exchange=exchange,
-                                             if_unused=if_unused)
-    except Exception as e:
-        echo_error(amqp_context, e)
+    if amqp_context.channel is None:
+        echo_error(amqp_context, 'Not connected to broker. Please retry...')
+        amqp_context.reconnect()
     else:
-        echo_ok(amqp_context)
+        try:
+            amqp_context.channel.exchange_delete(exchange=exchange,
+                                                 if_unused=if_unused)
+        except Exception as e:
+            echo_error(amqp_context, e)
+            amqp_context.reconnect()
+        else:
+            echo_ok(amqp_context)
 
 
 @amqp.command(name='queue.bind')
@@ -106,14 +129,19 @@ def exchange_delete(amqp_context, exchange, if_unused):
                 type=str)
 @click.pass_obj
 def queue_bind(amqp_context, queue, exchange, routing_key):
-    try:
-        amqp_context.channel.queue_bind(queue=queue,
-                                        exchange=exchange,
-                                        routing_key=routing_key)
-    except Exception as e:
-        echo_error(amqp_context, e)
+    if amqp_context.channel is None:
+        echo_error(amqp_context, 'Not connected to broker. Please retry...')
+        amqp_context.reconnect()
     else:
-        echo_ok(amqp_context)
+        try:
+            amqp_context.channel.queue_bind(queue=queue,
+                                            exchange=exchange,
+                                            routing_key=routing_key)
+        except Exception as e:
+            echo_error(amqp_context, e)
+            amqp_context.reconnect()
+        else:
+            echo_ok(amqp_context)
 
 
 @amqp.command(name='queue.declare')
@@ -130,18 +158,23 @@ def queue_bind(amqp_context, queue, exchange, routing_key):
                 default=False)
 @click.pass_obj
 def queue_declare(amqp_context, queue, passive, durable, auto_delete):
-    try:
-        retval = amqp_context.channel.queue_declare(queue=queue,
-                                                    passive=passive,
-                                                    durable=durable,
-                                                    auto_delete=auto_delete)
-    except Exception as e:
-        echo_error(amqp_context, e)
+    if amqp_context.channel is None:
+        echo_error(amqp_context, 'Not connected to broker. Please retry...')
+        amqp_context.reconnect()
     else:
-        amqp_context.cli_context.secho(
-            'queue:{0} messages:{1} consumers:{2}'.format(*retval),
-            fg='cyan', bold=True)
-        echo_ok(amqp_context)
+        try:
+            retval = amqp_context.channel.queue_declare(queue=queue,
+                                                        passive=passive,
+                                                        durable=durable,
+                                                        auto_delete=auto_delete)
+        except Exception as e:
+            echo_error(amqp_context, e)
+            amqp_context.reconnect()
+        else:
+            amqp_context.cli_context.secho(
+                'queue:{0} messages:{1} consumers:{2}'.format(*retval),
+                fg='cyan', bold=True)
+            echo_ok(amqp_context)
 
 
 @amqp.command(name='queue.delete')
@@ -155,17 +188,22 @@ def queue_declare(amqp_context, queue, passive, durable, auto_delete):
                 default=False)
 @click.pass_obj
 def queue_delete(amqp_context, queue, if_unused, if_empty):
-    try:
-        retval = amqp_context.channel.queue_delete(queue=queue,
-                                                   if_unused=if_unused,
-                                                   if_empty=if_empty)
-    except Exception as e:
-        echo_error(amqp_context, e)
+    if amqp_context.channel is None:
+        echo_error(amqp_context, 'Not connected to broker. Please retry...')
+        amqp_context.reconnect()
     else:
-        amqp_context.cli_context.secho(
-            f'{retval} messages deleted.',
-            fg='cyan', bold=True)
-        echo_ok(amqp_context)
+        try:
+            retval = amqp_context.channel.queue_delete(queue=queue,
+                                                       if_unused=if_unused,
+                                                       if_empty=if_empty)
+        except Exception as e:
+            echo_error(amqp_context, e)
+            amqp_context.reconnect()
+        else:
+            amqp_context.cli_context.secho(
+                f'{retval} messages deleted.',
+                fg='cyan', bold=True)
+            echo_ok(amqp_context)
 
 
 @amqp.command(name='queue.purge')
@@ -173,15 +211,20 @@ def queue_delete(amqp_context, queue, if_unused, if_empty):
                 type=str)
 @click.pass_obj
 def queue_purge(amqp_context, queue):
-    try:
-        retval = amqp_context.channel.queue_purge(queue=queue)
-    except Exception as e:
-        echo_error(amqp_context, e)
+    if amqp_context.channel is None:
+        echo_error(amqp_context, 'Not connected to broker. Please retry...')
+        amqp_context.reconnect()
     else:
-        amqp_context.cli_context.secho(
-            f'{retval} messages deleted.',
-            fg='cyan', bold=True)
-        echo_ok(amqp_context)
+        try:
+            retval = amqp_context.channel.queue_purge(queue=queue)
+        except Exception as e:
+            echo_error(amqp_context, e)
+            amqp_context.reconnect()
+        else:
+            amqp_context.cli_context.secho(
+                f'{retval} messages deleted.',
+                fg='cyan', bold=True)
+            echo_ok(amqp_context)
 
 
 @amqp.command(name='basic.get')
@@ -192,13 +235,18 @@ def queue_purge(amqp_context, queue):
                 default=False)
 @click.pass_obj
 def basic_get(amqp_context, queue, no_ack):
-    try:
-        message = amqp_context.channel.basic_get(queue, no_ack=no_ack)
-    except Exception as e:
-        echo_error(amqp_context, e)
+    if amqp_context.channel is None:
+        echo_error(amqp_context, 'Not connected to broker. Please retry...')
+        amqp_context.reconnect()
     else:
-        amqp_context.respond(dump_message(message))
-        echo_ok(amqp_context)
+        try:
+            message = amqp_context.channel.basic_get(queue, no_ack=no_ack)
+        except Exception as e:
+            echo_error(amqp_context, e)
+            amqp_context.reconnect()
+        else:
+            amqp_context.respond(dump_message(message))
+            echo_ok(amqp_context)
 
 
 @amqp.command(name='basic.publish')
@@ -217,19 +265,24 @@ def basic_get(amqp_context, queue, no_ack):
 @click.pass_obj
 def basic_publish(amqp_context, msg, exchange, routing_key, mandatory,
                   immediate):
-    # XXX Hack to fix Issue #2013
-    if isinstance(amqp_context.connection.connection, Connection):
-        msg = Message(msg)
-    try:
-        amqp_context.channel.basic_publish(msg,
-                                           exchange=exchange,
-                                           routing_key=routing_key,
-                                           mandatory=mandatory,
-                                           immediate=immediate)
-    except Exception as e:
-        echo_error(amqp_context, e)
+    if amqp_context.channel is None:
+        echo_error(amqp_context, 'Not connected to broker. Please retry...')
+        amqp_context.reconnect()
     else:
-        echo_ok(amqp_context)
+        # XXX Hack to fix Issue #2013
+        if isinstance(amqp_context.connection.connection, Connection):
+            msg = Message(msg)
+        try:
+            amqp_context.channel.basic_publish(msg,
+                                               exchange=exchange,
+                                               routing_key=routing_key,
+                                               mandatory=mandatory,
+                                               immediate=immediate)
+        except Exception as e:
+            echo_error(amqp_context, e)
+            amqp_context.reconnect()
+        else:
+            echo_ok(amqp_context)
 
 
 @amqp.command(name='basic.ack')
@@ -237,12 +290,17 @@ def basic_publish(amqp_context, msg, exchange, routing_key, mandatory,
                 type=int)
 @click.pass_obj
 def basic_ack(amqp_context, delivery_tag):
-    try:
-        amqp_context.channel.basic_ack(delivery_tag)
-    except Exception as e:
-        echo_error(amqp_context, e)
+    if amqp_context.channel is None:
+        echo_error(amqp_context, 'Not connected to broker. Please retry...')
+        amqp_context.reconnect()
     else:
-        echo_ok(amqp_context)
+        try:
+            amqp_context.channel.basic_ack(delivery_tag)
+        except Exception as e:
+            echo_error(amqp_context, e)
+            amqp_context.reconnect()
+        else:
+            echo_ok(amqp_context)
 
 
 repl = register_repl(amqp)
