@@ -1,3 +1,5 @@
+"""The ``celery shell`` program, used to start a REPL."""
+
 import os
 import sys
 from importlib import import_module
@@ -115,6 +117,13 @@ def invoke_default_shell(locals):
 def shell(ctx, ipython=False, bpython=False,
           python=False, without_tasks=False, eventlet=False,
           gevent=False):
+    """Start shell session with convenient access to celery symbols.
+        The following symbols will be added to the main globals:
+            - ``celery``:  the current application.
+            - ``chord``, ``group``, ``chain``, ``chunks``,
+              ``xmap``, ``xstarmap`` ``subtask``, ``Task``
+            - all registered tasks.
+    """
     sys.path.insert(0, os.getcwd())
     if eventlet:
         import_module('celery.concurrency.eventlet')
