@@ -62,7 +62,8 @@ def amqp(ctx):
                 type=bool,
                 default=False)
 @click.pass_obj
-def exchange_declare(amqp_context, exchange, type, passive, durable, auto_delete):
+def exchange_declare(amqp_context, exchange, type, passive, durable,
+                     auto_delete):
     amqp_context.channel.exchange_declare(exchange=exchange,
                                           type=type,
                                           passive=passive,
@@ -99,8 +100,24 @@ def queue_bind(amqp_context, queue, exchange, routing_key):
 
 
 @amqp.command(name='queue.declare')
-def queue_declare():
-    pass
+@click.argument('queue',
+                type=str)
+@click.argument('passive',
+                type=bool,
+                default=False)
+@click.argument('durable',
+                type=bool,
+                default=False)
+@click.argument('auto_delete',
+                type=bool,
+                default=False)
+@click.pass_obj
+def queue_declare(amqp_context, queue, passive, durable, auto_delete):
+    amqp_context.channel.queue_declare(queue=queue,
+                                       passive=passive,
+                                       durable=durable,
+                                       auto_delete=auto_delete)
+    amqp_context.cli_context.echo(amqp_context.cli_context.OK)
 
 
 @amqp.command(name='queue.delete')
@@ -139,7 +156,8 @@ def basic_get(amqp_context, queue, no_ack):
                 type=bool,
                 default=False)
 @click.pass_obj
-def basic_publish(amqp_context, msg, exchange, routing_key, mandatory, immediate):
+def basic_publish(amqp_context, msg, exchange, routing_key, mandatory,
+                  immediate):
     # XXX Hack to fix Issue #2013
     if isinstance(amqp_context.connection.connection, Connection):
         msg = Message(msg)
