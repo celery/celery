@@ -1,3 +1,6 @@
+import os
+import sys
+
 import click
 from click import ParamType
 from click.types import IntParamType, StringParamType
@@ -7,6 +10,9 @@ from celery.bin.base import LOG_LEVEL, CeleryDaemonCommand, CeleryOption, \
     COMMA_SEPARATED_LIST
 from celery.platforms import maybe_drop_privileges, detached, EX_FAILURE
 from celery.utils.nodenames import default_nodename, host_format, node_format
+from celery.utils.log import get_logger
+
+logger = get_logger(__name__)
 
 
 class CeleryBeat(ParamType):
@@ -65,6 +71,30 @@ CELERY_BEAT = CeleryBeat()
 WORKERS_POOL = WorkersPool()
 HOSTNAME = Hostname()
 PREFETCH_MULTIPLIER = PrefetchMultiplier()
+
+C_FAKEFORK = os.environ.get('C_FAKEFORK')
+
+
+def detach(path, argv, logfile=None, pidfile=None, uid=None,
+           gid=None, umask=None, workdir=None, fake=False, app=None,
+           executable=None, hostname=None):
+    """Detach program by argv."""
+    fake = 1 if C_FAKEFORK else fake
+    with detached(logfile, pidfile, uid, gid, umask, workdir, fake,
+                  after_forkers=False):
+        try:
+            if executable is not None:
+                path = executable
+            os.execv(path, [path] + argv)
+        except Exception:  # pylint: disable=broad-except
+            if app is None:
+                from celery import current_app
+                app = current_app
+            app.log.setup_logging_subsystem(
+                'ERROR', logfile, hostname=hostname)
+            logger.critical("Can't exec %r", ' '.join([path] + argv),
+                            exc_info=True)
+        return EX_FAILURE
 
 
 @click.command(cls=CeleryDaemonCommand,
@@ -231,6 +261,36 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
             raise click.UsageError(
                 "Unable to parse extra configuration from command line.\n"
                 f"Reason: {e}", ctx=ctx)
+    if kwargs.get('detach', False):
+        params = ctx.params.copy()
+        params.pop('detach')
+        params.pop('logfile')
+        params.pop('pidfile')
+        params.pop('uid')
+        params.pop('gid')
+        umask = params.pop('umask')
+        workdir = ctx.obj.workdir
+        params.pop('hostname')
+        executable = params.pop('executable')
+        argv = ['-m', 'celery', 'worker']
+        for arg, value in params.items():
+            if isinstance(value, bool) and value:
+                argv.append(f'--{arg}')
+            else:
+                if value is not None:
+                    argv.append(f'--{arg}')
+                    argv.append(str(value))
+            return detach(sys.executable,
+                          argv,
+                          logfile=logfile,
+                          pidfile=pidfile,
+                          uid=uid, gid=gid,
+                          umask=umask,
+                          workdir=workdir,
+                          app=app,
+                          executable=executable,
+                          hostname=hostname)
+        return
     maybe_drop_privileges(uid=uid, gid=gid)
     worker = app.Worker(
         hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
