@@ -140,8 +140,15 @@ def queue_delete(amqp_context, queue, if_unused, if_empty):
 
 
 @amqp.command(name='queue.purge')
-def queue_purge():
-    pass
+@click.argument('queue',
+                type=str)
+@click.pass_obj
+def queue_purge(amqp_context, queue):
+    retval = amqp_context.channel.queue_purge(queue=queue)
+    amqp_context.cli_context.secho(
+        f'{retval} messages deleted.',
+        fg='cyan', bold=True)
+    amqp_context.cli_context.echo(amqp_context.cli_context.OK)
 
 
 @amqp.command(name='basic.get')
