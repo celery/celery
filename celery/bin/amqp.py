@@ -121,12 +121,24 @@ def queue_declare(amqp_context, queue, passive, durable, auto_delete):
 
 
 @amqp.command(name='queue.delete')
-def queue_delete():
-    pass
+@click.argument('queue',
+                type=str)
+@click.argument('if_unused',
+                type=bool,
+                default=False)
+@click.argument('if_empty',
+                type=bool,
+                default=False)
+@click.pass_obj
+def queue_delete(amqp_context, queue, if_unused, if_empty):
+    amqp_context.channel.queue_delete(queue=queue,
+                                      if_unused=if_unused,
+                                      if_empty=if_empty)
+    amqp_context.cli_context.echo(amqp_context.cli_context.OK)
 
 
 @amqp.command(name='queue.purge')
-def queue_delete():
+def queue_purge():
     pass
 
 
