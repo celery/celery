@@ -17,6 +17,7 @@ from celery.bin.graph import graph
 from celery.bin.list import list_
 from celery.bin.logtool import logtool
 from celery.bin.migrate import migrate
+from celery.bin.multi import multi
 from celery.bin.purge import purge
 from celery.bin.result import result
 from celery.bin.shell import shell
@@ -130,6 +131,7 @@ celery.add_command(upgrade)
 celery.add_command(logtool)
 celery.add_command(amqp)
 celery.add_command(shell)
+celery.add_command(multi)
 
 
 def main() -> int:
