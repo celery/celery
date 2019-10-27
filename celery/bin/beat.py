@@ -3,7 +3,7 @@ from functools import partial
 import click
 
 from celery.bin.base import LOG_LEVEL, CeleryDaemonCommand, CeleryOption
-from celery.platforms import maybe_drop_privileges
+from celery.platforms import maybe_drop_privileges, detached
 
 
 @click.command(cls=CeleryDaemonCommand, context_settings={'allow_extra_args': True})
@@ -60,7 +60,7 @@ def beat(ctx, detach=False, logfile=None, pidfile=None, uid=None,
                    logfile=logfile, pidfile=pidfile, **kwargs)
 
     if detach:
-        # TODO: Implement this
-        pass
+        with detached(logfile, pidfile, uid, gid, umask, workdir):
+            return beat().run()
     else:
         return beat().run()
