@@ -15,10 +15,6 @@ def dump_message(message):
             'delivery_info': message.delivery_info}
 
 
-def format_declare_queue(ret):
-    return 'ok. queue:{0} messages:{1} consumers:{2}.'.format(*ret)
-
-
 class AMQPContext:
     def __init__(self, cli_context):
         self.cli_context = cli_context
@@ -113,10 +109,12 @@ def queue_bind(amqp_context, queue, exchange, routing_key):
                 default=False)
 @click.pass_obj
 def queue_declare(amqp_context, queue, passive, durable, auto_delete):
-    amqp_context.channel.queue_declare(queue=queue,
-                                       passive=passive,
-                                       durable=durable,
-                                       auto_delete=auto_delete)
+    retval = amqp_context.channel.queue_declare(queue=queue,
+                                                passive=passive,
+                                                durable=durable,
+                                                auto_delete=auto_delete)
+    amqp_context.cli_context.secho('queue:{0} messages:{1} consumers:{2}'.format(*retval),
+                                   fg='cyan', bold=True)
     amqp_context.cli_context.echo(amqp_context.cli_context.OK)
 
 
