@@ -197,6 +197,7 @@ def basic_publish(amqp_context, msg, exchange, routing_key, mandatory, immediate
 @click.pass_obj
 def basic_ack(amqp_context, delivery_tag):
     amqp_context.channel.basic_ack(delivery_tag)
+    amqp_context.cli_context.echo(amqp_context.cli_context.OK)
 
 
 repl = register_repl(amqp)
