@@ -28,11 +28,12 @@ else:
 class CLIContext:
     """Context Object for the CLI."""
 
-    def __init__(self, app, no_color, quiet=False):
+    def __init__(self, app, no_color, workdir, quiet=False):
         """Initialize the CLI context."""
         self.app = app or get_current_app()
         self.no_color = no_color
         self.quiet = quiet
+        self.workdir = workdir
 
     @cached_property
     def OK(self):
