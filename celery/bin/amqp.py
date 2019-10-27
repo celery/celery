@@ -15,6 +15,11 @@ def dump_message(message):
             'delivery_info': message.delivery_info}
 
 
+def echo_error(amqp_context, exception):
+    amqp_context.cli_context.error(
+        f'{amqp_context.cli_context.ERROR}: {exception}')
+
+
 class AMQPContext:
     def __init__(self, cli_context):
         self.cli_context = cli_context
@@ -60,11 +65,19 @@ def amqp(ctx):
 @click.pass_obj
 def exchange_declare(amqp_context, exchange, type, passive, durable,
                      auto_delete):
-    amqp_context.channel.exchange_declare(exchange=exchange,
-                                          type=type,
-                                          passive=passive,
-                                          durable=durable,
-                                          auto_delete=auto_delete)
+    try:
+        amqp_context.channel.exchange_declare(exchange=exchange,
+                                              type=type,
+                                              passive=passive,
+                                              durable=durable,
+                                              auto_delete=auto_delete)
+    except Exception as e:
+        echo_error(amqp_context, e)
+    else:
+        echo_ok(amqp_context)
+
+
+def echo_ok(amqp_context):
     amqp_context.cli_context.echo(amqp_context.cli_context.OK)
 
 
@@ -75,9 +88,13 @@ def exchange_declare(amqp_context, exchange, type, passive, durable,
                 type=bool)
 @click.pass_obj
 def exchange_delete(amqp_context, exchange, if_unused):
-    amqp_context.channel.exchange_delete(exchange=exchange,
-                                         if_unused=if_unused)
-    amqp_context.cli_context.echo(amqp_context.cli_context.OK)
+    try:
+        amqp_context.channel.exchange_delete(exchange=exchange,
+                                             if_unused=if_unused)
+    except Exception as e:
+        echo_error(amqp_context, e)
+    else:
+        echo_ok(amqp_context)
 
 
 @amqp.command(name='queue.bind')
@@ -89,10 +106,14 @@ def exchange_delete(amqp_context, exchange, if_unused):
                 type=str)
 @click.pass_obj
 def queue_bind(amqp_context, queue, exchange, routing_key):
-    amqp_context.channel.queue_bind(queue=queue,
-                                    exchange=exchange,
-                                    routing_key=routing_key)
-    amqp_context.cli_context.echo(amqp_context.cli_context.OK)
+    try:
+        amqp_context.channel.queue_bind(queue=queue,
+                                        exchange=exchange,
+                                        routing_key=routing_key)
+    except Exception as e:
+        echo_error(amqp_context, e)
+    else:
+        echo_ok(amqp_context)
 
 
 @amqp.command(name='queue.declare')
@@ -109,14 +130,18 @@ def queue_bind(amqp_context, queue, exchange, routing_key):
                 default=False)
 @click.pass_obj
 def queue_declare(amqp_context, queue, passive, durable, auto_delete):
-    retval = amqp_context.channel.queue_declare(queue=queue,
-                                                passive=passive,
-                                                durable=durable,
-                                                auto_delete=auto_delete)
-    amqp_context.cli_context.secho(
-        'queue:{0} messages:{1} consumers:{2}'.format(*retval),
-        fg='cyan', bold=True)
-    amqp_context.cli_context.echo(amqp_context.cli_context.OK)
+    try:
+        retval = amqp_context.channel.queue_declare(queue=queue,
+                                                    passive=passive,
+                                                    durable=durable,
+                                                    auto_delete=auto_delete)
+    except Exception as e:
+        echo_error(amqp_context, e)
+    else:
+        amqp_context.cli_context.secho(
+            'queue:{0} messages:{1} consumers:{2}'.format(*retval),
+            fg='cyan', bold=True)
+        echo_ok(amqp_context)
 
 
 @amqp.command(name='queue.delete')
@@ -130,13 +155,17 @@ def queue_declare(amqp_context, queue, passive, durable, auto_delete):
                 default=False)
 @click.pass_obj
 def queue_delete(amqp_context, queue, if_unused, if_empty):
-    retval = amqp_context.channel.queue_delete(queue=queue,
-                                               if_unused=if_unused,
-                                               if_empty=if_empty)
-    amqp_context.cli_context.secho(
-        f'{retval} messages deleted.',
-        fg='cyan', bold=True)
-    amqp_context.cli_context.echo(amqp_context.cli_context.OK)
+    try:
+        retval = amqp_context.channel.queue_delete(queue=queue,
+                                                   if_unused=if_unused,
+                                                   if_empty=if_empty)
+    except Exception as e:
+        echo_error(amqp_context, e)
+    else:
+        amqp_context.cli_context.secho(
+            f'{retval} messages deleted.',
+            fg='cyan', bold=True)
+        echo_ok(amqp_context)
 
 
 @amqp.command(name='queue.purge')
@@ -144,11 +173,15 @@ def queue_delete(amqp_context, queue, if_unused, if_empty):
                 type=str)
 @click.pass_obj
 def queue_purge(amqp_context, queue):
-    retval = amqp_context.channel.queue_purge(queue=queue)
-    amqp_context.cli_context.secho(
-        f'{retval} messages deleted.',
-        fg='cyan', bold=True)
-    amqp_context.cli_context.echo(amqp_context.cli_context.OK)
+    try:
+        retval = amqp_context.channel.queue_purge(queue=queue)
+    except Exception as e:
+        echo_error(amqp_context, e)
+    else:
+        amqp_context.cli_context.secho(
+            f'{retval} messages deleted.',
+            fg='cyan', bold=True)
+        echo_ok(amqp_context)
 
 
 @amqp.command(name='basic.get')
@@ -159,8 +192,13 @@ def queue_purge(amqp_context, queue):
                 default=False)
 @click.pass_obj
 def basic_get(amqp_context, queue, no_ack):
-    message = amqp_context.channel.basic_get(queue, no_ack=no_ack)
-    amqp_context.respond(dump_message(message))
+    try:
+        message = amqp_context.channel.basic_get(queue, no_ack=no_ack)
+    except Exception as e:
+        echo_error(amqp_context, e)
+    else:
+        amqp_context.respond(dump_message(message))
+        echo_ok(amqp_context)
 
 
 @amqp.command(name='basic.publish')
@@ -182,12 +220,16 @@ def basic_publish(amqp_context, msg, exchange, routing_key, mandatory,
     # XXX Hack to fix Issue #2013
     if isinstance(amqp_context.connection.connection, Connection):
         msg = Message(msg)
-    amqp_context.channel.basic_publish(msg,
-                                       exchange=exchange,
-                                       routing_key=routing_key,
-                                       mandatory=mandatory,
-                                       immediate=immediate)
-    amqp_context.cli_context.echo(amqp_context.cli_context.OK)
+    try:
+        amqp_context.channel.basic_publish(msg,
+                                           exchange=exchange,
+                                           routing_key=routing_key,
+                                           mandatory=mandatory,
+                                           immediate=immediate)
+    except Exception as e:
+        echo_error(amqp_context, e)
+    else:
+        echo_ok(amqp_context)
 
 
 @amqp.command(name='basic.ack')
@@ -195,8 +237,12 @@ def basic_publish(amqp_context, msg, exchange, routing_key, mandatory,
                 type=int)
 @click.pass_obj
 def basic_ack(amqp_context, delivery_tag):
-    amqp_context.channel.basic_ack(delivery_tag)
-    amqp_context.cli_context.echo(amqp_context.cli_context.OK)
+    try:
+        amqp_context.channel.basic_ack(delivery_tag)
+    except Exception as e:
+        echo_error(amqp_context, e)
+    else:
+        echo_ok(amqp_context)
 
 
 repl = register_repl(amqp)
