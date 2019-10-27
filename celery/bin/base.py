@@ -65,7 +65,7 @@ class CLIContext:
     def error(self, message=None, **kwargs):
         kwargs['err'] = True
         if self.no_color:
-            kwargs.pop('color', None)
+            kwargs['color'] = False
             click.echo(message, **kwargs)
         else:
             click.echo(message, **kwargs)
