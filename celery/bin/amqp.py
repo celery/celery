@@ -162,7 +162,8 @@ def queue_delete():
                 default=False)
 @click.pass_obj
 def basic_get(amqp_context, queue, no_ack):
-    amqp_context.respond(dump_message(amqp_context.channel.basic_get(queue, no_ack=no_ack)))
+    message = amqp_context.channel.basic_get(queue, no_ack=no_ack)
+    amqp_context.respond(dump_message(message))
 
 
 @amqp.command(name='basic.publish')
