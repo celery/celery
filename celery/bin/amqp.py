@@ -84,8 +84,18 @@ def exchange_delete(amqp_context, exchange, if_unused):
 
 
 @amqp.command(name='queue.bind')
-def queue_bind():
-    pass
+@click.argument('queue',
+                type=str)
+@click.argument('exchange',
+                type=str)
+@click.argument('routing_key',
+                type=str)
+@click.pass_obj
+def queue_bind(amqp_context, queue, exchange, routing_key):
+    amqp_context.channel.queue_bind(queue=queue,
+                                    exchange=exchange,
+                                    routing_key=routing_key)
+    amqp_context.cli_context.echo(amqp_context.cli_context.OK)
 
 
 @amqp.command(name='queue.declare')
