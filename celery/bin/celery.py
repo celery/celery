@@ -11,7 +11,7 @@ from celery.bin.amqp import amqp
 from celery.bin.base import CeleryCommand, CeleryOption, CLIContext
 from celery.bin.beat import beat
 from celery.bin.call import call
-from celery.bin.control import inspect, status, control
+from celery.bin.control import control, inspect, status
 from celery.bin.events import events
 from celery.bin.graph import graph
 from celery.bin.list import list_

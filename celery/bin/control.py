@@ -3,7 +3,7 @@ from functools import partial
 import click
 from kombu.utils.json import dumps
 
-from celery.app.control import Inspect, Control
+from celery.app.control import Control, Inspect
 from celery.bin.base import COMMA_SEPARATED_LIST, CeleryCommand, CeleryOption
 from celery.platforms import EX_UNAVAILABLE
 from celery.utils import text
