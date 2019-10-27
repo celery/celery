@@ -113,8 +113,9 @@ def queue_declare(amqp_context, queue, passive, durable, auto_delete):
                                                 passive=passive,
                                                 durable=durable,
                                                 auto_delete=auto_delete)
-    amqp_context.cli_context.secho('queue:{0} messages:{1} consumers:{2}'.format(*retval),
-                                   fg='cyan', bold=True)
+    amqp_context.cli_context.secho(
+        'queue:{0} messages:{1} consumers:{2}'.format(*retval),
+        fg='cyan', bold=True)
     amqp_context.cli_context.echo(amqp_context.cli_context.OK)
 
 
@@ -129,9 +130,12 @@ def queue_declare(amqp_context, queue, passive, durable, auto_delete):
                 default=False)
 @click.pass_obj
 def queue_delete(amqp_context, queue, if_unused, if_empty):
-    amqp_context.channel.queue_delete(queue=queue,
-                                      if_unused=if_unused,
-                                      if_empty=if_empty)
+    retval = amqp_context.channel.queue_delete(queue=queue,
+                                               if_unused=if_unused,
+                                               if_empty=if_empty)
+    amqp_context.cli_context.secho(
+        f'{retval} messages deleted.',
+        fg='cyan', bold=True)
     amqp_context.cli_context.echo(amqp_context.cli_context.OK)
 
 
