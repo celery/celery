@@ -460,5 +460,6 @@ class MultiTool(TermLogger):
 @click.command(cls=CeleryCommand, context_settings={'allow_extra_args': True})
 @click.pass_context
 def multi(ctx):
+    """Start multiple worker instances."""
     cmd = MultiTool(quiet=ctx.obj.quiet, no_color=ctx.obj.no_color)
     return cmd.execute_from_commandline([''] + ctx.args)
