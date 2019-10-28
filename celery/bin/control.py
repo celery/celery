@@ -19,6 +19,37 @@ def say_remote_command_reply(ctx, replies, show_reply=False):
                      show_body=show_reply)
 
 
+def consume_arguments(meta, method, args):
+    i = 0
+    try:
+        for i, arg in enumerate(args):
+            try:
+                name, typ = meta.args[i]
+            except IndexError:
+                if meta.variadic:
+                    break
+                raise click.UsageError(
+                    'Command {0!r} takes arguments: {1}'.format(
+                        method, meta.signature))
+            else:
+                yield name, typ(arg) if typ is not None else arg
+    finally:
+        args[:] = args[i:]
+
+
+def compile_arguments(action, args):
+    meta = Panel.meta[action]
+    arguments = {}
+    if meta.args:
+        arguments.update({
+            k: v for k, v in consume_arguments(meta, action, args)
+        })
+    if meta.variadic:
+        arguments.update({meta.variadic: args})
+    return arguments
+
+
+
 @click.command(cls=CeleryCommand)
 @click.option('-t',
               '--timeout',
@@ -107,7 +138,8 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
             nodecount, text.pluralize(nodecount, 'node')))
 
 
-@click.command(cls=CeleryCommand)
+@click.command(cls=CeleryCommand,
+               context_settings={'allow_extra_args': True})
 @click.argument("action", type=click.Choice([
     name for name, info in Panel.meta.items()
     if info.type == 'control' and info.visible
@@ -138,10 +170,13 @@ def control(ctx, action, timeout, destination, json):
     Availability: RabbitMQ (AMQP), Redis, and MongoDB transports."""
     callback = None if json else partial(say_remote_command_reply, ctx,
                                          show_reply=True)
+    args = ctx.args
+    arguments = compile_arguments(action, args)
     replies = ctx.obj.app.control.broadcast(action, timeout=timeout,
                                             destination=destination,
                                             callback=callback,
-                                            reply=True)
+                                            reply=True,
+                                            arguments=arguments)
 
     if not replies:
         ctx.obj.echo('No nodes replied within time constraint')
