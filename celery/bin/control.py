@@ -3,10 +3,10 @@ from functools import partial
 import click
 from kombu.utils.json import dumps
 
-from celery.app.control import Control, Inspect
 from celery.bin.base import COMMA_SEPARATED_LIST, CeleryCommand, CeleryOption
 from celery.platforms import EX_UNAVAILABLE
 from celery.utils import text
+from celery.worker.control import Panel
 
 
 def say_remote_command_reply(ctx, replies, show_reply=False):
@@ -61,8 +61,10 @@ def status(ctx, timeout, destination, json, **kwargs):
 
 
 @click.command(cls=CeleryCommand)
-@click.argument("action", type=click.Choice(
-    [choice for choice in dir(Inspect) if not choice.startswith('_')]))
+@click.argument("action", type=click.Choice([
+    name for name, info in Panel.meta.items()
+    if info.type == 'inspect' and info.visible
+]))
 @click.option('-t',
               '--timeout',
               cls=CeleryOption,
@@ -107,10 +109,8 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
 
 @click.command(cls=CeleryCommand)
 @click.argument("action", type=click.Choice([
-    choice for choice in dir(Control)
-    if (choice not in ('inspect', 'broadcast')
-        and choice.islower()
-        and not choice.startswith('_'))
+    name for name, info in Panel.meta.items()
+    if info.type == 'control' and info.visible
 ]))
 @click.option('-t',
               '--timeout',
@@ -132,7 +132,7 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
               help_group='Remote Control Options',
               help='Use json as output format.')
 @click.pass_context
-def control(ctx, action, timeout, destination, json, **kwargs):
+def control(ctx, action, timeout, destination, json):
     """Workers remote control.
 
     Availability: RabbitMQ (AMQP), Redis, and MongoDB transports."""
