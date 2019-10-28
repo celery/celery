@@ -4,7 +4,7 @@ from functools import partial
 import click
 
 from celery.bin.base import LOG_LEVEL, CeleryDaemonCommand, CeleryOption
-from celery.platforms import maybe_drop_privileges, detached
+from celery.platforms import detached, maybe_drop_privileges
 
 
 @click.command(cls=CeleryDaemonCommand, context_settings={'allow_extra_args': True})
