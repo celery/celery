@@ -107,9 +107,9 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
     ctx.obj = CLIContext(app=app, no_color=no_color, workdir=workdir, quiet=quiet)
 
     # User options
-    worker.params.extend(app.user_options.get('worker', []))
-    beat.params.extend(app.user_options.get('beat', []))
-    events.params.extend(app.user_options.get('events', []))
+    worker.params.extend(ctx.obj.app.user_options.get('worker', []))
+    beat.params.extend(ctx.obj.app.user_options.get('beat', []))
+    events.params.extend(ctx.obj.app.user_options.get('events', []))
 
 
 @celery.command(cls=CeleryCommand)
