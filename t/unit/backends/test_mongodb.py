@@ -236,7 +236,7 @@ class test_MongoBackend:
                 username='celeryuser',
                 password='celerypassword',
                 authmechanism='SCRAM-SHA-256',
-                **mb._prepare_client_options(),
+                **mb._prepare_client_options()
             )
             assert sentinel.connection == connection
 
@@ -254,7 +254,7 @@ class test_MongoBackend:
             mock_Connection.assert_called_once_with(
                 host=['localhost:27017'],
                 authmechanism='SCRAM-SHA-256',
-                **mb._prepare_client_options(),
+                **mb._prepare_client_options()
             )
 
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
