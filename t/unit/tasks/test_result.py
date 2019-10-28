@@ -254,31 +254,26 @@ class test_AsyncResult:
 
         with pytest.raises(KeyError):
             notb.get()
-        try:
+        with pytest.raises(KeyError) as excinfo:
             withtb.get()
-        except KeyError:
-            tb = traceback.format_exc()
-            assert '  File "foo.py", line 2, in foofunc' not in tb
-            assert '  File "bar.py", line 3, in barfunc' not in tb
-            assert 'KeyError:' in tb
-            assert "'blue'" in tb
-        else:
-            raise AssertionError('Did not raise KeyError.')
+
+        tb = [t.strip() for t in traceback.format_tb(excinfo.tb)]
+        assert 'File "foo.py", line 2, in foofunc' not in tb
+        assert 'File "bar.py", line 3, in barfunc' not in tb
+        assert excinfo.value.args[0] == 'blue'
+        assert excinfo.typename == 'KeyError'
 
     @skip.unless_module('tblib')
     def test_raising_remote_tracebacks(self):
         withtb = self.app.AsyncResult(self.task5['id'])
         self.app.conf.task_remote_tracebacks = True
-        try:
+        with pytest.raises(KeyError) as excinfo:
             withtb.get()
-        except KeyError:
-            tb = traceback.format_exc()
-            assert '  File "foo.py", line 2, in foofunc' in tb
-            assert '  File "bar.py", line 3, in barfunc' in tb
-            assert 'KeyError:' in tb
-            assert "'blue'" in tb
-        else:
-            raise AssertionError('Did not raise KeyError.')
+        tb = [t.strip() for t in traceback.format_tb(excinfo.tb)]
+        assert 'File "foo.py", line 2, in foofunc' in tb
+        assert 'File "bar.py", line 3, in barfunc' in tb
+        assert excinfo.value.args[0] == 'blue'
+        assert excinfo.typename == 'KeyError'
 
     def test_str(self):
         ok_res = self.app.AsyncResult(self.task1['id'])
