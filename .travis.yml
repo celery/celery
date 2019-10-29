@@ -20,6 +20,7 @@ env:
   - MATRIX_TOXENV=unit
 
 matrix:
+  fast_finish: true
   include:
   - python: 3.8
     env: MATRIX_TOXENV=integration-rabbitmq
