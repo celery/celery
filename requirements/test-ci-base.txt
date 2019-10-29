@@ -1,6 +1,7 @@
 pytest-cov
 pytest-sugar
 pytest-travis-fold
+pytest-echo
 codecov
 -r extras/redis.txt
 -r extras/sqlalchemy.txt

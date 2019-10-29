@@ -47,9 +47,6 @@ class test_link_error:
         assert result.get(timeout=TIMEOUT, propagate=False) == exception
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
-    @pytest.mark.xfail(condition=kombu.VERSION.major <= 4 and kombu.VERSION.minor <= 5,
-                       reason='When using Kombu<4.6.0 the worker is stuck when retrying link_error tasks.',
-                       raises=TimeoutError)
     def test_link_error_callback_retries(self):
         exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply_async(
@@ -69,9 +66,6 @@ class test_link_error:
         assert (fail.apply().get(timeout=TIMEOUT, propagate=False), True) == (exception, True)
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
-    @pytest.mark.xfail(condition=kombu.VERSION.major <= 4 and kombu.VERSION.minor <= 5,
-                       reason='When using Kombu<4.6.0 the worker is stuck when retrying link_error tasks.',
-                       raises=TimeoutError)
     def test_link_error_using_signature(self):
         fail = signature('t.integration.tasks.fail', args=("test", ))
         retrun_exception = signature('t.integration.tasks.return_exception')
