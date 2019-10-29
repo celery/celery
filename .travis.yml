@@ -1,5 +1,5 @@
 language: python
-dist: xenial
+dist: bionic
 cache: pip
 python:
   - '2.7'
@@ -20,6 +20,7 @@ env:
   - MATRIX_TOXENV=unit
 
 matrix:
+  fast_finish: true
   include:
   - python: 3.8
     env: MATRIX_TOXENV=integration-rabbitmq
@@ -74,7 +75,7 @@ before_install:
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
           if [[ "$TOXENV" == *integration* ]]; then
-              sudo echo 'deb https://dl.bintray.com/rabbitmq-erlang/debian xenial main' > /etc/apt/sources.list.d/rabbitmq-bintray.list
+              sudo echo 'deb https://dl.bintray.com/rabbitmq-erlang/debian bionic main' > /etc/apt/sources.list.d/rabbitmq-bintray.list
               sudo apt-key adv --keyserver "hkps.pool.sks-keyservers.net" --recv-keys "0x6B73A36E6026DFCA"
               wget -O - "https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc" | sudo apt-key add -
               sudo apt update
@@ -111,7 +112,7 @@ before_install:
           export AZUREBLOCKBLOB_URL="azureblockblob://DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
     - |
           wget -qO - https://packages.couchbase.com/ubuntu/couchbase.key | sudo apt-key add -
-          sudo apt-add-repository -y 'deb http://packages.couchbase.com/ubuntu xenial xenial/main'
+          sudo apt-add-repository -y 'deb http://packages.couchbase.com/ubuntu bionic bionic/main'
           sudo apt-get update && sudo apt-get install -y libcouchbase-dev
 after_success:
   - |
