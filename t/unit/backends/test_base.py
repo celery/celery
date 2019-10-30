@@ -5,10 +5,10 @@ import types
 from contextlib import contextmanager
 
 import pytest
+from case import ANY, Mock, call, patch, skip
 from kombu.serialization import prepare_accept_content
 
 import celery
-from case import ANY, Mock, call, patch, skip
 from celery import chord, group, signature, states, uuid
 from celery.app.task import Context, Task
 from celery.backends.base import (BaseBackend, DisabledBackend,

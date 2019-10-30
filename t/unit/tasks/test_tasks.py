@@ -5,10 +5,10 @@ import tempfile
 from datetime import datetime, timedelta
 
 import pytest
+from case import ANY, ContextMock, MagicMock, Mock, patch
 from kombu import Queue
 from kombu.exceptions import EncodeError
 
-from case import ANY, ContextMock, MagicMock, Mock, patch
 from celery import Task, group, uuid
 from celery.app.task import _reprtask
 from celery.exceptions import Ignore, ImproperlyConfigured, Retry

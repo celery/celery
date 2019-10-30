@@ -7,8 +7,8 @@ from datetime import timedelta
 from pickle import dumps, loads
 
 import pytest
-
 from case import ANY, ContextMock, Mock, call, mock, patch, skip
+
 from celery import signature, states, uuid
 from celery.canvas import Signature
 from celery.exceptions import (ChordError, CPendingDeprecationWarning,

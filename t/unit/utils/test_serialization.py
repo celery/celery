@@ -7,9 +7,9 @@ from datetime import date, datetime, time, timedelta
 
 import pytest
 import pytz
+from case import Mock, mock, skip
 from kombu import Queue
 
-from case import Mock, mock, skip
 from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE,
                                         UnpickleableExceptionWrapper,
                                         ensure_serializable,

@@ -6,8 +6,8 @@ import socket
 from itertools import cycle
 
 import pytest
-
 from case import Mock, mock, patch, skip
+
 from celery.app.defaults import DEFAULTS
 from celery.concurrency.asynpool import iterate_file_descriptors_safely
 from celery.five import range

@@ -10,6 +10,7 @@ from threading import Event
 
 import pytest
 from amqp import ChannelError
+from case import Mock, mock, patch, skip
 from kombu import Connection
 from kombu.asynchronous import get_event_loop
 from kombu.common import QoS, ignore_errors
@@ -17,7 +18,6 @@ from kombu.transport.base import Message
 from kombu.transport.memory import Transport
 from kombu.utils.uuid import uuid
 
-from case import Mock, mock, patch, skip
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
 from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,

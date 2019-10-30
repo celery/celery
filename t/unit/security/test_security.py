@@ -18,10 +18,10 @@ import os
 import tempfile
 
 import pytest
+from case import Mock, mock, patch
 from kombu.exceptions import SerializerNotInstalled
 from kombu.serialization import disable_insecure_serializers, registry
 
-from case import Mock, mock, patch
 from celery.exceptions import ImproperlyConfigured, SecurityError
 from celery.five import builtins
 from celery.security import disable_untrusted_serializers, setup_security
