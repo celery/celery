@@ -71,35 +71,35 @@ RUN pyenv exec python2.7 -m pip install --upgrade pip setuptools && \
 
 # Setup one celery environment for basic development use
 RUN pyenv exec python3.8 -m pip install \
-  -r requirements/default.txt \
+  -r requirements/dev.txt \
   -r requirements/test.txt \
   -r requirements/test-ci-default.txt \
   -r requirements/docs.txt \
   -r requirements/test-integration.txt \
   -r requirements/pkgutils.txt && \
   pyenv exec python3.7 -m pip install \
-  -r requirements/default.txt \
+  -r requirements/dev.txt \
   -r requirements/test.txt \
   -r requirements/test-ci-default.txt \
   -r requirements/docs.txt \
   -r requirements/test-integration.txt \
   -r requirements/pkgutils.txt && \
   pyenv exec python3.6 -m pip install \
-  -r requirements/default.txt \
+  -r requirements/dev.txt \
   -r requirements/test.txt \
   -r requirements/test-ci-default.txt \
   -r requirements/docs.txt \
   -r requirements/test-integration.txt \
   -r requirements/pkgutils.txt && \
   pyenv exec python3.5 -m pip install \
-  -r requirements/default.txt \
+  -r requirements/dev.txt \
   -r requirements/test.txt \
   -r requirements/test-ci-default.txt \
   -r requirements/docs.txt \
   -r requirements/test-integration.txt \
   -r requirements/pkgutils.txt && \
   pyenv exec python2.7 -m pip install \
-  -r requirements/default.txt \
+  -r requirements/dev.txt \
   -r requirements/test.txt \
   -r requirements/test-ci-default.txt \
   -r requirements/docs.txt \
