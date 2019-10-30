@@ -4,10 +4,10 @@ import errno
 import socket
 
 import pytest
+from case import Mock
 from kombu.asynchronous import ERR, READ, WRITE, Hub
 from kombu.exceptions import DecodeError
 
-from case import Mock
 from celery.bootsteps import CLOSE, RUN
 from celery.exceptions import (InvalidTaskError, WorkerLostError,
                                WorkerShutdown, WorkerTerminate)

@@ -6,8 +6,8 @@ from pickle import dumps, loads
 
 import pytest
 import pytz
-
 from case import Mock, call, patch, skip
+
 from celery import __version__, beat, uuid
 from celery.beat import BeatLazyFunc, event_t
 from celery.five import keys, string_t

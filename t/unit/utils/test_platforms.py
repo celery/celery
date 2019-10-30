@@ -7,8 +7,8 @@ import sys
 import tempfile
 
 import pytest
-
 from case import Mock, call, mock, patch, skip
+
 from celery import _find_option_with_arg, platforms
 from celery.exceptions import SecurityError
 from celery.five import WhateverIO

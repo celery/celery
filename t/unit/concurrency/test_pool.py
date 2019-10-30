@@ -4,7 +4,6 @@ import itertools
 import time
 
 from billiard.einfo import ExceptionInfo
-
 from case import skip
 
 

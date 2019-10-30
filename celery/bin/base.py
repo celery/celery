@@ -15,9 +15,9 @@ from pprint import pformat
 
 from celery import VERSION_BANNER, Celery, maybe_patch_concurrency, signals
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
-from celery.five import (getfullargspec, items, long_t,
+from celery.five import (PY2, getfullargspec, items, long_t,
                          python_2_unicode_compatible, string, string_t,
-                         text_t, PY2)
+                         text_t)
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE, isatty
 from celery.utils import imports, term, text
 from celery.utils.functional import dictfilter
