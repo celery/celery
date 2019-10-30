@@ -51,7 +51,7 @@ we expect you to take those consequences into account when making decisions.
 Even if it's not obvious at the time, our contributions to Celery will impact
 the work of others. For example, changes to code, infrastructure, policy,
 documentation and translations during a release may negatively impact
-others work.
+others' work.
 
 Be respectful
 -------------
@@ -108,7 +108,7 @@ Developers on every project come and go and Celery is no different. When you
 leave or disengage from the project, in whole or in part, we ask that you do
 so in a way that minimizes disruption to the project. This means you should
 tell people you're leaving and take the proper steps to ensure that others
-can pick up where you leave off.
+can pick up where you left off.
 
 .. _reporting-bugs:
 
@@ -220,13 +220,13 @@ spelling or other errors on the website/docs/code.
 
             $ celery -A proj report
 
-        This will also include your configuration settings and it try to
+        This will also include your configuration settings and it will try to
         remove values for keys known to be sensitive, but make sure you also
         verify the information before submitting so that it doesn't contain
         confidential information like API tokens and authentication
         credentials.
 
-    E) You issue might be tagged as `Needs Test Case`. A test case represents
+    E) Your issue might be tagged as `Needs Test Case`. A test case represents
        all the details needed to reproduce what your issue is reporting.
        A test case can be some minimal code that reproduces the issue or
        detailed instructions and configuration values that reproduces
@@ -282,7 +282,7 @@ SemVer: http://semver.org.
 
 Stable releases are published at PyPI
 while development releases are only available in the GitHub git repository as tags.
-All version tags starts with “v”, so version 0.8.0 is the tag v0.8.0.
+All version tags starts with “v”, so version 0.8.0 has the tag v0.8.0.
 
 .. _git-branches:
 
@@ -366,7 +366,7 @@ on a series that's no longer officially supported.
 An archived version is named ``X.Y-archived``.
 
 To maintain a cleaner history and drop compatibility to continue improving
-the project we **do not have any archived version** right now.
+the project, we **do not have any archived version** right now.
 
 Feature branches
 ----------------
@@ -410,14 +410,14 @@ Forking and setting up the repository
 First you need to fork the Celery repository, a good introduction to this
 is in the GitHub Guide: `Fork a Repo`_.
 
-After you have cloned the repository you should checkout your copy
+After you have cloned the repository, you should checkout your copy
 to a directory on your machine:
 
 .. code-block:: console
 
     $ git clone git@github.com:username/celery.git
 
-When the repository is cloned enter the directory to set up easy access
+When the repository is cloned, enter the directory to set up easy access
 to upstream changes:
 
 .. code-block:: console
@@ -433,9 +433,9 @@ always use the ``--rebase`` option to ``git pull``:
 
     git pull --rebase upstream master
 
-With this option you don't clutter the history with merging
+With this option, you don't clutter the history with merging
 commit notes. See `Rebasing merge commits in git`_.
-If you want to learn more about rebasing see the `Rebase`_
+If you want to learn more about rebasing, see the `Rebase`_
 section in the GitHub guides.
 
 If you need to work on a different branch than the one git calls ``master``, you can
@@ -516,18 +516,18 @@ use are also defined in the :file:`docker/docker-compose.yml` file.
 By running ``docker-compose build celery`` an image will be created with the
 name ``celery/celery:dev``. This docker image has every dependency needed
 for development installed. ``pyenv`` is used to install multiple python
-versions, the docker images offers python 2.7, 3.4, 3.5 and 3.6.
+versions, the docker image offers python 2.7, 3.4, 3.5 and 3.6.
 The default python version is set to 2.7.
 
 The :file:`docker-compose.yml` file defines the necessary environment variables
 to run integration tests. The ``celery`` service also mounts the codebase
 and sets the ``PYTHONPATH`` environment variable to ``/home/developer``.
 By setting ``PYTHONPATH`` the service allows to use the mounted codebase
-as global module for development. If you prefer you can also run
+as global module for development. If you prefer, you can also run
 ``python -m pip install -e .`` to install the codebase in development mode.
 
 If you would like to run a Django or stand alone project to manually test or
-debug a feature you can use the image built by `docker-compose` and mount
+debug a feature, you can use the image built by `docker-compose` and mount
 your custom code. Here's an example:
 
 Assuming a folder structure such as:
@@ -562,7 +562,7 @@ Assuming a folder structure such as:
         redis:
             image: redis:latest
 
-In the previous example we are using the image that we can build from
+In the previous example, we are using the image that we can build from
 this repository and mounting the celery code base as well as our custom
 project.
 
@@ -574,7 +574,7 @@ project.
 Running the unit test suite
 ---------------------------
 
-If you like to develop using virtual environments or just outside docker
+If you like to develop using virtual environments or just outside docker,
 you must make sure all necessary dependencies are installed.
 There are multiple requirements files to make it easier to install all dependencies.
 You do not have to use every requirements file but you must use `default.txt`.
@@ -682,7 +682,7 @@ Use the ``tox -e`` option if you only want to test specific Python versions:
 Building the documentation
 --------------------------
 
-To build the documentation you need to install the dependencies
+To build the documentation, you need to install the dependencies
 listed in :file:`requirements/docs.txt` and :file:`requirements/default.txt`:
 
 .. code-block:: console
@@ -697,7 +697,7 @@ the following packages:
 
    $ apt-get install texlive texlive-latex-extra dvipng
 
-After these dependencies are installed you should be able to
+After these dependencies are installed, you should be able to
 build the docs by running:
 
 .. code-block:: console
@@ -707,14 +707,14 @@ build the docs by running:
     $ make html
 
 Make sure there are no errors or warnings in the build output.
-After building succeeds the documentation is available at :file:`_build/html`.
+After building succeeds, the documentation is available at :file:`_build/html`.
 
 .. _contributing-verify:
 
 Verifying your contribution
 ---------------------------
 
-To use these tools you need to install a few dependencies. These dependencies
+To use these tools, you need to install a few dependencies. These dependencies
 can be found in :file:`requirements/pkgutils.txt`.
 
 Installing the dependencies:
@@ -733,7 +733,7 @@ execute:
 
     $ make flakecheck
 
-To not return a negative exit code when this command fails use
+To not return a negative exit code when this command fails, use
 the ``flakes`` target instead:
 
 .. code-block:: console
@@ -744,19 +744,19 @@ API reference
 ~~~~~~~~~~~~~
 
 To make sure that all modules have a corresponding section in the API
-reference please execute:
+reference, please execute:
 
 .. code-block:: console
 
     $ make apicheck
 
-If files are missing you can add them by copying an existing reference file.
+If files are missing, you can add them by copying an existing reference file.
 
-If the module is internal it should be part of the internal reference
-located in :file:`docs/internals/reference/`. If the module is public
+If the module is internal, it should be part of the internal reference
+located in :file:`docs/internals/reference/`. If the module is public,
 it should be located in :file:`docs/reference/`.
 
-For example if reference is missing for the module ``celery.worker.awesome``
+For example, if reference is missing for the module ``celery.worker.awesome``
 and this module is considered part of the public API, use the following steps:
 
 
@@ -817,14 +817,14 @@ had to be modified.
 Creating pull requests
 ----------------------
 
-When your feature/bugfix is complete you may want to submit
-a pull requests so that it can be reviewed by the maintainers.
+When your feature/bugfix is complete, you may want to submit
+a pull request, so that it can be reviewed by the maintainers.
 
-Before submitting a pull requests please make sure you go through this checklist to
+Before submitting a pull request, please make sure you go through this checklist to
 make it easier for the maintainers to accept your proposed changes:
 
 - [ ] Make sure any change or new feature has a unit and/or integration test.
-      If a test is not written a label will be assigned to your PR with the name
+      If a test is not written, a label will be assigned to your PR with the name
       ``Needs Test Coverage``.
 
 - [ ] Make sure unit test coverage does not decrease.
@@ -897,7 +897,7 @@ make it easier for the maintainers to accept your proposed changes:
 
         $ isort my_module.py --diff
 
-Creating pull requests is easy, and also let you track the progress
+Creating pull requests is easy, and they also let you track the progress
 of your contribution. Read the `Pull Requests`_ section in the GitHub
 Guide to learn how this is done.
 
@@ -963,7 +963,7 @@ Here is a summary of such statuses:
 
 - **Status: Needs Test Coverage**
 
-  Celery uses `codecov _` to verify code coverage. Please, make sure PRs do not
+  Celery uses `codecov _` to verify code coverage. Please make sure PRs do not
   decrease code coverage. This label will identify PRs which need code coverage.
 
 - **Status: Needs Test Case**
@@ -973,7 +973,7 @@ Here is a summary of such statuses:
   that reproduces the issue reported. If possible a test case can be submitted in
   the form of a PR to Celery's integration suite. The test case will be marked
   as failed until the bug is fixed. When a test case cannot be run by Celery's
-  integration suite then it's better to describe in the issue itself.
+  integration suite, then it's better to describe in the issue itself.
 
 - **Status: Needs Verification**
 
@@ -1089,7 +1089,7 @@ is following the conventions.
 
 * Wild-card imports must not be used (`from xxx import *`).
 
-* For distributions where Python 2.5 is the oldest support version
+* For distributions where Python 2.5 is the oldest support version,
   additional rules apply:
 
     * Absolute imports must be enabled at the top of every module::
@@ -1097,7 +1097,7 @@ is following the conventions.
         from __future__ import absolute_import
 
     * If the module uses the :keyword:`with` statement and must be compatible
-      with Python 2.5 (celery isn't) then it must also enable that::
+      with Python 2.5 (celery isn't), then it must also enable that::
 
         from __future__ import with_statement
 
@@ -1146,7 +1146,7 @@ that require third-party libraries must be added.
 
         pycassa
 
-    These are pip requirement files so you can have version specifiers and
+    These are pip requirement files, so you can have version specifiers and
     multiple packages are separated by newline. A more complex example could
     be:
 
@@ -1158,7 +1158,7 @@ that require third-party libraries must be added.
 
 2) Modify ``setup.py``
 
-    After the requirements file is added you need to add it as an option
+    After the requirements file is added, you need to add it as an option
     to :file:`setup.py` in the ``extras_require`` section::
 
         extra['extras_require'] = {
@@ -1171,7 +1171,7 @@ that require third-party libraries must be added.
     You must add your feature to the list in the :ref:`bundles` section
     of :file:`docs/includes/installation.txt`.
 
-    After you've made changes to this file you need to render
+    After you've made changes to this file, you need to render
     the distro :file:`README` file:
 
     .. code-block:: console
@@ -1181,8 +1181,8 @@ that require third-party libraries must be added.
 
 
 That's all that needs to be done, but remember that if your feature
-adds additional configuration options then these needs to be documented
-in :file:`docs/configuration.rst`. Also all settings need to be added to the
+adds additional configuration options, then these needs to be documented
+in :file:`docs/configuration.rst`. Also, all settings need to be added to the
 :file:`celery/app/defaults.py` module.
 
 Result backends require a separate section in the :file:`docs/configuration.rst`
@@ -1430,7 +1430,7 @@ Release Procedure
 Updating the version number
 ---------------------------
 
-The version number must be updated three places:
+The version number must be updated in three places:
 
     * :file:`celery/__init__.py`
     * :file:`docs/include/introduction.txt`
@@ -1438,13 +1438,13 @@ The version number must be updated three places:
 
 The changes to the previous files can be handled with the [`bumpversion` command line tool]
 (https://pypi.org/project/bumpversion/). The corresponding configuration lives in
-:file:`.bumpversion.cfg`. To do the necessary changes run:
+:file:`.bumpversion.cfg`. To do the necessary changes, run:
 
 .. code-block:: console
 
     $ bumpversion
 
-After you have changed these files you must render
+After you have changed these files, you must render
 the :file:`README` files. There's a script to convert sphinx syntax
 to generic reStructured Text syntax, and the make target `readme`
 does this for you:
