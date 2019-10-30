@@ -100,6 +100,8 @@ class test_DynamoDBBackend:
         mock_create_table = self.backend._client.create_table = MagicMock()
         mock_describe_table = self.backend._client.describe_table = \
             MagicMock()
+        mock_update_time_to_live = self.backend._client.update_time_to_live = \
+            MagicMock()
 
         mock_describe_table.return_value = {
             'Table': {
@@ -110,6 +112,9 @@ class test_DynamoDBBackend:
         self.backend._get_or_create_table()
         mock_create_table.assert_called_once_with(
             **self.backend._get_table_schema()
+        )
+        mock_update_time_to_live.assert_called_once_with(
+            **self.backend._get_ttl_specification()
         )
 
     def test_get_or_create_table_already_exists(self):
@@ -180,6 +185,25 @@ class test_DynamoDBBackend:
             result = self.backend._prepare_put_request('abcdef', 'val')
         assert result == expected
 
+    def test_prepare_put_request_with_ttl(self):
+        ttl = self.backend.time_to_live_seconds = 30
+        expected = {
+            'TableName': u'celery',
+            'Item': {
+                u'id': {u'S': u'abcdef'},
+                u'result': {u'B': u'val'},
+                u'timestamp': {
+                    u'N': str(Decimal(self._static_timestamp))
+                },
+                u'ttl': {
+                    u'N': str(int(self._static_timestamp + ttl))
+                }
+            }
+        }
+        with patch('celery.backends.dynamodb.time', self._mock_time):
+            result = self.backend._prepare_put_request('abcdef', 'val')
+        assert result == expected
+
     def test_item_to_dict(self):
         boto_response = {
             'Item': {
@@ -236,6 +260,30 @@ class test_DynamoDBBackend:
         assert call_kwargs['Item'] == expected_kwargs['Item']
         assert call_kwargs['TableName'] == 'celery'
 
+    def test_set_with_ttl(self):
+        ttl = self.backend.time_to_live_seconds = 30
+
+        self.backend._client = MagicMock()
+        self.backend._client.put_item = MagicMock()
+
+        # should return None
+        with patch('celery.backends.dynamodb.time', self._mock_time):
+            assert self.backend.set(sentinel.key, sentinel.value) is None
+
+        assert self.backend._client.put_item.call_count == 1
+        _, call_kwargs = self.backend._client.put_item.call_args
+        expected_kwargs = {
+            'Item': {
+                u'timestamp': {u'N': str(self._static_timestamp)},
+                u'id': {u'S': string(sentinel.key)},
+                u'result': {u'B': sentinel.value},
+                u'ttl': {u'N': str(int(self._static_timestamp + ttl))},
+            },
+            'TableName': 'celery'
+        }
+        assert call_kwargs['Item'] == expected_kwargs['Item']
+        assert call_kwargs['TableName'] == 'celery'
+
     def test_delete(self):
         self.backend._client = Mock(name='_client')
         mocked_delete = self.backend._client.delete = Mock('client.delete')
@@ -255,10 +303,15 @@ class test_DynamoDBBackend:
         assert url_ == url
 
     def test_backend_params_by_url(self):
-        self.app.conf.result_backend = \
-            'dynamodb://@us-east-1/celery_results?read=10&write=20'
+        self.app.conf.result_backend = (
+            'dynamodb://@us-east-1/celery_results'
+            '?read=10'
+            '&write=20'
+            '&ttl_seconds=600'
+        )
         assert self.backend.aws_region == 'us-east-1'
         assert self.backend.table_name == 'celery_results'
         assert self.backend.read_capacity_units == 10
         assert self.backend.write_capacity_units == 20
+        assert self.backend.time_to_live_seconds == 600
         assert self.backend.endpoint_url is None

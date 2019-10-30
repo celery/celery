@@ -51,9 +51,16 @@ class DynamoDBBackend(KeyValueStoreBackend):
     #: The endpoint URL that is passed to boto3 (local DynamoDB) (`default`)
     endpoint_url = None
 
+    #: Item time-to-live in seconds (`default`)
+    time_to_live_seconds = None
+
+    # DynamoDB supports Time to Live as an auto-expiry mechanism.
+    supports_autoexpire = True
+
     _key_field = DynamoDBAttribute(name='id', data_type='S')
     _value_field = DynamoDBAttribute(name='result', data_type='B')
     _timestamp_field = DynamoDBAttribute(name='timestamp', data_type='N')
+    _ttl_field = DynamoDBAttribute(name='ttl', data_type='N')
     _available_fields = None
 
     def __init__(self, url=None, table_name=None, *args, **kwargs):
@@ -118,6 +125,17 @@ class DynamoDBBackend(KeyValueStoreBackend):
                     self.write_capacity_units
                 )
             )
+
+            try:
+                self.time_to_live_seconds = int(
+                    query.get(
+                        'ttl_seconds',
+                        self.time_to_live_seconds
+                    )
+                )
+            except Exception:
+                pass
+
             self.table_name = table or self.table_name
 
         self._available_fields = (
@@ -177,6 +195,16 @@ class DynamoDBBackend(KeyValueStoreBackend):
             }
         }
 
+    def _get_ttl_specification(self):
+        """Get the boto3 structure describing the DynamoDB TTL specification."""
+        return {
+            'TableName': self.table_name,
+            'TimeToLiveSpecification': {
+                'Enabled': True,
+                'AttributeName': self._ttl_field.name
+            }
+        }
+
     def _get_or_create_table(self):
         """Create table if not exists, otherwise return the description."""
         table_schema = self._get_table_schema()
@@ -192,6 +220,17 @@ class DynamoDBBackend(KeyValueStoreBackend):
             logger.info(
                 'DynamoDB Table {} is now available.'.format(
                     self.table_name
+                )
+            )
+            # Enable time-to-live on the table, ignoring whether or not TTL is
+            # currently specified as an option for the backend. This allows
+            # enabling it later. Until then, items are inserted without a value
+            # in the ttl field, meaning that DynamoDB will never expire them.
+            self._client.update_time_to_live(**self._get_ttl_specification())
+            logger.info(
+                'DynamoDB Table {} time-to-live enabled on field {}.'.format(
+                    self.table_name,
+                    self._ttl_field.name
                 )
             )
             return table_description
@@ -236,7 +275,8 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
     def _prepare_put_request(self, key, value):
         """Construct the item creation request parameters."""
-        return {
+        timestamp = time()
+        put_request = {
             'TableName': self.table_name,
             'Item': {
                 self._key_field.name: {
@@ -246,10 +286,18 @@ class DynamoDBBackend(KeyValueStoreBackend):
                     self._value_field.data_type: value
                 },
                 self._timestamp_field.name: {
-                    self._timestamp_field.data_type: str(time())
+                    self._timestamp_field.data_type: str(timestamp)
                 }
             }
         }
+        if self.time_to_live_seconds is not None:
+            put_request['Item'].update({
+                self._ttl_field.name: {
+                    self._ttl_field.data_type:
+                        str(int(timestamp + self.time_to_live_seconds))
+                }
+            })
+        return put_request
 
     def _item_to_dict(self, raw_response):
         """Convert get_item() response to field-value pairs."""

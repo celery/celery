@@ -1572,6 +1572,14 @@ The fields of the DynamoDB URL in ``result_backend`` are defined as follows:
     The Read & Write Capacity Units for the created DynamoDB table. Default is ``1`` for both read and write.
     More details can be found in the `Provisioned Throughput documentation <http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ProvisionedThroughput.html>`_.
 
+#. ``ttl_seconds``
+
+    Time-to-live (in seconds) for results before they expire. Default is
+    disabled, meaning results are not expired. The DynamoDB table must have
+    Time to Live enabled for expiry to work. If the table doesn't exist, it is
+    created with Time to Live enabled. More details can be found in the
+    `DynamoDB TTL documentation <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html>`_
+
 .. _conf-ironcache-result-backend:
 
 IronCache backend settings
