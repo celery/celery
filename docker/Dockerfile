@@ -3,7 +3,7 @@ FROM debian:buster
 ENV PYTHONIOENCODING UTF-8
 
 # Pypy is installed from a package manager because it takes so long to build.
-RUN apt update && apt install -y build-essential \
+RUN apt-get update && apt-get install -y build-essential \
     libcurl4-openssl-dev \
     libffi-dev \
     tk-dev \
@@ -25,7 +25,7 @@ RUN apt update && apt install -y build-essential \
     libncursesw5-dev \
     zlib1g-dev \
     pkg-config \
-    libssl1.0-dev
+    libssl-dev
 
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.
