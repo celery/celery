@@ -2,6 +2,8 @@ FROM ubuntu:bionic
 
 ENV PYTHONIOENCODING UTF-8
 
+ARG DEBIAN_FRONTEND=noninteractive
+
 # Pypy is installed from a package manager because it takes so long to build.
 RUN apt-get update && apt-get install -y build-essential \
     libcurl4-openssl-dev \
@@ -25,7 +27,8 @@ RUN apt-get update && apt-get install -y build-essential \
     libncursesw5-dev \
     zlib1g-dev \
     pkg-config \
-    libssl-dev
+    libssl-dev \
+    sudo
 
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.
