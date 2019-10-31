@@ -1,4 +1,4 @@
-FROM debian:buster
+FROM ubuntu:bionic
 
 ENV PYTHONIOENCODING UTF-8
 
