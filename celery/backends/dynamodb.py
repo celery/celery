@@ -171,6 +171,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
                 **client_parameters
             )
             self._get_or_create_table()
+            self._set_table_ttl()
         return self._client
 
     def _get_table_schema(self):
@@ -195,16 +196,6 @@ class DynamoDBBackend(KeyValueStoreBackend):
             }
         }
 
-    def _get_ttl_specification(self):
-        """Get the boto3 structure describing the DynamoDB TTL specification."""
-        return {
-            'TableName': self.table_name,
-            'TimeToLiveSpecification': {
-                'Enabled': True,
-                'AttributeName': self._ttl_field.name
-            }
-        }
-
     def _get_or_create_table(self):
         """Create table if not exists, otherwise return the description."""
         table_schema = self._get_table_schema()
@@ -222,17 +213,6 @@ class DynamoDBBackend(KeyValueStoreBackend):
                     self.table_name
                 )
             )
-            # Enable time-to-live on the table, ignoring whether or not TTL is
-            # currently specified as an option for the backend. This allows
-            # enabling it later. Until then, items are inserted without a value
-            # in the ttl field, meaning that DynamoDB will never expire them.
-            self._client.update_time_to_live(**self._get_ttl_specification())
-            logger.info(
-                'DynamoDB Table {} time-to-live enabled on field {}.'.format(
-                    self.table_name,
-                    self._ttl_field.name
-                )
-            )
             return table_description
         except ClientError as e:
             error_code = e.response['Error'].get('Code', 'Unknown')
@@ -244,6 +224,86 @@ class DynamoDBBackend(KeyValueStoreBackend):
                 )
             else:
                 raise e
+
+    def _get_ttl_specification(self, ttl_attr_name):
+        """Get the boto3 structure describing the DynamoDB TTL specification."""
+        return {
+            'TableName': self.table_name,
+            'TimeToLiveSpecification': {
+                'Enabled': False if self.time_to_live_seconds is None else True,
+                'AttributeName': ttl_attr_name
+            }
+        }
+
+    def _set_table_ttl(self):
+        """Enable or disable Time to Live on the table."""
+
+        # Get the current TTL description.
+        description = self._client.describe_time_to_live(
+            TableName=self.table_name
+        )
+        status = description['TimeToLiveDescription']['TimeToLiveStatus']
+
+        # Return early when possible.
+        if status in ('ENABLED', 'ENABLING'):
+            cur_attr_name = \
+                description['TimeToLiveDescription']['AttributeName']
+            if self.time_to_live_seconds is not None:
+                if cur_attr_name == self._ttl_field.name:
+                    # We want TTL enabled, and it is currently enabled or being
+                    # enabled, and on the correct attribute.
+                    return description
+
+        elif status in ('DISABLED', 'DISABLING'):
+            if self.time_to_live_seconds is None:
+                # We want TTL disabled, and it is currently disabled or being
+                # disabled.
+                return description
+
+        # At this point, we have one of the following situations:
+        #
+        # We want TTL enabled,
+        #
+        # - and it's currently disabled: Try to enable.
+        #
+        # - and it's being disabled: Try to enable, but this is almost sure to
+        #   raise ValidationException with message:
+        #
+        #     Time to live has been modified multiple times within a fixed
+        #     interval
+        #
+        # - and it's currently enabling or being enabled, but on the wrong
+        #   attribute: Try to enable, but this will raise ValidationException
+        #   with message:
+        #
+        #     TimeToLive is active on a different AttributeName: current
+        #     AttributeName is ttlx
+        #
+        # We want TTL disabled,
+        #
+        # - and it's currently enabled: Try to disable.
+        #
+        # - and it's being enabled: Try to disable, but this is almost sure to
+        #   raise ValidationException with message:
+        #
+        #     Time to live has been modified multiple times within a fixed
+        #     interval
+        #
+        attr_name = \
+            cur_attr_name if status == 'ENABLED' else self._ttl_field.name
+        specification = self._client.update_time_to_live(
+            **self._get_ttl_specification(
+                ttl_attr_name=attr_name
+            )
+        )
+        logger.info(
+            'DynamoDB Table {} time-to-live enabled={} on field {}.'.format(
+                self.table_name,
+                False if self.time_to_live_seconds is None else True,
+                self._ttl_field.name
+            )
+        )
+        return specification
 
     def _wait_for_table_status(self, expected='ACTIVE'):
         """Poll for the expected table status."""

@@ -100,8 +100,6 @@ class test_DynamoDBBackend:
         mock_create_table = self.backend._client.create_table = MagicMock()
         mock_describe_table = self.backend._client.describe_table = \
             MagicMock()
-        mock_update_time_to_live = self.backend._client.update_time_to_live = \
-            MagicMock()
 
         mock_describe_table.return_value = {
             'Table': {
@@ -112,9 +110,6 @@ class test_DynamoDBBackend:
         self.backend._get_or_create_table()
         mock_create_table.assert_called_once_with(
             **self.backend._get_table_schema()
-        )
-        mock_update_time_to_live.assert_called_once_with(
-            **self.backend._get_ttl_specification()
         )
 
     def test_get_or_create_table_already_exists(self):
@@ -162,6 +157,145 @@ class test_DynamoDBBackend:
         ]
         self.backend._wait_for_table_status(expected='SOME_STATE')
         assert mock_describe_table.call_count == 2
+
+    def test_set_table_ttl_enable_when_enabled_with_correct_attr_succeeds(self):
+        self.backend.time_to_live_seconds = 30
+        self.backend._client = MagicMock()
+        mock_update_time_to_live = self.backend._client.update_time_to_live = \
+            MagicMock()
+
+        mock_describe_time_to_live = \
+            self.backend._client.describe_time_to_live = MagicMock()
+        mock_describe_time_to_live.return_value = {
+            'TimeToLiveDescription': {
+                'TimeToLiveStatus': 'ENABLED',
+                'AttributeName': self.backend._ttl_field.name
+            }
+        }
+
+        self.backend._set_table_ttl()
+        mock_describe_time_to_live.assert_called_once_with(
+            TableName=self.backend.table_name
+        )
+
+    def test_set_table_ttl_enable_when_currently_disabling_raises(self):
+        from botocore.exceptions import ClientError
+
+        self.backend.time_to_live_seconds = 30
+        self.backend._client = MagicMock()
+        mock_update_time_to_live = self.backend._client.update_time_to_live = \
+            MagicMock()
+        client_error = ClientError(
+            {
+                'Error': {
+                    'Code': 'ValidationException',
+                    'Message': (
+                        'Time to live has been modified multiple times '
+                        'within a fixed interval'
+                    )
+                }
+            },
+            'UpdateTimeToLive'
+        )
+        mock_update_time_to_live.side_effect = client_error
+
+        mock_describe_time_to_live = \
+            self.backend._client.describe_time_to_live = MagicMock()
+        mock_describe_time_to_live.return_value = {
+            'TimeToLiveDescription': {
+                'TimeToLiveStatus': 'DISABLING',
+                'AttributeName': self.backend._ttl_field.name
+            }
+        }
+
+        with pytest.raises(ClientError):
+            self.backend._set_table_ttl()
+
+    def test_set_table_ttl_enable_when_enabled_with_wrong_attr_raises(self):
+        from botocore.exceptions import ClientError
+
+        self.backend.time_to_live_seconds = 30
+        self.backend._client = MagicMock()
+        mock_update_time_to_live = self.backend._client.update_time_to_live = \
+            MagicMock()
+        wrong_attr_name = self.backend._ttl_field.name + 'x'
+        client_error = ClientError(
+            {
+                'Error': {
+                    'Code': 'ValidationException',
+                    'Message': (
+                        'TimeToLive is active on a different AttributeName: '
+                        'current AttributeName is {}'
+                    ).format(wrong_attr_name)
+                }
+            },
+            'UpdateTimeToLive'
+        )
+        mock_update_time_to_live.side_effect = client_error
+        mock_describe_time_to_live = \
+            self.backend._client.describe_time_to_live = MagicMock()
+
+        mock_describe_time_to_live.return_value = {
+            'TimeToLiveDescription': {
+                'TimeToLiveStatus': 'ENABLED',
+                'AttributeName': self.backend._ttl_field.name + 'x'
+            }
+        }
+
+        with pytest.raises(ClientError):
+            self.backend._set_table_ttl()
+
+    def test_set_table_ttl_disable_when_disabled_succeeds(self):
+        self.backend.time_to_live_seconds = None
+        self.backend._client = MagicMock()
+        mock_update_time_to_live = self.backend._client.update_time_to_live = \
+            MagicMock()
+        mock_describe_time_to_live = \
+            self.backend._client.describe_time_to_live = MagicMock()
+
+        mock_describe_time_to_live.return_value = {
+            'TimeToLiveDescription': {
+                'TimeToLiveStatus': 'DISABLED'
+            }
+        }
+
+        self.backend._set_table_ttl()
+        mock_describe_time_to_live.assert_called_once_with(
+            TableName=self.backend.table_name
+        )
+
+    def test_set_table_ttl_disable_when_currently_enabling_raises(self):
+        from botocore.exceptions import ClientError
+
+        self.backend.time_to_live_seconds = None
+        self.backend._client = MagicMock()
+        mock_update_time_to_live = self.backend._client.update_time_to_live = \
+            MagicMock()
+        client_error = ClientError(
+            {
+                'Error': {
+                    'Code': 'ValidationException',
+                    'Message': (
+                        'Time to live has been modified multiple times '
+                        'within a fixed interval'
+                    )
+                }
+            },
+            'UpdateTimeToLive'
+        )
+        mock_update_time_to_live.side_effect = client_error
+
+        mock_describe_time_to_live = \
+            self.backend._client.describe_time_to_live = MagicMock()
+        mock_describe_time_to_live.return_value = {
+            'TimeToLiveDescription': {
+                'TimeToLiveStatus': 'ENABLING',
+                'AttributeName': self.backend._ttl_field.name
+            }
+        }
+
+        with pytest.raises(ClientError):
+            self.backend._set_table_ttl()
 
     def test_prepare_get_request(self):
         expected = {
