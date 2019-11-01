@@ -22,8 +22,10 @@ Contributor understands and agrees that Celery shall have the irrevocable and pe
 and distribute copies of any Contribution, as well as to create and distribute collective works and
 derivative works of any Contribution, under the BSD License.
 
+
 Contributors
 ------------
+
 
 Asif Saif Uddin, 2016/08/30
 Ask Solem, 2012/06/07
