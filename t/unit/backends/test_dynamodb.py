@@ -158,6 +158,24 @@ class test_DynamoDBBackend:
         self.backend._wait_for_table_status(expected='SOME_STATE')
         assert mock_describe_table.call_count == 2
 
+    def test_set_table_ttl_no_describe_time_to_live_client_method_raises(self):
+        self.backend._client = MagicMock()
+        mock_describe_time_to_live = \
+            self.backend._client.describe_time_to_live = MagicMock()
+        mock_describe_time_to_live.side_effect = AttributeError()
+
+        with pytest.raises(AttributeError):
+            self.backend._set_table_ttl()
+
+    def test_set_table_ttl_no_update_time_to_live_client_method_raises(self):
+        self.backend._client = MagicMock()
+        mock_update_time_to_live = \
+            self.backend._client.update_time_to_live = MagicMock()
+        mock_update_time_to_live.side_effect = AttributeError()
+
+        with pytest.raises(AttributeError):
+            self.backend._set_table_ttl()
+
     def test_set_table_ttl_enable_when_enabled_with_correct_attr_succeeds(self):
         self.backend.time_to_live_seconds = 30
         self.backend._client = MagicMock()
