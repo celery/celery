@@ -486,7 +486,7 @@ Some useful commands to run:
 * ``make test``
 
     To run the test suite.
-    **Note:** This will run tests using python 3.6 by default.
+    **Note:** This will run tests using python 3.8 by default.
 
 * ``tox``
 
@@ -494,18 +494,18 @@ Some useful commands to run:
     **Note:** This command will run tests for every environment defined in :file:`tox.ini`.
     It takes a while.
 
-* ``pyenv exec python{2.7,3.4,3.5,3.6} -m pytest t/unit``
+* ``pyenv exec python{2.7,3.5,3.6,3.7,3.8} -m pytest t/unit``
 
     To run unit tests using pytest.
 
-    **Note:** ``{2.7,3.4,3.5,3.6}`` means you can use any of those options.
+    **Note:** ``{2.7,3.5,3.6,3.7,3.8}`` means you can use any of those options.
     e.g. ``pyenv exec python3.6 -m pytest t/unit``
 
-* ``pyenv exec python{2.7,3.4,3.5,3.6} -m pytest t/integration``
+* ``pyenv exec python{2.7,3.5,3.6,3.7,3.8} -m pytest t/integration``
 
     To run integration tests using pytest
 
-    **Note:** `{2.7,3.4,3.5,3.6}` means you can use any of those options.
+    **Note:** ``{2.7,3.5,3.6,3.7,3.8}`` means you can use any of those options.
     e.g. ``pyenv exec python3.6 -m pytest t/unit``
 
 By default, docker-compose will mount the Celery and test folders in the Docker
@@ -516,12 +516,12 @@ use are also defined in the :file:`docker/docker-compose.yml` file.
 By running ``docker-compose build celery`` an image will be created with the
 name ``celery/celery:dev``. This docker image has every dependency needed
 for development installed. ``pyenv`` is used to install multiple python
-versions, the docker image offers python 2.7, 3.4, 3.5 and 3.6.
-The default python version is set to 2.7.
+versions, the docker image offers python 2.7, 3.5, 3.6, 3.7 and 3.8.
+The default python version is set to 3.8.
 
 The :file:`docker-compose.yml` file defines the necessary environment variables
 to run integration tests. The ``celery`` service also mounts the codebase
-and sets the ``PYTHONPATH`` environment variable to ``/home/developer``.
+and sets the ``PYTHONPATH`` environment variable to ``/home/developer/celery``.
 By setting ``PYTHONPATH`` the service allows to use the mounted codebase
 as global module for development. If you prefer, you can also run
 ``python -m pip install -e .`` to install the codebase in development mode.
