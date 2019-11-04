@@ -225,12 +225,16 @@ class DynamoDBBackend(KeyValueStoreBackend):
             else:
                 raise e
 
+    def _has_ttl(self):
+        """Return the desired Time to Live config; True means enabled."""
+        return self.time_to_live_seconds is not None
+
     def _get_ttl_specification(self, ttl_attr_name):
         """Get the boto3 structure describing the DynamoDB TTL specification."""
         return {
             'TableName': self.table_name,
             'TimeToLiveSpecification': {
-                'Enabled': False if self.time_to_live_seconds is None else True,
+                'Enabled': self._has_ttl(),
                 'AttributeName': ttl_attr_name
             }
         }
@@ -241,30 +245,45 @@ class DynamoDBBackend(KeyValueStoreBackend):
         # Verify that the client supports the TTL methods.
         for method in ('update_time_to_live', 'describe_time_to_live'):
             if not hasattr(self._client, method):
-                logger.error((
+                message = (
                     "boto3 method '{method}' not found; ensure that "
                     "boto3>=1.9.178 and botocore>=1.12.178 are installed"
-                ).format(method=method))
-                if self.time_to_live_seconds is None:
-                    # Return if Time to Live should be disabled.
+                ).format(method=method)
+                if not self._has_ttl():
+                    # Return if Time to Live is not desired anyway.
+                    logger.debug(message)
                     return
                 else:
                     # Raise exception if Time to Live should be enabled.
+                    logger.error(message)
                     raise AttributeError(
                         "boto3 method '{}' not found".format(method)
                     )
 
         # Get the current TTL description.
-        description = self._client.describe_time_to_live(
-            TableName=self.table_name
-        )
-        status = description['TimeToLiveDescription']['TimeToLiveStatus']
+        try:
+            description = self._client.describe_time_to_live(
+                TableName=self.table_name
+            )
+            status = description['TimeToLiveDescription']['TimeToLiveStatus']
+        except ClientError as e:
+            error_code = e.response['Error'].get('Code', 'Unknown')
+            error_message = e.response['Error'].get('Message', 'Unknown')
+            logger.error((
+                'Error describing Time to Live on DynamoDB table {table}: '
+                '{code}: {message}'
+            ).format(
+                table=self.table_name,
+                code=error_code,
+                message=error_message,
+            ))
+            raise e
 
         # Return early when possible.
         if status in ('ENABLED', 'ENABLING'):
             cur_attr_name = \
                 description['TimeToLiveDescription']['AttributeName']
-            if self.time_to_live_seconds is not None:
+            if self._has_ttl():
                 if cur_attr_name == self._ttl_field.name:
                     # We want TTL enabled, and it is currently enabled or being
                     # enabled, and on the correct attribute.
@@ -280,7 +299,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
                     return description
 
         elif status in ('DISABLED', 'DISABLING'):
-            if self.time_to_live_seconds is None:
+            if not self._has_ttl():
                 # We want TTL disabled, and it is currently disabled or being
                 # disabled.
                 logger.debug((
@@ -332,10 +351,13 @@ class DynamoDBBackend(KeyValueStoreBackend):
                 )
             )
             logger.info(
-                'DynamoDB Table {} time-to-live enabled={} on field {}.'.format(
-                    self.table_name,
-                    False if self.time_to_live_seconds is None else True,
-                    self._ttl_field.name
+                (
+                    'DynamoDB table Time to Live updated: '
+                    'table={table} enabled={enabled} attribute={attr}'
+                ).format(
+                    table=self.table_name,
+                    enabled=self._has_ttl(),
+                    attr=self._ttl_field.name
                 )
             )
             return specification
@@ -346,9 +368,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
                 'Error {action} Time to Live on DynamoDB table {table}: '
                 '{code}: {message}'
             ).format(
-                action='disabling' \
-                    if self.time_to_live_seconds is None \
-                    else 'enabling',
+                action='enabling' if self._has_ttl() else 'disabling',
                 table=self.table_name,
                 code=error_code,
                 message=error_message,
@@ -400,7 +420,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
                 }
             }
         }
-        if self.time_to_live_seconds is not None:
+        if self._has_ttl():
             put_request['Item'].update({
                 self._ttl_field.name: {
                     self._ttl_field.data_type:
