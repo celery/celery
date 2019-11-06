@@ -141,3 +141,14 @@ issues for Celery, we were forced to bump the minimum required version to 3.3.0.
 
 News
 ====
+
+Result Backends
+---------------
+
+ElasticSearch Result Backend HTTP Basic Authentication Support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can now use HTTP Basic Authentication when using the ElasticSearch result
+backend by providing the username and the password in the URI.
+
+Previously, they were ignored and only unauthenticated requests were issued.
