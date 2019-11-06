@@ -28,7 +28,7 @@ To read more about Celery you should go read the :ref:`introduction <intro>`.
 While this version is backward compatible with previous versions
 it's important that you read the following section.
 
-This version is officially supported on CPython 2.7, 3.5, 3.6, 4.7 & 3.8
+This version is officially supported on CPython 2.7, 3.5, 3.6, 3.7 & 3.8
 and is also supported on PyPy2 & PyPy3.
 
 .. _`website`: http://celeryproject.org/
@@ -50,26 +50,20 @@ the best task execution platform for Python.
 This release has been codenamed `Cliffs <https://www.youtube.com/watch?v=i524g6JMkwI>`_
 which is one of my favorite tracks.
 
-This release focuses on new features like new result backends
-and a revamped security serializer along with bug fixes mainly for Celery Beat,
-Canvas, a number of critical fixes for hanging workers and
-fixes for several severe memory leaks.
+This release focuses on mostly bug fixes and usability improvement for developers.
+Many long standing bugs, usability issues, documentation issues & minor ehancement
+issues were squash squashed which improve the overall developers experience.
 
-Celery 4.4 is the first release to support Python 3.8.
+Celery 4.4 is the first release to support Python 3.8 & pypy36-7.2.
 
 As we now begin to work on Celery 5, the next generation of our task execution
 platform, atleast another 4.x is expected before Celery 5 stable release & will
 get support for atleast 1 years depending on community demand and support.
 
-We have also focused on reducing contribution friction.
+We have also focused on reducing contribution friction And updated the contributing
+tools.
 
-Thanks to **Josue Balandrano Coronel**, one of our core contributors, we now have an
-updated :ref:`contributing` document.
-If you intend to contribute, please review it at your earliest convenience.
 
-I have also added new issue templates, which we will continue to improve,
-so that the issues you open will have more relevant information which
-will allow us to help you to resolve them more easily.
 
 *— Asif Saif Uddin*
 
@@ -209,27 +203,11 @@ Kombu
 
 Starting from this release, the minimum required version is Kombu 4.6S.
 
-New Compression Algorithms
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Kombu 4.3 includes a few new optional compression methods:
-
-- LZMA (available from stdlib if using Python 3 or from a backported package)
-- Brotli (available if you install either the brotli or the brotlipy package)
-- ZStandard (available if you install the zstandard package)
-
-Unfortunately our current protocol generates huge payloads for complex canvases.
-
-Until we migrate to our 3rd revision of the Celery protocol in Celery 5
-which will resolve this issue, please use one of the new compression methods
-as a workaround.
-
-See :ref:`calling-compression` for details.
 
 Billiard
 --------
 
-Starting from this release, the minimum required version is Billiard 3.6.
+Starting from this release, the minimum required version is Billiard 3.6.1.
 
 Eventlet Workers Pool
 ---------------------
@@ -273,13 +251,13 @@ Redis Message Broker
 --------------------
 
 Due to multiple bugs in earlier versions of py-redis that were causing
-issues for Celery, we were forced to bump the minimum required version to 3.2.0.
+issues for Celery, we were forced to bump the minimum required version to 3.3.0.
 
 Redis Result Backend
 --------------------
 
 Due to multiple bugs in earlier versions of py-redis that were causing
-issues for Celery, we were forced to bump the minimum required version to 3.2.0.
+issues for Celery, we were forced to bump the minimum required version to 3.3.0.
 
 Riak Result Backend
 --------------------
