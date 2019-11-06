@@ -101,6 +101,20 @@ The supported Python Versions are:
 - PyPy3.5 7.1 (``pypy3``)
 - PyPy3.6 7.2 (``pypy3``)
 
+Dropped support for Python 3.4
+------------------------------
+
+Celery now requires either Python 2.7 or Python 3.5 and above.
+
+Python 3.4 has reached EOL in March 2019.
+In order to focus our efforts we have dropped support for Python 3.4 in
+this version.
+
+If you still require to run Celery using Python 3.4 you can still use
+Celery 4.3.
+However we encourage you to upgrade to a supported Python version since
+no further security patches will be applied for Python 3.4.
+
 Kombu
 -----
 
