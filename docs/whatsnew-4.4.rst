@@ -1,9 +1,9 @@
 .. _whatsnew-4.4:
 
 ===================================
- What's new in Celery 4.4 (rhubarb)
+ What's new in Celery 4.4 (Cliffs)
 ===================================
-:Author: Omer Katz (``omer.drow at gmail.com``)
+:Author: Asif Saif Uddin (``auvipy at gmail.com``)
 
 .. sidebar:: Change history
 
@@ -12,9 +12,9 @@
     releases (0.0.x), while older series are archived under the :ref:`history`
     section.
 
-Celery is a simple, flexible, and reliable distributed system to
-process vast amounts of messages, while providing operations with
-the tools required to maintain such a system.
+Celery is a simple, flexible, and reliable distributed programming framework
+to process vast amounts of messages, while providing operations with
+the tools required to maintain a distributed system with python.
 
 It's a task queue with focus on real-time processing, while also
 supporting task scheduling.
@@ -28,7 +28,7 @@ To read more about Celery you should go read the :ref:`introduction <intro>`.
 While this version is backward compatible with previous versions
 it's important that you read the following section.
 
-This version is officially supported on CPython 2.7, 3.4, 3.5, 3.6 & 3.7
+This version is officially supported on CPython 2.7, 3.5, 3.6, 4.7 & 3.8
 and is also supported on PyPy2 & PyPy3.
 
 .. _`website`: http://celeryproject.org/
@@ -44,27 +44,22 @@ and is also supported on PyPy2 & PyPy3.
 Preface
 =======
 
-The 4.3.0 release continues to improve our efforts to provide you with
+The 4.4.0 release continues to improve our efforts to provide you with
 the best task execution platform for Python.
 
-This release has been codenamed `Rhubarb <https://www.youtube.com/watch?v=_AWIqXzvX-U>`_
-which is one of my favorite tracks from Selected Ambient Works II.
+This release has been codenamed `Cliffs <https://www.youtube.com/watch?v=i524g6JMkwI>`_
+which is one of my favorite tracks.
 
 This release focuses on new features like new result backends
 and a revamped security serializer along with bug fixes mainly for Celery Beat,
 Canvas, a number of critical fixes for hanging workers and
 fixes for several severe memory leaks.
 
-Celery 4.3 is the first release to support Python 3.7.
+Celery 4.4 is the first release to support Python 3.8.
 
-We hope that 4.3 will be the last release to support Python 2.7 as we now
-begin to work on Celery 5, the next generation of our task execution platform.
-
-However, if Celery 5 will be delayed for any reason we may release
-another 4.x minor version which will still support Python 2.7.
-
-If another 4.x version will be released it will most likely drop support for
-Python 3.4 as it will reach it's EOL in March 2019.
+As we now begin to work on Celery 5, the next generation of our task execution
+platform, atleast another 4.x is expected before Celery 5 stable release & will
+get support for atleast 1 years depending on community demand and support.
 
 We have also focused on reducing contribution friction.
 
@@ -76,7 +71,7 @@ I have also added new issue templates, which we will continue to improve,
 so that the issues you open will have more relevant information which
 will allow us to help you to resolve them more easily.
 
-*— Omer Katz*
+*— Asif Saif Uddin*
 
 Wall of Contributors
 --------------------
@@ -185,7 +180,7 @@ yywing <386542536@qq.com>
     things like answering mailing-list questions.
 
 
-Upgrading from Celery 4.2
+Upgrading from Celery 4.3
 =========================
 
 Please read the important notes below as there are several breaking changes.
@@ -201,17 +196,18 @@ Supported Python Versions
 The supported Python Versions are:
 
 - CPython 2.7
-- CPython 3.4
 - CPython 3.5
 - CPython 3.6
 - CPython 3.7
-- PyPy2.7 6.0 (``pypy2``)
-- PyPy3.5 6.0 (``pypy3``)
+- CPython 3.8
+- PyPy2.7 7.2 (``pypy2``)
+- PyPy3.5 7.1 (``pypy3``)
+- PyPy3.6 7.2 (``pypy3``)
 
 Kombu
 -----
 
-Starting from this release, the minimum required version is Kombu 4.4.
+Starting from this release, the minimum required version is Kombu 4.6S.
 
 New Compression Algorithms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
