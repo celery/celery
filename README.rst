@@ -19,12 +19,12 @@ If you are using Celery to create a commercial product, please consider becoming
 .. _`backer`: https://opencollective.com/celery#backer
 .. _`sponsor`: https://opencollective.com/celery#sponsor
 
+For enterprise
+==============
 
-Sponsors
---------
+Available as part of the Tidelift Subscription.
 
-`Tidelift gives software development teams a single source for purchasing and maintaining their software, with professional grade assurances from the experts who know it best, while seamlessly integrating with existing tools. <https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=readme>`_
-
+The maintainers of ``celery`` and thousands of other packages are working with Tidelift to deliver commercial support and maintenance for the open source dependencies you use to build your applications. Save time, reduce risk, and improve code health, while paying the maintainers of the exact dependencies you use. `Learn more. <https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=enterprise&utm_term=repo>`_
 
 What's a Task Queue?
 ====================
