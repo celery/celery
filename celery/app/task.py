@@ -595,10 +595,13 @@ class Task(object):
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
         options = request.as_execution_options()
+        delivery_info = request.delivery_info or {}
+        priority = delivery_info.get('priority')
+        if priority is not None:
+            options['priority'] = priority
         if queue:
             options['queue'] = queue
         else:
-            delivery_info = request.delivery_info or {}
             exchange = delivery_info.get('exchange')
             routing_key = delivery_info.get('routing_key')
             if exchange == '' and routing_key:
