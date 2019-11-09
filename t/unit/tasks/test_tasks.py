@@ -212,6 +212,22 @@ class test_task_retries(TasksCase):
         self.retry_task.apply([0xFF, 0xFFFF], {'max_retries': 10})
         assert self.retry_task.iterations == 11
 
+    def test_retry_priority(self):
+        priority = 7
+        
+        # Technically, task.priority doesn't need to be set here
+        # since push_request() doesn't populate the delivery_info
+        # with it. However, setting task.priority here also doesn't
+        # cause any problems.
+        self.retry_task.priority = priority
+
+        self.retry_task.push_request()
+        self.retry_task.request.delivery_info = {
+            'priority': priority
+        }
+        sig = self.retry_task.signature_from_request()
+        assert sig.options['priority'] == priority
+
     def test_retry_no_args(self):
         self.retry_task_noargs.max_retries = 3
         self.retry_task_noargs.iterations = 0
