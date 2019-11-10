@@ -9,6 +9,17 @@ the 4.x series, please see :ref:`whatsnew-4.4` for
 an overview of what's new in Celery 4.4.
 
 
+4.4.0rc4
+========
+:release-date: 2019-11-11 00.30 A.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Kombu 4.6.6
+- Py-AMQP 2.5.2
+- Python 3.8
+- Numerious bug fixes
+- PyPy 7.2
+
 4.4.0rc3
 ========
 :release-date: 2019-08-14 23.00 P.M UTC+6:00
