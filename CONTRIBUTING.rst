@@ -913,7 +913,7 @@ You can also use `hub`_ to create pull requests. Example: https://theiconic.tech
 Status Labels
 ~~~~~~~~~~~~~~
 
-There are `different labels _` used to easily manage github issues and PRs.
+There are `different labels`_ used to easily manage github issues and PRs.
 Most of these labels make it easy to categorize each issue with important
 details. For instance, you might see a ``Component:canvas`` label on an issue or PR.
 The ``Component:canvas`` label means the issue or PR corresponds to the canvas functionality.
@@ -963,7 +963,7 @@ Here is a summary of such statuses:
 
 - **Status: Needs Test Coverage**
 
-  Celery uses `codecov _` to verify code coverage. Please make sure PRs do not
+  Celery uses `codecov`_ to verify code coverage. Please make sure PRs do not
   decrease code coverage. This label will identify PRs which need code coverage.
 
 - **Status: Needs Test Case**
