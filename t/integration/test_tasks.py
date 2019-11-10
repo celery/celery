@@ -5,7 +5,7 @@ import pytest
 from celery import group
 
 from .conftest import get_active_redis_channels
-from .tasks import add, add_ignore_result, print_unicode, retry_once, sleeping
+from .tasks import add, add_ignore_result, print_unicode, retry_once, retry_once_priority, sleeping
 
 
 class test_tasks:
@@ -20,6 +20,11 @@ class test_tasks:
     def test_task_retried(self):
         res = retry_once.delay()
         assert res.get(timeout=10) == 1  # retried once
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=2)
+    def test_task_retried_priority(self):
+        res = retry_once_priority.apply_async(priority=7)
+        assert res.get(timeout=10) == 7  # retried once with priority 7
 
     @pytest.mark.flaky(reruns=5, reruns_delay=2)
     def test_unicode_task(self, manager):
