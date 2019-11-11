@@ -240,27 +240,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
             }
         }
 
-    def _set_table_ttl(self):
-        """Enable or disable Time to Live on the table."""
-
-        # Verify that the client supports the TTL methods.
-        for method in ('update_time_to_live', 'describe_time_to_live'):
-            if not hasattr(self._client, method):
-                message = (
-                    "boto3 method '{method}' not found; ensure that "
-                    "boto3>=1.9.178 and botocore>=1.12.178 are installed"
-                ).format(method=method)
-                if not self._has_ttl():
-                    # Return if Time to Live is not desired anyway.
-                    logger.debug(message)
-                    return
-                else:
-                    # Raise exception if Time to Live should be enabled.
-                    logger.error(message)
-                    raise AttributeError(
-                        "boto3 method '{}' not found".format(method)
-                    )
-
+    def _get_table_ttl_description(self):
         # Get the current TTL description.
         try:
             description = self._client.describe_time_to_live(
@@ -280,7 +260,32 @@ class DynamoDBBackend(KeyValueStoreBackend):
             ))
             raise e
 
-        # Return early when possible.
+        return description
+
+    def _set_table_ttl(self):
+        """Enable or disable Time to Live on the table."""
+
+        # Verify client support for the DynamoDB TTL methods.
+        for method in ('update_time_to_live', 'describe_time_to_live'):
+            if not hasattr(self._client, method):
+                message = (
+                    "boto3 method '{method}' not found; ensure that "
+                    "boto3>=1.9.178 and botocore>=1.12.178 are installed"
+                ).format(method=method)
+                if not self._has_ttl():
+                    # Return if Time to Live is not desired anyway.
+                    logger.debug(message)
+                    return
+                else:
+                    # Raise exception if Time to Live should be enabled.
+                    logger.error(message)
+                    raise AttributeError(
+                        "boto3 method '{}' not found".format(method)
+                    )
+
+        # Get the table TTL description, and return early when possible.
+        description = self._get_table_ttl_description()
+        status = description['TimeToLiveDescription']['TimeToLiveStatus']
         if status in ('ENABLED', 'ENABLING'):
             cur_attr_name = \
                 description['TimeToLiveDescription']['AttributeName']
