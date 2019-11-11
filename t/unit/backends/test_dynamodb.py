@@ -38,6 +38,13 @@ class test_DynamoDBBackend:
                 url='dynamodb://a:@'
             )
 
+    def test_init_invalid_ttl_seconds_raises(self):
+        with pytest.raises(ValueError):
+            DynamoDBBackend(
+                app=self.app,
+                url='dynamodb://@?ttl_seconds=1d'
+            )
+
     def test_get_client_explicit_endpoint(self):
         table_creation_path = \
             'celery.backends.dynamodb.DynamoDBBackend._get_or_create_table'

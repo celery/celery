@@ -126,15 +126,16 @@ class DynamoDBBackend(KeyValueStoreBackend):
                 )
             )
 
-            try:
-                self.time_to_live_seconds = int(
-                    query.get(
-                        'ttl_seconds',
-                        self.time_to_live_seconds
+            ttl = query.get('ttl_seconds', self.time_to_live_seconds)
+            if ttl:
+                try:
+                    self.time_to_live_seconds = int(ttl)
+                except ValueError as e:
+                    logger.error(
+                        'TTL must be a number; got "{ttl}"',
+                        exc_info=e
                     )
-                )
-            except Exception:
-                pass
+                    raise e
 
             self.table_name = table or self.table_name
 
