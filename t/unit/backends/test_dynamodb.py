@@ -102,6 +102,26 @@ class test_DynamoDBBackend:
             )
             assert backend.aws_region == 'test'
 
+    @patch('boto3.client')
+    @patch('celery.backends.dynamodb.DynamoDBBackend._get_or_create_table')
+    @patch('celery.backends.dynamodb.DynamoDBBackend._validate_ttl_methods')
+    @patch('celery.backends.dynamodb.DynamoDBBackend._set_table_ttl')
+    def test_get_client_time_to_live_called(
+            self,
+            mock_set_table_ttl,
+            mock_validate_ttl_methods,
+            mock_get_or_create_table,
+            mock_boto_client,
+    ):
+        backend = DynamoDBBackend(
+            app=self.app,
+            url='dynamodb://key:secret@test?ttl_seconds=30'
+        )
+        client = backend._get_client()
+
+        mock_validate_ttl_methods.assert_called_once()
+        mock_set_table_ttl.assert_called_once()
+
     def test_get_or_create_table_not_exists(self):
         self.backend._client = MagicMock()
         mock_create_table = self.backend._client.create_table = MagicMock()
@@ -177,6 +197,10 @@ class test_DynamoDBBackend:
         self.backend.time_to_live_seconds = 30
         assert self.backend._has_ttl() is True
 
+    def test_validate_ttl_methods_present_returns_none(self):
+        self.backend._client = MagicMock()
+        assert self.backend._validate_ttl_methods() is None
+
     def test_validate_ttl_methods_missing_raise(self):
         self.backend._client = MagicMock()
         delattr(self.backend._client, 'describe_time_to_live')
@@ -208,6 +232,27 @@ class test_DynamoDBBackend:
 
         with pytest.raises(ClientError):
             self.backend._set_table_ttl()
+
+    def test_set_table_ttl_enable_when_disabled_succeeds(self):
+        self.backend.time_to_live_seconds = 30
+        self.backend._client = MagicMock()
+        mock_update_time_to_live = self.backend._client.update_time_to_live = \
+            MagicMock()
+
+        mock_describe_time_to_live = \
+            self.backend._client.describe_time_to_live = MagicMock()
+        mock_describe_time_to_live.return_value = {
+            'TimeToLiveDescription': {
+                'TimeToLiveStatus': 'DISABLED',
+                'AttributeName': self.backend._ttl_field.name
+            }
+        }
+
+        res = self.backend._set_table_ttl()
+        mock_describe_time_to_live.assert_called_once_with(
+            TableName=self.backend.table_name
+        )
+        mock_update_time_to_live.assert_called_once()
 
     def test_set_table_ttl_enable_when_enabled_with_correct_attr_succeeds(self):
         self.backend.time_to_live_seconds = 30
