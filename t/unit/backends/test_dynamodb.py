@@ -165,33 +165,16 @@ class test_DynamoDBBackend:
         self.backend._wait_for_table_status(expected='SOME_STATE')
         assert mock_describe_table.call_count == 2
 
-    def test_set_table_ttl_with_ttl_no_describe_method_raises(self):
-        self.backend.time_to_live_seconds = 30
+    def test_validate_ttl_methods_missing_raise(self):
         self.backend._client = MagicMock()
         delattr(self.backend._client, 'describe_time_to_live')
-
-        with pytest.raises(AttributeError):
-            self.backend._set_table_ttl()
-
-    def test_set_table_ttl_with_ttl_no_update_method_raises(self):
-        self.backend.time_to_live_seconds = 30
-        self.backend._client = MagicMock()
         delattr(self.backend._client, 'update_time_to_live')
 
         with pytest.raises(AttributeError):
-            self.backend._set_table_ttl()
+            self.backend._validate_ttl_methods()
 
-    def test_set_table_ttl_without_ttl_no_describe_method_returns_none(self):
-        self.backend._client = MagicMock()
-        delattr(self.backend._client, 'describe_time_to_live')
-
-        assert self.backend._set_table_ttl() is None
-
-    def test_set_table_ttl_without_ttl_no_update_method_returns_none(self):
-        self.backend._client = MagicMock()
-        delattr(self.backend._client, 'update_time_to_live')
-
-        assert self.backend._set_table_ttl() is None
+        with pytest.raises(AttributeError):
+            self.backend._validate_ttl_methods()
 
     def test_set_table_ttl_describe_time_to_live_fails_raises(self):
         from botocore.exceptions import ClientError

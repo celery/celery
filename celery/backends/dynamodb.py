@@ -172,7 +172,11 @@ class DynamoDBBackend(KeyValueStoreBackend):
                 **client_parameters
             )
             self._get_or_create_table()
-            self._set_table_ttl()
+
+            if self._has_ttl():
+                self._validate_ttl_methods()
+                self._set_table_ttl()
+
         return self._client
 
     def _get_table_schema(self):
@@ -228,10 +232,42 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
     def _has_ttl(self):
         """Return the desired Time to Live config; True means enabled."""
+
         return self.time_to_live_seconds is not None
+
+    def _validate_ttl_methods(self):
+        """Verify boto support for the DynamoDB Time to Live methods."""
+
+        # Required TTL methods.
+        required_methods = (
+            'update_time_to_live',
+            'describe_time_to_live',
+        )
+
+        # Find missing methods.
+        missing_methods = []
+        for method in list(required_methods):
+            if not hasattr(self._client, method):
+                missing_methods.append(method)
+
+        if missing_methods:
+            logger.error(
+                (
+                    'boto3 method(s) {methods} not found; ensure that '
+                    'boto3>=1.9.178 and botocore>=1.12.178 are installed'
+                ).format(
+                    methods=','.join(missing_methods)
+                )
+            )
+            raise AttributeError(
+                'boto3 method(s) {methods} not found'.format(
+                    methods=','.join(missing_methods)
+                )
+            )
 
     def _get_ttl_specification(self, ttl_attr_name):
         """Get the boto3 structure describing the DynamoDB TTL specification."""
+
         return {
             'TableName': self.table_name,
             'TimeToLiveSpecification': {
@@ -264,24 +300,6 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
     def _set_table_ttl(self):
         """Enable or disable Time to Live on the table."""
-
-        # Verify client support for the DynamoDB TTL methods.
-        for method in ('update_time_to_live', 'describe_time_to_live'):
-            if not hasattr(self._client, method):
-                message = (
-                    "boto3 method '{method}' not found; ensure that "
-                    "boto3>=1.9.178 and botocore>=1.12.178 are installed"
-                ).format(method=method)
-                if not self._has_ttl():
-                    # Return if Time to Live is not desired anyway.
-                    logger.debug(message)
-                    return
-                else:
-                    # Raise exception if Time to Live should be enabled.
-                    logger.error(message)
-                    raise AttributeError(
-                        "boto3 method '{}' not found".format(method)
-                    )
 
         # Get the table TTL description, and return early when possible.
         description = self._get_table_ttl_description()
