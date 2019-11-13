@@ -70,6 +70,7 @@ class test_Worker:
 
         def run(*args, **kwargs):
             pass
+
         x.run = run
         x.run_from_argv('celery', [])
         x.maybe_detach.assert_called()
@@ -210,10 +211,10 @@ class test_Worker:
             assert 'celery' not in app.amqp.queues.consume_from
 
             c.task_create_missing_queues = False
-            del(app.amqp.queues)
+            del (app.amqp.queues)
             with pytest.raises(ImproperlyConfigured):
                 self.Worker(app=self.app).setup_queues(['image'])
-            del(app.amqp.queues)
+            del (app.amqp.queues)
             c.task_create_missing_queues = True
             worker = self.Worker(app=self.app)
             worker.setup_queues(['image'])
@@ -374,6 +375,20 @@ class test_Worker:
             self.Worker(app=self.app).on_consumer_ready(object())
             assert worker_ready_sent[0]
 
+    def test_disable_task_events(self):
+        worker = self.Worker(app=self.app, task_events=False,
+                             without_gossip=True,
+                             without_heartbeat=True)
+        consumer_steps = worker.blueprint.steps['celery.worker.components.Consumer'].obj.steps
+        assert not any(True for step in consumer_steps
+                       if step.alias == 'Events')
+
+    def test_enable_task_events(self):
+        worker = self.Worker(app=self.app, task_events=True)
+        consumer_steps = worker.blueprint.steps['celery.worker.components.Consumer'].obj.steps
+        assert any(True for step in consumer_steps
+                   if step.alias == 'Events')
+
 
 @mock.stdouts
 class test_funs:
@@ -422,7 +437,6 @@ class test_funs:
 
 @mock.stdouts
 class test_signal_handlers:
-
     class _Worker(object):
         hostname = 'foo'
         stopped = False
