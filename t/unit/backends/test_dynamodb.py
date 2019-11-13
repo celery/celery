@@ -165,6 +165,18 @@ class test_DynamoDBBackend:
         self.backend._wait_for_table_status(expected='SOME_STATE')
         assert mock_describe_table.call_count == 2
 
+    def test_has_ttl_none_returns_none(self):
+        self.backend.time_to_live_seconds = None
+        assert self.backend._has_ttl() is None
+
+    def test_has_ttl_lt_zero_returns_false(self):
+        self.backend.time_to_live_seconds = -1
+        assert self.backend._has_ttl() is False
+
+    def test_has_ttl_gte_zero_returns_true(self):
+        self.backend.time_to_live_seconds = 30
+        assert self.backend._has_ttl() is True
+
     def test_validate_ttl_methods_missing_raise(self):
         self.backend._client = MagicMock()
         delattr(self.backend._client, 'describe_time_to_live')
@@ -179,7 +191,7 @@ class test_DynamoDBBackend:
     def test_set_table_ttl_describe_time_to_live_fails_raises(self):
         from botocore.exceptions import ClientError
 
-        self.backend.time_to_live_seconds = None
+        self.backend.time_to_live_seconds = -1
         self.backend._client = MagicMock()
         mock_describe_time_to_live = \
             self.backend._client.describe_time_to_live = MagicMock()
@@ -285,7 +297,7 @@ class test_DynamoDBBackend:
             self.backend._set_table_ttl()
 
     def test_set_table_ttl_disable_when_disabled_succeeds(self):
-        self.backend.time_to_live_seconds = None
+        self.backend.time_to_live_seconds = -1
         self.backend._client = MagicMock()
         mock_update_time_to_live = self.backend._client.update_time_to_live = \
             MagicMock()
@@ -306,7 +318,7 @@ class test_DynamoDBBackend:
     def test_set_table_ttl_disable_when_currently_enabling_raises(self):
         from botocore.exceptions import ClientError
 
-        self.backend.time_to_live_seconds = None
+        self.backend.time_to_live_seconds = -1
         self.backend._client = MagicMock()
         mock_update_time_to_live = self.backend._client.update_time_to_live = \
             MagicMock()

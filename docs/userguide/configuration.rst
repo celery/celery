@@ -1574,13 +1574,14 @@ The fields of the DynamoDB URL in ``result_backend`` are defined as follows:
 
 #. ``ttl_seconds``
 
-    Time-to-live (in seconds) for results before they expire. Default is
-    disabled, meaning results are not expired. The DynamoDB table must have
-    Time to Live enabled for expiry to work. Time to Live will be enabled on
-    the table if ``ttl_seconds`` is set; otherwise, Time to Live will be
-    disabled. Note that trying to change a table's Time to Live setting
-    multiple times in quick succession will cause a throttling error. More
-    details can be found in the
+    Time-to-live (in seconds) for results before they expire. The default is to
+    not expire results, while also leaving the DynamoDB table's Time to Live
+    settings untouched. If ``ttl_seconds`` is set to a positive value, results
+    will expire after the specified number of seconds. Setting ``ttl_seconds``
+    to a negative value means to not expire results, and also to actively
+    disable the DynamoDB table's Time to Live setting. Note that trying to
+    change a table's Time to Live setting multiple times in quick succession
+    will cause a throttling error. More details can be found in the
     `DynamoDB TTL documentation <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html>`_
 
 .. _conf-ironcache-result-backend:

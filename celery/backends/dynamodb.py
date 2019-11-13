@@ -173,7 +173,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
             )
             self._get_or_create_table()
 
-            if self._has_ttl():
+            if self._has_ttl() is not None:
                 self._validate_ttl_methods()
                 self._set_table_ttl()
 
@@ -231,9 +231,15 @@ class DynamoDBBackend(KeyValueStoreBackend):
                 raise e
 
     def _has_ttl(self):
-        """Return the desired Time to Live config; True means enabled."""
+        """Return the desired Time to Live config.
 
-        return self.time_to_live_seconds is not None
+        - True:  Enable TTL on the table; use expiry.
+        - False: Disable TTL on the table; don't use expiry.
+        - None:  Ignore TTL on thetable; don't use expiry.
+        """
+
+        return None if self.time_to_live_seconds is None \
+            else self.time_to_live_seconds >= 0
 
     def _validate_ttl_methods(self):
         """Verify boto support for the DynamoDB Time to Live methods."""
@@ -336,6 +342,18 @@ class DynamoDBBackend(KeyValueStoreBackend):
                     table=self.table_name
                 ))
                 return description
+
+        # The state shouldn't ever have any value beyond the four handled
+        # above, but to ease troubleshooting of potential future changes, emit
+        # a log showing the unknown state.
+        else: # pragma: no cover
+            logger.warning((
+                'Unknown DynamoDB Time to Live status {status} '
+                'on table {table}. Attempting to continue.'
+            ).format(
+                status=status,
+                table=self.table_name
+            ))
 
         # At this point, we have one of the following situations:
         #
