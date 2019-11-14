@@ -1207,7 +1207,7 @@ class group(Signature):
             self.tasks[:] = new_tasks
         else:
             self.tasks = new_tasks
-        return self.app.GroupResult(gid, results)
+        return self.app.GroupResult(group_id, results)
 
     _freeze = freeze
 
@@ -1248,7 +1248,7 @@ class group(Signature):
 
 @Signature.register_type()
 @python_2_unicode_compatible
-class chord(Signature):
+class _chord(Signature):
     r"""Barrier synchronization primitive.
 
     A chord consists of a header and a body.
@@ -1394,8 +1394,7 @@ class chord(Signature):
         options.pop('chord', None)
         options.pop('task_id', None)
 
-        header.freeze(group_id=group_id, chord=body, root_id=root_id)
-        header_result = header(*partial_args, task_id=group_id, **options)
+        header_result = header.freeze(group_id=group_id, chord=body, root_id=root_id)
 
         if len(header_result) > 0:
             app.backend.apply_chord(
@@ -1410,6 +1409,8 @@ class chord(Signature):
         # we execute the body manually here.
         else:
             body.delay([])
+
+        header_result = header(*partial_args, task_id=group_id, **options)
 
         bodyres.parent = header_result
         return bodyres
@@ -1470,6 +1471,14 @@ class chord(Signature):
 
     tasks = getitem_property('kwargs.header', 'Tasks in chord header.')
     body = getitem_property('kwargs.body', 'Body task of chord.')
+
+
+class chord(_chord):
+    def __new__(cls, header, body=None, **kwargs):
+        if not header:
+            return body
+
+        return super(chord, cls).__new__(cls, header, body=body, **kwargs)
 
 
 def signature(varies, *args, **kwargs):

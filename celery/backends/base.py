@@ -742,6 +742,7 @@ class BaseKeyValueStoreBackend(Backend):
         return result
 
     def _save_group(self, group_id, result):
+        print(f"save group: {datetime.datetime.now()}")
         self.set(self.get_key_for_group(group_id),
                  self.encode({'result': result.as_tuple()}))
         return result

@@ -8,7 +8,7 @@ from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
 from .conftest import get_redis_connection
-
+import datetime
 logger = get_task_logger(__name__)
 
 
@@ -21,6 +21,7 @@ def identity(x):
 @shared_task
 def add(x, y):
     """Add two numbers."""
+    logger.error(f"add: {datetime.datetime.now()}")
     return x + y
 
 

@@ -899,6 +899,17 @@ class test_chord:
         res = c.delay()
         assert res.get(timeout=TIMEOUT) == 499500
 
+    # @pytest.mark.flaky(reruns=5, reruns_delay=1)
+    def test_chord_no_missing_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = group(add.s(i, i) for i in range(2)) | tsum.s()
+        res = c.delay()
+        assert res.get(timeout=TIMEOUT) == 2
+
     @pytest.mark.flaky(reruns=5, reruns_delay=1)
     def test_chain_to_a_chord_with_large_header(self, manager):
         try:
