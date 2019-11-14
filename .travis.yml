@@ -42,6 +42,10 @@ matrix:
     env: MATRIX_TOXENV=integration-cache
     stage: integration
 
+  - python: 3.8
+    env: MATRIX_TOXENV=integration-cassandra
+    stage: integration
+
   - python: '3.8'
     env: TOXENV=flake8
     stage: lint
@@ -105,6 +109,11 @@ before_install:
           if [[ "$TOXENV" == *cache ]]; then
               docker run -d -p 11211:11211 memcached:alpine
               while ! nc -zv 127.0.0.1 11211; do sleep 1; done
+          fi
+    - |
+          if [[ "$TOXENV" == *cassandra ]]; then
+             sudo docker run -d -p 9042:9042 cassandra:latest
+             while ! nc -zv 127.0.0.1 9042; do sleep 1; done
           fi
     - |
           docker run -d -e executable=blob -t -p 10000:10000 --tmpfs /opt/azurite/folder:rw arafato/azurite:2.6.5
