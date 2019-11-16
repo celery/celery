@@ -78,10 +78,10 @@ The :program:`celery` program can be used to start the worker (you need to run t
 
 When the worker starts you should see a banner and some messages::
 
-     -------------- celery@halcyon.local v4.0 (latentcall)
-     ---- **** -----
-     --- * ***  * -- [Configuration]
-     -- * - **** --- . broker:      amqp://guest@localhost:5672//
+     --------------- celery@halcyon.local v4.0 (latentcall)
+     --- ***** -----
+     -- ******* ---- [Configuration]
+     - *** --- * --- . broker:      amqp://guest@localhost:5672//
      - ** ---------- . app:         __main__:0x1012d8590
      - ** ---------- . concurrency: 8 (processes)
      - ** ---------- . events:      OFF (enable -E to monitor this worker)
