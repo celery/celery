@@ -35,7 +35,12 @@ def get_active_redis_channels():
 def celery_config():
     return {
         'broker_url': TEST_BROKER,
-        'result_backend': TEST_BACKEND
+        'result_backend': TEST_BACKEND,
+        'cassandra_servers': ['localhost'],
+        'cassandra_keyspace': 'tests',
+        'cassandra_table': 'tests',
+        'cassandra_read_consistency': 'ONE',
+        'cassandra_write_consistency': 'ONE'
     }
 
 
