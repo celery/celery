@@ -1079,6 +1079,7 @@ class group(Signature):
         results = list(self._apply_tasks(tasks, producer, app, p,
                                          args=args, kwargs=kwargs, **options))
         result = self.app.GroupResult(group_id, results, ready_barrier=p)
+        result.save()
         p.finalize()
 
         # - Special case of group(A.s() | group(B.s(), C.s()))

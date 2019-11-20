@@ -2,6 +2,7 @@
 """Memcached and in-memory cache result backend."""
 from __future__ import absolute_import, unicode_literals
 
+import pylibmc
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.objects import cached_property
 
@@ -137,7 +138,12 @@ class CacheBackend(KeyValueStoreBackend):
             header_result, body, **kwargs)
 
     def incr(self, key):
-        return self.client.incr(key)
+        try:
+            return self.client.incr(key)
+        except pylibmc.NotFound:
+            self.client.set(key, 1)
+            return 1
+
 
     def expire(self, key, value):
         return self.client.touch(key, value)
