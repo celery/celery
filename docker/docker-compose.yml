@@ -16,6 +16,7 @@ services:
       REDIS_HOST: redis
       WORKER_LOGLEVEL: DEBUG
       AZUREBLOCKBLOB_URL: azureblockblob://DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
+      MYSQL_URL: mysql://root:c313ry@mysql/resultsdb
       PYTHONPATH: /home/developer/celery
     tty: true
     volumes:
@@ -25,6 +26,7 @@ services:
       - redis
       - dynamodb
       - azurite
+      - mysql
 
   rabbit:
     image: rabbitmq:3.8.0
@@ -37,3 +39,11 @@ services:
 
   azurite:
     image: arafato/azurite:2.6.5
+
+  mysql:
+    image: mysql
+    restart: always
+    environment:
+      - MYSQL_DATABASE=resultsdb
+      - MYSQL_ROOT_PASSWORD=c313ry
+

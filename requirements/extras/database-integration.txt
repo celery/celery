@@ -1,0 +1,2 @@
+-r sqlalchemy.txt
+mysqlclient
