@@ -42,6 +42,10 @@ matrix:
     env: MATRIX_TOXENV=integration-cache
     stage: integration
 
+  - python: 3.8
+    env: MATRIX_TOXENV=integration-cassandra
+    stage: integration
+
   - python: '3.8'
     env: TOXENV=flake8
     stage: lint
@@ -105,6 +109,15 @@ before_install:
           if [[ "$TOXENV" == *cache ]]; then
               docker run -d -p 11211:11211 memcached:alpine
               while ! nc -zv 127.0.0.1 11211; do sleep 1; done
+          fi
+    - |
+          if [[ "$TOXENV" == *cassandra ]]; then
+             cassandra_container_id=$(sudo docker run -d -p 9042:9042 cassandra:latest)
+             sudo docker exec $cassandra_container_id /bin/bash -c "while ! cqlsh -e 'describe cluster'; do sleep 1; done"
+             sudo docker exec $cassandra_container_id /usr/bin/cqlsh -e "CREATE KEYSPACE tests WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };"
+             sleep 1
+             sudo docker exec $cassandra_container_id /usr/bin/cqlsh -k tests -e "CREATE TABLE tests (task_id text, status text, result blob, date_done timestamp, traceback blob, children blob, PRIMARY KEY ((task_id), date_done)) WITH CLUSTERING ORDER BY (date_done DESC);"
+             sleep 1
           fi
     - |
           docker run -d -e executable=blob -t -p 10000:10000 --tmpfs /opt/azurite/folder:rw arafato/azurite:2.6.5

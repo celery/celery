@@ -213,11 +213,11 @@ class CassandraBackend(BaseBackend):
         """Get task meta-data for a task by id."""
         self._get_connection()
 
-        res = self._session.execute(self._read_stmt, (task_id, ))
+        res = self._session.execute(self._read_stmt, (task_id, )).one()
         if not res:
             return {'status': states.PENDING, 'result': None}
 
-        status, result, date_done, traceback, children = res[0]
+        status, result, date_done, traceback, children = res
 
         return self.meta_from_decoded({
             'task_id': task_id,
