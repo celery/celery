@@ -623,8 +623,6 @@ class test_chord:
         except NotImplementedError as e:
             raise pytest.skip(e.args[0])
 
-        if not manager.app.backend.supports_native_join:
-            raise pytest.skip('Requires native join support.')
         c = chain(
             add.si(1, 0),
             group(
