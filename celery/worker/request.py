@@ -510,6 +510,9 @@ class Request(object):
                 send_failed_event = False
             elif ack:
                 self.acknowledge()
+            else:
+                logger.info('!!rejecting the task')
+                self.reject(requeue=False)
 
         # These are special cases where the process would not have had time
         # to write the result.
