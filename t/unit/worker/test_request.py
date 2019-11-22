@@ -669,6 +669,7 @@ class test_Request(RequestCase):
     def test_on_failure_acks_on_failure_or_timeout_disabled_for_task(self):
         job = self.xRequest()
         job.time_start = 1
+        job._on_reject = Mock()
         self.mytask.acks_late = True
         self.mytask.acks_on_failure_or_timeout = False
         try:
@@ -676,7 +677,9 @@ class test_Request(RequestCase):
         except KeyError:
             exc_info = ExceptionInfo()
             job.on_failure(exc_info)
-        assert job.acknowledged is False
+
+        assert job.acknowledged is True
+        job._on_reject.assert_called_with(req_logger, job.connection_errors, False)
 
     def test_on_failure_acks_on_failure_or_timeout_enabled_for_task(self):
         job = self.xRequest()
@@ -701,7 +704,9 @@ class test_Request(RequestCase):
         except KeyError:
             exc_info = ExceptionInfo()
             job.on_failure(exc_info)
-        assert job.acknowledged is False
+        assert job.acknowledged is True
+        job._on_reject.assert_called_with(req_logger, job.connection_errors,
+                                          False)
         self.app.conf.acks_on_failure_or_timeout = True
 
     def test_on_failure_acks_on_failure_or_timeout_enabled(self):

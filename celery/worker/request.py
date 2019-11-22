@@ -510,6 +510,10 @@ class Request(object):
                 send_failed_event = False
             elif ack:
                 self.acknowledge()
+            else:
+                # supporting the behaviour where a task failed and
+                # need to be removed from prefetched local queue
+                self.reject(requeue=False)
 
         # These are special cases where the process would not have had time
         # to write the result.
