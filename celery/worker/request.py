@@ -511,7 +511,8 @@ class Request(object):
             elif ack:
                 self.acknowledge()
             else:
-                logger.info('!!rejecting the task')
+                # supporting the behaviour where a task failed and
+                # need to be removed from prefetched local queue
                 self.reject(requeue=False)
 
         # These are special cases where the process would not have had time
