@@ -704,7 +704,9 @@ class test_Request(RequestCase):
         except KeyError:
             exc_info = ExceptionInfo()
             job.on_failure(exc_info)
-        assert job.acknowledged is False
+        assert job.acknowledged is True
+        job._on_reject.assert_called_with(req_logger, job.connection_errors,
+                                          False)
         self.app.conf.acks_on_failure_or_timeout = True
 
     def test_on_failure_acks_on_failure_or_timeout_enabled(self):
