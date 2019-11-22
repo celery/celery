@@ -8,6 +8,7 @@ import socket
 import sys
 from datetime import datetime, timedelta
 from time import time
+from unittest.mock import ANY
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -669,6 +670,7 @@ class test_Request(RequestCase):
     def test_on_failure_acks_on_failure_or_timeout_disabled_for_task(self):
         job = self.xRequest()
         job.time_start = 1
+        job._on_reject = Mock()
         self.mytask.acks_late = True
         self.mytask.acks_on_failure_or_timeout = False
         try:
@@ -676,7 +678,8 @@ class test_Request(RequestCase):
         except KeyError:
             exc_info = ExceptionInfo()
             job.on_failure(exc_info)
-        assert job.acknowledged is False
+        assert job.acknowledged is True
+        job._on_reject.assert_called_with(ANY, ANY, False)
 
     def test_on_failure_acks_on_failure_or_timeout_enabled_for_task(self):
         job = self.xRequest()
