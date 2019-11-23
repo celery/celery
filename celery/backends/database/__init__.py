@@ -2,11 +2,9 @@
 """SQLAlchemy result store backend."""
 from __future__ import absolute_import, unicode_literals
 
-import datetime
 import logging
 from contextlib import contextmanager
 
-from kombu.utils.encoding import ensure_bytes
 from vine.utils import wraps
 
 from celery import states
