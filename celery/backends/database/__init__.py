@@ -26,12 +26,6 @@ except ImportError:  # pragma: no cover
         'The database result backend requires SQLAlchemy to be installed.'
         'See https://pypi.org/project/SQLAlchemy/')
 
-try:
-    from dateutil.parser import parse
-except ImportError:  # pragma: no cover
-    raise ImproperlyConfigured('The database result backend '
-                               'requires python-dateutil to be installed.')
-
 logger = logging.getLogger(__name__)
 
 __all__ = ('DatabaseBackend',)
@@ -127,6 +121,7 @@ class DatabaseBackend(BaseBackend):
             task = task and task[0]
             if not task:
                 task = self.task_cls(task_id)
+                task.task_id = task_id
                 session.add(task)
                 session.flush()
 
@@ -137,14 +132,13 @@ class DatabaseBackend(BaseBackend):
                        request=None):
 
         meta = self._get_result_meta(result=result, state=state,
-                                     traceback=traceback, request=request)
-        # Convert date_done to python datetime
-        if meta['date_done']:
-            meta['date_done'] = parse(meta['date_done'])
+                                     traceback=traceback, request=request,
+                                     format_date=False, encode=True)
 
-        # Exclude the primary key id column as we should not set it None
+        # Exclude the primary key id and task_id columns
+        # as we should not set it None
         columns = [column.name for column in self.task_cls.__table__.columns
-                   if column.name != 'id']
+                   if column.name not in {'id', 'task_id'}]
 
         # Iterate through the columns name of the table
         # to set the value from meta.
@@ -160,6 +154,7 @@ class DatabaseBackend(BaseBackend):
         with session_cleanup(session):
             task = list(session.query(self.task_cls).filter(self.task_cls.task_id == task_id))
             task = task and task[0]
+            print(task, self.task_cls)
             if not task:
                 task = self.task_cls(task_id)
                 task.status = states.PENDING

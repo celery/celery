@@ -1,2 +1,1 @@
 sqlalchemy
-python-dateutil

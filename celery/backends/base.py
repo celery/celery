@@ -352,9 +352,12 @@ class Backend(object):
         return task_id in self._cache
 
     def _get_result_meta(self, result,
-                         state, traceback, request):
+                         state, traceback, request, format_date=True,
+                         encode=False):
         if state in self.READY_STATES:
-            date_done = datetime.datetime.utcnow().isoformat()
+            date_done = datetime.datetime.utcnow()
+            if format_date:
+                date_done = date_done.isoformat()
         else:
             date_done = None
 
@@ -383,6 +386,14 @@ class Backend(object):
                     if hasattr(request, 'delivery_info') and
                     request.delivery_info else None
                 }
+
+                if encode:
+                    # args and kwargs need to be encoded properly before saving
+                    encode_needed_fields = {"args", "kwargs"}
+                    for field in encode_needed_fields:
+                        value = request_meta[field]
+                        encoded_value = self.encode(value)
+                        request_meta[field] = ensure_bytes(encoded_value)
 
                 meta.update(request_meta)
 
@@ -742,7 +753,7 @@ class BaseKeyValueStoreBackend(Backend):
                       traceback=None, request=None, **kwargs):
         meta = self._get_result_meta(result=result, state=state,
                                      traceback=traceback, request=request)
-        meta['task_id'] = task_id
+        meta['task_id'] = bytes_to_str(task_id)
 
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
