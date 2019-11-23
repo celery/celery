@@ -152,7 +152,6 @@ class DatabaseBackend(BaseBackend):
         with session_cleanup(session):
             task = list(session.query(self.task_cls).filter(self.task_cls.task_id == task_id))
             task = task and task[0]
-            print(task, self.task_cls)
             if not task:
                 task = self.task_cls(task_id)
                 task.status = states.PENDING
