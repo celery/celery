@@ -491,10 +491,10 @@ returns successfully:
 
     >>> res = add.apply_async((2, 2), link=mul.s(16))
     >>> res.get()
-    64
+    4
 
 The linked task will be applied with the result of its parent
-task as the first argument. In the above case where the result was 64,
+task as the first argument. In the above case where the result was 4,
 this will result in ``mul(4, 16)``.
 
 The results will keep track of any subtasks called by the original task,
