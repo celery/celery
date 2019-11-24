@@ -11,6 +11,7 @@
 -r extras/memcache.txt
 -r extras/eventlet.txt
 -r extras/gevent.txt
+-r extras/thread.txt
 -r extras/elasticsearch.txt
 -r extras/couchdb.txt
 -r extras/couchbase.txt

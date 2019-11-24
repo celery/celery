@@ -134,7 +134,7 @@ It supports…
 
     - **Concurrency**
 
-        - Prefork, Eventlet_, gevent_, single threaded (``solo``)
+        - Prefork, Eventlet_, gevent_, single threaded (``solo``), thread
 
     - **Result Stores**
 
