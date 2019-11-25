@@ -235,7 +235,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
         - True:  Enable TTL on the table; use expiry.
         - False: Disable TTL on the table; don't use expiry.
-        - None:  Ignore TTL on thetable; don't use expiry.
+        - None:  Ignore TTL on the table; don't use expiry.
         """
 
         return None if self.time_to_live_seconds is None \
