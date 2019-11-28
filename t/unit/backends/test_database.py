@@ -246,6 +246,37 @@ class test_DatabaseBackend_result_extended():
         assert meta['retries'] == 2
         assert meta['worker'] == "celery@worker_1"
 
+    @pytest.mark.parametrize(
+        'result_serializer, args, kwargs',
+        [
+            ('pickle', (SomeClass(1), SomeClass(2)),
+             {'foo': SomeClass(123)}),
+            ('json', ['a', 'b'], {'foo': 'bar'}),
+        ],
+        ids=['using pickle', 'using json']
+    )
+    def test_get_result_meta(self, result_serializer, args, kwargs):
+        self.app.conf.result_serializer = result_serializer
+        tb = DatabaseBackend(self.uri, app=self.app)
+
+        request = Context(args=args, kwargs=kwargs,
+                          task='mytask', retries=2,
+                          hostname='celery@worker_1',
+                          delivery_info={'routing_key': 'celery'})
+
+        meta = tb._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, format_date=False,
+                                   encode=True)
+
+        assert meta['result'] == {'fizz': 'buzz'}
+        assert tb.decode(meta['args']) == args
+        assert tb.decode(meta['kwargs']) == kwargs
+        assert meta['queue'] == 'celery'
+        assert meta['name'] == 'mytask'
+        assert meta['retries'] == 2
+        assert meta['worker'] == "celery@worker_1"
+
 
 @skip.unless_module('sqlalchemy')
 class test_SessionManager:

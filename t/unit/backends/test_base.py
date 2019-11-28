@@ -7,6 +7,7 @@ from contextlib import contextmanager
 import pytest
 from case import ANY, Mock, call, patch, skip
 from kombu.serialization import prepare_accept_content
+from kombu.utils.encoding import ensure_bytes
 
 import celery
 from celery import chord, group, signature, states, uuid
@@ -103,6 +104,45 @@ class test_Backend_interface:
         assert len(b4.accept) == 1
         assert list(b4.accept)[0] == 'application/x-yaml'
         assert prepare_accept_content(['yaml']) == b4.accept
+
+    def test_get_result_meta(self):
+        b1 = BaseBackend(self.app)
+        meta = b1._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=None)
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == {'fizz': 'buzz'}
+        assert meta['traceback'] is None
+
+        self.app.conf.result_extended = True
+        args = ['a', 'b']
+        kwargs = {'foo': 'bar'}
+        task_name = 'mytask'
+
+        b2 = BaseBackend(self.app)
+        request = Context(args=args, kwargs=kwargs,
+                          task=task_name,
+                          delivery_info={'routing_key': 'celery'})
+        meta = b2._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, encode=False)
+        assert meta['name'] == task_name
+        assert meta['args'] == args
+        assert meta['kwargs'] == kwargs
+        assert meta['queue'] == 'celery'
+
+    def test_get_result_meta_encoded(self):
+        self.app.conf.result_extended = True
+        b1 = BaseBackend(self.app)
+        args = ['a', 'b']
+        kwargs = {'foo': 'bar'}
+
+        request = Context(args=args, kwargs=kwargs)
+        meta = b1._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, encode=True)
+        assert meta['args'] == ensure_bytes(b1.encode(args))
+        assert meta['kwargs'] == ensure_bytes(b1.encode(kwargs))
 
 
 class test_BaseBackend_interface:
