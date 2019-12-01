@@ -39,10 +39,6 @@ matrix:
     stage: integration
 
   - python: 3.8
-    env: MATRIX_TOXENV=integration-cache
-    stage: integration
-
-  - python: 3.8
     env: MATRIX_TOXENV=integration-cassandra
     stage: integration
 
