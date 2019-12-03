@@ -1098,9 +1098,9 @@ class group(Signature):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         app = app or self.app
-        with app.producer_or_acquire(producer) as producer:
+        def _apply(_producer):
             for sig, res in tasks:
-                sig.apply_async(producer=producer, add_to_parent=False,
+                sig.apply_async(producer=_producer, add_to_parent=False,
                                 chord=sig.options.get('chord') or chord,
                                 args=args, kwargs=kwargs,
                                 **options)
@@ -1115,6 +1115,11 @@ class group(Signature):
                     p.size += 1
                     res.then(p, weak=True)
                 yield res  # <-- r.parent, etc set in the frozen result.
+        if app.conf.broker_producers:
+            return _apply(producer)
+        else:
+            with app.producer_or_acquire(producer) as _producer:
+                return _apply(_producer)
 
     def _freeze_gid(self, options):
         # remove task_id and use that as the group_id,

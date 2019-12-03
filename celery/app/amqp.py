@@ -468,12 +468,53 @@ class AMQP(object):
             raise ValueError('%s is out of range: %r' % (what, s))
         return s
 
+    def effective_entities(self, queue=None, exchange=None, exchange_type=None,
+            routing_key=None, delivery_mode=None):
+        """Transforms arguments to appropriate entities based on Celery
+           defaults.
+        Returns:
+                A tuple (exchange, exchange_type, routing_key, delivery_mode,
+                queue, qname)
+        """
+        qname = queue
+        if queue is None and exchange is None:
+            queue = self.default_queue
+        if queue is not None:
+            if isinstance(queue, string_t):
+                qname, queue = queue, self.queues[queue]
+            else:
+                qname = queue.name
+
+        if delivery_mode is None:
+            try:
+                delivery_mode = queue.exchange.delivery_mode
+            except AttributeError:
+                pass
+            delivery_mode = delivery_mode or\
+                            self.app.conf.task_default_delivery_mode
+
+        if exchange_type is None:
+            try:
+                exchange_type = queue.exchange.type
+            except AttributeError:
+                exchange_type = 'direct'
+
+        # convert to anon-exchange, when exchange not set and direct ex.
+        if (not exchange or not routing_key) and exchange_type == 'direct':
+                exchange, routing_key = '', qname
+        elif exchange is None:
+            # not topic exchange, and exchange not undefined
+            exchange = queue.exchange.name or self.default_exchange
+            routing_key = routing_key or queue.routing_key or\
+                          self.app.conf.task_default_routing_key
+        return exchange, exchange_type, routing_key, delivery_mode, queue, qname
+
     def _create_task_sender(self):
         default_retry = self.app.conf.task_publish_retry
         default_policy = self.app.conf.task_publish_retry_policy
-        default_delivery_mode = self.app.conf.task_default_delivery_mode
-        default_queue = self.default_queue
-        queues = self.queues
+        #default_delivery_mode = self.app.conf.task_default_delivery_mode
+        #default_queue = self.default_queue
+        #queues = self.queues
         send_before_publish = signals.before_task_publish.send
         before_receivers = signals.before_task_publish.receivers
         send_after_publish = signals.after_task_publish.send
@@ -483,9 +524,9 @@ class AMQP(object):
         sent_receivers = signals.task_sent.receivers
 
         default_evd = self._event_dispatcher
-        default_exchange = self.default_exchange
+        #default_exchange = self.default_exchange
 
-        default_rkey = self.app.conf.task_default_routing_key
+        #default_rkey = self.app.conf.task_default_routing_key
         default_serializer = self.app.conf.task_serializer
         default_compressor = self.app.conf.result_compression
 
@@ -503,35 +544,10 @@ class AMQP(object):
             if kwargs:
                 properties.update(kwargs)
 
-            qname = queue
-            if queue is None and exchange is None:
-                queue = default_queue
-            if queue is not None:
-                if isinstance(queue, string_t):
-                    qname, queue = queue, queues[queue]
-                else:
-                    qname = queue.name
-
-            if delivery_mode is None:
-                try:
-                    delivery_mode = queue.exchange.delivery_mode
-                except AttributeError:
-                    pass
-                delivery_mode = delivery_mode or default_delivery_mode
-
-            if exchange_type is None:
-                try:
-                    exchange_type = queue.exchange.type
-                except AttributeError:
-                    exchange_type = 'direct'
-
-            # convert to anon-exchange, when exchange not set and direct ex.
-            if (not exchange or not routing_key) and exchange_type == 'direct':
-                exchange, routing_key = '', qname
-            elif exchange is None:
-                # not topic exchange, and exchange not undefined
-                exchange = queue.exchange.name or default_exchange
-                routing_key = routing_key or queue.routing_key or default_rkey
+            (exchange, exchange_type, routing_key, delivery_mode, queue,
+                qname) = self.effective_entities(queue=queue, exchange=exchange,
+                exchange_type=exchange_type, routing_key=routing_key,
+                delivery_mode=delivery_mode)
             if declare is None and queue and not isinstance(queue, Broadcast):
                 declare = [queue]
 
@@ -615,6 +631,83 @@ class AMQP(object):
     @router.setter
     def router(self, value):
         return value
+
+    def broker_producers_write_url(self, exchange=None, routing_key=None,
+            **unused_kwargs):
+        """Uses exchange, routing_key to determine url from config
+           broker_producers_config.
+           Celery defaults are NOT used if arguments are None.
+        Returns:
+                broker url, if broker_producers is enabled and arguments are
+                not None, o/w None
+        """
+        if not self.app.conf.broker_producers:
+            # enabled per worker --multi-broker
+            return None
+
+        exchange = exchange or ''
+        routing_key = routing_key or ''
+        if not (exchange or routing_key):
+            # no defaults honored here
+            return None
+        key = (exchange, routing_key, )
+        _config = self.app.conf.broker_producers_config
+
+        # temporary
+        def temporary():
+            def q(_q):
+                return ('', _q, )
+            return {
+                q('q1') : 'amqp://dlj2:dlj2@sys-rabbit-dl-dev-1.bdns.bloomberg.com:30424/rmq-dl-common',
+                q('q2') : 'amqp://rmq-dltest:rmq-dltest@rmq-dltest.rabbitmq.dev.bloomberg.com:30424/rmq-dltest',
+            }
+        _config = temporary()
+
+        return _config[key]
+
+    def effective_broker_producers_write_url(self, queue=None, exchange=None,
+        routing_key=None):
+        """Uses queue, exchange, routing_key to determine appropriate exchange,
+           routing_key and then determine broker url.
+           Celery defaults are used if arguments are None.
+        Returns:
+                broker url, if broker_producers is enabled o/w None
+        """
+        (exchange, _, routing_key, _, _, _) = self.effective_entities(
+            queue=queue, exchange=exchange, exchange_type=None,
+            routing_key=routing_key, delivery_mode=None)
+        return self.broker_producers_write_url(exchange=exchange,
+            routing_key=routing_key)
+
+    def multi_connection_pool(self, queue=None, exchange=None, routing_key=None,
+            **unused_kwargs):
+        """Uses queue, exchange, routing_key to determine appropriate broker
+           connection pool.
+           Celery defaults are used if arguments are None.
+        Returns:
+                connection pool, if broker_producers is enabled o/w None
+        """
+        url = self.effective_broker_producers_write_url(queue=queue,
+            exchange=exchange, routing_key=routing_key)
+        if not url:
+            return None
+        _ = self.app.pool# sets global limit once
+        return pools.connections[self.app.connection_for_write(url=url)]
+
+    def multi_producer_pool(self, queue=None, exchange=None, routing_key=None,
+            **unused_kwargs):
+        """Uses queue, exchange, routing_key to determine appropriate broker
+           producers pool.
+           Celery defaults are used if arguments are None.
+        Returns:
+                producer pool, if broker_producers is enabled o/w None
+        """
+        url = self.effective_broker_producers_write_url(queue=queue,
+            exchange=exchange, routing_key=routing_key)
+        if not url:
+            return None
+        _ = self.app.pool# sets global limit once
+        return pools.producers[self.app.connection_for_write(url=url)]
 
     @property
     def producer_pool(self):

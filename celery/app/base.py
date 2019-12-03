@@ -751,7 +751,7 @@ class Celery(object):
         if connection:
             producer = amqp.Producer(connection, auto_declare=False)
 
-        with self.producer_or_acquire(producer) as P:
+        with self.producer_or_acquire(producer, **options) as P:
             with P.connection._reraise_as_library_errors():
                 if not ignored_result:
                     self.backend.on_task_call(P, task_id)
@@ -777,13 +777,22 @@ class Celery(object):
         """
         return self._connection(url or self.conf.broker_read_url, **kwargs)
 
-    def connection_for_write(self, url=None, **kwargs):
+    def connection_for_write(self, url=None, url_options={}, **kwargs):
         """Establish connection used for producing.
+        Arguments:
+            url: url for broker.
+            url_options (dict): options like exchange, routing_key to determine
+                broker url, if url not provided.
+            **kwargs : Arguments of :class:`kombu.Connection`
+        Returns:
+            kombu.Connection: the lazy connection instance.
 
         See Also:
             :meth:`connection` for supported arguments.
         """
-        return self._connection(url or self.conf.broker_write_url, **kwargs)
+        _url = url or self.broker_producers_write_url(
+            **url_options) or self.conf.broker_write_url
+        return self._connection(_url, **kwargs)
 
     def connection(self, hostname=None, userid=None, password=None,
                    virtual_host=None, port=None, ssl=None,
@@ -875,7 +884,7 @@ class Celery(object):
         return FallbackContext(connection, self._acquire_connection, pool=pool)
     default_connection = connection_or_acquire  # XXX compat
 
-    def producer_or_acquire(self, producer=None):
+    def producer_or_acquire(self, producer=None, **pool_options):
         """Context used to acquire a producer from the pool.
 
         For use within a :keyword:`with` statement to get a producer
@@ -884,9 +893,12 @@ class Celery(object):
         Arguments:
             producer (kombu.Producer): If not provided, a producer
                 will be acquired from the producer pool.
+            pool_options (dict): options to determine producer pool.
         """
+        _pool = self.multi_producer_pool(
+            **pool_options) or self.producer_pool
         return FallbackContext(
-            producer, self.producer_pool.acquire, block=True,
+            producer, _pool.acquire, block=True,
         )
     default_producer = producer_or_acquire  # XXX compat
 
@@ -1258,6 +1270,12 @@ class Celery(object):
     @property
     def producer_pool(self):
         return self.amqp.producer_pool
+
+    def broker_producers_write_url(self, **kwargs):
+        return self.amqp.broker_producers_write_url(kwargs)
+
+    def multi_producer_pool(self, **pool_options):
+        return self.amqp.multi_producer_pool(**pool_options)
 
     def uses_utc_timezone(self):
         """Check if the application uses the UTC timezone."""

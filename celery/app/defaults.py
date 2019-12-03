@@ -109,6 +109,8 @@ NAMESPACES = Namespace(
         login_method=Option(None, type='string'),
         pool_limit=Option(10, type='int'),
         use_ssl=Option(False, type='bool'),
+        producers=Option(False, type='bool'),
+        producers_config=Option({}, type='dict'),
 
         host=Option(type='string'),
         port=Option(type='int'),
