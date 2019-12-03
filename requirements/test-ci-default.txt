@@ -5,7 +5,6 @@
 -r extras/mongodb.txt
 -r extras/yaml.txt
 -r extras/tblib.txt
--r extras/sqs.txt
 -r extras/slmq.txt
 -r extras/msgpack.txt
 -r extras/memcache.txt
@@ -20,4 +19,6 @@
 -r extras/cosmosdbsql.txt
 -r extras/cassandra.txt
 -r extras/azureblockblob.txt
--r extras/s3.txt
+
+# SQS dependencies other than boto
+pycurl

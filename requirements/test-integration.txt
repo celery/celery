@@ -1,6 +1,5 @@
 simplejson
 -r extras/redis.txt
--r extras/dynamodb.txt
 -r extras/azureblockblob.txt
 -r extras/auth.txt
 -r extras/memcache.txt
