@@ -128,13 +128,13 @@ Starting from this release, the minimum required version is Billiard 3.6.1.
 Redis Message Broker
 --------------------
 
-Due to multiple bugs in earlier versions of py-redis that were causing
+Due to multiple bugs in earlier versions of redis-py that were causing
 issues for Celery, we were forced to bump the minimum required version to 3.3.0.
 
 Redis Result Backend
 --------------------
 
-Due to multiple bugs in earlier versions of py-redis that were causing
+Due to multiple bugs in earlier versions of redis-py that were causing
 issues for Celery, we were forced to bump the minimum required version to 3.3.0.
 
 .. _v440-news:
