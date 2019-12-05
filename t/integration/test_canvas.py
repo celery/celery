@@ -71,7 +71,7 @@ class test_link_error:
 
         exception = ExpectedException("Task expected to fail", "test")
         assert (fail.apply().get(timeout=TIMEOUT, propagate=False), True) == (
-        exception, True)
+            exception, True)
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
     def test_link_error_using_signature(self):
@@ -82,7 +82,7 @@ class test_link_error:
 
         exception = ExpectedException("Task expected to fail", "test")
         assert (fail.delay().get(timeout=TIMEOUT, propagate=False), True) == (
-        exception, True)
+            exception, True)
 
 
 class test_chain:
@@ -101,8 +101,8 @@ class test_chain:
     def test_complex_chain(self, manager):
         c = (
             add.s(2, 2) | (
-            add.s(4) | add_replaced.s(8) | add.s(16) | add.s(32)
-        ) |
+                add.s(4) | add_replaced.s(8) | add.s(16) | add.s(32)
+            ) |
             group(add.s(i) for i in range(4))
         )
         res = c()
@@ -572,7 +572,7 @@ class test_chord:
         # (existing from previous tests).
         chord_header_task_count = 2
         assert channels_before_count <= \
-               chord_header_task_count * total_chords + initial_channels_count
+            chord_header_task_count * total_chords + initial_channels_count
 
         result_values = [
             result.get(timeout=TIMEOUT)
