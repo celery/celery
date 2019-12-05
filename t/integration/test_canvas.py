@@ -8,7 +8,7 @@ import pytest
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
-from celery.exceptions import TimeoutError
+from celery.exceptions import TimeoutError, ChordError
 from celery.result import AsyncResult, GroupResult, ResultSet
 from .conftest import get_active_redis_channels, get_redis_connection
 from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
@@ -650,7 +650,8 @@ class test_chord:
     @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
     @pytest.mark.xfail(os.environ['TEST_BACKEND'] == 'cache+pylibmc',
                        reason="Not supported yet by the cache backend.",
-                       strict=True)
+                       strict=True,
+                       raises=ChordError)
     def test_nested_group_chain(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
