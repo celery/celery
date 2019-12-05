@@ -214,7 +214,7 @@ class test_task_retries(TasksCase):
 
     def test_retry_priority(self):
         priority = 7
-        
+
         # Technically, task.priority doesn't need to be set here
         # since push_request() doesn't populate the delivery_info
         # with it. However, setting task.priority here also doesn't
