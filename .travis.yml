@@ -67,12 +67,15 @@ matrix:
   - python: pypy2.7-7.2
     env: TOXENV=pypy
     before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
+    stage: test
   - python: pypy3.5-7.0
     env: TOXENV=pypy3
     before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
+    stage: test
   - python: pypy3.6-7.2
     env: TOXENV=pypy3
     before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
+    stage: test
 
 before_install:
     - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev
