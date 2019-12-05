@@ -236,13 +236,11 @@ class DynamoDBBackend(KeyValueStoreBackend):
         - False: Disable TTL on the table; don't use expiry.
         - None:  Ignore TTL on the table; don't use expiry.
         """
-
         return None if self.time_to_live_seconds is None \
             else self.time_to_live_seconds >= 0
 
     def _validate_ttl_methods(self):
         """Verify boto support for the DynamoDB Time to Live methods."""
-
         # Required TTL methods.
         required_methods = (
             'update_time_to_live',
@@ -272,7 +270,6 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
     def _get_ttl_specification(self, ttl_attr_name):
         """Get the boto3 structure describing the DynamoDB TTL specification."""
-
         return {
             'TableName': self.table_name,
             'TimeToLiveSpecification': {
@@ -304,7 +301,6 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
     def _set_table_ttl(self):
         """Enable or disable Time to Live on the table."""
-
         # Get the table TTL description, and return early when possible.
         description = self._get_table_ttl_description()
         status = description['TimeToLiveDescription']['TimeToLiveStatus']
