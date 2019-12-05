@@ -648,7 +648,7 @@ class test_chord:
         assert res.get(timeout=TIMEOUT) == [12, 13, 14, 15]
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
-    @pytest.mark.xfail(os.environ['TEST_BACKEND'] == 'cache+pylibmc',
+    @pytest.mark.xfail(os.environ['TEST_BACKEND'] == 'cache+pylibmc://',
                        reason="Not supported yet by the cache backend.",
                        strict=True,
                        raises=ChordError)
