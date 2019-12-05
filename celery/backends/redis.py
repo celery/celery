@@ -19,7 +19,6 @@ from celery.utils import deprecated
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
-
 from .asynchronous import AsyncBackendMixin, BaseResultConsumer
 from .base import BaseKeyValueStoreBackend
 
@@ -149,8 +148,9 @@ class ResultConsumer(BaseResultConsumer):
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
-    """
-    Redis task result store. It makes use of the following commands:
+    """Redis task result store.
+
+    It makes use of the following commands:
     GET, MGET, DEL, INCRBY, EXPIRE, SET, SETEX
     """
 
