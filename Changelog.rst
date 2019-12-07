@@ -9,7 +9,7 @@ the 4.x series, please see :ref:`whatsnew-4.4` for
 an overview of what's new in Celery 4.4.
 
 
-4.4.0rc4
+4.4.0rc5
 ========
 :release-date: 2019-12-07 21.05 A.M UTC+6:00
 :release-by: Asif Saif Uddin
