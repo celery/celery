@@ -11,6 +11,20 @@ an overview of what's new in Celery 4.4.
 
 4.4.0rc4
 ========
+:release-date: 2019-12-07 21.05 A.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Kombu 4.6.7
+- Events bootstep disabled if no events (#5807)
+- SQS - Reject on failure (#5843)
+- Add a concurrency model with ThreadPoolExecutor (#5099)
+- Add auto expiry for DynamoDB backend (#5805)
+- Store extending result in all backends (#5661)
+- Fix a race condition when publishing a very large chord header (#5850)
+- Improve docs and test matrix 
+
+4.4.0rc4
+========
 :release-date: 2019-11-11 00.45 A.M UTC+6:00
 :release-by: Asif Saif Uddin
 
