@@ -10,6 +10,7 @@ from kombu.utils.url import _parse_url as parse_url
 from celery.exceptions import ImproperlyConfigured
 from celery.five import string
 from celery.utils.log import get_logger
+
 from .base import KeyValueStoreBackend
 
 try:

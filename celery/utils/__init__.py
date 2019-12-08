@@ -9,8 +9,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from kombu.utils.objects import cached_property
 from kombu.utils.uuid import uuid
 
-from .functional import chunks, noop
-from .functional import memoize
+from .functional import chunks, memoize, noop
 from .imports import gen_task_name, import_from_cwd, instantiate
 from .imports import qualname as get_full_cls_name
 from .imports import symbol_by_name as get_cls_by_name

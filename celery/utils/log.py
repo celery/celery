@@ -16,6 +16,7 @@ from kombu.log import get_logger as _get_logger
 from kombu.utils.encoding import safe_str
 
 from celery.five import string_t, text_t
+
 from .term import colored
 
 __all__ = (

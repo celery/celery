@@ -3,8 +3,8 @@
 from __future__ import absolute_import, unicode_literals
 
 import sys
+from concurrent.futures import ThreadPoolExecutor, wait
 
-from concurrent.futures import wait, ThreadPoolExecutor
 from .base import BasePool, apply_target
 
 __all__ = ('TaskPool',)

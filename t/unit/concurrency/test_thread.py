@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import operator
+
 import pytest
 
 from celery.utils.functional import noop
