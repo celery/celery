@@ -41,6 +41,8 @@ def _enable_amqheartbeats(timer, connection, rate=2.0):
         try:
             connection.heartbeat_check(rate)
         except Exception as e:
+            # heartbeat_error is passed by reference can be updated
+            # no append here list should be fixed size=1
             heartbeat_error[0] = e
 
     timer.call_repeatedly(heartbeat / rate, tick, (rate,))
