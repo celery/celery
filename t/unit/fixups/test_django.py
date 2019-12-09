@@ -3,8 +3,8 @@ from __future__ import absolute_import, unicode_literals
 from contextlib import contextmanager
 
 import pytest
-
 from case import Mock, mock, patch
+
 from celery.fixups.django import (DjangoFixup, DjangoWorkerFixup,
                                   FixupWarning, _maybe_close_fd, fixup)
 

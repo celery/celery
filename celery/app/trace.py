@@ -502,8 +502,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     return trace_task
 
 
-def trace_task(task, uuid, args, kwargs, request={}, **opts):
+def trace_task(task, uuid, args, kwargs, request=None, **opts):
     """Trace task execution."""
+    request = {} if not request else request
     try:
         if task.__trace__ is None:
             task.__trace__ = build_tracer(task.name, task, **opts)
@@ -538,8 +539,9 @@ trace_task_ret = _trace_task_ret  # noqa: E305
 
 
 def _fast_trace_task(task, uuid, request, body, content_type,
-                     content_encoding, loads=loads_message, _loc=_localized,
+                     content_encoding, loads=loads_message, _loc=None,
                      hostname=None, **_):
+    _loc = _localized if not _loc else _loc
     embed = None
     tasks, accept, hostname = _loc
     if content_type:

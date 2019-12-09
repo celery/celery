@@ -55,7 +55,7 @@ def old_ns(ns):
 
 @python_2_unicode_compatible
 class Option(object):
-    """Decribes a Celery configuration option."""
+    """Describes a Celery configuration option."""
 
     alt = None
     deprecate_by = None

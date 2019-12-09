@@ -1,8 +1,8 @@
 .. image:: http://docs.celeryproject.org/en/latest/_images/celery-banner-small.png
 
-|build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge| 
+|build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 4.4.0rc1 (cliffs)
+:Version: 4.4.0rc5 (cliffs)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -19,12 +19,12 @@ If you are using Celery to create a commercial product, please consider becoming
 .. _`backer`: https://opencollective.com/celery#backer
 .. _`sponsor`: https://opencollective.com/celery#sponsor
 
+For enterprise
+==============
 
-Sponsors
---------
+Available as part of the Tidelift Subscription.
 
-`Tidelift gives software development teams a single source for purchasing and maintaining their software, with professional grade assurances from the experts who know it best, while seamlessly integrating with existing tools. <https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=readme>`_
-
+The maintainers of ``celery`` and thousands of other packages are working with Tidelift to deliver commercial support and maintenance for the open source dependencies you use to build your applications. Save time, reduce risk, and improve code health, while paying the maintainers of the exact dependencies you use. `Learn more. <https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=enterprise&utm_term=repo>`_
 
 What's a Task Queue?
 ====================
@@ -44,13 +44,14 @@ to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
 language. In addition to Python there's node-celery_ for Node.js,
-and a `PHP client`_.
+a `PHP client`_ and `gocelery`_ for golang.
 
 Language interoperability can also be achieved by using webhooks
 in such a way that the client enqueues an URL to be requested by a worker.
 
 .. _node-celery: https://github.com/mher/node-celery
 .. _`PHP client`: https://github.com/gjedeer/celery-php
+.. _`gocelery`: https://github.com/gocelery/gocelery
 
 What do I need?
 ===============
@@ -217,6 +218,8 @@ Documentation
 
 The `latest documentation`_ is hosted at Read The Docs, containing user guides,
 tutorials, and an API reference.
+
+最新的中文文档托管在 https://www.celerycn.io/ 中，包含用户指南、教程、API接口等。
 
 .. _`latest documentation`: http://docs.celeryproject.org/en/latest/
 

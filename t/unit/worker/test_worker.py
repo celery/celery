@@ -10,6 +10,7 @@ from threading import Event
 
 import pytest
 from amqp import ChannelError
+from case import Mock, mock, patch, skip
 from kombu import Connection
 from kombu.asynchronous import get_event_loop
 from kombu.common import QoS, ignore_errors
@@ -17,7 +18,6 @@ from kombu.transport.base import Message
 from kombu.transport.memory import Transport
 from kombu.utils.uuid import uuid
 
-from case import Mock, mock, patch, skip
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
 from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
@@ -836,6 +836,61 @@ class test_WorkController(ConsumerCase):
         worker.pool.register_with_event_loop(hub)
 
         # Then: test did not raise "OSError: [Errno 9] Bad file descriptor!"
+
+        # Finally:  Clean up so the threads before/after fixture passes
+        worker.terminate()
+        worker.pool.terminate()
+
+    @pytest.mark.nothreads_not_lingering
+    @mock.sleepdeprived(module=autoscale)
+    def test_with_file_descriptor_safety(self):
+        # Given: a test celery worker instance
+        worker = self.create_worker(
+            autoscale=[10, 5], use_eventloop=True,
+            timer_cls='celery.utils.timer2.Timer',
+            threads=False,
+        )
+
+        # Given: This test requires a QoS defined on the worker consumer
+        worker.consumer.qos = qos = QoS(lambda prefetch_count: prefetch_count, 2)
+        qos.update()
+
+        # Given: We have started the worker pool
+        worker.pool.start()
+
+        # Given: Utilize kombu to get the global hub state
+        hub = get_event_loop()
+        # Given: Initial call the Async Pool to register events works fine
+        worker.pool.register_with_event_loop(hub)
+
+        # Given: Mock the Hub to return errors for add and remove
+        def throw_file_not_found_error(*args, **kwargs):
+            raise OSError()
+
+        hub.add = throw_file_not_found_error
+        hub.add_reader = throw_file_not_found_error
+        hub.remove = throw_file_not_found_error
+
+        # When: Calling again to register with event loop ...
+        worker.pool.register_with_event_loop(hub)
+        worker.pool._pool.register_with_event_loop(hub)
+        # Then: test did not raise OSError
+        # Note: worker.pool is prefork.TaskPool whereas
+        # worker.pool._pool is the asynpool.AsynPool class.
+
+        # When: Calling the tic method on_poll_start
+        worker.pool._pool.on_poll_start()
+        # Then: test did not raise OSError
+
+        # Given: a mock object that fakes whats required to do whats next
+        proc = Mock(_sentinel_poll=42)
+
+        # When: Calling again to register with event loop ...
+        worker.pool._pool._track_child_process(proc, hub)
+        # Then: test did not raise OSError
+
+        # Given:
+        worker.pool._pool._flush_outqueue = throw_file_not_found_error
 
         # Finally:  Clean up so the threads before/after fixture passes
         worker.terminate()

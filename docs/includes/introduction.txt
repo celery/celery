@@ -1,4 +1,4 @@
-:Version: 4.3.0 (rhubarb)
+:Version: 4.4.0rc5 (cliffs)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -134,7 +134,7 @@ It supports…
 
     - **Concurrency**
 
-        - Prefork, Eventlet_, gevent_, single threaded (``solo``)
+        - Prefork, Eventlet_, gevent_, single threaded (``solo``), thread
 
     - **Result Stores**
 

@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import os
 
 from case import skip
+
 from celery.backends.azureblockblob import AzureBlockBlobBackend
 
 

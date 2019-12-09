@@ -9,9 +9,9 @@ from datetime import datetime, timedelta
 from pickle import dumps, loads
 
 import pytest
+from case import ContextMock, Mock, mock, patch
 from vine import promise
 
-from case import ContextMock, Mock, mock, patch
 from celery import Celery, _state
 from celery import app as _app
 from celery import current_app, shared_task
@@ -798,20 +798,6 @@ class test_App:
         self.app.conf.broker_failover_strategy = my_failover_strategy
         assert self.app.connection('amqp:////value') \
                        .failover_strategy == my_failover_strategy
-
-    def test_amqp_heartbeat_settings(self):
-        # Test default broker_heartbeat value
-        assert self.app.connection('amqp:////value') \
-                   .heartbeat == 0
-
-        # Test passing heartbeat through app configuration
-        self.app.conf.broker_heartbeat = 60
-        assert self.app.connection('amqp:////value') \
-                   .heartbeat == 60
-
-        # Test passing heartbeat as connection argument
-        assert self.app.connection('amqp:////value', heartbeat=30) \
-                   .heartbeat == 30
 
     def test_after_fork(self):
         self.app._pool = Mock()

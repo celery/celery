@@ -1,8 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-
 from case import Mock
+
 from celery import uuid
 from celery.app import control
 from celery.exceptions import DuplicateNodenameWarning

@@ -18,7 +18,7 @@ from . import local  # noqa
 
 SERIES = 'cliffs'
 
-__version__ = '4.4.0rc1'
+__version__ = '4.4.0rc5'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
@@ -151,8 +151,6 @@ def maybe_patch_concurrency(argv=None, short_opts=None,
         # set up eventlet/gevent environments ASAP
         from celery import concurrency
         concurrency.get_implementation(pool)
-
-
 
 
 # this just creates a new module, that imports stuff on first attribute

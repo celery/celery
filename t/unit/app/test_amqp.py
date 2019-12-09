@@ -3,9 +3,9 @@ from __future__ import absolute_import, unicode_literals
 from datetime import datetime, timedelta
 
 import pytest
+from case import Mock
 from kombu import Exchange, Queue
 
-from case import Mock
 from celery import uuid
 from celery.app.amqp import Queues, utf8dict
 from celery.five import keys
@@ -188,6 +188,35 @@ class test_default_queues:
         assert queue.routing_key == rkey or name
 
 
+class test_default_exchange:
+
+    @pytest.mark.parametrize('name,exchange,rkey', [
+        ('default', 'foo', None),
+        ('default', 'foo', 'routing_key'),
+    ])
+    def test_setting_default_exchange(self, name, exchange, rkey):
+        q = Queue(name, routing_key=rkey)
+        self.app.conf.task_queues = {q}
+        self.app.conf.task_default_exchange = exchange
+        queues = dict(self.app.amqp.queues)
+        queue = queues[name]
+        assert queue.exchange.name == exchange
+
+    @pytest.mark.parametrize('name,extype,rkey', [
+        ('default', 'direct', None),
+        ('default', 'direct', 'routing_key'),
+        ('default', 'topic', None),
+        ('default', 'topic', 'routing_key'),
+    ])
+    def test_setting_default_exchange_type(self, name, extype, rkey):
+        q = Queue(name, routing_key=rkey)
+        self.app.conf.task_queues = {q}
+        self.app.conf.task_default_exchange_type = extype
+        queues = dict(self.app.amqp.queues)
+        queue = queues[name]
+        assert queue.exchange.type == extype
+
+
 class test_AMQP_proto1:
 
     def test_kwargs_must_be_mapping(self):
@@ -332,6 +361,15 @@ class test_AMQP:
         r1 = self.app.amqp.routes
         r2 = self.app.amqp.routes
         assert r1 is r2
+
+    def update_conf_runtime_for_tasks_queues(self):
+        self.app.conf.update(task_routes={'task.create_pr': 'queue.qwerty'})
+        self.app.send_task('task.create_pr')
+        router_was = self.app.amqp.router
+        self.app.conf.update(task_routes={'task.create_pr': 'queue.asdfgh'})
+        self.app.send_task('task.create_pr')
+        router = self.app.amqp.router
+        assert router != router_was
 
 
 class test_as_task_v2:

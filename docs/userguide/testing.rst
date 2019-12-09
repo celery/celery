@@ -44,6 +44,10 @@ Say we had a task like this:
             raise self.retry(exc=exc)
 
 
+``Note``: A task being `bound <http://docs.celeryproject.org/en/latest/userguide/tasks.html#bound-tasks>`_ means the first
+argument to the task will always be the task instance (self). which means you do get a self argument as the
+first argument and can use the Task class methods and attributes.
+
 You could write unit tests for this task, using mocking like
 in this example:
 

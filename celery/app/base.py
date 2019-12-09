@@ -842,7 +842,7 @@ class Celery(object):
             port or conf.broker_port,
             transport=transport or conf.broker_transport,
             ssl=self.either('broker_use_ssl', ssl),
-            heartbeat=heartbeat or self.conf.broker_heartbeat,
+            heartbeat=heartbeat,
             login_method=login_method or conf.broker_login_method,
             failover_strategy=(
                 failover_strategy or conf.broker_failover_strategy
@@ -995,7 +995,8 @@ class Celery(object):
         return key
 
     def _sig_to_periodic_task_entry(self, schedule, sig,
-                                    args=(), kwargs={}, name=None, **opts):
+                                    args=(), kwargs=None, name=None, **opts):
+        kwargs = {} if not kwargs else kwargs
         sig = (sig.clone(args, kwargs)
                if isinstance(sig, abstract.CallableSignature)
                else self.signature(sig.name, args, kwargs))

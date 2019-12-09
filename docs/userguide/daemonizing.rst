@@ -22,7 +22,7 @@ If you have output similar to the above, please refer to
 :ref:`our systemd documentation <daemon-systemd-generic>` for guidance.
 
 However, the init.d script should still work in those Linux distributions
-as well since systemd provides the systemd-sysv compatiblity layer
+as well since systemd provides the systemd-sysv compatibility layer
 which generates services automatically from the init.d scripts we provide.
 
 If you package Celery for multiple Linux distributions

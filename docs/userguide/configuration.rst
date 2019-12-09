@@ -43,7 +43,7 @@ New lowercase settings
 Version 4.0 introduced new lower case settings and setting organization.
 
 The major difference between previous versions, apart from the lower case
-names, are the renaming of some prefixes, like ``celerybeat_`` to ``beat_``,
+names, are the renaming of some prefixes, like ``celery_beat_`` to ``beat_``,
 ``celeryd_`` to ``worker_``, and most of the top level ``celery_`` settings
 have been moved into a new  ``task_`` prefix.
 
@@ -123,28 +123,28 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_SECURITY_CERTIFICATE``            :setting:`security_certificate`
 ``CELERY_SECURITY_CERT_STORE``             :setting:`security_cert_store`
 ``CELERY_SECURITY_KEY``                    :setting:`security_key`
-``CELERY_TASK_ACKS_LATE``                  :setting:`task_acks_late`
-``CELERY_TASK_ACKS_ON_FAILURE_OR_TIMEOUT`` :setting:`task_acks_on_failure_or_timeout`
-``CELERY_TASK_ALWAYS_EAGER``               :setting:`task_always_eager`
-``CELERY_TASK_ANNOTATIONS``                :setting:`task_annotations`
-``CELERY_TASK_COMPRESSION``                :setting:`task_compression`
-``CELERY_TASK_CREATE_MISSING_QUEUES``      :setting:`task_create_missing_queues`
-``CELERY_TASK_DEFAULT_DELIVERY_MODE``      :setting:`task_default_delivery_mode`
-``CELERY_TASK_DEFAULT_EXCHANGE``           :setting:`task_default_exchange`
-``CELERY_TASK_DEFAULT_EXCHANGE_TYPE``      :setting:`task_default_exchange_type`
-``CELERY_TASK_DEFAULT_QUEUE``              :setting:`task_default_queue`
-``CELERY_TASK_DEFAULT_RATE_LIMIT``         :setting:`task_default_rate_limit`
-``CELERY_TASK_DEFAULT_ROUTING_KEY``        :setting:`task_default_routing_key`
-``CELERY_TASK_EAGER_PROPAGATES``           :setting:`task_eager_propagates`
-``CELERY_TASK_IGNORE_RESULT``              :setting:`task_ignore_result`
-``CELERY_TASK_PUBLISH_RETRY``              :setting:`task_publish_retry`
-``CELERY_TASK_PUBLISH_RETRY_POLICY``       :setting:`task_publish_retry_policy`
+``CELERY_ACKS_LATE``                  :setting:`task_acks_late`
+``CELERY_ACKS_ON_FAILURE_OR_TIMEOUT`` :setting:`task_acks_on_failure_or_timeout`
+``CELERY_ALWAYS_EAGER``               :setting:`task_always_eager`
+``CELERY_ANNOTATIONS``                :setting:`task_annotations`
+``CELERY_COMPRESSION``                :setting:`task_compression`
+``CELERY_CREATE_MISSING_QUEUES``      :setting:`task_create_missing_queues`
+``CELERY_DEFAULT_DELIVERY_MODE``      :setting:`task_default_delivery_mode`
+``CELERY_DEFAULT_EXCHANGE``           :setting:`task_default_exchange`
+``CELERY_DEFAULT_EXCHANGE_TYPE``      :setting:`task_default_exchange_type`
+``CELERY_DEFAULT_QUEUE``                   :setting:`task_default_queue`
+``CELERY_DEFAULT_RATE_LIMIT``         :setting:`task_default_rate_limit`
+``CELERY_DEFAULT_ROUTING_KEY``        :setting:`task_default_routing_key`
+``CELERY_EAGER_PROPAGATES``           :setting:`task_eager_propagates`
+``CELERY_IGNORE_RESULT``              :setting:`task_ignore_result`
+``CELERY_PUBLISH_RETRY``              :setting:`task_publish_retry`
+``CELERY_PUBLISH_RETRY_POLICY``       :setting:`task_publish_retry_policy`
 ``CELERY_QUEUES``                          :setting:`task_queues`
 ``CELERY_ROUTES``                          :setting:`task_routes`
-``CELERY_TASK_SEND_SENT_EVENT``            :setting:`task_send_sent_event`
-``CELERY_TASK_SERIALIZER``                 :setting:`task_serializer`
-``CELERYD_TASK_SOFT_TIME_LIMIT``           :setting:`task_soft_time_limit`
-``CELERYD_TASK_TIME_LIMIT``                :setting:`task_time_limit`
+``CELERY_SEND_SENT_EVENT``            :setting:`task_send_sent_event`
+``CELERY_SERIALIZER``                 :setting:`task_serializer`
+``CELERYD_SOFT_TIME_LIMIT``           :setting:`task_soft_time_limit`
+``CELERYD_TIME_LIMIT``                :setting:`task_time_limit`
 ``CELERY_TRACK_STARTED``                   :setting:`task_track_started`
 ``CELERYD_AGENT``                          :setting:`worker_agent`
 ``CELERYD_AUTOSCALER``                     :setting:`worker_autoscaler`
@@ -994,7 +994,11 @@ is the same as::
 
 Use the ``rediss://`` protocol to connect to redis over TLS::
 
-    result_backend = 'rediss://:password@host:port/db?ssl_cert_reqs=CERT_REQUIRED'
+    result_backend = 'rediss://:password@host:port/db?ssl_cert_reqs=required'
+
+Note that the ``ssl_cert_reqs`` string should be one of ``required``,
+``optional``, or ``none`` (though, for backwards compatibility, the string
+may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
 
 If a Unix socket connection should be used, the URL needs to be in the format:::
 
@@ -1024,11 +1028,14 @@ When using a TLS connection (protocol is ``rediss://``), you may pass in all val
 .. code-block:: python
 
     result_backend = 'rediss://:password@host:port/db?\
-        ssl_cert_reqs=CERT_REQUIRED\
+        ssl_cert_reqs=required\
         &ssl_ca_certs=%2Fvar%2Fssl%2Fmyca.pem\                  # /var/ssl/myca.pem
         &ssl_certfile=%2Fvar%2Fssl%2Fredis-server-cert.pem\     # /var/ssl/redis-server-cert.pem
         &ssl_keyfile=%2Fvar%2Fssl%2Fprivate%2Fworker-key.pem'   # /var/ssl/private/worker-key.pem
 
+Note that the ``ssl_cert_reqs`` string should be one of ``required``,
+``optional``, or ``none`` (though, for backwards compatibility, the string
+may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
 
 .. setting:: redis_backend_use_ssl
 
@@ -1052,12 +1059,16 @@ Default: No limit.
 Maximum number of connections available in the Redis connection
 pool used for sending and retrieving results.
 
+.. warning::
+    Redis will raise a `ConnectionError` if the number of concurrent
+    connections exceeds the maximum.
+
 .. setting:: redis_socket_connect_timeout
 
 ``redis_socket_connect_timeout``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 5.0.1
+.. versionadded:: 4.0.1
 
 Default: :const:`None`
 
@@ -1560,6 +1571,18 @@ The fields of the DynamoDB URL in ``result_backend`` are defined as follows:
 
     The Read & Write Capacity Units for the created DynamoDB table. Default is ``1`` for both read and write.
     More details can be found in the `Provisioned Throughput documentation <http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ProvisionedThroughput.html>`_.
+
+#. ``ttl_seconds``
+
+    Time-to-live (in seconds) for results before they expire. The default is to
+    not expire results, while also leaving the DynamoDB table's Time to Live
+    settings untouched. If ``ttl_seconds`` is set to a positive value, results
+    will expire after the specified number of seconds. Setting ``ttl_seconds``
+    to a negative value means to not expire results, and also to actively
+    disable the DynamoDB table's Time to Live setting. Note that trying to
+    change a table's Time to Live setting multiple times in quick succession
+    will cause a throttling error. More details can be found in the
+    `DynamoDB TTL documentation <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html>`_
 
 .. _conf-ironcache-result-backend:
 
@@ -2420,6 +2443,13 @@ transports):
 .. code-block:: python
 
     broker_transport_options = {'visibility_timeout': 18000}  # 5 hours
+
+Example setting the producer connection maximum number of retries (so producers
+won't retry forever if the broker isn't available at the first task execution):
+
+.. code-block:: python
+
+    broker_transport_options = {'max_retries': 5}
 
 .. _conf-worker:
 

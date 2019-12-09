@@ -305,7 +305,7 @@ class Control(object):
                 command to, when empty broadcast to all workers.
             routing_key (str): Optional routing key.
             options (Dict): Additional options as supported
-                by :meth:`kombu.entitiy.Queue.from_dict`.
+                by :meth:`kombu.entity.Queue.from_dict`.
 
         See Also:
             :meth:`broadcast` for supported keyword arguments.

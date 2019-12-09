@@ -197,7 +197,8 @@ For example for long-running tasks to send task progress you can do something li
     def on_raw_message(body):
         print(body)
 
-    r = hello.apply_async()
+    a, b = 1, 1
+    r = hello.apply_async(args=(a, b))
     print(r.get(on_message=on_raw_message, propagate=False))
 
 Will generate output like this:

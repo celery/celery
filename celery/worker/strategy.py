@@ -116,7 +116,7 @@ def default(task, app, consumer,
     # (optimized to avoid calling request.send_event)
     eventer = consumer.event_dispatcher
     events = eventer and eventer.enabled
-    send_event = eventer.send
+    send_event = eventer and eventer.send
     task_sends_events = events and task.send_events
 
     call_at = consumer.timer.call_at

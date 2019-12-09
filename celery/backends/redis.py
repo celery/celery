@@ -149,7 +149,11 @@ class ResultConsumer(BaseResultConsumer):
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
-    """Redis task result store."""
+    """Redis task result store.
+
+    It makes use of the following commands:
+    GET, MGET, DEL, INCRBY, EXPIRE, SET, SETEX
+    """
 
     ResultConsumer = ResultConsumer
 
@@ -212,7 +216,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             ssl_cert_reqs_missing = 'MISSING'
             ssl_string_to_constant = {'CERT_REQUIRED': CERT_REQUIRED,
                                       'CERT_OPTIONAL': CERT_OPTIONAL,
-                                      'CERT_NONE': CERT_NONE}
+                                      'CERT_NONE': CERT_NONE,
+                                      'required': CERT_REQUIRED,
+                                      'optional': CERT_OPTIONAL,
+                                      'none': CERT_NONE}
             ssl_cert_reqs = self.connparams.get('ssl_cert_reqs', ssl_cert_reqs_missing)
             ssl_cert_reqs = ssl_string_to_constant.get(ssl_cert_reqs, ssl_cert_reqs)
             if ssl_cert_reqs not in ssl_string_to_constant.values():
@@ -440,7 +447,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def client(self):
         return self._create_client(**self.connparams)
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         return super(RedisBackend, self).__reduce__(
             (self.url,), {'expires': self.expires},
         )

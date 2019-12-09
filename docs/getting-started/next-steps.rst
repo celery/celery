@@ -78,10 +78,10 @@ The :program:`celery` program can be used to start the worker (you need to run t
 
 When the worker starts you should see a banner and some messages::
 
-     -------------- celery@halcyon.local v4.0 (latentcall)
-     ---- **** -----
-     --- * ***  * -- [Configuration]
-     -- * - **** --- . broker:      amqp://guest@localhost:5672//
+     --------------- celery@halcyon.local v4.0 (latentcall)
+     --- ***** -----
+     -- ******* ---- [Configuration]
+     - *** --- * --- . broker:      amqp://guest@localhost:5672//
      - ** ---------- . app:         __main__:0x1012d8590
      - ** ---------- . concurrency: 8 (processes)
      - ** ---------- . events:      OFF (enable -E to monitor this worker)
@@ -256,6 +256,8 @@ You can call a task using the :meth:`delay` method:
 
 .. code-block:: pycon
 
+    >>> from proj.tasks import add
+    
     >>> add.delay(2, 2)
 
 This method is actually a star-argument shortcut to another method called
@@ -412,7 +414,7 @@ signature of a task invocation to another process or as an argument to another
 function, for this Celery uses something called *signatures*.
 
 A signature wraps the arguments and execution options of a single task
-invocation in a way such that it can be passed to functions or even serialized
+invocation in such a way that it can be passed to functions or even serialized
 and sent across the wire.
 
 You can create a signature for the ``add`` task using the arguments ``(2, 2)``,
@@ -433,8 +435,8 @@ There's also a shortcut using star arguments:
 And there's that calling API again…
 -----------------------------------
 
-Signature instances also supports the calling API: meaning they
-have the ``delay`` and ``apply_async`` methods.
+Signature instances also support the calling API, meaning they
+have ``delay`` and ``apply_async`` methods.
 
 But there's a difference in that the signature may already have
 an argument signature specified. The ``add`` task takes two arguments,
@@ -476,7 +478,7 @@ existing keyword arguments, but with new arguments taking precedence:
     >>> s3 = add.s(2, 2, debug=True)
     >>> s3.delay(debug=False)   # debug is now False.
 
-As stated signatures supports the calling API: meaning that;
+As stated, signatures support the calling API: meaning that
 
 - ``sig.apply_async(args=(), kwargs={}, **options)``
 
