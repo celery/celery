@@ -137,6 +137,25 @@ Redis Result Backend
 Due to multiple bugs in earlier versions of redis-py that were causing
 issues for Celery, we were forced to bump the minimum required version to 3.3.0.
 
+DynamoDB Result Backend
+-----------------------
+
+The DynamoDB result backend has gained TTL support.
+As a result the minimum boto3 version was bumped to 1.9.178 which is the first
+version to support TTL for DynamoDB.
+
+S3 Results Backend
+------------------
+
+To keep up with the current AWS API changes the minimum boto3 version was
+bumped to 1.9.125.
+
+SQS Message Broker
+------------------
+
+To keep up with the current AWS API changes the minimum boto3 version was
+bumped to 1.9.125.
+
 .. _v440-news:
 
 News
