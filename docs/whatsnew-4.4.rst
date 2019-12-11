@@ -176,7 +176,7 @@ Canvas
 ------
 
 Replacing Tasks Eagerly
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 You can now call `self.replace()` on tasks which are run eagerly.
 They will work exactly the same as tasks which are run asynchronously.
