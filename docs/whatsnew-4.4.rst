@@ -164,13 +164,30 @@ News
 Result Backends
 ---------------
 
-ElasticSearch Result Backend HTTP Basic Authentication Support
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ElasticSearch Results Backend
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+HTTP Basic Authentication Support
++++++++++++++++++++++++++++++++++
 
 You can now use HTTP Basic Authentication when using the ElasticSearch result
 backend by providing the username and the password in the URI.
 
 Previously, they were ignored and only unauthenticated requests were issued.
+
+MongoDB Results Backend
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Support for Authentication Source and Authentication Method
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+You can now specify the authSource and authMethod for the MongoDB
+using the URI options. The following URI does just that::
+
+    mongodb://user:password@example.com/?authSource=the_database&authMechanism=SCRAM-SHA-256
+
+Refer to the `documentation <https://api.mongodb.com/python/current/examples/authentication.html>`_
+for details about the various options.
 
 Canvas
 ------
@@ -180,3 +197,15 @@ Replacing Tasks Eagerly
 
 You can now call `self.replace()` on tasks which are run eagerly.
 They will work exactly the same as tasks which are run asynchronously.
+
+Chaining Groups
+~~~~~~~~~~~~~~~
+
+Chaining groups no longer result in a single group.
+
+The following used to join the two groups into one. Now they correctly execute
+one after another::
+
+     >>> result = group(add.si(1, 2), add.si(1, 2)) | group(tsum.s(), tsum.s()).delay()
+     >>> result.get()
+     [6, 6]
