@@ -460,11 +460,24 @@ class Celery(object):
             self._tasks[task.name] = task
             task.bind(self)  # connects task to this app
 
-            autoretry_for = tuple(options.get('autoretry_for', ()))
-            retry_kwargs = options.get('retry_kwargs', {})
-            retry_backoff = int(options.get('retry_backoff', False))
-            retry_backoff_max = int(options.get('retry_backoff_max', 600))
-            retry_jitter = options.get('retry_jitter', True)
+            autoretry_for = tuple(
+                options.get('autoretry_for',
+                            getattr(task, 'autoretry_for', ()))
+            )
+            retry_kwargs = options.get(
+                'retry_kwargs', getattr(task, 'retry_kwargs', {})
+            )
+            retry_backoff = int(
+                options.get('retry_backoff',
+                            getattr(task, 'retry_backoff', False))
+            )
+            retry_backoff_max = int(
+                options.get('retry_backoff_max',
+                            getattr(task, 'retry_backoff_max', 600))
+            )
+            retry_jitter = options.get(
+                'retry_jitter', getattr(task, 'retry_jitter', True)
+            )
 
             if autoretry_for and not hasattr(task, '_orig_run'):
 
