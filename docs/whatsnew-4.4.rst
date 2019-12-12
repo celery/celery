@@ -161,6 +161,21 @@ bumped to 1.9.125.
 News
 ====
 
+Task Pools
+----------
+
+Threaded Tasks Pool
+~~~~~~~~~~~~~~~~~
+
+We reintroduced a threaded task pool using `concurrent.futures.ThreadPoolExecutor`.
+
+The previous threaded task pool was experimental.
+In addition it was based on the `threadpool <https://pypi.org/project/threadpool/>`_
+package which is obsolete.
+
+You can use the new threaded task pool by setting :setting:`worker_pool` to
+'threads` or by passing `--pool threads` to the `celery worker` command.
+
 Result Backends
 ---------------
 
