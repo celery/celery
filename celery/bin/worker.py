@@ -18,7 +18,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
     Pool implementation:
 
-    prefork (default), eventlet, gevent or solo.
+    prefork (default), eventlet, gevent, threads or solo.
 
 .. cmdoption:: -n, --hostname
 
