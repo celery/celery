@@ -48,22 +48,6 @@ like adding new worker nodes, or revoking unnecessary tasks.
 General Settings
 ================
 
-.. _optimizing-librabbitmq:
-
-librabbitmq
------------
-
-If you're using RabbitMQ (AMQP) as the broker then you can install the
-:pypi:`librabbitmq` module to use an optimized client written in C:
-
-.. code-block:: console
-
-    $ pip install librabbitmq
-
-The 'amqp' transport will automatically use the librabbitmq module if it's
-installed, or you can also specify the transport you want directly by using
-the ``pyamqp://`` or ``librabbitmq://`` prefixes.
-
 .. _optimizing-connection-pools:
 
 Broker Connection Pools
