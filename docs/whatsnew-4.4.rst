@@ -52,7 +52,7 @@ which is one of my favorite tracks.
 
 This release focuses on mostly bug fixes and usability improvement for developers.
 Many long standing bugs, usability issues, documentation issues & minor ehancement
-issues were squash squashed which improve the overall developers experience.
+issues were squashed which improve the overall developers experience.
 
 Celery 4.4 is the first release to support Python 3.8 & pypy36-7.2.
 
@@ -155,6 +155,16 @@ SQS Message Broker
 
 To keep up with the current AWS API changes the minimum boto3 version was
 bumped to 1.9.125.
+=======
+Django
+------
+
+Starting from this release, the minimum required version for Django is 1.11.
+
+Configuration
+--------------
+
+`CELERY_TASK_RESULT_EXPIRES` has been replaced with `CELERY_RESULT_EXPIRES`.
 
 .. _v440-news:
 
