@@ -262,7 +262,7 @@ While the Celery Redis transport does honor the priority field, Redis itself has
 no notion of priorities. Please read this note before attempting to implement
 priorities with Redis as you may experience some unexpected behavior.
 
-To start scheduling tasks based on priorities you need configure queue_order_strategy transport option.
+To start scheduling tasks based on priorities you need to configure queue_order_strategy transport option.
 
 .. code-block:: python
     app.conf.broker_transport_options = {
