@@ -18,6 +18,7 @@ an overview of what's new in Celery 4.4.
 3.5, 3.6, 3.7 & 3.8
 and is also supported on PyPy2 & PyPy3.
 - Kombu 4.6.7
+- Task class definitions can have retry attributes (#5869)
 
 
 4.4.0rc5
@@ -32,7 +33,7 @@ and is also supported on PyPy2 & PyPy3.
 - Add auto expiry for DynamoDB backend (#5805)
 - Store extending result in all backends (#5661)
 - Fix a race condition when publishing a very large chord header (#5850)
-- Improve docs and test matrix 
+- Improve docs and test matrix
 
 4.4.0rc4
 ========
