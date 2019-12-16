@@ -155,11 +155,6 @@ SQS Message Broker
 
 To keep up with the current AWS API changes the minimum boto3 version was
 bumped to 1.9.125.
-=======
-Django
-------
-
-Starting from this release, the minimum required version for Django is 1.11.
 
 Configuration
 --------------
@@ -213,6 +208,25 @@ using the URI options. The following URI does just that::
 
 Refer to the `documentation <https://api.mongodb.com/python/current/examples/authentication.html>`_
 for details about the various options.
+
+
+Tasks
+------
+
+Task class definitions can now have retry attributes
+~~~~~~~~~~~~~~~~~~~~~~~
+
+You can now use `autoretry_for`, `retry_kwargs`, `retry_backoff`, `retry_backoff_max` and `retry_jitter` in class-based tasks:
+
+.. code-block:: python
+
+  class BaseTaskWithRetry(Task):
+    autoretry_for = (TypeError,)
+    retry_kwargs = {'max_retries': 5}
+    retry_backoff = True
+    retry_backoff_max = 700
+    retry_jitter = False
+
 
 Canvas
 ------
