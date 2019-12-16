@@ -56,7 +56,7 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 4.3 runs on,
+Celery version 4.4.0 runs on,
 
 - Python (2.7, 3.8, 3.5, 3.6, 3.7)
 - PyPy2.7 (7.2)
