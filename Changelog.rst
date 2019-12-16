@@ -4,9 +4,20 @@
  Change history
 ================
 
-This document contains change notes for bugfix releases in
-the 4.x series, please see :ref:`whatsnew-4.4` for
+This document contains change notes for bugfix & new features
+in the 4.x series, please see :ref:`whatsnew-4.4` for
 an overview of what's new in Celery 4.4.
+
+
+4.4.0
+=======
+:release-date: 2019-12-16 9.45 A.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- This version is officially supported on CPython 2.7,
+3.5, 3.6, 3.7 & 3.8
+and is also supported on PyPy2 & PyPy3.
+- Kombu 4.6.7
 
 
 4.4.0rc5
