@@ -798,6 +798,11 @@ makes it easy. Just specify the :attr:`~Task.retry_backoff` argument, like this:
     def x():
         ...
 
+By default, this exponential backoff will also introduce random jitter_ to
+avoid having all the tasks run at the same moment. It will also cap the
+maximum backoff delay to 10 minutes. All these settings can be customized
+via options documented below.
+
 .. versionadded:: 4.4
 
 You can also set `autoretry_for`, `retry_kwargs`, `retry_backoff`, `retry_backoff_max` and `retry_jitter` options in class-based tasks:
@@ -810,11 +815,6 @@ You can also set `autoretry_for`, `retry_kwargs`, `retry_backoff`, `retry_backof
         retry_backoff = True
         retry_backoff_max = 700
         retry_jitter = False
-
-By default, this exponential backoff will also introduce random jitter_ to
-avoid having all the tasks run at the same moment. It will also cap the
-maximum backoff delay to 10 minutes. All these settings can be customized
-via options documented below.
 
 .. attribute:: Task.autoretry_for
 
