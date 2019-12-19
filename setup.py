@@ -111,6 +111,15 @@ classes = """
 re_meta = re.compile(r'__(\w+?)__\s*=\s*(.*)')
 re_doc = re.compile(r'^"""(.+?)"""')
 
+_metadata = {
+    "project_urls": {
+        "Documentation": "http://docs.celeryproject.org/en/latest/index.html",
+        "Code": "https://github.com/celery/celery",
+        "Tracker": "https://github.com/celery/celery/issues",
+        "Funding": "https://opencollective.com/celery#backer"
+    }
+}
+
 
 def _add_default(m):
     attr_name, attr_value = m.groups()
@@ -239,4 +248,5 @@ setuptools.setup(
             'celery = celery.contrib.pytest',
         ],
     },
+    **_metadata
 )
