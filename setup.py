@@ -86,56 +86,10 @@ EXTENSIONS = {
     'zstd'
 }
 
-# -*- Classifiers -*-
-
-classes = """
-    Development Status :: 5 - Production/Stable
-    License :: OSI Approved :: BSD License
-    Topic :: System :: Distributed Computing
-    Topic :: Software Development :: Object Brokering
-    Programming Language :: Python
-    Programming Language :: Python :: 2
-    Programming Language :: Python :: 2.7
-    Programming Language :: Python :: 3
-    Programming Language :: Python :: 3.5
-    Programming Language :: Python :: 3.6
-    Programming Language :: Python :: 3.7
-    Programming Language :: Python :: 3.8
-    Programming Language :: Python :: Implementation :: CPython
-    Programming Language :: Python :: Implementation :: PyPy
-    Operating System :: OS Independent
-"""
-
 # -*- Distribution Meta -*-
 
 re_meta = re.compile(r'__(\w+?)__\s*=\s*(.*)')
 re_doc = re.compile(r'^"""(.+?)"""')
-
-_dist_metadata = {
-    "project_urls": {
-        "Documentation": "http://docs.celeryproject.org/en/latest/index.html",
-        "Code": "https://github.com/celery/celery",
-        "Tracker": "https://github.com/celery/celery/issues",
-        "Funding": "https://opencollective.com/celery#backer"
-    },
-    "classifiers": [
-        "Development Status :: 5 - Production/Stable",
-        "License :: OSI Approved :: BSD License",
-        "Topic :: System :: Distributed Computing",
-        "Topic :: Software Development :: Object Brokering",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: Implementation :: CPython",
-        "Programming Language :: Python :: Implementation :: PyPy",
-        "Operating System :: OS Independent"
-    ]
-}
 
 
 def _add_default(m):
@@ -264,5 +218,27 @@ setuptools.setup(
             'celery = celery.contrib.pytest',
         ],
     },
-    **_dist_metadata
+    project_urls={
+        "Documentation": "http://docs.celeryproject.org/en/latest/index.html",
+        "Code": "https://github.com/celery/celery",
+        "Tracker": "https://github.com/celery/celery/issues",
+        "Funding": "https://opencollective.com/celery"
+    },
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "License :: OSI Approved :: BSD License",
+        "Topic :: System :: Distributed Computing",
+        "Topic :: Software Development :: Object Brokering",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
+        "Operating System :: OS Independent"
+    ]
 )
