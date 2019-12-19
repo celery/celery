@@ -111,13 +111,30 @@ classes = """
 re_meta = re.compile(r'__(\w+?)__\s*=\s*(.*)')
 re_doc = re.compile(r'^"""(.+?)"""')
 
-_metadata = {
+_dist_metadata = {
     "project_urls": {
         "Documentation": "http://docs.celeryproject.org/en/latest/index.html",
         "Code": "https://github.com/celery/celery",
         "Tracker": "https://github.com/celery/celery/issues",
         "Funding": "https://opencollective.com/celery#backer"
-    }
+    },
+    "classifiers": [
+        "Development Status :: 5 - Production/Stable",
+        "License :: OSI Approved :: BSD License",
+        "Topic :: System :: Distributed Computing",
+        "Topic :: Software Development :: Object Brokering",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
+        "Operating System :: OS Independent"
+    ]
 }
 
 
@@ -236,7 +253,6 @@ setuptools.setup(
     python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*,",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
-    classifiers=[s.strip() for s in classes.split('\n') if s],
     cmdclass={'test': pytest},
     include_package_data=True,
     zip_safe=False,
@@ -248,5 +264,5 @@ setuptools.setup(
             'celery = celery.contrib.pytest',
         ],
     },
-    **_metadata
+    **_dist_metadata
 )
