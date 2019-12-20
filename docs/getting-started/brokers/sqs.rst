@@ -37,10 +37,10 @@ encode the password so it can always be parsed correctly. For example:
 
 .. code-block:: python
 
-    from kombu.utils.url import quote
+    from kombu.utils.url import safequote
     
-    aws_access_key = quote("ABCDEFGHIJKLMNOPQRST")
-    aws_secret_key = quote("ZYXK7NiynGlTogH8Nj+P9nlE73sq3")
+    aws_access_key = safequote("ABCDEFGHIJKLMNOPQRST")
+    aws_secret_key = safequote("ZYXK7NiynG/TogH8Nj+P9nlE73sq3")
     
     broker_url = "sqs://{aws_access_key}:{aws_secret_key}@".format(
         aws_access_key=aws_access_key, aws_secret_key=aws_secret_key,
