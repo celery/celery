@@ -12,21 +12,28 @@ environment:
     # a later point release.
     # See: https://www.appveyor.com/docs/installed-software#python
 
-    - PYTHON: "C:\\Python27"
-      PYTHON_VERSION: "2.7.x"
-      PYTHON_ARCH: "32"
-
-    - PYTHON: "C:\\Python34"
-      PYTHON_VERSION: "3.4.x"
-      PYTHON_ARCH: "32"
-
     - PYTHON: "C:\\Python27-x64"
       PYTHON_VERSION: "2.7.x"
       PYTHON_ARCH: "64"
       WINDOWS_SDK_VERSION: "v7.0"
 
-    - PYTHON: "C:\\Python34-x64"
-      PYTHON_VERSION: "3.4.x"
+    - PYTHON: "C:\\Python35-x64"
+      PYTHON_VERSION: "3.5.x"
+      PYTHON_ARCH: "64"
+      WINDOWS_SDK_VERSION: "v7.1"
+
+    - PYTHON: "C:\\Python36-x64"
+      PYTHON_VERSION: "3.6.x"
+      PYTHON_ARCH: "64"
+      WINDOWS_SDK_VERSION: "v7.1"
+      
+    - PYTHON: "C:\\Python37-x64"
+      PYTHON_VERSION: "3.7.x"
+      PYTHON_ARCH: "64"
+      WINDOWS_SDK_VERSION: "v7.1"
+      
+    - PYTHON: "C:\\Python38-x64"
+      PYTHON_VERSION: "3.8.x"
       PYTHON_ARCH: "64"
       WINDOWS_SDK_VERSION: "v7.1"
 
@@ -39,6 +46,7 @@ install:
   - "%PYTHON%/python -m pip install -U pip setuptools"
   - "%PYTHON%/Scripts/pip.exe install -U eventlet"
   - "%PYTHON%/Scripts/pip.exe install -U -r requirements/extras/thread.txt"
+  - "%PYTHON%/Scripts/pip.exe install -U -r requirements/test-ci-default.txt"
 
 build: off
 
