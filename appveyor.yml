@@ -12,6 +12,11 @@ environment:
     # a later point release.
     # See: https://www.appveyor.com/docs/installed-software#python
 
+    - PYTHON: "C:\\Python27-x64"
+      PYTHON_VERSION: "2.7.x"
+      PYTHON_ARCH: "64"
+      WINDOWS_SDK_VERSION: "v7.0"
+
     - PYTHON: "C:\\Python35-x64"
       PYTHON_VERSION: "3.5.x"
       PYTHON_ARCH: "64"
