@@ -363,7 +363,7 @@ class Backend(object):
 
         meta = {
             'status': state,
-            'result': result,
+            'result': self.encode(result),
             'traceback': traceback,
             'children': self.current_task_children(request),
             'date_done': date_done,
