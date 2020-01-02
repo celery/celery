@@ -144,6 +144,32 @@ class test_Backend_interface:
         assert meta['args'] == ensure_bytes(b1.encode(args))
         assert meta['kwargs'] == ensure_bytes(b1.encode(kwargs))
 
+    def test_get_result_meta_with_none(self):
+        b1 = BaseBackend(self.app)
+        meta = b1._get_result_meta(result=None,
+                                   state=states.SUCCESS, traceback=None,
+                                   request=None)
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] is None
+        assert meta['traceback'] is None
+
+        self.app.conf.result_extended = True
+        args = ['a', 'b']
+        kwargs = {'foo': 'bar'}
+        task_name = 'mytask'
+
+        b2 = BaseBackend(self.app)
+        request = Context(args=args, kwargs=kwargs,
+                          task=task_name,
+                          delivery_info={'routing_key': 'celery'})
+        meta = b2._get_result_meta(result=None,
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, encode=False)
+        assert meta['name'] == task_name
+        assert meta['args'] == args
+        assert meta['kwargs'] == kwargs
+        assert meta['queue'] == 'celery'
+
 
 class test_BaseBackend_interface:
 

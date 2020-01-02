@@ -77,8 +77,9 @@ class test_AsyncResult:
         self.task5 = mock_task(
             'task3', states.FAILURE, KeyError('blue'), PYTRACEBACK,
         )
+        self.task6 = mock_task('task6', states.SUCCESS, None)
         for task in (self.task1, self.task2,
-                     self.task3, self.task4, self.task5):
+                     self.task3, self.task4, self.task5, self.task6):
             save_result(self.app, task)
 
         @self.app.task(shared=False)
@@ -327,6 +328,7 @@ class test_AsyncResult:
         ok2_res = self.app.AsyncResult(self.task2['id'])
         nok_res = self.app.AsyncResult(self.task3['id'])
         nok2_res = self.app.AsyncResult(self.task4['id'])
+        none_res = self.app.AsyncResult(self.task6['id'])
 
         callback = Mock(name='callback')
 
@@ -338,6 +340,8 @@ class test_AsyncResult:
         assert nok_res.get(propagate=False)
         assert isinstance(nok2_res.result, KeyError)
         assert ok_res.info == 'the'
+        assert none_res.get() is None
+        assert none_res.state == states.SUCCESS
 
     def test_get_when_ignored(self):
         result = self.app.AsyncResult(uuid())
