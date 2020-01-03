@@ -780,7 +780,7 @@ class Task(object):
         return EagerResult(task_id, retval, state, traceback=tb)
 
     def AsyncResult(self, task_id, **kwargs):
-        """Get AsyncResult instance for this kind of task.
+        """Get AsyncResult instance for the specified task.
 
         Arguments:
             task_id (str): Task id to get result for.
