@@ -846,6 +846,25 @@ going stale through inactivity. For example, intermittent errors like
 `(OperationalError) (2006, 'MySQL server has gone away')` can be fixed by enabling
 short lived sessions. This option only affects the database backend.
 
+.. setting:: database_table_schemas
+
+``database_table_schemas``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}`` (empty mapping).
+
+When SQLAlchemy is configured as the result backend, Celery automatically
+creates two tables to store result meta-data for tasks. This setting allows
+you to customize the schema of the tables:
+
+.. code-block:: python
+
+    # use custom schema for the database result backend.
+    database_table_schemas = {
+        'task': 'celery',
+        'group': 'celery',
+    }
+
 .. setting:: database_table_names
 
 ``database_table_names``
