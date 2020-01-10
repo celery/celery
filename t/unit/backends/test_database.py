@@ -79,6 +79,15 @@ class test_DatabaseBackend:
         with pytest.raises(ImproperlyConfigured):
             DatabaseBackend(app=self.app)
 
+    def test_table_schema_config(self):
+        self.app.conf.database_table_schemas = {
+            'task': 'foo',
+            'group': 'bar',
+        }
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.task_cls.__table__.schema == 'foo'
+        assert tb.taskset_cls.__table__.schema == 'bar'
+
     def test_missing_task_id_is_PENDING(self):
         tb = DatabaseBackend(self.uri, app=self.app)
         assert tb.get_state('xxx-does-not-exist') == states.PENDING

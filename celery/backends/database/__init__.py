@@ -88,6 +88,10 @@ class DatabaseBackend(BaseBackend):
             'short_lived_sessions',
             conf.database_short_lived_sessions)
 
+        schemas = conf.database_table_schemas or {}
+        self.task_cls.__table__.schema = schemas.get('task')
+        self.taskset_cls.__table__.schema = schemas.get('group')
+
         tablenames = conf.database_table_names or {}
         self.task_cls.__table__.name = tablenames.get('task',
                                                       'celery_taskmeta')

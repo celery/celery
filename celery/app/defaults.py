@@ -244,6 +244,7 @@ NAMESPACES = Namespace(
         short_lived_sessions=Option(
             False, type='bool', old={'celery_result_db_short_lived_sessions'},
         ),
+        table_schemas=Option(type='dict'),
         table_names=Option(type='dict', old={'celery_result_db_tablenames'}),
     ),
     task=Namespace(
