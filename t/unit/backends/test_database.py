@@ -217,7 +217,6 @@ class test_DatabaseBackend:
         assert 'foo', repr(TaskSet('foo' in None))
 
 
-
 @skip.unless_module('sqlalchemy')
 @skip.if_pypy()
 @skip.if_jython()
