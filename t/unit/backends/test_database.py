@@ -65,7 +65,7 @@ def result_serializer(request):
 @skip.if_jython()
 @pytest.mark.usefixtures('result_serializer')
 class test_DatabaseBackend:
-    
+
     def setup(self):
         self.uri = 'sqlite:///test.db'
 
