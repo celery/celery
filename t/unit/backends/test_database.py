@@ -54,14 +54,20 @@ class test_session_cleanup:
         session.close.assert_called_with()
 
 
+@pytest.fixture(params=['pickle', 'json'])
+def result_serializer(request):
+    if request.instance:
+        request.instance.app.conf.result_serializer = request.param
+
+
 @skip.unless_module('sqlalchemy')
 @skip.if_pypy()
 @skip.if_jython()
+@pytest.mark.usefixtures('result_serializer')
 class test_DatabaseBackend:
-
+    
     def setup(self):
         self.uri = 'sqlite:///test.db'
-        self.app.conf.result_serializer = 'pickle'
 
     def test_retry_helper(self):
         from celery.backends.database import DatabaseError
@@ -105,6 +111,109 @@ class test_DatabaseBackend:
         tb.mark_as_done(tid, 42)
         assert tb.get_state(tid) == states.SUCCESS
         assert tb.get_result(tid) == 42
+
+    def test_mark_as_started(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.mark_as_started(tid)
+        assert tb.get_state(tid) == states.STARTED
+
+    def test_mark_as_revoked(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.mark_as_revoked(tid)
+        assert tb.get_state(tid) == states.REVOKED
+
+    def test_mark_as_retry(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        try:
+            raise KeyError('foo')
+        except KeyError as exception:
+            import traceback
+            trace = '\n'.join(traceback.format_stack())
+            tb.mark_as_retry(tid, exception, traceback=trace)
+            assert tb.get_state(tid) == states.RETRY
+            assert isinstance(tb.get_result(tid), KeyError)
+            assert tb.get_traceback(tid) == trace
+
+    def test_mark_as_failure(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+
+        tid3 = uuid()
+        try:
+            raise KeyError('foo')
+        except KeyError as exception:
+            import traceback
+            trace = '\n'.join(traceback.format_stack())
+            tb.mark_as_failure(tid3, exception, traceback=trace)
+            assert tb.get_state(tid3) == states.FAILURE
+            assert isinstance(tb.get_result(tid3), KeyError)
+            assert tb.get_traceback(tid3) == trace
+
+    def test_forget(self):
+        tb = DatabaseBackend(self.uri, backend='memory://', app=self.app)
+        tid = uuid()
+        tb.mark_as_done(tid, {'foo': 'bar'})
+        tb.mark_as_done(tid, {'foo': 'bar'})
+        x = self.app.AsyncResult(tid, backend=tb)
+        x.forget()
+        assert x.result is None
+
+    def test_process_cleanup(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb.process_cleanup()
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_reduce(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert loads(dumps(tb))
+
+    def test_save__restore__delete_group(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+
+        tid = uuid()
+        res = {'something': 'special'}
+        assert tb.save_group(tid, res) == res
+
+        res2 = tb.restore_group(tid)
+        assert res2 == res
+
+        tb.delete_group(tid)
+        assert tb.restore_group(tid) is None
+
+        assert tb.restore_group('xxx-nonexisting-id') is None
+
+    def test_cleanup(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        for i in range(10):
+            tb.mark_as_done(uuid(), 42)
+            tb.save_group(uuid(), {'foo': 'bar'})
+        s = tb.ResultSession()
+        for t in s.query(Task).all():
+            t.date_done = datetime.now() - tb.expires * 2
+        for t in s.query(TaskSet).all():
+            t.date_done = datetime.now() - tb.expires * 2
+        s.commit()
+        s.close()
+
+        tb.cleanup()
+
+    def test_Task__repr__(self):
+        assert 'foo' in repr(Task('foo'))
+
+    def test_TaskSet__repr__(self):
+        assert 'foo', repr(TaskSet('foo' in None))
+
+
+@skip.unless_module('sqlalchemy')
+@skip.if_pypy()
+@skip.if_jython()
+class test_DatabaseBackend_pickle_serializer:
+
+    def setup(self):
+        self.uri = 'sqlite:///test.db'
+        self.app.conf.result_serializer = 'pickle'
 
     def test_is_pickled(self):
         tb = DatabaseBackend(self.uri, app=self.app)
@@ -117,99 +226,6 @@ class test_DatabaseBackend:
         assert rindb.get('foo') == 'baz'
         assert rindb.get('bar').data == 12345
 
-    def test_mark_as_started(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-        tid = uuid()
-        tb.mark_as_started(tid)
-        assert tb.get_state(tid) == states.STARTED
-
-    def test_mark_as_revoked(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-        tid = uuid()
-        tb.mark_as_revoked(tid)
-        assert tb.get_state(tid) == states.REVOKED
-
-    def test_mark_as_retry(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-        tid = uuid()
-        try:
-            raise KeyError('foo')
-        except KeyError as exception:
-            import traceback
-            trace = '\n'.join(traceback.format_stack())
-            tb.mark_as_retry(tid, exception, traceback=trace)
-            assert tb.get_state(tid) == states.RETRY
-            assert isinstance(tb.get_result(tid), KeyError)
-            assert tb.get_traceback(tid) == trace
-
-    def test_mark_as_failure(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-
-        tid3 = uuid()
-        try:
-            raise KeyError('foo')
-        except KeyError as exception:
-            import traceback
-            trace = '\n'.join(traceback.format_stack())
-            tb.mark_as_failure(tid3, exception, traceback=trace)
-            assert tb.get_state(tid3) == states.FAILURE
-            assert isinstance(tb.get_result(tid3), KeyError)
-            assert tb.get_traceback(tid3) == trace
-
-    def test_forget(self):
-        tb = DatabaseBackend(self.uri, backend='memory://', app=self.app)
-        tid = uuid()
-        tb.mark_as_done(tid, {'foo': 'bar'})
-        tb.mark_as_done(tid, {'foo': 'bar'})
-        x = self.app.AsyncResult(tid, backend=tb)
-        x.forget()
-        assert x.result is None
-
-    def test_process_cleanup(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-        tb.process_cleanup()
-
-    @pytest.mark.usefixtures('depends_on_current_app')
-    def test_reduce(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-        assert loads(dumps(tb))
-
-    def test_save__restore__delete_group(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-
-        tid = uuid()
-        res = {'something': 'special'}
-        assert tb.save_group(tid, res) == res
-
-        res2 = tb.restore_group(tid)
-        assert res2 == res
-
-        tb.delete_group(tid)
-        assert tb.restore_group(tid) is None
-
-        assert tb.restore_group('xxx-nonexisting-id') is None
-
-    def test_cleanup(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-        for i in range(10):
-            tb.mark_as_done(uuid(), 42)
-            tb.save_group(uuid(), {'foo': 'bar'})
-        s = tb.ResultSession()
-        for t in s.query(Task).all():
-            t.date_done = datetime.now() - tb.expires * 2
-        for t in s.query(TaskSet).all():
-            t.date_done = datetime.now() - tb.expires * 2
-        s.commit()
-        s.close()
-
-        tb.cleanup()
-
-    def test_Task__repr__(self):
-        assert 'foo' in repr(Task('foo'))
-
-    def test_TaskSet__repr__(self):
-        assert 'foo', repr(TaskSet('foo' in None))
-
 
 @skip.unless_module('sqlalchemy')
 @skip.if_pypy()
@@ -219,49 +235,6 @@ class test_DatabaseBackend_json_serializer:
     def setup(self):
         self.uri = 'sqlite:///test.db'
         self.app.conf.result_serializer = 'json'
-
-    def test_retry_helper(self):
-        from celery.backends.database import DatabaseError
-
-        calls = [0]
-
-        @retry
-        def raises():
-            calls[0] += 1
-            raise DatabaseError(1, 2, 3)
-
-        with pytest.raises(DatabaseError):
-            raises(max_retries=5)
-        assert calls[0] == 5
-
-    def test_missing_dburi_raises_ImproperlyConfigured(self):
-        self.app.conf.database_url = None
-        with pytest.raises(ImproperlyConfigured):
-            DatabaseBackend(app=self.app)
-
-    def test_missing_task_id_is_PENDING(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-        assert tb.get_state('xxx-does-not-exist') == states.PENDING
-
-    def test_missing_task_meta_is_dict_with_pending(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-        meta = tb.get_task_meta('xxx-does-not-exist-at-all')
-        assert meta['status'] == states.PENDING
-        assert meta['task_id'] == 'xxx-does-not-exist-at-all'
-        assert meta['result'] is None
-        assert meta['traceback'] is None
-
-    def test_mark_as_done(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-
-        tid = uuid()
-
-        assert tb.get_state(tid) == states.PENDING
-        assert tb.get_result(tid) is None
-
-        tb.mark_as_done(tid, 42)
-        assert tb.get_state(tid) == states.SUCCESS
-        assert tb.get_result(tid) == 42
 
     def test_is_serialized(self):
         tb = DatabaseBackend(self.uri, app=self.app)
@@ -273,99 +246,6 @@ class test_DatabaseBackend_json_serializer:
         rindb = tb.get_result(tid2)
         assert rindb.get('foo') == 'baz'
         assert rindb.get('bar').get('data') == 12345
-
-    def test_mark_as_started(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-        tid = uuid()
-        tb.mark_as_started(tid)
-        assert tb.get_state(tid) == states.STARTED
-
-    def test_mark_as_revoked(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-        tid = uuid()
-        tb.mark_as_revoked(tid)
-        assert tb.get_state(tid) == states.REVOKED
-
-    def test_mark_as_retry(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-        tid = uuid()
-        try:
-            raise KeyError('foo')
-        except KeyError as exception:
-            import traceback
-            trace = '\n'.join(traceback.format_stack())
-            tb.mark_as_retry(tid, exception, traceback=trace)
-            assert tb.get_state(tid) == states.RETRY
-            assert isinstance(tb.get_result(tid), KeyError)
-            assert tb.get_traceback(tid) == trace
-
-    def test_mark_as_failure(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-
-        tid3 = uuid()
-        try:
-            raise KeyError('foo')
-        except KeyError as exception:
-            import traceback
-            trace = '\n'.join(traceback.format_stack())
-            tb.mark_as_failure(tid3, exception, traceback=trace)
-            assert tb.get_state(tid3) == states.FAILURE
-            assert isinstance(tb.get_result(tid3), KeyError)
-            assert tb.get_traceback(tid3) == trace
-
-    def test_forget(self):
-        tb = DatabaseBackend(self.uri, backend='memory://', app=self.app)
-        tid = uuid()
-        tb.mark_as_done(tid, {'foo': 'bar'})
-        tb.mark_as_done(tid, {'foo': 'bar'})
-        x = self.app.AsyncResult(tid, backend=tb)
-        x.forget()
-        assert x.result is None
-
-    def test_process_cleanup(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-        tb.process_cleanup()
-
-    @pytest.mark.usefixtures('depends_on_current_app')
-    def test_reduce(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-        assert loads(dumps(tb))
-
-    def test_save__restore__delete_group(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-
-        tid = uuid()
-        res = {'something': 'special'}
-        assert tb.save_group(tid, res) == res
-
-        res2 = tb.restore_group(tid)
-        assert res2 == res
-
-        tb.delete_group(tid)
-        assert tb.restore_group(tid) is None
-
-        assert tb.restore_group('xxx-nonexisting-id') is None
-
-    def test_cleanup(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-        for i in range(10):
-            tb.mark_as_done(uuid(), 42)
-            tb.save_group(uuid(), {'foo': 'bar'})
-        s = tb.ResultSession()
-        for t in s.query(Task).all():
-            t.date_done = datetime.now() - tb.expires * 2
-        for t in s.query(TaskSet).all():
-            t.date_done = datetime.now() - tb.expires * 2
-        s.commit()
-        s.close()
-
-        tb.cleanup()
-
-    def test_Task__repr__(self):
-        assert 'foo' in repr(Task('foo'))
-
-    def test_TaskSet__repr__(self):
-        assert 'foo', repr(TaskSet('foo' in None))
 
 
 @skip.unless_module('sqlalchemy')
