@@ -88,6 +88,8 @@ class ResultConsumer(BaseResultConsumer):
         super(ResultConsumer, self).__init__(*args, **kwargs)
         self._get_key_for_task = self.backend.get_key_for_task
         self._decode_result = self.backend.decode_result
+        self._ensure = self.backend.ensure
+        self._connection_errors = self.backend.connection_errors
         self.subscribed_to = set()
 
     def on_after_fork(self):
@@ -98,6 +100,20 @@ class ResultConsumer(BaseResultConsumer):
         except KeyError as e:
             logger.warning(text_t(e))
         super(ResultConsumer, self).on_after_fork()
+
+    def _reconnect_pubsub(self):
+        self._pubsub = None
+        self.backend.client.connection_pool.reset()
+        # task state might have changed when the connection was down so we
+        # retrieve meta for all subscribed tasks before going into pubsub mode
+        metas = self.backend.client.mget(self.subscribed_to)
+        metas = [meta for meta in metas if meta]
+        for meta in metas:
+            self.on_state_change(self._decode_result(meta), None)
+        self._pubsub = self.backend.client.pubsub(
+            ignore_subscribe_messages=True,
+        )
+        self._pubsub.subscribe(*self.subscribed_to)
 
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
@@ -124,9 +140,12 @@ class ResultConsumer(BaseResultConsumer):
 
     def drain_events(self, timeout=None):
         if self._pubsub:
-            message = self._pubsub.get_message(timeout=timeout)
-            if message and message['type'] == 'message':
-                self.on_state_change(self._decode_result(message['data']), message)
+            try:
+                message = self._pubsub.get_message(timeout=timeout)
+                if message and message['type'] == 'message':
+                    self.on_state_change(self._decode_result(message['data']), message)
+            except self._connection_errors:
+                self._ensure(self._reconnect_pubsub, ())
         elif timeout:
             time.sleep(timeout)
 
@@ -139,13 +158,19 @@ class ResultConsumer(BaseResultConsumer):
         key = self._get_key_for_task(task_id)
         if key not in self.subscribed_to:
             self.subscribed_to.add(key)
-            self._pubsub.subscribe(key)
+            try:
+                self._pubsub.subscribe(key)
+            except self._connection_errors:
+                self._ensure(self._reconnect_pubsub, ())
 
     def cancel_for(self, task_id):
+        key = self._get_key_for_task(task_id)
+        self.subscribed_to.discard(key)
         if self._pubsub:
-            key = self._get_key_for_task(task_id)
-            self.subscribed_to.discard(key)
-            self._pubsub.unsubscribe(key)
+            try:
+                self._pubsub.unsubscribe(key)
+            except self._connection_errors:
+                self._ensure(self._reconnect_pubsub, ())
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
