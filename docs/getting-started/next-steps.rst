@@ -257,7 +257,7 @@ You can call a task using the :meth:`delay` method:
 .. code-block:: pycon
 
     >>> from proj.tasks import add
-    
+
     >>> add.delay(2, 2)
 
 This method is actually a star-argument shortcut to another method called
@@ -532,14 +532,14 @@ as a group, and retrieve the return values in order.
     >>> from celery import group
     >>> from proj.tasks import add
 
-    >>> group(add.s(i, i) for i in xrange(10))().get()
+    >>> group(add.s(i, i) for i in range(10))().get()
     [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
 
 - Partial group
 
 .. code-block:: pycon
 
-    >>> g = group(add.s(i) for i in xrange(10))
+    >>> g = group(add.s(i) for i in range(10))
     >>> g(10).get()
     [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
 
@@ -586,7 +586,7 @@ A chord is a group with a callback:
     >>> from celery import chord
     >>> from proj.tasks import add, xsum
 
-    >>> chord((add.s(i, i) for i in xrange(10)), xsum.s())().get()
+    >>> chord((add.s(i, i) for i in range(10)), xsum.s())().get()
     90
 
 
@@ -595,7 +595,7 @@ to a chord:
 
 .. code-block:: pycon
 
-    >>> (group(add.s(i, i) for i in xrange(10)) | xsum.s())().get()
+    >>> (group(add.s(i, i) for i in range(10)) | xsum.s())().get()
     90
 
 
