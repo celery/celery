@@ -264,6 +264,22 @@ class test_Consumer:
         errback = conn.ensure_connection.call_args[0][0]
         errback(Mock(), 0)
 
+    @patch('celery.worker.consumer.consumer.error')
+    def test_connect_error_handler_progress(self, error):
+        self.app.conf.broker_connection_retry = True
+        self.app.conf.broker_connection_max_retries = 3
+        self.app._connection = _amqp_connection()
+        conn = self.app._connection.return_value
+        c = self.get_consumer()
+        assert c.connect()
+        errback = conn.ensure_connection.call_args[0][0]
+        errback(Mock(), 2)
+        assert error.call_args[0][3] == 'Trying again in 2.00 seconds... (1/3)'
+        errback(Mock(), 4)
+        assert error.call_args[0][3] == 'Trying again in 4.00 seconds... (2/3)'
+        errback(Mock(), 6)
+        assert error.call_args[0][3] == 'Trying again in 6.00 seconds... (3/3)'
+
 
 class test_Heart:
 
