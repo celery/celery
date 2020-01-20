@@ -3,6 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import time
+from contextlib import contextmanager
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 
@@ -115,6 +116,13 @@ class ResultConsumer(BaseResultConsumer):
         )
         self._pubsub.subscribe(*self.subscribed_to)
 
+    @contextmanager
+    def reconnect_on_error(self):
+        try:
+            yield
+        except self._connection_errors:
+            self._ensure(self._reconnect_pubsub, ())
+
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
             self.cancel_for(meta['task_id'])
@@ -140,12 +148,10 @@ class ResultConsumer(BaseResultConsumer):
 
     def drain_events(self, timeout=None):
         if self._pubsub:
-            try:
+            with self.reconnect_on_error():
                 message = self._pubsub.get_message(timeout=timeout)
                 if message and message['type'] == 'message':
                     self.on_state_change(self._decode_result(message['data']), message)
-            except self._connection_errors:
-                self._ensure(self._reconnect_pubsub, ())
         elif timeout:
             time.sleep(timeout)
 
@@ -158,19 +164,15 @@ class ResultConsumer(BaseResultConsumer):
         key = self._get_key_for_task(task_id)
         if key not in self.subscribed_to:
             self.subscribed_to.add(key)
-            try:
+            with self.reconnect_on_error():
                 self._pubsub.subscribe(key)
-            except self._connection_errors:
-                self._ensure(self._reconnect_pubsub, ())
 
     def cancel_for(self, task_id):
         key = self._get_key_for_task(task_id)
         self.subscribed_to.discard(key)
         if self._pubsub:
-            try:
+            with self.reconnect_on_error():
                 self._pubsub.unsubscribe(key)
-            except self._connection_errors:
-                self._ensure(self._reconnect_pubsub, ())
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
