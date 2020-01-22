@@ -114,7 +114,7 @@ class ResultConsumer(BaseResultConsumer):
         self._consume_from(initial_task_id)
 
     def on_wait_for_pending(self, result, **kwargs):
-        for meta in result._iter_meta():
+        for meta in result._iter_meta(**kwargs):
             if meta is not None:
                 self.on_state_change(meta, None)
 
