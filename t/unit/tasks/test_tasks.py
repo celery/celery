@@ -271,7 +271,12 @@ class TasksCase:
         def task_replaced_by_other_task(self):
             return self.replace(task_replacing_another_task.si())
 
+        @self.app.task(bind=True, autoretry_for=(Exception,))
+        def task_replaced_by_other_task_with_autoretry(self):
+            return self.replace(task_replacing_another_task.si())
+
         self.task_replaced_by_other_task = task_replaced_by_other_task
+        self.task_replaced_by_other_task_with_autoretry = task_replaced_by_other_task_with_autoretry
 
         # Remove all messages from memory-transport
         from kombu.transport.memory import Channel
@@ -929,6 +934,10 @@ class test_tasks(TasksCase):
     def test_replace_run(self):
         with pytest.raises(Ignore):
             self.task_replaced_by_other_task.run()
+
+    def test_replace_run_with_autoretry(self):
+        with pytest.raises(Ignore):
+            self.task_replaced_by_other_task_with_autoretry.run()
 
     def test_replace_delay(self):
         res = self.task_replaced_by_other_task.delay()
