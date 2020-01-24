@@ -209,7 +209,7 @@ class Task(object):
     store_errors_even_if_ignored = None
 
     #: The name of a serializer that are registered with
-    #: :mod:`kombu.serialization.registry`.  Default is `'pickle'`.
+    #: :mod:`kombu.serialization.registry`.  Default is `'json'`.
     serializer = None
 
     #: Hard time limit.
