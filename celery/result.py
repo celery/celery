@@ -836,7 +836,7 @@ class ResultSet(ResultBase):
 
     def _iter_meta(self, **kwargs):
         return (meta for _, meta in self.backend.get_many(
-            {r.id for r in self.results}, max_iterations=1, **kwargs,
+            {r.id for r in self.results}, max_iterations=1, **kwargs
         ))
 
     def _failed_join_report(self):
