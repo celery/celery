@@ -1,6 +1,7 @@
 ---
 name: Bug Report
 about: Is something wrong with Celery?
+labels: Issue Type: Bug Report
 ---
 <!--
 Please fill this template entirely and do not erase parts of it.
