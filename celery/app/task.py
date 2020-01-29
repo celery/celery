@@ -629,7 +629,7 @@ class Task(object):
             ...         twitter.post_status_update(message)
             ...     except twitter.FailWhale as exc:
             ...         # Retry in 5 minutes.
-            ...         raise self.retry(countdown=60 * 5, exc=exc)
+            ...         self.retry(countdown=60 * 5, exc=exc)
 
         Note:
             Although the task will never return above as `retry` raises an
