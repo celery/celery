@@ -146,7 +146,11 @@ class ResultConsumer(BaseResultConsumer):
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
-    """Redis task result store."""
+    """Redis task result store.
+
+    It makes use of the following commands:
+    GET, MGET, DEL, INCRBY, EXPIRE, SET, SETEX
+    """
 
     ResultConsumer = ResultConsumer
 

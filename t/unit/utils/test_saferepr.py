@@ -5,9 +5,10 @@ from decimal import Decimal
 from pprint import pprint
 
 import pytest
-
 from case import skip
-from celery.five import (items, long_t, text_t, values)
+
+from celery.five import (items, long_t, python_2_unicode_compatible, text_t,
+                         values)
 from celery.utils.saferepr import saferepr
 
 D_NUMBERS = {

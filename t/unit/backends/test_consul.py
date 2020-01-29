@@ -1,4 +1,5 @@
 from case import Mock, skip
+
 from celery.backends.consul import ConsulBackend
 
 

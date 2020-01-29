@@ -7,8 +7,8 @@ curl -L https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv
 git clone https://github.com/s1341/pyenv-alias.git $(pyenv root)/plugins/pyenv-alias
 
 # Python versions to test against
-VERSION_ALIAS="python2.7" pyenv install 2.7.15
-VERSION_ALIAS="python3.4" pyenv install 3.4.9
-VERSION_ALIAS="python3.5" pyenv install 3.5.6
-VERSION_ALIAS="python3.6" pyenv install 3.6.7
-VERSION_ALIAS="python3.7" pyenv install 3.7.1
+VERSION_ALIAS="python2.7" pyenv install 2.7.17
+VERSION_ALIAS="python3.5" pyenv install 3.5.8
+VERSION_ALIAS="python3.6" pyenv install 3.6.9
+VERSION_ALIAS="python3.7" pyenv install 3.7.5
+VERSION_ALIAS="python3.8" pyenv install 3.8.0

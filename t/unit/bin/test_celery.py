@@ -1,8 +1,8 @@
 import sys
 
 import pytest
-
 from case import Mock, patch
+
 from celery import __main__
 from celery.bin import celery as mod
 from celery.bin.base import Error

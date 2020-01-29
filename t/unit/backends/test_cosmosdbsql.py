@@ -1,6 +1,6 @@
 import pytest
-
 from case import Mock, call, patch, skip
+
 from celery.backends import cosmosdbsql
 from celery.backends.cosmosdbsql import CosmosDBSQLBackend
 from celery.exceptions import ImproperlyConfigured

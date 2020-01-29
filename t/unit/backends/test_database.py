@@ -2,8 +2,8 @@ from datetime import datetime
 from pickle import dumps, loads
 
 import pytest
-
 from case import Mock, patch, skip
+
 from celery import states, uuid
 from celery.app.task import Context
 from celery.exceptions import ImproperlyConfigured
@@ -76,6 +76,15 @@ class test_DatabaseBackend:
         self.app.conf.database_url = None
         with pytest.raises(ImproperlyConfigured):
             DatabaseBackend(app=self.app)
+
+    def test_table_schema_config(self):
+        self.app.conf.database_table_schemas = {
+            'task': 'foo',
+            'group': 'bar',
+        }
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.task_cls.__table__.schema == 'foo'
+        assert tb.taskset_cls.__table__.schema == 'bar'
 
     def test_missing_task_id_is_PENDING(self):
         tb = DatabaseBackend(self.uri, app=self.app)
@@ -239,6 +248,37 @@ class test_DatabaseBackend_result_extended():
         assert meta['result'] == {'fizz': 'buzz'}
         assert meta['args'] == args
         assert meta['kwargs'] == kwargs
+        assert meta['queue'] == 'celery'
+        assert meta['name'] == 'mytask'
+        assert meta['retries'] == 2
+        assert meta['worker'] == "celery@worker_1"
+
+    @pytest.mark.parametrize(
+        'result_serializer, args, kwargs',
+        [
+            ('pickle', (SomeClass(1), SomeClass(2)),
+             {'foo': SomeClass(123)}),
+            ('json', ['a', 'b'], {'foo': 'bar'}),
+        ],
+        ids=['using pickle', 'using json']
+    )
+    def test_get_result_meta(self, result_serializer, args, kwargs):
+        self.app.conf.result_serializer = result_serializer
+        tb = DatabaseBackend(self.uri, app=self.app)
+
+        request = Context(args=args, kwargs=kwargs,
+                          task='mytask', retries=2,
+                          hostname='celery@worker_1',
+                          delivery_info={'routing_key': 'celery'})
+
+        meta = tb._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, format_date=False,
+                                   encode=True)
+
+        assert meta['result'] == {'fizz': 'buzz'}
+        assert tb.decode(meta['args']) == args
+        assert tb.decode(meta['kwargs']) == kwargs
         assert meta['queue'] == 'celery'
         assert meta['name'] == 'mytask'
         assert meta['retries'] == 2

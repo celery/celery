@@ -1,6 +1,6 @@
 import pytest
-
 from case import mock, patch
+
 from celery.utils.threads import (Local, LocalManager, _FastLocalStack,
                                   _LocalStack, bgThread)
 

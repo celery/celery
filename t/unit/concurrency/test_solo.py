@@ -1,6 +1,7 @@
 import operator
 
 from case import Mock
+
 from celery import signals
 from celery.concurrency import solo
 from celery.utils.functional import noop

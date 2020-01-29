@@ -1,6 +1,6 @@
 import pytest
-
 from case import Mock, patch
+
 from celery.bin.base import Error
 from celery.bin.control import _RemoteControl, control, inspect, status
 from celery.five import WhateverIO
