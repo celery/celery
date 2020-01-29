@@ -413,15 +413,15 @@ class test_DynamoDBBackend:
     def test_prepare_put_request_with_ttl(self):
         ttl = self.backend.time_to_live_seconds = 30
         expected = {
-            'TableName': u'celery',
+            'TableName': 'celery',
             'Item': {
-                u'id': {u'S': u'abcdef'},
-                u'result': {u'B': u'val'},
-                u'timestamp': {
-                    u'N': str(Decimal(self._static_timestamp))
+                'id': {'S': 'abcdef'},
+                'result': {'B': 'val'},
+                'timestamp': {
+                    'N': str(Decimal(self._static_timestamp))
                 },
-                u'ttl': {
-                    u'N': str(int(self._static_timestamp + ttl))
+                'ttl': {
+                    'N': str(int(self._static_timestamp + ttl))
                 }
             }
         }
@@ -499,10 +499,10 @@ class test_DynamoDBBackend:
         _, call_kwargs = self.backend._client.put_item.call_args
         expected_kwargs = {
             'Item': {
-                u'timestamp': {u'N': str(self._static_timestamp)},
-                u'id': {u'S': string(sentinel.key)},
-                u'result': {u'B': sentinel.value},
-                u'ttl': {u'N': str(int(self._static_timestamp + ttl))},
+                'timestamp': {'N': str(self._static_timestamp)},
+                'id': {'S': string(sentinel.key)},
+                'result': {'B': sentinel.value},
+                'ttl': {'N': str(int(self._static_timestamp + ttl))},
             },
             'TableName': 'celery'
         }

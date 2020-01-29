@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import codecs
 import os
 import re
@@ -170,7 +169,7 @@ def extras_require():
 def long_description():
     try:
         return codecs.open('README.rst', 'r', 'utf-8').read()
-    except IOError:
+    except OSError:
         return 'Long description error: Missing README.rst file'
 
 # -*- Command: setup.py test -*-
