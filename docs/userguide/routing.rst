@@ -207,7 +207,7 @@ If you're confused about these terms, you should read up on AMQP.
     For users of RabbitMQ the `RabbitMQ FAQ`_
     could be useful as a source of information.
 
-.. _`Rabbits and Warrens`: http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/
+.. _`Rabbits and Warrens`: http://web.archive.org/web/20160323134044/http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/
 .. _`CloudAMQP tutorial`: amqp in 10 minutes part 3
     https://www.cloudamqp.com/blog/2015-09-03-part4-rabbitmq-for-beginners-exchanges-routing-keys-bindings.html
 .. _`RabbitMQ FAQ`: https://www.rabbitmq.com/faq.html
