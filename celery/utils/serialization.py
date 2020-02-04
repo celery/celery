@@ -10,17 +10,13 @@ from itertools import takewhile
 
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
-from celery.five import bytes_if_py2, items, reraise, string_t
-
+from celery.five import bytes_if_py2, items, string_t
 from .encoding import safe_repr
 
 try:
     import cPickle as pickle
 except ImportError:
     import pickle  # noqa
-
-
-PY33 = sys.version_info >= (3, 3)
 
 __all__ = (
     'UnpickleableExceptionWrapper', 'subclass_exception',
@@ -30,10 +26,7 @@ __all__ = (
 )
 
 #: List of base classes we probably don't want to reduce to.
-try:
-    unwanted_base_classes = (StandardError, Exception, BaseException, object)
-except NameError:  # pragma: no cover
-    unwanted_base_classes = (Exception, BaseException, object)  # py3k
+unwanted_base_classes = (Exception, BaseException, object)
 
 
 STRTOBOOL_DEFAULT_TABLE = {'false': False, 'no': False, '0': False,
@@ -267,27 +260,14 @@ def jsonify(obj,
         return unknown_type_filter(obj)
 
 
-# Since PyPy 3 targets Python 3.2, 'raise exc from None' will
-# raise a TypeError so we need to look for Python 3.3 or newer
-if PY33:  # pragma: no cover
-    from vine.five import exec_
-    _raise_with_context = None  # for flake8
-    exec_("""def _raise_with_context(exc, ctx): raise exc from ctx""")
+from vine.five import exec_
+_raise_with_context = None  # for flake8
+exec_("""def _raise_with_context(exc, ctx): raise exc from ctx""")
 
-    def raise_with_context(exc):
-        exc_info = sys.exc_info()
-        if not exc_info:
-            raise exc
-        elif exc_info[1] is exc:
-            raise
-        _raise_with_context(exc, exc_info[1])
-else:
-    def raise_with_context(exc):
-        exc_info = sys.exc_info()
-        if not exc_info:
-            raise exc
-        if exc_info[1] is exc:
-            raise
-        elif exc_info[2]:
-            reraise(type(exc), exc, exc_info[2])
+def raise_with_context(exc):
+    exc_info = sys.exc_info()
+    if not exc_info:
         raise exc
+    elif exc_info[1] is exc:
+        raise
+    _raise_with_context(exc, exc_info[1])

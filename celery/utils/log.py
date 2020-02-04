@@ -7,13 +7,12 @@ import threading
 import traceback
 from contextlib import contextmanager
 
-from kombu.five import PY3, values
+from kombu.five import values
 from kombu.log import LOG_LEVELS
 from kombu.log import get_logger as _get_logger
 from kombu.utils.encoding import safe_str
 
 from celery.five import string_t, text_t
-
 from .term import colored
 
 __all__ = (
@@ -142,8 +141,6 @@ class ColorFormatter(logging.Formatter):
         if ei and not isinstance(ei, tuple):
             ei = sys.exc_info()
         r = logging.Formatter.formatException(self, ei)
-        if isinstance(r, str) and not PY3:
-            return safe_str(r)
         return r
 
     def format(self, record):

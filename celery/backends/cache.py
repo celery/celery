@@ -3,9 +3,7 @@ from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.objects import cached_property
 
 from celery.exceptions import ImproperlyConfigured
-from celery.five import PY3
 from celery.utils.functional import LRUCache
-
 from .base import KeyValueStoreBackend
 
 __all__ = ('CacheBackend',)
@@ -24,7 +22,7 @@ Please use one of the following backends instead: {1}\
 
 def import_best_memcache():
     if _imp[0] is None:
-        is_pylibmc, memcache_key_t = False, ensure_bytes
+        is_pylibmc, memcache_key_t = False, bytes_to_str
         try:
             import pylibmc as memcache
             is_pylibmc = True
@@ -33,8 +31,6 @@ def import_best_memcache():
                 import memcache  # noqa
             except ImportError:
                 raise ImproperlyConfigured(REQUIRES_BACKEND)
-        if PY3:  # pragma: no cover
-            memcache_key_t = bytes_to_str
         _imp[0] = (is_pylibmc, memcache, memcache_key_t)
     return _imp[0]
 

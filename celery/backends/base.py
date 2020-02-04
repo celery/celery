@@ -23,7 +23,7 @@ from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
 from celery.exceptions import (ChordError, ImproperlyConfigured,
                                NotRegistered, TaskRevokedError, TimeoutError)
-from celery.five import PY3, items
+from celery.five import items
 from celery.result import (GroupResult, ResultBase, allow_join_result,
                            result_from_tuple)
 from celery.utils.collections import BufferMap
@@ -308,7 +308,7 @@ class Backend:
         return self.meta_from_decoded(self.decode(payload))
 
     def decode(self, payload):
-        payload = PY3 and payload or str(payload)
+        payload = payload or str(payload)
         return loads(payload,
                      content_type=self.content_type,
                      content_encoding=self.content_encoding,

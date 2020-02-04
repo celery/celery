@@ -3,13 +3,13 @@ import types
 from contextlib import contextmanager
 
 import pytest
+from case import Mock, mock, patch, skip
 from kombu.utils.encoding import ensure_bytes, str_to_bytes
 
-from case import Mock, mock, patch, skip
 from celery import signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
-from celery.five import PY3, bytes_if_py2, items, string, text_t
+from celery.five import bytes_if_py2, items, string
 
 
 class SomeClass:
@@ -150,10 +150,8 @@ class MyMemcachedStringEncodingError(Exception):
 class MemcachedClient(DummyClient):
 
     def set(self, key, value, *args, **kwargs):
-        if PY3:
-            key_t, must_be, not_be, cod = bytes, 'string', 'bytes', 'decode'
-        else:
-            key_t, must_be, not_be, cod = text_t, 'bytes', 'string', 'encode'
+        key_t, must_be, not_be, cod = bytes, 'string', 'bytes', 'decode'
+
         if isinstance(key, key_t):
             raise MyMemcachedStringEncodingError(
                 f'Keys must be {must_be}, not {not_be}.  Convert your '

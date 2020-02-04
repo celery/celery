@@ -12,7 +12,7 @@ from functools import reduce
 from importlib import import_module
 from types import ModuleType
 
-from .five import PY3, bytes_if_py2, items, string, string_t
+from .five import bytes_if_py2, items, string_t
 
 __all__ = ('Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate')
 
@@ -130,6 +130,7 @@ class Proxy:
             return bool(self._get_current_object())
         except RuntimeError:  # pragma: no cover
             return False
+
     __nonzero__ = __bool__  # Py2
 
     def __dir__(self):
@@ -287,19 +288,6 @@ class Proxy:
     def __reduce__(self):
         return self._get_current_object().__reduce__()
 
-    if not PY3:  # pragma: no cover
-        def __cmp__(self, other):
-            return cmp(self._get_current_object(), other)  # noqa
-
-        def __long__(self):
-            return long(self._get_current_object())  # noqa
-
-        def __unicode__(self):
-            try:
-                return string(self._get_current_object())
-            except RuntimeError:  # pragma: no cover
-                return repr(self)
-
 
 class PromiseProxy(Proxy):
     """Proxy that evaluates object once.
@@ -379,6 +367,7 @@ def maybe_evaluate(obj):
     except AttributeError:
         return obj
 
+
 #  ############# Module Generation ##########################
 
 # Utilities to dynamically
@@ -395,14 +384,11 @@ The module %s is deprecated and will be removed in a future version.
 
 DEFAULT_ATTRS = {'__file__', '__path__', '__doc__', '__all__'}
 
+
 # im_func is no longer available in Py3.
 # instead the unbound method itself can be used.
-if sys.version_info[0] == 3:  # pragma: no cover
-    def fun_of_method(method):
-        return method
-else:
-    def fun_of_method(method):  # noqa
-        return method.im_func
+def fun_of_method(method):
+    return method
 
 
 def getappattr(path):
@@ -504,7 +490,8 @@ class LazyModule(ModuleType):
 
     def __getattr__(self, name):
         if name in self._object_origins:
-            module = __import__(self._object_origins[name], None, None, [name])
+            module = __import__(self._object_origins[name], None, None,
+                                [name])
             for item in self._all_by_module[module.__name__]:
                 setattr(self, item, getattr(module, item))
             return getattr(module, name)

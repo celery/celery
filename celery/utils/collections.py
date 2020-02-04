@@ -5,8 +5,7 @@ from collections import deque
 from heapq import heapify, heappop, heappush
 from itertools import chain, count
 
-from celery.five import PY3, Empty, items, keys, monotonic, values
-
+from celery.five import Empty, items, keys, monotonic, values
 from .functional import first, uniq
 from .text import match_case
 
@@ -66,22 +65,11 @@ def lpmerge(L, R):
 class OrderedDict(_OrderedDict):
     """Dict where insertion order matters."""
 
-    if PY3:  # pragma: no cover
-        def _LRUkey(self):
-            # type: () -> Any
-            # return value of od.keys does not support __next__,
-            # but this version will also not create a copy of the list.
-            return next(iter(keys(self)))
-    else:
-        if _dict_is_ordered:  # pragma: no cover
-            def _LRUkey(self):
-                # type: () -> Any
-                # iterkeys is iterable.
-                return next(self.iterkeys())
-        else:
-            def _LRUkey(self):
-                # type: () -> Any
-                return self._OrderedDict__root[1][2]
+    def _LRUkey(self):
+        # type: () -> Any
+        # return value of od.keys does not support __next__,
+        # but this version will also not create a copy of the list.
+        return next(iter(keys(self)))
 
     if not hasattr(_OrderedDict, 'move_to_end'):
         if _dict_is_ordered:  # pragma: no cover

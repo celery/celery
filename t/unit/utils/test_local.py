@@ -1,9 +1,9 @@
 import sys
 
 import pytest
-
 from case import Mock, skip
-from celery.five import PY3, long_t, string
+
+from celery.five import string
 from celery.local import PromiseProxy, Proxy, maybe_evaluate, try_import
 
 
@@ -261,8 +261,6 @@ class test_Proxy:
         x = Proxy(lambda: 10)
         assert type(x.__float__()) == float
         assert type(x.__int__()) == int
-        if not PY3:
-            assert type(x.__long__()) == long_t
         assert hex(x)
         assert oct(x)
 
