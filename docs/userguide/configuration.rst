@@ -1104,6 +1104,26 @@ Default: 120.0 seconds.
 Socket timeout for reading/writing operations to the Redis server
 in seconds (int/float), used by the redis result backend.
 
+.. setting:: redis_retry_on_timeout
+
+``redis_retry_on_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: :const:`False`
+
+To retry reading/writing operations on TimeoutError to the Redis server,
+used by the redis result backend.
+
+.. setting:: socket_keepalive
+
+``socket_keepalive``
+~~~~~~~~~~~~~~~~~~~~
+
+Default: :const:`False`
+
+Socket TCP keepalive to keep connections healthy to the Redis server,
+used by the redis result backend.
+
 .. _conf-cassandra-result-backend:
 
 Cassandra backend settings

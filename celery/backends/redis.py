@@ -185,6 +185,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
         socket_timeout = _get('redis_socket_timeout')
         socket_connect_timeout = _get('redis_socket_connect_timeout')
+        retry_on_timeout = _get('redis_retry_on_timeout')
+        socket_keepalive = _get('redis_socket_keepalive')
 
         self.connparams = {
             'host': _get('redis_host') or 'localhost',
@@ -193,6 +195,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             'password': _get('redis_password'),
             'max_connections': self.max_connections,
             'socket_timeout': socket_timeout and float(socket_timeout),
+            'retry_on_timeout': retry_on_timeout or False,
+            'socket_keepalive': socket_keepalive or False,
             'socket_connect_timeout':
                 socket_connect_timeout and float(socket_connect_timeout),
         }
