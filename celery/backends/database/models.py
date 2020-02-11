@@ -5,7 +5,9 @@ from __future__ import absolute_import, unicode_literals
 from datetime import datetime
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.mysql import LONGBLOB
 from sqlalchemy.types import PickleType
+from sqlalchemy.ext.declarative import declared_attr
 
 from celery import states
 from celery.five import python_2_unicode_compatible
@@ -14,9 +16,20 @@ from .session import ResultModelBase
 
 __all__ = ('Task', 'TaskExtended', 'TaskSet')
 
+class PickleXlType(PickleType):
+    """PickleType with increased storage capacity on MySQL
+
+    Uses MySQL's LONGBLOB column type, which can store up to 4GB per row.
+    """
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'mysql':
+            return dialect.type_descriptor(LONGBLOB())
+        return super(PickleXlType, self).load_dialect_impl(dialect)
+
 
 @python_2_unicode_compatible
-class Task(ResultModelBase):
+class TaskBase(ResultModelBase):
     """Task result/status."""
 
     __tablename__ = 'celery_taskmeta'
@@ -26,7 +39,6 @@ class Task(ResultModelBase):
                    primary_key=True, autoincrement=True)
     task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
-    result = sa.Column(PickleType, nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
                           onupdate=datetime.utcnow, nullable=True)
     traceback = sa.Column(sa.Text, nullable=True)
@@ -47,7 +59,7 @@ class Task(ResultModelBase):
         return '<Task {0.task_id} state: {0.status}>'.format(self)
 
 
-class TaskExtended(Task):
+class TaskExtendedBase(TaskBase):
     """For the extend result."""
 
     __tablename__ = 'celery_taskmeta'
@@ -61,7 +73,7 @@ class TaskExtended(Task):
     queue = sa.Column(sa.String(155), nullable=True)
 
     def to_dict(self):
-        task_dict = super(TaskExtended, self).to_dict()
+        task_dict = super(TaskExtendedBase, self).to_dict()
         task_dict.update({
             'name': self.name,
             'args': self.args,
@@ -74,7 +86,7 @@ class TaskExtended(Task):
 
 
 @python_2_unicode_compatible
-class TaskSet(ResultModelBase):
+class TaskSetBase(ResultModelBase):
     """TaskSet result."""
 
     __tablename__ = 'celery_tasksetmeta'
@@ -83,7 +95,6 @@ class TaskSet(ResultModelBase):
     id = sa.Column(sa.Integer, sa.Sequence('taskset_id_sequence'),
                    autoincrement=True, primary_key=True)
     taskset_id = sa.Column(sa.String(155), unique=True)
-    result = sa.Column(PickleType, nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
                           nullable=True)
 
@@ -100,3 +111,25 @@ class TaskSet(ResultModelBase):
 
     def __repr__(self):
         return '<TaskSet: {0.taskset_id}>'.format(self)
+
+
+def task_storage_factory(large_results, extended_results):
+    result_column_class = PickleXlType if large_results else PickleType
+    task_base_class = TaskExtendedBase if extended_results else TaskBase
+
+    task_class = type(
+        str('Task'),
+        (task_base_class,),
+        {
+            'result': sa.Column(result_column_class, nullable=True)
+        }
+    )
+    task_set_class = type(
+        str('TaskSet'),
+        (TaskSetBase,),
+        {
+            'result': sa.Column(result_column_class, nullable=True)
+        }
+    )
+
+    return task_class, task_set_class

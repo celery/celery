@@ -13,8 +13,8 @@ from celery.exceptions import ImproperlyConfigured
 from celery.five import range
 from celery.utils.time import maybe_timedelta
 
-from .models import Task, TaskExtended, TaskSet
 from .session import SessionManager
+from .models import task_storage_factory
 
 try:
     from sqlalchemy.exc import DatabaseError, InvalidRequestError
@@ -67,9 +67,6 @@ class DatabaseBackend(BaseBackend):
     # to not bombard the database with queries.
     subpolling_interval = 0.5
 
-    task_cls = Task
-    taskset_cls = TaskSet
-
     def __init__(self, dburi=None, engine_options=None, url=None, **kwargs):
         # The `url` argument was added later and is used by
         # the app to set backend by url (celery.app.backends.by_url)
@@ -77,8 +74,10 @@ class DatabaseBackend(BaseBackend):
                                               url=url, **kwargs)
         conf = self.app.conf
 
-        if self.extended_result:
-            self.task_cls = TaskExtended
+        self.task_cls, self.taskset_cls = task_storage_factory(
+            conf.get('database_large_result_storage'),
+            self.extended_result
+        )
 
         self.url = url or dburi or conf.database_url
         self.engine_options = dict(
