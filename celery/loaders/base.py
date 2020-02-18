@@ -89,6 +89,9 @@ class BaseLoader(object):
         return self.import_from_cwd(module)
 
     def import_module(self, module, package=None):
+        want_reload_module = sys.modules.get(module, None)
+        if want_reload_module:
+            importlib.reload(want_reload_module)
         return importlib.import_module(module, package=package)
 
     def import_from_cwd(self, module, imp=None, package=None):
