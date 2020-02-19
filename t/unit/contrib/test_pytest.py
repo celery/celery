@@ -59,9 +59,9 @@ def test_pytest_import_passes(celery_app, celery_worker):
     task.get()
 
 
-def test_pytest_second_import_fails(celery_app, celery_worker):
+def test_pytest_second_import_fails_without_patched_module(celery_app, celery_worker):
     task = celery_app.send_task("t.unit.contrib.proj.foo.bar")
-    with pytest.raises(Exception):
+    with pytest.raises(KeyError):
         task.get()
 
 
