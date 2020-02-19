@@ -1,5 +1,3 @@
-import importlib
-import sys
 import pytest
 
 try:
@@ -37,17 +35,6 @@ def test_pytest_celery_marker_registration(testdir):
 
 
 @pytest.fixture
-def fixed_import(mocker):
-    def import_module(module, package=None):
-        want_reload_module = sys.modules.get(module, None)
-        if want_reload_module:
-            importlib.reload(want_reload_module)
-        return importlib.import_module(module, package=package)
-
-    mocker.patch('celery.loaders.base.BaseLoader.import_module', side_effect=import_module)
-
-
-@pytest.fixture
 def celery_includes():
     return [
         't.unit.contrib.proj.foo'
@@ -59,12 +46,6 @@ def test_pytest_import_passes(celery_app, celery_worker):
     task.get()
 
 
-def test_pytest_second_import_fails_without_patched_module(celery_app, celery_worker):
-    task = celery_app.send_task("t.unit.contrib.proj.foo.bar")
-    with pytest.raises(KeyError):
-        task.get()
-
-
-def test_pytest_second_import_passes(fixed_import, celery_app, celery_worker):
+def test_pytest_second_with_new_app_fixtures_also_passes(celery_app, celery_worker):
     task = celery_app.send_task("t.unit.contrib.proj.foo.bar")
     task.get()
