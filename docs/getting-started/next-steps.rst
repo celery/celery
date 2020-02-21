@@ -328,26 +328,33 @@ exception, in fact ``result.get()`` will propagate any errors by default:
 
 .. code-block:: pycon
 
-    >>> res = add.delay(2)
+    >>> res = add.delay(2, '2')
     >>> res.get(timeout=1)
 
 .. code-block:: pytb
 
     Traceback (most recent call last):
-    File "<stdin>", line 1, in <module>
-    File "/opt/devel/celery/celery/result.py", line 113, in get
-        interval=interval)
-    File "/opt/devel/celery/celery/backends/rpc.py", line 138, in wait_for
-        raise meta['result']
-    TypeError: add() takes exactly 2 arguments (1 given)
+      File "<stdin>", line 1, in <module>
+      File "celery/result.py", line 221, in get
+        return self.backend.wait_for_pending(
+      File "celery/backends/asynchronous.py", line 195, in wait_for_pending
+        return result.maybe_throw(callback=callback, propagate=propagate)
+      File "celery/result.py", line 333, in maybe_throw
+        self.throw(value, self._to_remote_traceback(tb))
+      File "celery/result.py", line 326, in throw
+        self.on_ready.throw(*args, **kwargs)
+      File "vine/promises.py", line 244, in throw
+        reraise(type(exc), exc, tb)
+      File "vine/five.py", line 195, in reraise
+        raise value
+    TypeError: unsupported operand type(s) for +: 'int' and 'str'
 
-If you don't wish for the errors to propagate then you can disable that
-by passing the ``propagate`` argument:
+If you don't wish for the errors to propagate then you can disable that by passing the ``propagate`` argument:
 
 .. code-block:: pycon
 
     >>> res.get(propagate=False)
-    TypeError('add() takes exactly 2 arguments (1 given)',)
+    TypeError("unsupported operand type(s) for +: 'int' and 'str'")
 
 In this case it'll return the exception instance raised instead,
 and so to check whether the task succeeded or failed you'll have to
