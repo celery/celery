@@ -79,6 +79,11 @@ CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
 
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 
+E_RETRY_LIMIT_EXCEEDED = """
+Retry limit exceeded while trying to reconnect to the Celery redis result \
+store backend. The Celery application must be restarted.
+"""
+
 logger = get_logger(__name__)
 
 
@@ -121,7 +126,11 @@ class ResultConsumer(BaseResultConsumer):
         try:
             yield
         except self._connection_errors:
-            self._ensure(self._reconnect_pubsub, ())
+            try:
+                self._ensure(self._reconnect_pubsub, ())
+            except self._connection_errors:
+                logger.critical(E_RETRY_LIMIT_EXCEEDED)
+                raise
 
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
