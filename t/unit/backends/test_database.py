@@ -86,7 +86,18 @@ class test_DatabaseBackend:
         }
         tb = DatabaseBackend(self.uri, app=self.app)
         assert tb.task_cls.__table__.schema == 'foo'
+        assert tb.task_cls.__table__.c.id.default.schema == 'foo'
         assert tb.taskset_cls.__table__.schema == 'bar'
+        assert tb.taskset_cls.__table__.c.id.default.schema == 'bar'
+
+    def test_table_name_config(self):
+        self.app.conf.database_table_names = {
+            'task': 'foo',
+            'group': 'bar',
+        }
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.task_cls.__table__.name == 'foo'
+        assert tb.taskset_cls.__table__.name == 'bar'
 
     def test_missing_task_id_is_PENDING(self):
         tb = DatabaseBackend(self.uri, app=self.app)
