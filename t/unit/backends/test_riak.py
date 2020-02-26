@@ -1,8 +1,8 @@
 import sys
 
 import pytest
-
 from case import MagicMock, Mock, patch, sentinel, skip
+
 from celery.exceptions import ImproperlyConfigured
 
 try:

@@ -1,4 +1,5 @@
 from case import patch
+
 from celery.bin.result import result
 from celery.five import WhateverIO
 

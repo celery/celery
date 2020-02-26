@@ -27,6 +27,7 @@ class Events(bootsteps.StartStopStep):
             not without_gossip or
             not without_heartbeat
         )
+        self.enabled = self.send_events
         c.event_dispatcher = None
         super().__init__(c, **kwargs)
 

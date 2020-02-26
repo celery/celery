@@ -1,6 +1,6 @@
 import pytest
-
 from case import skip
+
 from celery.five import text_t
 from celery.utils import term
 from celery.utils.term import colored, fg

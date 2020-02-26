@@ -1,8 +1,9 @@
 import sys
 import time
 
-import celery.utils.timer2 as timer2
 from case import Mock, call, patch
+
+import celery.utils.timer2 as timer2
 
 
 class test_Timer:

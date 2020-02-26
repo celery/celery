@@ -1,6 +1,7 @@
 """Tests for ``celery report`` command."""
 
 from case import Mock, call, patch
+
 from celery.bin.celery import report
 from celery.five import WhateverIO
 

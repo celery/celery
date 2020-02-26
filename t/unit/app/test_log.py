@@ -5,9 +5,9 @@ from io import StringIO
 from tempfile import mktemp
 
 import pytest
-
 from case import Mock, mock, patch, skip
 from case.utils import get_logger_handlers
+
 from celery import signals, uuid
 from celery.app.log import TaskFormatter
 from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,

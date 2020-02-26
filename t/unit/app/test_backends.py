@@ -1,6 +1,6 @@
 import pytest
-
 from case import patch
+
 from celery.app import backends
 from celery.backends.amqp import AMQPBackend
 from celery.backends.cache import CacheBackend

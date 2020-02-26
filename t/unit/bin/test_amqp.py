@@ -1,6 +1,6 @@
 import pytest
-
 from case import Mock, patch
+
 from celery.bin.amqp import AMQPAdmin, AMQShell, amqp, dump_message, main
 from celery.five import WhateverIO
 

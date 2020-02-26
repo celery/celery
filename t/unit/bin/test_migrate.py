@@ -1,6 +1,6 @@
 import pytest
-
 from case import Mock, patch
+
 from celery.bin.migrate import migrate
 from celery.five import WhateverIO
 

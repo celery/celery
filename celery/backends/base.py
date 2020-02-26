@@ -24,8 +24,8 @@ from celery._state import get_current_task
 from celery.exceptions import (ChordError, ImproperlyConfigured,
                                NotRegistered, TaskRevokedError, TimeoutError)
 from celery.five import PY3, items
-from celery.result import (GroupResult, ResultBase, allow_join_result,
-                           result_from_tuple)
+from celery.result import (GroupResult, ResultBase, ResultSet,
+                           allow_join_result, result_from_tuple)
 from celery.utils.collections import BufferMap
 from celery.utils.functional import LRUCache, arity_greater
 from celery.utils.log import get_logger
@@ -197,9 +197,15 @@ class Backend:
             # need to do so if the errback only takes a single task_id arg.
             task_id = request.id
             root_id = request.root_id or task_id
-            group(old_signature, app=self.app).apply_async(
-                (task_id,), parent_id=task_id, root_id=root_id
-            )
+            g = group(old_signature, app=self.app)
+            if self.app.conf.task_always_eager or request.delivery_info.get('is_eager', False):
+                g.apply(
+                    (task_id,), parent_id=task_id, root_id=root_id
+                )
+            else:
+                g.apply_async(
+                    (task_id,), parent_id=task_id, root_id=root_id
+                )
 
     def mark_as_revoked(self, task_id, reason='',
                         request=None, store_result=True, state=states.REVOKED):
@@ -254,9 +260,10 @@ class Backend:
         serializer = self.serializer if serializer is None else serializer
         if serializer in EXCEPTION_ABLE_CODECS:
             return get_pickleable_exception(exc)
-        return {'exc_type': type(exc).__name__,
+        exctype = type(exc)
+        return {'exc_type': getattr(exctype, '__qualname__', exctype.__name__),
                 'exc_message': ensure_serializable(exc.args, self.encode),
-                'exc_module': type(exc).__module__}
+                'exc_module': exctype.__module__}
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
@@ -270,7 +277,11 @@ class Backend:
                     exc_module = from_utf8(exc_module)
                     exc_type = from_utf8(exc['exc_type'])
                     try:
-                        cls = getattr(sys.modules[exc_module], exc_type)
+                        # Load module and find exception class in that
+                        cls = sys.modules[exc_module]
+                        # The type can contain qualified name with parent classes
+                        for name in exc_type.split('.'):
+                            cls = getattr(cls, name)
                     except (KeyError, AttributeError):
                         cls = create_exception_cls(exc_type,
                                                    celery.exceptions.__name__)
@@ -336,6 +347,54 @@ class Backend:
 
     def is_cached(self, task_id):
         return task_id in self._cache
+
+    def _get_result_meta(self, result,
+                         state, traceback, request, format_date=True,
+                         encode=False):
+        if state in self.READY_STATES:
+            date_done = datetime.datetime.utcnow()
+            if format_date:
+                date_done = date_done.isoformat()
+        else:
+            date_done = None
+
+        meta = {
+            'status': state,
+            'result': result,
+            'traceback': traceback,
+            'children': self.current_task_children(request),
+            'date_done': date_done,
+        }
+
+        if request and getattr(request, 'group', None):
+            meta['group_id'] = request.group
+        if request and getattr(request, 'parent_id', None):
+            meta['parent_id'] = request.parent_id
+
+        if self.app.conf.find_value_for_key('extended', 'result'):
+            if request:
+                request_meta = {
+                    'name': getattr(request, 'task', None),
+                    'args': getattr(request, 'args', None),
+                    'kwargs': getattr(request, 'kwargs', None),
+                    'worker': getattr(request, 'hostname', None),
+                    'retries': getattr(request, 'retries', None),
+                    'queue': request.delivery_info.get('routing_key')
+                    if hasattr(request, 'delivery_info') and
+                    request.delivery_info else None
+                }
+
+                if encode:
+                    # args and kwargs need to be encoded properly before saving
+                    encode_needed_fields = {"args", "kwargs"}
+                    for field in encode_needed_fields:
+                        value = request_meta[field]
+                        encoded_value = self.encode(value)
+                        request_meta[field] = ensure_bytes(encoded_value)
+
+                meta.update(request_meta)
+
+        return meta
 
     def store_result(self, task_id, result, state,
                      traceback=None, request=None, **kwargs):
@@ -478,9 +537,17 @@ class SyncBackendMixin:
         self._ensure_not_eager()
         results = result.results
         if not results:
-            return iter([])
-        return self.get_many(
-            {r.id for r in results},
+            return
+
+        task_ids = set()
+        for result in results:
+            if isinstance(result, ResultSet):
+                yield result.id, result.results
+            else:
+                task_ids.add(result.id)
+
+        yield from self.get_many(
+            task_ids,
             timeout=timeout, interval=interval, no_ack=no_ack,
             on_message=on_message, on_interval=on_interval,
         )
@@ -680,40 +747,9 @@ class BaseKeyValueStoreBackend(Backend):
 
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
-
-        if state in self.READY_STATES:
-            date_done = datetime.datetime.utcnow().isoformat()
-        else:
-            date_done = None
-
-        meta = {
-            'status': state,
-            'result': result,
-            'traceback': traceback,
-            'children': self.current_task_children(request),
-            'task_id': bytes_to_str(task_id),
-            'date_done': date_done,
-        }
-
-        if request and getattr(request, 'group', None):
-            meta['group_id'] = request.group
-        if request and getattr(request, 'parent_id', None):
-            meta['parent_id'] = request.parent_id
-
-        if self.app.conf.find_value_for_key('extended', 'result'):
-            if request:
-                request_meta = {
-                    'name': getattr(request, 'task', None),
-                    'args': getattr(request, 'args', None),
-                    'kwargs': getattr(request, 'kwargs', None),
-                    'worker': getattr(request, 'hostname', None),
-                    'retries': getattr(request, 'retries', None),
-                    'queue': request.delivery_info.get('routing_key')
-                    if hasattr(request, 'delivery_info') and
-                    request.delivery_info else None
-                }
-
-                meta.update(request_meta)
+        meta = self._get_result_meta(result=result, state=state,
+                                     traceback=traceback, request=request)
+        meta['task_id'] = bytes_to_str(task_id)
 
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result

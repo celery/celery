@@ -1,7 +1,7 @@
 """Tests for the ArangoDb."""
 import pytest
-
 from case import Mock, patch, sentinel, skip
+
 from celery.app import backends
 from celery.backends import arangodb as module
 from celery.backends.arangodb import ArangoDbBackend

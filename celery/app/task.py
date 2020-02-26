@@ -18,7 +18,6 @@ from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
-from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import raise_with_context
 
@@ -206,7 +205,7 @@ class Task:
     store_errors_even_if_ignored = None
 
     #: The name of a serializer that are registered with
-    #: :mod:`kombu.serialization.registry`.  Default is `'pickle'`.
+    #: :mod:`kombu.serialization.registry`.  Default is `'json'`.
     serializer = None
 
     #: Hard time limit.
@@ -383,12 +382,6 @@ class Task:
         setattr(cls, attr, meth)
 
     def __call__(self, *args, **kwargs):
-        logger = get_logger(__name__)
-
-        def handle_sigterm(signum, frame):
-            logger.info('SIGTERM received, waiting till the task finished')
-
-        signal.signal(signal.SIGTERM, handle_sigterm)
         _task_stack.push(self)
         self.push_request(args=args, kwargs=kwargs)
         try:
@@ -598,10 +591,13 @@ class Task:
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
         options = request.as_execution_options()
+        delivery_info = request.delivery_info or {}
+        priority = delivery_info.get('priority')
+        if priority is not None:
+            options['priority'] = priority
         if queue:
             options['queue'] = queue
         else:
-            delivery_info = request.delivery_info or {}
             exchange = delivery_info.get('exchange')
             routing_key = delivery_info.get('routing_key')
             if exchange == '' and routing_key:
@@ -780,7 +776,7 @@ class Task:
         return EagerResult(task_id, retval, state, traceback=tb)
 
     def AsyncResult(self, task_id, **kwargs):
-        """Get AsyncResult instance for this kind of task.
+        """Get AsyncResult instance for the specified task.
 
         Arguments:
             task_id (str): Task id to get result for.

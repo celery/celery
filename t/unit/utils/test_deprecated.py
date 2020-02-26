@@ -1,6 +1,6 @@
 import pytest
-
 from case import patch
+
 from celery.utils import deprecated
 
 

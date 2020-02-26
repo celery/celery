@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import codecs
 import os
 import re
@@ -86,22 +85,6 @@ EXTENSIONS = {
     'zstd'
 }
 
-# -*- Classifiers -*-
-
-classes = """
-    Development Status :: 5 - Production/Stable
-    License :: OSI Approved :: BSD License
-    Topic :: System :: Distributed Computing
-    Topic :: Software Development :: Object Brokering
-    Programming Language :: Python
-    Programming Language :: Python :: 3
-    Programming Language :: Python :: 3.6
-    Programming Language :: Python :: 3.7
-    Programming Language :: Python :: Implementation :: CPython
-    Programming Language :: Python :: Implementation :: PyPy3
-    Operating System :: OS Independent
-"""
-
 # -*- Distribution Meta -*-
 
 re_meta = re.compile(r'__(\w+?)__\s*=\s*(.*)')
@@ -186,7 +169,7 @@ def extras_require():
 def long_description():
     try:
         return codecs.open('README.rst', 'r', 'utf-8').read()
-    except IOError:
+    except OSError:
         return 'Long description error: Missing README.rst file'
 
 # -*- Command: setup.py test -*-
@@ -223,7 +206,6 @@ setuptools.setup(
     python_requires=">=3.6,",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
-    classifiers=[s.strip() for s in classes.split('\n') if s],
     cmdclass={'test': pytest},
     include_package_data=True,
     zip_safe=False,
@@ -235,4 +217,24 @@ setuptools.setup(
             'celery = celery.contrib.pytest',
         ],
     },
+    project_urls={
+        "Documentation": "http://docs.celeryproject.org/en/latest/index.html",
+        "Code": "https://github.com/celery/celery",
+        "Tracker": "https://github.com/celery/celery/issues",
+        "Funding": "https://opencollective.com/celery"
+    },
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "License :: OSI Approved :: BSD License",
+        "Topic :: System :: Distributed Computing",
+        "Topic :: Software Development :: Object Brokering",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
+        "Operating System :: OS Independent"
+    ]
 )

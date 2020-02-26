@@ -1,8 +1,8 @@
 import sys
 
 import pytest
-
 from case import Mock, skip
+
 from celery.five import PY3, long_t, string
 from celery.local import PromiseProxy, Proxy, maybe_evaluate, try_import
 

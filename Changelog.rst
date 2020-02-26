@@ -4,10 +4,47 @@
  Change history
 ================
 
-This document contains change notes for bugfix releases in
-the 4.x series, please see :ref:`whatsnew-4.4` for
+This document contains change notes for bugfix & new features
+in the 4.x series, please see :ref:`whatsnew-4.4` for
 an overview of what's new in Celery 4.4.
 
+
+4.4.0
+=======
+:release-date: 2019-12-16 9.45 A.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- This version is officially supported on CPython 2.7,
+3.5, 3.6, 3.7 & 3.8
+and is also supported on PyPy2 & PyPy3.
+- Kombu 4.6.7
+- Task class definitions can have retry attributes (#5869)
+
+
+4.4.0rc5
+========
+:release-date: 2019-12-07 21.05 A.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Kombu 4.6.7
+- Events bootstep disabled if no events (#5807)
+- SQS - Reject on failure (#5843)
+- Add a concurrency model with ThreadPoolExecutor (#5099)
+- Add auto expiry for DynamoDB backend (#5805)
+- Store extending result in all backends (#5661)
+- Fix a race condition when publishing a very large chord header (#5850)
+- Improve docs and test matrix
+
+4.4.0rc4
+========
+:release-date: 2019-11-11 00.45 A.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Kombu 4.6.6
+- Py-AMQP 2.5.2
+- Python 3.8
+- Numerious bug fixes
+- PyPy 7.2
 
 4.4.0rc3
 ========
