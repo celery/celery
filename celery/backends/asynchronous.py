@@ -8,7 +8,6 @@ from time import sleep
 from weakref import WeakKeyDictionary
 
 from kombu.utils.compat import detect_environment
-from kombu.utils.objects import cached_property
 
 from celery import states
 from celery.exceptions import TimeoutError
@@ -44,7 +43,7 @@ class Drainer(object):
     def stop(self):
         pass
 
-    def drain_events_until(self, p, timeout=None, on_interval=None, wait=None):
+    def drain_events_until(self, p, timeout=None, interval=1, on_interval=None, wait=None):
         wait = wait or self.result_consumer.drain_events
         time_start = monotonic()
 
@@ -53,7 +52,7 @@ class Drainer(object):
             if timeout and monotonic() - time_start >= timeout:
                 raise socket.timeout()
             try:
-                yield self.wait_for(p, wait, timeout=1)
+                yield self.wait_for(p, wait, timeout=interval)
             except socket.timeout:
                 pass
             if on_interval:
@@ -97,10 +96,11 @@ class greenletDrainer(Drainer):
 @register_drainer('eventlet')
 class eventletDrainer(greenletDrainer):
 
-    @cached_property
-    def spawn(self):
-        from eventlet import spawn
-        return spawn
+    def spawn(self, func):
+        from eventlet import spawn, sleep
+        g = spawn(func)
+        sleep(0)
+        return g
 
     def wait_for(self, p, wait, timeout=None):
         self.start()
@@ -111,10 +111,11 @@ class eventletDrainer(greenletDrainer):
 @register_drainer('gevent')
 class geventDrainer(greenletDrainer):
 
-    @cached_property
-    def spawn(self):
-        from gevent import spawn
-        return spawn
+    def spawn(self, func):
+        from gevent import spawn, sleep
+        g = spawn(func)
+        sleep(0)
+        return g
 
     def wait_for(self, p, wait, timeout=None):
         import gevent
