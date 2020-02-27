@@ -161,9 +161,9 @@ class DatabaseBackend(BaseBackend):
                 task.status = states.PENDING
                 task.result = None
             data = task.to_dict()
-            if 'args' in data:
+            if data.get('args', None) is not None:
                 data['args'] = self.decode(data['args'])
-            if 'kwargs' in data:
+            if data.get('kwargs', None) is not None:
                 data['kwargs'] = self.decode(data['kwargs'])
             return self.meta_from_decoded(data)
 
