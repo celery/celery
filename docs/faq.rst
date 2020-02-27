@@ -316,7 +316,7 @@ them:
     $ pkill 'celery worker'
 
     $ # - If you don't have pkill use:
-    $ # ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill
+    $ # ps auxww | awk '/celery worker/ {print $2}' | xargs kill
 
 You may have to wait a while until all workers have finished executing
 tasks. If it's still hanging after a long time you can kill them by force
@@ -327,7 +327,7 @@ with:
     $ pkill -9 'celery worker'
 
     $ # - If you don't have pkill use:
-    $ # ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill -9
+    $ # ps auxww | awk '/celery worker/ {print $2}' | xargs kill -9
 
 .. _faq-task-does-not-run:
 

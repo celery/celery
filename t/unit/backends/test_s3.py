@@ -1,11 +1,11 @@
 import boto3
 import pytest
 from botocore.exceptions import ClientError
-
 from case import patch
+from moto import mock_s3
+
 from celery.backends.s3 import S3Backend
 from celery.exceptions import ImproperlyConfigured
-from moto import mock_s3
 
 
 class test_S3Backend:

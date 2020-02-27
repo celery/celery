@@ -846,6 +846,25 @@ going stale through inactivity. For example, intermittent errors like
 `(OperationalError) (2006, 'MySQL server has gone away')` can be fixed by enabling
 short lived sessions. This option only affects the database backend.
 
+.. setting:: database_table_schemas
+
+``database_table_schemas``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}`` (empty mapping).
+
+When SQLAlchemy is configured as the result backend, Celery automatically
+creates two tables to store result meta-data for tasks. This setting allows
+you to customize the schema of the tables:
+
+.. code-block:: python
+
+    # use custom schema for the database result backend.
+    database_table_schemas = {
+        'task': 'celery',
+        'group': 'celery',
+    }
+
 .. setting:: database_table_names
 
 ``database_table_names``
@@ -1571,6 +1590,18 @@ The fields of the DynamoDB URL in ``result_backend`` are defined as follows:
 
     The Read & Write Capacity Units for the created DynamoDB table. Default is ``1`` for both read and write.
     More details can be found in the `Provisioned Throughput documentation <http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ProvisionedThroughput.html>`_.
+
+#. ``ttl_seconds``
+
+    Time-to-live (in seconds) for results before they expire. The default is to
+    not expire results, while also leaving the DynamoDB table's Time to Live
+    settings untouched. If ``ttl_seconds`` is set to a positive value, results
+    will expire after the specified number of seconds. Setting ``ttl_seconds``
+    to a negative value means to not expire results, and also to actively
+    disable the DynamoDB table's Time to Live setting. Note that trying to
+    change a table's Time to Live setting multiple times in quick succession
+    will cause a throttling error. More details can be found in the
+    `DynamoDB TTL documentation <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html>`_
 
 .. _conf-ironcache-result-backend:
 

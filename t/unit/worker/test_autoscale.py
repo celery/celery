@@ -1,6 +1,7 @@
 import sys
 
 from case import Mock, mock, patch
+
 from celery.concurrency.base import BasePool
 from celery.five import monotonic
 from celery.utils.objects import Bunch

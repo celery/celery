@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 REFBASE = 'http://docs.celeryproject.org/en/latest'
 REFS = {
     'mailing-list':

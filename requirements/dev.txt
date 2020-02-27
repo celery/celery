@@ -1,0 +1,5 @@
+pytz>dev
+git+https://github.com/celery/kombu.git
+git+https://github.com/celery/py-amqp.git
+git+https://github.com/celery/billiard.git
+vine==1.3.0

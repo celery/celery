@@ -2,8 +2,8 @@ import datetime
 import os
 
 import pytest
-
 from case import Mock, mock, patch, skip
+
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
 

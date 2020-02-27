@@ -2,8 +2,8 @@ import pickle
 from time import time
 
 import pytest
-
 from case import Mock, patch
+
 from celery import uuid
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.platforms import EX_OK

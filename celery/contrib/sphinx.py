@@ -28,6 +28,7 @@ syntax.
 
 Use ``.. autotask::`` to alternatively manually document a task.
 """
+
 from sphinx.domains.python import PyModulelevel
 from sphinx.ext.autodoc import FunctionDocumenter
 
