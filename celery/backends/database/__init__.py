@@ -163,7 +163,7 @@ class DatabaseBackend(BaseBackend):
             data = task.to_dict()
             if data.get('args', None) is not None:
                 data['args'] = self.decode(data['args'])
-            if data.get('kwargs', None) is not None::
+            if data.get('kwargs', None) is not None:
                 data['kwargs'] = self.decode(data['kwargs'])
             return self.meta_from_decoded(data)
 
