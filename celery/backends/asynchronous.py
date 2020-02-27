@@ -93,11 +93,6 @@ class greenletDrainer(Drainer):
         self._stopped.set()
         self._shutdown.wait(THREAD_TIMEOUT_MAX)
 
-    def wait_for(self, p, wait, timeout=None):
-        self.start()
-        if not p.ready:
-            sleep(0)
-
 
 @register_drainer('eventlet')
 class eventletDrainer(greenletDrainer):
@@ -107,6 +102,11 @@ class eventletDrainer(greenletDrainer):
         from eventlet import spawn
         return spawn
 
+    def wait_for(self, p, wait, timeout=None):
+        self.start()
+        if not p.ready:
+            self._g._exit_event.wait(timeout=timeout)
+
 
 @register_drainer('gevent')
 class geventDrainer(greenletDrainer):
@@ -115,6 +115,12 @@ class geventDrainer(greenletDrainer):
     def spawn(self):
         from gevent import spawn
         return spawn
+
+    def wait_for(self, p, wait, timeout=None):
+        import gevent
+        self.start()
+        if not p.ready:
+            gevent.wait([self._g], timeout=timeout)
 
 
 class AsyncBackendMixin(object):
