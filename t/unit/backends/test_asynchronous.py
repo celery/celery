@@ -54,9 +54,7 @@ class DrainerTests(object):
         p = promise()
 
         def fulfill_promise_thread():
-            # Should run on_interval twice - once (no results) then a second time after the
-            # promise is seen to be ready.
-            time.sleep(self.interval * 2 - (self.interval / 2))
+            time.sleep(self.interval * 2)
             p('done')
 
         threading.Thread(target=fulfill_promise_thread).start()
@@ -68,23 +66,21 @@ class DrainerTests(object):
             pass
 
         assert p.ready, 'Should have terminated with promise being ready'
-        assert on_interval.call_count == 2, 'Should only have called on_interval twice'
+        assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
 
     def test_drain_backend_timeout(self):
         p = promise()
         on_interval = Mock()
 
-        # Looking for 6 checks against the on_interval mock
-        timeout = (self.interval * 5) + self.interval / 2
         with pytest.raises(socket.timeout):
             for _ in self.drainer.drain_events_until(p,
                                                      on_interval=on_interval,
                                                      interval=self.interval,
-                                                     timeout=timeout):
+                                                     timeout=self.interval * 5):
                 pass
 
-        assert not p.ready
-        assert on_interval.call_count == 6, 'Should have called on_interval six times'
+        assert not p.ready, 'Promise should remain un-fulfilled'
+        assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
 
 
 @skip.unless_module('eventlet')
