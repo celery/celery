@@ -89,14 +89,13 @@ class DatabaseBackend(BaseBackend):
             conf.database_short_lived_sessions)
 
         schemas = conf.database_table_schemas or {}
-        self.task_cls.__table__.schema = schemas.get('task')
-        self.taskset_cls.__table__.schema = schemas.get('group')
-
         tablenames = conf.database_table_names or {}
-        self.task_cls.__table__.name = tablenames.get('task',
-                                                      'celery_taskmeta')
-        self.taskset_cls.__table__.name = tablenames.get('group',
-                                                         'celery_tasksetmeta')
+        self.task_cls.configure(
+            schema=schemas.get('task'),
+            name=tablenames.get('task'))
+        self.taskset_cls.configure(
+            schema=schemas.get('group'),
+            name=tablenames.get('group'))
 
         if not self.url:
             raise ImproperlyConfigured(
