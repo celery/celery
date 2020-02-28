@@ -13,7 +13,7 @@ from celery.utils.time import rate
 from celery.worker import state
 from celery.worker.request import Request
 from celery.worker.strategy import default as default_strategy
-from celery.worker.strategy import proto1_to_proto2
+from celery.worker.strategy import proto1_to_proto2, hybrid_to_proto2
 
 
 class test_proto1_to_proto2:
@@ -268,3 +268,25 @@ class test_custom_request_for_default_strategy(test_default_strategy_proto2):
             )
             task_message_handler(C.message, None, None, None, None)
             _MyRequest.assert_called()
+
+
+class test_hybrid_to_proto2:
+
+    def setup(self):
+        self.message = Mock(name='message')
+        self.body = {
+            'args': (1,),
+            'kwargs': {'foo': 'baz'},
+            'utc': False,
+            'taskset': '123',
+        }
+
+    def test_retries_default_value(self):
+        _, headers, _, _ = hybrid_to_proto2(self.message, self.body)
+        assert headers.get('retries') == 0
+
+    def test_retries_custom_value(self):
+        _custom_value = 3
+        self.body['retries'] = _custom_value
+        _, headers, _, _ = hybrid_to_proto2(self.message, self.body)
+        assert headers.get('retries') == _custom_value
