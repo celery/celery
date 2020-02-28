@@ -1157,7 +1157,7 @@ for example one that reads the current prefetch count:
 
     from celery.worker.control import inspect_command
 
-    @inspect_command
+    @inspect_command()
     def current_prefetch_count(state):
         return {'prefetch_count': state.consumer.qos.value}
 
