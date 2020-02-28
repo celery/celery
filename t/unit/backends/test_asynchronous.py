@@ -9,6 +9,7 @@ from vine import promise
 
 from celery.backends.asynchronous import BaseResultConsumer
 from celery.backends.base import Backend
+from celery.utils import cached_property
 
 
 @pytest.fixture(autouse=True)
@@ -39,6 +40,25 @@ class DrainerTests(object):
     def setup_drainer(self):
         raise NotImplementedError
 
+    @cached_property
+    def sleep(self):
+        """
+        Sleep on the event loop.
+        """
+        raise NotImplementedError
+
+    def schedule_thread(self, thread):
+        """
+        Set up a thread that runs on the event loop.
+        """
+        raise NotImplementedError
+
+    def teardown_thread(self, thread):
+        """
+        Wait for a thread to stop.
+        """
+        raise NotImplementedError
+
     def result_consumer_drain_events(self, timeout=None):
         """
         Subclasses should override this method to define the behavior of
@@ -50,10 +70,10 @@ class DrainerTests(object):
         p = promise()
 
         def fulfill_promise_thread():
-            time.sleep(self.interval * 2)
+            self.sleep(self.interval * 2)
             p('done')
 
-        threading.Thread(target=fulfill_promise_thread).start()
+        fulfill_thread = self.schedule_thread(fulfill_promise_thread)
 
         on_interval = Mock()
         for _ in self.drainer.drain_events_until(p,
@@ -61,6 +81,8 @@ class DrainerTests(object):
                                                  interval=self.interval,
                                                  timeout=self.MAX_TIMEOUT):
             pass
+
+        self.teardown_thread(fulfill_thread)
 
         assert p.ready, 'Should have terminated with promise being ready'
         assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
@@ -71,14 +93,21 @@ class DrainerTests(object):
         running.
         """
         p = promise()
+        liveness_mock = Mock()
 
         def fulfill_promise_thread():
-            time.sleep(self.interval * 2)
+            self.sleep(self.interval * 2)
             p('done')
 
-        liveness_mock = Mock()
-        self.schedule_liveness_thread(liveness_mock, p)
-        threading.Thread(target=fulfill_promise_thread).start()
+        def liveness_thread():
+            while 1:
+                if p.ready:
+                    return
+                self.sleep(self.interval / 10)
+                liveness_mock()
+
+        fulfill_thread = self.schedule_thread(fulfill_promise_thread)
+        liveness_thread = self.schedule_thread(liveness_thread)
 
         on_interval = Mock()
         for _ in self.drainer.drain_events_until(p,
@@ -86,6 +115,9 @@ class DrainerTests(object):
                                                  interval=self.interval,
                                                  timeout=self.MAX_TIMEOUT):
             pass
+
+        self.teardown_thread(fulfill_thread)
+        self.teardown_thread(liveness_thread)
 
         assert p.ready, 'Should have terminated with promise being ready'
         assert on_interval.call_count < liveness_mock.call_count, \
@@ -112,22 +144,23 @@ class test_EventletDrainer(DrainerTests):
     def setup_drainer(self):
         self.drainer = self.get_drainer('eventlet')
 
+    @cached_property
+    def sleep(self):
+        from eventlet import sleep
+        return sleep
+
     def result_consumer_drain_events(self, timeout=None):
         import eventlet
         eventlet.sleep(0)
 
-    def schedule_liveness_thread(self, liveness_mock, p):
+    def schedule_thread(self, thread):
         import eventlet
-
-        def liveness_thread():
-            while 1:
-                if p.ready:
-                    return
-                eventlet.sleep(self.interval / 10)
-                liveness_mock()
-
-        eventlet.spawn(liveness_thread)
+        g = eventlet.spawn(thread)
         eventlet.sleep(0)
+        return g
+
+    def teardown_thread(self, thread):
+        thread.wait()
 
 
 class test_Drainer(DrainerTests):
@@ -135,18 +168,21 @@ class test_Drainer(DrainerTests):
     def setup_drainer(self):
         self.drainer = self.get_drainer('default')
 
+    @cached_property
+    def sleep(self):
+        from time import sleep
+        return sleep
+
     def result_consumer_drain_events(self, timeout=None):
         time.sleep(timeout)
 
-    def schedule_liveness_thread(self, liveness_mock, p):
-        def liveness_thread():
-            while 1:
-                if p.ready:
-                    return
-                time.sleep(self.interval / 10)
-                liveness_mock()
+    def schedule_thread(self, thread):
+        t = threading.Thread(target=thread)
+        t.start()
+        return t
 
-        threading.Thread(target=liveness_thread).start()
+    def teardown_thread(self, thread):
+        thread.join()
 
 
 @skip.unless_module('gevent')
@@ -155,19 +191,21 @@ class test_GeventDrainer(DrainerTests):
     def setup_drainer(self):
         self.drainer = self.get_drainer('gevent')
 
+    @cached_property
+    def sleep(self):
+        from gevent import sleep
+        return sleep
+
     def result_consumer_drain_events(self, timeout=None):
         import gevent
         gevent.sleep(0)
 
-    def schedule_liveness_thread(self, liveness_mock, p):
+    def schedule_thread(self, thread):
         import gevent
-
-        def liveness_thread():
-            while 1:
-                if p.ready:
-                    return
-                gevent.sleep(self.interval / 10)
-                liveness_mock()
-
-        gevent.spawn(liveness_thread)
+        g = gevent.spawn(thread)
         gevent.sleep(0)
+        return g
+
+    def teardown_thread(self, thread):
+        import gevent
+        gevent.wait([thread])
