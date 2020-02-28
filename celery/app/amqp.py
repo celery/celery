@@ -1,6 +1,7 @@
 """Sending/Receiving Messages (Kombu integration)."""
 import numbers
 from collections import namedtuple
+from collections.abc import Mapping
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
@@ -16,14 +17,7 @@ from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
 from celery.utils.time import maybe_make_aware
-
 from . import routes as _routes
-
-try:
-    from collections.abc import Mapping
-except ImportError:
-    # TODO: Remove this when we drop Python 2.7 support
-    from collections import Mapping
 
 __all__ = ('AMQP', 'Queues', 'task_message')
 

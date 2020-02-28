@@ -171,13 +171,7 @@ def _select(readers=None, writers=None, err=None, timeout=0,
     try:
         return poll(readers, writers, err, timeout)
     except OSError as exc:
-        # Workaround for celery/celery#4513
-        # TODO: Remove the fallback to the first arg of the exception
-        # once we drop Python 2.7.
-        try:
-            _errno = exc.errno
-        except AttributeError:
-            _errno = exc.args[0]
+        _errno = exc.errno
 
         if _errno == errno.EINTR:
             return set(), set(), 1
@@ -186,10 +180,7 @@ def _select(readers=None, writers=None, err=None, timeout=0,
                 try:
                     select.select([fd], [], [], 0)
                 except OSError as exc:
-                    try:
-                        _errno = exc.errno
-                    except AttributeError:
-                        _errno = exc.args[0]
+                    _errno = exc.errno
 
                     if _errno not in SELECT_BAD_FD:
                         raise
@@ -199,12 +190,6 @@ def _select(readers=None, writers=None, err=None, timeout=0,
             return set(), set(), 1
         else:
             raise
-
-
-try:  # TODO Delete when drop py2 support as FileNotFoundError is py3
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
 
 
 def iterate_file_descriptors_safely(fds_iter, source_data,

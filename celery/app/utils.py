@@ -3,6 +3,7 @@ import os
 import platform as _platform
 import re
 from collections import namedtuple
+from collections.abc import Mapping
 from copy import deepcopy
 from types import ModuleType
 
@@ -14,16 +15,8 @@ from celery.platforms import pyimplementation
 from celery.utils.collections import ConfigurationView
 from celery.utils.imports import import_from_cwd, qualname, symbol_by_name
 from celery.utils.text import pretty
-
 from .defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY,
                        _TO_OLD_KEY, DEFAULTS, SETTING_KEYS, find)
-
-try:
-    from collections.abc import Mapping
-except ImportError:
-    # TODO: Remove this when we drop Python 2.7 support
-    from collections import Mapping
-
 
 __all__ = (
     'Settings', 'appstr', 'bugreport',
