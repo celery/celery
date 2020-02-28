@@ -834,9 +834,9 @@ class ResultSet(ResultBase):
                 acc[order_index[task_id]] = value
         return acc
 
-    def _iter_meta(self):
+    def _iter_meta(self, **kwargs):
         return (meta for _, meta in self.backend.get_many(
-            {r.id for r in self.results}, max_iterations=1,
+            {r.id for r in self.results}, max_iterations=1, **kwargs
         ))
 
     def _failed_join_report(self):

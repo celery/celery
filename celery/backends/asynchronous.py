@@ -200,6 +200,7 @@ class AsyncBackendMixin(object):
         return self.result_consumer._wait_for_pending(
             result, timeout=timeout,
             on_interval=on_interval, on_message=on_message,
+            **kwargs
         )
 
     @property
