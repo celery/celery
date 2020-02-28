@@ -1,3 +1,4 @@
+import os
 import socket
 import time
 import threading
@@ -8,6 +9,12 @@ from vine import promise
 
 from celery.backends.asynchronous import BaseResultConsumer
 from celery.backends.base import Backend
+
+
+@pytest.fixture(autouse=True)
+def setup_eventlet():
+    # By default eventlet will patch the DNS resolver when imported.
+    os.environ.update(EVENTLET_NO_GREENDNS='yes')
 
 
 class DrainerTests(object):
