@@ -23,6 +23,7 @@ class DrainerTests(object):
     """
 
     interval = 0.1  # Check every tenth of a second
+    MAX_TIMEOUT = 10  # Specify a max timeout so it doesn't run forever
 
     def get_drainer(self, environment):
         with patch('celery.backends.asynchronous.detect_environment') as d:
@@ -31,17 +32,12 @@ class DrainerTests(object):
             consumer = BaseResultConsumer(backend, self.app, backend.accept,
                                           pending_results={},
                                           pending_messages={})
+            consumer.drain_events = Mock(side_effect=self.result_consumer_drain_events)
             return consumer.drainer
 
     @pytest.fixture(autouse=True)
     def setup_drainer(self):
         raise NotImplementedError
-
-    @pytest.fixture(autouse=True)
-    def setup_drain_events(self):
-        drain_events = self.patching(
-            'celery.backends.asynchronous.BaseResultConsumer.drain_events')
-        drain_events.side_effect = self.result_consumer_drain_events
 
     def result_consumer_drain_events(self, timeout=None):
         """
@@ -50,14 +46,7 @@ class DrainerTests(object):
         """
         raise NotImplementedError
 
-    def fulfill_promise_after(self, p, after_seconds):
-        """
-        Subclasses should override this method to fulfill the promise after a number of seconds
-        have passed.
-        """
-        raise NotImplementedError
-
-    def test_drain_backend_checks_on_interval(self):
+    def test_drain_checks_on_interval(self):
         p = promise()
 
         def fulfill_promise_thread():
@@ -69,13 +58,40 @@ class DrainerTests(object):
         on_interval = Mock()
         for _ in self.drainer.drain_events_until(p,
                                                  on_interval=on_interval,
-                                                 interval=self.interval):
+                                                 interval=self.interval,
+                                                 timeout=self.MAX_TIMEOUT):
             pass
 
         assert p.ready, 'Should have terminated with promise being ready'
         assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
 
-    def test_drain_backend_timeout(self):
+    def test_drain_does_not_block_event_loop(self):
+        """
+        This test makes sure that other greenlets can still operate while drain_events_until is
+        running.
+        """
+        p = promise()
+
+        def fulfill_promise_thread():
+            time.sleep(self.interval * 2)
+            p('done')
+
+        liveness_mock = Mock()
+        self.schedule_liveness_thread(liveness_mock, p)
+        threading.Thread(target=fulfill_promise_thread).start()
+
+        on_interval = Mock()
+        for _ in self.drainer.drain_events_until(p,
+                                                 on_interval=on_interval,
+                                                 interval=self.interval,
+                                                 timeout=self.MAX_TIMEOUT):
+            pass
+
+        assert p.ready, 'Should have terminated with promise being ready'
+        assert on_interval.call_count < liveness_mock.call_count, \
+            'Should have served liveness_mock while waiting for event'
+
+    def test_drain_timeout(self):
         p = promise()
         on_interval = Mock()
 
@@ -96,12 +112,21 @@ class test_EventletDrainer(DrainerTests):
     def setup_drainer(self):
         self.drainer = self.get_drainer('eventlet')
 
-    def fulfill_promise_after(self, p, after_seconds):
-        import eventlet
-        eventlet.spawn_after(after_seconds, lambda: p('done'))
-
     def result_consumer_drain_events(self, timeout=None):
         import eventlet
+        eventlet.sleep(0)
+
+    def schedule_liveness_thread(self, liveness_mock, p):
+        import eventlet
+
+        def liveness_thread():
+            while 1:
+                if p.ready:
+                    return
+                eventlet.sleep(self.interval / 10)
+                liveness_mock()
+
+        eventlet.spawn(liveness_thread)
         eventlet.sleep(0)
 
 
@@ -113,6 +138,16 @@ class test_Drainer(DrainerTests):
     def result_consumer_drain_events(self, timeout=None):
         time.sleep(timeout)
 
+    def schedule_liveness_thread(self, liveness_mock, p):
+        def liveness_thread():
+            while 1:
+                if p.ready:
+                    return
+                time.sleep(self.interval / 10)
+                liveness_mock()
+
+        threading.Thread(target=liveness_thread).start()
+
 
 @skip.unless_module('gevent')
 class test_GeventDrainer(DrainerTests):
@@ -122,4 +157,17 @@ class test_GeventDrainer(DrainerTests):
 
     def result_consumer_drain_events(self, timeout=None):
         import gevent
+        gevent.sleep(0)
+
+    def schedule_liveness_thread(self, liveness_mock, p):
+        import gevent
+
+        def liveness_thread():
+            while 1:
+                if p.ready:
+                    return
+                gevent.sleep(self.interval / 10)
+                liveness_mock()
+
+        gevent.spawn(liveness_thread)
         gevent.sleep(0)
