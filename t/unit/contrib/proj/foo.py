@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from celery import Celery, shared_task
-from xyzzy import plugh  # noqa
+from .xyzzy import plugh  # noqa
 
 app = Celery()
 
