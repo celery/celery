@@ -15,8 +15,7 @@ an overview of what's new in Celery 4.4.
 :release-by: Asif Saif Uddin
 
 - This version is officially supported on CPython 2.7,
-3.5, 3.6, 3.7 & 3.8
-and is also supported on PyPy2 & PyPy3.
+  3.5, 3.6, 3.7 & 3.8 and is also supported on PyPy2 & PyPy3.
 - Kombu 4.6.7
 - Task class definitions can have retry attributes (#5869)
 
