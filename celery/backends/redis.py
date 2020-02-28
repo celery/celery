@@ -3,6 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import time
+from contextlib import contextmanager
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 
@@ -78,6 +79,11 @@ CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
 
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 
+E_RETRY_LIMIT_EXCEEDED = """
+Retry limit exceeded while trying to reconnect to the Celery redis result \
+store backend. The Celery application must be restarted.
+"""
+
 logger = get_logger(__name__)
 
 
@@ -88,6 +94,8 @@ class ResultConsumer(BaseResultConsumer):
         super(ResultConsumer, self).__init__(*args, **kwargs)
         self._get_key_for_task = self.backend.get_key_for_task
         self._decode_result = self.backend.decode_result
+        self._ensure = self.backend.ensure
+        self._connection_errors = self.backend.connection_errors
         self.subscribed_to = set()
 
     def on_after_fork(self):
@@ -98,6 +106,31 @@ class ResultConsumer(BaseResultConsumer):
         except KeyError as e:
             logger.warning(text_t(e))
         super(ResultConsumer, self).on_after_fork()
+
+    def _reconnect_pubsub(self):
+        self._pubsub = None
+        self.backend.client.connection_pool.reset()
+        # task state might have changed when the connection was down so we
+        # retrieve meta for all subscribed tasks before going into pubsub mode
+        metas = self.backend.client.mget(self.subscribed_to)
+        metas = [meta for meta in metas if meta]
+        for meta in metas:
+            self.on_state_change(self._decode_result(meta), None)
+        self._pubsub = self.backend.client.pubsub(
+            ignore_subscribe_messages=True,
+        )
+        self._pubsub.subscribe(*self.subscribed_to)
+
+    @contextmanager
+    def reconnect_on_error(self):
+        try:
+            yield
+        except self._connection_errors:
+            try:
+                self._ensure(self._reconnect_pubsub, ())
+            except self._connection_errors:
+                logger.critical(E_RETRY_LIMIT_EXCEEDED)
+                raise
 
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
@@ -124,9 +157,10 @@ class ResultConsumer(BaseResultConsumer):
 
     def drain_events(self, timeout=None):
         if self._pubsub:
-            message = self._pubsub.get_message(timeout=timeout)
-            if message and message['type'] == 'message':
-                self.on_state_change(self._decode_result(message['data']), message)
+            with self.reconnect_on_error():
+                message = self._pubsub.get_message(timeout=timeout)
+                if message and message['type'] == 'message':
+                    self.on_state_change(self._decode_result(message['data']), message)
         elif timeout:
             time.sleep(timeout)
 
@@ -139,13 +173,15 @@ class ResultConsumer(BaseResultConsumer):
         key = self._get_key_for_task(task_id)
         if key not in self.subscribed_to:
             self.subscribed_to.add(key)
-            self._pubsub.subscribe(key)
+            with self.reconnect_on_error():
+                self._pubsub.subscribe(key)
 
     def cancel_for(self, task_id):
+        key = self._get_key_for_task(task_id)
+        self.subscribed_to.discard(key)
         if self._pubsub:
-            key = self._get_key_for_task(task_id)
-            self.subscribed_to.discard(key)
-            self._pubsub.unsubscribe(key)
+            with self.reconnect_on_error():
+                self._pubsub.unsubscribe(key)
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
