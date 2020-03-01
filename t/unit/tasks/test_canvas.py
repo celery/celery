@@ -742,6 +742,13 @@ class test_chord(CanvasCase):
         x = chord([t1], body=t1)
         assert x.app is current_app
 
+    def test_chord_size_with_groups(self):
+        x = chord([
+            self.add.s(2, 2) | group([self.add.si(2, 2), self.add.si(2, 2)]),
+            self.add.s(2, 2) | group([self.add.si(2, 2), self.add.si(2, 2)]),
+        ], body=self.add.si(2, 2))
+        assert x.__length_hint__() == 4
+
     def test_set_immutable(self):
         x = chord([Mock(name='t1'), Mock(name='t2')], app=self.app)
         x.set_immutable(True)

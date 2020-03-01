@@ -1366,6 +1366,8 @@ class chord(Signature):
             task = stack.popleft()
             if isinstance(task, group):
                 stack.extend(task.tasks)
+            elif isinstance(task, _chain) and isinstance(task.tasks[-1], group):
+                stack.extend(task.tasks[-1].tasks)
             else:
                 yield task if value is None else value
 
