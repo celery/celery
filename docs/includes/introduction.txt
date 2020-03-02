@@ -1,4 +1,4 @@
-:Version: 4.4.0 (cliffs)
+:Version: 4.4.1 (cliffs)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -37,15 +37,16 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 4.0 runs on,
+Celery version 4.4 runs on,
 
-- Python (2.7, 3.4, 3.5, 3.6, 3.7)
-- PyPy2.7 (6.0)
-- PyPy3.5 (6.0)
+- Python (2.7, 3.5, 3.6, 3.7, 38)
+- PyPy2.7 (7.3)
+- PyPy3.5 (7.1)
+- PyPy3.6 (7.3)
 
 
 This is the last version to support Python 2.7,
-and from the next version (Celery 5.x) Python 3.5 or newer is required.
+and from the next version (Celery 5.x) Python 3.6 or newer is required.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
