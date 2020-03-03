@@ -414,7 +414,7 @@ class AsyncResult(ResultBase):
             return self._maybe_set_cache(self.backend.get_task_meta(self.id))
         return self._cache
 
-    def _iter_meta(self):
+    def _iter_meta(self, **kwargs):
         return iter([self._get_task_meta()])
 
     def _set_cache(self, d):
