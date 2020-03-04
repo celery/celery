@@ -12,12 +12,34 @@ from celery.exceptions import ImproperlyConfigured
 
 class test_S3Backend:
 
-    def test_with_missing_aws_credentials(self):
+    @patch('botocore.credentials.CredentialResolver.load_credentials')
+    def test_with_missing_aws_credentials(self, mock_load_credentials):
         self.app.conf.s3_access_key_id = None
         self.app.conf.s3_secret_access_key = None
+        self.app.conf.s3_bucket = 'bucket'
+
+        mock_load_credentials.return_value = None
 
         with pytest.raises(ImproperlyConfigured, match="Missing aws s3 creds"):
             S3Backend(app=self.app)
+
+    @patch('botocore.credentials.CredentialResolver.load_credentials')
+    def test_with_no_credentials_in_config_attempts_to_load_credentials(self, mock_load_credentials):
+        self.app.conf.s3_access_key_id = None
+        self.app.conf.s3_secret_access_key = None
+        self.app.conf.s3_bucket = 'bucket'
+
+        S3Backend(app=self.app)
+        mock_load_credentials.assert_called_once()
+
+    @patch('botocore.credentials.CredentialResolver.load_credentials')
+    def test_with_credentials_in_config_does_not_search_for_credentials(self, mock_load_credentials):
+        self.app.conf.s3_access_key_id = 'somekeyid'
+        self.app.conf.s3_secret_access_key = 'somesecret'
+        self.app.conf.s3_bucket = 'bucket'
+
+        S3Backend(app=self.app)
+        mock_load_credentials.assert_not_called()
 
     def test_with_no_given_bucket(self):
         self.app.conf.s3_access_key_id = 'somekeyid'

@@ -43,8 +43,6 @@ class S3Backend(KeyValueStoreBackend):
 
         self.aws_access_key_id = conf.get('s3_access_key_id', None)
         self.aws_secret_access_key = conf.get('s3_secret_access_key', None)
-        if not self.aws_access_key_id or not self.aws_secret_access_key:
-            raise ImproperlyConfigured('Missing aws s3 creds')
 
         self.bucket_name = conf.get('s3_bucket', None)
         if not self.bucket_name:
@@ -84,4 +82,6 @@ class S3Backend(KeyValueStoreBackend):
             aws_secret_access_key=self.aws_secret_access_key,
             region_name=self.aws_region
         )
+        if session.get_credentials() is None:
+            raise ImproperlyConfigured('Missing aws s3 creds')
         return session.resource('s3', endpoint_url=self.endpoint_url)
