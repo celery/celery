@@ -232,10 +232,13 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             'max_connections': self.max_connections,
             'socket_timeout': socket_timeout and float(socket_timeout),
             'retry_on_timeout': retry_on_timeout or False,
-            'socket_keepalive': socket_keepalive or False,
             'socket_connect_timeout':
                 socket_connect_timeout and float(socket_connect_timeout),
         }
+
+        # absent in redis.connection.UnixDomainSocketConnection
+        if socket_keepalive:
+            self.connparams['socket_keepalive'] = socket_keepalive
 
         # "redis_backend_use_ssl" must be a dict with the keys:
         # 'ssl_cert_reqs', 'ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile'
