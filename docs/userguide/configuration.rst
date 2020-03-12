@@ -1109,15 +1109,20 @@ in seconds (int/float), used by the redis result backend.
 ``redis_retry_on_timeout``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 4.4.1
+
 Default: :const:`False`
 
 To retry reading/writing operations on TimeoutError to the Redis server,
-used by the redis result backend.
+used by the redis result backend. Shouldn't set this variable if using Redis
+connection by unix socket.
 
-.. setting:: socket_keepalive
+.. setting:: redis_socket_keepalive
 
-``socket_keepalive``
+``redis_socket_keepalive``
 ~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 4.4.1
 
 Default: :const:`False`
 
