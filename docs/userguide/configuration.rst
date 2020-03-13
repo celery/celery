@@ -712,7 +712,7 @@ serialization formats.
 Default: No compression.
 
 Optional compression method used for task results.
-Supports the same options as the :setting:`task_serializer` setting.
+Supports the same options as the :setting:`task_compression` setting.
 
 .. setting:: result_extended
 
