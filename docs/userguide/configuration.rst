@@ -827,7 +827,7 @@ strings (this is the part of the URI that comes after the ``db+`` prefix).
 Default: ``{}`` (empty mapping).
 
 To specify additional SQLAlchemy database engine options you can use
-the :setting:`sqlalchmey_engine_options` setting::
+the :setting:`database_engine_options` setting::
 
     # echo enables verbose logging from SQLAlchemy.
     app.conf.database_engine_options = {'echo': True}
