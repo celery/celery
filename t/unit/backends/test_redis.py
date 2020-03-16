@@ -324,6 +324,7 @@ class test_RedisBackend:
         assert 'port' not in x.connparams
         assert x.connparams['socket_timeout'] == 30.0
         assert 'socket_connect_timeout' not in x.connparams
+        assert 'socket_keepalive' not in x.connparams
         assert x.connparams['db'] == 3
 
     @skip.unless_module('redis')
