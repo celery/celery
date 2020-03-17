@@ -1,4 +1,4 @@
-:Version: 4.4.1 (cliffs)
+:Version: 4.4.2 (cliffs)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
