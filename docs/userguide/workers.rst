@@ -924,6 +924,10 @@ The output will include the following fields:
     Value of the workers logical clock. This is a positive integer and should
     be increasing every time you receive statistics.
 
+- ``uptime``
+
+    Numbers of seconds since the worker controller was started
+
 - ``pid``
 
     Process id of the worker instance (Main process).
