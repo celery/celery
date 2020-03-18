@@ -98,6 +98,20 @@ class test_S3Backend:
         assert s3_backend.get(key) == 'another_status'
 
     @mock_s3
+    def test_set_and_get_a_result(self):
+        self._mock_s3_resource()
+
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.s3_access_key_id = 'somekeyid'
+        self.app.conf.s3_secret_access_key = 'somesecret'
+        self.app.conf.s3_bucket = 'bucket'
+
+        s3_backend = S3Backend(app=self.app)
+        s3_backend.store_result('foo', 'baar', 'STARTED')
+        value = s3_backend.get_result('foo')
+        assert value == 'baar'
+
+    @mock_s3
     def test_get_a_missing_key(self):
         self._mock_s3_resource()
 

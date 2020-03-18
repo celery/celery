@@ -61,7 +61,8 @@ class S3Backend(KeyValueStoreBackend):
         s3_object = self._get_s3_object(key)
         try:
             s3_object.load()
-            return s3_object.get()['Body'].read().decode('utf-8')
+            data = s3_object.get()['Body'].read()
+            return data if self.content_encoding == 'binary' else data.decode('utf-8')
         except botocore.exceptions.ClientError as error:
             if error.response['Error']['Code'] == "404":
                 return None
