@@ -62,7 +62,7 @@ Examples
     $ celery multi show 10 -l INFO -Q:1-3 images,video -Q:4,5 data
         -Q default -L:4,5 DEBUG
 
-    $ # Additional options are added to each celery worker' comamnd,
+    $ # Additional options are added to each celery worker' command,
     $ # but you can also modify the options for ranges of, or specific workers
 
     $ # 3 workers: Two with 3 processes, and one with 10 processes.
