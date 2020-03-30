@@ -113,7 +113,7 @@ instead.
 Including the default prefork pool, Celery also supports using
 Eventlet, Gevent, and running in a single thread (see :ref:`concurrency`).
 
--- *Events* is an option that when enabled causes Celery to send
+-- *Events* is an option that causes Celery to send
 monitoring messages (events) for actions occurring in the worker.
 These can be used by monitor programs like ``celery events``,
 and Flower - the real-time Celery monitor, that you can read about in
