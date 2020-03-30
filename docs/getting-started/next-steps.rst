@@ -144,7 +144,7 @@ by the worker is detailed in the :ref:`Workers Guide <guide-workers>`.
 In the background
 ~~~~~~~~~~~~~~~~~
 
-In production you'll want to run the worker in the background, this is
+In production you'll want to run the worker in the background,
 described in detail in the :ref:`daemonization tutorial <daemonizing>`.
 
 The daemonization scripts uses the :program:`celery multi` command to
@@ -180,7 +180,7 @@ or stop it:
 
 The ``stop`` command is asynchronous so it won't wait for the
 worker to shutdown. You'll probably want to use the ``stopwait`` command
-instead,  this ensures all currently executing tasks are completed
+instead, which ensures that all currently executing tasks are completed
 before exiting:
 
 .. code-block:: console
@@ -194,8 +194,8 @@ before exiting:
     restarting. Only the same pidfile and logfile arguments must be
     used when stopping.
 
-By default it'll create pid and log files in the current directory,
-to protect against multiple workers launching on top of each other
+By default it'll create pid and log files in the current directory.
+To protect against multiple workers launching on top of each other
 you're encouraged to put these in a dedicated directory:
 
 .. code-block:: console
@@ -286,17 +286,17 @@ so that no message is sent:
     4
 
 These three methods - :meth:`delay`, :meth:`apply_async`, and applying
-(``__call__``), represents the Celery calling API, that's also used for
+(``__call__``), represents the Celery calling API, which is also used for
 signatures.
 
 A more detailed overview of the Calling API can be found in the
 :ref:`Calling User Guide <guide-calling>`.
 
-Every task invocation will be given a unique identifier (an UUID), this
+Every task invocation will be given a unique identifier (an UUID) -- this
 is the task id.
 
 The ``delay`` and ``apply_async`` methods return an :class:`~@AsyncResult`
-instance, that can be used to keep track of the tasks execution state.
+instance, which can be used to keep track of the tasks execution state.
 But for this you need to enable a :ref:`result backend <task-result-backends>` so that
 the state can be stored somewhere.
 
@@ -304,7 +304,7 @@ Results are disabled by default because of the fact that there's no result
 backend that suits every application, so to choose one you need to consider
 the drawbacks of each individual backend. For many tasks
 keeping the return value isn't even very useful, so it's a sensible default to
-have. Also note that result backends aren't used for monitoring tasks and workers,
+have. Also note that result backends aren't used for monitoring tasks and workers:
 for that Celery uses dedicated event messages (see :ref:`guide-monitoring`).
 
 If you have a result backend configured you can retrieve the return
@@ -356,8 +356,8 @@ If you don't wish for the errors to propagate then you can disable that by passi
     >>> res.get(propagate=False)
     TypeError("unsupported operand type(s) for +: 'int' and 'str'")
 
-In this case it'll return the exception instance raised instead,
-and so to check whether the task succeeded or failed you'll have to
+In this case it'll return the exception instance raised instead --
+so to check whether the task succeeded or failed, you'll have to
 use the corresponding methods on the result instance:
 
 .. code-block:: pycon
@@ -416,9 +416,9 @@ Calling tasks is described in detail in the
 ==============================
 
 You just learned how to call a task using the tasks ``delay`` method,
-and this is often all you need, but sometimes you may want to pass the
+and this is often all you need. But sometimes you may want to pass the
 signature of a task invocation to another process or as an argument to another
-function, for this Celery uses something called *signatures*.
+function, for which Celery uses something called *signatures*.
 
 A signature wraps the arguments and execution options of a single task
 invocation in such a way that it can be passed to functions or even serialized
@@ -477,7 +477,7 @@ and this can be resolved when calling the signature:
 Here you added the argument 8 that was prepended to the existing argument 2
 forming a complete signature of ``add(8, 2)``.
 
-Keyword arguments can also be added later, these are then merged with any
+Keyword arguments can also be added later; these are then merged with any
 existing keyword arguments, but with new arguments taking precedence:
 
 .. code-block:: pycon
@@ -758,7 +758,7 @@ configure that using the :setting:`timezone` setting:
 Optimization
 ============
 
-The default configuration isn't optimized for throughput by default,
+The default configuration isn't optimized for throughput. By default,
 it tries to walk the middle way between many short tasks and fewer long
 tasks, a compromise between throughput and fair scheduling.
 
