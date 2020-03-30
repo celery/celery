@@ -116,7 +116,7 @@ Eventlet, Gevent, and running in a single thread (see :ref:`concurrency`).
 -- *Events* is an option that causes Celery to send
 monitoring messages (events) for actions occurring in the worker.
 These can be used by monitor programs like ``celery events``,
-and Flower - the real-time Celery monitor, that you can read about in
+and Flower -- the real-time Celery monitor, which you can read about in
 the :ref:`Monitoring and Management guide <guide-monitoring>`.
 
 -- *Queues* is the list of queues that the worker will consume
