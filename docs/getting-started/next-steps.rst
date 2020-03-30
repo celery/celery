@@ -223,10 +223,10 @@ About the :option:`--app <celery --app>` argument
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :option:`--app <celery --app>` argument specifies the Celery app instance
-to use, it must be in the form of ``module.path:attribute``
+to use, in the form of ``module.path:attribute``
 
-But it also supports a shortcut form If only a package name is specified,
-where it'll try to search for the app instance, in the following order:
+But it also supports a shortcut form. If only a package name is specified,
+it'll try to search for the app instance, in the following order:
 
 With :option:`--app=proj <celery --app>`:
 
@@ -286,7 +286,7 @@ so that no message is sent:
     4
 
 These three methods - :meth:`delay`, :meth:`apply_async`, and applying
-(``__call__``), represents the Celery calling API, which is also used for
+(``__call__``), make up the Celery calling API, which is also used for
 signatures.
 
 A more detailed overview of the Calling API can be found in the
@@ -300,8 +300,8 @@ instance, which can be used to keep track of the tasks execution state.
 But for this you need to enable a :ref:`result backend <task-result-backends>` so that
 the state can be stored somewhere.
 
-Results are disabled by default because of the fact that there's no result
-backend that suits every application, so to choose one you need to consider
+Results are disabled by default because there is no result
+backend that suits every application; to choose one you need to consider
 the drawbacks of each individual backend. For many tasks
 keeping the return value isn't even very useful, so it's a sensible default to
 have. Also note that result backends aren't used for monitoring tasks and workers:
@@ -349,7 +349,7 @@ exception, in fact ``result.get()`` will propagate any errors by default:
         raise value
     TypeError: unsupported operand type(s) for +: 'int' and 'str'
 
-If you don't wish for the errors to propagate then you can disable that by passing the ``propagate`` argument:
+If you don't wish for the errors to propagate, you can disable that by passing ``propagate``:
 
 .. code-block:: pycon
 
@@ -648,9 +648,9 @@ specifying the :option:`celery worker -Q` option:
 
     $ celery -A proj worker -Q hipri
 
-You may specify multiple queues by using a comma separated list,
-for example you can make the worker consume from both the default
-queue, and the ``hipri`` queue, where
+You may specify multiple queues by using a comma-separated list.
+For example, you can make the worker consume from both the default
+queue and the ``hipri`` queue, where
 the default queue is named ``celery`` for historical reasons:
 
 .. code-block:: console
@@ -680,7 +680,7 @@ control commands are received by every worker in the cluster.
 
 You can also specify one or more workers to act on the request
 using the :option:`--destination <celery inspect --destination>` option.
-This is a comma separated list of worker host names:
+This is a comma-separated list of worker host names:
 
 .. code-block:: console
 
@@ -690,7 +690,7 @@ If a destination isn't provided then every worker will act and reply
 to the request.
 
 The :program:`celery inspect` command contains commands that
-doesn't change anything in the worker, it only replies information
+don't change anything in the worker; it only returns information
 and statistics about what's going on inside the worker.
 For a list of inspect commands you can execute:
 
@@ -698,8 +698,8 @@ For a list of inspect commands you can execute:
 
     $ celery -A proj inspect --help
 
-Then there's the :program:`celery control` command, that contains
-commands that actually changes things in the worker at runtime:
+Then there's the :program:`celery control` command, which contains
+commands that actually change things in the worker at runtime:
 
 .. code-block:: console
 
@@ -744,7 +744,7 @@ in the :ref:`Monitoring Guide <guide-monitoring>`.
 Timezone
 ========
 
-All times and dates, internally and in messages uses the UTC timezone.
+All times and dates, internally and in messages use the UTC timezone.
 
 When the worker receives a message, for example with a countdown set it
 converts that UTC time to local time. If you wish to use
@@ -767,7 +767,7 @@ for throughput then you should read the :ref:`Optimizing Guide
 <guide-optimizing>`.
 
 If you're using RabbitMQ then you can install the :pypi:`librabbitmq`
-module: this is an AMQP client implemented in C:
+module, an AMQP client implemented in C:
 
 .. code-block:: console
 
