@@ -44,13 +44,13 @@ you simply import this instance.
 
     See :ref:`celerytut-broker` for more information.
 
-- The ``backend`` argument specifies the result backend to use,
+- The ``backend`` argument specifies the result backend to use.
 
     It's used to keep track of task state and results.
     While results are disabled by default I use the RPC result backend here
-    because I demonstrate how retrieving results work later, you may want to use
+    because I demonstrate how retrieving results work later. You may want to use
     a different backend for your application. They all have different
-    strengths and weaknesses. If you don't need results it's better
+    strengths and weaknesses. If you don't need results, it's better
     to disable them. Results can also be disabled for individual tasks
     by setting the ``@task(ignore_result=True)`` option.
 
@@ -93,20 +93,20 @@ When the worker starts you should see a banner and some messages::
      [2012-06-08 16:23:51,078: WARNING/MainProcess] celery@halcyon.local has started.
 
 -- The *broker* is the URL you specified in the broker argument in our ``celery``
-module, you can also specify a different broker on the command-line by using
+module. You can also specify a different broker on the command-line by using
 the :option:`-b <celery -b>` option.
 
 -- *Concurrency* is the number of prefork worker process used
-to process your tasks concurrently, when all of these are busy doing work
+to process your tasks concurrently. When all of these are busy doing work,
 new tasks will have to wait for one of the tasks to finish before
 it can be processed.
 
 The default concurrency number is the number of CPU's on that machine
-(including cores), you can specify a custom number using
+(including cores). You can specify a custom number using
 the :option:`celery worker -c` option.
 There's no recommended value, as the optimal number depends on a number of
 factors, but if your tasks are mostly I/O-bound then you can try to increase
-it, experimentation has shown that adding more than twice the number
+it. Experimentation has shown that adding more than twice the number
 of CPU's is rarely effective, and likely to degrade performance
 instead.
 
