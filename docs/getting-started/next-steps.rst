@@ -44,13 +44,13 @@ you simply import this instance.
 
     See :ref:`celerytut-broker` for more information.
 
-- The ``backend`` argument specifies the result backend to use,
+- The ``backend`` argument specifies the result backend to use.
 
     It's used to keep track of task state and results.
     While results are disabled by default I use the RPC result backend here
-    because I demonstrate how retrieving results work later, you may want to use
+    because I demonstrate how retrieving results work later. You may want to use
     a different backend for your application. They all have different
-    strengths and weaknesses. If you don't need results it's better
+    strengths and weaknesses. If you don't need results, it's better
     to disable them. Results can also be disabled for individual tasks
     by setting the ``@task(ignore_result=True)`` option.
 
@@ -93,30 +93,30 @@ When the worker starts you should see a banner and some messages::
      [2012-06-08 16:23:51,078: WARNING/MainProcess] celery@halcyon.local has started.
 
 -- The *broker* is the URL you specified in the broker argument in our ``celery``
-module, you can also specify a different broker on the command-line by using
+module. You can also specify a different broker on the command-line by using
 the :option:`-b <celery -b>` option.
 
 -- *Concurrency* is the number of prefork worker process used
-to process your tasks concurrently, when all of these are busy doing work
+to process your tasks concurrently. When all of these are busy doing work,
 new tasks will have to wait for one of the tasks to finish before
 it can be processed.
 
 The default concurrency number is the number of CPU's on that machine
-(including cores), you can specify a custom number using
+(including cores). You can specify a custom number using
 the :option:`celery worker -c` option.
 There's no recommended value, as the optimal number depends on a number of
 factors, but if your tasks are mostly I/O-bound then you can try to increase
-it, experimentation has shown that adding more than twice the number
+it. Experimentation has shown that adding more than twice the number
 of CPU's is rarely effective, and likely to degrade performance
 instead.
 
 Including the default prefork pool, Celery also supports using
 Eventlet, Gevent, and running in a single thread (see :ref:`concurrency`).
 
--- *Events* is an option that when enabled causes Celery to send
+-- *Events* is an option that causes Celery to send
 monitoring messages (events) for actions occurring in the worker.
 These can be used by monitor programs like ``celery events``,
-and Flower - the real-time Celery monitor, that you can read about in
+and Flower -- the real-time Celery monitor, which you can read about in
 the :ref:`Monitoring and Management guide <guide-monitoring>`.
 
 -- *Queues* is the list of queues that the worker will consume
@@ -144,7 +144,7 @@ by the worker is detailed in the :ref:`Workers Guide <guide-workers>`.
 In the background
 ~~~~~~~~~~~~~~~~~
 
-In production you'll want to run the worker in the background, this is
+In production you'll want to run the worker in the background,
 described in detail in the :ref:`daemonization tutorial <daemonizing>`.
 
 The daemonization scripts uses the :program:`celery multi` command to
@@ -180,7 +180,7 @@ or stop it:
 
 The ``stop`` command is asynchronous so it won't wait for the
 worker to shutdown. You'll probably want to use the ``stopwait`` command
-instead,  this ensures all currently executing tasks are completed
+instead, which ensures that all currently executing tasks are completed
 before exiting:
 
 .. code-block:: console
@@ -194,8 +194,8 @@ before exiting:
     restarting. Only the same pidfile and logfile arguments must be
     used when stopping.
 
-By default it'll create pid and log files in the current directory,
-to protect against multiple workers launching on top of each other
+By default it'll create pid and log files in the current directory.
+To protect against multiple workers launching on top of each other
 you're encouraged to put these in a dedicated directory:
 
 .. code-block:: console
@@ -223,10 +223,10 @@ About the :option:`--app <celery --app>` argument
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :option:`--app <celery --app>` argument specifies the Celery app instance
-to use, it must be in the form of ``module.path:attribute``
+to use, in the form of ``module.path:attribute``
 
-But it also supports a shortcut form If only a package name is specified,
-where it'll try to search for the app instance, in the following order:
+But it also supports a shortcut form. If only a package name is specified,
+it'll try to search for the app instance, in the following order:
 
 With :option:`--app=proj <celery --app>`:
 
@@ -286,25 +286,25 @@ so that no message is sent:
     4
 
 These three methods - :meth:`delay`, :meth:`apply_async`, and applying
-(``__call__``), represents the Celery calling API, that's also used for
+(``__call__``), make up the Celery calling API, which is also used for
 signatures.
 
 A more detailed overview of the Calling API can be found in the
 :ref:`Calling User Guide <guide-calling>`.
 
-Every task invocation will be given a unique identifier (an UUID), this
+Every task invocation will be given a unique identifier (an UUID) -- this
 is the task id.
 
 The ``delay`` and ``apply_async`` methods return an :class:`~@AsyncResult`
-instance, that can be used to keep track of the tasks execution state.
+instance, which can be used to keep track of the tasks execution state.
 But for this you need to enable a :ref:`result backend <task-result-backends>` so that
 the state can be stored somewhere.
 
-Results are disabled by default because of the fact that there's no result
-backend that suits every application, so to choose one you need to consider
+Results are disabled by default because there is no result
+backend that suits every application; to choose one you need to consider
 the drawbacks of each individual backend. For many tasks
 keeping the return value isn't even very useful, so it's a sensible default to
-have. Also note that result backends aren't used for monitoring tasks and workers,
+have. Also note that result backends aren't used for monitoring tasks and workers:
 for that Celery uses dedicated event messages (see :ref:`guide-monitoring`).
 
 If you have a result backend configured you can retrieve the return
@@ -349,15 +349,15 @@ exception, in fact ``result.get()`` will propagate any errors by default:
         raise value
     TypeError: unsupported operand type(s) for +: 'int' and 'str'
 
-If you don't wish for the errors to propagate then you can disable that by passing the ``propagate`` argument:
+If you don't wish for the errors to propagate, you can disable that by passing ``propagate``:
 
 .. code-block:: pycon
 
     >>> res.get(propagate=False)
     TypeError("unsupported operand type(s) for +: 'int' and 'str'")
 
-In this case it'll return the exception instance raised instead,
-and so to check whether the task succeeded or failed you'll have to
+In this case it'll return the exception instance raised instead --
+so to check whether the task succeeded or failed, you'll have to
 use the corresponding methods on the result instance:
 
 .. code-block:: pycon
@@ -416,9 +416,9 @@ Calling tasks is described in detail in the
 ==============================
 
 You just learned how to call a task using the tasks ``delay`` method,
-and this is often all you need, but sometimes you may want to pass the
+and this is often all you need. But sometimes you may want to pass the
 signature of a task invocation to another process or as an argument to another
-function, for this Celery uses something called *signatures*.
+function, for which Celery uses something called *signatures*.
 
 A signature wraps the arguments and execution options of a single task
 invocation in such a way that it can be passed to functions or even serialized
@@ -477,7 +477,7 @@ and this can be resolved when calling the signature:
 Here you added the argument 8 that was prepended to the existing argument 2
 forming a complete signature of ``add(8, 2)``.
 
-Keyword arguments can also be added later, these are then merged with any
+Keyword arguments can also be added later; these are then merged with any
 existing keyword arguments, but with new arguments taking precedence:
 
 .. code-block:: pycon
@@ -648,9 +648,9 @@ specifying the :option:`celery worker -Q` option:
 
     $ celery -A proj worker -Q hipri
 
-You may specify multiple queues by using a comma separated list,
-for example you can make the worker consume from both the default
-queue, and the ``hipri`` queue, where
+You may specify multiple queues by using a comma-separated list.
+For example, you can make the worker consume from both the default
+queue and the ``hipri`` queue, where
 the default queue is named ``celery`` for historical reasons:
 
 .. code-block:: console
@@ -680,7 +680,7 @@ control commands are received by every worker in the cluster.
 
 You can also specify one or more workers to act on the request
 using the :option:`--destination <celery inspect --destination>` option.
-This is a comma separated list of worker host names:
+This is a comma-separated list of worker host names:
 
 .. code-block:: console
 
@@ -690,7 +690,7 @@ If a destination isn't provided then every worker will act and reply
 to the request.
 
 The :program:`celery inspect` command contains commands that
-doesn't change anything in the worker, it only replies information
+don't change anything in the worker; it only returns information
 and statistics about what's going on inside the worker.
 For a list of inspect commands you can execute:
 
@@ -698,8 +698,8 @@ For a list of inspect commands you can execute:
 
     $ celery -A proj inspect --help
 
-Then there's the :program:`celery control` command, that contains
-commands that actually changes things in the worker at runtime:
+Then there's the :program:`celery control` command, which contains
+commands that actually change things in the worker at runtime:
 
 .. code-block:: console
 
@@ -744,7 +744,7 @@ in the :ref:`Monitoring Guide <guide-monitoring>`.
 Timezone
 ========
 
-All times and dates, internally and in messages uses the UTC timezone.
+All times and dates, internally and in messages use the UTC timezone.
 
 When the worker receives a message, for example with a countdown set it
 converts that UTC time to local time. If you wish to use
@@ -758,7 +758,7 @@ configure that using the :setting:`timezone` setting:
 Optimization
 ============
 
-The default configuration isn't optimized for throughput by default,
+The default configuration isn't optimized for throughput. By default,
 it tries to walk the middle way between many short tasks and fewer long
 tasks, a compromise between throughput and fair scheduling.
 
@@ -767,7 +767,7 @@ for throughput then you should read the :ref:`Optimizing Guide
 <guide-optimizing>`.
 
 If you're using RabbitMQ then you can install the :pypi:`librabbitmq`
-module: this is an AMQP client implemented in C:
+module, an AMQP client implemented in C:
 
 .. code-block:: console
 
