@@ -369,6 +369,9 @@ class Celery(object):
     def task(self, *args, **opts):
         """Decorator to create a task class out of any callable.
 
+        See :ref:`Task options<task-options>` for a list of the
+        arguments that can be passed to this decorator.
+
         Examples:
             .. code-block:: python
 
