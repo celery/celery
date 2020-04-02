@@ -317,6 +317,14 @@ class test_SessionManager:
         engine2 = s.get_engine('dburi', foo=1)
         assert engine2 is engine
 
+    @patch('celery.backends.database.session.create_engine')
+    def test_get_engine_kwargs(self, create_engine):
+        s = SessionManager()
+        engine = s.get_engine('dbur', foo=1, pool_size=5)
+        assert engine is create_engine()
+        engine2 = s.get_engine('dburi', foo=1)
+        assert engine2 is engine
+
     @patch('celery.backends.database.session.sessionmaker')
     def test_create_session_forked(self, sessionmaker):
         s = SessionManager()
