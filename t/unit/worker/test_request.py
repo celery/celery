@@ -859,18 +859,10 @@ class test_Request(RequestCase):
             assert isinstance(res, ExceptionInfo)
 
     def test_worker_task_trace_handle_retry(self):
-        import inspect
         tid = uuid()
         self.mytask.push_request(id=tid)
-        frame_list = []
-
-        def raise_dummy():
-            frame_str_temp = str(inspect.currentframe().__repr__)
-            frame_list.append(frame_str_temp)
-            local_value = 1214
-            raise ValueError('foo')
         try:
-            raise_dummy()
+            raise ValueError('foo')
         except Exception as exc:
             try:
                 raise Retry(str(exc), exc=exc)
@@ -884,29 +876,16 @@ class test_Request(RequestCase):
                     self.mytask, self.mytask.request, store_errors=True,
                 )
                 assert self.mytask.backend.get_status(tid) == states.RETRY
-            tb_ = exc.__traceback__
-            while tb_ is not None:
-                if str(tb_.tb_frame.__repr__) == frame_list[0]:
-                    assert len(tb_.tb_frame.f_locals) == 0
-                tb_ = tb_.tb_next
         finally:
             self.mytask.pop_request()
 
     def test_worker_task_trace_handle_failure(self):
-        import inspect
         tid = uuid()
         self.mytask.push_request()
         try:
             self.mytask.request.id = tid
-            frame_list = []
-
-            def raise_dummy():
-                frame_str_temp = str(inspect.currentframe().__repr__)
-                frame_list.append(frame_str_temp)
-                local_value = 1214
-                raise ValueError('foo')
             try:
-                raise_dummy()
+                raise ValueError('foo')
             except Exception as exc:
                 w = TraceInfo(states.FAILURE, exc)
                 w.handle_failure(
@@ -917,12 +896,6 @@ class test_Request(RequestCase):
                     self.mytask, self.mytask.request, store_errors=True,
                 )
                 assert self.mytask.backend.get_status(tid) == states.FAILURE
-
-                tb_ = exc.__traceback__
-                while tb_ is not None:
-                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
-                        assert len(tb_.tb_frame.f_locals) == 0
-                    tb_ = tb_.tb_next
         finally:
             self.mytask.pop_request()
 
