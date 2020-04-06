@@ -381,6 +381,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     )
 
                 # -*- TRACE -*-
+                used_exc_in_einfo = None
                 try:
                     R = retval = fun(*args, **kwargs)
                     state = SUCCESS
@@ -388,15 +389,19 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I, R = Info(REJECTED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                     I.handle_reject(task, task_request)
+                    used_exc_in_einfo = exc
                 except Ignore as exc:
                     I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                     I.handle_ignore(task, task_request)
+                    used_exc_in_einfo = exc
                 except Retry as exc:
                     I, R, state, retval = on_error(
                         task_request, exc, uuid, RETRY, call_errbacks=False)
+                    used_exc_in_einfo = exc
                 except Exception as exc:
                     I, R, state, retval = on_error(task_request, exc, uuid)
+                    used_exc_in_einfo = exc
                 except BaseException:
                     raise
                 else:
@@ -464,6 +469,20 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 'return_value': Rstr,
                                 'runtime': T,
                             })
+                finally:
+                    #Cleared Tb, but einfo still has a reference to Traceback.
+                    # exc cleans up the Traceback at the last moment that can be revealed.
+                    if used_exc_in_einfo is not None:
+                        if hasattr(used_exc_in_einfo,'__traceback__'):
+                            tb = used_exc_in_einfo.__traceback__
+                            while tb is not None:
+                                try:
+                                    tb.tb_frame.clear()
+                                except RuntimeError:
+                                    # Ignore the exception raised if the frame is still executing.
+                                    pass
+                                tb = tb.tb_next
+                    del used_exc_in_einfo
 
                 # -* POST *-
                 if state not in IGNORE_STATES:
@@ -570,6 +589,13 @@ def report_internal_error(task, exc):
                 exc, exc_info.traceback)))
         return exc_info
     finally:
+        while _tb is not None:
+            try:
+                _tb.tb_frame.clear()
+            except RuntimeError:
+                # Ignore the exception raised if the frame is still executing.
+                pass
+            _tb = _tb.tb_next
         del _tb
 
 
