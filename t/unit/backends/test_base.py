@@ -389,6 +389,9 @@ class test_BaseBackend_dict:
         self.b.mark_as_failure = Mock()
         frame_list = []
 
+        if (2, 7, 0) <= sys.version_info < (3, 0, 0):
+            sys.exc_clear = Mock()
+
         def raise_dummy():
             frame_str_temp = str(inspect.currentframe().__repr__)
             frame_list.append(frame_str_temp)
@@ -404,11 +407,14 @@ class test_BaseBackend_dict:
             assert args[1] is exc
             assert args[2]
 
-            tb_ = exc.__traceback__
-            while tb_ is not None:
-                if str(tb_.tb_frame.__repr__) == frame_list[0]:
-                    assert len(tb_.tb_frame.f_locals) == 0
-                tb_ = tb_.tb_next
+            if sys.version_info >= (3, 4, 0):
+                tb_ = exc.__traceback__
+                while tb_ is not None:
+                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                        assert len(tb_.tb_frame.f_locals) == 0
+                    tb_ = tb_.tb_next
+            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
+                sys.exc_clear.assert_called()
 
 
     def test_prepare_value_serializes_group_result(self):
