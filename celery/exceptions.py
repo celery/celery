@@ -205,7 +205,7 @@ class IncompleteStream(TaskError):
 
 @python_2_unicode_compatible
 class NotRegistered(KeyError, TaskError):
-    """The task ain't registered."""
+    """The task is not registered."""
 
     def __repr__(self):
         return UNREGISTERED_FMT.format(self)
