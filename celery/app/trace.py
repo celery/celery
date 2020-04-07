@@ -523,6 +523,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         except MemoryError:
             raise
         except Exception as exc:
+            _signal_internal_error(task, uuid, args, kwargs, request, exc)
             if eager:
                 raise
             R = report_internal_error(task, exc)
@@ -541,7 +542,29 @@ def trace_task(task, uuid, args, kwargs, request=None, **opts):
             task.__trace__ = build_tracer(task.name, task, **opts)
         return task.__trace__(uuid, args, kwargs, request)
     except Exception as exc:
+        _signal_internal_error(task, uuid, args, kwargs, request, exc)
         return trace_ok_t(report_internal_error(task, exc), None, 0.0, None)
+
+
+def _signal_internal_error(task, uuid, args, kwargs, request, exc):
+    """Send a special `internal_error` signal to the app for outside body errors"""
+    try:
+        _, _, tb = sys.exc_info()
+        einfo = ExceptionInfo()
+        einfo.exception = get_pickleable_exception(einfo.exception)
+        einfo.type = get_pickleable_etype(einfo.type)
+        signals.task_internal_error.send(
+            sender=task,
+            task_id=uuid,
+            args=args,
+            kwargs=kwargs,
+            request=request,
+            exception=exc,
+            traceback=tb,
+            einfo=einfo,
+        )
+    finally:
+        del tb
 
 
 def _trace_task_ret(name, uuid, request, body, content_type,
