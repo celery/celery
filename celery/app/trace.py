@@ -273,6 +273,7 @@ def traceback_clear(exc=None):
         while tb is not None:
             try:
                 tb.tb_frame.clear()
+                tb.tb_frame.f_locals
             except RuntimeError:
                 # Ignore the exception raised if the frame is still executing.
                 pass
