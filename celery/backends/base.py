@@ -256,13 +256,18 @@ class Backend(object):
             self.mark_as_failure(task_id, exc, exception_info.traceback)
             return exception_info
         finally:
-            while tb is not None:
-                try:
-                    tb.tb_frame.clear()
-                except RuntimeError:
-                    # Ignore the exception raised if the frame is still executing.
-                    pass
-                tb = tb.tb_next
+            if sys.version_info >= (3, 4, 0):
+                while tb is not None:
+                    try:
+                        tb.tb_frame.clear()
+                    except RuntimeError:
+                        # Ignore the exception raised if the frame is still executing.
+                        pass
+                    tb = tb.tb_next
+
+            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
+                sys.exc_clear()
+
             del tb
 
     def prepare_exception(self, exc, serializer=None):

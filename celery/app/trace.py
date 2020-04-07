@@ -82,7 +82,8 @@ Task %(name)s[%(id)s] retry: %(exc)s\
 """
 
 log_policy_t = namedtuple(
-    'log_policy_t', ('format', 'description', 'severity', 'traceback', 'mail'),
+    'log_policy_t',
+    ('format', 'description', 'severity', 'traceback', 'mail'),
 )
 
 log_policy_reject = log_policy_t(LOG_REJECTED, 'rejected', logging.WARN, 1, 1)
@@ -256,6 +257,30 @@ class TraceInfo(object):
                    extra={'data': context})
 
 
+def traceback_clear(exc=None):
+    # Cleared Tb, but einfo still has a reference to Traceback.
+    # exc cleans up the Traceback at the last moment that can be revealed.
+    tb = None
+    if exc is not None:
+        if hasattr(exc, '__traceback__'):
+            tb = exc.__traceback__
+        else:
+            _, _, tb = sys.exc_info()
+    else:
+        _, _, tb = sys.exc_info()
+
+    if sys.version_info >= (3, 4, 0):
+        while tb is not None:
+            try:
+                tb.tb_frame.clear()
+            except RuntimeError:
+                # Ignore the exception raised if the frame is still executing.
+                pass
+            tb = tb.tb_next
+
+    elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
+        sys.exc_clear()
+
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                  Info=TraceInfo, eager=False, propagate=False, app=None,
                  monotonic=monotonic, trace_ok_t=trace_ok_t,
@@ -381,7 +406,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     )
 
                 # -*- TRACE -*-
-                used_exc_in_einfo = None
                 try:
                     R = retval = fun(*args, **kwargs)
                     state = SUCCESS
@@ -389,19 +413,19 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I, R = Info(REJECTED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                     I.handle_reject(task, task_request)
-                    used_exc_in_einfo = exc
+                    traceback_clear(exc)
                 except Ignore as exc:
                     I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                     I.handle_ignore(task, task_request)
-                    used_exc_in_einfo = exc
+                    traceback_clear(exc)
                 except Retry as exc:
                     I, R, state, retval = on_error(
                         task_request, exc, uuid, RETRY, call_errbacks=False)
-                    used_exc_in_einfo = exc
+                    traceback_clear(exc)
                 except Exception as exc:
                     I, R, state, retval = on_error(task_request, exc, uuid)
-                    used_exc_in_einfo = exc
+                    traceback_clear(exc)
                 except BaseException:
                     raise
                 else:
@@ -469,20 +493,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 'return_value': Rstr,
                                 'runtime': T,
                             })
-                finally:
-                    #Cleared Tb, but einfo still has a reference to Traceback.
-                    # exc cleans up the Traceback at the last moment that can be revealed.
-                    if used_exc_in_einfo is not None:
-                        if hasattr(used_exc_in_einfo,'__traceback__'):
-                            tb = used_exc_in_einfo.__traceback__
-                            while tb is not None:
-                                try:
-                                    tb.tb_frame.clear()
-                                except RuntimeError:
-                                    # Ignore the exception raised if the frame is still executing.
-                                    pass
-                                tb = tb.tb_next
-                    del used_exc_in_einfo
 
                 # -* POST *-
                 if state not in IGNORE_STATES:
