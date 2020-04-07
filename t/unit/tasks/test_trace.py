@@ -326,6 +326,7 @@ class test_trace(TraceCase):
         _, info = self.trace(self.raises, (exc,), {})
         assert info.state == states.RETRY
         assert info.retval is exc
+        mock_traceback_clear.assert_called()
 
     @patch('celery.app.trace.traceback_clear')
     def test_trace_exception(self, mock_traceback_clear):
@@ -333,6 +334,7 @@ class test_trace(TraceCase):
         _, info = self.trace(self.raises, (exc,), {})
         assert info.state == states.FAILURE
         assert info.retval is exc
+        mock_traceback_clear.assert_called()
 
     def test_trace_task_ret__no_content_type(self):
         _trace_task_ret(
