@@ -600,13 +600,6 @@ def report_internal_error(task, exc):
                 exc, exc_info.traceback)))
         return exc_info
     finally:
-        while _tb is not None:
-            try:
-                _tb.tb_frame.clear()
-            except RuntimeError:
-                # Ignore the exception raised if the frame is still executing.
-                pass
-            _tb = _tb.tb_next
         del _tb
 
 
