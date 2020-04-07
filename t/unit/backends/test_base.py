@@ -407,7 +407,7 @@ class test_BaseBackend_dict:
             assert args[1] is exc
             assert args[2]
 
-            if sys.version_info >= (3, 4, 0):
+            if sys.version_info >= (3, 5, 0):
                 tb_ = exc.__traceback__
                 while tb_ is not None:
                     if str(tb_.tb_frame.__repr__) == frame_list[0]:

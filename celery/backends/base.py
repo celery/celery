@@ -256,7 +256,7 @@ class Backend(object):
             self.mark_as_failure(task_id, exc, exception_info.traceback)
             return exception_info
         finally:
-            if sys.version_info >= (3, 4, 0):
+            if sys.version_info >= (3, 5, 0):
                 while tb is not None:
                     try:
                         tb.tb_frame.clear()

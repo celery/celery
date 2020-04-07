@@ -167,7 +167,7 @@ class test_trace(TraceCase):
         except KeyError as exc:
             traceback_clear(exc)
 
-            if sys.version_info >= (3, 4, 0):
+            if sys.version_info >= (3, 5, 0):
                 tb_ = exc.__traceback__
                 while tb_ is not None:
                     if str(tb_.tb_frame.__repr__) == frame_list[0]:
@@ -181,7 +181,7 @@ class test_trace(TraceCase):
         except KeyError as exc:
             traceback_clear()
 
-            if sys.version_info >= (3, 4, 0):
+            if sys.version_info >= (3, 5, 0):
                 tb_ = exc.__traceback__
                 while tb_ is not None:
                     if str(tb_.tb_frame.__repr__) == frame_list[0]:
@@ -195,7 +195,7 @@ class test_trace(TraceCase):
         except KeyError as exc:
             traceback_clear(str(exc))
 
-            if sys.version_info >= (3, 4, 0):
+            if sys.version_info >= (3, 5, 0):
                 tb_ = exc.__traceback__
                 while tb_ is not None:
                     if str(tb_.tb_frame.__repr__) == frame_list[0]:

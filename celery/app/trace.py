@@ -269,7 +269,7 @@ def traceback_clear(exc=None):
     else:
         _, _, tb = sys.exc_info()
 
-    if sys.version_info >= (3, 4, 0):
+    if sys.version_info >= (3, 5, 0):
         while tb is not None:
             try:
                 tb.tb_frame.clear()
