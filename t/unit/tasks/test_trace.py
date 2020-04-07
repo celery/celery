@@ -12,7 +12,9 @@ from celery.app.trace import (TraceInfo, _fast_trace_task, _trace_task_ret,
                               log_policy_internal, log_policy_reject,
                               log_policy_unexpected,
                               reset_worker_optimizations,
-                              setup_worker_optimizations, trace_task)
+                              setup_worker_optimizations, trace_task,
+                              traceback_clear)
+
 from celery.exceptions import Ignore, Reject, Retry
 
 
@@ -150,7 +152,60 @@ class test_trace(TraceCase):
         with pytest.raises(MemoryError):
             self.trace(add, (2, 2), {}, eager=False)
 
-    def test_when_Ignore(self):
+    def test_traceback_clear(self):
+        import inspect, sys
+        sys.exc_clear = Mock()
+        frame_list =[]
+
+        def raise_dummy():
+            frame_str_temp = str(inspect.currentframe().__repr__)
+            frame_list.append(frame_str_temp)
+            local_value = 1214
+            raise KeyError('foo')
+        try:
+            raise_dummy()
+        except KeyError as exc:
+            traceback_clear(exc)
+
+            if sys.version_info >= (3, 5, 0):
+                tb_ = exc.__traceback__
+                while tb_ is not None:
+                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                        assert len(tb_.tb_frame.f_locals) == 0
+                    tb_ = tb_.tb_next
+            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
+                sys.exc_clear.assert_called()
+
+        try:
+            raise_dummy()
+        except KeyError as exc:
+            traceback_clear()
+
+            if sys.version_info >= (3, 5, 0):
+                tb_ = exc.__traceback__
+                while tb_ is not None:
+                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                        assert len(tb_.tb_frame.f_locals) == 0
+                    tb_ = tb_.tb_next
+            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
+                sys.exc_clear.assert_called()
+
+        try:
+            raise_dummy()
+        except KeyError as exc:
+            traceback_clear(str(exc))
+
+            if sys.version_info >= (3, 5, 0):
+                tb_ = exc.__traceback__
+                while tb_ is not None:
+                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                        assert len(tb_.tb_frame.f_locals) == 0
+                    tb_ = tb_.tb_next
+            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
+                sys.exc_clear.assert_called()
+
+    @patch('celery.app.trace.traceback_clear')
+    def test_when_Ignore(self, mock_traceback_clear):
 
         @self.app.task(shared=False)
         def ignored():
@@ -158,8 +213,10 @@ class test_trace(TraceCase):
 
         retval, info = self.trace(ignored, (), {})
         assert info.state == states.IGNORED
+        mock_traceback_clear.assert_called()
 
-    def test_when_Reject(self):
+    @patch('celery.app.trace.traceback_clear')
+    def test_when_Reject(self, mock_traceback_clear):
 
         @self.app.task(shared=False)
         def rejecting():
@@ -167,6 +224,7 @@ class test_trace(TraceCase):
 
         retval, info = self.trace(rejecting, (), {})
         assert info.state == states.REJECTED
+        mock_traceback_clear.assert_called()
 
     def test_backend_cleanup_raises(self):
         self.add.backend.process_cleanup = Mock()
@@ -262,17 +320,21 @@ class test_trace(TraceCase):
         with pytest.raises(SystemExit):
             self.trace(self.raises, (SystemExit(),), {})
 
-    def test_trace_Retry(self):
+    @patch('celery.app.trace.traceback_clear')
+    def test_trace_Retry(self, mock_traceback_clear):
         exc = Retry('foo', 'bar')
         _, info = self.trace(self.raises, (exc,), {})
         assert info.state == states.RETRY
         assert info.retval is exc
+        mock_traceback_clear.assert_called()
 
-    def test_trace_exception(self):
+    @patch('celery.app.trace.traceback_clear')
+    def test_trace_exception(self, mock_traceback_clear):
         exc = KeyError('foo')
         _, info = self.trace(self.raises, (exc,), {})
         assert info.state == states.FAILURE
         assert info.retval is exc
+        mock_traceback_clear.assert_called()
 
     def test_trace_task_ret__no_content_type(self):
         _trace_task_ret(
