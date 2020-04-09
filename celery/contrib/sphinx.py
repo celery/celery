@@ -31,7 +31,7 @@ Use ``.. autotask::`` to alternatively manually document a task.
 """
 from __future__ import absolute_import, unicode_literals
 
-from sphinx.domains.python import PyModulelevel
+from sphinx.domains.python import PyFunction
 from sphinx.ext.autodoc import FunctionDocumenter
 
 from celery.app.task import BaseTask
@@ -77,7 +77,7 @@ class TaskDocumenter(FunctionDocumenter):
         return super(TaskDocumenter, self).check_module()
 
 
-class TaskDirective(PyModulelevel):
+class TaskDirective(PyFunction):
     """Sphinx task directive."""
 
     def get_signature_prefix(self, sig):
