@@ -194,10 +194,10 @@ class test_Node:
             '--executable={0}'.format(n.executable),
             '-O fair',
             '-n foo@bar.com',
-            '--logfile=foo%I.log',
+            '--logfile=/var/log/celery/foo%I.log',
             '-Q q1,q2',
             '--max-tasks-per-child=30',
-            '--pidfile=foo.pid',
+            '--pidfile=/var/run/celery/foo.pid',
             '',
         ])
 
@@ -275,7 +275,7 @@ class test_Node:
 
     def test_logfile(self):
         assert self.node.logfile == self.expander.return_value
-        self.expander.assert_called_with('%n%I.log')
+        self.expander.assert_called_with('/var/log/celery/%n%I.log')
 
 
 class test_Cluster:
