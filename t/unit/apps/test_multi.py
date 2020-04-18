@@ -370,7 +370,10 @@ class test_Cluster:
             Node('baz@e.com'),
         ])
         nodes = p.getpids(on_down=callback)
-        node_0, node_1 = nodes
+        try:
+            node_0, node_1 = nodes
+        except:
+            pass
         assert node_0.name == 'foo@e.com'
         assert sorted(node_0.argv) == sorted([
             '',
