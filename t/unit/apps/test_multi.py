@@ -113,8 +113,8 @@ class test_multi_args:
 
         def _args(name, *args):
             return args + (
-                '--pidfile={0}/{1}.pid'.format(argv[1], name),
-                '--logfile={0}/{1}%I.log'.format(argv[1], name),
+                '--pidfile={0}/{1}.pid'.format(args[1], name),
+                '--logfile={0}/{1}%I.log'.format(args[0], name),
                 '--executable={0}'.format(sys.executable),
                 '',
             )
