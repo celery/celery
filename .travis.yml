@@ -18,7 +18,8 @@ env:
   - PYTHONUNBUFFERED=yes
   matrix:
   - MATRIX_TOXENV=unit
-before_install:
+
+before_script:
   - sudo mkdir /var/log/celery
   - sudo mkdir /var/run/celery
   - sudo chown travis /var/log/celery
