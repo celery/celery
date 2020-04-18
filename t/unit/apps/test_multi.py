@@ -128,34 +128,34 @@ class test_multi_args:
             node_i = 'celery%s' % (i + 2,)
             assert worker.argv == (
                 'COMMAND',
-                '-n %s@example.com' % (node_i,)) + _args(node_i)
+                '-n %s@example.com' % (node_i,)) + _args(node_i, '/var/log/celery', '/var/run/celery')
 
         nodes4 = list(multi_args(p2, cmd='COMMAND', suffix='""'))
         assert len(nodes4) == 10
         assert nodes4[0].name == 'celery1@'
         assert nodes4[0].argv == (
-            'COMMAND', '-c 5', '-n celery1@') + _args('celery1')
+            'COMMAND', '-c 5', '-n celery1@') + _args('celery1', '/var/log/celery', '/var/run/celery')
 
         p3 = NamespacedOptionParser(['foo@', '-c:foo', '5'])
         p3.parse()
         nodes5 = list(multi_args(p3, cmd='COMMAND', suffix='""'))
         assert nodes5[0].name == 'foo@'
         assert nodes5[0].argv == (
-            'COMMAND', '-c 5', '-n foo@') + _args('foo')
+            'COMMAND', '-c 5', '-n foo@') + _args('foo', '/var/log/celery', '/var/run/celery')
 
         p4 = NamespacedOptionParser(['foo', '-Q:1', 'test'])
         p4.parse()
         nodes6 = list(multi_args(p4, cmd='COMMAND', suffix='""'))
         assert nodes6[0].name == 'foo@'
         assert nodes6[0].argv == (
-            'COMMAND', '-Q test', '-n foo@') + _args('foo')
+            'COMMAND', '-Q test', '-n foo@') + _args('foo', '/var/log/celery', '/var/run/celery')
 
         p5 = NamespacedOptionParser(['foo@bar', '-Q:1', 'test'])
         p5.parse()
         nodes7 = list(multi_args(p5, cmd='COMMAND', suffix='""'))
         assert nodes7[0].name == 'foo@bar'
         assert nodes7[0].argv == (
-            'COMMAND', '-Q test', '-n foo@bar') + _args('foo')
+            'COMMAND', '-Q test', '-n foo@bar') + _args('foo', '/var/log/celery', '/var/run/celery')
 
         p6 = NamespacedOptionParser(['foo@bar', '-Q:0', 'test'])
         p6.parse()
