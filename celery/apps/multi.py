@@ -152,8 +152,9 @@ class Node(object):
             except KeyError:
                 pass
         path_split = value.split("/")
-        if not os.path.exists("/" + "/".join(path_split[0:-1])):
-            os.makedirs("/" + "/".join(path_split[0:-1]))
+        dir_path = "/".join(path_split[0:-1])
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
         return d.setdefault(alt[0], value)
 
     def _prepare_expander(self):
