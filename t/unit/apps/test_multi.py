@@ -176,7 +176,7 @@ class test_Node:
         self.p = Mock(name='p')
         self.p.options = {
             '--executable': 'python',
-            '--logfile': 'foo.log',
+            '--logfile': '/var/log/celery/foo.log',
         }
         self.p.namespaces = {}
         self.node = Node('foo@bar.com', options={'-A': 'proj'})
