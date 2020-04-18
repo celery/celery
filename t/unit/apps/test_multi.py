@@ -115,7 +115,7 @@ class test_multi_args:
             return args + (
                 '--pidfile=/var/run/celery/{}.pid'.format(name),
                 '--logfile=/var/log/celery/{}%I.log'.format(name),
-                '--executable={0}''.format(sys.executable),
+                '--executable={0}'.format(sys.executable),
                 '',
             )
 
