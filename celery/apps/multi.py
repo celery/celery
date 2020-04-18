@@ -153,9 +153,9 @@ class Node(object):
                 pass
         path_split = value.split("/")
         try:
-            os.makedirs("/".join(path_list[0:-1]), exist_ok=True)
+            os.makedirs("/".join(path_split[0:-1]), exist_ok=True)
         except:
-            value = path_list[-1]
+            value = path_split[-1]
         return d.setdefault(alt[0], value)
 
     def _prepare_expander(self):
