@@ -122,7 +122,7 @@ class test_multi_args:
         assert len(nodes3) == 10
         assert nodes3[0].name == 'celery1@example.com'
         assert nodes3[0].argv == (
-            'COMMAND', '-c 5', '-n celery1@example.com') + _args('celery1', '/var/log/celery', 'var/run/celery')
+            'COMMAND', '-c 5', '-n celery1@example.com') + _args('celery1', '/var/log/celery', '/var/run/celery')
         for i, worker in enumerate(nodes3[1:]):
             assert worker.name == 'celery%s@example.com' % (i + 2)
             node_i = 'celery%s' % (i + 2,)
