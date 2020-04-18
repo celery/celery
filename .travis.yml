@@ -48,27 +48,21 @@ matrix:
 
   - python: '3.8'
     env: TOXENV=flake8
-    before_install: sudo mkdir /var/log/celery && sudo mkdir /var/run/celery && sudo chown travis /var/log/celery && sudo chown travis /var/run/celery
     stage: lint
   - python: '3.8'
     env: TOXENV=apicheck
-    before_install: sudo mkdir /var/log/celery && sudo mkdir /var/run/celery && sudo chown travis /var/log/celery && sudo chown travis /var/run/celery
     stage: lint
   - python: '3.8'
     env: TOXENV=configcheck
-    before_install: sudo mkdir /var/log/celery && sudo mkdir /var/run/celery && sudo chown travis /var/log/celery && sudo chown travis /var/run/celery
     stage: lint
   - python: '3.8'
     env: TOXENV=bandit
-    before_install: sudo mkdir /var/log/celery && sudo mkdir /var/run/celery && sudo chown travis /var/log/celery && sudo chown travis /var/run/celery
     stage: lint
   - python: '3.8'
     env: TOXENV=pydocstyle
-    before_install: sudo mkdir /var/log/celery && sudo mkdir /var/run/celery && sudo chown travis /var/log/celery && sudo chown travis /var/run/celery
     stage: lint
   - python: '2.7'
     env: TOXENV=flakeplus
-    before_install: sudo mkdir /var/log/celery && sudo mkdir /var/run/celery && sudo chown travis /var/log/celery && sudo chown travis /var/run/celery
     stage: lint
   - python: pypy2.7-7.3
     env: TOXENV=pypy
