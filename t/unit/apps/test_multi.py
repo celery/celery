@@ -375,8 +375,8 @@ class test_Cluster:
         assert sorted(node_0.argv) == sorted([
             '',
             '--executable={0}'.format(node_0.executable),
-            '--logfile=foo%I.log',
-            '--pidfile=foo.pid',
+            '--logfile=/var/log/celery/foo%I.log',
+            '--pidfile=/var/run/celery/foo.pid',
             '-m celery worker --detach',
             '-n foo@e.com',
         ])
