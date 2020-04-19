@@ -370,10 +370,7 @@ class test_Cluster:
             Node('baz@e.com'),
         ])
         nodes = p.getpids(on_down=callback)
-        try:
-            node_0, node_1 = nodes
-        except:
-            pass
+        node_0, node_1 = nodes
         assert node_0.name == 'foo@e.com'
         assert sorted(node_0.argv) == sorted([
             '',
@@ -407,8 +404,8 @@ class test_Cluster:
 
             def read_pid(self):
                 try:
-                    return {'foo.pid': 10,
-                            'bar.pid': 11}[self.path]
+                    return {'/var/run/celery/foo.pid': 10,
+                            '/var/run/celery/bar.pid': 11}[self.path]
                 except KeyError:
                     raise ValueError()
         self.Pidfile.side_effect = pids
