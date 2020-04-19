@@ -387,7 +387,7 @@ class test_Cluster:
             '',
             '--executable={0}'.format(node_1.executable),
             '--logfile=/var/log/celery/bar%I.log',
-            '--pidfile=/var/log/celery/bar.pid',
+            '--pidfile=/var/run/celery/bar.pid',
             '-m celery worker --detach',
             '-n bar@e.com',
         ])
