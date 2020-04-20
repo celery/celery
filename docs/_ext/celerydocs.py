@@ -4,7 +4,12 @@ import sys
 import typing
 
 from docutils import nodes
-from sphinx.environment import NoUri
+
+try:
+    from sphinx.errors import NoUri
+except ImportError:
+    # TODO: Remove this once we drop Sphinx 2 support
+    from sphinx.environment import NoUri
 
 APPATTRS = {
     'amqp': 'celery.app.amqp.AMQP',
