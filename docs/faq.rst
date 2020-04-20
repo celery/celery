@@ -201,7 +201,7 @@ information you can even create simple web servers that enable preloading of
 code. Simply expose an endpoint that performs an operation, and create a task
 that just performs an HTTP request to that endpoint.
 
-You can also use `Flower's <https://flower.readthedocs.io>`_ `REST API <https://flower.readthedocs.io/en/latest/api.html#post--api-task-async-apply-(.+)>`_ to invoke tasks. 
+You can also use `Flower's <https://flower.readthedocs.io>`_ `REST API <https://flower.readthedocs.io/en/latest/api.html#post--api-task-async-apply-(.+)>`_ to invoke tasks.
 
 .. _faq-troubleshooting:
 
@@ -876,8 +876,6 @@ is required.
 
 Can I schedule tasks to execute at a specific time?
 ---------------------------------------------------
-
-.. module:: celery.app.task
 
 **Answer**: Yes. You can use the `eta` argument of :meth:`Task.apply_async`.
 

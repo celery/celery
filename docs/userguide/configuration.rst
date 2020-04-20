@@ -123,28 +123,28 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_SECURITY_CERTIFICATE``            :setting:`security_certificate`
 ``CELERY_SECURITY_CERT_STORE``             :setting:`security_cert_store`
 ``CELERY_SECURITY_KEY``                    :setting:`security_key`
-``CELERY_ACKS_LATE``                  :setting:`task_acks_late`
-``CELERY_ACKS_ON_FAILURE_OR_TIMEOUT`` :setting:`task_acks_on_failure_or_timeout`
-``CELERY_ALWAYS_EAGER``               :setting:`task_always_eager`
-``CELERY_ANNOTATIONS``                :setting:`task_annotations`
-``CELERY_COMPRESSION``                :setting:`task_compression`
-``CELERY_CREATE_MISSING_QUEUES``      :setting:`task_create_missing_queues`
-``CELERY_DEFAULT_DELIVERY_MODE``      :setting:`task_default_delivery_mode`
-``CELERY_DEFAULT_EXCHANGE``           :setting:`task_default_exchange`
-``CELERY_DEFAULT_EXCHANGE_TYPE``      :setting:`task_default_exchange_type`
+``CELERY_ACKS_LATE``                       :setting:`task_acks_late`
+``CELERY_ACKS_ON_FAILURE_OR_TIMEOUT``      :setting:`task_acks_on_failure_or_timeout`
+``CELERY_ALWAYS_EAGER``                    :setting:`task_always_eager`
+``CELERY_ANNOTATIONS``                     :setting:`task_annotations`
+``CELERY_COMPRESSION``                     :setting:`task_compression`
+``CELERY_CREATE_MISSING_QUEUES``           :setting:`task_create_missing_queues`
+``CELERY_DEFAULT_DELIVERY_MODE``           :setting:`task_default_delivery_mode`
+``CELERY_DEFAULT_EXCHANGE``                :setting:`task_default_exchange`
+``CELERY_DEFAULT_EXCHANGE_TYPE``           :setting:`task_default_exchange_type`
 ``CELERY_DEFAULT_QUEUE``                   :setting:`task_default_queue`
-``CELERY_DEFAULT_RATE_LIMIT``         :setting:`task_default_rate_limit`
-``CELERY_DEFAULT_ROUTING_KEY``        :setting:`task_default_routing_key`
-``CELERY_EAGER_PROPAGATES``           :setting:`task_eager_propagates`
-``CELERY_IGNORE_RESULT``              :setting:`task_ignore_result`
-``CELERY_PUBLISH_RETRY``              :setting:`task_publish_retry`
-``CELERY_PUBLISH_RETRY_POLICY``       :setting:`task_publish_retry_policy`
+``CELERY_DEFAULT_RATE_LIMIT``              :setting:`task_default_rate_limit`
+``CELERY_DEFAULT_ROUTING_KEY``             :setting:`task_default_routing_key`
+``CELERY_EAGER_PROPAGATES``                :setting:`task_eager_propagates`
+``CELERY_IGNORE_RESULT``                   :setting:`task_ignore_result`
+``CELERY_PUBLISH_RETRY``                   :setting:`task_publish_retry`
+``CELERY_PUBLISH_RETRY_POLICY``            :setting:`task_publish_retry_policy`
 ``CELERY_QUEUES``                          :setting:`task_queues`
 ``CELERY_ROUTES``                          :setting:`task_routes`
-``CELERY_SEND_SENT_EVENT``            :setting:`task_send_sent_event`
-``CELERY_SERIALIZER``                 :setting:`task_serializer`
-``CELERYD_SOFT_TIME_LIMIT``           :setting:`task_soft_time_limit`
-``CELERYD_TIME_LIMIT``                :setting:`task_time_limit`
+``CELERY_SEND_SENT_EVENT``                 :setting:`task_send_sent_event`
+``CELERY_SERIALIZER``                      :setting:`task_serializer`
+``CELERYD_SOFT_TIME_LIMIT``                :setting:`task_soft_time_limit`
+``CELERYD_TIME_LIMIT``                     :setting:`task_time_limit`
 ``CELERY_TRACK_STARTED``                   :setting:`task_track_started`
 ``CELERYD_AGENT``                          :setting:`worker_agent`
 ``CELERYD_AUTOSCALER``                     :setting:`worker_autoscaler`
@@ -1120,7 +1120,7 @@ connection by unix socket.
 .. setting:: redis_socket_keepalive
 
 ``redis_socket_keepalive``
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 4.4.1
 
@@ -2655,7 +2655,7 @@ Specify if remote control of the workers is enabled.
 .. setting:: worker_proc_alive_timeout
 
 ``worker_proc_alive_timeout``
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: 4.0.
 
