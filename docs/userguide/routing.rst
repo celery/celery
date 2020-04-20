@@ -265,6 +265,7 @@ priorities with Redis as you may experience some unexpected behavior.
 To start scheduling tasks based on priorities you need to configure queue_order_strategy transport option.
 
 .. code-block:: python
+
     app.conf.broker_transport_options = {
         'queue_order_strategy': 'priority',
     }

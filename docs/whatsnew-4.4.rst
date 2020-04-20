@@ -170,7 +170,7 @@ Task Pools
 ----------
 
 Threaded Tasks Pool
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 We reintroduced a threaded task pool using `concurrent.futures.ThreadPoolExecutor`.
 
@@ -185,7 +185,7 @@ Result Backends
 ---------------
 
 ElasticSearch Results Backend
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 HTTP Basic Authentication Support
 +++++++++++++++++++++++++++++++++
@@ -202,9 +202,9 @@ Support for Authentication Source and Authentication Method
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 You can now specify the authSource and authMethod for the MongoDB
-using the URI options. The following URI does just that::
+using the URI options. The following URI does just that:
 
-    mongodb://user:password@example.com/?authSource=the_database&authMechanism=SCRAM-SHA-256
+    ``mongodb://user:password@example.com/?authSource=the_database&authMechanism=SCRAM-SHA-256``
 
 Refer to the `documentation <https://api.mongodb.com/python/current/examples/authentication.html>`_
 for details about the various options.
@@ -214,7 +214,7 @@ Tasks
 ------
 
 Task class definitions can now have retry attributes
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can now use `autoretry_for`, `retry_kwargs`, `retry_backoff`, `retry_backoff_max` and `retry_jitter` in class-based tasks:
 
