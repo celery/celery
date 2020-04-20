@@ -70,7 +70,8 @@ task_internal_error = Signal(
     providing_args={
         'task_id', 'args', 'kwargs', 'request', 'exception', 'traceback', 'einfo'
     }
-)task_revoked = Signal(
+)
+task_revoked = Signal(
     name='task_revoked',
     providing_args={
         'request', 'terminated', 'signum', 'expired',
