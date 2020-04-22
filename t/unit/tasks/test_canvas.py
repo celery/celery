@@ -269,6 +269,10 @@ class test_chunks(CanvasCase):
 
 class test_chain(CanvasCase):
 
+    def test_chain_of_chain_with_a_single_task(self):
+        s = self.add.s(1, 1)
+        assert chain([chain(s)]).tasks == list(chain(s).tasks)
+
     def test_clone_preserves_state(self):
         x = chain(self.add.s(i, i) for i in range(10))
         assert x.clone().tasks == x.tasks
