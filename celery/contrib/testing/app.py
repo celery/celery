@@ -34,6 +34,7 @@ class Trap(object):
         # in Python 3.8 and above.
         if name == '_is_coroutine':
             return None
+        print(name)
         raise RuntimeError('Test depends on current_app')
 
 
