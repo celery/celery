@@ -113,8 +113,8 @@ class test_multi_args:
 
         def _args(name, *args):
             return args + (
-                '--pidfile={0}.pid'.format(name),
-                '--logfile={0}%I.log'.format(name),
+                '--pidfile=/var/run/celery/{}.pid'.format(name),
+                '--logfile=/var/log/celery/{}%I.log'.format(name),
                 '--executable={0}'.format(sys.executable),
                 '',
             )
@@ -176,7 +176,7 @@ class test_Node:
         self.p = Mock(name='p')
         self.p.options = {
             '--executable': 'python',
-            '--logfile': 'foo.log',
+            '--logfile': '/var/log/celery/foo.log',
         }
         self.p.namespaces = {}
         self.node = Node('foo@bar.com', options={'-A': 'proj'})
@@ -194,10 +194,10 @@ class test_Node:
             '--executable={0}'.format(n.executable),
             '-O fair',
             '-n foo@bar.com',
-            '--logfile=foo%I.log',
+            '--logfile=/var/log/celery/foo%I.log',
             '-Q q1,q2',
             '--max-tasks-per-child=30',
-            '--pidfile=foo.pid',
+            '--pidfile=/var/run/celery/foo.pid',
             '',
         ])
 
@@ -275,7 +275,7 @@ class test_Node:
 
     def test_logfile(self):
         assert self.node.logfile == self.expander.return_value
-        self.expander.assert_called_with('%n%I.log')
+        self.expander.assert_called_with('/var/log/celery/%n%I.log')
 
 
 class test_Cluster:
@@ -375,8 +375,8 @@ class test_Cluster:
         assert sorted(node_0.argv) == sorted([
             '',
             '--executable={0}'.format(node_0.executable),
-            '--logfile=foo%I.log',
-            '--pidfile=foo.pid',
+            '--logfile=/var/log/celery/foo%I.log',
+            '--pidfile=/var/run/celery/foo.pid',
             '-m celery worker --detach',
             '-n foo@e.com',
         ])
@@ -386,8 +386,8 @@ class test_Cluster:
         assert sorted(node_1.argv) == sorted([
             '',
             '--executable={0}'.format(node_1.executable),
-            '--logfile=bar%I.log',
-            '--pidfile=bar.pid',
+            '--logfile=/var/log/celery/bar%I.log',
+            '--pidfile=/var/run/celery/bar.pid',
             '-m celery worker --detach',
             '-n bar@e.com',
         ])
@@ -404,8 +404,8 @@ class test_Cluster:
 
             def read_pid(self):
                 try:
-                    return {'foo.pid': 10,
-                            'bar.pid': 11}[self.path]
+                    return {'/var/run/celery/foo.pid': 10,
+                            '/var/run/celery/bar.pid': 11}[self.path]
                 except KeyError:
                     raise ValueError()
         self.Pidfile.side_effect = pids
