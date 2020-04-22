@@ -140,8 +140,8 @@ class Node(object):
 
     def _annotate_with_default_opts(self, options):
         options['-n'] = self.name
-        self._setdefaultopt(options, ['--pidfile', '-p'], '%n.pid')
-        self._setdefaultopt(options, ['--logfile', '-f'], '%n%I.log')
+        self._setdefaultopt(options, ['--pidfile', '-p'], '/var/run/celery/%n.pid')
+        self._setdefaultopt(options, ['--logfile', '-f'], '/var/log/celery/%n%I.log')
         self._setdefaultopt(options, ['--executable'], sys.executable)
         return options
 
@@ -151,6 +151,10 @@ class Node(object):
                 return d[opt]
             except KeyError:
                 pass
+        path_split = value.split("/")
+        dir_path = "/".join(path_split[0:-1])
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
         return d.setdefault(alt[0], value)
 
     def _prepare_expander(self):
