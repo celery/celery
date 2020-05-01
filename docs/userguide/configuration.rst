@@ -1567,7 +1567,7 @@ setting to be set to a DynamoDB URL::
 
 For example, specifying the AWS region and the table name::
 
-    result_backend = 'dynamodb://@us-east-1/celery_results
+    result_backend = 'dynamodb://@us-east-1/celery_results'
 
 or retrieving AWS configuration parameters from the environment, using the default table name (``celery``)
 and specifying read and write provisioned throughput::
