@@ -64,21 +64,16 @@ matrix:
   - python: '2.7'
     env: TOXENV=flakeplus
     stage: lint
+ 
+  allow_failures:
   - python: pypy2.7-7.3
     env: TOXENV=pypy
-    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
-    stage: test
-  - python: pypy3.5-7.0
-    env: TOXENV=pypy3
     before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
     stage: test
   - python: pypy3.6-7.3
     env: TOXENV=pypy3
     before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
     stage: test
-  allow_failures:
-  - python: pypy3.5-7.0
-    env: TOXENV=pypy3
 
 before_install:
     - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev
