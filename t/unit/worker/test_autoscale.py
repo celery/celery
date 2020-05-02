@@ -110,14 +110,12 @@ class test_Autoscaler:
         x.body()
         x.body()
         assert x.pool.num_processes == 10
-        worker.consumer._update_prefetch_count.assert_called()
         state.reserved_requests.clear()
         x.body()
         assert x.pool.num_processes == 10
         x._last_scale_up = monotonic() - 10000
         x.body()
         assert x.pool.num_processes == 3
-        worker.consumer._update_prefetch_count.assert_called()
 
     def test_run(self):
 
@@ -155,6 +153,7 @@ class test_Autoscaler:
     def test_update_and_force(self):
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
+        x.worker.consumer.prefetch_multiplier = 1
         assert x.processes == 3
         x.force_scale_up(5)
         assert x.processes == 8
@@ -174,6 +173,25 @@ class test_Autoscaler:
         x.update(max=300, min=10)
         x.update(max=300, min=2)
         x.update(max=None, min=None)
+
+    def test_prefetch_count_on_updates(self):
+        worker = Mock(name='worker')
+        x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
+        x.worker.consumer.prefetch_multiplier = 1
+        x.update(5, None)
+        worker.consumer._update_prefetch_count.assert_called_with(-5)
+        x.update(15, 7)
+        worker.consumer._update_prefetch_count.assert_called_with(10)
+
+    def test_prefetch_count_on_force_up(self):
+        worker = Mock(name='worker')
+        x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
+        x.worker.consumer.prefetch_multiplier = 1
+
+        x.force_scale_up(5)
+        worker.consumer._update_prefetch_count.assert_not_called()
+        x.force_scale_up(5)
+        worker.consumer._update_prefetch_count.assert_called_with(3)
 
     def test_info(self):
         worker = Mock(name='worker')
