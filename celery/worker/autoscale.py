@@ -104,6 +104,7 @@ class Autoscaler(bgThread):
             if max is not None:
                 if max < self.processes:
                     self._shrink(self.processes - max)
+                self._update_consumer_prefetch_count(max)
                 self.max_concurrency = max
             if min is not None:
                 if min > self.processes:
@@ -115,6 +116,7 @@ class Autoscaler(bgThread):
         with self.mutex:
             new = self.processes + n
             if new > self.max_concurrency:
+                self._update_consumer_prefetch_count(new)
                 self.max_concurrency = new
             self._grow(n)
 
@@ -137,7 +139,6 @@ class Autoscaler(bgThread):
     def _grow(self, n):
         info('Scaling up %s processes.', n)
         self.pool.grow(n)
-        self.worker.consumer._update_prefetch_count(n)
 
     def _shrink(self, n):
         info('Scaling down %s processes.', n)
@@ -147,7 +148,13 @@ class Autoscaler(bgThread):
             debug("Autoscaler won't scale down: all processes busy.")
         except Exception as exc:
             error('Autoscaler: scale_down: %r', exc, exc_info=True)
-        self.worker.consumer._update_prefetch_count(-n)
+
+    def _update_consumer_prefetch_count(self, new_max):
+        diff = new_max - self.max_concurrency
+        if diff:
+            self.worker.consumer._update_prefetch_count(
+                diff * self.worker.consumer.prefetch_multiplier
+            )
 
     def info(self):
         return {

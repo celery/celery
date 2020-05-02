@@ -223,7 +223,7 @@ class Consumer(bootsteps.StartStopStep):
 
     def create(self, w):
         if w.max_concurrency:
-            prefetch_count = max(w.min_concurrency, 1) * w.prefetch_multiplier
+            prefetch_count = max(w.max_concurrency, 1) * w.prefetch_multiplier
         else:
             prefetch_count = w.concurrency * w.prefetch_multiplier
         c = w.consumer = self.instantiate(
