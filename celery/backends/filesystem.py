@@ -61,7 +61,7 @@ class FilesystemBackend(KeyValueStoreBackend):
     def _find_path(self, url):
         if not url:
             raise ImproperlyConfigured(E_NO_PATH_SET)
-        if url.startswith('file:///'):
+        if url.startswith('file://'):
             return url[7:]
         if url.startswith('file://localhost/'):
             return url[16:]
