@@ -690,7 +690,7 @@ Régis B <github@behmo.com>
 Remigiusz Modrzejewski <lrem@maxnet.org.pl>
 Rémi Marenco <remi.marenco@gmail.com>
 rfkrocktk <rfkrocktk@gmail.com>
- <rick.van.hattem@fawo.nl>
+Rick van Hattem <rick.van.hattem@fawo.nl>
 Rick Wargo <rickwargo@users.noreply.github.com>
 Rico Moorman <rico.moorman@gmail.com>
 Rik <gitaarik@gmail.com>
@@ -945,7 +945,7 @@ Tasks
 Bound Tasks as Error Callbacks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We fixed a regression that occured when bound tasks are used as error callbacks.
+We fixed a regression that occurred when bound tasks are used as error callbacks.
 This used to work in Celery 3.x but raised an exception in 4.x until this release.
 
 In both 4.0 and 4.1 the following code wouldn't work:

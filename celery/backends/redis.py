@@ -2,6 +2,8 @@
 """Redis result store backend."""
 from __future__ import absolute_import, unicode_literals
 
+import time
+from contextlib import contextmanager
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 
@@ -19,7 +21,8 @@ from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
 
-from . import async, base
+from .asynchronous import AsyncBackendMixin, BaseResultConsumer
+from .base import BaseKeyValueStoreBackend
 
 try:
     from urllib.parse import unquote
@@ -64,23 +67,35 @@ will not valdate the identity of the redis broker when connecting. This \
 leaves you vulnerable to man in the middle attacks.
 """
 
-E_REDIS_SSL_CERT_REQS_MISSING = """
-A rediss:// URL must have parameter ssl_cert_reqs be CERT_REQUIRED, \
-CERT_OPTIONAL, or CERT_NONE
+E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH = """
+SSL connection parameters have been provided but the specified URL scheme \
+is redis://. A Redis SSL connection URL should use the scheme rediss://.
+"""
+
+E_REDIS_SSL_CERT_REQS_MISSING_INVALID = """
+A rediss:// URL must have parameter ssl_cert_reqs and this must be set to \
+CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
 """
 
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 
+E_RETRY_LIMIT_EXCEEDED = """
+Retry limit exceeded while trying to reconnect to the Celery redis result \
+store backend. The Celery application must be restarted.
+"""
+
 logger = get_logger(__name__)
 
 
-class ResultConsumer(async.BaseResultConsumer):
+class ResultConsumer(BaseResultConsumer):
     _pubsub = None
 
     def __init__(self, *args, **kwargs):
         super(ResultConsumer, self).__init__(*args, **kwargs)
         self._get_key_for_task = self.backend.get_key_for_task
         self._decode_result = self.backend.decode_result
+        self._ensure = self.backend.ensure
+        self._connection_errors = self.backend.connection_errors
         self.subscribed_to = set()
 
     def on_after_fork(self):
@@ -89,8 +104,33 @@ class ResultConsumer(async.BaseResultConsumer):
             if self._pubsub is not None:
                 self._pubsub.close()
         except KeyError as e:
-            logger.warn(text_t(e))
+            logger.warning(text_t(e))
         super(ResultConsumer, self).on_after_fork()
+
+    def _reconnect_pubsub(self):
+        self._pubsub = None
+        self.backend.client.connection_pool.reset()
+        # task state might have changed when the connection was down so we
+        # retrieve meta for all subscribed tasks before going into pubsub mode
+        metas = self.backend.client.mget(self.subscribed_to)
+        metas = [meta for meta in metas if meta]
+        for meta in metas:
+            self.on_state_change(self._decode_result(meta), None)
+        self._pubsub = self.backend.client.pubsub(
+            ignore_subscribe_messages=True,
+        )
+        self._pubsub.subscribe(*self.subscribed_to)
+
+    @contextmanager
+    def reconnect_on_error(self):
+        try:
+            yield
+        except self._connection_errors:
+            try:
+                self._ensure(self._reconnect_pubsub, ())
+            except self._connection_errors:
+                logger.critical(E_RETRY_LIMIT_EXCEEDED)
+                raise
 
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
@@ -107,7 +147,7 @@ class ResultConsumer(async.BaseResultConsumer):
         self._consume_from(initial_task_id)
 
     def on_wait_for_pending(self, result, **kwargs):
-        for meta in result._iter_meta():
+        for meta in result._iter_meta(**kwargs):
             if meta is not None:
                 self.on_state_change(meta, None)
 
@@ -116,9 +156,13 @@ class ResultConsumer(async.BaseResultConsumer):
             self._pubsub.close()
 
     def drain_events(self, timeout=None):
-        m = self._pubsub.get_message(timeout=timeout)
-        if m and m['type'] == 'message':
-            self.on_state_change(self._decode_result(m['data']), m)
+        if self._pubsub:
+            with self.reconnect_on_error():
+                message = self._pubsub.get_message(timeout=timeout)
+                if message and message['type'] == 'message':
+                    self.on_state_change(self._decode_result(message['data']), message)
+        elif timeout:
+            time.sleep(timeout)
 
     def consume_from(self, task_id):
         if self._pubsub is None:
@@ -129,17 +173,23 @@ class ResultConsumer(async.BaseResultConsumer):
         key = self._get_key_for_task(task_id)
         if key not in self.subscribed_to:
             self.subscribed_to.add(key)
-            self._pubsub.subscribe(key)
+            with self.reconnect_on_error():
+                self._pubsub.subscribe(key)
 
     def cancel_for(self, task_id):
+        key = self._get_key_for_task(task_id)
+        self.subscribed_to.discard(key)
         if self._pubsub:
-            key = self._get_key_for_task(task_id)
-            self.subscribed_to.discard(key)
-            self._pubsub.unsubscribe(key)
+            with self.reconnect_on_error():
+                self._pubsub.unsubscribe(key)
 
 
-class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
-    """Redis task result store."""
+class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
+    """Redis task result store.
+
+    It makes use of the following commands:
+    GET, MGET, DEL, INCRBY, EXPIRE, SET, SETEX
+    """
 
     ResultConsumer = ResultConsumer
 
@@ -171,6 +221,8 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
 
         socket_timeout = _get('redis_socket_timeout')
         socket_connect_timeout = _get('redis_socket_connect_timeout')
+        retry_on_timeout = _get('redis_retry_on_timeout')
+        socket_keepalive = _get('redis_socket_keepalive')
 
         self.connparams = {
             'host': _get('redis_host') or 'localhost',
@@ -179,9 +231,14 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             'password': _get('redis_password'),
             'max_connections': self.max_connections,
             'socket_timeout': socket_timeout and float(socket_timeout),
+            'retry_on_timeout': retry_on_timeout or False,
             'socket_connect_timeout':
                 socket_connect_timeout and float(socket_connect_timeout),
         }
+
+        # absent in redis.connection.UnixDomainSocketConnection
+        if socket_keepalive:
+            self.connparams['socket_keepalive'] = socket_keepalive
 
         # "redis_backend_use_ssl" must be a dict with the keys:
         # 'ssl_cert_reqs', 'ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile'
@@ -193,6 +250,30 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
 
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
+
+        # If we've received SSL parameters via query string or the
+        # redis_backend_use_ssl dict, check ssl_cert_reqs is valid. If set
+        # via query string ssl_cert_reqs will be a string so convert it here
+        if ('connection_class' in self.connparams and
+                self.connparams['connection_class'] is redis.SSLConnection):
+            ssl_cert_reqs_missing = 'MISSING'
+            ssl_string_to_constant = {'CERT_REQUIRED': CERT_REQUIRED,
+                                      'CERT_OPTIONAL': CERT_OPTIONAL,
+                                      'CERT_NONE': CERT_NONE,
+                                      'required': CERT_REQUIRED,
+                                      'optional': CERT_OPTIONAL,
+                                      'none': CERT_NONE}
+            ssl_cert_reqs = self.connparams.get('ssl_cert_reqs', ssl_cert_reqs_missing)
+            ssl_cert_reqs = ssl_string_to_constant.get(ssl_cert_reqs, ssl_cert_reqs)
+            if ssl_cert_reqs not in ssl_string_to_constant.values():
+                raise ValueError(E_REDIS_SSL_CERT_REQS_MISSING_INVALID)
+
+            if ssl_cert_reqs == CERT_OPTIONAL:
+                logger.warning(W_REDIS_SSL_CERT_OPTIONAL)
+            elif ssl_cert_reqs == CERT_NONE:
+                logger.warning(W_REDIS_SSL_CERT_NONE)
+            self.connparams['ssl_cert_reqs'] = ssl_cert_reqs
+
         self.url = url
 
         self.connection_errors, self.channel_errors = (
@@ -225,25 +306,23 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         else:
             connparams['db'] = path
 
+        ssl_param_keys = ['ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile',
+                          'ssl_cert_reqs']
+
+        if scheme == 'redis':
+            # If connparams or query string contain ssl params, raise error
+            if (any(key in connparams for key in ssl_param_keys) or
+                    any(key in query for key in ssl_param_keys)):
+                raise ValueError(E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH)
+
         if scheme == 'rediss':
             connparams['connection_class'] = redis.SSLConnection
             # The following parameters, if present in the URL, are encoded. We
             # must add the decoded values to connparams.
-            for ssl_setting in ['ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile']:
+            for ssl_setting in ssl_param_keys:
                 ssl_val = query.pop(ssl_setting, None)
                 if ssl_val:
                     connparams[ssl_setting] = unquote(ssl_val)
-            ssl_cert_reqs = query.pop('ssl_cert_reqs', 'MISSING')
-            if ssl_cert_reqs == 'CERT_REQUIRED':
-                connparams['ssl_cert_reqs'] = CERT_REQUIRED
-            elif ssl_cert_reqs == 'CERT_OPTIONAL':
-                logger.warn(W_REDIS_SSL_CERT_OPTIONAL)
-                connparams['ssl_cert_reqs'] = CERT_OPTIONAL
-            elif ssl_cert_reqs == 'CERT_NONE':
-                logger.warn(W_REDIS_SSL_CERT_NONE)
-                connparams['ssl_cert_reqs'] = CERT_NONE
-            else:
-                raise ValueError(E_REDIS_SSL_CERT_REQS_MISSING)
 
         # db may be string and start with / like in kombu.
         db = connparams.get('db') or 0
@@ -343,13 +422,17 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         tkey = self.get_key_for_group(gid, '.t')
         result = self.encode_result(result, state)
         with client.pipeline() as pipe:
-            _, readycount, totaldiff, _, _ = pipe \
+            pipeline = pipe \
                 .rpush(jkey, self.encode([1, tid, state, result])) \
                 .llen(jkey) \
-                .get(tkey) \
-                .expire(jkey, self.expires) \
-                .expire(tkey, self.expires) \
-                .execute()
+                .get(tkey)
+
+            if self.expires is not None:
+                pipeline = pipeline \
+                    .expire(jkey, self.expires) \
+                    .expire(tkey, self.expires)
+
+            _, readycount, totaldiff = pipeline.execute()[:3]
 
         totaldiff = int(totaldiff or 0)
 
@@ -359,13 +442,16 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             if readycount == total:
                 decode, unpack = self.decode, self._unpack_chord_result
                 with client.pipeline() as pipe:
-                    resl, _, _ = pipe \
+                    resl, = pipe \
                         .lrange(jkey, 0, total) \
-                        .delete(jkey) \
-                        .delete(tkey) \
                         .execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])
+                    with client.pipeline() as pipe:
+                        _, _ = pipe \
+                            .delete(jkey) \
+                            .delete(tkey) \
+                            .execute()
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception(
                         'Chord callback for %r raised: %r', request.group, exc)
@@ -404,7 +490,8 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
     def client(self):
         return self._create_client(**self.connparams)
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         return super(RedisBackend, self).__reduce__(
             (self.url,), {'expires': self.expires},
         )
@@ -445,13 +532,13 @@ class SentinelBackend(RedisBackend):
             data = super(SentinelBackend, self)._params_from_url(
                 url=chunk, defaults=defaults)
             connparams['hosts'].append(data)
-        for p in ("host", "port", "db", "password"):
-            connparams.pop(p)
+        for param in ("host", "port", "db", "password"):
+            connparams.pop(param)
 
         # Adding db/password in connparams to connect to the correct instance
-        for p in ("db", "password"):
-            if connparams['hosts'] and p in connparams['hosts'][0]:
-                connparams[p] = connparams['hosts'][0].get(p)
+        for param in ("db", "password"):
+            if connparams['hosts'] and param in connparams['hosts'][0]:
+                connparams[param] = connparams['hosts'][0].get(param)
         return connparams
 
     def _get_sentinel_instance(self, **params):

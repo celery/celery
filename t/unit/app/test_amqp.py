@@ -95,14 +95,14 @@ class test_Queues:
     @pytest.mark.parametrize('ha_policy,qname,q,qargs,expected', [
         (None, 'xyz', 'xyz', None, None),
         (None, 'xyz', 'xyz', {'x-foo': 'bar'}, {'x-foo': 'bar'}),
-        ('all', 'foo', Queue('foo'), None, {'x-ha-policy': 'all'}),
+        ('all', 'foo', Queue('foo'), None, {'ha-mode': 'all'}),
         ('all', 'xyx2',
-         Queue('xyx2', queue_arguments={'x-foo': 'bari'}),
+         Queue('xyx2', queue_arguments={'x-foo': 'bar'}),
          None,
-         {'x-ha-policy': 'all', 'x-foo': 'bari'}),
+         {'ha-mode': 'all', 'x-foo': 'bar'}),
         (['A', 'B', 'C'], 'foo', Queue('foo'), None, {
-            'x-ha-policy': 'nodes',
-            'x-ha-policy-params': ['A', 'B', 'C']}),
+            'ha-mode': 'nodes',
+            'ha-params': ['A', 'B', 'C']}),
     ])
     def test_with_ha_policy(self, ha_policy, qname, q, qargs, expected):
         queues = Queues(ha_policy=ha_policy, create_missing=False)
@@ -124,7 +124,7 @@ class test_Queues:
     def test_with_ha_policy_compat(self):
         q = Queues(ha_policy='all')
         q.add('bar')
-        assert q['bar'].queue_arguments == {'x-ha-policy': 'all'}
+        assert q['bar'].queue_arguments == {'ha-mode': 'all'}
 
     def test_add_default_exchange(self):
         ex = Exchange('fff', 'fanout')
@@ -148,10 +148,10 @@ class test_Queues:
          {'x-max-priority': 10}),
         ({'ha_policy': 'all', 'max_priority': 5},
          'bar', 'bar',
-         {'x-ha-policy': 'all', 'x-max-priority': 5}),
+         {'ha-mode': 'all', 'x-max-priority': 5}),
         ({'ha_policy': 'all', 'max_priority': 5},
          'xyx2', Queue('xyx2', queue_arguments={'x-max-priority': 2}),
-         {'x-ha-policy': 'all', 'x-max-priority': 2}),
+         {'ha-mode': 'all', 'x-max-priority': 2}),
         ({'max_priority': None},
          'foo2', 'foo2',
          None),
@@ -186,6 +186,35 @@ class test_default_queues:
         assert queue.exchange.name == exchange or name
         assert queue.exchange.type == 'direct'
         assert queue.routing_key == rkey or name
+
+
+class test_default_exchange:
+
+    @pytest.mark.parametrize('name,exchange,rkey', [
+        ('default', 'foo', None),
+        ('default', 'foo', 'routing_key'),
+    ])
+    def test_setting_default_exchange(self, name, exchange, rkey):
+        q = Queue(name, routing_key=rkey)
+        self.app.conf.task_queues = {q}
+        self.app.conf.task_default_exchange = exchange
+        queues = dict(self.app.amqp.queues)
+        queue = queues[name]
+        assert queue.exchange.name == exchange
+
+    @pytest.mark.parametrize('name,extype,rkey', [
+        ('default', 'direct', None),
+        ('default', 'direct', 'routing_key'),
+        ('default', 'topic', None),
+        ('default', 'topic', 'routing_key'),
+    ])
+    def test_setting_default_exchange_type(self, name, extype, rkey):
+        q = Queue(name, routing_key=rkey)
+        self.app.conf.task_queues = {q}
+        self.app.conf.task_default_exchange_type = extype
+        queues = dict(self.app.amqp.queues)
+        queue = queues[name]
+        assert queue.exchange.type == extype
 
 
 class test_AMQP_proto1:
@@ -332,6 +361,15 @@ class test_AMQP:
         r1 = self.app.amqp.routes
         r2 = self.app.amqp.routes
         assert r1 is r2
+
+    def update_conf_runtime_for_tasks_queues(self):
+        self.app.conf.update(task_routes={'task.create_pr': 'queue.qwerty'})
+        self.app.send_task('task.create_pr')
+        router_was = self.app.amqp.router
+        self.app.conf.update(task_routes={'task.create_pr': 'queue.asdfgh'})
+        self.app.send_task('task.create_pr')
+        router = self.app.amqp.router
+        assert router != router_was
 
 
 class test_as_task_v2:

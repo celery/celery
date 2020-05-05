@@ -15,6 +15,16 @@ or :ref:`our mailing-list <mailing-list>`.
 
 Celery is Open Source and licensed under the `BSD License`_.
 
+Donations
+=========
+
+This project relies on your generous donations.
+
+If you are using Celery to create a commercial product, please consider becoming our `backer`_ or our `sponsor`_ to ensure Celery's future.
+
+.. _`backer`: https://opencollective.com/celery#backer
+.. _`sponsor`: https://opencollective.com/celery#sponsor
+
 Getting Started
 ===============
 
@@ -48,7 +58,7 @@ Contents
     tutorials/index
     faq
     changelog
-    whatsnew-4.2
+    whatsnew-4.4
     reference/index
     internals/index
     history/index

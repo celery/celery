@@ -1,27 +1,25 @@
 from __future__ import absolute_import, unicode_literals
 
 import os
-from functools import wraps
 
 import pytest
 
+# we have to import the pytest plugin fixtures here,
+# in case user did not do the `python setup.py develop` yet,
+# that installs the pytest plugin into the setuptools registry.
+from celery.contrib.pytest import celery_app, celery_session_worker
 from celery.contrib.testing.manager import Manager
 
 TEST_BROKER = os.environ.get('TEST_BROKER', 'pyamqp://')
 TEST_BACKEND = os.environ.get('TEST_BACKEND', 'redis://')
 
-
-def flaky(fun):
-    @wraps(fun)
-    def _inner(*args, **kwargs):
-        for i in reversed(range(3)):
-            try:
-                return fun(*args, **kwargs)
-            except Exception:
-                if not i:
-                    raise
-    _inner.__wrapped__ = fun
-    return _inner
+# Tricks flake8 into silencing redefining fixtures warnings.
+__all__ = (
+    'celery_app',
+    'celery_session_worker',
+    'get_active_redis_channels',
+    'get_redis_connection',
+)
 
 
 def get_redis_connection():
@@ -37,7 +35,12 @@ def get_active_redis_channels():
 def celery_config():
     return {
         'broker_url': TEST_BROKER,
-        'result_backend': TEST_BACKEND
+        'result_backend': TEST_BACKEND,
+        'cassandra_servers': ['localhost'],
+        'cassandra_keyspace': 'tests',
+        'cassandra_table': 'tests',
+        'cassandra_read_consistency': 'ONE',
+        'cassandra_write_consistency': 'ONE'
     }
 
 

@@ -3,7 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import numbers
-from collections import Mapping, namedtuple
+from collections import namedtuple
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
@@ -21,6 +21,12 @@ from celery.utils.text import indent as textindent
 from celery.utils.time import maybe_make_aware
 
 from . import routes as _routes
+
+try:
+    from collections.abc import Mapping
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Mapping
 
 __all__ = ('AMQP', 'Queues', 'task_message')
 
@@ -124,9 +130,9 @@ class Queues(dict):
         return self._add(Queue.from_dict(name, **options))
 
     def _add(self, queue):
+        if queue.exchange is None or queue.exchange.name == '':
+            queue.exchange = self.default_exchange
         if not queue.routing_key:
-            if queue.exchange is None or queue.exchange.name == '':
-                queue.exchange = self.default_exchange
             queue.routing_key = self.default_routing_key
         if self.ha_policy:
             if queue.queue_arguments is None:
@@ -142,9 +148,9 @@ class Queues(dict):
     def _set_ha_policy(self, args):
         policy = self.ha_policy
         if isinstance(policy, (list, tuple)):
-            return args.update({'x-ha-policy': 'nodes',
-                                'x-ha-policy-params': list(policy)})
-        args['x-ha-policy'] = policy
+            return args.update({'ha-mode': 'nodes',
+                                'ha-params': list(policy)})
+        args['ha-mode'] = policy
 
     def _set_max_priority(self, args):
         if 'x-max-priority' not in args and self.max_priority is not None:
@@ -247,6 +253,7 @@ class AMQP(object):
             1: self.as_task_v1,
             2: self.as_task_v2,
         }
+        self.app._conf.bind_to(self._handle_conf_update)
 
     @cached_property
     def create_task_message(self):
@@ -605,6 +612,10 @@ class AMQP(object):
     def router(self):
         return self.Router()
 
+    @router.setter
+    def router(self, value):
+        return value
+
     @property
     def producer_pool(self):
         if self._producer_pool is None:
@@ -628,3 +639,9 @@ class AMQP(object):
         # We call Dispatcher.publish with a custom producer
         # so don't need the diuspatcher to be enabled.
         return self.app.events.Dispatcher(enabled=False)
+
+    def _handle_conf_update(self, *args, **kwargs):
+        if ('task_routes' in kwargs or 'task_routes' in args):
+            self.flush_routes()
+            self.router = self.Router()
+        return

@@ -82,7 +82,8 @@ Task %(name)s[%(id)s] retry: %(exc)s\
 """
 
 log_policy_t = namedtuple(
-    'log_policy_t', ('format', 'description', 'severity', 'traceback', 'mail'),
+    'log_policy_t',
+    ('format', 'description', 'severity', 'traceback', 'mail'),
 )
 
 log_policy_reject = log_policy_t(LOG_REJECTED, 'rejected', logging.WARN, 1, 1)
@@ -256,6 +257,31 @@ class TraceInfo(object):
                    extra={'data': context})
 
 
+def traceback_clear(exc=None):
+    # Cleared Tb, but einfo still has a reference to Traceback.
+    # exc cleans up the Traceback at the last moment that can be revealed.
+    tb = None
+    if exc is not None:
+        if hasattr(exc, '__traceback__'):
+            tb = exc.__traceback__
+        else:
+            _, _, tb = sys.exc_info()
+    else:
+        _, _, tb = sys.exc_info()
+
+    if sys.version_info >= (3, 5, 0):
+        while tb is not None:
+            try:
+                tb.tb_frame.clear()
+                tb.tb_frame.f_locals
+            except RuntimeError:
+                # Ignore the exception raised if the frame is still executing.
+                pass
+            tb = tb.tb_next
+
+    elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
+        sys.exc_clear()
+
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                  Info=TraceInfo, eager=False, propagate=False, app=None,
                  monotonic=monotonic, trace_ok_t=trace_ok_t,
@@ -298,6 +324,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     track_started = not eager and (task.track_started and not ignore_result)
     publish_result = not eager and not ignore_result
     hostname = hostname or gethostname()
+    inherit_parent_priority = app.conf.task_inherit_parent_priority
 
     loader_task_init = loader.on_task_init
     loader_cleanup = loader.on_process_cleanup
@@ -364,6 +391,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
             root_id = task_request.root_id or uuid
+            task_priority = task_request.delivery_info.get('priority') if \
+                inherit_parent_priority else None
             push_request(task_request)
             try:
                 # -*- PRE -*-
@@ -385,16 +414,20 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I, R = Info(REJECTED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                     I.handle_reject(task, task_request)
+                    traceback_clear(exc)
                 except Ignore as exc:
                     I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                     I.handle_ignore(task, task_request)
+                    traceback_clear(exc)
                 except Retry as exc:
                     I, R, state, retval = on_error(
                         task_request, exc, uuid, RETRY, call_errbacks=False)
+                    traceback_clear(exc)
                 except Exception as exc:
                     I, R, state, retval = on_error(task_request, exc, uuid)
-                except BaseException as exc:
+                    traceback_clear(exc)
+                except BaseException:
                     raise
                 else:
                     try:
@@ -419,15 +452,18 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                     group_.apply_async(
                                         (retval,),
                                         parent_id=uuid, root_id=root_id,
+                                        priority=task_priority
                                     )
                                 if sigs:
                                     group(sigs, app=app).apply_async(
                                         (retval,),
                                         parent_id=uuid, root_id=root_id,
+                                        priority=task_priority
                                     )
                             else:
                                 signature(callbacks[0], app=app).apply_async(
                                     (retval,), parent_id=uuid, root_id=root_id,
+                                    priority=task_priority
                                 )
 
                         # execute first task in chain
@@ -437,6 +473,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             _chsig.apply_async(
                                 (retval,), chain=chain,
                                 parent_id=uuid, root_id=root_id,
+                                priority=task_priority
                             )
                         mark_as_done(
                             uuid, retval, task_request, publish_result,
@@ -495,8 +532,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     return trace_task
 
 
-def trace_task(task, uuid, args, kwargs, request={}, **opts):
+def trace_task(task, uuid, args, kwargs, request=None, **opts):
     """Trace task execution."""
+    request = {} if not request else request
     try:
         if task.__trace__ is None:
             task.__trace__ = build_tracer(task.name, task, **opts)
@@ -531,8 +569,9 @@ trace_task_ret = _trace_task_ret  # noqa: E305
 
 
 def _fast_trace_task(task, uuid, request, body, content_type,
-                     content_encoding, loads=loads_message, _loc=_localized,
+                     content_encoding, loads=loads_message, _loc=None,
                      hostname=None, **_):
+    _loc = _localized if not _loc else _loc
     embed = None
     tasks, accept, hostname = _loc
     if content_type:

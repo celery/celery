@@ -23,7 +23,7 @@ from celery._state import (_announce_app_finalized, _deregister_app,
                            _register_app, _set_current_app, _task_stack,
                            connect_on_app_finalize, get_current_app,
                            get_current_worker_task, set_default_app)
-from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
+from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured, Ignore
 from celery.five import (UserDict, bytes_if_py2, python_2_unicode_compatible,
                          values)
 from celery.loaders import get_loader_cls
@@ -42,7 +42,7 @@ from celery.utils.time import (get_exponential_backoff_interval, timezone,
 from . import builtins  # noqa
 from . import backends
 from .annotations import prepare as prepare_annotations
-from .defaults import find_deprecated_settings
+from .defaults import DEFAULT_SECURITY_DIGEST, find_deprecated_settings
 from .registry import TaskRegistry
 from .utils import (AppPickler, Settings, _new_key_to_old, _old_key_to_new,
                     _unpickle_app, _unpickle_app_v2, appstr, bugreport,
@@ -151,8 +151,9 @@ class Celery(object):
 
     Keyword Arguments:
         broker (str): URL of the default broker used.
-        backend (Union[str, type]): The result store backend class,
-            or the name of the backend class to use.
+        backend (Union[str, Type[celery.backends.base.Backend]]):
+            The result store backend class, or the name of the backend
+            class to use.
 
             Default is the value of the :setting:`result_backend` setting.
         autofinalize (bool): If set to False a :exc:`RuntimeError`
@@ -161,17 +162,21 @@ class Celery(object):
         set_as_current (bool):  Make this the global current app.
         include (List[str]): List of modules every worker should import.
 
-        amqp (Union[str, type]): AMQP object or class name.
-        events (Union[str, type]): Events object or class name.
-        log (Union[str, type]): Log object or class name.
-        control (Union[str, type]): Control object or class name.
-        tasks (Union[str, type]): A task registry, or the name of
+        amqp (Union[str, Type[AMQP]]): AMQP object or class name.
+        events (Union[str, Type[celery.app.events.Events]]): Events object or
+            class name.
+        log (Union[str, Type[Logging]]): Log object or class name.
+        control (Union[str, Type[celery.app.control.Control]]): Control object
+            or class name.
+        tasks (Union[str, Type[TaskRegistry]]): A task registry, or the name of
             a registry class.
         fixups (List[str]): List of fix-up plug-ins (e.g., see
             :mod:`celery.fixups.django`).
-        config_source (Union[str, type]): Take configuration from a class,
+        config_source (Union[str, class]): Take configuration from a class,
             or object.  Attributes may include any settings described in
             the documentation.
+        task_cls (Union[str, Type[celery.app.task.Task]]): base task class to
+            use. See :ref:`this section <custom-task-cls-app-wide>` for usage.
     """
 
     #: This is deprecated, use :meth:`reduce_keys` instead
@@ -268,6 +273,8 @@ class Celery(object):
         self.__autoset('broker_url', broker)
         self.__autoset('result_backend', backend)
         self.__autoset('include', include)
+        self.__autoset('broker_use_ssl', kwargs.get('broker_use_ssl'))
+        self.__autoset('redis_backend_use_ssl', kwargs.get('redis_backend_use_ssl'))
         self._conf = Settings(
             PendingConfiguration(
                 self._preconf, self._finalize_pending_conf),
@@ -362,6 +369,9 @@ class Celery(object):
     def task(self, *args, **opts):
         """Decorator to create a task class out of any callable.
 
+        See :ref:`Task options<task-options>` for a list of the
+        arguments that can be passed to this decorator.
+
         Examples:
             .. code-block:: python
 
@@ -396,7 +406,7 @@ class Celery(object):
             return shared_task(*args, lazy=False, **opts)
 
         def inner_create_task_cls(shared=True, filter=None, lazy=True, **opts):
-            _filt = filter  # stupid 2to3
+            _filt = filter
 
             def _create_task_cls(fun):
                 if shared:
@@ -453,11 +463,24 @@ class Celery(object):
             self._tasks[task.name] = task
             task.bind(self)  # connects task to this app
 
-            autoretry_for = tuple(options.get('autoretry_for', ()))
-            retry_kwargs = options.get('retry_kwargs', {})
-            retry_backoff = int(options.get('retry_backoff', False))
-            retry_backoff_max = int(options.get('retry_backoff_max', 600))
-            retry_jitter = options.get('retry_jitter', True)
+            autoretry_for = tuple(
+                options.get('autoretry_for',
+                            getattr(task, 'autoretry_for', ()))
+            )
+            retry_kwargs = options.get(
+                'retry_kwargs', getattr(task, 'retry_kwargs', {})
+            )
+            retry_backoff = int(
+                options.get('retry_backoff',
+                            getattr(task, 'retry_backoff', False))
+            )
+            retry_backoff_max = int(
+                options.get('retry_backoff_max',
+                            getattr(task, 'retry_backoff_max', 600))
+            )
+            retry_jitter = options.get(
+                'retry_jitter', getattr(task, 'retry_jitter', True)
+            )
 
             if autoretry_for and not hasattr(task, '_orig_run'):
 
@@ -465,6 +488,10 @@ class Celery(object):
                 def run(*args, **kwargs):
                     try:
                         return task._orig_run(*args, **kwargs)
+                    except Ignore:
+                        # If Ignore signal occures task shouldn't be retried,
+                        # even if it suits autoretry_for list
+                        raise
                     except autoretry_for as exc:
                         if retry_backoff:
                             retry_kwargs['countdown'] = \
@@ -594,7 +621,8 @@ class Celery(object):
         )
 
     def setup_security(self, allowed_serializers=None, key=None, cert=None,
-                       store=None, digest='sha1', serializer='json'):
+                       store=None, digest=DEFAULT_SECURITY_DIGEST,
+                       serializer='json'):
         """Setup the message-signing serializer.
 
         This will affect all application instances (a global operation).
@@ -613,7 +641,7 @@ class Celery(object):
             store (str): Directory containing certificates.
                 Defaults to the :setting:`security_cert_store` setting.
             digest (str): Digest algorithm used when signing messages.
-                Default is ``sha1``.
+                Default is ``sha256``.
             serializer (str): Serializer used to encode messages after
                 they've been signed.  See :setting:`task_serializer` for
                 the serializers supported.  Default is ``json``.
@@ -655,7 +683,8 @@ class Celery(object):
                 value returned is used (for lazy evaluation).
             related_name (str): The name of the module to find.  Defaults
                 to "tasks": meaning "look for 'module.tasks' for every
-                module in ``packages``."
+                module in ``packages``.".  If ``None`` will only try to import
+                the package, i.e. "look for 'module'".
             force (bool): By default this call is lazy so that the actual
                 auto-discovery won't happen until an application imports
                 the default modules.  Forcing will cause the auto-discovery
@@ -723,6 +752,10 @@ class Celery(object):
                     root_id = parent.request.root_id or parent.request.id
                 if not parent_id:
                     parent_id = parent.request.id
+
+                if conf.task_inherit_parent_priority:
+                    options.setdefault('priority',
+                                       parent.request.delivery_info.get('priority'))
 
         message = amqp.create_task_message(
             task_id, name, args, kwargs, countdown, eta, group_id,
@@ -829,7 +862,7 @@ class Celery(object):
             port or conf.broker_port,
             transport=transport or conf.broker_transport,
             ssl=self.either('broker_use_ssl', ssl),
-            heartbeat=heartbeat or self.conf.broker_heartbeat,
+            heartbeat=heartbeat,
             login_method=login_method or conf.broker_login_method,
             failover_strategy=(
                 failover_strategy or conf.broker_failover_strategy
@@ -982,7 +1015,8 @@ class Celery(object):
         return key
 
     def _sig_to_periodic_task_entry(self, schedule, sig,
-                                    args=(), kwargs={}, name=None, **opts):
+                                    args=(), kwargs=None, name=None, **opts):
+        kwargs = {} if not kwargs else kwargs
         sig = (sig.clone(args, kwargs)
                if isinstance(sig, abstract.CallableSignature)
                else self.signature(sig.name, args, kwargs))

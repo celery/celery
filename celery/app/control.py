@@ -9,12 +9,14 @@ from __future__ import absolute_import, unicode_literals
 import warnings
 
 from billiard.common import TERM_SIGNAME
+from kombu.matcher import match
 from kombu.pidbox import Mailbox
 from kombu.utils.compat import register_after_fork
 from kombu.utils.functional import lazy
 from kombu.utils.objects import cached_property
 
 from celery.exceptions import DuplicateNodenameWarning
+from celery.five import items
 from celery.utils.log import get_logger
 from celery.utils.text import pluralize
 
@@ -68,13 +70,16 @@ class Inspect(object):
     app = None
 
     def __init__(self, destination=None, timeout=1.0, callback=None,
-                 connection=None, app=None, limit=None):
+                 connection=None, app=None, limit=None, pattern=None,
+                 matcher=None):
         self.app = app or self.app
         self.destination = destination
         self.timeout = timeout
         self.callback = callback
         self.connection = connection
         self.limit = limit
+        self.pattern = pattern
+        self.matcher = matcher
 
     def _prepare(self, reply):
         if reply:
@@ -82,6 +87,11 @@ class Inspect(object):
             if (self.destination and
                     not isinstance(self.destination, (list, tuple))):
                 return by_node.get(self.destination)
+            if self.pattern:
+                pattern = self.pattern
+                matcher = self.matcher
+                return {node: reply for node, reply in items(by_node)
+                        if match(node, pattern, matcher)}
             return by_node
 
     def _request(self, command, **kwargs):
@@ -93,6 +103,7 @@ class Inspect(object):
             connection=self.connection,
             limit=self.limit,
             timeout=self.timeout, reply=True,
+            pattern=self.pattern, matcher=self.matcher,
         ))
 
     def report(self):
@@ -160,7 +171,7 @@ class Control(object):
     def __init__(self, app=None):
         self.app = app
         self.mailbox = self.Mailbox(
-            'celery',
+            app.conf.control_exchange,
             type='fanout',
             accept=['json'],
             producer_pool=lazy(lambda: self.app.amqp.producer_pool),
@@ -206,13 +217,15 @@ class Control(object):
 
     def revoke(self, task_id, destination=None, terminate=False,
                signal=TERM_SIGNAME, **kwargs):
-        """Tell all (or specific) workers to revoke a task by id.
+        """Tell all (or specific) workers to revoke a task by id
+        (or list of ids).
 
         If a task is revoked, the workers will ignore the task and
         not execute it after all.
 
         Arguments:
-            task_id (str): Id of the task to revoke.
+            task_id (Union(str, list)): Id of the task to revoke
+                (or list of ids).
             terminate (bool): Also terminate the process currently working
                 on the task (if any).
             signal (str): Name of signal to send to process if terminate.
@@ -229,7 +242,8 @@ class Control(object):
 
     def terminate(self, task_id,
                   destination=None, signal=TERM_SIGNAME, **kwargs):
-        """Tell all (or specific) workers to terminate a task by id.
+        """Tell all (or specific) workers to terminate a task by id
+        (or list of ids).
 
         See Also:
             This is just a shortcut to :meth:`revoke` with the terminate
@@ -294,7 +308,7 @@ class Control(object):
                 command to, when empty broadcast to all workers.
             routing_key (str): Optional routing key.
             options (Dict): Additional options as supported
-                by :meth:`kombu.entitiy.Queue.from_dict`.
+                by :meth:`kombu.entity.Queue.from_dict`.
 
         See Also:
             :meth:`broadcast` for supported keyword arguments.
@@ -431,7 +445,8 @@ class Control(object):
 
     def broadcast(self, command, arguments=None, destination=None,
                   connection=None, reply=False, timeout=1.0, limit=None,
-                  callback=None, channel=None, **extra_kwargs):
+                  callback=None, channel=None, pattern=None, matcher=None,
+                  **extra_kwargs):
         """Broadcast a control command to the celery workers.
 
         Arguments:
@@ -446,10 +461,21 @@ class Control(object):
             limit (int): Limit number of replies.
             callback (Callable): Callback called immediately for
                 each reply received.
+            pattern (str): Custom pattern string to match
+            matcher (Callable): Custom matcher to run the pattern to match
         """
         with self.app.connection_or_acquire(connection) as conn:
             arguments = dict(arguments or {}, **extra_kwargs)
-            return self.mailbox(conn)._broadcast(
-                command, arguments, destination, reply, timeout,
-                limit, callback, channel=channel,
-            )
+            if pattern and matcher:
+                # tests pass easier without requiring pattern/matcher to
+                # always be sent in
+                return self.mailbox(conn)._broadcast(
+                    command, arguments, destination, reply, timeout,
+                    limit, callback, channel=channel,
+                    pattern=pattern, matcher=matcher,
+                )
+            else:
+                return self.mailbox(conn)._broadcast(
+                    command, arguments, destination, reply, timeout,
+                    limit, callback, channel=channel,
+                )

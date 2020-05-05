@@ -269,6 +269,10 @@ class test_chunks(CanvasCase):
 
 class test_chain(CanvasCase):
 
+    def test_chain_of_chain_with_a_single_task(self):
+        s = self.add.s(1, 1)
+        assert chain([chain(s)]).tasks == list(chain(s).tasks)
+
     def test_clone_preserves_state(self):
         x = chain(self.add.s(i, i) for i in range(10))
         assert x.clone().tasks == x.tasks
@@ -323,6 +327,12 @@ class test_chain(CanvasCase):
         for task in tasks:
             assert isinstance(task, Signature)
             assert task.app is self.app
+
+    def test_groups_in_chain_to_chord(self):
+        g1 = group([self.add.s(2, 2), self.add.s(4, 4)])
+        g2 = group([self.add.s(3, 3), self.add.s(5, 5)])
+        c = g1 | g2
+        assert isinstance(c, chord)
 
     def test_group_to_chord(self):
         c = (
@@ -402,6 +412,24 @@ class test_chain(CanvasCase):
         for task in c.tasks:
             assert task.options['link_error'] == [s('error')]
 
+    def test_apply_options_none(self):
+        class static(Signature):
+
+            def clone(self, *args, **kwargs):
+                return self
+
+            def _apply_async(self, *args, **kwargs):
+                self.args = args
+                self.kwargs = kwargs
+
+        c = static(self.add, (2, 2), type=self.add, app=self.app, priority=5)
+
+        c.apply_async(priority=4)
+        assert c.kwargs['priority'] == 4
+
+        c.apply_async(priority=None)
+        assert c.kwargs['priority'] == 5
+
     def test_reverse(self):
         x = self.add.s(2, 2) | self.add.s(2)
         assert isinstance(signature(x), _chain)
@@ -440,6 +468,11 @@ class test_chain(CanvasCase):
         assert res.parent.get() == 16
         assert res.parent.parent.get() == 8
         assert res.parent.parent.parent is None
+
+    def test_kwargs_apply(self):
+        x = chain(self.add.s(), self.add.s(8), self.add.s(10))
+        res = x.apply(kwargs={'x': 1, 'y': 1}).get()
+        assert res == 20
 
     def test_single_expresion(self):
         x = chain(self.add.s(1, 2)).apply()
@@ -713,6 +746,13 @@ class test_chord(CanvasCase):
         x = chord([t1], body=t1)
         assert x.app is current_app
 
+    def test_chord_size_with_groups(self):
+        x = chord([
+            self.add.s(2, 2) | group([self.add.si(2, 2), self.add.si(2, 2)]),
+            self.add.s(2, 2) | group([self.add.si(2, 2), self.add.si(2, 2)]),
+        ], body=self.add.si(2, 2))
+        assert x.__length_hint__() == 4
+
     def test_set_immutable(self):
         x = chord([Mock(name='t1'), Mock(name='t2')], app=self.app)
         x.set_immutable(True)
@@ -741,6 +781,29 @@ class test_chord(CanvasCase):
         x.freeze()
         x.tasks = [self.add.s(2, 2)]
         x.freeze()
+
+    def test_chain_always_eager(self):
+        self.app.conf.task_always_eager = True
+        from celery import _state
+        from celery import result
+
+        fixture_task_join_will_block = _state.task_join_will_block
+        try:
+            _state.task_join_will_block = _state.orig_task_join_will_block
+            result.task_join_will_block = _state.orig_task_join_will_block
+
+            @self.app.task(shared=False)
+            def finalize(*args):
+                pass
+
+            @self.app.task(shared=False)
+            def chord_add():
+                return chord([self.add.s(4, 4)], finalize.s()).apply_async()
+
+            chord_add.apply_async(throw=True).get()
+        finally:
+            _state.task_join_will_block = fixture_task_join_will_block
+            result.task_join_will_block = fixture_task_join_will_block
 
 
 class test_maybe_signature(CanvasCase):

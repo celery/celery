@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 
 from time import sleep
 
-from celery import chain, group, shared_task
+from celery import chain, chord, group, shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
@@ -14,6 +14,7 @@ logger = get_task_logger(__name__)
 
 @shared_task
 def identity(x):
+    """Return the argument."""
     return x
 
 
@@ -21,6 +22,12 @@ def identity(x):
 def add(x, y):
     """Add two numbers."""
     return x + y
+
+
+@shared_task
+def raise_error():
+    """Deliberately raise an error."""
+    raise ValueError("deliberate error")
 
 
 @shared_task(ignore_result=True)
@@ -34,6 +41,11 @@ def chain_add(x, y):
     (
         add.s(x, x) | add.s(y)
     ).apply_async()
+
+
+@shared_task
+def chord_add(x, y):
+    chord(add.s(x, x), add.s(y)).apply_async()
 
 
 @shared_task
@@ -57,7 +69,7 @@ def delayed_sum_with_soft_guard(numbers, pause_time=1):
 
 @shared_task
 def tsum(nums):
-    """Sum an iterable of numbers"""
+    """Sum an iterable of numbers."""
     return sum(nums)
 
 
@@ -96,6 +108,12 @@ def print_unicode(log_message='håå®ƒ valmuefrø', print_message='hiöäüß'
 
 
 @shared_task
+def return_exception(e):
+    """Return a tuple containing the exception message and sentinel value."""
+    return e, True
+
+
+@shared_task
 def sleeping(i, **_):
     """Task sleeping for ``i`` seconds, and returning nothing."""
     sleep(i)
@@ -114,23 +132,31 @@ def collect_ids(self, res, i):
     are :task:`ids`: returns a tuple of::
 
         (previous_result, (root_id, parent_id, i))
-
     """
     return res, (self.request.root_id, self.request.parent_id, i)
 
 
 @shared_task(bind=True, expires=60.0, max_retries=1)
-def retry_once(self):
+def retry_once(self, *args, expires=60.0, max_retries=1, countdown=0.1):
     """Task that fails and is retried. Returns the number of retries."""
     if self.request.retries:
         return self.request.retries
-    raise self.retry(countdown=0.1)
+    raise self.retry(countdown=countdown,
+                     max_retries=max_retries)
+
+
+@shared_task(bind=True, expires=60.0, max_retries=1)
+def retry_once_priority(self, *args, expires=60.0, max_retries=1, countdown=0.1):
+    """Task that fails and is retried. Returns the priority."""
+    if self.request.retries:
+        return self.request.delivery_info['priority']
+    raise self.retry(countdown=countdown,
+                     max_retries=max_retries)
 
 
 @shared_task
 def redis_echo(message):
-    """Task that appends the message to a redis list"""
-
+    """Task that appends the message to a redis list."""
     redis_connection = get_redis_connection()
     redis_connection.rpush('redis-echo', message)
 
@@ -178,3 +204,34 @@ def build_chain_inside_task(self):
     )
     result = test_chain()
     return result
+
+
+class ExpectedException(Exception):
+    """Sentinel exception for tests."""
+
+    def __eq__(self, other):
+        return (
+            other is not None and
+            isinstance(other, ExpectedException) and
+            self.args == other.args
+        )
+
+    def __hash__(self):
+        return hash(self.args)
+
+
+@shared_task
+def fail(*args):
+    """Task that simply raises ExpectedException."""
+    args = ("Task expected to fail",) + args
+    raise ExpectedException(*args)
+
+
+@shared_task
+def chord_error(*args):
+    return args
+
+
+@shared_task(bind=True)
+def return_priority(self, *_args):
+    return "Priority: %s" % self.request.delivery_info['priority']

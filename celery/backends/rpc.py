@@ -17,7 +17,7 @@ from celery._state import current_task, task_join_will_block
 from celery.five import items, range
 
 from . import base
-from .async import AsyncBackendMixin, BaseResultConsumer
+from .asynchronous import AsyncBackendMixin, BaseResultConsumer
 
 __all__ = ('BacklogLimitExceeded', 'RPCBackend')
 
@@ -318,7 +318,8 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         raise NotImplementedError(
             'delete_group is not supported by this backend.')
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         return super(RPCBackend, self).__reduce__(args, dict(
             kwargs,
             connection=self._connection,

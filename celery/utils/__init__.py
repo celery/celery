@@ -5,20 +5,36 @@ Don't import from here directly anymore, as these are only
 here for backwards compatibility.
 """
 from __future__ import absolute_import, print_function, unicode_literals
-from .functional import memoize  # noqa
-from .nodenames import worker_direct, nodename, nodesplit
 
-__all__ = ('worker_direct', 'gen_task_name', 'nodename', 'nodesplit',
-           'cached_property', 'uuid')
+from kombu.utils.objects import cached_property
+from kombu.utils.uuid import uuid
 
+from .functional import chunks, memoize, noop
+from .imports import gen_task_name, import_from_cwd, instantiate
+from .imports import qualname as get_full_cls_name
+from .imports import symbol_by_name as get_cls_by_name
 # ------------------------------------------------------------------------ #
 # > XXX Compat
-from .log import LOG_LEVELS     # noqa
-from .imports import (          # noqa
-    qualname as get_full_cls_name, symbol_by_name as get_cls_by_name,
-    instantiate, import_from_cwd, gen_task_name,
-)
-from .functional import chunks, noop                    # noqa
-from kombu.utils.objects import cached_property         # noqa
-from kombu.utils.uuid import uuid   # noqa
+from .log import LOG_LEVELS
+from .nodenames import nodename, nodesplit, worker_direct
+
 gen_unique_id = uuid
+
+__all__ = (
+    'LOG_LEVELS',
+    'cached_property',
+    'chunks',
+    'gen_task_name',
+    'gen_task_name',
+    'gen_unique_id',
+    'get_cls_by_name',
+    'get_full_cls_name',
+    'import_from_cwd',
+    'instantiate',
+    'memoize',
+    'nodename',
+    'nodesplit',
+    'noop',
+    'uuid',
+    'worker_direct'
+)

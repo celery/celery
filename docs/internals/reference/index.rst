@@ -19,10 +19,12 @@
     celery.concurrency.prefork
     celery.concurrency.eventlet
     celery.concurrency.gevent
+    celery.concurrency.thread
     celery.concurrency.base
     celery.backends
     celery.backends.base
-    celery.backends.async
+    celery.backends.asynchronous
+    celery.backends.azureblockblob
     celery.backends.rpc
     celery.backends.database
     celery.backends.amqp
@@ -35,8 +37,11 @@
     celery.backends.riak
     celery.backends.cassandra
     celery.backends.couchbase
+    celery.backends.arangodb
     celery.backends.dynamodb
     celery.backends.filesystem
+    celery.backends.cosmosdbsql
+    celery.backends.s3
     celery.app.trace
     celery.app.annotations
     celery.app.routes

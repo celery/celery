@@ -5,7 +5,7 @@ from __future__ import absolute_import, unicode_literals
 import numbers
 import re
 from bisect import bisect, bisect_left
-from collections import Iterable, namedtuple
+from collections import namedtuple
 from datetime import datetime, timedelta
 
 from kombu.utils.objects import cached_property
@@ -15,6 +15,13 @@ from .five import python_2_unicode_compatible, range, string_t
 from .utils.collections import AttributeDict
 from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware,
                          maybe_timedelta, remaining, timezone, weekday)
+
+try:
+    from collections.abc import Iterable
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Iterable
+
 
 __all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
@@ -361,7 +368,7 @@ class crontab(BaseSchedule):
         - A (list of) integers from 1-31 that represents the days of the
           month that execution should occur.
         - A string representing a Crontab pattern.  This may get pretty
-          advanced, such as ``day_of_month='2-30/3'`` (for every even
+          advanced, such as ``day_of_month='2-30/2'`` (for every even
           numbered day) or ``day_of_month='1-7,15-21'`` (for the first and
           third weeks of the month).
 

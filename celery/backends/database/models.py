@@ -12,7 +12,7 @@ from celery.five import python_2_unicode_compatible
 
 from .session import ResultModelBase
 
-__all__ = ('Task', 'TaskSet')
+__all__ = ('Task', 'TaskExtended', 'TaskSet')
 
 
 @python_2_unicode_compatible
@@ -46,6 +46,38 @@ class Task(ResultModelBase):
     def __repr__(self):
         return '<Task {0.task_id} state: {0.status}>'.format(self)
 
+    @classmethod
+    def configure(cls, schema=None, name=None):
+        cls.__table__.schema = schema
+        cls.id.default.schema = schema
+        cls.__table__.name = name or cls.__tablename__
+
+
+class TaskExtended(Task):
+    """For the extend result."""
+
+    __tablename__ = 'celery_taskmeta'
+    __table_args__ = {'sqlite_autoincrement': True, 'extend_existing': True}
+
+    name = sa.Column(sa.String(155), nullable=True)
+    args = sa.Column(sa.LargeBinary, nullable=True)
+    kwargs = sa.Column(sa.LargeBinary, nullable=True)
+    worker = sa.Column(sa.String(155), nullable=True)
+    retries = sa.Column(sa.Integer, nullable=True)
+    queue = sa.Column(sa.String(155), nullable=True)
+
+    def to_dict(self):
+        task_dict = super(TaskExtended, self).to_dict()
+        task_dict.update({
+            'name': self.name,
+            'args': self.args,
+            'kwargs': self.kwargs,
+            'worker': self.worker,
+            'retries': self.retries,
+            'queue': self.queue,
+        })
+        return task_dict
+
 
 @python_2_unicode_compatible
 class TaskSet(ResultModelBase):
@@ -74,3 +106,9 @@ class TaskSet(ResultModelBase):
 
     def __repr__(self):
         return '<TaskSet: {0.taskset_id}>'.format(self)
+
+    @classmethod
+    def configure(cls, schema=None, name=None):
+        cls.__table__.schema = schema
+        cls.id.default.schema = schema
+        cls.__table__.name = name or cls.__tablename__

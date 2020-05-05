@@ -759,7 +759,8 @@ All bootsteps will now receive this argument as a keyword argument to
 
     class MyBootstep(bootsteps.Step):
 
-        def __init__(self, worker, enable_my_option=False, **options):
+        def __init__(self, parent, enable_my_option=False, **options):
+            super().__init__(parent, **options)
             if enable_my_option:
                 party()
 
@@ -874,7 +875,7 @@ Worker API
 
 
 :class:`~kombu.asynchronous.Hub` - The workers async event loop
---------------------------------------------------------
+---------------------------------------------------------------
 :supported transports: amqp, redis
 
 .. versionadded:: 3.0

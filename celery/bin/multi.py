@@ -22,7 +22,7 @@ Examples
     $ # You need to add the same arguments when you restart,
     $ # as these aren't persisted anywhere.
     $ celery multi restart Leslie -E --pidfile=/var/run/celery/%n.pid
-                                     --logfile=/var/run/celery/%n%I.log
+                                     --logfile=/var/log/celery/%n%I.log
 
     $ # To stop the node, you need to specify the same pidfile.
     $ celery multi stop Leslie --pidfile=/var/run/celery/%n.pid
@@ -62,7 +62,7 @@ Examples
     $ celery multi show 10 -l INFO -Q:1-3 images,video -Q:4,5 data
         -Q default -L:4,5 DEBUG
 
-    $ # Additional options are added to each celery worker' comamnd,
+    $ # Additional options are added to each celery worker' command,
     $ # but you can also modify the options for ranges of, or specific workers
 
     $ # 3 workers: Two with 3 processes, and one with 10 processes.

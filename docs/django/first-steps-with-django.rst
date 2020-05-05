@@ -88,11 +88,14 @@ from the Django settings; but you can also separate them if wanted.
 
     app.config_from_object('django.conf:settings', namespace='CELERY')
 
-The uppercase name-space means that all Celery configuration options
+The uppercase name-space means that all
+:ref:`Celery configuration options <configuration>`
 must be specified in uppercase instead of lowercase, and start with
 ``CELERY_``, so for example the :setting:`task_always_eager` setting
 becomes ``CELERY_TASK_ALWAYS_EAGER``, and the :setting:`broker_url`
-setting becomes ``CELERY_BROKER_URL``.
+setting becomes ``CELERY_BROKER_URL``. This also applies to the
+workers settings, for instance, the :setting:`worker_concurrency`
+setting becomes ``CELERY_WORKER_CONCURRENCY``.
 
 You can pass the settings object directly instead, but using a string
 is better since then the worker doesn't have to serialize the object.
@@ -202,7 +205,26 @@ To use this with your project you need to follow these steps:
 
     .. code-block:: python
 
-        CELERY_RESULT_BACKEND = 'django-cache'
+        CELERY_CACHE_BACKEND = 'django-cache'
+
+    We can also use the cache defined in the CACHES setting in django.
+
+    .. code-block:: python
+
+        # celery setting.
+        CELERY_CACHE_BACKEND = 'default'
+
+        # django setting.
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+                'LOCATION': 'my_cache_table',
+            }
+        }
+
+    For additional configuration options, view the
+    :ref:`conf-result-backend` reference.
+
 
 ``django-celery-beat`` - Database-backed Periodic Tasks with Admin interface.
 -----------------------------------------------------------------------------
@@ -228,6 +250,11 @@ use the help command:
 .. code-block:: console
 
     $ celery help
+    
+Known Issues
+============
+CONN_MAX_AGE other than zero is known to cause issues according to `bug #4878 <https://github.com/celery/celery/issues/4878>`_. Until this is fixed, please set CONN_MAX_AGE to zero.
+
 
 Where to go from here
 =====================

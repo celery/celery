@@ -51,7 +51,7 @@ consider enabling the :setting:`task_reject_on_worker_lost` setting.
     A task that blocks indefinitely may eventually stop the worker instance
     from doing any other work.
 
-    If you task does I/O then make sure you add timeouts to these operations,
+    If your task does I/O then make sure you add timeouts to these operations,
     like adding a timeout to a web request using the :pypi:`requests` library:
 
     .. code-block:: python
@@ -330,7 +330,7 @@ Changing the automatic naming behavior
 .. versionadded:: 4.0
 
 There are some cases when the default automatic naming isn't suitable.
-Consider you have many tasks within many different modules::
+Consider having many tasks within many different modules::
 
     project/
            /__init__.py
@@ -531,6 +531,41 @@ see :setting:`worker_redirect_stdouts`).
             finally:
                 sys.stdout, sys.stderr = old_outs
 
+
+.. note::
+
+    If a specific Celery logger you need is not emitting logs, you should
+    check that the logger is propagating properly. In this example
+    "celery.app.trace" is enabled so that "succeeded in" logs are emitted:
+
+    .. code-block:: python
+
+
+        import celery
+        import logging
+
+        @celery.signals.after_setup_logger.connect
+        def on_after_setup_logger(**kwargs):
+            logger = logging.getLogger('celery')
+            logger.propagate = True
+            logger = logging.getLogger('celery.app.trace')
+            logger.propagate = True
+
+
+.. note::
+
+    If you want to completely disable Celery logging configuration,
+    use the :signal:`setup_logging` signal:
+
+    .. code-block:: python
+
+        import celery
+
+        @celery.signals.setup_logging.connect
+        def on_setup_logging(**kwargs):
+            pass
+
+
 .. _task-argument-checking:
 
 Argument checking
@@ -570,7 +605,7 @@ You can disable the argument checking for any task by setting its
     ... def add(x, y):
     ...     return x + y
 
-    # Works locally, but the worker reciving the task will raise an error.
+    # Works locally, but the worker receiving the task will raise an error.
     >>> add.delay(8)
     <AsyncResult: f59d71ca-1549-43e0-be41-4e8821a83c0c>
 
@@ -647,7 +682,7 @@ Here's an example using ``retry``:
 The bind argument to the task decorator will give access to ``self`` (the
 task type instance).
 
-The ``exc`` method is used to pass exception information that's
+The ``exc`` argument is used to pass exception information that's
 used in logs, and when storing task results.
 Both the exception and the traceback will
 be available in the task state (if a result backend is enabled).
@@ -767,6 +802,19 @@ By default, this exponential backoff will also introduce random jitter_ to
 avoid having all the tasks run at the same moment. It will also cap the
 maximum backoff delay to 10 minutes. All these settings can be customized
 via options documented below.
+
+.. versionadded:: 4.4
+
+You can also set `autoretry_for`, `retry_kwargs`, `retry_backoff`, `retry_backoff_max` and `retry_jitter` options in class-based tasks:
+
+.. code-block:: python
+
+    class BaseTaskWithRetry(Task):
+        autoretry_for = (TypeError,)
+        retry_kwargs = {'max_retries': 5}
+        retry_backoff = True
+        retry_backoff_max = 700
+        retry_jitter = False
 
 .. attribute:: Task.autoretry_for
 
@@ -1018,7 +1066,7 @@ different strengths and weaknesses (see :ref:`task-result-backends`).
 During its lifetime a task will transition through several possible states,
 and each state may have arbitrary meta-data attached to it. When a task
 moves into a new state the previous state is
-forgotten about, but some transitions can be deducted, (e.g., a task now
+forgotten about, but some transitions can be deduced, (e.g., a task now
 in the :state:`FAILED` state, is implied to have been in the
 :state:`STARTED` state at some point).
 
@@ -1435,8 +1483,10 @@ For example, a base Task class that caches a database connection:
                 self._db = Database.connect()
             return self._db
 
+Per task usage
+~~~~~~~~~~~~~~
 
-that can be added to tasks like this:
+The above can be added to each task like this:
 
 .. code-block:: python
 
@@ -1448,6 +1498,26 @@ that can be added to tasks like this:
 
 The ``db`` attribute of the ``process_rows`` task will then
 always stay the same in each process.
+
+.. _custom-task-cls-app-wide:
+
+App-wide usage
+~~~~~~~~~~~~~~
+
+You can also use your custom class in your whole Celery app by passing it as
+the ``task_cls`` argument when instantiating the app. This argument should be
+either a string giving the python path to your Task class or the class itself:
+
+.. code-block:: python
+
+    from celery import Celery
+
+    app = Celery('tasks', task_cls='your.module.path:DatabaseTask')
+
+This will make all your tasks declared using the decorator syntax within your
+app to use your ``DatabaseTask`` class and will all have a ``db`` attribute.
+
+The default value is the class provided by Celery: ``'celery.app.task:Task'``.
 
 Handlers
 --------
@@ -1594,7 +1664,7 @@ yourself:
      'celery.chord':
         <@task: celery.chord>}
 
-This is the list of tasks built-in to Celery. Note that tasks
+This is the list of tasks built into Celery. Note that tasks
 will only be registered when the module they're defined in is imported.
 
 The default loader imports any modules listed in the
@@ -1693,7 +1763,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
         return myhttplib.get(url)
 
     @app.task
-    def parse_page(url, page):
+    def parse_page(page):
         return myparser.parse_document(page)
 
     @app.task
@@ -1728,10 +1798,10 @@ different :func:`~celery.signature`'s.
 You can read about chains and other powerful constructs
 at :ref:`designing-workflows`.
 
-By default celery will not enable you to run tasks within task synchronously
-in rare or extreme cases you might have to do so.
+By default Celery will not allow you to run subtasks synchronously within a task,
+but in rare or extreme cases you might need to do so.
 **WARNING**:
-enabling subtasks run synchronously is not recommended!
+enabling subtasks to run synchronously is not recommended!
 
 .. code-block:: python
 
@@ -1816,7 +1886,7 @@ system, like `memcached`_.
 State
 -----
 
-Since celery is a distributed system, you can't know which process, or
+Since Celery is a distributed system, you can't know which process, or
 on what machine the task will be executed. You can't even know if the task will
 run in a timely manner.
 
@@ -1888,14 +1958,16 @@ Let's have a look at another example:
 .. code-block:: python
 
     from django.db import transaction
+    from django.http import HttpResponseRedirect
 
-    @transaction.commit_on_success
+    @transaction.atomic
     def create_article(request):
         article = Article.objects.create()
         expand_abbreviations.delay(article.pk)
+        return HttpResponseRedirect('/articles/')
 
 This is a Django view creating an article object in the database,
-then passing the primary key to a task. It uses the `commit_on_success`
+then passing the primary key to a task. It uses the `transaction.atomic`
 decorator, that will commit the transaction when the view returns, or
 roll back if the view raises an exception.
 
@@ -1903,7 +1975,7 @@ There's a race condition if the task starts executing
 before the transaction has been committed; The database object doesn't exist
 yet!
 
-The solution is to use the ``on_commit`` callback to launch your celery task
+The solution is to use the ``on_commit`` callback to launch your Celery task
 once all transactions have been committed successfully.
 
 .. code-block:: python

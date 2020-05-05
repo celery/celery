@@ -18,7 +18,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
     Pool implementation:
 
-    prefork (default), eventlet, gevent or solo.
+    prefork (default), eventlet, gevent, threads or solo.
 
 .. cmdoption:: -n, --hostname
 
@@ -222,7 +222,8 @@ class worker(Command):
         self.maybe_detach([command] + argv)
         return self(*args, **options)
 
-    def maybe_detach(self, argv, dopts=['-D', '--detach']):
+    def maybe_detach(self, argv, dopts=None):
+        dopts = ['-D', '--detach'] if not dopts else dopts
         if any(arg in argv for arg in dopts):
             argv = [v for v in argv if v not in dopts]
             # will never return

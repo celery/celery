@@ -2,6 +2,7 @@
 """Task results/state and results for groups of tasks."""
 from __future__ import absolute_import, unicode_literals
 
+import datetime
 import time
 from collections import OrderedDict, deque
 from contextlib import contextmanager
@@ -18,6 +19,7 @@ from .five import (items, monotonic, python_2_unicode_compatible, range,
                    string_t)
 from .utils import deprecated
 from .utils.graph import DependencyGraph, GraphFormatter
+from .utils.iso8601 import parse_iso8601
 
 try:
     import tblib
@@ -99,13 +101,13 @@ class AsyncResult(ResultBase):
         self.id = id
         self.backend = backend or self.app.backend
         self.parent = parent
-        self.on_ready = promise(self._on_fulfilled)
+        self.on_ready = promise(self._on_fulfilled, weak=True)
         self._cache = None
         self._ignored = False
 
     @property
     def ignored(self):
-        """"If True, task result retrieval is disabled."""
+        """If True, task result retrieval is disabled."""
         if hasattr(self, '_ignored'):
             return self._ignored
         return False
@@ -128,8 +130,10 @@ class AsyncResult(ResultBase):
         return (self.id, parent and parent.as_tuple()), None
 
     def forget(self):
-        """Forget about (and possibly remove the result of) this task."""
+        """Forget the result of this task and its parents."""
         self._cache = None
+        if self.parent:
+            self.parent.forget()
         self.backend.forget(self.id)
 
     def revoke(self, connection=None, terminate=False, signal=None,
@@ -203,7 +207,7 @@ class AsyncResult(ResultBase):
             assert_will_not_block()
         _on_interval = promise()
         if follow_parents and propagate and self.parent:
-            on_interval = promise(self._maybe_reraise_parent_error)
+            _on_interval = promise(self._maybe_reraise_parent_error, weak=True)
             self._maybe_reraise_parent_error()
         if on_interval:
             _on_interval.then(on_interval)
@@ -410,7 +414,7 @@ class AsyncResult(ResultBase):
             return self._maybe_set_cache(self.backend.get_task_meta(self.id))
         return self._cache
 
-    def _iter_meta(self):
+    def _iter_meta(self, **kwargs):
         return iter([self._get_task_meta()])
 
     def _set_cache(self, d):
@@ -480,6 +484,38 @@ class AsyncResult(ResultBase):
     def task_id(self, id):
         self.id = id
 
+    @property
+    def name(self):
+        return self._get_task_meta().get('name')
+
+    @property
+    def args(self):
+        return self._get_task_meta().get('args')
+
+    @property
+    def kwargs(self):
+        return self._get_task_meta().get('kwargs')
+
+    @property
+    def worker(self):
+        return self._get_task_meta().get('worker')
+
+    @property
+    def date_done(self):
+        """UTC date and time."""
+        date_done = self._get_task_meta().get('date_done')
+        if date_done and not isinstance(date_done, datetime.datetime):
+            return parse_iso8601(date_done)
+        return date_done
+
+    @property
+    def retries(self):
+        return self._get_task_meta().get('retries')
+
+    @property
+    def queue(self):
+        return self._get_task_meta().get('queue')
+
 
 @Thenable.register
 @python_2_unicode_compatible
@@ -497,12 +533,11 @@ class ResultSet(ResultBase):
 
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
         self._app = app
-        self._cache = None
         self.results = results
         self.on_ready = promise(args=(self,))
         self._on_full = ready_barrier or barrier(results)
         if self._on_full:
-            self._on_full.then(promise(self._on_ready))
+            self._on_full.then(promise(self._on_ready, weak=True))
 
     def add(self, result):
         """Add :class:`AsyncResult` as a new member of the set.
@@ -516,7 +551,6 @@ class ResultSet(ResultBase):
 
     def _on_ready(self):
         if self.backend.is_async:
-            self._cache = [r.get() for r in self.results]
             self.on_ready()
 
     def remove(self, result):
@@ -662,8 +696,6 @@ class ResultSet(ResultBase):
         in addition it uses :meth:`join_native` if available for the
         current result backend.
         """
-        if self._cache is not None:
-            return self._cache
         return (self.join_native if self.supports_native_join else self.join)(
             timeout=timeout, propagate=propagate,
             interval=interval, callback=callback, no_ack=no_ack,
@@ -737,6 +769,7 @@ class ResultSet(ResultBase):
             value = result.get(
                 timeout=remaining, propagate=propagate,
                 interval=interval, no_ack=no_ack, on_interval=on_interval,
+                disable_sync_subtasks=disable_sync_subtasks,
             )
             if callback:
                 callback(result.id, value)
@@ -787,18 +820,23 @@ class ResultSet(ResultBase):
         acc = None if callback else [None for _ in range(len(self))]
         for task_id, meta in self.iter_native(timeout, interval, no_ack,
                                               on_message, on_interval):
-            value = meta['result']
-            if propagate and meta['status'] in states.PROPAGATE_STATES:
-                raise value
+            if isinstance(meta, list):
+                value = []
+                for children_result in meta:
+                    value.append(children_result.get())
+            else:
+                value = meta['result']
+                if propagate and meta['status'] in states.PROPAGATE_STATES:
+                    raise value
             if callback:
                 callback(task_id, value)
             else:
                 acc[order_index[task_id]] = value
         return acc
 
-    def _iter_meta(self):
+    def _iter_meta(self, **kwargs):
         return (meta for _, meta in self.backend.get_many(
-            {r.id for r in self.results}, max_iterations=1,
+            {r.id for r in self.results}, max_iterations=1, **kwargs
         ))
 
     def _failed_join_report(self):

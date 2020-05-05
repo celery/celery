@@ -6,12 +6,13 @@ import socket
 import pytest
 from case import Mock
 from kombu.asynchronous import ERR, READ, WRITE, Hub
+from kombu.exceptions import DecodeError
 
 from celery.bootsteps import CLOSE, RUN
 from celery.exceptions import (InvalidTaskError, WorkerLostError,
                                WorkerShutdown, WorkerTerminate)
 from celery.five import Empty, python_2_unicode_compatible
-from celery.platforms import EX_FAILURE
+from celery.platforms import EX_FAILURE, EX_OK
 from celery.worker import state
 from celery.worker.consumer import Consumer
 from celery.worker.loops import _quick_drain, asynloop, synloop
@@ -91,6 +92,10 @@ class X(object):
             name='on_invalid_task',
         )
         _consumer.on_invalid_task = self.on_invalid_task
+        self.on_decode_error = self.obj.on_decode_error = Mock(
+            name='on_decode_error',
+        )
+        _consumer.on_decode_error = self.on_decode_error
         _consumer.strategies = self.obj.strategies
 
     def timeout_then_error(self, mock):
@@ -206,14 +211,22 @@ class test_asynloop:
         on_task(msg)
         x.on_invalid_task.assert_called_with(None, msg, exc)
 
-    def test_should_terminate(self):
+    def test_on_task_DecodeError(self):
+        x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
+        exc = strategy.side_effect = DecodeError()
+        on_task(msg)
+        x.on_decode_error.assert_called_with(msg, exc)
+
+    @pytest.mark.parametrize('should_stop', (None, False, True, EX_OK))
+    def test_should_terminate(self, should_stop):
         x = X(self.app)
-        # XXX why aren't the errors propagated?!?
+        state.should_stop = should_stop
         state.should_terminate = True
         try:
             with pytest.raises(WorkerTerminate):
                 asynloop(*x.args)
         finally:
+            state.should_stop = None
             state.should_terminate = None
 
     def test_should_terminate_hub_close_raises(self):
@@ -372,8 +385,8 @@ class test_asynloop:
         x = X(self.app)
 
         def Gen():
-            raise StopIteration()
-            yield
+            if 0:
+                yield
         gen = Gen()
         x.hub.add_writer(6, gen)
         x.hub.on_tick.add(x.close_then_error(Mock(name='tick'), 2))

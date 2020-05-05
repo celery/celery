@@ -20,11 +20,15 @@ to "zlib", and the serializer to "pickle".
 
 """
 from __future__ import absolute_import, print_function, unicode_literals
+
 import re
+
 import requests
-from celery import task, group
+
+from celery import group, task
 from eventlet import Timeout
 from pybloom import BloomFilter
+
 try:
     from urllib.parse import urlsplit
 except ImportError:

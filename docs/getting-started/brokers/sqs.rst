@@ -32,7 +32,19 @@ where the URL format is:
 
     sqs://aws_access_key_id:aws_secret_access_key@
 
-you must *remember to include the "@" at the end*.
+Please note that you must remember to include the ``@`` sign at the end and
+encode the password so it can always be parsed correctly. For example:
+
+.. code-block:: python
+
+    from kombu.utils.url import safequote
+    
+    aws_access_key = safequote("ABCDEFGHIJKLMNOPQRST")
+    aws_secret_key = safequote("ZYXK7NiynG/TogH8Nj+P9nlE73sq3")
+    
+    broker_url = "sqs://{aws_access_key}:{aws_secret_key}@".format(
+        aws_access_key=aws_access_key, aws_secret_key=aws_secret_key,
+    )
 
 The login credentials can also be set using the environment variables
 :envvar:`AWS_ACCESS_KEY_ID` and :envvar:`AWS_SECRET_ACCESS_KEY`,
@@ -41,12 +53,6 @@ in that case the broker URL may only be ``sqs://``.
 If you are using IAM roles on instances, you can set the BROKER_URL to:
 ``sqs://`` and kombu will attempt to retrieve access tokens from the instance
 metadata.
-
-.. note::
-
-    If you specify AWS credentials in the broker URL, then please keep in mind
-    that the secret access key may contain unsafe characters that need to be
-    URL encoded.
 
 Options
 =======
@@ -76,7 +82,7 @@ This option is set via the :setting:`broker_transport_options` setting::
 
     broker_transport_options = {'visibility_timeout': 3600}  # 1 hour.
 
-The default visibility timeout is 30 minutes.
+The default visibility timeout is 30 seconds.
 
 Polling Interval
 ----------------
@@ -98,6 +104,24 @@ Very frequent polling intervals can cause *busy loops*, resulting in the
 worker using a lot of CPU time. If you need sub-millisecond precision you
 should consider using another transport, like `RabbitMQ <broker-amqp>`,
 or `Redis <broker-redis>`.
+
+Long Polling
+------------
+
+`SQS Long Polling`_ is enabled by default and the ``WaitTimeSeconds`` parameter
+of `ReceiveMessage`_ operation is set to 10 seconds.
+
+The value of ``WaitTimeSeconds`` parameter can be set via the
+:setting:`broker_transport_options` setting::
+
+    broker_transport_options = {'wait_time_seconds': 15}
+
+Valid values are 0 to 20. Note that newly created queues themselves (also if
+created by Celery) will have the default value of 0 set for the "Receive Message
+Wait Time" queue property.
+
+.. _`SQS Long Polling`: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-long-polling.html
+.. _`ReceiveMessage`: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html
 
 Queue Prefix
 ------------

@@ -4,8 +4,10 @@ import codecs
 import os
 import re
 import sys
+
 import setuptools
 import setuptools.command.test
+
 try:
     from platform import python_implementation as _pyimp
 except (AttributeError, ImportError):
@@ -37,64 +39,52 @@ E_UNSUPPORTED_PYTHON = """
 PYIMP = _pyimp()
 PY26_OR_LESS = sys.version_info < (2, 7)
 PY3 = sys.version_info[0] == 3
-PY33_OR_LESS = PY3 and sys.version_info < (3, 4)
+PY34_OR_LESS = PY3 and sys.version_info < (3, 5)
 PYPY_VERSION = getattr(sys, 'pypy_version_info', None)
 PYPY = PYPY_VERSION is not None
 PYPY24_ATLEAST = PYPY_VERSION and PYPY_VERSION >= (2, 4)
 
 if PY26_OR_LESS:
     raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '2.7'))
-elif PY33_OR_LESS and not PYPY24_ATLEAST:
-    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '3.4'))
+elif PY34_OR_LESS and not PYPY24_ATLEAST:
+    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '3.5'))
 
 # -*- Extras -*-
 
 EXTENSIONS = {
+    'arangodb',
     'auth',
+    'azureblockblob',
+    'brotli',
     'cassandra',
-    'django',
-    'elasticsearch',
-    'memcache',
-    'pymemcache',
+    'consul',
+    'cosmosdbsql',
     'couchbase',
+    'couchdb',
+    'django',
+    'dynamodb',
+    'elasticsearch',
     'eventlet',
     'gevent',
+    'librabbitmq',
+    'lzma',
+    'memcache',
+    'mongodb',
     'msgpack',
-    'yaml',
+    'pymemcache',
+    'pyro',
     'redis',
-    'sqs',
-    'couchdb',
     'riak',
-    'zookeeper',
+    's3',
+    'slmq',
     'solar',
     'sqlalchemy',
-    'librabbitmq',
-    'pyro',
-    'slmq',
+    'sqs',
     'tblib',
-    'consul',
-    'dynamodb',
-    'mongodb',
+    'yaml',
+    'zookeeper',
+    'zstd'
 }
-
-# -*- Classifiers -*-
-
-classes = """
-    Development Status :: 5 - Production/Stable
-    License :: OSI Approved :: BSD License
-    Topic :: System :: Distributed Computing
-    Topic :: Software Development :: Object Brokering
-    Programming Language :: Python
-    Programming Language :: Python :: 2
-    Programming Language :: Python :: 2.7
-    Programming Language :: Python :: 3
-    Programming Language :: Python :: 3.4
-    Programming Language :: Python :: 3.5
-    Programming Language :: Python :: 3.6
-    Programming Language :: Python :: Implementation :: CPython
-    Programming Language :: Python :: Implementation :: PyPy
-    Operating System :: OS Independent
-"""
 
 # -*- Distribution Meta -*-
 
@@ -176,6 +166,7 @@ def extras_require():
 
 # -*- Long Description -*-
 
+
 def long_description():
     try:
         return codecs.open('README.rst', 'r', 'utf-8').read()
@@ -183,6 +174,7 @@ def long_description():
         return 'Long description error: Missing README.rst file'
 
 # -*- Command: setup.py test -*-
+
 
 class pytest(setuptools.command.test.test):
     user_options = [('pytest-args=', 'a', 'Arguments to pass to py.test')]
@@ -196,6 +188,7 @@ class pytest(setuptools.command.test.test):
         sys.exit(_pytest.main(self.pytest_args))
 
 # -*- %%% -*-
+
 
 meta = parse_dist_meta()
 setuptools.setup(
@@ -211,10 +204,9 @@ setuptools.setup(
     license='BSD',
     platforms=['any'],
     install_requires=install_requires(),
-    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
-    classifiers=[s.strip() for s in classes.split('\n') if s],
     cmdclass={'test': pytest},
     include_package_data=True,
     zip_safe=False,
@@ -226,4 +218,27 @@ setuptools.setup(
             'celery = celery.contrib.pytest',
         ],
     },
+    project_urls={
+        "Documentation": "http://docs.celeryproject.org/en/latest/index.html",
+        "Code": "https://github.com/celery/celery",
+        "Tracker": "https://github.com/celery/celery/issues",
+        "Funding": "https://opencollective.com/celery"
+    },
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "License :: OSI Approved :: BSD License",
+        "Topic :: System :: Distributed Computing",
+        "Topic :: Software Development :: Object Brokering",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
+        "Operating System :: OS Independent"
+    ]
 )

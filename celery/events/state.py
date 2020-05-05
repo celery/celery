@@ -18,7 +18,7 @@ from __future__ import absolute_import, unicode_literals
 import bisect
 import sys
 import threading
-from collections import Callable, defaultdict
+from collections import defaultdict
 from datetime import datetime
 from decimal import Decimal
 from itertools import islice
@@ -33,6 +33,13 @@ from celery import states
 from celery.five import items, python_2_unicode_compatible, values
 from celery.utils.functional import LRUCache, memoize, pass1
 from celery.utils.log import get_logger
+
+try:
+    from collections.abc import Callable
+except ImportError:
+    # TODO: Remove this when we drop Python 2.7 support
+    from collections import Callable
+
 
 __all__ = ('Worker', 'Task', 'State', 'heartbeat_expires')
 
@@ -280,7 +287,7 @@ class Task(object):
     merge_rules = {
         states.RECEIVED: (
             'name', 'args', 'kwargs', 'parent_id',
-            'root_id' 'retries', 'eta', 'expires',
+            'root_id', 'retries', 'eta', 'expires',
         ),
     }
 
@@ -340,8 +347,9 @@ class Task(object):
         # update current state with info from this event.
         self.__dict__.update(fields)
 
-    def info(self, fields=None, extra=[]):
+    def info(self, fields=None, extra=None):
         """Information about this task suitable for on-screen display."""
+        extra = [] if not extra else extra
         fields = self._info_fields if fields is None else fields
 
         def _keys():
@@ -390,7 +398,7 @@ class Task(object):
     def parent(self):
         # issue github.com/mher/flower/issues/648
         try:
-            return self.parent_id and self.cluster_state.tasks[self.parent_id]
+            return self.parent_id and self.cluster_state.tasks.data[self.parent_id]
         except KeyError:
             return None
 
@@ -398,7 +406,7 @@ class Task(object):
     def root(self):
         # issue github.com/mher/flower/issues/648
         try:
-            return self.root_id and self.cluster_state.tasks[self.root_id]
+            return self.root_id and self.cluster_state.tasks.data[self.root_id]
         except KeyError:
             return None
 

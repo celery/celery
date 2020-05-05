@@ -6,8 +6,12 @@ from contextlib import contextmanager
 
 import pytest
 from case import ANY, Mock, call, patch, skip
+from kombu.serialization import prepare_accept_content
+from kombu.utils.encoding import ensure_bytes
 
-from celery import chord, group, states, uuid
+import celery
+from celery import chord, group, signature, states, uuid
+from celery.app.task import Context, Task
 from celery.backends.base import (BaseBackend, DisabledBackend,
                                   KeyValueStoreBackend, _nulldict)
 from celery.exceptions import ChordError, TimeoutError
@@ -25,6 +29,17 @@ class wrapobject(object):
 
     def __init__(self, *args, **kwargs):
         self.args = args
+
+
+class paramexception(Exception):
+
+    def __init__(self, param):
+        self.param = param
+
+
+class objectexception(object):
+    class Nested(Exception):
+        pass
 
 
 if sys.version_info[0] == 3 or getattr(sys, 'pypy_version_info', None):
@@ -56,6 +71,78 @@ class test_serialization:
     def test_create_exception_cls(self):
         assert serialization.create_exception_cls('FooError', 'm')
         assert serialization.create_exception_cls('FooError', 'm', KeyError)
+
+
+class test_Backend_interface:
+
+    def setup(self):
+        self.app.conf.accept_content = ['json']
+
+    def test_accept_precedence(self):
+
+        # default is app.conf.accept_content
+        accept_content = self.app.conf.accept_content
+        b1 = BaseBackend(self.app)
+        assert prepare_accept_content(accept_content) == b1.accept
+
+        # accept parameter
+        b2 = BaseBackend(self.app, accept=['yaml'])
+        assert len(b2.accept) == 1
+        assert list(b2.accept)[0] == 'application/x-yaml'
+        assert prepare_accept_content(['yaml']) == b2.accept
+
+        # accept parameter over result_accept_content
+        self.app.conf.result_accept_content = ['json']
+        b3 = BaseBackend(self.app, accept=['yaml'])
+        assert len(b3.accept) == 1
+        assert list(b3.accept)[0] == 'application/x-yaml'
+        assert prepare_accept_content(['yaml']) == b3.accept
+
+        # conf.result_accept_content if specified
+        self.app.conf.result_accept_content = ['yaml']
+        b4 = BaseBackend(self.app)
+        assert len(b4.accept) == 1
+        assert list(b4.accept)[0] == 'application/x-yaml'
+        assert prepare_accept_content(['yaml']) == b4.accept
+
+    def test_get_result_meta(self):
+        b1 = BaseBackend(self.app)
+        meta = b1._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=None)
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == {'fizz': 'buzz'}
+        assert meta['traceback'] is None
+
+        self.app.conf.result_extended = True
+        args = ['a', 'b']
+        kwargs = {'foo': 'bar'}
+        task_name = 'mytask'
+
+        b2 = BaseBackend(self.app)
+        request = Context(args=args, kwargs=kwargs,
+                          task=task_name,
+                          delivery_info={'routing_key': 'celery'})
+        meta = b2._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, encode=False)
+        assert meta['name'] == task_name
+        assert meta['args'] == args
+        assert meta['kwargs'] == kwargs
+        assert meta['queue'] == 'celery'
+
+    def test_get_result_meta_encoded(self):
+        self.app.conf.result_extended = True
+        b1 = BaseBackend(self.app)
+        args = ['a', 'b']
+        kwargs = {'foo': 'bar'}
+
+        request = Context(args=args, kwargs=kwargs)
+        meta = b1._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, encode=True)
+        assert meta['args'] == ensure_bytes(b1.encode(args))
+        assert meta['kwargs'] == ensure_bytes(b1.encode(kwargs))
 
 
 class test_BaseBackend_interface:
@@ -145,6 +232,28 @@ class test_prepare_exception:
         y = self.b.exception_to_python(x)
         assert isinstance(y, KeyError)
 
+    def test_json_exception_arguments(self):
+        self.b.serializer = 'json'
+        x = self.b.prepare_exception(Exception(object))
+        assert x == {
+            'exc_message': serialization.ensure_serializable(
+                (object,), self.b.encode),
+            'exc_type': Exception.__name__,
+            'exc_module': Exception.__module__}
+        y = self.b.exception_to_python(x)
+        assert isinstance(y, Exception)
+
+    @pytest.mark.skipif(sys.version_info < (3, 3), reason='no qualname support')
+    def test_json_exception_nested(self):
+        self.b.serializer = 'json'
+        x = self.b.prepare_exception(objectexception.Nested('msg'))
+        assert x == {
+            'exc_message': ('msg',),
+            'exc_type': 'objectexception.Nested',
+            'exc_module': objectexception.Nested.__module__}
+        y = self.b.exception_to_python(x)
+        assert isinstance(y, objectexception.Nested)
+
     def test_impossible(self):
         self.b.serializer = 'pickle'
         x = self.b.prepare_exception(Impossible())
@@ -177,7 +286,7 @@ class KVBackend(KeyValueStoreBackend):
 
     def __init__(self, app, *args, **kwargs):
         self.db = {}
-        super(KVBackend, self).__init__(app)
+        super(KVBackend, self).__init__(app, *args, **kwargs)
 
     def get(self, key):
         return self.db.get(key)
@@ -274,10 +383,22 @@ class test_BaseBackend_dict:
         self.b.reload_task_result('task-exists')
         self.b._cache['task-exists'] = {'result': 'task'}
 
+
     def test_fail_from_current_stack(self):
+        import inspect
         self.b.mark_as_failure = Mock()
-        try:
+        frame_list = []
+
+        if (2, 7, 0) <= sys.version_info < (3, 0, 0):
+            sys.exc_clear = Mock()
+
+        def raise_dummy():
+            frame_str_temp = str(inspect.currentframe().__repr__)
+            frame_list.append(frame_str_temp)
+            local_value = 1214
             raise KeyError('foo')
+        try:
+            raise_dummy()
         except KeyError as exc:
             self.b.fail_from_current_stack('task_id')
             self.b.mark_as_failure.assert_called()
@@ -285,6 +406,16 @@ class test_BaseBackend_dict:
             assert args[0] == 'task_id'
             assert args[1] is exc
             assert args[2]
+
+            if sys.version_info >= (3, 5, 0):
+                tb_ = exc.__traceback__
+                while tb_ is not None:
+                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                        assert len(tb_.tb_frame.f_locals) == 0
+                    tb_ = tb_.tb_next
+            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
+                sys.exc_clear.assert_called()
+
 
     def test_prepare_value_serializes_group_result(self):
         self.b.serializer = 'json'
@@ -314,10 +445,27 @@ class test_BaseBackend_dict:
         b.mark_as_done('id', 10, request=request)
         b.on_chord_part_return.assert_called_with(request, states.SUCCESS, 10)
 
+    def test_mark_as_failure__bound_errback_eager(self):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+        request = Mock(name='request')
+        request.delivery_info = {
+            'is_eager': True
+        }
+        request.errbacks = [
+            self.bound_errback.subtask(args=[1], immutable=True)]
+        exc = KeyError()
+        group = self.patching('celery.backends.base.group')
+        b.mark_as_failure('id', exc, request=request)
+        group.assert_called_with(request.errbacks, app=self.app)
+        group.return_value.apply.assert_called_with(
+            (request.id, ), parent_id=request.id, root_id=request.root_id)
+
     def test_mark_as_failure__bound_errback(self):
         b = BaseBackend(app=self.app)
         b._store_result = Mock()
         request = Mock(name='request')
+        request.delivery_info = {}
         request.errbacks = [
             self.bound_errback.subtask(args=[1], immutable=True)]
         exc = KeyError()
@@ -335,6 +483,35 @@ class test_BaseBackend_dict:
         exc = KeyError()
         b.mark_as_failure('id', exc, request=request)
         assert self.errback.last_result == 5
+
+    @patch('celery.backends.base.group')
+    def test_class_based_task_can_be_used_as_error_callback(self, mock_group):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+
+        class TaskBasedClass(Task):
+            def run(self):
+                pass
+
+        TaskBasedClass = self.app.register_task(TaskBasedClass())
+
+        request = Mock(name='request')
+        request.errbacks = [TaskBasedClass.subtask(args=[], immutable=True)]
+        exc = KeyError()
+        b.mark_as_failure('id', exc, request=request)
+        mock_group.assert_called_once_with(request.errbacks, app=self.app)
+
+    @patch('celery.backends.base.group')
+    def test_unregistered_task_can_be_used_as_error_callback(self, mock_group):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+
+        request = Mock(name='request')
+        request.errbacks = [signature('doesnotexist',
+                                      immutable=True)]
+        exc = KeyError()
+        b.mark_as_failure('id', exc, request=request)
+        mock_group.assert_called_once_with(request.errbacks, app=self.app)
 
     def test_mark_as_failure__chord(self):
         b = BaseBackend(app=self.app)
@@ -371,6 +548,26 @@ class test_BaseBackend_dict:
     def test_exception_to_python_when_None(self):
         b = BaseBackend(app=self.app)
         assert b.exception_to_python(None) is None
+
+    def test_exception_to_python_when_attribute_exception(self):
+        b = BaseBackend(app=self.app)
+        test_exception = {'exc_type': 'AttributeDoesNotExist',
+                          'exc_module': 'celery',
+                          'exc_message': ['Raise Custom Message']}
+
+        result_exc = b.exception_to_python(test_exception)
+        assert str(result_exc) == 'Raise Custom Message'
+
+    def test_exception_to_python_when_type_error(self):
+        b = BaseBackend(app=self.app)
+        celery.TestParamException = paramexception
+        test_exception = {'exc_type': 'TestParamException',
+                          'exc_module': 'celery',
+                          'exc_message': []}
+
+        result_exc = b.exception_to_python(test_exception)
+        del celery.TestParamException
+        assert str(result_exc) == "<class 't.unit.backends.test_base.paramexception'>([])"
 
     def test_wait_for__on_interval(self):
         self.patching('time.sleep')
@@ -410,6 +607,33 @@ class test_KeyValueStoreBackend:
         assert self.b.get_state(tid) == states.SUCCESS
         self.b.forget(tid)
         assert self.b.get_state(tid) == states.PENDING
+
+    @pytest.mark.parametrize('serializer',
+                             ['json', 'pickle', 'yaml', 'msgpack'])
+    def test_store_result_parent_id(self, serializer):
+        self.app.conf.accept_content = ('json', serializer)
+        self.b = KVBackend(app=self.app, serializer=serializer)
+        tid = uuid()
+        pid = uuid()
+        state = 'SUCCESS'
+        result = 10
+        request = Context(parent_id=pid)
+        self.b.store_result(
+            tid, state=state, result=result, request=request,
+        )
+        stored_meta = self.b.decode(self.b.get(self.b.get_key_for_task(tid)))
+        assert stored_meta['parent_id'] == request.parent_id
+
+    def test_store_result_group_id(self):
+        tid = uuid()
+        state = 'SUCCESS'
+        result = 10
+        request = Context(group='gid', children=[])
+        self.b.store_result(
+            tid, state=state, result=result, request=request,
+        )
+        stored_meta = self.b.decode(self.b.get(self.b.get_key_for_task(tid)))
+        assert stored_meta['group_id'] == request.group
 
     def test_strip_prefix(self):
         x = self.b.get_key_for_task('x1b34')

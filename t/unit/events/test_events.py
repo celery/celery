@@ -229,6 +229,15 @@ class test_EventReceiver:
         r = self.app.events.Receiver(Mock(), queue_prefix='fooq')
         assert r.queue.name.startswith('fooq.')
 
+    def test_event_exchange__default(self):
+        r = self.app.events.Receiver(Mock())
+        assert r.exchange.name == 'celeryev'
+
+    def test_event_exchange__setting(self):
+        self.app.conf.event_exchange = 'exchange_ev'
+        r = self.app.events.Receiver(Mock())
+        assert r.exchange.name == 'exchange_ev'
+
     def test_catch_all_event(self):
         message = {'type': 'world-war'}
         got_event = [False]

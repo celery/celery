@@ -205,7 +205,7 @@ class IncompleteStream(TaskError):
 
 @python_2_unicode_compatible
 class NotRegistered(KeyError, TaskError):
-    """The task ain't registered."""
+    """The task is not registered."""
 
     def __repr__(self):
         return UNREGISTERED_FMT.format(self)
@@ -222,6 +222,11 @@ class TimeoutError(TaskError):
 
 class MaxRetriesExceededError(TaskError):
     """The tasks max restart limit has been exceeded."""
+
+    def __init__(self, *args, **kwargs):
+        self.task_args = kwargs.pop("task_args", [])
+        self.task_kwargs = kwargs.pop("task_kwargs", dict())
+        super(MaxRetriesExceededError, self).__init__(*args, **kwargs)
 
 
 class TaskRevokedError(TaskError):

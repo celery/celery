@@ -25,7 +25,7 @@ change how you run your code, not how you write it.
 Celery supports Eventlet as an alternative execution pool implementation and
 in some cases superior to prefork. However, you need to ensure one task doesn't
 block the event loop too long. Generally, CPU-bound operations don't go well
-with Evenetlet. Also note that some libraries, usually with C extensions,
+with Eventlet. Also note that some libraries, usually with C extensions,
 cannot be monkeypatched and therefore cannot benefit from using Eventlet.
 Please refer to their documentation if you are not sure. For example, pylibmc
 does not allow cooperation with Eventlet but psycopg2 does when both of them

@@ -44,7 +44,8 @@ class EventReceiver(ConsumerMixin):
         self.node_id = node_id or uuid()
         self.queue_prefix = queue_prefix or self.app.conf.event_queue_prefix
         self.exchange = get_exchange(
-            self.connection or self.app.connection_for_write())
+            self.connection or self.app.connection_for_write(),
+            name=self.app.conf.event_exchange)
         if queue_ttl is None:
             queue_ttl = self.app.conf.event_queue_ttl
         if queue_expires is None:
@@ -89,7 +90,8 @@ class EventReceiver(ConsumerMixin):
         unless :attr:`EventDispatcher.should_stop` is set to True, or
         forced via :exc:`KeyboardInterrupt` or :exc:`SystemExit`.
         """
-        return list(self.consume(limit=limit, timeout=timeout, wakeup=wakeup))
+        for _ in self.consume(limit=limit, timeout=timeout, wakeup=wakeup):
+            pass
 
     def wakeup_workers(self, channel=None):
         self.app.control.broadcast('heartbeat',

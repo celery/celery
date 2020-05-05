@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import copy
+import datetime
 import traceback
 from contextlib import contextmanager
 
@@ -8,6 +9,7 @@ import pytest
 from case import Mock, call, patch, skip
 
 from celery import states, uuid
+from celery.app.task import Context
 from celery.backends.base import SyncBackendMixin
 from celery.exceptions import (CPendingDeprecationWarning,
                                ImproperlyConfigured, IncompleteStream,
@@ -67,6 +69,7 @@ class test_AsyncResult:
     def setup(self):
         self.app.conf.result_cache_max = 100
         self.app.conf.result_serializer = 'pickle'
+        self.app.conf.result_extended = True
         self.task1 = mock_task('task1', states.SUCCESS, 'the')
         self.task2 = mock_task('task2', states.SUCCESS, 'quick')
         self.task3 = mock_task('task3', states.FAILURE, KeyError('brown'))
@@ -82,6 +85,16 @@ class test_AsyncResult:
         def mytask():
             pass
         self.mytask = mytask
+
+    def test_forget(self):
+        first = Mock()
+        second = self.app.AsyncResult(self.task1['id'], parent=first)
+        third = self.app.AsyncResult(self.task2['id'], parent=second)
+        last = self.app.AsyncResult(self.task3['id'], parent=third)
+        last.forget()
+        first.forget.assert_called_once()
+        assert last.result is None
+        assert second.result is None
 
     def test_ignored_getter(self):
         result = self.app.AsyncResult(uuid())
@@ -171,7 +184,7 @@ class test_AsyncResult:
         )
         x.backend.READY_STATES = states.READY_STATES
         assert x.graph
-        assert x.get_leaf() is 2
+        assert x.get_leaf() == 2
 
         it = x.collect()
         assert list(it) == [
@@ -241,31 +254,26 @@ class test_AsyncResult:
 
         with pytest.raises(KeyError):
             notb.get()
-        try:
+        with pytest.raises(KeyError) as excinfo:
             withtb.get()
-        except KeyError:
-            tb = traceback.format_exc()
-            assert '  File "foo.py", line 2, in foofunc' not in tb
-            assert '  File "bar.py", line 3, in barfunc' not in tb
-            assert 'KeyError:' in tb
-            assert "'blue'" in tb
-        else:
-            raise AssertionError('Did not raise KeyError.')
+
+        tb = [t.strip() for t in traceback.format_tb(excinfo.tb)]
+        assert 'File "foo.py", line 2, in foofunc' not in tb
+        assert 'File "bar.py", line 3, in barfunc' not in tb
+        assert excinfo.value.args[0] == 'blue'
+        assert excinfo.typename == 'KeyError'
 
     @skip.unless_module('tblib')
     def test_raising_remote_tracebacks(self):
         withtb = self.app.AsyncResult(self.task5['id'])
         self.app.conf.task_remote_tracebacks = True
-        try:
+        with pytest.raises(KeyError) as excinfo:
             withtb.get()
-        except KeyError:
-            tb = traceback.format_exc()
-            assert '  File "foo.py", line 2, in foofunc' in tb
-            assert '  File "bar.py", line 3, in barfunc' in tb
-            assert 'KeyError:' in tb
-            assert "'blue'" in tb
-        else:
-            raise AssertionError('Did not raise KeyError.')
+        tb = [t.strip() for t in traceback.format_tb(excinfo.tb)]
+        assert 'File "foo.py", line 2, in foofunc' in tb
+        assert 'File "bar.py", line 3, in barfunc' in tb
+        assert excinfo.value.args[0] == 'blue'
+        assert excinfo.typename == 'KeyError'
 
     def test_str(self):
         ok_res = self.app.AsyncResult(self.task1['id'])
@@ -392,6 +400,44 @@ class test_AsyncResult:
         result.backend = None
         del result
 
+    def test_get_request_meta(self):
+
+        x = self.app.AsyncResult('1')
+        request = Context(
+            task='foo',
+            children=None,
+            args=['one', 'two'],
+            kwargs={'kwarg1': 'three'},
+            hostname="foo",
+            retries=1,
+            delivery_info={'routing_key': 'celery'}
+        )
+        x.backend.store_result(task_id="1", result='foo', state=states.SUCCESS,
+                               traceback=None, request=request)
+        assert x.name == 'foo'
+        assert x.args == ['one', 'two']
+        assert x.kwargs == {'kwarg1': 'three'}
+        assert x.worker == 'foo'
+        assert x.retries == 1
+        assert x.queue == 'celery'
+        assert isinstance(x.date_done, datetime.datetime)
+        assert x.task_id == "1"
+        assert x.state == "SUCCESS"
+        result = self.app.AsyncResult(self.task4['id'])
+        assert result.date_done is None
+
+    @pytest.mark.parametrize('result_dict, date', [
+        ({'date_done': None}, None),
+        ({'date_done': '1991-10-05T05:41:06'},
+         datetime.datetime(1991, 10, 5, 5, 41, 6)),
+        ({'date_done': datetime.datetime(1991, 10, 5, 5, 41, 6)},
+         datetime.datetime(1991, 10, 5, 5, 41, 6))
+    ])
+    def test_date_done(self, result_dict, date):
+        result = self.app.AsyncResult(uuid())
+        result._cache = result_dict
+        assert result.date_done == date
+
 
 class test_ResultSet:
 
@@ -417,6 +463,49 @@ class test_ResultSet:
         b.supports_native_join = True
         x.get()
         x.join_native.assert_called()
+
+    @patch('celery.result.task_join_will_block')
+    def test_get_sync_subtask_option(self, task_join_will_block):
+        task_join_will_block.return_value = True
+        x = self.app.ResultSet([self.app.AsyncResult(str(t)) for t in [1, 2, 3]])
+        b = x.results[0].backend = Mock()
+        b.supports_native_join = False
+        with pytest.raises(RuntimeError):
+            x.get()
+        with pytest.raises(TimeoutError):
+            x.get(disable_sync_subtasks=False, timeout=0.1)
+
+    def test_join_native_with_group_chain_group(self):
+        """Test group(chain(group)) case, join_native can be run correctly.
+        In group(chain(group)) case, GroupResult has no _cache property, and
+        AsyncBackendMixin.iter_native returns a node instead of node._cache,
+        this test make sure ResultSet.join_native can process correctly both
+        values of AsyncBackendMixin.iter_native returns.
+        """
+        def _get_meta(tid, result=None, children=None):
+            return {
+                'status': states.SUCCESS,
+                'result': result,
+                'children': children,
+                'task_id': tid,
+            }
+
+        results = [self.app.AsyncResult(t) for t in [1, 2, 3]]
+        values = [(_.id, _get_meta(_.id, _)) for _ in results]
+        g_res = GroupResult(6, [self.app.AsyncResult(t) for t in [4, 5]])
+        results += [g_res]
+        values += [(6, g_res.children)]
+        x = self.app.ResultSet(results)
+        x.results[0].backend = Mock()
+        x.results[0].backend.join = Mock()
+        x.results[3][0].get = Mock()
+        x.results[3][0].get.return_value = g_res.results[0]
+        x.results[3][1].get = Mock()
+        x.results[3][1].get.return_value = g_res.results[1]
+        x.iter_native = Mock()
+        x.iter_native.return_value = values.__iter__()
+        x.join_native()
+        x.iter_native.assert_called()
 
     def test_eq_ne(self):
         g1 = self.app.ResultSet([
@@ -723,7 +812,7 @@ class test_GroupResult:
         ts = self.app.GroupResult(uuid(), subs)
         ts.save()
         with pytest.raises(RuntimeError,
-                           message="Test depends on current_app"):
+                           match="Test depends on current_app"):
             GroupResult.restore(ts.id)
 
     def test_join_native(self):

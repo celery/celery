@@ -5,6 +5,7 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 from billiard.einfo import ExceptionInfo
+from kombu import serialization
 from kombu.exceptions import OperationalError
 from kombu.utils.uuid import uuid
 
@@ -208,7 +209,7 @@ class Task(object):
     store_errors_even_if_ignored = None
 
     #: The name of a serializer that are registered with
-    #: :mod:`kombu.serialization.registry`.  Default is `'pickle'`.
+    #: :mod:`kombu.serialization.registry`.  Default is `'json'`.
     serializer = None
 
     #: Hard time limit.
@@ -249,6 +250,17 @@ class Task(object):
     #: :setting:`task_acks_late` setting.
     acks_late = None
 
+    #: When enabled messages for this task will be acknowledged even if it
+    #: fails or times out.
+    #:
+    #: Configuring this setting only applies to tasks that are
+    #: acknowledged **after** they have been executed and only if
+    #: :setting:`task_acks_late` is enabled.
+    #:
+    #: The application default can be overridden with the
+    #: :setting:`task_acks_on_failure_or_timeout` setting.
+    acks_on_failure_or_timeout = None
+
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
     #: exits or is signaled (e.g., :sig:`KILL`/:sig:`INT`, etc).
@@ -272,6 +284,9 @@ class Task(object):
     #: Default task expiry time.
     expires = None
 
+    #: Default task priority.
+    priority = None
+
     #: Max length of result representation used in logs and events.
     resultrepr_maxsize = 1024
 
@@ -292,8 +307,10 @@ class Task(object):
     from_config = (
         ('serializer', 'task_serializer'),
         ('rate_limit', 'task_default_rate_limit'),
+        ('priority', 'task_default_priority'),
         ('track_started', 'task_track_started'),
         ('acks_late', 'task_acks_late'),
+        ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
         ('store_errors_even_if_ignored', 'task_store_errors_even_if_ignored'),
@@ -512,12 +529,6 @@ class Task(object):
             else:
                 check_arguments(*(args or ()), **(kwargs or {}))
 
-        app = self._get_app()
-        if app.conf.task_always_eager:
-            with denied_join_result():
-                return self.apply(args, kwargs, task_id=task_id or uuid(),
-                                  link=link, link_error=link_error, **options)
-
         if self.__v2_compat__:
             shadow = shadow or self.shadow_name(self(), args, kwargs, options)
         else:
@@ -527,13 +538,35 @@ class Task(object):
         options = dict(preopts, **options) if options else preopts
 
         options.setdefault('ignore_result', self.ignore_result)
+        if self.priority:
+            options.setdefault('priority', self.priority)
 
-        return app.send_task(
-            self.name, args, kwargs, task_id=task_id, producer=producer,
-            link=link, link_error=link_error, result_cls=self.AsyncResult,
-            shadow=shadow, task_type=self,
-            **options
-        )
+        app = self._get_app()
+        if app.conf.task_always_eager:
+            with app.producer_or_acquire(producer) as eager_producer:
+                serializer = options.get(
+                    'serializer',
+                    (eager_producer.serializer if eager_producer.serializer
+                     else app.conf.task_serializer)
+                )
+                body = args, kwargs
+                content_type, content_encoding, data = serialization.dumps(
+                    body, serializer,
+                )
+                args, kwargs = serialization.loads(
+                    data, content_type, content_encoding,
+                    accept=[content_type]
+                )
+            with denied_join_result():
+                return self.apply(args, kwargs, task_id=task_id or uuid(),
+                                  link=link, link_error=link_error, **options)
+        else:
+            return app.send_task(
+                self.name, args, kwargs, task_id=task_id, producer=producer,
+                link=link, link_error=link_error, result_cls=self.AsyncResult,
+                shadow=shadow, task_type=self,
+                **options
+            )
 
     def shadow_name(self, args, kwargs, options):
         """Override for custom task name in worker logs/monitoring.
@@ -562,10 +595,13 @@ class Task(object):
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
         options = request.as_execution_options()
+        delivery_info = request.delivery_info or {}
+        priority = delivery_info.get('priority')
+        if priority is not None:
+            options['priority'] = priority
         if queue:
             options['queue'] = queue
         else:
-            delivery_info = request.delivery_info or {}
             exchange = delivery_info.get('exchange')
             routing_key = delivery_info.get('routing_key')
             if exchange == '' and routing_key:
@@ -580,7 +616,7 @@ class Task(object):
 
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
               eta=None, countdown=None, max_retries=None, **options):
-        """Retry the task.
+        """Retry the task, adding it to the back of the queue.
 
         Example:
             >>> from imaginary_twitter_lib import Twitter
@@ -593,7 +629,7 @@ class Task(object):
             ...         twitter.post_status_update(message)
             ...     except twitter.FailWhale as exc:
             ...         # Retry in 5 minutes.
-            ...         raise self.retry(countdown=60 * 5, exc=exc)
+            ...         self.retry(countdown=60 * 5, exc=exc)
 
         Note:
             Although the task will never return above as `retry` raises an
@@ -633,6 +669,7 @@ class Task(object):
             **options (Any): Extra options to pass on to :meth:`apply_async`.
 
         Raises:
+
             celery.exceptions.Retry:
                 To tell the worker that the task has been re-sent for retry.
                 This always happens, unless the `throw` keyword argument
@@ -667,7 +704,9 @@ class Task(object):
                 raise_with_context(exc)
             raise self.MaxRetriesExceededError(
                 "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
-                    self.name, request.id, S.args, S.kwargs))
+                    self.name, request.id, S.args, S.kwargs
+                ), task_args=S.args, task_kwargs=S.kwargs
+            )
 
         ret = Retry(exc=exc, when=eta or countdown)
 
@@ -741,7 +780,7 @@ class Task(object):
         return EagerResult(task_id, retval, state, traceback=tb)
 
     def AsyncResult(self, task_id, **kwargs):
-        """Get AsyncResult instance for this kind of task.
+        """Get AsyncResult instance for the specified task.
 
         Arguments:
             task_id (str): Task id to get result for.
@@ -819,14 +858,17 @@ class Task(object):
     def replace(self, sig):
         """Replace this task, with a new task inheriting the task id.
 
+        Execution of the host task ends immediately and no subsequent statements
+        will be run.
+
         .. versionadded:: 4.0
 
         Arguments:
             sig (~@Signature): signature to replace with.
 
         Raises:
-            ~@Ignore: This is always raised, so the best practice
-            is to always use ``raise self.replace(...)`` to convey
+            ~@Ignore: This is always raised when called in asynchrous context.
+            It is best to always use ``return self.replace(...)`` to convey
             to the reader that the task won't continue after being replaced.
         """
         chord = self.request.chord
@@ -852,8 +894,11 @@ class Task(object):
         )
         sig.freeze(self.request.id)
 
-        sig.delay()
-        raise Ignore('Replaced by new task')
+        if self.request.is_eager:
+            return sig.apply().get()
+        else:
+            sig.delay()
+            raise Ignore('Replaced by new task')
 
     def add_to_chord(self, sig, lazy=False):
         """Add signature to the chord the current task is a member of.
@@ -878,7 +923,7 @@ class Task(object):
         self.backend.add_to_chord(self.request.group, result)
         return sig.delay() if not lazy else sig
 
-    def update_state(self, task_id=None, state=None, meta=None):
+    def update_state(self, task_id=None, state=None, meta=None, **kwargs):
         """Update task state.
 
         Arguments:
@@ -889,7 +934,7 @@ class Task(object):
         """
         if task_id is None:
             task_id = self.request.id
-        self.backend.store_result(task_id, meta, state)
+        self.backend.store_result(task_id, meta, state, request=self.request, **kwargs)
 
     def on_success(self, retval, task_id, args, kwargs):
         """Success handler.

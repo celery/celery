@@ -109,7 +109,11 @@ beat schedule list.
 
 
 Setting these up from within the :data:`~@on_after_configure` handler means
-that we'll not evaluate the app at module level when using ``test.s()``.
+that we'll not evaluate the app at module level when using ``test.s()``. Note that 
+:data:`~@on_after_configure` is sent after the app is set up, so tasks outside the
+module where the app is declared (e.g. in a `tasks.py` file located by 
+:meth:`celery.Celery.autodiscover_tasks`) must use a later signal, such as 
+:data:`~@on_after_finalize`.
 
 The :meth:`~@add_periodic_task` function will add the entry to the
 :setting:`beat_schedule` setting behind the scenes, and the same setting
@@ -265,7 +269,7 @@ Some examples:
 |                                         |                                            |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(0, 0,``                       | Execute on every even numbered day.        |
-|         ``day_of_month='2-30/3')``      |                                            |
+|         ``day_of_month='2-30/2')``      |                                            |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(0, 0,``                       | Execute on the first and third weeks of    |
 |         ``day_of_month='1-7,15-21')``   | the month.                                 |
@@ -273,7 +277,7 @@ Some examples:
 | ``crontab(0, 0, day_of_month='11',``    | Execute on the eleventh of May every year. |
 |          ``month_of_year='5')``         |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0,``                       | Execute every day on the first month     |
+| ``crontab(0, 0,``                       | Execute every day on the first month       |
 |         ``month_of_year='*/3')``        | of every quarter.                          |
 +-----------------------------------------+--------------------------------------------+
 
@@ -461,6 +465,6 @@ To install and use this extension:
 
         $ celery -A proj beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 
-   Note:  You may also add this as an settings option directly.
+   Note:  You may also add this as the :setting:`beat_scheduler` setting directly.
 
 #. Visit the Django-Admin interface to set up some periodic tasks.

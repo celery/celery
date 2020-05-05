@@ -48,22 +48,6 @@ like adding new worker nodes, or revoking unnecessary tasks.
 General Settings
 ================
 
-.. _optimizing-librabbitmq:
-
-librabbitmq
------------
-
-If you're using RabbitMQ (AMQP) as the broker then you can install the
-:pypi:`librabbitmq` module to use an optimized client written in C:
-
-.. code-block:: console
-
-    $ pip install librabbitmq
-
-The 'amqp' transport will automatically use the librabbitmq module if it's
-installed, or you can also specify the transport you want directly by using
-the ``pyamqp://`` or ``librabbitmq://`` prefixes.
-
 .. _optimizing-connection-pools:
 
 Broker Connection Pools
@@ -170,7 +154,7 @@ When using the default of early acknowledgment, having a prefetch multiplier set
 of *one*, means the worker will reserve at most one extra task for every
 worker process: or in other words, if the worker is started with
 :option:`-c 10 <celery worker -c>`, the worker may reserve at most 20
-tasks (10 unacknowledged tasks executing, and 10 unacknowledged reserved
+tasks (10 acknowledged tasks executing, and 10 unacknowledged reserved
 tasks) at any time.
 
 Often users ask if disabling "prefetching of tasks" is possible, but what
@@ -225,11 +209,11 @@ have a buffer as small as 64KB but on recent Linux versions the buffer
 size is 1MB (can only be changed system wide).
 
 You can disable this prefetching behavior by enabling the
-:option:`-Ofair <celery worker -O>` worker option:
+:option:`-O fair <celery worker -O>` worker option:
 
 .. code-block:: console
 
-    $ celery -A proj worker -l info -Ofair
+    $ celery -A proj worker -l info -O fair
 
 With this option enabled the worker will only write to processes that are
 available for work, disabling the prefetch behavior::

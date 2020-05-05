@@ -284,7 +284,7 @@ restart_workers () {
 
 
 kill_workers() {
-    _chuid kill $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
+    _chuid kill $CELERYD_NODES $DAEMON_OPTS --pidfile="$CELERYD_PID_FILE"
 }
 
 

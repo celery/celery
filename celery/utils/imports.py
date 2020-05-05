@@ -2,7 +2,6 @@
 """Utilities related to importing modules and symbols by name."""
 from __future__ import absolute_import, unicode_literals
 
-import imp as _imp
 import importlib
 import os
 import sys
@@ -78,18 +77,26 @@ def find_module(module, path=None, imp=None):
     if imp is None:
         imp = importlib.import_module
     with cwd_in_path():
-        if '.' in module:
-            last = None
-            parts = module.split('.')
-            for i, part in enumerate(parts[:-1]):
-                mpart = imp('.'.join(parts[:i + 1]))
-                try:
-                    path = mpart.__path__
-                except AttributeError:
-                    raise NotAPackage(module)
-                last = _imp.find_module(parts[i + 1], path)
-            return last
-        return _imp.find_module(module)
+        try:
+            return imp(module)
+        except ImportError:
+            # Raise a more specific error if the problem is that one of the
+            # dot-separated segments of the module name is not a package.
+            if '.' in module:
+                parts = module.split('.')
+                for i, part in enumerate(parts[:-1]):
+                    package = '.'.join(parts[:i + 1])
+                    try:
+                        mpart = imp(package)
+                    except ImportError:
+                        # Break out and re-raise the original ImportError
+                        # instead.
+                        break
+                    try:
+                        mpart.__path__
+                    except AttributeError:
+                        raise NotAPackage(package)
+            raise
 
 
 def import_from_cwd(module, imp=None, package=None):
