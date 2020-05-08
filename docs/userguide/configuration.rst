@@ -608,6 +608,10 @@ Can be one of the following:
     Use `Memcached`_ to store the results.
     See :ref:`conf-cache-result-backend`.
 
+* mongodb
+    Use `MongoDB`_ to store the results.
+    See :ref:`conf-mongodb-result-backend`.
+
 * ``cassandra``
     Use `Cassandra`_ to store the results.
     See :ref:`conf-cassandra-result-backend`.
@@ -659,6 +663,7 @@ Can be one of the following:
 
 .. _`SQLAlchemy`: http://sqlalchemy.org
 .. _`Memcached`: http://memcached.org
+.. _`MongoDB`: http://mongodb.org
 .. _`Redis`: https://redis.io
 .. _`Cassandra`: http://cassandra.apache.org/
 .. _`Elasticsearch`: https://aws.amazon.com/elasticsearch-service/
@@ -973,6 +978,56 @@ setting:
 
 This setting is no longer used as it's now possible to specify
 the cache backend directly in the :setting:`result_backend` setting.
+
+.. _conf-mongodb-result-backend:
+
+MongoDB backend settings
+------------------------
+
+.. note::
+
+    The MongoDB backend requires the :mod:`pymongo` library:
+    http://github.com/mongodb/mongo-python-driver/tree/master
+
+.. setting:: mongodb_backend_settings
+
+mongodb_backend_settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is a dict supporting the following keys:
+
+* database
+    The database name to connect to. Defaults to ``celery``.
+
+* taskmeta_collection
+    The collection name to store task meta data.
+    Defaults to ``celery_taskmeta``.
+
+* max_pool_size
+    Passed as max_pool_size to PyMongo's Connection or MongoClient
+    constructor. It is the maximum number of TCP connections to keep
+    open to MongoDB at a given time. If there are more open connections
+    than max_pool_size, sockets will be closed when they are released.
+    Defaults to 10.
+
+* options
+
+    Additional keyword arguments to pass to the mongodb connection
+    constructor.  See the :mod:`pymongo` docs to see a list of arguments
+    supported.
+
+.. _example-mongodb-result-config:
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    result_backend = 'mongodb://localhost:27017/'
+    mongodb_backend_settings = {
+        'database': 'mydb',
+        'taskmeta_collection': 'my_taskmeta_collection',
+    }
 
 .. _conf-redis-result-backend:
 
