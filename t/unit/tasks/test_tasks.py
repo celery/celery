@@ -1223,12 +1223,21 @@ class test_apply_async(TasksCase):
 
     def test_always_eager_with_task_serializer_option(self):
         self.app.conf.task_always_eager = True
+        self.app.conf.task_serializer = 'pickle'
+
+        @self.app.task
+        def task(*args, **kwargs):
+            pass
+        task.apply_async((1, 2, 3, 4, {1}))
+
+    def test_always_eager_uses_task_serializer_setting(self):
+        self.app.conf.task_always_eager = True
 
         @self.app.task(serializer='pickle')
         def task(*args, **kwargs):
             pass
         task.apply_async((1, 2, 3, 4, {1}))
-
+        
     def test_task_with_ignored_result(self):
         with patch.object(self.app, 'send_task') as send_task:
             self.task_with_ignored_result.apply_async()
