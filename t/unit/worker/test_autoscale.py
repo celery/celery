@@ -183,6 +183,15 @@ class test_Autoscaler:
         x.update(15, 7)
         worker.consumer._update_prefetch_count.assert_called_with(10)
 
+    def test_prefetch_count_on_updates_prefetch_multiplier_gt_one(self):
+        worker = Mock(name='worker')
+        x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
+        x.worker.consumer.prefetch_multiplier = 4
+        x.update(5, None)
+        worker.consumer._update_prefetch_count.assert_called_with(-5)
+        x.update(15, 7)
+        worker.consumer._update_prefetch_count.assert_called_with(10)
+
     def test_prefetch_count_on_force_up(self):
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)

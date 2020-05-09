@@ -153,7 +153,7 @@ class Autoscaler(bgThread):
         diff = new_max - self.max_concurrency
         if diff:
             self.worker.consumer._update_prefetch_count(
-                diff * self.worker.consumer.prefetch_multiplier
+                diff
             )
 
     def info(self):
