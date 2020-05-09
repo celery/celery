@@ -544,11 +544,12 @@ class Task(object):
         app = self._get_app()
         if app.conf.task_always_eager:
             with app.producer_or_acquire(producer) as eager_producer:
-                serializer = options.get(
-                    'serializer',
-                    (eager_producer.serializer if eager_producer.serializer
-                     else app.conf.task_serializer)
-                )
+                serializer = options.get('serializer')
+                if serializer is None:
+                    if eager_producer.serializer:
+                        serializer = eager_producer.serializer 
+                    else:
+                        serializer = app.conf.task_serializer
                 body = args, kwargs
                 content_type, content_encoding, data = serialization.dumps(
                     body, serializer,
