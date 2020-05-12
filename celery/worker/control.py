@@ -469,7 +469,7 @@ def memdump(state, samples=10, **kwargs):  # pragma: no cover
 def pool_grow(state, n=1, **kwargs):
     """Grow pool by n processes/threads."""
     if state.consumer.controller.autoscaler:
-        state.consumer.controller.autoscaler.force_scale_up(n)
+        return nok("pool_grow is not supported with autoscale. Adjust autoscale range instead.")
     else:
         state.consumer.pool.grow(n)
         state.consumer._update_prefetch_count(n)
@@ -483,7 +483,7 @@ def pool_grow(state, n=1, **kwargs):
 def pool_shrink(state, n=1, **kwargs):
     """Shrink pool by n processes/threads."""
     if state.consumer.controller.autoscaler:
-        state.consumer.controller.autoscaler.force_scale_down(n)
+        return nok("pool_shrink is not supported with autoscale. Adjust autoscale range instead.")
     else:
         state.consumer.pool.shrink(n)
         state.consumer._update_prefetch_count(-n)

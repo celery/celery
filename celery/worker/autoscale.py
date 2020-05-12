@@ -112,21 +112,6 @@ class Autoscaler(bgThread):
                 self.min_concurrency = min
             return self.max_concurrency, self.min_concurrency
 
-    def force_scale_up(self, n):
-        with self.mutex:
-            new = self.processes + n
-            if new > self.max_concurrency:
-                self._update_consumer_prefetch_count(new)
-                self.max_concurrency = new
-            self._grow(n)
-
-    def force_scale_down(self, n):
-        with self.mutex:
-            new = self.processes - n
-            if new < self.min_concurrency:
-                self.min_concurrency = max(new, 0)
-            self._shrink(min(n, self.processes))
-
     def scale_up(self, n):
         self._last_scale_up = monotonic()
         return self._grow(n)
