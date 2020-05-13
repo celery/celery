@@ -94,6 +94,19 @@ class TasksCase:
 
         self.retry_task_noargs = retry_task_noargs
 
+        @self.app.task(bind=True, max_retries=3, iterations=0, shared=False)
+        def retry_task_without_throw(self, **kwargs):
+            self.iterations += 1
+            try:
+                if self.request.retries >= 3:
+                    return 42
+                else:
+                    raise Exception("random code exception")
+            except Exception as exc:
+                return self.retry(exc=exc, throw=False)
+
+        self.retry_task_without_throw = retry_task_without_throw
+
         @self.app.task(bind=True, max_retries=3, iterations=0,
                        base=MockApplyTask, shared=False)
         def retry_task_mockapply(self, arg1, arg2, kwarg=1):
@@ -350,6 +363,9 @@ class test_task_retries(TasksCase):
                 self.retry_task_mockapply.retry(args=[4, 4], kwargs=None)
         finally:
             self.retry_task_mockapply.pop_request()
+
+    def test_retry_eager(self):
+        assert self.retry_task_without_throw.apply().get() == 42
 
     def test_retry_not_eager(self):
         self.retry_task_mockapply.push_request()
