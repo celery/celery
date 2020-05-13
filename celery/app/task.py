@@ -708,6 +708,7 @@ class Task(object):
                     self.name, request.id, S.args, S.kwargs
                 ), task_args=S.args, task_kwargs=S.kwargs
             )
+
         ret = Retry(exc=exc, when=eta or countdown)
 
         if is_eager:
@@ -717,6 +718,7 @@ class Task(object):
             if throw:
                 raise ret
             return retry_ret
+
         try:
             S.apply_async()
         except Exception as exc:
