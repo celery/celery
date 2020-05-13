@@ -4,9 +4,10 @@ import datetime
 from pickle import dumps, loads
 
 import pytest
-from kombu.exceptions import EncodeError
-
 from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
+from kombu.exceptions import EncodeError
+from pymongo.errors import ConfigurationError
+
 from celery import states, uuid
 from celery.backends.mongodb import InvalidDocument, MongoBackend
 from celery.exceptions import ImproperlyConfigured
@@ -129,8 +130,9 @@ class test_MongoBackend:
 
         self.app.conf.mongodb_backend_settings = None
 
-        def mock_resolver(_, record_type):
-            if record_type == 'SRV':
+        def mock_resolver(_, rdtype, rdclass=None, lifetime=None, **kwargs):
+
+            if rdtype == 'SRV':
                 return [
                     SRV(0, 0, 0, 0, 27017, Name(labels=hostname))
                     for hostname in [
@@ -139,7 +141,7 @@ class test_MongoBackend:
                         b'mongo3.example.com'.split(b'.')
                     ]
                 ]
-            elif record_type == 'TXT':
+            elif rdtype == 'TXT':
                 return [TXT(0, 0, [b'replicaSet=rs0'])]
 
         dns_resolver_query.side_effect = mock_resolver
@@ -218,6 +220,42 @@ class test_MongoBackend:
                 host=mongodb_uri, **self.backend._prepare_client_options()
             )
             assert sentinel.connection == connection
+
+    def test_get_connection_with_authmechanism(self):
+        with patch('pymongo.MongoClient') as mock_Connection:
+            self.app.conf.mongodb_backend_settings = None
+            uri = ('mongodb://'
+                   'celeryuser:celerypassword@'
+                   'localhost:27017/'
+                   'celerydatabase?authMechanism=SCRAM-SHA-256')
+            mb = MongoBackend(app=self.app, url=uri)
+            mock_Connection.return_value = sentinel.connection
+            connection = mb._get_connection()
+            mock_Connection.assert_called_once_with(
+                host=['localhost:27017'],
+                username='celeryuser',
+                password='celerypassword',
+                authmechanism='SCRAM-SHA-256',
+                **mb._prepare_client_options()
+            )
+            assert sentinel.connection == connection
+
+    def test_get_connection_with_authmechanism_no_username(self):
+        with patch('pymongo.MongoClient') as mock_Connection:
+            self.app.conf.mongodb_backend_settings = None
+            uri = ('mongodb://'
+                   'localhost:27017/'
+                   'celerydatabase?authMechanism=SCRAM-SHA-256')
+            mb = MongoBackend(app=self.app, url=uri)
+            mock_Connection.side_effect = ConfigurationError(
+                'SCRAM-SHA-256 requires a username.')
+            with pytest.raises(ConfigurationError):
+                mb._get_connection()
+            mock_Connection.assert_called_once_with(
+                host=['localhost:27017'],
+                authmechanism='SCRAM-SHA-256',
+                **mb._prepare_client_options()
+            )
 
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
     def test_get_database_no_existing(self, mock_get_connection):

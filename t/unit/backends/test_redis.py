@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+import json
 import random
 import ssl
 from contextlib import contextmanager
@@ -7,8 +8,8 @@ from datetime import timedelta
 from pickle import dumps, loads
 
 import pytest
-
 from case import ANY, ContextMock, Mock, call, mock, patch, skip
+
 from celery import signature, states, uuid
 from celery.canvas import Signature
 from celery.exceptions import (ChordError, CPendingDeprecationWarning,
@@ -24,6 +25,10 @@ def raise_on_second_call(mock, exc, *retval):
     mock.side_effect = on_first_call
     if retval:
         mock.return_value, = retval
+
+
+class ConnectionError(Exception):
+    pass
 
 
 class Connection(object):
@@ -55,9 +60,27 @@ class Pipeline(object):
         return [step(*a, **kw) for step, a, kw in self.steps]
 
 
+class PubSub(mock.MockCallbacks):
+    def __init__(self, ignore_subscribe_messages=False):
+        self._subscribed_to = set()
+
+    def close(self):
+        self._subscribed_to = set()
+
+    def subscribe(self, *args):
+        self._subscribed_to.update(args)
+
+    def unsubscribe(self, *args):
+        self._subscribed_to.difference_update(args)
+
+    def get_message(self, timeout=None):
+        pass
+
+
 class Redis(mock.MockCallbacks):
     Connection = Connection
     Pipeline = Pipeline
+    pubsub = PubSub
 
     def __init__(self, host=None, port=None, db=None, password=None, **kw):
         self.host = host
@@ -70,6 +93,9 @@ class Redis(mock.MockCallbacks):
 
     def get(self, key):
         return self.keyspace.get(key)
+
+    def mget(self, keys):
+        return [self.get(key) for key in keys]
 
     def setex(self, key, expires, value):
         self.set(key, value)
@@ -144,7 +170,9 @@ class test_RedisResultConsumer:
         return _RedisBackend(app=self.app)
 
     def get_consumer(self):
-        return self.get_backend().result_consumer
+        consumer = self.get_backend().result_consumer
+        consumer._connection_errors = (ConnectionError,)
+        return consumer
 
     @patch('celery.backends.asynchronous.BaseResultConsumer.on_after_fork')
     def test_on_after_fork(self, parent_method):
@@ -193,6 +221,33 @@ class test_RedisResultConsumer:
         consumer = self.get_consumer()
         # drain_events shouldn't crash when called before start
         consumer.drain_events(0.001)
+
+    def test_consume_from_connection_error(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer._pubsub.subscribe.side_effect = (ConnectionError(), None)
+        consumer.consume_from('some-task')
+        assert consumer._pubsub._subscribed_to == {b'celery-task-meta-initial', b'celery-task-meta-some-task'}
+
+    def test_cancel_for_connection_error(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer._pubsub.unsubscribe.side_effect = ConnectionError()
+        consumer.consume_from('some-task')
+        consumer.cancel_for('some-task')
+        assert consumer._pubsub._subscribed_to == {b'celery-task-meta-initial'}
+
+    @patch('celery.backends.redis.ResultConsumer.cancel_for')
+    @patch('celery.backends.asynchronous.BaseResultConsumer.on_state_change')
+    def test_drain_events_connection_error(self, parent_on_state_change, cancel_for):
+        meta = {'task_id': 'initial', 'status': states.SUCCESS}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.backend.set(b'celery-task-meta-initial', json.dumps(meta))
+        consumer._pubsub.get_message.side_effect = ConnectionError()
+        consumer.drain_events()
+        parent_on_state_change.assert_called_with(meta, None)
+        assert consumer._pubsub._subscribed_to == {b'celery-task-meta-initial'}
 
 
 class test_RedisBackend:
@@ -269,6 +324,7 @@ class test_RedisBackend:
         assert 'port' not in x.connparams
         assert x.connparams['socket_timeout'] == 30.0
         assert 'socket_connect_timeout' not in x.connparams
+        assert 'socket_keepalive' not in x.connparams
         assert x.connparams['db'] == 3
 
     @skip.unless_module('redis')
@@ -300,9 +356,13 @@ class test_RedisBackend:
         assert x.connparams['connection_class'] is SSLConnection
 
     @skip.unless_module('redis')
-    def test_backend_ssl_certreq_str(self):
+    @pytest.mark.parametrize('cert_str', [
+        "required",
+        "CERT_REQUIRED",
+    ])
+    def test_backend_ssl_certreq_str(self, cert_str):
         self.app.conf.redis_backend_use_ssl = {
-            'ssl_cert_reqs': 'CERT_REQUIRED',
+            'ssl_cert_reqs': cert_str,
             'ssl_ca_certs': '/path/to/ca.crt',
             'ssl_certfile': '/path/to/client.crt',
             'ssl_keyfile': '/path/to/client.key',
@@ -328,11 +388,15 @@ class test_RedisBackend:
         assert x.connparams['connection_class'] is SSLConnection
 
     @skip.unless_module('redis')
-    def test_backend_ssl_url(self):
+    @pytest.mark.parametrize('cert_str', [
+        "required",
+        "CERT_REQUIRED",
+    ])
+    def test_backend_ssl_url(self, cert_str):
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
         x = self.Backend(
-            'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_REQUIRED',
+            'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=%s' % cert_str,
             app=self.app,
         )
         assert x.connparams
@@ -348,14 +412,19 @@ class test_RedisBackend:
         assert x.connparams['connection_class'] is SSLConnection
 
     @skip.unless_module('redis')
-    def test_backend_ssl_url_options(self):
+    @pytest.mark.parametrize('cert_str', [
+        "none",
+        "CERT_NONE",
+    ])
+    def test_backend_ssl_url_options(self, cert_str):
         x = self.Backend(
             (
-                'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_NONE'
+                'rediss://:bosco@vandelay.com:123//1'
+                '?ssl_cert_reqs={cert_str}'
                 '&ssl_ca_certs=%2Fvar%2Fssl%2Fmyca.pem'
                 '&ssl_certfile=%2Fvar%2Fssl%2Fredis-server-cert.pem'
                 '&ssl_keyfile=%2Fvar%2Fssl%2Fprivate%2Fworker-key.pem'
-            ),
+            ).format(cert_str=cert_str),
             app=self.app,
         )
         assert x.connparams
@@ -369,9 +438,13 @@ class test_RedisBackend:
         assert x.connparams['ssl_keyfile'] == '/var/ssl/private/worker-key.pem'
 
     @skip.unless_module('redis')
-    def test_backend_ssl_url_cert_none(self):
+    @pytest.mark.parametrize('cert_str', [
+        "optional",
+        "CERT_OPTIONAL",
+    ])
+    def test_backend_ssl_url_cert_none(self, cert_str):
         x = self.Backend(
-            'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_OPTIONAL',
+            'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=%s' % cert_str,
             app=self.app,
         )
         assert x.connparams

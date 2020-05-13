@@ -37,10 +37,10 @@ encode the password so it can always be parsed correctly. For example:
 
 .. code-block:: python
 
-    from kombu.utils.url import quote
+    from kombu.utils.url import safequote
     
-    aws_access_key = quote("ABCDEFGHIJKLMNOPQRST")
-    aws_secret_key = quote("ZYXK7NiynGlTogH8Nj+P9nlE73sq3")
+    aws_access_key = safequote("ABCDEFGHIJKLMNOPQRST")
+    aws_secret_key = safequote("ZYXK7NiynG/TogH8Nj+P9nlE73sq3")
     
     broker_url = "sqs://{aws_access_key}:{aws_secret_key}@".format(
         aws_access_key=aws_access_key, aws_secret_key=aws_secret_key,
@@ -131,6 +131,20 @@ If you have other services using SQS you can configure it do so
 using the :setting:`broker_transport_options` setting::
 
     broker_transport_options = {'queue_name_prefix': 'celery-'}
+
+Predefined Queues
+-----------------
+
+If you want Celery to use a set of predefined queues in AWS, and to
+never attempt to list SQS queues, nor attempt to create or delete them,
+pass a map of queue names to URLs using the :setting:`predefined_queue_urls`
+setting::
+
+    broker_transport_options = {
+        'predefined_queue_urls': {
+            'my-q': 'https://ap-southeast-2.queue.amazonaws.com/123456/my-q'
+        }
+    }
 
 
 .. _sqs-caveats:

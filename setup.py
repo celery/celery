@@ -39,15 +39,15 @@ E_UNSUPPORTED_PYTHON = """
 PYIMP = _pyimp()
 PY26_OR_LESS = sys.version_info < (2, 7)
 PY3 = sys.version_info[0] == 3
-PY33_OR_LESS = PY3 and sys.version_info < (3, 4)
+PY34_OR_LESS = PY3 and sys.version_info < (3, 5)
 PYPY_VERSION = getattr(sys, 'pypy_version_info', None)
 PYPY = PYPY_VERSION is not None
 PYPY24_ATLEAST = PYPY_VERSION and PYPY_VERSION >= (2, 4)
 
 if PY26_OR_LESS:
     raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '2.7'))
-elif PY33_OR_LESS and not PYPY24_ATLEAST:
-    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '3.4'))
+elif PY34_OR_LESS and not PYPY24_ATLEAST:
+    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '3.5'))
 
 # -*- Extras -*-
 
@@ -85,25 +85,6 @@ EXTENSIONS = {
     'zookeeper',
     'zstd'
 }
-
-# -*- Classifiers -*-
-
-classes = """
-    Development Status :: 5 - Production/Stable
-    License :: OSI Approved :: BSD License
-    Topic :: System :: Distributed Computing
-    Topic :: Software Development :: Object Brokering
-    Programming Language :: Python
-    Programming Language :: Python :: 2
-    Programming Language :: Python :: 2.7
-    Programming Language :: Python :: 3
-    Programming Language :: Python :: 3.5
-    Programming Language :: Python :: 3.6
-    Programming Language :: Python :: 3.7
-    Programming Language :: Python :: Implementation :: CPython
-    Programming Language :: Python :: Implementation :: PyPy
-    Operating System :: OS Independent
-"""
 
 # -*- Distribution Meta -*-
 
@@ -223,10 +204,9 @@ setuptools.setup(
     license='BSD',
     platforms=['any'],
     install_requires=install_requires(),
-    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*,",
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
-    classifiers=[s.strip() for s in classes.split('\n') if s],
     cmdclass={'test': pytest},
     include_package_data=True,
     zip_safe=False,
@@ -238,4 +218,27 @@ setuptools.setup(
             'celery = celery.contrib.pytest',
         ],
     },
+    project_urls={
+        "Documentation": "http://docs.celeryproject.org/en/latest/index.html",
+        "Code": "https://github.com/celery/celery",
+        "Tracker": "https://github.com/celery/celery/issues",
+        "Funding": "https://opencollective.com/celery"
+    },
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "License :: OSI Approved :: BSD License",
+        "Topic :: System :: Distributed Computing",
+        "Topic :: Software Development :: Object Brokering",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
+        "Operating System :: OS Independent"
+    ]
 )

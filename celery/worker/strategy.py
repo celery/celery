@@ -48,7 +48,7 @@ def hybrid_to_proto2(message, body):
         'shadow': body.get('shadow'),
         'eta': body.get('eta'),
         'expires': body.get('expires'),
-        'retries': body.get('retries'),
+        'retries': body.get('retries', 0),
         'timelimit': body.get('timelimit', (None, None)),
         'argsrepr': body.get('argsrepr'),
         'kwargsrepr': body.get('kwargsrepr'),
@@ -116,7 +116,7 @@ def default(task, app, consumer,
     # (optimized to avoid calling request.send_event)
     eventer = consumer.event_dispatcher
     events = eventer and eventer.enabled
-    send_event = eventer.send
+    send_event = eventer and eventer.send
     task_sends_events = events and task.send_events
 
     call_at = consumer.timer.call_at

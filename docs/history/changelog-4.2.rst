@@ -5,7 +5,7 @@
 ================
 
 This document contains change notes for bugfix releases in
-the 4.x series, please see :ref:`whatsnew-4.2` for
+the 4.2.x series, please see :ref:`whatsnew-4.2` for
 an overview of what's new in Celery 4.2.
 
 4.2.1
@@ -372,7 +372,7 @@ Documentation fixes:
 
   Contributed by :github_user:`tothegump`
 
-- **Django** Fix a regression casuing Celery to crash when using Django.
+- **Django** Fix a regression causing Celery to crash when using Django.
 
   Contributed by **Jonas Haag**
 
@@ -390,7 +390,7 @@ Documentation fixes:
 
   Contributed by **Hsiaoming Yang**
 
-- Fixed a regression that occured during the development of Celery 4.2 which caused `celery report` to crash when Django is installed.
+- Fixed a regression that occurred during the development of Celery 4.2 which caused `celery report` to crash when Django is installed.
 
   Contributed by **Josue Balandrano Coronel**
 

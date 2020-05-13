@@ -552,6 +552,20 @@ see :setting:`worker_redirect_stdouts`).
             logger.propagate = True
 
 
+.. note::
+
+    If you want to completely disable Celery logging configuration,
+    use the :signal:`setup_logging` signal:
+
+    .. code-block:: python
+
+        import celery
+
+        @celery.signals.setup_logging.connect
+        def on_setup_logging(**kwargs):
+            pass
+
+
 .. _task-argument-checking:
 
 Argument checking
@@ -788,6 +802,19 @@ By default, this exponential backoff will also introduce random jitter_ to
 avoid having all the tasks run at the same moment. It will also cap the
 maximum backoff delay to 10 minutes. All these settings can be customized
 via options documented below.
+
+.. versionadded:: 4.4
+
+You can also set `autoretry_for`, `retry_kwargs`, `retry_backoff`, `retry_backoff_max` and `retry_jitter` options in class-based tasks:
+
+.. code-block:: python
+
+    class BaseTaskWithRetry(Task):
+        autoretry_for = (TypeError,)
+        retry_kwargs = {'max_retries': 5}
+        retry_backoff = True
+        retry_backoff_max = 700
+        retry_jitter = False
 
 .. attribute:: Task.autoretry_for
 
@@ -1736,7 +1763,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
         return myhttplib.get(url)
 
     @app.task
-    def parse_page(url, page):
+    def parse_page(page):
         return myparser.parse_document(page)
 
     @app.task
@@ -1931,14 +1958,16 @@ Let's have a look at another example:
 .. code-block:: python
 
     from django.db import transaction
+    from django.http import HttpResponseRedirect
 
-    @transaction.commit_on_success
+    @transaction.atomic
     def create_article(request):
         article = Article.objects.create()
         expand_abbreviations.delay(article.pk)
+        return HttpResponseRedirect('/articles/')
 
 This is a Django view creating an article object in the database,
-then passing the primary key to a task. It uses the `commit_on_success`
+then passing the primary key to a task. It uses the `transaction.atomic`
 decorator, that will commit the transaction when the view returns, or
 roll back if the view raises an exception.
 

@@ -199,7 +199,7 @@ class Pidfile(object):
         try:
             os.kill(pid, 0)
         except os.error as exc:
-            if exc.errno == errno.ESRCH:
+            if exc.errno == errno.ESRCH or exc.errno == errno.EPERM:
                 print('Stale pidfile exists - Removing it.', file=sys.stderr)
                 self.remove()
                 return True

@@ -411,7 +411,6 @@ class CeleryCommand(Command):
             cls = self.commands[command]
         except KeyError:
             cls, argv = self.commands['help'], ['help']
-        cls = self.commands.get(command) or self.commands['help']
         try:
             return cls(
                 app=self.app, on_error=self.on_error,

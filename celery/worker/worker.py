@@ -17,6 +17,8 @@ from __future__ import absolute_import, unicode_literals
 import os
 import sys
 
+from datetime import datetime
+
 from billiard import cpu_count
 from kombu.utils.compat import detect_environment
 
@@ -93,6 +95,7 @@ class WorkController(object):
     def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app or self.app
         self.hostname = default_nodename(hostname)
+        self.startup_time = datetime.utcnow()
         self.app.loader.init_worker()
         self.on_before_init(**kwargs)
         self.setup_defaults(**kwargs)
@@ -296,9 +299,11 @@ class WorkController(object):
             return reload_from_cwd(sys.modules[module], reloader)
 
     def info(self):
+        uptime = datetime.utcnow() - self.startup_time
         return {'total': self.state.total_count,
                 'pid': os.getpid(),
-                'clock': str(self.app.clock)}
+                'clock': str(self.app.clock),
+                'uptime': round(uptime.total_seconds())}
 
     def rusage(self):
         if resource is None:

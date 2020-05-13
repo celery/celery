@@ -197,7 +197,8 @@ For example for long-running tasks to send task progress you can do something li
     def on_raw_message(body):
         print(body)
 
-    r = hello.apply_async()
+    a, b = 1, 1
+    r = hello.apply_async(args=(a, b))
     print(r.get(on_message=on_raw_message, propagate=False))
 
 Will generate output like this:
@@ -445,6 +446,16 @@ json -- JSON is supported in many programming languages, is now
     best choice.
 
     See http://json.org for more information.
+
+    .. note::
+
+        (From Python official docs https://docs.python.org/3.6/library/json.html)
+        Keys in key/value pairs of JSON are always of the type :class:`str`. When
+        a dictionary is converted into JSON, all the keys of the dictionary are
+        coerced to strings. As a result of this, if a dictionary is converted
+        into JSON and then back into a dictionary, the dictionary may not equal
+        the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
+        keys.
 
 pickle -- If you have no desire to support any language other than
     Python, then using the pickle encoding will gain you the support of

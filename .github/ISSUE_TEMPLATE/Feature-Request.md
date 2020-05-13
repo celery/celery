@@ -1,6 +1,7 @@
 ---
 name: Feature Request
 about: Do you need a new feature?
+labels: "Issue Type: Feature Request"
 ---
 <!--
 Please fill this template entirely and do not erase parts of it.

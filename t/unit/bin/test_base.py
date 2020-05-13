@@ -3,8 +3,8 @@ from __future__ import absolute_import, unicode_literals
 import os
 
 import pytest
-
 from case import Mock, mock, patch
+
 from celery.bin.base import Command, Extensions, Option
 from celery.five import bytes_if_py2
 
@@ -236,6 +236,8 @@ class test_Command:
         assert cmd.find_app('t.unit.bin.proj.hello')
         assert cmd.find_app('t.unit.bin.proj.app:app')
         assert cmd.find_app('t.unit.bin.proj.app.app')
+        with pytest.raises(AttributeError, match='is the celery module'):
+            cmd.find_app('t.unit.bin.proj.app2')
         with pytest.raises(AttributeError):
             cmd.find_app('t.unit.bin')
 

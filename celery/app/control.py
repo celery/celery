@@ -217,13 +217,15 @@ class Control(object):
 
     def revoke(self, task_id, destination=None, terminate=False,
                signal=TERM_SIGNAME, **kwargs):
-        """Tell all (or specific) workers to revoke a task by id.
+        """Tell all (or specific) workers to revoke a task by id
+        (or list of ids).
 
         If a task is revoked, the workers will ignore the task and
         not execute it after all.
 
         Arguments:
-            task_id (str): Id of the task to revoke.
+            task_id (Union(str, list)): Id of the task to revoke
+                (or list of ids).
             terminate (bool): Also terminate the process currently working
                 on the task (if any).
             signal (str): Name of signal to send to process if terminate.
@@ -240,7 +242,8 @@ class Control(object):
 
     def terminate(self, task_id,
                   destination=None, signal=TERM_SIGNAME, **kwargs):
-        """Tell all (or specific) workers to terminate a task by id.
+        """Tell all (or specific) workers to terminate a task by id
+        (or list of ids).
 
         See Also:
             This is just a shortcut to :meth:`revoke` with the terminate
@@ -305,7 +308,7 @@ class Control(object):
                 command to, when empty broadcast to all workers.
             routing_key (str): Optional routing key.
             options (Dict): Additional options as supported
-                by :meth:`kombu.entitiy.Queue.from_dict`.
+                by :meth:`kombu.entity.Queue.from_dict`.
 
         See Also:
             :meth:`broadcast` for supported keyword arguments.

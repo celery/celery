@@ -23,7 +23,7 @@ from celery._state import (_announce_app_finalized, _deregister_app,
                            _register_app, _set_current_app, _task_stack,
                            connect_on_app_finalize, get_current_app,
                            get_current_worker_task, set_default_app)
-from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
+from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured, Ignore
 from celery.five import (UserDict, bytes_if_py2, python_2_unicode_compatible,
                          values)
 from celery.loaders import get_loader_cls
@@ -369,6 +369,9 @@ class Celery(object):
     def task(self, *args, **opts):
         """Decorator to create a task class out of any callable.
 
+        See :ref:`Task options<task-options>` for a list of the
+        arguments that can be passed to this decorator.
+
         Examples:
             .. code-block:: python
 
@@ -460,11 +463,24 @@ class Celery(object):
             self._tasks[task.name] = task
             task.bind(self)  # connects task to this app
 
-            autoretry_for = tuple(options.get('autoretry_for', ()))
-            retry_kwargs = options.get('retry_kwargs', {})
-            retry_backoff = int(options.get('retry_backoff', False))
-            retry_backoff_max = int(options.get('retry_backoff_max', 600))
-            retry_jitter = options.get('retry_jitter', True)
+            autoretry_for = tuple(
+                options.get('autoretry_for',
+                            getattr(task, 'autoretry_for', ()))
+            )
+            retry_kwargs = options.get(
+                'retry_kwargs', getattr(task, 'retry_kwargs', {})
+            )
+            retry_backoff = int(
+                options.get('retry_backoff',
+                            getattr(task, 'retry_backoff', False))
+            )
+            retry_backoff_max = int(
+                options.get('retry_backoff_max',
+                            getattr(task, 'retry_backoff_max', 600))
+            )
+            retry_jitter = options.get(
+                'retry_jitter', getattr(task, 'retry_jitter', True)
+            )
 
             if autoretry_for and not hasattr(task, '_orig_run'):
 
@@ -472,6 +488,10 @@ class Celery(object):
                 def run(*args, **kwargs):
                     try:
                         return task._orig_run(*args, **kwargs)
+                    except Ignore:
+                        # If Ignore signal occures task shouldn't be retried,
+                        # even if it suits autoretry_for list
+                        raise
                     except autoretry_for as exc:
                         if retry_backoff:
                             retry_kwargs['countdown'] = \
@@ -842,7 +862,7 @@ class Celery(object):
             port or conf.broker_port,
             transport=transport or conf.broker_transport,
             ssl=self.either('broker_use_ssl', ssl),
-            heartbeat=heartbeat or self.conf.broker_heartbeat,
+            heartbeat=heartbeat,
             login_method=login_method or conf.broker_login_method,
             failover_strategy=(
                 failover_strategy or conf.broker_failover_strategy
@@ -995,7 +1015,8 @@ class Celery(object):
         return key
 
     def _sig_to_periodic_task_entry(self, schedule, sig,
-                                    args=(), kwargs={}, name=None, **opts):
+                                    args=(), kwargs=None, name=None, **opts):
+        kwargs = {} if not kwargs else kwargs
         sig = (sig.clone(args, kwargs)
                if isinstance(sig, abstract.CallableSignature)
                else self.signature(sig.name, args, kwargs))

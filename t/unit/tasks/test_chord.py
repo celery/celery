@@ -3,8 +3,8 @@ from __future__ import absolute_import, unicode_literals
 from contextlib import contextmanager
 
 import pytest
-
 from case import Mock
+
 from celery import canvas, group, result, uuid
 from celery.exceptions import ChordError, Retry
 from celery.five import range

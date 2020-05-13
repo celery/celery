@@ -12,7 +12,7 @@ Introduction
 
 There are several tools available to monitor and inspect Celery clusters.
 
-This document describes some of these, as as well as
+This document describes some of these, as well as
 features related to monitoring, like events and broadcast commands.
 
 .. _monitoring-workers:

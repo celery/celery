@@ -5,10 +5,10 @@ import tempfile
 from datetime import datetime, timedelta
 
 import pytest
+from case import ANY, ContextMock, MagicMock, Mock, patch
 from kombu import Queue
 from kombu.exceptions import EncodeError
 
-from case import ANY, ContextMock, MagicMock, Mock, patch
 from celery import Task, group, uuid
 from celery.app.task import _reprtask
 from celery.exceptions import Ignore, ImproperlyConfigured, Retry
@@ -41,6 +41,14 @@ class MockApplyTask(Task):
 
 class TaskWithPriority(Task):
     priority = 10
+
+
+class TaskWithRetry(Task):
+    autoretry_for = (TypeError,)
+    retry_kwargs = {'max_retries': 5}
+    retry_backoff = True
+    retry_backoff_max = 700
+    retry_jitter = False
 
 
 class TasksCase:
@@ -152,6 +160,81 @@ class TasksCase:
 
         self.autoretry_backoff_jitter_task = autoretry_backoff_jitter_task
 
+        @self.app.task(bind=True, base=TaskWithRetry, shared=False)
+        def autoretry_for_from_base_task(self, a, b):
+            self.iterations += 1
+            return a + b
+
+        self.autoretry_for_from_base_task = autoretry_for_from_base_task
+
+        @self.app.task(bind=True, base=TaskWithRetry,
+                       autoretry_for=(ZeroDivisionError,), shared=False)
+        def override_autoretry_for_from_base_task(self, a, b):
+            self.iterations += 1
+            return a / b
+
+        self.override_autoretry_for = override_autoretry_for_from_base_task
+
+        @self.app.task(bind=True, base=TaskWithRetry, shared=False)
+        def retry_kwargs_from_base_task(self, a, b):
+            self.iterations += 1
+            return a + b
+
+        self.retry_kwargs_from_base_task = retry_kwargs_from_base_task
+
+        @self.app.task(bind=True, base=TaskWithRetry,
+                       retry_kwargs={'max_retries': 2}, shared=False)
+        def override_retry_kwargs_from_base_task(self, a, b):
+            self.iterations += 1
+            return a + b
+
+        self.override_retry_kwargs = override_retry_kwargs_from_base_task
+
+        @self.app.task(bind=True, base=TaskWithRetry, shared=False)
+        def retry_backoff_from_base_task(self, a, b):
+            self.iterations += 1
+            return a + b
+
+        self.retry_backoff_from_base_task = retry_backoff_from_base_task
+
+        @self.app.task(bind=True, base=TaskWithRetry,
+                       retry_backoff=False, shared=False)
+        def override_retry_backoff_from_base_task(self, a, b):
+            self.iterations += 1
+            return a + b
+
+        self.override_retry_backoff = override_retry_backoff_from_base_task
+
+        @self.app.task(bind=True, base=TaskWithRetry, shared=False)
+        def retry_backoff_max_from_base_task(self, a, b):
+            self.iterations += 1
+            return a + b
+
+        self.retry_backoff_max_from_base_task = retry_backoff_max_from_base_task
+
+        @self.app.task(bind=True, base=TaskWithRetry,
+                       retry_backoff_max=16, shared=False)
+        def override_retry_backoff_max_from_base_task(self, a, b):
+            self.iterations += 1
+            return a + b
+
+        self.override_backoff_max = override_retry_backoff_max_from_base_task
+
+        @self.app.task(bind=True, base=TaskWithRetry, shared=False)
+        def retry_backoff_jitter_from_base_task(self, a, b):
+            self.iterations += 1
+            return a + b
+
+        self.retry_backoff_jitter_from_base = retry_backoff_jitter_from_base_task
+
+        @self.app.task(bind=True, base=TaskWithRetry,
+                       retry_jitter=True, shared=False)
+        def override_backoff_jitter_from_base_task(self, a, b):
+            self.iterations += 1
+            return a + b
+
+        self.override_backoff_jitter = override_backoff_jitter_from_base_task
+
         @self.app.task(bind=True)
         def task_check_request_context(self):
             assert self.request.hostname == socket.gethostname()
@@ -188,7 +271,12 @@ class TasksCase:
         def task_replaced_by_other_task(self):
             return self.replace(task_replacing_another_task.si())
 
+        @self.app.task(bind=True, autoretry_for=(Exception,))
+        def task_replaced_by_other_task_with_autoretry(self):
+            return self.replace(task_replacing_another_task.si())
+
         self.task_replaced_by_other_task = task_replaced_by_other_task
+        self.task_replaced_by_other_task_with_autoretry = task_replaced_by_other_task_with_autoretry
 
         # Remove all messages from memory-transport
         from kombu.transport.memory import Channel
@@ -211,6 +299,22 @@ class test_task_retries(TasksCase):
         self.retry_task.iterations = 0
         self.retry_task.apply([0xFF, 0xFFFF], {'max_retries': 10})
         assert self.retry_task.iterations == 11
+
+    def test_retry_priority(self):
+        priority = 7
+
+        # Technically, task.priority doesn't need to be set here
+        # since push_request() doesn't populate the delivery_info
+        # with it. However, setting task.priority here also doesn't
+        # cause any problems.
+        self.retry_task.priority = priority
+
+        self.retry_task.push_request()
+        self.retry_task.request.delivery_info = {
+            'priority': priority
+        }
+        sig = self.retry_task.signature_from_request()
+        assert sig.options['priority'] == priority
 
     def test_retry_no_args(self):
         self.retry_task_noargs.max_retries = 3
@@ -356,6 +460,94 @@ class test_task_retries(TasksCase):
             call[1]['countdown'] for call in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [0, 1, 3, 7]
+
+    def test_autoretry_for_from_base(self):
+        self.autoretry_for_from_base_task.iterations = 0
+        self.autoretry_for_from_base_task.apply((1, "a"))
+        assert self.autoretry_for_from_base_task.iterations == 6
+
+    def test_override_autoretry_for_from_base(self):
+        self.override_autoretry_for.iterations = 0
+        self.override_autoretry_for.apply((1, 0))
+        assert self.override_autoretry_for.iterations == 6
+
+    def test_retry_kwargs_from_base(self):
+        self.retry_kwargs_from_base_task.iterations = 0
+        self.retry_kwargs_from_base_task.apply((1, "a"))
+        assert self.retry_kwargs_from_base_task.iterations == 6
+
+    def test_override_retry_kwargs_from_base(self):
+        self.override_retry_kwargs.iterations = 0
+        self.override_retry_kwargs.apply((1, "a"))
+        assert self.override_retry_kwargs.iterations == 3
+
+    def test_retry_backoff_from_base(self):
+        task = self.retry_backoff_from_base_task
+        task.iterations = 0
+        with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
+            task.apply((1, "a"))
+
+        assert task.iterations == 6
+        retry_call_countdowns = [
+            call[1]['countdown'] for call in fake_retry.call_args_list
+        ]
+        assert retry_call_countdowns == [1, 2, 4, 8, 16, 32]
+
+    @patch('celery.app.base.get_exponential_backoff_interval')
+    def test_override_retry_backoff_from_base(self, backoff):
+        self.override_retry_backoff.iterations = 0
+        self.override_retry_backoff.apply((1, "a"))
+        assert self.override_retry_backoff.iterations == 6
+        assert backoff.call_count == 0
+
+    def test_retry_backoff_max_from_base(self):
+        task = self.retry_backoff_max_from_base_task
+        task.iterations = 0
+        with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
+            task.apply((1, "a"))
+
+        assert task.iterations == 6
+        retry_call_countdowns = [
+            call[1]['countdown'] for call in fake_retry.call_args_list
+        ]
+        assert retry_call_countdowns == [1, 2, 4, 8, 16, 32]
+
+    def test_override_retry_backoff_max_from_base(self):
+        task = self.override_backoff_max
+        task.iterations = 0
+        with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
+            task.apply((1, "a"))
+
+        assert task.iterations == 6
+        retry_call_countdowns = [
+            call[1]['countdown'] for call in fake_retry.call_args_list
+        ]
+        assert retry_call_countdowns == [1, 2, 4, 8, 16, 16]
+
+    def test_retry_backoff_jitter_from_base(self):
+        task = self.retry_backoff_jitter_from_base
+        task.iterations = 0
+        with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
+            task.apply((1, "a"))
+
+        assert task.iterations == 6
+        retry_call_countdowns = [
+            call[1]['countdown'] for call in fake_retry.call_args_list
+        ]
+        assert retry_call_countdowns == [1, 2, 4, 8, 16, 32]
+
+    @patch('random.randrange', side_effect=lambda i: i - 2)
+    def test_override_backoff_jitter_from_base(self, randrange):
+        task = self.override_backoff_jitter
+        task.iterations = 0
+        with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
+            task.apply((1, "a"))
+
+        assert task.iterations == 6
+        retry_call_countdowns = [
+            call[1]['countdown'] for call in fake_retry.call_args_list
+        ]
+        assert retry_call_countdowns == [0, 1, 3, 7, 15, 31]
 
     def test_retry_wrong_eta_when_not_enable_utc(self):
         """Issue #3753"""
@@ -743,6 +935,10 @@ class test_tasks(TasksCase):
         with pytest.raises(Ignore):
             self.task_replaced_by_other_task.run()
 
+    def test_replace_run_with_autoretry(self):
+        with pytest.raises(Ignore):
+            self.task_replaced_by_other_task_with_autoretry.run()
+
     def test_replace_delay(self):
         res = self.task_replaced_by_other_task.delay()
         assert isinstance(res, AsyncResult)
@@ -1027,12 +1223,21 @@ class test_apply_async(TasksCase):
 
     def test_always_eager_with_task_serializer_option(self):
         self.app.conf.task_always_eager = True
+        self.app.conf.task_serializer = 'pickle'
+
+        @self.app.task
+        def task(*args, **kwargs):
+            pass
+        task.apply_async((1, 2, 3, 4, {1}))
+
+    def test_always_eager_uses_task_serializer_setting(self):
+        self.app.conf.task_always_eager = True
 
         @self.app.task(serializer='pickle')
         def task(*args, **kwargs):
             pass
         task.apply_async((1, 2, 3, 4, {1}))
-
+        
     def test_task_with_ignored_result(self):
         with patch.object(self.app, 'send_task') as send_task:
             self.task_with_ignored_result.apply_async()

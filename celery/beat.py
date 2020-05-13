@@ -48,8 +48,8 @@ class SchedulingError(Exception):
 
 
 class BeatLazyFunc(object):
-    """An lazy function declared in 'beat_schedule' and called before sending to worker
-    
+    """An lazy function declared in 'beat_schedule' and called before sending to worker.
+
     Example:
 
         beat_schedule = {
@@ -61,8 +61,9 @@ class BeatLazyFunc(object):
                 }
             }
         }
-    
+
     """
+
     def __init__(self, func, *args, **kwargs):
         self._func = func
         self._func_params = {
@@ -383,7 +384,7 @@ class Scheduler(object):
         task = self.app.tasks.get(entry.task)
 
         try:
-            entry_args = [v() if isinstance(v, BeatLazyFunc) else v for v in entry.args]
+            entry_args = [v() if isinstance(v, BeatLazyFunc) else v for v in (entry.args or [])]
             entry_kwargs = {k: v() if isinstance(v, BeatLazyFunc) else v for k, v in entry.kwargs.items()}
             if task:
                 return task.apply_async(entry_args, entry_kwargs,
@@ -407,6 +408,7 @@ class Scheduler(object):
 
     def setup_schedule(self):
         self.install_default_entries(self.data)
+        self.merge_inplace(self.app.conf.beat_schedule)
 
     def _do_sync(self):
         try:

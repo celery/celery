@@ -95,7 +95,7 @@ longer version:
 
 .. code-block:: console
 
-    $ ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill -9
+    $ ps auxww | awk '/celery worker/ {print $2}' | xargs kill -9
 
 .. _worker-restarting:
 
@@ -244,7 +244,7 @@ Remote control
     commands from the command-line. It supports all of the commands
     listed below. See :ref:`monitoring-control` for more information.
 
-:pool support: *prefork, eventlet, gevent*, blocking:*solo* (see note)
+:pool support: *prefork, eventlet, gevent, thread*, blocking:*solo* (see note)
 :broker support: *amqp, redis*
 
 Workers have the ability to be remote controlled using a high-priority
@@ -924,6 +924,10 @@ The output will include the following fields:
     Value of the workers logical clock. This is a positive integer and should
     be increasing every time you receive statistics.
 
+- ``uptime``
+
+    Numbers of seconds since the worker controller was started
+
 - ``pid``
 
     Process id of the worker instance (Main process).
@@ -1157,7 +1161,7 @@ for example one that reads the current prefetch count:
 
     from celery.worker.control import inspect_command
 
-    @inspect_command
+    @inspect_command()
     def current_prefetch_count(state):
         return {'prefetch_count': state.consumer.qos.value}
 

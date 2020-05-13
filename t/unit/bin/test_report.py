@@ -3,6 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from case import Mock, call, patch
+
 from celery.bin.celery import report
 from celery.five import WhateverIO
 

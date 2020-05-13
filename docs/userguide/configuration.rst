@@ -43,7 +43,7 @@ New lowercase settings
 Version 4.0 introduced new lower case settings and setting organization.
 
 The major difference between previous versions, apart from the lower case
-names, are the renaming of some prefixes, like ``celerybeat_`` to ``beat_``,
+names, are the renaming of some prefixes, like ``celery_beat_`` to ``beat_``,
 ``celeryd_`` to ``worker_``, and most of the top level ``celery_`` settings
 have been moved into a new  ``task_`` prefix.
 
@@ -123,28 +123,28 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_SECURITY_CERTIFICATE``            :setting:`security_certificate`
 ``CELERY_SECURITY_CERT_STORE``             :setting:`security_cert_store`
 ``CELERY_SECURITY_KEY``                    :setting:`security_key`
-``CELERY_TASK_ACKS_LATE``                  :setting:`task_acks_late`
-``CELERY_TASK_ACKS_ON_FAILURE_OR_TIMEOUT`` :setting:`task_acks_on_failure_or_timeout`
-``CELERY_TASK_ALWAYS_EAGER``               :setting:`task_always_eager`
-``CELERY_TASK_ANNOTATIONS``                :setting:`task_annotations`
-``CELERY_TASK_COMPRESSION``                :setting:`task_compression`
-``CELERY_TASK_CREATE_MISSING_QUEUES``      :setting:`task_create_missing_queues`
-``CELERY_TASK_DEFAULT_DELIVERY_MODE``      :setting:`task_default_delivery_mode`
-``CELERY_TASK_DEFAULT_EXCHANGE``           :setting:`task_default_exchange`
-``CELERY_TASK_DEFAULT_EXCHANGE_TYPE``      :setting:`task_default_exchange_type`
-``CELERY_TASK_DEFAULT_QUEUE``              :setting:`task_default_queue`
-``CELERY_TASK_DEFAULT_RATE_LIMIT``         :setting:`task_default_rate_limit`
-``CELERY_TASK_DEFAULT_ROUTING_KEY``        :setting:`task_default_routing_key`
-``CELERY_TASK_EAGER_PROPAGATES``           :setting:`task_eager_propagates`
-``CELERY_TASK_IGNORE_RESULT``              :setting:`task_ignore_result`
-``CELERY_TASK_PUBLISH_RETRY``              :setting:`task_publish_retry`
-``CELERY_TASK_PUBLISH_RETRY_POLICY``       :setting:`task_publish_retry_policy`
+``CELERY_ACKS_LATE``                       :setting:`task_acks_late`
+``CELERY_ACKS_ON_FAILURE_OR_TIMEOUT``      :setting:`task_acks_on_failure_or_timeout`
+``CELERY_ALWAYS_EAGER``                    :setting:`task_always_eager`
+``CELERY_ANNOTATIONS``                     :setting:`task_annotations`
+``CELERY_COMPRESSION``                     :setting:`task_compression`
+``CELERY_CREATE_MISSING_QUEUES``           :setting:`task_create_missing_queues`
+``CELERY_DEFAULT_DELIVERY_MODE``           :setting:`task_default_delivery_mode`
+``CELERY_DEFAULT_EXCHANGE``                :setting:`task_default_exchange`
+``CELERY_DEFAULT_EXCHANGE_TYPE``           :setting:`task_default_exchange_type`
+``CELERY_DEFAULT_QUEUE``                   :setting:`task_default_queue`
+``CELERY_DEFAULT_RATE_LIMIT``              :setting:`task_default_rate_limit`
+``CELERY_DEFAULT_ROUTING_KEY``             :setting:`task_default_routing_key`
+``CELERY_EAGER_PROPAGATES``                :setting:`task_eager_propagates`
+``CELERY_IGNORE_RESULT``                   :setting:`task_ignore_result`
+``CELERY_PUBLISH_RETRY``                   :setting:`task_publish_retry`
+``CELERY_PUBLISH_RETRY_POLICY``            :setting:`task_publish_retry_policy`
 ``CELERY_QUEUES``                          :setting:`task_queues`
 ``CELERY_ROUTES``                          :setting:`task_routes`
-``CELERY_TASK_SEND_SENT_EVENT``            :setting:`task_send_sent_event`
-``CELERY_TASK_SERIALIZER``                 :setting:`task_serializer`
-``CELERYD_TASK_SOFT_TIME_LIMIT``           :setting:`task_soft_time_limit`
-``CELERYD_TASK_TIME_LIMIT``                :setting:`task_time_limit`
+``CELERY_SEND_SENT_EVENT``                 :setting:`task_send_sent_event`
+``CELERY_SERIALIZER``                      :setting:`task_serializer`
+``CELERYD_SOFT_TIME_LIMIT``                :setting:`task_soft_time_limit`
+``CELERYD_TIME_LIMIT``                     :setting:`task_time_limit`
 ``CELERY_TRACK_STARTED``                   :setting:`task_track_started`
 ``CELERYD_AGENT``                          :setting:`worker_agent`
 ``CELERYD_AUTOSCALER``                     :setting:`worker_autoscaler`
@@ -608,6 +608,10 @@ Can be one of the following:
     Use `Memcached`_ to store the results.
     See :ref:`conf-cache-result-backend`.
 
+* mongodb
+    Use `MongoDB`_ to store the results.
+    See :ref:`conf-mongodb-result-backend`.
+
 * ``cassandra``
     Use `Cassandra`_ to store the results.
     See :ref:`conf-cassandra-result-backend`.
@@ -659,6 +663,7 @@ Can be one of the following:
 
 .. _`SQLAlchemy`: http://sqlalchemy.org
 .. _`Memcached`: http://memcached.org
+.. _`MongoDB`: http://mongodb.org
 .. _`Redis`: https://redis.io
 .. _`Cassandra`: http://cassandra.apache.org/
 .. _`Elasticsearch`: https://aws.amazon.com/elasticsearch-service/
@@ -712,7 +717,7 @@ serialization formats.
 Default: No compression.
 
 Optional compression method used for task results.
-Supports the same options as the :setting:`task_serializer` setting.
+Supports the same options as the :setting:`task_compression` setting.
 
 .. setting:: result_extended
 
@@ -827,7 +832,7 @@ strings (this is the part of the URI that comes after the ``db+`` prefix).
 Default: ``{}`` (empty mapping).
 
 To specify additional SQLAlchemy database engine options you can use
-the :setting:`sqlalchmey_engine_options` setting::
+the :setting:`database_engine_options` setting::
 
     # echo enables verbose logging from SQLAlchemy.
     app.conf.database_engine_options = {'echo': True}
@@ -845,6 +850,25 @@ on low-traffic workers that experience errors as a result of cached database con
 going stale through inactivity. For example, intermittent errors like
 `(OperationalError) (2006, 'MySQL server has gone away')` can be fixed by enabling
 short lived sessions. This option only affects the database backend.
+
+.. setting:: database_table_schemas
+
+``database_table_schemas``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}`` (empty mapping).
+
+When SQLAlchemy is configured as the result backend, Celery automatically
+creates two tables to store result meta-data for tasks. This setting allows
+you to customize the schema of the tables:
+
+.. code-block:: python
+
+    # use custom schema for the database result backend.
+    database_table_schemas = {
+        'task': 'celery',
+        'group': 'celery',
+    }
 
 .. setting:: database_table_names
 
@@ -955,6 +979,56 @@ setting:
 This setting is no longer used as it's now possible to specify
 the cache backend directly in the :setting:`result_backend` setting.
 
+.. _conf-mongodb-result-backend:
+
+MongoDB backend settings
+------------------------
+
+.. note::
+
+    The MongoDB backend requires the :mod:`pymongo` library:
+    http://github.com/mongodb/mongo-python-driver/tree/master
+
+.. setting:: mongodb_backend_settings
+
+mongodb_backend_settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is a dict supporting the following keys:
+
+* database
+    The database name to connect to. Defaults to ``celery``.
+
+* taskmeta_collection
+    The collection name to store task meta data.
+    Defaults to ``celery_taskmeta``.
+
+* max_pool_size
+    Passed as max_pool_size to PyMongo's Connection or MongoClient
+    constructor. It is the maximum number of TCP connections to keep
+    open to MongoDB at a given time. If there are more open connections
+    than max_pool_size, sockets will be closed when they are released.
+    Defaults to 10.
+
+* options
+
+    Additional keyword arguments to pass to the mongodb connection
+    constructor.  See the :mod:`pymongo` docs to see a list of arguments
+    supported.
+
+.. _example-mongodb-result-config:
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    result_backend = 'mongodb://localhost:27017/'
+    mongodb_backend_settings = {
+        'database': 'mydb',
+        'taskmeta_collection': 'my_taskmeta_collection',
+    }
+
 .. _conf-redis-result-backend:
 
 Redis backend settings
@@ -994,7 +1068,11 @@ is the same as::
 
 Use the ``rediss://`` protocol to connect to redis over TLS::
 
-    result_backend = 'rediss://:password@host:port/db?ssl_cert_reqs=CERT_REQUIRED'
+    result_backend = 'rediss://:password@host:port/db?ssl_cert_reqs=required'
+
+Note that the ``ssl_cert_reqs`` string should be one of ``required``,
+``optional``, or ``none`` (though, for backwards compatibility, the string
+may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
 
 If a Unix socket connection should be used, the URL needs to be in the format:::
 
@@ -1024,11 +1102,14 @@ When using a TLS connection (protocol is ``rediss://``), you may pass in all val
 .. code-block:: python
 
     result_backend = 'rediss://:password@host:port/db?\
-        ssl_cert_reqs=CERT_REQUIRED\
+        ssl_cert_reqs=required\
         &ssl_ca_certs=%2Fvar%2Fssl%2Fmyca.pem\                  # /var/ssl/myca.pem
         &ssl_certfile=%2Fvar%2Fssl%2Fredis-server-cert.pem\     # /var/ssl/redis-server-cert.pem
         &ssl_keyfile=%2Fvar%2Fssl%2Fprivate%2Fworker-key.pem'   # /var/ssl/private/worker-key.pem
 
+Note that the ``ssl_cert_reqs`` string should be one of ``required``,
+``optional``, or ``none`` (though, for backwards compatibility, the string
+may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
 
 .. setting:: redis_backend_use_ssl
 
@@ -1052,12 +1133,16 @@ Default: No limit.
 Maximum number of connections available in the Redis connection
 pool used for sending and retrieving results.
 
+.. warning::
+    Redis will raise a `ConnectionError` if the number of concurrent
+    connections exceeds the maximum.
+
 .. setting:: redis_socket_connect_timeout
 
 ``redis_socket_connect_timeout``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 5.0.1
+.. versionadded:: 4.0.1
 
 Default: :const:`None`
 
@@ -1073,6 +1158,31 @@ Default: 120.0 seconds.
 
 Socket timeout for reading/writing operations to the Redis server
 in seconds (int/float), used by the redis result backend.
+
+.. setting:: redis_retry_on_timeout
+
+``redis_retry_on_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 4.4.1
+
+Default: :const:`False`
+
+To retry reading/writing operations on TimeoutError to the Redis server,
+used by the redis result backend. Shouldn't set this variable if using Redis
+connection by unix socket.
+
+.. setting:: redis_socket_keepalive
+
+``redis_socket_keepalive``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 4.4.1
+
+Default: :const:`False`
+
+Socket TCP keepalive to keep connections healthy to the Redis server,
+used by the redis result backend.
 
 .. _conf-cassandra-result-backend:
 
@@ -1512,7 +1622,7 @@ setting to be set to a DynamoDB URL::
 
 For example, specifying the AWS region and the table name::
 
-    result_backend = 'dynamodb://@us-east-1/celery_results
+    result_backend = 'dynamodb://@us-east-1/celery_results'
 
 or retrieving AWS configuration parameters from the environment, using the default table name (``celery``)
 and specifying read and write provisioned throughput::
@@ -1560,6 +1670,18 @@ The fields of the DynamoDB URL in ``result_backend`` are defined as follows:
 
     The Read & Write Capacity Units for the created DynamoDB table. Default is ``1`` for both read and write.
     More details can be found in the `Provisioned Throughput documentation <http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ProvisionedThroughput.html>`_.
+
+#. ``ttl_seconds``
+
+    Time-to-live (in seconds) for results before they expire. The default is to
+    not expire results, while also leaving the DynamoDB table's Time to Live
+    settings untouched. If ``ttl_seconds`` is set to a positive value, results
+    will expire after the specified number of seconds. Setting ``ttl_seconds``
+    to a negative value means to not expire results, and also to actively
+    disable the DynamoDB table's Time to Live setting. Note that trying to
+    change a table's Time to Live setting multiple times in quick succession
+    will cause a throttling error. More details can be found in the
+    `DynamoDB TTL documentation <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html>`_
 
 .. _conf-ironcache-result-backend:
 
@@ -2421,6 +2543,13 @@ transports):
 
     broker_transport_options = {'visibility_timeout': 18000}  # 5 hours
 
+Example setting the producer connection maximum number of retries (so producers
+won't retry forever if the broker isn't available at the first task execution):
+
+.. code-block:: python
+
+    broker_transport_options = {'max_retries': 5}
+
 .. _conf-worker:
 
 Worker
@@ -2581,7 +2710,7 @@ Specify if remote control of the workers is enabled.
 .. setting:: worker_proc_alive_timeout
 
 ``worker_proc_alive_timeout``
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: 4.0.
 

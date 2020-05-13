@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import operator
 
 from case import Mock
+
 from celery import signals
 from celery.concurrency import solo
 from celery.utils.functional import noop

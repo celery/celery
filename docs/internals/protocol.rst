@@ -79,7 +79,7 @@ This example sends a task message using version 2 of the protocol:
     args = (2, 2)
     kwargs = {}
     basic_publish(
-        message=json.dumps((args, kwargs, None),
+        message=json.dumps((args, kwargs, None)),
         application_headers={
             'lang': 'py',
             'task': 'proj.tasks.add',
