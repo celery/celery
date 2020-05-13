@@ -1,5 +1,5 @@
 language: python
-dist: bionic
+dist: focal
 cache: pip
 python:
   - '2.7'
@@ -80,7 +80,7 @@ before_install:
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
           if [[ "$TOXENV" == *integration* ]]; then
-              sudo echo 'deb https://dl.bintray.com/rabbitmq-erlang/debian bionic main' > /etc/apt/sources.list.d/rabbitmq-bintray.list
+              sudo echo 'deb https://dl.bintray.com/rabbitmq-erlang/debian focal main' > /etc/apt/sources.list.d/rabbitmq-bintray.list
               sudo apt-key adv --keyserver "hkps.pool.sks-keyservers.net" --recv-keys "0x6B73A36E6026DFCA"
               wget -O - "https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc" | sudo apt-key add -
               sudo apt update
