@@ -632,6 +632,20 @@ class test_KeyValueStoreBackend:
         stored_meta = self.b.decode(self.b.get(self.b.get_key_for_task(tid)))
         assert stored_meta['group_id'] == request.group
 
+    def test_store_result_race_second_write_should_ignore_if_previous_success(self):
+        tid = uuid()
+        state = 'SUCCESS'
+        result = 10
+        request = Context(group='gid', children=[])
+        self.b.store_result(
+            tid, state=state, result=result, request=request,
+        )
+        self.b.store_result(
+            tid, state=states.FAILURE, result=result, request=request,
+        )
+        stored_meta = self.b.decode(self.b.get(self.b.get_key_for_task(tid)))
+        assert stored_meta['status'] == states.SUCCESS
+
     def test_strip_prefix(self):
         x = self.b.get_key_for_task('x1b34')
         assert self.b._strip_prefix(x) == 'x1b34'
