@@ -22,6 +22,18 @@ env:
 matrix:
   fast_finish: true
   include:
+  - python: 2.7
+    stage: test
+    dist: bionic
+
+  - python: 3.5
+    stage: test
+    dist: bionic
+
+  - python: 3.6
+    stage: test
+    dist: bionic
+
   - python: 3.8
     env: MATRIX_TOXENV=integration-rabbitmq
     stage: integration
@@ -64,12 +76,14 @@ matrix:
   - python: '2.7'
     env: TOXENV=flakeplus
     stage: lint
- 
+    dist: bionic
+
   allow_failures:
   - python: pypy2.7-7.3
     env: TOXENV=pypy
     before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
     stage: test
+    dist: bionic
   - python: pypy3.6-7.3
     env: TOXENV=pypy3
     before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
