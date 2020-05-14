@@ -1,2 +1,2 @@
-couchbase
-couchbase-cffi;platform_python_implementation=="PyPy"
+couchbase < 3.0.0
+couchbase-cffi < 3.0.0;platform_python_implementation=="PyPy"
