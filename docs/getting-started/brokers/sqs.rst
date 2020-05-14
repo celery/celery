@@ -141,8 +141,12 @@ pass a map of queue names to URLs using the :setting:`predefined_queue_urls`
 setting::
 
     broker_transport_options = {
-        'predefined_queue_urls': {
-            'my-q': 'https://ap-southeast-2.queue.amazonaws.com/123456/my-q'
+        'predefined_queues': {
+            'my-q': {
+                'url': 'https://ap-southeast-2.queue.amazonaws.com/123456/my-q',
+                'access_key_id': 'xxx',
+                'secret_access_key': 'xxx',
+            }
         }
     }
 
