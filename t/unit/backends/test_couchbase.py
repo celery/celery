@@ -26,12 +26,12 @@ class test_CouchbaseBackend:
         self.backend = CouchbaseBackend(app=self.app)
 
     def test_init_no_couchbase(self):
-        prev, module.Couchbase = module.Couchbase, None
+        prev, module.Cluster = module.Cluster, None
         try:
             with pytest.raises(ImproperlyConfigured):
                 CouchbaseBackend(app=self.app)
         finally:
-            module.Couchbase = prev
+            module.Cluster = prev
 
     def test_init_no_settings(self):
         self.app.conf.couchbase_backend_settings = []
@@ -43,20 +43,20 @@ class test_CouchbaseBackend:
         CouchbaseBackend(app=self.app)
 
     def test_get_connection_connection_exists(self):
-        with patch('couchbase.connection.Connection') as mock_Connection:
+        with patch('couchbase.cluster.Cluster') as mock_Cluster:
             self.backend._connection = sentinel._connection
 
             connection = self.backend._get_connection()
 
             assert sentinel._connection == connection
-            mock_Connection.assert_not_called()
+            mock_Cluster.assert_not_called()
 
     def test_get(self):
         self.app.conf.couchbase_backend_settings = {}
         x = CouchbaseBackend(app=self.app)
         x._connection = Mock()
         mocked_get = x._connection.get = Mock()
-        mocked_get.return_value.value = sentinel.retval
+        mocked_get.return_value.content = sentinel.retval
         # should return None
         assert x.get('1f3fab') == sentinel.retval
         x._connection.get.assert_called_once_with('1f3fab')
@@ -83,11 +83,11 @@ class test_CouchbaseBackend:
         self.app.conf.couchbase_backend_settings = {}
         x = CouchbaseBackend(app=self.app)
         x._connection = Mock()
-        mocked_delete = x._connection.delete = Mock()
+        mocked_delete = x._connection.remove = Mock()
         mocked_delete.return_value = None
         # should return None
         assert x.delete('1f3fab') is None
-        x._connection.delete.assert_called_once_with('1f3fab')
+        x._connection.remove.assert_called_once_with('1f3fab')
 
     def test_config_params(self):
         self.app.conf.couchbase_backend_settings = {
