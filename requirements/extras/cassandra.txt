@@ -1,1 +1,1 @@
-cassandra-driver
+cassandra-driver<3.21.0
