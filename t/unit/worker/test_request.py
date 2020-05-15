@@ -653,7 +653,7 @@ class test_Request(RequestCase):
         job.delivery_info['redelivered'] = True
         job.on_failure(exc_info)
 
-        assert self.mytask.backend.get_status(job.id) == states.FAILURE
+        assert self.mytask.backend.get_status(job.id) == states.PENDING
 
     def test_on_failure_acks_late(self):
         job = self.xRequest()
