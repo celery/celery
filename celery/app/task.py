@@ -547,7 +547,7 @@ class Task(object):
                 serializer = options.get('serializer')
                 if serializer is None:
                     if eager_producer.serializer:
-                        serializer = eager_producer.serializer 
+                        serializer = eager_producer.serializer
                     else:
                         serializer = app.conf.task_serializer
                 body = args, kwargs

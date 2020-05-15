@@ -153,14 +153,14 @@ class test_trace(TraceCase):
             self.trace(add, (2, 2), {}, eager=False)
 
     def test_traceback_clear(self):
-        import inspect, sys
+        import inspect
+        import sys
         sys.exc_clear = Mock()
-        frame_list =[]
+        frame_list = []
 
         def raise_dummy():
             frame_str_temp = str(inspect.currentframe().__repr__)
             frame_list.append(frame_str_temp)
-            local_value = 1214
             raise KeyError('foo')
         try:
             raise_dummy()
