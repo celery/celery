@@ -1253,7 +1253,7 @@ class test_apply_async(TasksCase):
         def task(*args, **kwargs):
             pass
         task.apply_async((1, 2, 3, 4, {1}))
-        
+
     def test_task_with_ignored_result(self):
         with patch.object(self.app, 'send_task') as send_task:
             self.task_with_ignored_result.apply_async()

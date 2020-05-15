@@ -60,7 +60,7 @@ def it(_, n):
     elif i > n - 2:
         total = tdiff(it.time_start)
         print('({0} so far: {1}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
-        print('-- process {0} tasks: {1}s total, {2} tasks/s} '.format(
+        print('-- process {0} tasks: {1}s total, {2} tasks/s'.format(
             n, total, n / (total + .0),
         ))
         import os

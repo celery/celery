@@ -383,7 +383,6 @@ class test_BaseBackend_dict:
         self.b.reload_task_result('task-exists')
         self.b._cache['task-exists'] = {'result': 'task'}
 
-
     def test_fail_from_current_stack(self):
         import inspect
         self.b.mark_as_failure = Mock()
@@ -395,7 +394,6 @@ class test_BaseBackend_dict:
         def raise_dummy():
             frame_str_temp = str(inspect.currentframe().__repr__)
             frame_list.append(frame_str_temp)
-            local_value = 1214
             raise KeyError('foo')
         try:
             raise_dummy()
@@ -415,7 +413,6 @@ class test_BaseBackend_dict:
                     tb_ = tb_.tb_next
             elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
                 sys.exc_clear.assert_called()
-
 
     def test_prepare_value_serializes_group_result(self):
         self.b.serializer = 'json'
