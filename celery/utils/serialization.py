@@ -24,8 +24,6 @@ except ImportError:
     import pickle  # noqa
 
 
-PY33 = sys.version_info >= (3, 3)
-
 __all__ = (
     'UnpickleableExceptionWrapper', 'subclass_exception',
     'find_pickleable_exception', 'create_exception_cls',
