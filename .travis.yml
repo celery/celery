@@ -115,9 +115,9 @@ before_install:
           if [[ "$TOXENV" == *cassandra ]]; then
              cassandra_container_id=$(sudo docker run -d -p 9042:9042 cassandra:latest)
              sudo docker exec $cassandra_container_id /bin/bash -c "while ! cqlsh -e 'describe cluster'; do sleep 1; done"
-             sudo docker exec $cassandra_container_id /usr/bin/cqlsh -e "CREATE KEYSPACE tests WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };"
+             sudo docker exec $cassandra_container_id /opt/cassandra/bin/cqlsh -e "CREATE KEYSPACE tests WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };"
              sleep 1
-             sudo docker exec $cassandra_container_id /usr/bin/cqlsh -k tests -e "CREATE TABLE tests (task_id text, status text, result blob, date_done timestamp, traceback blob, children blob, PRIMARY KEY ((task_id), date_done)) WITH CLUSTERING ORDER BY (date_done DESC);"
+             sudo docker exec $cassandra_container_id /opt/cassandra/bin/cqlsh -k tests -e "CREATE TABLE tests (task_id text, status text, result blob, date_done timestamp, traceback blob, children blob, PRIMARY KEY ((task_id), date_done)) WITH CLUSTERING ORDER BY (date_done DESC);"
              sleep 1
           fi
     - |
