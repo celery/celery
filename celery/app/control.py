@@ -217,8 +217,7 @@ class Control(object):
 
     def revoke(self, task_id, destination=None, terminate=False,
                signal=TERM_SIGNAME, **kwargs):
-        """Tell all (or specific) workers to revoke a task by id
-        (or list of ids).
+        """Tell all (or specific) workers to revoke a task by id (or list of ids).
 
         If a task is revoked, the workers will ignore the task and
         not execute it after all.
@@ -242,8 +241,7 @@ class Control(object):
 
     def terminate(self, task_id,
                   destination=None, signal=TERM_SIGNAME, **kwargs):
-        """Tell all (or specific) workers to terminate a task by id
-        (or list of ids).
+        """Tell all (or specific) workers to terminate a task by id (or list of ids).
 
         See Also:
             This is just a shortcut to :meth:`revoke` with the terminate
