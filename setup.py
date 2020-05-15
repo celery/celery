@@ -239,6 +239,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
+        "Programming Language :: Python :: Implementation :: PyPy3",
         "Operating System :: OS Independent"
     ]
 )
