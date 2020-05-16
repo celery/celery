@@ -505,7 +505,8 @@ class Request(object):
             )
             ack = self.task.acks_on_failure_or_timeout
             if reject:
-                self.reject(requeue=True)
+                requeue = True
+                self.reject(requeue=requeue)
                 send_failed_event = False
             elif ack:
                 self.acknowledge()
