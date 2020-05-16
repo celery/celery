@@ -1030,7 +1030,8 @@ class EagerResult(AsyncResult):
             return self.result
         elif self.state in states.PROPAGATE_STATES:
             if propagate:
-                raise self.result
+                raise self.result if isinstance(
+                    self.result, Exception) else Exception(self.result)
             return self.result
     wait = get  # XXX Compat (remove 5.0)
 
