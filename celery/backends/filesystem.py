@@ -61,10 +61,10 @@ class FilesystemBackend(KeyValueStoreBackend):
     def _find_path(self, url):
         if not url:
             raise ImproperlyConfigured(E_NO_PATH_SET)
-        if url.startswith('file:///'):
-            return url[7:]
         if url.startswith('file://localhost/'):
             return url[16:]
+        if url.startswith('file://'):
+            return url[7:]
         raise ImproperlyConfigured(E_PATH_NON_CONFORMING_SCHEME)
 
     def _do_directory_test(self, key):
