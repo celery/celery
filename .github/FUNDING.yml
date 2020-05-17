@@ -5,7 +5,4 @@ patreon:
 open_collective: celery
 ko_fi: # Replace with a single Ko-fi username
 tidelift: "pypi/celery"
-tidelift: "pypi/amqp"
-tidelift: "pypi/django_celery_results"
-tidelift: "pypi/billiard"
 custom: # Replace with a single custom sponsorship URL
