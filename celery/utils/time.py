@@ -212,7 +212,7 @@ def remaining(start, ends_in, now=None, relative=False):
         start = start.replace(tzinfo=now.tzinfo)
     end_date = start + ends_in
     if relative:
-        end_date = delta_resolution(end_date, ends_in)
+        end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
     ret = end_date - now
     if C_REMDEBUG:  # pragma: no cover
         print('rem: NOW:%r START:%r ENDS_IN:%r END_DATE:%s REM:%s' % (
