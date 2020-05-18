@@ -364,8 +364,14 @@ class test_task_retries(TasksCase):
         finally:
             self.retry_task_mockapply.pop_request()
 
-    def test_retry_eager(self):
+    def test_retry_without_throw_eager(self):
         assert self.retry_task_without_throw.apply().get() == 42
+
+    def test_retry_eager_should_return_value(self):
+        self.retry_task.max_retries = 3
+        self.retry_task.iterations = 0
+        assert self.retry_task.apply([0xFF, 0xFFFF]).get() == 0xFF
+        assert self.retry_task.iterations == 4
 
     def test_retry_not_eager(self):
         self.retry_task_mockapply.push_request()

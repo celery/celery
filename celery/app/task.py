@@ -709,15 +709,14 @@ class Task(object):
                 ), task_args=S.args, task_kwargs=S.kwargs
             )
 
-        ret = Retry(exc=exc, when=eta or countdown)
+        ret = Retry(exc=exc, when=eta or countdown, is_eager=is_eager, sig=S)
 
         if is_eager:
             # if task was executed eagerly using apply(),
-            # then the retry must also be executed eagerly.
-            retry_ret = S.apply().get()
+            # then the retry must also be executed eagerly in apply method
             if throw:
                 raise ret
-            return retry_ret
+            return ret
 
         try:
             S.apply_async()
@@ -777,6 +776,8 @@ class Task(object):
         retval = ret.retval
         if isinstance(retval, ExceptionInfo):
             retval, tb = retval.exception, retval.traceback
+        if isinstance(retval, Retry) and retval.sig is not None:
+            return retval.sig.apply(retries=retries + 1)
         state = states.SUCCESS if ret.info is None else ret.info.state
         return EagerResult(task_id, retval, state, traceback=tb)
 

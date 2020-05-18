@@ -137,7 +137,7 @@ class Retry(TaskPredicate):
     #: :class:`~datetime.datetime`.
     when = None
 
-    def __init__(self, message=None, exc=None, when=None, **kwargs):
+    def __init__(self, message=None, exc=None, when=None, is_eager=False, sig=None, **kwargs):
         from kombu.utils.encoding import safe_repr
         self.message = message
         if isinstance(exc, string_t):
@@ -145,6 +145,8 @@ class Retry(TaskPredicate):
         else:
             self.exc, self.excs = exc, safe_repr(exc) if exc else None
         self.when = when
+        self.is_eager = is_eager
+        self.sig = sig
         super(Retry, self).__init__(self, exc, when, **kwargs)
 
     def humanize(self):
