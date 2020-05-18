@@ -335,6 +335,8 @@ class Backend(object):
         return self.meta_from_decoded(self.decode(payload))
 
     def decode(self, payload):
+        if payload is None:
+            return payload
         payload = PY3 and payload or str(payload)
         return loads(payload,
                      content_type=self.content_type,
