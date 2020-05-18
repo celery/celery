@@ -1,2 +1,2 @@
-couchbase < 3.0.0
+couchbase < 3.0.0; platform_system != "Windows"
 couchbase-cffi < 3.0.0;platform_python_implementation=="PyPy"

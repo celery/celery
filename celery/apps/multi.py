@@ -151,8 +151,8 @@ class Node(object):
                 return d[opt]
             except KeyError:
                 pass
-        path_split = value.split("/")
-        dir_path = "/".join(path_split[0:-1])
+        value = os.path.normpath(value)
+        dir_path = os.path.dirname(value)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         return d.setdefault(alt[0], value)

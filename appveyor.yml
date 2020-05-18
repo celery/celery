@@ -12,30 +12,29 @@ environment:
     # a later point release.
     # See: https://www.appveyor.com/docs/installed-software#python
 
-    - PYTHON: "C:\\Python27-x64"
-      PYTHON_VERSION: "2.7.x"
-      PYTHON_ARCH: "64"
-      WINDOWS_SDK_VERSION: "v7.0"
-
     - PYTHON: "C:\\Python35-x64"
       PYTHON_VERSION: "3.5.x"
       PYTHON_ARCH: "64"
       WINDOWS_SDK_VERSION: "v7.1"
+      TOXENV: "3.5-unit"
 
     - PYTHON: "C:\\Python36-x64"
       PYTHON_VERSION: "3.6.x"
       PYTHON_ARCH: "64"
       WINDOWS_SDK_VERSION: "v7.1"
-      
+      TOXENV: "3.6-unit"
+
     - PYTHON: "C:\\Python37-x64"
       PYTHON_VERSION: "3.7.x"
       PYTHON_ARCH: "64"
       WINDOWS_SDK_VERSION: "v7.1"
-      
+      TOXENV: "3.7-unit"
+
     - PYTHON: "C:\\Python38-x64"
       PYTHON_VERSION: "3.8.x"
       PYTHON_ARCH: "64"
       WINDOWS_SDK_VERSION: "v7.1"
+      TOXENV: "3.8-unit"
 
 
 init:
@@ -43,15 +42,14 @@ init:
 
 install:
   - "powershell extra\\appveyor\\install.ps1"
-  - "%PYTHON%/python -m pip install -U pip setuptools"
+  - "%PYTHON%/python -m pip install -U pip setuptools tox"
   - "%PYTHON%/Scripts/pip.exe install -U eventlet"
   - "%PYTHON%/Scripts/pip.exe install -U -r requirements/extras/thread.txt"
-  - "%PYTHON%/Scripts/pip.exe install -U -r requirements/test-ci-default.txt"
 
 build: off
 
 test_script:
-  - "%WITH_COMPILER% %PYTHON%/python setup.py test"
+  - "%WITH_COMPILER% %PYTHON%/Scripts/tox -v -- -v"
 
 after_test:
   - "%WITH_COMPILER% %PYTHON%/python setup.py bdist_wheel"
