@@ -293,6 +293,9 @@ class Task(object):
     #: Task request stack, the current request will be the topmost.
     request_stack = None
 
+    #: Default task protocol.
+    protocol = None
+
     #: Some may expect a request to exist even if the task hasn't been
     #: called.  This should probably be deprecated.
     _default_request = None
@@ -314,6 +317,7 @@ class Task(object):
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
         ('store_errors_even_if_ignored', 'task_store_errors_even_if_ignored'),
+        ('protocol', 'task_protocol'),
     )
 
     _backend = None  # set by backend property.

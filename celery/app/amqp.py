@@ -259,6 +259,9 @@ class AMQP(object):
     def create_task_message(self):
         return self.task_protocols[self.app.conf.task_protocol]
 
+    def create_task_message_with_protocol(self, protocol):
+        return self.task_protocols[protocol]
+
     @cached_property
     def send_task_message(self):
         return self._create_task_sender()
