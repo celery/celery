@@ -712,6 +712,24 @@ class test_KeyValueStoreBackend:
         with pytest.raises(self.b.TimeoutError):
             list(self.b.get_many(tasks, timeout=0.01, interval=0.01))
 
+    def test_get_many_passes_ready_states(self):
+        tasks_length = 10
+        ready_states = frozenset({states.SUCCESS})
+
+        self.b._cache.clear()
+        ids = {uuid(): i for i in range(tasks_length)}
+        for id, i in items(ids):
+            if i % 2 == 0:
+                self.b.mark_as_done(id, i)
+            else:
+                self.b.mark_as_failure(id, Exception())
+
+        it = self.b.get_many(list(ids), interval=0.01, max_iterations=1, READY_STATES=ready_states)
+        it_list = list(it)
+
+        assert all([got_state['status'] in ready_states for (got_id, got_state) in it_list])
+        assert len(it_list) == tasks_length / 2
+
     def test_chord_part_return_no_gid(self):
         self.b.implements_incr = True
         task = Mock()
