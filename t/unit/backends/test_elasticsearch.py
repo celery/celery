@@ -140,6 +140,7 @@ class test_ElasticsearchBackend:
             doc_type=x.doc_type,
             index=x.index,
             body=body,
+            params={'op_type': 'create'},
             kwarg1='test1'
         )
 
@@ -165,6 +166,7 @@ class test_ElasticsearchBackend:
             doc_type=x.doc_type,
             index=x.index,
             body={"field1": "value1"},
+            params={'op_type': 'create'},
             kwarg1='test1'
         )
 

@@ -4,6 +4,7 @@ from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime
 
+from celery import states
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import _parse_url
 
@@ -86,11 +87,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def get(self, key):
         try:
-            res = self.server.get(
-                index=self.index,
-                doc_type=self.doc_type,
-                id=key,
-            )
+            res = self._get(key)
             try:
                 if res['found']:
                     return res['_source']['result']
@@ -99,22 +96,28 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         except elasticsearch.exceptions.NotFoundError:
             pass
 
+    def _get(self, key):
+        return self.server.get(
+            index=self.index,
+            doc_type=self.doc_type,
+            id=key,
+        )
+
     def set(self, key, value):
+        body = {
+            'result': value,
+            '@timestamp': '{0}Z'.format(
+                datetime.utcnow().isoformat()[:-3]
+            ),
+        }
         try:
             self._index(
                 id=key,
-                body={
-                    'result': value,
-                    '@timestamp': '{0}Z'.format(
-                        datetime.utcnow().isoformat()[:-3]
-                    ),
-                },
+                body=body,
             )
         except elasticsearch.exceptions.ConflictError:
             # document already exists, update it
-            data = self.get(key)
-            data[key] = value
-            self._index(key, data, refresh=True)
+            self._update(id=key, body=body)
 
     def _index(self, id, body, **kwargs):
         body = {bytes_to_str(k): v for k, v in items(body)}
@@ -123,8 +126,46 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             index=self.index,
             doc_type=self.doc_type,
             body=body,
+            params={'op_type': 'create'},
             **kwargs
         )
+
+    def _update(self, id, body, **kwargs):
+        body = {bytes_to_str(k): v for k, v in items(body)}
+        retries = 3
+        while retries > 0:
+            retries -= 1
+            try:
+                res_get = self._get(key=id)
+                if not res_get['found']:
+                    return self._index(id, body, **kwargs)
+                parsed_result = self.decode_result(res_get['_source']['result'])
+                if parsed_result['status'] in states.READY_STATES:
+                    # if stored state is already in ready state, do nothing
+                    return {'result': 'noop'}
+
+                # get current sequence number and primary term
+                # https://www.elastic.co/guide/en/elasticsearch/reference/current/optimistic-concurrency-control.html
+                seq_no = res_get.get('_seq_no', 1)
+                prim_term = res_get.get('_primary_term', 1)
+
+                # try to update document with current seq_no and primary_term
+                res = self.server.update(
+                    id=bytes_to_str(id),
+                    index=self.index,
+                    body=body,
+                    params={'if_primary_term': prim_term, 'if_seq_no': seq_no},
+                    **kwargs
+                )
+                # result is elastic search update query result
+                # noop = query did not update any document
+                # updated = at least one document got updated
+                if res['result'] != 'noop':
+                    return res
+            except Exception:
+                if retries == 0:
+                    raise
+        raise Exception('too many retries to update backend')
 
     def mget(self, keys):
         return [self.get(key) for key in keys]
