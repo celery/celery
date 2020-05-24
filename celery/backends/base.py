@@ -714,18 +714,18 @@ class BaseKeyValueStoreBackend(Backend):
                 if value['status'] in READY_STATES:
                     yield k, value
 
-    def _mget_to_results(self, values, keys):
+    def _mget_to_results(self, values, keys, READY_STATES=states.READY_STATES):
         if hasattr(values, 'items'):
             # client returns dict so mapping preserved.
             return {
                 self._strip_prefix(k): v
-                for k, v in self._filter_ready(items(values))
+                for k, v in self._filter_ready(items(values), READY_STATES)
             }
         else:
             # client returns list so need to recreate mapping.
             return {
                 bytes_to_str(keys[i]): v
-                for i, v in self._filter_ready(enumerate(values))
+                for i, v in self._filter_ready(enumerate(values), READY_STATES)
             }
 
     def get_many(self, task_ids, timeout=None, interval=0.5, no_ack=True,
@@ -750,7 +750,7 @@ class BaseKeyValueStoreBackend(Backend):
         while ids:
             keys = list(ids)
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
-                                                 for k in keys]), keys)
+                                                 for k in keys]), keys, READY_STATES)
             cache.update(r)
             ids.difference_update({bytes_to_str(v) for v in r})
             for key, value in items(r):
