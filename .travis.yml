@@ -46,6 +46,10 @@ matrix:
     env: MATRIX_TOXENV=integration-cassandra
     stage: integration
 
+  - python: 3.8
+    env: MATRIX_TOXENV=integration-elasticsearch
+    stage: integration
+
   - python: '3.8'
     env: TOXENV=flake8
     stage: lint
@@ -64,7 +68,7 @@ matrix:
   - python: '2.7'
     env: TOXENV=flakeplus
     stage: lint
- 
+
   allow_failures:
   - python: pypy2.7-7.3
     env: TOXENV=pypy
@@ -123,6 +127,11 @@ before_install:
              sleep 1
              sudo docker exec $cassandra_container_id /opt/cassandra/bin/cqlsh -k tests -e "CREATE TABLE tests (task_id text, status text, result blob, date_done timestamp, traceback blob, children blob, PRIMARY KEY ((task_id), date_done)) WITH CLUSTERING ORDER BY (date_done DESC);"
              sleep 1
+          fi
+    - |
+          if [[ "$TOXENV" == *elasticsearch ]]; then
+             elasticsearch_container_id=$(sudo docker run -d -p 9200:9200 -e discovery.type=single-node elasticsearch:7.7.0)
+             sudo docker exec $elasticsearch_container_id /bin/bash -c "while ! curl '127.0.0.1:9200/_cluster/health?wait_for_status=yellow&timeout=30s'; do sleep 1; done"
           fi
     - |
           docker run -d -e executable=blob -t -p 10000:10000 --tmpfs /opt/azurite/folder:rw arafato/azurite:2.6.5
