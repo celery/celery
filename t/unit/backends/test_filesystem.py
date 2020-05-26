@@ -89,3 +89,10 @@ class test_FilesystemBackend:
         tb.mark_as_done(tid, 42)
         tb.forget(tid)
         assert len(os.listdir(self.directory)) == 0
+
+
+    def test_serialization_pickle(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        import pickle
+        pickled = pickle.dumps(tb)
+        assert isinstance(pickle.loads(pickled), FilesystemBackend)
