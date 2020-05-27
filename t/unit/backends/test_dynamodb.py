@@ -6,6 +6,7 @@ from decimal import Decimal
 import pytest
 from case import MagicMock, Mock, patch, sentinel, skip
 
+from celery import states
 from celery.backends import dynamodb as module
 from celery.backends.dynamodb import DynamoDBBackend
 from celery.exceptions import ImproperlyConfigured
@@ -473,7 +474,7 @@ class test_DynamoDBBackend:
 
         # should return None
         with patch('celery.backends.dynamodb.time', self._mock_time):
-            assert self.backend.set(sentinel.key, sentinel.value) is None
+            assert self.backend.set(sentinel.key, sentinel.value, states.SUCCESS) is None
 
         assert self.backend._client.put_item.call_count == 1
         _, call_kwargs = self.backend._client.put_item.call_args
@@ -496,7 +497,7 @@ class test_DynamoDBBackend:
 
         # should return None
         with patch('celery.backends.dynamodb.time', self._mock_time):
-            assert self.backend.set(sentinel.key, sentinel.value) is None
+            assert self.backend.set(sentinel.key, sentinel.value, states.SUCCESS) is None
 
         assert self.backend._client.put_item.call_count == 1
         _, call_kwargs = self.backend._client.put_item.call_args

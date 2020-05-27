@@ -103,7 +103,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             id=key,
         )
 
-    def set(self, key, value):
+    def set(self, key, value, state):
         body = {
             'result': value,
             '@timestamp': '{0}Z'.format(

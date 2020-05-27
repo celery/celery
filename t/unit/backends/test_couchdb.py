@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import pytest
 from case import MagicMock, Mock, sentinel, skip
 
+from celery import states
 from celery.app import backends
 from celery.backends import couchdb as module
 from celery.backends.couchdb import CouchBackend
@@ -63,7 +64,7 @@ class test_CouchBackend:
         x = CouchBackend(app=self.app)
         x._connection = Mock()
 
-        x.set(key, 'value')
+        x.set(key, 'value', states.SUCCESS)
 
         x._connection.save.assert_called_once_with({'_id': '1f3fab',
                                                     'value': 'value'})
@@ -75,7 +76,7 @@ class test_CouchBackend:
         x._connection.save.side_effect = (pycouchdb.exceptions.Conflict, None)
         get = x._connection.get = MagicMock()
 
-        x.set(key, 'value')
+        x.set(key, 'value', states.SUCCESS)
 
         x._connection.get.assert_called_once_with('1f3fab')
         x._connection.get('1f3fab').__setitem__.assert_called_once_with(

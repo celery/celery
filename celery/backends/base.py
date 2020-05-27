@@ -666,7 +666,7 @@ class BaseKeyValueStoreBackend(Backend):
     def mget(self, keys):
         raise NotImplementedError('Does not support get_many')
 
-    def set(self, key, value):
+    def set(self, key, value, state):
         raise NotImplementedError('Must implement the set method.')
 
     def delete(self, key):
@@ -786,12 +786,12 @@ class BaseKeyValueStoreBackend(Backend):
         if current_meta['status'] == states.SUCCESS:
             return result
 
-        self.set(self.get_key_for_task(task_id), self.encode(meta))
+        self.set(self.get_key_for_task(task_id), self.encode(meta), state)
         return result
 
     def _save_group(self, group_id, result):
         self.set(self.get_key_for_group(group_id),
-                 self.encode({'result': result.as_tuple()}))
+                 self.encode({'result': result.as_tuple()}), states.SUCCESS)
         return result
 
     def _delete_group(self, group_id):
