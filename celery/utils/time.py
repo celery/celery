@@ -397,10 +397,10 @@ def get_exponential_backoff_interval(
 ):
     """Calculate the exponential backoff wait time."""
     # Will be zero if factor equals 0
-    countdown = factor * (2 ** retries)
+    countdown = min(maximum, factor * (2 ** retries))
     # Full jitter according to
     # https://www.awsarchitectureblog.com/2015/03/backoff.html
     if full_jitter:
         countdown = random.randrange(countdown + 1)
     # Adjust according to maximum wait time and account for negative values.
-    return max(0, min(maximum, countdown))
+    return max(0, countdown)
