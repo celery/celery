@@ -7,6 +7,7 @@
     using K/V semantics like _get and _put.
 """
 from __future__ import absolute_import, unicode_literals
+from future.utils import raise_with_traceback
 
 import datetime
 import sys
@@ -26,7 +27,8 @@ import celery.exceptions
 from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
 from celery.exceptions import (ChordError, ImproperlyConfigured,
-                               NotRegistered, TaskRevokedError, TimeoutError)
+                               NotRegistered, TaskRevokedError, TimeoutError,
+                               BackendGetMetaError, BackendStoreError)
 from celery.five import PY3, items
 from celery.result import (GroupResult, ResultBase, ResultSet,
                            allow_join_result, result_from_tuple)
@@ -37,6 +39,7 @@ from celery.utils.serialization import (create_exception_cls,
                                         ensure_serializable,
                                         get_pickleable_exception,
                                         get_pickled_exception)
+from celery.utils.time import get_exponential_backoff_interval
 
 __all__ = ('BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend')
 
@@ -125,6 +128,11 @@ class Backend(object):
         self.accept = conf.result_accept_content if accept is None else accept
         self.accept = conf.accept_content if self.accept is None else self.accept  # noqa: E501
         self.accept = prepare_accept_content(self.accept)
+
+        self.always_retry = conf.get('result_backend_always_retry', False)
+        self.max_sleep_between_retries_ms = conf.get('result_backend_max_sleep_between_retries_ms', 10000)
+        self.base_sleep_between_retries_ms = conf.get('result_backend_base_sleep_between_retries_ms', 10)
+        self.max_retries = conf.get('result_backend_max_retries', float("inf"))
 
         self._pending_results = pending_results_t({}, WeakValueDictionary())
         self._pending_messages = BufferMap(MESSAGE_BUFFER_MAX)
@@ -415,13 +423,40 @@ class Backend(object):
 
         return meta
 
+    def _sleep(self, amount):
+        time.sleep(amount)
+
     def store_result(self, task_id, result, state,
                      traceback=None, request=None, **kwargs):
-        """Update task state and result."""
+        """Update task state and result.
+
+        if always_retry_backend_operation is activated, in the event of a recoverable exception,
+        then retry operation with an exponential backoff until a limit has been reached.
+        """
         result = self.encode_result(result, state)
-        self._store_result(task_id, result, state, traceback,
-                           request=request, **kwargs)
-        return result
+
+        retries = 0
+
+        while True:
+            try:
+                self._store_result(task_id, result, state, traceback,
+                                   request=request, **kwargs)
+                return result
+            except Exception as exc:
+                if self.always_retry and self.exception_safe_to_retry(exc):
+                    if retries < self.max_retries:
+                        retries += 1
+
+                        # get_exponential_backoff_interval computes integers
+                        # and time.sleep accept floats for sub second sleep
+                        sleep_amount = get_exponential_backoff_interval(
+                            self.base_sleep_between_retries_ms, retries,
+                            self.max_sleep_between_retries_ms, True) / 1000
+                        self._sleep(sleep_amount)
+                    else:
+                        raise_with_traceback(BackendStoreError("failed to store result on the backend", task_id=task_id, state=state))
+                else:
+                    raise
 
     def forget(self, task_id):
         self._cache.pop(task_id, None)
@@ -458,15 +493,49 @@ class Backend(object):
                 RuntimeWarning
             )
 
+    def exception_safe_to_retry(self, exc):
+        """Check if an exception is safe to retry.
+
+        Backends have to overload this method with correct predicates dealing with their exceptions.
+
+        By default no exception is safe to retry, it's up to backend implementation
+        to define which exceptions are safe.
+        """
+        return False
+
     def get_task_meta(self, task_id, cache=True):
+        """Get task meta from backend.
+
+        if always_retry_backend_operation is activated, in the event of a recoverable exception,
+        then retry operation with an exponential backoff until a limit has been reached.
+        """
         self._ensure_not_eager()
         if cache:
             try:
                 return self._cache[task_id]
             except KeyError:
                 pass
+        retries = 0
+        while True:
+            try:
+                meta = self._get_task_meta_for(task_id)
+                break
+            except Exception as exc:
+                if self.always_retry and self.exception_safe_to_retry(exc):
+                    if retries < self.max_retries:
+                        retries += 1
 
-        meta = self._get_task_meta_for(task_id)
+                        # get_exponential_backoff_interval computes integers
+                        # and time.sleep accept floats for sub second sleep
+                        sleep_amount = get_exponential_backoff_interval(
+                            self.base_sleep_between_retries_ms, retries,
+                            self.max_sleep_between_retries_ms, True) / 1000
+                        self._sleep(sleep_amount)
+                    else:
+                        raise_with_traceback(BackendGetMetaError("failed to get meta", task_id=task_id))
+                else:
+                    raise
+
         if cache and meta.get('status') == states.SUCCESS:
             self._cache[task_id] = meta
         return meta

@@ -677,6 +677,47 @@ Can be one of the following:
 .. _`S3`: https://aws.amazon.com/s3/
 
 
+.. setting:: result_backend_always_retry
+
+``result_backend_always_retry``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: :const:`False`
+
+If enable, backend will try to retry on the event of recoverable exceptions instead of propagating the exception.
+It will use an exponential backoff sleep time between 2 retries.
+
+
+.. setting:: result_backend_max_sleep_between_retries_ms
+
+``result_backend_max_sleep_between_retries_ms``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 10000
+
+This specifies the maximum sleep time between two backend operation retry.
+
+
+.. setting:: result_backend_base_sleep_between_retries_ms
+
+``result_backend_base_sleep_between_retries_ms``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 10
+
+This specifies the base amount of sleep time between two backend operation retry.
+
+
+.. setting:: result_backend_max_retries
+
+``result_backend_max_retries``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Inf
+
+This is the maximum of retries in case of recoverable exceptions.
+
+
 .. setting:: result_backend_transport_options
 
 ``result_backend_transport_options``

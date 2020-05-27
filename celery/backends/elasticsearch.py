@@ -85,6 +85,18 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
         self._server = None
 
+    def exception_safe_to_retry(self, exc):
+        if isinstance(exc, (elasticsearch.exceptions.TransportError)):
+            # 429: Too Many Requests
+            # 500: Internal Server Error
+            # 502: Bad Gateway
+            # 503: Service Unavailable
+            # 504: Gateway Timeout
+            # N/A: Low level exception (i.e. socket exception)
+            if exc.status_code in {429, 500, 502, 503, 504, 'N/A'}:
+                return True
+        return super().exception_safe_to_retry(exc)
+
     def get(self, key):
         try:
             res = self._get(key)
