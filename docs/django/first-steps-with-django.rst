@@ -250,11 +250,6 @@ use the help command:
 .. code-block:: console
 
     $ celery help
-    
-Known Issues
-============
-CONN_MAX_AGE other than zero is known to cause issues according to `bug #4878 <https://github.com/celery/celery/issues/4878>`_. Until this is fixed, please set CONN_MAX_AGE to zero.
-
 
 Where to go from here
 =====================
