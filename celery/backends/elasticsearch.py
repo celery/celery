@@ -165,6 +165,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
                 res = self.server.update(
                     id=bytes_to_str(id),
                     index=self.index,
+                    doc_type=self.doc_type,
                     body={'doc': body},
                     params={'if_primary_term': prim_term, 'if_seq_no': seq_no},
                     **kwargs
