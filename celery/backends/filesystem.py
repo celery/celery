@@ -58,6 +58,11 @@ class FilesystemBackend(KeyValueStoreBackend):
         # Lets verify that we've everything setup right
         self._do_directory_test(b'.fs-backend-' + uuid().encode(encoding))
 
+    def __reduce__(self, args=(), kwargs={}):
+        kwargs.update(
+            dict(url=self.url))
+        return super(FilesystemBackend, self).__reduce__(args, kwargs)
+
     def _find_path(self, url):
         if not url:
             raise ImproperlyConfigured(E_NO_PATH_SET)
