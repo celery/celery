@@ -58,7 +58,7 @@ class FilesystemBackend(KeyValueStoreBackend):
         # Lets verify that we've everything setup right
         self._do_directory_test(b'.fs-backend-' + uuid().encode(encoding))
 
-    def __myreduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
             dict(url=self.url))
         return super(FilesystemBackend, self).__reduce__(args, kwargs)

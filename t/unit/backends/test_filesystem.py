@@ -2,6 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import os
+import pickle
 import tempfile
 
 import pytest
@@ -90,9 +91,7 @@ class test_FilesystemBackend:
         tb.forget(tid)
         assert len(os.listdir(self.directory)) == 0
 
-
-    def test_serialization_pickle(self):
-        tb = FilesystemBackend(app=self.app, url=self.url)
-        import pickle
-        pickled = pickle.dumps(tb)
-        assert isinstance(pickle.loads(pickled), FilesystemBackend)
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_pickleable(self):
+        tb = FilesystemBackend(app=self.app, url=self.url, serializer='pickle')
+        assert pickle.loads(pickle.dumps(tb))
