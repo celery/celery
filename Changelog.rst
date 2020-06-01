@@ -9,6 +9,47 @@ in the 4.4.x series, please see :ref:`whatsnew-4.4` for
 an overview of what's new in Celery 4.4.
 
 
+4.4.3
+=======
+:release-date: 2020-06-01 4.00 P.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Fix backend utf-8 encoding in s3 backend .
+- Kombu 4.6.9
+- Task class definitions can have retry attributes (#5869)
+- Upgraded pycurl to the latest version that supports wheel.
+- Add uptime to the stats inspect command
+- Fixing issue #6019: unable to use mysql SSL parameters when getting
+- Clean TraceBack to reduce memory leaks for exception task (#6024)
+- exceptions: NotRegistered: fix up language
+- Give up sending a worker-offline message if transport is not connected
+- Add Task to __all__ in celery.__init__.py
+- Ensure a single chain object in a chain does not raise MaximumRecursion
+- Fix autoscale when prefetch_multiplier is 1
+- Allow start_worker to function without ping task
+- Update celeryd.conf
+- Fix correctly handle configuring the serializer for always_eager mode.
+- Remove doubling of prefetch_count increase when prefetch_multiplier
+- Fix eager function not returning result after retries
+- return retry result if not throw and is_eager
+- Always requeue while worker lost regardless of the redelivered flag
+- Allow relative paths in the filesystem backend (#6070)
+- [Fixed Issue #6017]
+- Avoid race condition due to task duplication.
+- Exceptions must be old-style classes or derived from BaseException
+- Fix windows build (#6104) 
+- Add encode to meta task in base.py (#5894)
+- Update time.py to solve the microsecond issues (#5199)
+- Change backend _ensure_not_eager error to warning
+- Add priority support for 'celery.chord_unlock' task (#5766)
+- Change eager retry behaviour
+- Avoid race condition in elasticsearch backend
+- backends base get_many pass READY_STATES arg
+- Add integration tests for Elasticsearch and fix _update
+- feat(backend): Adds cleanup to ArangoDB backend
+- remove jython check
+- fix filesystem backend cannot not be serialized by picked 
+
 4.4.0
 =======
 :release-date: 2019-12-16 9.45 A.M UTC+6:00
