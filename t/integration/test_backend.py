@@ -4,6 +4,7 @@ import os
 
 from case import skip
 
+from celery import states
 from celery.backends.azureblockblob import AzureBlockBlobBackend
 
 
@@ -19,7 +20,7 @@ class test_AzureBlockBlobBackend:
                       for i in range(5)}
 
         for key, value in key_values.items():
-            backend.set(key, value)
+            backend.set(key, value, states.SUCCESS)
 
         actual_values = backend.mget(key_values.keys())
         expected_values = list(key_values.values())

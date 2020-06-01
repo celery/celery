@@ -85,6 +85,19 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
         self._server = None
 
+    def exception_safe_to_retry(self, exc):
+        if isinstance(exc, (elasticsearch.exceptions.TransportError)):
+            # 409: Conflict
+            # 429: Too Many Requests
+            # 500: Internal Server Error
+            # 502: Bad Gateway
+            # 503: Service Unavailable
+            # 504: Gateway Timeout
+            # N/A: Low level exception (i.e. socket exception)
+            if exc.status_code in {409, 429, 500, 502, 503, 504, 'N/A'}:
+                return True
+        return super().exception_safe_to_retry(exc)
+
     def get(self, key):
         try:
             res = self._get(key)
@@ -103,7 +116,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             id=key,
         )
 
-    def set(self, key, value):
+    def set(self, key, value, state):
         body = {
             'result': value,
             '@timestamp': '{0}Z'.format(
@@ -117,7 +130,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             )
         except elasticsearch.exceptions.ConflictError:
             # document already exists, update it
-            self._update(id=key, body=body)
+            self._update(key, body, state)
 
     def _index(self, id, body, **kwargs):
         body = {bytes_to_str(k): v for k, v in items(body)}
@@ -130,42 +143,44 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             **kwargs
         )
 
-    def _update(self, id, body, **kwargs):
+    def _update(self, id, body, state, **kwargs):
         body = {bytes_to_str(k): v for k, v in items(body)}
-        retries = 3
-        while retries > 0:
-            retries -= 1
-            try:
-                res_get = self._get(key=id)
-                if not res_get['found']:
-                    return self._index(id, body, **kwargs)
-                parsed_result = self.decode_result(res_get['_source']['result'])
-                if parsed_result['status'] in states.READY_STATES:
-                    # if stored state is already in ready state, do nothing
-                    return {'result': 'noop'}
 
-                # get current sequence number and primary term
-                # https://www.elastic.co/guide/en/elasticsearch/reference/current/optimistic-concurrency-control.html
-                seq_no = res_get.get('_seq_no', 1)
-                prim_term = res_get.get('_primary_term', 1)
+        res_get = self._get(key=id)
+        if not res_get['found']:
+            return self._index(id, body, **kwargs)
+        try:
+            meta_present_on_backend = self.decode_result(res_get['_source']['result'])
+        except (TypeError, KeyError):
+            pass
+        else:
+            if meta_present_on_backend['status'] == states.SUCCESS:
+                # if stored state is already in success, do nothing
+                return {'result': 'noop'}
+            elif meta_present_on_backend['status'] in states.READY_STATES and state in states.UNREADY_STATES:
+                # if stored state is in ready state and current not, do nothing
+                return {'result': 'noop'}
 
-                # try to update document with current seq_no and primary_term
-                res = self.server.update(
-                    id=bytes_to_str(id),
-                    index=self.index,
-                    body={'doc': body},
-                    params={'if_primary_term': prim_term, 'if_seq_no': seq_no},
-                    **kwargs
-                )
-                # result is elastic search update query result
-                # noop = query did not update any document
-                # updated = at least one document got updated
-                if res['result'] != 'noop':
-                    return res
-            except Exception:
-                if retries == 0:
-                    raise
-        raise Exception('too many retries to update backend')
+        # get current sequence number and primary term
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/optimistic-concurrency-control.html
+        seq_no = res_get.get('_seq_no', 1)
+        prim_term = res_get.get('_primary_term', 1)
+
+        # try to update document with current seq_no and primary_term
+        res = self.server.update(
+            id=bytes_to_str(id),
+            index=self.index,
+            doc_type=self.doc_type,
+            body={'doc': body},
+            params={'if_primary_term': prim_term, 'if_seq_no': seq_no},
+            **kwargs
+        )
+        # result is elastic search update query result
+        # noop = query did not update any document
+        # updated = at least one document got updated
+        if res['result'] == 'noop':
+            raise elasticsearch.exceptions.ConflictError(409, 'conflicting update occurred concurrently', {})
+        return res
 
     def mget(self, keys):
         return [self.get(key) for key in keys]

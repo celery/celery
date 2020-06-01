@@ -5,7 +5,7 @@ import types
 from contextlib import contextmanager
 
 import pytest
-from case import ANY, Mock, call, patch, skip
+from case import ANY, Mock, call, patch, skip, sentinel
 from kombu.serialization import prepare_accept_content
 from kombu.utils.encoding import ensure_bytes
 
@@ -14,7 +14,7 @@ from celery import chord, group, signature, states, uuid
 from celery.app.task import Context, Task
 from celery.backends.base import (BaseBackend, DisabledBackend,
                                   KeyValueStoreBackend, _nulldict)
-from celery.exceptions import ChordError, TimeoutError
+from celery.exceptions import ChordError, TimeoutError, BackendStoreError, BackendGetMetaError
 from celery.five import bytes_if_py2, items, range
 from celery.result import result_from_tuple
 from celery.utils import serialization
@@ -317,7 +317,7 @@ class KVBackend(KeyValueStoreBackend):
     def get(self, key):
         return self.db.get(key)
 
-    def set(self, key, value):
+    def set(self, key, value, state):
         self.db[key] = value
 
     def mget(self, keys):
@@ -908,7 +908,7 @@ class test_KeyValueStoreBackend_interface:
 
     def test_set(self):
         with pytest.raises(NotImplementedError):
-            KeyValueStoreBackend(self.app).set('a', 1)
+            KeyValueStoreBackend(self.app).set('a', 1, states.SUCCESS)
 
     def test_incr(self):
         with pytest.raises(NotImplementedError):
@@ -968,3 +968,165 @@ class test_as_uri:
 
     def test_as_uri_exclude_password(self):
         assert self.b.as_uri() == 'sch://uuuu:**@hostname.dom/'
+
+
+class test_backend_retries:
+
+    def test_should_retry_exception(self):
+        assert not BaseBackend(app=self.app).exception_safe_to_retry(Exception("test"))
+
+    def test_get_failed_never_retries(self):
+        self.app.conf.result_backend_always_retry, prev = False, self.app.conf.result_backend_always_retry
+
+        expected_exc = Exception("failed")
+        try:
+            b = BaseBackend(app=self.app)
+            b.exception_safe_to_retry = lambda exc: True
+            b._sleep = Mock()
+            b._get_task_meta_for = Mock()
+            b._get_task_meta_for.side_effect = [
+                expected_exc,
+                {'status': states.SUCCESS, 'result': 42}
+            ]
+            try:
+                b.get_task_meta(sentinel.task_id)
+                assert False
+            except Exception as exc:
+                assert b._sleep.call_count == 0
+                assert exc == expected_exc
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+
+    def test_get_with_retries(self):
+        self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+
+        try:
+            b = BaseBackend(app=self.app)
+            b.exception_safe_to_retry = lambda exc: True
+            b._sleep = Mock()
+            b._get_task_meta_for = Mock()
+            b._get_task_meta_for.side_effect = [
+                Exception("failed"),
+                {'status': states.SUCCESS, 'result': 42}
+            ]
+            res = b.get_task_meta(sentinel.task_id)
+            assert res == {'status': states.SUCCESS, 'result': 42}
+            assert b._sleep.call_count == 1
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+
+    def test_get_reaching_max_retries(self):
+        self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+        self.app.conf.result_backend_max_retries, prev_max_retries = 0, self.app.conf.result_backend_max_retries
+
+        try:
+            b = BaseBackend(app=self.app)
+            b.exception_safe_to_retry = lambda exc: True
+            b._sleep = Mock()
+            b._get_task_meta_for = Mock()
+            b._get_task_meta_for.side_effect = [
+                Exception("failed"),
+                {'status': states.SUCCESS, 'result': 42}
+            ]
+            try:
+                b.get_task_meta(sentinel.task_id)
+                assert False
+            except BackendGetMetaError:
+                assert b._sleep.call_count == 0
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+            self.app.conf.result_backend_max_retries = prev_max_retries
+
+    def test_get_unsafe_exception(self):
+        self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+
+        expected_exc = Exception("failed")
+        try:
+            b = BaseBackend(app=self.app)
+            b._sleep = Mock()
+            b._get_task_meta_for = Mock()
+            b._get_task_meta_for.side_effect = [
+                expected_exc,
+                {'status': states.SUCCESS, 'result': 42}
+            ]
+            try:
+                b.get_task_meta(sentinel.task_id)
+                assert False
+            except Exception as exc:
+                assert b._sleep.call_count == 0
+                assert exc == expected_exc
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+
+    def test_store_result_never_retries(self):
+        self.app.conf.result_backend_always_retry, prev = False, self.app.conf.result_backend_always_retry
+
+        expected_exc = Exception("failed")
+        try:
+            b = BaseBackend(app=self.app)
+            b.exception_safe_to_retry = lambda exc: True
+            b._sleep = Mock()
+            b._get_task_meta_for = Mock()
+            b._get_task_meta_for.return_value = {
+                'status': states.RETRY, 'result': {"exc_type": "Exception", "exc_message": ["failed"], "exc_module": "builtins"}
+            }
+            b._store_result = Mock()
+            b._store_result.side_effect = [
+                expected_exc,
+                42
+            ]
+            try:
+                b.store_result(sentinel.task_id, 42, states.SUCCESS)
+            except Exception as exc:
+                assert b._sleep.call_count == 0
+                assert exc == expected_exc
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+
+    def test_store_result_with_retries(self):
+        self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+
+        try:
+            b = BaseBackend(app=self.app)
+            b.exception_safe_to_retry = lambda exc: True
+            b._sleep = Mock()
+            b._get_task_meta_for = Mock()
+            b._get_task_meta_for.return_value = {
+                'status': states.RETRY, 'result': {"exc_type": "Exception", "exc_message": ["failed"], "exc_module": "builtins"}
+            }
+            b._store_result = Mock()
+            b._store_result.side_effect = [
+                Exception("failed"),
+                42
+            ]
+            res = b.store_result(sentinel.task_id, 42, states.SUCCESS)
+            assert res == 42
+            assert b._sleep.call_count == 1
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+
+    def test_store_result_reaching_max_retries(self):
+        self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+        self.app.conf.result_backend_max_retries, prev_max_retries = 0, self.app.conf.result_backend_max_retries
+
+        try:
+            b = BaseBackend(app=self.app)
+            b.exception_safe_to_retry = lambda exc: True
+            b._sleep = Mock()
+            b._get_task_meta_for = Mock()
+            b._get_task_meta_for.return_value = {
+                'status': states.RETRY, 'result': {"exc_type": "Exception", "exc_message": ["failed"], "exc_module": "builtins"}
+            }
+            b._store_result = Mock()
+            b._store_result.side_effect = [
+                Exception("failed"),
+                42
+            ]
+            try:
+                b.store_result(sentinel.task_id, 42, states.SUCCESS)
+                assert False
+            except BackendStoreError:
+                assert b._sleep.call_count == 0
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+            self.app.conf.result_backend_max_retries = prev_max_retries

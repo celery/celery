@@ -6,6 +6,7 @@ from botocore.exceptions import ClientError
 from case import patch
 from moto import mock_s3
 
+from celery import states
 from celery.backends.s3 import S3Backend
 from celery.exceptions import ImproperlyConfigured
 
@@ -93,7 +94,7 @@ class test_S3Backend:
         self.app.conf.s3_bucket = 'bucket'
 
         s3_backend = S3Backend(app=self.app)
-        s3_backend.set(key, 'another_status')
+        s3_backend.set(key, 'another_status', states.SUCCESS)
 
         assert s3_backend.get(key) == 'another_status'
 
@@ -149,7 +150,7 @@ class test_S3Backend:
         self.app.conf.s3_bucket = 'bucket'
 
         s3_backend = S3Backend(app=self.app)
-        s3_backend.set('uuid', 'another_status')
+        s3_backend.set('uuid', 'another_status', states.SUCCESS)
         assert s3_backend.get('uuid') == 'another_status'
 
         s3_backend.delete('uuid')
@@ -168,7 +169,7 @@ class test_S3Backend:
 
         with pytest.raises(ClientError,
                            match=r'.*The specified bucket does not exist'):
-            s3_backend.set('uuid', 'another_status')
+            s3_backend.set('uuid', 'another_status', states.SUCCESS)
 
     def _mock_s3_resource(self):
         # Create AWS s3 Bucket for moto.
