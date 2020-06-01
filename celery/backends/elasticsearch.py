@@ -147,9 +147,14 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     def _update(self, id, body, state, **kwargs):
         body = {bytes_to_str(k): v for k, v in items(body)}
 
-        res_get = self._get(key=id)
-        if not res_get['found']:
+        try:
+            res_get = self._get(key=id)
+            if not res_get['found']:
+                return self._index(id, body, **kwargs)
+            # document disappeared between index and get calls.
+        except elasticsearch.exceptions.NotFoundError:
             return self._index(id, body, **kwargs)
+
         try:
             meta_present_on_backend = self.decode_result(res_get['_source']['result'])
         except (TypeError, KeyError):

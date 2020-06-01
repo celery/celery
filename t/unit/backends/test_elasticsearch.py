@@ -325,6 +325,79 @@ class test_ElasticsearchBackend:
         finally:
             self.app.conf.result_backend_always_retry = prev
 
+    @patch('celery.backends.elasticsearch.datetime')
+    @patch('celery.backends.base.datetime')
+    def test_backend_index_conflicting_document_removed(self, base_datetime_mock, es_datetime_mock):
+        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
+        es_datetime_mock.utcnow.return_value = expected_dt
+
+        expected_done_dt = datetime.datetime(2020, 6, 1, 18, 45, 34, 654321, None)
+        base_datetime_mock.utcnow.return_value = expected_done_dt
+
+        self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+        try:
+            x = ElasticsearchBackend(app=self.app)
+
+            task_id = str(sentinel.task_id)
+            encoded_task_id = bytes_to_str(x.get_key_for_task(task_id))
+            result = str(sentinel.result)
+
+            sleep_mock = Mock()
+            x._sleep = sleep_mock
+            x._server = Mock()
+            x._server.index.side_effect = [
+                exceptions.ConflictError(409, "concurrent update", {}),
+                {'result': 'created'}
+            ]
+
+            x._server.get.side_effect = [
+                {
+                    'found': True,
+                    '_source': {
+                        'result': """{"status":"RETRY","result":{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}"""
+                    },
+                    '_seq_no': 2,
+                    '_primary_term': 1,
+                },
+                exceptions.NotFoundError(404,
+                                         '{"_index":"celery","_type":"_doc","_id":"toto","found":false}',
+                                         {'_index': 'celery', '_type': '_doc',
+                                          '_id': 'toto', 'found': False}),
+            ]
+
+            result_meta = x._get_result_meta(result, states.SUCCESS, None, None)
+            result_meta['task_id'] = bytes_to_str(task_id)
+
+            expected_result = x.encode(result_meta)
+
+            x.store_result(task_id, result, states.SUCCESS)
+            x._server.index.assert_has_calls([
+                call(
+                    id=encoded_task_id,
+                    index=x.index,
+                    doc_type=x.doc_type,
+                    body={
+                        'result': expected_result,
+                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                    },
+                    params={'op_type': 'create'}
+                ),
+                call(
+                    id=encoded_task_id,
+                    index=x.index,
+                    doc_type=x.doc_type,
+                    body={
+                        'result': expected_result,
+                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                    },
+                    params={'op_type': 'create'}
+                ),
+            ])
+            x._server.update.assert_not_called()
+            sleep_mock.assert_not_called()
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+
     def test_backend_params_by_url(self):
         url = 'elasticsearch://localhost:9200/index/doc_type'
         with self.Celery(backend=url) as app:
