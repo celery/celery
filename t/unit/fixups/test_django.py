@@ -145,7 +145,7 @@ class test_DjangoWorkerFixup(FixupCase):
                         f.on_worker_process_init()
                         mcf.assert_called_with(conns[1].connection)
                         f.close_cache.assert_called_with()
-                        f._close_database.assert_called_with()
+                        f._close_database.assert_called_with(force=True)
 
                         f.validate_models = Mock(name='validate_models')
                         patching.setenv('FORKED_BY_MULTIPROCESSING', '1')
@@ -213,13 +213,35 @@ class test_DjangoWorkerFixup(FixupCase):
             f._db.connections = Mock()  # ConnectionHandler
             f._db.connections.all.side_effect = lambda: conns
 
-            f._close_database()
+            f._close_database(force=True)
             conns[0].close.assert_called_with()
+            conns[0].close_if_unusable_or_obsolete.assert_not_called()
             conns[1].close.assert_called_with()
+            conns[1].close_if_unusable_or_obsolete.assert_not_called()
             conns[2].close.assert_called_with()
+            conns[2].close_if_unusable_or_obsolete.assert_not_called()
+
+            for conn in conns:
+                conn.reset_mock()
+
+            f._close_database()
+            conns[0].close.assert_not_called()
+            conns[0].close_if_unusable_or_obsolete.assert_called_with()
+            conns[1].close.assert_not_called()
+            conns[1].close_if_unusable_or_obsolete.assert_called_with()
+            conns[2].close.assert_not_called()
+            conns[2].close_if_unusable_or_obsolete.assert_called_with()
 
             conns[1].close.side_effect = KeyError(
                 'omg')
+            f._close_database()
+            with pytest.raises(KeyError):
+                f._close_database(force=True)
+
+            conns[1].close.side_effect = None
+            conns[1].close_if_unusable_or_obsolete.side_effect = KeyError(
+                'omg')
+            f._close_database(force=True)
             with pytest.raises(KeyError):
                 f._close_database()
 
