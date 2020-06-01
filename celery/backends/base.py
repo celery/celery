@@ -9,7 +9,7 @@
 from __future__ import absolute_import, unicode_literals
 from future.utils import raise_with_traceback
 
-import datetime
+from datetime import datetime, timedelta
 import sys
 import time
 import warnings
@@ -355,7 +355,7 @@ class Backend(object):
     def prepare_expires(self, value, type=None):
         if value is None:
             value = self.app.conf.result_expires
-        if isinstance(value, datetime.timedelta):
+        if isinstance(value, timedelta):
             value = value.total_seconds()
         if value is not None and type:
             return type(value)
@@ -379,7 +379,7 @@ class Backend(object):
                          state, traceback, request, format_date=True,
                          encode=False):
         if state in self.READY_STATES:
-            date_done = datetime.datetime.utcnow()
+            date_done = datetime.utcnow()
             if format_date:
                 date_done = date_done.isoformat()
         else:
