@@ -493,8 +493,8 @@ class Celery(object):
                         # even if it suits autoretry_for list
                         raise
                     except Retry:
-                    # If Retry we should ignore??? Else the "real" exception will pop-up
-                    # and catched below sending the task in retry again
+                        # If Retry we should ignore??? Else the "real" exception will pop-up
+                        # and catched below sending the task in retry again
                         pass
                     except autoretry_for as exc:
                         if retry_backoff:
