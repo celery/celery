@@ -4,8 +4,12 @@ import pytest
 from case import Mock, patch, sentinel, skip, call
 from celery import states
 import datetime
-from elasticsearch import exceptions
 from kombu.utils.encoding import bytes_to_str
+
+try:
+    from elasticsearch import exceptions
+except ImportError:
+    exceptions = None
 
 from celery.app import backends
 from celery.backends import elasticsearch as module
