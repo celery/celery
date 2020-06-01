@@ -23,7 +23,7 @@ from celery._state import (_announce_app_finalized, _deregister_app,
                            _register_app, _set_current_app, _task_stack,
                            connect_on_app_finalize, get_current_app,
                            get_current_worker_task, set_default_app)
-from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured, Ignore
+from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured, Ignore, Retry
 from celery.five import (UserDict, bytes_if_py2, python_2_unicode_compatible,
                          values)
 from celery.loaders import get_loader_cls
@@ -492,6 +492,10 @@ class Celery(object):
                         # If Ignore signal occures task shouldn't be retried,
                         # even if it suits autoretry_for list
                         raise
+                    except Retry:
+                    # If Retry we should ignore??? Else the "real" exception will pop-up
+                    # and catched below sending the task in retry again
+                        pass
                     except autoretry_for as exc:
                         if retry_backoff:
                             retry_kwargs['countdown'] = \
