@@ -120,6 +120,33 @@ class TasksCase:
 
         self.retry_task_return_with_throw = retry_task_return_with_throw
 
+        @self.app.task(bind=True, max_retries=3, iterations=0, shared=False, autoretry_for=(Exception,))
+        def retry_task_auto_retry_with_single_new_arg(self, ret=None, **kwargs):
+            if ret is None:
+                return self.retry(exc=Exception("I have filled now"), args=["test"], kwargs=kwargs)
+            else:
+                return ret
+
+        self.retry_task_auto_retry_with_single_new_arg = retry_task_auto_retry_with_single_new_arg
+
+        @self.app.task(bind=True, max_retries=3, iterations=0, shared=False)
+        def retry_task_auto_retry_with_new_args(self, ret=None, place_holder=None, **kwargs):
+            if ret is None:
+                return self.retry(args=[place_holder, place_holder], kwargs=kwargs)
+            else:
+                return ret
+
+        self.retry_task_auto_retry_with_new_args = retry_task_auto_retry_with_new_args
+
+        @self.app.task(bind=True, max_retries=3, iterations=0, shared=False, autoretry_for=(Exception,))
+        def retry_task_auto_retry_exception_with_new_args(self, ret=None, place_holder=None, **kwargs):
+            if ret is None:
+                return self.retry(exc=Exception("I have filled"), args=[place_holder, place_holder], kwargs=kwargs)
+            else:
+                return ret
+
+        self.retry_task_auto_retry_exception_with_new_args = retry_task_auto_retry_exception_with_new_args
+
         @self.app.task(bind=True, max_retries=3, iterations=0, shared=False)
         def retry_task_raise_without_throw(self, **kwargs):
             self.iterations += 1
@@ -398,6 +425,15 @@ class test_task_retries(TasksCase):
 
     def test_return_with_throw_eager(self):
         assert self.retry_task_return_with_throw.apply().get() == 42
+
+    def test_eager_retry_with_single_new_params(self):
+        assert self.retry_task_auto_retry_with_single_new_arg.apply().get() == "test"
+
+    def test_eager_retry_with_new_params(self):
+        assert self.retry_task_auto_retry_with_new_args.si(place_holder="test").apply().get() == "test"
+
+    def test_eager_retry_with_autoretry_for_exception(self):
+        assert self.retry_task_auto_retry_exception_with_new_args.si(place_holder="test").apply().get() == "test"
 
     def test_retry_eager_should_return_value(self):
         self.retry_task.max_retries = 3
