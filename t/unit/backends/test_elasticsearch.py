@@ -57,6 +57,17 @@ class test_ElasticsearchBackend:
             index=x.index,
         )
 
+    def test_get_task_not_found(self):
+        x = ElasticsearchBackend(app=self.app)
+        x._server = Mock()
+        x._server.get.side_effect = [
+            exceptions.NotFoundError(404, '{"_index":"celery","_type":"_doc","_id":"toto","found":false}',
+                                     {'_index': 'celery', '_type': '_doc', '_id': 'toto', 'found': False})
+        ]
+
+        res = x.get(sentinel.task_id)
+        assert res is None
+
     def test_delete(self):
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
