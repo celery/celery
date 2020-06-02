@@ -423,6 +423,34 @@ class test_ElasticsearchBackend:
             kwarg1='test1'
         )
 
+    def test_encode_as_json(self):
+        self.app.conf.elasticsearch_save_meta_as_text, prev = False, self.app.conf.elasticsearch_save_meta_as_text
+        try:
+            x = ElasticsearchBackend(app=self.app)
+            result_meta = x._get_result_meta({'solution': 42}, states.SUCCESS, None, None)
+            assert x.encode(result_meta) == result_meta
+        finally:
+            self.app.conf.elasticsearch_save_meta_as_text = prev
+
+    def test_decode_from_json(self):
+        self.app.conf.elasticsearch_save_meta_as_text, prev = False, self.app.conf.elasticsearch_save_meta_as_text
+        try:
+            x = ElasticsearchBackend(app=self.app)
+            result_meta = x._get_result_meta({'solution': 42}, states.SUCCESS, None, None)
+            result_meta['result'] = x._encode(result_meta['result'])[2]
+            assert x.decode(result_meta) == result_meta
+        finally:
+            self.app.conf.elasticsearch_save_meta_as_text = prev
+
+    def test_decode_encoded_from_json(self):
+        self.app.conf.elasticsearch_save_meta_as_text, prev = False, self.app.conf.elasticsearch_save_meta_as_text
+        try:
+            x = ElasticsearchBackend(app=self.app)
+            result_meta = x._get_result_meta({'solution': 42}, states.SUCCESS, None, None)
+            assert x.decode(x.encode(result_meta)) == result_meta
+        finally:
+            self.app.conf.elasticsearch_save_meta_as_text = prev
+
     def test_config_params(self):
         self.app.conf.elasticsearch_max_retries = 10
         self.app.conf.elasticsearch_timeout = 20.0

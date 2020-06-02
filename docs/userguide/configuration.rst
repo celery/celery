@@ -1564,6 +1564,16 @@ Default: 10.0 seconds.
 
 Global timeout,used by the elasticsearch result backend.
 
+.. setting:: elasticsearch_save_meta_as_text
+
+``elasticsearch_save_meta_as_text``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: :const:`True`
+
+Should meta saved as text or as native json.
+Result is always serialized as text.
+
 .. _conf-riak-result-backend:
 
 Riak backend settings

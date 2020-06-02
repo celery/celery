@@ -228,6 +228,7 @@ NAMESPACES = Namespace(
         retry_on_timeout=Option(type='bool'),
         max_retries=Option(type='int'),
         timeout=Option(type='float'),
+        save_meta_as_text=Option(True, type='bool'),
     ),
     riak=Namespace(
         __old__=old_ns('celery_riak'),
