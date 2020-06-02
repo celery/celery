@@ -64,7 +64,7 @@ class test_multi_args:
             '-c:jerry,elaine', '5',
             '--loglevel:kramer=DEBUG',
             '--flag',
-            '--logfile=foo', '-Q', 'bar', 'jerry',
+            '--logfile=/var/log/celery/foo', '-Q', 'bar', 'jerry',
             'elaine', 'kramer',
             '--', '.disable_rate_limits=1',
         ])
@@ -86,19 +86,19 @@ class test_multi_args:
         assert_line_in(
             '*P*jerry@*S*',
             ['COMMAND', '-n *P*jerry@*S*', '-Q bar',
-             '-c 5', '--flag', '--logfile=foo',
+             '-c 5', '--flag', '--logfile=/var/log/celery/foo',
              '-- .disable_rate_limits=1', '*AP*'],
         )
         assert_line_in(
             '*P*elaine@*S*',
             ['COMMAND', '-n *P*elaine@*S*', '-Q bar',
-             '-c 5', '--flag', '--logfile=foo',
+             '-c 5', '--flag', '--logfile=/var/log/celery/foo',
              '-- .disable_rate_limits=1', '*AP*'],
         )
         assert_line_in(
             '*P*kramer@*S*',
             ['COMMAND', '--loglevel=DEBUG', '-n *P*kramer@*S*',
-             '-Q bar', '--flag', '--logfile=foo',
+             '-Q bar', '--flag', '--logfile=/var/log/celery/foo',
              '-- .disable_rate_limits=1', '*AP*'],
         )
         expand = nodes[0].expander
@@ -277,6 +277,33 @@ class test_Node:
     def test_logfile(self):
         assert self.node.logfile == self.expander.return_value
         self.expander.assert_called_with(os.path.normpath('/var/log/celery/%n%I.log'))
+
+    @patch('celery.apps.multi.os.path.exists')
+    def test_pidfile_default(self, mock_exists):
+        n = Node.from_kwargs(
+            'foo@bar.com',
+        )
+        assert n.options['--pidfile'] == '/var/run/celery/%n.pid'
+        mock_exists.assert_any_call('/var/run/celery')
+
+    @patch('celery.apps.multi.os.makedirs')
+    @patch('celery.apps.multi.os.path.exists', return_value=False)
+    def test_pidfile_custom(self, mock_exists, mock_dirs):
+        n = Node.from_kwargs(
+            'foo@bar.com',
+            pidfile='/var/run/demo/celery/%n.pid'
+        )
+        assert n.options['--pidfile'] == '/var/run/demo/celery/%n.pid'
+
+        try:
+            mock_exists.assert_any_call('/var/run/celery')
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError("Expected exists('/var/run/celery') to not have been called.")
+
+        mock_exists.assert_any_call('/var/run/demo/celery')
+        mock_dirs.assert_any_call('/var/run/demo/celery')
 
 
 class test_Cluster:

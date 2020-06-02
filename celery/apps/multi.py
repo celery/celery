@@ -151,11 +151,11 @@ class Node(object):
                 return d[opt]
             except KeyError:
                 pass
-        value = os.path.normpath(value)
+        value = d.setdefault(alt[0], os.path.normpath(value))
         dir_path = os.path.dirname(value)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
-        return d.setdefault(alt[0], value)
+        return value
 
     def _prepare_expander(self):
         shortname, hostname = self.name.split('@', 1)
