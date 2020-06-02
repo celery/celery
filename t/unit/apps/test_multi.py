@@ -305,9 +305,6 @@ class test_Node:
         mock_exists.assert_any_call('/var/run/demo/celery')
         mock_dirs.assert_any_call('/var/run/demo/celery')
 
-    def test_pidfile_makedirs(self):
-        pass
-
 
 class test_Cluster:
 
