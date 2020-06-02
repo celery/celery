@@ -83,6 +83,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         if es_max_retries is not None:
             self.es_max_retries = es_max_retries
 
+        self.es_save_meta_as_text = _get('elasticsearch_save_meta_as_text', True)
         self._server = None
 
     def exception_safe_to_retry(self, exc):
@@ -181,6 +182,30 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         if res['result'] == 'noop':
             raise elasticsearch.exceptions.ConflictError(409, 'conflicting update occurred concurrently', {})
         return res
+
+    def encode(self, data):
+        if self.es_save_meta_as_text:
+            return KeyValueStoreBackend.encode(self, data)
+        else:
+            if not isinstance(data, dict):
+                return KeyValueStoreBackend.encode(self, data)
+            if "result" in data:
+                data["result"] = self._encode(data["result"])[2]
+            if "traceback" in data:
+                data["traceback"] = self._encode(data["traceback"])[2]
+            return data
+
+    def decode(self, payload):
+        if self.es_save_meta_as_text:
+            return KeyValueStoreBackend.decode(self, payload)
+        else:
+            if not isinstance(payload, dict):
+                return KeyValueStoreBackend.decode(self, payload)
+            if "result" in payload:
+                payload["result"] = KeyValueStoreBackend.decode(self, payload["result"])
+            if "traceback" in payload:
+                payload["traceback"] = KeyValueStoreBackend.decode(self, payload["traceback"])
+            return payload
 
     def mget(self, keys):
         return [self.get(key) for key in keys]
