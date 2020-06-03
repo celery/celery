@@ -283,8 +283,8 @@ class test_Node:
         n = Node.from_kwargs(
             'foo@bar.com',
         )
-        assert n.options['--pidfile'] == '/var/run/celery/%n.pid'
-        mock_exists.assert_any_call('/var/run/celery')
+        assert n.options['--pidfile'] == os.path.normpath('/var/run/celery/%n.pid')
+        mock_exists.assert_any_call(os.path.normpath('/var/run/celery'))
 
     @patch('celery.apps.multi.os.makedirs')
     @patch('celery.apps.multi.os.path.exists', return_value=False)
