@@ -1,4 +1,5 @@
 pytz>dev
 billiard>=3.6.3.0,<4.0
+future>=0.18.0
 kombu>=4.6.10,<4.7
 vine==1.3.0
