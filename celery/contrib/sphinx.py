@@ -7,6 +7,8 @@ Introduction
 Usage
 -----
 
+The Celery extension for Sphinx requires Sphinx 2.0 or later.
+
 Add the extension to your :file:`docs/conf.py` configuration module:
 
 .. code-block:: python
