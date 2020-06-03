@@ -547,7 +547,7 @@ def trace_task(task, uuid, args, kwargs, request=None, **opts):
 
 
 def _signal_internal_error(task, uuid, args, kwargs, request, exc):
-    """Send a special `internal_error` signal to the app for outside body errors"""
+    """Send a special `internal_error` signal to the app for outside body errors."""
     try:
         _, _, tb = sys.exc_info()
         einfo = ExceptionInfo()

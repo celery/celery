@@ -11,11 +11,11 @@ from kombu.utils.url import _parse_url
 from celery.exceptions import ImproperlyConfigured
 from celery.five import items
 
-from .base import KeyValueStoreBackend
+from .base import KeyValueStoreBackend, Backend
 
 try:
     import elasticsearch
-except ImportError:
+except ImportError:  # pragma: no cover
     elasticsearch = None  # noqa
 
 __all__ = ('ElasticsearchBackend',)
@@ -97,7 +97,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             # N/A: Low level exception (i.e. socket exception)
             if exc.status_code in {409, 429, 500, 502, 503, 504, 'N/A'}:
                 return True
-        return super().exception_safe_to_retry(exc)
+        return False
 
     def get(self, key):
         try:
@@ -147,9 +147,14 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     def _update(self, id, body, state, **kwargs):
         body = {bytes_to_str(k): v for k, v in items(body)}
 
-        res_get = self._get(key=id)
-        if not res_get['found']:
+        try:
+            res_get = self._get(key=id)
+            if not res_get.get('found'):
+                return self._index(id, body, **kwargs)
+            # document disappeared between index and get calls.
+        except elasticsearch.exceptions.NotFoundError:
             return self._index(id, body, **kwargs)
+
         try:
             meta_present_on_backend = self.decode_result(res_get['_source']['result'])
         except (TypeError, KeyError):
@@ -189,9 +194,9 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         else:
             if not isinstance(data, dict):
                 return KeyValueStoreBackend.encode(self, data)
-            if "result" in data:
+            if data.get("result"):
                 data["result"] = self._encode(data["result"])[2]
-            if "traceback" in data:
+            if data.get("traceback"):
                 data["traceback"] = self._encode(data["traceback"])[2]
             return data
 
@@ -201,9 +206,9 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         else:
             if not isinstance(payload, dict):
                 return KeyValueStoreBackend.decode(self, payload)
-            if "result" in payload:
+            if payload.get("result"):
                 payload["result"] = KeyValueStoreBackend.decode(self, payload["result"])
-            if "traceback" in payload:
+            if payload.get("traceback"):
                 payload["traceback"] = KeyValueStoreBackend.decode(self, payload["traceback"])
             return payload
 
