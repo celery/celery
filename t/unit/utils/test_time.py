@@ -355,3 +355,10 @@ class test_get_exponential_backoff_interval:
             retries=3,
             maximum=100
         ) == 0
+
+    @patch('random.randrange')
+    def test_valid_random_range(self, rr):
+        rr.return_value = 0
+        maximum = 100
+        get_exponential_backoff_interval(factor=40, retries=10, maximum=maximum, full_jitter=True)
+        rr.assert_called_once_with(maximum + 1)

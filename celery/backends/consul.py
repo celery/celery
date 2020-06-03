@@ -70,7 +70,7 @@ class ConsulBackend(KeyValueStoreBackend):
         for key in keys:
             yield self.get(key)
 
-    def set(self, key, value):
+    def set(self, key, value, state):
         """Set a key in Consul.
 
         Before creating the key it will create a session inside Consul
