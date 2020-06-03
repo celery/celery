@@ -8,6 +8,20 @@ This document contains change notes for bugfix & new features
 in the 4.4.x series, please see :ref:`whatsnew-4.4` for
 an overview of what's new in Celery 4.4.
 
+4.4.4
+=======
+:release-date: 2020-06-03 11.00 A.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Fix autoretry_for with explicit retry (#6138).
+- Kombu 4.6.10
+- Use Django DB max age connection setting (fixes #4116).
+- Add retry on recoverable exception for the backend (#6122).
+- Fix random distribution of jitter for exponential backoff.
+- ElasticSearch: add setting to save meta as json.
+- fix #6136. celery 4.4.3 always trying create /var/run/celery directory.
+- Add task_internal_error signal (#6049). 
+
 
 4.4.3
 =======
