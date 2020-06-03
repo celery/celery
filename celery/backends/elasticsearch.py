@@ -11,7 +11,7 @@ from kombu.utils.url import _parse_url
 from celery.exceptions import ImproperlyConfigured
 from celery.five import items
 
-from .base import KeyValueStoreBackend, Backend
+from .base import KeyValueStoreBackend
 
 try:
     import elasticsearch
