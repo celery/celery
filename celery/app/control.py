@@ -135,6 +135,8 @@ class Inspect(object):
     registered_tasks = registered
 
     def ping(self, destination=None):
+        if destination:
+            self.destination = destination
         return self._request('ping')
 
     def active_queues(self):
