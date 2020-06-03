@@ -10,7 +10,12 @@ from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.objects import Bunch
 
-CASSANDRA_MODULES = ['cassandra', 'cassandra.auth', 'cassandra.cluster']
+CASSANDRA_MODULES = [
+    'cassandra',
+    'cassandra.auth',
+    'cassandra.cluster',
+    'cassandra.query',
+]
 
 
 @mock.module(*CASSANDRA_MODULES)
@@ -93,14 +98,6 @@ class test_CassandraBackend:
         session.execute = Mock()
         x._store_result('task_id', 'result', states.SUCCESS)
 
-    def test_process_cleanup(self, *modules):
-        from celery.backends import cassandra as mod
-        x = mod.CassandraBackend(app=self.app)
-        x.process_cleanup()
-
-        assert x._connection is None
-        assert x._session is None
-
     def test_timeouting_cluster(self):
         # Tests behavior when Cluster.connect raises
         # cassandra.OperationTimedOut.
@@ -128,40 +125,8 @@ class test_CassandraBackend:
 
         with pytest.raises(OTOExc):
             x._store_result('task_id', 'result', states.SUCCESS)
-        assert x._connection is None
+        assert x._cluster is None
         assert x._session is None
-
-        x.process_cleanup()  # shouldn't raise
-
-    def test_please_free_memory(self):
-        # Ensure that Cluster object IS shut down.
-        from celery.backends import cassandra as mod
-
-        class RAMHoggingCluster(object):
-
-            objects_alive = 0
-
-            def __init__(self, *args, **kwargs):
-                pass
-
-            def connect(self, *args, **kwargs):
-                RAMHoggingCluster.objects_alive += 1
-                return Mock()
-
-            def shutdown(self):
-                RAMHoggingCluster.objects_alive -= 1
-
-        mod.cassandra = Mock()
-
-        mod.cassandra.cluster = Mock()
-        mod.cassandra.cluster.Cluster = RAMHoggingCluster
-
-        for x in range(0, 10):
-            x = mod.CassandraBackend(app=self.app)
-            x._store_result('task_id', 'result', states.SUCCESS)
-            x.process_cleanup()
-
-        assert RAMHoggingCluster.objects_alive == 0
 
     def test_auth_provider(self):
         # Ensure valid auth_provider works properly, and invalid one raises
