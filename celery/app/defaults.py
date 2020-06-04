@@ -216,6 +216,7 @@ NAMESPACES = Namespace(
         extended=Option(False, type='bool'),
         serializer=Option('json'),
         backend_transport_options=Option({}, type='dict'),
+        chord_retry_interval=Option(1.0, type='float'),
         chord_join_timeout=Option(3.0, type='float'),
         backend_max_sleep_between_retries_ms=Option(10000, type='int'),
         backend_max_retries=Option(float("inf"), type='float'),

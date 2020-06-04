@@ -823,6 +823,15 @@ Default: 3.0.
 
 The timeout in seconds (int/float) when joining a group's results within a chord.
 
+.. setting:: result_chord_retry_interval
+
+``result_chord_retry_interval``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 1.0.
+
+Default interval for retrying chord tasks.
+
 .. _conf-database-result-backend:
 
 Database backend settings
