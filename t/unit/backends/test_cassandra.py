@@ -71,7 +71,6 @@ class test_CassandraBackend:
         mod.cassandra = Mock()
 
         x = mod.CassandraBackend(app=self.app)
-        x._connection = True
         session = x._session = Mock()
         execute = session.execute = Mock()
         result_set = Mock()
@@ -93,7 +92,6 @@ class test_CassandraBackend:
         mod.cassandra = Mock()
 
         x = mod.CassandraBackend(app=self.app)
-        x._connection = True
         session = x._session = Mock()
         session.execute = Mock()
         x._store_result('task_id', 'result', states.SUCCESS)
@@ -127,6 +125,27 @@ class test_CassandraBackend:
             x._store_result('task_id', 'result', states.SUCCESS)
         assert x._cluster is None
         assert x._session is None
+
+    def test_init_session(self):
+        # Tests behavior when Cluster.connect works properly
+        from celery.backends import cassandra as mod
+
+        class DummyCluster(object):
+
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def connect(self, *args, **kwargs):
+                return Mock()
+
+        mod.cassandra = Mock()
+        mod.cassandra.cluster = Mock()
+        mod.cassandra.cluster.Cluster = DummyCluster
+
+        x = mod.CassandraBackend(app=self.app)
+        assert x._session is None
+        x._get_connection(write=True)
+        assert x._session is not None
 
     def test_auth_provider(self):
         # Ensure valid auth_provider works properly, and invalid one raises
