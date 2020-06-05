@@ -1352,8 +1352,14 @@ class chord(Signature):
             with allow_join_result():
                 return self.apply(args, kwargs,
                                   body=body, task_id=task_id, **options)
+
+        merged_options = dict(self.options, **options) if options else self.options
+        option_task_id = merged_options.pop("task_id", None)
+        if task_id is None:
+            task_id = option_task_id
+
         # chord([A, B, ...], C)
-        return self.run(tasks, body, args, task_id=task_id, **options)
+        return self.run(tasks, body, args, task_id=task_id, **merged_options)
 
     def apply(self, args=None, kwargs=None,
               propagate=True, body=None, **options):
