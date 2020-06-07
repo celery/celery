@@ -57,8 +57,9 @@ def multi_args(p, *args, **kwargs):
 
 class test_multi_args:
 
+    @patch('celery.apps.multi.os.mkdir')
     @patch('celery.apps.multi.gethostname')
-    def test_parse(self, gethostname):
+    def test_parse(self, gethostname, mkdirs_mock):
         gethostname.return_value = 'example.com'
         p = NamespacedOptionParser([
             '-c:jerry,elaine', '5',
@@ -180,15 +181,17 @@ class test_Node:
             '--logfile': '/var/log/celery/foo.log',
         }
         self.p.namespaces = {}
-        self.node = Node('foo@bar.com', options={'-A': 'proj'})
+        with patch('celery.apps.multi.os.mkdir'):
+            self.node = Node('foo@bar.com', options={'-A': 'proj'})
         self.expander = self.node.expander = Mock(name='expander')
         self.node.pid = 303
 
     def test_from_kwargs(self):
-        n = Node.from_kwargs(
-            'foo@bar.com',
-            max_tasks_per_child=30, A='foo', Q='q1,q2', O='fair',
-        )
+        with patch('celery.apps.multi.os.mkdir'):
+            n = Node.from_kwargs(
+                'foo@bar.com',
+                max_tasks_per_child=30, A='foo', Q='q1,q2', O='fair',
+            )
         assert sorted(n.argv) == sorted([
             '-m celery worker --detach',
             '-A foo',
@@ -314,26 +317,27 @@ class test_Cluster:
         self.gethostname = self.patching('celery.apps.multi.gethostname')
         self.gethostname.return_value = 'example.com'
         self.Pidfile = self.patching('celery.apps.multi.Pidfile')
-        self.cluster = Cluster(
-            [Node('foo@example.com'),
-             Node('bar@example.com'),
-             Node('baz@example.com')],
-            on_stopping_preamble=Mock(name='on_stopping_preamble'),
-            on_send_signal=Mock(name='on_send_signal'),
-            on_still_waiting_for=Mock(name='on_still_waiting_for'),
-            on_still_waiting_progress=Mock(name='on_still_waiting_progress'),
-            on_still_waiting_end=Mock(name='on_still_waiting_end'),
-            on_node_start=Mock(name='on_node_start'),
-            on_node_restart=Mock(name='on_node_restart'),
-            on_node_shutdown_ok=Mock(name='on_node_shutdown_ok'),
-            on_node_status=Mock(name='on_node_status'),
-            on_node_signal=Mock(name='on_node_signal'),
-            on_node_signal_dead=Mock(name='on_node_signal_dead'),
-            on_node_down=Mock(name='on_node_down'),
-            on_child_spawn=Mock(name='on_child_spawn'),
-            on_child_signalled=Mock(name='on_child_signalled'),
-            on_child_failure=Mock(name='on_child_failure'),
-        )
+        with patch('celery.apps.multi.os.mkdir'):
+            self.cluster = Cluster(
+                [Node('foo@example.com'),
+                 Node('bar@example.com'),
+                 Node('baz@example.com')],
+                on_stopping_preamble=Mock(name='on_stopping_preamble'),
+                on_send_signal=Mock(name='on_send_signal'),
+                on_still_waiting_for=Mock(name='on_still_waiting_for'),
+                on_still_waiting_progress=Mock(name='on_still_waiting_progress'),
+                on_still_waiting_end=Mock(name='on_still_waiting_end'),
+                on_node_start=Mock(name='on_node_start'),
+                on_node_restart=Mock(name='on_node_restart'),
+                on_node_shutdown_ok=Mock(name='on_node_shutdown_ok'),
+                on_node_status=Mock(name='on_node_status'),
+                on_node_signal=Mock(name='on_node_signal'),
+                on_node_signal_dead=Mock(name='on_node_signal_dead'),
+                on_node_down=Mock(name='on_node_down'),
+                on_child_spawn=Mock(name='on_child_spawn'),
+                on_child_signalled=Mock(name='on_child_signalled'),
+                on_child_failure=Mock(name='on_child_failure'),
+            )
 
     def test_len(self):
         assert len(self.cluster) == 3
@@ -392,11 +396,12 @@ class test_Cluster:
         self.prepare_pidfile_for_getpids(self.Pidfile)
         callback = Mock()
 
-        p = Cluster([
-            Node('foo@e.com'),
-            Node('bar@e.com'),
-            Node('baz@e.com'),
-        ])
+        with patch('celery.apps.multi.os.mkdir'):
+            p = Cluster([
+                Node('foo@e.com'),
+                Node('bar@e.com'),
+                Node('baz@e.com'),
+            ])
         nodes = p.getpids(on_down=callback)
         node_0, node_1 = nodes
         assert node_0.name == 'foo@e.com'

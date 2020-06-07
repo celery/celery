@@ -179,7 +179,8 @@ class test_MultiTool:
         x.splash()
         x.note.assert_called()
 
-    def test_Cluster(self):
+    @patch('celery.apps.multi.os.mkdir')
+    def test_Cluster(self, mkdir_mock):
         m = MultiTool()
         c = m.cluster_from_argv(['A', 'B', 'C'])
         assert c.env is m.env
@@ -264,7 +265,8 @@ class test_MultiTool_functional:
     def setup(self):
         self.fh = WhateverIO()
         self.env = {}
-        self.t = MultiTool(env=self.env, fh=self.fh)
+        with patch('celery.apps.multi.os.mkdir'):
+            self.t = MultiTool(env=self.env, fh=self.fh)
 
     def test_note(self):
         self.t.note('hello world')
@@ -319,20 +321,23 @@ class test_MultiTool_functional:
         self.t.help([])
         assert doc in self.fh.getvalue()
 
-    def test_expand(self):
+    @patch('celery.apps.multi.os.makedirs')
+    def test_expand(self, makedirs_mock):
         self.t.expand('foo%n', 'ask', 'klask', 'dask')
         assert self.fh.getvalue() == 'fooask\nfooklask\nfoodask\n'
 
+    @patch('celery.apps.multi.os.makedirs')
     @patch('celery.apps.multi.gethostname')
-    def test_get(self, gethostname):
+    def test_get(self, gethostname, makedirs_mock):
         gethostname.return_value = 'e.com'
         self.t.get('xuzzy@e.com', 'foo', 'bar', 'baz')
         assert not self.fh.getvalue()
         self.t.get('foo@e.com', 'foo', 'bar', 'baz')
         assert self.fh.getvalue()
 
+    @patch('celery.apps.multi.os.makedirs')
     @patch('celery.apps.multi.gethostname')
-    def test_names(self, gethostname):
+    def test_names(self, gethostname, makedirs_mock):
         gethostname.return_value = 'e.com'
         self.t.names('foo', 'bar', 'baz')
         assert 'foo@e.com\nbar@e.com\nbaz@e.com' in self.fh.getvalue()
