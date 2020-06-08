@@ -8,6 +8,18 @@ This document contains change notes for bugfix & new features
 in the 4.4.x series, please see :ref:`whatsnew-4.4` for
 an overview of what's new in Celery 4.4.
 
+4.4.5
+=======
+:release-date: 2020-06-08 12.15 P.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Add missing dependency on future (#6146).
+- ElasticSearch: Retry index if document was deleted between index
+- fix windows build
+- Customize the retry interval of chord_unlock tasks
+- fix multi tests in local
+
+
 4.4.4
 =======
 :release-date: 2020-06-03 11.00 A.M UTC+6:00
