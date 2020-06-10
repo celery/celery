@@ -22,7 +22,6 @@ from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import raise_with_context
-
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
 from .utils import appstr
@@ -869,7 +868,7 @@ class Task(object):
             sig (~@Signature): signature to replace with.
 
         Raises:
-            ~@Ignore: This is always raised when called in asynchrous context.
+            ~@Ignore: This is always raised when called in asynchronous context.
             It is best to always use ``return self.replace(...)`` to convey
             to the reader that the task won't continue after being replaced.
         """
