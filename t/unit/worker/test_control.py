@@ -334,7 +334,6 @@ class test_ControlPanel:
 
         panel.state.consumer = Mock()
         panel.state.consumer.controller = Mock()
-        sc = panel.state.consumer.controller.autoscaler = Mock()
         r = panel.handle('pool_grow')
         assert 'error' in r
         r = panel.handle('pool_shrink')
