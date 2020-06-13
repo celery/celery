@@ -87,6 +87,14 @@ class test_CassandraBackend:
         meta = x._get_task_meta_for('task_id')
         assert meta['status'] == states.PENDING
 
+    def test_as_uri(self):
+        from celery.backends import cassandra as mod
+        mod.cassandra = Mock()
+
+        x = mod.CassandraBackend(app=self.app)
+        x.as_uri()
+        x.as_uri(include_password=False)
+
     def test_store_result(self, *modules):
         from celery.backends import cassandra as mod
         mod.cassandra = Mock()
@@ -126,6 +134,38 @@ class test_CassandraBackend:
         assert x._cluster is None
         assert x._session is None
 
+    def test_create_result_table(self):
+        # Tests behavior when session.execute raises
+        # cassandra.AlreadyExists.
+        from celery.backends import cassandra as mod
+
+        class OTOExc(Exception):
+            pass
+
+        class FaultySession(object):
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def execute(self, *args, **kwargs):
+                raise OTOExc()
+
+        class DummyCluster(object):
+
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def connect(self, *args, **kwargs):
+                return FaultySession()
+
+        mod.cassandra = Mock()
+        mod.cassandra.cluster = Mock()
+        mod.cassandra.cluster.Cluster = DummyCluster
+        mod.cassandra.AlreadyExists = OTOExc
+
+        x = mod.CassandraBackend(app=self.app)
+        x._get_connection(write=True)
+        assert x._session is not None
+
     def test_init_session(self):
         # Tests behavior when Cluster.connect works properly
         from celery.backends import cassandra as mod
@@ -146,6 +186,10 @@ class test_CassandraBackend:
         assert x._session is None
         x._get_connection(write=True)
         assert x._session is not None
+
+        s = x._session
+        x._get_connection()
+        assert s is x._session
 
     def test_auth_provider(self):
         # Ensure valid auth_provider works properly, and invalid one raises
