@@ -154,7 +154,7 @@ class test_Autoscaler:
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.worker.consumer.prefetch_multiplier = 1
-        x.keepalive = 0
+        x.keepalive = -1
         assert x.processes == 3
         x.scale_up(5)
         x.update(7, None)
