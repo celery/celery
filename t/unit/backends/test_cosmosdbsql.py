@@ -109,7 +109,7 @@ class test_DocumentDBBackend:
 
     @patch(MODULE_TO_MOCK + ".CosmosDBSQLBackend._client")
     def test_set(self, mock_client):
-        self.backend.set(b"mykey", "myvalue", states.SUCCESS)
+        self.backend._set_with_state(b"mykey", "myvalue", states.SUCCESS)
 
         mock_client.CreateDocument.assert_called_once_with(
             "dbs/celerydb/colls/celerycol",

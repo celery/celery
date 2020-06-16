@@ -364,7 +364,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             retries, max_retries or 'Inf', humanize_seconds(tts, 'in '))
         return tts
 
-    def set(self, key, value, state, **retry_policy):
+    def set(self, key, value, **retry_policy):
         return self.ensure(self._set, (key, value), **retry_policy)
 
     def _set(self, key, value):

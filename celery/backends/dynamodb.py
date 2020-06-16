@@ -486,7 +486,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
         item = self._item_to_dict(item_response)
         return item.get(self._value_field.name)
 
-    def set(self, key, value, state):
+    def set(self, key, value):
         key = string(key)
         request_parameters = self._prepare_put_request(key, value)
         self.client.put_item(**request_parameters)

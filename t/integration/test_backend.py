@@ -20,7 +20,7 @@ class test_AzureBlockBlobBackend:
                       for i in range(5)}
 
         for key, value in key_values.items():
-            backend.set(key, value, states.SUCCESS)
+            backend._set_with_state(key, value, states.SUCCESS)
 
         actual_values = backend.mget(key_values.keys())
         expected_values = list(key_values.values())

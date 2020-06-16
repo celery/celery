@@ -69,7 +69,7 @@ class test_CouchbaseBackend:
         x._connection = MagicMock()
         x._connection.set = MagicMock()
         # should return None
-        assert x.set(sentinel.key, sentinel.value, states.SUCCESS) is None
+        assert x._set_with_state(sentinel.key, sentinel.value, states.SUCCESS) is None
 
     def test_set_expires(self):
         self.app.conf.couchbase_backend_settings = None
@@ -78,7 +78,7 @@ class test_CouchbaseBackend:
         x._connection = MagicMock()
         x._connection.set = MagicMock()
         # should return None
-        assert x.set(sentinel.key, sentinel.value, states.SUCCESS) is None
+        assert x._set_with_state(sentinel.key, sentinel.value, states.SUCCESS) is None
 
     def test_delete(self):
         self.app.conf.couchbase_backend_settings = {}

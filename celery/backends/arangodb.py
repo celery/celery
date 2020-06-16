@@ -144,7 +144,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
             logging.error(err)
             return None
 
-    def set(self, key, value, state):
+    def set(self, key, value):
         """Insert a doc with value into task attribute and _key as key."""
         try:
             logging.debug(

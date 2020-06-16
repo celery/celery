@@ -181,7 +181,7 @@ class CosmosDBSQLBackend(KeyValueStoreBackend):
         else:
             return document.get("value")
 
-    def set(self, key, value, state):
+    def set(self, key, value):
         """Store a value for a given key.
 
         Args:
