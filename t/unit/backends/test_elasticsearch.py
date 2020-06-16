@@ -126,7 +126,96 @@ class test_ElasticsearchBackend:
             'result': 'updated'
         }
 
-        x.set(sentinel.task_id, sentinel.result, sentinel.state)
+        x._set_with_state(sentinel.task_id, sentinel.result, sentinel.state)
+
+        assert x._server.get.call_count == 1
+        x._server.index.assert_called_once_with(
+            id=sentinel.task_id,
+            index=x.index,
+            doc_type=x.doc_type,
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            params={'op_type': 'create'},
+        )
+        x._server.update.assert_called_once_with(
+            id=sentinel.task_id,
+            index=x.index,
+            doc_type=x.doc_type,
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
+            params={'if_seq_no': 2, 'if_primary_term': 1}
+        )
+
+    @patch('celery.backends.elasticsearch.datetime')
+    def test_index_conflict_without_state(self, datetime_mock):
+        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
+        datetime_mock.utcnow.return_value = expected_dt
+
+        x = ElasticsearchBackend(app=self.app)
+        x._server = Mock()
+        x._server.index.side_effect = [
+            exceptions.ConflictError(409, "concurrent update", {})
+        ]
+
+        x._server.get.return_value = {
+            'found': True,
+            '_source': {
+                'result': """{"status":"RETRY","result":{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}"""
+            },
+            '_seq_no': 2,
+            '_primary_term': 1,
+        }
+
+        x._server.update.return_value = {
+            'result': 'updated'
+        }
+
+        x.set(sentinel.task_id, sentinel.result)
+
+        assert x._server.get.call_count == 1
+        x._server.index.assert_called_once_with(
+            id=sentinel.task_id,
+            index=x.index,
+            doc_type=x.doc_type,
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            params={'op_type': 'create'},
+        )
+        x._server.update.assert_called_once_with(
+            id=sentinel.task_id,
+            index=x.index,
+            doc_type=x.doc_type,
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
+            params={'if_seq_no': 2, 'if_primary_term': 1}
+        )
+
+    @patch('celery.backends.elasticsearch.datetime')
+    def test_index_conflict_with_ready_state_on_backend_without_state(self, datetime_mock):
+        """Even if the backend already have a ready state saved (FAILURE in this test case)
+        as we are calling ElasticsearchBackend.set directly, it does not have state,
+        so it cannot protect overriding a ready state by any other state.
+        As a result, server.update will be called no matter what.
+        """
+        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
+        datetime_mock.utcnow.return_value = expected_dt
+
+        x = ElasticsearchBackend(app=self.app)
+        x._server = Mock()
+        x._server.index.side_effect = [
+            exceptions.ConflictError(409, "concurrent update", {})
+        ]
+
+        x._server.get.return_value = {
+            'found': True,
+            '_source': {
+                'result': """{"status":"FAILURE","result":{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}"""
+            },
+            '_seq_no': 2,
+            '_primary_term': 1,
+        }
+
+        x._server.update.return_value = {
+            'result': 'updated'
+        }
+
+        x.set(sentinel.task_id, sentinel.result)
 
         assert x._server.get.call_count == 1
         x._server.index.assert_called_once_with(
@@ -168,7 +257,7 @@ class test_ElasticsearchBackend:
             'result': 'updated'
         }
 
-        x.set(sentinel.task_id, sentinel.result, sentinel.state)
+        x._set_with_state(sentinel.task_id, sentinel.result, sentinel.state)
 
         assert x._server.get.call_count == 1
         x._server.index.assert_called_once_with(
@@ -204,7 +293,7 @@ class test_ElasticsearchBackend:
             'result': 'updated'
         }
 
-        x.set(sentinel.task_id, sentinel.result, states.RETRY)
+        x._set_with_state(sentinel.task_id, sentinel.result, states.RETRY)
 
         assert x._server.get.call_count == 1
         x._server.index.assert_called_once_with(

@@ -106,7 +106,7 @@ class CouchbaseBackend(KeyValueStoreBackend):
         except NotFoundError:
             return None
 
-    def set(self, key, value, state):
+    def set(self, key, value):
         self.connection.set(key, value, ttl=self.expires, format=FMT_AUTO)
 
     def mget(self, keys):

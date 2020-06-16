@@ -317,7 +317,7 @@ class KVBackend(KeyValueStoreBackend):
     def get(self, key):
         return self.db.get(key)
 
-    def set(self, key, value, state):
+    def _set_with_state(self, key, value, state):
         self.db[key] = value
 
     def mget(self, keys):
@@ -908,7 +908,7 @@ class test_KeyValueStoreBackend_interface:
 
     def test_set(self):
         with pytest.raises(NotImplementedError):
-            KeyValueStoreBackend(self.app).set('a', 1, states.SUCCESS)
+            KeyValueStoreBackend(self.app)._set_with_state('a', 1, states.SUCCESS)
 
     def test_incr(self):
         with pytest.raises(NotImplementedError):

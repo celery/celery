@@ -117,7 +117,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             id=key,
         )
 
-    def set(self, key, value, state):
+    def _set_with_state(self, key, value, state):
         body = {
             'result': value,
             '@timestamp': '{0}Z'.format(
@@ -133,6 +133,9 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             # document already exists, update it
             self._update(key, body, state)
 
+    def set(self, key, value):
+        return self._set_with_state(key, value, None)
+
     def _index(self, id, body, **kwargs):
         body = {bytes_to_str(k): v for k, v in items(body)}
         return self.server.index(
@@ -145,6 +148,15 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         )
 
     def _update(self, id, body, state, **kwargs):
+        """Update state in a conflict free manner.
+
+        If state is defined (not None), this will not update ES server if either:
+        * existing state is success
+        * existing state is a ready state and current state in not a ready state
+
+        This way, a Retry state cannot override a Success or Failure, and chord_unlock
+        will not retry indefinitely.
+        """
         body = {bytes_to_str(k): v for k, v in items(body)}
 
         try:

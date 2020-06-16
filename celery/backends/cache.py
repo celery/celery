@@ -124,7 +124,7 @@ class CacheBackend(KeyValueStoreBackend):
     def mget(self, keys):
         return self.client.get_multi(keys)
 
-    def set(self, key, value, state):
+    def set(self, key, value):
         return self.client.set(key, value, self.expires)
 
     def delete(self, key):

@@ -7,7 +7,7 @@ import os
 
 from kombu.utils.encoding import ensure_bytes
 
-from celery import uuid, states
+from celery import uuid
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
 
@@ -74,7 +74,7 @@ class FilesystemBackend(KeyValueStoreBackend):
 
     def _do_directory_test(self, key):
         try:
-            self.set(key, b'test value', states.SUCCESS)
+            self.set(key, b'test value')
             assert self.get(key) == b'test value'
             self.delete(key)
         except IOError:
@@ -90,7 +90,7 @@ class FilesystemBackend(KeyValueStoreBackend):
         except FileNotFoundError:
             pass
 
-    def set(self, key, value, state):
+    def set(self, key, value):
         with self.open(self._filename(key), 'wb') as outfile:
             outfile.write(ensure_bytes(value))
 

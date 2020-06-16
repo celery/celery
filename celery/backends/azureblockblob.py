@@ -110,7 +110,7 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
         except AzureMissingResourceHttpError:
             return None
 
-    def set(self, key, value, state):
+    def set(self, key, value):
         """Store a value for a given key.
 
         Args:

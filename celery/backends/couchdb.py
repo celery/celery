@@ -86,7 +86,7 @@ class CouchBackend(KeyValueStoreBackend):
         except pycouchdb.exceptions.NotFound:
             return None
 
-    def set(self, key, value, state):
+    def set(self, key, value):
         key = bytes_to_str(key)
         data = {'_id': key, 'value': value}
         try:

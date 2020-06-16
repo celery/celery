@@ -243,7 +243,7 @@ class test_RedisResultConsumer:
         meta = {'task_id': 'initial', 'status': states.SUCCESS}
         consumer = self.get_consumer()
         consumer.start('initial')
-        consumer.backend.set(b'celery-task-meta-initial', json.dumps(meta), states.SUCCESS)
+        consumer.backend._set_with_state(b'celery-task-meta-initial', json.dumps(meta), states.SUCCESS)
         consumer._pubsub.get_message.side_effect = ConnectionError()
         consumer.drain_events()
         parent_on_state_change.assert_called_with(meta, None)
@@ -578,7 +578,7 @@ class test_RedisBackend:
 
     def test_set_no_expire(self):
         self.b.expires = None
-        self.b.set('foo', 'bar', states.SUCCESS)
+        self.b._set_with_state('foo', 'bar', states.SUCCESS)
 
     def create_task(self):
         tid = uuid()

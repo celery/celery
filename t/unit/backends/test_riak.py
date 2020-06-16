@@ -77,7 +77,7 @@ class test_RiakBackend:
         self.backend._bucket = MagicMock()
         self.backend._bucket.set = MagicMock()
         # should return None
-        assert self.backend.set(sentinel.key, sentinel.value, states.SUCCESS) is None
+        assert self.backend._set_with_state(sentinel.key, sentinel.value, states.SUCCESS) is None
 
     def test_delete(self):
         self.app.conf.couchbase_backend_settings = {}

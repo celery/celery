@@ -99,8 +99,8 @@ class test_CacheBackend:
         deps.delete.assert_called_with()
 
     def test_mget(self):
-        self.tb.set('foo', 1, states.SUCCESS)
-        self.tb.set('bar', 2, states.SUCCESS)
+        self.tb._set_with_state('foo', 1, states.SUCCESS)
+        self.tb._set_with_state('bar', 2, states.SUCCESS)
 
         assert self.tb.mget(['foo', 'bar']) == {'foo': 1, 'bar': 2}
 
