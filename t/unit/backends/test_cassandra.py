@@ -88,6 +88,7 @@ class test_CassandraBackend:
         assert meta['status'] == states.PENDING
 
     def test_as_uri(self):
+        # Just ensure as_uri works properly
         from celery.backends import cassandra as mod
         mod.cassandra = Mock()
 
