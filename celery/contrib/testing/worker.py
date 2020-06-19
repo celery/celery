@@ -94,6 +94,7 @@ def _start_worker_thread(app,
                          logfile=None,
                          WorkController=TestWorkController,
                          perform_ping_check=True,
+                         hostname=None,
                          **kwargs):
     # type: (Celery, int, str, Union[str, int], str, Any, **Any) -> Iterable
     """Start Celery worker in a thread.
@@ -111,7 +112,7 @@ def _start_worker_thread(app,
     worker = WorkController(
         app=app,
         concurrency=concurrency,
-        hostname=anon_nodename(),
+        hostname=hostname or anon_nodename(),
         pool=pool,
         loglevel=loglevel,
         logfile=logfile,
