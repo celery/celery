@@ -3,6 +3,10 @@ from celery.utils.nodenames import anon_nodename
 
 
 class test_StartWorker:
+    def setup(self):
+        self.app.control.discard_all()
+        self.app.control.purge()
+    
     def test_start_worker_hostname(self):
         with start_worker(self.app, hostname='foo') as worker:
             assert worker.hostname == 'celery@foo'
