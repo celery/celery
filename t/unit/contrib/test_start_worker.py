@@ -4,4 +4,4 @@ from celery.contrib.testing.worker import start_worker
 class test_StartWorker:
     def test_start_worker_hostname(self):
         with start_worker(self.app, hostname='foo') as worker:
-            assert worker.hostname == 'foo'
+            assert worker.hostname == 'celery@foo'
