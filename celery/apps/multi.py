@@ -289,10 +289,10 @@ class MultiParser(object):
         prefix = options.pop('--prefix', prefix) or ''
         suffix = options.pop('--suffix', self.suffix) or hostname
         suffix = '' if suffix in ('""', "''") else suffix
-
+        range_prefix = options.pop('--range-prefix', '') or self.range_prefix
         if ranges:
             try:
-                names, prefix = self._get_ranges(names), self.range_prefix
+                names, prefix = self._get_ranges(names), range_prefix
             except ValueError:
                 pass
         self._update_ns_opts(p, names)
