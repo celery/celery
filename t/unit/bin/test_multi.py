@@ -77,6 +77,37 @@ class test_MultiTool:
         assert self.t._handle_reserved_options(
             ['a', '-q', 'b', '--no-color', 'c']) == ['a', 'b', 'c']
 
+    @patch('celery.apps.multi.os.mkdir', new=Mock())
+    def test_range_prefix(self):
+        m = MultiTool()
+        range_prefix = 'worker'
+        workers_count = 2
+        _opt_parser, nodes = m._nodes_from_argv([
+            '{}'.format(workers_count),
+            '--range-prefix={}'.format(range_prefix)])
+        for i, node in enumerate(nodes, start=1):
+            assert node.name.startswith(range_prefix + str(i))
+
+    @patch('celery.apps.multi.os.mkdir', new=Mock())
+    def test_range_prefix_not_set(self):
+        m = MultiTool()
+        default_prefix = 'celery'
+        workers_count = 2
+        _opt_parser, nodes = m._nodes_from_argv([
+            '{}'.format(workers_count)])
+        for i, node in enumerate(nodes, start=1):
+            assert node.name.startswith(default_prefix + str(i))
+
+    @patch('celery.apps.multi.os.mkdir', new=Mock())
+    def test_range_prefix_not_used_in_named_range(self):
+        m = MultiTool()
+        range_prefix = 'worker'
+        _opt_parser, nodes = m._nodes_from_argv([
+            'a b c',
+            '--range-prefix={}'.format(range_prefix)])
+        for i, node in enumerate(nodes, start=1):
+            assert not node.name.startswith(range_prefix)
+
     def test_start(self):
         self.cluster.start.return_value = [0, 0, 1, 0]
         assert self.t.start('10', '-A', 'proj')
