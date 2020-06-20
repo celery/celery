@@ -94,8 +94,7 @@ class test_MultiTool:
         default_prefix = 'celery'
         workers_count = 2
         _opt_parser, nodes = m._nodes_from_argv([
-            '{}'.format(workers_count),
-            '--range-prefix={}'.format(default_prefix)])
+            '{}'.format(workers_count)])
         for i, node in enumerate(nodes, start=1):
             assert node.name.startswith(default_prefix + str(i))
 
