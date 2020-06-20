@@ -1073,6 +1073,12 @@ class test_tuples:
         x = result_from_tuple([uid, []], app=self.app)
         assert x.id == uid
 
+    def test_as_list(self):
+        uid = uuid()
+        x = self.app.AsyncResult(uid)
+        assert x.id == x.as_list()[0]
+        assert isinstance(x.as_list(), list)
+
     def test_GroupResult(self):
         x = self.app.GroupResult(
             uuid(), [self.app.AsyncResult(uuid()) for _ in range(10)],
