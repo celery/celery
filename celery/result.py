@@ -129,6 +129,15 @@ class AsyncResult(ResultBase):
         parent = self.parent
         return (self.id, parent and parent.as_tuple()), None
 
+    def as_list(self):
+        """  Returns as a list of task IDs. """
+        results = []
+        parent = self.parent
+        results.append(self.id)
+        if parent is not None:
+            results.extend(parent.as_list())
+        return results
+
     def forget(self):
         """Forget the result of this task and its parents."""
         self._cache = None
