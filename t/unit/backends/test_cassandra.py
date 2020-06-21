@@ -10,7 +10,12 @@ from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.objects import Bunch
 
-CASSANDRA_MODULES = ['cassandra', 'cassandra.auth', 'cassandra.cluster']
+CASSANDRA_MODULES = [
+    'cassandra',
+    'cassandra.auth',
+    'cassandra.cluster',
+    'cassandra.query',
+]
 
 
 @mock.module(*CASSANDRA_MODULES)
@@ -66,7 +71,6 @@ class test_CassandraBackend:
         mod.cassandra = Mock()
 
         x = mod.CassandraBackend(app=self.app)
-        x._connection = True
         session = x._session = Mock()
         execute = session.execute = Mock()
         result_set = Mock()
@@ -83,23 +87,23 @@ class test_CassandraBackend:
         meta = x._get_task_meta_for('task_id')
         assert meta['status'] == states.PENDING
 
+    def test_as_uri(self):
+        # Just ensure as_uri works properly
+        from celery.backends import cassandra as mod
+        mod.cassandra = Mock()
+
+        x = mod.CassandraBackend(app=self.app)
+        x.as_uri()
+        x.as_uri(include_password=False)
+
     def test_store_result(self, *modules):
         from celery.backends import cassandra as mod
         mod.cassandra = Mock()
 
         x = mod.CassandraBackend(app=self.app)
-        x._connection = True
         session = x._session = Mock()
         session.execute = Mock()
         x._store_result('task_id', 'result', states.SUCCESS)
-
-    def test_process_cleanup(self, *modules):
-        from celery.backends import cassandra as mod
-        x = mod.CassandraBackend(app=self.app)
-        x.process_cleanup()
-
-        assert x._connection is None
-        assert x._session is None
 
     def test_timeouting_cluster(self):
         # Tests behavior when Cluster.connect raises
@@ -128,40 +132,65 @@ class test_CassandraBackend:
 
         with pytest.raises(OTOExc):
             x._store_result('task_id', 'result', states.SUCCESS)
-        assert x._connection is None
+        assert x._cluster is None
         assert x._session is None
 
-        x.process_cleanup()  # shouldn't raise
-
-    def test_please_free_memory(self):
-        # Ensure that Cluster object IS shut down.
+    def test_create_result_table(self):
+        # Tests behavior when session.execute raises
+        # cassandra.AlreadyExists.
         from celery.backends import cassandra as mod
 
-        class RAMHoggingCluster(object):
+        class OTOExc(Exception):
+            pass
 
-            objects_alive = 0
+        class FaultySession(object):
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def execute(self, *args, **kwargs):
+                raise OTOExc()
+
+        class DummyCluster(object):
 
             def __init__(self, *args, **kwargs):
                 pass
 
             def connect(self, *args, **kwargs):
-                RAMHoggingCluster.objects_alive += 1
-                return Mock()
-
-            def shutdown(self):
-                RAMHoggingCluster.objects_alive -= 1
+                return FaultySession()
 
         mod.cassandra = Mock()
-
         mod.cassandra.cluster = Mock()
-        mod.cassandra.cluster.Cluster = RAMHoggingCluster
+        mod.cassandra.cluster.Cluster = DummyCluster
+        mod.cassandra.AlreadyExists = OTOExc
 
-        for x in range(0, 10):
-            x = mod.CassandraBackend(app=self.app)
-            x._store_result('task_id', 'result', states.SUCCESS)
-            x.process_cleanup()
+        x = mod.CassandraBackend(app=self.app)
+        x._get_connection(write=True)
+        assert x._session is not None
 
-        assert RAMHoggingCluster.objects_alive == 0
+    def test_init_session(self):
+        # Tests behavior when Cluster.connect works properly
+        from celery.backends import cassandra as mod
+
+        class DummyCluster(object):
+
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def connect(self, *args, **kwargs):
+                return Mock()
+
+        mod.cassandra = Mock()
+        mod.cassandra.cluster = Mock()
+        mod.cassandra.cluster.Cluster = DummyCluster
+
+        x = mod.CassandraBackend(app=self.app)
+        assert x._session is None
+        x._get_connection(write=True)
+        assert x._session is not None
+
+        s = x._session
+        x._get_connection()
+        assert s is x._session
 
     def test_auth_provider(self):
         # Ensure valid auth_provider works properly, and invalid one raises
