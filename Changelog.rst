@@ -8,6 +8,22 @@ This document contains change notes for bugfix & new features
 in the 4.4.x series, please see :ref:`whatsnew-4.4` for
 an overview of what's new in Celery 4.4.
 
+4.4.6
+=======
+:release-date: 2020-06-24 2.40 P.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Remove autoscale force_scale methods (#6085).
+- Fix autoscale test
+- Pass ping destination to request
+- chord: merge init options with run options
+- Put back KeyValueStoreBackend.set method without state
+- Added --range-prefix option to `celery multi` (#6180) 
+- Added as_list function to AsyncResult class (#6179)
+- Fix CassandraBackend error in threads or gevent pool (#6147)
+- Kombu 4.6.11
+
+
 4.4.5
 =======
 :release-date: 2020-06-08 12.15 P.M UTC+6:00
