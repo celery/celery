@@ -1158,6 +1158,25 @@ class test_chord:
         res1 = c1.apply(args=(1,))
         assert res1.get(timeout=TIMEOUT) == [1, 1]
 
+    @pytest.mark.xfail(reason="Issue #6200")
+    def test_chain_in_chain_with_args(self):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c1 = chain(  # NOTE: This chain should have only 1 chain inside it
+            chain(
+                identity.s(),
+                identity.s(),
+            ),
+        )
+
+        res1 = c1.apply_async(args=(1,))
+        assert res1.get(timeout=TIMEOUT) == 1
+        res1 = c1.apply(args=(1,))
+        assert res1.get(timeout=TIMEOUT) == 1
+
     @flaky
     def test_large_header(self, manager):
         try:
