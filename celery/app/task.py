@@ -886,8 +886,8 @@ class Task:
             for t in reversed(self.request.chain):
                 sig |= signature(t, app=self.app)
             sig.set(
-                link=options['link'],
-                link_error=options['link_error']
+                link=options.get('link', None),
+                link_error=options.get('link_error', None)
             )
 
         sig.set(
