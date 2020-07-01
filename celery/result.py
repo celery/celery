@@ -130,7 +130,7 @@ class AsyncResult(ResultBase):
         return (self.id, parent and parent.as_tuple()), None
 
     def as_list(self):
-        """  Returns as a list of task IDs. """
+        """Returns as a list of task IDs."""
         results = []
         parent = self.parent
         results.append(self.id)
