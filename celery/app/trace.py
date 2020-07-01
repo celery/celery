@@ -543,7 +543,7 @@ def trace_task(task, uuid, args, kwargs, request=None, **opts):
         return task.__trace__(uuid, args, kwargs, request)
     except Exception as exc:
         _signal_internal_error(task, uuid, args, kwargs, request, exc)
-        return trace_ok_t(report_internal_error(task, exc), None, 0.0, None)
+        return trace_ok_t(report_internal_error(task, exc), TraceInfo(FAILURE, exc), 0.0, None)
 
 
 def _signal_internal_error(task, uuid, args, kwargs, request, exc):

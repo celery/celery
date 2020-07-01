@@ -367,10 +367,15 @@ class Request(object):
             'logfile': logfile,
             'is_eager': False,
         }, **embed or {})
-        retval = trace_task(self.task, self.id, self._args, self._kwargs, request,
-                            hostname=self._hostname, loader=self._app.loader,
-                            app=self._app)[0]
-        self.acknowledge()
+
+        retval, I, _, _ = trace_task(self.task, self.id, self._args, self._kwargs, request,
+                                     hostname=self._hostname, loader=self._app.loader,
+                                     app=self._app)
+
+        if I:
+            self.reject(requeue=False)
+        else:
+            self.acknowledge()
         return retval
 
     def maybe_expire(self):

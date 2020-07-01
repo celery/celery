@@ -20,6 +20,7 @@ from celery import states
 from celery.app.trace import (TraceInfo, _trace_task_ret, build_tracer,
                               mro_lookup, reset_worker_optimizations,
                               setup_worker_optimizations, trace_task)
+from celery.backends.base import BaseDictBackend
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated, WorkerLostError)
 from celery.five import monotonic
@@ -938,6 +939,25 @@ class test_Request(RequestCase):
         meta = self.mytask.backend.get_task_meta(tid)
         assert meta['status'] == states.SUCCESS
         assert meta['result'] == 256
+
+    def test_execute_backend_error_acks_late(self):
+        """direct call to execute should reject task in case of internal failure."""
+        tid = uuid()
+        self.mytask.acks_late = True
+        job = self.xRequest(id=tid, args=[4], kwargs={})
+        job._on_reject = Mock()
+        job._on_ack = Mock()
+        self.mytask.backend = BaseDictBackend(app=self.app)
+        self.mytask.backend.mark_as_done = Mock()
+        self.mytask.backend.mark_as_done.side_effect = Exception()
+        self.mytask.backend.mark_as_failure = Mock()
+        self.mytask.backend.mark_as_failure.side_effect = Exception()
+
+        job.execute()
+
+        assert job.acknowledged
+        job._on_reject.assert_called_once()
+        job._on_ack.assert_not_called()
 
     def test_execute_success_no_kwargs(self):
 
