@@ -120,7 +120,7 @@ class DrainerTests(object):
         self.teardown_thread(liveness_thread)
 
         assert p.ready, 'Should have terminated with promise being ready'
-        assert on_interval.call_count < liveness_mock.call_count, \
+        assert on_interval.call_count <= liveness_mock.call_count, \
             'Should have served liveness_mock while waiting for event'
 
     def test_drain_timeout(self):
