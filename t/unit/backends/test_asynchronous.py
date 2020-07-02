@@ -87,6 +87,8 @@ class DrainerTests(object):
         assert p.ready, 'Should have terminated with promise being ready'
         assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
 
+        self.drainer.stop()
+
     def test_drain_does_not_block_event_loop(self):
         """
         This test makes sure that other greenlets can still operate while drain_events_until is
@@ -123,6 +125,8 @@ class DrainerTests(object):
         assert on_interval.call_count < liveness_mock.call_count, \
             'Should have served liveness_mock while waiting for event'
 
+        self.drainer.stop()
+
     def test_drain_timeout(self):
         p = promise()
         on_interval = Mock()
@@ -136,6 +140,8 @@ class DrainerTests(object):
 
         assert not p.ready, 'Promise should remain un-fulfilled'
         assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
+
+        self.drainer.stop()
 
 
 @skip.unless_module('eventlet')
