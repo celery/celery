@@ -5,6 +5,7 @@ Contains utilities for working with task routers, (:setting:`task_routes`).
 import re
 import string
 from collections import OrderedDict
+from collections.abc import Mapping
 
 from kombu import Queue
 
@@ -13,13 +14,6 @@ from celery.five import items, string_t
 from celery.utils.collections import lpmerge
 from celery.utils.functional import maybe_evaluate, mlazy
 from celery.utils.imports import symbol_by_name
-
-try:
-    from collections.abc import Mapping
-except ImportError:
-    # TODO: Remove this when we drop Python 2.7 support
-    from collections import Mapping
-
 
 try:
     Pattern = re._pattern_type

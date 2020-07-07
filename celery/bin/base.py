@@ -12,7 +12,7 @@ from pprint import pformat
 
 from celery import VERSION_BANNER, Celery, maybe_patch_concurrency, signals
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
-from celery.five import (PY2, getfullargspec, items, long_t,
+from celery.five import (getfullargspec, items, long_t,
                          python_2_unicode_compatible, string, string_t,
                          text_t)
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE, isatty
@@ -284,12 +284,7 @@ class Command:
         try:
             argv = self.setup_app_from_commandline(argv)
         except ModuleNotFoundError as e:
-            # In Python 2.7 and below, there is no name instance for exceptions
-            # TODO: Remove this once we drop support for Python 2.7
-            if PY2:
-                package_name = e.message.replace("No module named ", "")
-            else:
-                package_name = e.name
+            package_name = e.name
             self.on_error(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(package_name))
             return EX_FAILURE
         except AttributeError as e:

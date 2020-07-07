@@ -1,12 +1,8 @@
+from collections.abc import Mapping, MutableMapping
+
 from case import Mock
 
 from celery.app.utils import Settings, bugreport, filter_hidden_settings
-
-try:
-    from collections.abc import Mapping, MutableMapping
-except ImportError:
-    # TODO: Remove this when we drop Python 2.7 support
-    from collections import Mapping, MutableMapping
 
 
 class test_Settings:
