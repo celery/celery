@@ -141,8 +141,6 @@ class test_CassandraBackend:
         class OTOExc(Exception):
             pass
 
-        class RAMHoggingCluster:
-
         class FaultySession:
             def __init__(self, *args, **kwargs):
                 pass
