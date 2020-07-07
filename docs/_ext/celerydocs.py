@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import sys
 import typing
 
@@ -47,7 +45,7 @@ APPDIRECT = {
     'autofinalize', 'steps', 'user_options', 'main', 'clock',
 }
 
-APPATTRS.update({x: 'celery.Celery.{}'.format(x) for x in APPDIRECT})
+APPATTRS.update({x: f'celery.Celery.{x}' for x in APPDIRECT})
 
 ABBRS = {
     'Celery': 'celery.Celery',
@@ -101,7 +99,7 @@ def resolve(S, type):
         except AttributeError:
             pass
         else:
-            return 'typing.{}'.format(S), None
+            return f'typing.{S}', None
     orig = S
     if S.startswith('@'):
         S = S.lstrip('@-')

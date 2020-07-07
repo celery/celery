@@ -35,7 +35,7 @@ class paramexception(Exception):
         self.param = param
 
 
-class objectexception(object):
+class objectexception:
     class Nested(Exception):
         pass
 

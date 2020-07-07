@@ -635,12 +635,11 @@ class SyncBackendMixin:
             else:
                 task_ids.add(result.id)
 
-        for task_id, meta in self.get_many(
+        yield from self.get_many(
             task_ids,
             timeout=timeout, interval=interval, no_ack=no_ack,
             on_message=on_message, on_interval=on_interval,
-        ):
-            yield task_id, meta
+        )
 
     def wait_for_pending(self, result, timeout=None, interval=0.5,
                          no_ack=True, on_message=None, on_interval=None,
