@@ -21,6 +21,9 @@ Error Hierarchy
             - :exc:`~celery.exceptions.TaskRevokedError`
             - :exc:`~celery.exceptions.InvalidTaskError`
             - :exc:`~celery.exceptions.ChordError`
+        - :exc:`~celery.exceptions.BackendError`
+            - :exc:`~celery.exceptions.BackendGetMetaError`
+            - :exc:`~celery.exceptions.BackendStoreError`
     - :class:`kombu.exceptions.KombuError`
         - :exc:`~celery.exceptions.OperationalError`
 
@@ -76,6 +79,9 @@ __all__ = (
     'NotRegistered', 'AlreadyRegistered', 'TimeoutError',
     'MaxRetriesExceededError', 'TaskRevokedError',
     'InvalidTaskError', 'ChordError',
+
+    # Backend related errors.
+    'BackendError', 'BackendGetMetaError', 'BackendStoreError',
 
     # Billiard task errors.
     'SoftTimeLimitExceeded', 'TimeLimitExceeded',
@@ -134,7 +140,7 @@ class Retry(TaskPredicate):
     #: :class:`~datetime.datetime`.
     when = None
 
-    def __init__(self, message=None, exc=None, when=None, **kwargs):
+    def __init__(self, message=None, exc=None, when=None, is_eager=False, sig=None, **kwargs):
         from kombu.utils.encoding import safe_repr
         self.message = message
         if isinstance(exc, string_t):
@@ -142,6 +148,8 @@ class Retry(TaskPredicate):
         else:
             self.exc, self.excs = exc, safe_repr(exc) if exc else None
         self.when = when
+        self.is_eager = is_eager
+        self.sig = sig
         super().__init__(self, exc, when, **kwargs)
 
     def humanize(self):
@@ -200,7 +208,7 @@ class IncompleteStream(TaskError):
 
 
 class NotRegistered(KeyError, TaskError):
-    """The task ain't registered."""
+    """The task is not registered."""
 
     def __repr__(self):
         return UNREGISTERED_FMT.format(self)
@@ -253,3 +261,28 @@ SystemTerminate = WorkerTerminate  # noqa: E305 XXX compat
 
 class WorkerShutdown(SystemExit):
     """Signals that the worker should perform a warm shutdown."""
+
+
+class BackendError(Exception):
+    """An issue writing or reading to/from the backend."""
+
+
+class BackendGetMetaError(BackendError):
+    """An issue reading from the backend."""
+
+    def __init__(self, *args, **kwargs):
+        self.task_id = kwargs.get('task_id', "")
+
+    def __repr__(self):
+        return super().__repr__() + " task_id:" + self.task_id
+
+
+class BackendStoreError(BackendError):
+    """An issue writing from the backend."""
+
+    def __init__(self, *args, **kwargs):
+        self.state = kwargs.get('state', "")
+        self.task_id = kwargs.get('task_id', "")
+
+    def __repr__(self):
+        return super().__repr__() + " state:" + self.state + " task_id:" + self.task_id

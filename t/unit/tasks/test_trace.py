@@ -1,43 +1,56 @@
 import pytest
+from case import Mock, patch
 from kombu.exceptions import EncodeError
 
-from case import Mock, patch
 from celery import group, signals, states, uuid
 from celery.app.task import Context
-from celery.app.trace import (TraceInfo, _fast_trace_task, _trace_task_ret,
-                              build_tracer, get_log_policy, get_task_name,
-                              log_policy_expected, log_policy_ignore,
-                              log_policy_internal, log_policy_reject,
-                              log_policy_unexpected,
-                              reset_worker_optimizations,
-                              setup_worker_optimizations, trace_task)
+from celery.app.trace import (
+    TraceInfo,
+    _fast_trace_task,
+    _trace_task_ret,
+    build_tracer,
+    get_log_policy,
+    get_task_name,
+    log_policy_expected,
+    log_policy_ignore,
+    log_policy_internal,
+    log_policy_reject,
+    log_policy_unexpected,
+    reset_worker_optimizations,
+    setup_worker_optimizations,
+    trace_task,
+    traceback_clear,
+)
+
 from celery.exceptions import Ignore, Reject, Retry
 
 
-def trace(app, task, args=(), kwargs={},
-          propagate=False, eager=True, request=None, **opts):
-    t = build_tracer(task.name, task,
-                     eager=eager, propagate=propagate, app=app, **opts)
+def trace(
+    app, task, args=(), kwargs={}, propagate=False, eager=True, request=None, **opts
+):
+    t = build_tracer(task.name, task, eager=eager, propagate=propagate, app=app, **opts)
     ret = t('id-1', args, kwargs, request)
     return ret.retval, ret.info
 
 
 class TraceCase:
-
     def setup(self):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
+
         self.add = add
 
         @self.app.task(shared=False, ignore_result=True)
         def add_cast(x, y):
             return x + y
+
         self.add_cast = add_cast
 
         @self.app.task(shared=False)
         def raises(exc):
             raise exc
+
         self.raises = raises
 
     def trace(self, *args, **kwargs):
@@ -45,14 +58,12 @@ class TraceCase:
 
 
 class test_trace(TraceCase):
-
     def test_trace_successful(self):
         retval, info = self.trace(self.add, (2, 2), {})
         assert info is None
         assert retval == 4
 
     def test_trace_on_success(self):
-
         @self.app.task(shared=False, on_success=Mock())
         def add_with_success(x, y):
             return x + y
@@ -67,15 +78,12 @@ class test_trace(TraceCase):
         assert get_log_policy(self.add, einfo, Ignore()) is log_policy_ignore
 
         self.add.throws = (TypeError,)
-        assert (get_log_policy(self.add, einfo, KeyError()) is
-                log_policy_unexpected)
-        assert (get_log_policy(self.add, einfo, TypeError()) is
-                log_policy_expected)
+        assert get_log_policy(self.add, einfo, KeyError()) is log_policy_unexpected
+        assert get_log_policy(self.add, einfo, TypeError()) is log_policy_expected
 
         einfo2 = Mock(name='einfo2')
         einfo2.internal = True
-        assert (get_log_policy(self.add, einfo2, KeyError()) is
-                log_policy_internal)
+        assert get_log_policy(self.add, einfo2, KeyError()) is log_policy_internal
 
     def test_get_task_name(self):
         assert get_task_name(Context({}), 'default') == 'default'
@@ -84,7 +92,6 @@ class test_trace(TraceCase):
         assert get_task_name(Context({'shadow': 'test'}), 'default') == 'test'
 
     def test_trace_after_return(self):
-
         @self.app.task(shared=False, after_return=Mock())
         def add_with_after_return(x, y):
             return x + y
@@ -120,10 +127,10 @@ class test_trace(TraceCase):
             signals.task_success.receivers[:] = []
 
     def test_when_chord_part(self):
-
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
+
         add.backend = Mock()
 
         request = {'chord': uuid()}
@@ -136,10 +143,10 @@ class test_trace(TraceCase):
         assert not args[3]
 
     def test_when_backend_cleanup_raises(self):
-
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
+
         add.backend = Mock(name='backend')
         add.backend.process_cleanup.side_effect = KeyError()
         self.trace(add, (2, 2), {}, eager=False)
@@ -148,23 +155,78 @@ class test_trace(TraceCase):
         with pytest.raises(MemoryError):
             self.trace(add, (2, 2), {}, eager=False)
 
-    def test_when_Ignore(self):
+    def test_traceback_clear(self):
+        import inspect
+        import sys
+        sys.exc_clear = Mock()
+        frame_list = []
 
+        def raise_dummy():
+            frame_str_temp = str(inspect.currentframe().__repr__)
+            frame_list.append(frame_str_temp)
+            raise KeyError('foo')
+
+        try:
+            raise_dummy()
+        except KeyError as exc:
+            traceback_clear(exc)
+
+            if sys.version_info >= (3, 5, 0):
+                tb_ = exc.__traceback__
+                while tb_ is not None:
+                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                        assert len(tb_.tb_frame.f_locals) == 0
+                    tb_ = tb_.tb_next
+            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
+                sys.exc_clear.assert_called()
+
+        try:
+            raise_dummy()
+        except KeyError as exc:
+            traceback_clear()
+
+            if sys.version_info >= (3, 5, 0):
+                tb_ = exc.__traceback__
+                while tb_ is not None:
+                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                        assert len(tb_.tb_frame.f_locals) == 0
+                    tb_ = tb_.tb_next
+            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
+                sys.exc_clear.assert_called()
+
+        try:
+            raise_dummy()
+        except KeyError as exc:
+            traceback_clear(str(exc))
+
+            if sys.version_info >= (3, 5, 0):
+                tb_ = exc.__traceback__
+                while tb_ is not None:
+                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                        assert len(tb_.tb_frame.f_locals) == 0
+                    tb_ = tb_.tb_next
+            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
+                sys.exc_clear.assert_called()
+
+    @patch('celery.app.trace.traceback_clear')
+    def test_when_Ignore(self, mock_traceback_clear):
         @self.app.task(shared=False)
         def ignored():
             raise Ignore()
 
         retval, info = self.trace(ignored, (), {})
         assert info.state == states.IGNORED
+        mock_traceback_clear.assert_called()
 
-    def test_when_Reject(self):
-
+    @patch('celery.app.trace.traceback_clear')
+    def test_when_Reject(self, mock_traceback_clear):
         @self.app.task(shared=False)
         def rejecting():
             raise Reject()
 
         retval, info = self.trace(rejecting, (), {})
         assert info.state == states.REJECTED
+        mock_traceback_clear.assert_called()
 
     def test_backend_cleanup_raises(self):
         self.add.backend.process_cleanup = Mock()
@@ -189,8 +251,7 @@ class test_trace(TraceCase):
         maybe_signature.return_value = sig
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig.apply_async.assert_called_with(
-            (4, ), parent_id='id-1', root_id='root',
-            chain=[sig2], priority=None
+            (4,), parent_id='id-1', root_id='root', chain=[sig2], priority=None
         )
 
     @patch('celery.canvas.maybe_signature')
@@ -198,13 +259,15 @@ class test_trace(TraceCase):
         self.app.conf.task_inherit_parent_priority = True
         sig = Mock(name='sig')
         sig2 = Mock(name='sig2')
-        request = {'chain': [sig2, sig], 'root_id': 'root',
-                   'delivery_info': {'priority': 42}}
+        request = {
+            'chain': [sig2, sig],
+            'root_id': 'root',
+            'delivery_info': {'priority': 42},
+        }
         maybe_signature.return_value = sig
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig.apply_async.assert_called_with(
-            (4, ), parent_id='id-1', root_id='root',
-            chain=[sig2], priority=42
+            (4,), parent_id='id-1', root_id='root', chain=[sig2], priority=42
         )
 
     @patch('celery.canvas.maybe_signature')
@@ -227,11 +290,10 @@ class test_trace(TraceCase):
 
         def passt(s, *args, **kwargs):
             return s
+
         maybe_signature.side_effect = passt
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
-        group_.assert_called_with(
-            (4,), parent_id='id-1', root_id='root', priority=None
-        )
+        group_.assert_called_with((4,), parent_id='id-1', root_id='root', priority=None)
         sig3.apply_async.assert_called_with(
             (4,), parent_id='id-1', root_id='root', priority=None
         )
@@ -247,6 +309,7 @@ class test_trace(TraceCase):
 
         def passt(s, *args, **kwargs):
             return s
+
         maybe_signature.side_effect = passt
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig1.apply_async.assert_called_with(
@@ -260,22 +323,25 @@ class test_trace(TraceCase):
         with pytest.raises(SystemExit):
             self.trace(self.raises, (SystemExit(),), {})
 
-    def test_trace_Retry(self):
+    @patch('celery.app.trace.traceback_clear')
+    def test_trace_Retry(self, mock_traceback_clear):
         exc = Retry('foo', 'bar')
         _, info = self.trace(self.raises, (exc,), {})
         assert info.state == states.RETRY
         assert info.retval is exc
+        mock_traceback_clear.assert_called()
 
-    def test_trace_exception(self):
+    @patch('celery.app.trace.traceback_clear')
+    def test_trace_exception(self, mock_traceback_clear):
         exc = KeyError('foo')
         _, info = self.trace(self.raises, (exc,), {})
         assert info.state == states.FAILURE
         assert info.retval is exc
+        mock_traceback_clear.assert_called()
 
     def test_trace_task_ret__no_content_type(self):
         _trace_task_ret(
-            self.add.name, 'id1', {}, ((2, 2), {}, {}), None, None,
-            app=self.app,
+            self.add.name, 'id1', {}, ((2, 2), {}, {}), None, None, app=self.app,
         )
 
     def test_fast_trace_task__no_content_type(self):
@@ -283,17 +349,24 @@ class test_trace(TraceCase):
             self.add.name, self.add, app=self.app,
         )
         _fast_trace_task(
-            self.add.name, 'id1', {}, ((2, 2), {}, {}), None, None,
-            app=self.app, _loc=[self.app.tasks, {}, 'hostname']
+            self.add.name,
+            'id1',
+            {},
+            ((2, 2), {}, {}),
+            None,
+            None,
+            app=self.app,
+            _loc=[self.app.tasks, {}, 'hostname'],
         )
 
     def test_trace_exception_propagate(self):
         with pytest.raises(KeyError):
             self.trace(self.raises, (KeyError('foo'),), {}, propagate=True)
 
+    @patch('celery.app.trace.signals.task_internal_error.send')
     @patch('celery.app.trace.build_tracer')
     @patch('celery.app.trace.report_internal_error')
-    def test_outside_body_error(self, report_internal_error, build_tracer):
+    def test_outside_body_error(self, report_internal_error, build_tracer, send):
         tracer = Mock()
         tracer.side_effect = KeyError('foo')
         build_tracer.return_value = tracer
@@ -304,11 +377,11 @@ class test_trace(TraceCase):
 
         trace_task(xtask, 'uuid', (), {})
         assert report_internal_error.call_count
+        assert send.call_count
         assert xtask.__trace__ is tracer
 
 
 class test_TraceInfo(TraceCase):
-
     class TI(TraceInfo):
         __slots__ = TraceInfo.__slots__ + ('__dict__',)
 
@@ -317,7 +390,8 @@ class test_TraceInfo(TraceCase):
         x.handle_failure = Mock()
         x.handle_error_state(self.add_cast, self.add_cast.request)
         x.handle_failure.assert_called_with(
-            self.add_cast, self.add_cast.request,
+            self.add_cast,
+            self.add_cast.request,
             store_errors=self.add_cast.store_errors_even_if_ignored,
             call_errbacks=True,
         )
@@ -332,10 +406,10 @@ class test_TraceInfo(TraceCase):
 
 
 class test_stackprotection:
-
     def test_stackprotection(self):
         setup_worker_optimizations(self.app)
         try:
+
             @self.app.task(shared=False, bind=True)
             def foo(self, i):
                 if i:

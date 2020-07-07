@@ -5,7 +5,7 @@
 ================
 
 This document contains change notes for bugfix releases in
-the 4.x series, please see :ref:`whatsnew-4.2` for
+the 4.2.x series, please see :ref:`whatsnew-4.2` for
 an overview of what's new in Celery 4.2.
 
 4.2.1

@@ -5,7 +5,6 @@ from decimal import Decimal
 from pprint import pprint
 
 import pytest
-
 from case import skip
 from celery.five import (items, long_t, text_t, values)
 from celery.utils.saferepr import saferepr
@@ -187,7 +186,8 @@ class test_saferepr:
         class X:
 
             def __repr__(self):
-                return 'æ e i a æ å'.encode()
+                return 'æ e i a æ å'.encode(
+                    'utf-8', errors='backslash replace')
 
         val = X()
         assert repr(val)

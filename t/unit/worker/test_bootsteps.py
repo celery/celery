@@ -1,6 +1,6 @@
 import pytest
-
 from case import Mock, patch
+
 from celery import bootsteps
 
 

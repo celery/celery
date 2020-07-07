@@ -1,6 +1,6 @@
 import pytest
-
 from case import Mock
+
 from celery.utils import debug
 
 

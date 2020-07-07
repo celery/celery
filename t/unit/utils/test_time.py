@@ -2,9 +2,9 @@ from datetime import datetime, timedelta, tzinfo
 
 import pytest
 import pytz
+from case import Mock, patch
 from pytz import AmbiguousTimeError
 
-from case import Mock, patch
 from celery.utils.iso8601 import parse_iso8601
 from celery.utils.time import (LocalTimezone, delta_resolution, ffwd,
                                get_exponential_backoff_interval,
@@ -353,3 +353,10 @@ class test_get_exponential_backoff_interval:
             retries=3,
             maximum=100
         ) == 0
+
+    @patch('random.randrange')
+    def test_valid_random_range(self, rr):
+        rr.return_value = 0
+        maximum = 100
+        get_exponential_backoff_interval(factor=40, retries=10, maximum=maximum, full_jitter=True)
+        rr.assert_called_once_with(maximum + 1)

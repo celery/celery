@@ -2,7 +2,6 @@
 import logging
 from contextlib import contextmanager
 
-from kombu.utils.encoding import ensure_bytes
 from vine.utils import wraps
 
 from celery import states
@@ -86,11 +85,14 @@ class DatabaseBackend(BaseBackend):
             'short_lived_sessions',
             conf.database_short_lived_sessions)
 
+        schemas = conf.database_table_schemas or {}
         tablenames = conf.database_table_names or {}
-        self.task_cls.__table__.name = tablenames.get('task',
-                                                      'celery_taskmeta')
-        self.taskset_cls.__table__.name = tablenames.get('group',
-                                                         'celery_tasksetmeta')
+        self.task_cls.configure(
+            schema=schemas.get('task'),
+            name=tablenames.get('task'))
+        self.taskset_cls.configure(
+            schema=schemas.get('group'),
+            name=tablenames.get('group'))
 
         if not self.url:
             raise ImproperlyConfigured(
@@ -117,6 +119,7 @@ class DatabaseBackend(BaseBackend):
             task = task and task[0]
             if not task:
                 task = self.task_cls(task_id)
+                task.task_id = task_id
                 session.add(task)
                 session.flush()
 
@@ -125,24 +128,22 @@ class DatabaseBackend(BaseBackend):
 
     def _update_result(self, task, result, state, traceback=None,
                        request=None):
-        task.result = result
-        task.status = state
-        task.traceback = traceback
-        if self.app.conf.find_value_for_key('extended', 'result'):
-            task.name = getattr(request, 'task', None)
-            task.args = ensure_bytes(
-                self.encode(getattr(request, 'args', None))
-            )
-            task.kwargs = ensure_bytes(
-                self.encode(getattr(request, 'kwargs', None))
-            )
-            task.worker = getattr(request, 'hostname', None)
-            task.retries = getattr(request, 'retries', None)
-            task.queue = (
-                request.delivery_info.get("routing_key")
-                if hasattr(request, "delivery_info") and request.delivery_info
-                else None
-            )
+
+        meta = self._get_result_meta(result=result, state=state,
+                                     traceback=traceback, request=request,
+                                     format_date=False, encode=True)
+
+        # Exclude the primary key id and task_id columns
+        # as we should not set it None
+        columns = [column.name for column in self.task_cls.__table__.columns
+                   if column.name not in {'id', 'task_id'}]
+
+        # Iterate through the columns name of the table
+        # to set the value from meta.
+        # If the value is not present in meta, set None
+        for column in columns:
+            value = meta.get(column)
+            setattr(task, column, value)
 
     @retry
     def _get_task_meta_for(self, task_id):
@@ -156,9 +157,9 @@ class DatabaseBackend(BaseBackend):
                 task.status = states.PENDING
                 task.result = None
             data = task.to_dict()
-            if 'args' in data:
+            if data.get('args', None) is not None:
                 data['args'] = self.decode(data['args'])
-            if 'kwargs' in data:
+            if data.get('kwargs', None) is not None:
                 data['kwargs'] = self.decode(data['kwargs'])
             return self.meta_from_decoded(data)
 

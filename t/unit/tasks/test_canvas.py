@@ -1,8 +1,8 @@
 import json
 
 import pytest
-
 from case import MagicMock, Mock
+
 from celery._state import _task_stack
 from celery.canvas import (Signature, _chain, _maybe_group, chain, chord,
                            chunks, group, maybe_signature, maybe_unroll_group,
@@ -267,6 +267,10 @@ class test_chunks(CanvasCase):
 
 class test_chain(CanvasCase):
 
+    def test_chain_of_chain_with_a_single_task(self):
+        s = self.add.s(1, 1)
+        assert chain([chain(s)]).tasks == list(chain(s).tasks)
+
     def test_clone_preserves_state(self):
         x = chain(self.add.s(i, i) for i in range(10))
         assert x.clone().tasks == x.tasks
@@ -405,6 +409,24 @@ class test_chain(CanvasCase):
         c.apply_async(link_error=[s('error')])
         for task in c.tasks:
             assert task.options['link_error'] == [s('error')]
+
+    def test_apply_options_none(self):
+        class static(Signature):
+
+            def clone(self, *args, **kwargs):
+                return self
+
+            def _apply_async(self, *args, **kwargs):
+                self.args = args
+                self.kwargs = kwargs
+
+        c = static(self.add, (2, 2), type=self.add, app=self.app, priority=5)
+
+        c.apply_async(priority=4)
+        assert c.kwargs['priority'] == 4
+
+        c.apply_async(priority=None)
+        assert c.kwargs['priority'] == 5
 
     def test_reverse(self):
         x = self.add.s(2, 2) | self.add.s(2)
@@ -721,6 +743,13 @@ class test_chord(CanvasCase):
         t1.app = t1._app = None
         x = chord([t1], body=t1)
         assert x.app is current_app
+
+    def test_chord_size_with_groups(self):
+        x = chord([
+            self.add.s(2, 2) | group([self.add.si(2, 2), self.add.si(2, 2)]),
+            self.add.s(2, 2) | group([self.add.si(2, 2), self.add.si(2, 2)]),
+        ], body=self.add.si(2, 2))
+        assert x.__length_hint__() == 4
 
     def test_set_immutable(self):
         x = chord([Mock(name='t1'), Mock(name='t2')], app=self.app)

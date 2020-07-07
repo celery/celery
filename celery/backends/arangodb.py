@@ -4,8 +4,10 @@
 
 import json
 import logging
+from datetime import timedelta
 
 from kombu.utils.encoding import str_t
+from kombu.utils.objects import cached_property
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
@@ -112,6 +114,10 @@ class ArangoDbBackend(KeyValueStoreBackend):
         """Database Object to the given database."""
         return self.connection[self.database]
 
+    @cached_property
+    def expires_delta(self):
+        return timedelta(seconds=self.expires)
+
     def get(self, key):
         try:
             logging.debug(
@@ -203,6 +209,22 @@ class ArangoDbBackend(KeyValueStoreBackend):
                     key=key, collection=self.collection
                 )
             )
+        except AQLQueryError as aql_err:
+            logging.error(aql_err)
+        except Exception as err:
+            logging.error(err)
+
+    def cleanup(self):
+        """Delete expired meta-data."""
+        remove_before = (self.app.now() - self.expires_delta).isoformat()
+        try:
+            query = (
+                'FOR item IN {collection} '
+                'FILTER item.task.date_done < "{remove_before}" '
+                'REMOVE item IN {collection}'
+            ).format(collection=self.collection, remove_before=remove_before)
+            logging.debug(query)
+            self.db.AQLQuery(query)
         except AQLQueryError as aql_err:
             logging.error(aql_err)
         except Exception as err:

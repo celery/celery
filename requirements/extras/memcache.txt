@@ -1,1 +1,1 @@
-pylibmc
+pylibmc; platform_system != "Windows"

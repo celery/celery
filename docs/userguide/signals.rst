@@ -289,7 +289,46 @@ Provides arguments:
 
     The :class:`billiard.einfo.ExceptionInfo` instance.
 
-.. signal:: task_received
+``task_internal_error``
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Dispatched when an internal Celery error occurs while executing the task.
+
+Sender is the task object executed.
+
+.. signal:: task_internal_error
+
+Provides arguments:
+
+* ``task_id``
+
+    Id of the task.
+
+* ``args``
+
+    Positional arguments the task was called with.
+
+* ``kwargs``
+
+    Keyword arguments the task was called with.
+
+* ``request``
+
+    The original request dictionary.
+    This is provided as the ``task.request`` may not be ready by the time
+    the exception is raised.
+
+* ``exception``
+
+    Exception instance raised.
+
+* ``traceback``
+
+    Stack trace object.
+
+* ``einfo``
+
+    The :class:`billiard.einfo.ExceptionInfo` instance.
 
 ``task_received``
 ~~~~~~~~~~~~~~~~~
@@ -297,6 +336,8 @@ Provides arguments:
 Dispatched when a task is received from the broker and is ready for execution.
 
 Sender is the consumer object.
+
+.. signal:: task_received
 
 Provides arguments:
 

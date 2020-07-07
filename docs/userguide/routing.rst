@@ -207,7 +207,7 @@ If you're confused about these terms, you should read up on AMQP.
     For users of RabbitMQ the `RabbitMQ FAQ`_
     could be useful as a source of information.
 
-.. _`Rabbits and Warrens`: http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/
+.. _`Rabbits and Warrens`: http://web.archive.org/web/20160323134044/http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/
 .. _`CloudAMQP tutorial`: amqp in 10 minutes part 3
     https://www.cloudamqp.com/blog/2015-09-03-part4-rabbitmq-for-beginners-exchanges-routing-keys-bindings.html
 .. _`RabbitMQ FAQ`: https://www.rabbitmq.com/faq.html
@@ -262,6 +262,15 @@ While the Celery Redis transport does honor the priority field, Redis itself has
 no notion of priorities. Please read this note before attempting to implement
 priorities with Redis as you may experience some unexpected behavior.
 
+To start scheduling tasks based on priorities you need to configure queue_order_strategy transport option.
+
+.. code-block:: python
+
+    app.conf.broker_transport_options = {
+        'queue_order_strategy': 'priority',
+    }
+
+
 The priority support is implemented by creating n lists for each queue.
 This means that even though there are 10 (0-9) priority levels, these are
 consolidated into 4 levels by default to save resources. This means that a
@@ -278,6 +287,7 @@ If you want more priority levels you can set the priority_steps transport option
 
     app.conf.broker_transport_options = {
         'priority_steps': list(range(10)),
+        'queue_order_strategy': 'priority',
     }
 
 

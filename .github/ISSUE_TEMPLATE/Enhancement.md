@@ -1,6 +1,7 @@
 ---
 name: Enhancement
 about: Do you want to improve an existing feature?
+labels: "Issue Type: Enhancement"
 ---
 <!--
 Please fill this template entirely and do not erase parts of it.

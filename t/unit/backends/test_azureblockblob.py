@@ -1,6 +1,7 @@
 import pytest
-
 from case import Mock, call, patch, skip
+
+from celery import states
 from celery.backends import azureblockblob
 from celery.backends.azureblockblob import AzureBlockBlobBackend
 from celery.exceptions import ImproperlyConfigured
@@ -69,7 +70,7 @@ class test_AzureBlockBlobBackend:
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._client")
     def test_set(self, mock_client):
-        self.backend.set(b"mykey", "myvalue")
+        self.backend._set_with_state(b"mykey", "myvalue", states.SUCCESS)
 
         mock_client.create_blob_from_text.assert_called_once_with(
             "celery", "mykey", "myvalue")

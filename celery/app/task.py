@@ -18,10 +18,8 @@ from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
-from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import raise_with_context
-
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
 from .utils import appstr
@@ -206,7 +204,7 @@ class Task:
     store_errors_even_if_ignored = None
 
     #: The name of a serializer that are registered with
-    #: :mod:`kombu.serialization.registry`.  Default is `'pickle'`.
+    #: :mod:`kombu.serialization.registry`.  Default is `'json'`.
     serializer = None
 
     #: Hard time limit.
@@ -383,12 +381,6 @@ class Task:
         setattr(cls, attr, meth)
 
     def __call__(self, *args, **kwargs):
-        logger = get_logger(__name__)
-
-        def handle_sigterm(signum, frame):
-            logger.info('SIGTERM received, waiting till the task finished')
-
-        signal.signal(signal.SIGTERM, handle_sigterm)
         _task_stack.push(self)
         self.push_request(args=args, kwargs=kwargs)
         try:
@@ -547,11 +539,12 @@ class Task:
         app = self._get_app()
         if app.conf.task_always_eager:
             with app.producer_or_acquire(producer) as eager_producer:
-                serializer = options.get(
-                    'serializer',
-                    (eager_producer.serializer if eager_producer.serializer
-                     else app.conf.task_serializer)
-                )
+                serializer = options.get('serializer')
+                if serializer is None:
+                    if eager_producer.serializer:
+                        serializer = eager_producer.serializer
+                    else:
+                        serializer = app.conf.task_serializer
                 body = args, kwargs
                 content_type, content_encoding, data = serialization.dumps(
                     body, serializer,
@@ -598,10 +591,13 @@ class Task:
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
         options = request.as_execution_options()
+        delivery_info = request.delivery_info or {}
+        priority = delivery_info.get('priority')
+        if priority is not None:
+            options['priority'] = priority
         if queue:
             options['queue'] = queue
         else:
-            delivery_info = request.delivery_info or {}
             exchange = delivery_info.get('exchange')
             routing_key = delivery_info.get('routing_key')
             if exchange == '' and routing_key:
@@ -629,7 +625,7 @@ class Task:
             ...         twitter.post_status_update(message)
             ...     except twitter.FailWhale as exc:
             ...         # Retry in 5 minutes.
-            ...         raise self.retry(countdown=60 * 5, exc=exc)
+            ...         self.retry(countdown=60 * 5, exc=exc)
 
         Note:
             Although the task will never return above as `retry` raises an
@@ -708,12 +704,11 @@ class Task:
                 ), task_args=S.args, task_kwargs=S.kwargs
             )
 
-        ret = Retry(exc=exc, when=eta or countdown)
+        ret = Retry(exc=exc, when=eta or countdown, is_eager=is_eager, sig=S)
 
         if is_eager:
             # if task was executed eagerly using apply(),
-            # then the retry must also be executed eagerly.
-            S.apply().get()
+            # then the retry must also be executed eagerly in apply method
             if throw:
                 raise ret
             return ret
@@ -776,11 +771,13 @@ class Task:
         retval = ret.retval
         if isinstance(retval, ExceptionInfo):
             retval, tb = retval.exception, retval.traceback
+        if isinstance(retval, Retry) and retval.sig is not None:
+            return retval.sig.apply(retries=retries + 1)
         state = states.SUCCESS if ret.info is None else ret.info.state
         return EagerResult(task_id, retval, state, traceback=tb)
 
     def AsyncResult(self, task_id, **kwargs):
-        """Get AsyncResult instance for this kind of task.
+        """Get AsyncResult instance for the specified task.
 
         Arguments:
             task_id (str): Task id to get result for.
@@ -867,7 +864,7 @@ class Task:
             sig (~@Signature): signature to replace with.
 
         Raises:
-            ~@Ignore: This is always raised when called in asynchrous context.
+            ~@Ignore: This is always raised when called in asynchronous context.
             It is best to always use ``return self.replace(...)`` to convey
             to the reader that the task won't continue after being replaced.
         """

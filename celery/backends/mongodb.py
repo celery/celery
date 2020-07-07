@@ -154,6 +154,10 @@ class MongoBackend(BaseBackend):
             # don't change self.options
             conf = dict(self.options)
             conf['host'] = host
+            if self.user:
+                conf['username'] = self.user
+            if self.password:
+                conf['password'] = self.password
 
             self._connection = MongoClient(**conf)
 
@@ -173,23 +177,17 @@ class MongoBackend(BaseBackend):
     def decode(self, data):
         if self.serializer == 'bson':
             return data
-        return super().decode(data)
+
+        payload = self.encode(data)
+        return super().decode(payload)
 
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
         """Store return value and state of an executed task."""
-        meta = {
-            '_id': task_id,
-            'status': state,
-            'result': self.encode(result),
-            'date_done': datetime.utcnow(),
-            'traceback': self.encode(traceback),
-            'children': self.encode(
-                self.current_task_children(request),
-            ),
-        }
-        if request and getattr(request, 'parent_id', None):
-            meta['parent_id'] = request.parent_id
+        meta = self._get_result_meta(result=result, state=state,
+                                     traceback=traceback, request=request)
+        # Add the _id for mongodb
+        meta['_id'] = task_id
 
         try:
             self.collection.replace_one({'_id': task_id}, meta, upsert=True)

@@ -1,6 +1,7 @@
 from time import time
 
 from case import Mock, patch
+
 from celery.events.dumper import Dumper, evdump, humanize_type
 from celery.five import WhateverIO
 

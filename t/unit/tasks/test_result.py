@@ -4,8 +4,8 @@ import traceback
 from contextlib import contextmanager
 
 import pytest
-
 from case import Mock, call, patch, skip
+
 from celery import states, uuid
 from celery.app.task import Context
 from celery.backends.base import SyncBackendMixin
@@ -75,8 +75,9 @@ class test_AsyncResult:
         self.task5 = mock_task(
             'task3', states.FAILURE, KeyError('blue'), PYTRACEBACK,
         )
+        self.task6 = mock_task('task6', states.SUCCESS, None)
         for task in (self.task1, self.task2,
-                     self.task3, self.task4, self.task5):
+                     self.task3, self.task4, self.task5, self.task6):
             save_result(self.app, task)
 
         @self.app.task(shared=False)
@@ -252,31 +253,26 @@ class test_AsyncResult:
 
         with pytest.raises(KeyError):
             notb.get()
-        try:
+        with pytest.raises(KeyError) as excinfo:
             withtb.get()
-        except KeyError:
-            tb = traceback.format_exc()
-            assert '  File "foo.py", line 2, in foofunc' not in tb
-            assert '  File "bar.py", line 3, in barfunc' not in tb
-            assert 'KeyError:' in tb
-            assert "'blue'" in tb
-        else:
-            raise AssertionError('Did not raise KeyError.')
+
+        tb = [t.strip() for t in traceback.format_tb(excinfo.tb)]
+        assert 'File "foo.py", line 2, in foofunc' not in tb
+        assert 'File "bar.py", line 3, in barfunc' not in tb
+        assert excinfo.value.args[0] == 'blue'
+        assert excinfo.typename == 'KeyError'
 
     @skip.unless_module('tblib')
     def test_raising_remote_tracebacks(self):
         withtb = self.app.AsyncResult(self.task5['id'])
         self.app.conf.task_remote_tracebacks = True
-        try:
+        with pytest.raises(KeyError) as excinfo:
             withtb.get()
-        except KeyError:
-            tb = traceback.format_exc()
-            assert '  File "foo.py", line 2, in foofunc' in tb
-            assert '  File "bar.py", line 3, in barfunc' in tb
-            assert 'KeyError:' in tb
-            assert "'blue'" in tb
-        else:
-            raise AssertionError('Did not raise KeyError.')
+        tb = [t.strip() for t in traceback.format_tb(excinfo.tb)]
+        assert 'File "foo.py", line 2, in foofunc' in tb
+        assert 'File "bar.py", line 3, in barfunc' in tb
+        assert excinfo.value.args[0] == 'blue'
+        assert excinfo.typename == 'KeyError'
 
     def test_str(self):
         ok_res = self.app.AsyncResult(self.task1['id'])
@@ -330,6 +326,7 @@ class test_AsyncResult:
         ok2_res = self.app.AsyncResult(self.task2['id'])
         nok_res = self.app.AsyncResult(self.task3['id'])
         nok2_res = self.app.AsyncResult(self.task4['id'])
+        none_res = self.app.AsyncResult(self.task6['id'])
 
         callback = Mock(name='callback')
 
@@ -341,6 +338,8 @@ class test_AsyncResult:
         assert nok_res.get(propagate=False)
         assert isinstance(nok2_res.result, KeyError)
         assert ok_res.info == 'the'
+        assert none_res.get() is None
+        assert none_res.state == states.SUCCESS
 
     def test_get_when_ignored(self):
         result = self.app.AsyncResult(uuid())
@@ -466,7 +465,7 @@ class test_ResultSet:
         b.supports_native_join = True
         x.get()
         x.join_native.assert_called()
-    
+
     @patch('celery.result.task_join_will_block')
     def test_get_sync_subtask_option(self, task_join_will_block):
         task_join_will_block.return_value = True
@@ -1071,6 +1070,12 @@ class test_tuples:
         uid = uuid()
         x = result_from_tuple([uid, []], app=self.app)
         assert x.id == uid
+
+    def test_as_list(self):
+        uid = uuid()
+        x = self.app.AsyncResult(uid)
+        assert x.id == x.as_list()[0]
+        assert isinstance(x.as_list(), list)
 
     def test_GroupResult(self):
         x = self.app.GroupResult(

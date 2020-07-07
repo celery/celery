@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Kombu Issue Tracker
+    url: https://github.com/celery/kombu/issues/
+    about: If this issue only involves Kombu, please open a new issue there.
+  - name: Billiard Issue Tracker
+    url: https://github.com/celery/billiard/issues/
+    about: If this issue only involves Billiard, please open a new issue there.
+  - name: py-amqp Issue Tracker
+    url: https://github.com/celery/py-amqp/issues/
+    about: If this issue only involves py-amqp, please open a new issue there.

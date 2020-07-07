@@ -19,7 +19,7 @@ __all__ = (
     'ColorFormatter', 'LoggingProxy', 'base_logger',
     'set_in_sighandler', 'in_sighandler', 'get_logger',
     'get_task_logger', 'mlevel',
-    'get_multiprocessing_logger', 'reset_multiprocessing_logger',
+    'get_multiprocessing_logger', 'reset_multiprocessing_logger', 'LOG_LEVELS'
 )
 
 _process_aware = False

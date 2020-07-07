@@ -1,9 +1,9 @@
 from datetime import datetime
 
 import pytest
+from case import patch
 from kombu.utils.json import dumps
 
-from case import patch
 from celery.bin.call import call
 from celery.five import WhateverIO
 

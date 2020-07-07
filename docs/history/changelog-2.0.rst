@@ -853,7 +853,7 @@ News
                                  'routing_key': 'media.video.encode'}}
 
         >>> CELERY_ROUTES = ('myapp.tasks.Router',
-                             {'celery.ping': 'default})
+                             {'celery.ping': 'default'})
 
     Where `myapp.tasks.Router` could be:
 
