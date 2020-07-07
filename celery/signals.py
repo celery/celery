@@ -18,6 +18,7 @@ from .utils.dispatch import Signal
 __all__ = (
     'before_task_publish', 'after_task_publish', 'task_internal_error',
     'task_prerun', 'task_postrun', 'task_success',
+    'task_received', 'task_rejected', 'task_unknown',
     'task_retry', 'task_failure', 'task_revoked', 'celeryd_init',
     'celeryd_after_setup', 'worker_init', 'worker_process_init',
     'worker_process_shutdown', 'worker_ready', 'worker_shutdown',
