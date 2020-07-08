@@ -121,6 +121,10 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [4, 5]
 
+    def test_chain_of_chain_with_a_single_task(self, manager):
+        sig = signature('any_taskname', queue='any_q')
+        chain([chain(sig)]).apply_async()
+
     def test_chain_on_error(self, manager):
         from .tasks import ExpectedException
 
@@ -926,6 +930,25 @@ class test_chord:
         )
         res = c.delay()
         assert res.get(timeout=TIMEOUT) == 7
+
+    @pytest.mark.xfail(reason="Issue #6176")
+    def test_chord_in_chain_with_args(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c1 = chain(
+            chord(
+                [identity.s(), identity.s()],
+                identity.s(),
+            ),
+            identity.s(),
+        )
+        res1 = c1.apply_async(args=(1,))
+        assert res1.get(timeout=TIMEOUT) == [1, 1]
+        res1 = c1.apply(args=(1,))
+        assert res1.get(timeout=TIMEOUT) == [1, 1]
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
     def test_large_header(self, manager):

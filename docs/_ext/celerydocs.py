@@ -3,7 +3,11 @@ import typing
 
 from docutils import nodes
 
-from sphinx.environment import NoUri
+try:
+    from sphinx.errors import NoUri
+except ImportError:
+    # TODO: Remove this once we drop Sphinx 2 support
+    from sphinx.environment import NoUri
 
 APPATTRS = {
     'amqp': 'celery.app.amqp.AMQP',
@@ -142,9 +146,12 @@ def maybe_resolve_abbreviations(app, env, node, contnode):
                 domain = env.domains[node.get('refdomain')]
             except KeyError:
                 raise NoUri
-            return domain.resolve_xref(env, node['refdoc'], app.builder,
-                                       type, newtarget,
-                                       node, contnode)
+            try:
+                return domain.resolve_xref(env, node['refdoc'], app.builder,
+                                           type, newtarget,
+                                           node, contnode)
+            except KeyError:
+                raise NoUri
 
 
 def setup(app):

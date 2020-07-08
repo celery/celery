@@ -138,8 +138,8 @@ class Node:
 
     def _annotate_with_default_opts(self, options):
         options['-n'] = self.name
-        self._setdefaultopt(options, ['--pidfile', '-p'], '%n.pid')
-        self._setdefaultopt(options, ['--logfile', '-f'], '%n%I.log')
+        self._setdefaultopt(options, ['--pidfile', '-p'], '/var/run/celery/%n.pid')
+        self._setdefaultopt(options, ['--logfile', '-f'], '/var/log/celery/%n%I.log')
         self._setdefaultopt(options, ['--executable'], sys.executable)
         return options
 
@@ -149,7 +149,11 @@ class Node:
                 return d[opt]
             except KeyError:
                 pass
-        return d.setdefault(alt[0], value)
+        value = d.setdefault(alt[0], os.path.normpath(value))
+        dir_path = os.path.dirname(value)
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+        return value
 
     def _prepare_expander(self):
         shortname, hostname = self.name.split('@', 1)
@@ -283,10 +287,10 @@ class MultiParser:
         prefix = options.pop('--prefix', prefix) or ''
         suffix = options.pop('--suffix', self.suffix) or hostname
         suffix = '' if suffix in ('""', "''") else suffix
-
+        range_prefix = options.pop('--range-prefix', '') or self.range_prefix
         if ranges:
             try:
-                names, prefix = self._get_ranges(names), self.range_prefix
+                names, prefix = self._get_ranges(names), range_prefix
             except ValueError:
                 pass
         self._update_ns_opts(p, names)

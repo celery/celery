@@ -188,7 +188,8 @@ class test_saferepr:
         class X:
 
             def __repr__(self):
-                return 'æ e i a æ å'.encode()
+                return 'æ e i a æ å'.encode(
+                    'utf-8', errors='backslash replace')
 
         val = X()
         assert repr(val)

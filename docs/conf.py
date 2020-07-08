@@ -44,6 +44,9 @@ globals().update(conf.build_config(
     ],
     linkcheck_ignore=[
         r'^http://localhost'
+    ],
+    autodoc_mock_imports=[
+        'riak'
     ]
 ))
 

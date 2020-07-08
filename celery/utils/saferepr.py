@@ -16,8 +16,7 @@ from itertools import chain
 from numbers import Number
 from pprint import _recursion
 
-from celery.five import PY3, items, range, text_t
-
+from celery.five import items, range, text_t
 from .text import truncate
 
 __all__ = ('saferepr', 'reprstream')
@@ -127,7 +126,7 @@ def _format_binary_bytes(val, maxlen, ellipsis='...'):
 
 
 def _bytes_prefix(s):
-    return 'b' + s if PY3 else s
+    return 'b' + s
 
 
 def _repr_binary_bytes(val):

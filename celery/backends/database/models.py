@@ -41,6 +41,12 @@ class Task(ResultModelBase):
     def __repr__(self):
         return '<Task {0.task_id} state: {0.status}>'.format(self)
 
+    @classmethod
+    def configure(cls, schema=None, name=None):
+        cls.__table__.schema = schema
+        cls.id.default.schema = schema
+        cls.__table__.name = name or cls.__tablename__
+
 
 class TaskExtended(Task):
     """For the extend result."""
@@ -94,3 +100,9 @@ class TaskSet(ResultModelBase):
 
     def __repr__(self):
         return f'<TaskSet: {self.taskset_id}>'
+
+    @classmethod
+    def configure(cls, schema=None, name=None):
+        cls.__table__.schema = schema
+        cls.id.default.schema = schema
+        cls.__table__.name = name or cls.__tablename__

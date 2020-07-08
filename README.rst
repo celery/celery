@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 4.4.0 (cliffs)
+:Version: 4.4.6 (cliffs)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -44,7 +44,7 @@ to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
 language. In addition to Python there's node-celery_ for Node.js,
-a `PHP client`_ and `gocelery`_ for golang.
+a `PHP client`_, `gocelery`_ for golang, and rusty-celery_ for Rust.
 
 Language interoperability can also be achieved by using webhooks
 in such a way that the client enqueues an URL to be requested by a worker.
@@ -52,6 +52,7 @@ in such a way that the client enqueues an URL to be requested by a worker.
 .. _node-celery: https://github.com/mher/node-celery
 .. _`PHP client`: https://github.com/gjedeer/celery-php
 .. _`gocelery`: https://github.com/gocelery/gocelery
+.. _rusty-celery: https://github.com/rusty-celery/rusty-celery
 
 What do I need?
 ===============
@@ -59,7 +60,7 @@ What do I need?
 Celery version 5.0.0 alpha-1 runs on,
 
 - Python (3.6, 3.7, 3.8)
-- PyPy3.6 (7.1.1)
+- PyPy3.6 (7.6)
 
 
 This is the next version to of celery which will support Python 3.6 or newer.

@@ -20,8 +20,6 @@ from kombu.utils.uuid import uuid
 from vine import barrier
 
 from celery._state import current_app
-from celery.five import PY3
-from celery.local import try_import
 from celery.result import GroupResult, allow_join_result
 from celery.utils import abstract
 from celery.utils.collections import ChainMap
@@ -36,9 +34,6 @@ __all__ = (
     'Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
     'group', 'chord', 'signature', 'maybe_signature',
 )
-
-# json in Python 2.7 borks if dict contains byte keys.
-JSON_NEEDS_UNICODE_KEYS = PY3 and not try_import('simplejson')
 
 
 def maybe_unroll_group(group):
@@ -400,8 +395,12 @@ class Signature(dict):
             other = maybe_unroll_group(other)
             if isinstance(self, _chain):
                 # chain | group() -> chain
+                tasks = self.unchain_tasks()
+                if not tasks:
+                    # If the chain is empty, return the group
+                    return other
                 return _chain(seq_concat_item(
-                    self.unchain_tasks(), other), app=self._app)
+                    tasks, other), app=self._app)
             # task | group() -> chain
             return _chain(self, other, app=self.app)
 
@@ -473,10 +472,9 @@ class Signature(dict):
     def __repr__(self):
         return self.reprcall()
 
-    if JSON_NEEDS_UNICODE_KEYS:  # pragma: no cover
-        def items(self):
-            for k, v in dict.items(self):
-                yield k.decode() if isinstance(k, bytes) else k, v
+    def items(self):
+        for k, v in dict.items(self):
+            yield k.decode() if isinstance(k, bytes) else k, v
 
     @property
     def name(self):
@@ -613,7 +611,7 @@ class _chain(Signature):
         return signature
 
     def unchain_tasks(self):
-        # Clone chain's tasks assigning sugnatures from link_error
+        # Clone chain's tasks assigning signatures from link_error
         # to each task
         tasks = [t.clone() for t in self.tasks]
         for sig in self.options.get('link_error', []):
@@ -868,7 +866,9 @@ class chain(_chain):
         if not kwargs and tasks:
             if len(tasks) != 1 or is_list(tasks[0]):
                 tasks = tasks[0] if len(tasks) == 1 else tasks
-                return reduce(operator.or_, tasks)
+                # if is_list(tasks) and len(tasks) == 1:
+                #     return super(chain, cls).__new__(cls, tasks, **kwargs)
+                return reduce(operator.or_, tasks, chain())
         return super().__new__(cls, *tasks, **kwargs)
 
 
@@ -1329,8 +1329,14 @@ class chord(Signature):
             with allow_join_result():
                 return self.apply(args, kwargs,
                                   body=body, task_id=task_id, **options)
+
+        merged_options = dict(self.options, **options) if options else self.options
+        option_task_id = merged_options.pop("task_id", None)
+        if task_id is None:
+            task_id = option_task_id
+
         # chord([A, B, ...], C)
-        return self.run(tasks, body, args, task_id=task_id, **options)
+        return self.run(tasks, body, args, task_id=task_id, **merged_options)
 
     def apply(self, args=None, kwargs=None,
               propagate=True, body=None, **options):
@@ -1349,6 +1355,8 @@ class chord(Signature):
             task = stack.popleft()
             if isinstance(task, group):
                 stack.extend(task.tasks)
+            elif isinstance(task, _chain) and isinstance(task.tasks[-1], group):
+                stack.extend(task.tasks[-1].tasks)
             else:
                 yield task if value is None else value
 

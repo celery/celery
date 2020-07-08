@@ -14,7 +14,7 @@ class MockDispatcher:
         self.enabled = True
 
     def send(self, msg, **_fields):
-        self.sent.append(msg)
+        self.sent.append((msg, _fields))
         if self.heart:
             if self.next_iter > 10:
                 self.heart._shutdown.set()
@@ -64,6 +64,7 @@ class test_Heart:
         h = Heart(timer, eventer)
         h.start()
         assert not h.tref
+        assert not eventer.sent
 
     def test_stop_when_disabled(self):
         timer = MockTimer()
@@ -71,3 +72,22 @@ class test_Heart:
         eventer.enabled = False
         h = Heart(timer, eventer)
         h.stop()
+        assert not eventer.sent
+
+    def test_message_retries(self):
+        timer = MockTimer()
+        eventer = MockDispatcher()
+        eventer.enabled = True
+        h = Heart(timer, eventer, interval=1)
+
+        h.start()
+        assert eventer.sent[-1][0] == "worker-online"
+
+        # Invoke a heartbeat
+        h.tref[1](*h.tref[2], **h.tref[3])
+        assert eventer.sent[-1][0] == "worker-heartbeat"
+        assert eventer.sent[-1][1]["retry"]
+
+        h.stop()
+        assert eventer.sent[-1][0] == "worker-offline"
+        assert not eventer.sent[-1][1]["retry"]

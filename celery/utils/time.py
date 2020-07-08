@@ -12,8 +12,7 @@ from pytz import AmbiguousTimeError, FixedOffset
 from pytz import timezone as _timezone
 from pytz import utc
 
-from celery.five import PY3, string_t
-
+from celery.five import string_t
 from .functional import dictfilter
 from .iso8601 import parse_iso8601
 from .text import pluralize
@@ -82,20 +81,18 @@ class LocalTimezone(tzinfo):
     def tzname(self, dt):
         return _time.tzname[self._isdst(dt)]
 
-    if PY3:  # pragma: no cover
+    def fromutc(self, dt):
+        # The base tzinfo class no longer implements a DST
+        # offset aware .fromutc() in Python 3 (Issue #2306).
 
-        def fromutc(self, dt):
-            # The base tzinfo class no longer implements a DST
-            # offset aware .fromutc() in Python 3 (Issue #2306).
-
-            # I'd rather rely on pytz to do this, than port
-            # the C code from cpython's fromutc [asksol]
-            offset = int(self.utcoffset(dt).seconds / 60.0)
-            try:
-                tz = self._offset_cache[offset]
-            except KeyError:
-                tz = self._offset_cache[offset] = FixedOffset(offset)
-            return tz.fromutc(dt.replace(tzinfo=tz))
+        # I'd rather rely on pytz to do this, than port
+        # the C code from cpython's fromutc [asksol]
+        offset = int(self.utcoffset(dt).seconds / 60.0)
+        try:
+            tz = self._offset_cache[offset]
+        except KeyError:
+            tz = self._offset_cache[offset] = FixedOffset(offset)
+        return tz.fromutc(dt.replace(tzinfo=tz))
 
     def _isdst(self, dt):
         tt = (dt.year, dt.month, dt.day,
@@ -119,17 +116,10 @@ class _Zone:
             dt = make_aware(dt, orig or self.utc)
         return localize(dt, self.tz_or_local(local))
 
-    if PY3:  # pragma: no cover
-
-        def to_system(self, dt):
-            # tz=None is a special case since Python 3.3, and will
-            # convert to the current local timezone (Issue #2306).
-            return dt.astimezone(tz=None)
-
-    else:
-
-        def to_system(self, dt):  # noqa
-            return localize(dt, self.local)
+    def to_system(self, dt):
+        # tz=None is a special case since Python 3.3, and will
+        # convert to the current local timezone (Issue #2306).
+        return dt.astimezone(tz=None)
 
     def to_local_fallback(self, dt):
         if is_naive(dt):
@@ -206,7 +196,7 @@ def remaining(start, ends_in, now=None, relative=False):
         start = start.replace(tzinfo=now.tzinfo)
     end_date = start + ends_in
     if relative:
-        end_date = delta_resolution(end_date, ends_in)
+        end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
     ret = end_date - now
     if C_REMDEBUG:  # pragma: no cover
         print('rem: NOW:{!r} START:{!r} ENDS_IN:{!r} END_DATE:{} REM:{}'.format(
@@ -390,10 +380,10 @@ def get_exponential_backoff_interval(
 ):
     """Calculate the exponential backoff wait time."""
     # Will be zero if factor equals 0
-    countdown = factor * (2 ** retries)
+    countdown = min(maximum, factor * (2 ** retries))
     # Full jitter according to
     # https://www.awsarchitectureblog.com/2015/03/backoff.html
     if full_jitter:
         countdown = random.randrange(countdown + 1)
     # Adjust according to maximum wait time and account for negative values.
-    return max(0, min(maximum, countdown))
+    return max(0, countdown)

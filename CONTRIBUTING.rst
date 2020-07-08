@@ -407,7 +407,7 @@ Working on Features & Patches
 Forking and setting up the repository
 -------------------------------------
 
-First you need to fork the Celery repository, a good introduction to this
+First you need to fork the Celery repository; a good introduction to this
 is in the GitHub Guide: `Fork a Repo`_.
 
 After you have cloned the repository, you should checkout your copy

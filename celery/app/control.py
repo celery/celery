@@ -132,6 +132,8 @@ class Inspect:
     registered_tasks = registered
 
     def ping(self, destination=None):
+        if destination:
+            self.destination = destination
         return self._request('ping')
 
     def active_queues(self):
@@ -214,13 +216,14 @@ class Control:
 
     def revoke(self, task_id, destination=None, terminate=False,
                signal=TERM_SIGNAME, **kwargs):
-        """Tell all (or specific) workers to revoke a task by id.
+        """Tell all (or specific) workers to revoke a task by id (or list of ids).
 
         If a task is revoked, the workers will ignore the task and
         not execute it after all.
 
         Arguments:
-            task_id (str): Id of the task to revoke.
+            task_id (Union(str, list)): Id of the task to revoke
+                (or list of ids).
             terminate (bool): Also terminate the process currently working
                 on the task (if any).
             signal (str): Name of signal to send to process if terminate.
@@ -237,7 +240,7 @@ class Control:
 
     def terminate(self, task_id,
                   destination=None, signal=TERM_SIGNAME, **kwargs):
-        """Tell all (or specific) workers to terminate a task by id.
+        """Tell all (or specific) workers to terminate a task by id (or list of ids).
 
         See Also:
             This is just a shortcut to :meth:`revoke` with the terminate

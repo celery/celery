@@ -177,7 +177,9 @@ class MongoBackend(BaseBackend):
     def decode(self, data):
         if self.serializer == 'bson':
             return data
-        return super().decode(data)
+
+        payload = self.encode(data)
+        return super().decode(payload)
 
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):

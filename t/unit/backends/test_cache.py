@@ -9,7 +9,7 @@ from kombu.utils.encoding import ensure_bytes, str_to_bytes
 from celery import signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
-from celery.five import PY3, bytes_if_py2, items, string, text_t
+from celery.five import bytes_if_py2, items, string
 
 
 class SomeClass:
@@ -97,8 +97,8 @@ class test_CacheBackend:
         deps.delete.assert_called_with()
 
     def test_mget(self):
-        self.tb.set('foo', 1)
-        self.tb.set('bar', 2)
+        self.tb._set_with_state('foo', 1, states.SUCCESS)
+        self.tb._set_with_state('bar', 2, states.SUCCESS)
 
         assert self.tb.mget(['foo', 'bar']) == {'foo': 1, 'bar': 2}
 
@@ -150,10 +150,8 @@ class MyMemcachedStringEncodingError(Exception):
 class MemcachedClient(DummyClient):
 
     def set(self, key, value, *args, **kwargs):
-        if PY3:
-            key_t, must_be, not_be, cod = bytes, 'string', 'bytes', 'decode'
-        else:
-            key_t, must_be, not_be, cod = text_t, 'bytes', 'string', 'encode'
+        key_t, must_be, not_be, cod = bytes, 'string', 'bytes', 'decode'
+
         if isinstance(key, key_t):
             raise MyMemcachedStringEncodingError(
                 f'Keys must be {must_be}, not {not_be}.  Convert your '

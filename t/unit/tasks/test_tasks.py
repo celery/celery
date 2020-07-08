@@ -92,6 +92,72 @@ class TasksCase:
 
         self.retry_task_noargs = retry_task_noargs
 
+        @self.app.task(bind=True, max_retries=3, iterations=0, shared=False)
+        def retry_task_return_without_throw(self, **kwargs):
+            self.iterations += 1
+            try:
+                if self.request.retries >= 3:
+                    return 42
+                else:
+                    raise Exception("random code exception")
+            except Exception as exc:
+                return self.retry(exc=exc, throw=False)
+
+        self.retry_task_return_without_throw = retry_task_return_without_throw
+
+        @self.app.task(bind=True, max_retries=3, iterations=0, shared=False)
+        def retry_task_return_with_throw(self, **kwargs):
+            self.iterations += 1
+            try:
+                if self.request.retries >= 3:
+                    return 42
+                else:
+                    raise Exception("random code exception")
+            except Exception as exc:
+                return self.retry(exc=exc, throw=True)
+
+        self.retry_task_return_with_throw = retry_task_return_with_throw
+
+        @self.app.task(bind=True, max_retries=3, iterations=0, shared=False, autoretry_for=(Exception,))
+        def retry_task_auto_retry_with_single_new_arg(self, ret=None, **kwargs):
+            if ret is None:
+                return self.retry(exc=Exception("I have filled now"), args=["test"], kwargs=kwargs)
+            else:
+                return ret
+
+        self.retry_task_auto_retry_with_single_new_arg = retry_task_auto_retry_with_single_new_arg
+
+        @self.app.task(bind=True, max_retries=3, iterations=0, shared=False)
+        def retry_task_auto_retry_with_new_args(self, ret=None, place_holder=None, **kwargs):
+            if ret is None:
+                return self.retry(args=[place_holder, place_holder], kwargs=kwargs)
+            else:
+                return ret
+
+        self.retry_task_auto_retry_with_new_args = retry_task_auto_retry_with_new_args
+
+        @self.app.task(bind=True, max_retries=3, iterations=0, shared=False, autoretry_for=(Exception,))
+        def retry_task_auto_retry_exception_with_new_args(self, ret=None, place_holder=None, **kwargs):
+            if ret is None:
+                return self.retry(exc=Exception("I have filled"), args=[place_holder, place_holder], kwargs=kwargs)
+            else:
+                return ret
+
+        self.retry_task_auto_retry_exception_with_new_args = retry_task_auto_retry_exception_with_new_args
+
+        @self.app.task(bind=True, max_retries=3, iterations=0, shared=False)
+        def retry_task_raise_without_throw(self, **kwargs):
+            self.iterations += 1
+            try:
+                if self.request.retries >= 3:
+                    return 42
+                else:
+                    raise Exception("random code exception")
+            except Exception as exc:
+                raise self.retry(exc=exc, throw=False)
+
+        self.retry_task_raise_without_throw = retry_task_raise_without_throw
+
         @self.app.task(bind=True, max_retries=3, iterations=0,
                        base=MockApplyTask, shared=False)
         def retry_task_mockapply(self, arg1, arg2, kwarg=1):
@@ -269,7 +335,12 @@ class TasksCase:
         def task_replaced_by_other_task(self):
             return self.replace(task_replacing_another_task.si())
 
+        @self.app.task(bind=True, autoretry_for=(Exception,))
+        def task_replaced_by_other_task_with_autoretry(self):
+            return self.replace(task_replacing_another_task.si())
+
         self.task_replaced_by_other_task = task_replaced_by_other_task
+        self.task_replaced_by_other_task_with_autoretry = task_replaced_by_other_task_with_autoretry
 
         # Remove all messages from memory-transport
         from kombu.transport.memory import Channel
@@ -343,6 +414,30 @@ class test_task_retries(TasksCase):
                 self.retry_task_mockapply.retry(args=[4, 4], kwargs=None)
         finally:
             self.retry_task_mockapply.pop_request()
+
+    def test_retry_without_throw_eager(self):
+        assert self.retry_task_return_without_throw.apply().get() == 42
+
+    def test_raise_without_throw_eager(self):
+        assert self.retry_task_raise_without_throw.apply().get() == 42
+
+    def test_return_with_throw_eager(self):
+        assert self.retry_task_return_with_throw.apply().get() == 42
+
+    def test_eager_retry_with_single_new_params(self):
+        assert self.retry_task_auto_retry_with_single_new_arg.apply().get() == "test"
+
+    def test_eager_retry_with_new_params(self):
+        assert self.retry_task_auto_retry_with_new_args.si(place_holder="test").apply().get() == "test"
+
+    def test_eager_retry_with_autoretry_for_exception(self):
+        assert self.retry_task_auto_retry_exception_with_new_args.si(place_holder="test").apply().get() == "test"
+
+    def test_retry_eager_should_return_value(self):
+        self.retry_task.max_retries = 3
+        self.retry_task.iterations = 0
+        assert self.retry_task.apply([0xFF, 0xFFFF]).get() == 0xFF
+        assert self.retry_task.iterations == 4
 
     def test_retry_not_eager(self):
         self.retry_task_mockapply.push_request()
@@ -928,6 +1023,10 @@ class test_tasks(TasksCase):
         with pytest.raises(Ignore):
             self.task_replaced_by_other_task.run()
 
+    def test_replace_run_with_autoretry(self):
+        with pytest.raises(Ignore):
+            self.task_replaced_by_other_task_with_autoretry.run()
+
     def test_replace_delay(self):
         res = self.task_replaced_by_other_task.delay()
         assert isinstance(res, AsyncResult)
@@ -1211,6 +1310,15 @@ class test_apply_async(TasksCase):
         task2.apply_async((1, 2, 3, 4, {1}))
 
     def test_always_eager_with_task_serializer_option(self):
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_serializer = 'pickle'
+
+        @self.app.task
+        def task(*args, **kwargs):
+            pass
+        task.apply_async((1, 2, 3, 4, {1}))
+
+    def test_always_eager_uses_task_serializer_setting(self):
         self.app.conf.task_always_eager = True
 
         @self.app.task(serializer='pickle')

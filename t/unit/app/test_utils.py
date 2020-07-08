@@ -1,6 +1,7 @@
 from collections.abc import Mapping, MutableMapping
 
 from case import Mock
+
 from celery.app.utils import Settings, bugreport, filter_hidden_settings
 
 

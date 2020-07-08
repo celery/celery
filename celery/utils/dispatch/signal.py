@@ -7,7 +7,7 @@ import weakref
 from kombu.utils.functional import retry_over_time
 
 from celery.exceptions import CDeprecationWarning
-from celery.five import PY3, range, text_t
+from celery.five import range, text_t
 from celery.local import PromiseProxy, Proxy
 from celery.utils.functional import fun_accepts_kwargs
 from celery.utils.log import get_logger
@@ -202,11 +202,8 @@ class Signal:  # pragma: no cover
 
         if weak:
             ref, receiver_object = _boundmethod_safe_weakref(receiver)
-            if PY3:
-                receiver = ref(receiver)
-                weakref.finalize(receiver_object, self._remove_receiver)
-            else:
-                receiver = ref(receiver, self._remove_receiver)
+            receiver = ref(receiver)
+            weakref.finalize(receiver_object, self._remove_receiver)
 
         with self.lock:
             self._clear_dead_receivers()

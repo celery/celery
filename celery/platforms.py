@@ -162,7 +162,7 @@ class Pidfile:
     def read_pid(self):
         """Read and return the current pid."""
         with ignore_errno('ENOENT'):
-            with open(self.path, 'r') as fh:
+            with open(self.path) as fh:
                 line = fh.readline()
                 if line.strip() == line:  # must contain '\n'
                     raise ValueError(
