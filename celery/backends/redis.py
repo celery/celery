@@ -129,6 +129,31 @@ class ResultConsumer(BaseResultConsumer):
                 logger.critical(E_RETRY_LIMIT_EXCEEDED)
                 raise
 
+    def _reconnect_pubsub(self):
+        self._pubsub = None
+        self.backend.client.connection_pool.reset()
+        # task state might have changed when the connection was down so we
+        # retrieve meta for all subscribed tasks before going into pubsub mode
+        metas = self.backend.client.mget(self.subscribed_to)
+        metas = [meta for meta in metas if meta]
+        for meta in metas:
+            self.on_state_change(self._decode_result(meta), None)
+        self._pubsub = self.backend.client.pubsub(
+            ignore_subscribe_messages=True,
+        )
+        self._pubsub.subscribe(*self.subscribed_to)
+
+    @contextmanager
+    def reconnect_on_error(self):
+        try:
+            yield
+        except self._connection_errors:
+            try:
+                self._ensure(self._reconnect_pubsub, ())
+            except self._connection_errors:
+                logger.critical(E_RETRY_LIMIT_EXCEEDED)
+                raise
+
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
             self.cancel_for(meta['task_id'])
