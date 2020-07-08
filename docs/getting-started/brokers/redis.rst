@@ -100,46 +100,6 @@ If you are using Sentinel, you should specify the master_name using the :setting
 Caveats
 =======
 
-.. _redis-caveat-fanout-prefix:
-
-Fanout prefix
--------------
-
-Broadcast messages will be seen by all virtual hosts by default.
-
-You have to set a transport option to prefix the messages so that
-they will only be received by the active virtual host:
-
-.. code-block:: python
-
-    app.conf.broker_transport_options = {'fanout_prefix': True}
-
-Note that you won't be able to communicate with workers running older
-versions or workers that doesn't have this setting enabled.
-
-This setting will be the default in the future, so better to migrate
-sooner rather than later.
-
-.. _redis-caveat-fanout-patterns:
-
-Fanout patterns
----------------
-
-Workers will receive all task related events by default.
-
-To avoid this you must set the ``fanout_patterns`` fanout option so that
-the workers may only subscribe to worker related events:
-
-.. code-block:: python
-
-    app.conf.broker_transport_options = {'fanout_patterns': True}
-
-Note that this change is backward incompatible so all workers in the
-cluster must have this option enabled, or else they won't be able to
-communicate.
-
-This option will be enabled by default in the future.
-
 Visibility timeout
 ------------------
 
