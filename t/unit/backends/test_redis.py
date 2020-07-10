@@ -117,14 +117,30 @@ class Redis(mock.MockCallbacks):
     def _get_sorted_set(self, key):
         return self.keyspace.setdefault(key, [])
 
-    def zadd(self, key, score, value):
-        self._get_sorted_set(key).append((float(score), value))
+    def zadd(self, key, mapping):
+        # Store elements as 2-tuples with the score first so we can sort it
+        # once the new items have been inserted
+        fake_sorted_set = self._get_sorted_set(key)
+        fake_sorted_set.extend(
+            (score, value) for value, score in mapping.items()
+        )
+        fake_sorted_set.sort()
 
-    def zrangebyscore(self, key, start, stop):
-        return list(sorted(self.keyspace.get(key, [])))[start:stop]
+    def zrange(self, key, start, stop):
+        # `stop` is inclusive in Redis so we use `stop + 1` unless that would
+        # cause us to move from negative (right-most) indicies to positive
+        stop = stop + 1 if stop != -1 else None
+        return [e[1] for e in self._get_sorted_set(key)[start:stop]]
 
-    def zcount(self, key, start, stop):
-        return len(self.zrangebyscore(key, start, stop))
+    def zrangebyscore(self, key, min_, max_):
+        return [
+            e[1] for e in self._get_sorted_set(key)
+            if (min_ == "-inf" or e[0] >= min_) and
+            (max_ == "+inf" or e[1] <= max_)
+        ]
+
+    def zcount(self, key, min_, max_):
+        return len(self.zrangebyscore(key, min_, max_))
 
 
 class Sentinel(mock.MockCallbacks):
