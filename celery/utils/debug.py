@@ -6,8 +6,8 @@ from contextlib import contextmanager
 from functools import partial
 from pprint import pprint
 
-from celery.five import WhateverIO, items, range
 from celery.platforms import signals
+from celery.utils.text import WhateverIO
 
 try:
     from psutil import Process
@@ -177,7 +177,7 @@ def cry(out=None, sepchr='=', seplen=49):  # pragma: no cover
     tmap = {t.ident: t for t in threading.enumerate()}
 
     sep = sepchr * seplen
-    for tid, frame in items(sys._current_frames()):
+    for tid, frame in sys._current_frames().items():
         thread = tmap.get(tid)
         if not thread:
             # skip old junk (left-overs from a fork)
