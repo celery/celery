@@ -4,8 +4,6 @@ from textwrap import dedent
 
 from kombu.utils.encoding import bytes_to_str, safe_str
 
-from celery.five import items
-
 __all__ = ('DOT', 'CycleError', 'DependencyGraph', 'GraphFormatter')
 
 
@@ -105,7 +103,7 @@ class DependencyGraph:
 
     def edges(self):
         """Return generator that yields for all edges in the graph."""
-        return (obj for obj, adj in items(self) if adj)
+        return (obj for obj, adj in self.items() if adj)
 
     def _khan62(self):
         """Perform Khan's simple topological sort algorithm from '62.
@@ -183,7 +181,7 @@ class DependencyGraph:
                 seen.add(draw.label(obj))
 
         P(draw.head())
-        for obj, adjacent in items(self):
+        for obj, adjacent in self.items():
             if not adjacent:
                 if_not_seen(draw.terminal_node, obj)
             for req in adjacent:
@@ -207,7 +205,7 @@ class DependencyGraph:
         return obj in self.adjacent
 
     def _iterate_items(self):
-        return items(self.adjacent)
+        return self.adjacent.items()
     items = iteritems = _iterate_items
 
     def __repr__(self):
@@ -267,7 +265,7 @@ class GraphFormatter:
     def attrs(self, d, scheme=None):
         d = dict(self.scheme, **dict(scheme, **d or {}) if scheme else d)
         return self._attrsep.join(
-            safe_str(self.attr(k, v)) for k, v in items(d)
+            safe_str(self.attr(k, v)) for k, v in d.items()
         )
 
     def head(self, **attrs):
