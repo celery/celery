@@ -10,7 +10,6 @@ from types import ModuleType
 from kombu.utils.url import maybe_sanitize_url
 
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items, keys, string_t, values
 from celery.platforms import pyimplementation
 from celery.utils.collections import ConfigurationView
 from celery.utils.imports import import_from_cwd, qualname, symbol_by_name
@@ -178,9 +177,9 @@ class Settings(ConfigurationView):
         filt = filter_hidden_settings if censored else lambda v: v
         dict_members = dir(dict)
         self.finalize()
+        settings = self if with_defaults else self.without_defaults()
         return filt({
-            k: v for k, v in items(
-                self if with_defaults else self.without_defaults())
+            k: v for k, v in settings.items()
             if not k.startswith('_') and k not in dict_members
         })
 
@@ -188,7 +187,7 @@ class Settings(ConfigurationView):
         """Return a human readable text showing configuration changes."""
         return '\n'.join(
             f'{key}: {pretty(value, width=50)}'
-            for key, value in items(self.table(with_defaults, censored)))
+            for key, value in self.table(with_defaults, censored).items())
 
 
 def _new_key_to_old(key, convert=_TO_OLD_KEY.get):
@@ -221,7 +220,7 @@ def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
     source = conf
     if conf is None:
         source, conf = preconf, {}
-    have = set(keys(source)) - ignore_keys
+    have = set(source.keys()) - ignore_keys
     is_in_new = have.intersection(all_keys)
     is_in_old = have.intersection(old_keys)
 
@@ -258,7 +257,7 @@ def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
             for key in sorted(really_left)
         )))
 
-    preconf = {info.convert.get(k, k): v for k, v in items(preconf)}
+    preconf = {info.convert.get(k, k): v for k, v in preconf.items()}
     defaults = dict(deepcopy(info.defaults), **preconf)
     return Settings(
         preconf, [conf, defaults],
@@ -310,7 +309,7 @@ def filter_hidden_settings(conf):
     def maybe_censor(key, value, mask='*' * 8):
         if isinstance(value, Mapping):
             return filter_hidden_settings(value)
-        if isinstance(key, string_t):
+        if isinstance(key, str):
             if HIDDEN_SETTINGS.search(key):
                 return mask
             elif 'broker_url' in key.lower():
@@ -321,7 +320,7 @@ def filter_hidden_settings(conf):
 
         return value
 
-    return {k: maybe_censor(k, v) for k, v in items(conf)}
+    return {k: maybe_censor(k, v) for k, v in conf.items()}
 
 
 def bugreport(app):
@@ -383,7 +382,7 @@ def find_app(app, symbol_by_name=symbol_by_name, imp=import_from_cwd):
                         )
                     except ImportError:
                         pass
-                for suspect in values(vars(sym)):
+                for suspect in vars(sym).values():
                     if isinstance(suspect, Celery):
                         return suspect
                 raise
