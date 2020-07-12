@@ -2,7 +2,6 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from collections.abc import Callable
 
-from celery.five import with_metaclass
 
 __all__ = ('CallableTask', 'CallableSignature')
 
@@ -11,8 +10,7 @@ def _hasattr(C, attr):
     return any(attr in B.__dict__ for B in C.__mro__)
 
 
-@with_metaclass(ABCMeta)
-class _AbstractClass:
+class _AbstractClass(metaclass=ABCMeta):
     __required_attributes__ = frozenset()
 
     @classmethod
