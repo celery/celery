@@ -853,7 +853,7 @@ class test_chord:
         j_key = backend.get_key_for_group(original_group_id, '.j')
         redis_connection = get_redis_connection()
         chord_results = [backend.decode(t) for t in
-                         redis_connection.lrange(j_key, 0, 3)]
+                         redis_connection.zrange(j_key, 0, 3)]
 
         # Validate group result
         assert [cr[3] for cr in chord_results if cr[2] == states.SUCCESS] == \
