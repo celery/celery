@@ -5,9 +5,7 @@ from time import sleep, time
 from kombu.utils.url import _parse_url as parse_url
 
 from celery.exceptions import ImproperlyConfigured
-from celery.five import string
 from celery.utils.log import get_logger
-
 from .base import KeyValueStoreBackend
 
 try:
@@ -477,14 +475,14 @@ class DynamoDBBackend(KeyValueStoreBackend):
         return self._get_client()
 
     def get(self, key):
-        key = string(key)
+        key = str(key)
         request_parameters = self._prepare_get_request(key)
         item_response = self.client.get_item(**request_parameters)
         item = self._item_to_dict(item_response)
         return item.get(self._value_field.name)
 
     def set(self, key, value):
-        key = string(key)
+        key = str(key)
         request_parameters = self._prepare_put_request(key, value)
         self.client.put_item(**request_parameters)
 
@@ -492,6 +490,6 @@ class DynamoDBBackend(KeyValueStoreBackend):
         return [self.get(key) for key in keys]
 
     def delete(self, key):
-        key = string(key)
+        key = str(key)
         request_parameters = self._prepare_get_request(key)
         self.client.delete_item(**request_parameters)
