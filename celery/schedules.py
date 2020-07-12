@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 from kombu.utils.objects import cached_property
 
 from . import current_app
-from .five import range, string_t
 from .utils.collections import AttributeDict
 from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware,
                          maybe_timedelta, remaining, timezone, weekday)
@@ -291,7 +290,7 @@ class crontab_parser:
         return list(range(self.min_, self.max_ + self.min_))
 
     def _expand_number(self, s):
-        if isinstance(s, string_t) and s[0] == '-':
+        if isinstance(s, str) and s[0] == '-':
             raise self.ParseException('negative numbers not supported')
         try:
             i = int(s)
@@ -434,7 +433,7 @@ class crontab(BaseSchedule):
         """
         if isinstance(cronspec, numbers.Integral):
             result = {cronspec}
-        elif isinstance(cronspec, string_t):
+        elif isinstance(cronspec, str):
             result = crontab_parser(max_, min_).parse(cronspec)
         elif isinstance(cronspec, set):
             result = cronspec
