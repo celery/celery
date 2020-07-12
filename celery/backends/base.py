@@ -5,16 +5,16 @@
 - :class:`KeyValueStoreBackend` is a common base class
     using K/V semantics like _get and _put.
 """
-from datetime import datetime, timedelta
-from future.utils import raise_with_traceback
 import sys
 import time
 import warnings
 from collections import namedtuple
+from datetime import datetime, timedelta
 from functools import partial
 from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
+from future.utils import raise_with_traceback
 from kombu.serialization import dumps, loads, prepare_accept_content
 from kombu.serialization import registry as serializer_registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
@@ -26,7 +26,6 @@ from celery._state import get_current_task
 from celery.exceptions import (ChordError, ImproperlyConfigured,
                                NotRegistered, TaskRevokedError, TimeoutError,
                                BackendGetMetaError, BackendStoreError)
-from celery.five import items
 from celery.result import (GroupResult, ResultBase, ResultSet,
                            allow_join_result, result_from_tuple)
 from celery.utils.collections import BufferMap
@@ -787,7 +786,7 @@ class BaseKeyValueStoreBackend(Backend):
             # client returns dict so mapping preserved.
             return {
                 self._strip_prefix(k): v
-                for k, v in self._filter_ready(items(values), READY_STATES)
+                for k, v in self._filter_ready(values.items(), READY_STATES)
             }
         else:
             # client returns list so need to recreate mapping.
@@ -821,7 +820,7 @@ class BaseKeyValueStoreBackend(Backend):
                                                  for k in keys]), keys, READY_STATES)
             cache.update(r)
             ids.difference_update({bytes_to_str(v) for v in r})
-            for key, value in items(r):
+            for key, value in r.items():
                 if on_message is not None:
                     on_message(value)
                 yield bytes_to_str(key), value
