@@ -5,7 +5,7 @@ import pytest
 from case import Mock, patch, skip
 
 from celery.contrib.rdb import Rdb, debugger, set_trace
-from celery.five import WhateverIO
+from celery.utils.text import WhateverIO
 
 
 class SockErr(socket.error):
