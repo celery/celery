@@ -19,7 +19,6 @@ from kombu.utils.encoding import safe_str
 from celery import VERSION_BANNER, platforms, signals
 from celery.app import trace
 from celery.exceptions import WorkerShutdown, WorkerTerminate
-from celery.five import string, string_t
 from celery.loaders.app import AppLoader
 from celery.platforms import EX_FAILURE, EX_OK, check_privileges, isatty
 from celery.utils import static, term
@@ -147,9 +146,9 @@ class Worker(WorkController):
         if use_image:
             print(term.imgcat(static.logo()))
         print(safe_str(''.join([
-            string(self.colored.cyan(
+            str(self.colored.cyan(
                 ' \n', self.startup_info(artlines=not use_image))),
-            string(self.colored.reset(self.extra_info() or '')),
+            str(self.colored.reset(self.extra_info() or '')),
         ])), file=sys.__stdout__)
 
     def on_consumer_ready(self, consumer):
@@ -186,7 +185,7 @@ class Worker(WorkController):
 
     def startup_info(self, artlines=True):
         app = self.app
-        concurrency = string(self.concurrency)
+        concurrency = str(self.concurrency)
         appr = '{}:{:#x}'.format(app.main or '__main__', id(app))
         if not isinstance(app.loader, AppLoader):
             loader = qualname(app.loader)
@@ -197,7 +196,7 @@ class Worker(WorkController):
             max, min = self.autoscale
             concurrency = f'{{min={min}, max={max}}}'
         pool = self.pool_cls
-        if not isinstance(pool, string_t):
+        if not isinstance(pool, str):
             pool = pool.__module__
         concurrency += f" ({pool.split('.')[-1]})"
         events = 'ON'
