@@ -1,7 +1,9 @@
 """Async I/O backend support utilities."""
 import socket
 import threading
+import time
 from collections import deque
+from queue import Empty
 from time import sleep
 from weakref import WeakKeyDictionary
 
@@ -9,7 +11,6 @@ from kombu.utils.compat import detect_environment
 
 from celery import states
 from celery.exceptions import TimeoutError
-from celery.five import Empty, monotonic
 from celery.utils.threads import THREAD_TIMEOUT_MAX
 
 __all__ = (
@@ -43,11 +44,11 @@ class Drainer:
 
     def drain_events_until(self, p, timeout=None, interval=1, on_interval=None, wait=None):
         wait = wait or self.result_consumer.drain_events
-        time_start = monotonic()
+        time_start = time.monotonic()
 
         while 1:
             # Total time spent may exceed a single call to wait()
-            if timeout and monotonic() - time_start >= timeout:
+            if timeout and time.monotonic() - time_start >= timeout:
                 raise socket.timeout()
             try:
                 yield self.wait_for(p, wait, timeout=interval)
