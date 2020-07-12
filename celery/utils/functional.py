@@ -1,14 +1,13 @@
 """Functional-style utilties."""
 import inspect
 import sys
+from collections import UserList
 from functools import partial
 from itertools import chain, islice
 
 from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
                                     maybe_evaluate, maybe_list, memoize)
 from vine import promise
-
-from celery.five import UserList, getfullargspec, range
 
 __all__ = (
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
@@ -268,7 +267,7 @@ def head_from_fun(fun, bound=False, debug=False):
         name = fun.__name__
     definition = FUNHEAD_TEMPLATE.format(
         fun_name=name,
-        fun_args=_argsfromspec(getfullargspec(fun)),
+        fun_args=_argsfromspec(inspect.getfullargspec(fun)),
         fun_value=1,
     )
     if debug:  # pragma: no cover
@@ -285,12 +284,12 @@ def head_from_fun(fun, bound=False, debug=False):
 
 
 def arity_greater(fun, n):
-    argspec = getfullargspec(fun)
+    argspec = inspect.getfullargspec(fun)
     return argspec.varargs or len(argspec.args) > n
 
 
 def fun_takes_argument(name, fun, position=None):
-    spec = getfullargspec(fun)
+    spec = inspect.getfullargspec(fun)
     return (
         spec.varkw or spec.varargs or
         (len(spec.args) >= position if position else name in spec.args)
