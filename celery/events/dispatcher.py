@@ -8,10 +8,8 @@ from collections import defaultdict, deque
 from kombu import Producer
 
 from celery.app import app_or_default
-from celery.five import items
 from celery.utils.nodenames import anon_nodename
 from celery.utils.time import utcoffset
-
 from .event import Event, get_exchange, group_from
 
 __all__ = ('EventDispatcher',)
@@ -209,7 +207,7 @@ class EventDispatcher:
                 self._outbound_buffer.clear()
         if groups:
             with self.mutex:
-                for group, events in items(self._group_buffer):
+                for group, events in self._group_buffer.items():
                     self._publish(events, self.producer, '%s.multi' % group)
                     events[:] = []  # list.clear
 
