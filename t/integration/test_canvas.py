@@ -8,7 +8,6 @@ from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
 from celery.exceptions import ChordError, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
-
 from .conftest import get_active_redis_channels, get_redis_connection
 from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     add_to_all, add_to_all_to_chord, build_chain_inside_task,
@@ -165,8 +164,6 @@ class test_chain:
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
     def test_group_chord_group_chain(self, manager):
-        from celery.five import bytes_if_py2
-
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
         redis_connection = get_redis_connection()
@@ -177,13 +174,9 @@ class test_chain:
 
         result = (before | connect | after).delay()
         result.get(timeout=TIMEOUT)
-        redis_messages = list(map(
-            bytes_if_py2,
-            redis_connection.lrange('redis-echo', 0, -1)
-        ))
-        before_items = \
-            set(map(bytes_if_py2, (b'before 0', b'before 1', b'before 2')))
-        after_items = set(map(bytes_if_py2, (b'after 0', b'after 1')))
+        redis_messages = list(redis_connection.lrange('redis-echo', 0, -1))
+        before_items = {b'before 0', b'before 1', b'before 2'}
+        after_items = {b'after 0', b'after 1'}
 
         assert set(redis_messages[:3]) == before_items
         assert redis_messages[3] == b'connect'
@@ -202,8 +195,6 @@ class test_chain:
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
     def test_second_order_replace(self, manager):
-        from celery.five import bytes_if_py2
-
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
@@ -212,10 +203,7 @@ class test_chain:
 
         result = second_order_replace1.delay()
         result.get(timeout=TIMEOUT)
-        redis_messages = list(map(
-            bytes_if_py2,
-            redis_connection.lrange('redis-echo', 0, -1)
-        ))
+        redis_messages = list(redis_connection.lrange('redis-echo', 0, -1))
 
         expected_messages = [b'In A', b'In B', b'In/Out C', b'Out B',
                              b'Out A']
