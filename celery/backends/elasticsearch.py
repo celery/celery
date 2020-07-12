@@ -6,6 +6,7 @@ from kombu.utils.url import _parse_url
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
+
 from .base import KeyValueStoreBackend
 
 try:

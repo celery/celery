@@ -10,6 +10,7 @@ from kombu import Producer
 from celery.app import app_or_default
 from celery.utils.nodenames import anon_nodename
 from celery.utils.time import utcoffset
+
 from .event import Event, get_exchange, group_from
 
 __all__ = ('EventDispatcher',)

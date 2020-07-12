@@ -13,15 +13,15 @@ try:
     from greenlet import getcurrent as get_ident
 except ImportError:  # pragma: no cover
     try:
-        from _thread import get_ident                   # noqa
+        from _thread import get_ident  # noqa
     except ImportError:
         try:
-            from thread import get_ident                # noqa
+            from thread import get_ident  # noqa
         except ImportError:  # pragma: no cover
             try:
-                from _dummy_thread import get_ident     # noqa
+                from _dummy_thread import get_ident  # noqa
             except ImportError:
-                from dummy_thread import get_ident      # noqa
+                from dummy_thread import get_ident  # noqa
 
 
 __all__ = (

@@ -96,7 +96,7 @@ class greenletDrainer(Drainer):
 class eventletDrainer(greenletDrainer):
 
     def spawn(self, func):
-        from eventlet import spawn, sleep
+        from eventlet import sleep, spawn
         g = spawn(func)
         sleep(0)
         return g
@@ -111,7 +111,7 @@ class eventletDrainer(greenletDrainer):
 class geventDrainer(greenletDrainer):
 
     def spawn(self, func):
-        from gevent import spawn, sleep
+        from gevent import sleep, spawn
         g = spawn(func)
         sleep(0)
         return g

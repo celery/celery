@@ -115,6 +115,7 @@ if C_BENCH:  # pragma: no cover
     from time import monotonic
 
     from billiard.process import current_process
+
     from celery.utils.debug import memdump, sample_mem
 
     all_count = 0

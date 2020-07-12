@@ -15,6 +15,7 @@ from celery.app import trace
 from celery.concurrency.base import BasePool
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
+
 from .asynpool import AsynPool
 
 __all__ = ('TaskPool', 'process_initializer', 'process_destructor')

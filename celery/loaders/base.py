@@ -164,7 +164,7 @@ class BaseLoader:
             'list': 'json',
             'dict': 'json'
         }
-        from celery.app.defaults import Option, NAMESPACES
+        from celery.app.defaults import NAMESPACES, Option
         namespace = namespace and namespace.lower()
         typemap = dict(Option.typemap, **extra_types)
 

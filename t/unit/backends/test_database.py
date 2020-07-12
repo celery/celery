@@ -14,12 +14,10 @@ except ImportError:
     DatabaseBackend = Task = TaskSet = retry = None  # noqa
     SessionManager = session_cleanup = None  # noqa
 else:
-    from celery.backends.database import (
-        DatabaseBackend, retry, session_cleanup,
-    )
-    from celery.backends.database import session
-    from celery.backends.database.session import SessionManager
+    from celery.backends.database import (DatabaseBackend, retry, session,
+                                          session_cleanup)
     from celery.backends.database.models import Task, TaskSet
+    from celery.backends.database.session import SessionManager
 
 
 class SomeClass:

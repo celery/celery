@@ -2,7 +2,6 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from collections.abc import Callable
 
-
 __all__ = ('CallableTask', 'CallableSignature')
 
 

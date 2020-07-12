@@ -25,6 +25,7 @@ from kombu.serialization import disable_insecure_serializers, registry
 from celery.exceptions import ImproperlyConfigured, SecurityError
 from celery.security import disable_untrusted_serializers, setup_security
 from celery.security.utils import reraise_errors
+
 from . import CERT1, KEY1
 from .case import SecurityCase
 

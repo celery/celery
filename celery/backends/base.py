@@ -23,9 +23,9 @@ from kombu.utils.url import maybe_sanitize_url
 import celery.exceptions
 from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
-from celery.exceptions import (ChordError, ImproperlyConfigured,
-                               NotRegistered, TaskRevokedError, TimeoutError,
-                               BackendGetMetaError, BackendStoreError)
+from celery.exceptions import (BackendGetMetaError, BackendStoreError,
+                               ChordError, ImproperlyConfigured,
+                               NotRegistered, TaskRevokedError, TimeoutError)
 from celery.result import (GroupResult, ResultBase, ResultSet,
                            allow_join_result, result_from_tuple)
 from celery.utils.collections import BufferMap

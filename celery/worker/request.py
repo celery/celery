@@ -6,7 +6,7 @@ how tasks are executed.
 import logging
 import sys
 from datetime import datetime
-from time import time, monotonic
+from time import monotonic, time
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
@@ -25,6 +25,7 @@ from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import get_pickled_exception
 from celery.utils.time import maybe_iso8601, maybe_make_aware, timezone
+
 from . import state
 
 __all__ = ('Request',)

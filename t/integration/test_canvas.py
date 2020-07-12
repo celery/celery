@@ -8,6 +8,7 @@ from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
 from celery.exceptions import ChordError, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
+
 from .conftest import get_active_redis_channels, get_redis_connection
 from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     add_to_all, add_to_all_to_chord, build_chain_inside_task,
@@ -796,9 +797,11 @@ class test_chord:
         assert parent_id is None
 
     def test_chord_on_error(self, manager):
-        from celery import states
-        from .tasks import ExpectedException
         import time
+
+        from celery import states
+
+        from .tasks import ExpectedException
 
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')

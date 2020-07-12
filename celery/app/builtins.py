@@ -166,7 +166,8 @@ def add_chain_task(app):
 @connect_on_app_finalize
 def add_chord_task(app):
     """No longer used, but here for backwards compatibility."""
-    from celery import group, chord as _chord
+    from celery import chord as _chord
+    from celery import group
     from celery.canvas import maybe_signature
 
     @app.task(name='celery.chord', bind=True, ignore_result=False,

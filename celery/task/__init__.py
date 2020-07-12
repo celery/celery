@@ -21,8 +21,9 @@ if STATICA_HACK:  # pragma: no cover
     # This is never executed, but tricks static analyzers (PyDev, PyCharm,
     # pylint, etc.) into knowing the types of these symbols, and what
     # they contain.
-    from celery.canvas import group, chord, subtask
-    from .base import BaseTask, Task, PeriodicTask, task, periodic_task
+    from celery.canvas import chord, group, subtask
+
+    from .base import BaseTask, PeriodicTask, Task, periodic_task, task
 
 
 class module(LazyModule):

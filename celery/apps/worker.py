@@ -347,7 +347,8 @@ def install_rdb_handler(envvar='CELERY_RDBSIG',
     def rdb_handler(*args):
         """Signal handler setting a rdb breakpoint at the current frame."""
         with in_sighandler():
-            from celery.contrib.rdb import set_trace, _frame
+            from celery.contrib.rdb import _frame, set_trace
+
             # gevent does not pass standard signal handler args
             frame = args[1] if args else _frame().f_back
             set_trace(frame)

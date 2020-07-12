@@ -4,7 +4,7 @@ import signal
 import socket
 import sys
 from datetime import datetime, timedelta
-from time import time, monotonic
+from time import monotonic, time
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -232,8 +232,8 @@ class test_Request(RequestCase):
             self.add.s(**kwargs)).kwargs == kwargs
 
     def test_info_function(self):
-        import string
         import random
+        import string
         kwargs = {}
         for i in range(0, 2):
             kwargs[str(i)] = ''.join(random.choice(string.ascii_lowercase) for i in range(1000))

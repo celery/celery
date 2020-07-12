@@ -11,6 +11,7 @@ from kombu.exceptions import ContentDisallowed, DecodeError
 from celery import bootsteps
 from celery.utils.log import get_logger
 from celery.utils.objects import Bunch
+
 from .mingle import Mingle
 
 __all__ = ('Gossip',)

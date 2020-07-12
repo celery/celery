@@ -18,7 +18,7 @@ import os
 import select
 import sys
 import time
-from collections import deque, namedtuple, Counter
+from collections import Counter, deque, namedtuple
 from io import BytesIO
 from numbers import Integral
 from pickle import HIGHEST_PROTOCOL

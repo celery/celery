@@ -38,7 +38,8 @@ from celery.app.task import BaseTask
 try:  # pragma: no cover
     from inspect import formatargspec, getfullargspec
 except ImportError:  # Py2
-    from inspect import formatargspec, getargspec as getfullargspec  # noqa
+    from inspect import formatargspec
+    from inspect import getargspec as getfullargspec  # noqa
 
 
 class TaskDocumenter(FunctionDocumenter):

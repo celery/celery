@@ -21,8 +21,9 @@ class test_AAPickle:
         prev = sys.modules.pop('celery.utils.serialization', None)
         try:
             with mock.mask_modules('cPickle'):
-                from celery.utils.serialization import pickle
                 import pickle as orig_pickle
+
+                from celery.utils.serialization import pickle
                 assert pickle.dumps is orig_pickle.dumps
         finally:
             sys.modules['celery.utils.serialization'] = prev

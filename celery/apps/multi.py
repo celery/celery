@@ -4,7 +4,7 @@ import os
 import shlex
 import signal
 import sys
-from collections import OrderedDict, defaultdict, UserList
+from collections import OrderedDict, UserList, defaultdict
 from functools import partial
 from subprocess import Popen
 from time import sleep

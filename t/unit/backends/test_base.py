@@ -11,8 +11,8 @@ from celery import chord, group, signature, states, uuid
 from celery.app.task import Context, Task
 from celery.backends.base import (BaseBackend, DisabledBackend,
                                   KeyValueStoreBackend, _nulldict)
-from celery.exceptions import ChordError, TimeoutError, BackendStoreError, \
-    BackendGetMetaError
+from celery.exceptions import (BackendGetMetaError, BackendStoreError,
+                               ChordError, TimeoutError)
 from celery.result import result_from_tuple
 from celery.utils import serialization
 from celery.utils.functional import pass1

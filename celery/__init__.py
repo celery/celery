@@ -65,16 +65,15 @@ if os.environ.get('C_IMPDEBUG'):  # pragma: no cover
 STATICA_HACK = True
 globals()['kcah_acitats'[::-1].upper()] = False
 if STATICA_HACK:  # pragma: no cover
-    from celery.app import shared_task                   # noqa
-    from celery.app.base import Celery                   # noqa
-    from celery.app.utils import bugreport               # noqa
-    from celery.app.task import Task                     # noqa
     from celery._state import current_app, current_task  # noqa
-    from celery.canvas import (                          # noqa
-        chain, chord, chunks, group,
-        signature, maybe_signature, xmap, xstarmap, subtask,
-    )
-    from celery.utils import uuid                        # noqa
+    from celery.app import shared_task  # noqa
+    from celery.app.base import Celery  # noqa
+    from celery.app.task import Task  # noqa
+    from celery.app.utils import bugreport  # noqa
+    from celery.canvas import (chain, chord, chunks, group,  # noqa
+                               maybe_signature, signature, subtask, xmap,
+                               xstarmap)
+    from celery.utils import uuid  # noqa
 
 # Eventlet/gevent patching must happen before importing
 # anything else, so these tools must be at top-level.
@@ -110,7 +109,8 @@ def _patch_eventlet():
 
 def _patch_gevent():
     import gevent
-    from gevent import monkey, signal as gevent_signal
+    from gevent import monkey
+    from gevent import signal as gevent_signal
 
     monkey.patch_all()
     if gevent.version_info[0] == 0:  # pragma: no cover

@@ -8,7 +8,7 @@ from celery.utils.log import get_logger
 from .base import KeyValueStoreBackend
 
 try:
-    import azure.storage as azurestorage
+    from azure import storage as azurestorage
     from azure.common import AzureMissingResourceHttpError
     from azure.storage.blob import BlockBlobService
     from azure.storage.common.retry import ExponentialRetry

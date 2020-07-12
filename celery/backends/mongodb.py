@@ -7,6 +7,7 @@ from kombu.utils.url import maybe_sanitize_url, urlparse
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
+
 from .base import BaseBackend
 
 try:
@@ -18,7 +19,7 @@ if pymongo:
     try:
         from bson.binary import Binary
     except ImportError:                     # pragma: no cover
-        from pymongo.binary import Binary   # noqa
+        from pymongo.binary import Binary  # noqa
     from pymongo.errors import InvalidDocument  # noqa
 else:                                       # pragma: no cover
     Binary = None                           # noqa

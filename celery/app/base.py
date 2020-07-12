@@ -2,7 +2,7 @@
 import os
 import threading
 import warnings
-from collections import defaultdict, deque, UserDict
+from collections import UserDict, defaultdict, deque
 from datetime import datetime
 from operator import attrgetter
 
@@ -20,8 +20,8 @@ from celery._state import (_announce_app_finalized, _deregister_app,
                            _register_app, _set_current_app, _task_stack,
                            connect_on_app_finalize, get_current_app,
                            get_current_worker_task, set_default_app)
-from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured, \
-    Ignore, Retry
+from celery.exceptions import (AlwaysEagerIgnored, Ignore,
+                               ImproperlyConfigured, Retry)
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
@@ -33,9 +33,10 @@ from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
 from celery.utils.time import (get_exponential_backoff_interval, timezone,
                                to_utc)
-from . import backends
+
 # Load all builtin tasks
 from . import builtins  # noqa
+from . import backends
 from .annotations import prepare as prepare_annotations
 from .defaults import DEFAULT_SECURITY_DIGEST, find_deprecated_settings
 from .registry import TaskRegistry

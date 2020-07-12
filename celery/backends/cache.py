@@ -4,6 +4,7 @@ from kombu.utils.objects import cached_property
 
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.functional import LRUCache
+
 from .base import KeyValueStoreBackend
 
 __all__ = ('CacheBackend',)

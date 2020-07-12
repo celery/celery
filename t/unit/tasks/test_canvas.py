@@ -439,8 +439,7 @@ class test_chain(CanvasCase):
 
     def test_chain_always_eager(self):
         self.app.conf.task_always_eager = True
-        from celery import _state
-        from celery import result
+        from celery import _state, result
 
         fixture_task_join_will_block = _state.task_join_will_block
         try:
@@ -782,8 +781,7 @@ class test_chord(CanvasCase):
 
     def test_chain_always_eager(self):
         self.app.conf.task_always_eager = True
-        from celery import _state
-        from celery import result
+        from celery import _state, result
 
         fixture_task_join_will_block = _state.task_join_will_block
         try:

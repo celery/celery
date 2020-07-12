@@ -1,7 +1,7 @@
 """Worker remote control command implementations."""
 import io
 import tempfile
-from collections import namedtuple, UserDict
+from collections import UserDict, namedtuple
 
 from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr
@@ -12,6 +12,7 @@ from celery.utils.functional import maybe_list
 from celery.utils.log import get_logger
 from celery.utils.serialization import jsonify, strtobool
 from celery.utils.time import rate
+
 from . import state as worker_state
 from .request import Request
 

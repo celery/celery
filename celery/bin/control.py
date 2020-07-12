@@ -148,6 +148,7 @@ class _RemoteControl(Command):
     @classmethod
     def _choices_by_group(cls, app):
         from celery.worker.control import Panel
+
         # need to import task modules for custom user-remote control commands.
         app.loader.import_default_modules()
 

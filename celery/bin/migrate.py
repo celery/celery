@@ -56,6 +56,7 @@ class migrate(Command):
 
     def run(self, source, destination, **kwargs):
         from kombu import Connection
+
         from celery.contrib.migrate import migrate_tasks
 
         migrate_tasks(Connection(source),

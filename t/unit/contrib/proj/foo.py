@@ -1,5 +1,6 @@
-from celery import Celery, shared_task
 from xyzzy import plugh  # noqa
+
+from celery import Celery, shared_task
 
 app = Celery()
 

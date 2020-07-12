@@ -18,8 +18,9 @@ def TaskMessage(name, id=None, args=(), kwargs=None, callbacks=None,
     #        str, bool, **Any) -> Any
     """Create task message in protocol 2 format."""
     kwargs = {} if not kwargs else kwargs
-    from celery import uuid
     from kombu.serialization import dumps
+
+    from celery import uuid
     id = id or uuid()
     message = Mock(name=f'TaskMessage-{id}')
     message.headers = {
@@ -42,8 +43,9 @@ def TaskMessage1(name, id=None, args=(), kwargs=None, callbacks=None,
     #        Sequence[Signature], Sequence[Signature]) -> Any
     """Create task message in protocol 1 format."""
     kwargs = {} if not kwargs else kwargs
-    from celery import uuid
     from kombu.serialization import dumps
+
+    from celery import uuid
     id = id or uuid()
     message = Mock(name=f'TaskMessage-{id}')
     message.headers = {}

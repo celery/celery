@@ -10,6 +10,7 @@ from celery import states
 from celery.exceptions import TimeoutError
 from celery.utils import deprecated
 from celery.utils.log import get_logger
+
 from .base import BaseBackend
 
 __all__ = ('BacklogLimitExceeded', 'AMQPBackend')
