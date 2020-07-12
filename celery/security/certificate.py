@@ -9,8 +9,6 @@ from cryptography.x509 import load_pem_x509_certificate
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 
 from celery.exceptions import SecurityError
-from celery.five import values
-
 from .utils import reraise_errors
 
 __all__ = ('Certificate', 'CertStore', 'FSCertStore')
@@ -66,7 +64,7 @@ class CertStore:
 
     def itercerts(self):
         """Return certificate iterator."""
-        yield from values(self._certs)
+        yield from self._certs.values()
 
     def __getitem__(self, id):
         """Get certificate by id."""
