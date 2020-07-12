@@ -1,9 +1,8 @@
 import sys
 
 import pytest
-from case import Mock, skip
+from case import Mock
 
-from celery.five import string
 from celery.local import PromiseProxy, Proxy, maybe_evaluate, try_import
 
 
@@ -73,24 +72,6 @@ class test_Proxy:
         x = Proxy(X)
         with pytest.raises(AttributeError):
             x.__dict__
-
-    @skip.if_python3()
-    def test_unicode(self):
-
-        class X:
-
-            def __unicode__(self):
-                return 'UNICODE'
-            __str__ = __unicode__
-
-            def __repr__(self):
-                return 'REPR'
-
-        x = Proxy(lambda: X())
-        assert string(x) == 'UNICODE'
-        del(X.__unicode__)
-        del(X.__str__)
-        assert string(x) == 'REPR'
 
     def test_dir(self):
 

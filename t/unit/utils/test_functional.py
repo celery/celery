@@ -1,8 +1,6 @@
 import pytest
-from case import skip
 from kombu.utils.functional import lazy
 
-from celery.five import nextfun, range
 from celery.utils.functional import (DummyContext, first, firstmethod,
                                      fun_accepts_kwargs, fun_takes_argument,
                                      head_from_fun, maybe_list, mlazy,
@@ -76,7 +74,7 @@ def test_maybe_list():
 
 def test_mlazy():
     it = iter(range(20, 30))
-    p = mlazy(nextfun(it))
+    p = mlazy(it.__next__)
     assert p() == 20
     assert p.evaluated
     assert p() == 20
@@ -153,7 +151,7 @@ class test_head_from_fun:
         g(1, 2)
         g(1, 2, kwarg=3)
 
-    @skip.unless_python3()
+
     def test_regression_3678(self):
         local = {}
         fun = ('def f(foo, *args, bar="", **kwargs):'
@@ -166,7 +164,7 @@ class test_head_from_fun:
         with pytest.raises(TypeError):
             g(bar=100)
 
-    @skip.unless_python3()
+
     def test_from_fun_with_hints(self):
         local = {}
         fun = ('def f_hints(x: int, y: int, kwarg: int=1):'
@@ -180,7 +178,7 @@ class test_head_from_fun:
         g(1, 2)
         g(1, 2, kwarg=3)
 
-    @skip.unless_python3()
+
     def test_from_fun_forced_kwargs(self):
         local = {}
         fun = ('def f_kwargs(*, a, b="b", c=None):'

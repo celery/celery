@@ -5,7 +5,7 @@ from datetime import date, datetime, time, timedelta
 
 import pytest
 import pytz
-from case import Mock, mock, skip
+from case import Mock, mock
 from kombu import Queue
 
 from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE,
@@ -30,15 +30,9 @@ class test_AAPickle:
 
 class test_ensure_serializable:
 
-    @skip.unless_python3()
+
     def test_json_py3(self):
         expected = (1, "<class 'object'>")
-        actual = ensure_serializable([1, object], encoder=json.dumps)
-        assert expected == actual
-
-    @skip.if_python3()
-    def test_json_py2(self):
-        expected = (1, "<type 'object'>")
         actual = ensure_serializable([1, object], encoder=json.dumps)
         assert expected == actual
 
