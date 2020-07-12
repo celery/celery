@@ -6,6 +6,7 @@ errors are recorded, handlers are applied and so on.
 import logging
 import os
 import sys
+import time
 from collections import namedtuple
 from warnings import warn
 
@@ -20,7 +21,6 @@ from celery._state import _task_stack
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
 from celery.exceptions import Ignore, InvalidTaskError, Reject, Retry
-from celery.five import monotonic, text_t
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import mro_lookup
@@ -193,7 +193,7 @@ class TraceInfo:
             info(LOG_RETRY, {
                 'id': req.id,
                 'name': get_task_name(req, task.name),
-                'exc': text_t(reason),
+                'exc': str(reason),
             })
             return einfo
         finally:
@@ -282,7 +282,7 @@ def traceback_clear(exc=None):
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                  Info=TraceInfo, eager=False, propagate=False, app=None,
-                 monotonic=monotonic, trace_ok_t=trace_ok_t,
+                 monotonic=time.monotonic, trace_ok_t=trace_ok_t,
                  IGNORE_STATES=IGNORE_STATES):
     """Return a function that traces task execution.
 
