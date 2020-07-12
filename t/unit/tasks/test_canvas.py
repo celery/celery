@@ -776,6 +776,23 @@ class test_chord(CanvasCase):
         x.kwargs['body'] = None
         assert 'without body' in repr(x)
 
+    def test_freeze_tasks_body_is_group(self):
+        # Confirm that `group index` is passed from a chord to elements of its
+        # body when the chord itself is encapsulated in a group
+        body_elem = self.add.s()
+        chord_body = group([body_elem])
+        chord_obj = chord(self.add.s(), body=chord_body)
+        top_group = group([chord_obj])
+        # We expect the body to be the signature we passed in before we freeze
+        (embedded_body_elem, ) = chord_obj.body.tasks
+        assert embedded_body_elem is body_elem
+        assert embedded_body_elem.options == dict()
+        # When we freeze the chord, its body will be clones and options set
+        top_group.freeze()
+        (embedded_body_elem, ) = chord_obj.body.tasks
+        assert embedded_body_elem is not body_elem
+        assert embedded_body_elem.options["group_index"] == 0   # 0th task
+
     def test_freeze_tasks_is_not_group(self):
         x = chord([self.add.s(2, 2)], body=self.add.s(), app=self.app)
         x.freeze()
