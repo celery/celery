@@ -51,7 +51,13 @@ class RouteCase:
         self.mytask = mytask
 
     def assert_routes_to_queue(self, queue, router, name,
-                               args=[], kwargs={}, options={}):
+                               args=None, kwargs=None, options=None):
+        if options is None:
+            options = {}
+        if kwargs is None:
+            kwargs = {}
+        if args is None:
+            args = []
         assert router.route(options, name, args, kwargs)['queue'].name == queue
 
     def assert_routes_to_default_queue(self, router, name, *args, **kwargs):
