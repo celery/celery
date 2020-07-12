@@ -3,7 +3,6 @@ import sys
 from collections import deque, namedtuple
 from datetime import timedelta
 
-from celery.five import items, keys
 from celery.utils.functional import memoize
 from celery.utils.serialization import strtobool
 
@@ -40,7 +39,7 @@ searchresult = namedtuple('searchresult', ('namespace', 'key', 'type'))
 
 def Namespace(__old__=None, **options):
     if __old__ is not None:
-        for key, opt in items(options):
+        for key, opt in options.items():
             if not opt.old:
                 opt.old = {o.format(key) for o in __old__}
     return options
@@ -63,7 +62,7 @@ class Option:
     def __init__(self, default=None, *args, **kwargs):
         self.default = default
         self.type = kwargs.get('type') or 'string'
-        for attr, value in items(kwargs):
+        for attr, value in kwargs.items():
             setattr(self, attr, value)
 
     def to_python(self, value):
@@ -360,7 +359,7 @@ def flatten(d, root='', keyfilter=_flatten_keys):
     stack = deque([(root, d)])
     while stack:
         ns, options = stack.popleft()
-        for key, opt in items(options):
+        for key, opt in options.items():
             if isinstance(opt, dict):
                 stack.append((ns + key + '_', opt))
             else:
@@ -376,8 +375,8 @@ _TO_OLD_KEY = {new_key: old_key for old_key, new_key, _ in __compat}
 _TO_NEW_KEY = {old_key: new_key for old_key, new_key, _ in __compat}
 __compat = None
 
-SETTING_KEYS = set(keys(DEFAULTS))
-_OLD_SETTING_KEYS = set(keys(_TO_NEW_KEY))
+SETTING_KEYS = set(DEFAULTS.keys())
+_OLD_SETTING_KEYS = set(_TO_NEW_KEY.keys())
 
 
 def find_deprecated_settings(source):  # pragma: no cover
@@ -402,7 +401,7 @@ def find(name, namespace='celery'):
         )
     except KeyError:
         # - Try all the other namespaces.
-        for ns, opts in items(NAMESPACES):
+        for ns, opts in NAMESPACES.items():
             if ns.lower() == name.lower():
                 return searchresult(None, ns, opts)
             elif isinstance(opts, dict):
