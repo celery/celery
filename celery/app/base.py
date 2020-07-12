@@ -2,7 +2,7 @@
 import os
 import threading
 import warnings
-from collections import defaultdict, deque
+from collections import defaultdict, deque, UserDict
 from datetime import datetime
 from operator import attrgetter
 
@@ -20,8 +20,8 @@ from celery._state import (_announce_app_finalized, _deregister_app,
                            _register_app, _set_current_app, _task_stack,
                            connect_on_app_finalize, get_current_app,
                            get_current_worker_task, set_default_app)
-from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured, Ignore, Retry
-from celery.five import UserDict, bytes_if_py2, values
+from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured, \
+    Ignore, Retry
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
@@ -33,10 +33,9 @@ from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
 from celery.utils.time import (get_exponential_backoff_interval, timezone,
                                to_utc)
-
+from . import backends
 # Load all builtin tasks
 from . import builtins  # noqa
-from . import backends
 from .annotations import prepare as prepare_annotations
 from .defaults import DEFAULT_SECURITY_DIGEST, find_deprecated_settings
 from .registry import TaskRegistry
@@ -541,7 +540,7 @@ class Celery:
                 while pending:
                     maybe_evaluate(pending.popleft())
 
-                for task in values(self._tasks):
+                for task in self._tasks.values():
                     task.bind(self)
 
                 self.on_after_finalize.send(sender=self)
@@ -1068,7 +1067,7 @@ class Celery:
         if not keep_reduce:
             attrs['__reduce__'] = __reduce__
 
-        return type(bytes_if_py2(name or Class.__name__), (Class,), attrs)
+        return type(name or Class.__name__, (Class,), attrs)
 
     def _rgetattr(self, path):
         return attrgetter(path)(self)
