@@ -20,7 +20,6 @@ from kombu.utils.functional import maybe_evaluate, reprcall
 from kombu.utils.objects import cached_property
 
 from . import __version__, platforms, signals
-from .five import items, monotonic, reraise, values
 from .schedules import crontab, maybe_schedule
 from .utils.imports import load_extension_class_names, symbol_by_name
 from .utils.log import get_logger, iter_open_logger_fds
@@ -160,7 +159,7 @@ class ScheduleEntry:
         return self.schedule.is_due(self.last_run_at)
 
     def __iter__(self):
-        return iter(items(vars(self)))
+        return iter(vars(self).items())
 
     def __repr__(self):
         return '<{name}: {0.name} {call} {0.schedule}'.format(
@@ -295,7 +294,7 @@ class Scheduler:
         """Populate the heap with the data contained in the schedule."""
         priority = 5
         self._heap = []
-        for entry in values(self.schedule):
+        for entry in self.schedule.values():
             is_due, next_call_delay = entry.is_due()
             self._heap.append(event_t(
                 self._when(
@@ -363,7 +362,7 @@ class Scheduler:
     def should_sync(self):
         return (
             (not self._last_sync or
-             (monotonic() - self._last_sync) > self.sync_every) or
+             (time.monotonic() - self._last_sync) > self.sync_every) or
             (self.sync_every_tasks and
              self._tasks_since_sync >= self.sync_every_tasks)
         )
@@ -391,9 +390,9 @@ class Scheduler:
                                       producer=producer,
                                       **entry.options)
         except Exception as exc:  # pylint: disable=broad-except
-            reraise(SchedulingError, SchedulingError(
+            raise SchedulingError(
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
-                    entry, exc=exc)), sys.exc_info()[2])
+                    entry, exc=exc)) from exc
         finally:
             self._tasks_since_sync += 1
             if self.should_sync():
@@ -411,7 +410,7 @@ class Scheduler:
             debug('beat: Synchronizing schedule...')
             self.sync()
         finally:
-            self._last_sync = monotonic()
+            self._last_sync = time.monotonic()
             self._tasks_since_sync = 0
 
     def sync(self):
@@ -434,7 +433,7 @@ class Scheduler:
     def update_from_dict(self, dict_):
         self.schedule.update({
             name: self._maybe_entry(name, entry)
-            for name, entry in items(dict_)
+            for name, entry in dict_.items()
         })
 
     def merge_inplace(self, b):
@@ -546,7 +545,7 @@ class PersistentScheduler(Scheduler):
         })
         self.sync()
         debug('Current schedule:\n' + '\n'.join(
-            repr(entry) for entry in values(entries)))
+            repr(entry) for entry in entries.values()))
 
     def _create_schedule(self):
         for _ in (1, 2):
