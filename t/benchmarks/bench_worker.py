@@ -4,7 +4,6 @@ import sys
 from kombu.five import monotonic  # noqa
 
 from celery import Celery  # noqa
-from celery.five import range  # noqa
 
 os.environ.update(
     NOSETPS='yes',
