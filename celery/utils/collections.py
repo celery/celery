@@ -1,13 +1,14 @@
 """Custom maps, sets, sequences, and other data structures."""
 import sys
+import time
 from collections import OrderedDict as _OrderedDict
 from collections import deque
 from collections.abc import (Callable, Mapping, MutableMapping, MutableSet,
                              Sequence)
 from heapq import heapify, heappop, heappush
 from itertools import chain, count
+from queue import Empty
 
-from celery.five import Empty, items, keys, monotonic, values
 from .functional import first, uniq
 from .text import match_case
 
@@ -51,7 +52,7 @@ def lpmerge(L, R):
     Keeps values from `L`, if the value in `R` is :const:`None`.
     """
     setitem = L.__setitem__
-    [setitem(k, v) for k, v in items(R) if v is not None]
+    [setitem(k, v) for k, v in R.items() if v is not None]
     return L
 
 
@@ -62,7 +63,7 @@ class OrderedDict(_OrderedDict):
         # type: () -> Any
         # return value of od.keys does not support __next__,
         # but this version will also not create a copy of the list.
-        return next(iter(keys(self)))
+        return next(iter(self.keys()))
 
     if not hasattr(_OrderedDict, 'move_to_end'):
         if _dict_is_ordered:  # pragma: no cover
@@ -513,7 +514,7 @@ class LimitedSet:
         False
         >>> len(s)  # maxlen is reached
         50000
-        >>> s.purge(now=monotonic() + 7200)  # clock + 2 hours
+        >>> s.purge(now=time.monotonic() + 7200)  # clock + 2 hours
         >>> len(s)  # now only minlen items are cached
         4000
         >>>> 57000 in s  # even this item is gone now
@@ -543,7 +544,7 @@ class LimitedSet:
     def _refresh_heap(self):
         # type: () -> None
         """Time consuming recreating of heap.  Don't run this too often."""
-        self._heap[:] = [entry for entry in values(self._data)]
+        self._heap[:] = [entry for entry in self._data.values()]
         heapify(self._heap)
 
     def _maybe_refresh_heap(self):
@@ -560,7 +561,7 @@ class LimitedSet:
     def add(self, item, now=None):
         # type: (Any, float) -> None
         """Add a new item, or reset the expiry time of an existing item."""
-        now = now or monotonic()
+        now = now or time.monotonic()
         if item in self._data:
             self.discard(item)
         entry = (now, item)
@@ -580,7 +581,7 @@ class LimitedSet:
             self.purge()
         elif isinstance(other, dict):
             # revokes are sent as a dict
-            for key, inserted in items(other):
+            for key, inserted in other.items():
                 if isinstance(inserted, (tuple, list)):
                     # in case someone uses ._data directly for sending update
                     inserted = inserted[0]
@@ -610,7 +611,7 @@ class LimitedSet:
             now (float): Time of purging -- by default right now.
                 This can be useful for unit testing.
         """
-        now = now or monotonic()
+        now = now or time.monotonic()
         now = now() if isinstance(now, Callable) else now
         if self.maxlen:
             while len(self._data) > self.maxlen:
@@ -650,7 +651,7 @@ class LimitedSet:
             >>> r == s
             True
         """
-        return {key: inserted for inserted, key in values(self._data)}
+        return {key: inserted for inserted, key in self._data.values()}
 
     def __eq__(self, other):
         # type: (Any) -> bool
@@ -668,7 +669,7 @@ class LimitedSet:
 
     def __iter__(self):
         # type: () -> Iterable
-        return (i for _, i in sorted(values(self._data)))
+        return (i for _, i in sorted(self._data.values()))
 
     def __len__(self):
         # type: () -> int
@@ -816,7 +817,7 @@ class BufferMap(OrderedDict, Evictable):
         self.bufmaxsize = 1000
         if iterable:
             self.update(iterable)
-        self.total = sum(len(buf) for buf in items(self))
+        self.total = sum(len(buf) for buf in self.items())
 
     def put(self, key, item):
         # type: (Any, Any) -> None
