@@ -5,7 +5,6 @@ from kombu.utils.functional import maybe_evaluate
 
 from celery.app import routes
 from celery.exceptions import QueueNotFound
-from celery.five import items
 from celery.utils.imports import qualname
 
 
@@ -77,7 +76,7 @@ class test_MapRoute(RouteCase):
         expand = E(self.app, self.app.amqp.queues)
         route = routes.MapRoute({self.mytask.name: self.b_queue})
         eroute = expand(route(self.mytask.name))
-        for key, value in items(self.b_queue):
+        for key, value in self.b_queue.items():
             assert eroute[key] == value
         assert route('celery.awesome') is None
 
