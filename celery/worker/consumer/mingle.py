@@ -1,6 +1,5 @@
 """Worker <-> Worker Sync at startup (Bootstep)."""
 from celery import bootsteps
-from celery.five import items
 from celery.utils.log import get_logger
 
 from .events import Events
@@ -42,9 +41,9 @@ class Mingle(bootsteps.StartStopStep):
         replies = self.send_hello(c)
         if replies:
             info('mingle: sync with %s nodes',
-                 len([reply for reply, value in items(replies) if value]))
+                 len([reply for reply, value in replies.items() if value]))
             [self.on_node_reply(c, nodename, reply)
-             for nodename, reply in items(replies) if reply]
+             for nodename, reply in replies.items() if reply]
             info('mingle: sync complete')
         else:
             info('mingle: all alone')
