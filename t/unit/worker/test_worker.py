@@ -4,6 +4,7 @@ import sys
 from collections import deque
 from datetime import datetime, timedelta
 from functools import partial
+from queue import Empty, Queue as FastQueue
 from threading import Event
 
 import pytest
@@ -21,9 +22,6 @@ from celery.concurrency.base import BasePool
 from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
                                TaskRevokedError, WorkerShutdown,
                                WorkerTerminate)
-from celery.five import Empty
-from celery.five import Queue as FastQueue
-from celery.five import range
 from celery.platforms import EX_FAILURE
 from celery.utils.nodenames import worker_direct
 from celery.utils.serialization import pickle

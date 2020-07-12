@@ -2,13 +2,13 @@ import socket
 import sys
 from collections import defaultdict
 from datetime import datetime, timedelta
+from queue import Queue as FastQueue
 
 import pytest
 from case import Mock, call, patch
 from kombu import pidbox
 from kombu.utils.uuid import uuid
 
-from celery.five import Queue as FastQueue
 from celery.utils.collections import AttributeDict
 from celery.utils.timer2 import Timer
 from celery.worker import WorkController as _WC  # noqa

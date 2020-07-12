@@ -4,7 +4,7 @@ import signal
 import socket
 import sys
 from datetime import datetime, timedelta
-from time import time
+from time import time, monotonic
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -20,7 +20,6 @@ from celery.app.trace import (TraceInfo, _trace_task_ret, build_tracer,
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated, WorkerLostError)
-from celery.five import monotonic
 from celery.signals import task_revoked
 from celery.worker import request as module
 from celery.worker import strategy
