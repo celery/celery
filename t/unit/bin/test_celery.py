@@ -16,6 +16,13 @@ from celery.five import WhateverIO
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
 
 
+class MyApp(object):
+    user_options = {'preload': None}
+
+
+APP = MyApp()  # <-- Used by test_short_and_long_arguments_be_the_same
+
+
 class test__main__:
 
     def test_main(self):
@@ -203,6 +210,17 @@ class test_CeleryCommand:
 
         x.handle_argv('celery', ['start', 'foo'])
         x.execute.assert_called_with('start', ['start', 'foo'])
+
+    def test_short_and_long_arguments_be_the_same(self):
+        for arg in "--app", "-A":
+            appstr = '.'.join([__name__, 'APP'])
+            x = CeleryCommand(app=self.app)
+            x.execute = Mock()
+            with pytest.raises(SystemExit):
+                x.execute_from_commandline(['celery', arg, appstr, 'worker'])
+            assert x.execute.called
+            assert x.execute.call_args[0]
+            assert x.execute.call_args[0][0] == "worker"
 
     def test_execute(self):
         x = CeleryCommand(app=self.app)
