@@ -1,19 +1,17 @@
 """Worker remote control command implementations."""
 import io
 import tempfile
-from collections import namedtuple
+from collections import namedtuple, UserDict
 
 from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr
 
 from celery.exceptions import WorkerShutdown
-from celery.five import UserDict, items, string_t, text_t
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe_list
 from celery.utils.log import get_logger
 from celery.utils.serialization import jsonify, strtobool
 from celery.utils.time import rate
-
 from . import state as worker_state
 from .request import Request
 
@@ -95,7 +93,7 @@ def conf(state, with_defaults=False, **kwargs):
 
 
 def _wanted_config_key(key):
-    return isinstance(key, string_t) and not key.startswith('__')
+    return isinstance(key, str) and not key.startswith('__')
 
 
 # -- Task
@@ -172,7 +170,7 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
 
 @control_command(
     variadic='task_id',
-    args=[('signal', text_t)],
+    args=[('signal', str)],
     signature='<signal> [id1 [id2 [... [idN]]]]'
 )
 def terminate(state, signal, task_id, **kwargs):
@@ -181,7 +179,7 @@ def terminate(state, signal, task_id, **kwargs):
 
 
 @control_command(
-    args=[('task_name', text_t), ('rate_limit', text_t)],
+    args=[('task_name', str), ('rate_limit', str)],
     signature='<task_name> <rate_limit (e.g., 5/s | 5/m | 5/h)>',
 )
 def rate_limit(state, task_name, rate_limit, **kwargs):
@@ -221,7 +219,7 @@ def rate_limit(state, task_name, rate_limit, **kwargs):
 
 
 @control_command(
-    args=[('task_name', text_t), ('soft', float), ('hard', float)],
+    args=[('task_name', str), ('soft', float), ('hard', float)],
     signature='<task_name> <soft_secs> [hard_secs]',
 )
 def time_limit(state, task_name=None, hard=None, soft=None, **kwargs):
@@ -400,7 +398,7 @@ def registered(state, taskinfoitems=None, builtins=False, **kwargs):
             if getattr(task, field, None) is not None
         }
         if fields:
-            info = ['='.join(f) for f in items(fields)]
+            info = ['='.join(f) for f in fields.items()]
             return '{} [{}]'.format(task.name, ' '.join(info))
         return task.name
 
@@ -411,7 +409,7 @@ def registered(state, taskinfoitems=None, builtins=False, **kwargs):
 
 @inspect_command(
     default_timeout=60.0,
-    args=[('type', text_t), ('num', int), ('max_depth', int)],
+    args=[('type', str), ('num', int), ('max_depth', int)],
     signature='[object_type=Request] [num=200 [max_depth=10]]',
 )
 def objgraph(state, num=200, max_depth=10, type='Request'):  # pragma: no cover
@@ -521,10 +519,10 @@ def shutdown(state, msg='Got shutdown from remote', **kwargs):
 
 @control_command(
     args=[
-        ('queue', text_t),
-        ('exchange', text_t),
-        ('exchange_type', text_t),
-        ('routing_key', text_t),
+        ('queue', str),
+        ('exchange', str),
+        ('exchange_type', str),
+        ('routing_key', str),
     ],
     signature='<queue> [exchange [type [routing_key]]]',
 )
@@ -538,7 +536,7 @@ def add_consumer(state, queue, exchange=None, exchange_type=None,
 
 
 @control_command(
-    args=[('queue', text_t)],
+    args=[('queue', str)],
     signature='<queue>',
 )
 def cancel_consumer(state, queue, **_):
