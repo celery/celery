@@ -13,7 +13,6 @@ from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
-from .five import items, monotonic, range, string_t
 from .utils import deprecated
 from .utils.graph import DependencyGraph, GraphFormatter
 from .utils.iso8601 import parse_iso8601
@@ -369,7 +368,7 @@ class AsyncResult(ResultBase):
     def __eq__(self, other):
         if isinstance(other, AsyncResult):
             return other.id == self.id
-        elif isinstance(other, string_t):
+        elif isinstance(other, str):
             return other == self.id
         return NotImplemented
 
@@ -563,7 +562,7 @@ class ResultSet(ResultBase):
         Raises:
             KeyError: if the result isn't a member.
         """
-        if isinstance(result, string_t):
+        if isinstance(result, str):
             result = self.app.AsyncResult(result)
         try:
             self.results.remove(result)
@@ -676,7 +675,7 @@ class ResultSet(ResultBase):
 
         while results:
             removed = set()
-            for task_id, result in items(results):
+            for task_id, result in results.items():
                 if result.ready():
                     yield result.get(timeout=timeout and timeout - elapsed,
                                      propagate=propagate)
@@ -756,7 +755,7 @@ class ResultSet(ResultBase):
         """
         if disable_sync_subtasks:
             assert_will_not_block()
-        time_start = monotonic()
+        time_start = time.monotonic()
         remaining = None
 
         if on_message is not None:
@@ -767,7 +766,7 @@ class ResultSet(ResultBase):
         for result in self.results:
             remaining = None
             if timeout:
-                remaining = timeout - (monotonic() - time_start)
+                remaining = timeout - (time.monotonic() - time_start)
                 if remaining <= 0.0:
                     raise TimeoutError('join operation timed out')
             value = result.get(
@@ -947,7 +946,7 @@ class GroupResult(ResultSet):
                 other.results == self.results and
                 other.parent == self.parent
             )
-        elif isinstance(other, string_t):
+        elif isinstance(other, str):
             return other == self.id
         return NotImplemented
 
