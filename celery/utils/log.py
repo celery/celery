@@ -12,7 +12,6 @@ from kombu.log import LOG_LEVELS
 from kombu.log import get_logger as _get_logger
 from kombu.utils.encoding import safe_str
 
-from celery.five import string_t, text_t
 from .term import colored
 
 __all__ = (
@@ -157,8 +156,8 @@ class ColorFormatter(logging.Formatter):
                 # so need to reorder calls based on type.
                 # Issue #427
                 try:
-                    if isinstance(msg, string_t):
-                        return text_t(color(safe_str(msg)))
+                    if isinstance(msg, str):
+                        return str(color(safe_str(msg)))
                     return safe_str(color(msg))
                 except UnicodeDecodeError:  # pragma: no cover
                     return safe_str(msg)  # skip colors
