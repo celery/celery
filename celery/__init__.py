@@ -49,7 +49,7 @@ del _temp
 del re
 
 if os.environ.get('C_IMPDEBUG'):  # pragma: no cover
-    from .five import builtins
+    import builtins
 
     def debug_import(name, locals=None, globals=None,
                      fromlist=None, level=-1, real_import=builtins.__import__):
@@ -100,7 +100,6 @@ def _find_option_with_arg(argv, short_opts=None, long_opts=None):
 
 
 def _patch_eventlet():
-    import eventlet
     import eventlet.debug
 
     eventlet.monkey_patch()
