@@ -12,8 +12,6 @@ from functools import reduce
 from importlib import import_module
 from types import ModuleType
 
-from .five import bytes_if_py2, items, string_t
-
 __all__ = ('Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate')
 
 __module__ = __name__  # used by Proxy class body
@@ -34,7 +32,7 @@ def _default_cls_attr(name, type_, cls_value):
     def __get__(self, obj, cls=None):
         return self.__getter(obj) if obj is not None else self
 
-    return type(bytes_if_py2(name), (type_,), {
+    return type(name, (type_,), {
         '__new__': __new__, '__get__': __get__,
     })
 
@@ -520,10 +518,10 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
 
     attrs = {
         attr_name: (prepare_attr(attr) if prepare_attr else attr)
-        for attr_name, attr in items(attrs)
+        for attr_name, attr in attrs.items()
     }
     module = sys.modules[fqdn] = type(
-        bytes_if_py2(modname), (base,), cls_attrs)(bytes_if_py2(name))
+        modname, (base,), cls_attrs)(name)
     module.__dict__.update(attrs)
     return module
 
@@ -558,21 +556,21 @@ def recreate_module(name, compat_modules=None, by_module=None, direct=None,
 
 def get_compat_module(pkg, name):
     def prepare(attr):
-        if isinstance(attr, string_t):
+        if isinstance(attr, str):
             return Proxy(getappattr, (attr,))
         return attr
 
     attrs = COMPAT_MODULES[pkg.__name__][name]
-    if isinstance(attrs, string_t):
+    if isinstance(attrs, str):
         fqdn = '.'.join([pkg.__name__, name])
         module = sys.modules[fqdn] = import_module(attrs)
         return module
-    attrs[bytes_if_py2('__all__')] = list(attrs)
+    attrs['__all__'] = list(attrs)
     return create_module(name, dict(attrs), pkg=pkg, prepare_attr=prepare)
 
 
 def get_origins(defs):
     origins = {}
-    for module, attrs in items(defs):
+    for module, attrs in defs.items():
         origins.update({attr: module for attr in attrs})
     return origins
