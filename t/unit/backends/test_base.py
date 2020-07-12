@@ -1,9 +1,8 @@
 import sys
-import types
 from contextlib import contextmanager
 
 import pytest
-from case import ANY, Mock, call, patch, skip, sentinel
+from case import ANY, Mock, call, patch, sentinel
 from kombu.serialization import prepare_accept_content
 from kombu.utils.encoding import ensure_bytes
 
@@ -12,8 +11,8 @@ from celery import chord, group, signature, states, uuid
 from celery.app.task import Context, Task
 from celery.backends.base import (BaseBackend, DisabledBackend,
                                   KeyValueStoreBackend, _nulldict)
-from celery.exceptions import ChordError, TimeoutError, BackendStoreError, BackendGetMetaError
-from celery.five import bytes_if_py2, items, range
+from celery.exceptions import ChordError, TimeoutError, BackendStoreError, \
+    BackendGetMetaError
 from celery.result import result_from_tuple
 from celery.utils import serialization
 from celery.utils.functional import pass1
@@ -40,18 +39,16 @@ class objectexception:
         pass
 
 
-if sys.version_info[0] == 3 or getattr(sys, 'pypy_version_info', None):
-    Oldstyle = None
-else:
-    Oldstyle = types.ClassType(bytes_if_py2('Oldstyle'), (), {})
+Oldstyle = None
+
 Unpickleable = subclass_exception(
-    bytes_if_py2('Unpickleable'), KeyError, 'foo.module',
+    'Unpickleable', KeyError, 'foo.module',
 )
 Impossible = subclass_exception(
-    bytes_if_py2('Impossible'), object, 'foo.module',
+    'Impossible', object, 'foo.module',
 )
 Lookalike = subclass_exception(
-    bytes_if_py2('Lookalike'), wrapobject, 'foo.module',
+    'Lookalike', wrapobject, 'foo.module',
 )
 
 
@@ -226,12 +223,6 @@ class test_BaseBackend_interface:
 
 
 class test_exception_pickle:
-
-    @skip.if_python3(reason='does not support old style classes')
-    @skip.if_pypy()
-    def test_oldstyle(self):
-        assert fnpe(Oldstyle())
-
     def test_BaseException(self):
         assert fnpe(Exception()) is None
 
@@ -679,7 +670,7 @@ class test_KeyValueStoreBackend:
         for is_dict in True, False:
             self.b.mget_returns_dict = is_dict
             ids = {uuid(): i for i in range(10)}
-            for id, i in items(ids):
+            for id, i in ids.items():
                 self.b.mark_as_done(id, i)
             it = self.b.get_many(list(ids), interval=0.01)
             for i, (got_id, got_state) in enumerate(it):
@@ -716,7 +707,7 @@ class test_KeyValueStoreBackend:
 
         self.b._cache.clear()
         ids = {uuid(): i for i in range(tasks_length)}
-        for id, i in items(ids):
+        for id, i in ids.items():
             if i % 2 == 0:
                 self.b.mark_as_done(id, i)
             else:
