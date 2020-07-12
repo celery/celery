@@ -9,7 +9,6 @@ from kombu.utils.functional import retry_over_time
 
 from celery import states
 from celery.exceptions import TimeoutError
-from celery.five import items
 from celery.result import ResultSet
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds as _humanize_seconds
@@ -124,12 +123,13 @@ class ManagerMixin:
         return self.app.control.inspect(timeout=timeout)
 
     def query_tasks(self, ids, timeout=0.5):
-        yield from items(self.inspect(timeout).query_task(*ids) or {})
+        tasks = self.inspect(timeout).query_task(*ids) or {}
+        yield from tasks.items()
 
     def query_task_states(self, ids, timeout=0.5):
         states = defaultdict(set)
         for hostname, reply in self.query_tasks(ids, timeout=timeout):
-            for task_id, (state, _) in items(reply):
+            for task_id, (state, _) in reply.items():
                 states[state].add(task_id)
         return states
 
