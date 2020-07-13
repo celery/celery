@@ -514,7 +514,7 @@ class Command(object):
         else:
             self.app = Celery(fixups=[])
 
-        self._handle_user_preload_options(remaining_options)
+        self._handle_user_preload_options(argv)
 
         return remaining_options
 
