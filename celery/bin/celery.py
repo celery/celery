@@ -473,9 +473,6 @@ class CeleryCommand(Command):
                 # we assume the first argument in argv[i:] is the command
                 # name.
                 return argv[index:] + rest
-            # if there are no more arguments then the last arg in rest'
-            # must be the command.
-            [rest.pop()] + rest
         return []
 
     def prepare_prog_name(self, name):
