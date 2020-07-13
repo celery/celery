@@ -1,4 +1,5 @@
 import pytest
+from billiard.einfo import ExceptionInfo
 from case import Mock, patch
 from kombu.exceptions import EncodeError
 
@@ -21,6 +22,7 @@ from celery.app.trace import (
     trace_task,
     traceback_clear,
 )
+from celery.backends.base import BaseDictBackend
 
 from celery.exceptions import Ignore, Reject, Retry
 
@@ -153,6 +155,18 @@ class test_trace(TraceCase):
         add.backend.process_cleanup.assert_called_with()
         add.backend.process_cleanup.side_effect = MemoryError()
         with pytest.raises(MemoryError):
+            self.trace(add, (2, 2), {}, eager=False)
+
+    def test_when_backend_raises_exception(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        add.backend = Mock(name='backend')
+        add.backend.mark_as_done.side_effect = Exception()
+        add.backend.mark_as_failure.side_effect = Exception("failed mark_as_failure")
+
+        with pytest.raises(Exception):
             self.trace(add, (2, 2), {}, eager=False)
 
     def test_traceback_clear(self):
@@ -379,6 +393,27 @@ class test_trace(TraceCase):
         assert report_internal_error.call_count
         assert send.call_count
         assert xtask.__trace__ is tracer
+
+    def test_backend_error_should_report_failure(self):
+        """check internal error is reported as failure.
+
+        In case of backend error, an exception may bubble up from trace and be
+        caught by trace_task.
+        """
+
+        @self.app.task(shared=False)
+        def xtask():
+            pass
+
+        xtask.backend = BaseDictBackend(app=self.app)
+        xtask.backend.mark_as_done = Mock()
+        xtask.backend.mark_as_done.side_effect = Exception()
+        xtask.backend.mark_as_failure = Mock()
+        xtask.backend.mark_as_failure.side_effect = Exception()
+
+        ret, info, _, _ = trace_task(xtask, 'uuid', (), {}, app=self.app)
+        assert info is not None
+        assert isinstance(ret, ExceptionInfo)
 
 
 class test_TraceInfo(TraceCase):
