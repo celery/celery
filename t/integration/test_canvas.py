@@ -862,7 +862,6 @@ class test_chord:
         assert len([cr for cr in chord_results if cr[2] != states.SUCCESS]
                    ) == 1
 
-    @pytest.xfail("Issue #6220")
     def test_chain_in_chord_on_error(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -878,8 +877,8 @@ class test_chord:
                 chord_error.s()),
         )
         res = c1()
-        with pytest.raises(ExpectedException):
-            res.get(propagate=True, timeout=10)
+        with pytest.raises(ChordError):
+            res.get(propagate=True, timeout=TIMEOUT)
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
     def test_parallel_chords(self, manager):

@@ -170,6 +170,13 @@ class Backend(object):
         if request:
             if request.chord:
                 self.on_chord_part_return(request, state, exc)
+            elif request.chain and 'chord' in request.chain[-1]['options']:
+                from celery.app.task import Context
+                failed_ctx = Context(request.chain[-1])
+                failed_ctx.update(failed_ctx.options)
+                failed_ctx.id = failed_ctx.options['task_id']
+                failed_ctx.group = failed_ctx.options['group_id']
+                self.on_chord_part_return(failed_ctx, state, exc)
             if call_errbacks and request.errbacks:
                 self._call_task_errbacks(request, exc, traceback)
 
