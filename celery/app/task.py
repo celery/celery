@@ -83,6 +83,7 @@ class Context(object):
     correlation_id = None
     taskset = None   # compat alias to group
     group = None
+    group_index = None
     chord = None
     chain = None
     utc = None
@@ -116,6 +117,7 @@ class Context(object):
             'root_id': self.root_id,
             'parent_id': self.parent_id,
             'group_id': self.group,
+            'group_index': self.group_index,
             'chord': self.chord,
             'chain': self.chain,
             'link': self.callbacks,
@@ -891,6 +893,7 @@ class Task(object):
         sig.set(
             chord=chord,
             group_id=self.request.group,
+            group_index=self.request.group_index,
             root_id=self.request.root_id,
         )
         sig.freeze(self.request.id)
@@ -917,6 +920,7 @@ class Task(object):
             raise ValueError('Current task is not member of any chord')
         sig.set(
             group_id=self.request.group,
+            group_index=self.request.group_index,
             chord=self.request.chord,
             root_id=self.request.root_id,
         )
