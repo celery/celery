@@ -435,6 +435,13 @@ class CeleryCommand(Command):
         )))
 
     def _relocate_args_from_start(self, argv, index=0):
+        """Move options to the end of args.
+
+        This rewrites:
+            -l debug worker -c 3
+        to:
+            worker -c 3 -l debug
+        """
         if argv:
             rest = []
             while index < len(argv):
@@ -466,9 +473,6 @@ class CeleryCommand(Command):
                 # we assume the first argument in argv[i:] is the command
                 # name.
                 return argv[index:] + rest
-            # if there are no more arguments then the last arg in rest'
-            # must be the command.
-            [rest.pop()] + rest
         return []
 
     def prepare_prog_name(self, name):

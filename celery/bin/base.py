@@ -474,7 +474,7 @@ class Command(object):
         return parser
 
     def setup_app_from_commandline(self, argv):
-        preload_options = self.parse_preload_options(argv)
+        preload_options, remaining_options = self.parse_preload_options(argv)
         quiet = preload_options.get('quiet')
         if quiet is not None:
             self.quiet = quiet
@@ -510,18 +510,18 @@ class Command(object):
             elif self.app is None:
                 self.app = self.get_app(loader=loader)
             if self.enable_config_from_cmdline:
-                argv = self.process_cmdline_config(argv)
+                remaining_options = self.process_cmdline_config(remaining_options)
         else:
             self.app = Celery(fixups=[])
 
         self._handle_user_preload_options(argv)
 
-        return argv
+        return remaining_options
 
     def _handle_user_preload_options(self, argv):
         user_preload = tuple(self.app.user_options['preload'] or ())
         if user_preload:
-            user_options = self._parse_preload_options(argv, user_preload)
+            user_options, _ = self._parse_preload_options(argv, user_preload)
             signals.user_preload_options.send(
                 sender=self, app=self.app, options=user_options,
             )
@@ -550,8 +550,8 @@ class Command(object):
         args = [arg for arg in args if arg not in ('-h', '--help')]
         parser = self.Parser()
         self.add_compat_options(parser, options)
-        namespace, _ = parser.parse_known_args(args)
-        return vars(namespace)
+        namespace, unknown_args = parser.parse_known_args(args)
+        return vars(namespace), unknown_args
 
     def add_append_opt(self, acc, opt, value):
         default = opt.default or []
