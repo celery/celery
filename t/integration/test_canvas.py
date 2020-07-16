@@ -812,7 +812,6 @@ class test_chord:
     def test_chord_on_error(self, manager):
         from celery import states
         from .tasks import ExpectedException
-        import time
 
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -828,8 +827,13 @@ class test_chord:
             res.get(propagate=True)
 
         # Got to wait for children to populate.
-        while not res.children:
-            time.sleep(0.1)
+        check = (
+            lambda: res.children,
+            lambda: res.children[0].children,
+            lambda: res.children[0].children[0].result,
+        )
+        while not all(f() for f in check):
+            pass
 
         # Extract the results of the successful tasks from the chord.
         #
