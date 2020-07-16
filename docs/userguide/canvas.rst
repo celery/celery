@@ -526,7 +526,7 @@ too:
 
 .. code-block:: pycon
 
-    >>> for result, value in res.collect(intermediate=True)):
+    >>> for result, value in res.collect(intermediate=True):
     ....
 
 You can link together as many tasks as you like,
