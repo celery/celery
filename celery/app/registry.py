@@ -6,6 +6,7 @@ import inspect
 from importlib import import_module
 
 from celery._state import get_current_app
+from celery.app.autoretry import add_autoretry_behaviour
 from celery.exceptions import InvalidTaskError, NotRegistered
 from celery.five import items
 
@@ -31,6 +32,7 @@ class TaskRegistry(dict):
                 'Task class {0!r} must specify .name attribute'.format(
                     type(task).__name__))
         self[task.name] = inspect.isclass(task) and task() or task
+        add_autoretry_behaviour(task)
 
     def unregister(self, name):
         """Unregister task by name.
