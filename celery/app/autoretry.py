@@ -28,7 +28,6 @@ def add_autoretry_behaviour(task, **options):
 
         @wraps(task.run)
         def run(*args, **kwargs):
-            print('running ', task.name)
             try:
                 return task._orig_run(*args, **kwargs)
             except Ignore:
