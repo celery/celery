@@ -6,7 +6,8 @@ from celery import group
 
 from .conftest import get_active_redis_channels
 from .tasks import (add, add_ignore_result, print_unicode, retry_once,
-                    retry_once_priority, sleeping)
+                    retry_once_priority, sleeping, ClassBasedAutoRetryTask)
+
 
 
 class test_tasks:
@@ -33,6 +34,13 @@ class test_tasks:
             group(print_unicode.s() for _ in range(5))(),
             timeout=10, propagate=True,
         )
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=2)
+    def test_class_based_task_retried(self, app):
+        task = ClassBasedAutoRetryTask()
+        app.tasks.register(task)
+        task.delay(1, 0)
+        assert task.iterations == 6
 
 
 class tests_task_redis_result_backend:

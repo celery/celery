@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Tasks auto-retry functionality."""
 from vine.utils import wraps
 
 from celery.exceptions import Ignore, Retry
@@ -5,6 +7,8 @@ from celery.utils.time import get_exponential_backoff_interval
 
 
 def add_autoretry_behaviour(task, **options):
+    """Wrap task's `run` method with auto-retry functionality"""
+
     autoretry_for = tuple(
         options.get('autoretry_for',
                     getattr(task, 'autoretry_for', ()))

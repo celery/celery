@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 
 from time import sleep
 
-from celery import chain, chord, group, shared_task
+from celery import chain, chord, group, shared_task, Task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
@@ -235,3 +235,17 @@ def chord_error(*args):
 @shared_task(bind=True)
 def return_priority(self, *_args):
     return "Priority: %s" % self.request.delivery_info['priority']
+
+
+class ClassBasedAutoRetryTask(Task):
+    name = 'ClassBasedAutoRetryTask'
+    autoretry_for = (ZeroDivisionError,)
+    retry_kwargs = {'max_retries': 5}
+    retry_backoff = True
+    retry_backoff_max = 700
+    retry_jitter = False
+    iterations = 0
+
+    def run(self, x, y):
+        self.iterations += 1
+        return x / y
