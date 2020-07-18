@@ -2,16 +2,38 @@ from __future__ import absolute_import, unicode_literals
 
 import pytest
 
-from celery import group
+from celery import group, Task
 
 from .conftest import get_active_redis_channels
 from .tasks import (add, add_ignore_result, print_unicode, retry_once,
-                    retry_once_priority, sleeping, ClassBasedAutoRetryTask)
+                    retry_once_priority, sleeping)
 
 
-@pytest.fixture(scope='session')
-def celery_class_based_tasks():
+class ClassBasedAutoRetryTask(Task):
+    name = 'auto_retry_class_task'
+    autoretry_for = (ValueError,)
+    retry_kwargs = {'max_retries': 1}
+    retry_backoff = True
+
+    def run(self):
+        if self.request.retries:
+            return self.request.retries
+        raise ValueError()
+
+
+@pytest.fixture()
+def celery_class_tasks():
     return [ClassBasedAutoRetryTask]
+
+
+class test_class_based_tasks:
+
+    @pytest.mark.flaky(reruns=5, reruns_delay=2)
+    def test_class_based_task_retried(self, celery_app, celery_worker):
+        task = ClassBasedAutoRetryTask()
+        celery_app.tasks.register(task)
+        res = task.delay()
+        assert res.get(timeout=10) == 1
 
 
 class test_tasks:
@@ -38,13 +60,6 @@ class test_tasks:
             group(print_unicode.s() for _ in range(5))(),
             timeout=10, propagate=True,
         )
-
-    @pytest.mark.flaky(reruns=5, reruns_delay=2)
-    def test_class_based_task_retried(self, app):
-        task = ClassBasedAutoRetryTask()
-        app.tasks.register(task)
-        res = task.delay(1, 0)
-        assert res.get(timeout=10) == 1  # retried once
 
 
 class tests_task_redis_result_backend:

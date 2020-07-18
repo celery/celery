@@ -31,8 +31,9 @@ class TaskRegistry(dict):
             raise InvalidTaskError(
                 'Task class {0!r} must specify .name attribute'.format(
                     type(task).__name__))
-        self[task.name] = inspect.isclass(task) and task() or task
+        task = inspect.isclass(task) and task() or task
         add_autoretry_behaviour(task)
+        self[task.name] = task
 
     def unregister(self, name):
         """Unregister task by name.

@@ -75,15 +75,9 @@ def celery_session_app(request,
 
 
 @pytest.fixture(scope='session')
-def celery_class_based_tasks():
-    return []
-
-
-@pytest.fixture(scope='session')
 def celery_session_worker(request,
                           celery_session_app,
                           celery_includes,
-                          celery_class_based_tasks,
                           celery_worker_pool,
                           celery_worker_parameters):
     # type: (Any, Celery, Sequence[str], str, Any) -> WorkController
@@ -91,8 +85,6 @@ def celery_session_worker(request,
     if not NO_WORKER:
         for module in celery_includes:
             celery_session_app.loader.import_task_module(module)
-        for class_based_task in celery_class_based_tasks:
-            celery_session_app.tasks.register(class_based_task)
         with worker.start_worker(celery_session_app,
                                  pool=celery_worker_pool,
                                  **celery_worker_parameters) as w:
@@ -180,9 +172,15 @@ def celery_app(request,
 
 
 @pytest.fixture()
+def celery_class_tasks():
+    return []
+
+
+@pytest.fixture()
 def celery_worker(request,
                   celery_app,
                   celery_includes,
+                  celery_class_tasks,
                   celery_worker_pool,
                   celery_worker_parameters):
     # type: (Any, Celery, Sequence[str], str, Any) -> WorkController
@@ -190,6 +188,8 @@ def celery_worker(request,
     if not NO_WORKER:
         for module in celery_includes:
             celery_app.loader.import_task_module(module)
+        for class_task in celery_class_tasks:
+            celery_app.tasks.register(class_task)
         with worker.start_worker(celery_app,
                                  pool=celery_worker_pool,
                                  **celery_worker_parameters) as w:

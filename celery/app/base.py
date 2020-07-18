@@ -2,6 +2,7 @@
 """Actual App instance implementation."""
 from __future__ import absolute_import, unicode_literals
 
+import inspect
 import os
 import threading
 import warnings
@@ -474,6 +475,7 @@ class Celery(object):
             style task classes, you should not need to use this for
             new projects.
         """
+        task = inspect.isclass(task) and task() or task
         if not task.name:
             task_cls = type(task)
             task.name = self.gen_task_name(
