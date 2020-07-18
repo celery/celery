@@ -478,6 +478,7 @@ class Celery(object):
             task_cls = type(task)
             task.name = self.gen_task_name(
                 task_cls.__name__, task_cls.__module__)
+        add_autoretry_behaviour(task)
         self.tasks[task.name] = task
         task._app = self
         task.bind(self)
