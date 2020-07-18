@@ -73,3 +73,9 @@ def manager(app, celery_session_worker):
 def ZZZZ_set_app_current(app):
     app.set_current()
     app.set_default()
+
+
+@pytest.fixture(scope='session')
+def celery_class_tasks():
+    from t.integration.tasks import ClassBasedAutoRetryTask
+    return [ClassBasedAutoRetryTask]
