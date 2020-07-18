@@ -39,8 +39,8 @@ class test_tasks:
     def test_class_based_task_retried(self, app):
         task = ClassBasedAutoRetryTask()
         app.tasks.register(task)
-        task.delay(1, 0)
-        assert task.iterations == 6
+        res = task.delay(1, 0)
+        assert res.get(timeout=10) == 1  # retried once
 
 
 class tests_task_redis_result_backend:

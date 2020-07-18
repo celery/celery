@@ -247,5 +247,7 @@ class ClassBasedAutoRetryTask(Task):
     iterations = 0
 
     def run(self, x, y):
-        self.iterations += 1
+        if self.request.retries:
+            return self.request.retries
+
         return x / y
