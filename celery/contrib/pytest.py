@@ -74,7 +74,7 @@ def celery_session_app(request,
         yield app
 
 
-@pytest.fixture(scope='sesion')
+@pytest.fixture(scope='session')
 def celery_class_based_tasks():
     return []
 
