@@ -9,7 +9,7 @@ from .tasks import (add, add_ignore_result, print_unicode, retry_once,
                     retry_once_priority, sleeping, ClassBasedAutoRetryTask)
 
 
-@pytest.fixture(scope='sesion')
+@pytest.fixture(scope='session')
 def celery_class_based_tasks():
     return [ClassBasedAutoRetryTask]
 
