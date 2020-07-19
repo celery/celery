@@ -583,7 +583,7 @@ class test_task_retries(TasksCase):
         ]
         assert retry_call_countdowns == [1, 2, 4, 8, 16, 32]
 
-    @patch('celery.app.base.get_exponential_backoff_interval')
+    @patch('celery.app.autoretry.get_exponential_backoff_interval')
     def test_override_retry_backoff_from_base(self, backoff):
         self.override_retry_backoff.iterations = 0
         self.override_retry_backoff.apply((1, "a"))
@@ -648,6 +648,27 @@ class test_task_retries(TasksCase):
 
         self.autoretry_task.apply((1, 0))
         assert self.autoretry_task.iterations == 6
+
+    def test_autoretry_class_based_task(self):
+        class ClassBasedAutoRetryTask(Task):
+            name = 'ClassBasedAutoRetryTask'
+            autoretry_for = (ZeroDivisionError,)
+            retry_kwargs = {'max_retries': 5}
+            retry_backoff = True
+            retry_backoff_max = 700
+            retry_jitter = False
+            iterations = 0
+            _app = self.app
+
+            def run(self, x, y):
+                self.iterations += 1
+                return x / y
+
+        task = ClassBasedAutoRetryTask()
+        self.app.tasks.register(task)
+        task.iterations = 0
+        task.apply([1, 0])
+        assert task.iterations == 6
 
 
 class test_canvas_utils(TasksCase):
