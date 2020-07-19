@@ -618,7 +618,7 @@ class test_chord:
 
         c = group([add_to_all_to_chord.s([1, 2, 3], 4)]) | identity.s()
         res = c()
-        assert res.get() == [0, 5, 6, 7]
+        assert sorted(res.get()) == [0, 5, 6, 7]
 
     @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
     def test_add_chord_to_chord(self, manager):
@@ -857,7 +857,7 @@ class test_chord:
         j_key = backend.get_key_for_group(original_group_id, '.j')
         redis_connection = get_redis_connection()
         chord_results = [backend.decode(t) for t in
-                         redis_connection.lrange(j_key, 0, 3)]
+                         redis_connection.zrange(j_key, 0, 3)]
 
         # Validate group result
         assert [cr[3] for cr in chord_results if cr[2] == states.SUCCESS] == \

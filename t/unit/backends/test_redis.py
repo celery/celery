@@ -114,21 +114,33 @@ class Redis(mock.MockCallbacks):
     def pipeline(self):
         return self.Pipeline(self)
 
-    def _get_list(self, key):
-        try:
-            return self.keyspace[key]
-        except KeyError:
-            l = self.keyspace[key] = []
-            return l
+    def _get_sorted_set(self, key):
+        return self.keyspace.setdefault(key, [])
 
-    def rpush(self, key, value):
-        self._get_list(key).append(value)
+    def zadd(self, key, mapping):
+        # Store elements as 2-tuples with the score first so we can sort it
+        # once the new items have been inserted
+        fake_sorted_set = self._get_sorted_set(key)
+        fake_sorted_set.extend(
+            (score, value) for value, score in mapping.items()
+        )
+        fake_sorted_set.sort()
 
-    def lrange(self, key, start, stop):
-        return self._get_list(key)[start:stop]
+    def zrange(self, key, start, stop):
+        # `stop` is inclusive in Redis so we use `stop + 1` unless that would
+        # cause us to move from negative (right-most) indicies to positive
+        stop = stop + 1 if stop != -1 else None
+        return [e[1] for e in self._get_sorted_set(key)[start:stop]]
 
-    def llen(self, key):
-        return len(self.keyspace.get(key) or [])
+    def zrangebyscore(self, key, min_, max_):
+        return [
+            e[1] for e in self._get_sorted_set(key)
+            if (min_ == "-inf" or e[0] >= min_) and
+            (max_ == "+inf" or e[1] <= max_)
+        ]
+
+    def zcount(self, key, min_, max_):
+        return len(self.zrangebyscore(key, min_, max_))
 
 
 class Sentinel(mock.MockCallbacks):
@@ -540,7 +552,7 @@ class test_RedisBackend:
 
     def test_on_chord_part_return_no_gid_or_tid(self):
         request = Mock(name='request')
-        request.id = request.group = None
+        request.id = request.group = request.group_index = None
         assert self.b.on_chord_part_return(request, 'SUCCESS', 10) is None
 
     def test_ConnectionPool(self):
@@ -580,7 +592,7 @@ class test_RedisBackend:
         self.b.expires = None
         self.b._set_with_state('foo', 'bar', states.SUCCESS)
 
-    def create_task(self):
+    def create_task(self, i):
         tid = uuid()
         task = Mock(name='task-{0}'.format(tid))
         task.name = 'foobarbaz'
@@ -589,17 +601,19 @@ class test_RedisBackend:
         task.request.id = tid
         task.request.chord['chord_size'] = 10
         task.request.group = 'group_id'
+        task.request.group_index = i
         return task
 
     @patch('celery.result.GroupResult.restore')
     def test_on_chord_part_return(self, restore):
-        tasks = [self.create_task() for i in range(10)]
+        tasks = [self.create_task(i) for i in range(10)]
+        random.shuffle(tasks)
 
         for i in range(10):
             self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
-            assert self.b.client.rpush.call_count
-            self.b.client.rpush.reset_mock()
-        assert self.b.client.lrange.call_count
+            assert self.b.client.zadd.call_count
+            self.b.client.zadd.reset_mock()
+        assert self.b.client.zrangebyscore.call_count
         jkey = self.b.get_key_for_group('group_id', '.j')
         tkey = self.b.get_key_for_group('group_id', '.t')
         self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
@@ -611,13 +625,13 @@ class test_RedisBackend:
     def test_on_chord_part_return_no_expiry(self, restore):
         old_expires = self.b.expires
         self.b.expires = None
-        tasks = [self.create_task() for i in range(10)]
+        tasks = [self.create_task(i) for i in range(10)]
 
         for i in range(10):
             self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
-            assert self.b.client.rpush.call_count
-            self.b.client.rpush.reset_mock()
-        assert self.b.client.lrange.call_count
+            assert self.b.client.zadd.call_count
+            self.b.client.zadd.reset_mock()
+        assert self.b.client.zrangebyscore.call_count
         jkey = self.b.get_key_for_group('group_id', '.j')
         tkey = self.b.get_key_for_group('group_id', '.t')
         self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
@@ -645,7 +659,7 @@ class test_RedisBackend:
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, ChordError())
-            self.b.client.pipeline.return_value.rpush().llen().get().expire(
+            self.b.client.pipeline.return_value.zadd().zcount().get().expire(
             ).expire().execute.return_value = (1, 1, 0, 4, 5)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
@@ -657,7 +671,7 @@ class test_RedisBackend:
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, RuntimeError())
-            self.b.client.pipeline.return_value.rpush().llen().get().expire(
+            self.b.client.pipeline.return_value.zadd().zcount().get().expire(
             ).expire().execute.return_value = (1, 1, 0, 4, 5)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
@@ -668,10 +682,11 @@ class test_RedisBackend:
     @contextmanager
     def chord_context(self, size=1):
         with patch('celery.backends.redis.maybe_signature') as ms:
-            tasks = [self.create_task() for i in range(size)]
+            tasks = [self.create_task(i) for i in range(size)]
             request = Mock(name='request')
             request.id = 'id1'
             request.group = 'gid1'
+            request.group_index = None
             callback = ms.return_value = Signature('add')
             callback.id = 'id1'
             callback['chord_size'] = size

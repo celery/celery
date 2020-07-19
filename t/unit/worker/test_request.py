@@ -1067,6 +1067,11 @@ class test_Request(RequestCase):
         job = self.xRequest(id=uuid(), group=gid)
         assert job.group == gid
 
+    def test_group_index(self):
+        group_index = 42
+        job = self.xRequest(id=uuid(), group_index=group_index)
+        assert job.group_index == group_index
+
 
 class test_create_request_class(RequestCase):
 

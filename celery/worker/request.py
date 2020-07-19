@@ -626,6 +626,11 @@ class Request(object):
         request.update(**embed or {})
         return Context(request)
 
+    @cached_property
+    def group_index(self):
+        # used by backend.on_chord_part_return to order return values in group
+        return self._request_dict.get('group_index')
+
 
 def create_request_cls(base, task, pool, hostname, eventer,
                        ref=ref, revoked_tasks=revoked_tasks,
