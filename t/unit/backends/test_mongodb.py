@@ -275,8 +275,7 @@ class test_MongoBackend:
 
         assert database is mock_database
         assert self.backend.__dict__['database'] is mock_database
-        mock_database.authenticate.assert_called_once_with(
-            MONGODB_USER, MONGODB_PASSWORD, source=self.backend.database_name)
+        mock_database.authenticate.assert_not_called()
 
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
     def test_get_database_no_existing_no_auth(self, mock_get_connection):
@@ -484,19 +483,6 @@ class test_MongoBackend:
 
         mock_get_database.assert_called_once_with()
         mock_collection.delete_many.assert_called()
-
-    def test_get_database_authfailure(self):
-        x = MongoBackend(app=self.app)
-        x._get_connection = Mock()
-        conn = x._get_connection.return_value = {}
-        db = conn[x.database_name] = Mock()
-        db.authenticate.return_value = False
-        x.user = 'jerry'
-        x.password = 'cere4l'
-        with pytest.raises(ImproperlyConfigured):
-            x._get_database()
-        db.authenticate.assert_called_with('jerry', 'cere4l',
-                                           source=x.database_name)
 
     def test_prepare_client_options(self):
         with patch('pymongo.version_tuple', new=(3, 0, 3)):
