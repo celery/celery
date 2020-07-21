@@ -31,7 +31,6 @@ class test_AAPickle:
 
 class test_ensure_serializable:
 
-
     def test_json_py3(self):
         expected = (1, "<class 'object'>")
         actual = ensure_serializable([1, object], encoder=json.dumps)

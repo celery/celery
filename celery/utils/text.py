@@ -189,6 +189,7 @@ def remove_repeating(substr, s):
         ])
     return s
 
+
 StringIO = io.StringIO
 _SIO_write = StringIO.write
 _SIO_init = StringIO.__init__

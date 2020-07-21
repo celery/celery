@@ -151,7 +151,6 @@ class test_head_from_fun:
         g(1, 2)
         g(1, 2, kwarg=3)
 
-
     def test_regression_3678(self):
         local = {}
         fun = ('def f(foo, *args, bar="", **kwargs):'
@@ -163,7 +162,6 @@ class test_head_from_fun:
         g(1, 2, 3, 4, bar=100)
         with pytest.raises(TypeError):
             g(bar=100)
-
 
     def test_from_fun_with_hints(self):
         local = {}
@@ -177,7 +175,6 @@ class test_head_from_fun:
             g(1)
         g(1, 2)
         g(1, 2, kwarg=3)
-
 
     def test_from_fun_forced_kwargs(self):
         local = {}

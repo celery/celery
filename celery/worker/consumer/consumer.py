@@ -112,7 +112,7 @@ def dump_body(m, body):
     # v2 protocol does not deserialize body
     body = m.body if body is None else body
     return '{} ({}b)'.format(truncate(safe_repr(body), 1024),
-                               len(m.body))
+                             len(m.body))
 
 
 class Consumer:

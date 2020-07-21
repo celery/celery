@@ -244,7 +244,7 @@ def humanize_seconds(secs, prefix='', sep='', now='now', microseconds=False):
         if secs >= divider:
             w = secs / float(divider)
             return '{}{}{} {}'.format(prefix, sep, formatter(w),
-                                          pluralize(w, unit))
+                                      pluralize(w, unit))
     if microseconds and secs > 0.0:
         return '{prefix}{sep}{0:.2f} seconds'.format(
             secs, sep=sep, prefix=prefix)

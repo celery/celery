@@ -70,7 +70,7 @@ class Option:
 
     def __repr__(self):
         return '<Option: type->{} default->{!r}>'.format(self.type,
-                                                           self.default)
+                                                         self.default)
 
 
 NAMESPACES = Namespace(
