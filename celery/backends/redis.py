@@ -17,7 +17,6 @@ from celery.utils import deprecated
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
-
 from .asynchronous import AsyncBackendMixin, BaseResultConsumer
 from .base import BaseKeyValueStoreBackend
 
@@ -97,31 +96,6 @@ class ResultConsumer(BaseResultConsumer):
         except KeyError as e:
             logger.warning(str(e))
         super().on_after_fork()
-
-    def _reconnect_pubsub(self):
-        self._pubsub = None
-        self.backend.client.connection_pool.reset()
-        # task state might have changed when the connection was down so we
-        # retrieve meta for all subscribed tasks before going into pubsub mode
-        metas = self.backend.client.mget(self.subscribed_to)
-        metas = [meta for meta in metas if meta]
-        for meta in metas:
-            self.on_state_change(self._decode_result(meta), None)
-        self._pubsub = self.backend.client.pubsub(
-            ignore_subscribe_messages=True,
-        )
-        self._pubsub.subscribe(*self.subscribed_to)
-
-    @contextmanager
-    def reconnect_on_error(self):
-        try:
-            yield
-        except self._connection_errors:
-            try:
-                self._ensure(self._reconnect_pubsub, ())
-            except self._connection_errors:
-                logger.critical(E_RETRY_LIMIT_EXCEEDED)
-                raise
 
     def _reconnect_pubsub(self):
         self._pubsub = None
