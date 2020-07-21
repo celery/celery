@@ -66,10 +66,10 @@ matrix:
   - python: '2.7'
     env: TOXENV=flakeplus
     stage: lint
-  - python: pypy3.6-7.3
-    env: TOXENV=pypy3
-    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
-    stage: test
+#  - python: pypy3.6-7.3
+#    env: TOXENV=pypy3
+#    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
+#    stage: test
 
 before_install:
     - sudo mkdir -p /var/log/celery
