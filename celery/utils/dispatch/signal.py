@@ -3,6 +3,7 @@ import sys
 import threading
 import warnings
 import weakref
+from weakref import WeakMethod
 
 from kombu.utils.functional import retry_over_time
 
@@ -11,11 +12,6 @@ from celery.local import PromiseProxy, Proxy
 from celery.utils.functional import fun_accepts_kwargs
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
-
-try:
-    from weakref import WeakMethod
-except ImportError:
-    from .weakref_backports import WeakMethod  # noqa
 
 __all__ = ('Signal',)
 
