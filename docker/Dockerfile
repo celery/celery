@@ -1,11 +1,11 @@
-FROM ubuntu:focal
+FROM ubuntu:18.04
 
 ENV PYTHONIOENCODING UTF-8
 
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Pypy is installed from a package manager because it takes so long to build.
-RUN apt-get update && apt-get install -y build-essential \
+RUN apt-get update && apt-get -y upgrade && apt-get install -y build-essential \
     libcurl4-openssl-dev \
     libffi-dev \
     tk-dev \
@@ -66,11 +66,11 @@ RUN chmod gu+x /entrypoint
 # Define the local pyenvs
 RUN pyenv local python3.8 python3.7 python3.6 python3.5 python2.7
 
-RUN pyenv exec python2.7 -m pip install --upgrade pip setuptools && \
-    pyenv exec python3.5 -m pip install --upgrade pip setuptools && \
-    pyenv exec python3.6 -m pip install --upgrade pip setuptools && \
-    pyenv exec python3.7 -m pip install --upgrade pip setuptools && \
-    pyenv exec python3.8 -m pip install --upgrade pip setuptools
+RUN pyenv exec python2.7 -m pip install --upgrade pip setuptools wheel && \
+    pyenv exec python3.5 -m pip install --upgrade pip setuptools wheel && \
+    pyenv exec python3.6 -m pip install --upgrade pip setuptools wheel && \
+    pyenv exec python3.7 -m pip install --upgrade pip setuptools wheel && \
+    pyenv exec python3.8 -m pip install --upgrade pip setuptools wheel
 
 # Setup one celery environment for basic development use
 RUN pyenv exec python3.8 -m pip install \
