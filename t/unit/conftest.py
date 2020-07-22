@@ -133,7 +133,7 @@ def AAA_disable_multiprocessing():
 
 
 def alive_threads():
-    return [thread for thread in threading.enumerate() if thread.is_alive()]
+    return [thread for thread in threading.enumerate() if thread.is_alive() and 'pymongo' not in thread.name]
 
 
 @pytest.fixture(autouse=True)

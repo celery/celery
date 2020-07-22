@@ -547,3 +547,43 @@ class test_MongoBackend_no_mock:
         assert backend.encode(data)
         backend.serializer = 'bson'
         assert backend.encode(data) == data
+
+
+@pytest.fixture(scope="function")
+def mongo_backend(app):
+    be = MongoBackend(app=app)
+    yield be
+
+    # Close pymongo connections
+    be._connection.close()
+
+@skip.unless_module('pymongo')
+class test_MongoBackend_serializing:
+
+    @pytest.mark.parametrize("serializer", ['json', 'bson', 'pickle'])
+    @pytest.mark.parametrize("result", [
+        'A simple string',
+        {'foo': "simple result"},
+        datetime.datetime(2000, 1, 1, 0, 0, 0, 0),
+        # This input is broken as of this writing
+        # datetime.datetime(2000, 1, 1, 0, 0, 0, 0, tzinfo=datetime.timezone.utc),
+    ])
+    def test_encode_success_results(self, mongo_backend, serializer, result):
+        mongo_backend.serializer = serializer
+
+        mongo_backend.store_result(TASK_ID, result, 'SUCCESS')
+        recovered = mongo_backend.get_result(TASK_ID)
+        assert recovered == result
+
+    @pytest.mark.parametrize("serializer", ['pickle'])
+    @pytest.mark.parametrize("exception", [
+        Exception("Basic Exception"),
+    ])
+    def test_encode_non_trivial_error_results(self, mongo_backend, serializer, exception):
+        mongo_backend.serializer = serializer
+
+        mongo_backend.store_result(TASK_ID, exception, 'FAILURE')
+        recovered = mongo_backend.get_result(TASK_ID)
+        # They are not the same object, so direct comparison fails
+        assert type(recovered) == type(exception)
+        assert recovered.args == exception.args
