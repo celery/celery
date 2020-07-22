@@ -2,7 +2,6 @@ from datetime import timedelta
 
 import pytest
 
-from celery.five import bytes_if_py2
 from celery.schedules import schedule
 from celery.task import PeriodicTask, periodic_task
 
@@ -23,7 +22,7 @@ class test_periodic_tasks:
 
     def test_must_have_run_every(self):
         with pytest.raises(NotImplementedError):
-            type(bytes_if_py2('Foo'), (PeriodicTask,), {
+            type('Foo', (PeriodicTask,), {
                 '__module__': __name__,
             })
 

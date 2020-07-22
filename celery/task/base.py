@@ -11,7 +11,6 @@ from celery import current_app
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
 from celery.app.task import _reprtask
-from celery.five import with_metaclass
 from celery.local import Proxy, class_property, reclassmethod
 from celery.schedules import maybe_schedule
 from celery.utils.log import get_task_logger
@@ -119,8 +118,7 @@ class TaskType(type):
         return _reprtask(self)
 
 
-@with_metaclass(TaskType)
-class Task(BaseTask):
+class Task(BaseTask, metaclass=TaskType):
     """Deprecated Task base class.
 
     Modern applications should use :class:`celery.Task` instead.

@@ -6,7 +6,6 @@ in the configuration.
 This prepares and performs the annotations in the
 :setting:`task_annotations` setting.
 """
-from celery.five import string_t
 from celery.utils.functional import firstmethod, mlazy
 from celery.utils.imports import instantiate
 
@@ -37,7 +36,7 @@ def prepare(annotations):
     def expand_annotation(annotation):
         if isinstance(annotation, dict):
             return MapAnnotation(annotation)
-        elif isinstance(annotation, string_t):
+        elif isinstance(annotation, str):
             return mlazy(instantiate, annotation)
         return annotation
 

@@ -14,7 +14,6 @@ The worker consists of several components, all managed by bootsteps
 
 import os
 import sys
-
 from datetime import datetime
 
 from billiard import cpu_count
@@ -26,7 +25,6 @@ from celery import signals
 from celery.bootsteps import RUN, TERMINATE
 from celery.exceptions import (ImproperlyConfigured, TaskRevokedError,
                                WorkerTerminate)
-from celery.five import values
 from celery.platforms import EX_FAILURE, create_pidlock
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel
@@ -191,7 +189,7 @@ class WorkController:
             [self.app.loader.import_task_module(m) for m in includes]
         self.include = includes
         task_modules = {task.__class__.__module__
-                        for task in values(self.app.tasks)}
+                        for task in self.app.tasks.values()}
         self.app.conf.include = tuple(set(prev) | task_modules)
 
     def prepare_args(self, **kwargs):

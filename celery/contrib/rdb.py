@@ -48,8 +48,6 @@ from pdb import Pdb
 
 from billiard.process import current_process
 
-from celery.five import range
-
 __all__ = (
     'CELERY_RDB_HOST', 'CELERY_RDB_PORT', 'DEFAULT_PORT',
     'Rdb', 'debugger', 'set_trace',

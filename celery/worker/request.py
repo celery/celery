@@ -6,7 +6,7 @@ how tasks are executed.
 import logging
 import sys
 from datetime import datetime
-from time import time
+from time import monotonic, time
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
@@ -19,7 +19,6 @@ from celery.app.trace import trace_task, trace_task_ret
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
-from celery.five import monotonic, string
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, noop
 from celery.utils.log import get_logger
@@ -520,7 +519,7 @@ class Request:
         # to write the result.
         if isinstance(exc, Terminated):
             self._announce_revoked(
-                'terminated', True, string(exc), False)
+                'terminated', True, str(exc), False)
             send_failed_event = False  # already sent revoked event
         elif not requeue and (isinstance(exc, WorkerLostError) or not return_ok):
             # only mark as failure if task has not been requeued

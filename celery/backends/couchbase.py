@@ -13,10 +13,9 @@ try:
 except ImportError:
     pass  # noqa
 try:
-    from couchbase import Couchbase
+    from couchbase import FMT_AUTO, Couchbase
     from couchbase.connection import Connection
     from couchbase.exceptions import NotFoundError
-    from couchbase import FMT_AUTO
 except ImportError:
     Couchbase = Connection = NotFoundError = None   # noqa
 

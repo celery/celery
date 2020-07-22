@@ -23,7 +23,6 @@ from kombu.utils.compat import maybe_fileno
 from kombu.utils.encoding import safe_str
 
 from .exceptions import SecurityError
-from .five import items, reraise, string_t
 from .local import try_import
 
 try:
@@ -146,7 +145,7 @@ class Pidfile:
         try:
             self.write_pid()
         except OSError as exc:
-            reraise(LockFailed, LockFailed(str(exc)), sys.exc_info()[2])
+            raise LockFailed(str(exc)) from exc
         return self
     __enter__ = acquire
 
@@ -310,7 +309,7 @@ class DaemonContext:
     def __init__(self, pidfile=None, workdir=None, umask=None,
                  fake=False, after_chdir=None, after_forkers=True,
                  **kwargs):
-        if isinstance(umask, string_t):
+        if isinstance(umask, str):
             # octal or decimal, depending on initial zero.
             umask = int(umask, 8 if umask.startswith('0') else 10)
         self.workdir = workdir or DAEMON_WORKDIR
@@ -646,7 +645,7 @@ class Signals:
         """Get signal number by name."""
         if isinstance(name, numbers.Integral):
             return name
-        if not isinstance(name, string_t) \
+        if not isinstance(name, str) \
                 or not name.isupper():
             raise TypeError('signal name must be uppercase string.')
         if not name.startswith('SIG'):
@@ -685,7 +684,7 @@ class Signals:
 
     def update(self, _d_=None, **sigmap):
         """Set signal handlers from a mapping."""
-        for name, handler in items(dict(_d_ or {}, **sigmap)):
+        for name, handler in dict(_d_ or {}, **sigmap).items():
             self[name] = handler
 
 
@@ -739,7 +738,7 @@ else:
 
 def get_errno_name(n):
     """Get errno for string (e.g., ``ENOENT``)."""
-    if isinstance(n, string_t):
+    if isinstance(n, str):
         return getattr(errno, n)
     return n
 

@@ -1,9 +1,11 @@
+import datetime
+
 import pytest
 from billiard.einfo import ExceptionInfo
-from case import Mock, patch, sentinel, skip, call
-from celery import states
-import datetime
+from case import Mock, call, patch, sentinel, skip
 from kombu.utils.encoding import bytes_to_str
+
+from celery import states
 
 try:
     from elasticsearch import exceptions

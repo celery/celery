@@ -11,7 +11,6 @@ from kombu.utils.objects import cached_property
 
 from celery import states
 from celery._state import current_task, task_join_will_block
-from celery.five import items, range
 
 from . import base
 from .asynchronous import AsyncBackendMixin, BaseResultConsumer
@@ -248,7 +247,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
                 prev = None
 
         latest = latest_by_id.pop(task_id, None)
-        for tid, msg in items(latest_by_id):
+        for tid, msg in latest_by_id.items():
             self.on_out_of_band_result(tid, msg)
 
         if latest:

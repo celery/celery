@@ -1,12 +1,11 @@
 """Elasticsearch result store backend."""
 from datetime import datetime
 
-from celery import states
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import _parse_url
 
+from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items
 
 from .base import KeyValueStoreBackend
 
@@ -135,7 +134,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         return self._set_with_state(key, value, None)
 
     def _index(self, id, body, **kwargs):
-        body = {bytes_to_str(k): v for k, v in items(body)}
+        body = {bytes_to_str(k): v for k, v in body.items()}
         return self.server.index(
             id=bytes_to_str(id),
             index=self.index,
@@ -155,7 +154,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         This way, a Retry state cannot override a Success or Failure, and chord_unlock
         will not retry indefinitely.
         """
-        body = {bytes_to_str(k): v for k, v in items(body)}
+        body = {bytes_to_str(k): v for k, v in body.items()}
 
         try:
             res_get = self._get(key=id)

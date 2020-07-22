@@ -7,7 +7,6 @@ from celery import states
 from celery.backends import dynamodb as module
 from celery.backends.dynamodb import DynamoDBBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.five import string
 
 
 @skip.unless_module('boto3')
@@ -430,25 +429,6 @@ class test_DynamoDBBackend:
             result = self.backend._prepare_put_request('abcdef', 'val')
         assert result == expected
 
-    def test_prepare_put_request_with_ttl(self):
-        ttl = self.backend.time_to_live_seconds = 30
-        expected = {
-            'TableName': u'celery',
-            'Item': {
-                u'id': {u'S': u'abcdef'},
-                u'result': {u'B': u'val'},
-                u'timestamp': {
-                    u'N': str(Decimal(self._static_timestamp))
-                },
-                u'ttl': {
-                    u'N': str(int(self._static_timestamp + ttl))
-                }
-            }
-        }
-        with patch('celery.backends.dynamodb.time', self._mock_time):
-            result = self.backend._prepare_put_request('abcdef', 'val')
-        assert result == expected
-
     def test_item_to_dict(self):
         boto_response = {
             'Item': {
@@ -497,7 +477,7 @@ class test_DynamoDBBackend:
         expected_kwargs = {
             'Item': {
                 'timestamp': {'N': str(self._static_timestamp)},
-                'id': {'S': string(sentinel.key)},
+                'id': {'S': str(sentinel.key)},
                 'result': {'B': sentinel.value}
             },
             'TableName': 'celery'
@@ -520,7 +500,7 @@ class test_DynamoDBBackend:
         expected_kwargs = {
             'Item': {
                 'timestamp': {'N': str(self._static_timestamp)},
-                'id': {'S': string(sentinel.key)},
+                'id': {'S': str(sentinel.key)},
                 'result': {'B': sentinel.value},
                 'ttl': {'N': str(int(self._static_timestamp + ttl))},
             },

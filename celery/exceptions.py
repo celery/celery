@@ -56,8 +56,6 @@ from billiard.exceptions import (SoftTimeLimitExceeded, Terminated,
                                  TimeLimitExceeded, WorkerLostError)
 from kombu.exceptions import OperationalError
 
-from .five import string_t
-
 __all__ = (
     # Warnings
     'CeleryWarning',
@@ -143,7 +141,7 @@ class Retry(TaskPredicate):
     def __init__(self, message=None, exc=None, when=None, is_eager=False, sig=None, **kwargs):
         from kombu.utils.encoding import safe_repr
         self.message = message
-        if isinstance(exc, string_t):
+        if isinstance(exc, str):
             self.exc, self.excs = None, exc
         else:
             self.exc, self.excs = exc, safe_repr(exc) if exc else None

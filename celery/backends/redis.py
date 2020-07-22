@@ -3,6 +3,7 @@ import time
 from contextlib import contextmanager
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
+from urllib.parse import unquote
 
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
@@ -12,20 +13,12 @@ from celery import states
 from celery._state import task_join_will_block
 from celery.canvas import maybe_signature
 from celery.exceptions import ChordError, ImproperlyConfigured
-from celery.five import string_t, text_t
 from celery.utils import deprecated
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
-
 from .asynchronous import AsyncBackendMixin, BaseResultConsumer
 from .base import BaseKeyValueStoreBackend
-
-try:
-    from urllib.parse import unquote
-except ImportError:
-    # Python 2
-    from urlparse import unquote
 
 try:
     import redis
@@ -101,33 +94,8 @@ class ResultConsumer(BaseResultConsumer):
             if self._pubsub is not None:
                 self._pubsub.close()
         except KeyError as e:
-            logger.warning(text_t(e))
+            logger.warning(str(e))
         super().on_after_fork()
-
-    def _reconnect_pubsub(self):
-        self._pubsub = None
-        self.backend.client.connection_pool.reset()
-        # task state might have changed when the connection was down so we
-        # retrieve meta for all subscribed tasks before going into pubsub mode
-        metas = self.backend.client.mget(self.subscribed_to)
-        metas = [meta for meta in metas if meta]
-        for meta in metas:
-            self.on_state_change(self._decode_result(meta), None)
-        self._pubsub = self.backend.client.pubsub(
-            ignore_subscribe_messages=True,
-        )
-        self._pubsub.subscribe(*self.subscribed_to)
-
-    @contextmanager
-    def reconnect_on_error(self):
-        try:
-            yield
-        except self._connection_errors:
-            try:
-                self._ensure(self._reconnect_pubsub, ())
-            except self._connection_errors:
-                logger.critical(E_RETRY_LIMIT_EXCEEDED)
-                raise
 
     def _reconnect_pubsub(self):
         self._pubsub = None
@@ -348,7 +316,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
         # db may be string and start with / like in kombu.
         db = connparams.get('db') or 0
-        db = db.strip('/') if isinstance(db, string_t) else db
+        db = db.strip('/') if isinstance(db, str) else db
         connparams['db'] = int(db)
 
         for key, value in query.items():

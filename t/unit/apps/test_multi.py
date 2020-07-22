@@ -1,7 +1,7 @@
 import errno
+import os
 import signal
 import sys
-import os
 
 import pytest
 from case import Mock, call, patch, skip

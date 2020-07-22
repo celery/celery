@@ -9,7 +9,6 @@ from kombu.asynchronous.semaphore import DummyLock
 from kombu.exceptions import ContentDisallowed, DecodeError
 
 from celery import bootsteps
-from celery.five import values
 from celery.utils.log import get_logger
 from celery.utils.objects import Bunch
 
@@ -162,7 +161,7 @@ class Gossip(bootsteps.ConsumerStep):
     def periodic(self):
         workers = self.state.workers
         dirty = set()
-        for worker in values(workers):
+        for worker in workers.values():
             if not worker.alive:
                 dirty.add(worker)
                 self.on_node_lost(worker)

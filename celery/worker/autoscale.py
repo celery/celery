@@ -9,12 +9,11 @@ the :option:`celery worker --autoscale` option is used.
 """
 import os
 import threading
-from time import sleep
+from time import monotonic, sleep
 
 from kombu.asynchronous.semaphore import DummyLock
 
 from celery import bootsteps
-from celery.five import monotonic
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
 

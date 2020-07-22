@@ -10,7 +10,6 @@ from itertools import takewhile
 
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
-from celery.five import bytes_if_py2, items, string_t
 from .encoding import safe_repr
 
 try:
@@ -28,7 +27,6 @@ __all__ = (
 #: List of base classes we probably don't want to reduce to.
 unwanted_base_classes = (Exception, BaseException, object)
 
-
 STRTOBOOL_DEFAULT_TABLE = {'false': False, 'no': False, '0': False,
                            'true': True, 'yes': True, '1': True,
                            'on': True, 'off': False}
@@ -36,7 +34,7 @@ STRTOBOOL_DEFAULT_TABLE = {'false': False, 'no': False, '0': False,
 
 def subclass_exception(name, parent, module):  # noqa
     """Create new exception class."""
-    return type(bytes_if_py2(name), (parent,), {'__module__': module})
+    return type(name, (parent,), {'__module__': module})
 
 
 def find_pickleable_exception(exc, loads=pickle.loads,
@@ -137,7 +135,8 @@ class UnpickleableExceptionWrapper(Exception):
         self.exc_cls_name = exc_cls_name
         self.exc_args = safe_exc_args
         self.text = text
-        Exception.__init__(self, exc_module, exc_cls_name, safe_exc_args, text)
+        Exception.__init__(self, exc_module, exc_cls_name, safe_exc_args,
+                           text)
 
     def restore(self):
         return create_exception_cls(self.exc_cls_name,
@@ -200,7 +199,7 @@ def strtobool(term, table=None):
     """
     if table is None:
         table = STRTOBOOL_DEFAULT_TABLE
-    if isinstance(term, string_t):
+    if isinstance(term, str):
         try:
             return table[term.lower()]
         except KeyError:
@@ -227,7 +226,7 @@ def _datetime_to_json(dt):
 
 
 def jsonify(obj,
-            builtin_types=(numbers.Real, string_t), key=None,
+            builtin_types=(numbers.Real, str), key=None,
             keyfilter=None,
             unknown_type_filter=None):
     """Transform object making it suitable for json serialization."""
@@ -245,7 +244,7 @@ def jsonify(obj,
         return [_jsonify(v) for v in obj]
     elif isinstance(obj, dict):
         return {
-            k: _jsonify(v, key=k) for k, v in items(obj)
+            k: _jsonify(v, key=k) for k, v in obj.items()
             if (keyfilter(k) if keyfilter else 1)
         }
     elif isinstance(obj, (datetime.date, datetime.time)):
@@ -260,14 +259,10 @@ def jsonify(obj,
         return unknown_type_filter(obj)
 
 
-from vine.five import exec_
-_raise_with_context = None  # for flake8
-exec_("""def _raise_with_context(exc, ctx): raise exc from ctx""")
-
 def raise_with_context(exc):
     exc_info = sys.exc_info()
     if not exc_info:
         raise exc
     elif exc_info[1] is exc:
         raise
-    _raise_with_context(exc, exc_info[1])
+    raise exc from exc_info[1]

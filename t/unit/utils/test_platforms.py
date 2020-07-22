@@ -9,7 +9,6 @@ from case import Mock, call, mock, patch, skip
 
 from celery import _find_option_with_arg, platforms
 from celery.exceptions import SecurityError
-from celery.five import WhateverIO
 from celery.platforms import (DaemonContext, LockFailed, Pidfile,
                               _setgroups_hack, check_privileges,
                               close_open_fds, create_pidlock, detached,
@@ -18,6 +17,7 @@ from celery.platforms import (DaemonContext, LockFailed, Pidfile,
                               parse_uid, set_mp_process_title,
                               set_process_title, setgid, setgroups, setuid,
                               signals)
+from celery.utils.text import WhateverIO
 
 try:
     import resource

@@ -1,5 +1,4 @@
 """Task implementation: request context and the task base class."""
-import signal
 import sys
 
 from billiard.einfo import ExceptionInfo
@@ -12,7 +11,6 @@ from celery._state import _task_stack
 from celery.canvas import signature
 from celery.exceptions import (Ignore, ImproperlyConfigured,
                                MaxRetriesExceededError, Reject, Retry)
-from celery.five import items
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
@@ -20,6 +18,7 @@ from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import raise_with_context
+
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
 from .utils import appstr
@@ -365,7 +364,7 @@ class Task:
     @classmethod
     def annotate(cls):
         for d in resolve_all_annotations(cls.app.annotations, cls):
-            for key, value in items(d):
+            for key, value in d.items():
                 if key.startswith('@'):
                     cls.add_around(key[1:], value)
                 else:

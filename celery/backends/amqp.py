@@ -1,5 +1,6 @@
 """The old AMQP result backend, deprecated and replaced by the RPC backend."""
 import socket
+import time
 from collections import deque
 from operator import itemgetter
 
@@ -7,7 +8,6 @@ from kombu import Consumer, Exchange, Producer, Queue
 
 from celery import states
 from celery.exceptions import TimeoutError
-from celery.five import monotonic, range
 from celery.utils import deprecated
 from celery.utils.log import get_logger
 
@@ -193,7 +193,7 @@ class AMQPBackend(BaseBackend):
     poll = get_task_meta  # XXX compat
 
     def drain_events(self, connection, consumer,
-                     timeout=None, on_interval=None, now=monotonic, wait=None):
+                     timeout=None, on_interval=None, now=time.monotonic, wait=None):
         wait = wait or connection.drain_events
         results = {}
 
@@ -237,7 +237,7 @@ class AMQPBackend(BaseBackend):
 
     def get_many(self, task_ids, timeout=None, no_ack=True,
                  on_message=None, on_interval=None,
-                 now=monotonic, getfields=itemgetter('status', 'task_id'),
+                 now=time.monotonic, getfields=itemgetter('status', 'task_id'),
                  READY_STATES=states.READY_STATES,
                  PROPAGATE_STATES=states.PROPAGATE_STATES, **kwargs):
         with self.app.pool.acquire_channel(block=True) as (conn, channel):

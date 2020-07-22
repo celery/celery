@@ -4,7 +4,7 @@ import os
 import shlex
 import signal
 import sys
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict, UserList, defaultdict
 from functools import partial
 from subprocess import Popen
 from time import sleep
@@ -12,7 +12,6 @@ from time import sleep
 from kombu.utils.encoding import from_utf8
 from kombu.utils.objects import cached_property
 
-from celery.five import UserList, items
 from celery.platforms import IS_WINDOWS, Pidfile, signal_name
 from celery.utils.nodenames import (gethostname, host_format, node_format,
                                     nodesplit)
@@ -65,7 +64,7 @@ def _kwargs_to_command_line(kwargs):
     return {
         ('--{}'.format(k.replace('_', '-'))
          if len(k) > 1 else f'-{k}'): f'{v}'
-        for k, v in items(kwargs)
+        for k, v in kwargs.items()
     }
 
 
@@ -164,7 +163,7 @@ class Node:
         argv = tuple(
             [self.expander(self.cmd)] +
             [format_opt(opt, self.expander(value))
-             for opt, value in items(self.options)] +
+             for opt, value in self.options.items()] +
             [self.extra_args]
         )
         if self.append:
@@ -316,7 +315,7 @@ class MultiParser:
     def _update_ns_opts(self, p, names):
         # Numbers in args always refers to the index in the list of names.
         # (e.g., `start foo bar baz -c:1` where 1 is foo, 2 is bar, and so on).
-        for ns_name, ns_opts in list(items(p.namespaces)):
+        for ns_name, ns_opts in list(p.namespaces.items()):
             if ns_name.isdigit():
                 ns_index = int(ns_name) - 1
                 if ns_index < 0:
@@ -327,7 +326,7 @@ class MultiParser:
                     raise KeyError(f'No node at index {ns_name!r}')
 
     def _update_ns_ranges(self, p, ranges):
-        for ns_name, ns_opts in list(items(p.namespaces)):
+        for ns_name, ns_opts in list(p.namespaces.items()):
             if ',' in ns_name or (ranges and '-' in ns_name):
                 for subns in self._parse_ns_range(ns_name, ranges):
                     p.namespaces[subns].update(ns_opts)

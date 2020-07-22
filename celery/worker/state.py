@@ -9,13 +9,13 @@ import shelve
 import sys
 import weakref
 import zlib
+from collections import Counter
 
 from kombu.serialization import pickle, pickle_protocol
 from kombu.utils.objects import cached_property
 
 from celery import __version__
 from celery.exceptions import WorkerShutdown, WorkerTerminate
-from celery.five import Counter
 from celery.utils.collections import LimitedSet
 
 __all__ = (
@@ -112,9 +112,10 @@ C_BENCH_EVERY = int(os.environ.get('C_BENCH_EVERY') or
                     os.environ.get('CELERY_BENCH_EVERY') or 1000)
 if C_BENCH:  # pragma: no cover
     import atexit
+    from time import monotonic
 
     from billiard.process import current_process
-    from celery.five import monotonic
+
     from celery.utils.debug import memdump, sample_mem
 
     all_count = 0

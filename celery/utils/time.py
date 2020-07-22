@@ -12,7 +12,6 @@ from pytz import AmbiguousTimeError, FixedOffset
 from pytz import timezone as _timezone
 from pytz import utc
 
-from celery.five import string_t
 from .functional import dictfilter
 from .iso8601 import parse_iso8601
 from .text import pluralize
@@ -127,7 +126,7 @@ class _Zone:
         return localize(dt, self.local)
 
     def get_timezone(self, zone):
-        if isinstance(zone, string_t):
+        if isinstance(zone, str):
             return _timezone(zone)
         return zone
 
@@ -207,7 +206,7 @@ def remaining(start, ends_in, now=None, relative=False):
 def rate(r):
     """Convert rate string (`"100/m"`, `"2/h"` or `"0.5/s"`) to seconds."""
     if r:
-        if isinstance(r, string_t):
+        if isinstance(r, str):
             ops, _, modifier = r.partition('/')
             return RATE_MODIFIER_MAP[modifier or 's'](float(ops)) or 0
         return r or 0
@@ -245,7 +244,7 @@ def humanize_seconds(secs, prefix='', sep='', now='now', microseconds=False):
         if secs >= divider:
             w = secs / float(divider)
             return '{}{}{} {}'.format(prefix, sep, formatter(w),
-                                          pluralize(w, unit))
+                                      pluralize(w, unit))
     if microseconds and secs > 0.0:
         return '{prefix}{sep}{0:.2f} seconds'.format(
             secs, sep=sep, prefix=prefix)

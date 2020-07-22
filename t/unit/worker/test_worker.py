@@ -4,6 +4,8 @@ import sys
 from collections import deque
 from datetime import datetime, timedelta
 from functools import partial
+from queue import Empty
+from queue import Queue as FastQueue
 from threading import Event
 
 import pytest
@@ -21,9 +23,6 @@ from celery.concurrency.base import BasePool
 from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
                                TaskRevokedError, WorkerShutdown,
                                WorkerTerminate)
-from celery.five import Empty
-from celery.five import Queue as FastQueue
-from celery.five import range
 from celery.platforms import EX_FAILURE
 from celery.utils.nodenames import worker_direct
 from celery.utils.serialization import pickle
@@ -735,8 +734,8 @@ class test_WorkController(ConsumerCase):
 
     @skip.todo('unstable test')
     def test_process_shutdown_on_worker_shutdown(self):
-        from celery.concurrency.prefork import process_destructor
         from celery.concurrency.asynpool import Worker
+        from celery.concurrency.prefork import process_destructor
         with patch('celery.signals.worker_process_shutdown') as ws:
             with patch('os._exit') as _exit:
                 worker = Worker(None, None, on_exit=process_destructor)

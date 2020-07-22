@@ -15,14 +15,13 @@ from billiard.exceptions import RestartFreqExceeded
 from kombu.asynchronous.semaphore import DummyLock
 from kombu.exceptions import ContentDisallowed, DecodeError
 from kombu.utils.compat import _detect_environment
-from kombu.utils.encoding import bytes_t, safe_repr
+from kombu.utils.encoding import safe_repr
 from kombu.utils.limits import TokenBucket
 from vine import ppartial, promise
 
 from celery import bootsteps, signals
 from celery.app.trace import build_tracer
 from celery.exceptions import InvalidTaskError, NotRegistered
-from celery.five import buffer_t, items, values
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -112,10 +111,8 @@ def dump_body(m, body):
     """Format message body for debugging purposes."""
     # v2 protocol does not deserialize body
     body = m.body if body is None else body
-    if isinstance(body, buffer_t):
-        body = bytes_t(body)
     return '{} ({}b)'.format(truncate(safe_repr(body), 1024),
-                               len(m.body))
+                             len(m.body))
 
 
 class Consumer:
@@ -235,7 +232,7 @@ class Consumer:
 
     def reset_rate_limits(self):
         self.task_buckets.update(
-            (n, self.bucket_for_task(t)) for n, t in items(self.app.tasks)
+            (n, self.bucket_for_task(t)) for n, t in self.app.tasks.items()
         )
 
     def _update_prefetch_count(self, index=0):
@@ -385,7 +382,7 @@ class Consumer:
             self.controller.semaphore.clear()
         if self.timer:
             self.timer.clear()
-        for bucket in values(self.task_buckets):
+        for bucket in self.task_buckets.values():
             if bucket:
                 bucket.clear_pending()
         reserved_requests.clear()
@@ -524,7 +521,7 @@ class Consumer:
 
     def update_strategies(self):
         loader = self.app.loader
-        for name, task in items(self.app.tasks):
+        for name, task in self.app.tasks.items():
             self.strategies[name] = task.start_strategy(self.app, self)
             task.__trace__ = build_tracer(name, task, loader, self.hostname,
                                           app=self.app)

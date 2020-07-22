@@ -16,7 +16,6 @@ from itertools import chain
 from numbers import Number
 from pprint import _recursion
 
-from celery.five import items, range, text_t
 from .text import truncate
 
 __all__ = ('saferepr', 'reprstream')
@@ -42,7 +41,7 @@ _quoted = namedtuple('_quoted', ('value',))
 _dirty = namedtuple('_dirty', ('objid',))
 
 #: Types that are repsented as chars.
-chars_t = (bytes, text_t)
+chars_t = (bytes, str)
 
 #: Types that are regarded as safe to call repr on.
 safe_t = (Number,)
@@ -82,7 +81,7 @@ def _chaindict(mapping,
                LIT_LIST_SEP=LIT_LIST_SEP):
     # type: (Dict, _literal, _literal) -> Iterator[Any]
     size = len(mapping)
-    for i, (k, v) in enumerate(items(mapping)):
+    for i, (k, v) in enumerate(mapping.items()):
         yield _key(k)
         yield LIT_DICT_KVSEP
         yield v
@@ -227,7 +226,7 @@ def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
             elif isinstance(val, Decimal):
                 yield _repr(val), it
             elif isinstance(val, safe_t):
-                yield text_t(val), it
+                yield str(val), it
             elif isinstance(val, chars_t):
                 yield _quoted(val), it
             elif isinstance(val, range):  # pragma: no cover

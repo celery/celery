@@ -5,7 +5,7 @@ from io import StringIO
 from tempfile import mktemp
 
 import pytest
-from case import Mock, mock, patch, skip
+from case import Mock, mock, patch
 from case.utils import get_logger_handlers
 
 from celery import signals, uuid
@@ -143,17 +143,6 @@ class test_ColorFormatter:
 
         msg = x.format(record)
         assert '<Unrepresentable' in msg
-        assert safe_str.call_count == 1
-
-    @skip.if_python3()
-    @patch('celery.utils.log.safe_str')
-    def test_format_raises_no_color(self, safe_str):
-        x = ColorFormatter(use_color=False)
-        record = Mock()
-        record.levelname = 'ERROR'
-        record.msg = 'HELLO'
-        record.exc_text = 'error text'
-        x.format(record)
         assert safe_str.call_count == 1
 
 

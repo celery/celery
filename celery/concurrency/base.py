@@ -1,14 +1,13 @@
 """Base Execution Pool."""
 import logging
 import os
-import sys
+import time
 
 from billiard.einfo import ExceptionInfo
 from billiard.exceptions import WorkerLostError
 from kombu.utils.encoding import safe_repr
 
 from celery.exceptions import WorkerShutdown, WorkerTerminate
-from celery.five import monotonic, reraise
 from celery.utils import timer2
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
@@ -20,7 +19,7 @@ logger = get_logger('celery.pool')
 
 def apply_target(target, args=(), kwargs=None, callback=None,
                  accept_callback=None, pid=None, getpid=os.getpid,
-                 propagate=(), monotonic=monotonic, **_):
+                 propagate=(), monotonic=time.monotonic, **_):
     """Apply function within pool context."""
     kwargs = {} if not kwargs else kwargs
     if accept_callback:
@@ -35,8 +34,7 @@ def apply_target(target, args=(), kwargs=None, callback=None,
         raise
     except BaseException as exc:
         try:
-            reraise(WorkerLostError, WorkerLostError(repr(exc)),
-                    sys.exc_info()[2])
+            raise WorkerLostError(repr(exc)) from exc
         except WorkerLostError:
             callback(ExceptionInfo())
     else:

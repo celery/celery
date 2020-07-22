@@ -13,7 +13,6 @@ from kombu.utils.functional import lazy
 from kombu.utils.objects import cached_property
 
 from celery.exceptions import DuplicateNodenameWarning
-from celery.five import items
 from celery.utils.log import get_logger
 from celery.utils.text import pluralize
 
@@ -87,7 +86,7 @@ class Inspect:
             if self.pattern:
                 pattern = self.pattern
                 matcher = self.matcher
-                return {node: reply for node, reply in items(by_node)
+                return {node: reply for node, reply in by_node.items()
                         if match(node, pattern, matcher)}
             return by_node
 

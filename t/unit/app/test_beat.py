@@ -8,7 +8,6 @@ from case import Mock, call, patch, skip
 
 from celery import __version__, beat, uuid
 from celery.beat import BeatLazyFunc, event_t
-from celery.five import keys, string_t
 from celery.schedules import crontab, schedule
 from celery.utils.objects import Bunch
 
@@ -259,7 +258,7 @@ class test_Scheduler:
 
     def test_info(self):
         scheduler = mScheduler(app=self.app)
-        assert isinstance(scheduler.info, string_t)
+        assert isinstance(scheduler.info, str)
 
     def test_maybe_entry(self):
         s = mScheduler(app=self.app)
@@ -701,7 +700,7 @@ class test_Service:
         assert isinstance(schedule, dict)
         assert isinstance(s.scheduler, beat.Scheduler)
         scheduled = list(schedule.keys())
-        for task_name in keys(sh['entries']):
+        for task_name in sh['entries'].keys():
             assert task_name in scheduled
 
         s.sync()

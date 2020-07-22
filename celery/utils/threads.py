@@ -5,23 +5,23 @@ import sys
 import threading
 import traceback
 from contextlib import contextmanager
+from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
 
-from celery.five import THREAD_TIMEOUT_MAX, items
 from celery.local import Proxy
 
 try:
     from greenlet import getcurrent as get_ident
 except ImportError:  # pragma: no cover
     try:
-        from _thread import get_ident                   # noqa
+        from _thread import get_ident  # noqa
     except ImportError:
         try:
-            from thread import get_ident                # noqa
+            from thread import get_ident  # noqa
         except ImportError:  # pragma: no cover
             try:
-                from _dummy_thread import get_ident     # noqa
+                from _dummy_thread import get_ident  # noqa
             except ImportError:
-                from dummy_thread import get_ident      # noqa
+                from dummy_thread import get_ident  # noqa
 
 
 __all__ = (
@@ -122,7 +122,7 @@ class Local:
         object.__setattr__(self, '__ident_func__', get_ident)
 
     def __iter__(self):
-        return iter(items(self.__storage__))
+        return iter(self.__storage__.items())
 
     def __call__(self, proxy):
         """Create a proxy for a name."""

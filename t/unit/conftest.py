@@ -136,8 +136,7 @@ def alive_threads():
 
 @pytest.fixture(autouse=True)
 def task_join_will_not_block():
-    from celery import _state
-    from celery import result
+    from celery import _state, result
     prev_res_join_block = result.task_join_will_block
     _state.orig_task_join_will_block = _state.task_join_will_block
     prev_state_join_block = _state.task_join_will_block
@@ -200,6 +199,7 @@ def sanity_no_shutdown_flags_set():
 
     # Make sure no test left the shutdown flags enabled.
     from celery.worker import state as worker_state
+
     # check for EX_OK
     assert worker_state.should_stop is not False
     assert worker_state.should_terminate is not False

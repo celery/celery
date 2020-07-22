@@ -28,7 +28,6 @@ from kombu.clocks import timetuple
 from kombu.utils.objects import cached_property
 
 from celery import states
-from celery.five import items, values
 from celery.utils.functional import LRUCache, memoize, pass1
 from celery.utils.log import get_logger
 
@@ -194,10 +193,10 @@ class Worker:
 
         def event(type_, timestamp=None,
                   local_received=None, fields=None,
-                  max_drift=HEARTBEAT_DRIFT_MAX, items=items, abs=abs, int=int,
+                  max_drift=HEARTBEAT_DRIFT_MAX, abs=abs, int=int,
                   insort=bisect.insort, len=len):
             fields = fields or {}
-            for k, v in items(fields):
+            for k, v in fields.items():
                 _set(self, k, v)
             if type_ == 'offline':
                 heartbeats[:] = []
@@ -219,7 +218,8 @@ class Worker:
         return event
 
     def update(self, f, **kw):
-        for k, v in items(dict(f, **kw) if kw else f):
+        d = dict(f, **kw) if kw else f
+        for k, v in d.items():
             setattr(self, k, v)
 
     def __repr__(self):
@@ -307,9 +307,8 @@ class Task:
             self.__dict__.update(kwargs)
 
     def event(self, type_, timestamp=None, local_received=None, fields=None,
-              precedence=states.precedence, items=items,
-              setattr=setattr, task_event_to_state=TASK_EVENT_TO_STATE.get,
-              RETRY=states.RETRY):
+              precedence=states.precedence, setattr=setattr,
+              task_event_to_state=TASK_EVENT_TO_STATE.get, RETRY=states.RETRY):
         fields = fields or {}
 
         # using .get is faster than catching KeyError in this case.
@@ -328,7 +327,7 @@ class Task:
             keep = self.merge_rules.get(state)
             if keep is not None:
                 fields = {
-                    k: v for k, v in items(fields) if k in keep
+                    k: v for k, v in fields.items() if k in keep
                 }
         else:
             fields.update(state=state, timestamp=timestamp)
@@ -650,12 +649,12 @@ class State:
     def rebuild_taskheap(self, timetuple=timetuple):
         heap = self._taskheap[:] = [
             timetuple(t.clock, t.timestamp, t.origin, ref(t))
-            for t in values(self.tasks)
+            for t in self.tasks.values()
         ]
         heap.sort()
 
     def itertasks(self, limit=None):
-        for index, row in enumerate(items(self.tasks)):
+        for index, row in enumerate(self.tasks.items()):
             yield row
             if limit and index + 1 >= limit:
                 break
@@ -712,7 +711,7 @@ class State:
 
     def alive_workers(self):
         """Return a list of (seemingly) alive workers."""
-        return (w for w in values(self.workers) if w.alive)
+        return (w for w in self.workers.values() if w.alive)
 
     def __repr__(self):
         return R_STATE.format(self)
@@ -728,9 +727,10 @@ class State:
 
 
 def _serialize_Task_WeakSet_Mapping(mapping):
-    return {name: [t.id for t in tasks] for name, tasks in items(mapping)}
+    return {name: [t.id for t in tasks] for name, tasks in mapping.items()}
 
 
 def _deserialize_Task_WeakSet_Mapping(mapping, tasks):
+    mapping = mapping or {}
     return {name: WeakSet(tasks[i] for i in ids if i in tasks)
-            for name, ids in items(mapping or {})}
+            for name, ids in mapping.items()}

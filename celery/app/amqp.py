@@ -11,11 +11,11 @@ from kombu.utils.functional import maybe_list
 from kombu.utils.objects import cached_property
 
 from celery import signals
-from celery.five import items, string_t
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
 from celery.utils.time import maybe_make_aware
+
 from . import routes as _routes
 
 __all__ = ('AMQP', 'Queues', 'task_message')
@@ -35,7 +35,7 @@ task_message = namedtuple('task_message',
 
 def utf8dict(d, encoding='utf-8'):
     return {k.decode(encoding) if isinstance(k, bytes) else k: v
-            for k, v in items(d)}
+            for k, v in d.items()}
 
 
 class Queues(dict):
@@ -67,7 +67,8 @@ class Queues(dict):
         self.max_priority = max_priority
         if queues is not None and not isinstance(queues, Mapping):
             queues = {q.name: q for q in queues}
-        for name, q in items(queues or {}):
+        queues = queues or {}
+        for name, q in queues.items():
             self.add(q) if isinstance(q, Queue) else self.add_compat(name, **q)
 
     def __getitem__(self, name):
@@ -149,7 +150,7 @@ class Queues(dict):
         if not active:
             return ''
         info = [QUEUE_FORMAT.strip().format(q)
-                for _, q in sorted(items(active))]
+                for _, q in sorted(active.items())]
         if indent_first:
             return textindent('\n'.join(info), indent)
         return info[0] + '\n' + textindent('\n'.join(info[1:]), indent)
@@ -319,10 +320,10 @@ class AMQP:
             expires = maybe_make_aware(
                 now + timedelta(seconds=expires), tz=timezone,
             )
-        if not isinstance(eta, string_t):
+        if not isinstance(eta, str):
             eta = eta and eta.isoformat()
         # If we retry a task `expires` will already be ISO8601-formatted.
-        if not isinstance(expires, string_t):
+        if not isinstance(expires, str):
             expires = expires and expires.isoformat()
 
         if argsrepr is None:
@@ -492,7 +493,7 @@ class AMQP:
             if queue is None and exchange is None:
                 queue = default_queue
             if queue is not None:
-                if isinstance(queue, string_t):
+                if isinstance(queue, str):
                     qname, queue = queue, queues[queue]
                 else:
                     qname = queue.name

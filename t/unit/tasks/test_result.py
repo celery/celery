@@ -12,7 +12,6 @@ from celery.backends.base import SyncBackendMixin
 from celery.exceptions import (CPendingDeprecationWarning,
                                ImproperlyConfigured, IncompleteStream,
                                TimeoutError)
-from celery.five import range
 from celery.result import (AsyncResult, EagerResult, GroupResult, ResultSet,
                            assert_will_not_block, result_from_tuple)
 from celery.utils.serialization import pickle

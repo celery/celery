@@ -16,7 +16,6 @@ from celery import current_app, shared_task
 from celery.app import base as _appbase
 from celery.app import defaults
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items, keys
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
@@ -368,7 +367,7 @@ class test_App:
         with self.Celery(broker='foo://bar') as app:
             app.conf.worker_agent = 'foo:Bar'
             assert not app.configured
-            assert list(keys(app.conf))
+            assert list(app.conf.keys())
             assert app.configured
             assert 'worker_agent' in app.conf
             assert dict(app.conf)
@@ -553,7 +552,7 @@ class test_App:
         saved = pickle.dumps(self.app)
         assert len(saved) < 2048
         restored = pickle.loads(saved)
-        for key, value in items(changes):
+        for key, value in changes.items():
             assert restored.conf[key] == value
 
     def test_worker_main(self):
@@ -774,7 +773,7 @@ class test_App:
     ])
     def test_amqp_get_broker_info(self, url, expected_fields):
         info = self.app.connection(url).info()
-        for key, expected_value in items(expected_fields):
+        for key, expected_value in expected_fields.items():
             assert info[key] == expected_value
 
     def test_amqp_failover_strategy_selection(self):
