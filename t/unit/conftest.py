@@ -133,6 +133,9 @@ def AAA_disable_multiprocessing():
 
 
 def alive_threads():
+    # !!!: ``'pymongo' not in thread.name`` does seem rather like a temporary helper for WIP. If it's
+    #      not meant to be temporary, then check is the testing model is correct. This is probably
+    #      because of using real backing services in unit-testing.
     return [thread for thread in threading.enumerate() if thread.is_alive() and 'pymongo' not in thread.name]
 
 

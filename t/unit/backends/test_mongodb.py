@@ -550,38 +550,67 @@ class test_MongoBackend_no_mock:
 
 
 @pytest.fixture(scope="function")
-def mongo_backend(app):
-    be = MongoBackend(app=app)
-    yield be
+def mongo_backend_factory(request, app):
+    # TODO: it's not really a unit-test fixture as it uses (requires?) a real backend...
+    #       Check if can be replaced with a mock. Move to integration tests if can't be mocked.
+    class MongoBackendFactory:
+        """MongoBackend container for helping with clean up."""
+        beckend_obj = None
 
-    # Close pymongo connections
-    be._connection.close()
+        @classmethod
+        def create(cls, serializer=None):
+            # TODO: Getting ``serializer_registry._encoders[self.serializer] KeyError: 'bson'`` exception,
+            #       seems like ``bson`` serializer must be registered manually. Check how to do it. But ``bson``
+            #       seem to work fine is set directly as MongoBackend instance property, so maybe it's the
+            #       intended way, however I didn't find in docs much about it...
+            if serializer == "bson":
+                cls.beckend_obj = MongoBackend(app=app)
+                cls.beckend_obj.serializer = serializer
+            else:
+                cls.beckend_obj = MongoBackend(app=app, serializer=serializer)
+            return cls.beckend_obj
+
+        @classmethod
+        def clean(cls):
+            if not cls.beckend_obj:
+                return
+            cls.beckend_obj._connection.close()
+
+    request.addfinalizer(MongoBackendFactory.clean)
+    yield MongoBackendFactory
+
 
 @skip.unless_module('pymongo')
 class test_MongoBackend_serializing:
 
     @pytest.mark.parametrize("serializer", ['json', 'bson', 'pickle'])
-    @pytest.mark.parametrize("result", [
-        'A simple string',
-        {'foo': "simple result"},
-        datetime.datetime(2000, 1, 1, 0, 0, 0, 0),
-        # This input is broken as of this writing
-        # datetime.datetime(2000, 1, 1, 0, 0, 0, 0, tzinfo=datetime.timezone.utc),
+    @pytest.mark.parametrize("result,result_supported_serializers", [
+        ('A simple string', ['json', 'pickle', 'bson']),
+        ({'foo': "simple result"}, ['json', 'pickle', 'bson']),
+        (object(), ['json', 'pickle', 'bson']),
+        # JSON does not have a concept of datetime, so following is not serializeable.
+        # Tho kombu may work for serializing, but not for deserializing.
+        (datetime.datetime(2000, 1, 1, 0, 0, 0, 0), ['pickle', 'bson']),
+        (datetime.datetime(2000, 1, 1, 0, 0, 0, 0, tzinfo=datetime.timezone.utc), ['pickle', 'bson']),
     ])
-    def test_encode_success_results(self, mongo_backend, serializer, result):
-        mongo_backend.serializer = serializer
-
+    def test_encode_success_results(self, mongo_backend_factory, serializer, result, result_supported_serializers):
+        mongo_backend = mongo_backend_factory.create(serializer=serializer)
         mongo_backend.store_result(TASK_ID, result, 'SUCCESS')
         recovered = mongo_backend.get_result(TASK_ID)
-        assert recovered == result
+        if serializer not in result_supported_serializers:
+            pytest.xfail(reason=f"{serializer} is not supported by {type(result)}")
+        if isinstance(result, datetime.datetime) and result.tzinfo:
+            # NOTE: by default Celery uses UTC and does not attach tzinfo, so in order to compare recovered with result,
+            #       the latter should be converted to UTC and have tzinfo removed.
+            result = result.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+        assert recovered == result, serializer
 
     @pytest.mark.parametrize("serializer", ['pickle'])
     @pytest.mark.parametrize("exception", [
         Exception("Basic Exception"),
     ])
-    def test_encode_non_trivial_error_results(self, mongo_backend, serializer, exception):
-        mongo_backend.serializer = serializer
-
+    def test_encode_non_trivial_error_results(self, mongo_backend_factory, serializer, exception):
+        mongo_backend = mongo_backend_factory.create(serializer=serializer)
         mongo_backend.store_result(TASK_ID, exception, 'FAILURE')
         recovered = mongo_backend.get_result(TASK_ID)
         # They are not the same object, so direct comparison fails
