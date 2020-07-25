@@ -643,7 +643,7 @@ class Celery(object):
             packages (List[str]): List of packages to search.
                 This argument may also be a callable, in which case the
                 value returned is used (for lazy evaluation).
-            related_name (str): The name of the module to find.  Defaults
+            related_name (Optional[str]): The name of the module to find.  Defaults
                 to "tasks": meaning "look for 'module.tasks' for every
                 module in ``packages``.".  If ``None`` will only try to import
                 the package, i.e. "look for 'module'".
