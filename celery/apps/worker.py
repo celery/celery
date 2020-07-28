@@ -16,6 +16,7 @@ import sys
 from datetime import datetime
 from functools import partial
 
+from billiard.common import REMAP_SIGTERM
 from billiard.process import current_process
 from kombu.utils.encoding import safe_str
 
@@ -286,9 +287,15 @@ def _shutdown_handler(worker, sig='TERM', how='Warm',
     platforms.signals[sig] = _handle_request
 
 
-install_worker_term_handler = partial(
-    _shutdown_handler, sig='SIGTERM', how='Warm', exc=WorkerShutdown,
-)
+if REMAP_SIGTERM == "SIGQUIT":
+    install_worker_term_handler = partial(
+        _shutdown_handler, sig='SIGTERM', how='Cold', exc=WorkerTerminate, exitcode=EX_FAILURE,
+    )
+else:
+    install_worker_term_handler = partial(
+        _shutdown_handler, sig='SIGTERM', how='Warm', exc=WorkerShutdown,
+    )
+
 if not is_jython:  # pragma: no cover
     install_worker_term_hard_handler = partial(
         _shutdown_handler, sig='SIGQUIT', how='Cold', exc=WorkerTerminate,

@@ -16,6 +16,7 @@ from celery.bin.worker import main as worker_main
 from celery.bin.worker import worker
 from celery.exceptions import (ImproperlyConfigured, WorkerShutdown,
                                WorkerTerminate)
+from celery.five import reload as reload_module
 from celery.platforms import EX_FAILURE, EX_OK
 from celery.worker import state
 
@@ -668,4 +669,23 @@ class test_signal_handlers:
                 state.should_stop = None
             wsd.send.assert_called_with(
                 sender='foo', sig='SIGTERM', how='Warm', exitcode=0,
+            )
+
+    @patch.dict(os.environ, {"REMAP_SIGTERM": "SIGQUIT"})
+    def test_send_worker_shutting_down_signal_with_remap_sigquit(self):
+        with patch('celery.apps.worker.signals.worker_shutting_down') as wsd:
+            from billiard import common
+
+            reload_module(common)
+            reload_module(cd)
+
+            worker = self._Worker()
+            handlers = self.psig(cd.install_worker_term_handler, worker)
+            try:
+                with pytest.raises(WorkerTerminate):
+                    handlers['SIGTERM']('SIGTERM', object())
+            finally:
+                state.should_stop = None
+            wsd.send.assert_called_with(
+                sender='foo', sig='SIGTERM', how='Cold', exitcode=1,
             )
