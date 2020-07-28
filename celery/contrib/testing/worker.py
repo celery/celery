@@ -53,16 +53,17 @@ class TestWorkController(worker.WorkController):
 
 
 @contextmanager
-def start_worker(app,
-                 concurrency=1,
-                 pool='solo',
-                 loglevel=WORKER_LOGLEVEL,
-                 logfile=None,
-                 perform_ping_check=True,
-                 ping_task_timeout=10.0,
-                 **kwargs):
-    # type: (Celery, int, str, Union[str, int],
-    #        str, bool, float, **Any) -> # Iterable
+def start_worker(
+    app,  # type: Celery
+    concurrency=1,  # type: int
+    pool='solo',  # type: str
+    loglevel=WORKER_LOGLEVEL,  # type: Union[str, int]
+    logfile=None,  # type: str
+    perform_ping_check=True,  # type: bool
+    ping_task_timeout=10.0,  # type: float
+    **kwargs  # type: Any
+):
+    # type: (...) -> Iterable
     """Start embedded worker.
 
     Yields:
