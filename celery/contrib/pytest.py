@@ -176,6 +176,7 @@ def celery_app(request,
 
 @pytest.fixture(scope='session')
 def celery_class_tasks():
+    """Redefine this fixture to register tasks with the test Celery app."""
     return []
 
 
