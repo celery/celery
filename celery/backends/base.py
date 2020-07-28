@@ -28,7 +28,7 @@ from celery._state import get_current_task
 from celery.exceptions import (ChordError, ImproperlyConfigured,
                                NotRegistered, TaskRevokedError, TimeoutError,
                                BackendGetMetaError, BackendStoreError)
-from celery.five import PY3, items, reraise
+from celery.five import PY3, items
 from celery.result import (GroupResult, ResultBase, ResultSet,
                            allow_join_result, result_from_tuple)
 from celery.utils.collections import BufferMap
@@ -37,7 +37,8 @@ from celery.utils.log import get_logger
 from celery.utils.serialization import (create_exception_cls,
                                         ensure_serializable,
                                         get_pickleable_exception,
-                                        get_pickled_exception)
+                                        get_pickled_exception,
+                                        raise_with_context)
 from celery.utils.time import get_exponential_backoff_interval
 
 __all__ = ('BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend')
@@ -453,10 +454,8 @@ class Backend(object):
                             self.max_sleep_between_retries_ms, True) / 1000
                         self._sleep(sleep_amount)
                     else:
-                        reraise(
-                            BackendStoreError,
+                        raise_with_context(
                             BackendStoreError("failed to store result on the backend", task_id=task_id, state=state),
-                            traceback,
                         )
                 else:
                     raise
@@ -524,7 +523,6 @@ class Backend(object):
                 meta = self._get_task_meta_for(task_id)
                 break
             except Exception as exc:
-                tb = sys.exc_info()[2]
                 if self.always_retry and self.exception_safe_to_retry(exc):
                     if retries < self.max_retries:
                         retries += 1
@@ -536,10 +534,8 @@ class Backend(object):
                             self.max_sleep_between_retries_ms, True) / 1000
                         self._sleep(sleep_amount)
                     else:
-                        reraise(
-                            BackendGetMetaError,
+                        raise_with_context(
                             BackendGetMetaError("failed to get meta", task_id=task_id),
-                            tb,
                         )
                 else:
                     raise
