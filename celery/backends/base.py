@@ -72,7 +72,6 @@ def unpickle_backend(cls, args, kwargs):
     return cls(*args, app=current_app._get_current_object(), **kwargs)
 
 
-
 class _nulldict(dict):
     def ignore(self, *a, **kw):
         pass
