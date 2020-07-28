@@ -114,8 +114,22 @@ class Redis(mock.MockCallbacks):
     def pipeline(self):
         return self.Pipeline(self)
 
+    def _get_unsorted_list(self, key):
+        # We simply store the values in append (rpush) order
+        return self.keyspace.setdefault(key, list())
+
+    def rpush(self, key, value):
+        self._get_unsorted_list(key).append(value)
+
+    def lrange(self, key, start, stop):
+        return self._get_unsorted_list(key)[start:stop]
+
+    def llen(self, key):
+        return len(self._get_unsorted_list(key))
+
     def _get_sorted_set(self, key):
-        return self.keyspace.setdefault(key, [])
+        # We store 2-tuples of (score, value) and sort after each append (zadd)
+        return self.keyspace.setdefault(key, list())
 
     def zadd(self, key, mapping):
         # Store elements as 2-tuples with the score first so we can sort it
@@ -611,6 +625,48 @@ class test_RedisBackend:
 
         for i in range(10):
             self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
+            assert self.b.client.rpush.call_count
+            self.b.client.rpush.reset_mock()
+        assert self.b.client.lrange.call_count
+        jkey = self.b.get_key_for_group('group_id', '.j')
+        tkey = self.b.get_key_for_group('group_id', '.t')
+        self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
+        self.b.client.expire.assert_has_calls([
+            call(jkey, 86400), call(tkey, 86400),
+        ])
+
+    @patch('celery.result.GroupResult.restore')
+    def test_on_chord_part_return__unordered(self, restore):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=False,
+        )
+
+        tasks = [self.create_task(i) for i in range(10)]
+        random.shuffle(tasks)
+
+        for i in range(10):
+            self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
+            assert self.b.client.rpush.call_count
+            self.b.client.rpush.reset_mock()
+        assert self.b.client.lrange.call_count
+        jkey = self.b.get_key_for_group('group_id', '.j')
+        tkey = self.b.get_key_for_group('group_id', '.t')
+        self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
+        self.b.client.expire.assert_has_calls([
+            call(jkey, 86400), call(tkey, 86400),
+        ])
+
+    @patch('celery.result.GroupResult.restore')
+    def test_on_chord_part_return__ordered(self, restore):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=True,
+        )
+
+        tasks = [self.create_task(i) for i in range(10)]
+        random.shuffle(tasks)
+
+        for i in range(10):
+            self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
             assert self.b.client.zadd.call_count
             self.b.client.zadd.reset_mock()
         assert self.b.client.zrangebyscore.call_count
@@ -623,6 +679,50 @@ class test_RedisBackend:
 
     @patch('celery.result.GroupResult.restore')
     def test_on_chord_part_return_no_expiry(self, restore):
+        old_expires = self.b.expires
+        self.b.expires = None
+        tasks = [self.create_task(i) for i in range(10)]
+
+        for i in range(10):
+            self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
+            assert self.b.client.rpush.call_count
+            self.b.client.rpush.reset_mock()
+        assert self.b.client.lrange.call_count
+        jkey = self.b.get_key_for_group('group_id', '.j')
+        tkey = self.b.get_key_for_group('group_id', '.t')
+        self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
+        self.b.client.expire.assert_not_called()
+
+        self.b.expires = old_expires
+
+    @patch('celery.result.GroupResult.restore')
+    def test_on_chord_part_return_no_expiry__unordered(self, restore):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=False,
+        )
+
+        old_expires = self.b.expires
+        self.b.expires = None
+        tasks = [self.create_task(i) for i in range(10)]
+
+        for i in range(10):
+            self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
+            assert self.b.client.rpush.call_count
+            self.b.client.rpush.reset_mock()
+        assert self.b.client.lrange.call_count
+        jkey = self.b.get_key_for_group('group_id', '.j')
+        tkey = self.b.get_key_for_group('group_id', '.t')
+        self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
+        self.b.client.expire.assert_not_called()
+
+        self.b.expires = old_expires
+
+    @patch('celery.result.GroupResult.restore')
+    def test_on_chord_part_return_no_expiry__ordered(self, restore):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=True,
+        )
+
         old_expires = self.b.expires
         self.b.expires = None
         tasks = [self.create_task(i) for i in range(10)]
@@ -646,7 +746,55 @@ class test_RedisBackend:
             self.b.on_chord_part_return(request, states.SUCCESS, 20)
             callback.delay.assert_called_with([10, 20])
 
+    def test_on_chord_part_return__success__unordered(self):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=False,
+        )
+
+        with self.chord_context(2) as (_, request, callback):
+            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            callback.delay.assert_not_called()
+            self.b.on_chord_part_return(request, states.SUCCESS, 20)
+            callback.delay.assert_called_with([10, 20])
+
+    def test_on_chord_part_return__success__ordered(self):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=True,
+        )
+
+        with self.chord_context(2) as (_, request, callback):
+            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            callback.delay.assert_not_called()
+            self.b.on_chord_part_return(request, states.SUCCESS, 20)
+            callback.delay.assert_called_with([10, 20])
+
     def test_on_chord_part_return__callback_raises(self):
+        with self.chord_context(1) as (_, request, callback):
+            callback.delay.side_effect = KeyError(10)
+            task = self.app._tasks['add'] = Mock(name='add_task')
+            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            task.backend.fail_from_current_stack.assert_called_with(
+                callback.id, exc=ANY,
+            )
+
+    def test_on_chord_part_return__callback_raises__unordered(self):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=False,
+        )
+
+        with self.chord_context(1) as (_, request, callback):
+            callback.delay.side_effect = KeyError(10)
+            task = self.app._tasks['add'] = Mock(name='add_task')
+            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            task.backend.fail_from_current_stack.assert_called_with(
+                callback.id, exc=ANY,
+            )
+
+    def test_on_chord_part_return__callback_raises__ordered(self):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=True,
+        )
+
         with self.chord_context(1) as (_, request, callback):
             callback.delay.side_effect = KeyError(10)
             task = self.app._tasks['add'] = Mock(name='add_task')
@@ -659,6 +807,38 @@ class test_RedisBackend:
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, ChordError())
+            self.b.client.pipeline.return_value.rpush().llen().get().expire(
+            ).expire().execute.return_value = (1, 1, 0, 4, 5)
+            task = self.app._tasks['add'] = Mock(name='add_task')
+            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            task.backend.fail_from_current_stack.assert_called_with(
+                callback.id, exc=ANY,
+            )
+
+    def test_on_chord_part_return__ChordError__unordered(self):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=False,
+        )
+
+        with self.chord_context(1) as (_, request, callback):
+            self.b.client.pipeline = ContextMock()
+            raise_on_second_call(self.b.client.pipeline, ChordError())
+            self.b.client.pipeline.return_value.rpush().llen().get().expire(
+            ).expire().execute.return_value = (1, 1, 0, 4, 5)
+            task = self.app._tasks['add'] = Mock(name='add_task')
+            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            task.backend.fail_from_current_stack.assert_called_with(
+                callback.id, exc=ANY,
+            )
+
+    def test_on_chord_part_return__ChordError__ordered(self):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=True,
+        )
+
+        with self.chord_context(1) as (_, request, callback):
+            self.b.client.pipeline = ContextMock()
+            raise_on_second_call(self.b.client.pipeline, ChordError())
             self.b.client.pipeline.return_value.zadd().zcount().get().expire(
             ).expire().execute.return_value = (1, 1, 0, 4, 5)
             task = self.app._tasks['add'] = Mock(name='add_task')
@@ -668,6 +848,38 @@ class test_RedisBackend:
             )
 
     def test_on_chord_part_return__other_error(self):
+        with self.chord_context(1) as (_, request, callback):
+            self.b.client.pipeline = ContextMock()
+            raise_on_second_call(self.b.client.pipeline, RuntimeError())
+            self.b.client.pipeline.return_value.rpush().llen().get().expire(
+            ).expire().execute.return_value = (1, 1, 0, 4, 5)
+            task = self.app._tasks['add'] = Mock(name='add_task')
+            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            task.backend.fail_from_current_stack.assert_called_with(
+                callback.id, exc=ANY,
+            )
+
+    def test_on_chord_part_return__other_error__unordered(self):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=False,
+        )
+
+        with self.chord_context(1) as (_, request, callback):
+            self.b.client.pipeline = ContextMock()
+            raise_on_second_call(self.b.client.pipeline, RuntimeError())
+            self.b.client.pipeline.return_value.rpush().llen().get().expire(
+            ).expire().execute.return_value = (1, 1, 0, 4, 5)
+            task = self.app._tasks['add'] = Mock(name='add_task')
+            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            task.backend.fail_from_current_stack.assert_called_with(
+                callback.id, exc=ANY,
+            )
+
+    def test_on_chord_part_return__other_error__ordered(self):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=True,
+        )
+
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, RuntimeError())
