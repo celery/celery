@@ -62,9 +62,6 @@ matrix:
   - python: '3.8'
     env: TOXENV=bandit
     stage: lint
-  - python: '3.8'
-    env: TOXENV=pydocstyle
-    stage: lint
   - python: '2.7'
     env: TOXENV=flakeplus
     stage: lint
