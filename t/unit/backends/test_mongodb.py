@@ -652,7 +652,6 @@ class test_MongoBackend_store_get_result:
 
         monkeypatch.setattr(MongoBackend, "collection", FakeMongoCollection())
 
-
     @pytest.mark.parametrize("serializer,result_type,result", [
         (s, type(i['result']), i['result']) for i in SUCCESS_RESULT_TEST_DATA for s in i['serializers']]
     )
