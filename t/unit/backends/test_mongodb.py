@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import datetime
+import sys
 from pickle import dumps, loads
 
 import pytest
@@ -659,6 +660,8 @@ class test_MongoBackend_store_get_result:
         backend = mongo_backend_factory(serializer=serializer)
         backend.store_result(TASK_ID, result, 'SUCCESS')
         recovered = backend.get_result(TASK_ID)
+        if sys.version_info.major == 2 and isinstance(recovered, str):
+            result_type = str  # workaround for python 2 compatibility and `unicode_literals`
         assert type(recovered) == result_type
         assert recovered == result
 
