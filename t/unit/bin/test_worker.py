@@ -2,6 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import logging
 import os
+import signal
 import sys
 
 import pytest
@@ -671,6 +672,11 @@ class test_signal_handlers:
                 sender='foo', sig='SIGTERM', how='Warm', exitcode=0,
             )
 
+    @pytest.mark.xfail(
+        not hasattr(signal, "SIGQUIT"),
+        reason="Windows does not support SIGQUIT",
+        raises=AttributeError,
+    )
     @patch.dict(os.environ, {"REMAP_SIGTERM": "SIGQUIT"})
     def test_send_worker_shutting_down_signal_with_remap_sigquit(self):
         with patch('celery.apps.worker.signals.worker_shutting_down') as wsd:

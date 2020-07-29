@@ -348,7 +348,7 @@ class test_Request(RequestCase):
         einfo = None
         try:
             raise WorkerLostError()
-        except:
+        except WorkerLostError:
             einfo = ExceptionInfo(internal=True)
         req = self.get_request(self.add.s(2, 2))
         req.task.acks_late = True
@@ -362,7 +362,7 @@ class test_Request(RequestCase):
         einfo = None
         try:
             raise WorkerLostError()
-        except:
+        except WorkerLostError:
             einfo = ExceptionInfo(internal=True)
         req = self.get_request(self.add.s(2, 2))
         req.task.acks_late = True
@@ -407,7 +407,7 @@ class test_Request(RequestCase):
         job.eventer = Mock(name='.eventer')
         try:
             raise Retry('foo', KeyError('moofoobar'))
-        except:
+        except Retry:
             einfo = ExceptionInfo()
             job.on_failure(einfo)
             job.eventer.send.assert_called_with(

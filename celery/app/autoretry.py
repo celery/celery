@@ -7,8 +7,7 @@ from celery.utils.time import get_exponential_backoff_interval
 
 
 def add_autoretry_behaviour(task, **options):
-    """Wrap task's `run` method with auto-retry functionality"""
-
+    """Wrap task's `run` method with auto-retry functionality."""
     autoretry_for = tuple(
         options.get('autoretry_for',
                     getattr(task, 'autoretry_for', ()))

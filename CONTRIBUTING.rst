@@ -849,14 +849,6 @@ make it easier for the maintainers to accept your proposed changes:
           $ make flakes
           $ tox -e flakeplus
 
-- [ ] Run ``pydocstyle`` against the code. The following commands are valid
-      and equivalent.:
-
-      .. code-block:: console
-
-          $ pydocstyle celery/
-          $ tox -e pydocstyle
-
 - [ ]  Build api docs to make sure everything is OK. The following commands are valid
       and equivalent.:
 
