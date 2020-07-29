@@ -1,18 +1,15 @@
 import pytest
 
-try:
-    from pytest import PytestUnknownMarkWarning  # noqa: F401
-
-    pytest_marker_warnings = True
-except ImportError:
-    pytest_marker_warnings = False
-
-
 pytest_plugins = ["pytester"]
+
+try:
+    pytest.fail()
+except BaseException as e:
+    Failed = type(e)
 
 
 @pytest.mark.skipif(
-    not pytest_marker_warnings,
+    not hasattr(pytest, "PytestUnknownMarkWarning"),
     reason="Older pytest version without marker warnings",
 )
 def test_pytest_celery_marker_registration(testdir):
@@ -28,7 +25,7 @@ def test_pytest_celery_marker_registration(testdir):
     )
 
     result = testdir.runpytest('-q')
-    with pytest.raises(ValueError):
+    with pytest.raises((ValueError, Failed)):
         result.stdout.fnmatch_lines_random(
             "*PytestUnknownMarkWarning: Unknown pytest.mark.celery*"
         )
