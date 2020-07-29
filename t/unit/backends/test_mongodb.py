@@ -4,8 +4,14 @@ import datetime
 from pickle import dumps, loads
 
 import pytest
+import pytz
+try:
+    import pymongo
+    import bson
+except ImportError:
+    pymongo = None
+    bson = None
 from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
-import bson
 from kombu.exceptions import EncodeError
 try:
     from pymongo.errors import ConfigurationError
@@ -615,7 +621,7 @@ SUCCESS_RESULT_TEST_DATA = [
         "serializers": ["bson", "pickle", "yaml"],
     },
     {
-        "result": datetime.datetime(2000, 1, 1, 0, 0, 0, 0, tzinfo=datetime.timezone.utc),
+        "result": datetime.datetime(2000, 1, 1, 0, 0, 0, 0, tzinfo=pytz.utc),
         "serializers": ["pickle", "yaml"],
     },
     # custom types
