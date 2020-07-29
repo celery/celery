@@ -334,11 +334,10 @@ class test_ControlPanel:
 
         panel.state.consumer = Mock()
         panel.state.consumer.controller = Mock()
-        sc = panel.state.consumer.controller.autoscaler = Mock()
-        panel.handle('pool_grow')
-        sc.force_scale_up.assert_called()
-        panel.handle('pool_shrink')
-        sc.force_scale_down.assert_called()
+        r = panel.handle('pool_grow')
+        assert 'error' in r
+        r = panel.handle('pool_shrink')
+        assert 'error' in r
 
     def test_add__cancel_consumer(self):
 

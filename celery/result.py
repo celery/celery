@@ -129,6 +129,15 @@ class AsyncResult(ResultBase):
         parent = self.parent
         return (self.id, parent and parent.as_tuple()), None
 
+    def as_list(self):
+        """  Returns as a list of task IDs. """
+        results = []
+        parent = self.parent
+        results.append(self.id)
+        if parent is not None:
+            results.extend(parent.as_list())
+        return results
+
     def forget(self):
         """Forget the result of this task and its parents."""
         self._cache = None
@@ -414,7 +423,7 @@ class AsyncResult(ResultBase):
             return self._maybe_set_cache(self.backend.get_task_meta(self.id))
         return self._cache
 
-    def _iter_meta(self):
+    def _iter_meta(self, **kwargs):
         return iter([self._get_task_meta()])
 
     def _set_cache(self, d):
@@ -834,9 +843,9 @@ class ResultSet(ResultBase):
                 acc[order_index[task_id]] = value
         return acc
 
-    def _iter_meta(self):
+    def _iter_meta(self, **kwargs):
         return (meta for _, meta in self.backend.get_many(
-            {r.id for r in self.results}, max_iterations=1,
+            {r.id for r in self.results}, max_iterations=1, **kwargs
         ))
 
     def _failed_join_report(self):
@@ -1030,7 +1039,8 @@ class EagerResult(AsyncResult):
             return self.result
         elif self.state in states.PROPAGATE_STATES:
             if propagate:
-                raise self.result
+                raise self.result if isinstance(
+                    self.result, Exception) else Exception(self.result)
             return self.result
     wait = get  # XXX Compat (remove 5.0)
 

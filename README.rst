@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 4.4.0rc5 (cliffs)
+:Version: 4.4.6 (cliffs)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -44,7 +44,7 @@ to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
 language. In addition to Python there's node-celery_ for Node.js,
-a `PHP client`_ and `gocelery`_ for golang.
+a `PHP client`_, `gocelery`_ for golang, and rusty-celery_ for Rust.
 
 Language interoperability can also be achieved by using webhooks
 in such a way that the client enqueues an URL to be requested by a worker.
@@ -52,19 +52,21 @@ in such a way that the client enqueues an URL to be requested by a worker.
 .. _node-celery: https://github.com/mher/node-celery
 .. _`PHP client`: https://github.com/gjedeer/celery-php
 .. _`gocelery`: https://github.com/gocelery/gocelery
+.. _rusty-celery: https://github.com/rusty-celery/rusty-celery
 
 What do I need?
 ===============
 
-Celery version 4.3 runs on,
+Celery version 4.4.0 runs on,
 
-- Python (2.7, 3.4, 3.5, 3.6, 3.7)
-- PyPy2.7 (6.0)
-- PyPy3.5 (6.0)
+- Python (2.7, 3.5, 3.6, 3.7, 3.8)
+- PyPy2.7 (7.2)
+- PyPy3.5 (7.1)
+- PyPy3.6 (7.6)
 
 
-This is the last version to support Python 2.7,
-and from the next version (Celery 5.x) Python 3.5 or newer is required.
+4.x.x is the last version to support Python 2.7,
+and from the next major version (Celery 5.x) Python 3.6 or newer is required.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
@@ -89,7 +91,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery 4.2 coming from previous versions then you should read our
+new to Celery 4.4 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_

@@ -408,6 +408,7 @@ class Scheduler(object):
 
     def setup_schedule(self):
         self.install_default_entries(self.data)
+        self.merge_inplace(self.app.conf.beat_schedule)
 
     def _do_sync(self):
         try:

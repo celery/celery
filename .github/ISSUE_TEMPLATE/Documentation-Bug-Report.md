@@ -1,6 +1,7 @@
 ---
 name: Documentation Bug Report
 about: Is something wrong with our documentation?
+labels: "Issue Type: Bug Report, Category: Documentation"
 ---
 <!--
 Please fill this template entirely and do not erase parts of it.

@@ -194,6 +194,8 @@ NAMESPACES = Namespace(
         port=Option(type='int'),
         socket_timeout=Option(120.0, type='float'),
         socket_connect_timeout=Option(None, type='float'),
+        retry_on_timeout=Option(False, type='bool'),
+        socket_keepalive=Option(False, type='bool'),
     ),
     result=Namespace(
         __old__=old_ns('celery_result'),
@@ -214,7 +216,12 @@ NAMESPACES = Namespace(
         extended=Option(False, type='bool'),
         serializer=Option('json'),
         backend_transport_options=Option({}, type='dict'),
+        chord_retry_interval=Option(1.0, type='float'),
         chord_join_timeout=Option(3.0, type='float'),
+        backend_max_sleep_between_retries_ms=Option(10000, type='int'),
+        backend_max_retries=Option(float("inf"), type='float'),
+        backend_base_sleep_between_retries_ms=Option(10, type='int'),
+        backend_always_retry=Option(False, type='bool'),
     ),
     elasticsearch=Namespace(
         __old__=old_ns('celery_elasticsearch'),
@@ -222,6 +229,7 @@ NAMESPACES = Namespace(
         retry_on_timeout=Option(type='bool'),
         max_retries=Option(type='int'),
         timeout=Option(type='float'),
+        save_meta_as_text=Option(True, type='bool'),
     ),
     riak=Namespace(
         __old__=old_ns('celery_riak'),
@@ -244,6 +252,7 @@ NAMESPACES = Namespace(
         short_lived_sessions=Option(
             False, type='bool', old={'celery_result_db_short_lived_sessions'},
         ),
+        table_schemas=Option(type='dict'),
         table_names=Option(type='dict', old={'celery_result_db_tablenames'}),
     ),
     task=Namespace(

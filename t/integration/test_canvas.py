@@ -123,6 +123,10 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [4, 5]
 
+    def test_chain_of_chain_with_a_single_task(self, manager):
+        sig = signature('any_taskname', queue='any_q')
+        chain([chain(sig)]).apply_async()
+
     def test_chain_on_error(self, manager):
         from .tasks import ExpectedException
 

@@ -48,22 +48,6 @@ like adding new worker nodes, or revoking unnecessary tasks.
 General Settings
 ================
 
-.. _optimizing-librabbitmq:
-
-librabbitmq
------------
-
-If you're using RabbitMQ (AMQP) as the broker then you can install the
-:pypi:`librabbitmq` module to use an optimized client written in C:
-
-.. code-block:: console
-
-    $ pip install librabbitmq
-
-The 'amqp' transport will automatically use the librabbitmq module if it's
-installed, or you can also specify the transport you want directly by using
-the ``pyamqp://`` or ``librabbitmq://`` prefixes.
-
 .. _optimizing-connection-pools:
 
 Broker Connection Pools
@@ -194,57 +178,6 @@ You can enable this behavior by using the following configuration options:
 
     task_acks_late = True
     worker_prefetch_multiplier = 1
-
-.. _prefork-pool-prefetch:
-
-Prefork pool prefetch settings
-------------------------------
-
-The prefork pool will asynchronously send as many tasks to the processes
-as it can and this means that the processes are, in effect, prefetching
-tasks.
-
-This benefits performance but it also means that tasks may be stuck
-waiting for long running tasks to complete::
-
-    -> send task T1 to process A
-    # A executes T1
-    -> send task T2 to process B
-    # B executes T2
-    <- T2 complete sent by process B
-
-    -> send task T3 to process A
-    # A still executing T1, T3 stuck in local buffer and won't start until
-    # T1 returns, and other queued tasks won't be sent to idle processes
-    <- T1 complete sent by process A
-    # A executes T3
-
-The worker will send tasks to the process as long as the pipe buffer is
-writable. The pipe buffer size varies based on the operating system: some may
-have a buffer as small as 64KB but on recent Linux versions the buffer
-size is 1MB (can only be changed system wide).
-
-You can disable this prefetching behavior by enabling the
-:option:`-O fair <celery worker -O>` worker option:
-
-.. code-block:: console
-
-    $ celery -A proj worker -l info -O fair
-
-With this option enabled the worker will only write to processes that are
-available for work, disabling the prefetch behavior::
-
-    -> send task T1 to process A
-    # A executes T1
-    -> send task T2 to process B
-    # B executes T2
-    <- T2 complete sent by process B
-
-    -> send T3 to process B
-    # B executes T3
-
-    <- T3 complete sent by process B
-    <- T1 complete sent by process A
 
 .. rubric:: Footnotes
 

@@ -43,8 +43,6 @@ class S3Backend(KeyValueStoreBackend):
 
         self.aws_access_key_id = conf.get('s3_access_key_id', None)
         self.aws_secret_access_key = conf.get('s3_secret_access_key', None)
-        if not self.aws_access_key_id or not self.aws_secret_access_key:
-            raise ImproperlyConfigured('Missing aws s3 creds')
 
         self.bucket_name = conf.get('s3_bucket', None)
         if not self.bucket_name:
@@ -63,7 +61,8 @@ class S3Backend(KeyValueStoreBackend):
         s3_object = self._get_s3_object(key)
         try:
             s3_object.load()
-            return s3_object.get()['Body'].read().decode('utf-8')
+            data = s3_object.get()['Body'].read()
+            return data if self.content_encoding == 'binary' else data.decode('utf-8')
         except botocore.exceptions.ClientError as error:
             if error.response['Error']['Code'] == "404":
                 return None
@@ -84,4 +83,6 @@ class S3Backend(KeyValueStoreBackend):
             aws_secret_access_key=self.aws_secret_access_key,
             region_name=self.aws_region
         )
+        if session.get_credentials() is None:
+            raise ImproperlyConfigured('Missing aws s3 creds')
         return session.resource('s3', endpoint_url=self.endpoint_url)

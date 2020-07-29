@@ -48,7 +48,7 @@ def add_unlock_chord_task(app):
     from celery.result import allow_join_result, result_from_tuple
 
     @app.task(name='celery.chord_unlock', max_retries=None, shared=False,
-              default_retry_delay=1, ignore_result=True, lazy=False, bind=True)
+              default_retry_delay=app.conf.result_chord_retry_interval, ignore_result=True, lazy=False, bind=True)
     def unlock_chord(self, group_id, callback, interval=None,
                      max_retries=None, result=None,
                      Result=app.AsyncResult, GroupResult=app.GroupResult,

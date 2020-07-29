@@ -1,2 +1,2 @@
 boto3>=1.9.125
-pycurl
+pycurl==7.43.0.5  # Latest version with wheel built (for appveyor)

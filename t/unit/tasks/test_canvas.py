@@ -269,6 +269,10 @@ class test_chunks(CanvasCase):
 
 class test_chain(CanvasCase):
 
+    def test_chain_of_chain_with_a_single_task(self):
+        s = self.add.s(1, 1)
+        assert chain([chain(s)]).tasks == list(chain(s).tasks)
+
     def test_clone_preserves_state(self):
         x = chain(self.add.s(i, i) for i in range(10))
         assert x.clone().tasks == x.tasks
@@ -741,6 +745,13 @@ class test_chord(CanvasCase):
         t1.app = t1._app = None
         x = chord([t1], body=t1)
         assert x.app is current_app
+
+    def test_chord_size_with_groups(self):
+        x = chord([
+            self.add.s(2, 2) | group([self.add.si(2, 2), self.add.si(2, 2)]),
+            self.add.s(2, 2) | group([self.add.si(2, 2), self.add.si(2, 2)]),
+        ], body=self.add.si(2, 2))
+        assert x.__length_hint__() == 4
 
     def test_set_immutable(self):
         x = chord([Mock(name='t1'), Mock(name='t2')], app=self.app)

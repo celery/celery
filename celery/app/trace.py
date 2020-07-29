@@ -82,7 +82,8 @@ Task %(name)s[%(id)s] retry: %(exc)s\
 """
 
 log_policy_t = namedtuple(
-    'log_policy_t', ('format', 'description', 'severity', 'traceback', 'mail'),
+    'log_policy_t',
+    ('format', 'description', 'severity', 'traceback', 'mail'),
 )
 
 log_policy_reject = log_policy_t(LOG_REJECTED, 'rejected', logging.WARN, 1, 1)
@@ -256,6 +257,32 @@ class TraceInfo(object):
                    extra={'data': context})
 
 
+def traceback_clear(exc=None):
+    # Cleared Tb, but einfo still has a reference to Traceback.
+    # exc cleans up the Traceback at the last moment that can be revealed.
+    tb = None
+    if exc is not None:
+        if hasattr(exc, '__traceback__'):
+            tb = exc.__traceback__
+        else:
+            _, _, tb = sys.exc_info()
+    else:
+        _, _, tb = sys.exc_info()
+
+    if sys.version_info >= (3, 5, 0):
+        while tb is not None:
+            try:
+                tb.tb_frame.clear()
+                tb.tb_frame.f_locals
+            except RuntimeError:
+                # Ignore the exception raised if the frame is still executing.
+                pass
+            tb = tb.tb_next
+
+    elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
+        sys.exc_clear()
+
+
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                  Info=TraceInfo, eager=False, propagate=False, app=None,
                  monotonic=monotonic, trace_ok_t=trace_ok_t,
@@ -388,15 +415,19 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I, R = Info(REJECTED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                     I.handle_reject(task, task_request)
+                    traceback_clear(exc)
                 except Ignore as exc:
                     I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                     I.handle_ignore(task, task_request)
+                    traceback_clear(exc)
                 except Retry as exc:
                     I, R, state, retval = on_error(
                         task_request, exc, uuid, RETRY, call_errbacks=False)
+                    traceback_clear(exc)
                 except Exception as exc:
                     I, R, state, retval = on_error(task_request, exc, uuid)
+                    traceback_clear(exc)
                 except BaseException:
                     raise
                 else:
@@ -492,6 +523,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         except MemoryError:
             raise
         except Exception as exc:
+            _signal_internal_error(task, uuid, args, kwargs, request, exc)
             if eager:
                 raise
             R = report_internal_error(task, exc)
@@ -510,7 +542,29 @@ def trace_task(task, uuid, args, kwargs, request=None, **opts):
             task.__trace__ = build_tracer(task.name, task, **opts)
         return task.__trace__(uuid, args, kwargs, request)
     except Exception as exc:
+        _signal_internal_error(task, uuid, args, kwargs, request, exc)
         return trace_ok_t(report_internal_error(task, exc), None, 0.0, None)
+
+
+def _signal_internal_error(task, uuid, args, kwargs, request, exc):
+    """Send a special `internal_error` signal to the app for outside body errors."""
+    try:
+        _, _, tb = sys.exc_info()
+        einfo = ExceptionInfo()
+        einfo.exception = get_pickleable_exception(einfo.exception)
+        einfo.type = get_pickleable_etype(einfo.type)
+        signals.task_internal_error.send(
+            sender=task,
+            task_id=uuid,
+            args=args,
+            kwargs=kwargs,
+            request=request,
+            exception=exc,
+            traceback=tb,
+            einfo=einfo,
+        )
+    finally:
+        del tb
 
 
 def _trace_task_ret(name, uuid, request, body, content_type,

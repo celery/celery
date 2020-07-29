@@ -298,7 +298,7 @@ The Primitives
 
         .. code-block:: pycon
 
-            >>> items = zip(xrange(1000), xrange(1000))  # 1000 items
+            >>> items = zip(range(1000), range(1000))  # 1000 items
             >>> add.chunks(items, 10)
 
         will split the list of items into chunks of 10, resulting in 100
@@ -372,7 +372,7 @@ Here's some examples:
     .. code-block:: pycon
 
         >>> from celery import group
-        >>> res = group(add.s(i, i) for i in xrange(10))()
+        >>> res = group(add.s(i, i) for i in range(10))()
         >>> res.get(timeout=1)
         [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
 
@@ -385,7 +385,7 @@ Here's some examples:
     .. code-block:: pycon
 
         >>> from celery import chord
-        >>> res = chord((add.s(i, i) for i in xrange(10)), xsum.s())()
+        >>> res = chord((add.s(i, i) for i in range(10)), xsum.s())()
         >>> res.get()
         90
 
@@ -434,7 +434,7 @@ Here's some examples:
 
     .. code-block:: pycon
 
-        >>> c3 = (group(add.s(i, i) for i in xrange(10)) | xsum.s())
+        >>> c3 = (group(add.s(i, i) for i in range(10)) | xsum.s())
         >>> res = c3()
         >>> res.get()
         90
@@ -459,7 +459,7 @@ Here's some examples:
 
     .. code-block:: pycon
 
-        >>> res = (add.s(4, 4) | group(add.si(i, i) for i in xrange(10)))()
+        >>> res = (add.s(4, 4) | group(add.si(i, i) for i in range(10)))()
         >>> res.get()
         <GroupResult: de44df8c-821d-4c84-9a6a-44769c738f98 [
             bc01831b-9486-4e51-b046-480d7c9b78de,
@@ -683,7 +683,7 @@ Group also supports iterators:
 
 .. code-block:: pycon
 
-    >>> group(add.s(i, i) for i in xrange(100))()
+    >>> group(add.s(i, i) for i in range(100))()
 
 A group is a signature object, so it can be used in combination
 with other signatures.
@@ -800,7 +800,7 @@ get the sum of the resulting numbers:
     >>> from tasks import add, tsum
 
     >>> chord(add.s(i, i)
-    ...       for i in xrange(100))(tsum.s()).get()
+    ...       for i in range(100))(tsum.s()).get()
     9900
 
 
@@ -809,7 +809,7 @@ synchronization makes this a lot slower than its Python counterpart:
 
 .. code-block:: pycon
 
-    >>> sum(i + i for i in xrange(100))
+    >>> sum(i + i for i in range(100))
 
 The synchronization step is costly, so you should avoid using chords as much
 as possible. Still, the chord is a powerful primitive to have in your toolbox

@@ -1,5 +1,5 @@
 language: python
-dist: bionic
+dist: focal
 cache: pip
 python:
   - '2.7'
@@ -46,6 +46,10 @@ matrix:
     env: MATRIX_TOXENV=integration-cassandra
     stage: integration
 
+  - python: 3.8
+    env: MATRIX_TOXENV=integration-elasticsearch
+    stage: integration
+
   - python: '3.8'
     env: TOXENV=flake8
     stage: lint
@@ -64,32 +68,27 @@ matrix:
   - python: '2.7'
     env: TOXENV=flakeplus
     stage: lint
-  - python: pypy2.7-7.2
-    env: TOXENV=pypy
-    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
-    stage: test
-  - python: pypy3.5-7.0
-    env: TOXENV=pypy3
-    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
-    stage: test
-  - python: pypy3.6-7.2
-    env: TOXENV=pypy3
-    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
-    stage: test
+
   allow_failures:
-  - python: pypy2.7-7.2
+  - python: pypy2.7-7.3
     env: TOXENV=pypy
-  - python: pypy3.5-7.0
+    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
+    stage: test
+  - python: pypy3.6-7.3
     env: TOXENV=pypy3
-  - python: pypy3.6-7.2
-    env: TOXENV=pypy3
+    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
+    stage: test
 
 before_install:
+    - sudo mkdir -p /var/log/celery
+    - sudo mkdir -p /var/run/celery
+    - sudo chown travis /var/log/celery
+    - sudo chown travis /var/run/celery
     - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
           if [[ "$TOXENV" == *integration* ]]; then
-              sudo echo 'deb https://dl.bintray.com/rabbitmq-erlang/debian bionic main' > /etc/apt/sources.list.d/rabbitmq-bintray.list
+              sudo echo 'deb https://dl.bintray.com/rabbitmq-erlang/debian focal main' > /etc/apt/sources.list.d/rabbitmq-bintray.list
               sudo apt-key adv --keyserver "hkps.pool.sks-keyservers.net" --recv-keys "0x6B73A36E6026DFCA"
               wget -O - "https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc" | sudo apt-key add -
               sudo apt update
@@ -124,10 +123,15 @@ before_install:
           if [[ "$TOXENV" == *cassandra ]]; then
              cassandra_container_id=$(sudo docker run -d -p 9042:9042 cassandra:latest)
              sudo docker exec $cassandra_container_id /bin/bash -c "while ! cqlsh -e 'describe cluster'; do sleep 1; done"
-             sudo docker exec $cassandra_container_id /usr/bin/cqlsh -e "CREATE KEYSPACE tests WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };"
+             sudo docker exec $cassandra_container_id /opt/cassandra/bin/cqlsh -e "CREATE KEYSPACE tests WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };"
              sleep 1
-             sudo docker exec $cassandra_container_id /usr/bin/cqlsh -k tests -e "CREATE TABLE tests (task_id text, status text, result blob, date_done timestamp, traceback blob, children blob, PRIMARY KEY ((task_id), date_done)) WITH CLUSTERING ORDER BY (date_done DESC);"
+             sudo docker exec $cassandra_container_id /opt/cassandra/bin/cqlsh -k tests -e "CREATE TABLE tests (task_id text, status text, result blob, date_done timestamp, traceback blob, children blob, PRIMARY KEY ((task_id), date_done)) WITH CLUSTERING ORDER BY (date_done DESC);"
              sleep 1
+          fi
+    - |
+          if [[ "$TOXENV" == *elasticsearch ]]; then
+             elasticsearch_container_id=$(sudo docker run -d -p 9200:9200 -e discovery.type=single-node elasticsearch:7.7.0)
+             sudo docker exec $elasticsearch_container_id /bin/bash -c "while ! curl '127.0.0.1:9200/_cluster/health?wait_for_status=yellow&timeout=30s'; do sleep 1; done"
           fi
     - |
           docker run -d -e executable=blob -t -p 10000:10000 --tmpfs /opt/azurite/folder:rw arafato/azurite:2.6.5

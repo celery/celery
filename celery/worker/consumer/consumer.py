@@ -51,7 +51,7 @@ Trying to re-establish the connection...\
 """
 
 CONNECTION_RETRY_STEP = """\
-Trying again {when}...\
+Trying again {when}... ({retries}/{max_retries})\
 """
 
 CONNECTION_ERROR = """\
@@ -421,8 +421,11 @@ class Consumer(object):
         def _error_handler(exc, interval, next_step=CONNECTION_RETRY_STEP):
             if getattr(conn, 'alt', None) and interval == 0:
                 next_step = CONNECTION_FAILOVER
-            error(CONNECTION_ERROR, conn.as_uri(), exc,
-                  next_step.format(when=humanize_seconds(interval, 'in', ' ')))
+            next_step = next_step.format(
+                when=humanize_seconds(interval, 'in', ' '),
+                retries=int(interval / 2),
+                max_retries=self.app.conf.broker_connection_max_retries)
+            error(CONNECTION_ERROR, conn.as_uri(), exc, next_step)
 
         # remember that the connection is lazy, it won't establish
         # until needed.

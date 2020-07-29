@@ -33,6 +33,12 @@ Examples
     celery worker -n celery2@myhost -c 3
     celery worker -n celery3@myhost -c 3
 
+    $ # override name prefix when using range
+    $ celery multi start 3 --range-prefix worker -c 3
+    celery worker -n worker1@myhost -c 3
+    celery worker -n worker2@myhost -c 3
+    celery worker -n worker3@myhost -c 3
+
     $ # start 3 named workers
     $ celery multi start image video data -c 3
     celery worker -n image@myhost -c 3
@@ -62,7 +68,7 @@ Examples
     $ celery multi show 10 -l INFO -Q:1-3 images,video -Q:4,5 data
         -Q default -L:4,5 DEBUG
 
-    $ # Additional options are added to each celery worker' comamnd,
+    $ # Additional options are added to each celery worker' command,
     $ # but you can also modify the options for ranges of, or specific workers
 
     $ # 3 workers: Two with 3 processes, and one with 10 processes.

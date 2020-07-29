@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 from contextlib import contextmanager
 
 import pytest
-from case import Mock
+from case import Mock, patch, sentinel
 
 from celery import canvas, group, result, uuid
 from celery.exceptions import ChordError, Retry
@@ -174,6 +174,19 @@ class test_unlock_chord_task(ChordCase):
             # did retry
             retry.assert_called_with(countdown=10, max_retries=30)
 
+    def test_when_not_ready_with_configured_chord_retry_interval(self):
+        class NeverReady(TSR):
+            is_ready = False
+
+        self.app.conf.result_chord_retry_interval, prev = 42, self.app.conf.result_chord_retry_interval
+        try:
+            with self._chord_context(NeverReady, max_retries=30) as (cb, retry, _):
+                cb.type.apply_async.assert_not_called()
+                # did retry
+                retry.assert_called_with(countdown=42, max_retries=30)
+        finally:
+            self.app.conf.result_chord_retry_interval = prev
+
     def test_is_in_registry(self):
         assert 'celery.chord_unlock' in self.app.tasks
 
@@ -198,6 +211,30 @@ class test_unlock_chord_task(ChordCase):
 
     def test_unlock_join_timeout_custom(self):
         self._test_unlock_join_timeout(timeout=5.0)
+
+    def test_unlock_with_chord_params(self):
+        @self.app.task(shared=False)
+        def mul(x, y):
+            return x * y
+
+        from celery import chord
+        ch = chord(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), interval=10)
+
+        with patch.object(ch, 'run') as run:
+            ch.apply_async()
+            run.assert_called_once_with(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), (), task_id=None, interval=10)
+
+    def test_unlock_with_chord_params_and_task_id(self):
+        @self.app.task(shared=False)
+        def mul(x, y):
+            return x * y
+
+        from celery import chord
+        ch = chord(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), interval=10)
+
+        with patch.object(ch, 'run') as run:
+            ch.apply_async(task_id=sentinel.task_id)
+            run.assert_called_once_with(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), (), task_id=sentinel.task_id, interval=10)
 
 
 class test_chord(ChordCase):

@@ -88,11 +88,14 @@ class DatabaseBackend(BaseBackend):
             'short_lived_sessions',
             conf.database_short_lived_sessions)
 
+        schemas = conf.database_table_schemas or {}
         tablenames = conf.database_table_names or {}
-        self.task_cls.__table__.name = tablenames.get('task',
-                                                      'celery_taskmeta')
-        self.taskset_cls.__table__.name = tablenames.get('group',
-                                                         'celery_tasksetmeta')
+        self.task_cls.configure(
+            schema=schemas.get('task'),
+            name=tablenames.get('task'))
+        self.taskset_cls.configure(
+            schema=schemas.get('group'),
+            name=tablenames.get('group'))
 
         if not self.url:
             raise ImproperlyConfigured(
@@ -157,9 +160,9 @@ class DatabaseBackend(BaseBackend):
                 task.status = states.PENDING
                 task.result = None
             data = task.to_dict()
-            if 'args' in data:
+            if data.get('args', None) is not None:
                 data['args'] = self.decode(data['args'])
-            if 'kwargs' in data:
+            if data.get('kwargs', None) is not None:
                 data['kwargs'] = self.decode(data['kwargs'])
             return self.meta_from_decoded(data)
 

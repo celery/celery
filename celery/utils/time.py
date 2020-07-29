@@ -212,7 +212,7 @@ def remaining(start, ends_in, now=None, relative=False):
         start = start.replace(tzinfo=now.tzinfo)
     end_date = start + ends_in
     if relative:
-        end_date = delta_resolution(end_date, ends_in)
+        end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
     ret = end_date - now
     if C_REMDEBUG:  # pragma: no cover
         print('rem: NOW:%r START:%r ENDS_IN:%r END_DATE:%s REM:%s' % (
@@ -397,10 +397,10 @@ def get_exponential_backoff_interval(
 ):
     """Calculate the exponential backoff wait time."""
     # Will be zero if factor equals 0
-    countdown = factor * (2 ** retries)
+    countdown = min(maximum, factor * (2 ** retries))
     # Full jitter according to
     # https://www.awsarchitectureblog.com/2015/03/backoff.html
     if full_jitter:
         countdown = random.randrange(countdown + 1)
     # Adjust according to maximum wait time and account for negative values.
-    return max(0, min(maximum, countdown))
+    return max(0, countdown)

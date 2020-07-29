@@ -22,7 +22,6 @@ from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import raise_with_context
-
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
 from .utils import appstr
@@ -209,7 +208,7 @@ class Task(object):
     store_errors_even_if_ignored = None
 
     #: The name of a serializer that are registered with
-    #: :mod:`kombu.serialization.registry`.  Default is `'pickle'`.
+    #: :mod:`kombu.serialization.registry`.  Default is `'json'`.
     serializer = None
 
     #: Hard time limit.
@@ -544,11 +543,12 @@ class Task(object):
         app = self._get_app()
         if app.conf.task_always_eager:
             with app.producer_or_acquire(producer) as eager_producer:
-                serializer = options.get(
-                    'serializer',
-                    (eager_producer.serializer if eager_producer.serializer
-                     else app.conf.task_serializer)
-                )
+                serializer = options.get('serializer')
+                if serializer is None:
+                    if eager_producer.serializer:
+                        serializer = eager_producer.serializer
+                    else:
+                        serializer = app.conf.task_serializer
                 body = args, kwargs
                 content_type, content_encoding, data = serialization.dumps(
                     body, serializer,
@@ -629,7 +629,7 @@ class Task(object):
             ...         twitter.post_status_update(message)
             ...     except twitter.FailWhale as exc:
             ...         # Retry in 5 minutes.
-            ...         raise self.retry(countdown=60 * 5, exc=exc)
+            ...         self.retry(countdown=60 * 5, exc=exc)
 
         Note:
             Although the task will never return above as `retry` raises an
@@ -708,12 +708,11 @@ class Task(object):
                 ), task_args=S.args, task_kwargs=S.kwargs
             )
 
-        ret = Retry(exc=exc, when=eta or countdown)
+        ret = Retry(exc=exc, when=eta or countdown, is_eager=is_eager, sig=S)
 
         if is_eager:
             # if task was executed eagerly using apply(),
-            # then the retry must also be executed eagerly.
-            S.apply().get()
+            # then the retry must also be executed eagerly in apply method
             if throw:
                 raise ret
             return ret
@@ -776,11 +775,13 @@ class Task(object):
         retval = ret.retval
         if isinstance(retval, ExceptionInfo):
             retval, tb = retval.exception, retval.traceback
+        if isinstance(retval, Retry) and retval.sig is not None:
+            return retval.sig.apply(retries=retries + 1)
         state = states.SUCCESS if ret.info is None else ret.info.state
         return EagerResult(task_id, retval, state, traceback=tb)
 
     def AsyncResult(self, task_id, **kwargs):
-        """Get AsyncResult instance for this kind of task.
+        """Get AsyncResult instance for the specified task.
 
         Arguments:
             task_id (str): Task id to get result for.
@@ -867,7 +868,7 @@ class Task(object):
             sig (~@Signature): signature to replace with.
 
         Raises:
-            ~@Ignore: This is always raised when called in asynchrous context.
+            ~@Ignore: This is always raised when called in asynchronous context.
             It is best to always use ``return self.replace(...)`` to convey
             to the reader that the task won't continue after being replaced.
         """

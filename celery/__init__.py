@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Distributed Task Queue."""
+# :copyright: (c) 2016-20206 Asif Saif Uddin, celery core and individual
+#                 contributors, All rights reserved.
 # :copyright: (c) 2015-2016 Ask Solem.  All rights reserved.
 # :copyright: (c) 2012-2014 GoPivotal, Inc., All rights reserved.
 # :copyright: (c) 2009 - 2012 Ask Solem and individual contributors,
@@ -18,7 +20,7 @@ from . import local  # noqa
 
 SERIES = 'cliffs'
 
-__version__ = '4.4.0rc5'
+__version__ = '4.4.6'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
@@ -28,7 +30,7 @@ __keywords__ = 'task job queue distributed messaging actor'
 # -eof meta-
 
 __all__ = (
-    'Celery', 'bugreport', 'shared_task', 'task',
+    'Celery', 'bugreport', 'shared_task', 'task', 'Task',
     'current_app', 'current_task', 'maybe_signature',
     'chain', 'chord', 'chunks', 'group', 'signature',
     'xmap', 'xstarmap', 'uuid',

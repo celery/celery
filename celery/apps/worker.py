@@ -335,8 +335,8 @@ def install_worker_restart_handler(worker, sig='SIGHUP'):
 
 
 def install_cry_handler(sig='SIGUSR1'):
-    # Jython/PyPy does not have sys._current_frames
-    if is_jython or is_pypy:  # pragma: no cover
+    # PyPy does not have sys._current_frames
+    if is_pypy:  # pragma: no cover
         return
 
     def cry_handler(*args):

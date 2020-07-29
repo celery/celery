@@ -383,7 +383,7 @@ def find_app(app, symbol_by_name=symbol_by_name, imp=import_from_cwd):
             try:
                 found = sym.celery
                 if isinstance(found, ModuleType):
-                    raise AttributeError()
+                    raise AttributeError("attribute 'celery' is the celery module not the instance of celery")
             except AttributeError:
                 if getattr(sym, '__path__', None):
                     try:

@@ -90,7 +90,8 @@ class EventReceiver(ConsumerMixin):
         unless :attr:`EventDispatcher.should_stop` is set to True, or
         forced via :exc:`KeyboardInterrupt` or :exc:`SystemExit`.
         """
-        return list(self.consume(limit=limit, timeout=timeout, wakeup=wakeup))
+        for _ in self.consume(limit=limit, timeout=timeout, wakeup=wakeup):
+            pass
 
     def wakeup_workers(self, channel=None):
         self.app.control.broadcast('heartbeat',
