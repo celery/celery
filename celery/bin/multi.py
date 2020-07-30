@@ -470,6 +470,5 @@ class MultiTool(TermLogger):
 @click.pass_context
 def multi(ctx):
     """Start multiple worker instances."""
-    print(ctx.args)
     cmd = MultiTool(quiet=ctx.obj.quiet, no_color=ctx.obj.no_color)
     return cmd.execute_from_commandline([''] + ctx.args)
