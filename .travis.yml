@@ -86,7 +86,7 @@ before_install:
     - |
           if [[ "$TOXENV" == *rabbitmq ]]; then
               docker run -d -p 5672:5672 -p 15672:15672 rabbitmq:3.8
-              while ! nc -zv 127.0.0.1 15672; do sleep 10; done
+              while ! httping -c1 http://127.0.0.1:15672; do sleep 10; done
           fi
     - |
           if [[ "$TOXENV" =~ "pypy" ]]; then
@@ -127,7 +127,7 @@ before_install:
           fi
     - |
           docker run -d -e executable=blob -t -p 10000:10000 --tmpfs /opt/azurite/folder:rw arafato/azurite:2.6.5
-          while ! nc -zv 127.0.0.1 10000; do sleep 10; done
+          while ! httping -c1 http://127.0.0.1:10000; do sleep 10; done
           export AZUREBLOCKBLOB_URL="azureblockblob://DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
     - |
           wget -qO - https://packages.couchbase.com/ubuntu/couchbase.key | sudo apt-key add -
