@@ -1,9 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
 import datetime
+import sys
 from pickle import dumps, loads
 
 import pytest
+import pytz
 from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
 from kombu.exceptions import EncodeError
 try:
@@ -12,7 +14,7 @@ except ImportError:
     ConfigurationError = None
 
 from celery import states, uuid
-from celery.backends.mongodb import InvalidDocument, MongoBackend
+from celery.backends.mongodb import InvalidDocument, MongoBackend, Binary
 from celery.exceptions import ImproperlyConfigured
 
 COLLECTION = 'taskmeta_celery'
@@ -530,20 +532,138 @@ class test_MongoBackend:
             assert worker.startup_info()
 
 
+@pytest.fixture(scope="function")
+def mongo_backend_factory(app):
+    """Return a factory that creates MongoBackend instance with given serializer, including BSON."""
+
+    def create_mongo_backend(serializer):
+        # NOTE: `bson` is a only mongodb-specific type and can be set only directly on MongoBackend instance.
+        if serializer == "bson":
+            beckend = MongoBackend(app=app)
+            beckend.serializer = serializer
+        else:
+            app.conf.accept_content = ['json', 'pickle', 'msgpack', 'yaml']
+            app.conf.result_serializer = serializer
+            beckend = MongoBackend(app=app)
+        return beckend
+
+    yield create_mongo_backend
+
+
 @skip.unless_module('pymongo')
+@pytest.mark.parametrize("serializer,encoded_into", [
+    ('bson', int),
+    ('json', str),
+    ('pickle', Binary),
+    ('msgpack', Binary),
+    ('yaml', str),
+])
 class test_MongoBackend_no_mock:
 
-    def test_encode_decode(self, app):
-        backend = MongoBackend(app=app)
-        data = {'foo': 1}
-        assert backend.decode(backend.encode(data))
-        backend.serializer = 'bson'
-        assert backend.encode(data) == data
-        assert backend.decode(data) == data
+    def test_encode(self, mongo_backend_factory, serializer, encoded_into):
+        backend = mongo_backend_factory(serializer=serializer)
+        assert isinstance(backend.encode(10), encoded_into)
 
-    def test_de(self, app):
-        backend = MongoBackend(app=app)
-        data = {'foo': 1}
-        assert backend.encode(data)
-        backend.serializer = 'bson'
-        assert backend.encode(data) == data
+    def test_encode_decode(self, mongo_backend_factory, serializer, encoded_into):
+        backend = mongo_backend_factory(serializer=serializer)
+        decoded = backend.decode(backend.encode(12))
+        assert decoded == 12
+
+
+class _MyTestClass(object):
+
+    def __init__(self, a):
+        self.a = a
+
+    def __eq__(self, other):
+        assert self.__class__ == type(other)
+        return self.a == other.a
+
+
+SUCCESS_RESULT_TEST_DATA = [
+    # json types
+    {
+        "result": "A simple string",
+        "serializers": ["bson", "pickle", "yaml", "json", "msgpack"],
+    },
+    {
+        "result": 100,
+        "serializers": ["bson", "pickle", "yaml", "json", "msgpack"],
+    },
+    {
+        "result": 9.1999999999999999,
+        "serializers": ["bson", "pickle", "yaml", "json", "msgpack"],
+    },
+    {
+        "result": {"foo": "simple result"},
+        "serializers": ["bson", "pickle", "yaml", "json", "msgpack"],
+    },
+    {
+        "result": ["a", "b"],
+        "serializers": ["bson", "pickle", "yaml", "json", "msgpack"],
+    },
+    {
+        "result": False,
+        "serializers": ["bson", "pickle", "yaml", "json", "msgpack"],
+    },
+    {
+        "result": None,
+        "serializers": ["bson", "pickle", "yaml", "json", "msgpack"],
+    },
+    # advanced essential types
+    {
+        "result": datetime.datetime(2000, 1, 1, 0, 0, 0, 0),
+        "serializers": ["bson", "pickle", "yaml"],
+    },
+    {
+        "result": datetime.datetime(2000, 1, 1, 0, 0, 0, 0, tzinfo=pytz.utc),
+        "serializers": ["pickle", "yaml"],
+    },
+    # custom types
+    {
+        "result": _MyTestClass("Hi!"),
+        "serializers": ["pickle"],
+    },
+]
+
+
+@skip.unless_module('pymongo')
+class test_MongoBackend_store_get_result:
+
+    @pytest.fixture(scope="function", autouse=True)
+    def fake_mongo_collection_patch(self, monkeypatch):
+        """A fake collection with serialization experience close to MongoDB."""
+        bson = pytest.importorskip("bson")
+
+        class FakeMongoCollection(object):
+            def __init__(self):
+                self.data = {}
+
+            def replace_one(self, task_id, meta, upsert=True):
+                self.data[task_id['_id']] = bson.encode(meta)
+
+            def find_one(self, task_id):
+                return bson.decode(self.data[task_id['_id']])
+
+        monkeypatch.setattr(MongoBackend, "collection", FakeMongoCollection())
+
+    @pytest.mark.parametrize("serializer,result_type,result", [
+        (s, type(i['result']), i['result']) for i in SUCCESS_RESULT_TEST_DATA for s in i['serializers']]
+    )
+    def test_encode_success_results(self, mongo_backend_factory, serializer, result_type, result):
+        backend = mongo_backend_factory(serializer=serializer)
+        backend.store_result(TASK_ID, result, 'SUCCESS')
+        recovered = backend.get_result(TASK_ID)
+        if sys.version_info.major == 2 and isinstance(recovered, str):
+            result_type = str  # workaround for python 2 compatibility and `unicode_literals`
+        assert type(recovered) == result_type
+        assert recovered == result
+
+    @pytest.mark.parametrize("serializer", ["bson", "pickle", "yaml", "json", "msgpack"])
+    def test_encode_exception_error_results(self, mongo_backend_factory, serializer):
+        backend = mongo_backend_factory(serializer=serializer)
+        exception = Exception("Basic Exception")
+        backend.store_result(TASK_ID, exception, 'FAILURE')
+        recovered = backend.get_result(TASK_ID)
+        assert type(recovered) == type(exception)
+        assert recovered.args == exception.args
