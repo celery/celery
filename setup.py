@@ -7,46 +7,7 @@ import sys
 import setuptools
 import setuptools.command.test
 
-try:
-    from platform import python_implementation as _pyimp
-except (AttributeError, ImportError):
-    def _pyimp():
-        return 'Python (unknown)'
-
 NAME = 'celery'
-
-# -*- Python Versions -*-
-
-E_UNSUPPORTED_PYTHON = """
-----------------------------------------
- Celery 4.0 requires %s %s or later
-----------------------------------------
-
-- For CPython 2.6, PyPy 1.x, Jython 2.6, CPython 3.2->3.3; use Celery 3.1:
-
-    $ pip install 'celery<4'
-
-- For CPython 2.5, Jython 2.5; use Celery 3.0:
-
-    $ pip install 'celery<3.1'
-
-- For CPython 2.4; use Celery 2.2:
-
-    $ pip install 'celery<2.3'
-"""
-
-PYIMP = _pyimp()
-PY26_OR_LESS = sys.version_info < (2, 7)
-PY3 = sys.version_info[0] == 3
-PY34_OR_LESS = PY3 and sys.version_info < (3, 5)
-PYPY_VERSION = getattr(sys, 'pypy_version_info', None)
-PYPY = PYPY_VERSION is not None
-PYPY24_ATLEAST = PYPY_VERSION and PYPY_VERSION >= (2, 4)
-
-if PY26_OR_LESS:
-    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '2.7'))
-elif PY34_OR_LESS and not PYPY24_ATLEAST:
-    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '3.5'))
 
 # -*- Extras -*-
 
