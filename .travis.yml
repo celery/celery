@@ -81,7 +81,7 @@ before_install:
     - sudo mkdir -p /var/run/celery
     - sudo chown travis /var/log/celery
     - sudo chown travis /var/run/celery
-    - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev
+    - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev httping
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
           if [[ "$TOXENV" == *rabbitmq ]]; then
@@ -104,7 +104,7 @@ before_install:
     - |
           if [[ "$TOXENV" == *dynamodb ]]; then
               docker run -d -p 8000:8000 amazon/dynamodb-local -inMemory
-              while ! nc -zv 127.0.0.1 8000; do sleep 10; done
+              while ! httping -c1 http://127.0.0.1:8000; do sleep 10; done
           fi
     - |
           if [[ "$TOXENV" == *cache ]]; then
