@@ -12,11 +12,9 @@ from celery.exceptions import CeleryWarning, ImproperlyConfigured
 from .base import KeyValueStoreBackend
 
 try:
-    import riak
-    from riak import RiakClient
-    from riak.resolver import last_written_resolver
+    import riak.resolver
 except ImportError:  # pragma: no cover
-    riak = RiakClient = last_written_resolver = None  # noqa
+    riak = None
 
 __all__ = ('RiakBackend',)
 
@@ -115,10 +113,12 @@ class RiakBackend(KeyValueStoreBackend):
     def _get_client(self):
         """Get client connection."""
         if self._client is None or not self._client.is_alive():
-            self._client = RiakClient(protocol=self.protocol,
-                                      host=self.host,
-                                      pb_port=self.port)
-            self._client.resolver = last_written_resolver
+            self._client = riak.RiakClient(
+                protocol=self.protocol,
+                host=self.host,
+                pb_port=self.port,
+            )
+            self._client.resolver = riak.resolver.last_written_resolver
         return self._client
 
     def _get_bucket(self):
