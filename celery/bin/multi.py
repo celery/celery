@@ -33,7 +33,7 @@ Examples
     celery worker -n celery3@myhost -c 3
 
     $ # override name prefix when using range
-    $ celery multi start 3 --range-prefix worker -c 3
+    $ celery multi start 3 --range-prefix=worker -c 3
     celery worker -n worker1@myhost -c 3
     celery worker -n worker2@myhost -c 3
     celery worker -n worker3@myhost -c 3
@@ -460,9 +460,16 @@ class MultiTool(TermLogger):
         return str(self.colored.magenta('DOWN'))
 
 
-@click.command(cls=CeleryCommand, context_settings={'allow_extra_args': True})
+@click.command(
+    cls=CeleryCommand,
+    context_settings={
+        'allow_extra_args': True,
+        'ignore_unknown_options': True
+    }
+)
 @click.pass_context
 def multi(ctx):
     """Start multiple worker instances."""
+    print(ctx.args)
     cmd = MultiTool(quiet=ctx.obj.quiet, no_color=ctx.obj.no_color)
     return cmd.execute_from_commandline([''] + ctx.args)
