@@ -6,10 +6,15 @@ about: About to release a new major version? (Maintainers Only!)
 Version: <!-- Insert Version Here -->
 Release PR: <!-- Insert Release PR Here -->
 
+# Description
+
+<!-- Briefly describe the contents of the version -->
+
 # Checklist
 
 - [ ] Release PR drafted
 - [ ] Milestone is 100% done
+- [ ] Merge Freeze
 - [ ] Release PR reviewed
 - [ ] The master branch build passes
 
@@ -18,6 +23,11 @@ Release PR: <!-- Insert Release PR Here -->
 - [ ] What's New
 
 # Process
+
+# Alphas
+
+<!-- Add more as needed -->
+- [ ] Alpha 1
 
 ## Betas
 
