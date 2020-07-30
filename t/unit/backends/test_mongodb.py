@@ -6,12 +6,6 @@ from pickle import dumps, loads
 
 import pytest
 import pytz
-try:
-    import pymongo
-    import bson
-except ImportError:
-    pymongo = None
-    bson = None
 from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
 from kombu.exceptions import EncodeError
 try:
@@ -639,6 +633,7 @@ class test_MongoBackend_store_get_result:
     @pytest.fixture(scope="function", autouse=True)
     def fake_mongo_collection_patch(self, monkeypatch):
         """A fake collection with serialization experience close to MongoDB."""
+        bson = pytest.importorskip("bson")
 
         class FakeMongoCollection(object):
             def __init__(self):
