@@ -24,25 +24,28 @@ def is_retryable_exception(exc):
     return isinstance(exc, RETRYABLE_EXCEPTIONS)
 
 
-TIMEOUT = 120
+TIMEOUT = 60
+
+
+flaky = pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
 
 
 class test_link_error:
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_link_error_eager(self):
         exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply(args=("test",), link_error=return_exception.s())
         actual = result.get(timeout=TIMEOUT, propagate=False)
         assert actual == exception
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_link_error(self):
         exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply(args=("test",), link_error=return_exception.s())
         actual = result.get(timeout=TIMEOUT, propagate=False)
         assert actual == exception
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_link_error_callback_error_callback_retries_eager(self):
         exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply(
@@ -51,7 +54,7 @@ class test_link_error:
         )
         assert result.get(timeout=TIMEOUT, propagate=False) == exception
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_link_error_callback_retries(self):
         exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply_async(
@@ -60,7 +63,7 @@ class test_link_error:
         )
         assert result.get(timeout=TIMEOUT, propagate=False) == exception
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_link_error_using_signature_eager(self):
         fail = signature('t.integration.tasks.fail', args=("test",))
         retrun_exception = signature('t.integration.tasks.return_exception')
@@ -71,7 +74,7 @@ class test_link_error:
         assert (fail.apply().get(timeout=TIMEOUT, propagate=False), True) == (
             exception, True)
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_link_error_using_signature(self):
         fail = signature('t.integration.tasks.fail', args=("test",))
         retrun_exception = signature('t.integration.tasks.return_exception')
@@ -85,17 +88,17 @@ class test_link_error:
 
 class test_chain:
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_simple_chain(self, manager):
         c = add.s(4, 4) | add.s(8) | add.s(16)
         assert c().get(timeout=TIMEOUT) == 32
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_single_chain(self, manager):
         c = chain(add.s(3, 4))()
         assert c.get(timeout=TIMEOUT) == 7
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_complex_chain(self, manager):
         c = (
             add.s(2, 2) | (
@@ -106,7 +109,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [64, 65, 66, 67]
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_group_results_in_chain(self, manager):
         # This adds in an explicit test for the special case added in commit
         # 1e3fcaa969de6ad32b52a3ed8e74281e5e5360e6
@@ -142,7 +145,7 @@ class test_chain:
         with pytest.raises(ExpectedException):
             res.parent.get(propagate=True)
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_chain_inside_group_receives_arguments(self, manager):
         c = (
             add.s(5, 6) |
@@ -151,7 +154,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [14, 14]
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_eager_chain_inside_task(self, manager):
         from .tasks import chain_add
 
@@ -162,7 +165,7 @@ class test_chain:
 
         chain_add.app.conf.task_always_eager = prev
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_group_chord_group_chain(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -183,7 +186,7 @@ class test_chain:
         assert set(redis_messages[4:]) == after_items
         redis_connection.delete('redis-echo')
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_group_result_not_has_cache(self, manager):
         t1 = identity.si(1)
         t2 = identity.si(2)
@@ -193,7 +196,7 @@ class test_chain:
         result = task.delay()
         assert result.get(timeout=TIMEOUT) == [1, 2, [3, 4]]
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_second_order_replace(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -209,7 +212,7 @@ class test_chain:
                              b'Out A']
         assert redis_messages == expected_messages
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_parent_ids(self, manager, num=10):
         assert_ping(manager)
 
@@ -277,7 +280,7 @@ class test_chain:
         result = c.get()
         assert result == 10
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_groupresult_serialization(self, manager):
         """Test GroupResult is correctly serialized
         to save in the result backend"""
@@ -291,7 +294,7 @@ class test_chain:
         assert len(result) == 2
         assert isinstance(result[0][1], list)
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_chain_of_task_a_group_and_a_chord(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -306,7 +309,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == 8
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_chain_of_chords_as_groups_chained_to_a_task_with_two_tasks(self,
                                                                         manager):
         try:
@@ -324,7 +327,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == 12
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_chain_of_chords_with_two_tasks(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -340,7 +343,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == 12
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_chain_of_a_chord_and_a_group_with_two_tasks(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -356,7 +359,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [6, 6]
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_chain_of_a_chord_and_a_task_and_a_group(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -371,7 +374,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [6, 6]
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_chain_of_a_chord_and_two_tasks_and_a_group(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -387,7 +390,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [7, 7]
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_chain_of_a_chord_and_three_tasks_and_a_group(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -407,14 +410,14 @@ class test_chain:
 
 class test_result_set:
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_result_set(self, manager):
         assert_ping(manager)
 
         rs = ResultSet([add.delay(1, 1), add.delay(2, 2)])
         assert rs.get(timeout=TIMEOUT) == [2, 4]
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_result_set_error(self, manager):
         assert_ping(manager)
 
@@ -426,7 +429,7 @@ class test_result_set:
 
 
 class test_group:
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_ready_with_exception(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -436,7 +439,7 @@ class test_group:
         while not result.ready():
             pass
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_empty_group_result(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -448,7 +451,7 @@ class test_group:
         task = GroupResult.restore(result.id)
         assert task.results == []
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_parent_ids(self, manager):
         assert_ping(manager)
 
@@ -468,7 +471,7 @@ class test_group:
             assert parent_id == expected_parent_id
             assert value == i + 2
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_nested_group(self, manager):
         assert_ping(manager)
 
@@ -486,7 +489,7 @@ class test_group:
 
         assert res.get(timeout=TIMEOUT) == [11, 101, 1001, 2001]
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_large_group(self, manager):
         assert_ping(manager)
 
@@ -511,7 +514,7 @@ def assert_ping(manager):
 
 
 class test_chord:
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_simple_chord_with_a_delay_in_group_save(self, manager, monkeypatch):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -536,7 +539,7 @@ class test_chord:
         result = c()
         assert result.get(timeout=TIMEOUT) == 4
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_redis_subscribed_channels_leak(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -577,7 +580,7 @@ class test_chord:
         assert channels_after_count == initial_channels_count
         assert set(channels_after) == set(initial_channels)
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_replaced_nested_chord(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -597,7 +600,7 @@ class test_chord:
         res1 = c1()
         assert res1.get(timeout=TIMEOUT) == [29, 38]
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_add_to_chord(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -606,7 +609,7 @@ class test_chord:
         res = c()
         assert sorted(res.get()) == [0, 5, 6, 7]
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_add_chord_to_chord(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -615,7 +618,7 @@ class test_chord:
         res = c()
         assert res.get() == [0, 5 + 6 + 7]
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_eager_chord_inside_task(self, manager):
         from .tasks import chord_add
 
@@ -626,7 +629,7 @@ class test_chord:
 
         chord_add.app.conf.task_always_eager = prev
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_group_chain(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -638,7 +641,7 @@ class test_chord:
         res = c()
         assert res.get(timeout=TIMEOUT) == [12, 13, 14, 15]
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     @pytest.mark.xfail(os.environ['TEST_BACKEND'] == 'cache+pylibmc://',
                        reason="Not supported yet by the cache backend.",
                        strict=True,
@@ -666,7 +669,7 @@ class test_chord:
         res = c()
         assert res.get(timeout=TIMEOUT) == 11
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_single_task_header(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -695,7 +698,7 @@ class test_chord:
         res2 = c2()
         assert res2.get(timeout=TIMEOUT) == []
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_nested_chord(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -729,7 +732,7 @@ class test_chord:
         res = c()
         assert [[[[3, 3], 4], 5], 6] == res.get(timeout=TIMEOUT)
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_parent_ids(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -744,7 +747,7 @@ class test_chord:
         )
         self.assert_parentids_chord(g(), expected_root_id)
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_parent_ids__OR(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -853,7 +856,7 @@ class test_chord:
         assert len([cr for cr in chord_results if cr[2] != states.SUCCESS]
                    ) == 1
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_parallel_chords(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -867,7 +870,7 @@ class test_chord:
 
         assert r.get(timeout=TIMEOUT) == [10, 10]
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_chord_in_chords_with_chains(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -898,7 +901,7 @@ class test_chord:
 
         assert r.get(timeout=TIMEOUT) == 4
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_chain_chord_chain_chord(self, manager):
         # test for #2573
         try:
@@ -943,7 +946,7 @@ class test_chord:
         res1 = c1.apply(args=(1,))
         assert res1.get(timeout=TIMEOUT) == [1, 1]
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_large_header(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -954,7 +957,7 @@ class test_chord:
         res = c.delay()
         assert res.get(timeout=TIMEOUT) == 499500
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_chain_to_a_chord_with_large_header(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -966,12 +969,12 @@ class test_chord:
         res = c.delay()
         assert res.get(timeout=TIMEOUT) == 1000
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_priority(self, manager):
         c = chain(return_priority.signature(priority=3))()
         assert c.get(timeout=TIMEOUT) == "Priority: 3"
 
-    @pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+    @flaky
     def test_priority_chain(self, manager):
         c = return_priority.signature(priority=3) | return_priority.signature(
             priority=5)

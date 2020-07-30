@@ -99,15 +99,12 @@ def main(argv=sys.argv):
         print(f'Usage: {os.path.basename(argv[0])} [apply|work|both] [n=20k]')
         return sys.exit(1)
     try:
-        try:
-            n = int(argv[2])
-        except IndexError:
-            pass
-        return {'apply': bench_apply,
-                'work': bench_work,
-                'both': bench_both}[argv[1]](n=n)
-    except:
-        raise
+        n = int(argv[2])
+    except IndexError:
+        pass
+    return {'apply': bench_apply,
+            'work': bench_work,
+            'both': bench_both}[argv[1]](n=n)
 
 
 if __name__ == '__main__':
