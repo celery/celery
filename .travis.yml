@@ -81,7 +81,7 @@ before_install:
     - sudo mkdir -p /var/run/celery
     - sudo chown travis /var/log/celery
     - sudo chown travis /var/run/celery
-    - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev httping
+    - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev httping expect
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
           if [[ "$TOXENV" == *rabbitmq ]]; then
@@ -109,7 +109,7 @@ before_install:
     - |
           if [[ "$TOXENV" == *cache ]]; then
               docker run -d -p 11211:11211 memcached:alpine
-              while ! nc -zv 127.0.0.1 11211; do sleep 1; done
+              while ! ./extra/travis/is-memcached-running 127.0.0.1 11211; do sleep 1; done
           fi
     - |
           if [[ "$TOXENV" == *cassandra ]]; then
