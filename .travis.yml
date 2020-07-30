@@ -103,7 +103,7 @@ before_install:
           fi
     - |
           if [[ "$TOXENV" == *dynamodb ]]; then
-              docker run -d -p 8000:8000 dwmkerr/dynamodb:38 -inMemory
+              docker run -d -p 8000:8000 amazon/dynamodb-local -inMemory
               while ! nc -zv 127.0.0.1 8000; do sleep 10; done
           fi
     - |
