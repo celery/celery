@@ -81,12 +81,12 @@ before_install:
     - sudo mkdir -p /var/run/celery
     - sudo chown travis /var/log/celery
     - sudo chown travis /var/run/celery
-    - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev
+    - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev httping expect
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
           if [[ "$TOXENV" == *rabbitmq ]]; then
-              docker run -d -p 5672:5672 -p 15672:15672 rabbitmq:3.8
-              while ! nc -zv 127.0.0.1 15672; do sleep 10; done
+              docker run -d -p 5672:5672 -p 15672:15672 rabbitmq:3.8-management
+              while ! httping -c1 http://127.0.0.1:15672; do sleep 10; done
           fi
     - |
           if [[ "$TOXENV" =~ "pypy" ]]; then
@@ -103,13 +103,13 @@ before_install:
           fi
     - |
           if [[ "$TOXENV" == *dynamodb ]]; then
-              docker run -d -p 8000:8000 dwmkerr/dynamodb:38 -inMemory
-              while ! nc -zv 127.0.0.1 8000; do sleep 10; done
+              docker run -d -p 8000:8000 amazon/dynamodb-local
+              while ! httping -c1 http://127.0.0.1:8000; do sleep 10; done
           fi
     - |
           if [[ "$TOXENV" == *cache ]]; then
               docker run -d -p 11211:11211 memcached:alpine
-              while ! nc -zv 127.0.0.1 11211; do sleep 1; done
+              while ! ./extra/travis/is-memcached-running 127.0.0.1 11211; do sleep 1; done
           fi
     - |
           if [[ "$TOXENV" == *cassandra ]]; then
@@ -127,7 +127,7 @@ before_install:
           fi
     - |
           docker run -d -e executable=blob -t -p 10000:10000 --tmpfs /opt/azurite/folder:rw arafato/azurite:2.6.5
-          while ! nc -zv 127.0.0.1 10000; do sleep 10; done
+          while ! httping -c1 http://127.0.0.1:10000; do sleep 10; done
           export AZUREBLOCKBLOB_URL="azureblockblob://DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
     - |
           wget -qO - https://packages.couchbase.com/ubuntu/couchbase.key | sudo apt-key add -
