@@ -630,7 +630,7 @@ class test_chord:
 
         c = group([add_chord_to_chord.s([1, 2, 3], 4)]) | identity.s()
         res = c()
-        assert res.get() == [0, 5 + 6 + 7]
+        assert sorted(res.get()) == [0, 5 + 6 + 7]
 
     @flaky
     def test_eager_chord_inside_task(self, manager):
@@ -859,8 +859,14 @@ class test_chord:
         backend = fail.app.backend
         j_key = backend.get_key_for_group(original_group_id, '.j')
         redis_connection = get_redis_connection()
-        chord_results = [backend.decode(t) for t in
-                         redis_connection.zrange(j_key, 0, 3)]
+        # The redis key is either a list or zset depending on configuration
+        if manager.app.conf.result_backend_transport_options.get(
+            'result_chord_ordered', False
+        ):
+            job_results = redis_connection.zrange(j_key, 0, 3)
+        else:
+            job_results = redis_connection.lrange(j_key, 0, 3)
+        chord_results = [backend.decode(t) for t in job_results]
 
         # Validate group result
         assert [cr[3] for cr in chord_results if cr[2] == states.SUCCESS] == \

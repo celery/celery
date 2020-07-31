@@ -409,6 +409,13 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         # this flag.
         pass
 
+    @cached_property
+    def _chord_zset(self):
+        transport_options = self.app.conf.get(
+            'result_backend_transport_options', {}
+        )
+        return transport_options.get('result_chord_ordered', False)
+
     def on_chord_part_return(self, request, state, result,
                              propagate=None, **kwargs):
         app = self.app
@@ -423,11 +430,19 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         tkey = self.get_key_for_group(gid, '.t')
         result = self.encode_result(result, state)
         with client.pipeline() as pipe:
-            pipeline = pipe \
-                .zadd(jkey,
-                      {self.encode([1, tid, state, result]): group_index}) \
-                .zcount(jkey, '-inf', '+inf') \
-                .get(tkey)
+            if self._chord_zset:
+                pipeline = (pipe
+                    .zadd(jkey, {
+                        self.encode([1, tid, state, result]): group_index
+                    })
+                    .zcount(jkey, '-inf', '+inf')
+                )
+            else:
+                pipeline = (pipe
+                    .rpush(jkey, self.encode([1, tid, state, result]))
+                    .llen(jkey)
+                )
+            pipeline = pipeline.get(tkey)
 
             if self.expires is not None:
                 pipeline = pipeline \
@@ -444,9 +459,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             if readycount == total:
                 decode, unpack = self.decode, self._unpack_chord_result
                 with client.pipeline() as pipe:
-                    resl, = pipe \
-                        .zrange(jkey, 0, -1) \
-                        .execute()
+                    if self._chord_zset:
+                        pipeline = pipe.zrange(jkey, 0, -1)
+                    else:
+                        pipeline = pipe.lrange(jkey, 0, total)
+                    resl, = pipeline.execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])
                     with client.pipeline() as pipe:
