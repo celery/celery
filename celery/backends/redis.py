@@ -31,7 +31,6 @@ except ImportError:
     from urlparse import unquote
 
 try:
-    import redis
     import redis.connection
     from kombu.transport.redis import get_redis_error_classes
 except ImportError:  # pragma: no cover
@@ -39,9 +38,9 @@ except ImportError:  # pragma: no cover
     get_redis_error_classes = None  # noqa
 
 try:
-    from redis import sentinel
+    import redis.sentinel
 except ImportError:
-    sentinel = None
+    pass
 
 __all__ = ('RedisBackend', 'SentinelBackend')
 
@@ -519,7 +518,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 class SentinelBackend(RedisBackend):
     """Redis sentinel task result store."""
 
-    sentinel = sentinel
+    sentinel = getattr(redis, "sentinel", None)
 
     def __init__(self, *args, **kwargs):
         if self.sentinel is None:
