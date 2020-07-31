@@ -8,6 +8,25 @@ This document contains change notes for bugfix & new features
 in the 4.4.x series, please see :ref:`whatsnew-4.4` for
 an overview of what's new in Celery 4.4.
 
+
+4.4.7
+=======
+:release-date: 2020-07-31 11.45 P.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Add task_received, task_rejected and task_unknown to signals module.
+- [ES backend] add 401 as safe for retry.
+- treat internal errors as failure.
+- Remove redis fanout caveats.
+- FIX: -A and --args should behave the same. (#6223) 
+- Class-based tasks autoretry (#6233)  
+- Preserve order of group results with Redis result backend (#6218) 
+- Replace future with celery.five Fixes #6250, and reraise to include 
+- Fix REMAP_SIGTERM=SIGQUIT not working
+- (Fixes#6258) MongoDB: fix for serialization issue (#6259)
+- Make use of ordered sets in Redis opt-in
+- Test, CI, Docker & style and minor doc impovements.
+
 4.4.6
 =======
 :release-date: 2020-06-24 2.40 P.M UTC+6:00
