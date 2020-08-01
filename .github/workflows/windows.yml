@@ -1,0 +1,36 @@
+name: Windows
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: windows-2019
+    strategy:
+      matrix:
+        python-version: [3.5, 3.6, 3.7, 3.8]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements/extras/thread.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --upgrade tox eventlet --requirement=requirements/extras/thread.txt
+
+      - name: Test
+        run: tox -e ${{ matrix.python-version }}-unit
+        
+      - name: Build
+        run: python setup.py bdist_wheel
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: windows-whls
+          path: dist
