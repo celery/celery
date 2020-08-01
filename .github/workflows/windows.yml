@@ -11,7 +11,7 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: ~\AppData\Local\pip\Cache
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements/extras/thread.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements/**.txt') }}
           restore-keys: ${{ runner.os }}-pip-
 
       - name: Set up Python ${{ matrix.python-version }}
@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install --upgrade tox eventlet --requirement=requirements/extras/thread.txt
+          python -m pip install --requirement requirements/pkgutils.txt
 
       - name: Test
         run: tox -vv -e ${{ matrix.python-version }}-unit
