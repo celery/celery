@@ -25,7 +25,7 @@ jobs:
           python -m pip install --upgrade tox eventlet --requirement=requirements/extras/thread.txt
 
       - name: Test
-        run: tox -e ${{ matrix.python-version }}-unit
+        run: tox -vv -e ${{ matrix.python-version }}-unit
         
       - name: Build
         run: python setup.py bdist_wheel
