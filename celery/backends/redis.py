@@ -429,21 +429,13 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         jkey = self.get_key_for_group(gid, '.j')
         tkey = self.get_key_for_group(gid, '.t')
         result = self.encode_result(result, state)
+        encoded = self.encode([1, tid, state, result])
         with client.pipeline() as pipe:
-            if self._chord_zset:
-                pipeline = (pipe
-                    .zadd(jkey, {
-                        self.encode([1, tid, state, result]): group_index
-                    })
-                    .zcount(jkey, '-inf', '+inf')
-                )
-            else:
-                pipeline = (pipe
-                    .rpush(jkey, self.encode([1, tid, state, result]))
-                    .llen(jkey)
-                )
-            pipeline = pipeline.get(tkey)
-
+            pipeline = (
+                pipe.zadd(jkey, {encoded: group_index}).zcount(jkey, "-inf", "+inf")
+                if self._chord_zset
+                else pipe.rpush(jkey, encoded).llen(jkey)
+            ).get(tkey)
             if self.expires is not None:
                 pipeline = pipeline \
                     .expire(jkey, self.expires) \
