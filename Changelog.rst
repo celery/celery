@@ -21,7 +21,7 @@ an overview of what's new in Celery 4.4.
 - FIX: -A and --args should behave the same. (#6223) 
 - Class-based tasks autoretry (#6233)  
 - Preserve order of group results with Redis result backend (#6218) 
-- Replace future with celery.five Fixes #6250, and reraise to include 
+- Replace future with celery.five Fixes #6250, and use raise_with_context instead of reraise
 - Fix REMAP_SIGTERM=SIGQUIT not working
 - (Fixes#6258) MongoDB: fix for serialization issue (#6259)
 - Make use of ordered sets in Redis opt-in
