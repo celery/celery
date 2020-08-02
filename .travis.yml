@@ -77,10 +77,7 @@ matrix:
     stage: test
 
 before_install:
-    - sudo mkdir -p /var/log/celery
-    - sudo mkdir -p /var/run/celery
-    - sudo chown travis /var/log/celery
-    - sudo chown travis /var/run/celery
+    - sudo install --directory --owner=travis /var/log/celery /var/run/celery
     - sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev httping expect
     - if [[ -v MATRIX_TOXENV ]]; then export TOXENV=${TRAVIS_PYTHON_VERSION}-${MATRIX_TOXENV}; fi; env
     - |
