@@ -29,7 +29,7 @@ def _maybe_close_fd(fh):
 
 def _verify_django_version(django):
     if django.VERSION < (1, 11):
-        raise ImproperlyConfigured('Celery 4.x requires Django 1.11 or later.')
+        raise ImproperlyConfigured('Celery 5.x requires Django 1.11 or later.')
 
 
 def fixup(app, env='DJANGO_SETTINGS_MODULE'):
