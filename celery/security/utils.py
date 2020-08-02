@@ -1,10 +1,11 @@
 """Utilities used by the message signing serializer."""
+import sys
 from contextlib import contextmanager
 
 import cryptography.exceptions
 from cryptography.hazmat.primitives import hashes
 
-from celery.exceptions import SecurityError
+from celery.exceptions import SecurityError, reraise
 
 __all__ = ('get_digest_algorithm', 'reraise_errors',)
 
@@ -22,4 +23,6 @@ def reraise_errors(msg='{0!r}', errors=None):
     try:
         yield
     except errors as exc:
-        raise SecurityError(msg.format(exc)) from exc
+        reraise(SecurityError,
+                SecurityError(msg.format(exc)),
+                sys.exc_info()[2])

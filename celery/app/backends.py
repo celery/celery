@@ -1,8 +1,9 @@
 """Backend selection."""
+import sys
 import types
 
 from celery._state import current_app
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import ImproperlyConfigured, reraise
 from celery.utils.imports import load_extension_class_names, symbol_by_name
 
 __all__ = ('by_name', 'by_url')
@@ -48,7 +49,8 @@ def by_name(backend=None, loader=None,
     try:
         cls = symbol_by_name(backend, aliases)
     except ValueError as exc:
-        raise ImproperlyConfigured(UNKNOWN_BACKEND.strip().format(backend, exc)) from exc
+        reraise(ImproperlyConfigured, ImproperlyConfigured(
+            UNKNOWN_BACKEND.strip().format(backend, exc)), sys.exc_info()[2])
     if isinstance(cls, types.ModuleType):
         raise ImproperlyConfigured(UNKNOWN_BACKEND.strip().format(
             backend, 'is a Python module, not a backend class.'))

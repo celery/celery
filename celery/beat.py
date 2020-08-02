@@ -20,6 +20,7 @@ from kombu.utils.functional import maybe_evaluate, reprcall
 from kombu.utils.objects import cached_property
 
 from . import __version__, platforms, signals
+from .exceptions import reraise
 from .schedules import crontab, maybe_schedule
 from .utils.imports import load_extension_class_names, symbol_by_name
 from .utils.log import get_logger, iter_open_logger_fds
@@ -390,9 +391,9 @@ class Scheduler:
                                       producer=producer,
                                       **entry.options)
         except Exception as exc:  # pylint: disable=broad-except
-            raise SchedulingError(
+            reraise(SchedulingError, SchedulingError(
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
-                    entry, exc=exc)) from exc
+                    entry, exc=exc)), sys.exc_info()[2])
         finally:
             self._tasks_since_sync += 1
             if self.should_sync():

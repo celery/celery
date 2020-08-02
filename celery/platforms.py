@@ -22,7 +22,7 @@ from billiard.compat import close_open_fds, get_fdmax
 from kombu.utils.compat import maybe_fileno
 from kombu.utils.encoding import safe_str
 
-from .exceptions import SecurityError
+from .exceptions import SecurityError, reraise
 from .local import try_import
 
 try:
@@ -145,7 +145,7 @@ class Pidfile:
         try:
             self.write_pid()
         except OSError as exc:
-            raise LockFailed(str(exc)) from exc
+            reraise(LockFailed, LockFailed(str(exc)), sys.exc_info()[2])
         return self
     __enter__ = acquire
 

@@ -57,6 +57,7 @@ from billiard.exceptions import (SoftTimeLimitExceeded, Terminated,
 from kombu.exceptions import OperationalError
 
 __all__ = (
+    'reraise',
     # Warnings
     'CeleryWarning',
     'AlwaysEagerIgnored', 'DuplicateNodenameWarning',
@@ -95,6 +96,13 @@ __all__ = (
 UNREGISTERED_FMT = """\
 Task of kind {0} never registered, please make sure it's imported.\
 """
+
+
+def reraise(tp, value, tb=None):
+    """Reraise exception."""
+    if value.__traceback__ is not tb:
+        raise value.with_traceback(tb)
+    raise value
 
 
 class CeleryWarning(UserWarning):
@@ -138,7 +146,8 @@ class Retry(TaskPredicate):
     #: :class:`~datetime.datetime`.
     when = None
 
-    def __init__(self, message=None, exc=None, when=None, is_eager=False, sig=None, **kwargs):
+    def __init__(self, message=None, exc=None, when=None, is_eager=False,
+                 sig=None, **kwargs):
         from kombu.utils.encoding import safe_repr
         self.message = message
         if isinstance(exc, str):
