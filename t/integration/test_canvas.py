@@ -30,7 +30,12 @@ def is_retryable_exception(exc):
 TIMEOUT = 60
 
 
-flaky = pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+_flaky = pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+_timeout = pytest.mark.timeout(timeout=300)
+
+
+def flaky(fn):
+    return _timeout(_flaky(fn))
 
 
 class test_link_error:

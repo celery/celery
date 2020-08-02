@@ -793,7 +793,6 @@ class test_WorkController(ConsumerCase):
         assert worker.autoscaler
 
     @skip.if_win32()
-    @pytest.mark.nothreads_not_lingering
     @mock.sleepdeprived(module=autoscale)
     def test_with_autoscaler_file_descriptor_safety(self):
         # Given: a test celery worker instance with auto scaling
@@ -843,7 +842,6 @@ class test_WorkController(ConsumerCase):
         worker.pool.terminate()
 
     @skip.if_win32()
-    @pytest.mark.nothreads_not_lingering
     @mock.sleepdeprived(module=autoscale)
     def test_with_file_descriptor_safety(self):
         # Given: a test celery worker instance

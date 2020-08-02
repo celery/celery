@@ -133,7 +133,11 @@ def AAA_disable_multiprocessing():
 
 
 def alive_threads():
-    return [thread for thread in threading.enumerate() if thread.is_alive()]
+    return [
+        thread
+        for thread in threading.enumerate()
+        if not thread.name.startswith("pytest_timeout ") and thread.is_alive()
+    ]
 
 
 @pytest.fixture(autouse=True)
