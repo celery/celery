@@ -12,7 +12,12 @@ from .tasks import (add, add_ignore_result, print_unicode, retry_once,
 TIMEOUT = 10
 
 
-flaky = pytest.mark.flaky(reruns=5, reruns_delay=2)
+_flaky = pytest.mark.flaky(reruns=5, reruns_delay=2)
+_timeout = pytest.mark.timeout(timeout=300)
+
+
+def flaky(fn):
+    return _timeout(_flaky(fn))
 
 
 class test_class_based_tasks:
