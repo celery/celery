@@ -30,16 +30,12 @@ syntax.
 
 Use ``.. autotask::`` to alternatively manually document a task.
 """
+from inspect import formatargspec, getfullargspec
+
 from sphinx.domains.python import PyFunction
 from sphinx.ext.autodoc import FunctionDocumenter
 
 from celery.app.task import BaseTask
-
-try:  # pragma: no cover
-    from inspect import formatargspec, getfullargspec
-except ImportError:  # Py2
-    from inspect import formatargspec
-    from inspect import getargspec as getfullargspec  # noqa
 
 
 class TaskDocumenter(FunctionDocumenter):
