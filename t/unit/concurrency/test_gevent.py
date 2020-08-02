@@ -4,9 +4,10 @@ from celery.concurrency.gevent import TaskPool, Timer, apply_timeout
 
 gevent_modules = (
     'gevent',
-    'gevent.monkey',
     'gevent.greenlet',
+    'gevent.monkey',
     'gevent.pool',
+    'gevent.signal',
     'greenlet',
 )
 

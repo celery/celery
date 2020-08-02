@@ -21,7 +21,6 @@ from .asynchronous import AsyncBackendMixin, BaseResultConsumer
 from .base import BaseKeyValueStoreBackend
 
 try:
-    import redis
     import redis.connection
     from kombu.transport.redis import get_redis_error_classes
 except ImportError:  # pragma: no cover
@@ -29,9 +28,9 @@ except ImportError:  # pragma: no cover
     get_redis_error_classes = None  # noqa
 
 try:
-    from redis import sentinel
+    import redis.sentinel
 except ImportError:
-    sentinel = None
+    pass
 
 __all__ = ('RedisBackend', 'SentinelBackend')
 
@@ -400,6 +399,13 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         # this flag.
         pass
 
+    @cached_property
+    def _chord_zset(self):
+        transport_options = self.app.conf.get(
+            'result_backend_transport_options', {}
+        )
+        return transport_options.get('result_chord_ordered', False)
+
     def on_chord_part_return(self, request, state, result,
                              propagate=None, **kwargs):
         app = self.app
@@ -413,13 +419,13 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         jkey = self.get_key_for_group(gid, '.j')
         tkey = self.get_key_for_group(gid, '.t')
         result = self.encode_result(result, state)
+        encoded = self.encode([1, tid, state, result])
         with client.pipeline() as pipe:
-            pipeline = pipe \
-                .zadd(jkey,
-                      {self.encode([1, tid, state, result]): group_index}) \
-                .zcount(jkey, '-inf', '+inf') \
-                .get(tkey)
-
+            pipeline = (
+                pipe.zadd(jkey, {encoded: group_index}).zcount(jkey, "-inf", "+inf")
+                if self._chord_zset
+                else pipe.rpush(jkey, encoded).llen(jkey)
+            ).get(tkey)
             if self.expires is not None:
                 pipeline = pipeline \
                     .expire(jkey, self.expires) \
@@ -435,9 +441,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             if readycount == total:
                 decode, unpack = self.decode, self._unpack_chord_result
                 with client.pipeline() as pipe:
-                    resl, = pipe \
-                        .zrange(jkey, 0, -1) \
-                        .execute()
+                    if self._chord_zset:
+                        pipeline = pipe.zrange(jkey, 0, -1)
+                    else:
+                        pipeline = pipe.lrange(jkey, 0, total)
+                    resl, = pipeline.execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])
                     with client.pipeline() as pipe:
@@ -509,7 +517,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 class SentinelBackend(RedisBackend):
     """Redis sentinel task result store."""
 
-    sentinel = sentinel
+    sentinel = getattr(redis, "sentinel", None)
 
     def __init__(self, *args, **kwargs):
         if self.sentinel is None:

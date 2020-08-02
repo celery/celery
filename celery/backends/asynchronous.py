@@ -111,9 +111,9 @@ class eventletDrainer(greenletDrainer):
 class geventDrainer(greenletDrainer):
 
     def spawn(self, func):
-        from gevent import sleep, spawn
-        g = spawn(func)
-        sleep(0)
+        import gevent
+        g = gevent.spawn(func)
+        gevent.sleep(0)
         return g
 
     def wait_for(self, p, wait, timeout=None):

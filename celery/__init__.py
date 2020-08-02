@@ -17,7 +17,7 @@ from . import local  # noqa
 
 SERIES = 'cliffs'
 
-__version__ = '4.4.6'
+__version__ = '4.4.7'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
@@ -108,16 +108,16 @@ def _patch_eventlet():
 
 
 def _patch_gevent():
-    import gevent
-    from gevent import monkey
-    from gevent import signal as gevent_signal
+    import gevent.monkey
+    import gevent.signal
 
-    monkey.patch_all()
+    gevent.monkey.patch_all()
     if gevent.version_info[0] == 0:  # pragma: no cover
         # Signals aren't working in gevent versions <1.0,
         # and aren't monkey patched by patch_all()
-        _signal = __import__('signal')
-        _signal.signal = gevent_signal
+        import signal
+
+        signal.signal = gevent.signal
 
 
 def maybe_patch_concurrency(argv=None, short_opts=None,

@@ -176,14 +176,12 @@ class MongoBackend(BaseBackend):
     def decode(self, data):
         if self.serializer == 'bson':
             return data
-
-        payload = self.encode(data)
-        return super().decode(payload)
+        return super().decode(data)
 
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
         """Store return value and state of an executed task."""
-        meta = self._get_result_meta(result=result, state=state,
+        meta = self._get_result_meta(result=self.encode(result), state=state,
                                      traceback=traceback, request=request)
         # Add the _id for mongodb
         meta['_id'] = task_id

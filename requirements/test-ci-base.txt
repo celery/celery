@@ -1,5 +1,4 @@
 pytest-cov
-pytest-sugar
 pytest-travis-fold
 codecov
 -r extras/redis.txt
