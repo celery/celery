@@ -16,7 +16,7 @@ stages:
 env:
   global:
   - PYTHONUNBUFFERED=yes
-  - CELERY_TOX_PARALEL=
+  - CELERY_TOX_PARALLEL=
   matrix:
   - MATRIX_TOXENV=unit
 
