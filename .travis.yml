@@ -54,7 +54,7 @@ matrix:
   - python: '3.8'
     env:
       - TOXENV=flake8,apicheck,configcheck,bandit
-      - CELERY_TOX_PARALLEL=--parallel --parallel-live
+      - CELERY_TOX_PARALLEL='--parallel --parallel-live'
     stage: lint
   - python: '2.7'
     env: TOXENV=flakeplus
