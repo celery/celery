@@ -345,7 +345,7 @@ Previously these were named ``releaseXX-maint``.
 The versions we currently maintain is:
 
 * 4.2
- 
+
   This is the current series.
 
 * 4.1
@@ -536,7 +536,7 @@ Assuming a folder structure such as:
 
     + celery_project
       + celery # repository cloned here.
-      + my_project 
+      + my_project
         - manage.py
         + my_project
           - views.py
@@ -839,15 +839,6 @@ make it easier for the maintainers to accept your proposed changes:
           $ flake8 -j 2 celery/ t/
           $ make flakecheck
           $ tox -e flake8
-
-- [ ] Run ``flakeplus`` against the code. The following commands are valid
-      and equivalent.:
-
-      .. code-block:: console
-
-          $ flakeplus --2.7 celery/ t/
-          $ make flakes
-          $ tox -e flakeplus
 
 - [ ]  Build api docs to make sure everything is OK. The following commands are valid
       and equivalent.:
