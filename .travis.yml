@@ -16,6 +16,7 @@ stages:
 env:
   global:
   - PYTHONUNBUFFERED=yes
+  - CELERY_TOX_PARALLEL=
   matrix:
   - MATRIX_TOXENV=unit
 
@@ -51,16 +52,9 @@ matrix:
     stage: integration
 
   - python: '3.8'
-    env: TOXENV=flake8
-    stage: lint
-  - python: '3.8'
-    env: TOXENV=apicheck
-    stage: lint
-  - python: '3.8'
-    env: TOXENV=configcheck
-    stage: lint
-  - python: '3.8'
-    env: TOXENV=bandit
+    env:
+      - TOXENV=flake8,apicheck,configcheck,bandit
+      - CELERY_TOX_PARALLEL='--parallel --parallel-live'
     stage: lint
   - python: '2.7'
     env: TOXENV=flakeplus
@@ -137,7 +131,7 @@ after_success:
               .tox/$TOXENV/bin/codecov -e TOXENV
           fi;
 install: pip --disable-pip-version-check install --upgrade-strategy eager -U tox | cat
-script: tox -v -- -v
+script: tox $CELERY_TOX_PARALLEL -v -- -v
 notifications:
   email: false
   irc:
