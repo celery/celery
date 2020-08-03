@@ -34,7 +34,7 @@ Examples
     celery worker -n celery3@myhost -c 3
 
     $ # override name prefix when using range
-    $ celery multi start 3 --range-prefix worker -c 3
+    $ celery multi start 3 --range-prefix=worker -c 3
     celery worker -n worker1@myhost -c 3
     celery worker -n worker2@myhost -c 3
     celery worker -n worker3@myhost -c 3
