@@ -758,7 +758,12 @@ class test_ElasticsearchBackend:
                 raise Exception("failed")
             except Exception as exc:
                 einfo = ExceptionInfo()
-                result_meta = x._get_result_meta(x.encode_result(exc, states.FAILURE), states.FAILURE, einfo.traceback, None)
+                result_meta = x._get_result_meta(
+                    x.encode_result(exc, states.FAILURE),
+                    states.FAILURE,
+                    einfo.traceback,
+                    None,
+                )
                 assert x.encode(result_meta) == result_meta
         finally:
             self.app.conf.elasticsearch_save_meta_as_text = prev
@@ -800,7 +805,12 @@ class test_ElasticsearchBackend:
                 raise Exception("failed")
             except Exception as exc:
                 einfo = ExceptionInfo()
-                result_meta = x._get_result_meta(x.encode_result(exc, states.FAILURE), states.FAILURE, einfo.traceback, None)
+                result_meta = x._get_result_meta(
+                    x.encode_result(exc, states.FAILURE),
+                    states.FAILURE,
+                    einfo.traceback,
+                    None,
+                )
                 assert x.decode(x.encode(result_meta)) == result_meta
         finally:
             self.app.conf.elasticsearch_save_meta_as_text = prev
