@@ -52,6 +52,7 @@ def utf8dict(d, encoding='utf-8'):
 
 
 class Queues(dict):
+
     """Queue name⇒ declaration mapping.
 
     Arguments:
