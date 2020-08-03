@@ -1068,7 +1068,12 @@ class test_backend_retries:
             b._sleep = Mock()
             b._get_task_meta_for = Mock()
             b._get_task_meta_for.return_value = {
-                'status': states.RETRY, 'result': {"exc_type": "Exception", "exc_message": ["failed"], "exc_module": "builtins"}
+                'status': states.RETRY,
+                'result': {
+                    "exc_type": "Exception",
+                    "exc_message": ["failed"],
+                    "exc_module": "builtins",
+                },
             }
             b._store_result = Mock()
             b._store_result.side_effect = [
@@ -1092,7 +1097,12 @@ class test_backend_retries:
             b._sleep = Mock()
             b._get_task_meta_for = Mock()
             b._get_task_meta_for.return_value = {
-                'status': states.RETRY, 'result': {"exc_type": "Exception", "exc_message": ["failed"], "exc_module": "builtins"}
+                'status': states.RETRY,
+                'result': {
+                    "exc_type": "Exception",
+                    "exc_message": ["failed"],
+                    "exc_module": "builtins",
+                },
             }
             b._store_result = Mock()
             b._store_result.side_effect = [
@@ -1115,7 +1125,12 @@ class test_backend_retries:
             b._sleep = Mock()
             b._get_task_meta_for = Mock()
             b._get_task_meta_for.return_value = {
-                'status': states.RETRY, 'result': {"exc_type": "Exception", "exc_message": ["failed"], "exc_module": "builtins"}
+                'status': states.RETRY,
+                'result': {
+                    "exc_type": "Exception",
+                    "exc_message": ["failed"],
+                    "exc_module": "builtins",
+                },
             }
             b._store_result = Mock()
             b._store_result.side_effect = [
