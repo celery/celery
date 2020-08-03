@@ -234,7 +234,13 @@ class test_unlock_chord_task(ChordCase):
 
         with patch.object(ch, 'run') as run:
             ch.apply_async(task_id=sentinel.task_id)
-            run.assert_called_once_with(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), (), task_id=sentinel.task_id, interval=10)
+            run.assert_called_once_with(
+                group(mul.s(1, 1), mul.s(2, 2)),
+                mul.s(),
+                (),
+                task_id=sentinel.task_id,
+                interval=10,
+            )
 
 
 class test_chord(ChordCase):
