@@ -31,7 +31,7 @@ instead. See also the FAQ entry :ref:`faq-acks_late-vs-retry`.
 
 Note that the worker will acknowledge the message if the child process executing
 the task is terminated (either by the task calling :func:`sys.exit`, or by signal)
-even when :attr:`~Task.acks_late` is enabled.  This behavior is by purpose
+even when :attr:`~Task.acks_late` is enabled.  This behavior is intentional
 as...
 
 #. We don't want to rerun tasks that forces the kernel to send
