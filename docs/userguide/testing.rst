@@ -93,8 +93,17 @@ pytest
 
 .. versionadded:: 4.0
 
-Celery is also a :pypi:`pytest` plugin that adds fixtures that you can
+Celery also makes a :pypi:`pytest` plugin available that adds fixtures that you can
 use in your integration (or unit) test suites.
+
+Enabling
+--------
+
+Celery initially ships the plugin in a disabled state, to enable it you can either:
+
+    * `pip install celery[pytest]`
+    * `pip install pytest-celery`
+    * or add `pytest_plugins = 'celery.contrib.pytest'` to your pytest.ini
 
 
 Marks
