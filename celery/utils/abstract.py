@@ -1,5 +1,5 @@
 """Abstract classes."""
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 from collections.abc import Callable
 
 __all__ = ('CallableTask', 'CallableSignature')
@@ -57,47 +57,58 @@ class CallableSignature(CallableTask):  # pragma: no cover
         'clone', 'freeze', 'set', 'link', 'link_error', '__or__',
     })
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def name(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def type(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def app(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def id(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def task(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def args(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def kwargs(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def options(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def subtask_type(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def chord_size(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def immutable(self):
         pass
 
