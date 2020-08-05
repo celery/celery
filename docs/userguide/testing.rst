@@ -89,7 +89,7 @@ in this example:
                 send_order(product.pk, 3, Decimal(30.6))
 
 pytest
-=======
+======
 
 .. versionadded:: 4.0
 
