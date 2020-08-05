@@ -1,8 +1,8 @@
 """Eventlet execution pool."""
 import sys
+from time import monotonic
 
 from kombu.asynchronous import timer as _timer  # noqa
-from kombu.five import monotonic
 
 from celery import signals  # noqa
 

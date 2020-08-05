@@ -1,6 +1,7 @@
 """Gevent execution pool."""
+from time import monotonic
+
 from kombu.asynchronous import timer as _timer
-from kombu.five import monotonic
 
 from . import base
 

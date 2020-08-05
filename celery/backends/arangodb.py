@@ -6,7 +6,6 @@ import json
 import logging
 from datetime import timedelta
 
-from kombu.utils.encoding import str_t
 from kombu.utils.objects import cached_property
 from kombu.utils.url import _parse_url
 
@@ -51,7 +50,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
     http_protocol = 'http'
 
     # Use str as arangodb key not bytes
-    key_t = str_t
+    key_t = str
 
     def __init__(self, url=None, *args, **kwargs):
         """Parse the url or load the settings from settings object."""
