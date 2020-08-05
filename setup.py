@@ -213,10 +213,7 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'celery = celery.__main__:main',
-        ],
-        'pytest11': [
-            'celery = celery.contrib.pytest',
-        ],
+        ]
     },
     project_urls={
         "Documentation": "http://docs.celeryproject.org/en/latest/index.html",
