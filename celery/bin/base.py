@@ -90,7 +90,7 @@ class CLIContext:
         if not n:
             return '- empty -'
         return '\n'.join(
-            f'{self.style("*", color="white")} {item}' for item in n
+            f'{self.style("*", fg="white")} {item}' for item in n
         )
 
     def pretty_dict_ok_error(self, n):
