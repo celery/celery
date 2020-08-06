@@ -555,20 +555,20 @@ class test_App:
         for key, value in changes.items():
             assert restored.conf[key] == value
 
-    def test_worker_main(self):
-        from celery.bin import worker as worker_bin
-
-        class worker(worker_bin.worker):
-
-            def execute_from_commandline(self, argv):
-                return argv
-
-        prev, worker_bin.worker = worker_bin.worker, worker
-        try:
-            ret = self.app.worker_main(argv=['--version'])
-            assert ret == ['--version']
-        finally:
-            worker_bin.worker = prev
+    # def test_worker_main(self):
+    #     from celery.bin import worker as worker_bin
+    #
+    #     class worker(worker_bin.worker):
+    #
+    #         def execute_from_commandline(self, argv):
+    #             return argv
+    #
+    #     prev, worker_bin.worker = worker_bin.worker, worker
+    #     try:
+    #         ret = self.app.worker_main(argv=['--version'])
+    #         assert ret == ['--version']
+    #     finally:
+    #         worker_bin.worker = prev
 
     def test_config_from_envvar(self):
         os.environ['CELERYTEST_CONFIG_OBJECT'] = 't.unit.app.test_app'
@@ -750,11 +750,6 @@ class test_App:
         assert self.app.config_from_envvar(key, force=True)
         assert self.app.conf['FOO'] == 10
         assert self.app.conf['BAR'] == 20
-
-    @patch('celery.bin.celery.CeleryCommand.execute_from_commandline')
-    def test_start(self, execute):
-        self.app.start()
-        execute.assert_called()
 
     @pytest.mark.parametrize('url,expected_fields', [
         ('pyamqp://', {
