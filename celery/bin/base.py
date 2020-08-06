@@ -39,6 +39,7 @@ class CLIContext:
     def OK(self):
         return self.style("OK", fg="green", bold=True)    \
 
+
     @cached_property
     def ERROR(self):
         return self.style("ERROR", fg="red", bold=True)

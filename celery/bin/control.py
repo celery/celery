@@ -49,7 +49,6 @@ def compile_arguments(action, args):
     return arguments
 
 
-
 @click.command(cls=CeleryCommand)
 @click.option('-t',
               '--timeout',
