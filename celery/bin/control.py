@@ -72,7 +72,6 @@ def compile_arguments(action, args):
 @click.pass_context
 def status(ctx, timeout, destination, json, **kwargs):
     """Show list of workers that are online."""
-
     callback = None if json else partial(say_remote_command_reply, ctx)
     replies = ctx.obj.app.control.inspect(timeout=timeout,
                                           destination=destination,
@@ -118,7 +117,8 @@ def status(ctx, timeout, destination, json, **kwargs):
 def inspect(ctx, action, timeout, destination, json, **kwargs):
     """Inspect the worker at runtime.
 
-    Availability: RabbitMQ (AMQP) and Redis transports."""
+    Availability: RabbitMQ (AMQP) and Redis transports.
+    """
     callback = None if json else partial(say_remote_command_reply, ctx,
                                          show_reply=True)
     replies = ctx.obj.app.control.inspect(timeout=timeout,
@@ -166,7 +166,8 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
 def control(ctx, action, timeout, destination, json):
     """Workers remote control.
 
-    Availability: RabbitMQ (AMQP), Redis, and MongoDB transports."""
+    Availability: RabbitMQ (AMQP), Redis, and MongoDB transports.
+    """
     callback = None if json else partial(say_remote_command_reply, ctx,
                                          show_reply=True)
     args = ctx.args

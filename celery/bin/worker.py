@@ -115,12 +115,14 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               default=False,
               help_group="Worker Options",
               help="Start worker as a background process.")
+# TODO: Load default from the app in the context
 @click.option('-S',
               '--statedb',
               cls=CeleryOption,
               type=click.Path(),
               help_group="Worker Options",
-              help="Path to the state database. The extension '.db' may be appended to the filename.  Default: {default}")  # TODO: Load default from the app in the context
+              help="Path to the state database. The extension '.db' may be"
+                   "appended to the filename.  Default: {default}")
 @click.option('-l',
               '--loglevel',
               default='WARNING',
@@ -135,18 +137,23 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               type=click.Choice(('default', 'fair')),
               help_group="Worker Options",
               help="Apply optimization profile.")
+# TODO: Load default from the app in the context
 @click.option('--prefetch-multiplier',
               default=0,
               type=PREFETCH_MULTIPLIER,
               cls=CeleryOption,
               help_group="Worker Options",
-              help="Set custom prefetch multiplier value for this worker instance.")  # TODO: Load default from the app in the context
+              help="Set custom prefetch multiplier value"
+                   "for this worker instance.")
+# TODO: Load default from the app in the context
 @click.option('-c',
               '--concurrency',
               type=CONCURRENCY,
               cls=CeleryOption,
               help_group="Pool Options",
-              help="Number of child processes processing the queue.  The default is the number of CPUs available on your system.")  # TODO: Load default from the app in the context
+              help="Number of child processes processing the queue.  "
+                   "The default is the number of CPUs available"
+                   "on your system.")
 @click.option('-P',
               '--pool',
               default='prefork',

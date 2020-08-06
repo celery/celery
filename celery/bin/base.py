@@ -17,7 +17,8 @@ try:
     from pygments.lexers import PythonLexer
     from pygments.formatters import Terminal256Formatter
 except ImportError:
-    highlight = lambda s, *args, **kwargs: s
+    def highlight(s, *args, **kwargs):
+        return s
     LEXER = None
     FORMATTER = None
 else:

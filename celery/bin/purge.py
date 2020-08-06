@@ -39,10 +39,15 @@ def purge(ctx, force, queues, exclude_queues):
 
     if names:
         if not force:
-            click.confirm(f"{ctx.obj.style('WARNING', fg='red')}: This will remove all tasks from {text.pluralize(qnum, 'queue')}: {', '.join(sorted(names))}.\n"
+            queues_headline = text.pluralize(qnum, 'queue')
+            queue_names = ', '.join(sorted(names))
+            click.confirm(f"{ctx.obj.style('WARNING', fg='red')}:"
+                          "This will remove all tasks from "
+                          f"{queues_headline}: {queue_names}.\n"
                           "         There is no undo for this operation!\n\n"
                           "(to skip this prompt use the -f option)\n"
-                          "Are you sure you want to delete all tasks?", abort=True)
+                          "Are you sure you want to delete all tasks?",
+                          abort=True)
 
         def _purge(conn, queue):
             try:
