@@ -1,3 +1,4 @@
+"""The ``celery list bindings`` command, used to inspect queue bindings."""
 import click
 
 from celery.bin.base import CeleryCommand

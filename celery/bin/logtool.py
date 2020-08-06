@@ -1,3 +1,4 @@
+"""The ``celery logtool`` command."""
 import re
 from collections import Counter
 from fileinput import FileInput

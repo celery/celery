@@ -1,3 +1,4 @@
+"""The ``celery purge`` program, used to delete messages from queues."""
 import click
 
 from celery.bin.base import COMMA_SEPARATED_LIST, CeleryCommand, CeleryOption

@@ -1,3 +1,4 @@
+"""The ``celery result`` program, used to inspect task results."""
 import click
 
 from celery.bin.base import CeleryCommand, CeleryOption

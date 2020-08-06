@@ -1,3 +1,4 @@
+"""The ``celery events`` program."""
 import sys
 from functools import partial
 
@@ -7,23 +8,23 @@ from celery.bin.base import LOG_LEVEL, CeleryDaemonCommand, CeleryOption
 from celery.platforms import detached, set_process_title, strargv
 
 
-def set_process_status(prog, info=''):
+def _set_process_status(prog, info=''):
     prog = '{0}:{1}'.format('celery events', prog)
     info = '{0} {1}'.format(info, strargv(sys.argv))
     return set_process_title(prog, info=info)
 
 
-def run_evdump(app):
+def _run_evdump(app):
     from celery.events.dumper import evdump
-    set_process_status('dump')
+    _set_process_status('dump')
     return evdump(app=app)
 
 
-def run_evcam(camera, app, logfile=None, pidfile=None, uid=None,
-              gid=None, umask=None, workdir=None,
-              detach=False, **kwargs):
+def _run_evcam(camera, app, logfile=None, pidfile=None, uid=None,
+               gid=None, umask=None, workdir=None,
+               detach=False, **kwargs):
     from celery.events.snapshot import evcam
-    set_process_status('cam')
+    _set_process_status('cam')
     kwargs['app'] = app
     cam = partial(evcam, camera,
                   logfile=logfile, pidfile=pidfile, **kwargs)
@@ -35,10 +36,10 @@ def run_evcam(camera, app, logfile=None, pidfile=None, uid=None,
         return cam()
 
 
-def run_evtop(app):
+def _run_evtop(app):
     try:
         from celery.events.cursesmon import evtop
-        set_process_status('top')
+        _set_process_status('top')
         return evtop(app=app)
     except ModuleNotFoundError as e:
         if e.name == '_curses':
@@ -81,12 +82,12 @@ def events(ctx, dump, camera, detach, frequency, maxrate, loglevel, **kwargs):
     """Event-stream utilities."""
     app = ctx.obj.app
     if dump:
-        return run_evdump(app)
+        return _run_evdump(app)
 
     if camera:
-        return run_evcam(camera, app=app, freq=frequency, maxrate=maxrate,
-                         loglevel=loglevel,
-                         detach=detach,
-                         **kwargs)
+        return _run_evcam(camera, app=app, freq=frequency, maxrate=maxrate,
+                          loglevel=loglevel,
+                          detach=detach,
+                          **kwargs)
 
-    return run_evtop(app)
+    return _run_evtop(app)

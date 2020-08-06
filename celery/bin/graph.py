@@ -1,3 +1,4 @@
+"""The ``celery graph`` command."""
 import sys
 from operator import itemgetter
 
@@ -15,6 +16,7 @@ def graph():
 @graph.command(cls=CeleryCommand, context_settings={'allow_extra_args': True})
 @click.pass_context
 def bootsteps(ctx):
+    """Display bootsteps graph."""
     worker = ctx.obj.app.WorkController()
     include = {arg.lower() for arg in ctx.args or ['worker', 'consumer']}
     if 'worker' in include:
@@ -29,6 +31,7 @@ def bootsteps(ctx):
 @graph.command(cls=CeleryCommand, context_settings={'allow_extra_args': True})
 @click.pass_context
 def workers(ctx):
+    """Display workers graph."""
     def simplearg(arg):
         return maybe_list(itemgetter(0, 2)(arg.partition(':')))
 

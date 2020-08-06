@@ -1,3 +1,4 @@
+"""The ``celery upgrade`` command, used to upgrade from previous versions."""
 import codecs
 import sys
 
@@ -67,6 +68,7 @@ def _to_new_key(line, keyfilter=pass1, source=defaults._TO_NEW_KEY):
               help_group='Upgrading Options',
               help='Dont backup original files.')
 def settings(filename, django, compat, no_backup):
+    """Migrate settings from Celery 3.x to Celery 4.x."""
     lines = _slurp(filename)
     keyfilter = _compat_key if django or compat else pass1
     print('processing {0}...'.format(filename), file=sys.stderr)

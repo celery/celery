@@ -18,6 +18,7 @@ try:
     from pygments.formatters import Terminal256Formatter
 except ImportError:
     def highlight(s, *args, **kwargs):
+        """Place holder function in case pygments is missing."""
         return s
     LEXER = None
     FORMATTER = None

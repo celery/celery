@@ -1,3 +1,4 @@
+"""The ``celery call`` program used to send tasks from the command-line."""
 import click
 
 from celery.bin.base import (ISO8601, ISO8601_OR_FLOAT, JSON, CeleryCommand,

@@ -1,3 +1,5 @@
+"""AMQP 0.9.1 REPL."""
+
 import pprint
 
 import click

@@ -9,7 +9,7 @@ import click
 from celery.bin.base import CeleryCommand, CeleryOption
 
 
-def invoke_fallback_shell(locals):
+def _invoke_fallback_shell(locals):
     import code
     try:
         import readline
@@ -23,12 +23,12 @@ def invoke_fallback_shell(locals):
     code.interact(local=locals)
 
 
-def invoke_bpython_shell(locals):
+def _invoke_bpython_shell(locals):
     import bpython
     bpython.embed(locals)
 
 
-def invoke_ipython_shell(locals):
+def _invoke_ipython_shell(locals):
     for ip in (_ipython, _ipython_pre_10,
                _ipython_terminal, _ipython_010,
                _no_ipython):
@@ -65,18 +65,18 @@ def _no_ipython(self):  # pragma: no cover
     raise ImportError('no suitable ipython found')
 
 
-def invoke_default_shell(locals):
+def _invoke_default_shell(locals):
     try:
         import IPython  # noqa
     except ImportError:
         try:
             import bpython  # noqa
         except ImportError:
-            return invoke_fallback_shell(locals)
+            return _invoke_fallback_shell(locals)
         else:
-            return invoke_bpython_shell(locals)
+            return _invoke_bpython_shell(locals)
     else:
-        return invoke_ipython_shell(locals)
+        return _invoke_ipython_shell(locals)
 
 
 @click.command(cls=CeleryCommand)
@@ -156,15 +156,15 @@ def shell(ctx, ipython=False, bpython=False,
         })
 
     if python:
-        return invoke_fallback_shell(locals)
+        return _invoke_fallback_shell(locals)
     elif bpython:
         try:
-            return invoke_bpython_shell(locals)
+            return _invoke_bpython_shell(locals)
         except ImportError:
             ctx.obj.echo(f'{ctx.obj.ERROR}: bpython is not installed')
     elif ipython:
         try:
-            return invoke_ipython_shell(locals)
+            return _invoke_ipython_shell(locals)
         except ImportError as e:
             ctx.obj.echo(f'{ctx.obj.ERROR}: {e}')
-    return invoke_default_shell(locals)
+    return _invoke_default_shell(locals)

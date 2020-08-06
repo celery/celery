@@ -1,3 +1,4 @@
+"""The ``celery migrate`` command, used to filter and move messages."""
 import click
 from kombu import Connection
 
