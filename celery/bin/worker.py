@@ -107,7 +107,8 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               cls=CeleryOption,
               type=HOSTNAME,
               help_group="Worker Options",
-              help="Set custom hostname (e.g., 'w1@%%h').  Expands: %%h (hostname), %%n (name) and %%d, (domain).")
+              help="Set custom hostname (e.g., 'w1@%%h').  "
+                   "Expands: %%h (hostname), %%n (name) and %%d, (domain).")
 @click.option('-D',
               '--detach',
               cls=CeleryOption,
@@ -167,31 +168,36 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               is_flag=True,
               cls=CeleryOption,
               help_group="Pool Options",
-              help="Send task-related events that can be captured by monitors like celery events, celerymon, and others.")
+              help="Send task-related events that can be captured by monitors"
+                   " like celery events, celerymon, and others.")
 @click.option('--time-limit',
               type=float,
               cls=CeleryOption,
               help_group="Pool Options",
-              help="Enables a hard time limit (in seconds int/float) for tasks.")
+              help="Enables a hard time limit "
+                   "(in seconds int/float) for tasks.")
 @click.option('--soft-time-limit',
               type=float,
               cls=CeleryOption,
               help_group="Pool Options",
-              help="Enables a soft time limit (in seconds int/float) for tasks.")
+              help="Enables a soft time limit "
+                   "(in seconds int/float) for tasks.")
 @click.option('--max-tasks-per-child',
               type=int,
               cls=CeleryOption,
               help_group="Pool Options",
-              help="Maximum number of tasks a pool worker can execute before it's terminated and replaced by a new worker.")
+              help="Maximum number of tasks a pool worker can execute before "
+                   "it's terminated and replaced by a new worker.")
 @click.option('--max-memory-per-child',
               type=int,
               cls=CeleryOption,
               help_group="Pool Options",
-              help="""Maximum amount of resident memory, in KiB, that may be consumed by a
-                   child process before it will be replaced by a new one.  If a single
-                   task causes a child process to exceed this limit, the task will be
-                   completed and the child process will be replaced afterwards.
-                   Default: no limit.""")
+              help="Maximum amount of resident memory, in KiB, that may be "
+                   "consumed by a child process before it will be replaced "
+                   "by a new one.  If a single task causes a child process "
+                   "to exceed this limit, the task will be completed and "
+                   "the child process will be replaced afterwards.\n"
+                   "Default: no limit.")
 @click.option('--purge',
               '--discard',
               is_flag=True,
@@ -238,11 +244,12 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               cls=CeleryOption,
               is_flag=True,
               help_group="Embedded Beat Options")
+# TODO: Load default from the app in the context
 @click.option('-s',
               '--schedule-filename',
               '--schedule',
               cls=CeleryOption,
-              help_group="Embedded Beat Options")  # TODO: Load default from the app in the context
+              help_group="Embedded Beat Options")
 @click.option('--scheduler',
               cls=CeleryOption,
               help_group="Embedded Beat Options")

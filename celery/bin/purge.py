@@ -39,8 +39,9 @@ def purge(ctx, force, queues, exclude_queues):
     qnum = len(names)
 
     if names:
+        queues_headline = text.pluralize(qnum, 'queue')
         if not force:
-            queues_headline = text.pluralize(qnum, 'queue')
+            queues_headline = queues_headline
             queue_names = ', '.join(sorted(names))
             click.confirm(f"{ctx.obj.style('WARNING', fg='red')}:"
                           "This will remove all tasks from "
@@ -60,6 +61,8 @@ def purge(ctx, force, queues, exclude_queues):
             messages = sum(_purge(conn, queue) for queue in names)
 
         if messages:
-            ctx.obj.echo(f"Purged {messages} {text.pluralize(messages, 'message')} from {qnum} known task {text.pluralize(qnum, 'queue')}.")
+            messages_headline = text.pluralize(messages, 'message')
+            ctx.obj.echo(f"Purged {messages} {messages_headline} from "
+                         f"{qnum} known task {queues_headline}.")
         else:
-            ctx.obj.echo(f"No messages purged from {qnum} {text.pluralize(qnum, 'queue')}.")
+            ctx.obj.echo(f"No messages purged from {qnum} {queues_headline}.")
