@@ -75,6 +75,5 @@
     celery.utils.text
     celery.utils.dispatch
     celery.utils.dispatch.signal
-    celery.utils.dispatch.weakref_backports
     celery.platforms
     celery._state
