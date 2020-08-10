@@ -854,7 +854,7 @@ class test_chord:
         redis_connection = get_redis_connection()
         # The redis key is either a list or zset depending on configuration
         if manager.app.conf.result_backend_transport_options.get(
-            'result_chord_ordered', False
+            'result_chord_ordered', True
         ):
             job_results = redis_connection.zrange(j_key, 0, 3)
         else:

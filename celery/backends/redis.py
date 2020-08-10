@@ -405,7 +405,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         transport_options = self.app.conf.get(
             'result_backend_transport_options', {}
         )
-        return transport_options.get('result_chord_ordered', False)
+        return transport_options.get('result_chord_ordered', True)
 
     def on_chord_part_return(self, request, state, result,
                              propagate=None, **kwargs):
