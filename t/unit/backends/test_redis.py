@@ -623,9 +623,9 @@ class test_RedisBackend:
 
         for i in range(10):
             self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
-            assert self.b.client.rpush.call_count
-            self.b.client.rpush.reset_mock()
-        assert self.b.client.lrange.call_count
+            assert self.b.client.zadd.call_count
+            self.b.client.zadd.reset_mock()
+        assert self.b.client.zrangebyscore.call_count
         jkey = self.b.get_key_for_group('group_id', '.j')
         tkey = self.b.get_key_for_group('group_id', '.t')
         self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
@@ -683,9 +683,9 @@ class test_RedisBackend:
 
         for i in range(10):
             self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
-            assert self.b.client.rpush.call_count
-            self.b.client.rpush.reset_mock()
-        assert self.b.client.lrange.call_count
+            assert self.b.client.zadd.call_count
+            self.b.client.zadd.reset_mock()
+        assert self.b.client.zrangebyscore.call_count
         jkey = self.b.get_key_for_group('group_id', '.j')
         tkey = self.b.get_key_for_group('group_id', '.t')
         self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
@@ -805,7 +805,7 @@ class test_RedisBackend:
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, ChordError())
-            self.b.client.pipeline.return_value.rpush().llen().get().expire(
+            self.b.client.pipeline.return_value.zadd().zcount().get().expire(
             ).expire().execute.return_value = (1, 1, 0, 4, 5)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
@@ -849,7 +849,7 @@ class test_RedisBackend:
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, RuntimeError())
-            self.b.client.pipeline.return_value.rpush().llen().get().expire(
+            self.b.client.pipeline.return_value.zadd().zcount().get().expire(
             ).expire().execute.return_value = (1, 1, 0, 4, 5)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
