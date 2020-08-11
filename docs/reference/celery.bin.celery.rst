@@ -4,11 +4,7 @@
 
 .. contents::
     :local:
-.. currentmodule:: celery.bin.celeryC
-
-.. click:: celery.bin.celery:celery
-    :prog: celery
-    :show-nested:
+.. currentmodule:: celery.bin.celery
 
 .. automodule:: celery.bin.celery
     :members:
