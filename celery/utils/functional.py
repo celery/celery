@@ -1,17 +1,13 @@
-# -*- coding: utf-8 -*-
 """Functional-style utilties."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import inspect
 import sys
+from collections import UserList
 from functools import partial
 from itertools import chain, islice
 
 from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
                                     maybe_evaluate, maybe_list, memoize)
 from vine import promise
-
-from celery.five import UserList, getfullargspec, range
 
 __all__ = (
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
@@ -26,7 +22,7 @@ def {fun_name}({fun_args}):
 """
 
 
-class DummyContext(object):
+class DummyContext:
 
     def __enter__(self):
         return self
@@ -48,7 +44,7 @@ class mlazy(lazy):
 
     def evaluate(self):
         if not self.evaluated:
-            self._value = super(mlazy, self).evaluate()
+            self._value = super().evaluate()
             self.evaluated = True
         return self._value
 
@@ -244,12 +240,12 @@ def _argsfromspec(spec, replace_defaults=True):
 
     return ', '.join(filter(None, [
         ', '.join(positional),
-        ', '.join('{0}={1}'.format(k, v) for k, v in optional),
-        '*{0}'.format(varargs) if varargs else None,
+        ', '.join(f'{k}={v}' for k, v in optional),
+        f'*{varargs}' if varargs else None,
         '*' if (kwonlyargs or kwonlyargs_optional) and not varargs else None,
         ', '.join(kwonlyargs) if kwonlyargs else None,
-        ', '.join('{0}="{1}"'.format(k, v) for k, v in kwonlyargs_optional),
-        '**{0}'.format(varkw) if varkw else None,
+        ', '.join(f'{k}="{v}"' for k, v in kwonlyargs_optional),
+        f'**{varkw}' if varkw else None,
     ]))
 
 
@@ -271,7 +267,7 @@ def head_from_fun(fun, bound=False, debug=False):
         name = fun.__name__
     definition = FUNHEAD_TEMPLATE.format(
         fun_name=name,
-        fun_args=_argsfromspec(getfullargspec(fun)),
+        fun_args=_argsfromspec(inspect.getfullargspec(fun)),
         fun_value=1,
     )
     if debug:  # pragma: no cover
@@ -288,12 +284,12 @@ def head_from_fun(fun, bound=False, debug=False):
 
 
 def arity_greater(fun, n):
-    argspec = getfullargspec(fun)
+    argspec = inspect.getfullargspec(fun)
     return argspec.varargs or len(argspec.args) > n
 
 
 def fun_takes_argument(name, fun, position=None):
-    spec = getfullargspec(fun)
+    spec = inspect.getfullargspec(fun)
     return (
         spec.varkw or spec.varargs or
         (len(spec.args) >= position if position else name in spec.args)

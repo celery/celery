@@ -1,15 +1,11 @@
-# -*- coding: utf-8 -*-
 """ArangoDb result store backend."""
 
 # pylint: disable=W1202,W0703
-
-from __future__ import absolute_import, unicode_literals
 
 import json
 import logging
 from datetime import timedelta
 
-from kombu.utils.encoding import str_t
 from kombu.utils.objects import cached_property
 from kombu.utils.url import _parse_url
 
@@ -54,11 +50,11 @@ class ArangoDbBackend(KeyValueStoreBackend):
     http_protocol = 'http'
 
     # Use str as arangodb key not bytes
-    key_t = str_t
+    key_t = str
 
     def __init__(self, url=None, *args, **kwargs):
         """Parse the url or load the settings from settings object."""
-        super(ArangoDbBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if py_arango_connection is None:
             raise ImproperlyConfigured(

@@ -1,15 +1,12 @@
-# -*- coding: utf-8 -*-
 """Task request.
 
 This module defines the :class:`Request` class, that specifies
 how tasks are executed.
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import sys
 from datetime import datetime
-from time import time
+from time import monotonic, time
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
@@ -22,7 +19,6 @@ from celery.app.trace import trace_task, trace_task_ret
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
-from celery.five import monotonic, python_2_unicode_compatible, string
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, noop
 from celery.utils.log import get_logger
@@ -65,8 +61,7 @@ task_ready = state.task_ready
 revoked_tasks = state.revoked
 
 
-@python_2_unicode_compatible
-class Request(object):
+class Request:
     """A request for task execution."""
 
     acknowledged = False
@@ -134,7 +129,7 @@ class Request(object):
                 eta = maybe_iso8601(eta)
             except (AttributeError, ValueError, TypeError) as exc:
                 raise InvalidTaskError(
-                    'invalid ETA value {0!r}: {1}'.format(eta, exc))
+                    f'invalid ETA value {eta!r}: {exc}')
             self._eta = maybe_make_aware(eta, self.tzlocal)
         else:
             self._eta = None
@@ -145,7 +140,7 @@ class Request(object):
                 expires = maybe_iso8601(expires)
             except (AttributeError, ValueError, TypeError) as exc:
                 raise InvalidTaskError(
-                    'invalid expires value {0!r}: {1}'.format(expires, exc))
+                    f'invalid expires value {expires!r}: {exc}')
             self._expires = maybe_make_aware(expires, self.tzlocal)
         else:
             self._expires = None
@@ -490,7 +485,7 @@ class Request(object):
         """Handler called if the task raised an exception."""
         task_ready(self)
         if isinstance(exc_info.exception, MemoryError):
-            raise MemoryError('Process got: %s' % (exc_info.exception,))
+            raise MemoryError(f'Process got: {exc_info.exception}')
         elif isinstance(exc_info.exception, Reject):
             return self.reject(requeue=exc_info.exception.requeue)
         elif isinstance(exc_info.exception, Ignore):
@@ -524,7 +519,7 @@ class Request(object):
         # to write the result.
         if isinstance(exc, Terminated):
             self._announce_revoked(
-                'terminated', True, string(exc), False)
+                'terminated', True, str(exc), False)
             send_failed_event = False  # already sent revoked event
         elif not requeue and (isinstance(exc, WorkerLostError) or not return_ok):
             # only mark as failure if task has not been requeued
@@ -577,13 +572,13 @@ class Request(object):
         """``str(self)``."""
         return ' '.join([
             self.humaninfo(),
-            ' ETA:[{0}]'.format(self._eta) if self._eta else '',
-            ' expires:[{0}]'.format(self._expires) if self._expires else '',
+            f' ETA:[{self._eta}]' if self._eta else '',
+            f' expires:[{self._expires}]' if self._expires else '',
         ])
 
     def __repr__(self):
         """``repr(self)``."""
-        return '<{0}: {1} {2} {3}>'.format(
+        return '<{}: {} {} {}>'.format(
             type(self).__name__, self.humaninfo(),
             self._argsrepr, self._kwargsrepr,
         )

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import os
 import sys
@@ -142,8 +140,7 @@ def alive_threads():
 
 @pytest.fixture(autouse=True)
 def task_join_will_not_block():
-    from celery import _state
-    from celery import result
+    from celery import _state, result
     prev_res_join_block = result.task_join_will_block
     _state.orig_task_join_will_block = _state.task_join_will_block
     prev_state_join_block = _state.task_join_will_block
@@ -206,6 +203,7 @@ def sanity_no_shutdown_flags_set():
 
     # Make sure no test left the shutdown flags enabled.
     from celery.worker import state as worker_state
+
     # check for EX_OK
     assert worker_state.should_stop is not False
     assert worker_state.should_terminate is not False
@@ -285,7 +283,7 @@ def teardown():
     if os.path.exists('test.db'):
         try:
             os.remove('test.db')
-        except WindowsError:
+        except OSError:
             pass
 
     # Make sure there are no remaining threads at shutdown.
@@ -325,6 +323,6 @@ def import_all_modules(name=__name__, file=__file__,
                 pass
             except OSError as exc:
                 warnings.warn(UserWarning(
-                    'Ignored error importing module {0}: {1!r}'.format(
+                    'Ignored error importing module {}: {!r}'.format(
                         module, exc,
                     )))

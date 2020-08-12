@@ -1,6 +1,4 @@
 """The ``celery call`` program used to send tasks from the command-line."""
-from __future__ import absolute_import, unicode_literals
-
 from kombu.utils.json import loads
 
 from celery.bin.base import Command

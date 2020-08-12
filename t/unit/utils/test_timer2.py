@@ -1,11 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-
 import sys
 import time
 
 from case import Mock, call, patch
 
-import celery.utils.timer2 as timer2
+from celery.utils import timer2 as timer2
 
 
 class test_Timer:

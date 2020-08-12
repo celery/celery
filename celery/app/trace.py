@@ -1,14 +1,12 @@
-# -*- coding: utf-8 -*-
 """Trace task execution.
 
 This module defines how the task execution is traced:
 errors are recorded, handlers are applied and so on.
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import os
 import sys
+import time
 from collections import namedtuple
 from warnings import warn
 
@@ -23,7 +21,6 @@ from celery._state import _task_stack
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
 from celery.exceptions import Ignore, InvalidTaskError, Reject, Retry
-from celery.five import monotonic, text_t
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import mro_lookup
@@ -151,7 +148,7 @@ def get_task_name(request, default):
     return getattr(request, 'shadow', None) or default
 
 
-class TraceInfo(object):
+class TraceInfo:
     """Information about task execution."""
 
     __slots__ = ('state', 'retval')
@@ -196,7 +193,7 @@ class TraceInfo(object):
             info(LOG_RETRY, {
                 'id': req.id,
                 'name': get_task_name(req, task.name),
-                'exc': text_t(reason),
+                'exc': str(reason),
             })
             return einfo
         finally:
@@ -285,7 +282,7 @@ def traceback_clear(exc=None):
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                  Info=TraceInfo, eager=False, propagate=False, app=None,
-                 monotonic=monotonic, trace_ok_t=trace_ok_t,
+                 monotonic=time.monotonic, trace_ok_t=trace_ok_t,
                  IGNORE_STATES=IGNORE_STATES):
     """Return a function that traces task execution.
 
@@ -620,7 +617,7 @@ def report_internal_error(task, exc):
         _value = task.backend.prepare_exception(exc, 'pickle')
         exc_info = ExceptionInfo((_type, _value, _tb), internal=True)
         warn(RuntimeWarning(
-            'Exception raised outside body: {0!r}:\n{1}'.format(
+            'Exception raised outside body: {!r}:\n{}'.format(
                 exc, exc_info.traceback)))
         return exc_info
     finally:

@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
 """Consul result store backend.
 
 - :class:`ConsulBackend` implements KeyValueStoreBackend to store results
     in the key-value store of Consul.
 """
-from __future__ import absolute_import, unicode_literals
-
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import parse_url
 
@@ -39,7 +36,7 @@ class ConsulBackend(KeyValueStoreBackend):
     path = None
 
     def __init__(self, *args, **kwargs):
-        super(ConsulBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if self.consul is None:
             raise ImproperlyConfigured(CONSUL_MISSING)
@@ -55,7 +52,7 @@ class ConsulBackend(KeyValueStoreBackend):
 
     def _key_to_consul_key(self, key):
         key = bytes_to_str(key)
-        return key if self.path is None else '{0}/{1}'.format(self.path, key)
+        return key if self.path is None else f'{self.path}/{key}'
 
     def get(self, key):
         key = self._key_to_consul_key(key)

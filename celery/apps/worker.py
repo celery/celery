@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Worker command-line program.
 
 This module is the 'program-version' of :mod:`celery.worker`.
@@ -7,8 +6,6 @@ It does everything necessary to run that module
 as an actual application, like installing signal handlers,
 platform tweaks, and so on.
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import logging
 import os
 import platform as _platform
@@ -23,7 +20,6 @@ from kombu.utils.encoding import safe_str
 from celery import VERSION_BANNER, platforms, signals
 from celery.app import trace
 from celery.exceptions import WorkerShutdown, WorkerTerminate
-from celery.five import string, string_t
 from celery.loaders.app import AppLoader
 from celery.platforms import EX_FAILURE, EX_OK, check_privileges, isatty
 from celery.utils import static, term
@@ -83,7 +79,7 @@ def active_thread_count():
 
 
 def safe_say(msg):
-    print('\n{0}'.format(msg), file=sys.__stderr__)
+    print(f'\n{msg}', file=sys.__stderr__)
 
 
 class Worker(WorkController):
@@ -108,7 +104,7 @@ class Worker(WorkController):
             'worker_redirect_stdouts', redirect_stdouts)
         self.redirect_stdouts_level = self.app.either(
             'worker_redirect_stdouts_level', redirect_stdouts_level)
-        super(Worker, self).setup_defaults(**kwargs)
+        super().setup_defaults(**kwargs)
         self.purge = purge
         self.no_color = no_color
         self._isatty = isatty(sys.stdout)
@@ -151,9 +147,9 @@ class Worker(WorkController):
         if use_image:
             print(term.imgcat(static.logo()))
         print(safe_str(''.join([
-            string(self.colored.cyan(
+            str(self.colored.cyan(
                 ' \n', self.startup_info(artlines=not use_image))),
-            string(self.colored.reset(self.extra_info() or '')),
+            str(self.colored.reset(self.extra_info() or '')),
         ])), file=sys.__stdout__)
 
     def on_consumer_ready(self, consumer):
@@ -172,12 +168,11 @@ class Worker(WorkController):
         with self.app.connection_for_write() as connection:
             count = self.app.control.purge(connection=connection)
             if count:  # pragma: no cover
-                print('purge: Erased {0} {1} from the queue.\n'.format(
-                    count, pluralize(count, 'message')))
+                print(f"purge: Erased {count} {pluralize(count, 'message')} from the queue.\n")
 
     def tasklist(self, include_builtins=True, sep='\n', int_='celery.'):
         return sep.join(
-            '  . {0}'.format(task) for task in sorted(self.app.tasks)
+            f'  . {task}' for task in sorted(self.app.tasks)
             if (not task.startswith(int_) if not include_builtins else task)
         )
 
@@ -191,20 +186,20 @@ class Worker(WorkController):
 
     def startup_info(self, artlines=True):
         app = self.app
-        concurrency = string(self.concurrency)
-        appr = '{0}:{1:#x}'.format(app.main or '__main__', id(app))
+        concurrency = str(self.concurrency)
+        appr = '{}:{:#x}'.format(app.main or '__main__', id(app))
         if not isinstance(app.loader, AppLoader):
             loader = qualname(app.loader)
             if loader.startswith('celery.loaders'):  # pragma: no cover
                 loader = loader[14:]
-            appr += ' ({0})'.format(loader)
+            appr += f' ({loader})'
         if self.autoscale:
             max, min = self.autoscale
-            concurrency = '{{min={0}, max={1}}}'.format(min, max)
+            concurrency = f'{{min={min}, max={max}}}'
         pool = self.pool_cls
-        if not isinstance(pool, string_t):
+        if not isinstance(pool, str):
             pool = pool.__module__
-        concurrency += ' ({0})'.format(pool.split('.')[-1])
+        concurrency += f" ({pool.split('.')[-1]})"
         events = 'ON'
         if not self.task_events:
             events = 'OFF (enable -E to monitor tasks in this worker)'
@@ -260,7 +255,7 @@ class Worker(WorkController):
     def set_process_status(self, info):
         return platforms.set_mp_process_title(
             'celeryd',
-            info='{0} ({1})'.format(info, platforms.strargv(sys.argv)),
+            info=f'{info} ({platforms.strargv(sys.argv)})',
             hostname=self.hostname,
         )
 
@@ -273,7 +268,7 @@ def _shutdown_handler(worker, sig='TERM', how='Warm',
             if current_process()._name == 'MainProcess':
                 if callback:
                     callback(worker)
-                safe_say('worker: {0} shutdown (MainProcess)'.format(how))
+                safe_say(f'worker: {how} shutdown (MainProcess)')
                 signals.worker_shutting_down.send(
                     sender=worker.hostname, sig=sig, how=how,
                     exitcode=exitcode,
@@ -283,7 +278,7 @@ def _shutdown_handler(worker, sig='TERM', how='Warm',
                                 'Cold': 'should_terminate'}[how], exitcode)
             else:
                 raise exc(exitcode)
-    _handle_request.__name__ = str('worker_{0}'.format(how))
+    _handle_request.__name__ = str(f'worker_{how}')
     platforms.signals[sig] = _handle_request
 
 
@@ -333,7 +328,7 @@ def install_worker_restart_handler(worker, sig='SIGHUP'):
     def restart_worker_sig_handler(*args):
         """Signal handler restarting the current python program."""
         set_in_sighandler(True)
-        safe_say('Restarting celery worker ({0})'.format(' '.join(sys.argv)))
+        safe_say(f"Restarting celery worker ({' '.join(sys.argv)})")
         import atexit
         atexit.register(_reload_current_worker)
         from celery.worker import state
@@ -359,7 +354,8 @@ def install_rdb_handler(envvar='CELERY_RDBSIG',
     def rdb_handler(*args):
         """Signal handler setting a rdb breakpoint at the current frame."""
         with in_sighandler():
-            from celery.contrib.rdb import set_trace, _frame
+            from celery.contrib.rdb import _frame, set_trace
+
             # gevent does not pass standard signal handler args
             frame = args[1] if args else _frame().f_back
             set_trace(frame)

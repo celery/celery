@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import os
 import sys
 import warnings
@@ -9,7 +7,6 @@ from case import Mock, mock, patch
 
 from celery import loaders
 from celery.exceptions import NotConfigured
-from celery.five import bytes_if_py2
 from celery.loaders import base, default
 from celery.loaders.app import AppLoader
 from celery.utils.imports import NotAPackage
@@ -143,7 +140,7 @@ class test_DefaultLoader:
             pass
 
         configname = os.environ.get('CELERY_CONFIG_MODULE') or 'celeryconfig'
-        celeryconfig = ConfigModule(bytes_if_py2(configname))
+        celeryconfig = ConfigModule(configname)
         celeryconfig.imports = ('os', 'sys')
 
         prevconfig = sys.modules.get(configname)

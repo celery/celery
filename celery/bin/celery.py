@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The :program:`celery` umbrella command.
 
 .. program:: celery
@@ -253,8 +252,6 @@ in any command that also has a `--detach` option.
 
     Destination routing key (defaults to the queue routing key).
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import numbers
 import sys
 from functools import partial
@@ -339,7 +336,7 @@ class help(Command):
     """Show help screen and exit."""
 
     def usage(self, command):
-        return '%(prog)s <command> [options] {0.args}'.format(self)
+        return f'%(prog)s <command> [options] {self.args}'
 
     def run(self, *args, **kwargs):
         self.parser.print_help()
@@ -364,7 +361,7 @@ class report(Command):
         settings because Django is not properly setup when
         running the report.
         """
-        super(report, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.app.loader.import_default_modules()
 
     def run(self, *args, **kwargs):
@@ -429,8 +426,8 @@ class CeleryCommand(Command):
             helps = '{self.prog_name} {command} --help'
         else:
             helps = '{self.prog_name} --help'
-        self.error(self.colored.magenta('Error: {0}'.format(exc)))
-        self.error("""Please try '{0}'""".format(helps.format(
+        self.error(self.colored.magenta(f'Error: {exc}'))
+        self.error("""Please try '{}'""".format(helps.format(
             self=self, command=command,
         )))
 
@@ -496,7 +493,7 @@ class CeleryCommand(Command):
             self.respects_app_option = False
         try:
             sys.exit(determine_exit_status(
-                super(CeleryCommand, self).execute_from_commandline(argv)))
+                super().execute_from_commandline(argv)))
         except KeyboardInterrupt:
             sys.exit(EX_FAILURE)
 
@@ -506,13 +503,13 @@ class CeleryCommand(Command):
         colored = term.colored() if colored is None else colored
         colored = colored.names[color] if color else lambda x: x
         obj = cls.commands[command]
-        cmd = 'celery {0}'.format(colored(command))
+        cmd = 'celery {}'.format(colored(command))
         if obj.leaf:
             return '|' + text.indent(cmd, indent)
         return text.join([
             ' ',
-            '|' + text.indent('{0} --help'.format(cmd), indent),
-            obj.list_commands(indent, 'celery {0}'.format(command), colored,
+            '|' + text.indent(f'{cmd} --help', indent),
+            obj.list_commands(indent, f'celery {command}', colored,
                               app=app),
         ])
 
@@ -523,7 +520,7 @@ class CeleryCommand(Command):
         ret = []
         for command_cls, commands, color in command_classes:
             ret.extend([
-                text.indent('+ {0}: '.format(white(command_cls)), indent),
+                text.indent('+ {}: '.format(white(command_cls)), indent),
                 '\n'.join(
                     cls.get_command_info(
                         command, indent + 4, color, colored, app=app)

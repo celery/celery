@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import socket
 
 import pytest
@@ -9,7 +7,7 @@ from celery.events import Event
 from celery.events.receiver import CLIENT_CLOCK_SKEW
 
 
-class MockProducer(object):
+class MockProducer:
 
     raise_on_publish = False
 

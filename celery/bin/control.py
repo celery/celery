@@ -1,6 +1,4 @@
 """The ``celery control``, ``. inspect`` and ``. status`` programs."""
-from __future__ import absolute_import, unicode_literals
-
 from kombu.utils.json import dumps
 from kombu.utils.objects import cached_property
 
@@ -19,7 +17,7 @@ class _RemoteControl(Command):
     def __init__(self, *args, **kwargs):
         self.show_body = kwargs.pop('show_body', True)
         self.show_reply = kwargs.pop('show_reply', True)
-        super(_RemoteControl, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def add_arguments(self, parser):
         group = parser.add_argument_group('Remote Control Options')
@@ -47,7 +45,7 @@ class _RemoteControl(Command):
         else:
             help = None
         return text.join([
-            '|' + text.indent('{0}{1} {2}'.format(
+            '|' + text.indent('{}{} {}'.format(
                 prefix, color(command), meta.signature or ''), indent),
             help,
         ])
@@ -64,7 +62,7 @@ class _RemoteControl(Command):
             for c in sorted(choices))
 
     def usage(self, command):
-        return '%(prog)s {0} [options] {1} <command> [arg1 .. argN]'.format(
+        return '%(prog)s {} [options] {} <command> [arg1 .. argN]'.format(
             command, self.args)
 
     def call(self, *args, **kwargs):
@@ -73,26 +71,26 @@ class _RemoteControl(Command):
     def run(self, *args, **kwargs):
         if not args:
             raise self.UsageError(
-                'Missing {0.name} method.  See --help'.format(self))
+                f'Missing {self.name} method.  See --help')
         return self.do_call_method(args, **kwargs)
 
     def _ensure_fanout_supported(self):
         with self.app.connection_for_write() as conn:
             if not conn.supports_exchange_type('fanout'):
                 raise self.Error(
-                    'Broadcast not supported by transport {0!r}'.format(
+                    'Broadcast not supported by transport {!r}'.format(
                         conn.info()['transport']))
 
     def do_call_method(self, args,
                        timeout=None, destination=None, json=False, **kwargs):
         method = args[0]
         if method == 'help':
-            raise self.Error("Did you mean '{0.name} --help'?".format(self))
+            raise self.Error(f"Did you mean '{self.name} --help'?")
         try:
             meta = self.choices[method]
         except KeyError:
             raise self.UsageError(
-                'Unknown {0.name} method {1}'.format(self, method))
+                f'Unknown {self.name} method {method}')
 
         self._ensure_fanout_supported()
 
@@ -125,7 +123,7 @@ class _RemoteControl(Command):
             kw.update({meta.variadic: args})
         if not kw and args:
             raise self.Error(
-                'Command {0!r} takes no arguments.'.format(method),
+                f'Command {method!r} takes no arguments.',
                 status=EX_USAGE)
         return kw or {}
 
@@ -139,7 +137,7 @@ class _RemoteControl(Command):
                     if meta.variadic:
                         break
                     raise self.Error(
-                        'Command {0!r} takes arguments: {1}'.format(
+                        'Command {!r} takes arguments: {}'.format(
                             method, meta.signature),
                         status=EX_USAGE)
                 else:
@@ -150,6 +148,7 @@ class _RemoteControl(Command):
     @classmethod
     def _choices_by_group(cls, app):
         from celery.worker.control import Panel
+
         # need to import task modules for custom user-remote control commands.
         app.loader.import_default_modules()
 
@@ -235,5 +234,5 @@ class status(Command):
                              status=EX_UNAVAILABLE)
         nodecount = len(replies)
         if not kwargs.get('quiet', False):
-            self.out('\n{0} {1} online.'.format(
+            self.out('\n{} {} online.'.format(
                 nodecount, text.pluralize(nodecount, 'node')))

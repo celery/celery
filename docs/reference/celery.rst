@@ -76,8 +76,6 @@ and creating Celery applications.
 
     .. automethod:: setup_security
 
-    .. automethod:: start
-
     .. automethod:: task
 
     .. automethod:: send_task
@@ -87,8 +85,6 @@ and creating Celery applications.
     .. autoattribute:: AsyncResult
 
     .. autoattribute:: GroupResult
-
-    .. automethod:: worker_main
 
     .. autoattribute:: Worker
 

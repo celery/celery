@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime
 from pickle import dumps, loads
 
@@ -16,15 +14,13 @@ except ImportError:
     DatabaseBackend = Task = TaskSet = retry = None  # noqa
     SessionManager = session_cleanup = None  # noqa
 else:
-    from celery.backends.database import (
-        DatabaseBackend, retry, session_cleanup,
-    )
-    from celery.backends.database import session
-    from celery.backends.database.session import SessionManager
+    from celery.backends.database import (DatabaseBackend, retry, session,
+                                          session_cleanup)
     from celery.backends.database.models import Task, TaskSet
+    from celery.backends.database.session import SessionManager
 
 
-class SomeClass(object):
+class SomeClass:
 
     def __init__(self, data):
         self.data = data

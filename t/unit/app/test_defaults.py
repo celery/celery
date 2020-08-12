@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import sys
 from importlib import import_module
 
@@ -8,7 +6,6 @@ from case import mock
 from celery.app.defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS,
                                  _TO_NEW_KEY, _TO_OLD_KEY, DEFAULTS,
                                  NAMESPACES, SETTING_KEYS)
-from celery.five import values
 
 
 class test_defaults:
@@ -44,8 +41,8 @@ class test_defaults:
         assert not any(key.islower() for key in _TO_NEW_KEY)
         assert not any(key.isupper() for key in SETTING_KEYS)
         assert not any(key.islower() for key in _OLD_SETTING_KEYS)
-        assert not any(value.isupper() for value in values(_TO_NEW_KEY))
-        assert not any(value.islower() for value in values(_TO_OLD_KEY))
+        assert not any(value.isupper() for value in _TO_NEW_KEY.values())
+        assert not any(value.islower() for value in _TO_OLD_KEY.values())
 
         for key in _TO_NEW_KEY:
             assert key in _OLD_SETTING_KEYS

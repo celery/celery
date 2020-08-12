@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
 """Platforms.
 
 Utilities dealing with platform specifics: signals, daemonization,
 users, groups, and so on.
 """
-from __future__ import absolute_import, print_function, unicode_literals
 
 import atexit
 import errno
@@ -24,8 +22,7 @@ from billiard.compat import close_open_fds, get_fdmax
 from kombu.utils.compat import maybe_fileno
 from kombu.utils.encoding import safe_str
 
-from .exceptions import SecurityError
-from .five import items, reraise, string_t
+from .exceptions import SecurityError, reraise
 from .local import try_import
 
 try:
@@ -63,7 +60,7 @@ IS_WINDOWS = SYSTEM == 'Windows'
 DAEMON_WORKDIR = '/'
 
 PIDFILE_FLAGS = os.O_CREAT | os.O_EXCL | os.O_WRONLY
-PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
+PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | (os.R_OK)
 
 PIDLOCKED = """ERROR: Pidfile ({0}) already exists.
 Seems we're already running? (pid: {1})"""
@@ -125,7 +122,7 @@ class LockFailed(Exception):
     """Raised if a PID lock can't be acquired."""
 
 
-class Pidfile(object):
+class Pidfile:
     """Pidfile.
 
     This is the type returned by :func:`create_pidlock`.
@@ -164,17 +161,17 @@ class Pidfile(object):
     def read_pid(self):
         """Read and return the current pid."""
         with ignore_errno('ENOENT'):
-            with open(self.path, 'r') as fh:
+            with open(self.path) as fh:
                 line = fh.readline()
                 if line.strip() == line:  # must contain '\n'
                     raise ValueError(
-                        'Partial or invalid pidfile {0.path}'.format(self))
+                        f'Partial or invalid pidfile {self.path}')
 
                 try:
                     return int(line.strip())
                 except ValueError:
                     raise ValueError(
-                        'pidfile {0.path} contents invalid.'.format(self))
+                        f'pidfile {self.path} contents invalid.')
 
     def remove(self):
         """Remove the lock."""
@@ -211,7 +208,7 @@ class Pidfile(object):
 
     def write_pid(self):
         pid = os.getpid()
-        content = '{0}\n'.format(pid)
+        content = f'{pid}\n'
 
         pidfile_fd = os.open(self.path, PIDFILE_FLAGS, PIDFILE_MODE)
         pidfile = os.fdopen(pidfile_fd, 'w')
@@ -304,7 +301,7 @@ def fd_by_path(paths):
     return [_fd for _fd in range(get_fdmax(2048)) if fd_in_stats(_fd)]
 
 
-class DaemonContext(object):
+class DaemonContext:
     """Context manager daemonizing the process."""
 
     _is_open = False
@@ -312,7 +309,7 @@ class DaemonContext(object):
     def __init__(self, pidfile=None, workdir=None, umask=None,
                  fake=False, after_chdir=None, after_forkers=True,
                  **kwargs):
-        if isinstance(umask, string_t):
+        if isinstance(umask, str):
             # octal or decimal, depending on initial zero.
             umask = int(umask, 8 if umask.startswith('0') else 10)
         self.workdir = workdir or DAEMON_WORKDIR
@@ -438,7 +435,7 @@ def parse_uid(uid):
         try:
             return pwd.getpwnam(uid).pw_uid
         except (AttributeError, KeyError):
-            raise KeyError('User does not exist: {0}'.format(uid))
+            raise KeyError(f'User does not exist: {uid}')
 
 
 def parse_gid(gid):
@@ -455,7 +452,7 @@ def parse_gid(gid):
         try:
             return grp.getgrnam(gid).gr_gid
         except (AttributeError, KeyError):
-            raise KeyError('Group does not exist: {0}'.format(gid))
+            raise KeyError(f'Group does not exist: {gid}')
 
 
 def _setgroups_hack(groups):
@@ -578,7 +575,7 @@ def _setuid(uid, gid):
             'non-root user able to restore privileges after setuid.')
 
 
-class Signals(object):
+class Signals:
     """Convenience interface to :mod:`signals`.
 
     If the requested signal isn't supported on the current platform,
@@ -648,7 +645,7 @@ class Signals(object):
         """Get signal number by name."""
         if isinstance(name, numbers.Integral):
             return name
-        if not isinstance(name, string_t) \
+        if not isinstance(name, str) \
                 or not name.isupper():
             raise TypeError('signal name must be uppercase string.')
         if not name.startswith('SIG'):
@@ -687,7 +684,7 @@ class Signals(object):
 
     def update(self, _d_=None, **sigmap):
         """Set signal handlers from a mapping."""
-        for name, handler in items(dict(_d_ or {}, **sigmap)):
+        for name, handler in dict(_d_ or {}, **sigmap).items():
             self[name] = handler
 
 
@@ -715,8 +712,8 @@ def set_process_title(progname, info=None):
 
     Only works if :pypi:`setproctitle` is installed.
     """
-    proctitle = '[{0}]'.format(progname)
-    proctitle = '{0} {1}'.format(proctitle, info) if info else proctitle
+    proctitle = f'[{progname}]'
+    proctitle = f'{proctitle} {info}' if info else proctitle
     if _setproctitle:
         _setproctitle.setproctitle(safe_str(proctitle))
     return proctitle
@@ -734,14 +731,14 @@ else:
         Only works if :pypi:`setproctitle` is installed.
         """
         if hostname:
-            progname = '{0}: {1}'.format(progname, hostname)
+            progname = f'{progname}: {hostname}'
         name = current_process().name if current_process else 'MainProcess'
-        return set_process_title('{0}:{1}'.format(progname, name), info=info)
+        return set_process_title(f'{progname}:{name}', info=info)
 
 
 def get_errno_name(n):
     """Get errno for string (e.g., ``ENOENT``)."""
-    if isinstance(n, string_t):
+    if isinstance(n, str):
         return getattr(errno, n)
     return n
 

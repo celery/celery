@@ -1,11 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-
 from case import Mock
 
 from celery.worker.heartbeat import Heart
 
 
-class MockDispatcher(object):
+class MockDispatcher:
     heart = None
     next_iter = 0
 
@@ -23,7 +21,7 @@ class MockDispatcher(object):
             self.next_iter += 1
 
 
-class MockTimer(object):
+class MockTimer:
 
     def call_repeatedly(self, secs, fun, args=(), kwargs={}):
 

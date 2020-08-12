@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from collections import defaultdict
 from contextlib import contextmanager
 
@@ -13,7 +11,7 @@ from celery.utils.time import rate
 from celery.worker import state
 from celery.worker.request import Request
 from celery.worker.strategy import default as default_strategy
-from celery.worker.strategy import proto1_to_proto2, hybrid_to_proto2
+from celery.worker.strategy import hybrid_to_proto2, proto1_to_proto2
 
 
 class test_proto1_to_proto2:
@@ -71,7 +69,7 @@ class test_default_strategy_proto2:
     def prepare_message(self, message):
         return message
 
-    class Context(object):
+    class Context:
 
         def __init__(self, sig, s, reserved, consumer, message):
             self.sig = sig

@@ -1,9 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
 import pickle
 from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
+from queue import Empty, Queue
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -12,11 +11,10 @@ from case import Mock, mock
 from celery import states, uuid
 from celery.app.task import Context
 from celery.backends.amqp import AMQPBackend
-from celery.five import Empty, Queue, range
 from celery.result import AsyncResult
 
 
-class SomeClass(object):
+class SomeClass:
 
     def __init__(self, data):
         self.data = data
@@ -144,7 +142,7 @@ class test_AMQPBackend:
     def _result_context(self):
         results = Queue()
 
-        class Message(object):
+        class Message:
             acked = 0
             requeued = 0
 
@@ -162,7 +160,7 @@ class test_AMQPBackend:
             def requeue(self, *args, **kwargs):
                 self.requeued += 1
 
-        class MockBinding(object):
+        class MockBinding:
 
             def __init__(self, *args, **kwargs):
                 self.channel = Mock()

@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 """Task results/state and results for groups of tasks."""
-from __future__ import absolute_import, unicode_literals
 
 import datetime
 import time
@@ -15,8 +13,6 @@ from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
-from .five import (items, monotonic, python_2_unicode_compatible, range,
-                   string_t)
 from .utils import deprecated
 from .utils.graph import DependencyGraph, GraphFormatter
 from .utils.iso8601 import parse_iso8601
@@ -63,7 +59,7 @@ def denied_join_result():
         _set_task_join_will_block(reset_value)
 
 
-class ResultBase(object):
+class ResultBase:
     """Base class for results."""
 
     #: Parent result (if part of a chain)
@@ -71,7 +67,6 @@ class ResultBase(object):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class AsyncResult(ResultBase):
     """Query task state.
 
@@ -96,7 +91,7 @@ class AsyncResult(ResultBase):
                  app=None, parent=None):
         if id is None:
             raise ValueError(
-                'AsyncResult requires valid id, not {0}'.format(type(id)))
+                f'AsyncResult requires valid id, not {type(id)}')
         self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
@@ -368,12 +363,12 @@ class AsyncResult(ResultBase):
         return hash(self.id)
 
     def __repr__(self):
-        return '<{0}: {1}>'.format(type(self).__name__, self.id)
+        return f'<{type(self).__name__}: {self.id}>'
 
     def __eq__(self, other):
         if isinstance(other, AsyncResult):
             return other.id == self.id
-        elif isinstance(other, string_t):
+        elif isinstance(other, str):
             return other == self.id
         return NotImplemented
 
@@ -527,7 +522,6 @@ class AsyncResult(ResultBase):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class ResultSet(ResultBase):
     """A collection of results.
 
@@ -568,7 +562,7 @@ class ResultSet(ResultBase):
         Raises:
             KeyError: if the result isn't a member.
         """
-        if isinstance(result, string_t):
+        if isinstance(result, str):
             result = self.app.AsyncResult(result)
         try:
             self.results.remove(result)
@@ -681,7 +675,7 @@ class ResultSet(ResultBase):
 
         while results:
             removed = set()
-            for task_id, result in items(results):
+            for task_id, result in results.items():
                 if result.ready():
                     yield result.get(timeout=timeout and timeout - elapsed,
                                      propagate=propagate)
@@ -761,7 +755,7 @@ class ResultSet(ResultBase):
         """
         if disable_sync_subtasks:
             assert_will_not_block()
-        time_start = monotonic()
+        time_start = time.monotonic()
         remaining = None
 
         if on_message is not None:
@@ -772,7 +766,7 @@ class ResultSet(ResultBase):
         for result in self.results:
             remaining = None
             if timeout:
-                remaining = timeout - (monotonic() - time_start)
+                remaining = timeout - (time.monotonic() - time_start)
                 if remaining <= 0.0:
                     raise TimeoutError('join operation timed out')
             value = result.get(
@@ -866,8 +860,7 @@ class ResultSet(ResultBase):
         return True if res is NotImplemented else not res
 
     def __repr__(self):
-        return '<{0}: [{1}]>'.format(type(self).__name__,
-                                     ', '.join(r.id for r in self.results))
+        return f'<{type(self).__name__}: [{", ".join(r.id for r in self.results)}]>'
 
     @property
     def supports_native_join(self):
@@ -893,7 +886,6 @@ class ResultSet(ResultBase):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class GroupResult(ResultSet):
     """Like :class:`ResultSet`, but with an associated id.
 
@@ -954,7 +946,7 @@ class GroupResult(ResultSet):
                 other.results == self.results and
                 other.parent == self.parent
             )
-        elif isinstance(other, string_t):
+        elif isinstance(other, str):
             return other == self.id
         return NotImplemented
 
@@ -963,10 +955,7 @@ class GroupResult(ResultSet):
         return True if res is NotImplemented else not res
 
     def __repr__(self):
-        return '<{0}: {1} [{2}]>'.format(
-            type(self).__name__, self.id,
-            ', '.join(r.id for r in self.results)
-        )
+        return f'<{type(self).__name__}: {self.id} [{", ".join(r.id for r in self.results)}]>'
 
     def __str__(self):
         """`str(self) -> self.id`."""
@@ -997,7 +986,6 @@ class GroupResult(ResultSet):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 
@@ -1051,7 +1039,7 @@ class EagerResult(AsyncResult):
         self._state = states.REVOKED
 
     def __repr__(self):
-        return '<EagerResult: {0.id}>'.format(self)
+        return f'<EagerResult: {self.id}>'
 
     @property
     def _cache(self):

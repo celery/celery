@@ -1,6 +1,4 @@
 """Creating events, and event exchange definition."""
-from __future__ import absolute_import, unicode_literals
-
 import time
 from copy import copy
 

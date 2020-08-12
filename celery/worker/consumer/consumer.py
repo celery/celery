@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
 """Worker Consumer Blueprint.
 
 This module contains the components responsible for consuming messages
 from the broker, processing the messages and keeping the broker connections
 up and running.
 """
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import logging
 import os
@@ -18,14 +15,13 @@ from billiard.exceptions import RestartFreqExceeded
 from kombu.asynchronous.semaphore import DummyLock
 from kombu.exceptions import ContentDisallowed, DecodeError
 from kombu.utils.compat import _detect_environment
-from kombu.utils.encoding import bytes_t, safe_repr
+from kombu.utils.encoding import safe_repr
 from kombu.utils.limits import TokenBucket
 from vine import ppartial, promise
 
 from celery import bootsteps, signals
 from celery.app.trace import build_tracer
 from celery.exceptions import InvalidTaskError, NotRegistered
-from celery.five import buffer_t, items, python_2_unicode_compatible, values
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -115,14 +111,11 @@ def dump_body(m, body):
     """Format message body for debugging purposes."""
     # v2 protocol does not deserialize body
     body = m.body if body is None else body
-    if isinstance(body, buffer_t):
-        body = bytes_t(body)
-    return '{0} ({1}b)'.format(truncate(safe_repr(body), 1024),
-                               len(m.body))
+    return '{} ({}b)'.format(truncate(safe_repr(body), 1024),
+                             len(m.body))
 
 
-@python_2_unicode_compatible
-class Consumer(object):
+class Consumer:
     """Consumer blueprint."""
 
     Strategies = dict
@@ -239,7 +232,7 @@ class Consumer(object):
 
     def reset_rate_limits(self):
         self.task_buckets.update(
-            (n, self.bucket_for_task(t)) for n, t in items(self.app.tasks)
+            (n, self.bucket_for_task(t)) for n, t in self.app.tasks.items()
         )
 
     def _update_prefetch_count(self, index=0):
@@ -389,7 +382,7 @@ class Consumer(object):
             self.controller.semaphore.clear()
         if self.timer:
             self.timer.clear()
-        for bucket in values(self.task_buckets):
+        for bucket in self.task_buckets.values():
             if bucket:
                 bucket.clear_pending()
         reserved_requests.clear()
@@ -515,7 +508,7 @@ class Consumer(object):
         if self.event_dispatcher:
             self.event_dispatcher.send(
                 'task-failed', uuid=id_,
-                exception='NotRegistered({0!r})'.format(name),
+                exception=f'NotRegistered({name!r})',
             )
         signals.task_unknown.send(
             sender=self, message=message, exc=exc, name=name, id=id_,
@@ -528,7 +521,7 @@ class Consumer(object):
 
     def update_strategies(self):
         loader = self.app.loader
-        for name, task in items(self.app.tasks):
+        for name, task in self.app.tasks.items():
             self.strategies[name] = task.start_strategy(self.app, self)
             task.__trace__ = build_tracer(name, task, loader, self.hostname,
                                           app=self.app)

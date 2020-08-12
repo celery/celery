@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import os
 
 import pytest
@@ -9,7 +7,7 @@ from celery.bin.base import Command, Extensions, Option
 from celery.five import bytes_if_py2
 
 
-class MyApp(object):
+class MyApp:
     user_options = {'preload': None}
 
 
@@ -181,7 +179,7 @@ class test_Command:
     def test_with_custom_app(self, app):
         cmd = MockCommand(app=app)
         appstr = '.'.join([__name__, 'APP'])
-        cmd.setup_app_from_commandline(['--app=%s' % (appstr,),
+        cmd.setup_app_from_commandline([f'--app={appstr}',
                                         '--loglevel=INFO'])
         assert cmd.app is APP
         cmd.setup_app_from_commandline(['-A', appstr,

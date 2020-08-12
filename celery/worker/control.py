@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
 """Worker remote control command implementations."""
-from __future__ import absolute_import, unicode_literals
-
 import io
 import tempfile
-from collections import namedtuple
+from collections import UserDict, namedtuple
 
 from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr
 
 from celery.exceptions import WorkerShutdown
-from celery.five import UserDict, items, string_t, text_t
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe_list
 from celery.utils.log import get_logger
@@ -98,7 +94,7 @@ def conf(state, with_defaults=False, **kwargs):
 
 
 def _wanted_config_key(key):
-    return isinstance(key, string_t) and not key.startswith('__')
+    return isinstance(key, str) and not key.startswith('__')
 
 
 # -- Task
@@ -166,16 +162,16 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
 
         if not terminated:
             return ok('terminate: tasks unknown')
-        return ok('terminate: {0}'.format(', '.join(terminated)))
+        return ok('terminate: {}'.format(', '.join(terminated)))
 
     idstr = ', '.join(task_ids)
     logger.info('Tasks flagged as revoked: %s', idstr)
-    return ok('tasks {0} flagged as revoked'.format(idstr))
+    return ok(f'tasks {idstr} flagged as revoked')
 
 
 @control_command(
     variadic='task_id',
-    args=[('signal', text_t)],
+    args=[('signal', str)],
     signature='<signal> [id1 [id2 [... [idN]]]]'
 )
 def terminate(state, signal, task_id, **kwargs):
@@ -184,7 +180,7 @@ def terminate(state, signal, task_id, **kwargs):
 
 
 @control_command(
-    args=[('task_name', text_t), ('rate_limit', text_t)],
+    args=[('task_name', str), ('rate_limit', str)],
     signature='<task_name> <rate_limit (e.g., 5/s | 5/m | 5/h)>',
 )
 def rate_limit(state, task_name, rate_limit, **kwargs):
@@ -203,7 +199,7 @@ def rate_limit(state, task_name, rate_limit, **kwargs):
     try:
         rate(rate_limit)
     except ValueError as exc:
-        return nok('Invalid rate limit string: {0!r}'.format(exc))
+        return nok(f'Invalid rate limit string: {exc!r}')
 
     try:
         state.app.tasks[task_name].rate_limit = rate_limit
@@ -224,7 +220,7 @@ def rate_limit(state, task_name, rate_limit, **kwargs):
 
 
 @control_command(
-    args=[('task_name', text_t), ('soft', float), ('hard', float)],
+    args=[('task_name', str), ('soft', float), ('hard', float)],
     signature='<task_name> <soft_secs> [hard_secs]',
 )
 def time_limit(state, task_name=None, hard=None, soft=None, **kwargs):
@@ -403,8 +399,8 @@ def registered(state, taskinfoitems=None, builtins=False, **kwargs):
             if getattr(task, field, None) is not None
         }
         if fields:
-            info = ['='.join(f) for f in items(fields)]
-            return '{0} [{1}]'.format(task.name, ' '.join(info))
+            info = ['='.join(f) for f in fields.items()]
+            return '{} [{}]'.format(task.name, ' '.join(info))
         return task.name
 
     return [_extract_info(reg[task]) for task in sorted(tasks)]
@@ -414,7 +410,7 @@ def registered(state, taskinfoitems=None, builtins=False, **kwargs):
 
 @inspect_command(
     default_timeout=60.0,
-    args=[('type', text_t), ('num', int), ('max_depth', int)],
+    args=[('type', str), ('num', int), ('max_depth', int)],
     signature='[object_type=Request] [num=200 [max_depth=10]]',
 )
 def objgraph(state, num=200, max_depth=10, type='Request'):  # pragma: no cover
@@ -509,7 +505,7 @@ def autoscale(state, max=None, min=None):
     autoscaler = state.consumer.controller.autoscaler
     if autoscaler:
         max_, min_ = autoscaler.update(max, min)
-        return ok('autoscale now max={0} min={1}'.format(max_, min_))
+        return ok(f'autoscale now max={max_} min={min_}')
     raise ValueError('Autoscale not enabled')
 
 
@@ -524,10 +520,10 @@ def shutdown(state, msg='Got shutdown from remote', **kwargs):
 
 @control_command(
     args=[
-        ('queue', text_t),
-        ('exchange', text_t),
-        ('exchange_type', text_t),
-        ('routing_key', text_t),
+        ('queue', str),
+        ('exchange', str),
+        ('exchange_type', str),
+        ('routing_key', str),
     ],
     signature='<queue> [exchange [type [routing_key]]]',
 )
@@ -537,11 +533,11 @@ def add_consumer(state, queue, exchange=None, exchange_type=None,
     state.consumer.call_soon(
         state.consumer.add_task_queue,
         queue, exchange, exchange_type or 'direct', routing_key, **options)
-    return ok('add consumer {0}'.format(queue))
+    return ok(f'add consumer {queue}')
 
 
 @control_command(
-    args=[('queue', text_t)],
+    args=[('queue', str)],
     signature='<queue>',
 )
 def cancel_consumer(state, queue, **_):
@@ -549,7 +545,7 @@ def cancel_consumer(state, queue, **_):
     state.consumer.call_soon(
         state.consumer.cancel_task_queue, queue,
     )
-    return ok('no longer consuming from {0}'.format(queue))
+    return ok(f'no longer consuming from {queue}')
 
 
 @inspect_command()

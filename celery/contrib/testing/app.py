@@ -1,6 +1,4 @@
 """Create Celery app instances used for testing."""
-from __future__ import absolute_import, unicode_literals
-
 import weakref
 from contextlib import contextmanager
 from copy import deepcopy
@@ -22,7 +20,7 @@ DEFAULT_TEST_CONFIG = {
 }
 
 
-class Trap(object):
+class Trap:
     """Trap that pretends to be an app but raises an exception instead.
 
     This to protect from code that does not properly pass app instances,
@@ -42,7 +40,7 @@ class UnitLogging(symbol_by_name(Celery.log_cls)):
     """Sets up logging for the test application."""
 
     def __init__(self, *args, **kwargs):
-        super(UnitLogging, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.already_setup = True
 
 
@@ -78,7 +76,7 @@ def set_trap(app):
     prev_tls = _state._tls
     _state.set_default_app(trap)
 
-    class NonTLS(object):
+    class NonTLS:
         current_app = trap
     _state._tls = NonTLS()
 

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import datetime
 import sys
 from pickle import dumps, loads
@@ -8,6 +6,7 @@ import pytest
 import pytz
 from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
 from kombu.exceptions import EncodeError
+
 try:
     from pymongo.errors import ConfigurationError
 except ImportError:
@@ -129,9 +128,9 @@ class test_MongoBackend:
 
     @patch('dns.resolver.query')
     def test_init_mongodb_dns_seedlist(self, dns_resolver_query):
-        from dns.rdtypes.IN.SRV import SRV
-        from dns.rdtypes.ANY.TXT import TXT
         from dns.name import Name
+        from dns.rdtypes.ANY.TXT import TXT
+        from dns.rdtypes.IN.SRV import SRV
 
         self.app.conf.mongodb_backend_settings = None
 

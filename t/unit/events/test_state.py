@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import pickle
 from decimal import Decimal
 from itertools import count
@@ -12,10 +10,9 @@ from celery import states, uuid
 from celery.events import Event
 from celery.events.state import (HEARTBEAT_DRIFT_MAX, HEARTBEAT_EXPIRE_WINDOW,
                                  State, Task, Worker, heartbeat_expires)
-from celery.five import range
 
 
-class replay(object):
+class replay:
 
     def __init__(self, state):
         self.state = state
@@ -101,7 +98,7 @@ class ev_task_states(replay):
 
 def QTEV(type, uuid, hostname, clock, name=None, timestamp=None):
     """Quick task event."""
-    return Event('task-{0}'.format(type), uuid=uuid, hostname=hostname,
+    return Event(f'task-{type}', uuid=uuid, hostname=hostname,
                  clock=clock, name=name, timestamp=timestamp or time())
 
 
@@ -110,7 +107,7 @@ class ev_logical_clock_ordering(replay):
     def __init__(self, state, offset=0, uids=None):
         self.offset = offset or 0
         self.uids = self.setuids(uids)
-        super(ev_logical_clock_ordering, self).__init__(state)
+        super().__init__(state)
 
     def setuids(self, uids):
         uids = self.tA, self.tB, self.tC = uids or [uuid(), uuid(), uuid()]

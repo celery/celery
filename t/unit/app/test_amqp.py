@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime, timedelta
 
 import pytest
@@ -8,7 +6,6 @@ from kombu import Exchange, Queue
 
 from celery import uuid
 from celery.app.amqp import Queues, utf8dict
-from celery.five import keys
 from celery.utils.time import to_utc
 
 
@@ -113,13 +110,13 @@ class test_Queues:
         q = Queues()
         q.select(['foo', 'bar'])
         q.select_add('baz')
-        assert sorted(keys(q._consume_from)) == ['bar', 'baz', 'foo']
+        assert sorted(q._consume_from.keys()) == ['bar', 'baz', 'foo']
 
     def test_deselect(self):
         q = Queues()
         q.select(['foo', 'bar'])
         q.deselect('bar')
-        assert sorted(keys(q._consume_from)) == ['foo']
+        assert sorted(q._consume_from.keys()) == ['foo']
 
     def test_with_ha_policy_compat(self):
         q = Queues(ha_policy='all')

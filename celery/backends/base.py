@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Result backend base classes.
 
 - :class:`BaseBackend` defines the interface.
@@ -6,13 +5,11 @@
 - :class:`KeyValueStoreBackend` is a common base class
     using K/V semantics like _get and _put.
 """
-from __future__ import absolute_import, unicode_literals
-
-from datetime import datetime, timedelta
 import sys
 import time
 import warnings
 from collections import namedtuple
+from datetime import datetime, timedelta
 from functools import partial
 from weakref import WeakValueDictionary
 
@@ -25,10 +22,9 @@ from kombu.utils.url import maybe_sanitize_url
 import celery.exceptions
 from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
-from celery.exceptions import (ChordError, ImproperlyConfigured,
-                               NotRegistered, TaskRevokedError, TimeoutError,
-                               BackendGetMetaError, BackendStoreError)
-from celery.five import PY3, items
+from celery.exceptions import (BackendGetMetaError, BackendStoreError,
+                               ChordError, ImproperlyConfigured,
+                               NotRegistered, TaskRevokedError, TimeoutError)
 from celery.result import (GroupResult, ResultBase, ResultSet,
                            allow_join_result, result_from_tuple)
 from celery.utils.collections import BufferMap
@@ -80,7 +76,7 @@ class _nulldict(dict):
     __setitem__ = update = setdefault = ignore
 
 
-class Backend(object):
+class Backend:
     READY_STATES = states.READY_STATES
     UNREADY_STATES = states.UNREADY_STATES
     EXCEPTION_STATES = states.EXCEPTION_STATES
@@ -317,7 +313,7 @@ class Backend(object):
                     else:
                         exc = cls(exc_msg)
                 except Exception as err:  # noqa
-                    exc = Exception('{}({})'.format(cls, exc_msg))
+                    exc = Exception(f'{cls}({exc_msg})')
             if self.serializer in EXCEPTION_ABLE_CODECS:
                 exc = get_pickled_exception(exc)
         return exc
@@ -346,7 +342,7 @@ class Backend(object):
     def decode(self, payload):
         if payload is None:
             return payload
-        payload = PY3 and payload or str(payload)
+        payload = payload or str(payload)
         return loads(payload,
                      content_type=self.content_type,
                      content_encoding=self.content_encoding,
@@ -627,7 +623,7 @@ class Backend(object):
         return (unpickle_backend, (self.__class__, args, kwargs))
 
 
-class SyncBackendMixin(object):
+class SyncBackendMixin:
     def iter_native(self, result, timeout=None, interval=0.5, no_ack=True,
                     on_message=None, on_interval=None):
         self._ensure_not_eager()
@@ -642,12 +638,11 @@ class SyncBackendMixin(object):
             else:
                 task_ids.add(result.id)
 
-        for task_id, meta in self.get_many(
+        yield from self.get_many(
             task_ids,
             timeout=timeout, interval=interval, no_ack=no_ack,
             on_message=on_message, on_interval=on_interval,
-        ):
-            yield task_id, meta
+        )
 
     def wait_for_pending(self, result, timeout=None, interval=0.5,
                          no_ack=True, on_message=None, on_interval=None,
@@ -724,7 +719,7 @@ class BaseKeyValueStoreBackend(Backend):
         if hasattr(self.key_t, '__func__'):  # pragma: no cover
             self.key_t = self.key_t.__func__  # remove binding
         self._encode_prefixes()
-        super(BaseKeyValueStoreBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.implements_incr:
             self.apply_chord = self._apply_chord_incr
 
@@ -795,7 +790,7 @@ class BaseKeyValueStoreBackend(Backend):
             # client returns dict so mapping preserved.
             return {
                 self._strip_prefix(k): v
-                for k, v in self._filter_ready(items(values), READY_STATES)
+                for k, v in self._filter_ready(values.items(), READY_STATES)
             }
         else:
             # client returns list so need to recreate mapping.
@@ -829,12 +824,12 @@ class BaseKeyValueStoreBackend(Backend):
                                                  for k in keys]), keys, READY_STATES)
             cache.update(r)
             ids.difference_update({bytes_to_str(v) for v in r})
-            for key, value in items(r):
+            for key, value in r.items():
                 if on_message is not None:
                     on_message(value)
                 yield bytes_to_str(key), value
             if timeout and iterations * interval >= timeout:
-                raise TimeoutError('Operation timed out ({0})'.format(timeout))
+                raise TimeoutError(f'Operation timed out ({timeout})')
             if on_interval:
                 on_interval()
             time.sleep(interval)  # don't busy loop.
@@ -911,7 +906,7 @@ class BaseKeyValueStoreBackend(Backend):
             logger.exception('Chord %r raised: %r', gid, exc)
             return self.chord_error_from_stack(
                 callback,
-                ChordError('Cannot restore group: {0!r}'.format(exc)),
+                ChordError(f'Cannot restore group: {exc!r}'),
             )
         if deps is None:
             try:
@@ -921,7 +916,7 @@ class BaseKeyValueStoreBackend(Backend):
                 logger.exception('Chord callback %r raised: %r', gid, exc)
                 return self.chord_error_from_stack(
                     callback,
-                    ChordError('GroupResult {0} no longer exists'.format(gid)),
+                    ChordError(f'GroupResult {gid} no longer exists'),
                 )
         val = self.incr(key)
         size = len(deps)
@@ -952,7 +947,7 @@ class BaseKeyValueStoreBackend(Backend):
                     logger.exception('Chord %r raised: %r', gid, exc)
                     self.chord_error_from_stack(
                         callback,
-                        ChordError('Callback error: {0!r}'.format(exc)),
+                        ChordError(f'Callback error: {exc!r}'),
                     )
             finally:
                 deps.delete()

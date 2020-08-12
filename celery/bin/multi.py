@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Start multiple worker instances from the command-line.
 
 .. program:: celery multi
@@ -99,8 +98,6 @@ Examples
     celery worker -n baz@myhost -c 10
     celery worker -n xuzzy@myhost -c 3
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import signal
 import sys
@@ -168,7 +165,7 @@ def using_cluster_and_sig(fun):
     return _inner
 
 
-class TermLogger(object):
+class TermLogger:
 
     splash_text = 'celery multi v{version}'
     splash_context = {'version': VERSION_BANNER}
@@ -278,7 +275,7 @@ class MultiTool(TermLogger):
         try:
             return self.commands[command](*argv) or EX_OK
         except KeyError:
-            return self.error('Invalid command: {0}'.format(command))
+            return self.error(f'Invalid command: {command}')
 
     def _handle_reserved_options(self, argv):
         argv = list(argv)  # don't modify callers argv.
@@ -403,7 +400,7 @@ class MultiTool(TermLogger):
         num_left = len(nodes)
         if num_left:
             self.note(self.colored.blue(
-                '> Waiting for {0} {1} -> {2}...'.format(
+                '> Waiting for {} {} -> {}...'.format(
                     num_left, pluralize(num_left, 'node'),
                     ', '.join(str(node.pid) for node in nodes)),
             ), newline=False)
@@ -420,17 +417,17 @@ class MultiTool(TermLogger):
                 node))
 
     def on_node_start(self, node):
-        self.note('\t> {0.name}: '.format(node), newline=False)
+        self.note(f'\t> {node.name}: ', newline=False)
 
     def on_node_restart(self, node):
         self.note(self.colored.blue(
-            '> Restarting node {0.name}: '.format(node)), newline=False)
+            f'> Restarting node {node.name}: '), newline=False)
 
     def on_node_down(self, node):
-        self.note('> {0.name}: {1.DOWN}'.format(node, self))
+        self.note(f'> {node.name}: {self.DOWN}')
 
     def on_node_shutdown_ok(self, node):
-        self.note('\n\t> {0.name}: {1.OK}'.format(node, self))
+        self.note(f'\n\t> {node.name}: {self.OK}')
 
     def on_node_status(self, node, retval):
         self.note(retval and self.FAILED or self.OK)
@@ -440,13 +437,13 @@ class MultiTool(TermLogger):
             node, sig=sig))
 
     def on_child_spawn(self, node, argstr, env):
-        self.info('  {0}'.format(argstr))
+        self.info(f'  {argstr}')
 
     def on_child_signalled(self, node, signum):
-        self.note('* Child was terminated by signal {0}'.format(signum))
+        self.note(f'* Child was terminated by signal {signum}')
 
     def on_child_failure(self, node, retcode):
-        self.note('* Child terminated with exit code {0}'.format(retcode))
+        self.note(f'* Child terminated with exit code {retcode}')
 
     @cached_property
     def OK(self):

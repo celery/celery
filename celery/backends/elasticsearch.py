@@ -1,15 +1,11 @@
-# -* coding: utf-8 -*-
 """Elasticsearch result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime
 
-from celery import states
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import _parse_url
 
+from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items
 
 from .base import KeyValueStoreBackend
 
@@ -46,7 +42,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     es_max_retries = 3
 
     def __init__(self, url=None, *args, **kwargs):
-        super(ElasticsearchBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
         _get = self.app.conf.get
 
@@ -121,7 +117,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     def _set_with_state(self, key, value, state):
         body = {
             'result': value,
-            '@timestamp': '{0}Z'.format(
+            '@timestamp': '{}Z'.format(
                 datetime.utcnow().isoformat()[:-3]
             ),
         }
@@ -138,7 +134,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         return self._set_with_state(key, value, None)
 
     def _index(self, id, body, **kwargs):
-        body = {bytes_to_str(k): v for k, v in items(body)}
+        body = {bytes_to_str(k): v for k, v in body.items()}
         return self.server.index(
             id=bytes_to_str(id),
             index=self.index,
@@ -158,7 +154,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         This way, a Retry state cannot override a Success or Failure, and chord_unlock
         will not retry indefinitely.
         """
-        body = {bytes_to_str(k): v for k, v in items(body)}
+        body = {bytes_to_str(k): v for k, v in body.items()}
 
         try:
             res_get = self._get(key=id)
@@ -237,7 +233,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         if self.username and self.password:
             http_auth = (self.username, self.password)
         return elasticsearch.Elasticsearch(
-            '%s:%s' % (self.host, self.port),
+            f'{self.host}:{self.port}',
             retry_on_timeout=self.es_retry_on_timeout,
             max_retries=self.es_max_retries,
             timeout=self.es_timeout,

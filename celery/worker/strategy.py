@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
 """Task execution strategy (optimization)."""
-from __future__ import absolute_import, unicode_literals
-
 import logging
 
 from kombu.asynchronous.timer import to_timestamp
-from kombu.five import buffer_t
 
 from celery import signals
 from celery.exceptions import InvalidTaskError
@@ -100,7 +96,7 @@ def proto1_to_proto2(message, body):
 
 def default(task, app, consumer,
             info=logger.info, error=logger.error, task_reserved=task_reserved,
-            to_system_tz=timezone.to_system, bytes=bytes, buffer_t=buffer_t,
+            to_system_tz=timezone.to_system, bytes=bytes,
             proto1_to_proto2=proto1_to_proto2):
     """Default task execution strategy.
 
@@ -126,7 +122,6 @@ def default(task, app, consumer,
     handle = consumer.on_task_request
     limit_task = consumer._limit_task
     limit_post_eta = consumer._limit_post_eta
-    body_can_be_buffer = consumer.pool.body_can_be_buffer
     Request = symbol_by_name(task.Request)
     Req = create_request_cls(Request, task, consumer.pool, hostname, eventer)
 
@@ -138,8 +133,6 @@ def default(task, app, consumer,
             body, headers, decoded, utc = (
                 message.body, message.headers, False, app.uses_utc_timezone(),
             )
-            if not body_can_be_buffer:
-                body = bytes(body) if isinstance(body, buffer_t) else body
         else:
             if 'args' in message.payload:
                 body, headers, decoded, utc = hybrid_to_proto2(message,

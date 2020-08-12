@@ -1,23 +1,19 @@
-# -*- coding: utf-8 -*-
 """Scheduler for Python functions.
 
 .. note::
     This is used for the thread-based worker only,
     not for amqp/redis/sqs/qpid where :mod:`kombu.asynchronous.timer` is used.
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import sys
 import threading
 from itertools import count
+from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
 from time import sleep
 
 from kombu.asynchronous.timer import Entry
 from kombu.asynchronous.timer import Timer as Schedule
 from kombu.asynchronous.timer import logger, to_timestamp
-
-from celery.five import THREAD_TIMEOUT_MAX
 
 TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
 
@@ -44,7 +40,7 @@ class Timer(threading.Thread):
             import traceback
             print('- Timer starting')
             traceback.print_stack()
-            super(Timer, self).start(*args, **kwargs)
+            super().start(*args, **kwargs)
 
     def __init__(self, schedule=None, on_error=None, on_tick=None,
                  on_start=None, max_interval=None, **kwargs):
@@ -58,7 +54,7 @@ class Timer(threading.Thread):
         self.mutex = threading.Lock()
         self.not_empty = threading.Condition(self.mutex)
         self.daemon = True
-        self.name = 'Timer-{0}'.format(next(self._timer_count))
+        self.name = 'Timer-{}'.format(next(self._timer_count))
 
     def _next_entry(self):
         with self.not_empty:

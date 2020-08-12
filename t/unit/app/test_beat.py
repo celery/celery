@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import errno
 from datetime import datetime, timedelta
 from pickle import dumps, loads
@@ -10,7 +8,6 @@ from case import Mock, call, patch, skip
 
 from celery import __version__, beat, uuid
 from celery.beat import BeatLazyFunc, event_t
-from celery.five import keys, string_t
 from celery.schedules import crontab, schedule
 from celery.utils.objects import Bunch
 
@@ -26,7 +23,7 @@ class MockShelve(dict):
         self.synced = True
 
 
-class MockService(object):
+class MockService:
     started = False
     stopped = False
 
@@ -261,7 +258,7 @@ class test_Scheduler:
 
     def test_info(self):
         scheduler = mScheduler(app=self.app)
-        assert isinstance(scheduler.info, string_t)
+        assert isinstance(scheduler.info, str)
 
     def test_maybe_entry(self):
         s = mScheduler(app=self.app)
@@ -612,17 +609,17 @@ class test_PersistentScheduler:
         s.setup_schedule()
         s._remove_db.assert_called_with()
 
-        s._store = {str('__version__'): 1}
+        s._store = {'__version__': 1}
         s.setup_schedule()
 
         s._store.clear = Mock()
         op = s.persistence.open = Mock()
         op.return_value = s._store
-        s._store[str('tz')] = 'FUNKY'
+        s._store['tz'] = 'FUNKY'
         s.setup_schedule()
         op.assert_called_with(s.schedule_filename, writeback=True)
         s._store.clear.assert_called_with()
-        s._store[str('utc_enabled')] = False
+        s._store['utc_enabled'] = False
         s._store.clear = Mock()
         s.setup_schedule()
         s._store.clear.assert_called_with()
@@ -631,10 +628,10 @@ class test_PersistentScheduler:
         s = create_persistent_scheduler()[0](
             schedule_filename='schedule', app=self.app,
         )
-        s._store = {str('entries'): {}}
+        s._store = {'entries': {}}
         s.schedule = {'foo': 'bar'}
         assert s.schedule == {'foo': 'bar'}
-        assert s._store[str('entries')] == s.schedule
+        assert s._store['entries'] == s.schedule
 
     def test_run_all_due_tasks_after_restart(self):
         scheduler_class, shelve = create_persistent_scheduler_w_call_logging()
@@ -703,7 +700,7 @@ class test_Service:
         assert isinstance(schedule, dict)
         assert isinstance(s.scheduler, beat.Scheduler)
         scheduled = list(schedule.keys())
-        for task_name in keys(sh[str('entries')]):
+        for task_name in sh['entries'].keys():
             assert task_name in scheduled
 
         s.sync()
@@ -757,7 +754,7 @@ class test_EmbeddedService:
         assert isinstance(s.service, beat.Service)
         s.service = MockService()
 
-        class _Popen(object):
+        class _Popen:
             terminated = False
 
             def terminate(self):

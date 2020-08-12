@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Internal state.
 
 This is an internal module containing thread state
@@ -6,7 +5,6 @@ like the ``current_app``, and ``current_task``.
 
 This module shouldn't be used directly.
 """
-from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import sys

@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Base command-line interface."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import argparse
 import json
 import os
@@ -15,8 +12,7 @@ from pprint import pformat
 
 from celery import VERSION_BANNER, Celery, maybe_patch_concurrency, signals
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
-from celery.five import (PY2, getfullargspec, items, long_t,
-                         python_2_unicode_compatible, string, string_t,
+from celery.five import (getfullargspec, items, long_t, string, string_t,
                          text_t)
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE, isatty
 from celery.utils import imports, term, text
@@ -116,7 +112,6 @@ def _add_compat_options(parser, options):
             _add_optparse_argument(parser, option)
 
 
-@python_2_unicode_compatible
 class Error(Exception):
     """Exception raised by commands."""
 
@@ -125,7 +120,7 @@ class Error(Exception):
     def __init__(self, reason, status=None):
         self.reason = reason
         self.status = status if status is not None else self.status
-        super(Error, self).__init__(reason, status)
+        super().__init__(reason, status)
 
     def __str__(self):
         return self.reason
@@ -137,7 +132,7 @@ class UsageError(Error):
     status = EX_USAGE
 
 
-class Extensions(object):
+class Extensions:
     """Loads extensions from setuptools entrypoints."""
 
     def __init__(self, namespace, register):
@@ -155,7 +150,7 @@ class Extensions(object):
         return self.names
 
 
-class Command(object):
+class Command:
     """Base class for command-line applications.
 
     Arguments:
@@ -236,7 +231,7 @@ class Command(object):
     def on_error(self, exc):
         # pylint: disable=method-hidden
         #   on_error argument to __init__ may override this method.
-        self.error(self.colored.red('Error: {0}'.format(exc)))
+        self.error(self.colored.red(f'Error: {exc}'))
 
     def on_usage_error(self, exc):
         # pylint: disable=method-hidden
@@ -265,7 +260,7 @@ class Command(object):
         required = S.args[_index:-len(S.defaults) if S.defaults else None]
         missing = required[len(given):]
         if missing:
-            raise self.UsageError('Missing required {0}: {1}'.format(
+            raise self.UsageError('Missing required {}: {}'.format(
                 text.pluralize(len(missing), 'argument'),
                 ', '.join(missing)
             ))
@@ -288,12 +283,7 @@ class Command(object):
         try:
             argv = self.setup_app_from_commandline(argv)
         except ModuleNotFoundError as e:
-            # In Python 2.7 and below, there is no name instance for exceptions
-            # TODO: Remove this once we drop support for Python 2.7
-            if PY2:
-                package_name = e.message.replace("No module named ", "")
-            else:
-                package_name = e.name
+            package_name = e.name
             self.on_error(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(package_name))
             return EX_FAILURE
         except AttributeError as e:
@@ -315,7 +305,7 @@ class Command(object):
             maybe_patch_concurrency(argv, *pool_option)
 
     def usage(self, command):
-        return '%(prog)s {0} [options] {self.args}'.format(command, self=self)
+        return f'%(prog)s {command} [options] {self.args}'
 
     def add_arguments(self, parser):
         pass
@@ -368,7 +358,7 @@ class Command(object):
                         for c in choices]
         schoices = '/'.join(schoices)
 
-        p = '{0} ({1})? '.format(q.capitalize(), schoices)
+        p = '{} ({})? '.format(q.capitalize(), schoices)
         while 1:
             val = input(p).lower()
             if val in choices:
@@ -453,7 +443,7 @@ class Command(object):
 
     def _format_epilog(self, epilog):
         if epilog:
-            return '\n{0}\n\n'.format(epilog)
+            return f'\n{epilog}\n\n'
         return ''
 
     def _format_description(self, description):
@@ -609,7 +599,7 @@ class Command(object):
         if not n:
             return '- empty -'
         return '\n'.join(
-            str(c.reset(c.white('*'), ' {0}'.format(item))) for item in n
+            str(c.reset(c.white('*'), f' {item}')) for item in n
         )
 
     def pretty_dict_ok_error(self, n):

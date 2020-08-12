@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import pickle
 from time import time
 
@@ -112,7 +110,7 @@ class test_Persistent:
 
     def add_revoked(self, p, *ids):
         for id in ids:
-            p.db.setdefault(str('revoked'), LimitedSet()).add(id)
+            p.db.setdefault('revoked', LimitedSet()).add(id)
 
     def test_merge(self, p, data=['foo', 'bar', 'baz']):
         state.revoked.update(data)
@@ -123,26 +121,26 @@ class test_Persistent:
     def test_merge_dict(self, p):
         p.clock = Mock()
         p.clock.adjust.return_value = 626
-        d = {str('revoked'): {str('abc'): time()}, str('clock'): 313}
+        d = {'revoked': {'abc': time()}, 'clock': 313}
         p._merge_with(d)
         p.clock.adjust.assert_called_with(313)
-        assert d[str('clock')] == 626
-        assert str('abc') in state.revoked
+        assert d['clock'] == 626
+        assert 'abc' in state.revoked
 
     def test_sync_clock_and_purge(self, p):
         passthrough = Mock()
         passthrough.side_effect = lambda x: x
         with patch('celery.worker.state.revoked') as revoked:
-            d = {str('clock'): 0}
+            d = {'clock': 0}
             p.clock = Mock()
             p.clock.forward.return_value = 627
             p._dumps = passthrough
             p.compress = passthrough
             p._sync_with(d)
             revoked.purge.assert_called_with()
-            assert d[str('clock')] == 627
-            assert str('revoked') not in d
-            assert d[str('zrevoked')] is revoked
+            assert d['clock'] == 627
+            assert 'revoked' not in d
+            assert d['zrevoked'] is revoked
 
     def test_sync(self, p,
                   data1=['foo', 'bar', 'baz'], data2=['baz', 'ini', 'koz']):
@@ -151,15 +149,15 @@ class test_Persistent:
             state.revoked.add(item)
         p.sync()
 
-        assert p.db[str('zrevoked')]
-        pickled = p.decompress(p.db[str('zrevoked')])
+        assert p.db['zrevoked']
+        pickled = p.decompress(p.db['zrevoked'])
         assert pickled
         saved = pickle.loads(pickled)
         for item in data2:
             assert item in saved
 
 
-class SimpleReq(object):
+class SimpleReq:
 
     def __init__(self, name):
         self.id = uuid()

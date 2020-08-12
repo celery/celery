@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import json
 
 import pytest
@@ -281,7 +279,7 @@ class test_chain(CanvasCase):
 
     def test_repr(self):
         x = self.add.s(2, 2) | self.add.s(2)
-        assert repr(x) == '%s(2, 2) | add(2)' % (self.add.name,)
+        assert repr(x) == f'{self.add.name}(2, 2) | add(2)'
 
     def test_apply_async(self):
         c = self.add.s(2, 2) | self.add.s(4) | self.add.s(8)
@@ -441,8 +439,7 @@ class test_chain(CanvasCase):
 
     def test_chain_always_eager(self):
         self.app.conf.task_always_eager = True
-        from celery import _state
-        from celery import result
+        from celery import _state, result
 
         fixture_task_join_will_block = _state.task_join_will_block
         try:
@@ -801,8 +798,7 @@ class test_chord(CanvasCase):
 
     def test_chain_always_eager(self):
         self.app.conf.task_always_eager = True
-        from celery import _state
-        from celery import result
+        from celery import _state, result
 
         fixture_task_join_will_block = _state.task_join_will_block
         try:

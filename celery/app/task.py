@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Task implementation: request context and the task base class."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 
 from billiard.einfo import ExceptionInfo
@@ -14,7 +11,6 @@ from celery._state import _task_stack
 from celery.canvas import signature
 from celery.exceptions import (Ignore, ImproperlyConfigured,
                                MaxRetriesExceededError, Reject, Retry)
-from celery.five import items, python_2_unicode_compatible
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
@@ -22,6 +18,7 @@ from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import raise_with_context
+
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
 from .utils import appstr
@@ -46,7 +43,7 @@ TaskType = type
 
 def _strflags(flags, default=''):
     if flags:
-        return ' ({0})'.format(', '.join(flags))
+        return ' ({})'.format(', '.join(flags))
     return default
 
 
@@ -61,8 +58,7 @@ def _reprtask(task, fmt=None, flags=None):
     )
 
 
-@python_2_unicode_compatible
-class Context(object):
+class Context:
     """Task request variables (Task.request)."""
 
     logfile = None
@@ -108,7 +104,7 @@ class Context(object):
         return getattr(self, key, default)
 
     def __repr__(self):
-        return '<Context: {0!r}>'.format(vars(self))
+        return '<Context: {!r}>'.format(vars(self))
 
     def as_execution_options(self):
         limit_hard, limit_soft = self.timelimit or (None, None)
@@ -140,8 +136,7 @@ class Context(object):
 
 
 @abstract.CallableTask.register
-@python_2_unicode_compatible
-class Task(object):
+class Task:
     """Task base class.
 
     Note:
@@ -371,7 +366,7 @@ class Task(object):
     @classmethod
     def annotate(cls):
         for d in resolve_all_annotations(cls.app.annotations, cls):
-            for key, value in items(d):
+            for key, value in d.items():
                 if key.startswith('@'):
                     cls.add_around(key[1:], value)
                 else:
@@ -705,7 +700,7 @@ class Task(object):
                 # the exc' argument provided (raise exc from orig)
                 raise_with_context(exc)
             raise self.MaxRetriesExceededError(
-                "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
+                "Can't retry {}[{}] args:{} kwargs:{}".format(
                     self.name, request.id, S.args, S.kwargs
                 ), task_args=S.args, task_kwargs=S.kwargs
             )

@@ -17,7 +17,6 @@
 #
 #    >>> unlock_graph.apply_async((A.apply_async(),
 #    ...                           A_callback.s()), countdown=1)
-from __future__ import absolute_import, print_function, unicode_literals
 
 from collections import deque
 
@@ -32,20 +31,20 @@ def add(x, y):
 
 @task()
 def make_request(id, url):
-    print('-get: {0!r}'.format(url))
+    print(f'-get: {url!r}')
     return url
 
 
 @task()
 def B_callback(urls, id):
-    print('-batch {0} done'.format(id))
+    print(f'-batch {id} done')
     return urls
 
 
 @task()
 def B(id):
     return chord(
-        make_request.s(id, '{0} {1!r}'.format(id, i))
+        make_request.s(id, f'{id} {i!r}')
         for i in range(10)
     )(B_callback.s(id))
 
@@ -89,11 +88,11 @@ def unlock_graph(result, callback,
 
 @task()
 def A_callback(res):
-    print('-everything done: {0!r}'.format(res))
+    print(f'-everything done: {res!r}')
     return res
 
 
-class chord2(object):
+class chord2:
 
     def __init__(self, tasks, **options):
         self.tasks = tasks

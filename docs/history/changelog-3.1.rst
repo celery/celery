@@ -1325,7 +1325,7 @@ white-list block:
 
 Note also that if you wait for the result of a subtask in any form
 when using the prefork pool you must also disable the pool prefetching
-behavior with the worker :ref:`-Ofair option <prefork-pool-prefetch>`.
+behavior with the worker :ref:`-Ofair option <optimizing-prefetch-limit>`.
 
 .. _v317-fixes:
 

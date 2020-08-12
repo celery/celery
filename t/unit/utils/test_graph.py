@@ -1,9 +1,7 @@
-from __future__ import absolute_import, unicode_literals
-
 from case import Mock
 
-from celery.five import WhateverIO, items
 from celery.utils.graph import DependencyGraph
+from celery.utils.text import WhateverIO
 
 
 class test_DependencyGraph:
@@ -58,7 +56,7 @@ class test_DependencyGraph:
         assert x.format(obj) is obj
 
     def test_items(self):
-        assert dict(items(self.graph1())) == {
+        assert dict(self.graph1().items()) == {
             'A': [], 'B': [], 'C': ['A'], 'D': ['C', 'B'],
         }
 

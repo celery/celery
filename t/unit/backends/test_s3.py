@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import boto3
 import pytest
 from botocore.exceptions import ClientError

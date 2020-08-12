@@ -1,6 +1,4 @@
 """The ``celery migrate`` command, used to filter and move messages."""
-from __future__ import absolute_import, unicode_literals
-
 from celery.bin.base import Command
 
 MIGRATE_PROGRESS_FMT = """\
@@ -58,6 +56,7 @@ class migrate(Command):
 
     def run(self, source, destination, **kwargs):
         from kombu import Connection
+
         from celery.contrib.migrate import migrate_tasks
 
         migrate_tasks(Connection(source),

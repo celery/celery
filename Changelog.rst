@@ -37,7 +37,7 @@ an overview of what's new in Celery 4.4.
 - Pass ping destination to request
 - chord: merge init options with run options
 - Put back KeyValueStoreBackend.set method without state
-- Added --range-prefix option to `celery multi` (#6180) 
+- Added --range-prefix option to `celery multi` (#6180)
 - Added as_list function to AsyncResult class (#6179)
 - Fix CassandraBackend error in threads or gevent pool (#6147)
 - Kombu 4.6.11
@@ -67,7 +67,7 @@ an overview of what's new in Celery 4.4.
 - Fix random distribution of jitter for exponential backoff.
 - ElasticSearch: add setting to save meta as json.
 - fix #6136. celery 4.4.3 always trying create /var/run/celery directory.
-- Add task_internal_error signal (#6049). 
+- Add task_internal_error signal (#6049).
 
 
 4.4.3
@@ -98,7 +98,7 @@ an overview of what's new in Celery 4.4.
 - [Fixed Issue #6017]
 - Avoid race condition due to task duplication.
 - Exceptions must be old-style classes or derived from BaseException
-- Fix windows build (#6104) 
+- Fix windows build (#6104)
 - Add encode to meta task in base.py (#5894)
 - Update time.py to solve the microsecond issues (#5199)
 - Change backend _ensure_not_eager error to warning
@@ -109,7 +109,7 @@ an overview of what's new in Celery 4.4.
 - Add integration tests for Elasticsearch and fix _update
 - feat(backend): Adds cleanup to ArangoDB backend
 - remove jython check
-- fix filesystem backend cannot not be serialized by picked 
+- fix filesystem backend cannot not be serialized by picked
 
 4.4.0
 =======

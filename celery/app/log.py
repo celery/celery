@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Logging configuration.
 
 The Celery instances logging section: ``Celery.log``.
@@ -7,8 +6,6 @@ Sets up logging for the worker and other programs,
 redirects standard outs, colors log output, patches logging
 related compatibility fixes, and so on.
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import os
 import sys
@@ -18,7 +15,6 @@ from kombu.utils.encoding import set_default_encoding_file
 
 from celery import signals
 from celery._state import get_current_task
-from celery.five import string_t
 from celery.local import class_property
 from celery.platforms import isatty
 from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
@@ -46,7 +42,7 @@ class TaskFormatter(ColorFormatter):
         return ColorFormatter.format(self, record)
 
 
-class Logging(object):
+class Logging:
     """Application logging setup (app.log)."""
 
     #: The logging subsystem is only configured once per process.
@@ -140,7 +136,7 @@ class Logging(object):
 
         # This is a hack for multiprocessing's fork+exec, so that
         # logging before Process.run works.
-        logfile_name = logfile if isinstance(logfile, string_t) else ''
+        logfile_name = logfile if isinstance(logfile, str) else ''
         os.environ.update(_MP_FORK_LOGLEVEL_=str(loglevel),
                           _MP_FORK_LOGFILE_=logfile_name,
                           _MP_FORK_LOGFORMAT_=format)

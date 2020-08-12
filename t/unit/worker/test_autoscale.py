@@ -1,11 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-
 import sys
+from time import monotonic
 
 from case import Mock, mock, patch
 
 from celery.concurrency.base import BasePool
-from celery.five import monotonic
 from celery.utils.objects import Bunch
 from celery.worker import autoscale, state
 
@@ -16,7 +14,7 @@ class MockPool(BasePool):
     shrink_raises_ValueError = False
 
     def __init__(self, *args, **kwargs):
-        super(MockPool, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._pool = Bunch(_processes=self.limit)
 
     def grow(self, n=1):
@@ -105,7 +103,7 @@ class test_Autoscaler:
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.body()
         assert x.pool.num_processes == 3
-        _keep = [Mock(name='req{0}'.format(i)) for i in range(20)]
+        _keep = [Mock(name=f'req{i}') for i in range(20)]
         [state.task_reserved(m) for m in _keep]
         x.body()
         x.body()
@@ -222,7 +220,7 @@ class test_Autoscaler:
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.body()  # the body func scales up or down
 
-        _keep = [Mock(name='req{0}'.format(i)) for i in range(35)]
+        _keep = [Mock(name=f'req{i}') for i in range(35)]
         for req in _keep:
             state.task_reserved(req)
             x.body()

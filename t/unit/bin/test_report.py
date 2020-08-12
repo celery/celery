@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 """Tests for ``celery report`` command."""
-from __future__ import absolute_import, unicode_literals
 
 from case import Mock, call, patch
 

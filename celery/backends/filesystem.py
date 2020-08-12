@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """File-system result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 import locale
 import os
 
@@ -44,7 +41,7 @@ class FilesystemBackend(KeyValueStoreBackend):
 
     def __init__(self, url=None, open=open, unlink=os.unlink, sep=os.sep,
                  encoding=default_encoding, *args, **kwargs):
-        super(FilesystemBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
         path = self._find_path(url)
 
@@ -77,7 +74,7 @@ class FilesystemBackend(KeyValueStoreBackend):
             self.set(key, b'test value')
             assert self.get(key) == b'test value'
             self.delete(key)
-        except IOError:
+        except OSError:
             raise ImproperlyConfigured(E_PATH_INVALID)
 
     def _filename(self, key):

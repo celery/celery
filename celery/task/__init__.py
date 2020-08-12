@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Old deprecated task module.
 
 This is the old task module, it shouldn't be used anymore,
@@ -6,8 +5,6 @@ import from the main 'celery' module instead.
 If you're looking for the decorator implementation then that's in
 ``celery.app.base.Celery.task``.
 """
-from __future__ import absolute_import, unicode_literals
-
 from celery._state import current_app
 from celery._state import current_task as current
 from celery.local import LazyModule, Proxy, recreate_module
@@ -24,8 +21,9 @@ if STATICA_HACK:  # pragma: no cover
     # This is never executed, but tricks static analyzers (PyDev, PyCharm,
     # pylint, etc.) into knowing the types of these symbols, and what
     # they contain.
-    from celery.canvas import group, chord, subtask
-    from .base import BaseTask, Task, PeriodicTask, task, periodic_task
+    from celery.canvas import chord, group, subtask
+
+    from .base import BaseTask, PeriodicTask, Task, periodic_task, task
 
 
 class module(LazyModule):

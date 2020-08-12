@@ -1,13 +1,10 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 import numbers
 import os
 import signal
 import socket
 import sys
 from datetime import datetime, timedelta
-from time import time
+from time import monotonic, time
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -23,7 +20,6 @@ from celery.app.trace import (TraceInfo, _trace_task_ret, build_tracer,
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated, WorkerLostError)
-from celery.five import monotonic
 from celery.signals import task_revoked
 from celery.worker import request as module
 from celery.worker import strategy
@@ -69,7 +65,7 @@ class test_mro_lookup:
 
     def test_order(self):
 
-        class A(object):
+        class A:
             pass
 
         class B(A):
@@ -236,8 +232,8 @@ class test_Request(RequestCase):
             self.add.s(**kwargs)).kwargs == kwargs
 
     def test_info_function(self):
-        import string
         import random
+        import string
         kwargs = {}
         for i in range(0, 2):
             kwargs[str(i)] = ''.join(random.choice(string.ascii_lowercase) for i in range(1000))

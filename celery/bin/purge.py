@@ -1,6 +1,4 @@
 """The ``celery purge`` program, used to delete messages from queues."""
-from __future__ import absolute_import, unicode_literals
-
 from celery.bin.base import Command
 from celery.five import keys
 from celery.utils import text

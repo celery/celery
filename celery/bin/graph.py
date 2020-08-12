@@ -1,13 +1,10 @@
-# -*- coding: utf-8 -*-
 """The :program:`celery graph` command.
 
 .. program:: celery graph
 """
-from __future__ import absolute_import, unicode_literals
-
 from operator import itemgetter
 
-from celery.five import items, python_2_unicode_compatible
+from celery.five import items
 from celery.utils.graph import DependencyGraph, GraphFormatter
 
 from .base import Command
@@ -28,7 +25,7 @@ class graph(Command):
         if not what:
             raise self.UsageError('missing type')
         elif what not in map:
-            raise self.Error('no graph {0} in {1}'.format(what, '|'.join(map)))
+            raise self.Error('no graph {} in {}'.format(what, '|'.join(map)))
         return map[what](*args, **kwargs)
 
     def bootsteps(self, *args, **kwargs):
@@ -54,11 +51,10 @@ class graph(Command):
         generic = 'generic' in args
 
         def generic_label(node):
-            return '{0} ({1}://)'.format(type(node).__name__,
-                                         node._label.split('://')[0])
+            return '{} ({}://)'.format(type(node).__name__,
+                                       node._label.split('://')[0])
 
-        @python_2_unicode_compatible
-        class Node(object):
+        class Node:
             force_label = None
             scheme = {}
 
@@ -84,8 +80,8 @@ class graph(Command):
 
             def __init__(self, label, **kwargs):
                 self.real_label = label
-                super(Thread, self).__init__(
-                    label='thr-{0}'.format(next(tids)),
+                super().__init__(
+                    label='thr-{}'.format(next(tids)),
                     pos=0,
                 )
 
@@ -152,11 +148,11 @@ class graph(Command):
             size = len(l)
             abbr = max and size > max
             if 'enumerate' in args:
-                l = ['{0}{1}'.format(name, subscript(i + 1))
+                l = ['{}{}'.format(name, subscript(i + 1))
                      for i, obj in enumerate(l)]
             if abbr:
                 l = l[0:max - 1] + [l[size - 1]]
-                l[max - 2] = '{0}⎨…{1}⎬'.format(
+                l[max - 2] = '{}⎨…{}⎬'.format(
                     name[0], subscript(size - (max - 1)))
             return l
 

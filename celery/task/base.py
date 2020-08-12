@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Deprecated task base class.
 
 The task implementation has been moved to :mod:`celery.app.task`.
@@ -6,15 +5,12 @@ The task implementation has been moved to :mod:`celery.app.task`.
 This contains the backward compatible Task class used in the old API,
 and shouldn't be used in new applications.
 """
-from __future__ import absolute_import, unicode_literals
-
 from kombu import Exchange
 
 from celery import current_app
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
 from celery.app.task import _reprtask
-from celery.five import python_2_unicode_compatible, with_metaclass
 from celery.local import Proxy, class_property, reclassmethod
 from celery.schedules import maybe_schedule
 from celery.utils.log import get_task_logger
@@ -29,8 +25,7 @@ _COMPAT_CLASSMETHODS = (
 )
 
 
-@python_2_unicode_compatible
-class _CompatShared(object):
+class _CompatShared:
 
     def __init__(self, name, cons):
         self.name = name
@@ -40,7 +35,7 @@ class _CompatShared(object):
         return hash(self.name)
 
     def __repr__(self):
-        return '<OldTask: %r>' % (self.name,)
+        return f'<OldTask: {self.name!r}>'
 
     def __call__(self, app):
         return self.cons(app)
@@ -59,7 +54,7 @@ class TaskType(type):
     _creation_count = {}  # used by old non-abstract task classes
 
     def __new__(cls, name, bases, attrs):
-        new = super(TaskType, cls).__new__
+        new = super().__new__
         task_module = attrs.get('__module__') or '__main__'
 
         # - Abstract class: abstract attribute shouldn't be inherited.
@@ -123,9 +118,7 @@ class TaskType(type):
         return _reprtask(self)
 
 
-@with_metaclass(TaskType)
-@python_2_unicode_compatible
-class Task(BaseTask):
+class Task(BaseTask, metaclass=TaskType):
     """Deprecated Task base class.
 
     Modern applications should use :class:`celery.Task` instead.
@@ -253,7 +246,7 @@ class PeriodicTask(Task):
             raise NotImplementedError(
                 'Periodic tasks must have a run_every attribute')
         self.run_every = maybe_schedule(self.run_every, self.relative)
-        super(PeriodicTask, self).__init__()
+        super().__init__()
 
     @classmethod
     def on_bound(cls, app):

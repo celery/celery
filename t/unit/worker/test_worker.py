@@ -1,11 +1,11 @@
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import socket
 import sys
 from collections import deque
 from datetime import datetime, timedelta
 from functools import partial
+from queue import Empty
+from queue import Queue as FastQueue
 from threading import Event
 
 import pytest
@@ -23,9 +23,6 @@ from celery.concurrency.base import BasePool
 from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
                                TaskRevokedError, WorkerShutdown,
                                WorkerTerminate)
-from celery.five import Empty
-from celery.five import Queue as FastQueue
-from celery.five import range
 from celery.platforms import EX_FAILURE
 from celery.utils.nodenames import worker_direct
 from celery.utils.serialization import pickle
@@ -43,7 +40,7 @@ def MockStep(step=None):
     else:
         step.blueprint = Mock(name='step.blueprint')
     step.blueprint.name = 'MockNS'
-    step.name = 'MockStep(%s)' % (id(step),)
+    step.name = f'MockStep({id(step)})'
     return step
 
 
@@ -318,7 +315,7 @@ class test_Consumer(ConsumerCase):
 
             def drain_events(self, **kwargs):
                 self.obj.connection = None
-                raise socket.error('foo')
+                raise OSError('foo')
 
         c = self.LoopConsumer()
         c.blueprint.state = RUN
@@ -581,7 +578,7 @@ class test_Consumer(ConsumerCase):
         controller.box.node.listen = BConsumer()
         connections = []
 
-        class Connection(object):
+        class Connection:
             calls = 0
 
             def __init__(self, obj):
@@ -642,7 +639,7 @@ class test_Consumer(ConsumerCase):
 
     def test_start__loop(self):
 
-        class _QoS(object):
+        class _QoS:
             prev = 3
             value = 4
 
@@ -737,8 +734,8 @@ class test_WorkController(ConsumerCase):
 
     @skip.todo('unstable test')
     def test_process_shutdown_on_worker_shutdown(self):
-        from celery.concurrency.prefork import process_destructor
         from celery.concurrency.asynpool import Worker
+        from celery.concurrency.prefork import process_destructor
         with patch('celery.signals.worker_process_shutdown') as ws:
             with patch('os._exit') as _exit:
                 worker = Worker(None, None, on_exit=process_destructor)
@@ -818,7 +815,7 @@ class test_WorkController(ConsumerCase):
         worker.pool.register_with_event_loop(hub)
 
         # Create some mock queue message and read from them
-        _keep = [Mock(name='req{0}'.format(i)) for i in range(20)]
+        _keep = [Mock(name=f'req{i}') for i in range(20)]
         [state.task_reserved(m) for m in _keep]
         auto_scaler.body()
 

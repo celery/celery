@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Sphinx documentation plugin used to document tasks.
 
 Introduction
@@ -31,17 +30,12 @@ syntax.
 
 Use ``.. autotask::`` to alternatively manually document a task.
 """
-from __future__ import absolute_import, unicode_literals
+from inspect import formatargspec, getfullargspec
 
 from sphinx.domains.python import PyFunction
 from sphinx.ext.autodoc import FunctionDocumenter
 
 from celery.app.task import BaseTask
-
-try:  # pragma: no cover
-    from inspect import formatargspec, getfullargspec
-except ImportError:  # Py2
-    from inspect import formatargspec, getargspec as getfullargspec  # noqa
 
 
 class TaskDocumenter(FunctionDocumenter):
@@ -76,7 +70,7 @@ class TaskDocumenter(FunctionDocumenter):
         wrapped = getattr(self.object, '__wrapped__', None)
         if wrapped and getattr(wrapped, '__module__') == self.modname:
             return True
-        return super(TaskDocumenter, self).check_module()
+        return super().check_module()
 
 
 class TaskDirective(PyFunction):

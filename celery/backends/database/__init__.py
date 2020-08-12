@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """SQLAlchemy result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 import logging
 from contextlib import contextmanager
 
@@ -10,9 +7,7 @@ from vine.utils import wraps
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.five import range
 from celery.utils.time import maybe_timedelta
-
 from .models import Task, TaskExtended, TaskSet
 from .session import SessionManager
 
@@ -73,8 +68,8 @@ class DatabaseBackend(BaseBackend):
     def __init__(self, dburi=None, engine_options=None, url=None, **kwargs):
         # The `url` argument was added later and is used by
         # the app to set backend by url (celery.app.backends.by_url)
-        super(DatabaseBackend, self).__init__(expires_type=maybe_timedelta,
-                                              url=url, **kwargs)
+        super().__init__(expires_type=maybe_timedelta,
+                         url=url, **kwargs)
         conf = self.app.conf
 
         if self.extended_result:
@@ -223,4 +218,4 @@ class DatabaseBackend(BaseBackend):
             {'dburi': self.url,
              'expires': self.expires,
              'engine_options': self.engine_options})
-        return super(DatabaseBackend, self).__reduce__(args, kwargs)
+        return super().__reduce__(args, kwargs)

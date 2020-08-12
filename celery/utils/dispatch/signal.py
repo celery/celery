@@ -1,25 +1,17 @@
-# -*- coding: utf-8 -*-
 """Implementation of the Observer pattern."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 import threading
 import warnings
 import weakref
+from weakref import WeakMethod
 
 from kombu.utils.functional import retry_over_time
 
 from celery.exceptions import CDeprecationWarning
-from celery.five import PY3, python_2_unicode_compatible, range, text_t
 from celery.local import PromiseProxy, Proxy
 from celery.utils.functional import fun_accepts_kwargs
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
-
-try:
-    from weakref import WeakMethod
-except ImportError:
-    from .weakref_backports import WeakMethod  # noqa
 
 __all__ = ('Signal',)
 
@@ -29,7 +21,7 @@ logger = get_logger(__name__)
 def _make_id(target):  # pragma: no cover
     if isinstance(target, Proxy):
         target = target._get_current_object()
-    if isinstance(target, (bytes, text_t)):
+    if isinstance(target, (bytes, str)):
         # see Issue #2475
         return target
     if hasattr(target, '__func__'):
@@ -75,8 +67,7 @@ Could not process signal receiver %(receiver)s. Retrying %(when)s...\
 """
 
 
-@python_2_unicode_compatible
-class Signal(object):  # pragma: no cover
+class Signal:  # pragma: no cover
     """Create new signal.
 
     Keyword Arguments:
@@ -206,11 +197,8 @@ class Signal(object):  # pragma: no cover
 
         if weak:
             ref, receiver_object = _boundmethod_safe_weakref(receiver)
-            if PY3:
-                receiver = ref(receiver)
-                weakref.finalize(receiver_object, self._remove_receiver)
-            else:
-                receiver = ref(receiver, self._remove_receiver)
+            receiver = ref(receiver)
+            weakref.finalize(receiver_object, self._remove_receiver)
 
         with self.lock:
             self._clear_dead_receivers()
@@ -359,8 +347,7 @@ class Signal(object):  # pragma: no cover
 
     def __repr__(self):
         """``repr(signal)``."""
-        return '<{0}: {1} providing_args={2!r}>'.format(
-            type(self).__name__, self.name, self.providing_args)
+        return f'<{type(self).__name__}: {self.name} providing_args={self.providing_args!r}>'
 
     def __str__(self):
         """``str(signal)``."""

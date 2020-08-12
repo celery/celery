@@ -1,11 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
 import sys
 
 import pytest
-from case import Mock, patch, skip
+from case import Mock, patch
 
-from celery.five import bytes_if_py2
 from celery.utils.imports import (NotAPackage, find_module, gen_task_name,
                                   module_file, qualname, reload_from_cwd)
 
@@ -48,7 +45,6 @@ def test_find_module_legacy_namespace_package(tmp_path, monkeypatch):
         assert exc_info.value.args[0] == 'pkg.foo.bar'
 
 
-@skip.unless_python3()
 def test_find_module_pep420_namespace_package(tmp_path, monkeypatch):
     monkeypatch.chdir(str(tmp_path))
     (tmp_path / 'pkg' / 'foo').mkdir(parents=True)
@@ -69,7 +65,7 @@ def test_find_module_pep420_namespace_package(tmp_path, monkeypatch):
 
 
 def test_qualname():
-    Class = type(bytes_if_py2('Fox'), (object,), {
+    Class = type('Fox', (object,), {
         '__module__': 'quick.brown',
     })
     assert qualname(Class) == 'quick.brown.Fox'

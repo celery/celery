@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """MongoDB result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime, timedelta
 
 from kombu.exceptions import EncodeError
@@ -10,7 +7,6 @@ from kombu.utils.url import maybe_sanitize_url, urlparse
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items, string_t
 
 from .base import BaseBackend
 
@@ -23,7 +19,7 @@ if pymongo:
     try:
         from bson.binary import Binary
     except ImportError:                     # pragma: no cover
-        from pymongo.binary import Binary   # noqa
+        from pymongo.binary import Binary  # noqa
     from pymongo.errors import InvalidDocument  # noqa
 else:                                       # pragma: no cover
     Binary = None                           # noqa
@@ -62,7 +58,7 @@ class MongoBackend(BaseBackend):
     def __init__(self, app=None, **kwargs):
         self.options = {}
 
-        super(MongoBackend, self).__init__(app, **kwargs)
+        super().__init__(app, **kwargs)
 
         if not pymongo:
             raise ImproperlyConfigured(
@@ -70,7 +66,7 @@ class MongoBackend(BaseBackend):
                 'MongoDB backend.')
 
         # Set option defaults
-        for key, value in items(self._prepare_client_options()):
+        for key, value in self._prepare_client_options().items():
             self.options.setdefault(key, value)
 
         # update conf with mongo uri data, only if uri was given
@@ -80,7 +76,7 @@ class MongoBackend(BaseBackend):
             uri_data = pymongo.uri_parser.parse_uri(self.url)
             # build the hosts list to create a mongo connection
             hostslist = [
-                '{0}:{1}'.format(x[0], x[1]) for x in uri_data['nodelist']
+                f'{x[0]}:{x[1]}' for x in uri_data['nodelist']
             ]
             self.user = uri_data['username']
             self.password = uri_data['password']
@@ -123,7 +119,7 @@ class MongoBackend(BaseBackend):
     def _ensure_mongodb_uri_compliance(url):
         parsed_url = urlparse(url)
         if not parsed_url.scheme.startswith('mongodb'):
-            url = 'mongodb+{}'.format(url)
+            url = f'mongodb+{url}'
 
         if url == 'mongodb://':
             url += 'localhost'
@@ -151,9 +147,9 @@ class MongoBackend(BaseBackend):
                 # This enables the use of replica sets and sharding.
                 # See pymongo.Connection() for more info.
                 host = self.host
-                if isinstance(host, string_t) \
+                if isinstance(host, str) \
                    and not host.startswith('mongodb://'):
-                    host = 'mongodb://{0}:{1}'.format(host, self.port)
+                    host = f'mongodb://{host}:{self.port}'
             # don't change self.options
             conf = dict(self.options)
             conf['host'] = host
@@ -170,7 +166,7 @@ class MongoBackend(BaseBackend):
         if self.serializer == 'bson':
             # mongodb handles serialization
             return data
-        payload = super(MongoBackend, self).encode(data)
+        payload = super().encode(data)
 
         # serializer which are in a unsupported format (pickle/binary)
         if self.serializer in BINARY_CODECS:
@@ -180,7 +176,7 @@ class MongoBackend(BaseBackend):
     def decode(self, data):
         if self.serializer == 'bson':
             return data
-        return super(MongoBackend, self).decode(data)
+        return super().decode(data)
 
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
@@ -261,7 +257,7 @@ class MongoBackend(BaseBackend):
 
     def __reduce__(self, args=(), kwargs=None):
         kwargs = {} if not kwargs else kwargs
-        return super(MongoBackend, self).__reduce__(
+        return super().__reduce__(
             args, dict(kwargs, expires=self.expires, url=self.url))
 
     def _get_database(self):
