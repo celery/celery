@@ -28,7 +28,7 @@ class AMQPContext:
         if isinstance(retval, str):
             self.cli_context.echo(retval)
         else:
-            self.cli_context.echo(pprint.pprint(retval))
+            self.cli_context.echo(pprint.pformat(retval))
 
     def echo_error(self, exception):
         self.cli_context.error(f'{self.cli_context.ERROR}: {exception}')
