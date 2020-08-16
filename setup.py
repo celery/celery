@@ -34,7 +34,6 @@ EXTENSIONS = {
     'pymemcache',
     'pyro',
     'redis',
-    'riak',
     's3',
     'slmq',
     'solar',
