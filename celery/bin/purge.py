@@ -41,7 +41,6 @@ def purge(ctx, force, queues, exclude_queues):
     if names:
         queues_headline = text.pluralize(qnum, 'queue')
         if not force:
-            queues_headline = queues_headline
             queue_names = ', '.join(sorted(names))
             click.confirm(f"{ctx.obj.style('WARNING', fg='red')}:"
                           "This will remove all tasks from "
