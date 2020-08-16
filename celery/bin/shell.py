@@ -72,11 +72,11 @@ def _invoke_default_shell(locals):
         try:
             import bpython  # noqa
         except ImportError:
-            return _invoke_fallback_shell(locals)
+            _invoke_fallback_shell(locals)
         else:
-            return _invoke_bpython_shell(locals)
+            _invoke_bpython_shell(locals)
     else:
-        return _invoke_ipython_shell(locals)
+        _invoke_ipython_shell(locals)
 
 
 @click.command(cls=CeleryCommand)
@@ -156,15 +156,15 @@ def shell(ctx, ipython=False, bpython=False,
         })
 
     if python:
-        return _invoke_fallback_shell(locals)
+        _invoke_fallback_shell(locals)
     elif bpython:
         try:
-            return _invoke_bpython_shell(locals)
+            _invoke_bpython_shell(locals)
         except ImportError:
             ctx.obj.echo(f'{ctx.obj.ERROR}: bpython is not installed')
     elif ipython:
         try:
-            return _invoke_ipython_shell(locals)
+            _invoke_ipython_shell(locals)
         except ImportError as e:
             ctx.obj.echo(f'{ctx.obj.ERROR}: {e}')
-    return _invoke_default_shell(locals)
+    _invoke_default_shell(locals)
