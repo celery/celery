@@ -280,6 +280,19 @@ class test_multi:
             multi(self.app).run_from_argv('celery', ['arg'], command='multi')
             m.execute_from_commandline.assert_called_with(['multi', 'arg'])
 
+    def test_execute_from_commandline_preserve_args(self):
+            multi_mock = Mock()
+            m = multi_mock.return_value = Mock()
+            x = CeleryCommand(app=self.app)
+            x.commands['multi'] = multi_mock
+            with pytest.raises(SystemExit):
+                x.execute_from_commandline(['celery', 'multi', 'worker1',
+                                            '-A', 'app'])
+            multi_mock.assert_called()
+            m.run_from_argv.assert_called_with('celery', ['worker1', '-A',
+                                                           'app'],
+                                               command='multi')
+
 
 class test_main:
 
