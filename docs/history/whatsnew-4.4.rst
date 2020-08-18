@@ -1,8 +1,8 @@
 .. _whatsnew-4.4:
 
-===================================
+==================================
  What's new in Celery 4.4 (Cliffs)
-===================================
+==================================
 :Author: Asif Saif Uddin (``auvipy at gmail.com``)
 
 .. sidebar:: Change history

@@ -3,8 +3,8 @@ from sphinx_celery import conf
 globals().update(conf.build_config(
     'celery', __file__,
     project='Celery',
-    version_dev='5.0',
-    version_stable='4.0',
+    version_dev='6.0',
+    version_stable='5.0',
     canonical_url='http://docs.celeryproject.org',
     webdomain='celeryproject.org',
     github_project='celery/celery',
