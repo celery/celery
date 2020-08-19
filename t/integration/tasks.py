@@ -1,6 +1,6 @@
 from time import sleep
 
-from celery import chain, chord, group, shared_task, Task
+from celery import Task, chain, chord, group, shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 

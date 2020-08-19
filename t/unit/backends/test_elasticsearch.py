@@ -17,7 +17,6 @@ from celery.backends import elasticsearch as module
 from celery.backends.elasticsearch import ElasticsearchBackend
 from celery.exceptions import ImproperlyConfigured
 
-
 _RESULT_RETRY = (
     '{"status":"RETRY","result":'
     '{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}'

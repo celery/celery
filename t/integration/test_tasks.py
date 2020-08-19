@@ -3,9 +3,8 @@ import pytest
 from celery import group
 
 from .conftest import get_active_redis_channels
-from .tasks import (add, add_ignore_result, print_unicode, retry_once,
-                    retry_once_priority, sleeping, ClassBasedAutoRetryTask)
-
+from .tasks import (ClassBasedAutoRetryTask, add, add_ignore_result,
+                    print_unicode, retry_once, retry_once_priority, sleeping)
 
 TIMEOUT = 10
 
