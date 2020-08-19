@@ -5,7 +5,7 @@ import sys
 
 import click
 from click import ParamType
-from click.types import IntParamType, StringParamType
+from click.types import StringParamType
 
 from celery import concurrency
 from celery.bin.base import (COMMA_SEPARATED_LIST, LOG_LEVEL,
@@ -56,6 +56,8 @@ class Hostname(StringParamType):
 
 
 class Autoscale(ParamType):
+    """Autoscaling parameter."""
+
     name = "<min workers>, <max workers>"
 
     def convert(self, value, param, ctx):
