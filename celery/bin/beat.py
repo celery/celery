@@ -19,23 +19,22 @@ from celery.platforms import detached, maybe_drop_privileges
 @click.option('-s',
               '--schedule',
               cls=CeleryOption,
+              callback=lambda ctx, _, value: value or ctx.obj.app.conf.beat_schedule_filename,
               help_group="Beat Options",
               help="Path to the schedule database."
                    "  Defaults to `celerybeat-schedule`."
-                   "The extension '.db' may be appended to the filename."
-                   "Default is {default}.")
+                   "The extension '.db' may be appended to the filename.")
 @click.option('-S',
               '--scheduler',
               cls=CeleryOption,
+              callback=lambda ctx, _, value: value or ctx.obj.app.conf.beat_scheduler,
               help_group="Beat Options",
-              help="Scheduler class to use."
-                   "Default is {default}.")
+              help="Scheduler class to use.")
 @click.option('--max-interval',
               cls=CeleryOption,
               type=int,
               help_group="Beat Options",
-              help="Scheduler class to use."
-                   "Default is {default}.")
+              help="Max seconds to sleep between schedule iterations.")
 @click.option('-l',
               '--loglevel',
               default='WARNING',
