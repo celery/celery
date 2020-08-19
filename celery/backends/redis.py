@@ -150,7 +150,8 @@ class ResultConsumer(BaseResultConsumer):
             with self.reconnect_on_error():
                 message = self._pubsub.get_message(timeout=timeout)
                 if message and message['type'] == 'message':
-                    self.on_state_change(self._decode_result(message['data']), message)
+                    self.on_state_change(
+                        self._decode_result(message['data']), message)
         elif timeout:
             time.sleep(timeout)
 
@@ -253,8 +254,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                                       'required': CERT_REQUIRED,
                                       'optional': CERT_OPTIONAL,
                                       'none': CERT_NONE}
-            ssl_cert_reqs = self.connparams.get('ssl_cert_reqs', ssl_cert_reqs_missing)
-            ssl_cert_reqs = ssl_string_to_constant.get(ssl_cert_reqs, ssl_cert_reqs)
+            ssl_cert_reqs = self.connparams.get(
+                'ssl_cert_reqs', ssl_cert_reqs_missing)
+            ssl_cert_reqs = ssl_string_to_constant.get(
+                ssl_cert_reqs, ssl_cert_reqs)
             if ssl_cert_reqs not in ssl_string_to_constant.values():
                 raise ValueError(E_REDIS_SSL_CERT_REQS_MISSING_INVALID)
 
@@ -423,7 +426,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         encoded = self.encode([1, tid, state, result])
         with client.pipeline() as pipe:
             pipeline = (
-                pipe.zadd(jkey, {encoded: group_index}).zcount(jkey, "-inf", "+inf")
+                pipe.zadd(jkey, {encoded: group_index}
+                          ).zcount(jkey, "-inf", "+inf")
                 if self._chord_zset
                 else pipe.rpush(jkey, encoded).llen(jkey)
             ).get(tkey)
