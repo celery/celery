@@ -1,6 +1,7 @@
 sphinx_celery==2.0.0
 Sphinx>=3.0.0
 sphinx-testing==0.7.2
+sphinx-click==2.5.0
 -r extras/sqlalchemy.txt
 -r test.txt
 -r deps/mock.txt

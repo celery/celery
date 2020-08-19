@@ -1,12 +1,11 @@
-"""The :program:`celery logtool` command.
-
-.. program:: celery logtool
-"""
+"""The ``celery logtool`` command."""
 import re
 from collections import Counter
 from fileinput import FileInput
 
-from .base import Command
+import click
+
+from celery.bin.base import CeleryCommand
 
 __all__ = ('logtool',)
 
@@ -19,12 +18,10 @@ RE_TASK_RESULT = re.compile(r'.+?[\w\.]+\[.+?\] (.+)')
 REPORT_FORMAT = """
 Report
 ======
-
 Task total: {task[total]}
 Task errors: {task[errors]}
 Task success: {task[succeeded]}
 Task completed: {task[completed]}
-
 Tasks
 =====
 {task[types].format}
@@ -35,7 +32,7 @@ class _task_counts(list):
 
     @property
     def format(self):
-        return '\n'.join('{}: {}'.format(*i) for i in self)
+        return '\n'.join('{0}: {1}'.format(*i) for i in self)
 
 
 def task_info(line):
@@ -43,7 +40,7 @@ def task_info(line):
     return m.groups()
 
 
-class Audit:
+class Audit(object):
 
     def __init__(self, on_task_error=None, on_trace=None, on_debug=None):
         self.ids = set()
@@ -113,53 +110,46 @@ class Audit:
         }
 
 
-class logtool(Command):
+@click.group()
+def logtool():
     """The ``celery logtool`` command."""
 
-    args = """<action> [arguments]
-            .....  stats      [file1|- [file2 [...]]]
-            .....  traces     [file1|- [file2 [...]]]
-            .....  errors     [file1|- [file2 [...]]]
-            .....  incomplete [file1|- [file2 [...]]]
-            .....  debug      [file1|- [file2 [...]]]
-    """
 
-    def run(self, what=None, *files, **kwargs):
-        map = {
-            'stats': self.stats,
-            'traces': self.traces,
-            'errors': self.errors,
-            'incomplete': self.incomplete,
-            'debug': self.debug,
-        }
-        if not what:
-            raise self.UsageError('missing action')
-        elif what not in map:
-            raise self.Error(
-                'action {} not in {}'.format(what, '|'.join(map)),
-            )
+@logtool.command(cls=CeleryCommand)
+@click.argument('files', nargs=-1)
+@click.pass_context
+def stats(ctx, files):
+    ctx.obj.echo(REPORT_FORMAT.format(
+        **Audit().run(files).report()
+    ))
 
-        return map[what](files)
 
-    def stats(self, files):
-        self.out(REPORT_FORMAT.format(
-            **Audit().run(files).report()
-        ))
+@logtool.command(cls=CeleryCommand)
+@click.argument('files', nargs=-1)
+@click.pass_context
+def traces(ctx, files):
+    Audit(on_trace=ctx.obj.echo).run(files)
 
-    def traces(self, files):
-        Audit(on_trace=self.out).run(files)
 
-    def errors(self, files):
-        Audit(on_task_error=self.say1).run(files)
+@logtool.command(cls=CeleryCommand)
+@click.argument('files', nargs=-1)
+@click.pass_context
+def errors(ctx, files):
+    Audit(on_task_error=lambda line, *_: ctx.obj.echo(line)).run(files)
 
-    def incomplete(self, files):
-        audit = Audit()
-        audit.run(files)
-        for task_id in audit.incomplete_tasks():
-            self.error(f'Did not complete: {task_id!r}')
 
-    def debug(self, files):
-        Audit(on_debug=self.out).run(files)
+@logtool.command(cls=CeleryCommand)
+@click.argument('files', nargs=-1)
+@click.pass_context
+def incomplete(ctx, files):
+    audit = Audit()
+    audit.run(files)
+    for task_id in audit.incomplete_tasks():
+        ctx.obj.echo(f'Did not complete: {task_id}')
 
-    def say1(self, line, *_):
-        self.out(line)
+
+@logtool.command(cls=CeleryCommand)
+@click.argument('files', nargs=-1)
+@click.pass_context
+def debug(ctx, files):
+    Audit(on_debug=ctx.obj.echo).run(files)

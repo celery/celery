@@ -10,6 +10,7 @@
 .. toctree::
     :maxdepth: 1
 
+    cli
     celery
     celery.app
     celery.app.task

@@ -1,44 +1,36 @@
 """The ``celery list bindings`` command, used to inspect queue bindings."""
-from celery.bin.base import Command
+import click
+
+from celery.bin.base import CeleryCommand
 
 
-class list_(Command):
+@click.group(name="list")
+def list_():
     """Get info from broker.
 
     Note:
-       For RabbitMQ the management plugin is required.
 
-    Example:
-        .. code-block:: console
-
-            $ celery list bindings
+        For RabbitMQ the management plugin is required.
     """
 
-    args = '[bindings]'
 
-    def list_bindings(self, management):
+@list_.command(cls=CeleryCommand)
+@click.pass_context
+def bindings(ctx):
+    """Inspect queue bindings."""
+    # TODO: Consider using a table formatter for this command.
+    app = ctx.obj.app
+    with app.connection() as conn:
+        app.amqp.TaskConsumer(conn).declare()
+
         try:
-            bindings = management.get_bindings()
+            bindings = conn.manager.get_bindings()
         except NotImplementedError:
-            raise self.Error('Your transport cannot list bindings.')
+            raise click.UsageError('Your transport cannot list bindings.')
 
         def fmt(q, e, r):
-            return self.out(f'{q:<28} {e:<28} {r}')
+            ctx.obj.echo('{0:<28} {1:<28} {2}'.format(q, e, r))
         fmt('Queue', 'Exchange', 'Routing Key')
         fmt('-' * 16, '-' * 16, '-' * 16)
         for b in bindings:
             fmt(b['destination'], b['source'], b['routing_key'])
-
-    def run(self, what=None, *_, **kw):
-        topics = {'bindings': self.list_bindings}
-        available = ', '.join(topics)
-        if not what:
-            raise self.UsageError(
-                f'Missing argument, specify one of: {available}')
-        if what not in topics:
-            raise self.UsageError(
-                'unknown topic {!r} (choose one of: {})'.format(
-                    what, available))
-        with self.app.connection() as conn:
-            self.app.amqp.TaskConsumer(conn).declare()
-            topics[what](conn.manager)

@@ -67,7 +67,7 @@ Examples
     $ celery multi show 10 -l INFO -Q:1-3 images,video -Q:4,5 data
         -Q default -L:4,5 DEBUG
 
-    $ # Additional options are added to each celery worker' command,
+    $ # Additional options are added to each celery worker' comamnd,
     $ # but you can also modify the options for ranges of, or specific workers
 
     $ # 3 workers: Two with 3 processes, and one with 10 processes.
@@ -103,10 +103,12 @@ import signal
 import sys
 from functools import wraps
 
+import click
 from kombu.utils.objects import cached_property
 
 from celery import VERSION_BANNER
 from celery.apps.multi import Cluster, MultiParser, NamespacedOptionParser
+from celery.bin.base import CeleryCommand
 from celery.platforms import EX_FAILURE, EX_OK, signals
 from celery.utils import term
 from celery.utils.text import pluralize
@@ -165,7 +167,7 @@ def using_cluster_and_sig(fun):
     return _inner
 
 
-class TermLogger:
+class TermLogger(object):
 
     splash_text = 'celery multi v{version}'
     splash_context = {'version': VERSION_BANNER}
@@ -275,7 +277,7 @@ class MultiTool(TermLogger):
         try:
             return self.commands[command](*argv) or EX_OK
         except KeyError:
-            return self.error(f'Invalid command: {command}')
+            return self.error('Invalid command: {0}'.format(command))
 
     def _handle_reserved_options(self, argv):
         argv = list(argv)  # don't modify callers argv.
@@ -400,7 +402,7 @@ class MultiTool(TermLogger):
         num_left = len(nodes)
         if num_left:
             self.note(self.colored.blue(
-                '> Waiting for {} {} -> {}...'.format(
+                '> Waiting for {0} {1} -> {2}...'.format(
                     num_left, pluralize(num_left, 'node'),
                     ', '.join(str(node.pid) for node in nodes)),
             ), newline=False)
@@ -417,17 +419,17 @@ class MultiTool(TermLogger):
                 node))
 
     def on_node_start(self, node):
-        self.note(f'\t> {node.name}: ', newline=False)
+        self.note('\t> {0.name}: '.format(node), newline=False)
 
     def on_node_restart(self, node):
         self.note(self.colored.blue(
-            f'> Restarting node {node.name}: '), newline=False)
+            '> Restarting node {0.name}: '.format(node)), newline=False)
 
     def on_node_down(self, node):
-        self.note(f'> {node.name}: {self.DOWN}')
+        self.note('> {0.name}: {1.DOWN}'.format(node, self))
 
     def on_node_shutdown_ok(self, node):
-        self.note(f'\n\t> {node.name}: {self.OK}')
+        self.note('\n\t> {0.name}: {1.OK}'.format(node, self))
 
     def on_node_status(self, node, retval):
         self.note(retval and self.FAILED or self.OK)
@@ -437,13 +439,13 @@ class MultiTool(TermLogger):
             node, sig=sig))
 
     def on_child_spawn(self, node, argstr, env):
-        self.info(f'  {argstr}')
+        self.info('  {0}'.format(argstr))
 
     def on_child_signalled(self, node, signum):
-        self.note(f'* Child was terminated by signal {signum}')
+        self.note('* Child was terminated by signal {0}'.format(signum))
 
     def on_child_failure(self, node, retcode):
-        self.note(f'* Child terminated with exit code {retcode}')
+        self.note('* Child terminated with exit code {0}'.format(retcode))
 
     @cached_property
     def OK(self):
@@ -458,5 +460,15 @@ class MultiTool(TermLogger):
         return str(self.colored.magenta('DOWN'))
 
 
-if __name__ == '__main__':              # pragma: no cover
-    main()
+@click.command(
+    cls=CeleryCommand,
+    context_settings={
+        'allow_extra_args': True,
+        'ignore_unknown_options': True
+    }
+)
+@click.pass_context
+def multi(ctx):
+    """Start multiple worker instances."""
+    cmd = MultiTool(quiet=ctx.obj.quiet, no_color=ctx.obj.no_color)
+    return cmd.execute_from_commandline([''] + ctx.args)

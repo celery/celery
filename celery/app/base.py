@@ -31,10 +31,9 @@ from celery.utils.imports import gen_task_name, instantiate, symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
 from celery.utils.time import timezone, to_utc
-
+from . import backends
 # Load all builtin tasks
 from . import builtins  # noqa
-from . import backends
 from .annotations import prepare as prepare_annotations
 from .autoretry import add_autoretry_behaviour
 from .defaults import DEFAULT_SECURITY_DIGEST, find_deprecated_settings
@@ -341,24 +340,6 @@ class Celery:
         """
         self._pool = None
         _deregister_app(self)
-
-    def start(self, argv=None):
-        """Run :program:`celery` using `argv`.
-
-        Uses :data:`sys.argv` if `argv` is not specified.
-        """
-        return instantiate(
-            'celery.bin.celery:CeleryCommand', app=self
-        ).execute_from_commandline(argv)
-
-    def worker_main(self, argv=None):
-        """Run :program:`celery worker` using `argv`.
-
-        Uses :data:`sys.argv` if `argv` is not specified.
-        """
-        return instantiate(
-            'celery.bin.worker:worker', app=self
-        ).execute_from_commandline(argv)
 
     def task(self, *args, **opts):
         """Decorator to create a task class out of any callable.
