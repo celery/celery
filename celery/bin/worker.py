@@ -55,24 +55,33 @@ class Hostname(StringParamType):
         return host_format(default_nodename(value))
 
 
-class PrefetchMultiplier(IntParamType):
-    """Prefetch multiplier option."""
+class Autoscale(ParamType):
+    name = "<min workers>, <max workers>"
 
-    name = 'multiplier'
+    def convert(self, value, param, ctx):
+        value = value.split(',')
 
+        if len(value) > 2:
+            self.fail("Expected two comma separated integers or one integer."
+                      f"Got {len(value)} instead.")
 
-class Concurrency(IntParamType):
-    """Concurrency option."""
+        if len(value) == 1:
+            try:
+                value = (int(value[0]), 0)
+            except ValueError:
+                self.fail(f"Expected an integer. Got {value} instead.")
 
-    name = 'concurrency'
+        try:
+            return tuple(reversed(sorted(map(int, value))))
+        except ValueError:
+            self.fail("Expected two comma separated integers."
+                      f"Got {value.join(',')} instead.")
 
-
-CONCURRENCY = Concurrency()
 
 CELERY_BEAT = CeleryBeat()
 WORKERS_POOL = WorkersPool()
 HOSTNAME = Hostname()
-PREFETCH_MULTIPLIER = PrefetchMultiplier()
+AUTOSCALE = Autoscale()
 
 C_FAKEFORK = os.environ.get('C_FAKEFORK')
 
@@ -116,14 +125,14 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               default=False,
               help_group="Worker Options",
               help="Start worker as a background process.")
-# TODO: Load default from the app in the context
 @click.option('-S',
               '--statedb',
               cls=CeleryOption,
               type=click.Path(),
+              callback=lambda ctx, _, value: value or ctx.obj.app.conf.worker_state_db,
               help_group="Worker Options",
               help="Path to the state database. The extension '.db' may be"
-                   "appended to the filename.  Default: {default}")
+                   "appended to the filename.")
 @click.option('-l',
               '--loglevel',
               default='WARNING',
@@ -138,18 +147,19 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               type=click.Choice(('default', 'fair')),
               help_group="Worker Options",
               help="Apply optimization profile.")
-# TODO: Load default from the app in the context
 @click.option('--prefetch-multiplier',
-              default=0,
-              type=PREFETCH_MULTIPLIER,
+              type=int,
+              metavar="<prefetch multiplier>",
+              callback=lambda ctx, _, value: value or ctx.obj.app.conf.worker_prefetch_multiplier,
               cls=CeleryOption,
               help_group="Worker Options",
               help="Set custom prefetch multiplier value"
                    "for this worker instance.")
-# TODO: Load default from the app in the context
 @click.option('-c',
               '--concurrency',
-              type=CONCURRENCY,
+              type=int,
+              metavar="<concurrency>",
+              callback=lambda ctx, _, value: value or ctx.obj.app.conf.worker_concurrency,
               cls=CeleryOption,
               help_group="Pool Options",
               help="Number of child processes processing the queue.  "
@@ -202,30 +212,30 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               '--discard',
               is_flag=True,
               cls=CeleryOption,
-              help_group="Queue Options", )
+              help_group="Queue Options")
 @click.option('--queues',
               '-Q',
               type=COMMA_SEPARATED_LIST,
               cls=CeleryOption,
-              help_group="Queue Options", )
+              help_group="Queue Options")
 @click.option('--exclude-queues',
               '-X',
               type=COMMA_SEPARATED_LIST,
               cls=CeleryOption,
-              help_group="Queue Options", )
+              help_group="Queue Options")
 @click.option('--include',
               '-I',
               type=COMMA_SEPARATED_LIST,
               cls=CeleryOption,
-              help_group="Queue Options", )
+              help_group="Queue Options")
 @click.option('--without-gossip',
               default=False,
               cls=CeleryOption,
-              help_group="Features", )
+              help_group="Features")
 @click.option('--without-mingle',
               default=False,
               cls=CeleryOption,
-              help_group="Features", )
+              help_group="Features")
 @click.option('--without-heartbeat',
               default=False,
               cls=CeleryOption,
@@ -235,7 +245,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               cls=CeleryOption,
               help_group="Features", )
 @click.option('--autoscale',
-              type=str,  # TODO: Parse this
+              type=AUTOSCALE,
               cls=CeleryOption,
               help_group="Features", )
 @click.option('-B',
@@ -244,10 +254,10 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               cls=CeleryOption,
               is_flag=True,
               help_group="Embedded Beat Options")
-# TODO: Load default from the app in the context
 @click.option('-s',
               '--schedule-filename',
               '--schedule',
+              callback=lambda ctx, _, value: value or ctx.obj.app.conf.beat_schedule_filename,
               cls=CeleryOption,
               help_group="Embedded Beat Options")
 @click.option('--scheduler',
@@ -317,53 +327,3 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
         **kwargs)
     worker.start()
     return worker.exitcode
-
-
-class Concurrency(IntParamType):
-    """Concurrency option."""
-
-    name = 'concurrency'
-
-
-class CeleryBeat(ParamType):
-    """Celery Beat flag."""
-
-    name = "beat"
-
-    def convert(self, value, param, ctx):
-        if ctx.obj.app.IS_WINDOWS and value:
-            self.fail('-B option does not work on Windows.  '
-                      'Please run celery beat as a separate service.')
-
-        return value
-
-
-class WorkersPool(click.Choice):
-    """Workers pool option."""
-
-    name = "pool"
-
-    def __init__(self):
-        """Initialize the workers pool option with the relevant choices."""
-        super().__init__(('prefork', 'eventlet', 'gevent', 'solo'))
-
-    def convert(self, value, param, ctx):
-        # Pools like eventlet/gevent needs to patch libs as early
-        # as possible.
-        return concurrency.get_implementation(
-            value) or ctx.obj.app.conf.worker_pool
-
-
-class Hostname(StringParamType):
-    """Hostname option."""
-
-    name = "hostname"
-
-    def convert(self, value, param, ctx):
-        return host_format(default_nodename(value))
-
-
-class PrefetchMultiplier(IntParamType):
-    """Prefetch multiplier option."""
-
-    name = 'multiplier'

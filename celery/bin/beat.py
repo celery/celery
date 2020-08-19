@@ -7,7 +7,9 @@ from celery.bin.base import LOG_LEVEL, CeleryDaemonCommand, CeleryOption
 from celery.platforms import detached, maybe_drop_privileges
 
 
-@click.command(cls=CeleryDaemonCommand, context_settings={'allow_extra_args': True})
+@click.command(cls=CeleryDaemonCommand, context_settings={
+    'allow_extra_args': True
+})
 @click.option('--detach',
               cls=CeleryOption,
               is_flag=True,
@@ -18,7 +20,8 @@ from celery.platforms import detached, maybe_drop_privileges
               '--schedule',
               cls=CeleryOption,
               help_group="Beat Options",
-              help="Path to the schedule database.  Defaults to `celerybeat-schedule`."
+              help="Path to the schedule database."
+                   "  Defaults to `celerybeat-schedule`."
                    "The extension '.db' may be appended to the filename."
                    "Default is {default}.")
 @click.option('-S',
@@ -51,7 +54,8 @@ def beat(ctx, detach=False, logfile=None, pidfile=None, uid=None,
             app.config_from_cmdline(ctx.args)
         except (KeyError, ValueError) as e:
             # TODO: Improve the error messages
-            raise click.UsageError("Unable to parse extra configuration from command line.\n"
+            raise click.UsageError("Unable to parse extra configuration"
+                                   " from command line.\n"
                                    f"Reason: {e}", ctx=ctx)
 
     if not detach:
