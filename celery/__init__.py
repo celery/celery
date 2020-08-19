@@ -17,7 +17,7 @@ from . import local  # noqa
 
 SERIES = 'cliffs'
 
-__version__ = '5.0.0a2'
+__version__ = '5.0.0b1'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
