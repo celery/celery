@@ -8,6 +8,7 @@ from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
 from celery.exceptions import ChordError, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
+
 from .conftest import get_active_redis_channels, get_redis_connection
 from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     add_to_all, add_to_all_to_chord, build_chain_inside_task,

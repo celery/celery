@@ -13,7 +13,7 @@ except ImportError:
     ConfigurationError = None
 
 from celery import states, uuid
-from celery.backends.mongodb import InvalidDocument, MongoBackend, Binary
+from celery.backends.mongodb import Binary, InvalidDocument, MongoBackend
 from celery.exceptions import ImproperlyConfigured
 
 COLLECTION = 'taskmeta_celery'

@@ -1,9 +1,9 @@
 import pytest
 from case import Mock
-from celery.utils.text import WhateverIO
 
 from celery.bin.base import Error
 from celery.bin.list import list_
+from celery.utils.text import WhateverIO
 
 
 class test_list:
