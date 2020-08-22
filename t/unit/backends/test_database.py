@@ -28,6 +28,9 @@ class SomeClass:
     def __eq__(self, cmp):
         return self.data == cmp.data
 
+    def __json__(self):
+        return {'data': self.data}
+
 
 @skip.unless_module('sqlalchemy')
 class test_session_cleanup:
@@ -47,14 +50,20 @@ class test_session_cleanup:
         session.close.assert_called_with()
 
 
+@pytest.fixture(params=['pickle', 'json'])
+def result_serializer(request):
+    if request.instance:
+        request.instance.app.conf.result_serializer = request.param
+
+
 @skip.unless_module('sqlalchemy')
 @skip.if_pypy()
 @skip.if_jython()
+@pytest.mark.usefixtures('result_serializer')
 class test_DatabaseBackend:
 
     def setup(self):
         self.uri = 'sqlite:///test.db'
-        self.app.conf.result_serializer = 'pickle'
 
     def test_retry_helper(self):
         from celery.backends.database import DatabaseError
@@ -118,17 +127,6 @@ class test_DatabaseBackend:
         tb.mark_as_done(tid, 42)
         assert tb.get_state(tid) == states.SUCCESS
         assert tb.get_result(tid) == 42
-
-    def test_is_pickled(self):
-        tb = DatabaseBackend(self.uri, app=self.app)
-
-        tid2 = uuid()
-        result = {'foo': 'baz', 'bar': SomeClass(12345)}
-        tb.mark_as_done(tid2, result)
-        # is serialized properly.
-        rindb = tb.get_result(tid2)
-        assert rindb.get('foo') == 'baz'
-        assert rindb.get('bar').data == 12345
 
     def test_mark_as_started(self):
         tb = DatabaseBackend(self.uri, app=self.app)
@@ -222,6 +220,48 @@ class test_DatabaseBackend:
 
     def test_TaskSet__repr__(self):
         assert 'foo', repr(TaskSet('foo' in None))
+
+
+@skip.unless_module('sqlalchemy')
+@skip.if_pypy()
+@skip.if_jython()
+class test_DatabaseBackend_pickle_serializer:
+
+    def setup(self):
+        self.uri = 'sqlite:///test.db'
+        self.app.conf.result_serializer = 'pickle'
+
+    def test_is_pickled(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+
+        tid2 = uuid()
+        result = {'foo': 'baz', 'bar': SomeClass(12345)}
+        tb.mark_as_done(tid2, result)
+        # is serialized properly.
+        rindb = tb.get_result(tid2)
+        assert rindb.get('foo') == 'baz'
+        assert rindb.get('bar').data == 12345
+
+
+@skip.unless_module('sqlalchemy')
+@skip.if_pypy()
+@skip.if_jython()
+class test_DatabaseBackend_json_serializer:
+
+    def setup(self):
+        self.uri = 'sqlite:///test.db'
+        self.app.conf.result_serializer = 'json'
+
+    def test_is_serialized(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+
+        tid2 = uuid()
+        result = {'foo': 'baz', 'bar': SomeClass(12345)}
+        tb.mark_as_done(tid2, result)
+        # is serialized properly.
+        rindb = tb.get_result(tid2)
+        assert rindb.get('foo') == 'baz'
+        assert rindb.get('bar').get('data') == 12345
 
 
 @skip.unless_module('sqlalchemy')

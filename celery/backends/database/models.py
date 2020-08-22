@@ -2,7 +2,6 @@
 from datetime import datetime
 
 import sqlalchemy as sa
-from sqlalchemy.types import PickleType
 
 from celery import states
 
@@ -21,7 +20,7 @@ class Task(ResultModelBase):
                    primary_key=True, autoincrement=True)
     task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
-    result = sa.Column(PickleType, nullable=True)
+    result = sa.Column(sa.LargeBinary(length=(2 ** 31) - 1), nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
                           onupdate=datetime.utcnow, nullable=True)
     traceback = sa.Column(sa.Text, nullable=True)
@@ -83,7 +82,7 @@ class TaskSet(ResultModelBase):
     id = sa.Column(sa.Integer, sa.Sequence('taskset_id_sequence'),
                    autoincrement=True, primary_key=True)
     taskset_id = sa.Column(sa.String(155), unique=True)
-    result = sa.Column(PickleType, nullable=True)
+    result = sa.Column(sa.LargeBinary(length=(2 ** 31) - 1), nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
                           nullable=True)
 

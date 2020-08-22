@@ -4,6 +4,8 @@ from contextlib import contextmanager
 
 from vine.utils import wraps
 
+from kombu.utils.encoding import ensure_bytes
+
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
@@ -128,7 +130,7 @@ class DatabaseBackend(BaseBackend):
     def _update_result(self, task, result, state, traceback=None,
                        request=None):
 
-        meta = self._get_result_meta(result=result, state=state,
+        meta = self._get_result_meta(result=ensure_bytes(self.encode(result)), state=state,
                                      traceback=traceback, request=request,
                                      format_date=False, encode=True)
 
@@ -155,6 +157,9 @@ class DatabaseBackend(BaseBackend):
                 task = self.task_cls(task_id)
                 task.status = states.PENDING
                 task.result = None
+            else:
+                task.result = self.decode(task.result)
+
             data = task.to_dict()
             if data.get('args', None) is not None:
                 data['args'] = self.decode(data['args'])
@@ -167,7 +172,7 @@ class DatabaseBackend(BaseBackend):
         """Store the result of an executed group."""
         session = self.ResultSession()
         with session_cleanup(session):
-            group = self.taskset_cls(group_id, result)
+            group = self.taskset_cls(group_id, ensure_bytes(self.encode(result)))
             session.add(group)
             session.flush()
             session.commit()
@@ -181,6 +186,7 @@ class DatabaseBackend(BaseBackend):
             group = session.query(self.taskset_cls).filter(
                 self.taskset_cls.taskset_id == group_id).first()
             if group:
+                group.result = self.decode(group.result)
                 return group.to_dict()
 
     @retry
