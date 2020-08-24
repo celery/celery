@@ -12,7 +12,7 @@ from celery.contrib.migrate import (State, StopFiltering, _maybe_queue,
                                     migrate_tasks, move, move_by_idmap,
                                     move_by_taskmap, move_task_by_id,
                                     start_filter, task_id_eq, task_id_in)
-from celery.utils.encoding import ensure_bytes
+from kombu.utils.encoding import ensure_bytes
 
 # hack to ignore error at shutdown
 QoS.restore_at_shutdown = False

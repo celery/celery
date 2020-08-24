@@ -10,7 +10,7 @@ from itertools import takewhile
 
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
-from .encoding import safe_repr
+from kombu.utils.encoding import safe_repr
 
 try:
     import cPickle as pickle
