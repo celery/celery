@@ -1,8 +1,9 @@
 import errno
 import socket
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch, skip
+from case import skip
 
 from celery.contrib.rdb import Rdb, debugger, set_trace
 from celery.utils.text import WhateverIO

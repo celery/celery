@@ -1,8 +1,9 @@
 from contextlib import contextmanager
+from unittest.mock import Mock, patch
 
 import pytest
 from amqp import ChannelError
-from case import Mock, mock, patch
+from case import mock
 from kombu import Connection, Exchange, Producer, Queue
 from kombu.transport.virtual import QoS
 
@@ -22,21 +23,19 @@ def Message(body, exchange='exchange', routing_key='rkey',
             compression=None, content_type='application/json',
             content_encoding='utf-8'):
     return Mock(
-        attrs={
-            'body': body,
-            'delivery_info': {
+            body=body,
+            delivery_info={
                 'exchange': exchange,
                 'routing_key': routing_key,
             },
-            'headers': {
+            headers={
                 'compression': compression,
             },
-            'content_type': content_type,
-            'content_encoding': content_encoding,
-            'properties': {
+            content_type=content_type,
+            content_encoding=content_encoding,
+            properties={
                 'correlation_id': isinstance(body, dict) and body['id'] or None
             }
-        },
     )
 
 

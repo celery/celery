@@ -2,9 +2,10 @@ import errno
 import os
 import signal
 import sys
+from unittest.mock import Mock, call, patch
 
 import pytest
-from case import Mock, call, patch, skip
+from case import skip
 
 from celery.apps.multi import (Cluster, MultiParser, NamespacedOptionParser,
                                Node, format_opt)

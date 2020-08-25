@@ -4,9 +4,10 @@ import ssl
 from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
+from unittest.mock import ANY, Mock, call, patch
 
 import pytest
-from case import ANY, ContextMock, Mock, call, mock, patch, skip
+from case import ContextMock, mock, skip
 
 from celery import signature, states, uuid
 from celery.canvas import Signature

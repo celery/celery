@@ -1,5 +1,7 @@
+from unittest.mock import Mock, patch
+
 import pytest
-from case import Mock, mock, patch
+from case import mock
 
 from celery.app.events import Events
 from celery.events.snapshot import Polaroid, evcam

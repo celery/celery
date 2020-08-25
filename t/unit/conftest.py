@@ -4,9 +4,9 @@ import sys
 import threading
 import warnings
 from importlib import import_module
+from unittest.mock import Mock
 
 import pytest
-from case import Mock
 from case.utils import decorator
 from kombu import Queue
 
@@ -113,7 +113,7 @@ def app(celery_app):
 def AAA_disable_multiprocessing():
     # pytest-cov breaks if a multiprocessing.Process is started,
     # so disable them completely to make sure it doesn't happen.
-    from case import patch
+    from unittest.mock import patch
     stuff = [
         'multiprocessing.Process',
         'billiard.Process',

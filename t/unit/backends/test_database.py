@@ -1,8 +1,9 @@
 from datetime import datetime
 from pickle import dumps, loads
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch, skip
+from case import skip
 
 from celery import states, uuid
 from celery.app.task import Context

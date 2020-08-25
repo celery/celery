@@ -2,9 +2,10 @@ import os
 import socket
 import threading
 import time
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch, skip
+from case import skip
 from vine import promise
 
 from celery.backends.asynchronous import BaseResultConsumer

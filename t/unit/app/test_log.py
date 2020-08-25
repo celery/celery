@@ -3,9 +3,10 @@ import sys
 from collections import defaultdict
 from io import StringIO
 from tempfile import mktemp
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, mock, patch
+from case import mock
 from case.utils import get_logger_handlers
 
 from celery import signals, uuid

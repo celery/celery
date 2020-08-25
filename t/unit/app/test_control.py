@@ -1,5 +1,6 @@
+from unittest.mock import Mock
+
 import pytest
-from case import Mock
 
 from celery import uuid
 from celery.app import control

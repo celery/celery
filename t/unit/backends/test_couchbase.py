@@ -1,8 +1,9 @@
 """Tests for the CouchbaseBackend."""
 from datetime import timedelta
+from unittest.mock import MagicMock, Mock, patch, sentinel
 
 import pytest
-from case import MagicMock, Mock, patch, sentinel, skip
+from case import skip
 
 from celery import states
 from celery.app import backends

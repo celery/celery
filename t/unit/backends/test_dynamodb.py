@@ -1,7 +1,8 @@
 from decimal import Decimal
+from unittest.mock import MagicMock, Mock, patch, sentinel
 
 import pytest
-from case import MagicMock, Mock, patch, sentinel, skip
+from case import skip
 
 from celery import states
 from celery.backends import dynamodb as module

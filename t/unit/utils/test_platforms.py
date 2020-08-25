@@ -3,9 +3,10 @@ import os
 import signal
 import sys
 import tempfile
+from unittest.mock import Mock, call, patch
 
 import pytest
-from case import Mock, call, mock, patch, skip
+from case import mock, skip
 
 from celery import _find_option_with_arg, platforms
 from celery.exceptions import SecurityError

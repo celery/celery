@@ -3,10 +3,11 @@ from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
 from queue import Empty, Queue
+from unittest.mock import Mock
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from case import Mock, mock
+from case import mock
 
 from celery import states, uuid
 from celery.app.task import Context

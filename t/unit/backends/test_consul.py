@@ -1,4 +1,6 @@
-from case import Mock, skip
+from unittest.mock import Mock
+
+from case import skip
 
 from celery.backends.consul import ConsulBackend
 

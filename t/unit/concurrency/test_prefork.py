@@ -2,9 +2,10 @@ import errno
 import os
 import socket
 from itertools import cycle
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, mock, patch, skip
+from case import mock, skip
 
 from celery.app.defaults import DEFAULTS
 from celery.concurrency.asynpool import iterate_file_descriptors_safely

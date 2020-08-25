@@ -1,10 +1,11 @@
 import errno
 from datetime import datetime, timedelta
 from pickle import dumps, loads
+from unittest.mock import Mock, call, patch
 
 import pytest
 import pytz
-from case import Mock, call, patch, skip
+from case import skip
 
 from celery import __version__, beat, uuid
 from celery.beat import BeatLazyFunc, event_t

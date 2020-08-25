@@ -1,5 +1,7 @@
+from unittest.mock import Mock, patch
+
 import pytest
-from case import Mock, patch, skip
+from case import skip
 
 from celery.exceptions import ImproperlyConfigured
 from celery.worker.components import Beat, Hub, Pool, Timer

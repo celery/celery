@@ -2,10 +2,11 @@ import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pickle import dumps, loads
+from unittest.mock import Mock
 
 import pytest
 import pytz
-from case import Case, Mock, skip
+from case import Case, skip
 
 from celery.schedules import (ParseException, crontab, crontab_parser,
                               schedule, solar)

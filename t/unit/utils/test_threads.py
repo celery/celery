@@ -1,5 +1,7 @@
+from unittest.mock import patch
+
 import pytest
-from case import mock, patch
+from case import mock
 
 from celery.utils.threads import (Local, LocalManager, _FastLocalStack,
                                   _LocalStack, bgThread)

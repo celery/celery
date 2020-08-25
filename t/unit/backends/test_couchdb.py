@@ -1,5 +1,7 @@
+from unittest.mock import MagicMock, Mock, sentinel
+
 import pytest
-from case import MagicMock, Mock, sentinel, skip
+from case import skip
 
 from celery import states
 from celery.app import backends

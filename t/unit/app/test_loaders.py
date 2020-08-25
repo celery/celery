@@ -1,9 +1,10 @@
 import os
 import sys
 import warnings
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, mock, patch
+from case import mock
 
 from celery import loaders
 from celery.exceptions import NotConfigured

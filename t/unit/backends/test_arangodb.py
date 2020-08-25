@@ -1,8 +1,9 @@
 """Tests for the ArangoDb."""
 import datetime
+from unittest.mock import Mock, patch, sentinel
 
 import pytest
-from case import Mock, patch, sentinel, skip
+from case import skip
 
 from celery.app import backends
 from celery.backends import arangodb as module

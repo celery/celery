@@ -1,5 +1,7 @@
+from unittest.mock import Mock, patch
+
 import pytest
-from case import ContextMock, Mock, patch
+from case import ContextMock
 
 from celery import chord, group
 from celery.app import builtins

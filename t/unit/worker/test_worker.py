@@ -7,10 +7,11 @@ from functools import partial
 from queue import Empty
 from queue import Queue as FastQueue
 from threading import Event
+from unittest.mock import Mock, patch
 
 import pytest
 from amqp import ChannelError
-from case import Mock, mock, patch, skip
+from case import mock, skip
 from kombu import Connection
 from kombu.asynchronous import get_event_loop
 from kombu.common import QoS, ignore_errors
@@ -274,8 +275,12 @@ class test_Consumer(ConsumerCase):
         assert self.timer.empty()
 
     def test_start_channel_error(self):
+        def loop_side_effect():
+            yield KeyError('foo')
+            yield SyntaxError('bar')
+
         c = self.NoopConsumer(task_events=False, pool=BasePool())
-        c.loop.on_nth_call_do_raise(KeyError('foo'), SyntaxError('bar'))
+        c.loop.side_effect = loop_side_effect()
         c.channel_errors = (KeyError,)
         try:
             with pytest.raises(KeyError):
@@ -284,8 +289,11 @@ class test_Consumer(ConsumerCase):
             c.timer and c.timer.stop()
 
     def test_start_connection_error(self):
+        def loop_side_effect():
+            yield KeyError('foo')
+            yield SyntaxError('bar')
         c = self.NoopConsumer(task_events=False, pool=BasePool())
-        c.loop.on_nth_call_do_raise(KeyError('foo'), SyntaxError('bar'))
+        c.loop.side_effect = loop_side_effect()
         c.connection_errors = (KeyError,)
         try:
             with pytest.raises(SyntaxError):
@@ -623,9 +631,14 @@ class test_Consumer(ConsumerCase):
     @patch('kombu.connection.Connection._establish_connection')
     @patch('kombu.utils.functional.sleep')
     def test_connect_errback(self, sleep, connect):
+        def connect_side_effect():
+            yield Mock()
+            while True:
+                yield ChannelError('error')
+
         c = self.NoopConsumer()
         Transport.connection_errors = (ChannelError,)
-        connect.on_nth_call_do(ChannelError('error'), n=1)
+        connect.side_effect = connect_side_effect()
         c.connect()
         connect.assert_called_with()
 

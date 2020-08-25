@@ -3,8 +3,9 @@ from decimal import Decimal
 from itertools import count
 from random import shuffle
 from time import time
+from unittest.mock import Mock, patch
 
-from case import Mock, patch, skip
+from case import skip
 
 from celery import states, uuid
 from celery.events import Event

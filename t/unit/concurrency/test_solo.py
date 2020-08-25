@@ -1,6 +1,5 @@
 import operator
-
-from case import Mock
+from unittest.mock import Mock
 
 from celery import signals
 from celery.concurrency import solo

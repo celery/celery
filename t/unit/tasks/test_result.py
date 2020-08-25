@@ -2,9 +2,10 @@ import copy
 import datetime
 import traceback
 from contextlib import contextmanager
+from unittest.mock import Mock, call, patch
 
 import pytest
-from case import Mock, call, patch, skip
+from case import skip
 
 from celery import states, uuid
 from celery.app.task import Context

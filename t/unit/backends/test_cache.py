@@ -1,9 +1,10 @@
 import sys
 import types
 from contextlib import contextmanager
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, mock, patch, skip
+from case import mock, skip
 from kombu.utils.encoding import ensure_bytes, str_to_bytes
 
 from celery import signature, states, uuid

@@ -1,4 +1,4 @@
-from case import Mock
+from unittest.mock import Mock
 
 from celery.utils.graph import DependencyGraph
 from celery.utils.text import WhateverIO

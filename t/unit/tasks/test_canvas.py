@@ -1,7 +1,7 @@
 import json
+from unittest.mock import MagicMock, Mock
 
 import pytest
-from case import MagicMock, Mock
 
 from celery._state import _task_stack
 from celery.canvas import (Signature, _chain, _maybe_group, chain, chord,

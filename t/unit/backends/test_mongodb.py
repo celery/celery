@@ -1,10 +1,11 @@
 import datetime
 import sys
 from pickle import dumps, loads
+from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 
 import pytest
 import pytz
-from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
+from case import mock, skip
 from kombu.exceptions import EncodeError
 
 try:

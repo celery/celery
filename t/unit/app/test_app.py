@@ -5,9 +5,10 @@ import ssl
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pickle import dumps, loads
+from unittest.mock import Mock, patch
 
 import pytest
-from case import ContextMock, Mock, mock, patch
+from case import ContextMock, mock
 from vine import promise
 
 from celery import Celery, _state

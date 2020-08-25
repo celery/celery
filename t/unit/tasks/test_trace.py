@@ -1,6 +1,7 @@
+from unittest.mock import Mock, patch
+
 import pytest
 from billiard.einfo import ExceptionInfo
-from case import Mock, patch
 from kombu.exceptions import EncodeError
 
 from celery import group, signals, states, uuid

@@ -5,10 +5,10 @@ import socket
 import sys
 from datetime import datetime, timedelta
 from time import monotonic, time
+from unittest.mock import Mock, patch
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from case import Mock, patch
 from kombu.utils.encoding import (default_encode, from_utf8, safe_repr,
                                   safe_str)
 from kombu.utils.uuid import uuid

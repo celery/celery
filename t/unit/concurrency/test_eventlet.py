@@ -1,7 +1,8 @@
 import sys
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch, skip
+from case import skip
 
 from celery.concurrency.eventlet import TaskPool, Timer, apply_target
 

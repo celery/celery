@@ -16,9 +16,10 @@ Generated with:
 import builtins
 import os
 import tempfile
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, mock, patch
+from case import mock
 from kombu.exceptions import SerializerNotInstalled
 from kombu.serialization import disable_insecure_serializers, registry
 

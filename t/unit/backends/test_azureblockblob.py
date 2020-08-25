@@ -1,5 +1,7 @@
+from unittest.mock import Mock, call, patch
+
 import pytest
-from case import Mock, call, patch, skip
+from case import skip
 
 from celery import states
 from celery.backends import azureblockblob

@@ -2,10 +2,11 @@ import json
 import pickle
 import sys
 from datetime import date, datetime, time, timedelta
+from unittest.mock import Mock
 
 import pytest
 import pytz
-from case import Mock, mock
+from case import mock
 from kombu import Queue
 
 from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE,
