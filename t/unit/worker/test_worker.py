@@ -745,7 +745,7 @@ class test_WorkController(ConsumerCase):
             self.worker._send_worker_shutdown()
             ws.send.assert_called_with(sender=self.worker)
 
-    @skip.todo('unstable test')
+    @pytest.mark.skip('TODO: unstable test')
     def test_process_shutdown_on_worker_shutdown(self):
         from celery.concurrency.asynpool import Worker
         from celery.concurrency.prefork import process_destructor
