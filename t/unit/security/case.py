@@ -1,6 +1,7 @@
-from case import skip
+import pytest
 
 
-@skip.unless_module('cryptography')
 class SecurityCase:
-    pass
+
+    def setup(self):
+        pytest.importorskip('cryptography')
