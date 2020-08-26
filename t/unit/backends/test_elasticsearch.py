@@ -3,7 +3,6 @@ from unittest.mock import Mock, call, patch, sentinel
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from case import skip
 from kombu.utils.encoding import bytes_to_str
 
 from celery import states
@@ -27,8 +26,9 @@ _RESULT_FAILURE = (
     '{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}'
 )
 
+pytest.importorskip('elasticsearch')
 
-@skip.unless_module('elasticsearch')
+
 class test_ElasticsearchBackend:
 
     def setup(self):

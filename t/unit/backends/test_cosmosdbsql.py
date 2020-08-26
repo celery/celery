@@ -1,7 +1,6 @@
 from unittest.mock import Mock, call, patch
 
 import pytest
-from case import skip
 
 from celery import states
 from celery.backends import cosmosdbsql
@@ -10,8 +9,9 @@ from celery.exceptions import ImproperlyConfigured
 
 MODULE_TO_MOCK = "celery.backends.cosmosdbsql"
 
+pytest.importorskip('pydocumentdb')
 
-@skip.unless_module("pydocumentdb")
+
 class test_DocumentDBBackend:
     def setup(self):
         self.url = "cosmosdbsql://:key@endpoint"

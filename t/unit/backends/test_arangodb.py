@@ -3,7 +3,6 @@ import datetime
 from unittest.mock import Mock, patch, sentinel
 
 import pytest
-from case import skip
 
 from celery.app import backends
 from celery.backends import arangodb as module
@@ -15,8 +14,9 @@ try:
 except ImportError:
     pyArango = None  # noqa
 
+pytest.importorskip('pyArango')
 
-@skip.unless_module('pyArango')
+
 class test_ArangoDbBackend:
 
     def setup(self):

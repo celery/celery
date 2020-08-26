@@ -9,16 +9,12 @@ from celery import states, uuid
 from celery.app.task import Context
 from celery.exceptions import ImproperlyConfigured
 
-try:
-    import sqlalchemy  # noqa
-except ImportError:
-    DatabaseBackend = Task = TaskSet = retry = None  # noqa
-    SessionManager = session_cleanup = None  # noqa
-else:
-    from celery.backends.database import (DatabaseBackend, retry, session,
-                                          session_cleanup)
-    from celery.backends.database.models import Task, TaskSet
-    from celery.backends.database.session import SessionManager
+pytest.importorskip('sqlalchemy')  # noqa
+
+from celery.backends.database import (DatabaseBackend, retry, session,
+                                      session_cleanup)
+from celery.backends.database.models import Task, TaskSet
+from celery.backends.database.session import SessionManager
 
 
 class SomeClass:
@@ -30,7 +26,6 @@ class SomeClass:
         return self.data == cmp.data
 
 
-@skip.unless_module('sqlalchemy')
 class test_session_cleanup:
 
     def test_context(self):
@@ -48,7 +43,6 @@ class test_session_cleanup:
         session.close.assert_called_with()
 
 
-@skip.unless_module('sqlalchemy')
 @skip.if_pypy()
 @skip.if_jython()
 class test_DatabaseBackend:
@@ -225,7 +219,6 @@ class test_DatabaseBackend:
         assert 'foo', repr(TaskSet('foo' in None))
 
 
-@skip.unless_module('sqlalchemy')
 @skip.if_pypy()
 @skip.if_jython()
 class test_DatabaseBackend_result_extended():
@@ -355,7 +348,6 @@ class test_DatabaseBackend_result_extended():
         assert meta['worker'] == "celery@worker_1"
 
 
-@skip.unless_module('sqlalchemy')
 class test_SessionManager:
 
     def test_after_fork(self):

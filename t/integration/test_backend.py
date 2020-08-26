@@ -1,12 +1,14 @@
 import os
 
 from case import skip
+import pytest
 
 from celery import states
 from celery.backends.azureblockblob import AzureBlockBlobBackend
 
+pytest.importorskip('azure')
 
-@skip.unless_module("azure")
+
 @skip.unless_environ("AZUREBLOCKBLOB_URL")
 class test_AzureBlockBlobBackend:
     def test_crud(self, manager):

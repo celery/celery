@@ -1,8 +1,8 @@
 import sys
 from unittest.mock import Mock, patch
 
-import pytest
 from case import skip
+import pytest
 
 from celery.concurrency.eventlet import TaskPool, Timer, apply_target
 
@@ -14,9 +14,10 @@ eventlet_modules = (
     'greenlet',
 )
 
+pytest.importorskip('eventlet')
+
 
 @skip.if_pypy()
-@skip.unless_module('eventlet')
 class EventletCase:
 
     def setup(self):

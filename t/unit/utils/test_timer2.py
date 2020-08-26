@@ -55,7 +55,7 @@ class test_Timer:
 
         on_tick = Mock(name='on_tick')
         t = timer2.Timer(on_tick=on_tick)
-        ne = t._next_entry = Mock(
+        t._next_entry = Mock(
             name='_next_entry', side_effect=next_entry_side_effect()
         )
         t.run()

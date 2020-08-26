@@ -1,7 +1,6 @@
 from unittest.mock import Mock, call, patch
 
 import pytest
-from case import skip
 
 from celery import states
 from celery.backends import azureblockblob
@@ -10,8 +9,9 @@ from celery.exceptions import ImproperlyConfigured
 
 MODULE_TO_MOCK = "celery.backends.azureblockblob"
 
+pytest.importorskip('azure')
 
-@skip.unless_module("azure")
+
 class test_AzureBlockBlobBackend:
     def setup(self):
         self.url = (

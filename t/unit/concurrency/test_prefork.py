@@ -182,8 +182,10 @@ class ExeMockTaskPool(mp.TaskPool):
 
 
 @skip.if_win32()
-@skip.unless_module('multiprocessing')
 class test_AsynPool:
+
+    def setup(self):
+        pytest.importorskip('multiprocessing')
 
     def test_gen_not_started(self):
 
@@ -332,8 +334,10 @@ class test_AsynPool:
 
 
 @skip.if_win32()
-@skip.unless_module('multiprocessing')
 class test_ResultHandler:
+
+    def setup(self):
+        pytest.importorskip('multiprocessing')
 
     def test_process_result(self):
         x = asynpool.ResultHandler(

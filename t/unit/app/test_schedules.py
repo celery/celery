@@ -24,10 +24,10 @@ def patch_crontab_nowfun(cls, retval):
         cls.nowfun = prev_nowfun
 
 
-@skip.unless_module('ephem')
 class test_solar:
 
     def setup(self):
+        pytest.importorskip('ephem0')
         self.s = solar('sunrise', 60, 30, app=self.app)
 
     def test_reduce(self):

@@ -1,8 +1,10 @@
 import itertools
 import time
 
+import pytest
 from billiard.einfo import ExceptionInfo
-from case import skip
+
+pytest.importorskip('multiprocessing')
 
 
 def do_something(i):
@@ -20,7 +22,6 @@ def raise_something(i):
         return ExceptionInfo()
 
 
-@skip.unless_module('multiprocessing')
 class test_TaskPool:
 
     def setup(self):
