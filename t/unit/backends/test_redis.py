@@ -10,8 +10,7 @@ from case import ANY, ContextMock, Mock, call, mock, patch, skip
 
 from celery import signature, states, uuid
 from celery.canvas import Signature
-from celery.exceptions import (ChordError, CPendingDeprecationWarning,
-                               ImproperlyConfigured)
+from celery.exceptions import (ChordError, ImproperlyConfigured)
 from celery.utils.collections import AttributeDict
 
 
@@ -491,19 +490,6 @@ class test_RedisBackend:
                 uri,
                 app=self.app,
             )
-
-    def test_compat_propertie(self):
-        x = self.Backend(
-            'redis://:bosco@vandelay.com:123//1', app=self.app,
-        )
-        with pytest.warns(CPendingDeprecationWarning):
-            assert x.host == 'vandelay.com'
-        with pytest.warns(CPendingDeprecationWarning):
-            assert x.db == 1
-        with pytest.warns(CPendingDeprecationWarning):
-            assert x.port == 123
-        with pytest.warns(CPendingDeprecationWarning):
-            assert x.password == 'bosco'
 
     def test_conf_raises_KeyError(self):
         self.app.conf = AttributeDict({
