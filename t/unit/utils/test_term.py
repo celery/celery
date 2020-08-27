@@ -4,8 +4,10 @@ from case import skip
 from celery.utils import term
 from celery.utils.term import colored, fg
 
+import t.skip
 
-@skip.if_win32()
+
+@t.skip.if_win32
 class test_colored:
 
     @pytest.fixture(autouse=True)

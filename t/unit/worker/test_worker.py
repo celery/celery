@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from amqp import ChannelError
-from case import mock, skip
+from case import mock
 from kombu import Connection
 from kombu.asynchronous import get_event_loop
 from kombu.common import QoS, ignore_errors
@@ -33,6 +33,8 @@ from celery.worker import worker as worker_module
 from celery.worker.consumer import Consumer
 from celery.worker.pidbox import gPidbox
 from celery.worker.request import Request
+
+import t.skip
 
 
 def MockStep(step=None):
@@ -802,7 +804,7 @@ class test_WorkController(ConsumerCase):
         )
         assert worker.autoscaler
 
-    @skip.if_win32()
+    @t.skip.if_win32
     @mock.sleepdeprived(module=autoscale)
     def test_with_autoscaler_file_descriptor_safety(self):
         # Given: a test celery worker instance with auto scaling
@@ -851,7 +853,7 @@ class test_WorkController(ConsumerCase):
         worker.terminate()
         worker.pool.terminate()
 
-    @skip.if_win32()
+    @t.skip.if_win32
     @mock.sleepdeprived(module=autoscale)
     def test_with_file_descriptor_safety(self):
         # Given: a test celery worker instance

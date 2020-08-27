@@ -16,6 +16,8 @@ from celery.backends.database import (DatabaseBackend, retry, session,
 from celery.backends.database.models import Task, TaskSet
 from celery.backends.database.session import SessionManager
 
+import t.skip
+
 
 class SomeClass:
 
@@ -43,7 +45,7 @@ class test_session_cleanup:
         session.close.assert_called_with()
 
 
-@skip.if_pypy()
+@t.skip.if_pypy
 @skip.if_jython()
 class test_DatabaseBackend:
 
@@ -219,7 +221,7 @@ class test_DatabaseBackend:
         assert 'foo', repr(TaskSet('foo' in None))
 
 
-@skip.if_pypy()
+@t.skip.if_pypy
 @skip.if_jython()
 class test_DatabaseBackend_result_extended():
     def setup(self):

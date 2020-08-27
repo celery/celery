@@ -6,7 +6,7 @@ import tempfile
 from unittest.mock import Mock, call, patch
 
 import pytest
-from case import mock, skip
+from case import mock
 
 from celery import _find_option_with_arg, platforms
 from celery.exceptions import SecurityError
@@ -19,6 +19,8 @@ from celery.platforms import (DaemonContext, LockFailed, Pidfile,
                               set_process_title, setgid, setgroups, setuid,
                               signals)
 from celery.utils.text import WhateverIO
+
+import t.skip
 
 try:
     import resource
@@ -44,7 +46,7 @@ class test_find_option_with_arg:
             ['-f', 'bar'], short_opts=['-f']) == 'bar'
 
 
-@skip.if_win32()
+@t.skip.if_win32
 def test_fd_by_path():
     test_file = tempfile.NamedTemporaryFile()
     try:
@@ -121,7 +123,7 @@ class test_Signals:
         assert signals.supported('INT')
         assert not signals.supported('SIGIMAGINARY')
 
-    @skip.if_win32()
+    @t.skip.if_win32
     def test_reset_alarm(self):
         with patch('signal.alarm') as _alarm:
             signals.reset_alarm()
@@ -166,7 +168,7 @@ class test_Signals:
         signals['INT'] = lambda *a: a
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_get_fdmax:
 
     @patch('resource.getrlimit')
@@ -185,7 +187,7 @@ class test_get_fdmax:
             assert get_fdmax(None) == 13
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_maybe_drop_privileges:
 
     def test_on_windows(self):
@@ -302,7 +304,7 @@ class test_maybe_drop_privileges:
         setuid.assert_not_called()
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_setget_uid_gid:
 
     @patch('celery.platforms.parse_uid')
@@ -359,7 +361,7 @@ class test_setget_uid_gid:
             parse_gid('group')
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_initgroups:
 
     @patch('pwd.getpwuid')
@@ -395,7 +397,7 @@ class test_initgroups:
                 os.initgroups = prev
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_detached:
 
     def test_without_resource(self):
@@ -435,7 +437,7 @@ class test_detached:
         pidlock.assert_called_with('/foo/bar/pid')
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_DaemonContext:
 
     @patch('multiprocessing.util._run_after_forkers')
@@ -503,7 +505,7 @@ class test_DaemonContext:
             x.open()
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_Pidfile:
 
     @patch('celery.platforms.Pidfile')
@@ -769,7 +771,7 @@ class test_setgroups:
         with pytest.raises(OSError):
             _setgroups_hack(list(range(400)))
 
-    @skip.if_win32()
+    @t.skip.if_win32
     @patch('celery.platforms._setgroups_hack')
     def test_setgroups(self, hack):
         with patch('os.sysconf') as sysconf:
@@ -777,7 +779,7 @@ class test_setgroups:
             setgroups(list(range(400)))
             hack.assert_called_with(list(range(100)))
 
-    @skip.if_win32()
+    @t.skip.if_win32
     @patch('celery.platforms._setgroups_hack')
     def test_setgroups_sysconf_raises(self, hack):
         with patch('os.sysconf') as sysconf:
@@ -785,7 +787,7 @@ class test_setgroups:
             setgroups(list(range(400)))
             hack.assert_called_with(list(range(400)))
 
-    @skip.if_win32()
+    @t.skip.if_win32
     @patch('os.getgroups')
     @patch('celery.platforms._setgroups_hack')
     def test_setgroups_raises_ESRCH(self, hack, getgroups):
@@ -797,7 +799,7 @@ class test_setgroups:
             with pytest.raises(OSError):
                 setgroups(list(range(400)))
 
-    @skip.if_win32()
+    @t.skip.if_win32
     @patch('os.getgroups')
     @patch('celery.platforms._setgroups_hack')
     def test_setgroups_raises_EPERM(self, hack, getgroups):

@@ -5,13 +5,15 @@ from itertools import cycle
 from unittest.mock import Mock, patch
 
 import pytest
-from case import mock, skip
+from case import mock
 
 from celery.app.defaults import DEFAULTS
 from celery.concurrency.asynpool import iterate_file_descriptors_safely
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import noop
 from celery.utils.objects import Bunch
+
+import t.skip
 
 try:
     from celery.concurrency import asynpool
@@ -181,7 +183,7 @@ class ExeMockTaskPool(mp.TaskPool):
     Pool = BlockingPool = ExeMockPool
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_AsynPool:
 
     def setup(self):
@@ -333,7 +335,7 @@ class test_AsynPool:
         assert fd_iter == {}, "Expected all items removed from managed dict"
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_ResultHandler:
 
     def setup(self):
