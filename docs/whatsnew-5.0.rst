@@ -140,6 +140,12 @@ Billiard
 
 Starting from this release, the minimum required version is Billiard 3.6.3.
 
+Eventlet Workers Pool
+---------------------
+
+Due to `eventlet/eventlet#526 <https://github.com/eventlet/eventlet/issues/526>`_
+the minimum required eventlet version is now 0.26.1.
+
 .. _v500-news:
 
 News
