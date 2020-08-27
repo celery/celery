@@ -1,5 +1,4 @@
 import pytest
-from case import skip
 
 from celery.utils import term
 from celery.utils.term import colored, fg
