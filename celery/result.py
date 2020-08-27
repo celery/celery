@@ -2,9 +2,8 @@
 
 import datetime
 import time
-from collections import OrderedDict, deque
+from collections import deque
 from contextlib import contextmanager
-from copy import copy
 
 from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
