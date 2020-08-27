@@ -3,7 +3,6 @@ from pickle import dumps, loads
 from unittest.mock import Mock, patch
 
 import pytest
-from case import skip
 
 from celery import states, uuid
 from celery.app.task import Context
@@ -46,7 +45,6 @@ class test_session_cleanup:
 
 
 @t.skip.if_pypy
-@skip.if_jython()
 class test_DatabaseBackend:
 
     def setup(self):
@@ -222,7 +220,6 @@ class test_DatabaseBackend:
 
 
 @t.skip.if_pypy
-@skip.if_jython()
 class test_DatabaseBackend_result_extended():
     def setup(self):
         self.uri = 'sqlite:///test.db'
