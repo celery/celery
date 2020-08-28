@@ -8,14 +8,14 @@ from celery import states, uuid
 from celery.app.task import Context
 from celery.exceptions import ImproperlyConfigured
 
-pytest.importorskip('sqlalchemy')  # noqa
+pytest.importorskip('sqlalchemy')
 
-from celery.backends.database import (DatabaseBackend, retry, session,
+from celery.backends.database import (DatabaseBackend, retry, session,    # noqa
                                       session_cleanup)
-from celery.backends.database.models import Task, TaskSet
-from celery.backends.database.session import SessionManager
+from celery.backends.database.models import Task, TaskSet    # noqa
+from celery.backends.database.session import SessionManager  # noqa
 
-import t.skip
+from t import skip   # noqa
 
 
 class SomeClass:
@@ -44,7 +44,7 @@ class test_session_cleanup:
         session.close.assert_called_with()
 
 
-@t.skip.if_pypy
+@skip.if_pypy
 class test_DatabaseBackend:
 
     def setup(self):
@@ -219,7 +219,7 @@ class test_DatabaseBackend:
         assert 'foo', repr(TaskSet('foo' in None))
 
 
-@t.skip.if_pypy
+@skip.if_pypy
 class test_DatabaseBackend_result_extended():
     def setup(self):
         self.uri = 'sqlite:///test.db'
