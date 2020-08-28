@@ -1,9 +1,14 @@
 import os
-import posix
+import importlib
 
 import pytest
 
 from celery.utils.sysinfo import df, load_average
+
+try:
+    posix = importlib.import_module('posix')
+except Exception:
+    posix = None
 
 
 @pytest.mark.skipif(
