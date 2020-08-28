@@ -3,9 +3,9 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timedelta
 from queue import Queue as FastQueue
+from unittest.mock import Mock, call, patch
 
 import pytest
-from case import Mock, call, patch
 from kombu import pidbox
 from kombu.utils.uuid import uuid
 

@@ -1,10 +1,11 @@
 import errno
 import socket
 from collections import deque
+from unittest.mock import Mock, call, patch
 
 import pytest
 from billiard.exceptions import RestartFreqExceeded
-from case import ContextMock, Mock, call, patch
+from case import ContextMock
 
 from celery.utils.collections import LimitedSet
 from celery.worker.consumer.agent import Agent

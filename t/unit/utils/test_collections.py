@@ -5,12 +5,13 @@ from time import monotonic
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from case import skip
 
 from celery.utils.collections import (AttributeDict, BufferMap,
                                       ConfigurationView, DictAttribute,
                                       LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
+
+import t.skip
 
 
 class test_DictAttribute:
@@ -153,7 +154,7 @@ class test_ExceptionInfo:
             assert repr(einfo)
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_LimitedSet:
 
     def test_add(self):

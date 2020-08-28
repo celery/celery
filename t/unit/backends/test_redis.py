@@ -4,9 +4,10 @@ import ssl
 from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
+from unittest.mock import ANY, Mock, call, patch
 
 import pytest
-from case import ANY, ContextMock, Mock, call, mock, patch, skip
+from case import ContextMock, mock
 
 from celery import signature, states, uuid
 from celery.canvas import Signature
@@ -292,8 +293,9 @@ class test_RedisBackend:
         self.b = self.Backend(app=self.app)
 
     @pytest.mark.usefixtures('depends_on_current_app')
-    @skip.unless_module('redis')
     def test_reduce(self):
+        pytest.importorskip('redis')
+
         from celery.backends.redis import RedisBackend
         x = RedisBackend(app=self.app)
         assert loads(dumps(x))
@@ -317,8 +319,9 @@ class test_RedisBackend:
         assert x.connparams['socket_timeout'] == 30.0
         assert x.connparams['socket_connect_timeout'] == 100.0
 
-    @skip.unless_module('redis')
     def test_timeouts_in_url_coerced(self):
+        pytest.importorskip('redis')
+
         x = self.Backend(
             ('redis://:bosco@vandelay.com:123//1?'
              'socket_timeout=30&socket_connect_timeout=100'),
@@ -332,8 +335,9 @@ class test_RedisBackend:
         assert x.connparams['socket_timeout'] == 30
         assert x.connparams['socket_connect_timeout'] == 100
 
-    @skip.unless_module('redis')
     def test_socket_url(self):
+        pytest.importorskip('redis')
+
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
         x = self.Backend(
@@ -350,8 +354,9 @@ class test_RedisBackend:
         assert 'socket_keepalive' not in x.connparams
         assert x.connparams['db'] == 3
 
-    @skip.unless_module('redis')
     def test_backend_ssl(self):
+        pytest.importorskip('redis')
+
         self.app.conf.redis_backend_use_ssl = {
             'ssl_cert_reqs': ssl.CERT_REQUIRED,
             'ssl_ca_certs': '/path/to/ca.crt',
@@ -378,12 +383,13 @@ class test_RedisBackend:
         from redis.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
-    @skip.unless_module('redis')
     @pytest.mark.parametrize('cert_str', [
         "required",
         "CERT_REQUIRED",
     ])
     def test_backend_ssl_certreq_str(self, cert_str):
+        pytest.importorskip('redis')
+
         self.app.conf.redis_backend_use_ssl = {
             'ssl_cert_reqs': cert_str,
             'ssl_ca_certs': '/path/to/ca.crt',
@@ -410,12 +416,13 @@ class test_RedisBackend:
         from redis.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
-    @skip.unless_module('redis')
     @pytest.mark.parametrize('cert_str', [
         "required",
         "CERT_REQUIRED",
     ])
     def test_backend_ssl_url(self, cert_str):
+        pytest.importorskip('redis')
+
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
         x = self.Backend(
@@ -434,12 +441,13 @@ class test_RedisBackend:
         from redis.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
-    @skip.unless_module('redis')
     @pytest.mark.parametrize('cert_str', [
         "none",
         "CERT_NONE",
     ])
     def test_backend_ssl_url_options(self, cert_str):
+        pytest.importorskip('redis')
+
         x = self.Backend(
             (
                 'rediss://:bosco@vandelay.com:123//1'
@@ -460,12 +468,13 @@ class test_RedisBackend:
         assert x.connparams['ssl_certfile'] == '/var/ssl/redis-server-cert.pem'
         assert x.connparams['ssl_keyfile'] == '/var/ssl/private/worker-key.pem'
 
-    @skip.unless_module('redis')
     @pytest.mark.parametrize('cert_str', [
         "optional",
         "CERT_OPTIONAL",
     ])
     def test_backend_ssl_url_cert_none(self, cert_str):
+        pytest.importorskip('redis')
+
         x = self.Backend(
             'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=%s' % cert_str,
             app=self.app,
@@ -479,12 +488,13 @@ class test_RedisBackend:
         from redis.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
-    @skip.unless_module('redis')
     @pytest.mark.parametrize("uri", [
         'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_KITTY_CATS',
         'rediss://:bosco@vandelay.com:123//1'
     ])
     def test_backend_ssl_url_invalid(self, uri):
+        pytest.importorskip('redis')
+
         with pytest.raises(ValueError):
             self.Backend(
                 uri,
@@ -930,8 +940,9 @@ class test_SentinelBackend:
         self.b = self.Backend(app=self.app)
 
     @pytest.mark.usefixtures('depends_on_current_app')
-    @skip.unless_module('redis')
     def test_reduce(self):
+        pytest.importorskip('redis')
+
         from celery.backends.redis import SentinelBackend
         x = SentinelBackend(app=self.app)
         assert loads(dumps(x))

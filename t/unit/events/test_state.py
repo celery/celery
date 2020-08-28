@@ -3,8 +3,9 @@ from decimal import Decimal
 from itertools import count
 from random import shuffle
 from time import time
+from unittest.mock import Mock, patch
 
-from case import Mock, patch, skip
+import pytest
 
 from celery import states, uuid
 from celery.events import Event
@@ -339,7 +340,7 @@ class test_State:
         assert now[1][0] == tC
         assert now[2][0] == tB
 
-    @skip.todo(reason='not working')
+    @pytest.mark.skip('TODO: not working')
     def test_task_descending_clock_ordering(self):
         state = State()
         r = ev_logical_clock_ordering(state)

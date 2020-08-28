@@ -1,7 +1,6 @@
 import sys
 import time
-
-from case import Mock, call, patch
+from unittest.mock import Mock, call, patch
 
 from celery.utils import timer2 as timer2
 
@@ -46,11 +45,19 @@ class test_Timer:
 
     @patch('celery.utils.timer2.sleep')
     def test_on_tick(self, sleep):
+        def next_entry_side_effect():
+            # side effect simulating following scenario:
+            # 3.33, 3.33, 3.33, <shutdown event set>
+            for _ in range(3):
+                yield 3.33
+            while True:
+                yield t._is_shutdown.set()
+
         on_tick = Mock(name='on_tick')
         t = timer2.Timer(on_tick=on_tick)
-        ne = t._next_entry = Mock(name='_next_entry')
-        ne.return_value = 3.33
-        ne.on_nth_call_do(t._is_shutdown.set, 3)
+        t._next_entry = Mock(
+            name='_next_entry', side_effect=next_entry_side_effect()
+        )
         t.run()
         sleep.assert_called_with(3.33)
         on_tick.assert_has_calls([call(3.33), call(3.33), call(3.33)])

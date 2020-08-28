@@ -1,7 +1,7 @@
 import sys
+from unittest.mock import Mock
 
 import pytest
-from case import Mock
 
 from celery.local import PromiseProxy, Proxy, maybe_evaluate, try_import
 

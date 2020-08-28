@@ -1,7 +1,7 @@
 from contextlib import contextmanager
+from unittest.mock import Mock, patch, sentinel
 
 import pytest
-from case import Mock, patch, sentinel
 
 from celery import canvas, group, result, uuid
 from celery.exceptions import ChordError, Retry

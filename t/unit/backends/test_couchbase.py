@@ -1,8 +1,8 @@
 """Tests for the CouchbaseBackend."""
 from datetime import timedelta
+from unittest.mock import MagicMock, Mock, patch, sentinel
 
 import pytest
-from case import MagicMock, Mock, patch, sentinel, skip
 
 from celery import states
 from celery.app import backends
@@ -17,8 +17,9 @@ except ImportError:
 
 COUCHBASE_BUCKET = 'celery_bucket'
 
+pytest.importorskip('couchbase')
 
-@skip.unless_module('couchbase')
+
 class test_CouchbaseBackend:
 
     def setup(self):

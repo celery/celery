@@ -1,8 +1,8 @@
 from collections import defaultdict
 from contextlib import contextmanager
+from unittest.mock import ANY, Mock, patch
 
 import pytest
-from case import ANY, Mock, patch
 from kombu.utils.limits import TokenBucket
 
 from celery import Task, signals

@@ -2,9 +2,9 @@ import copy
 import datetime
 import traceback
 from contextlib import contextmanager
+from unittest.mock import Mock, call, patch
 
 import pytest
-from case import Mock, call, patch, skip
 
 from celery import states, uuid
 from celery.app.task import Context
@@ -260,8 +260,9 @@ class test_AsyncResult:
         assert excinfo.value.args[0] == 'blue'
         assert excinfo.typename == 'KeyError'
 
-    @skip.unless_module('tblib')
     def test_raising_remote_tracebacks(self):
+        pytest.importorskip('tblib')
+
         withtb = self.app.AsyncResult(self.task5['id'])
         self.app.conf.task_remote_tracebacks = True
         with pytest.raises(KeyError) as excinfo:

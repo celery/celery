@@ -1,15 +1,16 @@
 from decimal import Decimal
+from unittest.mock import MagicMock, Mock, patch, sentinel
 
 import pytest
-from case import MagicMock, Mock, patch, sentinel, skip
 
 from celery import states
 from celery.backends import dynamodb as module
 from celery.backends.dynamodb import DynamoDBBackend
 from celery.exceptions import ImproperlyConfigured
 
+pytest.importorskip('boto3')
 
-@skip.unless_module('boto3')
+
 class test_DynamoDBBackend:
     def setup(self):
         self._static_timestamp = Decimal(1483425566.52)  # noqa

@@ -2,12 +2,13 @@ import errno
 import os
 import signal
 import sys
+from unittest.mock import Mock, call, patch
 
 import pytest
-from case import Mock, call, patch, skip
 
 from celery.apps.multi import (Cluster, MultiParser, NamespacedOptionParser,
                                Node, format_opt)
+import t.skip
 
 
 class test_functions:
@@ -383,7 +384,7 @@ class test_Cluster:
         for node in nodes:
             node.send.assert_called_with(15, self.cluster.on_node_signal_dead)
 
-    @skip.if_win32()
+    @t.skip.if_win32
     def test_kill(self):
         self.cluster.send_all = Mock(name='.send_all')
         self.cluster.kill()

@@ -7,10 +7,11 @@ from functools import partial
 from queue import Empty
 from queue import Queue as FastQueue
 from threading import Event
+from unittest.mock import Mock, patch
 
 import pytest
 from amqp import ChannelError
-from case import Mock, mock, patch, skip
+from case import mock
 from kombu import Connection
 from kombu.asynchronous import get_event_loop
 from kombu.common import QoS, ignore_errors
@@ -32,6 +33,8 @@ from celery.worker import worker as worker_module
 from celery.worker.consumer import Consumer
 from celery.worker.pidbox import gPidbox
 from celery.worker.request import Request
+
+import t.skip
 
 
 def MockStep(step=None):
@@ -274,8 +277,12 @@ class test_Consumer(ConsumerCase):
         assert self.timer.empty()
 
     def test_start_channel_error(self):
+        def loop_side_effect():
+            yield KeyError('foo')
+            yield SyntaxError('bar')
+
         c = self.NoopConsumer(task_events=False, pool=BasePool())
-        c.loop.on_nth_call_do_raise(KeyError('foo'), SyntaxError('bar'))
+        c.loop.side_effect = loop_side_effect()
         c.channel_errors = (KeyError,)
         try:
             with pytest.raises(KeyError):
@@ -284,8 +291,11 @@ class test_Consumer(ConsumerCase):
             c.timer and c.timer.stop()
 
     def test_start_connection_error(self):
+        def loop_side_effect():
+            yield KeyError('foo')
+            yield SyntaxError('bar')
         c = self.NoopConsumer(task_events=False, pool=BasePool())
-        c.loop.on_nth_call_do_raise(KeyError('foo'), SyntaxError('bar'))
+        c.loop.side_effect = loop_side_effect()
         c.connection_errors = (KeyError,)
         try:
             with pytest.raises(SyntaxError):
@@ -623,9 +633,14 @@ class test_Consumer(ConsumerCase):
     @patch('kombu.connection.Connection._establish_connection')
     @patch('kombu.utils.functional.sleep')
     def test_connect_errback(self, sleep, connect):
+        def connect_side_effect():
+            yield Mock()
+            while True:
+                yield ChannelError('error')
+
         c = self.NoopConsumer()
         Transport.connection_errors = (ChannelError,)
-        connect.on_nth_call_do(ChannelError('error'), n=1)
+        connect.side_effect = connect_side_effect()
         c.connect()
         connect.assert_called_with()
 
@@ -732,7 +747,7 @@ class test_WorkController(ConsumerCase):
             self.worker._send_worker_shutdown()
             ws.send.assert_called_with(sender=self.worker)
 
-    @skip.todo('unstable test')
+    @pytest.mark.skip('TODO: unstable test')
     def test_process_shutdown_on_worker_shutdown(self):
         from celery.concurrency.asynpool import Worker
         from celery.concurrency.prefork import process_destructor
@@ -789,7 +804,7 @@ class test_WorkController(ConsumerCase):
         )
         assert worker.autoscaler
 
-    @skip.if_win32()
+    @t.skip.if_win32
     @mock.sleepdeprived(module=autoscale)
     def test_with_autoscaler_file_descriptor_safety(self):
         # Given: a test celery worker instance with auto scaling
@@ -838,7 +853,7 @@ class test_WorkController(ConsumerCase):
         worker.terminate()
         worker.pool.terminate()
 
-    @skip.if_win32()
+    @t.skip.if_win32
     @mock.sleepdeprived(module=autoscale)
     def test_with_file_descriptor_safety(self):
         # Given: a test celery worker instance

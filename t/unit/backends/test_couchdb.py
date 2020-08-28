@@ -1,5 +1,6 @@
+from unittest.mock import MagicMock, Mock, sentinel
+
 import pytest
-from case import MagicMock, Mock, sentinel, skip
 
 from celery import states
 from celery.app import backends
@@ -14,8 +15,9 @@ except ImportError:
 
 COUCHDB_CONTAINER = 'celery_container'
 
+pytest.importorskip('pycouchdb')
 
-@skip.unless_module('pycouchdb')
+
 class test_CouchBackend:
 
     def setup(self):

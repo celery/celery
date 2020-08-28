@@ -3,7 +3,7 @@ import pickle
 import tempfile
 
 import pytest
-from case import skip
+import t.skip
 
 from celery import states, uuid
 from celery.backends import filesystem
@@ -11,7 +11,7 @@ from celery.backends.filesystem import FilesystemBackend
 from celery.exceptions import ImproperlyConfigured
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_FilesystemBackend:
 
     def setup(self):

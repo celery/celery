@@ -1,8 +1,9 @@
 from datetime import datetime
 from pickle import dumps, loads
+from unittest.mock import Mock
 
 import pytest
-from case import Mock, mock
+from case import mock
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured

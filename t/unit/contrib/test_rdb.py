@@ -1,11 +1,13 @@
 import errno
 import socket
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch, skip
 
 from celery.contrib.rdb import Rdb, debugger, set_trace
 from celery.utils.text import WhateverIO
+
+import t.skip
 
 
 class SockErr(socket.error):
@@ -28,7 +30,7 @@ class test_Rdb:
         debugger.return_value.set_trace.assert_called()
 
     @patch('celery.contrib.rdb.Rdb.get_avail_port')
-    @skip.if_pypy()
+    @t.skip.if_pypy
     def test_rdb(self, get_avail_port):
         sock = Mock()
         get_avail_port.return_value = (sock, 8000)
@@ -72,7 +74,7 @@ class test_Rdb:
             rdb.set_quit.assert_called_with()
 
     @patch('socket.socket')
-    @skip.if_pypy()
+    @t.skip.if_pypy
     def test_get_avail_port(self, sock):
         out = WhateverIO()
         sock.return_value.accept.return_value = (Mock(), ['helu'])

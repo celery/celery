@@ -1,8 +1,12 @@
+from unittest.mock import Mock, patch
+
 import pytest
-from case import Mock, patch, skip
 
 from celery.exceptions import ImproperlyConfigured
 from celery.worker.components import Beat, Hub, Pool, Timer
+
+
+import t.skip
 
 # some of these are tested in test_worker, so I've only written tests
 # here to complete coverage.  Should move everything to this module at some
@@ -59,7 +63,7 @@ class test_Pool:
         comp.close(w)
         comp.terminate(w)
 
-    @skip.if_win32()
+    @t.skip.if_win32
     def test_create_when_eventloop(self):
         w = Mock()
         w.use_eventloop = w.pool_putlocks = w.pool_cls.uses_semaphore = True

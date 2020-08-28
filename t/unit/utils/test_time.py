@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, tzinfo
+from unittest.mock import Mock, patch
 
 import pytest
 import pytz
-from case import Mock, patch
 from pytz import AmbiguousTimeError
 
 from celery.utils.iso8601 import parse_iso8601

@@ -1,9 +1,15 @@
-from case import skip
+import os
+import posix
+
+import pytest
 
 from celery.utils.sysinfo import df, load_average
 
 
-@skip.unless_symbol('os.getloadavg')
+@pytest.mark.skipif(
+        not hasattr(os, 'getloadavg'),
+        reason='Function os.getloadavg is not defined'
+)
 def test_load_average(patching):
     getloadavg = patching('os.getloadavg')
     getloadavg.return_value = 0.54736328125, 0.6357421875, 0.69921875
@@ -12,7 +18,10 @@ def test_load_average(patching):
     assert l == (0.55, 0.64, 0.7)
 
 
-@skip.unless_symbol('posix.statvfs_result')
+@pytest.mark.skipif(
+        not hasattr(posix, 'statvfs_result'),
+        reason='Function posix.statvfs_result is not defined'
+)
 def test_df():
     x = df('/')
     assert x.total_blocks

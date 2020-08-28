@@ -2,14 +2,16 @@ import os
 import socket
 import threading
 import time
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch, skip
 from vine import promise
 
 from celery.backends.asynchronous import BaseResultConsumer
 from celery.backends.base import Backend
 from celery.utils import cached_property
+
+pytest.importorskip('gevent')
 
 
 @pytest.fixture(autouse=True)
@@ -138,7 +140,6 @@ class DrainerTests(object):
         assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
 
 
-@skip.unless_module('eventlet')
 class test_EventletDrainer(DrainerTests):
     @pytest.fixture(autouse=True)
     def setup_drainer(self):
@@ -185,7 +186,6 @@ class test_Drainer(DrainerTests):
         thread.join()
 
 
-@skip.unless_module('gevent')
 class test_GeventDrainer(DrainerTests):
     @pytest.fixture(autouse=True)
     def setup_drainer(self):

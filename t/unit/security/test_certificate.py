@@ -1,8 +1,9 @@
 import datetime
 import os
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, mock, patch, skip
+from case import mock
 
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
@@ -29,7 +30,7 @@ class test_Certificate(SecurityCase):
         with pytest.raises(SecurityError):
             Certificate(KEY1)
 
-    @skip.todo(reason='cert expired')
+    @pytest.mark.skip('TODO: cert expired')
     def test_has_expired(self):
         assert not Certificate(CERT1).has_expired()
 

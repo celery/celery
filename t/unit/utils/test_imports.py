@@ -1,7 +1,7 @@
 import sys
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch
 
 from celery.utils.imports import (NotAPackage, find_module, gen_task_name,
                                   module_file, qualname, reload_from_cwd)

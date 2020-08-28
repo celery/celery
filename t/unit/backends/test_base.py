@@ -1,8 +1,8 @@
 import sys
 from contextlib import contextmanager
+from unittest.mock import ANY, Mock, call, patch, sentinel
 
 import pytest
-from case import ANY, Mock, call, patch, sentinel
 from kombu.serialization import prepare_accept_content
 from kombu.utils.encoding import ensure_bytes
 

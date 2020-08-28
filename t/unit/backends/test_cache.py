@@ -1,9 +1,10 @@
 import sys
 import types
 from contextlib import contextmanager
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, mock, patch, skip
+from case import mock
 from kombu.utils.encoding import ensure_bytes, str_to_bytes
 
 from celery import signature, states, uuid
@@ -131,8 +132,8 @@ class test_CacheBackend:
         b = CacheBackend(backend=backend, app=self.app)
         assert b.as_uri() == backend
 
-    @skip.unless_module('memcached', name='python-memcached')
     def test_regression_worker_startup_info(self):
+        pytest.importorskip('memcached')
         self.app.conf.result_backend = (
             'cache+memcached://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/'
         )

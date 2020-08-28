@@ -1,9 +1,9 @@
 import errno
 import socket
 from queue import Empty
+from unittest.mock import Mock
 
 import pytest
-from case import Mock
 from kombu.asynchronous import ERR, READ, WRITE, Hub
 from kombu.exceptions import DecodeError
 

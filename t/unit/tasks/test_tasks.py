@@ -1,9 +1,10 @@
 import socket
 import tempfile
 from datetime import datetime, timedelta
+from unittest.mock import ANY, MagicMock, Mock, patch
 
 import pytest
-from case import ANY, ContextMock, MagicMock, Mock, patch
+from case import ContextMock
 from kombu import Queue
 from kombu.exceptions import EncodeError
 

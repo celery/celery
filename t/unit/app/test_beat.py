@@ -1,10 +1,10 @@
 import errno
 from datetime import datetime, timedelta
 from pickle import dumps, loads
+from unittest.mock import Mock, call, patch
 
 import pytest
 import pytz
-from case import Mock, call, patch, skip
 
 from celery import __version__, beat, uuid
 from celery.beat import BeatLazyFunc, event_t
@@ -745,8 +745,8 @@ class test_Service:
 
 class test_EmbeddedService:
 
-    @skip.unless_module('_multiprocessing', name='multiprocessing')
     def xxx_start_stop_process(self):
+        pytest.importorskip('_multiprocessing')
         from billiard.process import Process
 
         s = beat.EmbeddedService(self.app)

@@ -1,8 +1,8 @@
 import pickle
 from time import time
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch
 
 from celery import uuid
 from celery.exceptions import WorkerShutdown, WorkerTerminate

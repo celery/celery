@@ -1,5 +1,6 @@
+from unittest.mock import patch
+
 import pytest
-from case import patch
 
 from celery.app import backends
 from celery.backends.amqp import AMQPBackend

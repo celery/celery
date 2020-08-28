@@ -1,7 +1,8 @@
+from unittest.mock import patch
+
 import boto3
 import pytest
 from botocore.exceptions import ClientError
-from case import patch
 from moto import mock_s3
 
 from celery import states

@@ -1,23 +1,21 @@
 from datetime import datetime
 from pickle import dumps, loads
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch, skip
 
 from celery import states, uuid
 from celery.app.task import Context
 from celery.exceptions import ImproperlyConfigured
 
-try:
-    import sqlalchemy  # noqa
-except ImportError:
-    DatabaseBackend = Task = TaskSet = retry = None  # noqa
-    SessionManager = session_cleanup = None  # noqa
-else:
-    from celery.backends.database import (DatabaseBackend, retry, session,
-                                          session_cleanup)
-    from celery.backends.database.models import Task, TaskSet
-    from celery.backends.database.session import SessionManager
+pytest.importorskip('sqlalchemy')
+
+from celery.backends.database import (DatabaseBackend, retry, session,    # noqa
+                                      session_cleanup)
+from celery.backends.database.models import Task, TaskSet    # noqa
+from celery.backends.database.session import SessionManager  # noqa
+
+from t import skip   # noqa
 
 
 class SomeClass:
@@ -29,7 +27,6 @@ class SomeClass:
         return self.data == cmp.data
 
 
-@skip.unless_module('sqlalchemy')
 class test_session_cleanup:
 
     def test_context(self):
@@ -47,9 +44,7 @@ class test_session_cleanup:
         session.close.assert_called_with()
 
 
-@skip.unless_module('sqlalchemy')
-@skip.if_pypy()
-@skip.if_jython()
+@skip.if_pypy
 class test_DatabaseBackend:
 
     def setup(self):
@@ -224,9 +219,7 @@ class test_DatabaseBackend:
         assert 'foo', repr(TaskSet('foo' in None))
 
 
-@skip.unless_module('sqlalchemy')
-@skip.if_pypy()
-@skip.if_jython()
+@skip.if_pypy
 class test_DatabaseBackend_result_extended():
     def setup(self):
         self.uri = 'sqlite:///test.db'
@@ -354,7 +347,6 @@ class test_DatabaseBackend_result_extended():
         assert meta['worker'] == "celery@worker_1"
 
 
-@skip.unless_module('sqlalchemy')
 class test_SessionManager:
 
     def test_after_fork(self):

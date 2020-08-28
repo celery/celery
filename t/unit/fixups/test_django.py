@@ -1,7 +1,8 @@
 from contextlib import contextmanager
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, mock, patch
+from case import mock
 
 from celery.fixups.django import (DjangoFixup, DjangoWorkerFixup,
                                   FixupWarning, _maybe_close_fd, fixup)
