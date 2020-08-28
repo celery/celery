@@ -9,8 +9,7 @@ from case import Mock, call, patch, skip
 from celery import states, uuid
 from celery.app.task import Context
 from celery.backends.base import SyncBackendMixin
-from celery.exceptions import (CPendingDeprecationWarning,
-                               ImproperlyConfigured, IncompleteStream,
+from celery.exceptions import (ImproperlyConfigured, IncompleteStream,
                                TimeoutError)
 from celery.result import (AsyncResult, EagerResult, GroupResult, ResultSet,
                            assert_will_not_block, result_from_tuple)
@@ -555,48 +554,6 @@ class test_ResultSet:
 
             yield
 
-    def test_iterate_respects_subpolling_interval(self):
-        r1 = self.app.AsyncResult(uuid())
-        r2 = self.app.AsyncResult(uuid())
-        backend = r1.backend = r2.backend = Mock()
-        backend.subpolling_interval = 10
-
-        ready = r1.ready = r2.ready = Mock()
-
-        def se(*args, **kwargs):
-            ready.side_effect = KeyError()
-            return False
-        ready.return_value = False
-        ready.side_effect = se
-
-        x = self.app.ResultSet([r1, r2])
-        with self.dummy_copy():
-            with patch('celery.result.time') as _time:
-                with pytest.warns(CPendingDeprecationWarning):
-                    with pytest.raises(KeyError):
-                        list(x.iterate())
-                _time.sleep.assert_called_with(10)
-
-            backend.subpolling_interval = 0
-            with patch('celery.result.time') as _time:
-                with pytest.warns(CPendingDeprecationWarning):
-                    with pytest.raises(KeyError):
-                        ready.return_value = False
-                        ready.side_effect = se
-                        list(x.iterate())
-                    _time.sleep.assert_not_called()
-
-    def test_times_out(self):
-        r1 = self.app.AsyncResult(uuid)
-        r1.ready = Mock()
-        r1.ready.return_value = False
-        x = self.app.ResultSet([r1])
-        with self.dummy_copy():
-            with patch('celery.result.time'):
-                with pytest.warns(CPendingDeprecationWarning):
-                    with pytest.raises(TimeoutError):
-                        list(x.iterate(timeout=1))
-
     def test_add_discard(self):
         x = self.app.ResultSet([])
         x.add(self.app.AsyncResult('1'))
@@ -724,14 +681,6 @@ class test_GroupResult:
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_pickleable(self):
         assert pickle.loads(pickle.dumps(self.ts))
-
-    def test_iterate_raises(self):
-        ar = MockAsyncResultFailure(uuid(), app=self.app)
-        ts = self.app.GroupResult(uuid(), [ar])
-        with pytest.warns(CPendingDeprecationWarning):
-            it = ts.iterate()
-        with pytest.raises(KeyError):
-            next(it)
 
     def test_forget(self):
         subs = [MockAsyncResultSuccess(uuid(), app=self.app),
@@ -867,24 +816,6 @@ class test_GroupResult:
         backend.ids = [result.id for result in results]
         assert len(list(ts.iter_native())) == 10
 
-    def test_iterate_yields(self):
-        ar = MockAsyncResultSuccess(uuid(), app=self.app)
-        ar2 = MockAsyncResultSuccess(uuid(), app=self.app)
-        ts = self.app.GroupResult(uuid(), [ar, ar2])
-        with pytest.warns(CPendingDeprecationWarning):
-            it = ts.iterate()
-        assert next(it) == 42
-        assert next(it) == 42
-
-    def test_iterate_eager(self):
-        ar1 = EagerResult(uuid(), 42, states.SUCCESS)
-        ar2 = EagerResult(uuid(), 42, states.SUCCESS)
-        ts = self.app.GroupResult(uuid(), [ar1, ar2])
-        with pytest.warns(CPendingDeprecationWarning):
-            it = ts.iterate()
-        assert next(it) == 42
-        assert next(it) == 42
-
     def test_join_timeout(self):
         ar = MockAsyncResultSuccess(uuid(), app=self.app)
         ar2 = MockAsyncResultSuccess(uuid(), app=self.app)
@@ -904,12 +835,6 @@ class test_GroupResult:
     def test_iter_native_when_empty_group(self):
         ts = self.app.GroupResult(uuid(), [])
         assert list(ts.iter_native()) == []
-
-    def test_iterate_simple(self):
-        with pytest.warns(CPendingDeprecationWarning):
-            it = self.ts.iterate()
-        results = sorted(list(it))
-        assert results == list(range(self.size))
 
     def test___iter__(self):
         assert list(iter(self.ts)) == self.ts.results
@@ -965,16 +890,6 @@ class test_failed_AsyncResult:
 
     def test_completed_count(self):
         assert self.ts.completed_count() == len(self.ts) - 1
-
-    def test_iterate_simple(self):
-        with pytest.warns(CPendingDeprecationWarning):
-            it = self.ts.iterate()
-
-        def consume():
-            return list(it)
-
-        with pytest.raises(KeyError):
-            consume()
 
     def test_join(self):
         with pytest.raises(KeyError):

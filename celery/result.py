@@ -2,9 +2,8 @@
 
 import datetime
 import time
-from collections import OrderedDict, deque
+from collections import deque
 from contextlib import contextmanager
-from copy import copy
 
 from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
@@ -13,7 +12,6 @@ from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
-from .utils import deprecated
 from .utils.graph import DependencyGraph, GraphFormatter
 from .utils.iso8601 import parse_iso8601
 
@@ -665,30 +663,6 @@ class ResultSet(ResultBase):
     def __getitem__(self, index):
         """`res[i] -> res.results[i]`."""
         return self.results[index]
-
-    @deprecated.Callable('4.0', '5.0')
-    def iterate(self, timeout=None, propagate=True, interval=0.5):
-        """Deprecated method, use :meth:`get` with a callback argument."""
-        elapsed = 0.0
-        results = OrderedDict((result.id, copy(result))
-                              for result in self.results)
-
-        while results:
-            removed = set()
-            for task_id, result in results.items():
-                if result.ready():
-                    yield result.get(timeout=timeout and timeout - elapsed,
-                                     propagate=propagate)
-                    removed.add(task_id)
-                else:
-                    if result.backend.subpolling_interval:
-                        time.sleep(result.backend.subpolling_interval)
-            for task_id in removed:
-                results.pop(task_id, None)
-            time.sleep(interval)
-            elapsed += interval
-            if timeout and elapsed >= timeout:
-                raise TimeoutError('The operation timed out')
 
     def get(self, timeout=None, propagate=True, interval=0.5,
             callback=None, no_ack=True, on_message=None,
