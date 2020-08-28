@@ -143,7 +143,13 @@ If you experience an error like:
     removed from the Redis database.
 
 then you may want to configure the :command:`redis-server` to not evict keys
-by setting the ``timeout`` parameter to 0 in the redis configuration file.
+by setting in the redis configuration file:
+* the ``maxmemory`` option
+* the ``maxmemory-policy`` option to ``noeviction`` or ``allkeys-lru``
+
+See Redis server documentation about Eviction Policies for details:
+    
+    https://redis.io/topics/lru-cache
 
 Group result ordering
 ---------------------
