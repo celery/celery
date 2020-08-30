@@ -19,8 +19,8 @@ class test_gevent_patch:
         patch_all = self.patching('gevent.monkey.patch_all')
         import gevent
         gevent.version_info = (1, 0, 0)
-        from celery import maybe_patch_concurrency
-        maybe_patch_concurrency(['x', '-P', 'gevent'])
+        from celery.bin.worker import maybe_patch_concurrency
+        maybe_patch_concurrency('gevent')
         patch_all.assert_called()
 
 

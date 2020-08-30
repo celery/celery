@@ -37,8 +37,8 @@ class test_aaa_eventlet_patch(EventletCase):
 
     def test_aaa_is_patched(self):
         with patch('eventlet.monkey_patch', create=True) as monkey_patch:
-            from celery import maybe_patch_concurrency
-            maybe_patch_concurrency(['x', '-P', 'eventlet'])
+            from celery.bin.worker import maybe_patch_concurrency
+            maybe_patch_concurrency('eventlet')
             monkey_patch.assert_called_with()
 
     @patch('eventlet.debug.hub_blocking_detection', create=True)
@@ -46,8 +46,8 @@ class test_aaa_eventlet_patch(EventletCase):
     def test_aaa_blockdetecet(
             self, monkey_patch, hub_blocking_detection, patching):
         patching.setenv('EVENTLET_NOBLOCK', '10.3')
-        from celery import maybe_patch_concurrency
-        maybe_patch_concurrency(['x', '-P', 'eventlet'])
+        from celery.bin.worker import maybe_patch_concurrency
+        maybe_patch_concurrency('eventlet')
         monkey_patch.assert_called_with()
         hub_blocking_detection.assert_called_with(10.3, 10.3)
 
