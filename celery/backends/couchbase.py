@@ -1,26 +1,16 @@
 """Couchbase result store backend."""
-import logging
 
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
-
 from .base import KeyValueStoreBackend
 
 try:
-    import couchbase_ffi  # noqa
-except ImportError:
-    pass  # noqa
-try:
     from couchbase.cluster import Cluster, ClusterOptions
     from couchbase.auth import PasswordAuthenticator
-    # from couchbase.connection import Connection
-    # from couchbase.exceptions import NotFoundError
     from couchbase_core._libcouchbase import FMT_AUTO
-        # from couchbase import FMT_AUTO
 except ImportError:
-    Cluster = PasswordAuthenticator = ClusterOptions =  None
-    # Couchbase = Connection = NotFoundError = None   # noqa
+    Cluster = PasswordAuthenticator = ClusterOptions = None
 
 __all__ = ('CouchbaseBackend',)
 
@@ -83,9 +73,9 @@ class CouchbaseBackend(KeyValueStoreBackend):
         """Connect to the Couchbase server."""
         if self._connection is None:
             if self.host and self.port:
-                uri = "couchbase://{}:{}" % (self.host, self.port)
+                uri = f"couchbase://{self.host}:{self.port}"
             else:
-                uri = "couchbase://{}" % (self.host)
+                uri = f"couchbase://{self.host}"
             if self.username and self.password:
                 opt = PasswordAuthenticator(self.username, self.password)
             else:
