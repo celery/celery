@@ -32,7 +32,6 @@ class CeleryBeat(ParamType):
 
 class WorkersPool(click.Choice):
     """Workers pool option."""
-
     name = "pool"
 
     def __init__(self):
@@ -42,8 +41,42 @@ class WorkersPool(click.Choice):
     def convert(self, value, param, ctx):
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
+        patches = {
+            'eventlet': self._patch_eventlet,
+            'gevent': self._patch_gevent
+        }
+
+        try:
+            patcher = patches[value]
+        except KeyError:
+            pass
+        else:
+            patcher()
+
         return concurrency.get_implementation(
             value) or ctx.obj.app.conf.worker_pool
+
+    @staticmethod
+    def _patch_eventlet():
+        import eventlet.debug
+
+        eventlet.monkey_patch()
+        blockdetect = float(os.environ.get('EVENTLET_NOBLOCK', 0))
+        if blockdetect:
+            eventlet.debug.hub_blocking_detection(blockdetect, blockdetect)
+
+    @staticmethod
+    def _patch_gevent():
+        import gevent.monkey
+        import gevent.signal
+
+        gevent.monkey.patch_all()
+        if gevent.version_info[0] == 0:  # pragma: no cover
+            # Signals aren't working in gevent versions <1.0,
+            # and aren't monkey patched by patch_all()
+            import signal
+
+            signal.signal = gevent.signal
 
 
 class Hostname(StringParamType):

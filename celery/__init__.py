@@ -98,59 +98,6 @@ def _find_option_with_arg(argv, short_opts=None, long_opts=None):
     raise KeyError('|'.join(short_opts or [] + long_opts or []))
 
 
-def _patch_eventlet():
-    import eventlet.debug
-
-    eventlet.monkey_patch()
-    blockdetect = float(os.environ.get('EVENTLET_NOBLOCK', 0))
-    if blockdetect:
-        eventlet.debug.hub_blocking_detection(blockdetect, blockdetect)
-
-
-def _patch_gevent():
-    import gevent.monkey
-    import gevent.signal
-
-    gevent.monkey.patch_all()
-    if gevent.version_info[0] == 0:  # pragma: no cover
-        # Signals aren't working in gevent versions <1.0,
-        # and aren't monkey patched by patch_all()
-        import signal
-
-        signal.signal = gevent.signal
-
-
-def maybe_patch_concurrency(argv=None, short_opts=None,
-                            long_opts=None, patches=None):
-    """Apply eventlet/gevent monkeypatches.
-
-    With short and long opt alternatives that specify the command line
-    option to set the pool, this makes sure that anything that needs
-    to be patched is completed as early as possible.
-    (e.g., eventlet/gevent monkey patches).
-    """
-    argv = argv if argv else sys.argv
-    short_opts = short_opts if short_opts else ['-P']
-    long_opts = long_opts if long_opts else ['--pool']
-    patches = patches if patches else {'eventlet': _patch_eventlet,
-                                       'gevent': _patch_gevent}
-    try:
-        pool = _find_option_with_arg(argv, short_opts, long_opts)
-    except KeyError:
-        pass
-    else:
-        try:
-            patcher = patches[pool]
-        except KeyError:
-            pass
-        else:
-            patcher()
-
-        # set up eventlet/gevent environments ASAP
-        from celery import concurrency
-        concurrency.get_implementation(pool)
-
-
 # this just creates a new module, that imports stuff on first attribute
 # access.  This makes the library faster to use.
 old_module, new_module = local.recreate_module(  # pragma: no cover
@@ -174,6 +121,5 @@ old_module, new_module = local.recreate_module(  # pragma: no cover
     VERSION=VERSION, SERIES=SERIES, VERSION_BANNER=VERSION_BANNER,
     version_info_t=version_info_t,
     version_info=version_info,
-    maybe_patch_concurrency=maybe_patch_concurrency,
     _find_option_with_arg=_find_option_with_arg,
 )
