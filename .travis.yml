@@ -42,6 +42,10 @@ matrix:
     stage: integration
 
   - python: 3.8
+    env: MATRIX_TOXENV=integration-couchbase
+    stage: integration
+
+  - python: 3.8
     env: MATRIX_TOXENV=integration-cassandra
     stage: integration
 
@@ -86,6 +90,11 @@ before_install:
               docker run -d -p 8000:8000 amazon/dynamodb-local
               while ! httping -c1 http://127.0.0.1:8000; do sleep 10; done
           fi
+    - |
+        if [[ "$TOXENV" == *couchbase ]]; then
+            docker run -d -p 8091:8091 -p 8092:8092 -p 8903:8903 -p 8094:8904 -p 11210:11210 couchbase/server-sandbox:6.5.0
+            while ! httping -c1 http://127.0.0.1:8091; do sleep 10; done
+        fi
     - |
           if [[ "$TOXENV" == *cache ]]; then
               docker run -d -p 11211:11211 memcached:alpine

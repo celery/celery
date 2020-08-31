@@ -3,4 +3,5 @@ simplejson
 -r extras/azureblockblob.txt
 -r extras/auth.txt
 -r extras/memcache.txt
+-r extras/couchbase.txt
 pytest-rerunfailures>=6.0
