@@ -31,10 +31,12 @@ class App(ParamType):
     name = "application"
 
     def convert(self, value, param, ctx):
-        try:
-            return find_app(value)
-        except (ModuleNotFoundError, AttributeError) as e:
-            self.fail(str(e))
+        def lazy():
+            try:
+                return find_app(value)
+            except (ModuleNotFoundError, AttributeError) as e:
+                self.fail(str(e))
+        return lazy
 
 
 APP = App()
@@ -107,9 +109,9 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
     ctx.obj = CLIContext(app=app, no_color=no_color, workdir=workdir, quiet=quiet)
 
     # User options
-    worker.params.extend(ctx.obj.app.user_options.get('worker', []))
-    beat.params.extend(ctx.obj.app.user_options.get('beat', []))
-    events.params.extend(ctx.obj.app.user_options.get('events', []))
+    # worker.params.extend(ctx.obj.app.user_options.get('worker', []))
+    # beat.params.extend(ctx.obj.app.user_options.get('beat', []))
+    # events.params.extend(ctx.obj.app.user_options.get('events', []))
 
 
 @celery.command(cls=CeleryCommand)
