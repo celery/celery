@@ -367,7 +367,7 @@ def worker(ctx, hostname=None, pool_cls=None, uid=None, gid=None,
         worker_concurrency=worker_concurrency or
                            app.conf.worker_concurrency,
         beat_schedule_filename=beat_schedule_filename or
-                               app.conf.beat_schedule_filename
+                               app.conf.beat_schedule_filename,
         **kwargs)
     worker.start()
     return worker.exitcode
