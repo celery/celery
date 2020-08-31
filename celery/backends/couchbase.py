@@ -1,22 +1,16 @@
 """Couchbase result store backend."""
-import logging
 
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
-
 from .base import KeyValueStoreBackend
 
 try:
-    import couchbase_ffi  # noqa
+    from couchbase.cluster import Cluster, ClusterOptions
+    from couchbase.auth import PasswordAuthenticator
+    from couchbase_core._libcouchbase import FMT_AUTO
 except ImportError:
-    pass  # noqa
-try:
-    from couchbase import FMT_AUTO, Couchbase
-    from couchbase.connection import Connection
-    from couchbase.exceptions import NotFoundError
-except ImportError:
-    Couchbase = Connection = NotFoundError = None   # noqa
+    Cluster = PasswordAuthenticator = ClusterOptions = None
 
 __all__ = ('CouchbaseBackend',)
 
@@ -47,7 +41,7 @@ class CouchbaseBackend(KeyValueStoreBackend):
         super().__init__(*args, **kwargs)
         self.url = url
 
-        if Couchbase is None:
+        if Cluster is None:
             raise ImproperlyConfigured(
                 'You need to install the couchbase library to use the '
                 'Couchbase backend.',
@@ -78,17 +72,20 @@ class CouchbaseBackend(KeyValueStoreBackend):
     def _get_connection(self):
         """Connect to the Couchbase server."""
         if self._connection is None:
-            kwargs = {'bucket': self.bucket, 'host': self.host}
+            if self.host and self.port:
+                uri = f"couchbase://{self.host}:{self.port}"
+            else:
+                uri = f"couchbase://{self.host}"
+            if self.username and self.password:
+                opt = PasswordAuthenticator(self.username, self.password)
+            else:
+                opt = None
 
-            if self.port:
-                kwargs.update({'port': self.port})
-            if self.username:
-                kwargs.update({'username': self.username})
-            if self.password:
-                kwargs.update({'password': self.password})
+            cluster = Cluster(uri, opt)
 
-            logging.debug('couchbase settings %r', kwargs)
-            self._connection = Connection(**kwargs)
+            bucket = cluster.bucket(self.bucket)
+
+            self._connection = bucket.default_collection()
         return self._connection
 
     @property
@@ -96,16 +93,13 @@ class CouchbaseBackend(KeyValueStoreBackend):
         return self._get_connection()
 
     def get(self, key):
-        try:
-            return self.connection.get(key).value
-        except NotFoundError:
-            return None
+        return self.connection.get(key).content
 
     def set(self, key, value):
-        self.connection.set(key, value, ttl=self.expires, format=FMT_AUTO)
+        self.connection.upsert(key, value, ttl=self.expires, format=FMT_AUTO)
 
     def mget(self, keys):
-        return [self.get(key) for key in keys]
+        return self.connection.get_multi(keys)
 
     def delete(self, key):
-        self.connection.delete(key)
+        self.connection.remove(key)

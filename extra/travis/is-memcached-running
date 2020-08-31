@@ -1,4 +1,4 @@
-#!/usr/bin/env -S expect -f
+#!/usr/bin/expect -f
 # based on https://stackoverflow.com/a/17265696/833093
 
 set destination [lindex $argv 0]
