@@ -146,6 +146,11 @@ Eventlet Workers Pool
 Due to `eventlet/eventlet#526 <https://github.com/eventlet/eventlet/issues/526>`_
 the minimum required eventlet version is now 0.26.1.
 
+Gevent Workers Pool
+-------------------
+
+Starting from this release, the minimum required version is gevent 1.0.0.
+
 .. _v500-news:
 
 News
