@@ -1,7 +1,7 @@
 .. _whatsnew-5.0:
 
 =======================================
- What's new in Celery 5.0 (Singularity)
+ What's new in Celery 5.0 (singularity)
 =======================================
 :Author: Omer Katz (``omer.drow at gmail.com``)
 
