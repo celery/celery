@@ -14,12 +14,21 @@ an overview of what's new in Celery 5.0.
 :release-date: N/A
 :release-by: Omer Katz
 
-5.0.0rc1
+5.0.0rc2
 ========
-:release-date: 2020-08-24 9.00 UTC+3:00
+:release-date: 2020-09-01 6.30 P.M UTC+3:00
 :release-by: Omer Katz
 
-- Allow to opt out of ordered group results when using the Redis result backend (#6290)
+- Bump minimum required eventlet version to 0.26.1.
+- Update Couchbase Result backend to use SDK V3.
+- Restore monkeypatching when gevent or eventlet are used.
+
+5.0.0rc1
+========
+:release-date: 2020-08-24 9.00 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Allow to opt out of ordered group results when using the Redis result backend (#6290).
 - **Breaking Chnage** Remove the deprecated celery.utils.encoding module.
 
 5.0.0b1
