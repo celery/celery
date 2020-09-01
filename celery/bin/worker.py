@@ -302,8 +302,6 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
 @click.pass_context
 def worker(ctx, hostname=None, pool_cls=None, uid=None, gid=None,
            loglevel=None, logfile=None, pidfile=None, statedb=None,
-           prefetch_multiplier=None, worker_concurrency=None,
-           beat_schedule_filename=None,
            user_extra_params=None,
            **kwargs):
     """Start worker instance.
