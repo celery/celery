@@ -1,5 +1,4 @@
 """Click customizations for Celery."""
-import functools
 import json
 from collections import OrderedDict
 from pprint import pformat
@@ -33,7 +32,7 @@ class CLIContext:
 
     def __init__(self, app, no_color, workdir, quiet=False):
         """Initialize the CLI context."""
-        self._app = app
+        self._app_factory = app
         self.no_color = no_color
         self.quiet = quiet
         self.workdir = workdir
@@ -49,7 +48,10 @@ class CLIContext:
 
     @cached_property
     def app(self):
-        return self._app() or get_current_app()
+        """Instantiate an app if it wasn't already and return it. This lazy
+        approach gives opportunity for further initializations before the app
+        is loaded."""
+        return self._app_factory() or get_current_app()
 
     def style(self, message=None, **kwargs):
         if self.no_color:

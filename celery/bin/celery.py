@@ -31,12 +31,12 @@ class App(ParamType):
     name = "application"
 
     def convert(self, value, param, ctx):
-        def lazy():
+        def factory():
             try:
                 return find_app(value)
             except (ModuleNotFoundError, AttributeError) as e:
                 self.fail(str(e))
-        return lazy
+        return factory
 
 
 APP = App()
