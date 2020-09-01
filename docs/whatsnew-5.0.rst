@@ -73,8 +73,8 @@ As we'd like to provide some time for you to transition,
 we're designating Celery 4.x an LTS release.
 Celery 4.x will be supported until the 1st of August, 2021.
 
-We will accept and apply patches for bug fixes and security issues but no
-new features will be merged for that version.
+We will accept and apply patches for bug fixes and security issues.
+However, no new features will be merged for that version.
 
 Celery 5.x **is not** an LTS release. We will support it until the release
 of Celery 6.x.
