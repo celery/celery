@@ -151,6 +151,19 @@ Gevent Workers Pool
 
 Starting from this release, the minimum required version is gevent 1.0.0.
 
+Couchbase Result Backend
+------------------------
+
+The Couchbase result backend now uses the V3 Couchbase SDK.
+
+As a result, we no longer support Couchbase Server 5.x.
+
+Also, starting from this release, the minimum required version
+for the database client is couchbase 3.0.0.
+
+To verify that your Couchbase Server is compatible with the V3 SDK,
+please refer to their `documentation <https://docs.couchbase.com/python-sdk/3.0/project-docs/compatibility.html>`_.
+
 .. _v500-news:
 
 News
