@@ -146,7 +146,10 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
 
 
 @click.command(cls=CeleryDaemonCommand,
-               context_settings={'allow_extra_args': True})
+               context_settings={
+                   'allow_extra_args': True,
+                   'ignore_unknown_options': True
+               })
 @click.option('-n',
               '--hostname',
               default=host_format(default_nodename(None)),
@@ -205,7 +208,8 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               type=WORKERS_POOL,
               cls=CeleryOption,
               help_group="Pool Options",
-              help="Pool implementation.")
+              help="Pool implementation.",
+              is_eager=True)
 @click.option('-E',
               '--task-events',
               '--events',
@@ -296,14 +300,17 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
 @click.option('--scheduler',
               cls=CeleryOption,
               help_group="Embedded Beat Options")
+@click.argument('user_extra_params', nargs=-1, type=click.UNPROCESSED)
 @click.pass_context
 def worker(ctx, hostname=None, pool_cls=None, uid=None, gid=None,
            loglevel=None, logfile=None, pidfile=None, statedb=None,
            prefetch_multiplier=None, worker_concurrency=None,
            beat_schedule_filename=None,
+           user_extra_params=None,
            **kwargs):
     """Start worker instance.
 
+    \b
     Examples
     --------
     $ celery worker --app=proj -l info
@@ -314,6 +321,22 @@ def worker(ctx, hostname=None, pool_cls=None, uid=None, gid=None,
 
     """
     app = ctx.obj.app
+
+    user_opts = app.user_options.get('worker')
+    if user_opts:
+        user_options = {}
+
+        def cb(_, param, val):
+            user_options[param.name] = val
+            return val
+
+        for x in user_opts:
+            x.callback = cb
+
+        cmd = click.Command("user", params=list(user_opts))
+        cmd.parse_args(ctx, list(user_extra_params))
+
+        kwargs.update(user_options)
 
     if ctx.args:
         try:
@@ -362,12 +385,9 @@ def worker(ctx, hostname=None, pool_cls=None, uid=None, gid=None,
         pidfile=node_format(pidfile, hostname),
         statedb=node_format(statedb, hostname),
         no_color=ctx.obj.no_color,
-        prefetch_multiplier=prefetch_multiplier or
-                            app.conf.worker_prefetch_multiplier,
-        worker_concurrency=worker_concurrency or
-                           app.conf.worker_concurrency,
-        beat_schedule_filename=beat_schedule_filename or
-                               app.conf.beat_schedule_filename,
+        prefetch_multiplier=prefetch_multiplier or app.conf.worker_prefetch_multiplier,
+        worker_concurrency=worker_concurrency or app.conf.worker_concurrency,
+        beat_schedule_filename=beat_schedule_filename or app.conf.beat_schedule_filename,
         **kwargs)
     worker.start()
     return worker.exitcode
