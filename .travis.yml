@@ -54,10 +54,10 @@ matrix:
       - TOXENV=flake8,apicheck,configcheck,bandit
       - CELERY_TOX_PARALLEL='--parallel --parallel-live'
     stage: lint
-#  - python: pypy3.6-7.3
-#    env: TOXENV=pypy3
-#    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
-#    stage: test
+  - python: pypy3.6-7.3.1
+    env: TOXENV=pypy3
+    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
+    stage: test
 
 before_install:
     - sudo install --directory --owner=travis /var/log/celery /var/run/celery
