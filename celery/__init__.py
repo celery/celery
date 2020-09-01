@@ -112,12 +112,6 @@ def _patch_gevent():
     import gevent.signal
 
     gevent.monkey.patch_all()
-    if gevent.version_info[0] == 0:  # pragma: no cover
-        # Signals aren't working in gevent versions <1.0,
-        # and aren't monkey patched by patch_all()
-        import signal
-
-        signal.signal = gevent.signal
 
 
 def maybe_patch_concurrency(argv=None, short_opts=None,
