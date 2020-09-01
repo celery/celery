@@ -163,6 +163,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               '--statedb',
               cls=CeleryOption,
               type=click.Path(),
+              callback=lambda ctx, _, value: value or ctx.obj.app.conf.worker_state_db,
               help_group="Worker Options",
               help="Path to the state database. The extension '.db' may be"
                    "appended to the filename.")
@@ -183,6 +184,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
 @click.option('--prefetch-multiplier',
               type=int,
               metavar="<prefetch multiplier>",
+              callback=lambda ctx, _, value: value or ctx.obj.app.conf.worker_prefetch_multiplier,
               cls=CeleryOption,
               help_group="Worker Options",
               help="Set custom prefetch multiplier value"
@@ -191,6 +193,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               '--concurrency',
               type=int,
               metavar="<concurrency>",
+              callback=lambda ctx, _, value: value or ctx.obj.app.conf.worker_concurrency,
               cls=CeleryOption,
               help_group="Pool Options",
               help="Number of child processes processing the queue.  "
@@ -289,6 +292,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
 @click.option('-s',
               '--schedule-filename',
               '--schedule',
+              callback=lambda ctx, _, value: value or ctx.obj.app.conf.beat_schedule_filename,
               cls=CeleryOption,
               help_group="Embedded Beat Options")
 @click.option('--scheduler',
@@ -371,17 +375,12 @@ def worker(ctx, hostname=None, pool_cls=None, uid=None, gid=None,
                           hostname=hostname)
         return
     maybe_drop_privileges(uid=uid, gid=gid)
-    statedb = statedb or ctx.obj.app.conf.worker_state_db
-
     worker = app.Worker(
         hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
         logfile=logfile,  # node format handled by celery.app.log.setup
         pidfile=node_format(pidfile, hostname),
         statedb=node_format(statedb, hostname),
         no_color=ctx.obj.no_color,
-        prefetch_multiplier=prefetch_multiplier or app.conf.worker_prefetch_multiplier,
-        worker_concurrency=worker_concurrency or app.conf.worker_concurrency,
-        beat_schedule_filename=beat_schedule_filename or app.conf.beat_schedule_filename,
         **kwargs)
     worker.start()
     return worker.exitcode

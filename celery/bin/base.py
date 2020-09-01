@@ -47,8 +47,7 @@ class CLIContext:
     def ERROR(self):
         return self.style("ERROR", fg="red", bold=True)
 
-    @property
-    @functools.lru_cache(None)
+    @cached_property
     def app(self):
         return self._app() or get_current_app()
 
