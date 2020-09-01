@@ -48,9 +48,9 @@ class CLIContext:
 
     @cached_property
     def app(self):
-        """Instantiate an app if it wasn't already and return it. This lazy
+        """Instantiate the app if it wasn't already and return it. This lazy
         approach gives opportunity for further initializations before the app
-        is loaded."""
+        is imported."""
         return self._app_factory() or get_current_app()
 
     def style(self, message=None, **kwargs):
