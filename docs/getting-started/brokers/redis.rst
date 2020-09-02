@@ -94,6 +94,21 @@ If you are using Sentinel, you should specify the master_name using the :setting
 
     app.conf.result_backend_transport_options = {'master_name': "mymaster"}
 
+Connection timeouts
+^^^^^^^^^^^^^^^^^^^
+
+To configure the connection timeouts for the Redis result backend, use the ``retry_policy`` key under :setting:`result_backend_transport_options`:
+
+
+.. code-block:: python
+
+    app.conf.result_backend_transport_options = {
+        'retry_policy': {
+           'timeout': 5.0
+        }
+    }
+
+See :func:`~kombu.utils.functional.retry_over_time` for the possible retry policy options.
 
 .. _redis-caveats:
 

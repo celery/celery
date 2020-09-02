@@ -523,6 +523,29 @@ class test_RedisBackend:
         assert self.b.on_connection_error(10, exc, intervals, 3) == 30
         logger.error.assert_called_with(self.E_LOST, 3, 10, 'in 30.00 seconds')
 
+    @patch('celery.backends.redis.retry_over_time')
+    def test_retry_policy_conf(self, retry_over_time):
+        self.app.conf.result_backend_transport_options = dict(
+            retry_policy=dict(
+                max_retries=2,
+                interval_start=0,
+                interval_step=0.01,
+            ),
+        )
+        b = self.Backend(app=self.app)
+
+        def fn():
+            return 1
+
+        # We don't want to re-test retry_over_time, just check we called it
+        # with the expected args
+        b.ensure(fn, (),)
+
+        retry_over_time.assert_called_with(
+            fn, b.connection_errors, (), {}, ANY,
+            max_retries=2, interval_start=0, interval_step=0.01, interval_max=1
+        )
+
     def test_incr(self):
         self.b.client = Mock(name='client')
         self.b.incr('foo')
