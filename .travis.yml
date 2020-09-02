@@ -122,8 +122,8 @@ before_install:
           wget -qO - https://packages.couchbase.com/ubuntu/couchbase.key | sudo apt-key add -
           sudo apt-add-repository -y 'deb http://packages.couchbase.com/ubuntu bionic bionic/main'
           sudo apt-get update && sudo apt-get install -y libcouchbase-dev
-          install: pip --disable-pip-version-check install --upgrade-strategy eager -U tox | cat
-          script: tox $CELERY_TOX_PARALLEL -v -- -v
+install: pip --disable-pip-version-check install --upgrade-strategy eager -U tox | cat
+script: tox $CELERY_TOX_PARALLEL -v -- -v
 after_success:
   - |
           if [[ -v MATRIX_TOXENV || "$TOXENV" =~ "pypy" ]]; then
