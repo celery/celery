@@ -19,7 +19,7 @@ env:
   global:
   - PYTHONUNBUFFERED=yes
   - CELERY_TOX_PARALLEL=
-  matrix:
+  jobs:
   - MATRIX_TOXENV=unit
 
 jobs:
