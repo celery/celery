@@ -328,6 +328,15 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         connparams.update(query)
         return connparams
 
+    @cached_property
+    def retry_policy(self):
+        retry_policy = super().retry_policy
+        if "retry_policy" in self._transport_options:
+            retry_policy = retry_policy.copy()
+            retry_policy.update(self._transport_options['retry_policy'])
+
+        return retry_policy
+
     def on_task_call(self, producer, task_id):
         if not task_join_will_block():
             self.result_consumer.consume_from(task_id)
@@ -401,10 +410,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     @cached_property
     def _chord_zset(self):
-        transport_options = self.app.conf.get(
-            'result_backend_transport_options', {}
-        )
-        return transport_options.get('result_chord_ordered', True)
+        return self._transport_options.get('result_chord_ordered', True)
+
+    @cached_property
+    def _transport_options(self):
+        return self.app.conf.get('result_backend_transport_options', {})
 
     def on_chord_part_return(self, request, state, result,
                              propagate=None, **kwargs):
@@ -530,12 +540,8 @@ class SentinelBackend(RedisBackend):
         connparams = params.copy()
 
         hosts = connparams.pop("hosts")
-        result_backend_transport_opts = self.app.conf.get(
-            "result_backend_transport_options", {})
-        min_other_sentinels = result_backend_transport_opts.get(
-            "min_other_sentinels", 0)
-        sentinel_kwargs = result_backend_transport_opts.get(
-            "sentinel_kwargs", {})
+        min_other_sentinels = self._transport_options.get("min_other_sentinels", 0)
+        sentinel_kwargs = self._transport_options.get("sentinel_kwargs", {})
 
         sentinel_instance = self.sentinel.Sentinel(
             [(cp['host'], cp['port']) for cp in hosts],
@@ -548,9 +554,7 @@ class SentinelBackend(RedisBackend):
     def _get_pool(self, **params):
         sentinel_instance = self._get_sentinel_instance(**params)
 
-        result_backend_transport_opts = self.app.conf.get(
-            "result_backend_transport_options", {})
-        master_name = result_backend_transport_opts.get("master_name", None)
+        master_name = self._transport_options.get("master_name", None)
 
         return sentinel_instance.master_for(
             service_name=master_name,
