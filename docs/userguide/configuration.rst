@@ -1675,6 +1675,13 @@ AWS DynamoDB backend settings
     See :ref:`bundles` for information on combining multiple extension
     requirements.
 
+.. warning::
+
+    The Dynamodb backend is not compatible with tables that have a sort key defined.
+
+    If you want to query the results table based on something other than the partition key,
+    please define a global secondary index (GSI) instead.
+
 This backend requires the :setting:`result_backend`
 setting to be set to a DynamoDB URL::
 
