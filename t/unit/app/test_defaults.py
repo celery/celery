@@ -24,16 +24,6 @@ class test_defaults:
         val = object()
         assert self.defaults.Option.typemap['any'](val) is val
 
-    @mock.sys_platform('darwin')
-    @mock.pypy_version((1, 4, 0))
-    def test_default_pool_pypy_14(self):
-        assert self.defaults.DEFAULT_POOL == 'solo'
-
-    @mock.sys_platform('darwin')
-    @mock.pypy_version((1, 5, 0))
-    def test_default_pool_pypy_15(self):
-        assert self.defaults.DEFAULT_POOL == 'prefork'
-
     def test_compat_indices(self):
         assert not any(key.isupper() for key in DEFAULTS)
         assert not any(key.islower() for key in _OLD_DEFAULTS)
