@@ -1,5 +1,4 @@
 """Configuration introspection and defaults."""
-import sys
 from collections import deque, namedtuple
 from datetime import timedelta
 
@@ -8,17 +7,8 @@ from celery.utils.serialization import strtobool
 
 __all__ = ('Option', 'NAMESPACES', 'flatten', 'find')
 
-is_jython = sys.platform.startswith('java')
-is_pypy = hasattr(sys, 'pypy_version_info')
 
 DEFAULT_POOL = 'prefork'
-if is_jython:
-    DEFAULT_POOL = 'solo'
-elif is_pypy:
-    if sys.pypy_version_info[0:3] < (1, 5, 0):
-        DEFAULT_POOL = 'solo'
-    else:
-        DEFAULT_POOL = 'prefork'
 
 DEFAULT_ACCEPT_CONTENT = ['json']
 DEFAULT_PROCESS_LOG_FMT = """
