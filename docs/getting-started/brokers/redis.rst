@@ -143,7 +143,14 @@ If you experience an error like:
     removed from the Redis database.
 
 then you may want to configure the :command:`redis-server` to not evict keys
-by setting the ``timeout`` parameter to 0 in the redis configuration file.
+by setting in the redis configuration file:
+
+- the ``maxmemory`` option
+- the ``maxmemory-policy`` option to ``noeviction`` or ``allkeys-lru``
+
+See Redis server documentation about Eviction Policies for details:
+    
+    https://redis.io/topics/lru-cache
 
 Group result ordering
 ---------------------
@@ -151,17 +158,26 @@ Group result ordering
 Versions of Celery up to and including 4.4.6 used an unsorted list to store
 result objects for groups in the Redis backend. This can cause those results to
 be be returned in a different order to their associated tasks in the original
-group instantiation.
-
-Celery 4.4.7 and up introduce an opt-in behaviour which fixes this issue and
-ensures that group results are returned in the same order the tasks were
-defined, matching the behaviour of other backends. This change is incompatible
-with workers running versions of Celery without this feature, so the feature
-must be turned on using the boolean `result_chord_ordered` option of the
-:setting:`result_backend_transport_options` setting, like so:
+group instantiation. Celery 4.4.7 introduced an opt-in behaviour which fixes
+this issue and ensures that group results are returned in the same order the
+tasks were defined, matching the behaviour of other backends. In Celery 5.0
+this behaviour was changed to be opt-out. The behaviour is controlled by the
+`result_chord_ordered` configuration option which may be set like so:
 
 .. code-block:: python
 
+    # Specifying this for workers running Celery 4.4.6 or earlier has no effect
     app.conf.result_backend_transport_options = {
-        'result_chord_ordered': True
+        'result_chord_ordered': True    # or False
     }
+
+This is an incompatible change in the runtime behaviour of workers sharing the
+same Redis backend for result storage, so all workers must follow either the
+new or old behaviour to avoid breakage. For clusters with some workers running
+Celery 4.4.6 or earlier, this means that workers running 4.4.7 need no special
+configuration and workers running 5.0 or later must have `result_chord_ordered`
+set to `False`. For clusters with no workers running 4.4.6 or earlier but some
+workers running 4.4.7, it is recommended that `result_chord_ordered` be set to
+`True` for all workers to ease future migration. Migration between behaviours
+will disrupt results currently held in the Redis backend and cause breakage if
+downstream tasks are run by migrated workers - plan accordingly.

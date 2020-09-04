@@ -1,13 +1,10 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 from sphinx_celery import conf
 
 globals().update(conf.build_config(
     'celery', __file__,
     project='Celery',
-    version_dev='5.0',
-    version_stable='4.0',
+    version_dev='6.0',
+    version_stable='5.0',
     canonical_url='http://docs.celeryproject.org',
     webdomain='celeryproject.org',
     github_project='celery/celery',
@@ -19,6 +16,7 @@ globals().update(conf.build_config(
     html_favicon='images/favicon.ico',
     html_prepend_sidebars=['sidebardonations.html'],
     extra_extensions=[
+        'sphinx_click',
         'sphinx.ext.napoleon',
         'celery.contrib.sphinx',
         'celerydocs',

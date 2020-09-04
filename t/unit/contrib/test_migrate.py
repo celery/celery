@@ -1,10 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-
 from contextlib import contextmanager
+from unittest.mock import Mock, patch
 
 import pytest
 from amqp import ChannelError
-from case import Mock, mock, patch
+from case import mock
 from kombu import Connection, Exchange, Producer, Queue
 from kombu.transport.virtual import QoS
 
@@ -14,7 +13,7 @@ from celery.contrib.migrate import (State, StopFiltering, _maybe_queue,
                                     migrate_tasks, move, move_by_idmap,
                                     move_by_taskmap, move_task_by_id,
                                     start_filter, task_id_eq, task_id_in)
-from celery.utils.encoding import bytes_t, ensure_bytes
+from kombu.utils.encoding import ensure_bytes
 
 # hack to ignore error at shutdown
 QoS.restore_at_shutdown = False
@@ -24,21 +23,19 @@ def Message(body, exchange='exchange', routing_key='rkey',
             compression=None, content_type='application/json',
             content_encoding='utf-8'):
     return Mock(
-        attrs={
-            'body': body,
-            'delivery_info': {
+            body=body,
+            delivery_info={
                 'exchange': exchange,
                 'routing_key': routing_key,
             },
-            'headers': {
+            headers={
                 'compression': compression,
             },
-            'content_type': content_type,
-            'content_encoding': content_encoding,
-            'properties': {
+            content_type=content_type,
+            content_encoding=content_encoding,
+            properties={
                 'correlation_id': isinstance(body, dict) and body['id'] or None
             }
-        },
     )
 
 
@@ -245,7 +242,7 @@ class test_migrate_task:
         migrate_task(producer, x.body, x)
         producer.publish.assert_called()
         args, kwargs = producer.publish.call_args
-        assert isinstance(args[0], bytes_t)
+        assert isinstance(args[0], bytes)
         assert 'compression' not in kwargs['headers']
         assert kwargs['compression'] == 'zlib'
         assert kwargs['content_type'] == 'application/json'

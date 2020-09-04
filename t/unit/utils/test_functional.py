@@ -1,10 +1,6 @@
-from __future__ import absolute_import, unicode_literals
-
 import pytest
-from case import skip
 from kombu.utils.functional import lazy
 
-from celery.five import nextfun, range
 from celery.utils.functional import (DummyContext, first, firstmethod,
                                      fun_accepts_kwargs, fun_takes_argument,
                                      head_from_fun, maybe_list, mlazy,
@@ -39,7 +35,7 @@ class test_firstmethod:
 
     def test_handles_lazy(self):
 
-        class A(object):
+        class A:
 
             def __init__(self, value=None):
                 self.value = value
@@ -78,7 +74,7 @@ def test_maybe_list():
 
 def test_mlazy():
     it = iter(range(20, 30))
-    p = mlazy(nextfun(it))
+    p = mlazy(it.__next__)
     assert p() == 20
     assert p.evaluated
     assert p() == 20
@@ -136,7 +132,7 @@ class test_regen:
 class test_head_from_fun:
 
     def test_from_cls(self):
-        class X(object):
+        class X:
             def __call__(x, y, kwarg=1):  # noqa
                 pass
 
@@ -155,7 +151,6 @@ class test_head_from_fun:
         g(1, 2)
         g(1, 2, kwarg=3)
 
-    @skip.unless_python3()
     def test_regression_3678(self):
         local = {}
         fun = ('def f(foo, *args, bar="", **kwargs):'
@@ -168,7 +163,6 @@ class test_head_from_fun:
         with pytest.raises(TypeError):
             g(bar=100)
 
-    @skip.unless_python3()
     def test_from_fun_with_hints(self):
         local = {}
         fun = ('def f_hints(x: int, y: int, kwarg: int=1):'
@@ -182,7 +176,6 @@ class test_head_from_fun:
         g(1, 2)
         g(1, 2, kwarg=3)
 
-    @skip.unless_python3()
     def test_from_fun_forced_kwargs(self):
         local = {}
         fun = ('def f_kwargs(*, a, b="b", c=None):'
@@ -199,7 +192,7 @@ class test_head_from_fun:
         g(a=1, b=2, c=3)
 
     def test_classmethod(self):
-        class A(object):
+        class A:
             @classmethod
             def f(cls, x):
                 return x
@@ -259,31 +252,31 @@ def test_seq_concat_item(a, b, expected):
     assert res == expected
 
 
-class StarKwargsCallable(object):
+class StarKwargsCallable:
 
     def __call__(self, **kwargs):
         return 1
 
 
-class StarArgsStarKwargsCallable(object):
+class StarArgsStarKwargsCallable:
 
     def __call__(self, *args, **kwargs):
         return 1
 
 
-class StarArgsCallable(object):
+class StarArgsCallable:
 
     def __call__(self, *args):
         return 1
 
 
-class ArgsCallable(object):
+class ArgsCallable:
 
     def __call__(self, a, b):
         return 1
 
 
-class ArgsStarKwargsCallable(object):
+class ArgsStarKwargsCallable:
 
     def __call__(self, a, b, **kwargs):
         return 1

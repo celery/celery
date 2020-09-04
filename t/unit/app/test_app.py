@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import gc
 import itertools
 import os
@@ -7,9 +5,10 @@ import ssl
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pickle import dumps, loads
+from unittest.mock import Mock, patch
 
 import pytest
-from case import ContextMock, Mock, mock, patch
+from case import ContextMock, mock
 from vine import promise
 
 from celery import Celery, _state
@@ -18,7 +17,6 @@ from celery import current_app, shared_task
 from celery.app import base as _appbase
 from celery.app import defaults
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items, keys
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
@@ -29,7 +27,7 @@ from celery.utils.time import localize, timezone, to_utc
 THIS_IS_A_KEY = 'this is a value'
 
 
-class ObjectConfig(object):
+class ObjectConfig:
     FOO = 1
     BAR = 2
 
@@ -38,7 +36,7 @@ object_config = ObjectConfig()
 dict_config = {'FOO': 10, 'BAR': 20}
 
 
-class ObjectConfig2(object):
+class ObjectConfig2:
     LEAVE_FOR_WORK = True
     MOMENT_TO_STOP = True
     CALL_ME_BACK = 123456789
@@ -370,7 +368,7 @@ class test_App:
         with self.Celery(broker='foo://bar') as app:
             app.conf.worker_agent = 'foo:Bar'
             assert not app.configured
-            assert list(keys(app.conf))
+            assert list(app.conf.keys())
             assert app.configured
             assert 'worker_agent' in app.conf
             assert dict(app.conf)
@@ -555,23 +553,23 @@ class test_App:
         saved = pickle.dumps(self.app)
         assert len(saved) < 2048
         restored = pickle.loads(saved)
-        for key, value in items(changes):
+        for key, value in changes.items():
             assert restored.conf[key] == value
 
-    def test_worker_main(self):
-        from celery.bin import worker as worker_bin
-
-        class worker(worker_bin.worker):
-
-            def execute_from_commandline(self, argv):
-                return argv
-
-        prev, worker_bin.worker = worker_bin.worker, worker
-        try:
-            ret = self.app.worker_main(argv=['--version'])
-            assert ret == ['--version']
-        finally:
-            worker_bin.worker = prev
+    # def test_worker_main(self):
+    #     from celery.bin import worker as worker_bin
+    #
+    #     class worker(worker_bin.worker):
+    #
+    #         def execute_from_commandline(self, argv):
+    #             return argv
+    #
+    #     prev, worker_bin.worker = worker_bin.worker, worker
+    #     try:
+    #         ret = self.app.worker_main(argv=['--version'])
+    #         assert ret == ['--version']
+    #     finally:
+    #         worker_bin.worker = prev
 
     def test_config_from_envvar(self):
         os.environ['CELERYTEST_CONFIG_OBJECT'] = 't.unit.app.test_app'
@@ -601,7 +599,7 @@ class test_App:
 
     def test_config_from_object__compat(self):
 
-        class Config(object):
+        class Config:
             CELERY_ALWAYS_EAGER = 44
             CELERY_DEFAULT_DELIVERY_MODE = 30
             CELERY_TASK_PUBLISH_RETRY = False
@@ -614,7 +612,7 @@ class test_App:
 
     def test_config_from_object__supports_old_names(self):
 
-        class Config(object):
+        class Config:
             task_always_eager = 45
             task_default_delivery_mode = 301
 
@@ -627,7 +625,7 @@ class test_App:
 
     def test_config_from_object__namespace_uppercase(self):
 
-        class Config(object):
+        class Config:
             CELERY_TASK_ALWAYS_EAGER = 44
             CELERY_TASK_DEFAULT_DELIVERY_MODE = 301
 
@@ -636,7 +634,7 @@ class test_App:
 
     def test_config_from_object__namespace_lowercase(self):
 
-        class Config(object):
+        class Config:
             celery_task_always_eager = 44
             celery_task_default_delivery_mode = 301
 
@@ -645,7 +643,7 @@ class test_App:
 
     def test_config_from_object__mixing_new_and_old(self):
 
-        class Config(object):
+        class Config:
             task_always_eager = 44
             worker_agent = 'foo:Agent'
             worker_consumer = 'foo:Consumer'
@@ -659,7 +657,7 @@ class test_App:
 
     def test_config_from_object__mixing_old_and_new(self):
 
-        class Config(object):
+        class Config:
             CELERY_ALWAYS_EAGER = 46
             CELERYD_AGENT = 'foo:Agent'
             CELERYD_CONSUMER = 'foo:Consumer'
@@ -754,11 +752,6 @@ class test_App:
         assert self.app.conf['FOO'] == 10
         assert self.app.conf['BAR'] == 20
 
-    @patch('celery.bin.celery.CeleryCommand.execute_from_commandline')
-    def test_start(self, execute):
-        self.app.start()
-        execute.assert_called()
-
     @pytest.mark.parametrize('url,expected_fields', [
         ('pyamqp://', {
             'hostname': 'localhost',
@@ -776,7 +769,7 @@ class test_App:
     ])
     def test_amqp_get_broker_info(self, url, expected_fields):
         info = self.app.connection(url).info()
-        for key, expected_value in items(expected_fields):
+        for key, expected_value in expected_fields.items():
             assert info[key] == expected_value
 
     def test_amqp_failover_strategy_selection(self):
@@ -921,7 +914,7 @@ class test_App:
 
     def test_send_task_sent_event(self):
 
-        class Dispatcher(object):
+        class Dispatcher:
             sent = []
 
             def publish(self, type, fields, *args, **kwargs):

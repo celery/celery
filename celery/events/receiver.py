@@ -1,6 +1,4 @@
 """Event receiver implementation."""
-from __future__ import absolute_import, unicode_literals
-
 import time
 from operator import itemgetter
 
@@ -126,7 +124,7 @@ class EventReceiver(ConsumerMixin):
         return type, body
 
     def _receive(self, body, message, list=list, isinstance=isinstance):
-        if isinstance(body, list):  # celery 4.0: List of events
+        if isinstance(body, list):  # celery 4.0+: List of events
             process, from_message = self.process, self.event_from_message
             [process(*from_message(event)) for event in body]
         else:

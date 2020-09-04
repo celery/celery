@@ -1,18 +1,17 @@
-from __future__ import absolute_import, unicode_literals
-
 import pickle
 from collections import Mapping
 from itertools import count
+from time import monotonic
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from case import skip
 
-from celery.five import items, monotonic
 from celery.utils.collections import (AttributeDict, BufferMap,
                                       ConfigurationView, DictAttribute,
                                       LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
+
+import t.skip
 
 
 class test_DictAttribute:
@@ -94,7 +93,7 @@ class test_ConfigurationView:
             'default_key': 1,
             'both': 2,
         }
-        assert dict(items(self.view)) == expected
+        assert dict(self.view.items()) == expected
         assert sorted(list(iter(self.view))) == sorted(list(expected.keys()))
         assert sorted(list(self.view.keys())) == sorted(list(expected.keys()))
         assert (sorted(list(self.view.values())) ==
@@ -155,7 +154,7 @@ class test_ExceptionInfo:
             assert repr(einfo)
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_LimitedSet:
 
     def test_add(self):

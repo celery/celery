@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from eventlet import Timeout, monkey_patch, spawn_n
 from eventlet.event import Event
 from eventlet.queue import LightQueue
@@ -7,7 +5,7 @@ from eventlet.queue import LightQueue
 monkey_patch()
 
 
-class Receipt(object):
+class Receipt:
     result = None
 
     def __init__(self, callback=None):
@@ -25,7 +23,7 @@ class Receipt(object):
             return self.ready.wait()
 
 
-class ProducerPool(object):
+class ProducerPool:
     """Usage::
 
         >>> app = Celery(broker='amqp://')

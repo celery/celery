@@ -1,10 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime
 from pickle import dumps, loads
+from unittest.mock import Mock
 
 import pytest
-from case import Mock, mock
+from case import mock
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
@@ -113,7 +112,7 @@ class test_CassandraBackend:
         class OTOExc(Exception):
             pass
 
-        class VeryFaultyCluster(object):
+        class VeryFaultyCluster:
             def __init__(self, *args, **kwargs):
                 pass
 
@@ -143,7 +142,7 @@ class test_CassandraBackend:
         class OTOExc(Exception):
             pass
 
-        class FaultySession(object):
+        class FaultySession:
             def __init__(self, *args, **kwargs):
                 pass
 
@@ -197,7 +196,7 @@ class test_CassandraBackend:
         # ImproperlyConfigured exception.
         from celery.backends import cassandra as mod
 
-        class DummyAuth(object):
+        class DummyAuth:
             ValidAuthProvider = Mock()
 
         mod.cassandra = Mock()

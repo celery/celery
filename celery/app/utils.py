@@ -1,18 +1,15 @@
-# -*- coding: utf-8 -*-
 """App utilities: Compat settings, bug-report tool, pickling apps."""
-from __future__ import absolute_import, unicode_literals
-
 import os
 import platform as _platform
 import re
 from collections import namedtuple
+from collections.abc import Mapping
 from copy import deepcopy
 from types import ModuleType
 
 from kombu.utils.url import maybe_sanitize_url
 
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items, keys, string_t, values
 from celery.platforms import pyimplementation
 from celery.utils.collections import ConfigurationView
 from celery.utils.imports import import_from_cwd, qualname, symbol_by_name
@@ -20,13 +17,6 @@ from celery.utils.text import pretty
 
 from .defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY,
                        _TO_OLD_KEY, DEFAULTS, SETTING_KEYS, find)
-
-try:
-    from collections.abc import Mapping
-except ImportError:
-    # TODO: Remove this when we drop Python 2.7 support
-    from collections import Mapping
-
 
 __all__ = (
     'Settings', 'appstr', 'bugreport',
@@ -75,7 +65,7 @@ FMT_REPLACE_SETTING = '{replace:<36} -> {with_}'
 
 def appstr(app):
     """String used in __repr__ etc, to id app instances."""
-    return '{0} at {1:#x}'.format(app.main or '__main__', id(app))
+    return f'{app.main or "__main__"} at {id(app):#x}'
 
 
 class Settings(ConfigurationView):
@@ -188,17 +178,17 @@ class Settings(ConfigurationView):
         filt = filter_hidden_settings if censored else lambda v: v
         dict_members = dir(dict)
         self.finalize()
+        settings = self if with_defaults else self.without_defaults()
         return filt({
-            k: v for k, v in items(
-                self if with_defaults else self.without_defaults())
+            k: v for k, v in settings.items()
             if not k.startswith('_') and k not in dict_members
         })
 
     def humanize(self, with_defaults=False, censored=True):
         """Return a human readable text showing configuration changes."""
         return '\n'.join(
-            '{0}: {1}'.format(key, pretty(value, width=50))
-            for key, value in items(self.table(with_defaults, censored)))
+            f'{key}: {pretty(value, width=50)}'
+            for key, value in self.table(with_defaults, censored).items())
 
 
 def _new_key_to_old(key, convert=_TO_OLD_KEY.get):
@@ -231,7 +221,7 @@ def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
     source = conf
     if conf is None:
         source, conf = preconf, {}
-    have = set(keys(source)) - ignore_keys
+    have = set(source.keys()) - ignore_keys
     is_in_new = have.intersection(all_keys)
     is_in_old = have.intersection(old_keys)
 
@@ -268,7 +258,7 @@ def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
             for key in sorted(really_left)
         )))
 
-    preconf = {info.convert.get(k, k): v for k, v in items(preconf)}
+    preconf = {info.convert.get(k, k): v for k, v in preconf.items()}
     defaults = dict(deepcopy(info.defaults), **preconf)
     return Settings(
         preconf, [conf, defaults],
@@ -277,7 +267,7 @@ def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
     )
 
 
-class AppPickler(object):
+class AppPickler:
     """Old application pickler/unpickler (< 3.1)."""
 
     def __call__(self, cls, *args):
@@ -320,7 +310,7 @@ def filter_hidden_settings(conf):
     def maybe_censor(key, value, mask='*' * 8):
         if isinstance(value, Mapping):
             return filter_hidden_settings(value)
-        if isinstance(key, string_t):
+        if isinstance(key, str):
             if HIDDEN_SETTINGS.search(key):
                 return mask
             elif 'broker_url' in key.lower():
@@ -331,19 +321,20 @@ def filter_hidden_settings(conf):
 
         return value
 
-    return {k: maybe_censor(k, v) for k, v in items(conf)}
+    return {k: maybe_censor(k, v) for k, v in conf.items()}
 
 
 def bugreport(app):
     """Return a string containing information useful in bug-reports."""
     import billiard
-    import celery
     import kombu
+
+    import celery
 
     try:
         conn = app.connection()
-        driver_v = '{0}:{1}'.format(conn.transport.driver_name,
-                                    conn.transport.driver_version())
+        driver_v = '{}:{}'.format(conn.transport.driver_name,
+                                  conn.transport.driver_version())
         transport = conn.transport_cls
     except Exception:  # pylint: disable=broad-except
         transport = driver_v = ''
@@ -388,12 +379,12 @@ def find_app(app, symbol_by_name=symbol_by_name, imp=import_from_cwd):
                 if getattr(sym, '__path__', None):
                     try:
                         return find_app(
-                            '{0}.celery'.format(app),
+                            f'{app}.celery',
                             symbol_by_name=symbol_by_name, imp=imp,
                         )
                     except ImportError:
                         pass
-                for suspect in values(vars(sym)):
+                for suspect in vars(sym).values():
                     if isinstance(suspect, Celery):
                         return suspect
                 raise

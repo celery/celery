@@ -1,15 +1,7 @@
-from __future__ import absolute_import, unicode_literals
-
-import sys
 import typing
 
 from docutils import nodes
-
-try:
-    from sphinx.errors import NoUri
-except ImportError:
-    # TODO: Remove this once we drop Sphinx 2 support
-    from sphinx.environment import NoUri
+from sphinx.errors import NoUri
 
 APPATTRS = {
     'amqp': 'celery.app.amqp.AMQP',
@@ -47,7 +39,7 @@ APPDIRECT = {
     'autofinalize', 'steps', 'user_options', 'main', 'clock',
 }
 
-APPATTRS.update({x: 'celery.Celery.{0}'.format(x) for x in APPDIRECT})
+APPATTRS.update({x: f'celery.Celery.{x}' for x in APPDIRECT})
 
 ABBRS = {
     'Celery': 'celery.Celery',
@@ -57,16 +49,6 @@ ABBR_EMPTY = {
     'exc': 'celery.exceptions',
 }
 DEFAULT_EMPTY = 'celery.Celery'
-
-
-if sys.version_info[0] < 3:
-    def bytes_if_py2(s):
-        if isinstance(s, unicode):
-            return s.encode()
-        return s
-else:
-    def bytes_if_py2(s):  # noqa
-        return s
 
 
 def typeify(S, type):
@@ -92,7 +74,7 @@ def get_abbr(pre, rest, type, orig=None):
                 return d[pre], rest, d
             except KeyError:
                 pass
-        raise KeyError('Unknown abbreviation: {0} ({1})'.format(
+        raise KeyError('Unknown abbreviation: {} ({})'.format(
             '.'.join([pre, rest]) if orig is None else orig, type,
         ))
     else:
@@ -111,7 +93,7 @@ def resolve(S, type):
         except AttributeError:
             pass
         else:
-            return 'typing.{0}'.format(S), None
+            return f'typing.{S}', None
     orig = S
     if S.startswith('@'):
         S = S.lstrip('@-')
@@ -168,29 +150,29 @@ def maybe_resolve_abbreviations(app, env, node, contnode):
 
 def setup(app):
     app.connect(
-        bytes_if_py2('missing-reference'),
+        'missing-reference',
         maybe_resolve_abbreviations,
     )
 
     app.add_crossref_type(
-        directivename=bytes_if_py2('sig'),
-        rolename=bytes_if_py2('sig'),
-        indextemplate=bytes_if_py2('pair: %s; sig'),
+        directivename='sig',
+        rolename='sig',
+        indextemplate='pair: %s; sig',
     )
     app.add_crossref_type(
-        directivename=bytes_if_py2('state'),
-        rolename=bytes_if_py2('state'),
-        indextemplate=bytes_if_py2('pair: %s; state'),
+        directivename='state',
+        rolename='state',
+        indextemplate='pair: %s; state',
     )
     app.add_crossref_type(
-        directivename=bytes_if_py2('control'),
-        rolename=bytes_if_py2('control'),
-        indextemplate=bytes_if_py2('pair: %s; control'),
+        directivename='control',
+        rolename='control',
+        indextemplate='pair: %s; control',
     )
     app.add_crossref_type(
-        directivename=bytes_if_py2('event'),
-        rolename=bytes_if_py2('event'),
-        indextemplate=bytes_if_py2('pair: %s; event'),
+        directivename='event',
+        rolename='event',
+        indextemplate='pair: %s; event',
     )
 
     return {

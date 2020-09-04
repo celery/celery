@@ -1,20 +1,20 @@
-from __future__ import absolute_import, unicode_literals
-
 import datetime
 import sys
 from pickle import dumps, loads
+from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 
 import pytest
 import pytz
-from case import ANY, MagicMock, Mock, mock, patch, sentinel, skip
+from case import mock
 from kombu.exceptions import EncodeError
+
 try:
     from pymongo.errors import ConfigurationError
 except ImportError:
     ConfigurationError = None
 
 from celery import states, uuid
-from celery.backends.mongodb import InvalidDocument, MongoBackend, Binary
+from celery.backends.mongodb import Binary, InvalidDocument, MongoBackend
 from celery.exceptions import ImproperlyConfigured
 
 COLLECTION = 'taskmeta_celery'
@@ -27,8 +27,9 @@ MONGODB_DATABASE = 'testing'
 MONGODB_COLLECTION = 'collection1'
 MONGODB_GROUP_COLLECTION = 'group_collection1'
 
+pytest.importorskip('pymongo')
 
-@skip.unless_module('pymongo')
+
 class test_MongoBackend:
 
     default_url = 'mongodb://uuuu:pwpw@hostname.dom/database'
@@ -129,9 +130,9 @@ class test_MongoBackend:
 
     @patch('dns.resolver.query')
     def test_init_mongodb_dns_seedlist(self, dns_resolver_query):
-        from dns.rdtypes.IN.SRV import SRV
-        from dns.rdtypes.ANY.TXT import TXT
         from dns.name import Name
+        from dns.rdtypes.ANY.TXT import TXT
+        from dns.rdtypes.IN.SRV import SRV
 
         self.app.conf.mongodb_backend_settings = None
 
@@ -550,7 +551,6 @@ def mongo_backend_factory(app):
     yield create_mongo_backend
 
 
-@skip.unless_module('pymongo')
 @pytest.mark.parametrize("serializer,encoded_into", [
     ('bson', int),
     ('json', str),
@@ -627,7 +627,6 @@ SUCCESS_RESULT_TEST_DATA = [
 ]
 
 
-@skip.unless_module('pymongo')
 class test_MongoBackend_store_get_result:
 
     @pytest.fixture(scope="function", autouse=True)

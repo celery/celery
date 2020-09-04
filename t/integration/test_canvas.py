@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import os
 from datetime import datetime, timedelta
 from time import sleep
@@ -175,25 +173,19 @@ class test_chain:
 
     @flaky
     def test_group_chord_group_chain(self, manager):
-        from celery.five import bytes_if_py2
-
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
         redis_connection = get_redis_connection()
         redis_connection.delete('redis-echo')
-        before = group(redis_echo.si('before {}'.format(i)) for i in range(3))
+        before = group(redis_echo.si(f'before {i}') for i in range(3))
         connect = redis_echo.si('connect')
-        after = group(redis_echo.si('after {}'.format(i)) for i in range(2))
+        after = group(redis_echo.si(f'after {i}') for i in range(2))
 
         result = (before | connect | after).delay()
         result.get(timeout=TIMEOUT)
-        redis_messages = list(map(
-            bytes_if_py2,
-            redis_connection.lrange('redis-echo', 0, -1)
-        ))
-        before_items = \
-            set(map(bytes_if_py2, (b'before 0', b'before 1', b'before 2')))
-        after_items = set(map(bytes_if_py2, (b'after 0', b'after 1')))
+        redis_messages = list(redis_connection.lrange('redis-echo', 0, -1))
+        before_items = {b'before 0', b'before 1', b'before 2'}
+        after_items = {b'after 0', b'after 1'}
 
         assert set(redis_messages[:3]) == before_items
         assert redis_messages[3] == b'connect'
@@ -212,8 +204,6 @@ class test_chain:
 
     @flaky
     def test_second_order_replace(self, manager):
-        from celery.five import bytes_if_py2
-
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
@@ -222,10 +212,7 @@ class test_chain:
 
         result = second_order_replace1.delay()
         result.get(timeout=TIMEOUT)
-        redis_messages = list(map(
-            bytes_if_py2,
-            redis_connection.lrange('redis-echo', 0, -1)
-        ))
+        redis_messages = list(redis_connection.lrange('redis-echo', 0, -1))
 
         expected_messages = [b'In A', b'In B', b'In/Out C', b'Out B',
                              b'Out A']
@@ -819,6 +806,7 @@ class test_chord:
 
     def test_chord_on_error(self, manager):
         from celery import states
+
         from .tasks import ExpectedException
 
         if not manager.app.conf.result_backend.startswith('redis'):
@@ -866,7 +854,7 @@ class test_chord:
         redis_connection = get_redis_connection()
         # The redis key is either a list or zset depending on configuration
         if manager.app.conf.result_backend_transport_options.get(
-            'result_chord_ordered', False
+            'result_chord_ordered', True
         ):
             job_results = redis_connection.zrange(j_key, 0, 3)
         else:

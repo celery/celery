@@ -1,7 +1,6 @@
-from __future__ import absolute_import, unicode_literals
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch
 
 from celery import chord, group
 from celery._state import _task_stack

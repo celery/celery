@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Terminals and colors."""
-from __future__ import absolute_import, unicode_literals
-
 import base64
 import codecs
 import os
@@ -9,7 +6,6 @@ import platform
 import sys
 from functools import reduce
 
-from celery.five import python_2_unicode_compatible, string
 from celery.platforms import isatty
 
 __all__ = ('colored',)
@@ -36,8 +32,7 @@ def fg(s):
     return COLOR_SEQ % s
 
 
-@python_2_unicode_compatible
-class colored(object):
+class colored:
     """Terminal colored text.
 
     Example:
@@ -64,36 +59,36 @@ class colored(object):
         }
 
     def _add(self, a, b):
-        return string(a) + string(b)
+        return str(a) + str(b)
 
     def _fold_no_color(self, a, b):
         try:
             A = a.no_color()
         except AttributeError:
-            A = string(a)
+            A = str(a)
         try:
             B = b.no_color()
         except AttributeError:
-            B = string(b)
+            B = str(b)
 
-        return ''.join((string(A), string(B)))
+        return ''.join((str(A), str(B)))
 
     def no_color(self):
         if self.s:
-            return string(reduce(self._fold_no_color, self.s))
+            return str(reduce(self._fold_no_color, self.s))
         return ''
 
     def embed(self):
         prefix = ''
         if self.enabled:
             prefix = self.op
-        return ''.join((string(prefix), string(reduce(self._add, self.s))))
+        return ''.join((str(prefix), str(reduce(self._add, self.s))))
 
     def __str__(self):
         suffix = ''
         if self.enabled:
             suffix = RESET_SEQ
-        return string(''.join((self.embed(), string(suffix))))
+        return str(''.join((self.embed(), str(suffix))))
 
     def node(self, s, op):
         return self.__class__(enabled=self.enabled, op=op, *s)
@@ -165,7 +160,7 @@ class colored(object):
         return self.node(s or [''], RESET_SEQ)
 
     def __add__(self, other):
-        return string(self) + string(other)
+        return str(self) + str(other)
 
 
 def supports_images():

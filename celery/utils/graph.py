@@ -1,13 +1,8 @@
-# -*- coding: utf-8 -*-
 """Dependency graph implementation."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 from collections import Counter
 from textwrap import dedent
 
 from kombu.utils.encoding import bytes_to_str, safe_str
-
-from celery.five import items, python_2_unicode_compatible
 
 __all__ = ('DOT', 'CycleError', 'DependencyGraph', 'GraphFormatter')
 
@@ -31,8 +26,7 @@ class CycleError(Exception):
     """A cycle was detected in an acyclic graph."""
 
 
-@python_2_unicode_compatible
-class DependencyGraph(object):
+class DependencyGraph:
     """A directed acyclic graph of objects and their dependencies.
 
     Supports a robust topological sort
@@ -109,7 +103,7 @@ class DependencyGraph(object):
 
     def edges(self):
         """Return generator that yields for all edges in the graph."""
-        return (obj for obj, adj in items(self) if adj)
+        return (obj for obj, adj in self.items() if adj)
 
     def _khan62(self):
         """Perform Khan's simple topological sort algorithm from '62.
@@ -187,7 +181,7 @@ class DependencyGraph(object):
                 seen.add(draw.label(obj))
 
         P(draw.head())
-        for obj, adjacent in items(self):
+        for obj, adjacent in self.items():
             if not adjacent:
                 if_not_seen(draw.terminal_node, obj)
             for req in adjacent:
@@ -211,7 +205,7 @@ class DependencyGraph(object):
         return obj in self.adjacent
 
     def _iterate_items(self):
-        return items(self.adjacent)
+        return self.adjacent.items()
     items = iteritems = _iterate_items
 
     def __repr__(self):
@@ -227,7 +221,7 @@ class DependencyGraph(object):
         return '\n'.join(output)
 
 
-class GraphFormatter(object):
+class GraphFormatter:
     """Format dependency graphs."""
 
     _attr = DOT.ATTR.strip()
@@ -265,13 +259,13 @@ class GraphFormatter(object):
         self.graph_scheme = dict(self.graph_scheme, root=self.label(self.root))
 
     def attr(self, name, value):
-        value = '"{0}"'.format(value)
+        value = f'"{value}"'
         return self.FMT(self._attr, name=name, value=value)
 
     def attrs(self, d, scheme=None):
         d = dict(self.scheme, **dict(scheme, **d or {}) if scheme else d)
         return self._attrsep.join(
-            safe_str(self.attr(k, v)) for k, v in items(d)
+            safe_str(self.attr(k, v)) for k, v in d.items()
         )
 
     def head(self, **attrs):

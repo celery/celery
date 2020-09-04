@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
 """Worker Remote Control Client.
 
 Client for worker remote control commands.
 Server implementation is in :mod:`celery.worker.control`.
 """
-from __future__ import absolute_import, unicode_literals
-
 import warnings
 
 from billiard.common import TERM_SIGNAME
@@ -16,7 +13,6 @@ from kombu.utils.functional import lazy
 from kombu.utils.objects import cached_property
 
 from celery.exceptions import DuplicateNodenameWarning
-from celery.five import items
 from celery.utils.log import get_logger
 from celery.utils.text import pluralize
 
@@ -64,7 +60,7 @@ def _after_fork_cleanup_control(control):
         logger.info('after fork raised exception: %r', exc, exc_info=1)
 
 
-class Inspect(object):
+class Inspect:
     """API for app.control.inspect."""
 
     app = None
@@ -90,7 +86,7 @@ class Inspect(object):
             if self.pattern:
                 pattern = self.pattern
                 matcher = self.matcher
-                return {node: reply for node, reply in items(by_node)
+                return {node: reply for node, reply in by_node.items()
                         if match(node, pattern, matcher)}
             return by_node
 
@@ -165,7 +161,7 @@ class Inspect(object):
         return self._request('objgraph', num=n, max_depth=max_depth, type=type)
 
 
-class Control(object):
+class Control:
     """Worker remote control client."""
 
     Mailbox = Mailbox

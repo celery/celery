@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Beat command-line program.
 
 This module is the 'program-version' of :mod:`celery.beat`.
@@ -7,15 +6,12 @@ It does everything necessary to run that module
 as an actual application, like installing signal handlers
 and so on.
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import numbers
 import socket
 import sys
 from datetime import datetime
 
 from celery import VERSION_BANNER, beat, platforms
-from celery.five import text_t
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger
 from celery.utils.time import humanize_seconds
@@ -36,7 +32,7 @@ Configuration ->
 logger = get_logger('celery.beat')
 
 
-class Beat(object):
+class Beat:
     """Beat as a service."""
 
     Service = beat.Service
@@ -75,7 +71,7 @@ class Beat(object):
 
     def run(self):
         print(str(self.colored.cyan(
-            'celery beat v{0} is starting.'.format(VERSION_BANNER))))
+            f'celery beat v{VERSION_BANNER} is starting.')))
         self.init_loader()
         self.set_process_title()
         self.start_scheduler()
@@ -115,7 +111,7 @@ class Beat(object):
 
     def banner(self, service):
         c = self.colored
-        return text_t(  # flake8: noqa
+        return str(  # flake8: noqa
             c.blue('__    ', c.magenta('-'),
                    c.blue('    ... __   '), c.magenta('-'),
                    c.blue('        _\n'),

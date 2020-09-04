@@ -1,15 +1,14 @@
-# -*- coding: utf-8 -*-
 """Composing task work-flows.
 
 .. seealso:
 
     You should import these from :mod:`celery` and not this module.
 """
-from __future__ import absolute_import, unicode_literals
 
 import itertools
 import operator
 from collections import deque
+from collections.abc import MutableSequence
 from copy import deepcopy
 from functools import partial as _partial
 from functools import reduce
@@ -21,8 +20,6 @@ from kombu.utils.uuid import uuid
 from vine import barrier
 
 from celery._state import current_app
-from celery.five import PY3, python_2_unicode_compatible
-from celery.local import try_import
 from celery.result import GroupResult, allow_join_result
 from celery.utils import abstract
 from celery.utils.collections import ChainMap
@@ -33,19 +30,10 @@ from celery.utils.functional import (is_list, maybe_list, regen,
 from celery.utils.objects import getitem_property
 from celery.utils.text import remove_repeating_from_task, truncate
 
-try:
-    from collections.abc import MutableSequence
-except ImportError:
-    # TODO: Remove this when we drop Python 2.7 support
-    from collections import MutableSequence
-
 __all__ = (
     'Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
     'group', 'chord', 'signature', 'maybe_signature',
 )
-
-# json in Python 2.7 borks if dict contains byte keys.
-JSON_NEEDS_UNICODE_KEYS = PY3 and not try_import('simplejson')
 
 
 def maybe_unroll_group(group):
@@ -75,7 +63,6 @@ def _upgrade(fields, sig):
 
 
 @abstract.CallableSignature.register
-@python_2_unicode_compatible
 class Signature(dict):
     """Task Signature.
 
@@ -159,7 +146,7 @@ class Signature(dict):
         self._app = app
 
         if isinstance(task, dict):
-            super(Signature, self).__init__(task)  # works like dict(d)
+            super().__init__(task)  # works like dict(d)
         else:
             # Also supports using task class/instance instead of string name.
             try:
@@ -169,7 +156,7 @@ class Signature(dict):
             else:
                 self._type = task
 
-            super(Signature, self).__init__(
+            super().__init__(
                 task=task_name, args=tuple(args or ()),
                 kwargs=kwargs or {},
                 options=dict(options or {}, **ex),
@@ -487,10 +474,9 @@ class Signature(dict):
     def __repr__(self):
         return self.reprcall()
 
-    if JSON_NEEDS_UNICODE_KEYS:  # pragma: no cover
-        def items(self):
-            for k, v in dict.items(self):
-                yield k.decode() if isinstance(k, bytes) else k, v
+    def items(self):
+        for k, v in dict.items(self):
+            yield k.decode() if isinstance(k, bytes) else k, v
 
     @property
     def name(self):
@@ -591,7 +577,6 @@ def _prepare_chain_from_options(options, tasks, use_link):
 
 
 @Signature.register_type(name='chain')
-@python_2_unicode_compatible
 class _chain(Signature):
     tasks = getitem_property('kwargs.tasks', 'Tasks in chain.')
 
@@ -826,8 +811,7 @@ class _chain(Signature):
 
     def __repr__(self):
         if not self.tasks:
-            return '<{0}@{1:#x}: empty>'.format(
-                type(self).__name__, id(self))
+            return f'<{type(self).__name__}@{id(self):#x}: empty>'
         return remove_repeating_from_task(
             self.tasks[0]['task'],
             ' | '.join(repr(t) for t in self.tasks))
@@ -890,7 +874,7 @@ class chain(_chain):
                 # if is_list(tasks) and len(tasks) == 1:
                 #     return super(chain, cls).__new__(cls, tasks, **kwargs)
                 return reduce(operator.or_, tasks, chain())
-        return super(chain, cls).__new__(cls, *tasks, **kwargs)
+        return super().__new__(cls, *tasks, **kwargs)
 
 
 class _basemap(Signature):
@@ -921,7 +905,6 @@ class _basemap(Signature):
 
 
 @Signature.register_type()
-@python_2_unicode_compatible
 class xmap(_basemap):
     """Map operation for tasks.
 
@@ -934,12 +917,10 @@ class xmap(_basemap):
 
     def __repr__(self):
         task, it = self._unpack_args(self.kwargs)
-        return '[{0}(x) for x in {1}]'.format(
-            task.task, truncate(repr(it), 100))
+        return f'[{task.task}(x) for x in {truncate(repr(it), 100)}]'
 
 
 @Signature.register_type()
-@python_2_unicode_compatible
 class xstarmap(_basemap):
     """Map operation for tasks, using star arguments."""
 
@@ -947,8 +928,7 @@ class xstarmap(_basemap):
 
     def __repr__(self):
         task, it = self._unpack_args(self.kwargs)
-        return '[{0}(*x) for x in {1}]'.format(
-            task.task, truncate(repr(it), 100))
+        return f'[{task.task}(*x) for x in {truncate(repr(it), 100)}]'
 
 
 @Signature.register_type()
@@ -1008,7 +988,6 @@ def _maybe_group(tasks, app):
 
 
 @Signature.register_type()
-@python_2_unicode_compatible
 class group(Signature):
     """Creates a group of tasks to be executed in parallel.
 
@@ -1154,8 +1133,7 @@ class group(Signature):
                 unroll = task._prepared(
                     task.tasks, partial_args, group_id, root_id, app,
                 )
-                for taskN, resN in unroll:
-                    yield taskN, resN
+                yield from unroll
             else:
                 if partial_args and not task.immutable:
                     task.args = tuple(partial_args) + tuple(task.args)
@@ -1245,7 +1223,7 @@ class group(Signature):
         if self.tasks:
             return remove_repeating_from_task(
                 self.tasks[0]['task'],
-                'group({0.tasks!r})'.format(self))
+                f'group({self.tasks!r})')
         return 'group(<empty>)'
 
     def __len__(self):
@@ -1263,7 +1241,6 @@ class group(Signature):
 
 
 @Signature.register_type()
-@python_2_unicode_compatible
 class chord(Signature):
     r"""Barrier synchronization primitive.
 
@@ -1465,14 +1442,14 @@ class chord(Signature):
             if isinstance(self.body, _chain):
                 return remove_repeating_from_task(
                     self.body.tasks[0]['task'],
-                    '%({0} | {1!r})'.format(
+                    '%({} | {!r})'.format(
                         self.body.tasks[0].reprcall(self.tasks),
                         chain(self.body.tasks[1:], app=self._app),
                     ),
                 )
             return '%' + remove_repeating_from_task(
                 self.body['task'], self.body.reprcall(self.tasks))
-        return '<chord without body: {0.tasks!r}>'.format(self)
+        return f'<chord without body: {self.tasks!r}>'
 
     @cached_property
     def app(self):

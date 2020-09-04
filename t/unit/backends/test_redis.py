@@ -1,19 +1,17 @@
-from __future__ import absolute_import, unicode_literals
-
 import json
 import random
 import ssl
 from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
+from unittest.mock import ANY, Mock, call, patch
 
 import pytest
-from case import ANY, ContextMock, Mock, call, mock, patch, skip
+from case import ContextMock, mock
 
 from celery import signature, states, uuid
 from celery.canvas import Signature
-from celery.exceptions import (ChordError, CPendingDeprecationWarning,
-                               ImproperlyConfigured)
+from celery.exceptions import (ChordError, ImproperlyConfigured)
 from celery.utils.collections import AttributeDict
 
 
@@ -31,14 +29,14 @@ class ConnectionError(Exception):
     pass
 
 
-class Connection(object):
+class Connection:
     connected = True
 
     def disconnect(self):
         self.connected = False
 
 
-class Pipeline(object):
+class Pipeline:
     def __init__(self, client):
         self.client = client
         self.steps = []
@@ -170,19 +168,19 @@ class Sentinel(mock.MockCallbacks):
         return random.choice(self.sentinels)
 
 
-class redis(object):
+class redis:
     StrictRedis = Redis
 
-    class ConnectionPool(object):
+    class ConnectionPool:
         def __init__(self, **kwargs):
             pass
 
-    class UnixDomainSocketConnection(object):
+    class UnixDomainSocketConnection:
         def __init__(self, **kwargs):
             pass
 
 
-class sentinel(object):
+class sentinel:
     Sentinel = Sentinel
 
 
@@ -295,8 +293,9 @@ class test_RedisBackend:
         self.b = self.Backend(app=self.app)
 
     @pytest.mark.usefixtures('depends_on_current_app')
-    @skip.unless_module('redis')
     def test_reduce(self):
+        pytest.importorskip('redis')
+
         from celery.backends.redis import RedisBackend
         x = RedisBackend(app=self.app)
         assert loads(dumps(x))
@@ -320,8 +319,9 @@ class test_RedisBackend:
         assert x.connparams['socket_timeout'] == 30.0
         assert x.connparams['socket_connect_timeout'] == 100.0
 
-    @skip.unless_module('redis')
     def test_timeouts_in_url_coerced(self):
+        pytest.importorskip('redis')
+
         x = self.Backend(
             ('redis://:bosco@vandelay.com:123//1?'
              'socket_timeout=30&socket_connect_timeout=100'),
@@ -335,8 +335,9 @@ class test_RedisBackend:
         assert x.connparams['socket_timeout'] == 30
         assert x.connparams['socket_connect_timeout'] == 100
 
-    @skip.unless_module('redis')
     def test_socket_url(self):
+        pytest.importorskip('redis')
+
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
         x = self.Backend(
@@ -353,8 +354,9 @@ class test_RedisBackend:
         assert 'socket_keepalive' not in x.connparams
         assert x.connparams['db'] == 3
 
-    @skip.unless_module('redis')
     def test_backend_ssl(self):
+        pytest.importorskip('redis')
+
         self.app.conf.redis_backend_use_ssl = {
             'ssl_cert_reqs': ssl.CERT_REQUIRED,
             'ssl_ca_certs': '/path/to/ca.crt',
@@ -381,12 +383,13 @@ class test_RedisBackend:
         from redis.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
-    @skip.unless_module('redis')
     @pytest.mark.parametrize('cert_str', [
         "required",
         "CERT_REQUIRED",
     ])
     def test_backend_ssl_certreq_str(self, cert_str):
+        pytest.importorskip('redis')
+
         self.app.conf.redis_backend_use_ssl = {
             'ssl_cert_reqs': cert_str,
             'ssl_ca_certs': '/path/to/ca.crt',
@@ -413,12 +416,13 @@ class test_RedisBackend:
         from redis.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
-    @skip.unless_module('redis')
     @pytest.mark.parametrize('cert_str', [
         "required",
         "CERT_REQUIRED",
     ])
     def test_backend_ssl_url(self, cert_str):
+        pytest.importorskip('redis')
+
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
         x = self.Backend(
@@ -437,12 +441,13 @@ class test_RedisBackend:
         from redis.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
-    @skip.unless_module('redis')
     @pytest.mark.parametrize('cert_str', [
         "none",
         "CERT_NONE",
     ])
     def test_backend_ssl_url_options(self, cert_str):
+        pytest.importorskip('redis')
+
         x = self.Backend(
             (
                 'rediss://:bosco@vandelay.com:123//1'
@@ -463,12 +468,13 @@ class test_RedisBackend:
         assert x.connparams['ssl_certfile'] == '/var/ssl/redis-server-cert.pem'
         assert x.connparams['ssl_keyfile'] == '/var/ssl/private/worker-key.pem'
 
-    @skip.unless_module('redis')
     @pytest.mark.parametrize('cert_str', [
         "optional",
         "CERT_OPTIONAL",
     ])
     def test_backend_ssl_url_cert_none(self, cert_str):
+        pytest.importorskip('redis')
+
         x = self.Backend(
             'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=%s' % cert_str,
             app=self.app,
@@ -482,30 +488,18 @@ class test_RedisBackend:
         from redis.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
-    @skip.unless_module('redis')
     @pytest.mark.parametrize("uri", [
         'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_KITTY_CATS',
         'rediss://:bosco@vandelay.com:123//1'
     ])
     def test_backend_ssl_url_invalid(self, uri):
+        pytest.importorskip('redis')
+
         with pytest.raises(ValueError):
             self.Backend(
                 uri,
                 app=self.app,
             )
-
-    def test_compat_propertie(self):
-        x = self.Backend(
-            'redis://:bosco@vandelay.com:123//1', app=self.app,
-        )
-        with pytest.warns(CPendingDeprecationWarning):
-            assert x.host == 'vandelay.com'
-        with pytest.warns(CPendingDeprecationWarning):
-            assert x.db == 1
-        with pytest.warns(CPendingDeprecationWarning):
-            assert x.port == 123
-        with pytest.warns(CPendingDeprecationWarning):
-            assert x.password == 'bosco'
 
     def test_conf_raises_KeyError(self):
         self.app.conf = AttributeDict({
@@ -608,7 +602,7 @@ class test_RedisBackend:
 
     def create_task(self, i):
         tid = uuid()
-        task = Mock(name='task-{0}'.format(tid))
+        task = Mock(name=f'task-{tid}')
         task.name = 'foobarbaz'
         self.app.tasks['foobarbaz'] = task
         task.request.chord = signature(task)
@@ -625,9 +619,9 @@ class test_RedisBackend:
 
         for i in range(10):
             self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
-            assert self.b.client.rpush.call_count
-            self.b.client.rpush.reset_mock()
-        assert self.b.client.lrange.call_count
+            assert self.b.client.zadd.call_count
+            self.b.client.zadd.reset_mock()
+        assert self.b.client.zrangebyscore.call_count
         jkey = self.b.get_key_for_group('group_id', '.j')
         tkey = self.b.get_key_for_group('group_id', '.t')
         self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
@@ -685,9 +679,9 @@ class test_RedisBackend:
 
         for i in range(10):
             self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
-            assert self.b.client.rpush.call_count
-            self.b.client.rpush.reset_mock()
-        assert self.b.client.lrange.call_count
+            assert self.b.client.zadd.call_count
+            self.b.client.zadd.reset_mock()
+        assert self.b.client.zrangebyscore.call_count
         jkey = self.b.get_key_for_group('group_id', '.j')
         tkey = self.b.get_key_for_group('group_id', '.t')
         self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
@@ -807,7 +801,7 @@ class test_RedisBackend:
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, ChordError())
-            self.b.client.pipeline.return_value.rpush().llen().get().expire(
+            self.b.client.pipeline.return_value.zadd().zcount().get().expire(
             ).expire().execute.return_value = (1, 1, 0, 4, 5)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
@@ -851,7 +845,7 @@ class test_RedisBackend:
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, RuntimeError())
-            self.b.client.pipeline.return_value.rpush().llen().get().expire(
+            self.b.client.pipeline.return_value.zadd().zcount().get().expire(
             ).expire().execute.return_value = (1, 1, 0, 4, 5)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
@@ -946,8 +940,9 @@ class test_SentinelBackend:
         self.b = self.Backend(app=self.app)
 
     @pytest.mark.usefixtures('depends_on_current_app')
-    @skip.unless_module('redis')
     def test_reduce(self):
+        pytest.importorskip('redis')
+
         from celery.backends.redis import SentinelBackend
         x = SentinelBackend(app=self.app)
         assert loads(dumps(x))

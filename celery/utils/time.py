@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Utilities related to dates, times, intervals, and timezones."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import numbers
 import os
 import random
@@ -14,8 +11,6 @@ from kombu.utils.objects import cached_property
 from pytz import AmbiguousTimeError, FixedOffset
 from pytz import timezone as _timezone
 from pytz import utc
-
-from celery.five import PY3, python_2_unicode_compatible, string_t
 
 from .functional import dictfilter
 from .iso8601 import parse_iso8601
@@ -53,7 +48,6 @@ ZERO = timedelta(0)
 _local_timezone = None
 
 
-@python_2_unicode_compatible
 class LocalTimezone(tzinfo):
     """Local time implementation.
 
@@ -75,9 +69,7 @@ class LocalTimezone(tzinfo):
         tzinfo.__init__(self)
 
     def __repr__(self):
-        return '<LocalTimezone: UTC{0:+03d}>'.format(
-            int(self.DSTOFFSET.total_seconds() / 3600),
-        )
+        return f'<LocalTimezone: UTC{int(self.DSTOFFSET.total_seconds() / 3600):+03d}>'
 
     def utcoffset(self, dt):
         return self.DSTOFFSET if self._isdst(dt) else self.STDOFFSET
@@ -88,20 +80,18 @@ class LocalTimezone(tzinfo):
     def tzname(self, dt):
         return _time.tzname[self._isdst(dt)]
 
-    if PY3:  # pragma: no cover
+    def fromutc(self, dt):
+        # The base tzinfo class no longer implements a DST
+        # offset aware .fromutc() in Python 3 (Issue #2306).
 
-        def fromutc(self, dt):
-            # The base tzinfo class no longer implements a DST
-            # offset aware .fromutc() in Python 3 (Issue #2306).
-
-            # I'd rather rely on pytz to do this, than port
-            # the C code from cpython's fromutc [asksol]
-            offset = int(self.utcoffset(dt).seconds / 60.0)
-            try:
-                tz = self._offset_cache[offset]
-            except KeyError:
-                tz = self._offset_cache[offset] = FixedOffset(offset)
-            return tz.fromutc(dt.replace(tzinfo=tz))
+        # I'd rather rely on pytz to do this, than port
+        # the C code from cpython's fromutc [asksol]
+        offset = int(self.utcoffset(dt).seconds / 60.0)
+        try:
+            tz = self._offset_cache[offset]
+        except KeyError:
+            tz = self._offset_cache[offset] = FixedOffset(offset)
+        return tz.fromutc(dt.replace(tzinfo=tz))
 
     def _isdst(self, dt):
         tt = (dt.year, dt.month, dt.day,
@@ -112,7 +102,7 @@ class LocalTimezone(tzinfo):
         return tt.tm_isdst > 0
 
 
-class _Zone(object):
+class _Zone:
 
     def tz_or_local(self, tzinfo=None):
         # pylint: disable=redefined-outer-name
@@ -125,17 +115,10 @@ class _Zone(object):
             dt = make_aware(dt, orig or self.utc)
         return localize(dt, self.tz_or_local(local))
 
-    if PY3:  # pragma: no cover
-
-        def to_system(self, dt):
-            # tz=None is a special case since Python 3.3, and will
-            # convert to the current local timezone (Issue #2306).
-            return dt.astimezone(tz=None)
-
-    else:
-
-        def to_system(self, dt):  # noqa
-            return localize(dt, self.local)
+    def to_system(self, dt):
+        # tz=None is a special case since Python 3.3, and will
+        # convert to the current local timezone (Issue #2306).
+        return dt.astimezone(tz=None)
 
     def to_local_fallback(self, dt):
         if is_naive(dt):
@@ -143,7 +126,7 @@ class _Zone(object):
         return localize(dt, self.local)
 
     def get_timezone(self, zone):
-        if isinstance(zone, string_t):
+        if isinstance(zone, str):
             return _timezone(zone)
         return zone
 
@@ -215,7 +198,7 @@ def remaining(start, ends_in, now=None, relative=False):
         end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
     ret = end_date - now
     if C_REMDEBUG:  # pragma: no cover
-        print('rem: NOW:%r START:%r ENDS_IN:%r END_DATE:%s REM:%s' % (
+        print('rem: NOW:{!r} START:{!r} ENDS_IN:{!r} END_DATE:{} REM:{}'.format(
             now, start, ends_in, end_date, ret))
     return ret
 
@@ -223,7 +206,7 @@ def remaining(start, ends_in, now=None, relative=False):
 def rate(r):
     """Convert rate string (`"100/m"`, `"2/h"` or `"0.5/s"`) to seconds."""
     if r:
-        if isinstance(r, string_t):
+        if isinstance(r, str):
             ops, _, modifier = r.partition('/')
             return RATE_MODIFIER_MAP[modifier or 's'](float(ops)) or 0
         return r or 0
@@ -260,8 +243,8 @@ def humanize_seconds(secs, prefix='', sep='', now='now', microseconds=False):
     for unit, divider, formatter in TIME_UNITS:
         if secs >= divider:
             w = secs / float(divider)
-            return '{0}{1}{2} {3}'.format(prefix, sep, formatter(w),
-                                          pluralize(w, unit))
+            return '{}{}{} {}'.format(prefix, sep, formatter(w),
+                                      pluralize(w, unit))
     if microseconds and secs > 0.0:
         return '{prefix}{sep}{0:.2f} seconds'.format(
             secs, sep=sep, prefix=prefix)
@@ -332,8 +315,7 @@ def maybe_make_aware(dt, tz=None):
     return dt
 
 
-@python_2_unicode_compatible
-class ffwd(object):
+class ffwd:
     """Version of ``dateutil.relativedelta`` that only supports addition."""
 
     def __init__(self, year=None, month=None, weeks=0, weekday=None, day=None,

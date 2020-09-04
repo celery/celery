@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
 """Actual App instance implementation."""
-from __future__ import absolute_import, unicode_literals
-
 import inspect
 import os
 import threading
 import warnings
-from collections import defaultdict, deque
+from collections import UserDict, defaultdict, deque
 from datetime import datetime
 from operator import attrgetter
 
@@ -24,8 +21,6 @@ from celery._state import (_announce_app_finalized, _deregister_app,
                            connect_on_app_finalize, get_current_app,
                            get_current_worker_task, set_default_app)
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
-from celery.five import (UserDict, bytes_if_py2, python_2_unicode_compatible,
-                         values)
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
@@ -36,14 +31,13 @@ from celery.utils.imports import gen_task_name, instantiate, symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
 from celery.utils.time import timezone, to_utc
-
+from . import backends
 # Load all builtin tasks
 from . import builtins  # noqa
-from . import backends
 from .annotations import prepare as prepare_annotations
+from .autoretry import add_autoretry_behaviour
 from .defaults import DEFAULT_SECURITY_DIGEST, find_deprecated_settings
 from .registry import TaskRegistry
-from .autoretry import add_autoretry_behaviour
 from .utils import (AppPickler, Settings, _new_key_to_old, _old_key_to_new,
                     _unpickle_app, _unpickle_app_v2, appstr, bugreport,
                     detect_settings)
@@ -141,8 +135,7 @@ class PendingConfiguration(UserDict, AttributeDictMixin):
         return self.callback()
 
 
-@python_2_unicode_compatible
-class Celery(object):
+class Celery:
     """Celery application.
 
     Arguments:
@@ -348,24 +341,6 @@ class Celery(object):
         self._pool = None
         _deregister_app(self)
 
-    def start(self, argv=None):
-        """Run :program:`celery` using `argv`.
-
-        Uses :data:`sys.argv` if `argv` is not specified.
-        """
-        return instantiate(
-            'celery.bin.celery:CeleryCommand', app=self
-        ).execute_from_commandline(argv)
-
-    def worker_main(self, argv=None):
-        """Run :program:`celery worker` using `argv`.
-
-        Uses :data:`sys.argv` if `argv` is not specified.
-        """
-        return instantiate(
-            'celery.bin.worker:worker', app=self
-        ).execute_from_commandline(argv)
-
     def task(self, *args, **opts):
         """Decorator to create a task class out of any callable.
 
@@ -433,7 +408,7 @@ class Celery(object):
             raise TypeError('argument 1 to @task() must be a callable')
         if args:
             raise TypeError(
-                '@task() takes exactly 1 argument ({0} given)'.format(
+                '@task() takes exactly 1 argument ({} given)'.format(
                     sum([len(args), len(opts)])))
         return inner_create_task_cls(**opts)
 
@@ -506,7 +481,7 @@ class Celery(object):
                 while pending:
                     maybe_evaluate(pending.popleft())
 
-                for task in values(self._tasks):
+                for task in self._tasks.values():
                     task.bind(self)
 
                 self.on_after_finalize.send(sender=self)
@@ -1034,7 +1009,7 @@ class Celery(object):
         if not keep_reduce:
             attrs['__reduce__'] = __reduce__
 
-        return type(bytes_if_py2(name or Class.__name__), (Class,), attrs)
+        return type(name or Class.__name__, (Class,), attrs)
 
     def _rgetattr(self, path):
         return attrgetter(path)(self)
@@ -1046,7 +1021,7 @@ class Celery(object):
         self.close()
 
     def __repr__(self):
-        return '<{0} {1}>'.format(type(self).__name__, appstr(self))
+        return '<{} {}>'.format(type(self).__name__, appstr(self))
 
     def __reduce__(self):
         if self._using_v1_reduce:

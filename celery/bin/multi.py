@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Start multiple worker instances from the command-line.
 
 .. program:: celery multi
@@ -68,7 +67,7 @@ Examples
     $ celery multi show 10 -l INFO -Q:1-3 images,video -Q:4,5 data
         -Q default -L:4,5 DEBUG
 
-    $ # Additional options are added to each celery worker' command,
+    $ # Additional options are added to each celery worker' comamnd,
     $ # but you can also modify the options for ranges of, or specific workers
 
     $ # 3 workers: Two with 3 processes, and one with 10 processes.
@@ -99,17 +98,17 @@ Examples
     celery worker -n baz@myhost -c 10
     celery worker -n xuzzy@myhost -c 3
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import signal
 import sys
 from functools import wraps
 
+import click
 from kombu.utils.objects import cached_property
 
 from celery import VERSION_BANNER
 from celery.apps.multi import Cluster, MultiParser, NamespacedOptionParser
+from celery.bin.base import CeleryCommand
 from celery.platforms import EX_FAILURE, EX_OK, signals
 from celery.utils import term
 from celery.utils.text import pluralize
@@ -461,5 +460,15 @@ class MultiTool(TermLogger):
         return str(self.colored.magenta('DOWN'))
 
 
-if __name__ == '__main__':              # pragma: no cover
-    main()
+@click.command(
+    cls=CeleryCommand,
+    context_settings={
+        'allow_extra_args': True,
+        'ignore_unknown_options': True
+    }
+)
+@click.pass_context
+def multi(ctx):
+    """Start multiple worker instances."""
+    cmd = MultiTool(quiet=ctx.obj.quiet, no_color=ctx.obj.no_color)
+    return cmd.execute_from_commandline([''] + ctx.args)

@@ -1,7 +1,6 @@
-from __future__ import absolute_import, unicode_literals
+from xyzzy import plugh  # noqa
 
 from celery import Celery, shared_task
-from xyzzy import plugh  # noqa
 
 app = Celery()
 
@@ -12,7 +11,6 @@ def bar():
 
     This is a sample Task.
     """
-    pass
 
 
 @shared_task
@@ -21,4 +19,3 @@ def baz():
 
     This is a sample Shared Task.
     """
-    pass

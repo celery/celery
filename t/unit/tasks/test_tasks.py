@@ -1,20 +1,17 @@
-from __future__ import absolute_import, unicode_literals
-
 import socket
 import tempfile
 from datetime import datetime, timedelta
+from unittest.mock import ANY, MagicMock, Mock, patch
 
 import pytest
-from case import ANY, ContextMock, MagicMock, Mock, patch
+from case import ContextMock
 from kombu import Queue
 from kombu.exceptions import EncodeError
 
 from celery import Task, group, uuid
 from celery.app.task import _reprtask
 from celery.exceptions import Ignore, ImproperlyConfigured, Retry
-from celery.five import items, range, string_t
 from celery.result import AsyncResult, EagerResult
-from celery.task.base import Task as OldTask
 from celery.utils.time import parse_iso8601
 
 try:
@@ -748,43 +745,6 @@ class test_tasks(TasksCase):
 
         self.app.send_task = old_send_task
 
-    def test_shadow_name_old_task_class(self):
-        def shadow_name(task, args, kwargs, options):
-            return 'fooxyz'
-
-        @self.app.task(base=OldTask, shadow_name=shadow_name)
-        def shadowed():
-            pass
-
-        old_send_task = self.app.send_task
-        self.app.send_task = Mock()
-
-        shadowed.delay()
-
-        self.app.send_task.assert_called_once_with(ANY, ANY, ANY,
-                                                   compression=ANY,
-                                                   delivery_mode=ANY,
-                                                   exchange=ANY,
-                                                   expires=ANY,
-                                                   immediate=ANY,
-                                                   link=ANY,
-                                                   link_error=ANY,
-                                                   mandatory=ANY,
-                                                   priority=ANY,
-                                                   producer=ANY,
-                                                   queue=ANY,
-                                                   result_cls=ANY,
-                                                   routing_key=ANY,
-                                                   serializer=ANY,
-                                                   soft_time_limit=ANY,
-                                                   task_id=ANY,
-                                                   task_type=ANY,
-                                                   time_limit=ANY,
-                                                   shadow='fooxyz',
-                                                   ignore_result=False)
-
-        self.app.send_task = old_send_task
-
     def test_inherit_parent_priority_child_task(self):
         self.app.conf.task_inherit_parent_priority = True
 
@@ -860,20 +820,20 @@ class test_tasks(TasksCase):
         assert task_headers['id'] == presult.id
         assert task_headers['task'] == task_name
         if test_eta:
-            assert isinstance(task_headers.get('eta'), string_t)
+            assert isinstance(task_headers.get('eta'), str)
             to_datetime = parse_iso8601(task_headers.get('eta'))
             assert isinstance(to_datetime, datetime)
         if test_expires:
-            assert isinstance(task_headers.get('expires'), string_t)
+            assert isinstance(task_headers.get('expires'), str)
             to_datetime = parse_iso8601(task_headers.get('expires'))
             assert isinstance(to_datetime, datetime)
         properties = properties or {}
-        for arg_name, arg_value in items(properties):
+        for arg_name, arg_value in properties.items():
             assert task_properties.get(arg_name) == arg_value
         headers = headers or {}
-        for arg_name, arg_value in items(headers):
+        for arg_name, arg_value in headers.items():
             assert task_headers.get(arg_name) == arg_value
-        for arg_name, arg_value in items(kwargs):
+        for arg_name, arg_value in kwargs.items():
             assert task_kwargs.get(arg_name) == arg_value
 
     def test_incomplete_task_cls(self):

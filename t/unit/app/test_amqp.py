@@ -1,14 +1,11 @@
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock
 from kombu import Exchange, Queue
 
 from celery import uuid
 from celery.app.amqp import Queues, utf8dict
-from celery.five import keys
 from celery.utils.time import to_utc
 
 
@@ -113,13 +110,13 @@ class test_Queues:
         q = Queues()
         q.select(['foo', 'bar'])
         q.select_add('baz')
-        assert sorted(keys(q._consume_from)) == ['bar', 'baz', 'foo']
+        assert sorted(q._consume_from.keys()) == ['bar', 'baz', 'foo']
 
     def test_deselect(self):
         q = Queues()
         q.select(['foo', 'bar'])
         q.deselect('bar')
-        assert sorted(keys(q._consume_from)) == ['foo']
+        assert sorted(q._consume_from.keys()) == ['foo']
 
     def test_with_ha_policy_compat(self):
         q = Queues(ha_policy='all')
@@ -352,7 +349,6 @@ class test_AMQP:
         assert prod.publish.call_args[1]['delivery_mode'] == 33
 
     def test_send_task_message__with_receivers(self):
-        from case import patch
         mocked_receiver = ((Mock(), Mock()), Mock())
         with patch('celery.signals.task_sent.receivers', [mocked_receiver]):
             self.app.amqp.send_task_message(Mock(), 'foo', self.simple_message)

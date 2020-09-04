@@ -1,6 +1,4 @@
 """Useful mocks for unit testing."""
-from __future__ import absolute_import, unicode_literals
-
 import numbers
 from datetime import datetime, timedelta
 
@@ -28,10 +26,11 @@ def TaskMessage(
     # type: (...) -> Any
     """Create task message in protocol 2 format."""
     kwargs = {} if not kwargs else kwargs
-    from celery import uuid
     from kombu.serialization import dumps
+
+    from celery import uuid
     id = id or uuid()
-    message = Mock(name='TaskMessage-{0}'.format(id))
+    message = Mock(name=f'TaskMessage-{id}')
     message.headers = {
         'id': id,
         'task': name,
@@ -59,10 +58,11 @@ def TaskMessage1(
     # type: (...) -> Any
     """Create task message in protocol 1 format."""
     kwargs = {} if not kwargs else kwargs
-    from celery import uuid
     from kombu.serialization import dumps
+
+    from celery import uuid
     id = id or uuid()
-    message = Mock(name='TaskMessage-{0}'.format(id))
+    message = Mock(name=f'TaskMessage-{id}')
     message.headers = {}
     message.payload = {
         'task': name,

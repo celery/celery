@@ -1,29 +1,29 @@
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import os
 import socket
 from itertools import cycle
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, mock, patch, skip
+from case import mock
 
 from celery.app.defaults import DEFAULTS
 from celery.concurrency.asynpool import iterate_file_descriptors_safely
-from celery.five import range
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import noop
 from celery.utils.objects import Bunch
 
+import t.skip
+
 try:
-    from celery.concurrency import prefork as mp
     from celery.concurrency import asynpool
+    from celery.concurrency import prefork as mp
 except ImportError:
 
-    class _mp(object):
+    class _mp:
         RUN = 0x1
 
-        class TaskPool(object):
+        class TaskPool:
             _pool = Mock()
 
             def __init__(self, *args, **kwargs):
@@ -41,7 +41,7 @@ except ImportError:
     asynpool = None  # noqa
 
 
-class MockResult(object):
+class MockResult:
 
     def __init__(self, value, pid):
         self.value = value
@@ -62,9 +62,9 @@ class test_process_initializer:
         with mock.restore_logging():
             from celery import signals
             from celery._state import _tls
-            from celery.concurrency.prefork import (
-                process_initializer, WORKER_SIGRESET, WORKER_SIGIGNORE,
-            )
+            from celery.concurrency.prefork import (WORKER_SIGIGNORE,
+                                                    WORKER_SIGRESET,
+                                                    process_initializer)
             on_worker_process_init = Mock()
             signals.worker_process_init.connect(on_worker_process_init)
 
@@ -112,7 +112,7 @@ class test_process_destructor:
         )
 
 
-class MockPool(object):
+class MockPool:
     started = False
     closed = False
     joined = False
@@ -183,9 +183,11 @@ class ExeMockTaskPool(mp.TaskPool):
     Pool = BlockingPool = ExeMockPool
 
 
-@skip.if_win32()
-@skip.unless_module('multiprocessing')
+@t.skip.if_win32
 class test_AsynPool:
+
+    def setup(self):
+        pytest.importorskip('multiprocessing')
 
     def test_gen_not_started(self):
 
@@ -333,9 +335,11 @@ class test_AsynPool:
         assert fd_iter == {}, "Expected all items removed from managed dict"
 
 
-@skip.if_win32()
-@skip.unless_module('multiprocessing')
+@t.skip.if_win32
 class test_ResultHandler:
+
+    def setup(self):
+        pytest.importorskip('multiprocessing')
 
     def test_process_result(self):
         x = asynpool.ResultHandler(
@@ -432,7 +436,7 @@ class test_TaskPool:
         pool = TaskPool(10)
         procs = [Bunch(pid=i) for i in range(pool.limit)]
 
-        class _Pool(object):
+        class _Pool:
             _pool = procs
             _maxtasksperchild = None
             timeout = 10

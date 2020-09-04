@@ -34,7 +34,6 @@
     celery.backends.mongodb
     celery.backends.elasticsearch
     celery.backends.redis
-    celery.backends.riak
     celery.backends.cassandra
     celery.backends.couchbase
     celery.backends.arangodb
@@ -75,6 +74,5 @@
     celery.utils.text
     celery.utils.dispatch
     celery.utils.dispatch.signal
-    celery.utils.dispatch.weakref_backports
     celery.platforms
     celery._state

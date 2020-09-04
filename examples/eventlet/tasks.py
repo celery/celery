@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function, unicode_literals
-
 import requests
 
 from celery import task
@@ -7,9 +5,9 @@ from celery import task
 
 @task()
 def urlopen(url):
-    print('-open: {0}'.format(url))
+    print(f'-open: {url}')
     try:
         response = requests.get(url)
     except requests.exceptions.RequestException as exc:
-        print('-url {0} gave error: {1!r}'.format(url, exc))
+        print(f'-url {url} gave error: {exc!r}')
     return len(response.text)

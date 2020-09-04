@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """In-memory representation of cluster state.
 
 This module implements a data-structure used to keep
@@ -13,12 +12,11 @@ Snapshots (:mod:`celery.events.snapshot`) can be used to
 take "pictures" of this state at regular intervals
 to for example, store that in a database.
 """
-from __future__ import absolute_import, unicode_literals
-
 import bisect
 import sys
 import threading
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import datetime
 from decimal import Decimal
 from itertools import islice
@@ -30,16 +28,8 @@ from kombu.clocks import timetuple
 from kombu.utils.objects import cached_property
 
 from celery import states
-from celery.five import items, python_2_unicode_compatible, values
 from celery.utils.functional import LRUCache, memoize, pass1
 from celery.utils.log import get_logger
-
-try:
-    from collections.abc import Callable
-except ImportError:
-    # TODO: Remove this when we drop Python 2.7 support
-    from collections import Callable
-
 
 __all__ = ('Worker', 'Task', 'State', 'heartbeat_expires')
 
@@ -103,7 +93,7 @@ class CallableDefaultdict(defaultdict):
 
     def __init__(self, fun, *args, **kwargs):
         self.fun = fun
-        super(CallableDefaultdict, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
         return self.fun(*args, **kwargs)
@@ -160,8 +150,7 @@ def with_unique_field(attr):
 
 
 @with_unique_field('hostname')
-@python_2_unicode_compatible
-class Worker(object):
+class Worker:
     """Worker State."""
 
     heartbeat_max = 4
@@ -204,10 +193,10 @@ class Worker(object):
 
         def event(type_, timestamp=None,
                   local_received=None, fields=None,
-                  max_drift=HEARTBEAT_DRIFT_MAX, items=items, abs=abs, int=int,
+                  max_drift=HEARTBEAT_DRIFT_MAX, abs=abs, int=int,
                   insort=bisect.insort, len=len):
             fields = fields or {}
-            for k, v in items(fields):
+            for k, v in fields.items():
                 _set(self, k, v)
             if type_ == 'offline':
                 heartbeats[:] = []
@@ -229,7 +218,8 @@ class Worker(object):
         return event
 
     def update(self, f, **kw):
-        for k, v in items(dict(f, **kw) if kw else f):
+        d = dict(f, **kw) if kw else f
+        for k, v in d.items():
             setattr(self, k, v)
 
     def __repr__(self):
@@ -254,8 +244,7 @@ class Worker(object):
 
 
 @with_unique_field('uuid')
-@python_2_unicode_compatible
-class Task(object):
+class Task:
     """Task State."""
 
     name = received = sent = started = succeeded = failed = retried = \
@@ -318,9 +307,8 @@ class Task(object):
             self.__dict__.update(kwargs)
 
     def event(self, type_, timestamp=None, local_received=None, fields=None,
-              precedence=states.precedence, items=items,
-              setattr=setattr, task_event_to_state=TASK_EVENT_TO_STATE.get,
-              RETRY=states.RETRY):
+              precedence=states.precedence, setattr=setattr,
+              task_event_to_state=TASK_EVENT_TO_STATE.get, RETRY=states.RETRY):
         fields = fields or {}
 
         # using .get is faster than catching KeyError in this case.
@@ -339,7 +327,7 @@ class Task(object):
             keep = self.merge_rules.get(state)
             if keep is not None:
                 fields = {
-                    k: v for k, v in items(fields) if k in keep
+                    k: v for k, v in fields.items() if k in keep
                 }
         else:
             fields.update(state=state, timestamp=timestamp)
@@ -411,7 +399,7 @@ class Task(object):
             return None
 
 
-class State(object):
+class State:
     """Records clusters state."""
 
     Worker = Worker
@@ -661,12 +649,12 @@ class State(object):
     def rebuild_taskheap(self, timetuple=timetuple):
         heap = self._taskheap[:] = [
             timetuple(t.clock, t.timestamp, t.origin, ref(t))
-            for t in values(self.tasks)
+            for t in self.tasks.values()
         ]
         heap.sort()
 
     def itertasks(self, limit=None):
-        for index, row in enumerate(items(self.tasks)):
+        for index, row in enumerate(self.tasks.items()):
             yield row
             if limit and index + 1 >= limit:
                 break
@@ -723,7 +711,7 @@ class State(object):
 
     def alive_workers(self):
         """Return a list of (seemingly) alive workers."""
-        return (w for w in values(self.workers) if w.alive)
+        return (w for w in self.workers.values() if w.alive)
 
     def __repr__(self):
         return R_STATE.format(self)
@@ -739,9 +727,10 @@ class State(object):
 
 
 def _serialize_Task_WeakSet_Mapping(mapping):
-    return {name: [t.id for t in tasks] for name, tasks in items(mapping)}
+    return {name: [t.id for t in tasks] for name, tasks in mapping.items()}
 
 
 def _deserialize_Task_WeakSet_Mapping(mapping, tasks):
+    mapping = mapping or {}
     return {name: WeakSet(tasks[i] for i in ids if i in tasks)
-            for name, ids in items(mapping or {})}
+            for name, ids in mapping.items()}

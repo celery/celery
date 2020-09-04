@@ -12,18 +12,18 @@ Generated with:
               -signkey key1.key -out cert1.crt
     $ rm key1.key.org cert1.csr
 """
-from __future__ import absolute_import, unicode_literals
 
+import builtins
 import os
 import tempfile
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, mock, patch
+from case import mock
 from kombu.exceptions import SerializerNotInstalled
 from kombu.serialization import disable_insecure_serializers, registry
 
 from celery.exceptions import ImproperlyConfigured, SecurityError
-from celery.five import builtins
 from celery.security import disable_untrusted_serializers, setup_security
 from celery.security.utils import reraise_errors
 

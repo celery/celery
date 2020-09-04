@@ -1,6 +1,4 @@
 """Fixtures and testing utilities for :pypi:`pytest <pytest>`."""
-from __future__ import absolute_import, unicode_literals
-
 import os
 from contextlib import contextmanager
 

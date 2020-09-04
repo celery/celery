@@ -1,15 +1,14 @@
-from __future__ import absolute_import, unicode_literals
-
 import errno
+import os
 import signal
 import sys
-import os
+from unittest.mock import Mock, call, patch
 
 import pytest
-from case import Mock, call, patch, skip
 
 from celery.apps.multi import (Cluster, MultiParser, NamespacedOptionParser,
                                Node, format_opt)
+import t.skip
 
 
 class test_functions:
@@ -127,10 +126,10 @@ class test_multi_args:
             'COMMAND', '-c 5', '-n celery1@example.com') + _args('celery1')
         for i, worker in enumerate(nodes3[1:]):
             assert worker.name == 'celery%s@example.com' % (i + 2)
-            node_i = 'celery%s' % (i + 2,)
+            node_i = f'celery{i + 2}'
             assert worker.argv == (
                 'COMMAND',
-                '-n %s@example.com' % (node_i,)) + _args(node_i)
+                f'-n {node_i}@example.com') + _args(node_i)
 
         nodes4 = list(multi_args(p2, cmd='COMMAND', suffix='""'))
         assert len(nodes4) == 10
@@ -195,7 +194,7 @@ class test_Node:
         assert sorted(n.argv) == sorted([
             '-m celery worker --detach',
             '-A foo',
-            '--executable={0}'.format(n.executable),
+            f'--executable={n.executable}',
             '-O fair',
             '-n foo@bar.com',
             '--logfile={}'.format(os.path.normpath('/var/log/celery/foo%I.log')),
@@ -385,7 +384,7 @@ class test_Cluster:
         for node in nodes:
             node.send.assert_called_with(15, self.cluster.on_node_signal_dead)
 
-    @skip.if_win32()
+    @t.skip.if_win32
     def test_kill(self):
         self.cluster.send_all = Mock(name='.send_all')
         self.cluster.kill()
@@ -430,7 +429,7 @@ class test_Cluster:
         nodes = p.getpids('celery worker')
 
     def prepare_pidfile_for_getpids(self, Pidfile):
-        class pids(object):
+        class pids:
 
             def __init__(self, path):
                 self.path = path

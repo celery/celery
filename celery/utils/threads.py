@@ -1,30 +1,27 @@
-# -*- coding: utf-8 -*-
 """Threading primitives and utilities."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import socket
 import sys
 import threading
 import traceback
 from contextlib import contextmanager
+from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
 
-from celery.five import THREAD_TIMEOUT_MAX, items, python_2_unicode_compatible
 from celery.local import Proxy
 
 try:
     from greenlet import getcurrent as get_ident
 except ImportError:  # pragma: no cover
     try:
-        from _thread import get_ident                   # noqa
+        from _thread import get_ident  # noqa
     except ImportError:
         try:
-            from thread import get_ident                # noqa
+            from thread import get_ident  # noqa
         except ImportError:  # pragma: no cover
             try:
-                from _dummy_thread import get_ident     # noqa
+                from _dummy_thread import get_ident  # noqa
             except ImportError:
-                from dummy_thread import get_ident      # noqa
+                from dummy_thread import get_ident  # noqa
 
 
 __all__ = (
@@ -48,7 +45,7 @@ class bgThread(threading.Thread):
     """Background service thread."""
 
     def __init__(self, name=None, **kwargs):
-        super(bgThread, self).__init__()
+        super().__init__()
         self._is_shutdown = threading.Event()
         self._is_stopped = threading.Event()
         self.daemon = True
@@ -115,7 +112,7 @@ def release_local(local):
     local.__release_local__()
 
 
-class Local(object):
+class Local:
     """Local object."""
 
     __slots__ = ('__storage__', '__ident_func__')
@@ -125,7 +122,7 @@ class Local(object):
         object.__setattr__(self, '__ident_func__', get_ident)
 
     def __iter__(self):
-        return iter(items(self.__storage__))
+        return iter(self.__storage__.items())
 
     def __call__(self, proxy):
         """Create a proxy for a name."""
@@ -155,7 +152,7 @@ class Local(object):
             raise AttributeError(name)
 
 
-class _LocalStack(object):
+class _LocalStack:
     """Local stack.
 
     This class works similar to a :class:`Local` but keeps a stack
@@ -255,8 +252,7 @@ class _LocalStack(object):
             return None
 
 
-@python_2_unicode_compatible
-class LocalManager(object):
+class LocalManager:
     """Local objects cannot manage themselves.
 
     For that you need a local manager.
@@ -302,7 +298,7 @@ class LocalManager(object):
             release_local(local)
 
     def __repr__(self):
-        return '<{0} storages: {1}>'.format(
+        return '<{} storages: {}>'.format(
             self.__class__.__name__, len(self.locals))
 
 
@@ -312,7 +308,7 @@ class _FastLocalStack(threading.local):
         self.stack = []
         self.push = self.stack.append
         self.pop = self.stack.pop
-        super(_FastLocalStack, self).__init__()
+        super().__init__()
 
     @property
     def top(self):

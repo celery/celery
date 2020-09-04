@@ -1,15 +1,13 @@
-from __future__ import absolute_import, unicode_literals
-
 import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pickle import dumps, loads
+from unittest.mock import Mock
 
 import pytest
 import pytz
-from case import Case, Mock, skip
+from case import Case
 
-from celery.five import items
 from celery.schedules import (ParseException, crontab, crontab_parser,
                               schedule, solar)
 
@@ -26,10 +24,10 @@ def patch_crontab_nowfun(cls, retval):
         cls.nowfun = prev_nowfun
 
 
-@skip.unless_module('ephem')
 class test_solar:
 
     def setup(self):
+        pytest.importorskip('ephem0')
         self.s = solar('sunrise', 60, 30, app=self.app)
 
     def test_reduce(self):
@@ -81,8 +79,8 @@ class test_solar:
             try:
                 s.remaining_estimate(datetime.utcnow())
             except TypeError:
-                pytest.fail("{0} was called with 'use_center' which is not a \
-                    valid keyword for the function.".format(s.method))
+                pytest.fail(f"{s.method} was called with 'use_center' which is not a "
+                            "valid keyword for the function.")
 
 
 class test_schedule:
@@ -624,7 +622,7 @@ class test_crontab_is_due:
         l2, d2, n2 = due.remaining_delta(last_ran, ffwd=relativedelta)
         if not isinstance(d1, relativedelta):
             assert l1 == l2
-            for field, value in items(d1._fields()):
+            for field, value in d1._fields().items():
                 assert getattr(d1, field) == value
             assert not d2.years
             assert not d2.months
@@ -758,7 +756,7 @@ class test_crontab_is_due:
             assert due
             assert remaining == 60.0
 
-    @skip.todo('unstable test')
+    @pytest.mark.skip('TODO: unstable test')
     def test_monthly_moy_execution_is_not_due(self):
         with patch_crontab_nowfun(
                 self.monthly_moy, datetime(2013, 6, 28, 14, 30)):

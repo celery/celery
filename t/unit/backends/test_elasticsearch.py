@@ -1,11 +1,11 @@
-from __future__ import absolute_import, unicode_literals
+import datetime
+from unittest.mock import Mock, call, patch, sentinel
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from case import Mock, patch, sentinel, skip, call
-from celery import states
-import datetime
 from kombu.utils.encoding import bytes_to_str
+
+from celery import states
 
 try:
     from elasticsearch import exceptions
@@ -17,7 +17,6 @@ from celery.backends import elasticsearch as module
 from celery.backends.elasticsearch import ElasticsearchBackend
 from celery.exceptions import ImproperlyConfigured
 
-
 _RESULT_RETRY = (
     '{"status":"RETRY","result":'
     '{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}'
@@ -27,8 +26,9 @@ _RESULT_FAILURE = (
     '{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}'
 )
 
+pytest.importorskip('elasticsearch')
 
-@skip.unless_module('elasticsearch')
+
 class test_ElasticsearchBackend:
 
     def setup(self):

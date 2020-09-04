@@ -1,20 +1,10 @@
-# -*- coding: utf-8 -*-
 """Text formatting utilities."""
-from __future__ import absolute_import, unicode_literals
-
+import io
 import re
+from collections.abc import Callable
 from functools import partial
 from pprint import pformat
 from textwrap import fill
-
-from celery.five import string_t
-
-try:
-    from collections.abc import Callable
-except ImportError:
-    # TODO: Remove this when we drop Python 2.7 support
-    from collections import Callable
-
 
 __all__ = (
     'abbr', 'abbrtask', 'dedent', 'dedent_initial',
@@ -35,7 +25,7 @@ RE_FORMAT = re.compile(r'%(\w)')
 def str_to_list(s):
     # type: (str) -> List[str]
     """Convert string to list."""
-    if isinstance(s, string_t):
+    if isinstance(s, str):
         return s.split(',')
     return s
 
@@ -123,7 +113,7 @@ def pretty(value, width=80, nl_width=80, sep='\n', **kw):
     if isinstance(value, dict):
         return '{{{0} {1}'.format(sep, pformat(value, 4, nl_width)[1:])
     elif isinstance(value, tuple):
-        return '{0}{1}{2}'.format(
+        return '{}{}{}'.format(
             sep, ' ' * 4, pformat(value, width=nl_width, **kw),
         )
     else:
@@ -198,3 +188,18 @@ def remove_repeating(substr, s):
             s[index + len(substr):].replace(substr, ''),
         ])
     return s
+
+
+StringIO = io.StringIO
+_SIO_write = StringIO.write
+_SIO_init = StringIO.__init__
+
+
+class WhateverIO(StringIO):
+    """StringIO that takes bytes or str."""
+
+    def __init__(self, v=None, *a, **kw):
+        _SIO_init(self, v.decode() if isinstance(v, bytes) else v, *a, **kw)
+
+    def write(self, data):
+        _SIO_write(self, data.decode() if isinstance(data, bytes) else data)

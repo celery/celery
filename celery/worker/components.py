@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Worker-level Bootsteps."""
-from __future__ import absolute_import, unicode_literals
-
 import atexit
 import warnings
 
@@ -13,7 +10,6 @@ from kombu.asynchronous.timer import Timer as _Timer
 from celery import bootsteps
 from celery._state import _set_task_join_will_block
 from celery.exceptions import ImproperlyConfigured
-from celery.five import string_t
 from celery.platforms import IS_WINDOWS
 from celery.utils.log import worker_logger as logger
 
@@ -64,7 +60,7 @@ class Hub(bootsteps.StartStopStep):
 
     def __init__(self, w, **kwargs):
         w.hub = None
-        super(Hub, self).__init__(w, **kwargs)
+        super().__init__(w, **kwargs)
 
     def include_if(self, w):
         return w.use_eventloop
@@ -120,13 +116,13 @@ class Pool(bootsteps.StartStopStep):
         w.max_concurrency = None
         w.min_concurrency = w.concurrency
         self.optimization = w.optimization
-        if isinstance(autoscale, string_t):
+        if isinstance(autoscale, str):
             max_c, _, min_c = autoscale.partition(',')
             autoscale = [int(max_c), min_c and int(min_c) or 0]
         w.autoscale = autoscale
         if w.autoscale:
             w.max_concurrency, w.min_concurrency = w.autoscale
-        super(Pool, self).__init__(w, **kwargs)
+        super().__init__(w, **kwargs)
 
     def close(self, w):
         if w.pool:
@@ -191,7 +187,7 @@ class Beat(bootsteps.StartStopStep):
     def __init__(self, w, beat=False, **kwargs):
         self.enabled = w.beat = beat
         w.beat = None
-        super(Beat, self).__init__(w, beat=beat, **kwargs)
+        super().__init__(w, beat=beat, **kwargs)
 
     def create(self, w):
         from celery.beat import EmbeddedService
@@ -209,7 +205,7 @@ class StateDB(bootsteps.Step):
     def __init__(self, w, **kwargs):
         self.enabled = w.statedb
         w._persistence = None
-        super(StateDB, self).__init__(w, **kwargs)
+        super().__init__(w, **kwargs)
 
     def create(self, w):
         w._persistence = w.state.Persistent(w.state, w.statedb, w.app.clock)

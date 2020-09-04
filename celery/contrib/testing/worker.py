@@ -1,6 +1,4 @@
 """Embedded workers for integration tests."""
-from __future__ import absolute_import, unicode_literals
-
 import os
 import threading
 from contextlib import contextmanager
@@ -32,7 +30,7 @@ class TestWorkController(worker.WorkController):
     def __init__(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         self._on_started = threading.Event()
-        super(TestWorkController, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def on_consumer_ready(self, consumer):
         # type: (celery.worker.consumer.Consumer) -> None

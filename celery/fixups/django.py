@@ -1,6 +1,4 @@
 """Django-specific customization."""
-from __future__ import absolute_import, unicode_literals
-
 import os
 import sys
 import warnings
@@ -31,7 +29,7 @@ def _maybe_close_fd(fh):
 
 def _verify_django_version(django):
     if django.VERSION < (1, 11):
-        raise ImproperlyConfigured('Celery 4.x requires Django 1.11 or later.')
+        raise ImproperlyConfigured('Celery 5.x requires Django 1.11 or later.')
 
 
 def fixup(app, env='DJANGO_SETTINGS_MODULE'):
@@ -47,7 +45,7 @@ def fixup(app, env='DJANGO_SETTINGS_MODULE'):
             return DjangoFixup(app).install()
 
 
-class DjangoFixup(object):
+class DjangoFixup:
     """Fixup installed when using Django."""
 
     def __init__(self, app):
@@ -98,7 +96,7 @@ class DjangoFixup(object):
         return symbol_by_name('django.utils.timezone:now')
 
 
-class DjangoWorkerFixup(object):
+class DjangoWorkerFixup:
     _db_recycles = 0
 
     def __init__(self, app):
