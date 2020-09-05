@@ -114,5 +114,5 @@ WORKDIR $HOME/celery
 
 # Setup the entrypoint, this ensures pyenv is initialized when a container is started
 # and that any compiled files from earlier steps or from mounts are removed to avoid
-# py.test failing with an ImportMismatchError
+# pytest failing with an ImportMismatchError
 ENTRYPOINT ["/entrypoint"]

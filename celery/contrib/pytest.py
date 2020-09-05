@@ -1,4 +1,4 @@
-"""Fixtures and testing utilities for :pypi:`py.test <pytest>`."""
+"""Fixtures and testing utilities for :pypi:`pytest <pytest>`."""
 import os
 from contextlib import contextmanager
 
