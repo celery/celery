@@ -1004,6 +1004,12 @@ class Task:
         return result
 
     def push_request(self, *args, **kwargs):
+        # indico
+        # we want access to args & kwargs in our copied context
+        # TODO: consider making a copy - need to make sure arguments are small enough
+        # to avoid dup mem.
+        self.request.args = args
+        self.request.kwargs = kwargs
         self.request_stack.push(Context(*args, **kwargs))
 
     def pop_request(self):
