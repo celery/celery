@@ -64,15 +64,13 @@ class Option:
 
 
 NAMESPACES = Namespace(
-    accept_content=Option(DEFAULT_ACCEPT_CONTENT, type='list', old=OLD_NS),
+    accept_content=Option(DEFAULT_ACCEPT_CONTENT, type='list'),
     result_accept_content=Option(None, type='list'),
     enable_utc=Option(True, type='bool'),
-    imports=Option((), type='tuple', old=OLD_NS),
-    include=Option((), type='tuple', old=OLD_NS),
-    timezone=Option(type='string', old=OLD_NS),
+    imports=Option((), type='tuple'),
+    include=Option((), type='tuple'),
+    timezone=Option(type='string'),
     beat=Namespace(
-        __old__=OLD_NS_BEAT,
-
         max_loop_interval=Option(0, type='float'),
         schedule=Option({}, type='dict'),
         scheduler=Option('celery.beat:PersistentScheduler'),
@@ -102,8 +100,6 @@ NAMESPACES = Namespace(
         vhost=Option(type='string'),
     ),
     cache=Namespace(
-        __old__=old_ns('celery_cache'),
-
         backend=Option(),
         backend_options=Option({}, type='dict'),
     ),
@@ -139,17 +135,12 @@ NAMESPACES = Namespace(
         exchange=Option('celery', type='string'),
     ),
     couchbase=Namespace(
-        __old__=old_ns('celery_couchbase'),
-
         backend_settings=Option(None, type='dict'),
     ),
     arangodb=Namespace(
-        __old__=old_ns('celery_arangodb'),
         backend_settings=Option(None, type='dict')
     ),
     mongodb=Namespace(
-        __old__=old_ns('celery_mongodb'),
-
         backend_settings=Option(type='dict'),
     ),
     cosmosdbsql=Namespace(
@@ -160,8 +151,6 @@ NAMESPACES = Namespace(
         max_retry_wait_time=Option(30, type='int'),
     ),
     event=Namespace(
-        __old__=old_ns('celery_event'),
-
         queue_expires=Option(60.0, type='float'),
         queue_ttl=Option(5.0, type='float'),
         queue_prefix=Option('celeryev'),
@@ -169,8 +158,6 @@ NAMESPACES = Namespace(
         exchange=Option('celeryev', type='string'),
     ),
     redis=Namespace(
-        __old__=old_ns('celery_redis'),
-
         backend_use_ssl=Option(type='dict'),
         db=Option(type='int'),
         host=Option(type='string'),
@@ -183,20 +170,12 @@ NAMESPACES = Namespace(
         socket_keepalive=Option(False, type='bool'),
     ),
     result=Namespace(
-        __old__=old_ns('celery_result'),
-
         backend=Option(type='string'),
-        cache_max=Option(
-            -1,
-            type='int', old={'celery_max_cached_results'},
-        ),
+        cache_max=Option(-1, type='int'),
         compression=Option(type='str'),
         exchange=Option('celeryresults'),
         exchange_type=Option('direct'),
-        expires=Option(
-            timedelta(days=1),
-            type='float', old={'celery_task_result_expires'},
-        ),
+        expires=Option(timedelta(days=1), type='float'),
         persistent=Option(None, type='bool'),
         extended=Option(False, type='bool'),
         serializer=Option('json'),
@@ -209,44 +188,33 @@ NAMESPACES = Namespace(
         backend_always_retry=Option(False, type='bool'),
     ),
     elasticsearch=Namespace(
-        __old__=old_ns('celery_elasticsearch'),
-
         retry_on_timeout=Option(type='bool'),
         max_retries=Option(type='int'),
         timeout=Option(type='float'),
         save_meta_as_text=Option(True, type='bool'),
     ),
     riak=Namespace(
-        __old__=old_ns('celery_riak'),
-
         backend_settings=Option(type='dict'),
     ),
     security=Namespace(
-        __old__=old_ns('celery_security'),
-
         certificate=Option(type='string'),
         cert_store=Option(type='string'),
         key=Option(type='string'),
         digest=Option(DEFAULT_SECURITY_DIGEST, type='string'),
     ),
     database=Namespace(
-        url=Option(old={'celery_result_dburi'}),
-        engine_options=Option(
-            type='dict', old={'celery_result_engine_options'},
-        ),
-        short_lived_sessions=Option(
-            False, type='bool', old={'celery_result_db_short_lived_sessions'},
-        ),
+        url=Option(),
+        engine_options=Option(type='dict'),
+        short_lived_sessions=Option(False, type='bool'),
         table_schemas=Option(type='dict'),
-        table_names=Option(type='dict', old={'celery_result_db_tablenames'}),
+        table_names=Option(type='dict'),
     ),
     task=Namespace(
-        __old__=OLD_NS,
         acks_late=Option(False, type='bool'),
         acks_on_failure_or_timeout=Option(True, type='bool'),
         always_eager=Option(False, type='bool'),
         annotations=Option(type='any'),
-        compression=Option(type='string', old={'celery_message_compression'}),
+        compression=Option(type='string'),
         create_missing_queues=Option(True, type='bool'),
         inherit_parent_priority=Option(False, type='bool'),
         default_delivery_mode=Option(2, type='string'),
@@ -256,20 +224,16 @@ NAMESPACES = Namespace(
         default_routing_key=Option(None, type='string'),  # taken from queue
         default_rate_limit=Option(type='string'),
         default_priority=Option(None, type='string'),
-        eager_propagates=Option(
-            False, type='bool', old={'celery_eager_propagates_exceptions'},
-        ),
+        eager_propagates=Option(False, type='bool'),
         ignore_result=Option(False, type='bool'),
-        protocol=Option(2, type='int', old={'celery_task_protocol'}),
-        publish_retry=Option(
-            True, type='bool', old={'celery_task_publish_retry'},
-        ),
+        protocol=Option(2, type='int'),
+        publish_retry=Option(True, type='bool'),
         publish_retry_policy=Option(
             {'max_retries': 3,
              'interval_start': 0,
              'interval_max': 1,
              'interval_step': 0.2},
-            type='dict', old={'celery_task_publish_retry_policy'},
+            type='dict'
         ),
         queues=Option(type='dict'),
         queue_ha_policy=Option(None, type='string'),
@@ -277,36 +241,25 @@ NAMESPACES = Namespace(
         reject_on_worker_lost=Option(type='bool'),
         remote_tracebacks=Option(False, type='bool'),
         routes=Option(type='any'),
-        send_sent_event=Option(
-            False, type='bool', old={'celery_send_task_sent_event'},
-        ),
-        serializer=Option('json', old={'celery_task_serializer'}),
-        soft_time_limit=Option(
-            type='float', old={'celeryd_task_soft_time_limit'},
-        ),
-        time_limit=Option(
-            type='float', old={'celeryd_task_time_limit'},
-        ),
+        send_sent_event=Option(False, type='bool'),
+        serializer=Option('json'),
+        soft_time_limit=Option(type='float'),
+        time_limit=Option(type='float'),
         store_errors_even_if_ignored=Option(False, type='bool'),
         track_started=Option(False, type='bool'),
     ),
     worker=Namespace(
-        __old__=OLD_NS_WORKER,
         agent=Option(None, type='string'),
         autoscaler=Option('celery.worker.autoscale:Autoscaler'),
         concurrency=Option(0, type='int'),
         consumer=Option('celery.worker.consumer:Consumer', type='string'),
-        direct=Option(False, type='bool', old={'celery_worker_direct'}),
-        disable_rate_limits=Option(
-            False, type='bool', old={'celery_disable_rate_limits'},
-        ),
-        enable_remote_control=Option(
-            True, type='bool', old={'celery_enable_remote_control'},
-        ),
+        direct=Option(False, type='bool'),
+        disable_rate_limits=Option(False, type='bool'),
+        enable_remote_control=Option(True, type='bool'),
         hijack_root_logger=Option(True, type='bool'),
         log_color=Option(type='bool'),
         log_format=Option(DEFAULT_PROCESS_LOG_FMT),
-        lost_wait=Option(10.0, type='float', old={'celeryd_worker_lost_wait'}),
+        lost_wait=Option(10.0, type='float'),
         max_memory_per_child=Option(type='int'),
         max_tasks_per_child=Option(type='int'),
         pool=Option(DEFAULT_POOL),
@@ -314,15 +267,9 @@ NAMESPACES = Namespace(
         pool_restarts=Option(False, type='bool'),
         proc_alive_timeout=Option(4.0, type='float'),
         prefetch_multiplier=Option(4, type='int'),
-        redirect_stdouts=Option(
-            True, type='bool', old={'celery_redirect_stdouts'},
-        ),
-        redirect_stdouts_level=Option(
-            'WARNING', old={'celery_redirect_stdouts_level'},
-        ),
-        send_task_events=Option(
-            False, type='bool', old={'celery_send_events'},
-        ),
+        redirect_stdouts=Option(True, type='bool'),
+        redirect_stdouts_level=Option('WARNING'),
+        send_task_events=Option(False, type='bool'),
         state_db=Option(),
         task_log_format=Option(DEFAULT_TASK_LOG_FMT),
         timer=Option(type='string'),

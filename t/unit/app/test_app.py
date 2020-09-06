@@ -294,30 +294,6 @@ class test_App:
             assert app.conf.broker_url == 'foo://bar'
             assert app._preconf['worker_agent'] == 'foo:Bar'
 
-    def test_pending_configuration__compat_settings(self):
-        with self.Celery(broker='foo://bar', backend='foo') as app:
-            app.conf.update(
-                CELERY_ALWAYS_EAGER=4,
-                CELERY_DEFAULT_DELIVERY_MODE=63,
-                CELERYD_AGENT='foo:Barz',
-            )
-            assert app.conf.task_always_eager == 4
-            assert app.conf.task_default_delivery_mode == 63
-            assert app.conf.worker_agent == 'foo:Barz'
-            assert app.conf.broker_url == 'foo://bar'
-            assert app.conf.result_backend == 'foo'
-
-    def test_pending_configuration__compat_settings_mixing(self):
-        with self.Celery(broker='foo://bar', backend='foo') as app:
-            app.conf.update(
-                CELERY_ALWAYS_EAGER=4,
-                CELERY_DEFAULT_DELIVERY_MODE=63,
-                CELERYD_AGENT='foo:Barz',
-                worker_consumer='foo:Fooz',
-            )
-            with pytest.raises(ImproperlyConfigured):
-                assert app.conf.task_always_eager == 4
-
     def test_pending_configuration__django_settings(self):
         with self.Celery(broker='foo://bar', backend='foo') as app:
             app.config_from_object(DictAttribute(Bunch(
@@ -333,30 +309,6 @@ class test_App:
             assert app.conf.worker_agent == 'foo:Barz'
             assert app.conf.broker_url == 'foo://bar'
             assert app.conf.result_backend == 'foo'
-
-    def test_pending_configuration__compat_settings_mixing_new(self):
-        with self.Celery(broker='foo://bar', backend='foo') as app:
-            app.conf.update(
-                task_always_eager=4,
-                task_default_delivery_mode=63,
-                worker_agent='foo:Barz',
-                CELERYD_CONSUMER='foo:Fooz',
-                CELERYD_AUTOSCALER='foo:Xuzzy',
-            )
-            with pytest.raises(ImproperlyConfigured):
-                assert app.conf.worker_consumer == 'foo:Fooz'
-
-    def test_pending_configuration__compat_settings_mixing_alt(self):
-        with self.Celery(broker='foo://bar', backend='foo') as app:
-            app.conf.update(
-                task_always_eager=4,
-                task_default_delivery_mode=63,
-                worker_agent='foo:Barz',
-                CELERYD_CONSUMER='foo:Fooz',
-                worker_consumer='foo:Fooz',
-                CELERYD_AUTOSCALER='foo:Xuzzy',
-                worker_autoscaler='foo:Xuzzy'
-            )
 
     def test_pending_configuration__setdefault(self):
         with self.Celery(broker='foo://bar') as app:
@@ -377,7 +329,7 @@ class test_App:
         with self.Celery(set_as_current=False) as app:
             app.conf.worker_agent = 'foo://bar'
             app.conf.task_default_delivery_mode = 44
-            app.conf.CELERY_ALWAYS_EAGER = 5
+            app.conf.task_always_eager = 5
             with pytest.raises(ImproperlyConfigured):
                 app.finalize()
 
