@@ -325,17 +325,6 @@ class test_App:
             assert 'worker_agent' in app.conf
             assert dict(app.conf)
 
-    def test_pending_configuration__raises_ImproperlyConfigured(self):
-        with self.Celery(set_as_current=False) as app:
-            app.conf.worker_agent = 'foo://bar'
-            app.conf.task_default_delivery_mode = 44
-            app.conf.task_always_eager = 5
-            with pytest.raises(ImproperlyConfigured):
-                app.finalize()
-
-        with self.Celery() as app:
-            assert not self.app.conf.task_always_eager
-
     def test_pending_configuration__ssl_settings(self):
         with self.Celery(broker='foo://bar',
                          broker_use_ssl={
@@ -549,32 +538,6 @@ class test_App:
 
         self.assert_config2()
 
-    def test_config_from_object__compat(self):
-
-        class Config:
-            CELERY_ALWAYS_EAGER = 44
-            CELERY_DEFAULT_DELIVERY_MODE = 30
-            CELERY_TASK_PUBLISH_RETRY = False
-
-        self.app.config_from_object(Config)
-        assert self.app.conf.task_always_eager == 44
-        assert self.app.conf.CELERY_ALWAYS_EAGER == 44
-        assert not self.app.conf.task_publish_retry
-        assert self.app.conf.task_default_routing_key == 'testcelery'
-
-    def test_config_from_object__supports_old_names(self):
-
-        class Config:
-            task_always_eager = 45
-            task_default_delivery_mode = 301
-
-        self.app.config_from_object(Config())
-        assert self.app.conf.CELERY_ALWAYS_EAGER == 45
-        assert self.app.conf.task_always_eager == 45
-        assert self.app.conf.CELERY_DEFAULT_DELIVERY_MODE == 301
-        assert self.app.conf.task_default_delivery_mode == 301
-        assert self.app.conf.task_default_routing_key == 'testcelery'
-
     def test_config_from_object__namespace_uppercase(self):
 
         class Config:
@@ -592,34 +555,6 @@ class test_App:
 
         self.app.config_from_object(Config(), namespace='celery')
         assert self.app.conf.task_always_eager == 44
-
-    def test_config_from_object__mixing_new_and_old(self):
-
-        class Config:
-            task_always_eager = 44
-            worker_agent = 'foo:Agent'
-            worker_consumer = 'foo:Consumer'
-            beat_schedule = '/foo/schedule'
-            CELERY_DEFAULT_DELIVERY_MODE = 301
-
-        with pytest.raises(ImproperlyConfigured) as exc:
-            self.app.config_from_object(Config(), force=True)
-            assert exc.args[0].startswith('CELERY_DEFAULT_DELIVERY_MODE')
-            assert 'task_default_delivery_mode' in exc.args[0]
-
-    def test_config_from_object__mixing_old_and_new(self):
-
-        class Config:
-            CELERY_ALWAYS_EAGER = 46
-            CELERYD_AGENT = 'foo:Agent'
-            CELERYD_CONSUMER = 'foo:Consumer'
-            CELERYBEAT_SCHEDULE = '/foo/schedule'
-            task_default_delivery_mode = 301
-
-        with pytest.raises(ImproperlyConfigured) as exc:
-            self.app.config_from_object(Config(), force=True)
-            assert exc.args[0].startswith('task_default_delivery_mode')
-            assert 'CELERY_DEFAULT_DELIVERY_MODE' in exc.args[0]
 
     def test_config_from_cmdline(self):
         cmdline = ['task_always_eager=no',
