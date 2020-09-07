@@ -56,7 +56,6 @@ matrix:
     stage: lint
   - python: pypy3.6-7.3.1
     env: TOXENV=pypy3
-    before_install: sudo apt-get update && sudo apt-get install libgnutls-dev
     stage: test
 
 before_install:
