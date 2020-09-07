@@ -25,7 +25,6 @@ globals().update(conf.build_config(
         'cyanide': ('https://cyanide.readthedocs.io/en/latest', None),
     },
     apicheck_ignore_modules=[
-        'celery.five',
         'celery.__main__',
         'celery.task',
         'celery.contrib.testing',

@@ -37,8 +37,8 @@ For this reason your tasks run-time shouldn't exceed the timeout.
 
 .. code-block:: python
 
+    import time
     from celery import task
-    from celery.five import monotonic
     from celery.utils.log import get_task_logger
     from contextlib import contextmanager
     from django.core.cache import cache
@@ -51,7 +51,7 @@ For this reason your tasks run-time shouldn't exceed the timeout.
 
     @contextmanager
     def memcache_lock(lock_id, oid):
-        timeout_at = monotonic() + LOCK_EXPIRE - 3
+        timeout_at = time.monotonic() + LOCK_EXPIRE - 3
         # cache.add fails if the key already exists
         status = cache.add(lock_id, oid, LOCK_EXPIRE)
         try:
@@ -59,7 +59,7 @@ For this reason your tasks run-time shouldn't exceed the timeout.
         finally:
             # memcache delete is very slow, but we have to use it to take
             # advantage of using add() for atomic locking
-            if monotonic() < timeout_at and status:
+            if time.monotonic() < timeout_at and status:
                 # don't release the lock if we exceeded the timeout
                 # to lessen the chance of releasing an expired lock
                 # owned by someone else

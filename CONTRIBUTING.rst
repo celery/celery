@@ -1067,7 +1067,6 @@ is following the conventions.
         from Queue import Queue, Empty
 
         from .platforms import Pidfile
-        from .five import zip_longest, items, range
         from .utils.time import maybe_timedelta
 
 * Wild-card imports must not be used (`from xxx import *`).

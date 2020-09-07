@@ -11,8 +11,6 @@ from kombu.log import LOG_LEVELS
 from kombu.log import get_logger as _get_logger
 from kombu.utils.encoding import safe_str
 
-from celery.five import values
-
 from .term import colored
 
 __all__ = (
@@ -45,7 +43,7 @@ def set_in_sighandler(value):
 
 def iter_open_logger_fds():
     seen = set()
-    loggers = (list(values(logging.Logger.manager.loggerDict)) +
+    loggers = (list(logging.Logger.manager.loggerDict.values()) +
                [logging.getLogger(None)])
     for l in loggers:
         try:

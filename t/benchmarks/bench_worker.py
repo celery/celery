@@ -1,8 +1,6 @@
 import os
 import sys
 
-from kombu.five import monotonic  # noqa
-
 from celery import Celery  # noqa
 
 os.environ.update(
@@ -41,7 +39,7 @@ app.conf.update(
 
 
 def tdiff(then):
-    return monotonic() - then
+    return time.monotonic() - then
 
 
 @app.task(cur=0, time_start=None, queue='bench.worker', bare=True)
@@ -51,9 +49,9 @@ def it(_, n):
     i = it.cur
     if i and not i % 5000:
         print('({} so far: {}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
-        it.subt = monotonic()
+        it.subt = time.monotonic()
     if not i:
-        it.subt = it.time_start = monotonic()
+        it.subt = it.time_start = time.monotonic()
     elif i > n - 2:
         total = tdiff(it.time_start)
         print('({} so far: {}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
@@ -66,11 +64,11 @@ def it(_, n):
 
 
 def bench_apply(n=DEFAULT_ITS):
-    time_start = monotonic()
+    time_start = time.monotonic()
     task = it._get_current_object()
     with app.producer_or_acquire() as producer:
         [task.apply_async((i, n), producer=producer) for i in range(n)]
-    print('-- apply {} tasks: {}s'.format(n, monotonic() - time_start))
+    print('-- apply {} tasks: {}s'.format(n, time.monotonic() - time_start))
 
 
 def bench_work(n=DEFAULT_ITS, loglevel='CRITICAL'):
