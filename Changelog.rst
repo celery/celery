@@ -17,7 +17,7 @@ an overview of what's new in Celery 5.0.
 
 5.0.0rc3
 ========
-:release-date: 2020-09-01 6.30 P.M UTC+3:00
+:release-date: 2020-09-07 4.00 P.M UTC+3:00
 :release-by: Omer Katz
 
 - More cleanups of leftover Python 2 support. (#6338)
