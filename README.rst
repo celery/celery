@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.0.0rc2 (cliffs)
+:Version: 5.0.0rc3 (cliffs)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -57,7 +57,7 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 5.0.0rc2 runs on,
+Celery version 5.0.0rc3 runs on,
 
 - Python (3.6, 3.7, 3.8)
 - PyPy3.6 (7.6)
@@ -89,7 +89,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery 5.0.0rc2 coming from previous versions then you should read our
+new to Celery 5.0.0rc3 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
