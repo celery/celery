@@ -1133,7 +1133,6 @@ class test_signature_serialization:
         )
         sig.delay().get(timeout=TIMEOUT)
 
-    @pytest.mark.xfail(reason="#6341")
     def test_rebuild_nested_group_chain(self, manager):
         sig = chain(
             tasks.return_nested_signature_group_chain.s(),
@@ -1141,7 +1140,6 @@ class test_signature_serialization:
         )
         sig.delay().get(timeout=TIMEOUT)
 
-    @pytest.mark.xfail(reason="#6341")
     def test_rebuild_nested_group_group(self, manager):
         sig = chain(
             tasks.return_nested_signature_group_group.s(),
@@ -1149,7 +1147,6 @@ class test_signature_serialization:
         )
         sig.delay().get(timeout=TIMEOUT)
 
-    @pytest.mark.xfail(reason="#6341")
     def test_rebuild_nested_group_chord(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
