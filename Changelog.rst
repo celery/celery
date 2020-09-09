@@ -37,17 +37,17 @@ an overview of what's new in Celery 5.0.
 :release-by: Omer Katz
 
 - Allow to opt out of ordered group results when using the Redis result backend (#6290).
-- **Breaking Chnage** Remove the deprecated celery.utils.encoding module.
+- **Breaking Change** Remove the deprecated celery.utils.encoding module.
 
 5.0.0b1
 =======
 :release-date: 2020-08-19 8.30 P.M UTC+3:00
 :release-by: Omer Katz
 
-- **Breaking Chnage** Drop support for the Riak result backend (#5686).
-- **Breaking Chnage** pytest plugin is no longer enabled by default. (#6288)
+- **Breaking Change** Drop support for the Riak result backend (#5686).
+- **Breaking Change** pytest plugin is no longer enabled by default. (#6288)
   Install pytest-celery to enable it.
-- **Breaking Chnage** Brand new CLI based on Click (#5718).
+- **Breaking Change** Brand new CLI based on Click (#5718).
 
 5.0.0a2
 =======
