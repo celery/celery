@@ -5,22 +5,32 @@ python:
   - '3.6'
   - '3.7'
   - '3.8'
+  - '3.9-dev'
 os:
     - linux
 stages:
   - test
   - integration
   - lint
+services:
+  - redis
+  - docker
 env:
   global:
   - PYTHONUNBUFFERED=yes
   - CELERY_TOX_PARALLEL=
-  matrix:
+  jobs:
   - MATRIX_TOXENV=unit
 
-matrix:
+jobs:
   fast_finish: true
+  allow_failures:
+  - python: '3.9-dev'
   include:
+  - python: '3.9-dev'
+    env: MATRIX_TOXENV=integration-rabbitmq
+    stage: integration
+
   - python: 3.8
     env: MATRIX_TOXENV=integration-rabbitmq
     stage: integration
@@ -112,14 +122,14 @@ before_install:
           wget -qO - https://packages.couchbase.com/ubuntu/couchbase.key | sudo apt-key add -
           sudo apt-add-repository -y 'deb http://packages.couchbase.com/ubuntu bionic bionic/main'
           sudo apt-get update && sudo apt-get install -y libcouchbase-dev
+install: pip --disable-pip-version-check install --upgrade-strategy eager -U tox | cat
+script: tox $CELERY_TOX_PARALLEL -v -- -v
 after_success:
   - |
           if [[ -v MATRIX_TOXENV || "$TOXENV" =~ "pypy" ]]; then
               .tox/$TOXENV/bin/coverage xml
               .tox/$TOXENV/bin/codecov -e TOXENV
           fi;
-install: pip --disable-pip-version-check install --upgrade-strategy eager -U tox | cat
-script: tox $CELERY_TOX_PARALLEL -v -- -v
 notifications:
   email: false
   irc:
@@ -127,6 +137,3 @@ notifications:
       - "chat.freenode.net#celery"
     on_success: change
     on_failure: change
-services:
-    - redis
-    - docker
