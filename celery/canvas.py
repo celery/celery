@@ -440,6 +440,12 @@ class Signature(dict):
             return _chain(self, other, app=self._app)
         return NotImplemented
 
+    def __ior__(self, other):
+        # Python 3.9 introduces | as the merge operator for dicts.
+        # We override the in-place version of that operator
+        # so that canvases continue to work as they did before.
+        return self.__or__(other)
+
     def election(self):
         type = self.type
         app = type.app
