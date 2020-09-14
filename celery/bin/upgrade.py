@@ -20,7 +20,7 @@ def _slurp(filename):
         return [line for line in read_fh]
 
 
-def _compat_key(self, key, namespace='CELERY'):
+def _compat_key(key, namespace='CELERY'):
     key = key.upper()
     if not key.startswith(namespace):
         key = '_'.join([namespace, key])
