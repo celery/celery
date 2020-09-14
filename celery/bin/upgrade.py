@@ -52,12 +52,12 @@ def _to_new_key(line, keyfilter=pass1, source=defaults._TO_NEW_KEY):
 
 @upgrade.command(cls=CeleryCommand)
 @click.argument('filename')
-@click.option('-django',
+@click.option('--django',
               cls=CeleryOption,
               is_flag=True,
               help_group='Upgrading Options',
               help='Upgrade Django project.')
-@click.option('-compat',
+@click.option('--compat',
               cls=CeleryOption,
               is_flag=True,
               help_group='Upgrading Options',
@@ -66,7 +66,7 @@ def _to_new_key(line, keyfilter=pass1, source=defaults._TO_NEW_KEY):
               cls=CeleryOption,
               is_flag=True,
               help_group='Upgrading Options',
-              help='Dont backup original files.')
+              help="Don't backup original files.")
 def settings(filename, django, compat, no_backup):
     """Migrate settings from Celery 3.x to Celery 4.x."""
     lines = _slurp(filename)
