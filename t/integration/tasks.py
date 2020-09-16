@@ -1,6 +1,6 @@
 from time import sleep
 
-from celery import Task, chain, chord, group, shared_task
+from celery import Signature, Task, chain, chord, group, shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
@@ -244,3 +244,67 @@ class ClassBasedAutoRetryTask(Task):
         if self.request.retries:
             return self.request.retries
         raise ValueError()
+
+
+# The signatures returned by these tasks wouldn't actually run because the
+# arguments wouldn't be fulfilled - we never actually delay them so it's fine
+@shared_task
+def return_nested_signature_chain_chain():
+    return chain(chain([add.s()]))
+
+
+@shared_task
+def return_nested_signature_chain_group():
+    return chain(group([add.s()]))
+
+
+@shared_task
+def return_nested_signature_chain_chord():
+    return chain(chord([add.s()], add.s()))
+
+
+@shared_task
+def return_nested_signature_group_chain():
+    return group(chain([add.s()]))
+
+
+@shared_task
+def return_nested_signature_group_group():
+    return group(group([add.s()]))
+
+
+@shared_task
+def return_nested_signature_group_chord():
+    return group(chord([add.s()], add.s()))
+
+
+@shared_task
+def return_nested_signature_chord_chain():
+    return chord(chain([add.s()]), add.s())
+
+
+@shared_task
+def return_nested_signature_chord_group():
+    return chord(group([add.s()]), add.s())
+
+
+@shared_task
+def return_nested_signature_chord_chord():
+    return chord(chord([add.s()], add.s()), add.s())
+
+
+@shared_task
+def rebuild_signature(sig_dict):
+    sig_obj = Signature.from_dict(sig_dict)
+
+    def _recurse(sig):
+        if not isinstance(sig, Signature):
+            raise TypeError("{!r} is not a signature object".format(sig))
+        # Most canvas types have a `tasks` attribute
+        if isinstance(sig, (chain, group, chord)):
+            for task in sig.tasks:
+                _recurse(task)
+        # `chord`s also have a `body` attribute
+        if isinstance(sig, chord):
+            _recurse(sig.body)
+    _recurse(sig_obj)

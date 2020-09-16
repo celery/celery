@@ -694,6 +694,32 @@ class test_group(CanvasCase):
         x['args'] = None
         assert group.from_dict(dict(x))
 
+    @pytest.mark.xfail(reason="#6341")
+    def test_from_dict_deep_deserialize(self):
+        original_group = group([self.add.s(1, 2)] * 42)
+        serialized_group = json.loads(json.dumps(original_group))
+        deserialized_group = group.from_dict(serialized_group)
+        assert all(
+            isinstance(child_task, Signature)
+            for child_task in deserialized_group.tasks
+        )
+
+    @pytest.mark.xfail(reason="#6341")
+    def test_from_dict_deeper_deserialize(self):
+        inner_group = group([self.add.s(1, 2)] * 42)
+        outer_group = group([inner_group] * 42)
+        serialized_group = json.loads(json.dumps(outer_group))
+        deserialized_group = group.from_dict(serialized_group)
+        assert all(
+            isinstance(child_task, Signature)
+            for child_task in deserialized_group.tasks
+        )
+        assert all(
+            isinstance(grandchild_task, Signature)
+            for child_task in deserialized_group.tasks
+            for grandchild_task in child_task.tasks
+        )
+
     def test_call_empty_group(self):
         x = group(app=self.app)
         assert not len(x())
@@ -1058,6 +1084,119 @@ class test_chord(CanvasCase):
         finally:
             _state.task_join_will_block = fixture_task_join_will_block
             result.task_join_will_block = fixture_task_join_will_block
+
+    def test_from_dict(self):
+        header = self.add.s(1, 2)
+        original_chord = chord(header=header)
+        rebuilt_chord = chord.from_dict(dict(original_chord))
+        assert isinstance(rebuilt_chord, chord)
+
+    def test_from_dict_with_body(self):
+        header = body = self.add.s(1, 2)
+        original_chord = chord(header=header, body=body)
+        rebuilt_chord = chord.from_dict(dict(original_chord))
+        assert isinstance(rebuilt_chord, chord)
+
+    def test_from_dict_deep_deserialize(self, subtests):
+        header = body = self.add.s(1, 2)
+        original_chord = chord(header=header, body=body)
+        serialized_chord = json.loads(json.dumps(original_chord))
+        deserialized_chord = chord.from_dict(serialized_chord)
+        with subtests.test(msg="Verify chord is deserialized"):
+            assert isinstance(deserialized_chord, chord)
+        with subtests.test(msg="Validate chord header tasks is deserialized"):
+            assert all(
+                isinstance(child_task, Signature)
+                for child_task in deserialized_chord.tasks
+            )
+        with subtests.test(msg="Verify chord body is deserialized"):
+            assert isinstance(deserialized_chord.body, Signature)
+
+    @pytest.mark.xfail(reason="#6341")
+    def test_from_dict_deep_deserialize_group(self, subtests):
+        header = body = group([self.add.s(1, 2)] * 42)
+        original_chord = chord(header=header, body=body)
+        serialized_chord = json.loads(json.dumps(original_chord))
+        deserialized_chord = chord.from_dict(serialized_chord)
+        with subtests.test(msg="Verify chord is deserialized"):
+            assert isinstance(deserialized_chord, chord)
+        # A header which is a group gets unpacked into the chord's `tasks`
+        with subtests.test(
+            msg="Validate chord header tasks are deserialized and unpacked"
+        ):
+            assert all(
+                isinstance(child_task, Signature)
+                and not isinstance(child_task, group)
+                for child_task in deserialized_chord.tasks
+            )
+        # A body which is a group remains as it we passed in
+        with subtests.test(
+            msg="Validate chord body is deserialized and not unpacked"
+        ):
+            assert isinstance(deserialized_chord.body, group)
+            assert all(
+                isinstance(body_child_task, Signature)
+                for body_child_task in deserialized_chord.body.tasks
+            )
+
+    @pytest.mark.xfail(reason="#6341")
+    def test_from_dict_deeper_deserialize_group(self, subtests):
+        inner_group = group([self.add.s(1, 2)] * 42)
+        header = body = group([inner_group] * 42)
+        original_chord = chord(header=header, body=body)
+        serialized_chord = json.loads(json.dumps(original_chord))
+        deserialized_chord = chord.from_dict(serialized_chord)
+        with subtests.test(msg="Verify chord is deserialized"):
+            assert isinstance(deserialized_chord, chord)
+        # A header which is a group gets unpacked into the chord's `tasks`
+        with subtests.test(
+            msg="Validate chord header tasks are deserialized and unpacked"
+        ):
+            assert all(
+                isinstance(child_task, group)
+                for child_task in deserialized_chord.tasks
+            )
+            assert all(
+                isinstance(grandchild_task, Signature)
+                for child_task in deserialized_chord.tasks
+                for grandchild_task in child_task.tasks
+            )
+        # A body which is a group remains as it we passed in
+        with subtests.test(
+            msg="Validate chord body is deserialized and not unpacked"
+        ):
+            assert isinstance(deserialized_chord.body, group)
+            assert all(
+                isinstance(body_child_task, group)
+                for body_child_task in deserialized_chord.body.tasks
+            )
+            assert all(
+                isinstance(body_grandchild_task, Signature)
+                for body_child_task in deserialized_chord.body.tasks
+                for body_grandchild_task in body_child_task.tasks
+            )
+
+    def test_from_dict_deep_deserialize_chain(self, subtests):
+        header = body = chain([self.add.s(1, 2)] * 42)
+        original_chord = chord(header=header, body=body)
+        serialized_chord = json.loads(json.dumps(original_chord))
+        deserialized_chord = chord.from_dict(serialized_chord)
+        with subtests.test(msg="Verify chord is deserialized"):
+            assert isinstance(deserialized_chord, chord)
+        # A header which is a chain gets unpacked into the chord's `tasks`
+        with subtests.test(
+            msg="Validate chord header tasks are deserialized and unpacked"
+        ):
+            assert all(
+                isinstance(child_task, Signature)
+                and not isinstance(child_task, chain)
+                for child_task in deserialized_chord.tasks
+            )
+        # A body which is a chain gets mutatated into the hidden `_chain` class
+        with subtests.test(
+            msg="Validate chord body is deserialized and not unpacked"
+        ):
+            assert isinstance(deserialized_chord.body, _chain)
 
 
 class test_maybe_signature(CanvasCase):
