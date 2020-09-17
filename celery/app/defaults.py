@@ -216,11 +216,6 @@ NAMESPACES = Namespace(
         timeout=Option(type='float'),
         save_meta_as_text=Option(True, type='bool'),
     ),
-    riak=Namespace(
-        __old__=old_ns('celery_riak'),
-
-        backend_settings=Option(type='dict'),
-    ),
     security=Namespace(
         __old__=old_ns('celery_security'),
 
