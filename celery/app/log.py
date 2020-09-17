@@ -9,12 +9,14 @@ related compatibility fixes, and so on.
 import logging
 import os
 import sys
+import warnings
 from logging.handlers import WatchedFileHandler
 
 from kombu.utils.encoding import set_default_encoding_file
 
 from celery import signals
 from celery._state import get_current_task
+from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.local import class_property
 from celery.platforms import isatty
 from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
@@ -70,6 +72,9 @@ class Logging:
             CELERY_LOG_LEVEL=str(loglevel) if loglevel else '',
             CELERY_LOG_FILE=str(logfile) if logfile else '',
         )
+        warnings.filterwarnings('always', category=CDeprecationWarning)
+        warnings.filterwarnings('always', category=CPendingDeprecationWarning)
+        logging.captureWarnings(True)
         return handled
 
     def redirect_stdouts(self, loglevel=None, name='celery.redirected'):

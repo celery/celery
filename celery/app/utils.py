@@ -77,6 +77,11 @@ class Settings(ConfigurationView):
 
     """
 
+    def __init__(self, *args, deprecated_settings=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.deprecated_settings = deprecated_settings
+
     @property
     def broker_read_url(self):
         return (
@@ -190,6 +195,20 @@ class Settings(ConfigurationView):
             f'{key}: {pretty(value, width=50)}'
             for key, value in self.table(with_defaults, censored).items())
 
+    def maybe_warn_deprecated_settings(self):
+        # TODO: Remove this method in Celery 6.0
+        if self.deprecated_settings:
+            from celery.utils import deprecated
+            from celery.app.defaults import _TO_NEW_KEY
+            for setting in self.deprecated_settings:
+                deprecated.warn(description=f'The {setting!r} setting',
+                                removal='6.0.0',
+                                alternative=f'Use the {_TO_NEW_KEY[setting]} instead')
+
+            return True
+
+        return False
+
 
 def _new_key_to_old(key, convert=_TO_OLD_KEY.get):
     return convert(key, key)
@@ -263,6 +282,7 @@ def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
     return Settings(
         preconf, [conf, defaults],
         (_old_key_to_new, _new_key_to_old),
+        deprecated_settings=is_in_old,
         prefix=prefix,
     )
 
