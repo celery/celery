@@ -120,8 +120,7 @@ Python 2.7 has reached EOL in January 2020.
 In order to focus our efforts we have dropped support for Python 2.7 in
 this version.
 
-In addition Python 3.5 does not provide us with the features we need to move
-forward towards Celery 6.x.
+In addition, Python 3.5 has reached EOL in September 2020.
 Therefore, we are also dropping support for Python 3.5.
 
 If you still require to run Celery using Python 2.7 or Python 3.5
