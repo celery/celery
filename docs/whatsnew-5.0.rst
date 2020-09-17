@@ -163,6 +163,21 @@ for the database client is couchbase 3.0.0.
 To verify that your Couchbase Server is compatible with the V3 SDK,
 please refer to their `documentation <https://docs.couchbase.com/python-sdk/3.0/project-docs/compatibility.html>`_.
 
+Riak Result Backend
+-------------------
+
+The Riak result backend has been removed as the database is no longer maintained.
+
+The Python client only supports Python 3.6 and below which prevents us from
+supporting it and it is also unmaintained.
+
+If you are still using Riak, refrain from upgrading to Celery 5.0 while you
+migrate your application to a different database.
+
+We apologize for the lack of notice in advance but we feel that the chance
+you'll be affected by this breaking change is minimal which is why we
+did it.
+
 .. _v500-news:
 
 News
