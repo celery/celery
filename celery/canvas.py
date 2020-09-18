@@ -122,6 +122,9 @@ class Signature(dict):
 
     TYPES = {}
     _app = _type = None
+    # The following fields must not be changed during freezing/merging because
+    # to do so would disrupt completion of parent tasks
+    _IMMUTABLE_OPTIONS = {"group_id"}
 
     @classmethod
     def register_type(cls, name=None):
@@ -224,14 +227,22 @@ class Signature(dict):
     def _merge(self, args=None, kwargs=None, options=None, force=False):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
-        options = options if options else {}
+        if options is not None:
+            # We build a new options dictionary where values in `options`
+            # override values in `self.options` except for keys which are
+            # noted as being immutable (unrelated to signature immutability)
+            # implying that allowing their value to change would stall tasks
+            new_options = dict(self.options, **{
+                k: v for k, v in options.items()
+                if k not in self._IMMUTABLE_OPTIONS or k not in self.options
+            })
+        else:
+            new_options = self.options
         if self.immutable and not force:
-            return (self.args, self.kwargs,
-                    dict(self.options,
-                         **options) if options else self.options)
+            return (self.args, self.kwargs, new_options)
         return (tuple(args) + tuple(self.args) if args else self.args,
                 dict(self.kwargs, **kwargs) if kwargs else self.kwargs,
-                dict(self.options, **options) if options else self.options)
+                new_options)
 
     def clone(self, args=None, kwargs=None, **opts):
         """Create a copy of this signature.
@@ -286,7 +297,7 @@ class Signature(dict):
             opts['parent_id'] = parent_id
         if 'reply_to' not in opts:
             opts['reply_to'] = self.app.oid
-        if group_id:
+        if group_id and "group_id" not in opts:
             opts['group_id'] = group_id
         if chord:
             opts['chord'] = chord
