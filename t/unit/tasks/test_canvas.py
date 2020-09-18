@@ -1,5 +1,5 @@
 import json
-from unittest.mock import MagicMock, Mock, patch, sentinel
+from unittest.mock import MagicMock, Mock, call, patch, sentinel
 
 import pytest
 
@@ -808,12 +808,179 @@ class test_chord(CanvasCase):
         x = chord([t1], body=t1)
         assert x.app is current_app
 
-    def test_chord_size_with_groups(self):
-        x = chord([
-            self.add.s(2, 2) | group([self.add.si(2, 2), self.add.si(2, 2)]),
-            self.add.s(2, 2) | group([self.add.si(2, 2), self.add.si(2, 2)]),
-        ], body=self.add.si(2, 2))
-        assert x.__length_hint__() == 4
+    def test_chord_size_simple(self):
+        sig = chord(self.add.s())
+        assert sig.__length_hint__() == 1
+
+    def test_chord_size_with_body(self):
+        sig = chord(self.add.s(), self.add.s())
+        assert sig.__length_hint__() == 1
+
+    def test_chord_size_explicit_group_single(self):
+        sig = chord(group(self.add.s()))
+        assert sig.__length_hint__() == 1
+
+    def test_chord_size_explicit_group_many(self):
+        sig = chord(group([self.add.s()] * 42))
+        assert sig.__length_hint__() == 42
+
+    def test_chord_size_implicit_group_single(self):
+        sig = chord([self.add.s()])
+        assert sig.__length_hint__() == 1
+
+    def test_chord_size_implicit_group_many(self):
+        sig = chord([self.add.s()] * 42)
+        assert sig.__length_hint__() == 42
+
+    def test_chord_size_chain_single(self):
+        sig = chord(chain(self.add.s()))
+        assert sig.__length_hint__() == 1
+
+    def test_chord_size_chain_many(self):
+        # Chains get flattened into the encapsulating chord so even though the
+        # chain would only count for 1, the tasks we pulled into the chord's
+        # header and are counted as a bunch of simple signature objects
+        sig = chord(chain([self.add.s()] * 42))
+        assert sig.__length_hint__() == 42
+
+    def test_chord_size_nested_chain_chain_single(self):
+        sig = chord(chain(chain(self.add.s())))
+        assert sig.__length_hint__() == 1
+
+    def test_chord_size_nested_chain_chain_many(self):
+        # The outer chain will be pulled up into the chord but the lower one
+        # remains and will only count as a single final element
+        sig = chord(chain(chain([self.add.s()] * 42)))
+        assert sig.__length_hint__() == 1
+
+    def test_chord_size_implicit_chain_single(self):
+        sig = chord([self.add.s()])
+        assert sig.__length_hint__() == 1
+
+    def test_chord_size_implicit_chain_many(self):
+        # This isn't a chain object so the `tasks` attribute can't be lifted
+        # into the chord - this isn't actually valid and would blow up we tried
+        # to run it but it sanity checks our recursion
+        sig = chord([[self.add.s()] * 42])
+        assert sig.__length_hint__() == 1
+
+    def test_chord_size_nested_implicit_chain_chain_single(self):
+        sig = chord([chain(self.add.s())])
+        assert sig.__length_hint__() == 1
+
+    def test_chord_size_nested_implicit_chain_chain_many(self):
+        sig = chord([chain([self.add.s()] * 42)])
+        assert sig.__length_hint__() == 1
+
+    def test_chord_size_nested_chord_body_simple(self):
+        sig = chord(chord(tuple(), self.add.s()))
+        assert sig.__length_hint__() == 1
+
+    def test_chord_size_nested_chord_body_implicit_group_single(self):
+        sig = chord(chord(tuple(), [self.add.s()]))
+        assert sig.__length_hint__() == 1
+
+    def test_chord_size_nested_chord_body_implicit_group_many(self):
+        sig = chord(chord(tuple(), [self.add.s()] * 42))
+        assert sig.__length_hint__() == 42
+
+    # Nested groups in a chain only affect the chord size if they are the last
+    # element in the chain - in that case each group element is counted
+    def test_chord_size_nested_group_chain_group_head_single(self):
+        x = chord(
+            group(
+                [group(self.add.s()) | self.add.s()] * 42
+            ),
+            body=self.add.s()
+        )
+        assert x.__length_hint__() == 42
+
+    def test_chord_size_nested_group_chain_group_head_many(self):
+        x = chord(
+            group(
+                [group([self.add.s()] * 4) | self.add.s()] * 2
+            ),
+            body=self.add.s()
+        )
+        assert x.__length_hint__() == 2
+
+    def test_chord_size_nested_group_chain_group_mid_single(self):
+        x = chord(
+            group(
+                [self.add.s() | group(self.add.s()) | self.add.s()] * 42
+            ),
+            body=self.add.s()
+        )
+        assert x.__length_hint__() == 42
+
+    def test_chord_size_nested_group_chain_group_mid_many(self):
+        x = chord(
+            group(
+                [self.add.s() | group([self.add.s()] * 4) | self.add.s()] * 2
+            ),
+            body=self.add.s()
+        )
+        assert x.__length_hint__() == 2
+
+    def test_chord_size_nested_group_chain_group_tail_single(self):
+        x = chord(
+            group(
+                [self.add.s() | group(self.add.s())] * 42
+            ),
+            body=self.add.s()
+        )
+        assert x.__length_hint__() == 42
+
+    def test_chord_size_nested_group_chain_group_tail_many(self):
+        x = chord(
+            group(
+                [self.add.s() | group([self.add.s()] * 4)] * 2
+            ),
+            body=self.add.s()
+        )
+        assert x.__length_hint__() == 4 * 2
+
+    def test_chord_size_nested_implicit_group_chain_group_tail_single(self):
+        x = chord(
+            [self.add.s() | group(self.add.s())] * 42,
+            body=self.add.s()
+        )
+        assert x.__length_hint__() == 42
+
+    def test_chord_size_nested_implicit_group_chain_group_tail_many(self):
+        x = chord(
+            [self.add.s() | group([self.add.s()] * 4)] * 2,
+            body=self.add.s()
+        )
+        assert x.__length_hint__() == 4 * 2
+
+    def test_chord_size_deserialized_element_single(self):
+        child_sig = self.add.s()
+        deserialized_child_sig = json.loads(json.dumps(child_sig))
+        # We have to break in to be sure that a child remains as a `dict` so we
+        # can confirm that the length hint will instantiate a `Signature`
+        # object and then descend as expected
+        chord_sig = chord(tuple())
+        chord_sig.tasks = [deserialized_child_sig]
+        with patch(
+            "celery.canvas.Signature.from_dict", return_value=child_sig
+        ) as mock_from_dict:
+            assert chord_sig. __length_hint__() == 1
+        mock_from_dict.assert_called_once_with(deserialized_child_sig)
+
+    def test_chord_size_deserialized_element_many(self):
+        child_sig = self.add.s()
+        deserialized_child_sig = json.loads(json.dumps(child_sig))
+        # We have to break in to be sure that a child remains as a `dict` so we
+        # can confirm that the length hint will instantiate a `Signature`
+        # object and then descend as expected
+        chord_sig = chord(tuple())
+        chord_sig.tasks = [deserialized_child_sig] * 42
+        with patch(
+            "celery.canvas.Signature.from_dict", return_value=child_sig
+        ) as mock_from_dict:
+            assert chord_sig. __length_hint__() == 42
+        mock_from_dict.assert_has_calls([call(deserialized_child_sig)] * 42)
 
     def test_set_immutable(self):
         x = chord([Mock(name='t1'), Mock(name='t2')], app=self.app)
