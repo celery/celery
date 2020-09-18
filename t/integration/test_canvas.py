@@ -1009,3 +1009,25 @@ class test_chord:
         c = return_priority.signature(priority=3) | return_priority.signature(
             priority=5)
         assert c().get(timeout=TIMEOUT) == "Priority: 5"
+
+    def test_nested_chord_group_chain_group_tail(self, manager):
+        """
+        Sanity check that a deeply nested group is completed as expected.
+
+        Groups at the end of chains nested in chords have had issues and this
+        simple test sanity check that such a tsk structure can be completed.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        sig = chord(group(chain(
+            identity.s(42),     # -> 42
+            group(
+                identity.s(),   # -> 42
+                identity.s(),   # -> 42
+            ),                  # [42, 42]
+        )), identity.s())       # [[42, 42]]
+        res = sig.delay()
+        assert res.get(timeout=TIMEOUT) == [[42, 42]]

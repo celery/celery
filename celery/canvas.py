@@ -1383,21 +1383,30 @@ class chord(Signature):
             args=(tasks.apply(args, kwargs).get(propagate=propagate),),
         )
 
-    def _traverse_tasks(self, tasks, value=None):
-        stack = deque(tasks)
-        while stack:
-            task = stack.popleft()
-            if isinstance(task, group):
-                stack.extend(task.tasks)
-            elif isinstance(task, _chain) and isinstance(task.tasks[-1], group):
-                stack.extend(task.tasks[-1].tasks)
-            else:
-                yield task if value is None else value
+    @classmethod
+    def __descend(cls, sig_obj):
+        # Sometimes serialized signatures might make their way here
+        if not isinstance(sig_obj, Signature) and isinstance(sig_obj, dict):
+            sig_obj = Signature.from_dict(sig_obj)
+        if isinstance(sig_obj, group):
+            # Each task in a group counts toward this chord
+            subtasks = getattr(sig_obj.tasks, "tasks", sig_obj.tasks)
+            return sum(cls.__descend(task) for task in subtasks)
+        elif isinstance(sig_obj, _chain):
+            # The last element in a chain counts toward this chord
+            return cls.__descend(sig_obj.tasks[-1])
+        elif isinstance(sig_obj, chord):
+            # The child chord's body counts toward this chord
+            return cls.__descend(sig_obj.body)
+        elif isinstance(sig_obj, Signature):
+            # Each simple signature counts as 1 completion for this chord
+            return 1
+        # Any other types are assumed to be iterables of simple signatures
+        return len(sig_obj)
 
     def __length_hint__(self):
-        tasks = (self.tasks.tasks if isinstance(self.tasks, group)
-                 else self.tasks)
-        return sum(self._traverse_tasks(tasks, 1))
+        tasks = getattr(self.tasks, "tasks", self.tasks)
+        return sum(self.__descend(task) for task in tasks)
 
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
