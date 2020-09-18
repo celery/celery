@@ -1,5 +1,5 @@
 import json
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock, patch, sentinel
 
 import pytest
 
@@ -153,6 +153,29 @@ class test_Signature(CanvasCase):
         assert args == (2, 2)
         assert kwargs == {'foo': 1}
         assert options == {'task_id': 3}
+
+    def test_merge_options__none(self):
+        sig = self.add.si()
+        _, _, new_options = sig._merge()
+        assert new_options is sig.options
+        _, _, new_options = sig._merge(options=None)
+        assert new_options is sig.options
+
+    @pytest.mark.parametrize("immutable_sig", (True, False))
+    def test_merge_options__group_id(self, immutable_sig):
+        # This is to avoid testing the behaviour in `test_set_immutable()`
+        if immutable_sig:
+            sig = self.add.si()
+        else:
+            sig = self.add.s()
+        # If the signature has no group ID, it can be set
+        assert not sig.options
+        _, _, new_options = sig._merge(options={"group_id": sentinel.gid})
+        assert new_options == {"group_id": sentinel.gid}
+        # But if one is already set, the new one is silently ignored
+        sig.set(group_id=sentinel.old_gid)
+        _, _, new_options = sig._merge(options={"group_id": sentinel.new_gid})
+        assert new_options == {"group_id": sentinel.old_gid}
 
     def test_set_immutable(self):
         x = self.add.s(2, 2)
