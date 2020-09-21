@@ -39,17 +39,18 @@ What do I need?
 ===============
 
 .. sidebar:: Version Requirements
-    :subtitle: Celery version 4.0 runs on
+    :subtitle: Celery version 5.0 runs on
 
-    - Python ❨2.7, 3.4, 3.5❩
-    - PyPy ❨5.4, 5.5❩
+    - Python ❨3.6, 3.7, 3.8❩
+    - PyPy3.6 ❨7.3❩
 
-    This is the last version to support Python 2.7,
-    and from the next version (Celery 5.x) Python 3.5 or newer is required.
+    Celery 4.x was the last version to support Python 2.7,
+    Celery 5.x requires Python 3.6 or newer is required.
 
     If you're running an older version of Python, you need to be running
     an older version of Celery:
 
+    - Python 2.7 or Python 3.5: Celery series 4.4 or earlier.
     - Python 2.6: Celery series 3.1 or earlier.
     - Python 2.5: Celery series 3.0 or earlier.
     - Python 2.4 was Celery series 2.2 or earlier.
