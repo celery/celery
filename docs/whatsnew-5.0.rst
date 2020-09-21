@@ -124,6 +124,9 @@ Step 3: Read the important notes in this document
 Make sure you are not affected by any of the important upgrade notes
 mentioned in the :ref:`following section <v500-important>`.
 
+You should mainly verify that any of the breaking changes in the CLI
+do not affect you. Please refer to :ref:`New Command Line Interface` for details.
+
 Step 4: Upgrade to Celery 5.0
 -----------------------------
 
@@ -210,6 +213,18 @@ migrate your application to a different database.
 We apologize for the lack of notice in advance but we feel that the chance
 you'll be affected by this breaking change is minimal which is why we
 did it.
+
+New Command Line Interface
+--------------------------
+
+The command line interface has been revamped using Click.
+As a result a few breaking changes has been introduced:
+
+- Postfix global options like `celery worker --app path.to.app` or `celery worker --workdir /path/to/workdir` are no longer supported.
+  You should specify them as part of the global options of the main celery command.
+- :program:`celery amqp` and :program:`celery shell` require the `repl`
+  sub command to start a shell. You can now invoke specific shell commands
+  without a shell. Type `celery amqp --help` or `celery shell --help` for details.
 
 .. _v500-news:
 
