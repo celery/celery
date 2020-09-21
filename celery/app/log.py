@@ -226,7 +226,7 @@ class Logging:
         logfile = sys.__stderr__ if logfile is None else logfile
         if hasattr(logfile, 'write'):
             return logging.StreamHandler(logfile)
-        return WatchedFileHandler(logfile)
+        return WatchedFileHandler(logfile, encoding='utf-8')
 
     def _has_handler(self, logger):
         return any(
