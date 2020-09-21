@@ -233,11 +233,6 @@ class Logging:
         return self._has_handler(logger) and not getattr(
             logger, '_rudimentary_setup', False)
 
-    def setup_logger(self, name='celery', *args, **kwargs):
-        """Deprecated: No longer used."""
-        self.setup_logging_subsystem(*args, **kwargs)
-        return logging.root
-
     def get_default_logger(self, name='celery', **kwargs):
         return get_logger(name)
 

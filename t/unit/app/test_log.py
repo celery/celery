@@ -149,8 +149,12 @@ class test_ColorFormatter:
 
 class test_default_logger:
 
+    def setup_logger(self, *args, **kwargs):
+        self.app.log.setup_logging_subsystem(*args, **kwargs)
+
+        return logging.root
+
     def setup(self):
-        self.setup_logger = self.app.log.setup_logger
         self.get_logger = lambda n=None: get_logger(n) if n else logging.root
         signals.setup_logging.receivers[:] = []
         self.app.log.already_setup = False
