@@ -127,7 +127,22 @@ mentioned in the :ref:`following section <v500-important>`.
 You should mainly verify that any of the breaking changes in the CLI
 do not affect you. Please refer to :ref:`New Command Line Interface` for details.
 
-Step 4: Upgrade to Celery 5.0
+Step 4: Migrate your code to Python 3
+-------------------------------------
+
+Celery 5.0 supports only Python 3. Therefore, you must ensure your code is
+compatible with Python 3.
+
+If you haven't ported your code to Python 3, you must do so before upgrading.
+
+You can use tools like `2to3 <https://docs.python.org/3.8/library/2to3.html>`_
+and `pyupgrade <https://github.com/asottile/pyupgrade>`_ to assist you with
+this effort.
+
+After the migration is done, run your test suite with Celery 4 to ensure
+nothing has been broken.
+
+Step 5: Upgrade to Celery 5.0
 -----------------------------
 
 At this point you can upgrade your workers and clients with the new version.
