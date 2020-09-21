@@ -94,7 +94,40 @@ Wall of Contributors
 Upgrading from Celery 4.x
 =========================
 
-Please read the important notes below as there are several breaking changes.
+Step 1: Adjust your command line invocation
+-------------------------------------------
+
+Celery 5.0 introduces a new CLI implementation which isn't completely backwards compatible.
+
+The global options can no longer be positioned after the sub-command.
+Instead, they must be positioned as an option for the `celery` command like so::
+
+    celery --app path.to.app worker
+
+If you were using our :ref:`daemonizing` guide to deploy Celery in production,
+you should revisit it for updates.
+
+Step 2: Update your configuration with the new setting names
+------------------------------------------------------------
+
+If you haven't already updated your configuration when you migrated to Celery 4.0,
+please do so now.
+
+We elected to extend the deprecation period until 6.0 since
+we did not loudly warn about using these deprecated settings.
+
+Please refer to the :ref:`migration guide <v400-upgrade-settings>` for instructions.
+
+Step 3: Read the important notes in this document
+-------------------------------------------------
+
+Make sure you are not affected by any of the important upgrade notes
+mentioned in the :ref:`following section <v500-important>`.
+
+Step 4: Upgrade to Celery 5.0
+-----------------------------
+
+At this point you can upgrade your workers and clients with the new version.
 
 .. _v500-important:
 
