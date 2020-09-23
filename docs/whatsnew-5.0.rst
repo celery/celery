@@ -259,3 +259,5 @@ for the packager's convenience.
 
 News
 ====
+
+There are no other functional changes.
