@@ -125,7 +125,7 @@ Make sure you are not affected by any of the important upgrade notes
 mentioned in the :ref:`following section <v500-important>`.
 
 You should mainly verify that any of the breaking changes in the CLI
-do not affect you. Please refer to :ref:`New Command Line Interface` for details.
+do not affect you. Please refer to :ref:`New Command Line Interface <new_command_line_interface>` for details.
 
 Step 4: Migrate your code to Python 3
 -------------------------------------
@@ -229,6 +229,8 @@ We apologize for the lack of notice in advance but we feel that the chance
 you'll be affected by this breaking change is minimal which is why we
 did it.
 
+.. _new_command_line_interface:
+
 New Command Line Interface
 --------------------------
 
@@ -240,6 +242,13 @@ As a result a few breaking changes has been introduced:
 - :program:`celery amqp` and :program:`celery shell` require the `repl`
   sub command to start a shell. You can now invoke specific shell commands
   without a shell. Type `celery amqp --help` or `celery shell --help` for details.
+
+Click provides shell completion `out of the box <https://click.palletsprojects.com/en/7.x/bashcomplete/>`_.
+This functionality replaces our previous bash completion script and adds
+completion support for the zsh and fish shells.
+
+The bash completion script was exported to `extras/celery.bash <https://github.com/celery/celery/blob/master/extra/bash-completion/celery.bash>`_
+for the packager's convenience.
 
 .. _v500-news:
 
