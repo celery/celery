@@ -116,7 +116,7 @@ please do so now.
 We elected to extend the deprecation period until 6.0 since
 we did not loudly warn about using these deprecated settings.
 
-Please refer to the :ref:`migration guide <v400-upgrade-settings>` for instructions.
+Please refer to the :ref:`migration guide <conf-old-settings-map>` for instructions.
 
 Step 3: Read the important notes in this document
 -------------------------------------------------

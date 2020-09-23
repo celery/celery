@@ -140,6 +140,14 @@ class Worker(WorkController):
         if not self._custom_logging and self.redirect_stdouts:
             app.log.redirect_stdouts(self.redirect_stdouts_level)
 
+        # TODO: Remove the following code in Celery 6.0
+        if app.conf.maybe_warn_deprecated_settings():
+            logger.warning(
+                "Please run `celery upgrade settings path/to/settings.py` "
+                "to avoid these warnings and to allow a smoother upgrade "
+                "to Celery 6.0."
+            )
+
     def emit_banner(self):
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
