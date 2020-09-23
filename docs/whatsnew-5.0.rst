@@ -229,6 +229,11 @@ We apologize for the lack of notice in advance but we feel that the chance
 you'll be affected by this breaking change is minimal which is why we
 did it.
 
+AMQP Result Backend
+-------------------
+
+The AMQP result backend has been removed as it was deprecated in version 4.0.
+
 .. _new_command_line_interface:
 
 New Command Line Interface

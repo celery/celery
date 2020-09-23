@@ -3,7 +3,6 @@ from unittest.mock import patch
 import pytest
 
 from celery.app import backends
-from celery.backends.amqp import AMQPBackend
 from celery.backends.cache import CacheBackend
 from celery.exceptions import ImproperlyConfigured
 
@@ -11,7 +10,6 @@ from celery.exceptions import ImproperlyConfigured
 class test_backends:
 
     @pytest.mark.parametrize('url,expect_cls', [
-        ('amqp://', AMQPBackend),
         ('cache+memory://', CacheBackend),
     ])
     def test_get_backend_aliases(self, url, expect_cls, app):

@@ -27,7 +27,6 @@
     celery.backends.azureblockblob
     celery.backends.rpc
     celery.backends.database
-    celery.backends.amqp
     celery.backends.cache
     celery.backends.consul
     celery.backends.couchdb
