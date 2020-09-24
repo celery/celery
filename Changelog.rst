@@ -11,16 +11,20 @@ an overview of what's new in Celery 5.0.
 
 5.0.0
 =====
-:release-date: N/A
+:release-date: 2020-09-24 6.00 P.M UTC+3:00
 :release-by: Omer Katz
 
+- **Breaking Change** Remove AMQP result backend (#6360).
+- Warn when deprecated settings are used (#6353).
+- Expose retry_policy for Redis result backend (#6330).
+- Prepare Celery to support the yet to be released Python 3.9 (#6328).
 
 5.0.0rc3
 ========
 :release-date: 2020-09-07 4.00 P.M UTC+3:00
 :release-by: Omer Katz
 
-- More cleanups of leftover Python 2 support. (#6338)
+- More cleanups of leftover Python 2 support (#6338).
 
 5.0.0rc2
 ========
@@ -45,7 +49,7 @@ an overview of what's new in Celery 5.0.
 :release-by: Omer Katz
 
 - **Breaking Change** Drop support for the Riak result backend (#5686).
-- **Breaking Change** pytest plugin is no longer enabled by default. (#6288)
+- **Breaking Change** pytest plugin is no longer enabled by default (#6288).
   Install pytest-celery to enable it.
 - **Breaking Change** Brand new CLI based on Click (#5718).
 
