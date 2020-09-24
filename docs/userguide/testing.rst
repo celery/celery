@@ -88,6 +88,8 @@ in this example:
             with raises(Retry):
                 send_order(product.pk, 3, Decimal(30.6))
 
+.. _pytest_plugin:
+
 pytest
 ======
 

@@ -271,6 +271,13 @@ completion support for the zsh and fish shells.
 The bash completion script was exported to `extras/celery.bash <https://github.com/celery/celery/blob/master/extra/bash-completion/celery.bash>`_
 for the packager's convenience.
 
+Pytest Integration
+------------------
+
+Starting from Celery 5.0, the pytest plugin is no longer enabled by default.
+
+Please refer to the :ref:`documentation <pytest_plugin>` for instructions.
+
 .. _v500-news:
 
 News
