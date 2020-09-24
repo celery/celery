@@ -283,4 +283,10 @@ Please refer to the :ref:`documentation <pytest_plugin>` for instructions.
 News
 ====
 
-There are no other functional changes.
+Retry Policy for the Redis Result Backend
+-----------------------------------------
+
+The retry policy for the Redis result backend is now exposed through
+the result backend transport options.
+
+Please refer to the :ref:`documentation <redis-result-backend-timeout>` for details.

@@ -94,6 +94,8 @@ If you are using Sentinel, you should specify the master_name using the :setting
 
     app.conf.result_backend_transport_options = {'master_name': "mymaster"}
 
+.. _redis-result-backend-timeout:
+
 Connection timeouts
 ^^^^^^^^^^^^^^^^^^^
 
@@ -164,7 +166,7 @@ by setting in the redis configuration file:
 - the ``maxmemory-policy`` option to ``noeviction`` or ``allkeys-lru``
 
 See Redis server documentation about Eviction Policies for details:
-    
+
     https://redis.io/topics/lru-cache
 
 Group result ordering
