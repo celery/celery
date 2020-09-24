@@ -61,8 +61,6 @@ for backwards compatibility.
 From now on we only support Python 3.6 and above.
 We will maintain compatibility with Python 3.6 until it's
 EOL in December, 2021.
-We may choose to extend our support if a PyPy version for 3.7 will not become
-available by then but we don't guarantee we will.
 
 *— Omer Katz*
 
