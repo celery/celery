@@ -169,6 +169,8 @@ See Redis server documentation about Eviction Policies for details:
 
     https://redis.io/topics/lru-cache
 
+.. _redis-group-result-ordering:
+
 Group result ordering
 ---------------------
 
