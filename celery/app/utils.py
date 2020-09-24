@@ -198,8 +198,8 @@ class Settings(ConfigurationView):
     def maybe_warn_deprecated_settings(self):
         # TODO: Remove this method in Celery 6.0
         if self.deprecated_settings:
-            from celery.utils import deprecated
             from celery.app.defaults import _TO_NEW_KEY
+            from celery.utils import deprecated
             for setting in self.deprecated_settings:
                 deprecated.warn(description=f'The {setting!r} setting',
                                 removal='6.0.0',

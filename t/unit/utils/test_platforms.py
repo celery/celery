@@ -8,6 +8,7 @@ from unittest.mock import Mock, call, patch
 import pytest
 from case import mock
 
+import t.skip
 from celery import _find_option_with_arg, platforms
 from celery.exceptions import SecurityError
 from celery.platforms import (DaemonContext, LockFailed, Pidfile,
@@ -19,8 +20,6 @@ from celery.platforms import (DaemonContext, LockFailed, Pidfile,
                               set_process_title, setgid, setgroups, setuid,
                               signals)
 from celery.utils.text import WhateverIO
-
-import t.skip
 
 try:
     import resource

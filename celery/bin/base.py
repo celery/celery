@@ -14,8 +14,8 @@ from celery.utils.time import maybe_iso8601
 
 try:
     from pygments import highlight
-    from pygments.lexers import PythonLexer
     from pygments.formatters import Terminal256Formatter
+    from pygments.lexers import PythonLexer
 except ImportError:
     def highlight(s, *args, **kwargs):
         """Place holder function in case pygments is missing."""

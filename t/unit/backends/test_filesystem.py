@@ -3,8 +3,8 @@ import pickle
 import tempfile
 
 import pytest
-import t.skip
 
+import t.skip
 from celery import states, uuid
 from celery.backends import filesystem
 from celery.backends.filesystem import FilesystemBackend

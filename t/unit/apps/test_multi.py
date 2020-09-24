@@ -6,9 +6,9 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 
+import t.skip
 from celery.apps.multi import (Cluster, MultiParser, NamespacedOptionParser,
                                Node, format_opt)
-import t.skip
 
 
 class test_functions:

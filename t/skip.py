@@ -1,4 +1,5 @@
 import sys
+
 import pytest
 
 if_pypy = pytest.mark.skipif(getattr(sys, 'pypy_version_info', None), reason='PyPy not supported.')

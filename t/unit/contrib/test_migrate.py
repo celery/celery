@@ -6,6 +6,7 @@ from amqp import ChannelError
 from case import mock
 from kombu import Connection, Exchange, Producer, Queue
 from kombu.transport.virtual import QoS
+from kombu.utils.encoding import ensure_bytes
 
 from celery.contrib.migrate import (State, StopFiltering, _maybe_queue,
                                     expand_dest, filter_callback,
@@ -13,7 +14,6 @@ from celery.contrib.migrate import (State, StopFiltering, _maybe_queue,
                                     migrate_tasks, move, move_by_idmap,
                                     move_by_taskmap, move_task_by_id,
                                     start_filter, task_id_eq, task_id_in)
-from kombu.utils.encoding import ensure_bytes
 
 # hack to ignore error at shutdown
 QoS.restore_at_shutdown = False

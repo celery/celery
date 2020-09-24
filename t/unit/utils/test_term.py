@@ -1,9 +1,8 @@
 import pytest
 
+import t.skip
 from celery.utils import term
 from celery.utils.term import colored, fg
-
-import t.skip
 
 
 @t.skip.if_win32

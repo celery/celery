@@ -6,12 +6,11 @@ from time import monotonic
 import pytest
 from billiard.einfo import ExceptionInfo
 
+import t.skip
 from celery.utils.collections import (AttributeDict, BufferMap,
                                       ConfigurationView, DictAttribute,
                                       LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
-
-import t.skip
 
 
 class test_DictAttribute:

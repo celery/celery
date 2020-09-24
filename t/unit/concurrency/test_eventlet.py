@@ -3,9 +3,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from celery.concurrency.eventlet import TaskPool, Timer, apply_target
-
 import t.skip
+from celery.concurrency.eventlet import TaskPool, Timer, apply_target
 
 eventlet_modules = (
     'eventlet',

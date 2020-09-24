@@ -4,10 +4,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+import t.skip
 from celery.contrib.rdb import Rdb, debugger, set_trace
 from celery.utils.text import WhateverIO
-
-import t.skip
 
 
 class SockErr(socket.error):

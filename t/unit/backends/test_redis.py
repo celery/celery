@@ -11,7 +11,7 @@ from case import ContextMock, mock
 
 from celery import signature, states, uuid
 from celery.canvas import Signature
-from celery.exceptions import (ChordError, ImproperlyConfigured)
+from celery.exceptions import ChordError, ImproperlyConfigured
 from celery.utils.collections import AttributeDict
 
 
