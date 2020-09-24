@@ -85,6 +85,24 @@ Watch the next "What's New" document for updates.
 Wall of Contributors
 --------------------
 
+Artem Vasilyev <artem.v.vasilyev@gmail.com>
+Ash Berlin-Taylor <ash_github@firemirror.com>
+Asif Saif Uddin (Auvi) <auvipy@gmail.com>
+Asif Saif Uddin <auvipy@gmail.com>
+Christian Clauss <cclauss@me.com>
+Germain Chazot <g.chazot@gmail.com>
+Harry Moreno <morenoh149@gmail.com>
+kevinbai <kevinbai.cn@gmail.com>
+Martin Paulus <mpaulus@lequest.com>
+Matus Valo <matusvalo@gmail.com>
+Matus Valo <matusvalo@users.noreply.github.com>
+maybe-sybr <58414429+maybe-sybr@users.noreply.github.com>
+Omer Katz <omer.drow@gmail.com>
+Patrick Cloke <clokep@users.noreply.github.com>
+qiaocc <jasonqiao36@gmail.com>
+Thomas Grainger <tagrain@gmail.com>
+Weiliang Li <to.be.impressive@gmail.com>
+
 .. note::
 
     This wall was automatically generated from git history,
