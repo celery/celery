@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.0.0rc3 (cliffs)
+:Version: 5.0.0rc3 (singularity)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
