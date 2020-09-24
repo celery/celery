@@ -12,8 +12,8 @@ except Exception:
 
 
 @pytest.mark.skipif(
-        not hasattr(os, 'getloadavg'),
-        reason='Function os.getloadavg is not defined'
+    not hasattr(os, 'getloadavg'),
+    reason='Function os.getloadavg is not defined'
 )
 def test_load_average(patching):
     getloadavg = patching('os.getloadavg')
@@ -24,8 +24,8 @@ def test_load_average(patching):
 
 
 @pytest.mark.skipif(
-        not hasattr(posix, 'statvfs_result'),
-        reason='Function posix.statvfs_result is not defined'
+    not hasattr(posix, 'statvfs_result'),
+    reason='Function posix.statvfs_result is not defined'
 )
 def test_df():
     x = df('/')

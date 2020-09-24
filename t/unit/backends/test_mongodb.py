@@ -178,7 +178,7 @@ class test_MongoBackend:
         assert compliant_uri('mongodb://') == 'mongodb://localhost'
 
         assert compliant_uri('mongodb+something://host') == \
-               'mongodb+something://host'
+            'mongodb+something://host'
 
         assert compliant_uri('something://host') == 'mongodb+something://host'
 
@@ -647,7 +647,7 @@ class test_MongoBackend_store_get_result:
     @pytest.mark.parametrize("serializer,result_type,result", [
         (s, type(i['result']), i['result']) for i in SUCCESS_RESULT_TEST_DATA
         for s in i['serializers']]
-                             )
+    )
     def test_encode_success_results(self, mongo_backend_factory, serializer,
                                     result_type, result):
         backend = mongo_backend_factory(serializer=serializer)
