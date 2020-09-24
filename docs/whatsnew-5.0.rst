@@ -261,7 +261,7 @@ As a result a few breaking changes has been introduced:
 - Postfix global options like `celery worker --app path.to.app` or `celery worker --workdir /path/to/workdir` are no longer supported.
   You should specify them as part of the global options of the main celery command.
 - :program:`celery amqp` and :program:`celery shell` require the `repl`
-  sub command to start a shell. You can now invoke specific shell commands
+  sub command to start a shell. You can now also invoke specific commands
   without a shell. Type `celery amqp --help` or `celery shell --help` for details.
 
 Click provides shell completion `out of the box <https://click.palletsprojects.com/en/7.x/bashcomplete/>`_.
