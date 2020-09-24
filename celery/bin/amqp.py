@@ -171,7 +171,7 @@ def queue_declare(amqp_context, queue, passive, durable, auto_delete):
             amqp_context.reconnect()
         else:
             amqp_context.cli_context.secho(
-                'queue:{0} messages:{1} consumers:{2}'.format(*retval),
+                'queue:{} messages:{} consumers:{}'.format(*retval),
                 fg='cyan', bold=True)
             amqp_context.echo_ok()
 

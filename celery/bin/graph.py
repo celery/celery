@@ -42,10 +42,10 @@ def workers(ctx):
     generic = 'generic' in args
 
     def generic_label(node):
-        return '{0} ({1}://)'.format(type(node).__name__,
+        return '{} ({}://)'.format(type(node).__name__,
                                      node._label.split('://')[0])
 
-    class Node(object):
+    class Node:
         force_label = None
         scheme = {}
 
@@ -71,8 +71,8 @@ def workers(ctx):
 
         def __init__(self, label, **kwargs):
             self.real_label = label
-            super(Thread, self).__init__(
-                label='thr-{0}'.format(next(tids)),
+            super().__init__(
+                label='thr-{}'.format(next(tids)),
                 pos=0,
             )
 
@@ -139,11 +139,11 @@ def workers(ctx):
         size = len(l)
         abbr = max and size > max
         if 'enumerate' in args:
-            l = ['{0}{1}'.format(name, subscript(i + 1))
+            l = ['{}{}'.format(name, subscript(i + 1))
                  for i, obj in enumerate(l)]
         if abbr:
             l = l[0:max - 1] + [l[size - 1]]
-            l[max - 2] = '{0}⎨…{1}⎬'.format(
+            l[max - 2] = '{}⎨…{}⎬'.format(
                 name[0], subscript(size - (max - 1)))
         return l
 

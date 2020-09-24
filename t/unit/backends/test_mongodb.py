@@ -568,7 +568,7 @@ class test_MongoBackend_no_mock:
         assert decoded == 12
 
 
-class _MyTestClass(object):
+class _MyTestClass:
 
     def __init__(self, a):
         self.a = a
@@ -632,7 +632,7 @@ class test_MongoBackend_store_get_result:
         """A fake collection with serialization experience close to MongoDB."""
         bson = pytest.importorskip("bson")
 
-        class FakeMongoCollection(object):
+        class FakeMongoCollection:
             def __init__(self):
                 self.data = {}
 

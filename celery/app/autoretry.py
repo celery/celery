@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tasks auto-retry functionality."""
 from vine.utils import wraps
 

@@ -149,7 +149,7 @@ class test_CassandraBackend:
             def execute(self, *args, **kwargs):
                 raise OTOExc()
 
-        class DummyCluster(object):
+        class DummyCluster:
 
             def __init__(self, *args, **kwargs):
                 pass
@@ -170,7 +170,7 @@ class test_CassandraBackend:
         # Tests behavior when Cluster.connect works properly
         from celery.backends import cassandra as mod
 
-        class DummyCluster(object):
+        class DummyCluster:
 
             def __init__(self, *args, **kwargs):
                 pass

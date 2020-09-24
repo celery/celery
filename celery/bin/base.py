@@ -120,13 +120,13 @@ class CeleryOption(click.Option):
     def get_default(self, ctx):
         if self.default_value_from_context:
             self.default = ctx.obj[self.default_value_from_context]
-        return super(CeleryOption, self).get_default(ctx)
+        return super().get_default(ctx)
 
     def __init__(self, *args, **kwargs):
         """Initialize a Celery option."""
         self.help_group = kwargs.pop('help_group', None)
         self.default_value_from_context = kwargs.pop('default_value_from_context', None)
-        super(CeleryOption, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class CeleryCommand(click.Command):

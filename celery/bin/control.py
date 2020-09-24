@@ -30,7 +30,7 @@ def _consume_arguments(meta, method, args):
                 if meta.variadic:
                     break
                 raise click.UsageError(
-                    'Command {0!r} takes arguments: {1}'.format(
+                    'Command {!r} takes arguments: {}'.format(
                         method, meta.signature))
             else:
                 yield name, typ(arg) if typ is not None else arg
@@ -86,7 +86,7 @@ def status(ctx, timeout, destination, json, **kwargs):
         ctx.obj.echo(dumps(replies))
     nodecount = len(replies)
     if not kwargs.get('quiet', False):
-        ctx.obj.echo('\n{0} {1} online.'.format(
+        ctx.obj.echo('\n{} {} online.'.format(
             nodecount, text.pluralize(nodecount, 'node')))
 
 
@@ -134,7 +134,7 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
         ctx.obj.echo(dumps(replies))
     nodecount = len(replies)
     if not ctx.obj.quiet:
-        ctx.obj.echo('\n{0} {1} online.'.format(
+        ctx.obj.echo('\n{} {} online.'.format(
             nodecount, text.pluralize(nodecount, 'node')))
 
 

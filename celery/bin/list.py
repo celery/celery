@@ -29,7 +29,7 @@ def bindings(ctx):
             raise click.UsageError('Your transport cannot list bindings.')
 
         def fmt(q, e, r):
-            ctx.obj.echo('{0:<28} {1:<28} {2}'.format(q, e, r))
+            ctx.obj.echo(f'{q:<28} {e:<28} {r}')
         fmt('Queue', 'Exchange', 'Routing Key')
         fmt('-' * 16, '-' * 16, '-' * 16)
         for b in bindings:

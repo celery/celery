@@ -20,7 +20,7 @@ def setup_eventlet():
     os.environ.update(EVENTLET_NO_GREENDNS='yes')
 
 
-class DrainerTests(object):
+class DrainerTests:
     """
     Base test class for the Default / Gevent / Eventlet drainers.
     """

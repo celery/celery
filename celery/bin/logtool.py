@@ -32,7 +32,7 @@ class _task_counts(list):
 
     @property
     def format(self):
-        return '\n'.join('{0}: {1}'.format(*i) for i in self)
+        return '\n'.join('{}: {}'.format(*i) for i in self)
 
 
 def task_info(line):
@@ -40,7 +40,7 @@ def task_info(line):
     return m.groups()
 
 
-class Audit(object):
+class Audit:
 
     def __init__(self, on_task_error=None, on_trace=None, on_debug=None):
         self.ids = set()

@@ -116,7 +116,7 @@ class test_multi_args:
             return args + (
                 '--pidfile={}.pid'.format(os.path.join(os.path.normpath('/var/run/celery/'), name)),
                 '--logfile={}%I.log'.format(os.path.join(os.path.normpath('/var/log/celery/'), name)),
-                '--executable={0}'.format(sys.executable),
+                f'--executable={sys.executable}',
                 '',
             )
 
@@ -406,7 +406,7 @@ class test_Cluster:
         assert node_0.name == 'foo@e.com'
         assert sorted(node_0.argv) == sorted([
             '',
-            '--executable={0}'.format(node_0.executable),
+            f'--executable={node_0.executable}',
             '--logfile={}'.format(os.path.normpath('/var/log/celery/foo%I.log')),
             '--pidfile={}'.format(os.path.normpath('/var/run/celery/foo.pid')),
             '-m celery worker --detach',
@@ -417,7 +417,7 @@ class test_Cluster:
         assert node_1.name == 'bar@e.com'
         assert sorted(node_1.argv) == sorted([
             '',
-            '--executable={0}'.format(node_1.executable),
+            f'--executable={node_1.executable}',
             '--logfile={}'.format(os.path.normpath('/var/log/celery/bar%I.log')),
             '--pidfile={}'.format(os.path.normpath('/var/run/celery/bar.pid')),
             '-m celery worker --detach',
