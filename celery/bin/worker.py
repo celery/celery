@@ -231,15 +231,15 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               cls=CeleryOption,
               help_group="Queue Options")
 @click.option('--without-gossip',
-              default=False,
+              is_flag=True,
               cls=CeleryOption,
               help_group="Features")
 @click.option('--without-mingle',
-              default=False,
+              is_flag=True,
               cls=CeleryOption,
               help_group="Features")
 @click.option('--without-heartbeat',
-              default=False,
+              is_flag=True,
               cls=CeleryOption,
               help_group="Features", )
 @click.option('--heartbeat-interval',
