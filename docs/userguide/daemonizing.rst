@@ -72,11 +72,11 @@ the worker you must also export them (e.g., :command:`export DISPLAY=":0"`)
 
     .. code-block:: console
 
-        $ celery -A proj multi start worker1 \
+        $ celery multi -A proj start worker1 \
             --pidfile="$HOME/run/celery/%n.pid" \
             --logfile="$HOME/log/celery/%n%I.log"
 
-        $ celery -A proj multi restart worker1 \
+        $ celery multi -A proj restart worker1 \
             --logfile="$HOME/log/celery/%n%I.log" \
             --pidfile="$HOME/run/celery/%n.pid
 
@@ -399,12 +399,12 @@ This is an example systemd file:
   Group=celery
   EnvironmentFile=/etc/conf.d/celery
   WorkingDirectory=/opt/celery
-  ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} multi start ${CELERYD_NODES} \
+  ExecStart=/bin/sh -c '${CELERY_BIN} multi -A ${CELERY_APP} start ${CELERYD_NODES} \
     --pidfile=${CELERYD_PID_FILE} \
     --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'
   ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait ${CELERYD_NODES} \
     --pidfile=${CELERYD_PID_FILE}'
-  ExecReload=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} multi restart ${CELERYD_NODES} \
+  ExecReload=/bin/sh -c '${CELERY_BIN} multi -A ${CELERY_APP} restart ${CELERYD_NODES} \
     --pidfile=${CELERYD_PID_FILE} \
     --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'
 
@@ -492,7 +492,7 @@ This is an example systemd file for Celery Beat:
   Group=celery
   EnvironmentFile=/etc/conf.d/celery
   WorkingDirectory=/opt/celery
-  ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} beat  \
+  ExecStart=/bin/sh -c '${CELERY_BIN} beat -A ${CELERY_APP}  \
     --pidfile=${CELERYBEAT_PID_FILE} \
     --logfile=${CELERYBEAT_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL}'
 
