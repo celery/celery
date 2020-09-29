@@ -1204,8 +1204,8 @@ class test_create_request_class(RequestCase):
 
     def test_execute_using_pool__defaults_of_hybrid_to_proto2(self):
         weakref_ref = Mock(name='weakref.ref')
-        headers = strategy.hybrid_to_proto2('', {'id': uuid(),
-                                                 'task': self.mytask.name})[1]
+        headers = strategy.hybrid_to_proto2(Mock(headers=None), {'id': uuid(),
+                                            'task': self.mytask.name})[1]
         job = self.zRequest(revoked_tasks=set(), ref=weakref_ref, **headers)
         job.execute_using_pool(self.pool)
         assert job._apply_result
