@@ -13,7 +13,8 @@ pytest.importorskip('sqlalchemy')
 from celery.backends.database import (DatabaseBackend, retry, session,  # noqa
                                       session_cleanup)
 from celery.backends.database.models import Task, TaskSet  # noqa
-from celery.backends.database.session import SessionManager  # noqa
+from celery.backends.database.session import (  # noqa
+    PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager)
 from t import skip  # noqa
 
 
@@ -398,3 +399,28 @@ class test_SessionManager:
             SessionManager()
         finally:
             session.register_after_fork = prev
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_prepare_models_terminates(self, create_engine):
+        """SessionManager.prepare_models has retry logic because the creation
+        of database tables by multiple workers is racy. This test patches
+        the used method to always raise, so we can verify that it does
+        eventually terminate.
+        """
+        from sqlalchemy.dialects.sqlite import dialect
+        from sqlalchemy.exc import DatabaseError
+
+        sqlite = dialect.dbapi()
+        manager = SessionManager()
+        engine = manager.get_engine('dburi')
+
+        def raise_err(bind):
+            raise DatabaseError("", "", [], sqlite.DatabaseError)
+
+        patch_create_all = patch.object(
+            ResultModelBase.metadata, 'create_all', side_effect=raise_err)
+
+        with pytest.raises(DatabaseError), patch_create_all as mock_create_all:
+            manager.prepare_models(engine)
+
+        assert mock_create_all.call_count == PREPARE_MODELS_MAX_RETRIES + 1
