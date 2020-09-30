@@ -713,6 +713,24 @@ class test_RedisBackend:
         self.b.expires = old_expires
 
     @patch('celery.result.GroupResult.restore')
+    def test_on_chord_part_return_expire_set_to_zero(self, restore):
+        old_expires = self.b.expires
+        self.b.expires = 0
+        tasks = [self.create_task(i) for i in range(10)]
+
+        for i in range(10):
+            self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
+            assert self.b.client.zadd.call_count
+            self.b.client.zadd.reset_mock()
+        assert self.b.client.zrangebyscore.call_count
+        jkey = self.b.get_key_for_group('group_id', '.j')
+        tkey = self.b.get_key_for_group('group_id', '.t')
+        self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
+        self.b.client.expire.assert_not_called()
+
+        self.b.expires = old_expires
+
+    @patch('celery.result.GroupResult.restore')
     def test_on_chord_part_return_no_expiry__unordered(self, restore):
         self.app.conf.result_backend_transport_options = dict(
             result_chord_ordered=False,

@@ -436,7 +436,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                 if self._chord_zset
                 else pipe.rpush(jkey, encoded).llen(jkey)
             ).get(tkey)
-            if self.expires is not None:
+            if self.expires:
                 pipeline = pipeline \
                     .expire(jkey, self.expires) \
                     .expire(tkey, self.expires)
