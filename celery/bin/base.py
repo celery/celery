@@ -39,8 +39,7 @@ class CLIContext:
 
     @cached_property
     def OK(self):
-        return self.style("OK", fg="green", bold=True)    \
-
+        return self.style("OK", fg="green", bold=True)
 
     @cached_property
     def ERROR(self):
@@ -72,7 +71,7 @@ class CLIContext:
             kwargs['color'] = False
             click.echo(message, **kwargs)
         else:
-            click.echo(message, **kwargs)
+            click.secho(message, **kwargs)
 
     def pretty(self, n):
         if isinstance(n, list):
