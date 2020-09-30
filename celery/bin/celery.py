@@ -2,6 +2,7 @@
 import os
 
 import click
+import click.exceptions
 from click.types import ParamType
 from click_didyoumean import DYMGroup
 
@@ -104,7 +105,8 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
         os.environ['CELERY_RESULT_BACKEND'] = result_backend
     if config:
         os.environ['CELERY_CONFIG_MODULE'] = config
-    ctx.obj = CLIContext(app=app, no_color=no_color, workdir=workdir, quiet=quiet)
+    ctx.obj = CLIContext(app=app, no_color=no_color, workdir=workdir,
+                         quiet=quiet)
 
     # User options
     worker.params.extend(ctx.obj.app.user_options.get('worker', []))
@@ -138,6 +140,32 @@ celery.add_command(logtool)
 celery.add_command(amqp)
 celery.add_command(shell)
 celery.add_command(multi)
+
+# Monkey-patch click to display a custom error
+# when -A or --app are used as sub-command options instead of as options
+# of the global command.
+
+previous_show_implementation = click.exceptions.NoSuchOption.show
+
+WRONG_APP_OPTION_USAGE_MESSAGE = """You are using `{option_name}` as an option of the {info_name} sub-command:
+celery {info_name} {option_name} celeryapp <...>
+
+The support for this usage was removed in Celery 5.0. Instead you should use `{option_name}` as a global option:
+celery {option_name} celeryapp {info_name} <...>"""
+
+
+def _show(self, file=None):
+    if self.option_name in ('-A', '--app'):
+        self.ctx.obj.error(
+            WRONG_APP_OPTION_USAGE_MESSAGE.format(
+                option_name=self.option_name,
+                info_name=self.ctx.info_name),
+            fg='red'
+        )
+    previous_show_implementation(self, file=file)
+
+
+click.exceptions.NoSuchOption.show = _show
 
 
 def main() -> int:
