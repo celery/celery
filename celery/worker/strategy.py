@@ -50,6 +50,7 @@ def hybrid_to_proto2(message, body):
         'kwargsrepr': body.get('kwargsrepr'),
         'origin': body.get('origin'),
     }
+    headers.update(message.headers or {})
 
     embed = {
         'callbacks': body.get('callbacks'),
