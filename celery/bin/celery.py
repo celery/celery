@@ -1,5 +1,6 @@
 """Celery Command Line Interface."""
 import os
+import traceback
 
 import click
 import click.exceptions
@@ -25,6 +26,19 @@ from celery.bin.shell import shell
 from celery.bin.upgrade import upgrade
 from celery.bin.worker import worker
 
+UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND = click.style("""
+Unable to load celery application.
+The module {0} was not found.""", fg='red')
+
+UNABLE_TO_LOAD_APP_ERROR_OCCURRED = click.style("""
+Unable to load celery application.
+While trying to load the module {0} the following error occurred:
+{1}""", fg='red')
+
+UNABLE_TO_LOAD_APP_APP_MISSING = click.style("""
+Unable to load celery application.
+{0}""")
+
 
 class App(ParamType):
     """Application option."""
@@ -34,8 +48,21 @@ class App(ParamType):
     def convert(self, value, param, ctx):
         try:
             return find_app(value)
-        except (ModuleNotFoundError, AttributeError) as e:
-            self.fail(str(e))
+        except ModuleNotFoundError as e:
+            if e.name != value:
+                exc = traceback.format_exc()
+                self.fail(
+                    UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(value, exc)
+                )
+            self.fail(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(e.name))
+        except AttributeError as e:
+            attribute_name = e.args[0].capitalize()
+            self.fail(UNABLE_TO_LOAD_APP_APP_MISSING.format(attribute_name))
+        except Exception:
+            exc = traceback.format_exc()
+            self.fail(
+                UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(value, exc)
+            )
 
 
 APP = App()
