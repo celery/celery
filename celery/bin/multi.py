@@ -471,4 +471,9 @@ class MultiTool(TermLogger):
 def multi(ctx):
     """Start multiple worker instances."""
     cmd = MultiTool(quiet=ctx.obj.quiet, no_color=ctx.obj.no_color)
-    return cmd.execute_from_commandline([''] + ctx.args)
+    # In 4.x, celery multi ignores the global --app option.
+    # Since in 5.0 the --app option is global only we
+    # rearrange the arguments so that the MultiTool will parse them correctly.
+    args = sys.argv[1:]
+    args = args[args.index('multi'):] + args[:args.index('multi')]
+    return cmd.execute_from_commandline(args)
