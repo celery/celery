@@ -146,7 +146,7 @@ class Worker(WorkController):
         # all cases
         warn_deprecated = True
         config_source = app._config_source
-        if isinstance(config_source, (str, )):
+        if isinstance(config_source, str):
             # Don't raise the warning when the settings originate from
             # django.conf:settings
             warn_deprecated = config_source.lower() not in [
