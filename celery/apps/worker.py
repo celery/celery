@@ -141,7 +141,7 @@ class Worker(WorkController):
             app.log.redirect_stdouts(self.redirect_stdouts_level)
 
         # TODO: Remove the following code in Celery 6.0
-        # Ok this qualifies as a hack for issue #6366. Tried making it less of
+        # This qualifies as a hack for issue #6366.
         # a hack via app.__reduce_keys__(), but that may not work properly in
         # all cases
         warn_deprecated = True
