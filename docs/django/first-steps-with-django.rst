@@ -54,15 +54,8 @@ for simple projects you may use a single contained module that defines
 both the app and tasks, like in the :ref:`tut-celery` tutorial.
 
 Let's break down what happens in the first module,
-first we import absolute imports from the future, so that our
-``celery.py`` module won't clash with the library:
-
-.. code-block:: python
-
-    from __future__ import absolute_import
-
-Then we set the default :envvar:`DJANGO_SETTINGS_MODULE` environment variable
-for the :program:`celery` command-line program:
+first, we set the default :envvar:`DJANGO_SETTINGS_MODULE` environment 
+variable for the :program:`celery` command-line program:
 
 .. code-block:: python
 
