@@ -959,7 +959,7 @@ Map & Starmap
 -------------
 
 :class:`~celery.map` and :class:`~celery.starmap` are built-in tasks
-that call the calling task for every element in a sequence.
+that call the provided calling task for every element in a sequence.
 
 They differ from :class:`~celery.group` in that:
 
