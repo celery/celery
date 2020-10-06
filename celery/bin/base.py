@@ -220,6 +220,7 @@ class LogLevel(click.Choice):
         super().__init__(('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'FATAL'))
 
     def convert(self, value, param, ctx):
+        value = value.upper()
         value = super().convert(value, param, ctx)
         return mlevel(value)
 
