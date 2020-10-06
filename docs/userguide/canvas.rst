@@ -959,11 +959,11 @@ Map & Starmap
 -------------
 
 :class:`~celery.map` and :class:`~celery.starmap` are built-in tasks
-that calls the task for every element in a sequence.
+that call the provided calling task for every element in a sequence.
 
-They differ from group in that
+They differ from :class:`~celery.group` in that:
 
-- only one task message is sent
+- only one task message is sent.
 
 - the operation is sequential.
 
@@ -1013,7 +1013,7 @@ Chunks
 ------
 
 Chunking lets you divide an iterable of work into pieces, so that if
-you have one million objects, you can create 10 tasks with hundred
+you have one million objects, you can create 10 tasks with a hundred
 thousand objects each.
 
 Some may worry that chunking your tasks results in a degradation
