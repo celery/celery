@@ -208,7 +208,6 @@ class TraceInfo:
             einfo = ExceptionInfo()
             einfo.exception = get_pickleable_exception(einfo.exception)
             einfo.type = get_pickleable_etype(einfo.type)
-
             task.backend.mark_as_failure(
                 req.id, exc, einfo.traceback,
                 request=req, store_result=store_errors,

@@ -1088,8 +1088,7 @@ class group(Signature):
         if link is not None:
             raise TypeError('Cannot add link to group: use a chord')
         if link_error is not None:
-            raise TypeError(
-                'Cannot add link to group: do that on individual tasks')
+            link_error = None
         app = self.app
         if app.conf.task_always_eager:
             return self.apply(args, kwargs, **options)

@@ -218,11 +218,10 @@ class Backend:
     def mark_as_revoked(self, task_id, reason='',
                         request=None, store_result=True, state=states.REVOKED):
         exc = TaskRevokedError(reason)
-        if store_result:
-            self.store_result(task_id, exc, state,
-                              traceback=None, request=request)
-        if request and request.chord:
-            self.on_chord_part_return(request, state, exc)
+
+        return self.mark_as_failure(
+            task_id, exc, request=request, store_result=store_result, state=state
+        )
 
     def mark_as_retry(self, task_id, exc, traceback=None,
                       request=None, store_result=True, state=states.RETRY):
