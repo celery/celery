@@ -168,7 +168,7 @@ class CommaSeparatedList(ParamType):
     name = "comma separated list"
 
     def convert(self, value, param, ctx):
-        return set(text.str_to_list(value))
+        return text.str_to_list(value)
 
 
 class Json(ParamType):
