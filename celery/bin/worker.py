@@ -302,6 +302,7 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
         executable = params.pop('executable')
         argv = ['-m', 'celery', 'worker']
         for arg, value in params.items():
+            arg = arg.replace("_", "-")
             if isinstance(value, bool) and value:
                 argv.append(f'--{arg}')
             else:
