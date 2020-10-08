@@ -78,7 +78,7 @@ class NamespacedOptionParser:
         self.namespaces = defaultdict(lambda: OrderedDict())
 
     def parse(self):
-        rargs = list(self.args)
+        rargs = [arg for arg in self.args if arg]
         pos = 0
         while pos < len(rargs):
             arg = rargs[pos]
