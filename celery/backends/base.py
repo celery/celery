@@ -63,6 +63,12 @@ as this pattern requires synchronization.
 Result backends that supports chords: Redis, Database, Memcached, and more.
 """
 
+trailer_request_obj = namedtuple(
+    "trailer_request",
+    ("id", "group", "errbacks", "chord", "trailer_request", "group_index"),
+    defaults=(None, ) * 6
+)
+
 
 def unpickle_backend(cls, args, kwargs):
     """Return an unpickled backend."""
@@ -130,7 +136,7 @@ class Backend:
         self.base_sleep_between_retries_ms = conf.get('result_backend_base_sleep_between_retries_ms', 10)
         self.max_retries = conf.get('result_backend_max_retries', float("inf"))
 
-        self._pending_results = pending_results_t({}, WeakValueDictionary())
+        self._pending_results = pending_results_t({}, {})
         self._pending_messages = BufferMap(MESSAGE_BUFFER_MAX)
         self.url = url
 
@@ -164,6 +170,14 @@ class Backend:
             self.store_result(task_id, exc, state,
                               traceback=traceback, request=request)
         if request:
+            if request.trailer_request:
+                self.mark_as_failure(
+                    request.trailer_request["id"], exc, traceback=traceback,
+                    store_result=store_result, call_errbacks=call_errbacks,
+                    request=trailer_request_obj(**request.trailer_request),
+                    state=state
+                )
+
             if request.chord:
                 self.on_chord_part_return(request, state, exc)
             if call_errbacks and request.errbacks:

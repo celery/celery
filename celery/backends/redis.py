@@ -158,7 +158,8 @@ class ResultConsumer(BaseResultConsumer):
     def consume_from(self, task_id):
         if self._pubsub is None:
             return self.start(task_id)
-        self._consume_from(task_id)
+        else:
+            self._consume_from(task_id)
 
     def _consume_from(self, task_id):
         key = self._get_key_for_task(task_id)
@@ -270,6 +271,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         self.connection_errors, self.channel_errors = (
             get_redis_error_classes() if get_redis_error_classes
             else ((), ()))
+
         self.result_consumer = self.ResultConsumer(
             self, self.app, self.accept,
             self._pending_results, self._pending_messages,

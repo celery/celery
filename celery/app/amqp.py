@@ -279,7 +279,7 @@ class AMQP:
 
     def as_task_v2(self, task_id, name, args=None, kwargs=None,
                    countdown=None, eta=None, group_id=None, group_index=None,
-                   expires=None, retries=0, chord=None,
+                   trailer_request=None, expires=None, retries=0, chord=None,
                    callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
@@ -336,6 +336,7 @@ class AMQP:
                 'expires': expires,
                 'group': group_id,
                 'group_index': group_index,
+                'trailer_request': trailer_request,
                 'retries': retries,
                 'timelimit': [time_limit, soft_time_limit],
                 'root_id': root_id,
@@ -371,6 +372,7 @@ class AMQP:
 
     def as_task_v1(self, task_id, name, args=None, kwargs=None,
                    countdown=None, eta=None, group_id=None, group_index=None,
+                   trailer_request=None,
                    expires=None, retries=0,
                    chord=None, callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
@@ -415,6 +417,7 @@ class AMQP:
                 'kwargs': kwargs,
                 'group': group_id,
                 'group_index': group_index,
+                'trailer_request': trailer_request,
                 'retries': retries,
                 'eta': eta,
                 'expires': expires,

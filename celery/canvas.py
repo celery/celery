@@ -274,7 +274,7 @@ class Signature(dict):
     partial = clone
 
     def freeze(self, _id=None, group_id=None, chord=None,
-               root_id=None, parent_id=None, group_index=None):
+               root_id=None, parent_id=None, group_index=None, trailer_request=None):
         """Finalize the signature by adding a concrete task id.
 
         The task won't be called and you shouldn't call the signature
@@ -303,6 +303,8 @@ class Signature(dict):
             opts['chord'] = chord
         if group_index is not None:
             opts['group_index'] = group_index
+        if trailer_request is not None:
+            opts['trailer_request'] = trailer_request
         # pylint: disable=too-many-function-args
         #   Borks on this, as it's a property.
         return self.AsyncResult(tid)
@@ -686,13 +688,13 @@ class _chain(Signature):
                 return results_from_prepare[0]
 
     def freeze(self, _id=None, group_id=None, chord=None,
-               root_id=None, parent_id=None, group_index=None):
+               root_id=None, parent_id=None, group_index=None,trailer_request=None):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         _, results = self._frozen = self.prepare_steps(
             self.args, self.kwargs, self.tasks, root_id, parent_id, None,
             self.app, _id, group_id, chord, clone=False,
-            group_index=group_index,
+            group_index=group_index, trailer_request=trailer_request
         )
         return results[0]
 
@@ -700,7 +702,7 @@ class _chain(Signature):
                       root_id=None, parent_id=None, link_error=None, app=None,
                       last_task_id=None, group_id=None, chord_body=None,
                       clone=True, from_dict=Signature.from_dict,
-                      group_index=None):
+                      group_index=None, trailer_request=None):
         app = app or self.app
         # use chain message field for protocol 2 and later.
         # this avoids pickle blowing the stack on the recursion
@@ -777,7 +779,7 @@ class _chain(Signature):
                 res = task.freeze(
                     last_task_id,
                     root_id=root_id, group_id=group_id, chord=chord_body,
-                    group_index=group_index,
+                    group_index=group_index, trailer_request=trailer_request,
                 )
             else:
                 res = task.freeze(root_id=root_id)
@@ -1204,7 +1206,7 @@ class group(Signature):
         return options, group_id, options.get('root_id')
 
     def freeze(self, _id=None, group_id=None, chord=None,
-               root_id=None, parent_id=None, group_index=None):
+               root_id=None, parent_id=None, group_index=None, trailer_request=None):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         opts = self.options
@@ -1218,6 +1220,8 @@ class group(Signature):
             opts['chord'] = chord
         if group_index is not None:
             opts['group_index'] = group_index
+        if trailer_request is not None:
+            opts['trailer_request'] = trailer_request
         root_id = opts.setdefault('root_id', root_id)
         parent_id = opts.setdefault('parent_id', parent_id)
         new_tasks = []
@@ -1327,7 +1331,7 @@ class chord(Signature):
         return self.apply_async((), {'body': body} if body else {}, **options)
 
     def freeze(self, _id=None, group_id=None, chord=None,
-               root_id=None, parent_id=None, group_index=None):
+               root_id=None, parent_id=None, group_index=None, trailer_request=None):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         if not isinstance(self.tasks, group):
@@ -1336,7 +1340,7 @@ class chord(Signature):
             parent_id=parent_id, root_id=root_id, chord=self.body)
         body_result = self.body.freeze(
             _id, root_id=root_id, chord=chord, group_id=group_id,
-            group_index=group_index)
+            group_index=group_index, trailer_request=trailer_request)
         # we need to link the body result back to the group result,
         # but the body may actually be a chain,
         # so find the first result without a parent

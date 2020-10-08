@@ -75,7 +75,7 @@ class Request:
 
     if not IS_PYPY:  # pragma: no cover
         __slots__ = (
-            '_app', '_type', 'name', 'id', '_root_id', '_parent_id',
+            '_app', '_type', 'name', 'id', '_root_id', '_parent_id', '_trailer_request',
             '_on_ack', '_body', '_hostname', '_eventer', '_connection_errors',
             '_task', '_eta', '_expires', '_request_dict', '_on_reject', '_utc',
             '_content_type', '_content_encoding', '_argsrepr', '_kwargsrepr',
@@ -625,6 +625,11 @@ class Request:
     def group_index(self):
         # used by backend.on_chord_part_return to order return values in group
         return self._request_dict.get('group_index')
+
+    @cached_property
+    def trailer_request(self):
+        # used by backend.on_chord_part_return to order return values in group
+        return self._request_dict.get('trailer_request') or []
 
 
 def create_request_cls(base, task, pool, hostname, eventer,

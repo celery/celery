@@ -689,7 +689,7 @@ class Celery:
                   router=None, result_cls=None, expires=None,
                   publisher=None, link=None, link_error=None,
                   add_to_parent=True, group_id=None, group_index=None,
-                  retries=0, chord=None,
+                  trailer_request=None, retries=0, chord=None,
                   reply_to=None, time_limit=None, soft_time_limit=None,
                   root_id=None, parent_id=None, route_name=None,
                   shadow=None, chain=None, task_type=None, **options):
@@ -730,7 +730,7 @@ class Celery:
 
         message = amqp.create_task_message(
             task_id, name, args, kwargs, countdown, eta, group_id, group_index,
-            expires, retries, chord,
+            trailer_request, expires, retries, chord,
             maybe_list(link), maybe_list(link_error),
             reply_to or self.thread_oid, time_limit, soft_time_limit,
             self.conf.task_send_sent_event,
