@@ -54,7 +54,7 @@ for simple projects you may use a single contained module that defines
 both the app and tasks, like in the :ref:`tut-celery` tutorial.
 
 Let's break down what happens in the first module,
-first, we set the default :envvar:`DJANGO_SETTINGS_MODULE` environment 
+first, we set the default :envvar:`DJANGO_SETTINGS_MODULE` environment
 variable for the :program:`celery` command-line program:
 
 .. code-block:: python
@@ -89,6 +89,18 @@ becomes ``CELERY_TASK_ALWAYS_EAGER``, and the :setting:`broker_url`
 setting becomes ``CELERY_BROKER_URL``. This also applies to the
 workers settings, for instance, the :setting:`worker_concurrency`
 setting becomes ``CELERY_WORKER_CONCURRENCY``.
+
+For example, a Django project's configuration file might include:
+
+.. code-block:: python
+    :caption: settings.py
+
+    ...
+
+    # Celery Configuration Options
+    CELERY_TIMEZONE = "Australia/Tasmania"
+    CELERY_TASK_TRACK_STARTED = True
+    CELERY_TASK_TIME_LIMIT = 30 * 60
 
 You can pass the settings object directly instead, but using a string
 is better since then the worker doesn't have to serialize the object.
