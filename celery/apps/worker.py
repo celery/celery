@@ -142,8 +142,6 @@ class Worker(WorkController):
 
         # TODO: Remove the following code in Celery 6.0
         # This qualifies as a hack for issue #6366.
-        # a hack via app.__reduce_keys__(), but that may not work properly in
-        # all cases
         warn_deprecated = True
         config_source = app._config_source
         if isinstance(config_source, str):
