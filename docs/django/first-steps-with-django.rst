@@ -247,7 +247,7 @@ development it is useful to be able to start a worker instance by using the
 
 .. code-block:: console
 
-    $ celery -A proj worker -l info
+    $ celery -A proj worker -l INFO
 
 For a complete listing of the command-line options available,
 use the help command:
