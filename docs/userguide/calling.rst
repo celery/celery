@@ -692,7 +692,7 @@ the workers :option:`-Q <celery worker -Q>` argument:
 
 .. code-block:: console
 
-    $ celery -A proj worker -l info -Q celery,priority.high
+    $ celery -A proj worker -l INFO -Q celery,priority.high
 
 .. seealso::
 

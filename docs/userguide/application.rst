@@ -257,7 +257,7 @@ You can then specify the configuration module to use via the environment:
 
 .. code-block:: console
 
-    $ CELERY_CONFIG_MODULE="celeryconfig.prod" celery worker -l info
+    $ CELERY_CONFIG_MODULE="celeryconfig.prod" celery worker -l INFO
 
 .. _app-censored-config:
 
@@ -431,7 +431,7 @@ chain breaks:
 
 .. code-block:: console
 
-    $ CELERY_TRACE_APP=1 celery worker -l info
+    $ CELERY_TRACE_APP=1 celery worker -l INFO
 
 
 .. topic:: Evolving the API
