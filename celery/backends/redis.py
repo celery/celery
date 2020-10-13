@@ -13,6 +13,7 @@ from celery import states
 from celery._state import task_join_will_block
 from celery.canvas import maybe_signature
 from celery.exceptions import ChordError, ImproperlyConfigured
+from celery.result import GroupResult, allow_join_result
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
@@ -401,12 +402,14 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         return retval
 
     def apply_chord(self, header_result, body, **kwargs):
-        # Overrides this to avoid calling GroupResult.save
-        # pylint: disable=method-hidden
-        # Note that KeyValueStoreBackend.__init__ sets self.apply_chord
-        # if the implements_incr attr is set.  Redis backend doesn't set
-        # this flag.
-        pass
+        # If any of the child results of this chord are complex (ie. group
+        # results themselves), we need to save `header_result` to ensure that
+        # the expected structure is retained when we finish the chord and pass
+        # the results onward to the body in `on_chord_part_return()`. We don't
+        # do this is all cases to retain an optimisation in the common case
+        # where a chord header is comprised of simple result objects.
+        if any(isinstance(nr, GroupResult) for nr in header_result.results):
+            header_result.save(backend=self)
 
     @cached_property
     def _chord_zset(self):
@@ -449,20 +452,38 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             callback = maybe_signature(request.chord, app=app)
             total = callback['chord_size'] + totaldiff
             if readycount == total:
-                decode, unpack = self.decode, self._unpack_chord_result
-                with client.pipeline() as pipe:
-                    if self._chord_zset:
-                        pipeline = pipe.zrange(jkey, 0, -1)
-                    else:
-                        pipeline = pipe.lrange(jkey, 0, total)
-                    resl, = pipeline.execute()
-                try:
-                    callback.delay([unpack(tup, decode) for tup in resl])
+                header_result = GroupResult.restore(gid)
+                if header_result is not None:
+                    # If we manage to restore a `GroupResult`, then it must
+                    # have been complex and saved by `apply_chord()` earlier.
+                    #
+                    # Before we can join the `GroupResult`, it needs to be
+                    # manually marked as ready to avoid blocking
+                    header_result.on_ready()
+                    # We'll `join()` it to get the results and ensure they are
+                    # structured as intended rather than the flattened version
+                    # we'd construct without any other information.
+                    join_func = (
+                        header_result.join_native
+                        if header_result.supports_native_join
+                        else header_result.join
+                    )
+                    with allow_join_result():
+                        resl = join_func(timeout=3.0, propagate=True)
+                else:
+                    # Otherwise simply extract and decode the results we
+                    # stashed along the way, which should be faster for large
+                    # numbers of simple results in the chord header.
+                    decode, unpack = self.decode, self._unpack_chord_result
                     with client.pipeline() as pipe:
-                        _, _ = pipe \
-                            .delete(jkey) \
-                            .delete(tkey) \
-                            .execute()
+                        if self._chord_zset:
+                            pipeline = pipe.zrange(jkey, 0, -1)
+                        else:
+                            pipeline = pipe.lrange(jkey, 0, total)
+                        resl, = pipeline.execute()
+                    resl = [unpack(tup, decode) for tup in resl]
+                try:
+                    callback.delay(resl)
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception(
                         'Chord callback for %r raised: %r', request.group, exc)
@@ -470,6 +491,12 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                         callback,
                         ChordError(f'Callback error: {exc!r}'),
                     )
+                finally:
+                    with client.pipeline() as pipe:
+                        _, _ = pipe \
+                            .delete(jkey) \
+                            .delete(tkey) \
+                            .execute()
         except ChordError as exc:
             logger.exception('Chord %r raised: %r', request.group, exc)
             return self.chord_error_from_stack(callback, exc)
