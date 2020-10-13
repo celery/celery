@@ -919,7 +919,11 @@ class BaseKeyValueStoreBackend(Backend):
                     ChordError(f'GroupResult {gid} no longer exists'),
                 )
         val = self.incr(key)
-        size = len(deps)
+        # Set the chord size to the value defined in the request, or fall back
+        # to the number of dependencies we can see from the restored result
+        size = request.chord.get("chord_size")
+        if size is None:
+            size = len(deps)
         if val > size:  # pragma: no cover
             logger.warning('Chord counter incremented too many times for %r',
                            gid)
