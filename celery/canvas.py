@@ -652,19 +652,27 @@ class _chain(Signature):
         args = (tuple(args) + tuple(self.args)
                 if args and not self.immutable else self.args)
 
-        tasks, results = self.prepare_steps(
+        tasks, results_from_prepare = self.prepare_steps(
             args, kwargs, self.tasks, root_id, parent_id, link_error, app,
             task_id, group_id, chord,
         )
 
-        if results:
+        if results_from_prepare:
             if link:
                 tasks[0].extend_list_option('link', link)
             first_task = tasks.pop()
             options = _prepare_chain_from_options(options, tasks, use_link)
 
-            first_task.apply_async(**options)
-            return results[0]
+            result_from_apply = first_task.apply_async(**options)
+            # If we only have a single task, it may be important that we pass
+            # the real result object rather than the one obtained via freezing.
+            # e.g. For `GroupResult`s, we need to pass back the result object
+            # which will actually have its promise fulfilled by the subtasks,
+            # something that will never occur for the frozen result.
+            if not tasks:
+                return result_from_apply
+            else:
+                return results_from_prepare[0]
 
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None, group_index=None):

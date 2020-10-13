@@ -1,5 +1,5 @@
 import json
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -534,6 +534,48 @@ class test_chain(CanvasCase):
         assert len(tasks) == 2
 
         assert x.apply().get() == 3
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_chain_single_child_result(self):
+        child_sig = self.add.si(1, 1)
+        chain_sig = chain(child_sig)
+        assert chain_sig.tasks[0] is child_sig
+
+        with patch.object(
+            # We want to get back the result of actually applying the task
+            child_sig, "apply_async",
+        ) as mock_apply, patch.object(
+            # The child signature may be clone by `chain.prepare_steps()`
+            child_sig, "clone", return_value=child_sig,
+        ):
+            res = chain_sig()
+        # `_prepare_chain_from_options()` sets this `chain` kwarg with the
+        # subsequent tasks which would be run - nothing in this case
+        mock_apply.assert_called_once_with(chain=[])
+        assert res is mock_apply.return_value
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_chain_single_child_group_result(self):
+        child_sig = self.add.si(1, 1)
+        # The group will `clone()` the child during instantiation so mock it
+        with patch.object(child_sig, "clone", return_value=child_sig):
+            group_sig = group(child_sig)
+        # Now we can construct the chain signature which is actually under test
+        chain_sig = chain(group_sig)
+        assert chain_sig.tasks[0].tasks[0] is child_sig
+
+        with patch.object(
+            # We want to get back the result of actually applying the task
+            child_sig, "apply_async",
+        ) as mock_apply, patch.object(
+            # The child signature may be clone by `chain.prepare_steps()`
+            child_sig, "clone", return_value=child_sig,
+        ):
+            res = chain_sig()
+        # `_prepare_chain_from_options()` sets this `chain` kwarg with the
+        # subsequent tasks which would be run - nothing in this case
+        mock_apply.assert_called_once_with(chain=[])
+        assert res is mock_apply.return_value
 
 
 class test_group(CanvasCase):
