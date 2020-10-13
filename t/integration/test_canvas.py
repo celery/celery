@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, timedelta
 from time import sleep
 
@@ -6,7 +5,7 @@ import pytest
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
-from celery.exceptions import ChordError, TimeoutError
+from celery.exceptions import TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
 
 from .conftest import get_active_redis_channels, get_redis_connection
@@ -691,10 +690,12 @@ class test_chord:
 
         chord_add.app.conf.task_always_eager = prev
 
-    @flaky
     def test_group_chain(self, manager):
-        if not manager.app.conf.result_backend.startswith('redis'):
-            raise pytest.skip('Requires redis result backend.')
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         c = (
             add.s(2, 2) |
             group(add.s(i) for i in range(4)) |
@@ -703,11 +704,6 @@ class test_chord:
         res = c()
         assert res.get(timeout=TIMEOUT) == [12, 13, 14, 15]
 
-    @flaky
-    @pytest.mark.xfail(os.environ['TEST_BACKEND'] == 'cache+pylibmc://',
-                       reason="Not supported yet by the cache backend.",
-                       strict=True,
-                       raises=ChordError)
     def test_nested_group_chain(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
