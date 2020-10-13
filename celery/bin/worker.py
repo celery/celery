@@ -10,7 +10,8 @@ from click.types import StringParamType
 from celery import concurrency
 from celery.bin.base import (COMMA_SEPARATED_LIST, LOG_LEVEL,
                              CeleryDaemonCommand, CeleryOption)
-from celery.platforms import EX_FAILURE, detached, maybe_drop_privileges
+from celery.platforms import (EX_FAILURE, EX_OK, detached,
+                              maybe_drop_privileges)
 from celery.utils.log import get_logger
 from celery.utils.nodenames import default_nodename, host_format, node_format
 
@@ -99,6 +100,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
             if executable is not None:
                 path = executable
             os.execv(path, [path] + argv)
+            return EX_OK
         except Exception:  # pylint: disable=broad-except
             if app is None:
                 from celery import current_app
@@ -107,7 +109,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
                 'ERROR', logfile, hostname=hostname)
             logger.critical("Can't exec %r", ' '.join([path] + argv),
                             exc_info=True)
-        return EX_FAILURE
+            return EX_FAILURE
 
 
 @click.command(cls=CeleryDaemonCommand,
@@ -290,36 +292,23 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
                 "Unable to parse extra configuration from command line.\n"
                 f"Reason: {e}", ctx=ctx)
     if kwargs.get('detach', False):
-        params = ctx.params.copy()
-        params.pop('detach')
-        params.pop('logfile')
-        params.pop('pidfile')
-        params.pop('uid')
-        params.pop('gid')
-        umask = params.pop('umask')
-        workdir = ctx.obj.workdir
-        params.pop('hostname')
-        executable = params.pop('executable')
-        argv = ['-m', 'celery', 'worker']
-        for arg, value in params.items():
-            arg = arg.replace("_", "-")
-            if isinstance(value, bool) and value:
-                argv.append(f'--{arg}')
-            else:
-                if value is not None:
-                    argv.append(f'--{arg}')
-                    argv.append(str(value))
-            return detach(sys.executable,
-                          argv,
-                          logfile=logfile,
-                          pidfile=pidfile,
-                          uid=uid, gid=gid,
-                          umask=umask,
-                          workdir=workdir,
-                          app=app,
-                          executable=executable,
-                          hostname=hostname)
-        return
+        argv = ['-m', 'celery'] + sys.argv[1:]
+        if '--detach' in argv:
+            argv.remove('--detach')
+        if '-D' in argv:
+            argv.remove('-D')
+
+        return detach(sys.executable,
+                      argv,
+                      logfile=logfile,
+                      pidfile=pidfile,
+                      uid=uid, gid=gid,
+                      umask=kwargs.get('umask', None),
+                      workdir=kwargs.get('workdir', None),
+                      app=app,
+                      executable=kwargs.get('executable', None),
+                      hostname=hostname)
+
     maybe_drop_privileges(uid=uid, gid=gid)
     worker = app.Worker(
         hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,

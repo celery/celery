@@ -389,27 +389,28 @@ This is an example systemd file:
 
 .. code-block:: bash
 
-  [Unit]
-  Description=Celery Service
-  After=network.target
+    [Unit]
+    Description=Celery Service
+    After=network.target
 
-  [Service]
-  Type=forking
-  User=celery
-  Group=celery
-  EnvironmentFile=/etc/conf.d/celery
-  WorkingDirectory=/opt/celery
-  ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} multi start ${CELERYD_NODES} \
-    --pidfile=${CELERYD_PID_FILE} \
-    --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'
-  ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait ${CELERYD_NODES} \
-    --pidfile=${CELERYD_PID_FILE}'
-  ExecReload=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} multi restart ${CELERYD_NODES} \
-    --pidfile=${CELERYD_PID_FILE} \
-    --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'
+    [Service]
+    Type=forking
+    User=celery
+    Group=celery
+    EnvironmentFile=/etc/conf.d/celery
+    WorkingDirectory=/opt/celery
+    ExecStart=/bin/sh -c '${CELERY_BIN} -A $CELERY_APP multi start $CELERYD_NODES \
+        --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
+        --loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
+    ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait $CELERYD_NODES \
+        --pidfile=${CELERYD_PID_FILE} --loglevel="${CELERYD_LOG_LEVEL}"'
+    ExecReload=/bin/sh -c '${CELERY_BIN} -A $CELERY_APP multi restart $CELERYD_NODES \
+        --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
+        --loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
+    Restart=always
 
-  [Install]
-  WantedBy=multi-user.target
+    [Install]
+    WantedBy=multi-user.target
 
 Once you've put that file in :file:`/etc/systemd/system`, you should run
 :command:`systemctl daemon-reload` in order that Systemd acknowledges that file.
@@ -482,22 +483,22 @@ This is an example systemd file for Celery Beat:
 
 .. code-block:: bash
 
-  [Unit]
-  Description=Celery Beat Service
-  After=network.target
+    [Unit]
+    Description=Celery Beat Service
+    After=network.target
 
-  [Service]
-  Type=simple
-  User=celery
-  Group=celery
-  EnvironmentFile=/etc/conf.d/celery
-  WorkingDirectory=/opt/celery
-  ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} beat  \
-    --pidfile=${CELERYBEAT_PID_FILE} \
-    --logfile=${CELERYBEAT_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL}'
+    [Service]
+    Type=simple
+    User=celery
+    Group=celery
+    EnvironmentFile=/etc/conf.d/celery
+    WorkingDirectory=/opt/celery
+    ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} beat  \
+        --pidfile=${CELERYBEAT_PID_FILE} \
+        --logfile=${CELERYBEAT_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL}'
 
-  [Install]
-  WantedBy=multi-user.target
+    [Install]
+    WantedBy=multi-user.target
 
 
 Running the worker with superuser privileges (root)
