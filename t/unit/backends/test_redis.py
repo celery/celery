@@ -1,3 +1,4 @@
+import itertools
 import json
 import random
 import ssl
@@ -274,7 +275,7 @@ class test_RedisResultConsumer:
         assert consumer._pubsub._subscribed_to == {b'celery-task-meta-initial'}
 
 
-class test_RedisBackend:
+class basetest_RedisBackend:
     def get_backend(self):
         from celery.backends.redis import RedisBackend
 
@@ -287,11 +288,42 @@ class test_RedisBackend:
         from celery.backends.redis import E_LOST
         return E_LOST
 
+    def create_task(self, i, group_id="group_id"):
+        tid = uuid()
+        task = Mock(name=f'task-{tid}')
+        task.name = 'foobarbaz'
+        self.app.tasks['foobarbaz'] = task
+        task.request.chord = signature(task)
+        task.request.id = tid
+        task.request.chord['chord_size'] = 10
+        task.request.group = group_id
+        task.request.group_index = i
+        return task
+
+    @contextmanager
+    def chord_context(self, size=1):
+        with patch('celery.backends.redis.maybe_signature') as ms:
+            request = Mock(name='request')
+            request.id = 'id1'
+            request.group = 'gid1'
+            request.group_index = None
+            tasks = [
+                self.create_task(i, group_id=request.group)
+                for i in range(size)
+            ]
+            callback = ms.return_value = Signature('add')
+            callback.id = 'id1'
+            callback['chord_size'] = size
+            callback.delay = Mock(name='callback.delay')
+            yield tasks, request, callback
+
     def setup(self):
         self.Backend = self.get_backend()
         self.E_LOST = self.get_E_LOST()
         self.b = self.Backend(app=self.app)
 
+
+class test_RedisBackend(basetest_RedisBackend):
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_reduce(self):
         pytest.importorskip('redis')
@@ -623,20 +655,36 @@ class test_RedisBackend:
         self.b.expires = None
         self.b._set_with_state('foo', 'bar', states.SUCCESS)
 
-    def create_task(self, i):
-        tid = uuid()
-        task = Mock(name=f'task-{tid}')
-        task.name = 'foobarbaz'
-        self.app.tasks['foobarbaz'] = task
-        task.request.chord = signature(task)
-        task.request.id = tid
-        task.request.chord['chord_size'] = 10
-        task.request.group = 'group_id'
-        task.request.group_index = i
-        return task
+    def test_process_cleanup(self):
+        self.b.process_cleanup()
 
-    @patch('celery.result.GroupResult.restore')
-    def test_on_chord_part_return(self, restore):
+    def test_get_set_forget(self):
+        tid = uuid()
+        self.b.store_result(tid, 42, states.SUCCESS)
+        assert self.b.get_state(tid) == states.SUCCESS
+        assert self.b.get_result(tid) == 42
+        self.b.forget(tid)
+        assert self.b.get_state(tid) == states.PENDING
+
+    def test_set_expires(self):
+        self.b = self.Backend(expires=512, app=self.app)
+        tid = uuid()
+        key = self.b.get_key_for_task(tid)
+        self.b.store_result(tid, 42, states.SUCCESS)
+        self.b.client.expire.assert_called_with(
+            key, 512,
+        )
+
+
+class test_RedisBackend_chords_simple(basetest_RedisBackend):
+    @pytest.fixture(scope="class", autouse=True)
+    def simple_header_result(self):
+        with patch(
+            "celery.result.GroupResult.restore", return_value=None,
+        ) as p:
+            yield p
+
+    def test_on_chord_part_return(self):
         tasks = [self.create_task(i) for i in range(10)]
         random.shuffle(tasks)
 
@@ -652,8 +700,7 @@ class test_RedisBackend:
             call(jkey, 86400), call(tkey, 86400),
         ])
 
-    @patch('celery.result.GroupResult.restore')
-    def test_on_chord_part_return__unordered(self, restore):
+    def test_on_chord_part_return__unordered(self):
         self.app.conf.result_backend_transport_options = dict(
             result_chord_ordered=False,
         )
@@ -673,8 +720,7 @@ class test_RedisBackend:
             call(jkey, 86400), call(tkey, 86400),
         ])
 
-    @patch('celery.result.GroupResult.restore')
-    def test_on_chord_part_return__ordered(self, restore):
+    def test_on_chord_part_return__ordered(self):
         self.app.conf.result_backend_transport_options = dict(
             result_chord_ordered=True,
         )
@@ -694,8 +740,7 @@ class test_RedisBackend:
             call(jkey, 86400), call(tkey, 86400),
         ])
 
-    @patch('celery.result.GroupResult.restore')
-    def test_on_chord_part_return_no_expiry(self, restore):
+    def test_on_chord_part_return_no_expiry(self):
         old_expires = self.b.expires
         self.b.expires = None
         tasks = [self.create_task(i) for i in range(10)]
@@ -712,8 +757,7 @@ class test_RedisBackend:
 
         self.b.expires = old_expires
 
-    @patch('celery.result.GroupResult.restore')
-    def test_on_chord_part_return_expire_set_to_zero(self, restore):
+    def test_on_chord_part_return_expire_set_to_zero(self):
         old_expires = self.b.expires
         self.b.expires = 0
         tasks = [self.create_task(i) for i in range(10)]
@@ -730,8 +774,7 @@ class test_RedisBackend:
 
         self.b.expires = old_expires
 
-    @patch('celery.result.GroupResult.restore')
-    def test_on_chord_part_return_no_expiry__unordered(self, restore):
+    def test_on_chord_part_return_no_expiry__unordered(self):
         self.app.conf.result_backend_transport_options = dict(
             result_chord_ordered=False,
         )
@@ -752,8 +795,7 @@ class test_RedisBackend:
 
         self.b.expires = old_expires
 
-    @patch('celery.result.GroupResult.restore')
-    def test_on_chord_part_return_no_expiry__ordered(self, restore):
+    def test_on_chord_part_return_no_expiry__ordered(self):
         self.app.conf.result_backend_transport_options = dict(
             result_chord_ordered=True,
         )
@@ -926,39 +968,80 @@ class test_RedisBackend:
                 callback.id, exc=ANY,
             )
 
-    @contextmanager
-    def chord_context(self, size=1):
-        with patch('celery.backends.redis.maybe_signature') as ms:
-            tasks = [self.create_task(i) for i in range(size)]
-            request = Mock(name='request')
-            request.id = 'id1'
-            request.group = 'gid1'
-            request.group_index = None
-            callback = ms.return_value = Signature('add')
-            callback.id = 'id1'
-            callback['chord_size'] = size
-            callback.delay = Mock(name='callback.delay')
-            yield tasks, request, callback
 
-    def test_process_cleanup(self):
-        self.b.process_cleanup()
+class test_RedisBackend_chords_complex(basetest_RedisBackend):
+    @pytest.fixture(scope="function", autouse=True)
+    def complex_header_result(self):
+        with patch("celery.result.GroupResult.restore") as p:
+            yield p
 
-    def test_get_set_forget(self):
-        tid = uuid()
-        self.b.store_result(tid, 42, states.SUCCESS)
-        assert self.b.get_state(tid) == states.SUCCESS
-        assert self.b.get_result(tid) == 42
-        self.b.forget(tid)
-        assert self.b.get_state(tid) == states.PENDING
-
-    def test_set_expires(self):
-        self.b = self.Backend(expires=512, app=self.app)
-        tid = uuid()
-        key = self.b.get_key_for_task(tid)
-        self.b.store_result(tid, 42, states.SUCCESS)
-        self.b.client.expire.assert_called_with(
-            key, 512,
+    def test_apply_chord_complex_header(self):
+        mock_header_result = Mock()
+        # No results in the header at all - won't call `save()`
+        mock_header_result.results = tuple()
+        self.b.apply_chord(mock_header_result, None)
+        mock_header_result.save.assert_not_called()
+        mock_header_result.save.reset_mock()
+        # A single simple result in the header - won't call `save()`
+        mock_header_result.results = (self.app.AsyncResult("foo"), )
+        self.b.apply_chord(mock_header_result, None)
+        mock_header_result.save.assert_not_called()
+        mock_header_result.save.reset_mock()
+        # Many simple results in the header - won't call `save()`
+        mock_header_result.results = (self.app.AsyncResult("foo"), ) * 42
+        self.b.apply_chord(mock_header_result, None)
+        mock_header_result.save.assert_not_called()
+        mock_header_result.save.reset_mock()
+        # A single complex result in the header - will call `save()`
+        mock_header_result.results = (self.app.GroupResult("foo"), )
+        self.b.apply_chord(mock_header_result, None)
+        mock_header_result.save.assert_called_once_with(backend=self.b)
+        mock_header_result.save.reset_mock()
+        # Many complex results in the header - will call `save()`
+        mock_header_result.results = (self.app.GroupResult("foo"), ) * 42
+        self.b.apply_chord(mock_header_result, None)
+        mock_header_result.save.assert_called_once_with(backend=self.b)
+        mock_header_result.save.reset_mock()
+        # Mixed simple and complex results in the header - will call `save()`
+        mock_header_result.results = itertools.islice(
+            itertools.cycle((
+                self.app.AsyncResult("foo"), self.app.GroupResult("foo"),
+            )), 42,
         )
+        self.b.apply_chord(mock_header_result, None)
+        mock_header_result.save.assert_called_once_with(backend=self.b)
+        mock_header_result.save.reset_mock()
+
+    @pytest.mark.parametrize("supports_native_join", (True, False))
+    def test_on_chord_part_return(
+        self, complex_header_result, supports_native_join,
+    ):
+        mock_result_obj = complex_header_result.return_value
+        mock_result_obj.supports_native_join = supports_native_join
+
+        tasks = [self.create_task(i) for i in range(10)]
+        random.shuffle(tasks)
+
+        with self.chord_context(10) as (tasks, request, callback):
+            for task, result_val in zip(tasks, itertools.cycle((42, ))):
+                self.b.on_chord_part_return(
+                    task.request, states.SUCCESS, result_val,
+                )
+                # Confirm that `zadd` was called even though we won't end up
+                # using the data pushed into the sorted set
+                assert self.b.client.zadd.call_count == 1
+                self.b.client.zadd.reset_mock()
+        # Confirm that neither `zrange` not `lrange` were called
+        self.b.client.zrange.assert_not_called()
+        self.b.client.lrange.assert_not_called()
+        # Confirm that the `GroupResult.restore` mock was called
+        complex_header_result.assert_called_once_with(request.group)
+        # Confirm the the callback was called with the `join()`ed group result
+        if supports_native_join:
+            expected_join = mock_result_obj.join_native
+        else:
+            expected_join = mock_result_obj.join
+        callback.delay.assert_called_once_with(expected_join())
 
 
 class test_SentinelBackend:

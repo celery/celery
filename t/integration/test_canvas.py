@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timedelta
 from time import sleep
 
@@ -892,9 +893,15 @@ class test_chord:
         # So for clarity of our test, we instead do it here.
 
         # Use the error callback's result to find the failed task.
-        error_callback_result = AsyncResult(
-            res.children[0].children[0].result[0])
-        failed_task_id = error_callback_result.result.args[0].split()[3]
+        uuid_patt = re.compile(
+            r"[0-9A-Fa-f]{8}-([0-9A-Fa-f]{4}-){3}[0-9A-Fa-f]{12}"
+        )
+        callback_chord_exc = AsyncResult(
+            res.children[0].children[0].result[0]
+        ).result
+        failed_task_id = uuid_patt.search(str(callback_chord_exc))
+        assert (failed_task_id is not None), "No task ID in %r" % callback_exc
+        failed_task_id = failed_task_id.group()
 
         # Use new group_id result metadata to get group ID.
         failed_task_result = AsyncResult(failed_task_id)
