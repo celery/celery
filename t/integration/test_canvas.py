@@ -423,6 +423,34 @@ class test_chain:
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
 
+    def test_nested_chain_group_mid(self, manager):
+        """
+        Test that a mid-point group in a chain completes.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        sig = chain(
+            identity.s(42),                         # 42
+            group(identity.s(), identity.s()),      # [42, 42]
+            identity.s(),                           # [42, 42]
+        )
+        res = sig.delay()
+        assert res.get(timeout=TIMEOUT) == [42, 42]
+
+    def test_nested_chain_group_last(self, manager):
+        """
+        Test that a final group in a chain with preceding tasks completes.
+        """
+        sig = chain(
+            identity.s(42),                         # 42
+            group(identity.s(), identity.s()),      # [42, 42]
+        )
+        res = sig.delay()
+        assert res.get(timeout=TIMEOUT) == [42, 42]
+
 
 class test_result_set:
 
@@ -519,6 +547,16 @@ class test_group:
         Test that a simple group completes.
         """
         sig = group(identity.s(42), identity.s(42))     # [42, 42]
+        res = sig.delay()
+        assert res.get(timeout=TIMEOUT) == [42, 42]
+
+    def test_nested_group_group(self, manager):
+        """
+        Confirm that groups nested inside groups get unrolled.
+        """
+        sig = group(
+            group(identity.s(42), identity.s(42)),  # [42, 42]
+        )                                       # [42, 42] due to unrolling
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
 
@@ -1010,6 +1048,24 @@ class test_chord:
             priority=5)
         assert c().get(timeout=TIMEOUT) == "Priority: 5"
 
+    def test_nested_chord_group(self, manager):
+        """
+        Confirm that groups nested inside chords get unrolled.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        sig = chord(
+            (
+                group(identity.s(42), identity.s(42)),  # [42, 42]
+            ),
+            identity.s()                            # [42, 42]
+        )
+        res = sig.delay()
+        assert res.get(timeout=TIMEOUT) == [42, 42]
+
     def test_nested_chord_group_chain_group_tail(self, manager):
         """
         Sanity check that a deeply nested group is completed as expected.
@@ -1022,12 +1078,17 @@ class test_chord:
         except NotImplementedError as e:
             raise pytest.skip(e.args[0])
 
-        sig = chord(group(chain(
-            identity.s(42),     # -> 42
+        sig = chord(
             group(
-                identity.s(),   # -> 42
-                identity.s(),   # -> 42
-            ),                  # [42, 42]
-        )), identity.s())       # [[42, 42]]
+                chain(
+                    identity.s(42),     # 42
+                    group(
+                        identity.s(),       # 42
+                        identity.s(),       # 42
+                    ),                  # [42, 42]
+                ),                  # [42, 42]
+            ),                  # [[42, 42]] since the chain prevents unrolling
+            identity.s(),       # [[42, 42]]
+        )
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [[42, 42]]
