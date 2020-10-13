@@ -413,6 +413,16 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [8, 8]
 
+    def test_nested_chain_group_lone(self, manager):
+        """
+        Test that a lone group in a chain completes.
+        """
+        sig = chain(
+            group(identity.s(42), identity.s(42)),  # [42, 42]
+        )
+        res = sig.delay()
+        assert res.get(timeout=TIMEOUT) == [42, 42]
+
 
 class test_result_set:
 
@@ -503,6 +513,14 @@ class test_group:
         res = c.delay()
 
         assert res.get(timeout=TIMEOUT) == list(range(1000))
+
+    def test_group_lone(self, manager):
+        """
+        Test that a simple group completes.
+        """
+        sig = group(identity.s(42), identity.s(42))     # [42, 42]
+        res = sig.delay()
+        assert res.get(timeout=TIMEOUT) == [42, 42]
 
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
