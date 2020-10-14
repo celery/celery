@@ -327,13 +327,9 @@ class test_chain(CanvasCase):
 
     def test_from_dict_full_subtasks(self):
         c = chain(self.add.si(1, 2), self.add.si(3, 4), self.add.si(5, 6))
-
         serialized = json.loads(json.dumps(c))
-
         deserialized = chain.from_dict(serialized)
-
-        for task in deserialized.tasks:
-            assert isinstance(task, Signature)
+        assert all(isinstance(task, Signature) for task in deserialized.tasks)
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_app_falls_back_to_default(self):
@@ -346,9 +342,8 @@ class test_chain(CanvasCase):
         )
         c.freeze()
         tasks, _ = c._frozen
-        for task in tasks:
-            assert isinstance(task, Signature)
-            assert task.app is self.app
+        assert all(isinstance(task, Signature) for task in tasks)
+        assert all(task.app is self.app for task in tasks)
 
     def test_groups_in_chain_to_chord(self):
         g1 = group([self.add.s(2, 2), self.add.s(4, 4)])
