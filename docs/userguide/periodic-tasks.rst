@@ -463,7 +463,7 @@ To install and use this extension:
 
     .. code-block:: console
 
-        $ celery -A proj beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+        $ celery -A proj beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
 
    Note:  You may also add this as the :setting:`beat_scheduler` setting directly.
 
