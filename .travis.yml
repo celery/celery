@@ -64,8 +64,9 @@ jobs:
       - TOXENV=flake8,apicheck,configcheck,bandit
       - CELERY_TOX_PARALLEL='--parallel --parallel-live'
     stage: lint
+
   - python: pypy3.6-7.3.1
-    env: TOXENV=pypy3
+    env: TOXENV=pypy3-unit
     stage: test
 
 before_install:
