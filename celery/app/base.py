@@ -1178,14 +1178,13 @@ class Celery:
         """
         return get_current_worker_task()
 
-    @cached_property
+    @property
     def oid(self):
         """Universally unique identifier for this app."""
-        # since 4.0: thread.get_ident() is not included when
-        # generating the process id.  This is due to how the RPC
-        # backend now dedicates a single thread to receive results,
-        # which would not work if each thread has a separate id.
-        return oid_from(self, threads=False)
+
+        if not hasattr(tlocal, 'oid'):
+            tlocal.oid = oid_from(self, threads=True)
+        return tlocal.oid
 
     @cached_property
     def amqp(self):
