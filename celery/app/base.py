@@ -65,6 +65,8 @@ Example:
     {0}="proj.celeryconfig"
 """
 
+tlocal = threading.local()
+
 
 def app_has_custom(app, attr):
     """Return true if app has customized method `attr`.
@@ -1190,10 +1192,12 @@ class Celery:
         """AMQP related functionality: :class:`~@amqp`."""
         return instantiate(self.amqp_cls, app=self)
 
-    @cached_property
+    @property
     def backend(self):
         """Current backend instance."""
-        return self._get_backend()
+        if not hasattr(tlocal, 'backend'):
+            tlocal.backend = self._get_backend()
+        return tlocal.backend
 
     @property
     def conf(self):
