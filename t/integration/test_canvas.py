@@ -17,7 +17,7 @@ from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     delayed_sum_with_soft_guard, fail, identity, ids,
                     print_unicode, raise_error, redis_echo, retry_once,
                     return_exception, return_priority, second_order_replace1,
-                    tsum)
+                    tsum, replace_with_chain, replace_with_chain_which_raises)
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 
@@ -451,6 +451,43 @@ class test_chain:
         )
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
+
+    def test_chain_replaced_with_a_chain_and_a_callback(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_connection.delete('redis-echo')
+
+        c = chain(add.s(1, 2), replace_with_chain.s(), add.s(3))
+        res = c.delay()
+
+        assert res.get(timeout=TIMEOUT) == 13
+
+        redis_messages = list(redis_connection.lrange('redis-echo', 0, -1))
+
+        assert redis_messages == [b'link called']
+
+        redis_connection.delete('redis-echo')
+
+    def test_chain_replaced_with_a_chain_and_an_error_callback(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_connection.delete('redis-echo')
+
+        c = chain(add.s(1, 2), replace_with_chain_which_raises.s(), add.s(3))
+        res = c.delay()
+
+        with pytest.raises(ValueError):
+            res.get(timeout=TIMEOUT)
+
+        redis_messages = list(redis_connection.lrange('redis-echo', 0, -1))
+
+        assert redis_messages == [b'link_error called']
+
+        redis_connection.delete('redis-echo')
 
 
 class test_result_set:
