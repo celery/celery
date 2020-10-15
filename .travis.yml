@@ -5,7 +5,7 @@ python:
   - '3.6'
   - '3.7'
   - '3.8'
-  - '3.9-dev'
+  - '3.9'
 os:
     - linux
 stages:
@@ -25,9 +25,9 @@ env:
 jobs:
   fast_finish: true
   allow_failures:
-  - python: '3.9-dev'
+  - python: '3.9'
   include:
-  - python: '3.9-dev'
+  - python: '3.9'
     env: MATRIX_TOXENV=integration-rabbitmq
     stage: integration
 
