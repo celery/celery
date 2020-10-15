@@ -250,6 +250,18 @@ AMQP Result Backend
 
 The AMQP result backend has been removed as it was deprecated in version 4.0.
 
+Removed Deprecated Modules
+--------------------------
+
+The `celery.utils.encoding` and the `celery.task` modules has been deprecated
+in version 4.0 and therefore are removed in 5.0.
+
+If you were using the `celery.utils.encoding` module before,
+you should import `kombu.utils.encoding` instead.
+
+If you were using the `celery.task` module before, you should import directly
+from the `celery` module instead.
+
 .. _new_command_line_interface:
 
 New Command Line Interface
