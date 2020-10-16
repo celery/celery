@@ -428,6 +428,7 @@ class Celery:
                 '_decorated': True,
                 '__doc__': fun.__doc__,
                 '__module__': fun.__module__,
+                '__annotations__': fun.__annotations__,
                 '__header__': staticmethod(head_from_fun(fun, bound=bind)),
                 '__wrapped__': run}, **options))()
             # for some reason __qualname__ cannot be set in type()
