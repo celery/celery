@@ -494,6 +494,16 @@ class test_App:
         finally:
             _imports.MP_MAIN_FILE = None
 
+    def test_can_get_type_hints_for_tasks(self):
+        import typing
+
+        with self.Celery() as app:
+            @app.task
+            def foo(parameter: int) -> None:
+                pass
+
+            assert typing.get_type_hints(foo) == {'parameter': int, 'return': type(None)}
+
     def test_annotate_decorator(self):
         from celery.app.task import Task
 
