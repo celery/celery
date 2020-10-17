@@ -130,7 +130,7 @@ def shell(ctx, ipython=False, bpython=False,
         import_module('celery.concurrency.eventlet')
     if gevent:
         import_module('celery.concurrency.gevent')
-    import celery.task.base
+    import celery
     app = ctx.obj.app
     app.loader.import_default_modules()
 
