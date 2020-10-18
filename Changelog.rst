@@ -8,6 +8,35 @@ This document contains change notes for bugfix & new features
 in the 5.0.x series, please see :ref:`whatsnew-5.0` for
 an overview of what's new in Celery 5.0.
 
+.. _version-5.0.1:
+
+5.0.1
+=====
+:release-date: 2020-10-18 1.00 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Specify UTF-8 as the encoding for log files (#6357).
+- Custom headers now propagate when using the protocol 1 hybrid messages (#6374).
+- Retry creating the database schema for the database results backend
+  in case of a race condition (#6298).
+- When using the Redis results backend, awaiting for a chord no longer hangs
+  when setting :setting:`result_expires` to 0 (#6373).
+- When a user tries to specify the app as an option for the subcommand,
+  a custom error message is displayed (#6363).
+- Fix the `--without-gossip`, `--without-mingle`, and `--without-heartbeat`
+  options which now work as expected. (#6365)
+- Provide a clearer error message when the application cannot be loaded.
+- Avoid printing deprecation warnings for settings when they are loaded from
+  Django settings (#6385).
+- Allow lowercase log levels for the `--loglevel` option (#6388).
+- Detaching now works as expected (#6401).
+- Restore broadcasting messages from `celery control` (#6400).
+- Pass back real result for single task chains (#6411).
+- Ensure group tasks a deeply serialized (#6342).
+- Fix chord element counting (#6354).
+- Restore the `celery shell` command (#6421).
+
+.. _version-5.0.0:
 
 5.0.0
 =====
