@@ -649,8 +649,8 @@ class Celery:
     def _autodiscover_tasks_from_fixups(self, related_name):
         return self._autodiscover_tasks_from_names([
             pkg for fixup in self._fixups
-            for pkg in fixup.autodiscover_tasks()
             if hasattr(fixup, 'autodiscover_tasks')
+            for pkg in fixup.autodiscover_tasks()
         ], related_name=related_name)
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
