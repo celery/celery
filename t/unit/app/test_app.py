@@ -218,6 +218,13 @@ class test_App:
         self.app._using_v1_reduce = True
         assert loads(dumps(self.app))
 
+    def test_autodiscover_tasks_force_fixup_fallback(self):
+        self.app.loader.autodiscover_tasks = Mock()
+        self.app.autodiscover_tasks([], force=True)
+        self.app.loader.autodiscover_tasks.assert_called_with(
+            [], 'tasks',
+        )
+
     def test_autodiscover_tasks_force(self):
         self.app.loader.autodiscover_tasks = Mock()
         self.app.autodiscover_tasks(['proj.A', 'proj.B'], force=True)
