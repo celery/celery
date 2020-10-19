@@ -2122,8 +2122,8 @@ Or you can give it a list of nodes to replicate to:
 
     task_queue_ha_policy = ['rabbit@host1', 'rabbit@host2']
 
-Using a list will implicitly set ``x-ha-policy`` to 'nodes' and
-``x-ha-policy-params`` to the given list of nodes.
+Using a list will implicitly set ``ha-mode`` to 'nodes' and
+``ha-params`` to the given list of nodes.
 
 See http://www.rabbitmq.com/ha.html for more information.
 
