@@ -883,6 +883,7 @@ class Task:
 
         if self.request.chain:
             options = sig.options.copy()
+            sig.freeze(self.request.id)
             for t in reversed(self.request.chain):
                 sig |= signature(t, app=self.app)
             sig.set(
