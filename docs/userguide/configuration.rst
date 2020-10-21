@@ -115,7 +115,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_MESSAGE_COMPRESSION``             :setting:`result_compression`
 ``CELERY_RESULT_EXCHANGE``                 :setting:`result_exchange`
 ``CELERY_RESULT_EXCHANGE_TYPE``            :setting:`result_exchange_type`
-``CELERY_TASK_RESULT_EXPIRES``             :setting:`result_expires`
+``CELERY_RESULT_EXPIRES``                  :setting:`result_expires`
 ``CELERY_RESULT_PERSISTENT``               :setting:`result_persistent`
 ``CELERY_RESULT_SERIALIZER``               :setting:`result_serializer`
 ``CELERY_RESULT_DBURI``                    Use :setting:`result_backend` instead.
