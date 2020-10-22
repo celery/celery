@@ -79,7 +79,7 @@ def active_thread_count():
 
 
 def safe_say(msg):
-    print(f'\n{msg}', file=sys.__stderr__)
+    print(f'\n{msg}', file=sys.__stderr__, flush=True)
 
 
 class Worker(WorkController):
@@ -169,7 +169,7 @@ class Worker(WorkController):
             str(self.colored.cyan(
                 ' \n', self.startup_info(artlines=not use_image))),
             str(self.colored.reset(self.extra_info() or '')),
-        ])), file=sys.__stdout__)
+        ])), file=sys.__stdout__, flush=True)
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
@@ -187,7 +187,7 @@ class Worker(WorkController):
         with self.app.connection_for_write() as connection:
             count = self.app.control.purge(connection=connection)
             if count:  # pragma: no cover
-                print(f"purge: Erased {count} {pluralize(count, 'message')} from the queue.\n")
+                print(f"purge: Erased {count} {pluralize(count, 'message')} from the queue.\n", flush=True)
 
     def tasklist(self, include_builtins=True, sep='\n', int_='celery.'):
         return sep.join(
