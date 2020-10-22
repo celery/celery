@@ -612,7 +612,7 @@ class Task:
     subtask_from_request = signature_from_request  # XXX compat
 
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
-              eta=None, countdown=None, max_retries=None, **options):
+              eta=None, countdown=None, max_retries=-1, **options):
         """Retry the task, adding it to the back of the queue.
 
         Example:
@@ -675,7 +675,8 @@ class Task:
         """
         request = self.request
         retries = request.retries + 1
-        max_retries = self.max_retries if max_retries is None else max_retries
+        if max_retries is None or max_retries >= 0:
+            self.max_retries = max_retries
 
         # Not in worker or emulated by (apply/always_eager),
         # so just raise the original exception.
@@ -694,7 +695,7 @@ class Task:
             **options
         )
 
-        if max_retries is not None and retries > max_retries:
+        if self.max_retries is not None and retries > self.max_retries:
             if exc:
                 # On Py3: will augment any current exception with
                 # the exc' argument provided (raise exc from orig)
