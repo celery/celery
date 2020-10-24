@@ -10,7 +10,7 @@ from celery import current_app, group, states
 from celery._state import _task_stack
 from celery.canvas import signature
 from celery.exceptions import (Ignore, ImproperlyConfigured,
-                               MaxRetriesExceededError, Reject, Retry)
+                               MaxRetriesExceededError, Reject, Retry, ProtectedException)
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
@@ -698,12 +698,12 @@ class Task:
             if exc:
                 # On Py3: will augment any current exception with
                 # the exc' argument provided (raise exc from orig)
-                raise_with_context(exc)
-            raise self.MaxRetriesExceededError(
+                raise_with_context(ProtectedException(exc))
+            raise ProtectedException(self.MaxRetriesExceededError(
                 "Can't retry {}[{}] args:{} kwargs:{}".format(
                     self.name, request.id, S.args, S.kwargs
                 ), task_args=S.args, task_kwargs=S.kwargs
-            )
+            ))
 
         ret = Retry(exc=exc, when=eta or countdown, is_eager=is_eager, sig=S)
 
