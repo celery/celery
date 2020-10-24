@@ -1,7 +1,7 @@
 """Tasks auto-retry functionality."""
 from vine.utils import wraps
 
-from celery.exceptions import Ignore, Retry
+from celery.exceptions import Ignore, Retry, ProtectedException
 from celery.utils.time import get_exponential_backoff_interval
 
 
@@ -38,6 +38,8 @@ def add_autoretry_behaviour(task, **options):
                 raise
             except Retry:
                 raise
+            except ProtectedException as exc:
+                raise exc.incapsulated
             except autoretry_for as exc:
                 if retry_backoff:
                     retry_kwargs['countdown'] = \
