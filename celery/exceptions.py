@@ -293,3 +293,9 @@ class BackendStoreError(BackendError):
 
     def __repr__(self):
         return super().__repr__() + " state:" + self.state + " task_id:" + self.task_id
+
+
+class ProtectedException(Exception):
+    def __init__(self, exc, *args, **kwargs):
+        self.incapsuled = exc
+        super().__init__(*args, **kwargs)
