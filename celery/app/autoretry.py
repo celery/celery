@@ -39,7 +39,7 @@ def add_autoretry_behaviour(task, **options):
             except Retry:
                 raise
             except ProtectedException as exc:
-                raise exc.incapsulated
+                raise exc.encapsulated
             except autoretry_for as exc:
                 if retry_backoff:
                     retry_kwargs['countdown'] = \
