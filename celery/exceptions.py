@@ -297,5 +297,5 @@ class BackendStoreError(BackendError):
 
 class ProtectedException(Exception):
     def __init__(self, exc, *args, **kwargs):
-        self.incapsuled = exc
+        self.encapsulated = exc
         super().__init__(*args, **kwargs)
