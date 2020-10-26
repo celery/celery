@@ -156,6 +156,15 @@ class TasksCase:
 
         self.retry_task_max_retries_override = retry_task_max_retries_override
         
+        @self.app.task(bind=True, max_retries=0, iterations=0, shared=False,
+                       autoretry_for=(Exception,))
+        def retry_task_explicit_exception(self, **kwargs):
+            # Test for #6436
+            self.iterations += 1
+            raise MyCustomException()
+
+        self.retry_task_explicit_exception = retry_task_explicit_exception
+        
         @self.app.task(bind=True, max_retries=3, iterations=0, shared=False)
         def retry_task_raise_without_throw(self, **kwargs):
             self.iterations += 1
@@ -451,6 +460,14 @@ class test_task_retries(TasksCase):
         with pytest.raises(MyCustomException):
             result.get()
         assert self.retry_task_max_retries_override.iterations == 3
+
+    def test_retry_task_explicit_exception(self):
+        self.retry_task_explicit_exception.max_retries = 0
+        self.retry_task_explicit_exception.iterations = 0
+        result = self.retry_task_explicit_exception.apply()
+        with pytest.raises(MyCustomException):
+            result.get()
+        assert self.retry_task_explicit_exception.iterations == 1
 
     def test_retry_eager_should_return_value(self):
         self.retry_task.max_retries = 3
