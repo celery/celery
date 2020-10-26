@@ -695,15 +695,16 @@ class Task:
         )
 
         if max_retries is not None and retries > max_retries:
-            if exc:
-                # On Py3: will augment any current exception with
-                # the exc' argument provided (raise exc from orig)
-                raise_with_context(ProtectedException(exc))
-            raise ProtectedException(self.MaxRetriesExceededError(
-                "Can't retry {}[{}] args:{} kwargs:{}".format(
-                    self.name, request.id, S.args, S.kwargs
-                ), task_args=S.args, task_kwargs=S.kwargs
-            ))
+            if exc is None:
+                exc = self.MaxRetriesExceededError(
+                    "Can't retry {}[{}] args:{} kwargs:{}".format(
+                        self.name, request.id, S.args, S.kwargs
+                    ), task_args=S.args, task_kwargs=S.kwargs
+                )
+            # Retries ended, filter autoretry or not
+            if hasattr(self, "autoretry_for"):
+                exc = ProtectedException(exc)
+            raise exc
 
         ret = Retry(exc=exc, when=eta or countdown, is_eager=is_eager, sig=S)
 
