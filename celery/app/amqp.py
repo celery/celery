@@ -46,7 +46,6 @@ class Queues(dict):
         create_missing (bool): By default any unknown queues will be
             added automatically, but if this flag is disabled the occurrence
             of unknown queues in `wanted` will raise :exc:`KeyError`.
-        ha_policy (Sequence, str): Default HA policy for queues with none set.
         max_priority (int): Default x-max-priority for queues with none set.
     """
 
@@ -55,14 +54,13 @@ class Queues(dict):
     _consume_from = None
 
     def __init__(self, queues=None, default_exchange=None,
-                 create_missing=True, ha_policy=None, autoexchange=None,
+                 create_missing=True, autoexchange=None,
                  max_priority=None, default_routing_key=None):
         dict.__init__(self)
         self.aliases = WeakValueDictionary()
         self.default_exchange = default_exchange
         self.default_routing_key = default_routing_key
         self.create_missing = create_missing
-        self.ha_policy = ha_policy
         self.autoexchange = Exchange if autoexchange is None else autoexchange
         self.max_priority = max_priority
         if queues is not None and not isinstance(queues, Mapping):
@@ -122,23 +120,12 @@ class Queues(dict):
             queue.exchange = self.default_exchange
         if not queue.routing_key:
             queue.routing_key = self.default_routing_key
-        if self.ha_policy:
-            if queue.queue_arguments is None:
-                queue.queue_arguments = {}
-            self._set_ha_policy(queue.queue_arguments)
         if self.max_priority is not None:
             if queue.queue_arguments is None:
                 queue.queue_arguments = {}
             self._set_max_priority(queue.queue_arguments)
         self[queue.name] = queue
         return queue
-
-    def _set_ha_policy(self, args):
-        policy = self.ha_policy
-        if isinstance(policy, (list, tuple)):
-            return args.update({'ha-mode': 'nodes',
-                                'ha-params': list(policy)})
-        args['ha-mode'] = policy
 
     def _set_max_priority(self, args):
         if 'x-max-priority' not in args and self.max_priority is not None:
@@ -251,7 +238,7 @@ class AMQP:
     def send_task_message(self):
         return self._create_task_sender()
 
-    def Queues(self, queues, create_missing=None, ha_policy=None,
+    def Queues(self, queues, create_missing=None,
                autoexchange=None, max_priority=None):
         # Create new :class:`Queues` instance, using queue defaults
         # from the current configuration.
@@ -259,8 +246,6 @@ class AMQP:
         default_routing_key = conf.task_default_routing_key
         if create_missing is None:
             create_missing = conf.task_create_missing_queues
-        if ha_policy is None:
-            ha_policy = conf.task_queue_ha_policy
         if max_priority is None:
             max_priority = conf.task_queue_max_priority
         if not queues and conf.task_default_queue:
@@ -271,7 +256,7 @@ class AMQP:
                         else autoexchange)
         return self.queues_cls(
             queues, self.default_exchange, create_missing,
-            ha_policy, autoexchange, max_priority, default_routing_key,
+            autoexchange, max_priority, default_routing_key,
         )
 
     def Router(self, queues=None, create_missing=None):
