@@ -267,7 +267,6 @@ NAMESPACES = Namespace(
             type='dict', old={'celery_task_publish_retry_policy'},
         ),
         queues=Option(type='dict'),
-        queue_ha_policy=Option(None, type='string'),
         queue_max_priority=Option(None, type='int'),
         reject_on_worker_lost=Option(type='bool'),
         remote_tracebacks=Option(False, type='bool'),

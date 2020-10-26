@@ -2100,33 +2100,6 @@ The final routing options for ``tasks.add`` will become:
 
 See :ref:`routers` for more examples.
 
-.. setting:: task_queue_ha_policy
-
-``task_queue_ha_policy``
-~~~~~~~~~~~~~~~~~~~~~~~~
-:brokers: RabbitMQ
-
-Default: :const:`None`.
-
-This will set the default HA policy for a queue, and the value
-can either be a string (usually ``all``):
-
-.. code-block:: python
-
-    task_queue_ha_policy = 'all'
-
-Using 'all' will replicate the queue to all current nodes,
-Or you can give it a list of nodes to replicate to:
-
-.. code-block:: python
-
-    task_queue_ha_policy = ['rabbit@host1', 'rabbit@host2']
-
-Using a list will implicitly set ``ha-mode`` to 'nodes' and
-``ha-params`` to the given list of nodes.
-
-See http://www.rabbitmq.com/ha.html for more information.
-
 .. setting:: task_queue_max_priority
 
 ``task_queue_max_priority``

@@ -89,23 +89,6 @@ class test_Queues:
         q['foo'] = queue
         assert q['foo'].exchange == q.default_exchange
 
-    @pytest.mark.parametrize('ha_policy,qname,q,qargs,expected', [
-        (None, 'xyz', 'xyz', None, None),
-        (None, 'xyz', 'xyz', {'x-foo': 'bar'}, {'x-foo': 'bar'}),
-        ('all', 'foo', Queue('foo'), None, {'ha-mode': 'all'}),
-        ('all', 'xyx2',
-         Queue('xyx2', queue_arguments={'x-foo': 'bar'}),
-         None,
-         {'ha-mode': 'all', 'x-foo': 'bar'}),
-        (['A', 'B', 'C'], 'foo', Queue('foo'), None, {
-            'ha-mode': 'nodes',
-            'ha-params': ['A', 'B', 'C']}),
-    ])
-    def test_with_ha_policy(self, ha_policy, qname, q, qargs, expected):
-        queues = Queues(ha_policy=ha_policy, create_missing=False)
-        queues.add(q, queue_arguments=qargs)
-        assert queues[qname].queue_arguments == expected
-
     def test_select_add(self):
         q = Queues()
         q.select(['foo', 'bar'])
@@ -117,11 +100,6 @@ class test_Queues:
         q.select(['foo', 'bar'])
         q.deselect('bar')
         assert sorted(q._consume_from.keys()) == ['foo']
-
-    def test_with_ha_policy_compat(self):
-        q = Queues(ha_policy='all')
-        q.add('bar')
-        assert q['bar'].queue_arguments == {'ha-mode': 'all'}
 
     def test_add_default_exchange(self):
         ex = Exchange('fff', 'fanout')
@@ -143,12 +121,6 @@ class test_Queues:
         ({'max_priority': 10},
          'moo', Queue('moo', queue_arguments=None),
          {'x-max-priority': 10}),
-        ({'ha_policy': 'all', 'max_priority': 5},
-         'bar', 'bar',
-         {'ha-mode': 'all', 'x-max-priority': 5}),
-        ({'ha_policy': 'all', 'max_priority': 5},
-         'xyx2', Queue('xyx2', queue_arguments={'x-max-priority': 2}),
-         {'ha-mode': 'all', 'x-max-priority': 2}),
         ({'max_priority': None},
          'foo2', 'foo2',
          None),
@@ -254,10 +226,6 @@ class test_AMQP:
     def test_countdown_negative(self):
         with pytest.raises(ValueError):
             self.app.amqp.as_task_v2(uuid(), 'foo', countdown=-1232132323123)
-
-    def test_Queues__with_ha_policy(self):
-        x = self.app.amqp.Queues({}, ha_policy='all')
-        assert x.ha_policy == 'all'
 
     def test_Queues__with_max_priority(self):
         x = self.app.amqp.Queues({}, max_priority=23)
