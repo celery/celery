@@ -48,6 +48,11 @@ def add_autoretry_behaviour(task, **options):
                             retries=task.request.retries,
                             maximum=retry_backoff_max,
                             full_jitter=retry_jitter)
-                raise task.retry(exc=exc, **retry_kwargs)
+                try:
+                    task.retry(exc=exc, **retry_kwargs)
+                except ProtectedException as exc:
+                    raise exc.encapsulated
+                except Exception as exc:
+                    raise exc
 
         task._orig_run, task.run = task.run, run
