@@ -465,7 +465,18 @@ class test_chain:
 
         assert res.get(timeout=TIMEOUT) == 13
 
-        redis_messages = list(redis_connection.lrange('redis-echo', 0, -1))
+        redis_messages = []
+        for _ in range(10):
+            redis_messages = list(
+                redis_connection.lrange('redis-echo', 0, -1)
+            )
+
+            # Avoid race condition in CI where the test finishes
+            # before the link callback is called
+            if not redis_messages:
+                sleep(0.5)
+            else:
+                break
 
         assert redis_messages == [b'link called']
 
@@ -484,7 +495,18 @@ class test_chain:
         with pytest.raises(ValueError):
             res.get(timeout=TIMEOUT)
 
-        redis_messages = list(redis_connection.lrange('redis-echo', 0, -1))
+        redis_messages = []
+        for _ in range(10):
+            redis_messages = list(
+                redis_connection.lrange('redis-echo', 0, -1)
+            )
+
+            # Avoid race condition in CI where the test finishes
+            # before the link_error callback is called
+            if not redis_messages:
+                sleep(0.5)
+            else:
+                break
 
         assert redis_messages == [b'link_error called']
 
