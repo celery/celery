@@ -414,6 +414,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [8, 8]
 
+    @flaky
     def test_nested_chain_group_lone(self, manager):
         """
         Test that a lone group in a chain completes.
