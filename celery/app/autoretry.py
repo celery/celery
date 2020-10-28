@@ -1,7 +1,7 @@
 """Tasks auto-retry functionality."""
 from vine.utils import wraps
 
-from celery.exceptions import Ignore, Retry, ProtectedException
+from celery.exceptions import Ignore, Retry
 from celery.utils.time import get_exponential_backoff_interval
 
 
@@ -38,8 +38,6 @@ def add_autoretry_behaviour(task, **options):
                 raise
             except Retry:
                 raise
-            except ProtectedException as exc:
-                raise exc.encapsulated
             except autoretry_for as exc:
                 if retry_backoff:
                     retry_kwargs['countdown'] = \
@@ -48,11 +46,15 @@ def add_autoretry_behaviour(task, **options):
                             retries=task.request.retries,
                             maximum=retry_backoff_max,
                             full_jitter=retry_jitter)
-                try:
-                    task.retry(exc=exc, **retry_kwargs)
-                except ProtectedException as exc:
-                    raise exc.encapsulated
-                except Exception as exc:
-                    raise exc
+                # Override max_retries
+                if hasattr(task, 'override_max_retries'):
+                    retry_kwargs['max_retries'] =  getattr(task,
+                                                      'override_max_retries',
+                                                      task.max_retries)
+                ret = task.retry(exc=exc, **retry_kwargs)
+                # Stop propagation
+                if hasattr(task, 'override_max_retries'):
+                    delattr(task, 'override_max_retries')
+                raise ret
 
         task._orig_run, task.run = task.run, run
