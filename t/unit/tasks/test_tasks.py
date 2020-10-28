@@ -155,7 +155,7 @@ class TasksCase:
             self.retry(exc=MyCustomException)
 
         self.retry_task_max_retries_override = retry_task_max_retries_override
-        
+
         @self.app.task(bind=True, max_retries=0, iterations=0, shared=False,
                        autoretry_for=(Exception,))
         def retry_task_explicit_exception(self, **kwargs):
@@ -164,7 +164,7 @@ class TasksCase:
             raise MyCustomException()
 
         self.retry_task_explicit_exception = retry_task_explicit_exception
-        
+
         @self.app.task(bind=True, max_retries=3, iterations=0, shared=False)
         def retry_task_raise_without_throw(self, **kwargs):
             self.iterations += 1
