@@ -77,17 +77,25 @@ def add_replaced(self, x, y):
 
 
 @shared_task(bind=True)
-def replace_with_chain(self, *args):
-    c = chain(add.s(4, 5), add.s(1))
-    c.link(redis_echo.si("link called"))
+def replace_with_chain(self, *args, link_msg=None):
+    c = chain(identity.s(*args), identity.s())
+    link_sig = redis_echo.s()
+    if link_msg is not None:
+        link_sig.args = (link_msg,)
+        link_sig.set(immutable=True)
+    c.link(link_sig)
 
     return self.replace(c)
 
 
 @shared_task(bind=True)
-def replace_with_chain_which_raises(self, *args):
-    c = chain(add.s(4, 5), raise_error.s())
-    c.link_error(redis_echo.si("link_error called"))
+def replace_with_chain_which_raises(self, *args, link_msg=None):
+    c = chain(identity.s(*args), raise_error.s())
+    link_sig = redis_echo.s()
+    if link_msg is not None:
+        link_sig.args = (link_msg,)
+        link_sig.set(immutable=True)
+    c.link_error(link_sig)
 
     return self.replace(c)
 
