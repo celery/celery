@@ -46,6 +46,13 @@ class App(ParamType):
     name = "application"
 
     def convert(self, value, param, ctx):
+        # We need to ensure that we can find an app importable from the
+        # specified working directory (partially works around #6445). This
+        # `chdir()` has a problem where the `workdir` argument may not have
+        # been processed yet since this is a processing time type coercion,
+        # rather than one which occurs after all arguments have been processed.
+        if ctx is not None and "workdir" in ctx.params:
+            os.chdir(ctx.params["workdir"])
         try:
             return find_app(value)
         except ModuleNotFoundError as e:
