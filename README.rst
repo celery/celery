@@ -498,9 +498,9 @@ file in the top distribution directory for the full license text.
 
 .. # vim: syntax=rst expandtab tabstop=4 shiftwidth=4 shiftround
 
-.. |build-status| image:: https://secure.travis-ci.org/celery/celery.png?branch=master
+.. |build-status| image:: https://api.travis-ci.com/celery/celery.png?branch=master
     :alt: Build status
-    :target: https://travis-ci.org/celery/celery
+    :target: https://travis-ci.com/celery/celery
 
 .. |coverage| image:: https://codecov.io/github/celery/celery/coverage.svg?branch=master
     :target: https://codecov.io/github/celery/celery?branch=master
