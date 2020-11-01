@@ -101,6 +101,11 @@ def replace_with_chain_which_raises(self, *args, link_msg=None):
 
 
 @shared_task(bind=True)
+def replace_with_empty_chain(self, *_):
+    return self.replace(chain())
+
+
+@shared_task(bind=True)
 def add_to_all(self, nums, val):
     """Add the given value to all supplied numbers."""
     subtasks = [add.s(num, val) for num in nums]
