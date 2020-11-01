@@ -882,6 +882,17 @@ class Task:
             )
 
         if self.request.chain:
+            # We need to freeze the new signature with the current task's ID to
+            # ensure that we don't disassociate the new chain from the existing
+            # task IDs which would break previously constructed results
+            # objects.
+            sig.freeze(self.request.id)
+            if "link" in sig.options:
+                final_task_links = sig.tasks[-1].options.setdefault("link", [])
+                final_task_links.extend(maybe_list(sig.options["link"]))
+            # Construct the new remainder of the task by chaining the signature
+            # we're being replaced by with signatures constructed from the
+            # chain elements in the current request.
             for t in reversed(self.request.chain):
                 sig |= signature(t, app=self.app)
 

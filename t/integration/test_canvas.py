@@ -17,7 +17,7 @@ from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     delayed_sum_with_soft_guard, fail, identity, ids,
                     print_unicode, raise_error, redis_echo, retry_once,
                     return_exception, return_priority, second_order_replace1,
-                    tsum)
+                    tsum, replace_with_chain, replace_with_chain_which_raises)
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 
@@ -414,6 +414,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [8, 8]
 
+    @flaky
     def test_nested_chain_group_lone(self, manager):
         """
         Test that a lone group in a chain completes.
@@ -451,6 +452,137 @@ class test_chain:
         )
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
+
+    def test_chain_replaced_with_a_chain_and_a_callback(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_connection.delete('redis-echo')
+
+        link_msg = 'Internal chain callback'
+        c = chain(
+            identity.s('Hello '),
+            # The replacement chain will pass its args though
+            replace_with_chain.s(link_msg=link_msg),
+            add.s('world'),
+        )
+        res = c.delay()
+
+        assert res.get(timeout=TIMEOUT) == 'Hello world'
+
+        expected_msgs = {link_msg, }
+        while expected_msgs:
+            maybe_key_msg = redis_connection.blpop('redis-echo', TIMEOUT)
+            if maybe_key_msg is None:
+                raise TimeoutError('redis-echo')
+            _, msg = maybe_key_msg
+            msg = msg.decode()
+            expected_msgs.remove(msg)   # KeyError if `msg` is not in here
+
+        # There should be no more elements - block momentarily
+        assert redis_connection.blpop('redis-echo', min(1, TIMEOUT)) is None
+        redis_connection.delete('redis-echo')
+
+    def test_chain_replaced_with_a_chain_and_an_error_callback(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_connection.delete('redis-echo')
+
+        link_msg = 'Internal chain errback'
+        c = chain(
+            identity.s('Hello '),
+            replace_with_chain_which_raises.s(link_msg=link_msg),
+            add.s(' will never be seen :(')
+        )
+        res = c.delay()
+
+        with pytest.raises(ValueError):
+            res.get(timeout=TIMEOUT)
+
+        expected_msgs = {link_msg, }
+        while expected_msgs:
+            maybe_key_msg = redis_connection.blpop('redis-echo', TIMEOUT)
+            if maybe_key_msg is None:
+                raise TimeoutError('redis-echo')
+            _, msg = maybe_key_msg
+            msg = msg.decode()
+            expected_msgs.remove(msg)   # KeyError if `msg` is not in here
+
+        # There should be no more elements - block momentarily
+        assert redis_connection.blpop('redis-echo', min(1, TIMEOUT)) is None
+        redis_connection.delete('redis-echo')
+
+    def test_chain_with_cb_replaced_with_chain_with_cb(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_connection.delete('redis-echo')
+
+        link_msg = 'Internal chain callback'
+        c = chain(
+            identity.s('Hello '),
+            # The replacement chain will pass its args though
+            replace_with_chain.s(link_msg=link_msg),
+            add.s('world'),
+        )
+        c.link(redis_echo.s())
+        res = c.delay()
+
+        assert res.get(timeout=TIMEOUT) == 'Hello world'
+
+        expected_msgs = {link_msg, 'Hello world'}
+        while expected_msgs:
+            maybe_key_msg = redis_connection.blpop('redis-echo', TIMEOUT)
+            if maybe_key_msg is None:
+                raise TimeoutError('redis-echo')
+            _, msg = maybe_key_msg
+            msg = msg.decode()
+            expected_msgs.remove(msg)   # KeyError if `msg` is not in here
+
+        # There should be no more elements - block momentarily
+        assert redis_connection.blpop('redis-echo', min(1, TIMEOUT)) is None
+        redis_connection.delete('redis-echo')
+
+    @pytest.mark.xfail(reason="#6441")
+    def test_chain_with_eb_replaced_with_chain_with_eb(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_connection.delete('redis-echo')
+
+        inner_link_msg = 'Internal chain errback'
+        outer_link_msg = 'External chain errback'
+        c = chain(
+            identity.s('Hello '),
+            # The replacement chain will pass its args though
+            replace_with_chain_which_raises.s(link_msg=inner_link_msg),
+            add.s('world'),
+        )
+        c.link_error(redis_echo.s(outer_link_msg))
+        res = c.delay()
+
+        with pytest.raises(ValueError):
+            res.get(timeout=TIMEOUT)
+
+        expected_msgs = {inner_link_msg, outer_link_msg}
+        while expected_msgs:
+            # Shorter timeout here because we expect failure
+            timeout = min(5, TIMEOUT)
+            maybe_key_msg = redis_connection.blpop('redis-echo', timeout)
+            if maybe_key_msg is None:
+                raise TimeoutError('redis-echo')
+            _, msg = maybe_key_msg
+            msg = msg.decode()
+            expected_msgs.remove(msg)   # KeyError if `msg` is not in here
+
+        # There should be no more elements - block momentarily
+        assert redis_connection.blpop('redis-echo', min(1, TIMEOUT)) is None
+        redis_connection.delete('redis-echo')
 
 
 class test_result_set:

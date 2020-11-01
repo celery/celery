@@ -22,7 +22,7 @@ def add(x, y):
 
 
 @shared_task
-def raise_error():
+def raise_error(*args):
     """Deliberately raise an error."""
     raise ValueError("deliberate error")
 
@@ -74,6 +74,30 @@ def tsum(nums):
 def add_replaced(self, x, y):
     """Add two numbers (via the add task)."""
     raise self.replace(add.s(x, y))
+
+
+@shared_task(bind=True)
+def replace_with_chain(self, *args, link_msg=None):
+    c = chain(identity.s(*args), identity.s())
+    link_sig = redis_echo.s()
+    if link_msg is not None:
+        link_sig.args = (link_msg,)
+        link_sig.set(immutable=True)
+    c.link(link_sig)
+
+    return self.replace(c)
+
+
+@shared_task(bind=True)
+def replace_with_chain_which_raises(self, *args, link_msg=None):
+    c = chain(identity.s(*args), raise_error.s())
+    link_sig = redis_echo.s()
+    if link_msg is not None:
+        link_sig.args = (link_msg,)
+        link_sig.set(immutable=True)
+    c.link_error(link_sig)
+
+    return self.replace(c)
 
 
 @shared_task(bind=True)
@@ -143,7 +167,8 @@ def retry_once(self, *args, expires=60.0, max_retries=1, countdown=0.1):
 
 
 @shared_task(bind=True, expires=60.0, max_retries=1)
-def retry_once_priority(self, *args, expires=60.0, max_retries=1, countdown=0.1):
+def retry_once_priority(self, *args, expires=60.0, max_retries=1,
+                        countdown=0.1):
     """Task that fails and is retried. Returns the priority."""
     if self.request.retries:
         return self.request.delivery_info['priority']
@@ -160,7 +185,6 @@ def redis_echo(message):
 
 @shared_task(bind=True)
 def second_order_replace1(self, state=False):
-
     redis_connection = get_redis_connection()
     if not state:
         redis_connection.rpush('redis-echo', 'In A')
