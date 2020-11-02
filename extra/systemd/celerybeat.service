@@ -11,6 +11,7 @@ WorkingDirectory=/opt/celery
 ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} beat  \
     --pidfile=${CELERYBEAT_PID_FILE} \
     --logfile=${CELERYBEAT_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL}'
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
