@@ -8,7 +8,7 @@ from kombu.utils.uuid import uuid
 
 from celery import current_app, group, states
 from celery._state import _task_stack
-from celery.canvas import signature
+from celery.canvas import _chain, signature
 from celery.exceptions import (Ignore, ImproperlyConfigured,
                                MaxRetriesExceededError, Reject, Retry)
 from celery.local import class_property
@@ -882,6 +882,11 @@ class Task:
                 link=self.request.callbacks,
                 link_error=self.request.errbacks,
             )
+        elif isinstance(sig, _chain):
+            if not sig.tasks:
+                raise ImproperlyConfigured(
+                    "Cannot replace with an empty chain"
+                )
 
         if self.request.chain:
             # We need to freeze the new signature with the current task's ID to

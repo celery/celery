@@ -6,7 +6,7 @@ import pytest
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
-from celery.exceptions import TimeoutError
+from celery.exceptions import ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
 
 from . import tasks
@@ -15,9 +15,10 @@ from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     add_to_all, add_to_all_to_chord, build_chain_inside_task,
                     chord_error, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, fail, identity, ids,
-                    print_unicode, raise_error, redis_echo, retry_once,
-                    return_exception, return_priority, second_order_replace1,
-                    tsum, replace_with_chain, replace_with_chain_which_raises)
+                    print_unicode, raise_error, redis_echo,
+                    replace_with_chain, replace_with_chain_which_raises,
+                    replace_with_empty_chain, retry_once, return_exception,
+                    return_priority, second_order_replace1, tsum)
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 
@@ -583,6 +584,13 @@ class test_chain:
         # There should be no more elements - block momentarily
         assert redis_connection.blpop('redis-echo', min(1, TIMEOUT)) is None
         redis_connection.delete('redis-echo')
+
+    def test_replace_chain_with_empty_chain(self, manager):
+        r = chain(identity.s(1), replace_with_empty_chain.s()).delay()
+
+        with pytest.raises(ImproperlyConfigured,
+                           match="Cannot replace with an empty chain"):
+            r.get(timeout=TIMEOUT)
 
 
 class test_result_set:
