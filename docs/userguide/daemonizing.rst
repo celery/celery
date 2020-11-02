@@ -415,6 +415,12 @@ This is an example systemd file:
 Once you've put that file in :file:`/etc/systemd/system`, you should run
 :command:`systemctl daemon-reload` in order that Systemd acknowledges that file.
 You should also run that command each time you modify it.
+Use :command:`systemctl enable celery.service` if you want the celery service to
+automatically start when (re)booting the system.
+
+Optionally you can specify extra dependencies for the celery service: e.g. if you use
+RabbitMQ as a broker, you could specify ``rabbitmq-server.service`` in both ``After=`` and ``Requires=``
+in the ``[Unit]`` `systemd section <https://www.freedesktop.org/software/systemd/man/systemd.unit.html#%5BUnit%5D%20Section%20Options>`_.
 
 To configure user, group, :command:`chdir` change settings:
 ``User``, ``Group``, and ``WorkingDirectory`` defined in
@@ -496,10 +502,16 @@ This is an example systemd file for Celery Beat:
     ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} beat  \
         --pidfile=${CELERYBEAT_PID_FILE} \
         --logfile=${CELERYBEAT_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL}'
+    Restart=always
 
     [Install]
     WantedBy=multi-user.target
 
+Once you've put that file in :file:`/etc/systemd/system`, you should run
+:command:`systemctl daemon-reload` in order that Systemd acknowledges that file.
+You should also run that command each time you modify it.
+Use :command:`systemctl enable celerybeat.service` if you want the celery beat
+service to automatically start when (re)booting the system.
 
 Running the worker with superuser privileges (root)
 ======================================================================
