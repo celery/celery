@@ -675,6 +675,8 @@ class Task:
         """
         request = self.request
         retries = request.retries + 1
+        if max_retries is not None:
+            self.override_max_retries = max_retries
         max_retries = self.max_retries if max_retries is None else max_retries
 
         # Not in worker or emulated by (apply/always_eager),
