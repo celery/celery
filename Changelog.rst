@@ -8,6 +8,26 @@ This document contains change notes for bugfix & new features
 in the 5.0.x series, please see :ref:`whatsnew-5.0` for
 an overview of what's new in Celery 5.0.
 
+.. _version-5.0.2:
+
+5.0.2
+=====
+:release-date: 2020-11-02 8.00 P.M UTC+2:00
+:release-by: Omer Katz
+
+- Fix _autodiscover_tasks_from_fixups (#6424).
+- Flush worker prints, notably the banner (#6432).
+- **Breaking Change**: Remove `ha_policy` from queue definition. (#6440)
+
+    This argument has no effect since RabbitMQ 3.0.
+    Therefore, We feel comfortable dropping it in a patch release.
+
+- Python 3.9 support (#6418).
+- **Regression**: When using the prefork pool, pick the fair scheduling strategy by default (#6447).
+- Preserve callbacks when replacing a task with a chain (#6189).
+- Fix max_retries override on `self.retry()` (#6436).
+- Raise proper error when replacing with an empty chain (#6452)
+
 .. _version-5.0.1:
 
 5.0.1
