@@ -48,9 +48,9 @@ def add_autoretry_behaviour(task, **options):
                             full_jitter=retry_jitter)
                 # Override max_retries
                 if hasattr(task, 'override_max_retries'):
-                    retry_kwargs['max_retries'] =  getattr(task,
-                                                      'override_max_retries',
-                                                      task.max_retries)
+                    retry_kwargs['max_retries'] = getattr(task,
+                                                          'override_max_retries',
+                                                          task.max_retries)
                 ret = task.retry(exc=exc, **retry_kwargs)
                 # Stop propagation
                 if hasattr(task, 'override_max_retries'):

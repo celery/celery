@@ -1239,6 +1239,7 @@ class test_signature_serialization:
     signature object was not properly deserialized from its dictionary
     representation, and would explode later on if it were used as a signature.
     """
+
     def test_rebuild_nested_chain_chain(self, manager):
         sig = chain(
             tasks.return_nested_signature_chain_chain.s(),
