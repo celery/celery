@@ -291,7 +291,7 @@ Starting from Celery 5.0, the pytest plugin is no longer enabled by default.
 Please refer to the :ref:`documentation <pytest_plugin>` for instructions.
 
 Ordered Group Results for the Redis Result Backend
--------------------------------------------------
+--------------------------------------------------
 
 Previously group results were not ordered by their invocation order.
 Celery 4.4.7 introduced an opt-in feature to make them ordered.
