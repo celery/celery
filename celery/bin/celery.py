@@ -1,5 +1,6 @@
 """Celery Command Line Interface."""
 import os
+import pathlib
 import traceback
 
 import click
@@ -94,6 +95,9 @@ APP = App()
               help_group="Global Options")
 @click.option('--workdir',
               cls=CeleryOption,
+              type=pathlib.Path,
+              callback=lambda _, __, wd: os.chdir(wd) if wd else None,
+              is_eager=True,
               help_group="Global Options")
 @click.option('-C',
               '--no-color',
@@ -121,8 +125,6 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
         click.echo(ctx.get_help())
         ctx.exit()
 
-    if workdir:
-        os.chdir(workdir)
     if loader:
         # Default app takes loader from this env (Issue #1066).
         os.environ['CELERY_LOADER'] = loader
