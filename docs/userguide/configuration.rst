@@ -65,11 +65,11 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_IMPORTS``                         :setting:`imports`
 ``CELERY_INCLUDE``                         :setting:`include`
 ``CELERY_TIMEZONE``                        :setting:`timezone`
-``CELERY_BEAT_MAX_LOOP_INTERVAL``          :setting:`beat_max_loop_interval`
-``CELERY_BEAT_SCHEDULE``                   :setting:`beat_schedule`
-``CELERY_BEAT_SCHEDULER``                  :setting:`beat_scheduler`
-``CELERY_BEAT_SCHEDULE_FILENAME``          :setting:`beat_schedule_filename`
-``CELERY_BEAT_SYNC_EVERY``                 :setting:`beat_sync_every`
+``CELERYBEAT_MAX_LOOP_INTERVAL``          :setting:`beat_max_loop_interval`
+``CELERYBEAT_SCHEDULE``                   :setting:`beat_schedule`
+``CELERYBEAT_SCHEDULER``                  :setting:`beat_scheduler`
+``CELERYBEAT_SCHEDULE_FILENAME``          :setting:`beat_schedule_filename`
+``CELERYBEAT_SYNC_EVERY``                 :setting:`beat_sync_every`
 ``BROKER_URL``                             :setting:`broker_url`
 ``BROKER_TRANSPORT``                       :setting:`broker_transport`
 ``BROKER_TRANSPORT_OPTIONS``               :setting:`broker_transport_options`
