@@ -485,6 +485,12 @@ class test_MongoBackend:
         mock_get_database.assert_called_once_with()
         mock_collection.delete_many.assert_called()
 
+        self.backend.collections = mock_collection = Mock()
+        self.backend.expires = None
+
+        self.backend.cleanup()
+        mock_collection.delete_many.assert_not_called()
+
     def test_get_database_authfailure(self):
         x = MongoBackend(app=self.app)
         x._get_connection = Mock()
