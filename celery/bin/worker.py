@@ -135,7 +135,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               type=click.Path(),
               callback=lambda ctx, _, value: value or ctx.obj.app.conf.worker_state_db,
               help_group="Worker Options",
-              help="Path to the state database. The extension '.db' may be"
+              help="Path to the state database. The extension '.db' may be "
                    "appended to the filename.")
 @click.option('-l',
               '--loglevel',
