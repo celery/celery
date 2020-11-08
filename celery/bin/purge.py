@@ -32,10 +32,10 @@ def purge(ctx, force, queues, exclude_queues):
 
         There's no undo operation for this command.
     """
-    queues = queues or set()
-    exclude_queues = exclude_queues or set()
     app = ctx.obj.app
-    names = (queues or set(app.amqp.queues.keys())) - exclude_queues
+    queues = set(queues or app.amqp.queues.keys())
+    exclude_queues = set(exclude_queues or [])
+    names = queues - exclude_queues
     qnum = len(names)
 
     if names:
