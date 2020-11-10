@@ -185,6 +185,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     #: :pypi:`redis` client module.
     redis = redis
+    connection_class_ssl = redis.SSLConnection if redis else None
 
     #: Maximum number of connections in the pool.
     max_connections = None
@@ -236,7 +237,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         ssl = _get('redis_backend_use_ssl')
         if ssl:
             self.connparams.update(ssl)
-            self.connparams['connection_class'] = redis.SSLConnection
+            self.connparams['connection_class'] = self.connection_class_ssl
 
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
@@ -245,7 +246,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         # redis_backend_use_ssl dict, check ssl_cert_reqs is valid. If set
         # via query string ssl_cert_reqs will be a string so convert it here
         if ('connection_class' in self.connparams and
-                self.connparams['connection_class'] is redis.SSLConnection):
+                issubclass(self.connparams['connection_class'], redis.SSLConnection)):
             ssl_cert_reqs_missing = 'MISSING'
             ssl_string_to_constant = {'CERT_REQUIRED': CERT_REQUIRED,
                                       'CERT_OPTIONAL': CERT_OPTIONAL,
@@ -535,10 +536,25 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         )
 
 
+if getattr(redis, "sentinel", None):
+    class SentinelManagedSSLConnection(
+            redis.sentinel.SentinelManagedConnection,
+            redis.SSLConnection):
+        """Connect to a Redis server using Sentinel + TLS.
+
+        Use Sentinel to identify which Redis server is the current master
+        to connect to and when connecting to the Master server, use an
+        SSL Connection.
+        """
+
+        pass
+
+
 class SentinelBackend(RedisBackend):
     """Redis sentinel task result store."""
 
     sentinel = getattr(redis, "sentinel", None)
+    connection_class_ssl = SentinelManagedSSLConnection if sentinel else None
 
     def __init__(self, *args, **kwargs):
         if self.sentinel is None:
