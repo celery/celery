@@ -33,6 +33,7 @@ EXTENSIONS = {
     'msgpack',
     'pymemcache',
     'pyro',
+    'pytest',
     'redis',
     's3',
     'slmq',
