@@ -498,7 +498,8 @@ class Consumer(object):
         try:
             id_, name = message.headers['id'], message.headers['task']
             root_id = message.headers.get('root_id')
-        except KeyError:  # proto1
+        except KeyError as exc:  # proto1
+            logger.error('KeyError On unknown task : %r', exc)
             payload = message.payload
             id_, name = payload['id'], payload['task']
             root_id = None
@@ -556,11 +557,13 @@ class Consumer(object):
                     return self.on_decode_error(message, exc)
                 try:
                     type_, payload = payload['task'], payload  # protocol v1
-                except (TypeError, KeyError):
+                except (TypeError, KeyError) as exc:
+                    logger.error('TypeError On Task received : %r', exc)
                     return on_unknown_message(payload, message)
             try:
                 strategy = strategies[type_]
             except KeyError as exc:
+                logger.error('KeyError On Task received : %r', exc)
                 return on_unknown_task(None, message, exc)
             else:
                 try:
@@ -571,8 +574,10 @@ class Consumer(object):
                         callbacks,
                     )
                 except (InvalidTaskError, ContentDisallowed) as exc:
+                    logger.error('TaskError On Task received : %r', exc)
                     return on_invalid_task(payload, message, exc)
                 except DecodeError as exc:
+                    logger.error('DecodeError On Task received : %r', exc)
                     return self.on_decode_error(message, exc)
 
         return on_task_received
