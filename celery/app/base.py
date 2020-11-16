@@ -358,7 +358,7 @@ class Celery:
 
     def worker_main(self, argv=None):
         if argv is None:
-            argv = ['worker']
+            argv = sys.argv
 
         if 'worker' not in argv:
             raise ValueError(
