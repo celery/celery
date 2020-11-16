@@ -363,7 +363,7 @@ class Celery:
         if 'worker' not in argv:
             raise ValueError(
                 "The worker sub-command must be specified in argv.\n"
-                "Use app.start() to programatically start other commands."
+                "Use app.start() to programmatically start other commands."
             )
 
         self.start(argv=argv)
