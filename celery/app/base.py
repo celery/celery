@@ -1,12 +1,14 @@
 """Actual App instance implementation."""
 import inspect
 import os
+import sys
 import threading
 import warnings
 from collections import UserDict, defaultdict, deque
 from datetime import datetime
 from operator import attrgetter
 
+from click.exceptions import Exit
 from kombu import pools
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
@@ -341,6 +343,30 @@ class Celery:
         """
         self._pool = None
         _deregister_app(self)
+
+    def start(self, argv=None):
+        from celery.bin.celery import celery
+
+        celery.params[0].default = self
+
+        try:
+            celery.main(args=argv, standalone_mode=False)
+        except Exit as e:
+            return e.exit_code
+        finally:
+            celery.params[0].default = None
+
+    def worker_main(self, argv=None):
+        if argv is None:
+            argv = sys.argv
+
+        if 'worker' not in argv:
+            raise ValueError(
+                "The worker sub-command must be specified in argv.\n"
+                "Use app.start() to programmatically start other commands."
+            )
+
+        self.start(argv=argv)
 
     def task(self, *args, **opts):
         """Decorator to create a task class out of any callable.
