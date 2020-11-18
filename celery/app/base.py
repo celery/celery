@@ -1181,10 +1181,11 @@ class Celery:
     @property
     def oid(self):
         """Universally unique identifier for this app."""
-
-        if not hasattr(tlocal, 'oid'):
-            tlocal.oid = oid_from(self, threads=True)
-        return tlocal.oid
+        try:
+            return tlocal.oid
+        except AttributeError:
+            tlocal.oid = new_oid = oid_from(self, threads=True)
+            return new_oid
 
     @cached_property
     def amqp(self):
@@ -1194,9 +1195,11 @@ class Celery:
     @property
     def backend(self):
         """Current backend instance."""
-        if not hasattr(tlocal, 'backend'):
-            tlocal.backend = self._get_backend()
-        return tlocal.backend
+        try:
+            return tlocal.backend
+        except AttributeError:
+            tlocal.backend = new_backend = self._get_backend()
+            return new_backend
 
     @property
     def conf(self):
