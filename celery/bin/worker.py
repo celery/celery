@@ -94,6 +94,11 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
            executable=None, hostname=None):
     """Detach program by argv."""
     fake = 1 if C_FAKEFORK else fake
+    # `detached()` will attempt to touch the logfile to confirm that error
+    # messages won't be lost after detaching stdout/err, but this means we need
+    # to pre-format it rather than relying on `setup_logging_subsystem()` like
+    # we can elsewhere.
+    logfile = node_format(logfile, hostname)
     with detached(logfile, pidfile, uid, gid, umask, workdir, fake,
                   after_forkers=False):
         try:
