@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from unittest.mock import Mock, patch, sentinel
+from unittest.mock import Mock, patch, sentinel, PropertyMock
 
 import pytest
 
@@ -294,9 +294,8 @@ class test_add_to_chord:
             return self.add_to_chord(sig, lazy)
         self.adds = adds
 
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_add_to_chord(self):
-        self.app.backend = Mock(name='backend')
-
         sig = self.add.s(2, 2)
         sig.delay = Mock(name='sig.delay')
         self.adds.request.group = uuid()
@@ -333,8 +332,8 @@ class test_add_to_chord:
 
 class test_Chord_task(ChordCase):
 
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_run(self):
-        self.app.backend = Mock()
         self.app.backend.cleanup = Mock()
         self.app.backend.cleanup.__name__ = 'cleanup'
         Chord = self.app.tasks['celery.chord']

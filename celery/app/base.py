@@ -65,8 +65,6 @@ Example:
     {0}="proj.celeryconfig"
 """
 
-tlocal = threading.local()
-
 
 def app_has_custom(app, attr):
     """Return true if app has customized method `attr`.
@@ -208,6 +206,8 @@ class Celery:
     task_cls = 'celery.app.task:Task'
     registry_cls = 'celery.app.registry:TaskRegistry'
 
+    #: Thread local storage.
+    _local = None
     _fixups = None
     _pool = None
     _conf = None
@@ -231,6 +231,9 @@ class Celery:
                  changes=None, config_source=None, fixups=None, task_cls=None,
                  autofinalize=True, namespace=None, strict_typing=True,
                  **kwargs):
+
+        self._local = threading.local()
+
         self.clock = LamportClock()
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
@@ -729,7 +732,7 @@ class Celery:
             task_id, name, args, kwargs, countdown, eta, group_id, group_index,
             expires, retries, chord,
             maybe_list(link), maybe_list(link_error),
-            reply_to or self.oid, time_limit, soft_time_limit,
+            reply_to or self.thread_oid, time_limit, soft_time_limit,
             self.conf.task_send_sent_event,
             root_id, parent_id, shadow, chain,
             argsrepr=options.get('argsrepr'),
@@ -1178,13 +1181,22 @@ class Celery:
         """
         return get_current_worker_task()
 
-    @property
+    @cached_property
     def oid(self):
         """Universally unique identifier for this app."""
+        # since 4.0: thread.get_ident() is not included when
+        # generating the process id.  This is due to how the RPC
+        # backend now dedicates a single thread to receive results,
+        # which would not work if each thread has a separate id.
+        return oid_from(self, threads=False)
+
+    @property
+    def thread_oid(self):
+        """Per-thread unique identifier for this app."""
         try:
-            return tlocal.oid
+            return self._local.oid
         except AttributeError:
-            tlocal.oid = new_oid = oid_from(self, threads=True)
+            self._local.oid = new_oid = oid_from(self, threads=True)
             return new_oid
 
     @cached_property
@@ -1196,9 +1208,9 @@ class Celery:
     def backend(self):
         """Current backend instance."""
         try:
-            return tlocal.backend
+            return self._local.backend
         except AttributeError:
-            tlocal.backend = new_backend = self._get_backend()
+            self._local.backend = new_backend = self._get_backend()
             return new_backend
 
     @property

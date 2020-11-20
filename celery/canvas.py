@@ -296,7 +296,7 @@ class Signature(dict):
         if parent_id:
             opts['parent_id'] = parent_id
         if 'reply_to' not in opts:
-            opts['reply_to'] = self.app.oid
+            opts['reply_to'] = self.app.thread_oid
         if group_id and "group_id" not in opts:
             opts['group_id'] = group_id
         if chord:
