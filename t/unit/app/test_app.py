@@ -2,6 +2,7 @@ import gc
 import itertools
 import os
 import ssl
+import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pickle import dumps, loads
@@ -17,6 +18,7 @@ from celery import current_app, shared_task
 from celery.app import base as _appbase
 from celery.app import defaults
 from celery.exceptions import ImproperlyConfigured
+from celery.backends.base import Backend
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
@@ -986,6 +988,63 @@ class test_App:
 
         app = CustomCelery(set_as_current=False)
         assert isinstance(app.tasks, TaskRegistry)
+
+    def test_oid(self):
+        # Test that oid is global value.
+        oid1 = self.app.oid
+        oid2 = self.app.oid
+        uuid.UUID(oid1)
+        uuid.UUID(oid2)
+        assert oid1 == oid2
+
+    def test_global_oid(self):
+        # Test that oid is global value also within threads
+        main_oid = self.app.oid
+        uuid.UUID(main_oid)
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(lambda: self.app.oid)
+        thread_oid = future.result()
+        uuid.UUID(thread_oid)
+        assert main_oid == thread_oid
+
+    def test_thread_oid(self):
+        # Test that thread_oid is global value in single thread.
+        oid1 = self.app.thread_oid
+        oid2 = self.app.thread_oid
+        uuid.UUID(oid1)
+        uuid.UUID(oid2)
+        assert oid1 == oid2
+
+    def test_backend(self):
+        # Test that app.bakend returns the same backend in single thread
+        backend1 = self.app.backend
+        backend2 = self.app.backend
+        assert isinstance(backend1, Backend)
+        assert isinstance(backend2, Backend)
+        assert backend1 is backend2
+
+    def test_thread_backend(self):
+        # Test that app.bakend returns the new backend for each thread
+        main_backend = self.app.backend
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(lambda: self.app.backend)
+        thread_backend = future.result()
+        assert isinstance(main_backend, Backend)
+        assert isinstance(thread_backend, Backend)
+        assert main_backend is not thread_backend
+
+    def test_thread_oid_is_local(self):
+        # Test that thread_oid is local to thread.
+        main_oid = self.app.thread_oid
+        uuid.UUID(main_oid)
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(lambda: self.app.thread_oid)
+        thread_oid = future.result()
+        uuid.UUID(thread_oid)
+        assert main_oid != thread_oid
 
 
 class test_defaults:

@@ -338,5 +338,5 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
 
     @cached_property
     def oid(self):
-        # cached here is the app OID: name of queue we receive results on.
-        return self.app.oid
+        # cached here is the app thread OID: name of queue we receive results on.
+        return self.app.thread_oid
