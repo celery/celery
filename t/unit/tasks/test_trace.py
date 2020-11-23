@@ -176,42 +176,33 @@ class test_trace(TraceCase):
         except KeyError as exc:
             traceback_clear(exc)
 
-            if sys.version_info >= (3, 5, 0):
-                tb_ = exc.__traceback__
-                while tb_ is not None:
-                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
-                        assert len(tb_.tb_frame.f_locals) == 0
-                    tb_ = tb_.tb_next
-            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
-                sys.exc_clear.assert_called()
+            tb_ = exc.__traceback__
+            while tb_ is not None:
+                if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                    assert len(tb_.tb_frame.f_locals) == 0
+                tb_ = tb_.tb_next
 
         try:
             raise_dummy()
         except KeyError as exc:
             traceback_clear()
 
-            if sys.version_info >= (3, 5, 0):
-                tb_ = exc.__traceback__
-                while tb_ is not None:
-                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
-                        assert len(tb_.tb_frame.f_locals) == 0
-                    tb_ = tb_.tb_next
-            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
-                sys.exc_clear.assert_called()
+            tb_ = exc.__traceback__
+            while tb_ is not None:
+                if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                    assert len(tb_.tb_frame.f_locals) == 0
+                tb_ = tb_.tb_next
 
         try:
             raise_dummy()
         except KeyError as exc:
             traceback_clear(str(exc))
 
-            if sys.version_info >= (3, 5, 0):
-                tb_ = exc.__traceback__
-                while tb_ is not None:
-                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
-                        assert len(tb_.tb_frame.f_locals) == 0
-                    tb_ = tb_.tb_next
-            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
-                sys.exc_clear.assert_called()
+            tb_ = exc.__traceback__
+            while tb_ is not None:
+                if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                    assert len(tb_.tb_frame.f_locals) == 0
+                tb_ = tb_.tb_next
 
     @patch('celery.app.trace.traceback_clear')
     def test_when_Ignore(self, mock_traceback_clear):

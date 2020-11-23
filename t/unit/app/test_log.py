@@ -103,8 +103,6 @@ class test_ColorFormatter:
             raise Exception()
         except Exception:
             assert x.formatException(sys.exc_info())
-        if sys.version_info[0] == 2:
-            safe_str.assert_called()
 
     @patch('logging.Formatter.format')
     def test_format_object(self, _format):
@@ -222,9 +220,7 @@ class test_default_logger:
     @patch('os.fstat')
     def test_setup_logger_no_handlers_file(self, *args):
         tempfile = mktemp(suffix='unittest', prefix='celery')
-        _open = ('builtins.open' if sys.version_info[0] == 3
-                 else '__builtin__.open')
-        with patch(_open) as osopen:
+        with patch('builtins.open') as osopen:
             with mock.restore_logging():
                 files = defaultdict(StringIO)
 

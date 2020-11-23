@@ -1,5 +1,4 @@
 """Custom maps, sets, sequences, and other data structures."""
-import sys
 import time
 from collections import OrderedDict as _OrderedDict
 from collections import deque
@@ -193,24 +192,9 @@ class DictAttribute:
             yield getattr(self.obj, key)
     itervalues = _iterate_values
 
-    if sys.version_info[0] == 3:  # pragma: no cover
-        items = _iterate_items
-        keys = _iterate_keys
-        values = _iterate_values
-    else:
-
-        def keys(self):
-            # type: () -> List[Any]
-            return list(self)
-
-        def items(self):
-            # type: () -> List[Tuple[Any, Any]]
-            return list(self._iterate_items())
-
-        def values(self):
-            # type: () -> List[Any]
-            return list(self._iterate_values())
-
+    items = _iterate_items
+    keys = _iterate_keys
+    values = _iterate_values
 
 MutableMapping.register(DictAttribute)  # noqa: E305
 
@@ -360,23 +344,9 @@ class ChainMap(MutableMapping):
     def bind_to(self, callback):
         self._observers.append(callback)
 
-    if sys.version_info[0] == 3:  # pragma: no cover
-        keys = _iterate_keys
-        items = _iterate_items
-        values = _iterate_values
-
-    else:  # noqa
-        def keys(self):
-            # type: () -> List[Any]
-            return list(self._iterate_keys())
-
-        def items(self):
-            # type: () -> List[Tuple[Any, Any]]
-            return list(self._iterate_items())
-
-        def values(self):
-            # type: () -> List[Any]
-            return list(self._iterate_values())
+    keys = _iterate_keys
+    items = _iterate_items
+    values = _iterate_values
 
 
 class ConfigurationView(ChainMap, AttributeDictMixin):

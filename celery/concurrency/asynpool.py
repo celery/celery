@@ -16,7 +16,6 @@ import errno
 import gc
 import os
 import select
-import sys
 import time
 from collections import Counter, deque, namedtuple
 from io import BytesIO
@@ -24,6 +23,7 @@ from numbers import Integral
 from pickle import HIGHEST_PROTOCOL
 from time import sleep
 from weakref import WeakValueDictionary, ref
+from struct import pack, unpack, unpack_from
 
 from billiard import pool as _pool
 from billiard.compat import buf_t, isblocking, setblocking
@@ -35,7 +35,6 @@ from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange
 from vine import promise
 
-from celery.platforms import pack, unpack, unpack_from
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.worker import state as worker_state
@@ -46,12 +45,6 @@ from celery.worker import state as worker_state
 try:
     from _billiard import read as __read__
     readcanbuf = True
-
-    # unpack_from supports memoryview in 2.7.6 and 3.3+
-    if sys.version_info[0] == 2 and sys.version_info < (2, 7, 6):
-
-        def unpack_from(fmt, view, _unpack_from=unpack_from):  # noqa
-            return _unpack_from(fmt, view.tobytes())  # <- memoryview
 
 except ImportError:  # pragma: no cover
 

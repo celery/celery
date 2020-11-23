@@ -2,15 +2,13 @@ import numbers
 import os
 import signal
 import socket
-import sys
 from datetime import datetime, timedelta
 from time import monotonic, time
 from unittest.mock import Mock, patch
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from kombu.utils.encoding import (default_encode, from_utf8, safe_repr,
-                                  safe_str)
+from kombu.utils.encoding import from_utf8, safe_repr, safe_str
 from kombu.utils.uuid import uuid
 
 from celery import states
@@ -97,29 +95,6 @@ def jail(app, task_id, name, args, kwargs):
     return trace_task(
         task, task_id, args, kwargs, request=request, eager=False, app=app,
     ).retval
-
-
-@pytest.mark.skipif(sys.version_info[0] > 3, reason='Py2 only')
-class test_default_encode:
-
-    def test_jython(self):
-        prev, sys.platform = sys.platform, 'java 1.6.1'
-        try:
-            assert default_encode(b'foo') == b'foo'
-        finally:
-            sys.platform = prev
-
-    def test_cpython(self):
-        prev, sys.platform = sys.platform, 'darwin'
-        gfe, sys.getfilesystemencoding = (
-            sys.getfilesystemencoding,
-            lambda: 'utf-8',
-        )
-        try:
-            assert default_encode(b'foo') == b'foo'
-        finally:
-            sys.platform = prev
-            sys.getfilesystemencoding = gfe
 
 
 class test_Retry:
