@@ -1,6 +1,5 @@
 """Thread execution pool."""
 
-import sys
 from concurrent.futures import ThreadPoolExecutor, wait
 
 from .base import BasePool, apply_target
@@ -25,11 +24,6 @@ class TaskPool(BasePool):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # from 3.5, it is calculated from number of CPUs
-        if (3, 0) <= sys.version_info < (3, 5) and self.limit is None:
-            self.limit = 5
-
         self.executor = ThreadPoolExecutor(max_workers=self.limit)
 
     def on_stop(self):

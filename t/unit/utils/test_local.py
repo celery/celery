@@ -1,4 +1,3 @@
-import sys
 from unittest.mock import Mock
 
 import pytest
@@ -143,8 +142,6 @@ class test_Proxy:
         x[0:2] = [1, 2]
         del(x[0:2])
         assert str(x)
-        if sys.version_info[0] < 3:
-            assert x.__cmp__(object()) == -1
 
     def test_complex_cast(self):
 

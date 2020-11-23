@@ -1,4 +1,3 @@
-import sys
 from contextlib import contextmanager
 from unittest.mock import ANY, Mock, call, patch, sentinel
 
@@ -258,7 +257,6 @@ class test_prepare_exception:
         y = self.b.exception_to_python(x)
         assert isinstance(y, Exception)
 
-    @pytest.mark.skipif(sys.version_info < (3, 3), reason='no qualname support')
     def test_json_exception_nested(self):
         self.b.serializer = 'json'
         x = self.b.prepare_exception(objectexception.Nested('msg'))
@@ -276,10 +274,7 @@ class test_prepare_exception:
         assert str(x)
         y = self.b.exception_to_python(x)
         assert y.__class__.__name__ == 'Impossible'
-        if sys.version_info < (2, 5):
-            assert y.__class__.__module__
-        else:
-            assert y.__class__.__module__ == 'foo.module'
+        assert y.__class__.__module__ == 'foo.module'
 
     def test_regular(self):
         self.b.serializer = 'pickle'
@@ -403,9 +398,6 @@ class test_BaseBackend_dict:
         self.b.mark_as_failure = Mock()
         frame_list = []
 
-        if (2, 7, 0) <= sys.version_info < (3, 0, 0):
-            sys.exc_clear = Mock()
-
         def raise_dummy():
             frame_str_temp = str(inspect.currentframe().__repr__)
             frame_list.append(frame_str_temp)
@@ -420,14 +412,11 @@ class test_BaseBackend_dict:
             assert args[1] is exc
             assert args[2]
 
-            if sys.version_info >= (3, 5, 0):
-                tb_ = exc.__traceback__
-                while tb_ is not None:
-                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
-                        assert len(tb_.tb_frame.f_locals) == 0
-                    tb_ = tb_.tb_next
-            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
-                sys.exc_clear.assert_called()
+            tb_ = exc.__traceback__
+            while tb_ is not None:
+                if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                    assert len(tb_.tb_frame.f_locals) == 0
+                tb_ = tb_.tb_next
 
     def test_prepare_value_serializes_group_result(self):
         self.b.serializer = 'json'

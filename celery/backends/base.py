@@ -261,18 +261,14 @@ class Backend:
             self.mark_as_failure(task_id, exc, exception_info.traceback)
             return exception_info
         finally:
-            if sys.version_info >= (3, 5, 0):
-                while tb is not None:
-                    try:
-                        tb.tb_frame.clear()
-                        tb.tb_frame.f_locals
-                    except RuntimeError:
-                        # Ignore the exception raised if the frame is still executing.
-                        pass
-                    tb = tb.tb_next
-
-            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
-                sys.exc_clear()
+            while tb is not None:
+                try:
+                    tb.tb_frame.clear()
+                    tb.tb_frame.f_locals
+                except RuntimeError:
+                    # Ignore the exception raised if the frame is still executing.
+                    pass
+                tb = tb.tb_next
 
             del tb
 
