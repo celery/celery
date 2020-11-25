@@ -816,12 +816,10 @@ Entry-points is special meta-data that can be added to your packages ``setup.py`
 and then after installation, read from the system using the :mod:`pkg_resources` module.
 
 Celery recognizes ``celery.commands`` entry-points to install additional
-sub-commands, where the value of the entry-point must point to a valid subclass
-of :class:`celery.bin.base.Command`. There's limited documentation,
-unfortunately, but you can find inspiration from the various commands in the
-:mod:`celery.bin` package.
+sub-commands, where the value of the entry-point must point to a valid click
+command.
 
-This is how the :pypi:`Flower` monitoring extension adds the :program:`celery flower` command,
+This is how the :pypi:`Flower` monitoring extension may add the :program:`celery flower` command,
 by adding an entry-point in :file:`setup.py`:
 
 .. code-block:: python
@@ -830,44 +828,35 @@ by adding an entry-point in :file:`setup.py`:
         name='flower',
         entry_points={
             'celery.commands': [
-               'flower = flower.command:FlowerCommand',
+               'flower = flower.command:flower',
             ],
         }
     )
 
 The command definition is in two parts separated by the equal sign, where the
 first part is the name of the sub-command (flower), then the second part is
-the fully qualified symbol path to the class that implements the command:
+the fully qualified symbol path to the function that implements the command:
 
 .. code-block:: text
 
-    flower.command:FlowerCommand
+    flower.command:flower
 
 The module path and the name of the attribute should be separated by colon
 as above.
 
 
-In the module :file:`flower/command.py`, the command class is defined
-something like this:
+In the module :file:`flower/command.py`, the command function may be defined
+as the following:
 
 .. code-block:: python
 
-    from celery.bin.base import Command
+    import click
 
-
-    class FlowerCommand(Command):
-
-        def add_arguments(self, parser):
-            parser.add_argument(
-                '--port', default=8888, type='int',
-                help='Webserver port',
-            ),
-            parser.add_argument(
-                '--debug', action='store_true',
-            )
-
-        def run(self, port=None, debug=False, **kwargs):
-            print('Running our command')
+    @click.command()
+    @click.option('--port', default=8888, type=int, help='Webserver port')
+    @click.option('--debug', is_flag=True)
+    def flower(port, debug):
+        print('Running our command')
 
 
 Worker API
