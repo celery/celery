@@ -7,6 +7,8 @@ import click
 import click.exceptions
 from click.types import ParamType
 from click_didyoumean import DYMGroup
+from click_plugins import with_plugins
+from pkg_resources import iter_entry_points
 
 from celery import VERSION_BANNER
 from celery.app.utils import find_app
@@ -69,6 +71,7 @@ class App(ParamType):
 APP = App()
 
 
+@with_plugins(iter_entry_points('celery.commands'))
 @click.group(cls=DYMGroup, invoke_without_command=True)
 @click.option('-A',
               '--app',
