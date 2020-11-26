@@ -59,7 +59,7 @@ jobs:
     env: MATRIX_TOXENV=integration-elasticsearch
     stage: integration
 
-  - python: '3.8'
+  - python: '3.9'
     env:
       - TOXENV=flake8,apicheck,configcheck,bandit
       - CELERY_TOX_PARALLEL='--parallel --parallel-live'
