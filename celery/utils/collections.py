@@ -196,6 +196,7 @@ class DictAttribute:
     keys = _iterate_keys
     values = _iterate_values
 
+
 MutableMapping.register(DictAttribute)  # noqa: E305
 
 

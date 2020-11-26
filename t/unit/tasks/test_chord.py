@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from unittest.mock import Mock, patch, sentinel, PropertyMock
+from unittest.mock import Mock, PropertyMock, patch, sentinel
 
 import pytest
 

@@ -21,9 +21,9 @@ from collections import Counter, deque, namedtuple
 from io import BytesIO
 from numbers import Integral
 from pickle import HIGHEST_PROTOCOL
+from struct import pack, unpack, unpack_from
 from time import sleep
 from weakref import WeakValueDictionary, ref
-from struct import pack, unpack, unpack_from
 
 from billiard import pool as _pool
 from billiard.compat import buf_t, isblocking, setblocking

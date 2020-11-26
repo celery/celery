@@ -17,8 +17,8 @@ from celery import app as _app
 from celery import current_app, shared_task
 from celery.app import base as _appbase
 from celery.app import defaults
-from celery.exceptions import ImproperlyConfigured
 from celery.backends.base import Backend
+from celery.exceptions import ImproperlyConfigured
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
