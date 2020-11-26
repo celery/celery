@@ -103,10 +103,10 @@ Enabling
 
 Celery initially ships the plugin in a disabled state, to enable it you can either:
 
-    * `pip install celery[pytest]`
-    * `pip install pytest-celery`
-    * or add an environment variable `PYTEST_PLUGINS=celery.contrib.pytest`
-    * or add `pytest_plugins = ("celery.contrib.pytest", )` to your root conftest.py
+    * ``pip install celery[pytest]``
+    * ``pip install pytest-celery``
+    * or add an environment variable ``PYTEST_PLUGINS=celery.contrib.pytest``
+    * or add ``pytest_plugins = ("celery.contrib.pytest", )`` to your root conftest.py
 
 
 Marks
