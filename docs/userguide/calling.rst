@@ -711,13 +711,13 @@ setting or by using the ``ignore_result`` option:
 
 .. code-block:: pycon
 
-  >>> result = add.apply_async(1, 2, ignore_result=True)
+  >>> result = add.apply_async((1, 2), ignore_result=True)
   >>> result.get()
   None
 
   >>> # Do not ignore result (default)
   ...
-  >>> result = add.apply_async(1, 2, ignore_result=False)
+  >>> result = add.apply_async((1, 2), ignore_result=False)
   >>> result.get()
   3
 
