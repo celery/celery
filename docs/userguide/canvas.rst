@@ -569,7 +569,7 @@ Here's an example errback:
     def log_error(request, exc, traceback):
         with open(os.path.join('/var/errors', request.id), 'a') as fh:
             print('--\n\n{0} {1} {2}'.format(
-                task_id, exc, traceback), file=fh)
+                request.id, exc, traceback), file=fh)
 
 To make it even easier to link tasks together there's
 a special signature called :class:`~celery.chain` that lets
