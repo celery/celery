@@ -40,7 +40,7 @@ The Code of Conduct is heavily based on the `Ubuntu Code of Conduct`_, and
 the `Pylons Code of Conduct`_.
 
 .. _`Ubuntu Code of Conduct`: https://www.ubuntu.com/community/conduct
-.. _`Pylons Code of Conduct`: http://docs.pylonshq.com/community/conduct.html
+.. _`Pylons Code of Conduct`: https://pylonsproject.org/community-code-of-conduct.html
 
 Be considerate
 --------------
@@ -447,7 +447,7 @@ fetch and checkout a remote branch like this::
 
 .. _`Fork a Repo`: https://help.github.com/fork-a-repo/
 .. _`Rebasing merge commits in git`:
-    https://notes.envato.com/developers/rebasing-merge-commits-in-git/
+    https://web.archive.org/web/20150627054345/http://marketblog.envato.com/general/rebasing-merge-commits-in-git/
 .. _`Rebase`: https://help.github.com/rebase/
 
 .. _contributing-docker-development:
