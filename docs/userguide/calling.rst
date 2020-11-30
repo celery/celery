@@ -135,23 +135,18 @@ task that adds 16 to the previous result, forming the expression
 
 
 You can also cause a callback to be applied if task raises an exception
-(*errback*), but this behaves differently from a regular callback
-in that it will be passed the id of the parent task, not the result.
-This is because it may not always be possible to serialize
-the exception raised, and so this way the error callback requires
-a result backend to be enabled, and the task must retrieve the result
-of the task instead.
+(*errback*). The worker won't actually call the errback as a task, but will
+instead call the errback function directly so that the raw request, exception
+and traceback objects can be passed to it.
 
 This is an example error callback:
 
 .. code-block:: python
 
     @app.task
-    def error_handler(uuid):
-        result = AsyncResult(uuid)
-        exc = result.get(propagate=False)
+    def error_handler(request, exc, traceback):
         print('Task {0} raised exception: {1!r}\n{2!r}'.format(
-              uuid, exc, result.traceback))
+              request.id, exc, traceback))
 
 it can be added to the task using the ``link_error`` execution
 option:
