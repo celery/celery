@@ -4,11 +4,12 @@ from operator import itemgetter
 
 import click
 
-from celery.bin.base import CeleryCommand
+from celery.bin.base import CeleryCommand, handle_preload_options
 from celery.utils.graph import DependencyGraph, GraphFormatter
 
 
 @click.group()
+@handle_preload_options
 def graph():
     """The ``celery graph`` command."""
 

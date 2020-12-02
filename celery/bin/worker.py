@@ -9,7 +9,8 @@ from click.types import StringParamType
 
 from celery import concurrency
 from celery.bin.base import (COMMA_SEPARATED_LIST, LOG_LEVEL,
-                             CeleryDaemonCommand, CeleryOption)
+                             CeleryDaemonCommand, CeleryOption,
+                             handle_preload_options)
 from celery.platforms import (EX_FAILURE, EX_OK, detached,
                               maybe_drop_privileges)
 from celery.utils.log import get_logger
@@ -273,6 +274,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               cls=CeleryOption,
               help_group="Embedded Beat Options")
 @click.pass_context
+@handle_preload_options
 def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
            loglevel=None, logfile=None, pidfile=None, statedb=None,
            **kwargs):
