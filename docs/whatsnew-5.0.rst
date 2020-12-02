@@ -275,6 +275,8 @@ As a result a few breaking changes has been introduced:
 - :program:`celery amqp` and :program:`celery shell` require the `repl`
   sub command to start a shell. You can now also invoke specific commands
   without a shell. Type `celery amqp --help` or `celery shell --help` for details.
+- The API for adding user options has changed.
+  Refer to the :ref:`documentation <extending-command-options>` for details.
 
 Click provides shell completion `out of the box <https://click.palletsprojects.com/en/7.x/bashcomplete/>`_.
 This functionality replaces our previous bash completion script and adds

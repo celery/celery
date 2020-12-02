@@ -729,25 +729,22 @@ You can add additional command-line options to the ``worker``, ``beat``, and
 ``events`` commands by modifying the :attr:`~@user_options` attribute of the
 application instance.
 
-Celery commands uses the :mod:`argparse` module to parse command-line
-arguments, and so to add custom arguments you need to specify a callback
-that takes a :class:`argparse.ArgumentParser` instance - and adds arguments.
-Please see the :mod:`argparse` documentation to read about the fields supported.
+Celery commands uses the :mod:`click` module to parse command-line
+arguments, and so to add custom arguments you need to add :class:`click.Option` instances
+to the relevant set.
 
 Example adding a custom option to the :program:`celery worker` command:
 
 .. code-block:: python
 
     from celery import Celery
+    from click import Option
 
     app = Celery(broker='amqp://')
 
-    def add_worker_arguments(parser):
-        parser.add_argument(
-            '--enable-my-option', action='store_true', default=False,
-            help='Enable custom option.',
-        ),
-    app.user_options['worker'].add(add_worker_arguments)
+    app.user_options['worker'].add(Option(('--enable-my-option',),
+                                          is_flag=True,
+                                          help='Enable custom option.'))
 
 
 All bootsteps will now receive this argument as a keyword argument to
