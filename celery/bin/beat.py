@@ -3,7 +3,8 @@ from functools import partial
 
 import click
 
-from celery.bin.base import LOG_LEVEL, CeleryDaemonCommand, CeleryOption
+from celery.bin.base import (LOG_LEVEL, CeleryDaemonCommand, CeleryOption,
+                             handle_preload_options)
 from celery.platforms import detached, maybe_drop_privileges
 
 
@@ -43,6 +44,7 @@ from celery.platforms import detached, maybe_drop_privileges
               help_group="Beat Options",
               help="Logging level.")
 @click.pass_context
+@handle_preload_options
 def beat(ctx, detach=False, logfile=None, pidfile=None, uid=None,
          gid=None, umask=None, workdir=None, **kwargs):
     """Start the beat periodic task scheduler."""

@@ -8,6 +8,8 @@ from click_repl import register_repl
 
 __all__ = ('amqp',)
 
+from celery.bin.base import handle_preload_options
+
 
 def dump_message(message):
     if message is None:
@@ -54,6 +56,7 @@ class AMQPContext:
 
 @click.group(invoke_without_command=True)
 @click.pass_context
+@handle_preload_options
 def amqp(ctx):
     """AMQP Administration Shell.
 

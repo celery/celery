@@ -145,6 +145,9 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
     beat.params.extend(ctx.obj.app.user_options.get('beat', []))
     events.params.extend(ctx.obj.app.user_options.get('events', []))
 
+    for command in celery.commands.values():
+        command.params.extend(ctx.obj.app.user_options.get('preload', []))
+
 
 @celery.command(cls=CeleryCommand)
 @click.pass_context

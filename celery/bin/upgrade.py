@@ -5,11 +5,13 @@ import sys
 import click
 
 from celery.app import defaults
-from celery.bin.base import CeleryCommand, CeleryOption
+from celery.bin.base import (CeleryCommand, CeleryOption,
+                             handle_preload_options)
 from celery.utils.functional import pass1
 
 
 @click.group()
+@handle_preload_options
 def upgrade():
     """Perform upgrade between versions."""
 
