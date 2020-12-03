@@ -20,6 +20,10 @@ The cache backend {0!r} is unknown,
 Please use one of the following backends instead: {1}\
 """
 
+# Global shared in-memory cache for in-memory cache client
+# This is to share cache between threads
+_DUMMY_CLIENT_CACHE = LRUCache(limit=5000)
+
 
 def import_best_memcache():
     if _imp[0] is None:
@@ -53,7 +57,7 @@ def get_best_memcache(*args, **kwargs):
 class DummyClient:
 
     def __init__(self, *args, **kwargs):
-        self.cache = LRUCache(limit=5000)
+        self.cache = _DUMMY_CLIENT_CACHE
 
     def get(self, key, *args, **kwargs):
         return self.cache.get(key)

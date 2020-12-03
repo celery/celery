@@ -35,6 +35,16 @@ class test_CacheBackend:
         with pytest.raises(ImproperlyConfigured):
             CacheBackend(backend=None, app=self.app)
 
+    def test_memory_client_is_shared(self):
+        """This test verifies that memory:// backend state is shared over multiple threads"""
+        from threading import Thread
+        t = Thread(
+            target=lambda: CacheBackend(backend='memory://', app=self.app).set('test', 12345)
+        )
+        t.start()
+        t.join()
+        assert self.tb.client.get('test') == 12345
+
     def test_mark_as_done(self):
         assert self.tb.get_state(self.tid) == states.PENDING
         assert self.tb.get_result(self.tid) is None
