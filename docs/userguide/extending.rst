@@ -769,29 +769,22 @@ Preload options
 ~~~~~~~~~~~~~~~
 
 The :program:`celery` umbrella command supports the concept of 'preload
-options'.  These are special options passed to all sub-commands and parsed
-outside of the main parsing step.
+options'.  These are special options passed to all sub-commands.
 
-The list of default preload options can be found in the API reference:
-:mod:`celery.bin.base`.
-
-You can add new preload options too, for example to specify a configuration
+You can add new preload options, for example to specify a configuration
 template:
 
 .. code-block:: python
 
     from celery import Celery
     from celery import signals
-    from celery.bin import Option
+    from click import Option
 
     app = Celery()
 
-    def add_preload_options(parser):
-        parser.add_argument(
-            '-Z', '--template', default='default',
-            help='Configuration template to use.',
-        )
-    app.user_options['preload'].add(add_preload_options)
+    app.user_options['preload'].add(Option(('-Z', '--template'),
+                                           default='default',
+                                           help='Configuration template to use.'))
 
     @signals.user_preload_options.connect
     def on_preload_parsed(options, **kwargs):
