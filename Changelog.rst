@@ -8,6 +8,22 @@ This document contains change notes for bugfix & new features
 in the 5.0.x series, please see :ref:`whatsnew-5.0` for
 an overview of what's new in Celery 5.0.
 
+.. _version-5.0.3:
+
+5.0.3
+=====
+:release-date: 2020-12-03 6.30 P.M UTC+2:00
+:release-by: Omer Katz
+
+- Make `--workdir` eager for early handling (#6457).
+- When using the MongoDB backend, don't cleanup if result_expires is 0 or None (#6462).
+- Fix passing queues into purge command (#6469).
+- Restore `app.start()` and `app.worker_main()` (#6481).
+- Detaching no longer creates an extra log file (#6426).
+- Result backend instances are now thread local to ensure thread safety (#6416).
+- Don't upgrade click to 8.x since click-repl doesn't support it yet.
+- Restore preload options (#6516).
+
 .. _version-5.0.2:
 
 5.0.2
