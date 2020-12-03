@@ -1126,34 +1126,3 @@ class test_SentinelBackend:
         )
         pool = x._get_pool(**x.connparams)
         assert pool
-
-    def test_backend_ssl(self):
-        pytest.importorskip('redis')
-
-        from celery.backends.redis import SentinelBackend
-        self.app.conf.redis_backend_use_ssl = {
-            'ssl_cert_reqs': "CERT_REQUIRED",
-            'ssl_ca_certs': '/path/to/ca.crt',
-            'ssl_certfile': '/path/to/client.crt',
-            'ssl_keyfile': '/path/to/client.key',
-        }
-        self.app.conf.redis_socket_timeout = 30.0
-        self.app.conf.redis_socket_connect_timeout = 100.0
-        x = SentinelBackend(
-            'sentinel://:bosco@vandelay.com:123//1', app=self.app,
-        )
-        assert x.connparams
-        assert len(x.connparams['hosts']) == 1
-        assert x.connparams['hosts'][0]['host'] == 'vandelay.com'
-        assert x.connparams['hosts'][0]['db'] == 1
-        assert x.connparams['hosts'][0]['port'] == 123
-        assert x.connparams['hosts'][0]['password'] == 'bosco'
-        assert x.connparams['socket_timeout'] == 30.0
-        assert x.connparams['socket_connect_timeout'] == 100.0
-        assert x.connparams['ssl_cert_reqs'] == ssl.CERT_REQUIRED
-        assert x.connparams['ssl_ca_certs'] == '/path/to/ca.crt'
-        assert x.connparams['ssl_certfile'] == '/path/to/client.crt'
-        assert x.connparams['ssl_keyfile'] == '/path/to/client.key'
-
-        from celery.backends.redis import SentinelManagedSSLConnection
-        assert x.connparams['connection_class'] is SentinelManagedSSLConnection
