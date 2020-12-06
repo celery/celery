@@ -9,6 +9,7 @@ from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
+from kombu.exceptions import DecodeError
 
 from . import tasks
 from .conftest import get_active_redis_channels, get_redis_connection
@@ -702,8 +703,7 @@ class test_group:
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
 
-    @flaky
-    @pytest.mark.xfail(raises=ExtraData, strict=True)
+    @pytest.mark.xfail(raises=DecodeError, strict=True)
     @pytest.mark.celery(task_serializer='msgpack',
                         accept_content=['application/x-msgpack'])
     def test_group_msgpack(self, manager):
