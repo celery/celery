@@ -16,7 +16,22 @@ def identity(x):
 
 
 @shared_task
-def add(x, y):
+def add(x, y, z=None):
+    """Add two or three numbers."""
+    if z:
+        return x + y + z
+    else:
+        return x + y
+
+
+@shared_task(typing=False)
+def add_not_typed(x, y):
+    """Add two numbers, but don't check arguments"""
+    return x + y
+
+
+@shared_task(ignore_result=True)
+def add_ignore_result(x, y):
     """Add two numbers."""
     return x + y
 
@@ -25,12 +40,6 @@ def add(x, y):
 def raise_error(*args):
     """Deliberately raise an error."""
     raise ValueError("deliberate error")
-
-
-@shared_task(ignore_result=True)
-def add_ignore_result(x, y):
-    """Add two numbers."""
-    return x + y
 
 
 @shared_task
@@ -160,6 +169,24 @@ def collect_ids(self, res, i):
         (previous_result, (root_id, parent_id, i))
     """
     return res, (self.request.root_id, self.request.parent_id, i)
+
+
+@shared_task(bind=True, default_retry_delay=1)
+def retry(self, return_value=None):
+    """Task simulating multiple retries.
+
+    When return_value is provided, the task after retries returns
+    the result. Otherwise it fails.
+    """
+    if return_value:
+        attempt = getattr(self, 'attempt', 0)
+        print('attempt', attempt)
+        if attempt >= 3:
+            delattr(self, 'attempt')
+            return return_value
+        self.attempt = attempt + 1
+
+    raise self.retry(exc=ExpectedException(), countdown=5)
 
 
 @shared_task(bind=True, expires=60.0, max_retries=1)
