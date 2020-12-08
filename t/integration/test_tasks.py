@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from time import sleep, perf_counter
+from time import perf_counter, sleep
 
 import pytest
 
@@ -7,8 +7,9 @@ import celery
 from celery import group
 
 from .conftest import get_active_redis_channels
-from .tasks import (ClassBasedAutoRetryTask, add, add_ignore_result, add_not_typed, retry,
-                    print_unicode, retry_once, retry_once_priority, sleeping, fail, ExpectedException)
+from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add,
+                    add_ignore_result, add_not_typed, fail, print_unicode,
+                    retry, retry_once, retry_once_priority, sleeping)
 
 TIMEOUT = 10
 
