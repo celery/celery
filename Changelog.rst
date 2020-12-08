@@ -8,6 +8,20 @@ This document contains change notes for bugfix & new features
 in the 5.0.x series, please see :ref:`whatsnew-5.0` for
 an overview of what's new in Celery 5.0.
 
+.. _version-5.0.4:
+
+5.0.4
+=====
+:release-date: 2020-12-08 2.40 P.M UTC+2:00
+:release-by: Omer Katz
+
+-  DummyClient of cache+memory:// backend now shares state between threads (#6524).
+
+   This fixes a problem when using our pytest integration with the in memory
+   result backend.
+   Because the state wasn't shared between threads, #6416 results in test suites
+   hanging on `result.get()`.
+
 .. _version-5.0.3:
 
 5.0.3
