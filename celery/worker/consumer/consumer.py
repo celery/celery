@@ -526,11 +526,6 @@ class Consumer:
             task.__trace__ = build_tracer(name, task, loader, self.hostname,
                                           app=self.app)
 
-    def on_ack_log_error(self, logger, errors, multiple=False):
-        try:
-            return message.ack_log_error(logger, errors, multiple)
-        except BrokenPipeError:
-            maybe_shutdown()
 
     def create_task_handler(self, promise=promise):
         strategies = self.strategies
@@ -563,9 +558,15 @@ class Consumer:
                 return on_unknown_task(None, message, exc)
             else:
                 try:
+                    def on_ack_log_error(logger, errors, multiple=False):
+                        try:
+                            return message.ack_log_error(logger, errors, multiple)
+                        except BrokenPipeError:
+                            maybe_shutdown()
+
                     strategy(
                         message, payload,
-                        promise(call_soon, (self.on_ack_log_error,)),
+                        promise(call_soon, (on_ack_log_error,)),
                         promise(call_soon, (message.reject_log_error,)),
                         callbacks,
                     )
