@@ -1028,8 +1028,12 @@ setting:
 ``cache_backend``
 ~~~~~~~~~~~~~~~~~
 
-This setting is no longer used as it's now possible to specify
+This setting is no longer used in celery's builtin backends as it's now possible to specify
 the cache backend directly in the :setting:`result_backend` setting.
+
+.. note::
+
+    The :ref:`django-celery-results` library uses ``cache_backend`` for choosing django caches.
 
 .. _conf-mongodb-result-backend:
 
