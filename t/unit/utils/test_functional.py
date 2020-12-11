@@ -1,3 +1,5 @@
+import types
+
 import pytest
 from kombu.utils.functional import lazy
 
@@ -83,50 +85,68 @@ def test_mlazy():
 
 class test_regen:
 
-    def test_list(self):
+    def setup_method(self):
+        self.N = 10
+        self.g = regen(i for i in range(self.N))
+
+    def test_regen_list(self):
         l = [1, 2]
         r = regen(iter(l))
         assert regen(l) is l
+        # Check equality multiple times to ensure we have concretised properly
         assert r == l
-        assert r == l  # again
+        assert r == l
         assert r.__length_hint__() == 0
 
         fun, args = r.__reduce__()
         assert fun(*args) == l
 
-    def test_gen(self):
-        g = regen(iter(list(range(10))))
-        assert g[7] == 7
-        assert g[6] == 6
-        assert g[5] == 5
-        assert g[4] == 4
-        assert g[3] == 3
-        assert g[2] == 2
-        assert g[1] == 1
-        assert g[0] == 0
-        assert g.data, list(range(10))
-        assert g[8] == 8
-        assert g[0] == 0
-        g = regen(iter(list(range(10))))
-        assert g[0] == 0
-        assert g[1] == 1
-        assert g.data == list(range(10))
-        g = regen(iter([1]))
-        assert g[0] == 1
+    def test_regen_gen_index(self):
+        # Index backward from an index smaller than the total size of the
+        # concretised generator so we do a partial concretisation
+        for i in range(self.N // 2, 0 - 1, -1):
+            assert self.g[i] == i
+        # Confirm that the generator is not fully consumed
+        assert not self.g.fully_consumed()
+        # Access `.data` to concretise the remainder of the generator
+        assert self.g.data == list(range(self.N))
+        assert self.g.fully_consumed()
+        # And then confirm indexing and iteration continue to return the fully
+        # conretised set of elements
+        for i in range(self.N):
+            assert self.g[i] == i
+        assert list(self.g) == list(range(self.N))
+
+    def test_regen_gen_index_error(self):
         with pytest.raises(IndexError):
-            g[1]
-        assert g.data == [1]
+            self.g[self.N]  # `N` is out of range
+        # Confirm that we concretised the whole generator
+        assert self.g.fully_consumed()
+        assert list(self.g) == list(range(self.N))
 
-        g = regen(iter(list(range(10))))
-        assert g[-1] == 9
-        assert g[-2] == 8
-        assert g[-3] == 7
-        assert g[-4] == 6
-        assert g[-5] == 5
-        assert g[5] == 5
-        assert g.data == list(range(10))
+    def test_regen_gen_negative_index(self):
+        assert self.g[-1] == self.N - 1
+        assert self.g.fully_consumed()
+        for i in range(self.N - 1, 0 - 1, -1):
+            assert self.g[i] == i
 
-        assert list(iter(g)) == list(range(10))
+    def test_regen_gen_iter(self):
+        list(iter(self.g))
+        # Confirm that we concretised the whole generator
+        assert self.g.fully_consumed()
+        assert list(self.g) == list(range(self.N))
+
+    def test_regen_gen_repr(self):
+        # Confirm that `__repr__()` does not consume any elements
+        g = regen(i for i in range(1))
+        repr(self.g)
+        assert not self.g.fully_consumed()
+
+    def test_regen_gen_nonzero(self):
+        # Confirm that `__nonzero__()` does not consume any elements
+        g = regen(i for i in range(1))
+        bool(self.g)
+        assert not self.g.fully_consumed()
 
 
 class test_head_from_fun:
