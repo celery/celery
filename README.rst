@@ -213,6 +213,31 @@ database connections at ``fork``.
 
 .. _celery-documentation:
 
+Backends and brokers
+====================
+
+Celery has the ability to communicate and store with many different backends (Result Stores) and brokers (Message Transports).
+
+Redis
+-----
+
+Redis can be both a backend and a broker.
+
+**As a Broker:** Redis works well for fast transport of small messages. Large messages can congest the system. Furthermore, the Redis broker is based on lightweight Pub/Sub. As a result if tasks are queued while no worker is currently listening to the broker, they will be lost.
+
+**As a Backend:** Redis is a super fast K/V store, making it very efficient for fetching the results of a task call.
+
+RabbitMQ
+--------
+
+RabbitMQ is a broker.
+
+**As a Broker:** RabbitMQ handles larger messages better than Redis. RabbitMQ also has the capabilities of holding tasks in a queue, meaning that if a task is called and no workers are currently listening, once a worker connects it will pick up the task.
+
+*Note:* RabbitMQ (as the broker) and Redis (as the backend) are very commonly used together. If more guaranteed long-term persistence is needed from the result store, consider using PostgreSQL or MySQL (through SQLAlchemy), Cassandra, or a custom defined backend.
+
+
+
 Documentation
 =============
 
