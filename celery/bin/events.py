@@ -48,7 +48,6 @@ def _run_evtop(app):
             raise click.UsageError("The curses module is required for this command.")
 
 
-@handle_preload_options
 @click.command(cls=CeleryDaemonCommand)
 @click.option('-d',
               '--dump',
