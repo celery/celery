@@ -1,1 +1,1 @@
-python-consul
+python-consul2
