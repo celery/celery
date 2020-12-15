@@ -18,6 +18,9 @@ jobs:
         python-version: ['3.6', '3.7', '3.8', '3.9', 'pypy3']
 
     steps:
+    - name: Install apt packages
+      run: |
+        sudo apt install libcurl4-openssl-dev libssl-dev gnutls-dev httping expect
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
