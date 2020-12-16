@@ -141,8 +141,6 @@ fi
 
 export CELERY_LOADER
 
-CELERYBEAT_OPTS="$CELERYBEAT_OPTS -f $CELERYBEAT_LOG_FILE -l $CELERYBEAT_LOG_LEVEL"
-
 if [ -n "$2" ]; then
     CELERYBEAT_OPTS="$CELERYBEAT_OPTS $2"
 fi
@@ -254,8 +252,11 @@ _chuid () {
 
 start_beat () {
     echo "Starting ${SCRIPT_NAME}..."
-    _chuid $CELERY_APP_ARG $CELERYBEAT_OPTS $DAEMON_OPTS beat --detach \
-                --pidfile="$CELERYBEAT_PID_FILE"
+    _chuid $CELERY_APP_ARG $DAEMON_OPTS beat --detach \
+                 --pidfile="$CELERYBEAT_PID_FILE"      \
+                 --logfile="$CELERYBEAT_LOG_FILE"      \
+                 --loglevel="$CELERYBEAT_LOG_LEVEL"    \
+                 $CELERYBEAT_OPTS
 }
 
 
