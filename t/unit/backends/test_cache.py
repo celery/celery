@@ -71,12 +71,12 @@ class test_CacheBackend:
 
     def test_apply_chord(self):
         tb = CacheBackend(backend='memory://', app=self.app)
-        result = self.app.GroupResult(
+        result_args = (
             uuid(),
             [self.app.AsyncResult(uuid()) for _ in range(3)],
         )
-        tb.apply_chord(result, None)
-        assert self.app.GroupResult.restore(result.id, backend=tb) == result
+        tb.apply_chord(result_args, None)
+        assert self.app.GroupResult.restore(result_args[0], backend=tb) == self.app.GroupResult(*result_args)
 
     @patch('celery.result.GroupResult.restore')
     def test_on_chord_part_return(self, restore):
@@ -91,12 +91,12 @@ class test_CacheBackend:
         self.app.tasks['foobarbaz'] = task
         task.request.chord = signature(task)
 
-        result = self.app.GroupResult(
+        result_args = (
             uuid(),
             [self.app.AsyncResult(uuid()) for _ in range(3)],
         )
-        task.request.group = result.id
-        tb.apply_chord(result, None)
+        task.request.group = result_args[0]
+        tb.apply_chord(result_args, None)
 
         deps.join_native.assert_not_called()
         tb.on_chord_part_return(task.request, 'SUCCESS', 10)

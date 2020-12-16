@@ -3,8 +3,8 @@ from kombu.utils.functional import lazy
 
 from celery.utils.functional import (DummyContext, first, firstmethod,
                                      fun_accepts_kwargs, fun_takes_argument,
-                                     head_from_fun, maybe_list, mlazy,
-                                     padlist, regen, seq_concat_item,
+                                     head_from_fun, lookahead, maybe_list,
+                                     mlazy, padlist, regen, seq_concat_item,
                                      seq_concat_seq)
 
 
@@ -64,6 +64,10 @@ def test_first():
     iterations[0] = 0
     assert first(predicate, range(10, 20)) is None
     assert iterations[0] == 10
+
+
+def test_lookahead():
+    assert list(lookahead(x for x in range(6))) == [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, None)]
 
 
 def test_maybe_list():
