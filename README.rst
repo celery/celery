@@ -226,6 +226,7 @@ Redis can be both a backend and a broker.
 **As a Broker:** Redis works well for fast transport of small messages. Large messages can congest the system. Furthermore, the Redis broker is based on lightweight Pub/Sub. As a result if tasks are queued while no worker is currently listening to the broker, they will be lost.
 
 `See broker documentation for details`_
+
 .. _`See broker documentation for details`: https://docs.celeryproject.org/en/stable/getting-started/brokers/redis.html
 
 **As a Backend:** Redis is a super fast K/V store, making it very efficient for fetching the results of a task call.
