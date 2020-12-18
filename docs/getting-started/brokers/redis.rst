@@ -58,6 +58,12 @@ It is also easy to connect directly to a list of Redis Sentinel:
     app.conf.broker_url = 'sentinel://localhost:26379;sentinel://localhost:26380;sentinel://localhost:26381'
     app.conf.broker_transport_options = { 'master_name': "cluster1" }
 
+Additional options can be passed to the Sentinel client using ``sentinel_kwargs``:
+
+.. code-block:: python
+
+    app.conf.broker_transport_options = { 'sentinel_kwargs': { 'password': "password" } }
+
 .. _redis-visibility_timeout:
 
 Visibility Timeout
