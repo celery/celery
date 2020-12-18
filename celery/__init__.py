@@ -17,7 +17,7 @@ from . import local  # noqa
 
 SERIES = 'singularity'
 
-__version__ = '5.0.4'
+__version__ = '5.0.5'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'

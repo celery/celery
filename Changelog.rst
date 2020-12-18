@@ -8,6 +8,16 @@ This document contains change notes for bugfix & new features
 in the 5.0.x series, please see :ref:`whatsnew-5.0` for
 an overview of what's new in Celery 5.0.
 
+.. _version-5.0.5:
+
+5.0.5
+=====
+:release-date: 2020-12-16 5.35 P.M UTC+2:00
+:release-by: Omer Katz
+
+- Ensure keys are strings when deleting results from S3 (#6537).
+- Fix a regression breaking `celery --help` and `celery events` (#6543).
+
 .. _version-5.0.4:
 
 5.0.4
