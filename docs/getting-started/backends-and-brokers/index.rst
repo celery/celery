@@ -76,9 +76,11 @@ RabbitMQ
 
 RabbitMQ is a broker.
 
-RabbitMQ handles larger messages better than Redis, however if many messages are coming in very quickly, scaling can become a concern and Redis or SQS should be considered unless RabbitMQ is running at very large scale.
+**As a Broker:** RabbitMQ handles larger messages better than Redis, however if many messages are coming in very quickly, scaling can become a concern and Redis or SQS should be considered unless RabbitMQ is running at very large scale.
 
 :ref:`See documentation for details <broker-rabbitmq>`
+
+**As a Backend:** RabbitMQ can store results via ``rpc://`` backend. This backend creates separate temporary queue for each new result of a task call. Creating new queue for each task call can be a bottleneck for high volume usage.
 
 *Note: RabbitMQ (as the broker) and Redis (as the backend) are very commonly used together. If more guaranteed long-term persistence is needed from the result store, consider using PostgreSQL or MySQL (through SQLAlchemy), Cassandra, or a custom defined backend.*
 
