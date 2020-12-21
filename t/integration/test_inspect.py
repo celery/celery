@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime, timedelta
 from unittest.mock import ANY
 from time import sleep
@@ -47,10 +48,17 @@ class test_Inspect:
     @flaky
     def test_registered(self, inspect):
         """Tests listing registered tasks"""
+        # TODO: We can check also the exact values of the registered methods
         ret = inspect.registered()
         assert len(ret) == 1
-        # TODO: We can check also the values of the registered methods
         len(ret[NODENAME]) > 0
+        for task_name in ret[NODENAME]:
+            assert isinstance(task_name, str)
+
+        ret = inspect.registered('name')
+        for task_info in ret[NODENAME]:
+            # task_info is in form 'TASK_NAME [name=TASK_NAME]'
+            assert re.fullmatch(r'\S+ \[name=\S+\]', task_info)
 
     @flaky
     def test_active_queues(self, inspect):
