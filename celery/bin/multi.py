@@ -288,7 +288,7 @@ class MultiTool(TermLogger):
 
     @splash
     @using_cluster
-    def start(self, cluster):
+    def start(self, cluster, **kwargs):
         self.note('> Starting nodes...')
         return int(any(cluster.start()))
 
