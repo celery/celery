@@ -72,13 +72,11 @@ the worker you must also export them (e.g., :command:`export DISPLAY=":0"`)
 
     .. code-block:: console
 
-        $ celery multi start worker1 \
-            -A proj \
+        $ celery -A proj multi start worker1 \
             --pidfile="$HOME/run/celery/%n.pid" \
             --logfile="$HOME/log/celery/%n%I.log"
 
-        $ celery multi restart worker1 \
-            -A proj \
+        $ celery -A proj multi restart worker1 \
             --logfile="$HOME/log/celery/%n%I.log" \
             --pidfile="$HOME/run/celery/%n.pid
 
@@ -391,31 +389,38 @@ This is an example systemd file:
 
 .. code-block:: bash
 
-  [Unit]
-  Description=Celery Service
-  After=network.target
+    [Unit]
+    Description=Celery Service
+    After=network.target
 
-  [Service]
-  Type=forking
-  User=celery
-  Group=celery
-  EnvironmentFile=/etc/conf.d/celery
-  WorkingDirectory=/opt/celery
-  ExecStart=/bin/sh -c '${CELERY_BIN} multi start ${CELERYD_NODES} \
-    -A ${CELERY_APP} --pidfile=${CELERYD_PID_FILE} \
-    --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'
-  ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait ${CELERYD_NODES} \
-    --pidfile=${CELERYD_PID_FILE}'
-  ExecReload=/bin/sh -c '${CELERY_BIN} multi restart ${CELERYD_NODES} \
-    -A ${CELERY_APP} --pidfile=${CELERYD_PID_FILE} \
-    --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'
+    [Service]
+    Type=forking
+    User=celery
+    Group=celery
+    EnvironmentFile=/etc/conf.d/celery
+    WorkingDirectory=/opt/celery
+    ExecStart=/bin/sh -c '${CELERY_BIN} -A $CELERY_APP multi start $CELERYD_NODES \
+        --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
+        --loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
+    ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait $CELERYD_NODES \
+        --pidfile=${CELERYD_PID_FILE} --loglevel="${CELERYD_LOG_LEVEL}"'
+    ExecReload=/bin/sh -c '${CELERY_BIN} -A $CELERY_APP multi restart $CELERYD_NODES \
+        --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
+        --loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
+    Restart=always
 
-  [Install]
-  WantedBy=multi-user.target
+    [Install]
+    WantedBy=multi-user.target
 
 Once you've put that file in :file:`/etc/systemd/system`, you should run
 :command:`systemctl daemon-reload` in order that Systemd acknowledges that file.
 You should also run that command each time you modify it.
+Use :command:`systemctl enable celery.service` if you want the celery service to
+automatically start when (re)booting the system.
+
+Optionally you can specify extra dependencies for the celery service: e.g. if you use
+RabbitMQ as a broker, you could specify ``rabbitmq-server.service`` in both ``After=`` and ``Requires=``
+in the ``[Unit]`` `systemd section <https://www.freedesktop.org/software/systemd/man/systemd.unit.html#%5BUnit%5D%20Section%20Options>`_.
 
 To configure user, group, :command:`chdir` change settings:
 ``User``, ``Group``, and ``WorkingDirectory`` defined in
@@ -484,23 +489,29 @@ This is an example systemd file for Celery Beat:
 
 .. code-block:: bash
 
-  [Unit]
-  Description=Celery Beat Service
-  After=network.target
+    [Unit]
+    Description=Celery Beat Service
+    After=network.target
 
-  [Service]
-  Type=simple
-  User=celery
-  Group=celery
-  EnvironmentFile=/etc/conf.d/celery
-  WorkingDirectory=/opt/celery
-  ExecStart=/bin/sh -c '${CELERY_BIN} beat  \
-    -A ${CELERY_APP} --pidfile=${CELERYBEAT_PID_FILE} \
-    --logfile=${CELERYBEAT_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL}'
+    [Service]
+    Type=simple
+    User=celery
+    Group=celery
+    EnvironmentFile=/etc/conf.d/celery
+    WorkingDirectory=/opt/celery
+    ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} beat  \
+        --pidfile=${CELERYBEAT_PID_FILE} \
+        --logfile=${CELERYBEAT_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL}'
+    Restart=always
 
-  [Install]
-  WantedBy=multi-user.target
+    [Install]
+    WantedBy=multi-user.target
 
+Once you've put that file in :file:`/etc/systemd/system`, you should run
+:command:`systemctl daemon-reload` in order that Systemd acknowledges that file.
+You should also run that command each time you modify it.
+Use :command:`systemctl enable celerybeat.service` if you want the celery beat
+service to automatically start when (re)booting the system.
 
 Running the worker with superuser privileges (root)
 ======================================================================

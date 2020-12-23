@@ -19,6 +19,7 @@ from kombu.transport.base import Message
 from kombu.transport.memory import Transport
 from kombu.utils.uuid import uuid
 
+import t.skip
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
 from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
@@ -33,8 +34,6 @@ from celery.worker import worker as worker_module
 from celery.worker.consumer import Consumer
 from celery.worker.pidbox import gPidbox
 from celery.worker.request import Request
-
-import t.skip
 
 
 def MockStep(step=None):

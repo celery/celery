@@ -9,8 +9,10 @@ from click.types import StringParamType
 
 from celery import concurrency
 from celery.bin.base import (COMMA_SEPARATED_LIST, LOG_LEVEL,
-                             CeleryDaemonCommand, CeleryOption)
-from celery.platforms import EX_FAILURE, detached, maybe_drop_privileges
+                             CeleryDaemonCommand, CeleryOption,
+                             handle_preload_options)
+from celery.platforms import (EX_FAILURE, EX_OK, detached,
+                              maybe_drop_privileges)
 from celery.utils.log import get_logger
 from celery.utils.nodenames import default_nodename, host_format, node_format
 
@@ -93,12 +95,18 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
            executable=None, hostname=None):
     """Detach program by argv."""
     fake = 1 if C_FAKEFORK else fake
+    # `detached()` will attempt to touch the logfile to confirm that error
+    # messages won't be lost after detaching stdout/err, but this means we need
+    # to pre-format it rather than relying on `setup_logging_subsystem()` like
+    # we can elsewhere.
+    logfile = node_format(logfile, hostname)
     with detached(logfile, pidfile, uid, gid, umask, workdir, fake,
                   after_forkers=False):
         try:
             if executable is not None:
                 path = executable
             os.execv(path, [path] + argv)
+            return EX_OK
         except Exception:  # pylint: disable=broad-except
             if app is None:
                 from celery import current_app
@@ -107,7 +115,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
                 'ERROR', logfile, hostname=hostname)
             logger.critical("Can't exec %r", ' '.join([path] + argv),
                             exc_info=True)
-        return EX_FAILURE
+            return EX_FAILURE
 
 
 @click.command(cls=CeleryDaemonCommand,
@@ -133,7 +141,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               type=click.Path(),
               callback=lambda ctx, _, value: value or ctx.obj.app.conf.worker_state_db,
               help_group="Worker Options",
-              help="Path to the state database. The extension '.db' may be"
+              help="Path to the state database. The extension '.db' may be "
                    "appended to the filename.")
 @click.option('-l',
               '--loglevel',
@@ -231,15 +239,15 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               cls=CeleryOption,
               help_group="Queue Options")
 @click.option('--without-gossip',
-              default=False,
+              is_flag=True,
               cls=CeleryOption,
               help_group="Features")
 @click.option('--without-mingle',
-              default=False,
+              is_flag=True,
               cls=CeleryOption,
               help_group="Features")
 @click.option('--without-heartbeat',
-              default=False,
+              is_flag=True,
               cls=CeleryOption,
               help_group="Features", )
 @click.option('--heartbeat-interval',
@@ -266,6 +274,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               cls=CeleryOption,
               help_group="Embedded Beat Options")
 @click.pass_context
+@handle_preload_options
 def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
            loglevel=None, logfile=None, pidfile=None, statedb=None,
            **kwargs):
@@ -273,10 +282,10 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
 
     Examples
     --------
-    $ celery worker --app=proj -l info
-    $ celery worker -A proj -l info -Q hipri,lopri
-    $ celery worker -A proj --concurrency=4
-    $ celery worker -A proj --concurrency=1000 -P eventlet
+    $ celery --app=proj worker -l INFO
+    $ celery -A proj worker -l INFO -Q hipri,lopri
+    $ celery -A proj worker --concurrency=4
+    $ celery -A proj worker --concurrency=1000 -P eventlet
     $ celery worker --autoscale=10,0
 
     """
@@ -290,35 +299,23 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
                 "Unable to parse extra configuration from command line.\n"
                 f"Reason: {e}", ctx=ctx)
     if kwargs.get('detach', False):
-        params = ctx.params.copy()
-        params.pop('detach')
-        params.pop('logfile')
-        params.pop('pidfile')
-        params.pop('uid')
-        params.pop('gid')
-        umask = params.pop('umask')
-        workdir = ctx.obj.workdir
-        params.pop('hostname')
-        executable = params.pop('executable')
-        argv = ['-m', 'celery', 'worker']
-        for arg, value in params.items():
-            if isinstance(value, bool) and value:
-                argv.append(f'--{arg}')
-            else:
-                if value is not None:
-                    argv.append(f'--{arg}')
-                    argv.append(str(value))
-            return detach(sys.executable,
-                          argv,
-                          logfile=logfile,
-                          pidfile=pidfile,
-                          uid=uid, gid=gid,
-                          umask=umask,
-                          workdir=workdir,
-                          app=app,
-                          executable=executable,
-                          hostname=hostname)
-        return
+        argv = ['-m', 'celery'] + sys.argv[1:]
+        if '--detach' in argv:
+            argv.remove('--detach')
+        if '-D' in argv:
+            argv.remove('-D')
+
+        return detach(sys.executable,
+                      argv,
+                      logfile=logfile,
+                      pidfile=pidfile,
+                      uid=uid, gid=gid,
+                      umask=kwargs.get('umask', None),
+                      workdir=kwargs.get('workdir', None),
+                      app=app,
+                      executable=kwargs.get('executable', None),
+                      hostname=hostname)
+
     maybe_drop_privileges(uid=uid, gid=gid)
     worker = app.Worker(
         hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,

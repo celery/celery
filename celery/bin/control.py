@@ -4,7 +4,8 @@ from functools import partial
 import click
 from kombu.utils.json import dumps
 
-from celery.bin.base import COMMA_SEPARATED_LIST, CeleryCommand, CeleryOption
+from celery.bin.base import (COMMA_SEPARATED_LIST, CeleryCommand,
+                             CeleryOption, handle_preload_options)
 from celery.platforms import EX_UNAVAILABLE
 from celery.utils import text
 from celery.worker.control import Panel
@@ -30,7 +31,7 @@ def _consume_arguments(meta, method, args):
                 if meta.variadic:
                     break
                 raise click.UsageError(
-                    'Command {0!r} takes arguments: {1}'.format(
+                    'Command {!r} takes arguments: {}'.format(
                         method, meta.signature))
             else:
                 yield name, typ(arg) if typ is not None else arg
@@ -71,6 +72,7 @@ def _compile_arguments(action, args):
               help_group='Remote Control Options',
               help='Use json as output format.')
 @click.pass_context
+@handle_preload_options
 def status(ctx, timeout, destination, json, **kwargs):
     """Show list of workers that are online."""
     callback = None if json else partial(_say_remote_command_reply, ctx)
@@ -86,7 +88,7 @@ def status(ctx, timeout, destination, json, **kwargs):
         ctx.obj.echo(dumps(replies))
     nodecount = len(replies)
     if not kwargs.get('quiet', False):
-        ctx.obj.echo('\n{0} {1} online.'.format(
+        ctx.obj.echo('\n{} {} online.'.format(
             nodecount, text.pluralize(nodecount, 'node')))
 
 
@@ -115,6 +117,7 @@ def status(ctx, timeout, destination, json, **kwargs):
               help_group='Remote Control Options',
               help='Use json as output format.')
 @click.pass_context
+@handle_preload_options
 def inspect(ctx, action, timeout, destination, json, **kwargs):
     """Inspect the worker at runtime.
 
@@ -134,7 +137,7 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
         ctx.obj.echo(dumps(replies))
     nodecount = len(replies)
     if not ctx.obj.quiet:
-        ctx.obj.echo('\n{0} {1} online.'.format(
+        ctx.obj.echo('\n{} {} online.'.format(
             nodecount, text.pluralize(nodecount, 'node')))
 
 
@@ -164,6 +167,7 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
               help_group='Remote Control Options',
               help='Use json as output format.')
 @click.pass_context
+@handle_preload_options
 def control(ctx, action, timeout, destination, json):
     """Workers remote control.
 

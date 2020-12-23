@@ -5,7 +5,7 @@ import time
 from collections import deque
 from queue import Empty
 from time import sleep
-from weakref import WeakKeyDictionary
+from weakref import WeakKeyDictionary, WeakSet
 
 from kombu.utils.compat import detect_environment
 
@@ -173,7 +173,10 @@ class AsyncBackendMixin:
     def _add_pending_result(self, task_id, result, weak=False):
         concrete, weak_ = self._pending_results
         if task_id not in weak_ and result.id not in concrete:
-            (weak_ if weak else concrete)[task_id] = result
+            ref = (weak_ if weak else concrete)
+            results = ref.get(task_id, WeakSet() if weak else set())
+            results.add(result)
+            ref[task_id] = results
             self.result_consumer.consume_from(task_id)
 
     def add_pending_results(self, results, weak=False):
@@ -292,13 +295,14 @@ class BaseResultConsumer:
         if meta['status'] in states.READY_STATES:
             task_id = meta['task_id']
             try:
-                result = self._get_pending_result(task_id)
+                results = self._get_pending_result(task_id)
             except KeyError:
                 # send to buffer in case we received this result
                 # before it was added to _pending_results.
                 self._pending_messages.put(task_id, meta)
             else:
-                result._maybe_set_cache(meta)
+                for result in results:
+                    result._maybe_set_cache(meta)
                 buckets = self.buckets
                 try:
                     # remove bucket for this result, since it's fulfilled

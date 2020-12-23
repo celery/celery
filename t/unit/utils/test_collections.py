@@ -1,17 +1,16 @@
 import pickle
-from collections import Mapping
+from collections.abc import Mapping
 from itertools import count
 from time import monotonic
 
 import pytest
 from billiard.einfo import ExceptionInfo
 
+import t.skip
 from celery.utils.collections import (AttributeDict, BufferMap,
                                       ConfigurationView, DictAttribute,
                                       LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
-
-import t.skip
 
 
 class test_DictAttribute:
@@ -130,11 +129,11 @@ class test_ConfigurationView:
         assert len(self.view) == 2
 
     def test_isa_mapping(self):
-        from collections import Mapping
+        from collections.abc import Mapping
         assert issubclass(ConfigurationView, Mapping)
 
     def test_isa_mutable_mapping(self):
-        from collections import MutableMapping
+        from collections.abc import MutableMapping
         assert issubclass(ConfigurationView, MutableMapping)
 
 

@@ -3,6 +3,7 @@
 This module defines the :class:`Request` class, that specifies
 how tasks are executed.
 """
+import os
 import logging
 import sys
 from datetime import datetime
@@ -34,6 +35,8 @@ __all__ = ('Request',)
 # We cache globals and attribute lookups, so disable this warning.
 
 IS_PYPY = hasattr(sys, 'pypy_version_info')
+
+REJECT_TO_HIGH_MEMORY = os.getenv("REJECT_TO_HIGH_MEMORY")
 
 logger = get_logger(__name__)
 debug, info, warn, error = (logger.debug, logger.info,
@@ -75,7 +78,7 @@ class Request:
 
     if not IS_PYPY:  # pragma: no cover
         __slots__ = (
-            '_app', '_type', 'name', 'id', '_root_id', '_parent_id',
+            '_app', '_type', 'name', 'id', '_root_id', '_parent_id', '_trailer_request',
             '_on_ack', '_body', '_hostname', '_eventer', '_connection_errors',
             '_task', '_eta', '_expires', '_request_dict', '_on_reject', '_utc',
             '_content_type', '_content_encoding', '_argsrepr', '_kwargsrepr',
@@ -485,7 +488,8 @@ class Request:
         """Handler called if the task raised an exception."""
         task_ready(self)
         if isinstance(exc_info.exception, MemoryError):
-            raise MemoryError(f'Process got: {exc_info.exception}')
+            if not REJECT_TO_HIGH_MEMORY or not self.task.acks_late:
+                raise MemoryError(f'Process got: {exc_info.exception}')
         elif isinstance(exc_info.exception, Reject):
             return self.reject(requeue=exc_info.exception.requeue)
         elif isinstance(exc_info.exception, Ignore):
@@ -497,17 +501,25 @@ class Request:
             return self.on_retry(exc_info)
 
         # (acks_late) acknowledge after result stored.
-        requeue = False
         if self.task.acks_late:
             reject = (
                 self.task.reject_on_worker_lost and
-                isinstance(exc, WorkerLostError)
+                isinstance(exc, (WorkerLostError, MemoryError, Terminated))
             )
             ack = self.task.acks_on_failure_or_timeout
             if reject:
-                requeue = True
-                self.reject(requeue=requeue)
-                send_failed_event = False
+                if REJECT_TO_HIGH_MEMORY:
+                    # If we have a higher memory queue, reject without retry
+                    self.reject(requeue=False)
+                    # Don't send a failure event
+                    send_failed_event = False
+                    return
+                else:
+                    send_failed_event = True
+                    return_ok = False
+                    # Acknowledge the message so it doesn't get retried
+                    # and can be marked as complete
+                    self.acknowledge()
             elif ack:
                 self.acknowledge()
             else:
@@ -521,8 +533,8 @@ class Request:
             self._announce_revoked(
                 'terminated', True, str(exc), False)
             send_failed_event = False  # already sent revoked event
-        elif not requeue and (isinstance(exc, WorkerLostError) or not return_ok):
-            # only mark as failure if task has not been requeued
+        elif not return_ok:
+            # We do not ever want to retry failed tasks unless worker lost or terminated
             self.task.backend.mark_as_failure(
                 self.id, exc, request=self._context,
                 store_result=self.store_errors,
@@ -625,6 +637,11 @@ class Request:
     def group_index(self):
         # used by backend.on_chord_part_return to order return values in group
         return self._request_dict.get('group_index')
+
+    @cached_property
+    def trailer_request(self):
+        # used by backend.on_chord_part_return to order return values in group
+        return self._request_dict.get('trailer_request') or []
 
 
 def create_request_cls(base, task, pool, hostname, eventer,

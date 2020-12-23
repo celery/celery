@@ -729,25 +729,22 @@ You can add additional command-line options to the ``worker``, ``beat``, and
 ``events`` commands by modifying the :attr:`~@user_options` attribute of the
 application instance.
 
-Celery commands uses the :mod:`argparse` module to parse command-line
-arguments, and so to add custom arguments you need to specify a callback
-that takes a :class:`argparse.ArgumentParser` instance - and adds arguments.
-Please see the :mod:`argparse` documentation to read about the fields supported.
+Celery commands uses the :mod:`click` module to parse command-line
+arguments, and so to add custom arguments you need to add :class:`click.Option` instances
+to the relevant set.
 
 Example adding a custom option to the :program:`celery worker` command:
 
 .. code-block:: python
 
     from celery import Celery
+    from click import Option
 
     app = Celery(broker='amqp://')
 
-    def add_worker_arguments(parser):
-        parser.add_argument(
-            '--enable-my-option', action='store_true', default=False,
-            help='Enable custom option.',
-        ),
-    app.user_options['worker'].add(add_worker_arguments)
+    app.user_options['worker'].add(Option(('--enable-my-option',),
+                                          is_flag=True,
+                                          help='Enable custom option.'))
 
 
 All bootsteps will now receive this argument as a keyword argument to
@@ -772,29 +769,22 @@ Preload options
 ~~~~~~~~~~~~~~~
 
 The :program:`celery` umbrella command supports the concept of 'preload
-options'.  These are special options passed to all sub-commands and parsed
-outside of the main parsing step.
+options'.  These are special options passed to all sub-commands.
 
-The list of default preload options can be found in the API reference:
-:mod:`celery.bin.base`.
-
-You can add new preload options too, for example to specify a configuration
+You can add new preload options, for example to specify a configuration
 template:
 
 .. code-block:: python
 
     from celery import Celery
     from celery import signals
-    from celery.bin import Option
+    from click import Option
 
     app = Celery()
 
-    def add_preload_options(parser):
-        parser.add_argument(
-            '-Z', '--template', default='default',
-            help='Configuration template to use.',
-        )
-    app.user_options['preload'].add(add_preload_options)
+    app.user_options['preload'].add(Option(('-Z', '--template'),
+                                           default='default',
+                                           help='Configuration template to use.'))
 
     @signals.user_preload_options.connect
     def on_preload_parsed(options, **kwargs):
@@ -816,12 +806,10 @@ Entry-points is special meta-data that can be added to your packages ``setup.py`
 and then after installation, read from the system using the :mod:`pkg_resources` module.
 
 Celery recognizes ``celery.commands`` entry-points to install additional
-sub-commands, where the value of the entry-point must point to a valid subclass
-of :class:`celery.bin.base.Command`. There's limited documentation,
-unfortunately, but you can find inspiration from the various commands in the
-:mod:`celery.bin` package.
+sub-commands, where the value of the entry-point must point to a valid click
+command.
 
-This is how the :pypi:`Flower` monitoring extension adds the :program:`celery flower` command,
+This is how the :pypi:`Flower` monitoring extension may add the :program:`celery flower` command,
 by adding an entry-point in :file:`setup.py`:
 
 .. code-block:: python
@@ -830,44 +818,35 @@ by adding an entry-point in :file:`setup.py`:
         name='flower',
         entry_points={
             'celery.commands': [
-               'flower = flower.command:FlowerCommand',
+               'flower = flower.command:flower',
             ],
         }
     )
 
 The command definition is in two parts separated by the equal sign, where the
 first part is the name of the sub-command (flower), then the second part is
-the fully qualified symbol path to the class that implements the command:
+the fully qualified symbol path to the function that implements the command:
 
 .. code-block:: text
 
-    flower.command:FlowerCommand
+    flower.command:flower
 
 The module path and the name of the attribute should be separated by colon
 as above.
 
 
-In the module :file:`flower/command.py`, the command class is defined
-something like this:
+In the module :file:`flower/command.py`, the command function may be defined
+as the following:
 
 .. code-block:: python
 
-    from celery.bin.base import Command
+    import click
 
-
-    class FlowerCommand(Command):
-
-        def add_arguments(self, parser):
-            parser.add_argument(
-                '--port', default=8888, type='int',
-                help='Webserver port',
-            ),
-            parser.add_argument(
-                '--debug', action='store_true',
-            )
-
-        def run(self, port=None, debug=False, **kwargs):
-            print('Running our command')
+    @click.command()
+    @click.option('--port', default=8888, type=int, help='Webserver port')
+    @click.option('--debug', is_flag=True)
+    def flower(port, debug):
+        print('Running our command')
 
 
 Worker API

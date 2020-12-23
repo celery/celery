@@ -539,8 +539,6 @@ def recreate_module(name, compat_modules=None, by_module=None, direct=None,
         operator.add,
         [tuple(v) for v in [compat_modules, origins, direct, attrs]],
     )))
-    if sys.version_info[0] < 3:
-        _all = [s.encode() for s in _all]
     cattrs = {
         '_compat_modules': compat_modules,
         '_all_by_module': by_module, '_direct': direct,

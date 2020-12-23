@@ -1,6 +1,7 @@
 """Click customizations for Celery."""
 import json
 from collections import OrderedDict
+from functools import update_wrapper
 from pprint import pformat
 
 import click
@@ -8,14 +9,15 @@ from click import ParamType
 from kombu.utils.objects import cached_property
 
 from celery._state import get_current_app
+from celery.signals import user_preload_options
 from celery.utils import text
 from celery.utils.log import mlevel
 from celery.utils.time import maybe_iso8601
 
 try:
     from pygments import highlight
-    from pygments.lexers import PythonLexer
     from pygments.formatters import Terminal256Formatter
+    from pygments.lexers import PythonLexer
 except ImportError:
     def highlight(s, *args, **kwargs):
         """Place holder function in case pygments is missing."""
@@ -39,8 +41,7 @@ class CLIContext:
 
     @cached_property
     def OK(self):
-        return self.style("OK", fg="green", bold=True)    \
-
+        return self.style("OK", fg="green", bold=True)
 
     @cached_property
     def ERROR(self):
@@ -72,7 +73,7 @@ class CLIContext:
             kwargs['color'] = False
             click.echo(message, **kwargs)
         else:
-            click.echo(message, **kwargs)
+            click.secho(message, **kwargs)
 
     def pretty(self, n):
         if isinstance(n, list):
@@ -114,19 +115,38 @@ class CLIContext:
             self.echo(body)
 
 
+def handle_preload_options(f):
+    def caller(ctx, *args, **kwargs):
+        app = ctx.obj.app
+
+        preload_options = [o.name for o in app.user_options.get('preload', [])]
+
+        if preload_options:
+            user_options = {
+                preload_option: kwargs[preload_option]
+                for preload_option in preload_options
+            }
+
+            user_preload_options.send(sender=f, app=app, options=user_options)
+
+        return f(ctx, *args, **kwargs)
+
+    return update_wrapper(caller, f)
+
+
 class CeleryOption(click.Option):
     """Customized option for Celery."""
 
     def get_default(self, ctx):
         if self.default_value_from_context:
             self.default = ctx.obj[self.default_value_from_context]
-        return super(CeleryOption, self).get_default(ctx)
+        return super().get_default(ctx)
 
     def __init__(self, *args, **kwargs):
         """Initialize a Celery option."""
         self.help_group = kwargs.pop('help_group', None)
         self.default_value_from_context = kwargs.pop('default_value_from_context', None)
-        super(CeleryOption, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class CeleryCommand(click.Command):
@@ -169,7 +189,7 @@ class CommaSeparatedList(ParamType):
     name = "comma separated list"
 
     def convert(self, value, param, ctx):
-        return set(text.str_to_list(value))
+        return text.str_to_list(value)
 
 
 class Json(ParamType):
@@ -221,6 +241,7 @@ class LogLevel(click.Choice):
         super().__init__(('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'FATAL'))
 
     def convert(self, value, param, ctx):
+        value = value.upper()
         value = super().convert(value, param, ctx)
         return mlevel(value)
 

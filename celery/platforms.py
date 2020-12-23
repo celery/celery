@@ -11,7 +11,6 @@ import numbers
 import os
 import platform as _platform
 import signal as _signal
-import struct
 import sys
 import warnings
 from collections import namedtuple
@@ -797,21 +796,3 @@ def check_privileges(accept_content):
         warnings.warn(RuntimeWarning(ROOT_DISCOURAGED.format(
             uid=uid, euid=euid, gid=gid, egid=egid,
         )))
-
-
-if sys.version_info < (2, 7, 7):  # pragma: no cover
-    import functools
-
-    def _to_bytes_arg(fun):
-        @functools.wraps(fun)
-        def _inner(s, *args, **kwargs):
-            return fun(s.encode(), *args, **kwargs)
-        return _inner
-
-    pack = _to_bytes_arg(struct.pack)
-    unpack = _to_bytes_arg(struct.unpack)
-    unpack_from = _to_bytes_arg(struct.unpack_from)
-else:
-    pack = struct.pack
-    unpack = struct.unpack
-    unpack_from = struct.unpack_from

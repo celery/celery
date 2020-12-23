@@ -16,12 +16,12 @@ import errno
 import gc
 import os
 import select
-import sys
 import time
 from collections import Counter, deque, namedtuple
 from io import BytesIO
 from numbers import Integral
 from pickle import HIGHEST_PROTOCOL
+from struct import pack, unpack, unpack_from
 from time import sleep
 from weakref import WeakValueDictionary, ref
 
@@ -35,7 +35,6 @@ from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange
 from vine import promise
 
-from celery.platforms import pack, unpack, unpack_from
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.worker import state as worker_state
@@ -46,12 +45,6 @@ from celery.worker import state as worker_state
 try:
     from _billiard import read as __read__
     readcanbuf = True
-
-    # unpack_from supports memoryview in 2.7.6 and 3.3+
-    if sys.version_info[0] == 2 and sys.version_info < (2, 7, 6):
-
-        def unpack_from(fmt, view, _unpack_from=unpack_from):  # noqa
-            return _unpack_from(fmt, view.tobytes())  # <- memoryview
 
 except ImportError:  # pragma: no cover
 
@@ -84,6 +77,7 @@ SCHED_STRATEGY_FAIR = 4
 
 SCHED_STRATEGIES = {
     None: SCHED_STRATEGY_FAIR,
+    'default': SCHED_STRATEGY_FAIR,
     'fast': SCHED_STRATEGY_FCFS,
     'fcfs': SCHED_STRATEGY_FCFS,
     'fair': SCHED_STRATEGY_FAIR,

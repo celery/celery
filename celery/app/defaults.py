@@ -1,5 +1,4 @@
 """Configuration introspection and defaults."""
-import sys
 from collections import deque, namedtuple
 from datetime import timedelta
 
@@ -8,17 +7,8 @@ from celery.utils.serialization import strtobool
 
 __all__ = ('Option', 'NAMESPACES', 'flatten', 'find')
 
-is_jython = sys.platform.startswith('java')
-is_pypy = hasattr(sys, 'pypy_version_info')
 
 DEFAULT_POOL = 'prefork'
-if is_jython:
-    DEFAULT_POOL = 'solo'
-elif is_pypy:
-    if sys.pypy_version_info[0:3] < (1, 5, 0):
-        DEFAULT_POOL = 'solo'
-    else:
-        DEFAULT_POOL = 'prefork'
 
 DEFAULT_ACCEPT_CONTENT = ['json']
 DEFAULT_PROCESS_LOG_FMT = """
@@ -226,11 +216,6 @@ NAMESPACES = Namespace(
         timeout=Option(type='float'),
         save_meta_as_text=Option(True, type='bool'),
     ),
-    riak=Namespace(
-        __old__=old_ns('celery_riak'),
-
-        backend_settings=Option(type='dict'),
-    ),
     security=Namespace(
         __old__=old_ns('celery_security'),
 
@@ -282,7 +267,6 @@ NAMESPACES = Namespace(
             type='dict', old={'celery_task_publish_retry_policy'},
         ),
         queues=Option(type='dict'),
-        queue_ha_policy=Option(None, type='string'),
         queue_max_priority=Option(None, type='int'),
         reject_on_worker_lost=Option(type='bool'),
         remote_tracebacks=Option(False, type='bool'),

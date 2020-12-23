@@ -8,13 +8,6 @@ from celery import uuid
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
 
-# Python 2 does not have FileNotFoundError and IsADirectoryError
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
-    IsADirectoryError = IOError
-
 default_encoding = locale.getpreferredencoding(False)
 
 E_NO_PATH_SET = 'You need to configure a path for the file-system backend'
@@ -58,7 +51,7 @@ class FilesystemBackend(KeyValueStoreBackend):
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
             dict(url=self.url))
-        return super(FilesystemBackend, self).__reduce__(args, kwargs)
+        return super().__reduce__(args, kwargs)
 
     def _find_path(self, url):
         if not url:

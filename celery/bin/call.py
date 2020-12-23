@@ -2,9 +2,10 @@
 import click
 
 from celery.bin.base import (ISO8601, ISO8601_OR_FLOAT, JSON, CeleryCommand,
-                             CeleryOption)
+                             CeleryOption, handle_preload_options)
 
 
+@click.command(cls=CeleryCommand)
 @click.argument('name')
 @click.option('-a',
               '--args',
@@ -52,8 +53,8 @@ from celery.bin.base import (ISO8601, ISO8601_OR_FLOAT, JSON, CeleryCommand,
               cls=CeleryOption,
               help_group="Routing Options",
               help="custom routing key.")
-@click.command(cls=CeleryCommand)
 @click.pass_context
+@handle_preload_options
 def call(ctx, name, args, kwargs, eta, countdown, expires, serializer, queue, exchange, routing_key):
     """Call a task by name."""
     task_id = ctx.obj.app.send_task(

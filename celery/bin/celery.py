@@ -1,9 +1,14 @@
 """Celery Command Line Interface."""
 import os
+import pathlib
+import traceback
 
 import click
+import click.exceptions
 from click.types import ParamType
 from click_didyoumean import DYMGroup
+from click_plugins import with_plugins
+from pkg_resources import iter_entry_points
 
 from celery import VERSION_BANNER
 from celery.app.utils import find_app
@@ -24,6 +29,19 @@ from celery.bin.shell import shell
 from celery.bin.upgrade import upgrade
 from celery.bin.worker import worker
 
+UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND = click.style("""
+Unable to load celery application.
+The module {0} was not found.""", fg='red')
+
+UNABLE_TO_LOAD_APP_ERROR_OCCURRED = click.style("""
+Unable to load celery application.
+While trying to load the module {0} the following error occurred:
+{1}""", fg='red')
+
+UNABLE_TO_LOAD_APP_APP_MISSING = click.style("""
+Unable to load celery application.
+{0}""")
+
 
 class App(ParamType):
     """Application option."""
@@ -33,13 +51,27 @@ class App(ParamType):
     def convert(self, value, param, ctx):
         try:
             return find_app(value)
-        except (ModuleNotFoundError, AttributeError) as e:
-            self.fail(str(e))
+        except ModuleNotFoundError as e:
+            if e.name != value:
+                exc = traceback.format_exc()
+                self.fail(
+                    UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(value, exc)
+                )
+            self.fail(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(e.name))
+        except AttributeError as e:
+            attribute_name = e.args[0].capitalize()
+            self.fail(UNABLE_TO_LOAD_APP_APP_MISSING.format(attribute_name))
+        except Exception:
+            exc = traceback.format_exc()
+            self.fail(
+                UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(value, exc)
+            )
 
 
 APP = App()
 
 
+@with_plugins(iter_entry_points('celery.commands'))
 @click.group(cls=DYMGroup, invoke_without_command=True)
 @click.option('-A',
               '--app',
@@ -66,6 +98,9 @@ APP = App()
               help_group="Global Options")
 @click.option('--workdir',
               cls=CeleryOption,
+              type=pathlib.Path,
+              callback=lambda _, __, wd: os.chdir(wd) if wd else None,
+              is_eager=True,
               help_group="Global Options")
 @click.option('-C',
               '--no-color',
@@ -93,8 +128,6 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
         click.echo(ctx.get_help())
         ctx.exit()
 
-    if workdir:
-        os.chdir(workdir)
     if loader:
         # Default app takes loader from this env (Issue #1066).
         os.environ['CELERY_LOADER'] = loader
@@ -104,12 +137,16 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
         os.environ['CELERY_RESULT_BACKEND'] = result_backend
     if config:
         os.environ['CELERY_CONFIG_MODULE'] = config
-    ctx.obj = CLIContext(app=app, no_color=no_color, workdir=workdir, quiet=quiet)
+    ctx.obj = CLIContext(app=app, no_color=no_color, workdir=workdir,
+                         quiet=quiet)
 
     # User options
     worker.params.extend(ctx.obj.app.user_options.get('worker', []))
     beat.params.extend(ctx.obj.app.user_options.get('beat', []))
     events.params.extend(ctx.obj.app.user_options.get('events', []))
+
+    for command in celery.commands.values():
+        command.params.extend(ctx.obj.app.user_options.get('preload', []))
 
 
 @celery.command(cls=CeleryCommand)
@@ -138,6 +175,32 @@ celery.add_command(logtool)
 celery.add_command(amqp)
 celery.add_command(shell)
 celery.add_command(multi)
+
+# Monkey-patch click to display a custom error
+# when -A or --app are used as sub-command options instead of as options
+# of the global command.
+
+previous_show_implementation = click.exceptions.NoSuchOption.show
+
+WRONG_APP_OPTION_USAGE_MESSAGE = """You are using `{option_name}` as an option of the {info_name} sub-command:
+celery {info_name} {option_name} celeryapp <...>
+
+The support for this usage was removed in Celery 5.0. Instead you should use `{option_name}` as a global option:
+celery {option_name} celeryapp {info_name} <...>"""
+
+
+def _show(self, file=None):
+    if self.option_name in ('-A', '--app'):
+        self.ctx.obj.error(
+            WRONG_APP_OPTION_USAGE_MESSAGE.format(
+                option_name=self.option_name,
+                info_name=self.ctx.info_name),
+            fg='red'
+        )
+    previous_show_implementation(self, file=file)
+
+
+click.exceptions.NoSuchOption.show = _show
 
 
 def main() -> int:

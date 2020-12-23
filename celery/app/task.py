@@ -8,7 +8,7 @@ from kombu.utils.uuid import uuid
 
 from celery import current_app, group, states
 from celery._state import _task_stack
-from celery.canvas import signature
+from celery.canvas import _chain, signature
 from celery.exceptions import (Ignore, ImproperlyConfigured,
                                MaxRetriesExceededError, Reject, Retry)
 from celery.local import class_property
@@ -80,6 +80,7 @@ class Context:
     taskset = None   # compat alias to group
     group = None
     group_index = None
+    trailer_request = []
     chord = None
     chain = None
     utc = None
@@ -114,6 +115,7 @@ class Context:
             'parent_id': self.parent_id,
             'group_id': self.group,
             'group_index': self.group_index,
+            'trailer_request': self.trailer_request or [],
             'chord': self.chord,
             'chain': self.chain,
             'link': self.callbacks,
@@ -675,6 +677,8 @@ class Task:
         """
         request = self.request
         retries = request.retries + 1
+        if max_retries is not None:
+            self.override_max_retries = max_retries
         max_retries = self.max_retries if max_retries is None else max_retries
 
         # Not in worker or emulated by (apply/always_eager),
@@ -880,8 +884,24 @@ class Task:
                 link=self.request.callbacks,
                 link_error=self.request.errbacks,
             )
+        elif isinstance(sig, _chain):
+            if not sig.tasks:
+                raise ImproperlyConfigured(
+                    "Cannot replace with an empty chain"
+                )
 
         if self.request.chain:
+            # We need to freeze the new signature with the current task's ID to
+            # ensure that we don't disassociate the new chain from the existing
+            # task IDs which would break previously constructed results
+            # objects.
+            sig.freeze(self.request.id)
+            if "link" in sig.options:
+                final_task_links = sig.tasks[-1].options.setdefault("link", [])
+                final_task_links.extend(maybe_list(sig.options["link"]))
+            # Construct the new remainder of the task by chaining the signature
+            # we're being replaced by with signatures constructed from the
+            # chain elements in the current request.
             for t in reversed(self.request.chain):
                 sig |= signature(t, app=self.app)
 
@@ -889,6 +909,7 @@ class Task:
             chord=chord,
             group_id=self.request.group,
             group_index=self.request.group_index,
+            trailer_request=self.request.trailer_request,
             root_id=self.request.root_id,
         )
         sig.freeze(self.request.id)
@@ -916,6 +937,7 @@ class Task:
         sig.set(
             group_id=self.request.group,
             group_index=self.request.group_index,
+            trailer_request=self.request.trailer_request,
             chord=self.request.chord,
             root_id=self.request.root_id,
         )

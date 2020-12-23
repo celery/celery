@@ -6,7 +6,8 @@ from importlib import import_module
 
 import click
 
-from celery.bin.base import CeleryCommand, CeleryOption
+from celery.bin.base import (CeleryCommand, CeleryOption,
+                             handle_preload_options)
 
 
 def _invoke_fallback_shell(locals):
@@ -114,6 +115,7 @@ def _invoke_default_shell(locals):
               help_group="Shell Options",
               help="Use gevent.")
 @click.pass_context
+@handle_preload_options
 def shell(ctx, ipython=False, bpython=False,
           python=False, without_tasks=False, eventlet=False,
           gevent=False):
@@ -130,7 +132,7 @@ def shell(ctx, ipython=False, bpython=False,
         import_module('celery.concurrency.eventlet')
     if gevent:
         import_module('celery.concurrency.gevent')
-    import celery.task.base
+    import celery
     app = ctx.obj.app
     app.loader.import_default_modules()
 

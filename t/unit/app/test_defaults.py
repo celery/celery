@@ -1,8 +1,6 @@
 import sys
 from importlib import import_module
 
-from case import mock
-
 from celery.app.defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS,
                                  _TO_NEW_KEY, _TO_OLD_KEY, DEFAULTS,
                                  NAMESPACES, SETTING_KEYS)
@@ -23,16 +21,6 @@ class test_defaults:
     def test_any(self):
         val = object()
         assert self.defaults.Option.typemap['any'](val) is val
-
-    @mock.sys_platform('darwin')
-    @mock.pypy_version((1, 4, 0))
-    def test_default_pool_pypy_14(self):
-        assert self.defaults.DEFAULT_POOL == 'solo'
-
-    @mock.sys_platform('darwin')
-    @mock.pypy_version((1, 5, 0))
-    def test_default_pool_pypy_15(self):
-        assert self.defaults.DEFAULT_POOL == 'prefork'
 
     def test_compat_indices(self):
         assert not any(key.isupper() for key in DEFAULTS)

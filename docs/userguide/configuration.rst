@@ -47,12 +47,14 @@ names, are the renaming of some prefixes, like ``celery_beat_`` to ``beat_``,
 ``celeryd_`` to ``worker_``, and most of the top level ``celery_`` settings
 have been moved into a new  ``task_`` prefix.
 
-.. note::
+.. warning::
 
-    Celery will still be able to read old configuration files, so
-    there's no rush in moving to the new settings format. Furthermore,
-    we provide the ``celery upgrade`` command that should handle plenty
-    of cases (including :ref:`Django <latentcall-django-admonition>`).
+    Celery will still be able to read old configuration files until Celery 6.0.
+    Afterwards, support for the old configuration files will be removed.
+    We provide the ``celery upgrade`` command that should handle
+    plenty of cases (including :ref:`Django <latentcall-django-admonition>`).
+
+    Please migrate to the new configuration scheme as soon as possible.
 
 
 ========================================== ==============================================
@@ -113,7 +115,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_MESSAGE_COMPRESSION``             :setting:`result_compression`
 ``CELERY_RESULT_EXCHANGE``                 :setting:`result_exchange`
 ``CELERY_RESULT_EXCHANGE_TYPE``            :setting:`result_exchange_type`
-``CELERY_TASK_RESULT_EXPIRES``             :setting:`result_expires`
+``CELERY_RESULT_EXPIRES``                  :setting:`result_expires`
 ``CELERY_RESULT_PERSISTENT``               :setting:`result_persistent`
 ``CELERY_RESULT_SERIALIZER``               :setting:`result_serializer`
 ``CELERY_RESULT_DBURI``                    Use :setting:`result_backend` instead.
@@ -1026,8 +1028,12 @@ setting:
 ``cache_backend``
 ~~~~~~~~~~~~~~~~~
 
-This setting is no longer used as it's now possible to specify
+This setting is no longer used in celery's builtin backends as it's now possible to specify
 the cache backend directly in the :setting:`result_backend` setting.
+
+.. note::
+
+    The :ref:`django-celery-results` library uses ``cache_backend`` for choosing django caches.
 
 .. _conf-mongodb-result-backend:
 
@@ -1583,80 +1589,6 @@ Default: :const:`True`
 Should meta saved as text or as native json.
 Result is always serialized as text.
 
-.. _conf-riak-result-backend:
-
-Riak backend settings
----------------------
-
-.. note::
-
-    The Riak backend requires the :pypi:`riak` library.
-
-    To install the this package use :command:`pip`:
-
-    .. code-block:: console
-
-        $ pip install celery[riak]
-
-    See :ref:`bundles` for information on combining multiple extension
-    requirements.
-
-This backend requires the :setting:`result_backend`
-setting to be set to a Riak URL::
-
-    result_backend = 'riak://host:port/bucket'
-
-For example::
-
-    result_backend = 'riak://localhost/celery
-
-is the same as::
-
-    result_backend = 'riak://'
-
-The fields of the URL are defined as follows:
-
-#. ``host``
-
-    Host name or IP address of the Riak server (e.g., `'localhost'`).
-
-#. ``port``
-
-    Port to the Riak server using the protobuf protocol. Default is 8087.
-
-#. ``bucket``
-
-    Bucket name to use. Default is `celery`.
-    The bucket needs to be a string with ASCII characters only.
-
-Alternatively, this backend can be configured with the following configuration directives.
-
-.. setting:: riak_backend_settings
-
-``riak_backend_settings``
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Default: ``{}`` (empty mapping).
-
-This is a dict supporting the following keys:
-
-* ``host``
-
-    The host name of the Riak server. Defaults to ``"localhost"``.
-
-* ``port``
-
-    The port the Riak server is listening to. Defaults to 8087.
-
-* ``bucket``
-
-    The bucket name to connect to. Defaults to "celery".
-
-* ``protocol``
-
-    The protocol to use to connect to the Riak server. This isn't configurable
-    via :setting:`result_backend`
-
 .. _conf-dynamodb-result-backend:
 
 AWS DynamoDB backend settings
@@ -1674,6 +1606,13 @@ AWS DynamoDB backend settings
 
     See :ref:`bundles` for information on combining multiple extension
     requirements.
+
+.. warning::
+
+    The Dynamodb backend is not compatible with tables that have a sort key defined.
+
+    If you want to query the results table based on something other than the partition key,
+    please define a global secondary index (GSI) instead.
 
 This backend requires the :setting:`result_backend`
 setting to be set to a DynamoDB URL::
@@ -2164,33 +2103,6 @@ The final routing options for ``tasks.add`` will become:
      'serializer': 'json'}
 
 See :ref:`routers` for more examples.
-
-.. setting:: task_queue_ha_policy
-
-``task_queue_ha_policy``
-~~~~~~~~~~~~~~~~~~~~~~~~
-:brokers: RabbitMQ
-
-Default: :const:`None`.
-
-This will set the default HA policy for a queue, and the value
-can either be a string (usually ``all``):
-
-.. code-block:: python
-
-    task_queue_ha_policy = 'all'
-
-Using 'all' will replicate the queue to all current nodes,
-Or you can give it a list of nodes to replicate to:
-
-.. code-block:: python
-
-    task_queue_ha_policy = ['rabbit@host1', 'rabbit@host2']
-
-Using a list will implicitly set ``x-ha-policy`` to 'nodes' and
-``x-ha-policy-params`` to the given list of nodes.
-
-See http://www.rabbitmq.com/ha.html for more information.
 
 .. setting:: task_queue_max_priority
 

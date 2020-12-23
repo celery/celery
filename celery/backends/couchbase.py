@@ -3,11 +3,12 @@
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
+
 from .base import KeyValueStoreBackend
 
 try:
-    from couchbase.cluster import Cluster, ClusterOptions
     from couchbase.auth import PasswordAuthenticator
+    from couchbase.cluster import Cluster, ClusterOptions
     from couchbase_core._libcouchbase import FMT_AUTO
 except ImportError:
     Cluster = PasswordAuthenticator = ClusterOptions = None

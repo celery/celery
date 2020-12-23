@@ -208,7 +208,6 @@ class TraceInfo:
             einfo = ExceptionInfo()
             einfo.exception = get_pickleable_exception(einfo.exception)
             einfo.type = get_pickleable_etype(einfo.type)
-
             task.backend.mark_as_failure(
                 req.id, exc, einfo.traceback,
                 request=req, store_result=store_errors,
@@ -266,18 +265,14 @@ def traceback_clear(exc=None):
     else:
         _, _, tb = sys.exc_info()
 
-    if sys.version_info >= (3, 5, 0):
-        while tb is not None:
-            try:
-                tb.tb_frame.clear()
-                tb.tb_frame.f_locals
-            except RuntimeError:
-                # Ignore the exception raised if the frame is still executing.
-                pass
-            tb = tb.tb_next
-
-    elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
-        sys.exc_clear()
+    while tb is not None:
+        try:
+            tb.tb_frame.clear()
+            tb.tb_frame.f_locals
+        except RuntimeError:
+            # Ignore the exception raised if the frame is still executing.
+            pass
+        tb = tb.tb_next
 
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,

@@ -63,6 +63,12 @@ as this pattern requires synchronization.
 Result backends that supports chords: Redis, Database, Memcached, and more.
 """
 
+trailer_request_obj = namedtuple(
+    "trailer_request",
+    ("id", "group", "errbacks", "chord", "trailer_request", "group_index"),
+    defaults=(None, ) * 6
+)
+
 
 def unpickle_backend(cls, args, kwargs):
     """Return an unpickled backend."""
@@ -130,7 +136,7 @@ class Backend:
         self.base_sleep_between_retries_ms = conf.get('result_backend_base_sleep_between_retries_ms', 10)
         self.max_retries = conf.get('result_backend_max_retries', float("inf"))
 
-        self._pending_results = pending_results_t({}, WeakValueDictionary())
+        self._pending_results = pending_results_t({}, {})
         self._pending_messages = BufferMap(MESSAGE_BUFFER_MAX)
         self.url = url
 
@@ -164,6 +170,14 @@ class Backend:
             self.store_result(task_id, exc, state,
                               traceback=traceback, request=request)
         if request:
+            if request.trailer_request:
+                self.mark_as_failure(
+                    request.trailer_request["id"], exc, traceback=traceback,
+                    store_result=store_result, call_errbacks=call_errbacks,
+                    request=trailer_request_obj(**request.trailer_request),
+                    state=state
+                )
+
             if request.chord:
                 self.on_chord_part_return(request, state, exc)
             if call_errbacks and request.errbacks:
@@ -218,11 +232,10 @@ class Backend:
     def mark_as_revoked(self, task_id, reason='',
                         request=None, store_result=True, state=states.REVOKED):
         exc = TaskRevokedError(reason)
-        if store_result:
-            self.store_result(task_id, exc, state,
-                              traceback=None, request=request)
-        if request and request.chord:
-            self.on_chord_part_return(request, state, exc)
+
+        return self.mark_as_failure(
+            task_id, exc, request=request, store_result=store_result, state=state
+        )
 
     def mark_as_retry(self, task_id, exc, traceback=None,
                       request=None, store_result=True, state=states.RETRY):
@@ -267,18 +280,14 @@ class Backend:
             self.mark_as_failure(task_id, exc, exception_info.traceback)
             return exception_info
         finally:
-            if sys.version_info >= (3, 5, 0):
-                while tb is not None:
-                    try:
-                        tb.tb_frame.clear()
-                        tb.tb_frame.f_locals
-                    except RuntimeError:
-                        # Ignore the exception raised if the frame is still executing.
-                        pass
-                    tb = tb.tb_next
-
-            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
-                sys.exc_clear()
+            while tb is not None:
+                try:
+                    tb.tb_frame.clear()
+                    tb.tb_frame.f_locals
+                except RuntimeError:
+                    # Ignore the exception raised if the frame is still executing.
+                    pass
+                tb = tb.tb_next
 
             del tb
 
@@ -925,7 +934,11 @@ class BaseKeyValueStoreBackend(Backend):
                     ChordError(f'GroupResult {gid} no longer exists'),
                 )
         val = self.incr(key)
-        size = len(deps)
+        # Set the chord size to the value defined in the request, or fall back
+        # to the number of dependencies we can see from the restored result
+        size = request.chord.get("chord_size")
+        if size is None:
+            size = len(deps)
         if val > size:  # pragma: no cover
             logger.warning('Chord counter incremented too many times for %r',
                            gid)

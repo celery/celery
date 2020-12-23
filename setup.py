@@ -33,6 +33,7 @@ EXTENSIONS = {
     'msgpack',
     'pymemcache',
     'pyro',
+    'pytest',
     'redis',
     's3',
     'slmq',
@@ -136,7 +137,7 @@ def long_description():
 
 
 class pytest(setuptools.command.test.test):
-    user_options = [('pytest-args=', 'a', 'Arguments to pass to py.test')]
+    user_options = [('pytest-args=', 'a', 'Arguments to pass to pytest')]
 
     def initialize_options(self):
         setuptools.command.test.test.initialize_options(self)

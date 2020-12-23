@@ -79,7 +79,7 @@ def active_thread_count():
 
 
 def safe_say(msg):
-    print(f'\n{msg}', file=sys.__stderr__)
+    print(f'\n{msg}', file=sys.__stderr__, flush=True)
 
 
 class Worker(WorkController):
@@ -140,6 +140,25 @@ class Worker(WorkController):
         if not self._custom_logging and self.redirect_stdouts:
             app.log.redirect_stdouts(self.redirect_stdouts_level)
 
+        # TODO: Remove the following code in Celery 6.0
+        # This qualifies as a hack for issue #6366.
+        warn_deprecated = True
+        config_source = app._config_source
+        if isinstance(config_source, str):
+            # Don't raise the warning when the settings originate from
+            # django.conf:settings
+            warn_deprecated = config_source.lower() not in [
+                'django.conf:settings',
+            ]
+
+        if warn_deprecated:
+            if app.conf.maybe_warn_deprecated_settings():
+                logger.warning(
+                    "Please run `celery upgrade settings path/to/settings.py` "
+                    "to avoid these warnings and to allow a smoother upgrade "
+                    "to Celery 6.0."
+                )
+
     def emit_banner(self):
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
@@ -150,7 +169,7 @@ class Worker(WorkController):
             str(self.colored.cyan(
                 ' \n', self.startup_info(artlines=not use_image))),
             str(self.colored.reset(self.extra_info() or '')),
-        ])), file=sys.__stdout__)
+        ])), file=sys.__stdout__, flush=True)
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
@@ -168,7 +187,7 @@ class Worker(WorkController):
         with self.app.connection_for_write() as connection:
             count = self.app.control.purge(connection=connection)
             if count:  # pragma: no cover
-                print(f"purge: Erased {count} {pluralize(count, 'message')} from the queue.\n")
+                print(f"purge: Erased {count} {pluralize(count, 'message')} from the queue.\n", flush=True)
 
     def tasklist(self, include_builtins=True, sep='\n', int_='celery.'):
         return sep.join(

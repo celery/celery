@@ -122,6 +122,9 @@ class Signature(dict):
 
     TYPES = {}
     _app = _type = None
+    # The following fields must not be changed during freezing/merging because
+    # to do so would disrupt completion of parent tasks
+    _IMMUTABLE_OPTIONS = {"group_id"}
 
     @classmethod
     def register_type(cls, name=None):
@@ -224,14 +227,29 @@ class Signature(dict):
     def _merge(self, args=None, kwargs=None, options=None, force=False):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
-        options = options if options else {}
+        if options is not None:
+            # We build a new options dictionary where values in `options`
+            # override values in `self.options` except for keys which are
+            # noted as being immutable (unrelated to signature immutability)
+            # implying that allowing their value to change would stall tasks
+            new_options = dict(self.options, **{
+                k: v for k, v in options.items()
+                if k not in self._IMMUTABLE_OPTIONS or k not in self.options
+            })
+        else:
+            new_options = self.options
+
+        new_options = new_options if new_options else {}
+        new_options["link_error"] = (
+            new_options.get("link_error", []) + new_options.pop("link_error", [])
+        )
+
         if self.immutable and not force:
-            return (self.args, self.kwargs,
-                    dict(self.options,
-                         **options) if options else self.options)
+            return (self.args, self.kwargs, new_options)
+
         return (tuple(args) + tuple(self.args) if args else self.args,
                 dict(self.kwargs, **kwargs) if kwargs else self.kwargs,
-                dict(self.options, **options) if options else self.options)
+                new_options)
 
     def clone(self, args=None, kwargs=None, **opts):
         """Create a copy of this signature.
@@ -263,7 +281,7 @@ class Signature(dict):
     partial = clone
 
     def freeze(self, _id=None, group_id=None, chord=None,
-               root_id=None, parent_id=None, group_index=None):
+               root_id=None, parent_id=None, group_index=None, trailer_request=None):
         """Finalize the signature by adding a concrete task id.
 
         The task won't be called and you shouldn't call the signature
@@ -285,13 +303,15 @@ class Signature(dict):
         if parent_id:
             opts['parent_id'] = parent_id
         if 'reply_to' not in opts:
-            opts['reply_to'] = self.app.oid
-        if group_id:
+            opts['reply_to'] = self.app.thread_oid
+        if group_id and "group_id" not in opts:
             opts['group_id'] = group_id
         if chord:
             opts['chord'] = chord
         if group_index is not None:
             opts['group_index'] = group_index
+        if trailer_request is not None:
+            opts['trailer_request'] = trailer_request
         # pylint: disable=too-many-function-args
         #   Borks on this, as it's a property.
         return self.AsyncResult(tid)
@@ -439,6 +459,12 @@ class Signature(dict):
             # task | task -> chain
             return _chain(self, other, app=self._app)
         return NotImplemented
+
+    def __ior__(self, other):
+        # Python 3.9 introduces | as the merge operator for dicts.
+        # We override the in-place version of that operator
+        # so that canvases continue to work as they did before.
+        return self.__or__(other)
 
     def election(self):
         type = self.type
@@ -646,28 +672,36 @@ class _chain(Signature):
         args = (tuple(args) + tuple(self.args)
                 if args and not self.immutable else self.args)
 
-        tasks, results = self.prepare_steps(
+        tasks, results_from_prepare = self.prepare_steps(
             args, kwargs, self.tasks, root_id, parent_id, link_error, app,
             task_id, group_id, chord,
         )
 
-        if results:
+        if results_from_prepare:
             if link:
                 tasks[0].extend_list_option('link', link)
             first_task = tasks.pop()
             options = _prepare_chain_from_options(options, tasks, use_link)
 
-            first_task.apply_async(**options)
-            return results[0]
+            result_from_apply = first_task.apply_async(**options)
+            # If we only have a single task, it may be important that we pass
+            # the real result object rather than the one obtained via freezing.
+            # e.g. For `GroupResult`s, we need to pass back the result object
+            # which will actually have its promise fulfilled by the subtasks,
+            # something that will never occur for the frozen result.
+            if not tasks:
+                return result_from_apply
+            else:
+                return results_from_prepare[0]
 
     def freeze(self, _id=None, group_id=None, chord=None,
-               root_id=None, parent_id=None, group_index=None):
+               root_id=None, parent_id=None, group_index=None,trailer_request=None):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         _, results = self._frozen = self.prepare_steps(
             self.args, self.kwargs, self.tasks, root_id, parent_id, None,
             self.app, _id, group_id, chord, clone=False,
-            group_index=group_index,
+            group_index=group_index, trailer_request=trailer_request
         )
         return results[0]
 
@@ -675,7 +709,7 @@ class _chain(Signature):
                       root_id=None, parent_id=None, link_error=None, app=None,
                       last_task_id=None, group_id=None, chord_body=None,
                       clone=True, from_dict=Signature.from_dict,
-                      group_index=None):
+                      group_index=None, trailer_request=None):
         app = app or self.app
         # use chain message field for protocol 2 and later.
         # this avoids pickle blowing the stack on the recursion
@@ -752,7 +786,7 @@ class _chain(Signature):
                 res = task.freeze(
                     last_task_id,
                     root_id=root_id, group_id=group_id, chord=chord_body,
-                    group_index=group_index,
+                    group_index=group_index, trailer_request=trailer_request,
                 )
             else:
                 res = task.freeze(root_id=root_id)
@@ -1022,8 +1056,16 @@ class group(Signature):
 
     @classmethod
     def from_dict(cls, d, app=None):
+        # We need to mutate the `kwargs` element in place to avoid confusing
+        # `freeze()` implementations which end up here and expect to be able to
+        # access elements from that dictionary later and refer to objects
+        # canonicalized here
+        orig_tasks = d["kwargs"]["tasks"]
+        d["kwargs"]["tasks"] = rebuilt_tasks = type(orig_tasks)((
+            maybe_signature(task, app=app) for task in orig_tasks
+        ))
         return _upgrade(
-            d, group(d['kwargs']['tasks'], app=app, **d['options']),
+            d, group(rebuilt_tasks, app=app, **d['options']),
         )
 
     def __init__(self, *tasks, **options):
@@ -1055,8 +1097,7 @@ class group(Signature):
         if link is not None:
             raise TypeError('Cannot add link to group: use a chord')
         if link_error is not None:
-            raise TypeError(
-                'Cannot add link to group: do that on individual tasks')
+            link_error = None
         app = self.app
         if app.conf.task_always_eager:
             return self.apply(args, kwargs, **options)
@@ -1172,7 +1213,7 @@ class group(Signature):
         return options, group_id, options.get('root_id')
 
     def freeze(self, _id=None, group_id=None, chord=None,
-               root_id=None, parent_id=None, group_index=None):
+               root_id=None, parent_id=None, group_index=None, trailer_request=None):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         opts = self.options
@@ -1186,6 +1227,8 @@ class group(Signature):
             opts['chord'] = chord
         if group_index is not None:
             opts['group_index'] = group_index
+        if trailer_request is not None:
+            opts['trailer_request'] = trailer_request
         root_id = opts.setdefault('root_id', root_id)
         parent_id = opts.setdefault('parent_id', parent_id)
         new_tasks = []
@@ -1295,7 +1338,7 @@ class chord(Signature):
         return self.apply_async((), {'body': body} if body else {}, **options)
 
     def freeze(self, _id=None, group_id=None, chord=None,
-               root_id=None, parent_id=None, group_index=None):
+               root_id=None, parent_id=None, group_index=None, trailer_request=None):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         if not isinstance(self.tasks, group):
@@ -1304,7 +1347,7 @@ class chord(Signature):
             parent_id=parent_id, root_id=root_id, chord=self.body)
         body_result = self.body.freeze(
             _id, root_id=root_id, chord=chord, group_id=group_id,
-            group_index=group_index)
+            group_index=group_index, trailer_request=trailer_request)
         # we need to link the body result back to the group result,
         # but the body may actually be a chain,
         # so find the first result without a parent
@@ -1358,21 +1401,30 @@ class chord(Signature):
             args=(tasks.apply(args, kwargs).get(propagate=propagate),),
         )
 
-    def _traverse_tasks(self, tasks, value=None):
-        stack = deque(tasks)
-        while stack:
-            task = stack.popleft()
-            if isinstance(task, group):
-                stack.extend(task.tasks)
-            elif isinstance(task, _chain) and isinstance(task.tasks[-1], group):
-                stack.extend(task.tasks[-1].tasks)
-            else:
-                yield task if value is None else value
+    @classmethod
+    def __descend(cls, sig_obj):
+        # Sometimes serialized signatures might make their way here
+        if not isinstance(sig_obj, Signature) and isinstance(sig_obj, dict):
+            sig_obj = Signature.from_dict(sig_obj)
+        if isinstance(sig_obj, group):
+            # Each task in a group counts toward this chord
+            subtasks = getattr(sig_obj.tasks, "tasks", sig_obj.tasks)
+            return sum(cls.__descend(task) for task in subtasks)
+        elif isinstance(sig_obj, _chain):
+            # The last element in a chain counts toward this chord
+            return cls.__descend(sig_obj.tasks[-1])
+        elif isinstance(sig_obj, chord):
+            # The child chord's body counts toward this chord
+            return cls.__descend(sig_obj.body)
+        elif isinstance(sig_obj, Signature):
+            # Each simple signature counts as 1 completion for this chord
+            return 1
+        # Any other types are assumed to be iterables of simple signatures
+        return len(sig_obj)
 
     def __length_hint__(self):
-        tasks = (self.tasks.tasks if isinstance(self.tasks, group)
-                 else self.tasks)
-        return sum(self._traverse_tasks(tasks, 1))
+        tasks = getattr(self.tasks, "tasks", self.tasks)
+        return sum(self.__descend(task) for task in tasks)
 
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,

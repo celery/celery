@@ -137,7 +137,7 @@ Predefined Queues
 
 If you want Celery to use a set of predefined queues in AWS, and to
 never attempt to list SQS queues, nor attempt to create or delete them,
-pass a map of queue names to URLs using the :setting:`predefined_queue_urls`
+pass a map of queue names to URLs using the :setting:`predefined_queues`
 setting::
 
     broker_transport_options = {

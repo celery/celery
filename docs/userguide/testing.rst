@@ -88,13 +88,25 @@ in this example:
             with raises(Retry):
                 send_order(product.pk, 3, Decimal(30.6))
 
-Py.test
-=======
+.. _pytest_plugin:
+
+pytest
+======
 
 .. versionadded:: 4.0
 
-Celery is also a :pypi:`pytest` plugin that adds fixtures that you can
+Celery also makes a :pypi:`pytest` plugin available that adds fixtures that you can
 use in your integration (or unit) test suites.
+
+Enabling
+--------
+
+Celery initially ships the plugin in a disabled state, to enable it you can either:
+
+    * ``pip install celery[pytest]``
+    * ``pip install pytest-celery``
+    * or add an environment variable ``PYTEST_PLUGINS=celery.contrib.pytest``
+    * or add ``pytest_plugins = ("celery.contrib.pytest", )`` to your root conftest.py
 
 
 Marks

@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.0.0rc2 (cliffs)
+:Version: 5.0.5 (singularity)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -57,20 +57,20 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 5.0.0rc2 runs on,
+Celery version 5.0.5 runs on,
 
 - Python (3.6, 3.7, 3.8)
 - PyPy3.6 (7.6)
 
 
-This is the next version to of celery which will support Python 3.6 or newer.
+This is the next version of celery which will support Python 3.6 or newer.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
 
 - Python 2.6: Celery series 3.1 or earlier.
 - Python 2.5: Celery series 3.0 or earlier.
-- Python 2.4 was Celery series 2.2 or earlier.
+- Python 2.4: Celery series 2.2 or earlier.
 - Python 2.7: Celery 4.x series.
 
 Celery is a project with minimal funding,
@@ -89,7 +89,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery 5.0.0rc2 coming from previous versions then you should read our
+new to Celery 5.0.5 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -498,9 +498,9 @@ file in the top distribution directory for the full license text.
 
 .. # vim: syntax=rst expandtab tabstop=4 shiftwidth=4 shiftround
 
-.. |build-status| image:: https://secure.travis-ci.org/celery/celery.png?branch=master
+.. |build-status| image:: https://api.travis-ci.com/celery/celery.png?branch=master
     :alt: Build status
-    :target: https://travis-ci.org/celery/celery
+    :target: https://travis-ci.com/celery/celery
 
 .. |coverage| image:: https://codecov.io/github/celery/celery/coverage.svg?branch=master
     :target: https://codecov.io/github/celery/celery?branch=master
@@ -518,7 +518,7 @@ file in the top distribution directory for the full license text.
     :target: https://pypi.org/project/celery/
 
 .. |pyimp| image:: https://img.shields.io/pypi/implementation/celery.svg
-    :alt: Support Python implementations.
+    :alt: Supported Python implementations.
     :target: https://pypi.org/project/celery/
 
 .. |ocbackerbadge| image:: https://opencollective.com/celery/backers/badge.svg

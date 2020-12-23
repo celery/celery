@@ -1,4 +1,5 @@
 """Redis result store backend."""
+import uuid
 import time
 from contextlib import contextmanager
 from functools import partial
@@ -12,7 +13,8 @@ from kombu.utils.url import _parse_url
 from celery import states
 from celery._state import task_join_will_block
 from celery.canvas import maybe_signature
-from celery.exceptions import ChordError, ImproperlyConfigured
+from celery.exceptions import ChordError, ImproperlyConfigured, TaskRevokedError
+from celery.result import GroupResult, allow_join_result
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
@@ -156,7 +158,8 @@ class ResultConsumer(BaseResultConsumer):
     def consume_from(self, task_id):
         if self._pubsub is None:
             return self.start(task_id)
-        self._consume_from(task_id)
+        else:
+            self._consume_from(task_id)
 
     def _consume_from(self, task_id):
         key = self._get_key_for_task(task_id)
@@ -268,6 +271,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         self.connection_errors, self.channel_errors = (
             get_redis_error_classes() if get_redis_error_classes
             else ((), ()))
+
         self.result_consumer = self.ResultConsumer(
             self, self.app, self.accept,
             self._pending_results, self._pending_messages,
@@ -328,6 +332,15 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         connparams.update(query)
         return connparams
 
+    @cached_property
+    def retry_policy(self):
+        retry_policy = super().retry_policy
+        if "retry_policy" in self._transport_options:
+            retry_policy = retry_policy.copy()
+            retry_policy.update(self._transport_options['retry_policy'])
+
+        return retry_policy
+
     def on_task_call(self, producer, task_id):
         if not task_join_will_block():
             self.result_consumer.consume_from(task_id)
@@ -387,24 +400,31 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         _, tid, state, retval = decode(tup)
         if state in EXCEPTION_STATES:
             retval = self.exception_to_python(retval)
+
+        if isinstance(retval, TaskRevokedError):
+            raise retval
+
         if state in PROPAGATE_STATES:
             raise ChordError(f'Dependency {tid} raised {retval!r}')
         return retval
 
     def apply_chord(self, header_result, body, **kwargs):
-        # Overrides this to avoid calling GroupResult.save
-        # pylint: disable=method-hidden
-        # Note that KeyValueStoreBackend.__init__ sets self.apply_chord
-        # if the implements_incr attr is set.  Redis backend doesn't set
-        # this flag.
-        pass
+        # If any of the child results of this chord are complex (ie. group
+        # results themselves), we need to save `header_result` to ensure that
+        # the expected structure is retained when we finish the chord and pass
+        # the results onward to the body in `on_chord_part_return()`. We don't
+        # do this is all cases to retain an optimisation in the common case
+        # where a chord header is comprised of simple result objects.
+        if any(isinstance(nr, GroupResult) for nr in header_result.results):
+            header_result.save(backend=self)
 
     @cached_property
     def _chord_zset(self):
-        transport_options = self.app.conf.get(
-            'result_backend_transport_options', {}
-        )
-        return transport_options.get('result_chord_ordered', True)
+        return self._transport_options.get('result_chord_ordered', True)
+
+    @cached_property
+    def _transport_options(self):
+        return self.app.conf.get('result_backend_transport_options', {})
 
     def on_chord_part_return(self, request, state, result,
                              propagate=None, **kwargs):
@@ -426,7 +446,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                 if self._chord_zset
                 else pipe.rpush(jkey, encoded).llen(jkey)
             ).get(tkey)
-            if self.expires is not None:
+            if self.expires:
                 pipeline = pipeline \
                     .expire(jkey, self.expires) \
                     .expire(tkey, self.expires)
@@ -439,20 +459,47 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             callback = maybe_signature(request.chord, app=app)
             total = callback['chord_size'] + totaldiff
             if readycount == total:
-                decode, unpack = self.decode, self._unpack_chord_result
-                with client.pipeline() as pipe:
-                    if self._chord_zset:
-                        pipeline = pipe.zrange(jkey, 0, -1)
-                    else:
-                        pipeline = pipe.lrange(jkey, 0, total)
-                    resl, = pipeline.execute()
-                try:
-                    callback.delay([unpack(tup, decode) for tup in resl])
+                header_result = GroupResult.restore(gid)
+                if header_result is not None:
+                    # If we manage to restore a `GroupResult`, then it must
+                    # have been complex and saved by `apply_chord()` earlier.
+                    #
+                    # Before we can join the `GroupResult`, it needs to be
+                    # manually marked as ready to avoid blocking
+                    header_result.on_ready()
+                    # We'll `join()` it to get the results and ensure they are
+                    # structured as intended rather than the flattened version
+                    # we'd construct without any other information.
+                    join_func = (
+                        header_result.join_native
+                        if header_result.supports_native_join
+                        else header_result.join
+                    )
+                    with allow_join_result():
+                        resl = join_func(timeout=3.0, propagate=True)
+                else:
+                    # Otherwise simply extract and decode the results we
+                    # stashed along the way, which should be faster for large
+                    # numbers of simple results in the chord header.
+                    decode, unpack = self.decode, self._unpack_chord_result
                     with client.pipeline() as pipe:
-                        _, _ = pipe \
-                            .delete(jkey) \
-                            .delete(tkey) \
-                            .execute()
+                        if self._chord_zset:
+                            pipeline = pipe.zrange(jkey, 0, -1)
+                        else:
+                            pipeline = pipe.lrange(jkey, 0, total)
+                        resl, = pipeline.execute()
+                    resl = [unpack(tup, decode) for tup in resl]
+                try:
+                    callback.delay(resl)
+                except TaskRevokedError as exc:
+                    logger.exception(
+                        'Group %r task was revoked: %r', request.group, exc)
+                    if callback.id is None:
+                        callback.id = str(uuid.uuid4())
+                    return self.chord_error_from_stack(
+                        callback,
+                        exc
+                    )
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception(
                         'Chord callback for %r raised: %r', request.group, exc)
@@ -460,6 +507,12 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                         callback,
                         ChordError(f'Callback error: {exc!r}'),
                     )
+                finally:
+                    with client.pipeline() as pipe:
+                        _, _ = pipe \
+                            .delete(jkey) \
+                            .delete(tkey) \
+                            .execute()
         except ChordError as exc:
             logger.exception('Chord %r raised: %r', request.group, exc)
             return self.chord_error_from_stack(callback, exc)
@@ -530,12 +583,8 @@ class SentinelBackend(RedisBackend):
         connparams = params.copy()
 
         hosts = connparams.pop("hosts")
-        result_backend_transport_opts = self.app.conf.get(
-            "result_backend_transport_options", {})
-        min_other_sentinels = result_backend_transport_opts.get(
-            "min_other_sentinels", 0)
-        sentinel_kwargs = result_backend_transport_opts.get(
-            "sentinel_kwargs", {})
+        min_other_sentinels = self._transport_options.get("min_other_sentinels", 0)
+        sentinel_kwargs = self._transport_options.get("sentinel_kwargs", {})
 
         sentinel_instance = self.sentinel.Sentinel(
             [(cp['host'], cp['port']) for cp in hosts],
@@ -548,9 +597,7 @@ class SentinelBackend(RedisBackend):
     def _get_pool(self, **params):
         sentinel_instance = self._get_sentinel_instance(**params)
 
-        result_backend_transport_opts = self.app.conf.get(
-            "result_backend_transport_options", {})
-        master_name = result_backend_transport_opts.get("master_name", None)
+        master_name = self._transport_options.get("master_name", None)
 
         return sentinel_instance.master_for(
             service_name=master_name,

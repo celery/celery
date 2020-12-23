@@ -9,7 +9,7 @@ from celery.exceptions import ImproperlyConfigured
 
 MODULE_TO_MOCK = "celery.backends.azureblockblob"
 
-pytest.importorskip('azure')
+pytest.importorskip('azure.storage.blob')
 
 
 class test_AzureBlockBlobBackend:

@@ -554,6 +554,14 @@ class ResultSet(ResultBase):
         if self.backend.is_async:
             self.on_ready()
 
+    def collect(self, **kwargs):
+        for task in self.results:
+            task_results = list(task.collect(**kwargs))
+            if isinstance(task, ResultSet):
+                yield task_results
+            else:
+                yield task_results[-1]
+
     def remove(self, result):
         """Remove result from the set; it must be a member.
 
@@ -666,7 +674,8 @@ class ResultSet(ResultBase):
 
     def get(self, timeout=None, propagate=True, interval=0.5,
             callback=None, no_ack=True, on_message=None,
-            disable_sync_subtasks=True, on_interval=None):
+            disable_sync_subtasks=True, on_interval=None, **kwargs):
+        # PATCH: added kwargs for more generalized interface
         """See :meth:`join`.
 
         This is here for API compatibility with :class:`AsyncResult`,
@@ -949,6 +958,14 @@ class GroupResult(ResultSet):
     def children(self):
         return self.results
 
+    @property
+    def state(self):
+        for child in self.children:
+            if (child.state in states.EXCEPTION_STATES
+               or child.state in states.UNREADY_STATES):
+                break
+        return child.state
+
     @classmethod
     def restore(cls, id, backend=None, app=None):
         """Restore previously saved group result."""
@@ -1065,3 +1082,8 @@ def result_from_tuple(r, app=None):
 
         return Result(id, parent=parent)
     return r
+
+
+def get_exception_in_callback(task_id: str) -> Exception:
+    with allow_join_result():
+        return AsyncResult(task_id).get(propagate=False)

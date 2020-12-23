@@ -271,7 +271,7 @@ class test_custom_request_for_default_strategy(test_default_strategy_proto2):
 class test_hybrid_to_proto2:
 
     def setup(self):
-        self.message = Mock(name='message')
+        self.message = Mock(name='message', headers={"custom": "header"})
         self.body = {
             'args': (1,),
             'kwargs': {'foo': 'baz'},
@@ -288,3 +288,7 @@ class test_hybrid_to_proto2:
         self.body['retries'] = _custom_value
         _, headers, _, _ = hybrid_to_proto2(self.message, self.body)
         assert headers.get('retries') == _custom_value
+
+    def test_custom_headers(self):
+        _, headers, _, _ = hybrid_to_proto2(self.message, self.body)
+        assert headers.get("custom") == "header"

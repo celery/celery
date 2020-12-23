@@ -8,13 +8,13 @@ User=celery
 Group=celery
 EnvironmentFile=-/etc/conf.d/celery
 WorkingDirectory=/opt/celery
-ExecStart=/bin/sh -c '${CELERY_BIN} multi start $CELERYD_NODES \
-	-A $CELERY_APP --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
+ExecStart=/bin/sh -c '${CELERY_BIN} -A $CELERY_APP multi start $CELERYD_NODES \
+	--pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
 	--loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
 ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait $CELERYD_NODES \
-	--pidfile=${CELERYD_PID_FILE}'
-ExecReload=/bin/sh -c '${CELERY_BIN} multi restart $CELERYD_NODES \
-	-A $CELERY_APP --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
+	--pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE}'
+ExecReload=/bin/sh -c '${CELERY_BIN} -A $CELERY_APP multi restart $CELERYD_NODES \
+	--pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
 	--loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
 Restart=always
 

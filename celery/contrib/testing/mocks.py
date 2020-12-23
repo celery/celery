@@ -5,10 +5,7 @@ from datetime import datetime, timedelta
 try:
     from case import Mock
 except ImportError:
-    try:
-        from unittest.mock import Mock
-    except ImportError:
-        from mock import Mock
+    from unittest.mock import Mock
 
 
 def TaskMessage(

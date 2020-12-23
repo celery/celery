@@ -2,11 +2,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+import t.skip
 from celery.exceptions import ImproperlyConfigured
 from celery.worker.components import Beat, Hub, Pool, Timer
-
-
-import t.skip
 
 # some of these are tested in test_worker, so I've only written tests
 # here to complete coverage.  Should move everything to this module at some

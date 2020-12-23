@@ -599,7 +599,7 @@ class test_crontab_is_due:
             try:
                 assertions.assertAlmostEqual(a, b + skew, precision)
             except Exception as exc:
-                # AssertionError != builtins.AssertionError in py.test
+                # AssertionError != builtins.AssertionError in pytest
                 if 'AssertionError' in str(exc):
                     if index + 1 >= 3:
                         raise

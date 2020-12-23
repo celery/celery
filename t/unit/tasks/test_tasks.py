@@ -144,6 +144,27 @@ class TasksCase:
 
         self.retry_task_auto_retry_exception_with_new_args = retry_task_auto_retry_exception_with_new_args
 
+        @self.app.task(bind=True, max_retries=10, iterations=0, shared=False,
+                       autoretry_for=(Exception,))
+        def retry_task_max_retries_override(self, **kwargs):
+            # Test for #6436
+            self.iterations += 1
+            if self.iterations == 3:
+                # I wanna force fail here cause i have enough
+                self.retry(exc=MyCustomException, max_retries=0)
+            self.retry(exc=MyCustomException)
+
+        self.retry_task_max_retries_override = retry_task_max_retries_override
+
+        @self.app.task(bind=True, max_retries=0, iterations=0, shared=False,
+                       autoretry_for=(Exception,))
+        def retry_task_explicit_exception(self, **kwargs):
+            # Test for #6436
+            self.iterations += 1
+            raise MyCustomException()
+
+        self.retry_task_explicit_exception = retry_task_explicit_exception
+
         @self.app.task(bind=True, max_retries=3, iterations=0, shared=False)
         def retry_task_raise_without_throw(self, **kwargs):
             self.iterations += 1
@@ -431,6 +452,22 @@ class test_task_retries(TasksCase):
 
     def test_eager_retry_with_autoretry_for_exception(self):
         assert self.retry_task_auto_retry_exception_with_new_args.si(place_holder="test").apply().get() == "test"
+
+    def test_retry_task_max_retries_override(self):
+        self.retry_task_max_retries_override.max_retries = 10
+        self.retry_task_max_retries_override.iterations = 0
+        result = self.retry_task_max_retries_override.apply()
+        with pytest.raises(MyCustomException):
+            result.get()
+        assert self.retry_task_max_retries_override.iterations == 3
+
+    def test_retry_task_explicit_exception(self):
+        self.retry_task_explicit_exception.max_retries = 0
+        self.retry_task_explicit_exception.iterations = 0
+        result = self.retry_task_explicit_exception.apply()
+        with pytest.raises(MyCustomException):
+            result.get()
+        assert self.retry_task_explicit_exception.iterations == 1
 
     def test_retry_eager_should_return_value(self):
         self.retry_task.max_retries = 3

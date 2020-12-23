@@ -9,8 +9,8 @@ pytest.importorskip('azure')
 
 
 @pytest.mark.skipif(
-        not os.environ.get('AZUREBLOCKBLOB_URL'),
-        reason='Environment variable AZUREBLOCKBLOB_URL required'
+    not os.environ.get('AZUREBLOCKBLOB_URL'),
+    reason='Environment variable AZUREBLOCKBLOB_URL required'
 )
 class test_AzureBlockBlobBackend:
     def test_crud(self, manager):

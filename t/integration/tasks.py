@@ -1,6 +1,6 @@
 from time import sleep
 
-from celery import Task, chain, chord, group, shared_task
+from celery import Signature, Task, chain, chord, group, shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
@@ -16,21 +16,30 @@ def identity(x):
 
 
 @shared_task
-def add(x, y):
-    """Add two numbers."""
+def add(x, y, z=None):
+    """Add two or three numbers."""
+    if z:
+        return x + y + z
+    else:
+        return x + y
+
+
+@shared_task(typing=False)
+def add_not_typed(x, y):
+    """Add two numbers, but don't check arguments"""
     return x + y
-
-
-@shared_task
-def raise_error():
-    """Deliberately raise an error."""
-    raise ValueError("deliberate error")
 
 
 @shared_task(ignore_result=True)
 def add_ignore_result(x, y):
     """Add two numbers."""
     return x + y
+
+
+@shared_task
+def raise_error(*args):
+    """Deliberately raise an error."""
+    raise ValueError("deliberate error")
 
 
 @shared_task
@@ -74,6 +83,35 @@ def tsum(nums):
 def add_replaced(self, x, y):
     """Add two numbers (via the add task)."""
     raise self.replace(add.s(x, y))
+
+
+@shared_task(bind=True)
+def replace_with_chain(self, *args, link_msg=None):
+    c = chain(identity.s(*args), identity.s())
+    link_sig = redis_echo.s()
+    if link_msg is not None:
+        link_sig.args = (link_msg,)
+        link_sig.set(immutable=True)
+    c.link(link_sig)
+
+    return self.replace(c)
+
+
+@shared_task(bind=True)
+def replace_with_chain_which_raises(self, *args, link_msg=None):
+    c = chain(identity.s(*args), raise_error.s())
+    link_sig = redis_echo.s()
+    if link_msg is not None:
+        link_sig.args = (link_msg,)
+        link_sig.set(immutable=True)
+    c.link_error(link_sig)
+
+    return self.replace(c)
+
+
+@shared_task(bind=True)
+def replace_with_empty_chain(self, *_):
+    return self.replace(chain())
 
 
 @shared_task(bind=True)
@@ -133,6 +171,24 @@ def collect_ids(self, res, i):
     return res, (self.request.root_id, self.request.parent_id, i)
 
 
+@shared_task(bind=True, default_retry_delay=1)
+def retry(self, return_value=None):
+    """Task simulating multiple retries.
+
+    When return_value is provided, the task after retries returns
+    the result. Otherwise it fails.
+    """
+    if return_value:
+        attempt = getattr(self, 'attempt', 0)
+        print('attempt', attempt)
+        if attempt >= 3:
+            delattr(self, 'attempt')
+            return return_value
+        self.attempt = attempt + 1
+
+    raise self.retry(exc=ExpectedException(), countdown=5)
+
+
 @shared_task(bind=True, expires=60.0, max_retries=1)
 def retry_once(self, *args, expires=60.0, max_retries=1, countdown=0.1):
     """Task that fails and is retried. Returns the number of retries."""
@@ -143,7 +199,8 @@ def retry_once(self, *args, expires=60.0, max_retries=1, countdown=0.1):
 
 
 @shared_task(bind=True, expires=60.0, max_retries=1)
-def retry_once_priority(self, *args, expires=60.0, max_retries=1, countdown=0.1):
+def retry_once_priority(self, *args, expires=60.0, max_retries=1,
+                        countdown=0.1):
     """Task that fails and is retried. Returns the priority."""
     if self.request.retries:
         return self.request.delivery_info['priority']
@@ -160,7 +217,6 @@ def redis_echo(message):
 
 @shared_task(bind=True)
 def second_order_replace1(self, state=False):
-
     redis_connection = get_redis_connection()
     if not state:
         redis_connection.rpush('redis-echo', 'In A')
@@ -244,3 +300,67 @@ class ClassBasedAutoRetryTask(Task):
         if self.request.retries:
             return self.request.retries
         raise ValueError()
+
+
+# The signatures returned by these tasks wouldn't actually run because the
+# arguments wouldn't be fulfilled - we never actually delay them so it's fine
+@shared_task
+def return_nested_signature_chain_chain():
+    return chain(chain([add.s()]))
+
+
+@shared_task
+def return_nested_signature_chain_group():
+    return chain(group([add.s()]))
+
+
+@shared_task
+def return_nested_signature_chain_chord():
+    return chain(chord([add.s()], add.s()))
+
+
+@shared_task
+def return_nested_signature_group_chain():
+    return group(chain([add.s()]))
+
+
+@shared_task
+def return_nested_signature_group_group():
+    return group(group([add.s()]))
+
+
+@shared_task
+def return_nested_signature_group_chord():
+    return group(chord([add.s()], add.s()))
+
+
+@shared_task
+def return_nested_signature_chord_chain():
+    return chord(chain([add.s()]), add.s())
+
+
+@shared_task
+def return_nested_signature_chord_group():
+    return chord(group([add.s()]), add.s())
+
+
+@shared_task
+def return_nested_signature_chord_chord():
+    return chord(chord([add.s()], add.s()), add.s())
+
+
+@shared_task
+def rebuild_signature(sig_dict):
+    sig_obj = Signature.from_dict(sig_dict)
+
+    def _recurse(sig):
+        if not isinstance(sig, Signature):
+            raise TypeError("{!r} is not a signature object".format(sig))
+        # Most canvas types have a `tasks` attribute
+        if isinstance(sig, (chain, group, chord)):
+            for task in sig.tasks:
+                _recurse(task)
+        # `chord`s also have a `body` attribute
+        if isinstance(sig, chord):
+            _recurse(sig.body)
+    _recurse(sig_obj)

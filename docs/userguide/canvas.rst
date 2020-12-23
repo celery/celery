@@ -569,7 +569,7 @@ Here's an example errback:
     def log_error(request, exc, traceback):
         with open(os.path.join('/var/errors', request.id), 'a') as fh:
             print('--\n\n{0} {1} {2}'.format(
-                task_id, exc, traceback), file=fh)
+                request.id, exc, traceback), file=fh)
 
 To make it even easier to link tasks together there's
 a special signature called :class:`~celery.chain` that lets
@@ -959,11 +959,11 @@ Map & Starmap
 -------------
 
 :class:`~celery.map` and :class:`~celery.starmap` are built-in tasks
-that calls the task for every element in a sequence.
+that call the provided calling task for every element in a sequence.
 
-They differ from group in that
+They differ from :class:`~celery.group` in that:
 
-- only one task message is sent
+- only one task message is sent.
 
 - the operation is sequential.
 
@@ -1013,7 +1013,7 @@ Chunks
 ------
 
 Chunking lets you divide an iterable of work into pieces, so that if
-you have one million objects, you can create 10 tasks with hundred
+you have one million objects, you can create 10 tasks with a hundred
 thousand objects each.
 
 Some may worry that chunking your tasks results in a degradation

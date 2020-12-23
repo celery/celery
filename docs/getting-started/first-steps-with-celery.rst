@@ -159,7 +159,7 @@ argument:
 
 .. code-block:: console
 
-    $ celery -A tasks worker --loglevel=info
+    $ celery -A tasks worker --loglevel=INFO
 
 .. note::
 

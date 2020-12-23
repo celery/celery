@@ -5,11 +5,13 @@ import sys
 import click
 
 from celery.app import defaults
-from celery.bin.base import CeleryCommand, CeleryOption
+from celery.bin.base import (CeleryCommand, CeleryOption,
+                             handle_preload_options)
 from celery.utils.functional import pass1
 
 
 @click.group()
+@handle_preload_options
 def upgrade():
     """Perform upgrade between versions."""
 
@@ -20,7 +22,7 @@ def _slurp(filename):
         return [line for line in read_fh]
 
 
-def _compat_key(self, key, namespace='CELERY'):
+def _compat_key(key, namespace='CELERY'):
     key = key.upper()
     if not key.startswith(namespace):
         key = '_'.join([namespace, key])
@@ -30,7 +32,7 @@ def _compat_key(self, key, namespace='CELERY'):
 def _backup(filename, suffix='.orig'):
     lines = []
     backup_filename = ''.join([filename, suffix])
-    print('writing backup to {0}...'.format(backup_filename),
+    print(f'writing backup to {backup_filename}...',
           file=sys.stderr)
     with codecs.open(filename, 'r', 'utf-8') as read_fh:
         with codecs.open(backup_filename, 'w', 'utf-8') as backup_fh:
@@ -52,12 +54,12 @@ def _to_new_key(line, keyfilter=pass1, source=defaults._TO_NEW_KEY):
 
 @upgrade.command(cls=CeleryCommand)
 @click.argument('filename')
-@click.option('-django',
+@click.option('--django',
               cls=CeleryOption,
               is_flag=True,
               help_group='Upgrading Options',
               help='Upgrade Django project.')
-@click.option('-compat',
+@click.option('--compat',
               cls=CeleryOption,
               is_flag=True,
               help_group='Upgrading Options',
@@ -66,12 +68,12 @@ def _to_new_key(line, keyfilter=pass1, source=defaults._TO_NEW_KEY):
               cls=CeleryOption,
               is_flag=True,
               help_group='Upgrading Options',
-              help='Dont backup original files.')
+              help="Don't backup original files.")
 def settings(filename, django, compat, no_backup):
     """Migrate settings from Celery 3.x to Celery 4.x."""
     lines = _slurp(filename)
     keyfilter = _compat_key if django or compat else pass1
-    print('processing {0}...'.format(filename), file=sys.stderr)
+    print(f'processing {filename}...', file=sys.stderr)
     # gives list of tuples: ``(did_change, line_contents)``
     new_lines = [
         _to_new_key(line, keyfilter) for line in lines

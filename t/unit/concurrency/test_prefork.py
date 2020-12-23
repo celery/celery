@@ -7,13 +7,12 @@ from unittest.mock import Mock, patch
 import pytest
 from case import mock
 
+import t.skip
 from celery.app.defaults import DEFAULTS
 from celery.concurrency.asynpool import iterate_file_descriptors_safely
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import noop
 from celery.utils.objects import Bunch
-
-import t.skip
 
 try:
     from celery.concurrency import asynpool

@@ -23,9 +23,9 @@ globals().update(conf.build_config(
     ],
     extra_intersphinx_mapping={
         'cyanide': ('https://cyanide.readthedocs.io/en/latest', None),
+        'click': ('https://click.palletsprojects.com/en/7.x/', None),
     },
     apicheck_ignore_modules=[
-        'celery.five',
         'celery.__main__',
         'celery.task',
         'celery.contrib.testing',
