@@ -1,8 +1,10 @@
 """Thread execution pool."""
 
-from concurrent.futures import ThreadPoolExecutor, wait
+import threading
+from concurrent.futures import wait
 
 from .base import BasePool, apply_target
+from celery.utils.thread_pool import ThreadPoolExecutor
 
 __all__ = ('TaskPool',)
 
@@ -32,8 +34,10 @@ class TaskPool(BasePool):
 
     def on_apply(self, target, args=None, kwargs=None, callback=None,
                  accept_callback=None, **_):
-        f = self.executor.submit(apply_target, target, args, kwargs,
-                                 callback, accept_callback)
+        f = self.executor.submit(apply_target,
+                                 target, args, kwargs,
+                                 callback, accept_callback,
+                                 None, threading.get_ident)
         return ApplyResult(f)
 
     def _get_info(self):
@@ -43,3 +47,10 @@ class TaskPool(BasePool):
             # TODO use a public api to retrieve the current number of threads
             # in the executor when available. (Currently not available).
         }
+
+    def terminate_job(self, pid, signal=None):
+        for i in self.executor._threads:
+            if i.ident == pid:
+                i.terminate()
+                return
+        raise Exception("not find task")
