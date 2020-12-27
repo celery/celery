@@ -213,7 +213,6 @@ database connections at ``fork``.
 
 .. _celery-documentation:
 
-
 Documentation
 =============
 
