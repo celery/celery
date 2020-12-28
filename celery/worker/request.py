@@ -555,8 +555,8 @@ class Request:
         return {
             'id': self.id,
             'name': self.name,
-            'args': self._args,
-            'kwargs': self._kwargs,
+            'args': self.argsrepr,
+            'kwargs': self.kwargsrepr,
             'type': self._type,
             'hostname': self._hostname,
             'time_start': self.time_start,
