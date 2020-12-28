@@ -107,8 +107,8 @@ class test_Inspect:
             {
                 'id': res.task_id,
                 'name': 't.integration.tasks.sleeping',
-                'args': [5],
-                'kwargs': {},
+                'args': '(5,)',
+                'kwargs': '{}',
                 'type': 't.integration.tasks.sleeping',
                 'hostname': ANY,
                 'time_start': ANY,
@@ -137,8 +137,8 @@ class test_Inspect:
                 'request': {
                     'id': res.task_id,
                     'name': 't.integration.tasks.add',
-                    'args': [1, 2],
-                    'kwargs': {'z': 3},
+                    'args': '[1, 2]',
+                    'kwargs': "{'z': 3}",
                     'type': 't.integration.tasks.add',
                     'hostname': ANY,
                     'time_start': None,
@@ -171,8 +171,8 @@ class test_Inspect:
                 'active', {
                     'id': res.task_id,
                     'name': 't.integration.tasks.sleeping',
-                    'args': [5],
-                    'kwargs': {},
+                    'args': '(5,)',
+                    'kwargs': '{}',
                     'type': 't.integration.tasks.sleeping',
                     'hostname': NODENAME,
                     'time_start': ANY,
