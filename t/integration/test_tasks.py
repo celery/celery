@@ -176,6 +176,22 @@ class test_tasks:
         assert result.successful() is False
 
     @flaky
+    def test_revoked(self, manager):
+        """Testing revoking of task"""
+        # Fill the queue with tasks to fill the queue
+        for _ in range(4):
+            sleeping.delay(2)
+        # Execute task and revoke it
+        result = add.apply_async((1, 1))
+        result.revoke()
+        with pytest.raises(celery.exceptions.TaskRevokedError):
+            result.get()
+        assert result.status == 'REVOKED'
+        assert result.ready() is True
+        assert result.failed() is False
+        assert result.successful() is False
+
+    @flaky
     def test_wrong_arguments(self, manager):
         """Tests that proper exceptions are raised when task is called with wrong arguments."""
         with pytest.raises(TypeError):
