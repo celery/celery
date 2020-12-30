@@ -116,7 +116,9 @@ Celery is...
     It has an active, friendly community you can talk to for support,
     like at our `mailing-list`_, or the IRC channel.
 
-    Here's one of the simplest applications you can make::
+    Here's one of the simplest applications you can make:
+    
+    .. code-block:: python
 
         from celery import Celery
 
