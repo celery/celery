@@ -212,17 +212,19 @@ class test_Request(RequestCase):
         kwargs = {}
         for i in range(0, 2):
             kwargs[str(i)] = ''.join(random.choice(string.ascii_lowercase) for i in range(1000))
+
         assert self.get_request(
-            self.add.s(**kwargs)).info(safe=True).get('kwargs') == kwargs
+            self.add.s(**kwargs).set(kwargsrepr=repr(kwargs))).info(safe=True).get('kwargs') == repr(kwargs)
         assert self.get_request(
-            self.add.s(**kwargs)).info(safe=False).get('kwargs') == kwargs
+            self.add.s(**kwargs).set(kwargsrepr=repr(kwargs))).info(safe=False).get('kwargs') == repr(kwargs)
         args = []
         for i in range(0, 2):
             args.append(''.join(random.choice(string.ascii_lowercase) for i in range(1000)))
-        assert list(self.get_request(
-            self.add.s(*args)).info(safe=True).get('args')) == args
-        assert list(self.get_request(
-            self.add.s(*args)).info(safe=False).get('args')) == args
+        args = tuple(args)
+        assert self.get_request(
+            self.add.s(*args).set(argsrepr=repr(args))).info(safe=True).get('args') == repr(args)
+        assert self.get_request(
+            self.add.s(*args).set(argsrepr=repr(args))).info(safe=False).get('args') == repr(args)
 
     def test_no_shadow_header(self):
         request = self.get_request(self.add.s(2, 2),
