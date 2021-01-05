@@ -786,6 +786,18 @@ class test_KeyValueStoreBackend:
             callback.backend.fail_from_current_stack = Mock()
             yield task, deps, cb
 
+    def test_chord_part_return_timeout(self):
+        with self._chord_part_context(self.b) as (task, deps, _):
+            try:
+                self.app.conf.result_chord_join_timeout += 1.0
+                self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
+            finally:
+                self.app.conf.result_chord_join_timeout -= 1.0
+
+            self.b.expire.assert_not_called()
+            deps.delete.assert_called_with()
+            deps.join_native.assert_called_with(propagate=True, timeout=4.0)
+
     def test_chord_part_return_propagate_set(self):
         with self._chord_part_context(self.b) as (task, deps, _):
             self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
