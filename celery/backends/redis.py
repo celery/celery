@@ -469,7 +469,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                         else header_result.join
                     )
                     with allow_join_result():
-                        resl = join_func(timeout=3.0, propagate=True)
+                        resl = join_func(
+                            timeout=app.conf.result_chord_join_timeout,
+                            propagate=True
+                        )
                 else:
                     # Otherwise simply extract and decode the results we
                     # stashed along the way, which should be faster for large
