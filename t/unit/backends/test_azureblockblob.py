@@ -42,18 +42,18 @@ class test_AzureBlockBlobBackend:
 
     @patch(MODULE_TO_MOCK + ".BlobServiceClient")
     def test_create_client(self, mock_blob_service_factory):
-        mock_blob_service_instance = Mock()
-        mock_blob_service_factory.return_value = mock_blob_service_instance
+        mock_blob_service_client_instance = Mock()
+        mock_blob_service_factory.from_connection_string.return_value = mock_blob_service_client_instance
         backend = AzureBlockBlobBackend(app=self.app, url=self.url)
 
         # ensure container gets created on client access...
-        assert mock_blob_service_instance.from_connection_string.return_value.create_container.call_count == 0
+        assert mock_blob_service_client_instance.create_container.call_count == 0
         assert backend._blob_service_client is not None
-        assert mock_blob_service_instance.from_connection_string.return_value.create_container.call_count == 1
+        assert mock_blob_service_client_instance.create_container.call_count == 1
 
         # ...but only once per backend instance
         assert backend._blob_service_client is not None
-        assert mock_blob_service_instance.create_container.call_count == 1
+        assert mock_blob_service_client_instance.create_container.call_count == 1
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
     def test_get(self, mock_client):
