@@ -11,6 +11,7 @@ MODULE_TO_MOCK = "celery.backends.azureblockblob"
 
 pytest.importorskip('azure.storage.blob')
 
+
 class test_AzureBlockBlobBackend:
     def setup(self):
         self.url = (
@@ -64,7 +65,8 @@ class test_AzureBlockBlobBackend:
 
         mock_client.get_blob_client.return_value \
             .download_blob.return_value \
-            .readall.assert_called_once()
+            .readall.return_value \
+            .decode.assert_called_once()
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
     def test_get_missing(self, mock_client):
@@ -72,7 +74,7 @@ class test_AzureBlockBlobBackend:
             .download_blob.return_value \
             .readall.side_effect = azureblockblob.ResourceNotFoundError
 
-        print(self.backend.get(b"mykey"))
+        assert self.backend.get(b"mykey") is None
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
     def test_set(self, mock_client):
@@ -82,7 +84,7 @@ class test_AzureBlockBlobBackend:
             container="celery", blob="mykey")
 
         mock_client.get_blob_client.return_value \
-            .upload_blob.assert_called_once_with("myvalue")
+            .upload_blob.assert_called_once_with("myvalue", overwrite=True)
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
     def test_mget(self, mock_client):

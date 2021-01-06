@@ -9,7 +9,7 @@ from .base import KeyValueStoreBackend
 
 try:
     import azure.storage.blob as azurestorage
-    from azure.storage.blob import BlobServiceClient, BlobClient
+    from azure.storage.blob import BlobServiceClient
     from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 except ImportError:
     azurestorage = None
@@ -76,7 +76,6 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
         Args:
               key: The key for which to read the value.
         """
-
         key = bytes_to_str(key)
         LOGGER.debug("Getting Azure Block Blob %s/%s", self._container_name, key)
 
@@ -86,7 +85,7 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
         )
 
         try:
-            return blob_client.download_blob().readall()
+            return blob_client.download_blob().readall().decode()
         except ResourceNotFoundError:
             return None
 
@@ -106,7 +105,7 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
             blob=key,
         )
 
-        blob_client.upload_blob(value)
+        blob_client.upload_blob(value, overwrite=True)
 
     def mget(self, keys):
         """Read all the values for the provided keys.
@@ -115,7 +114,6 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
               keys: The list of keys to read.
 
         """
-
         return [self.get(key) for key in keys]
 
     def delete(self, key):
