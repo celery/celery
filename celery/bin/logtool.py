@@ -111,8 +111,9 @@ class Audit:
 
 
 @click.group()
+@click.pass_context
 @handle_preload_options
-def logtool():
+def logtool(ctx):
     """The ``celery logtool`` command."""
 
 

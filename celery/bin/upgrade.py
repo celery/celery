@@ -11,8 +11,9 @@ from celery.utils.functional import pass1
 
 
 @click.group()
+@click.pass_context
 @handle_preload_options
-def upgrade():
+def upgrade(ctx):
     """Perform upgrade between versions."""
 
 
