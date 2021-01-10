@@ -11,7 +11,7 @@ jobs:
       - run: bandit -r . || true
       - run: codespell --ignore-words-list="brane,gool,ist,sherif,wil" --quiet-level=2 --skip="*.key" || true
       - run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-      - run: isort --profile black . || true
+      - run: isort . || true
       - run: pip install -r requirements.txt || true
       - run: tox || true
       - run: pytest . || true
