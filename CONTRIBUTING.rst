@@ -292,8 +292,7 @@ Branches
 Current active version branches:
 
 * dev (which git calls "master") (https://github.com/celery/celery/tree/master)
-* 4.2 (https://github.com/celery/celery/tree/4.2)
-* 4.1 (https://github.com/celery/celery/tree/4.1)
+* 4.5 (https://github.com/celery/celery/tree/v4.5)
 * 3.1 (https://github.com/celery/celery/tree/3.1)
 
 You can see the state of any branch by looking at the Changelog:
@@ -494,18 +493,18 @@ Some useful commands to run:
     **Note:** This command will run tests for every environment defined in :file:`tox.ini`.
     It takes a while.
 
-* ``pyenv exec python{2.7,3.5,3.6,3.7,3.8} -m pytest t/unit``
+* ``pyenv exec python{3.6,3.7,3.8} -m pytest t/unit``
 
     To run unit tests using pytest.
 
-    **Note:** ``{2.7,3.5,3.6,3.7,3.8}`` means you can use any of those options.
+    **Note:** ``{3.6,3.7,3.8}`` means you can use any of those options.
     e.g. ``pyenv exec python3.6 -m pytest t/unit``
 
-* ``pyenv exec python{2.7,3.5,3.6,3.7,3.8} -m pytest t/integration``
+* ``pyenv exec python{3.6,3.7,3.8} -m pytest t/integration``
 
     To run integration tests using pytest
 
-    **Note:** ``{2.7,3.5,3.6,3.7,3.8}`` means you can use any of those options.
+    **Note:** ``{3.6,3.7,3.8}`` means you can use any of those options.
     e.g. ``pyenv exec python3.6 -m pytest t/unit``
 
 By default, docker-compose will mount the Celery and test folders in the Docker
@@ -516,7 +515,7 @@ use are also defined in the :file:`docker/docker-compose.yml` file.
 By running ``docker-compose build celery`` an image will be created with the
 name ``celery/celery:dev``. This docker image has every dependency needed
 for development installed. ``pyenv`` is used to install multiple python
-versions, the docker image offers python 2.7, 3.5, 3.6, 3.7 and 3.8.
+versions, the docker image offers python 3.6, 3.7 and 3.8.
 The default python version is set to 3.8.
 
 The :file:`docker-compose.yml` file defines the necessary environment variables
@@ -677,7 +676,7 @@ Use the ``tox -e`` option if you only want to test specific Python versions:
 
 .. code-block:: console
 
-    $ tox -e 2.7
+    $ tox -e 3.7
 
 Building the documentation
 --------------------------
