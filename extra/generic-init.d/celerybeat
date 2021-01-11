@@ -110,7 +110,7 @@ DEFAULT_USER="celery"
 DEFAULT_PID_FILE="/var/run/celery/beat.pid"
 DEFAULT_LOG_FILE="/var/log/celery/beat.log"
 DEFAULT_LOG_LEVEL="INFO"
-DEFAULT_CELERYBEAT="$CELERY_BIN beat"
+DEFAULT_CELERYBEAT="$CELERY_BIN"
 
 CELERYBEAT=${CELERYBEAT:-$DEFAULT_CELERYBEAT}
 CELERYBEAT_LOG_LEVEL=${CELERYBEAT_LOG_LEVEL:-${CELERYBEAT_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
@@ -140,8 +140,6 @@ if [ -z "$CELERYBEAT_LOG_FILE" ]; then
 fi
 
 export CELERY_LOADER
-
-CELERYBEAT_OPTS="$CELERYBEAT_OPTS -f $CELERYBEAT_LOG_FILE -l $CELERYBEAT_LOG_LEVEL"
 
 if [ -n "$2" ]; then
     CELERYBEAT_OPTS="$CELERYBEAT_OPTS $2"
@@ -254,8 +252,11 @@ _chuid () {
 
 start_beat () {
     echo "Starting ${SCRIPT_NAME}..."
-    _chuid $CELERY_APP_ARG $CELERYBEAT_OPTS $DAEMON_OPTS --detach \
-                --pidfile="$CELERYBEAT_PID_FILE"
+    _chuid $CELERY_APP_ARG $DAEMON_OPTS beat --detach \
+                 --pidfile="$CELERYBEAT_PID_FILE"      \
+                 --logfile="$CELERYBEAT_LOG_FILE"      \
+                 --loglevel="$CELERYBEAT_LOG_LEVEL"    \
+                 $CELERYBEAT_OPTS
 }
 
 
