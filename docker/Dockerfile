@@ -1,4 +1,4 @@
-FROM ubuntu:bionic
+FROM ubuntu:focal
 
 ENV PYTHONIOENCODING UTF-8
 
@@ -44,10 +44,10 @@ ENV PATH="$HOME/.pyenv/bin:$PATH"
 
 # Copy and run setup scripts
 WORKDIR $PROVISIONING
-COPY docker/scripts/install-couchbase.sh .
+#COPY docker/scripts/install-couchbase.sh .
 # Scripts will lose thier executable flags on copy. To avoid the extra instructions
 # we call the shell directly.
-RUN sh install-couchbase.sh
+#RUN sh install-couchbase.sh
 COPY docker/scripts/create-linux-user.sh .
 RUN sh create-linux-user.sh
 
@@ -64,11 +64,9 @@ COPY --chown=1000:1000 docker/entrypoint /entrypoint
 RUN chmod gu+x /entrypoint
 
 # Define the local pyenvs
-RUN pyenv local python3.8 python3.7 python3.6 python3.5 python2.7
+RUN pyenv local python3.8 python3.7 python3.6
 
-RUN pyenv exec python2.7 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.5 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.6 -m pip install --upgrade pip setuptools wheel && \
+RUN pyenv exec python3.6 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.7 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.8 -m pip install --upgrade pip setuptools wheel
 
@@ -93,20 +91,8 @@ RUN pyenv exec python3.8 -m pip install \
   -r requirements/test-ci-default.txt \
   -r requirements/docs.txt \
   -r requirements/test-integration.txt \
-  -r requirements/pkgutils.txt && \
-  pyenv exec python3.5 -m pip install \
-  -r requirements/dev.txt \
-  -r requirements/test.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/docs.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/pkgutils.txt && \
-  pyenv exec python2.7 -m pip install \
-  -r requirements/dev.txt \
-  -r requirements/test.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
   -r requirements/pkgutils.txt
+ 
 
 COPY --chown=1000:1000 . $HOME/celery
 
