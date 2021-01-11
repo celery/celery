@@ -1012,6 +1012,21 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
         mock_header_result.save.assert_called_once_with(backend=self.b)
         mock_header_result.save.reset_mock()
 
+    def test_on_chord_part_return_timeout(self, complex_header_result):
+        tasks = [self.create_task(i) for i in range(10)]
+        random.shuffle(tasks)
+        try:
+            self.app.conf.result_chord_join_timeout += 1.0
+            for task, result_val in zip(tasks, itertools.cycle((42, ))):
+                self.b.on_chord_part_return(
+                    task.request, states.SUCCESS, result_val,
+                )
+        finally:
+            self.app.conf.result_chord_join_timeout -= 1.0
+
+        join_func = complex_header_result.return_value.join_native
+        join_func.assert_called_once_with(timeout=4.0, propagate=True)
+
     @pytest.mark.parametrize("supports_native_join", (True, False))
     def test_on_chord_part_return(
         self, complex_header_result, supports_native_join,

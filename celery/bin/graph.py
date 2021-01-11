@@ -9,8 +9,9 @@ from celery.utils.graph import DependencyGraph, GraphFormatter
 
 
 @click.group()
+@click.pass_context
 @handle_preload_options
-def graph():
+def graph(ctx):
     """The ``celery graph`` command."""
 
 

@@ -928,7 +928,9 @@ class BaseKeyValueStoreBackend(Backend):
             j = deps.join_native if deps.supports_native_join else deps.join
             try:
                 with allow_join_result():
-                    ret = j(timeout=3.0, propagate=True)
+                    ret = j(
+                        timeout=app.conf.result_chord_join_timeout,
+                        propagate=True)
             except Exception as exc:  # pylint: disable=broad-except
                 try:
                     culprit = next(deps._failed_join_report())

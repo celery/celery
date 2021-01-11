@@ -41,55 +41,67 @@ class test_AzureBlockBlobBackend:
         with pytest.raises(ImproperlyConfigured):
             AzureBlockBlobBackend._parse_url("")
 
-    @patch(MODULE_TO_MOCK + ".BlockBlobService")
+    @patch(MODULE_TO_MOCK + ".BlobServiceClient")
     def test_create_client(self, mock_blob_service_factory):
-        mock_blob_service_instance = Mock()
-        mock_blob_service_factory.return_value = mock_blob_service_instance
+        mock_blob_service_client_instance = Mock()
+        mock_blob_service_factory.from_connection_string.return_value = mock_blob_service_client_instance
         backend = AzureBlockBlobBackend(app=self.app, url=self.url)
 
         # ensure container gets created on client access...
-        assert mock_blob_service_instance.create_container.call_count == 0
-        assert backend._client is not None
-        assert mock_blob_service_instance.create_container.call_count == 1
+        assert mock_blob_service_client_instance.create_container.call_count == 0
+        assert backend._blob_service_client is not None
+        assert mock_blob_service_client_instance.create_container.call_count == 1
 
         # ...but only once per backend instance
-        assert backend._client is not None
-        assert mock_blob_service_instance.create_container.call_count == 1
+        assert backend._blob_service_client is not None
+        assert mock_blob_service_client_instance.create_container.call_count == 1
 
-    @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._client")
+    @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
     def test_get(self, mock_client):
         self.backend.get(b"mykey")
 
-        mock_client.get_blob_to_text.assert_called_once_with(
-            "celery", "mykey")
+        mock_client.get_blob_client \
+            .assert_called_once_with(blob="mykey", container="celery")
 
-    @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._client")
+        mock_client.get_blob_client.return_value \
+            .download_blob.return_value \
+            .readall.return_value \
+            .decode.assert_called_once()
+
+    @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
     def test_get_missing(self, mock_client):
-        mock_client.get_blob_to_text.side_effect = \
-            azureblockblob.AzureMissingResourceHttpError("Missing", 404)
+        mock_client.get_blob_client.return_value \
+            .download_blob.return_value \
+            .readall.side_effect = azureblockblob.ResourceNotFoundError
 
         assert self.backend.get(b"mykey") is None
 
-    @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._client")
+    @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
     def test_set(self, mock_client):
         self.backend._set_with_state(b"mykey", "myvalue", states.SUCCESS)
 
-        mock_client.create_blob_from_text.assert_called_once_with(
-            "celery", "mykey", "myvalue")
+        mock_client.get_blob_client.assert_called_once_with(
+            container="celery", blob="mykey")
 
-    @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._client")
+        mock_client.get_blob_client.return_value \
+            .upload_blob.assert_called_once_with("myvalue", overwrite=True)
+
+    @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
     def test_mget(self, mock_client):
         keys = [b"mykey1", b"mykey2"]
 
         self.backend.mget(keys)
 
-        mock_client.get_blob_to_text.assert_has_calls(
-            [call("celery", "mykey1"),
-             call("celery", "mykey2")])
+        mock_client.get_blob_client.assert_has_calls(
+            [call(blob=key.decode(), container='celery') for key in keys],
+            any_order=True,)
 
-    @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._client")
+    @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
     def test_delete(self, mock_client):
         self.backend.delete(b"mykey")
 
-        mock_client.delete_blob.assert_called_once_with(
-            "celery", "mykey")
+        mock_client.get_blob_client.assert_called_once_with(
+            container="celery", blob="mykey")
+
+        mock_client.get_blob_client.return_value \
+            .delete_blob.assert_called_once()
