@@ -23,7 +23,8 @@ RUN apt-get update && apt-get install -y build-essential \
     libncurses5-dev \
     libsqlite3-dev \
     wget \
-    pypy \
+    pypy3 \
+    pypy3-lib \
     python-openssl \
     libncursesw5-dev \
     zlib1g-dev \
