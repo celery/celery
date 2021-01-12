@@ -94,14 +94,14 @@ RUN pyenv exec python3.8 -m pip install \
   -r requirements/test-ci-default.txt \
   -r requirements/docs.txt \
   -r requirements/test-integration.txt \
-  -r requirements/pkgutils.txt
+  -r requirements/pkgutils.txt && \
   pyenv exec python3.9 -m pip install \
   -r requirements/dev.txt \
   -r requirements/test.txt \
   -r requirements/test-ci-default.txt \
   -r requirements/docs.txt \
   -r requirements/test-integration.txt \
-  -r requirements/pkgutils.txt && \
+  -r requirements/pkgutils.txt
  
 
 COPY --chown=1000:1000 . $HOME/celery
