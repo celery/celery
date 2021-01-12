@@ -124,8 +124,7 @@ def _start_worker_thread(app,
         without_gossip=True,
         **kwargs)
 
-    # TODO: Shall we consider starting the thread with daemon=True
-    t = threading.Thread(target=worker.start)
+    t = threading.Thread(target=worker.start, daemon=True)
     t.start()
     worker.ensure_started()
     _set_task_join_will_block(False)
