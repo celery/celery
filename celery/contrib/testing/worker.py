@@ -131,9 +131,6 @@ def _start_worker_thread(app,
 
     yield worker
 
-    # TODO: Shall we check if the worker is still executing tasks, so that
-    # the timeout below is only applied to the shutdown operation?
-
     from celery.worker import state
     state.should_terminate = 0
     t.join(shutdown_timeout)
