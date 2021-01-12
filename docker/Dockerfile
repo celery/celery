@@ -5,7 +5,7 @@ ENV PYTHONIOENCODING UTF-8
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Pypy is installed from a package manager because it takes so long to build.
+# Pypy3 is installed from a package manager because it takes so long to build.
 RUN apt-get update && apt-get install -y build-essential \
     libcurl4-openssl-dev \
     libffi-dev \
@@ -70,7 +70,8 @@ RUN pyenv local python3.8 python3.7 python3.6
 
 RUN pyenv exec python3.6 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.7 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.8 -m pip install --upgrade pip setuptools wheel
+    pyenv exec python3.8 -m pip install --upgrade pip setuptools wheel && \
+    pyenv exec python3.9 -m pip install --upgrade pip setuptools wheel &&
 
 # Setup one celery environment for basic development use
 RUN pyenv exec python3.8 -m pip install \
@@ -94,6 +95,13 @@ RUN pyenv exec python3.8 -m pip install \
   -r requirements/docs.txt \
   -r requirements/test-integration.txt \
   -r requirements/pkgutils.txt
+  pyenv exec python3.9 -m pip install \
+  -r requirements/dev.txt \
+  -r requirements/test.txt \
+  -r requirements/test-ci-default.txt \
+  -r requirements/docs.txt \
+  -r requirements/test-integration.txt \
+  -r requirements/pkgutils.txt && \
  
 
 COPY --chown=1000:1000 . $HOME/celery

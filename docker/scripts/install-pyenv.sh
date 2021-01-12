@@ -10,3 +10,4 @@ git clone https://github.com/s1341/pyenv-alias.git $(pyenv root)/plugins/pyenv-a
 VERSION_ALIAS="python3.6" pyenv install 3.6.12
 VERSION_ALIAS="python3.7" pyenv install 3.7.9
 VERSION_ALIAS="python3.8" pyenv install 3.8.7
+VERSION_ALIAS="python3.9" pyenv install 3.9.1
