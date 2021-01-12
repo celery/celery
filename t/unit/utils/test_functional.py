@@ -141,6 +141,7 @@ class test_regen:
         self.consumed_second_item = False
         g = regen(build_generator())
         assert bool(g)
+        assert g[0] == 1
         assert not self.consumed_second_item
 
     def test_nonzero__empty_iter(self):
