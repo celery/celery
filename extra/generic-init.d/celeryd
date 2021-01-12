@@ -269,7 +269,7 @@ dryrun () {
 
 
 stop_workers () {
-    _chuid stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
+    _chuid stopwait $CELERYD_NODES $DAEMON_OPTS --pidfile="$CELERYD_PID_FILE"
 }
 
 
