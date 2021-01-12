@@ -66,12 +66,12 @@ COPY --chown=1000:1000 docker/entrypoint /entrypoint
 RUN chmod gu+x /entrypoint
 
 # Define the local pyenvs
-RUN pyenv local python3.8 python3.7 python3.6
+RUN pyenv local python3.8 python3.7 python3.6 python3.9
 
 RUN pyenv exec python3.6 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.7 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.8 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.9 -m pip install --upgrade pip setuptools wheel &&
+    pyenv exec python3.9 -m pip install --upgrade pip setuptools wheel
 
 # Setup one celery environment for basic development use
 RUN pyenv exec python3.8 -m pip install \
