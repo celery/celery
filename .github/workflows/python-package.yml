@@ -21,7 +21,7 @@ jobs:
     steps:
     - name: Install apt packages
       run: |
-        sudo apt-get install -f libcurl4-openssl-dev libssl-dev gnutls-dev httping expect
+        sudo apt-get install -f libcurl4-openssl-dev libssl-dev gnutls-dev httping expect libmemcached-dev
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
