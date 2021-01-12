@@ -1,11 +1,10 @@
 import pytest
-from kombu.utils.functional import lazy
-
 from celery.utils.functional import (DummyContext, first, firstmethod,
                                      fun_accepts_kwargs, fun_takes_argument,
                                      head_from_fun, maybe_list, mlazy,
                                      padlist, regen, seq_concat_item,
                                      seq_concat_seq)
+from kombu.utils.functional import lazy
 
 
 def test_DummyContext():
@@ -94,8 +93,11 @@ class test_regen:
         fun, args = r.__reduce__()
         assert fun(*args) == l
 
-    def test_gen(self):
-        g = regen(iter(list(range(10))))
+    @pytest.fixture
+    def g(self):
+        return regen(iter(list(range(10))))
+
+    def test_gen(self, g):
         assert g[7] == 7
         assert g[6] == 6
         assert g[5] == 5
@@ -107,17 +109,19 @@ class test_regen:
         assert g.data, list(range(10))
         assert g[8] == 8
         assert g[0] == 0
-        g = regen(iter(list(range(10))))
+
+    def test_gen__index_2(self, g):
         assert g[0] == 0
         assert g[1] == 1
         assert g.data == list(range(10))
-        g = regen(iter([1]))
-        assert g[0] == 1
-        with pytest.raises(IndexError):
-            g[1]
-        assert g.data == [1]
 
-        g = regen(iter(list(range(10))))
+    def test_gen__index_error(self, g):
+        assert g[0] == 0
+        with pytest.raises(IndexError):
+            g[11]
+        assert list(iter(g)) == list(range(10))
+
+    def test_gen__negative_index(self, g):
         assert g[-1] == 9
         assert g[-2] == 8
         assert g[-3] == 7
@@ -127,6 +131,21 @@ class test_regen:
         assert g.data == list(range(10))
 
         assert list(iter(g)) == list(range(10))
+
+    def test_nonzero__does_not_consume_more_than_first_item(self):
+        def build_generator():
+            yield 1
+            self.consumed_second_item = True
+            yield 2
+
+        self.consumed_second_item = False
+        g = regen(build_generator())
+        assert bool(g)
+        assert g[0] == 1
+        assert not self.consumed_second_item
+
+    def test_nonzero__empty_iter(self):
+        assert not regen(iter([]))
 
 
 class test_head_from_fun:
