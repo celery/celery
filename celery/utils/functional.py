@@ -3,7 +3,7 @@ import inspect
 import sys
 from collections import UserList
 from functools import partial
-from itertools import chain, islice
+from itertools import islice
 
 from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
                                     maybe_evaluate, maybe_list, memoize)
@@ -182,6 +182,7 @@ class _regen(UserList, list):
         self.__it = it
         self.__index = 0
         self.__consumed = []
+        self.__done = False
 
     def __reduce__(self):
         return list, (self.data,)
@@ -190,7 +191,13 @@ class _regen(UserList, list):
         return self.__it.__length_hint__()
 
     def __iter__(self):
-        return chain(self.__consumed, self.__it)
+        for x in self.__consumed:
+            yield x
+        if not self.__done:
+            for x in self.__it:
+                self.__consumed.append(x)
+                yield x
+            self.__done = True
 
     def __getitem__(self, index):
         if index < 0:
@@ -198,13 +205,25 @@ class _regen(UserList, list):
         try:
             return self.__consumed[index]
         except IndexError:
+            it = iter(self)
             try:
                 for _ in range(self.__index, index + 1):
-                    self.__consumed.append(next(self.__it))
+                    next(it)
             except StopIteration:
                 raise IndexError(index)
             else:
                 return self.__consumed[index]
+
+    def __bool__(self):
+        if len(self.__consumed):
+            return True
+
+        try:
+            next(iter(self))
+        except StopIteration:
+            return False
+        else:
+            return True
 
     @property
     def data(self):
