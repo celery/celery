@@ -367,6 +367,25 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 
     :ref:`calling-serializers`.
 
+.. setting:: task_args_repr_function
+
+``task_args_repr_function``
+~~~~~~~~~~~~~~~~~
+
+.. versionadded: 5.?
+
+Default: ``"celery.utils.saferepr.saferepr"``.
+
+Function used to get a string representation of the task args and kwargs used
+for logging purposes.
+
+It can be specified as either:
+
+    A function with the signature (o, **kwargs)
+
+    A string providing the path to a function with the signature (o, **kwargs).
+
+
 .. setting:: task_publish_retry
 
 ``task_publish_retry``

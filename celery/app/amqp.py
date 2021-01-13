@@ -11,8 +11,9 @@ from kombu.utils.functional import maybe_list
 from kombu.utils.objects import cached_property
 
 from celery import signals
+from celery.utils.functional import mlazy
 from celery.utils.nodenames import anon_nodename
-from celery.utils.saferepr import saferepr
+from celery.utils.imports import symbol_by_name
 from celery.utils.text import indent as textindent
 from celery.utils.time import maybe_make_aware
 
@@ -312,9 +313,9 @@ class AMQP:
             expires = expires and expires.isoformat()
 
         if argsrepr is None:
-            argsrepr = saferepr(args, self.argsrepr_maxsize)
+            argsrepr = self.repr(args, self.argsrepr_maxsize)
         if kwargsrepr is None:
-            kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize)
+            kwargsrepr = self.repr(kwargs, self.kwargsrepr_maxsize)
 
         if callbacks:
             callbacks = [utf8dict(callback) for callback in callbacks]
@@ -428,8 +429,8 @@ class AMQP:
             sent_event={
                 'uuid': task_id,
                 'name': name,
-                'args': saferepr(args),
-                'kwargs': saferepr(kwargs),
+                'args': self.repr(args),
+                'kwargs': self.repr(kwargs),
                 'retries': retries,
                 'eta': eta,
                 'expires': expires,
@@ -588,6 +589,15 @@ class AMQP:
     @router.setter
     def router(self, value):
         return value
+
+    @cached_property
+    def repr(self):
+        repr_function = self.app.conf.task_args_repr_function
+        if not repr_function:
+            return lambda o, **kwargs: o
+        elif isinstance(repr_function, str):
+            return mlazy(symbol_by_name, repr_function)
+        return repr_function
 
     @property
     def producer_pool(self):
