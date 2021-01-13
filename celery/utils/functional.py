@@ -191,8 +191,7 @@ class _regen(UserList, list):
         return self.__it.__length_hint__()
 
     def __iter__(self):
-        for x in self.__consumed:
-            yield x
+        yield from self.__consumed
         if not self.__done:
             for x in self.__it:
                 self.__consumed.append(x)
