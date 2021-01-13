@@ -629,6 +629,24 @@ arguments:
     ...     kwargsrepr=repr({'card': '**** **** **** 5678'})
     ... ).delay()
 
+.. versionadded:: 5.1
+
+You can also define a custom function to generate the representation of the
+positional and keyword arguments of all tasks, by using
+:setting:`task_args_repr_function` setting:
+
+.. code-block:: python
+
+    def task_args_repr_function(o, **kwargs):
+        if isinstance(o, (tuple, list)):
+            o = ('<secret>', )*len(o)
+        elif isinstance(o, dict):
+            o = o.copy()
+            if 'card' in o:
+                o['card'] = '***'
+        return repr(o)
+
+By default this function is ``"celery.utils.saferepr.saferepr"``.
 
 .. warning::
 
