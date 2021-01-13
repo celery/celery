@@ -13,9 +13,9 @@ from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.objects import cached_property
 
-from celery import signals, current_app
+from celery import current_app, signals
 from celery.app.task import Context
-from celery.app.trace import trace_task, trace_task_ret, fast_trace_task
+from celery.app.trace import fast_trace_task, trace_task, trace_task_ret
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
