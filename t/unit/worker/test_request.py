@@ -762,8 +762,9 @@ class test_Request(RequestCase):
 
     def test_fast_trace_task(self):
         from celery.app import trace
+        assert self.app.use_fast_trace_task is False
         setup_worker_optimizations(self.app)
-        assert trace.trace_task_ret is trace._fast_trace_task
+        assert self.app.use_fast_trace_task is True
         tid = uuid()
         message = self.TaskMessage(self.mytask.name, tid, args=[4])
         assert len(message.payload) == 3
@@ -772,7 +773,7 @@ class test_Request(RequestCase):
                 self.mytask.name, self.mytask, self.app.loader, 'test',
                 app=self.app,
             )
-            failed, res, runtime = trace.trace_task_ret(
+            failed, res, runtime = trace.fast_trace_task(
                 self.mytask.name, tid, message.headers, message.body,
                 message.content_type, message.content_encoding)
             assert not failed
@@ -780,8 +781,8 @@ class test_Request(RequestCase):
             assert runtime is not None
             assert isinstance(runtime, numbers.Real)
         finally:
-            reset_worker_optimizations()
-            assert trace.trace_task_ret is trace._trace_task_ret
+            reset_worker_optimizations(self.app)
+            assert self.app.use_fast_trace_task is False
         delattr(self.mytask, '__trace__')
         failed, res, runtime = trace.trace_task_ret(
             self.mytask.name, tid, message.headers, message.body,
@@ -977,11 +978,30 @@ class test_Request(RequestCase):
         assert isinstance(meta['result'], KeyError)
 
     def test_execute_using_pool(self):
+        from celery.app.trace import trace_task_ret
         tid = uuid()
         job = self.xRequest(id=tid, args=[4])
         p = Mock()
         job.execute_using_pool(p)
         p.apply_async.assert_called_once()
+        trace = p.apply_async.call_args[0][0]
+        assert trace == trace_task_ret
+        args = p.apply_async.call_args[1]['args']
+        assert args[0] == self.mytask.name
+        assert args[1] == tid
+        assert args[2] == job.request_dict
+        assert args[3] == job.message.body
+
+    def test_execute_using_pool_fast_trace_task(self):
+        from celery.app.trace import fast_trace_task
+        self.app.use_fast_trace_task = True
+        tid = uuid()
+        job = self.xRequest(id=tid, args=[4])
+        p = Mock()
+        job.execute_using_pool(p)
+        p.apply_async.assert_called_once()
+        trace = p.apply_async.call_args[0][0]
+        assert trace == fast_trace_task
         args = p.apply_async.call_args[1]['args']
         assert args[0] == self.mytask.name
         assert args[1] == tid
@@ -1054,7 +1074,7 @@ class test_create_request_class(RequestCase):
 
     def create_request_cls(self, **kwargs):
         return create_request_cls(
-            Request, self.task, self.pool, 'foo', self.eventer, **kwargs
+            self.app, Request, self.task, self.pool, 'foo', self.eventer, **kwargs
         )
 
     def zRequest(self, Request=None, revoked_tasks=None, ref=None, **kwargs):
@@ -1134,6 +1154,28 @@ class test_create_request_class(RequestCase):
 
     def test_execute_using_pool(self):
         from celery.app.trace import trace_task_ret as trace
+        weakref_ref = Mock(name='weakref.ref')
+        job = self.zRequest(id=uuid(), revoked_tasks=set(), ref=weakref_ref)
+        job.execute_using_pool(self.pool)
+        self.pool.apply_async.assert_called_with(
+            trace,
+            args=(job.type, job.id, job.request_dict, job.body,
+                  job.content_type, job.content_encoding),
+            accept_callback=job.on_accepted,
+            timeout_callback=job.on_timeout,
+            callback=job.on_success,
+            error_callback=job.on_failure,
+            soft_timeout=self.task.soft_time_limit,
+            timeout=self.task.time_limit,
+            correlation_id=job.id,
+        )
+        assert job._apply_result
+        weakref_ref.assert_called_with(self.pool.apply_async())
+        assert job._apply_result is weakref_ref()
+
+    def test_execute_using_pool_with_use_fast_trace_task(self):
+        from celery.app.trace import fast_trace_task as trace
+        self.app.use_fast_trace_task = True
         weakref_ref = Mock(name='weakref.ref')
         job = self.zRequest(id=uuid(), revoked_tasks=set(), ref=weakref_ref)
         job.execute_using_pool(self.pool)

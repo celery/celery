@@ -606,6 +606,8 @@ def _fast_trace_task(task, uuid, request, body, content_type,
     )
     return (1, R, T) if I else (0, Rstr, T)
 
+fast_trace_task = _fast_trace_task  # noqa: E305
+
 
 def report_internal_error(task, exc):
     _type, _value, _tb = sys.exc_info()
@@ -622,8 +624,6 @@ def report_internal_error(task, exc):
 
 def setup_worker_optimizations(app, hostname=None):
     """Setup worker related optimizations."""
-    global trace_task_ret
-
     hostname = hostname or gethostname()
 
     # make sure custom Task.__call__ methods that calls super
@@ -649,16 +649,11 @@ def setup_worker_optimizations(app, hostname=None):
         hostname,
     ]
 
-    trace_task_ret = _fast_trace_task
-    from celery.worker import request as request_module
-    request_module.trace_task_ret = _fast_trace_task
-    request_module.__optimize__()
+    app.use_fast_trace_task = True
 
 
-def reset_worker_optimizations():
+def reset_worker_optimizations(app):
     """Reset previously configured optimizations."""
-    global trace_task_ret
-    trace_task_ret = _trace_task_ret
     try:
         delattr(BaseTask, '_stackprotected')
     except AttributeError:
@@ -667,8 +662,7 @@ def reset_worker_optimizations():
         BaseTask.__call__ = _patched.pop('BaseTask.__call__')
     except KeyError:
         pass
-    from celery.worker import request as request_module
-    request_module.trace_task_ret = _trace_task_ret
+    app.use_fast_trace_task = False
 
 
 def _install_stack_protection():

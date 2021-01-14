@@ -435,4 +435,4 @@ class test_stackprotection:
 
             assert foo(1).called_directly
         finally:
-            reset_worker_optimizations()
+            reset_worker_optimizations(self.app)

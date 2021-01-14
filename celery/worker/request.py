@@ -15,7 +15,7 @@ from kombu.utils.objects import cached_property
 
 from celery import signals
 from celery.app.task import Context
-from celery.app.trace import trace_task, trace_task_ret
+from celery.app.trace import trace_task, trace_task_ret, fast_trace_task
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
@@ -323,8 +323,9 @@ class Request:
             raise TaskRevokedError(task_id)
 
         time_limit, soft_time_limit = self.time_limits
+        trace = fast_trace_task if self._app.use_fast_trace_task else trace_task_ret
         result = pool.apply_async(
-            trace_task_ret,
+            trace,
             args=(self._type, task_id, self._request_dict, self._body,
                   self._content_type, self._content_encoding),
             accept_callback=self.on_accepted,
@@ -627,14 +628,17 @@ class Request:
         return self._request_dict.get('group_index')
 
 
-def create_request_cls(base, task, pool, hostname, eventer,
+def create_request_cls(app, base, task, pool, hostname, eventer,
                        ref=ref, revoked_tasks=revoked_tasks,
-                       task_ready=task_ready, trace=trace_task_ret):
+                       task_ready=task_ready, trace=None):
     default_time_limit = task.time_limit
     default_soft_time_limit = task.soft_time_limit
     apply_async = pool.apply_async
     acks_late = task.acks_late
     events = eventer and eventer.enabled
+
+    if trace is None:
+        trace = fast_trace_task if app.use_fast_trace_task else trace_task_ret
 
     class Request(base):
 
