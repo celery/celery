@@ -167,6 +167,11 @@ This fixture starts a Celery worker instance that you can use
 for integration tests.  The worker will be started in a *separate thread*
 and will be shutdown as soon as the test returns.
 
+By default the fixture will wait up to 10 seconds for the worker to complete
+outstanding tasks and will raise an exception if the time limit is exceeded.
+The timeout can be customized by setting the ``shutdown_timeout`` key in the
+dictionary returned by the :func:`celery_worker_parameters` fixture.
+
 Example:
 
 .. code-block:: python

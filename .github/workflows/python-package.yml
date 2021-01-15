@@ -14,13 +14,14 @@ jobs:
 
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.6', '3.7', '3.8', '3.9', 'pypy3']
 
     steps:
     - name: Install apt packages
       run: |
-        sudo apt-get install -f libcurl4-openssl-dev libssl-dev gnutls-dev httping expect
+        sudo apt-get install -f libcurl4-openssl-dev libssl-dev gnutls-dev httping expect libmemcached-dev
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2

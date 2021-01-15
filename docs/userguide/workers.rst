@@ -732,7 +732,7 @@ to specify the workers that should reply to the request:
 
 
 This can also be done programmatically by using the
-:meth:`@control.inspect.active_queues` method:
+:meth:`~celery.app.control.Inspect.active_queues` method:
 
 .. code-block:: pycon
 
@@ -771,7 +771,7 @@ Dump of registered tasks
 ------------------------
 
 You can get a list of tasks registered in the worker using the
-:meth:`~@control.inspect.registered`:
+:meth:`~celery.app.control.Inspect.registered`:
 
 .. code-block:: pycon
 
@@ -785,7 +785,7 @@ Dump of currently executing tasks
 ---------------------------------
 
 You can get a list of active tasks using
-:meth:`~@control.inspect.active`:
+:meth:`~celery.app.control.Inspect.active`:
 
 .. code-block:: pycon
 
@@ -802,7 +802,7 @@ Dump of scheduled (ETA) tasks
 -----------------------------
 
 You can get a list of tasks waiting to be scheduled by using
-:meth:`~@control.inspect.scheduled`:
+:meth:`~celery.app.control.Inspect.scheduled`:
 
 .. code-block:: pycon
 
@@ -834,7 +834,7 @@ Reserved tasks are tasks that have been received, but are still waiting to be
 executed.
 
 You can get a list of these using
-:meth:`~@control.inspect.reserved`:
+:meth:`~celery.app.control.Inspect.reserved`:
 
 .. code-block:: pycon
 
@@ -852,201 +852,14 @@ Statistics
 ----------
 
 The remote control command ``inspect stats`` (or
-:meth:`~@control.inspect.stats`) will give you a long list of useful (or not
+:meth:`~celery.app.control.Inspect.stats`) will give you a long list of useful (or not
 so useful) statistics about the worker:
 
 .. code-block:: console
 
     $ celery -A proj inspect stats
 
-The output will include the following fields:
-
-- ``broker``
-
-    Section for broker information.
-
-    * ``connect_timeout``
-
-        Timeout in seconds (int/float) for establishing a new connection.
-
-    * ``heartbeat``
-
-        Current heartbeat value (set by client).
-
-    * ``hostname``
-
-        Node name of the remote broker.
-
-    * ``insist``
-
-        No longer used.
-
-    * ``login_method``
-
-        Login method used to connect to the broker.
-
-    * ``port``
-
-        Port of the remote broker.
-
-    * ``ssl``
-
-        SSL enabled/disabled.
-
-    * ``transport``
-
-        Name of transport used (e.g., ``amqp`` or ``redis``)
-
-    * ``transport_options``
-
-        Options passed to transport.
-
-    * ``uri_prefix``
-
-        Some transports expects the host name to be a URL.
-
-        .. code-block:: text
-
-            redis+socket:///tmp/redis.sock
-
-        In this example the URI-prefix will be ``redis``.
-
-    * ``userid``
-
-        User id used to connect to the broker with.
-
-    * ``virtual_host``
-
-        Virtual host used.
-
-- ``clock``
-
-    Value of the workers logical clock. This is a positive integer and should
-    be increasing every time you receive statistics.
-
-- ``uptime``
-
-    Numbers of seconds since the worker controller was started
-
-- ``pid``
-
-    Process id of the worker instance (Main process).
-
-- ``pool``
-
-    Pool-specific section.
-
-    * ``max-concurrency``
-
-        Max number of processes/threads/green threads.
-
-    * ``max-tasks-per-child``
-
-        Max number of tasks a thread may execute before being recycled.
-
-    * ``processes``
-
-        List of PIDs (or thread-id's).
-
-    * ``put-guarded-by-semaphore``
-
-        Internal
-
-    * ``timeouts``
-
-        Default values for time limits.
-
-    * ``writes``
-
-        Specific to the prefork pool, this shows the distribution of writes
-        to each process in the pool when using async I/O.
-
-- ``prefetch_count``
-
-    Current prefetch count value for the task consumer.
-
-- ``rusage``
-
-    System usage statistics. The fields available may be different
-    on your platform.
-
-    From :manpage:`getrusage(2)`:
-
-    * ``stime``
-
-        Time spent in operating system code on behalf of this process.
-
-    * ``utime``
-
-        Time spent executing user instructions.
-
-    * ``maxrss``
-
-        The maximum resident size used by this process (in kilobytes).
-
-    * ``idrss``
-
-        Amount of non-shared memory used for data (in kilobytes times ticks of
-        execution)
-
-    * ``isrss``
-
-        Amount of non-shared memory used for stack space (in kilobytes times
-        ticks of execution)
-
-    * ``ixrss``
-
-        Amount of memory shared with other processes (in kilobytes times
-        ticks of execution).
-
-    * ``inblock``
-
-        Number of times the file system had to read from the disk on behalf of
-        this process.
-
-    * ``oublock``
-
-        Number of times the file system has to write to disk on behalf of
-        this process.
-
-    * ``majflt``
-
-        Number of page faults that were serviced by doing I/O.
-
-    * ``minflt``
-
-        Number of page faults that were serviced without doing I/O.
-
-    * ``msgrcv``
-
-        Number of IPC messages received.
-
-    * ``msgsnd``
-
-        Number of IPC messages sent.
-
-    * ``nvcsw``
-
-        Number of times this process voluntarily invoked a context switch.
-
-    * ``nivcsw``
-
-        Number of times an involuntary context switch took place.
-
-    * ``nsignals``
-
-        Number of signals received.
-
-    * ``nswap``
-
-        The number of times this process was swapped entirely out of memory.
-
-
-- ``total``
-
-    Map of task names and the total number of tasks with that type
-    the worker has accepted since start-up.
-
+For the output details, consult the reference documentation of :meth:`~celery.app.control.Inspect.stats`.
 
 Additional Commands
 ===================
