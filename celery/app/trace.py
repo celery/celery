@@ -560,9 +560,9 @@ def _signal_internal_error(task, uuid, args, kwargs, request, exc):
         del tb
 
 
-def _trace_task_ret(name, uuid, request, body, content_type,
-                    content_encoding, loads=loads_message, app=None,
-                    **extra_request):
+def trace_task_ret(name, uuid, request, body, content_type,
+                   content_encoding, loads=loads_message, app=None,
+                   **extra_request):
     app = app or current_app._get_current_object()
     embed = None
     if content_type:
@@ -582,12 +582,9 @@ def _trace_task_ret(name, uuid, request, body, content_type,
     return (1, R, T) if I else (0, Rstr, T)
 
 
-trace_task_ret = _trace_task_ret  # noqa: E305
-
-
-def _fast_trace_task(task, uuid, request, body, content_type,
-                     content_encoding, loads=loads_message, _loc=None,
-                     hostname=None, **_):
+def fast_trace_task(task, uuid, request, body, content_type,
+                    content_encoding, loads=loads_message, _loc=None,
+                    hostname=None, **_):
     _loc = _localized if not _loc else _loc
     embed = None
     tasks, accept, hostname = _loc
@@ -605,8 +602,6 @@ def _fast_trace_task(task, uuid, request, body, content_type,
         uuid, args, kwargs, request,
     )
     return (1, R, T) if I else (0, Rstr, T)
-
-fast_trace_task = _fast_trace_task  # noqa: E305
 
 
 def report_internal_error(task, exc):
