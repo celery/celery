@@ -1,14 +1,14 @@
 import os
 import re
 from datetime import datetime, timedelta
-from unittest.mock import ANY
 from time import sleep
+from unittest.mock import ANY
 
 import pytest
 
 from celery.utils.nodenames import anon_nodename
 
-from .tasks import sleeping, add
+from .tasks import add, sleeping
 
 NODENAME = anon_nodename()
 
