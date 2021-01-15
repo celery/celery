@@ -647,7 +647,7 @@ def setup_worker_optimizations(app, hostname=None):
     app.use_fast_trace_task = True
 
 
-def reset_worker_optimizations(app):
+def reset_worker_optimizations(app=current_app):
     """Reset previously configured optimizations."""
     try:
         delattr(BaseTask, '_stackprotected')

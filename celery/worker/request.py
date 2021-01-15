@@ -13,7 +13,7 @@ from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.objects import cached_property
 
-from celery import signals
+from celery import signals, current_app
 from celery.app.task import Context
 from celery.app.trace import trace_task, trace_task_ret, fast_trace_task
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
@@ -628,9 +628,9 @@ class Request:
         return self._request_dict.get('group_index')
 
 
-def create_request_cls(app, base, task, pool, hostname, eventer,
+def create_request_cls(base, task, pool, hostname, eventer,
                        ref=ref, revoked_tasks=revoked_tasks,
-                       task_ready=task_ready, trace=None):
+                       task_ready=task_ready, trace=None, app=current_app):
     default_time_limit = task.time_limit
     default_soft_time_limit = task.soft_time_limit
     apply_async = pool.apply_async

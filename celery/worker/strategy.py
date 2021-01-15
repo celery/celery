@@ -124,7 +124,7 @@ def default(task, app, consumer,
     limit_task = consumer._limit_task
     limit_post_eta = consumer._limit_post_eta
     Request = symbol_by_name(task.Request)
-    Req = create_request_cls(app, Request, task, consumer.pool, hostname, eventer)
+    Req = create_request_cls(Request, task, consumer.pool, hostname, eventer, app=app)
 
     revoked_tasks = consumer.controller.state.revoked
 
