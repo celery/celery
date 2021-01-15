@@ -1072,7 +1072,7 @@ class test_create_request_class(RequestCase):
 
     def create_request_cls(self, **kwargs):
         return create_request_cls(
-            self.app, Request, self.task, self.pool, 'foo', self.eventer, **kwargs
+            Request, self.task, self.pool, 'foo', self.eventer, app=self.app, **kwargs
         )
 
     def zRequest(self, Request=None, revoked_tasks=None, ref=None, **kwargs):
