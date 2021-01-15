@@ -6,7 +6,7 @@ from kombu.exceptions import EncodeError
 
 from celery import group, signals, states, uuid
 from celery.app.task import Context
-from celery.app.trace import (TraceInfo, _fast_trace_task, _trace_task_ret,
+from celery.app.trace import (TraceInfo, fast_trace_task, trace_task_ret,
                               build_tracer, get_log_policy, get_task_name,
                               log_policy_expected, log_policy_ignore,
                               log_policy_internal, log_policy_reject,
@@ -336,7 +336,7 @@ class test_trace(TraceCase):
         mock_traceback_clear.assert_called()
 
     def test_trace_task_ret__no_content_type(self):
-        _trace_task_ret(
+        trace_task_ret(
             self.add.name, 'id1', {}, ((2, 2), {}, {}), None, None, app=self.app,
         )
 
@@ -344,7 +344,7 @@ class test_trace(TraceCase):
         self.app.tasks[self.add.name].__trace__ = build_tracer(
             self.add.name, self.add, app=self.app,
         )
-        _fast_trace_task(
+        fast_trace_task(
             self.add.name,
             'id1',
             {},
