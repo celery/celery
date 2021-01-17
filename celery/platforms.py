@@ -782,7 +782,7 @@ def check_privileges(accept_content):
                    for attr in ['getuid', 'getgid', 'geteuid', 'getegid']):
             raise SecurityError('suspicious platform, contact support')
 
-    if not uid or not gid or not euid or not egid:
+    if not uid or not euid:
         if ('pickle' in accept_content or
                 'application/x-python-serialize' in accept_content):
             if not C_FORCE_ROOT:
