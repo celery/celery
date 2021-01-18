@@ -13,6 +13,7 @@ import platform as _platform
 import signal as _signal
 import sys
 import warnings
+import grp
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -781,8 +782,30 @@ def check_privileges(accept_content):
         if not all(hasattr(os, attr)
                    for attr in ['getuid', 'getgid', 'geteuid', 'getegid']):
             raise SecurityError('suspicious platform, contact support')
+    
+    # Get the group database entry for the current user's group and effective group id using grp.getgrgid() method
+    gid_entry = grp.getgrgid(gid)
+    egid_entry = grp.getgrgid(egid)
+    gid_grp_name = gid_entry[0]
+    egid_grp_name = egid_entry[0]
 
+    # Confirm that uid and euid are not 0 (root)
     if not uid or not euid:
+        if ('pickle' in accept_content or
+                'application/x-python-serialize' in accept_content):
+            if not C_FORCE_ROOT:
+                try:
+                    print(ROOT_DISALLOWED.format(
+                        uid=uid, euid=euid, gid=gid, egid=egid,
+                    ), file=sys.stderr)
+                finally:
+                    sys.stderr.flush()
+                    os._exit(1)
+        warnings.warn(RuntimeWarning(ROOT_DISCOURAGED.format(
+            uid=uid, euid=euid, gid=gid, egid=egid,
+        )))
+    # Confirm that the gid and egid are not one that can be used to escalate privilege
+    elif str(gid_grp_name) == 'sudo' or str(egid_grp_name) == 'sudo' or str(gid_grp_name) == 'wheel' or str(egid_grp_name) == 'wheel':
         if ('pickle' in accept_content or
                 'application/x-python-serialize' in accept_content):
             if not C_FORCE_ROOT:
