@@ -54,6 +54,7 @@ import numbers
 
 from billiard.exceptions import (SoftTimeLimitExceeded, Terminated,
                                  TimeLimitExceeded, WorkerLostError)
+from click import ClickException
 from kombu.exceptions import OperationalError
 
 __all__ = (
@@ -91,6 +92,8 @@ __all__ = (
 
     # Worker shutdown semi-predicates (inherits from SystemExit).
     'WorkerShutdown', 'WorkerTerminate',
+
+    'CeleryCommandException',
 )
 
 UNREGISTERED_FMT = """\
@@ -293,3 +296,10 @@ class BackendStoreError(BackendError):
 
     def __repr__(self):
         return super().__repr__() + " state:" + self.state + " task_id:" + self.task_id
+
+
+class CeleryCommandException(ClickException):
+
+    def __init__(self, message, exit_code):
+        super().__init__(message=message)
+        self.exit_code = exit_code
