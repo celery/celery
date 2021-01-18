@@ -788,6 +788,10 @@ def check_privileges(accept_content):
     egid_entry = grp.getgrgid(egid)
     gid_grp_name = gid_entry[0]
     egid_grp_name = egid_entry[0]
+    
+    # Create lists to use in validation step later. 
+    gid_list = [gid_grp_name, egid_grp_name]
+    group_list = ['sudo', 'wheel']    
 
     # Confirm that uid and euid are not 0 (root)
     if not uid or not euid:
@@ -805,7 +809,7 @@ def check_privileges(accept_content):
             uid=uid, euid=euid, gid=gid, egid=egid,
         )))
     # Confirm that the gid and egid are not one that can be used to escalate privilege
-    elif str(gid_grp_name) == 'sudo' or str(egid_grp_name) == 'sudo' or str(gid_grp_name) == 'wheel' or str(egid_grp_name) == 'wheel':
+    elif any((True for x in gid_list if x in group_list)):
         if ('pickle' in accept_content or
                 'application/x-python-serialize' in accept_content):
             if not C_FORCE_ROOT:
