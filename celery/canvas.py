@@ -1172,13 +1172,13 @@ class group(Signature):
                 sig, res, group_id = current_task
                 _chord = sig.options.get("chord") or chord
                 if _chord is not None and next_task is None:
-                    chord_length = task_index + 1
+                    chord_size = task_index + 1
                     if isinstance(sig, _chain):
                         if sig.tasks[-1].subtask_type == 'chord':
-                            chord_length = sig.tasks[-1].__length_hint__()
+                            chord_size = sig.tasks[-1].__length_hint__()
                         else:
-                            chord_length = task_index + len(sig.tasks[-1])
-                    app.backend.set_chord_size(group_id, chord_length)
+                            chord_size = task_index + len(sig.tasks[-1])
+                    app.backend.set_chord_size(group_id, chord_size)
                 sig.apply_async(producer=producer, add_to_parent=False,
                                 chord=_chord, args=args, kwargs=kwargs,
                                 **options)
