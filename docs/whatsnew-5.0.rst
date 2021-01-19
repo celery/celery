@@ -301,7 +301,7 @@ Celery 4.4.7 introduced an opt-in feature to make them ordered.
 It is now an opt-out behavior.
 
 If you were previously using the Redis result backend, you might need to
-out-out of this behavior.
+opt-out of this behavior.
 
 Please refer to the :ref:`documentation <redis-group-result-ordering>`
 for instructions on how to disable this feature.
