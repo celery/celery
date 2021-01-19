@@ -813,8 +813,8 @@ def check_privileges(accept_content):
     gids_in_use_list = (gid_grp_name, egid_grp_name)
     groups_with_security_risk_list = ('sudo', 'wheel')
 
-    # Confirm that uid and euid are not 0 (root)
-    if not uid or not euid:
+    is_root = uid == 0 or euid == 0
+    if is_root:
         if (pickle_or_serialize):
             if not C_FORCE_ROOT:
                 try:
