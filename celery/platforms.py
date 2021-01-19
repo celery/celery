@@ -789,18 +789,18 @@ def check_privileges(accept_content):
         gid_entry = grp.getgrgid(gid)
         egid_entry = grp.getgrgid(egid)
     except KeyError:
-        print('An entry for the specified gid or egid was not found')
+        warnings.warn(SecurityWarning('An entry for the specified gid or egid was not found'))
         if ('pickle' in accept_content or
                 'application/x-python-serialize' in accept_content):
             if not C_FORCE_ROOT:
                 try:
-                    print(ROOT_DISALLOWED.format(
+                    warnings.warn(SecurityWarning(ROOT_DISALLOWED.format(
                         uid=uid, euid=euid, gid=gid, egid=egid,
-                    ), file=sys.stderr)
+                    ), file=sys.stderr))
                 finally:
                     sys.stderr.flush()
                     os._exit(1)
-        warnings.warn(RuntimeWarning(ROOT_DISCOURAGED.format(
+        warnings.warn(SecurityWarning(ROOT_DISCOURAGED.format(
             uid=uid, euid=euid, gid=gid, egid=egid,
         )))    
 
@@ -818,13 +818,13 @@ def check_privileges(accept_content):
                 'application/x-python-serialize' in accept_content):
             if not C_FORCE_ROOT:
                 try:
-                    print(ROOT_DISALLOWED.format(
+                    warnings.warn(SecurityWarning(ROOT_DISALLOWED.format(
                         uid=uid, euid=euid, gid=gid, egid=egid,
-                    ), file=sys.stderr)
+                    ), file=sys.stderr))
                 finally:
                     sys.stderr.flush()
                     os._exit(1)
-        warnings.warn(RuntimeWarning(ROOT_DISCOURAGED.format(
+        warnings.warn(SecurityWarning(ROOT_DISCOURAGED.format(
             uid=uid, euid=euid, gid=gid, egid=egid,
         )))
     # Confirm that the gid and egid are not one that can be used to escalate privilege
@@ -834,12 +834,12 @@ def check_privileges(accept_content):
                 'application/x-python-serialize' in accept_content):
             if not C_FORCE_ROOT:
                 try:
-                    print(ROOT_DISALLOWED.format(
+                    warnings.warn(SecurityWarning(ROOT_DISALLOWED.format(
                         uid=uid, euid=euid, gid=gid, egid=egid,
-                    ), file=sys.stderr)
+                    ), file=sys.stderr))
                 finally:
                     sys.stderr.flush()
                     os._exit(1)
-        warnings.warn(RuntimeWarning(ROOT_DISCOURAGED.format(
+        warnings.warn(SecurityWarning(ROOT_DISCOURAGED.format(
             uid=uid, euid=euid, gid=gid, egid=egid,
         )))
