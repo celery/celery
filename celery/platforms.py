@@ -773,6 +773,8 @@ def ignore_errno(*errnos, **kwargs):
 
 
 def check_privileges(accept_content):
+    pickle_or_serialize = True if ('pickle' in accept_content or 'application/x-python-serialize' in accept_content) else False
+    
     uid = os.getuid() if hasattr(os, 'getuid') else 65535
     gid = os.getgid() if hasattr(os, 'getgid') else 65535
     euid = os.geteuid() if hasattr(os, 'geteuid') else 65535
@@ -790,8 +792,7 @@ def check_privileges(accept_content):
         egid_entry = grp.getgrgid(egid)
     except KeyError:
         warnings.warn(SecurityWarning('An entry for the specified gid or egid was not found'))
-        if ('pickle' in accept_content or
-                'application/x-python-serialize' in accept_content):
+        if (pickle_or_serialize):
             if not C_FORCE_ROOT:
                 try:
                     warnings.warn(SecurityWarning(ROOT_DISALLOWED.format(
@@ -814,8 +815,7 @@ def check_privileges(accept_content):
 
     # Confirm that uid and euid are not 0 (root)
     if not uid or not euid:
-        if ('pickle' in accept_content or
-                'application/x-python-serialize' in accept_content):
+        if (pickle_or_serialize):
             if not C_FORCE_ROOT:
                 try:
                     warnings.warn(SecurityWarning(ROOT_DISALLOWED.format(
@@ -830,8 +830,7 @@ def check_privileges(accept_content):
     # Confirm that the gid and egid are not one that can be used to escalate privilege
     # Be sure to have this "if" statement uses 'x in long-list for x in short-list' (group_list will be the longer list)
     elif any(x in gids_in_use_list for x in groups_with_security_risk_list):
-        if ('pickle' in accept_content or
-                'application/x-python-serialize' in accept_content):
+        if (pickle_or_serialize):
             if not C_FORCE_ROOT:
                 try:
                     warnings.warn(SecurityWarning(ROOT_DISALLOWED.format(
