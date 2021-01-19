@@ -773,7 +773,7 @@ def ignore_errno(*errnos, **kwargs):
 
 
 def check_privileges(accept_content):
-    pickle_or_serialize = True if ('pickle' in accept_content or 'application/x-python-serialize' in accept_content) else False
+    pickle_or_serialize = 'pickle' in accept_content or 'application/x-python-serialize' in accept_content
     
     uid = os.getuid() if hasattr(os, 'getuid') else 65535
     gid = os.getgid() if hasattr(os, 'getgid') else 65535
