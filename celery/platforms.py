@@ -784,8 +784,27 @@ def check_privileges(accept_content):
             raise SecurityError('suspicious platform, contact support')
     
     # Get the group database entry for the current user's group and effective group id using grp.getgrgid() method
-    gid_entry = grp.getgrgid(gid)
-    egid_entry = grp.getgrgid(egid)
+    # We must handle the error in the event of gid or egid not being found.
+    try:
+        gid_entry = grp.getgrgid(gid)
+        egid_entry = grp.getgrgid(egid)
+    except KeyError:
+        print('An entry for the specified gid or egid was not found')
+        if ('pickle' in accept_content or
+                'application/x-python-serialize' in accept_content):
+            if not C_FORCE_ROOT:
+                try:
+                    print(ROOT_DISALLOWED.format(
+                        uid=uid, euid=euid, gid=gid, egid=egid,
+                    ), file=sys.stderr)
+                finally:
+                    sys.stderr.flush()
+                    os._exit(1)
+        warnings.warn(RuntimeWarning(ROOT_DISCOURAGED.format(
+            uid=uid, euid=euid, gid=gid, egid=egid,
+        )))    
+
+    # Get the group and effective group name based on gid
     gid_grp_name = gid_entry[0]
     egid_grp_name = egid_entry[0]
     
@@ -809,7 +828,8 @@ def check_privileges(accept_content):
             uid=uid, euid=euid, gid=gid, egid=egid,
         )))
     # Confirm that the gid and egid are not one that can be used to escalate privilege
-    elif any((True for x in gid_list if x in group_list)):
+    # Be sure to have this "if" statement use x in long-list for x in short-list (group_list will be the longer list)
+    elif any((True for x in group_list if x in gid_list)):
         if ('pickle' in accept_content or
                 'application/x-python-serialize' in accept_content):
             if not C_FORCE_ROOT:
