@@ -809,7 +809,7 @@ def check_privileges(accept_content):
     egid_grp_name = egid_entry[0]
     
     # Create lists to use in validation step later. 
-    gid_list = [gid_grp_name, egid_grp_name]
+    gid_list = (gid_grp_name, egid_grp_name)
     group_list = ['sudo', 'wheel']    
 
     # Confirm that uid and euid are not 0 (root)
