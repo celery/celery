@@ -6,6 +6,7 @@ from kombu.utils.json import dumps
 
 from celery.bin.base import (COMMA_SEPARATED_LIST, CeleryCommand,
                              CeleryOption, handle_preload_options)
+from celery.exceptions import CeleryCommandException
 from celery.platforms import EX_UNAVAILABLE
 from celery.utils import text
 from celery.worker.control import Panel
@@ -81,8 +82,10 @@ def status(ctx, timeout, destination, json, **kwargs):
                                           callback=callback).ping()
 
     if not replies:
-        ctx.obj.echo('No nodes replied within time constraint')
-        return EX_UNAVAILABLE
+        raise CeleryCommandException(
+            message='No nodes replied within time constraint',
+            exit_code=EX_UNAVAILABLE
+        )
 
     if json:
         ctx.obj.echo(dumps(replies))
@@ -130,8 +133,10 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
                                           callback=callback)._request(action)
 
     if not replies:
-        ctx.obj.echo('No nodes replied within time constraint')
-        return EX_UNAVAILABLE
+        raise CeleryCommandException(
+            message='No nodes replied within time constraint',
+            exit_code=EX_UNAVAILABLE
+        )
 
     if json:
         ctx.obj.echo(dumps(replies))
@@ -184,8 +189,10 @@ def control(ctx, action, timeout, destination, json):
                                             arguments=arguments)
 
     if not replies:
-        ctx.obj.echo('No nodes replied within time constraint')
-        return EX_UNAVAILABLE
+        raise CeleryCommandException(
+            message='No nodes replied within time constraint',
+            exit_code=EX_UNAVAILABLE
+        )
 
     if json:
         ctx.obj.echo(dumps(replies))
