@@ -828,7 +828,7 @@ def check_privileges(accept_content):
             uid=uid, euid=euid, gid=gid, egid=egid,
         )))
     # Confirm that the gid and egid are not one that can be used to escalate privilege
-    # Be sure to have this "if" statement use x in long-list for x in short-list (group_list will be the longer list)
+    # Be sure to have this "if" statement uses 'x in long-list for x in short-list' (group_list will be the longer list)
     elif any((True for x in group_list if x in gid_list)):
         if ('pickle' in accept_content or
                 'application/x-python-serialize' in accept_content):
