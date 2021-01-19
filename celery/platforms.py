@@ -784,7 +784,7 @@ def check_privileges(accept_content):
             raise SecurityError('suspicious platform, contact support')
     
     # Get the group database entry for the current user's group and effective group id using grp.getgrgid() method
-    # We must handle the error in the event of gid or egid not being found.
+    # We must handle the case where either the gid or the egid are not found.
     try:
         gid_entry = grp.getgrgid(gid)
         egid_entry = grp.getgrgid(egid)
