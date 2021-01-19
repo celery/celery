@@ -780,7 +780,7 @@ def check_privileges(accept_content):
 
     if hasattr(os, 'fchown'):
         if not all(hasattr(os, attr)
-                   for attr in ['getuid', 'getgid', 'geteuid', 'getegid']):
+                   for attr in ('getuid', 'getgid', 'geteuid', 'getegid')):
             raise SecurityError('suspicious platform, contact support')
     
     # Get the group database entry for the current user's group and effective group id using grp.getgrgid() method
