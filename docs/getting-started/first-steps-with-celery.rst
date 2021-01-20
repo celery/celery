@@ -181,7 +181,7 @@ There are also several other commands available, and help is also available:
 
 .. code-block:: console
 
-    $ celery help
+    $ celery --help
 
 .. _`supervisord`: http://supervisord.org
 
