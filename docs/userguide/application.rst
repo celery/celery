@@ -400,7 +400,7 @@ The following example is considered bad practice:
 
     from celery import current_app
 
-    class Scheduler(object):
+    class Scheduler:
 
         def run(self):
             app = current_app
@@ -409,7 +409,7 @@ Instead it should take the ``app`` as an argument:
 
 .. code-block:: python
 
-    class Scheduler(object):
+    class Scheduler:
 
         def __init__(self, app):
             self.app = app
@@ -421,7 +421,7 @@ so that everything also works in the module-based compatibility API
 
     from celery.app import app_or_default
 
-    class Scheduler(object):
+    class Scheduler:
         def __init__(self, app=None):
             self.app = app_or_default(app)
 

@@ -951,7 +951,7 @@ implemented in other backends (suggestions welcome!).
 
         def after_return(self, *args, **kwargs):
             do_something()
-            super(MyTask, self).after_return(*args, **kwargs)
+            super().after_return(*args, **kwargs)
 
 .. _canvas-map:
 
