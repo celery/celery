@@ -317,7 +317,7 @@ instead of a dict to choose the tasks to annotate:
 
 .. code-block:: python
 
-    class MyAnnotate(object):
+    class MyAnnotate:
 
         def annotate(self, task):
             if task.name.startswith('tasks.'):

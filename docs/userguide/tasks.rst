@@ -359,7 +359,7 @@ may contain:
         def gen_task_name(self, name, module):
             if module.endswith('.tasks'):
                 module = module[:-6]
-            return super(MyCelery, self).gen_task_name(name, module)
+            return super().gen_task_name(name, module)
 
     app = MyCelery('main')
 
