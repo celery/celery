@@ -35,8 +35,7 @@ def apply_target(target, args=(), kwargs=None, callback=None,
         raise
     except BaseException as exc:
         try:
-            reraise(WorkerLostError, WorkerLostError(repr(exc)),
-                    sys.exc_info()[2])
+            raise WorkerLostError(repr(exc)).with_traceback(sys.exc_info()[2])
         except WorkerLostError:
             callback(ExceptionInfo())
     else:
