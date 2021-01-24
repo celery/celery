@@ -159,10 +159,10 @@ class test_trace(TraceCase):
         self.trace(add, (2, 2), {}, eager=True)
 
         add.backend.mark_as_done.assert_called_once_with(
-            'id-1', # task_id
-            4,      # result
-            ANY,    # request
-            False   # store_result
+            'id-1',     # task_id
+            4,          # result
+            ANY,        # request
+            False       # store_result
         )
 
     def test_eager_task_does_not_call_store_result(self):
@@ -191,10 +191,10 @@ class test_trace(TraceCase):
         self.trace(add, (2, 2), {}, eager=True)
 
         add.backend.mark_as_done.assert_called_once_with(
-            'id-1', # task_id
-            4,      # result
-            ANY,    # request
-            True    # store_result
+            'id-1',     # task_id
+            4,          # result
+            ANY,        # request
+            True        # store_result
         )
 
     def test_eager_task_with_setting_will_call_store_result(self):

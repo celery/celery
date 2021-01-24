@@ -429,7 +429,7 @@ It's the same as always running ``apply()`` with ``throw=True``.
 .. setting:: task_store_eager_result
 
 ``task_store_eager_result``
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: Disabled.
 
