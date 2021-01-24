@@ -316,7 +316,13 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     ignore_result = task.ignore_result
     track_started = task.track_started
     track_started = not eager and (task.track_started and not ignore_result)
-    publish_result = not eager and not ignore_result
+
+    # #6476
+    if eager and not ignore_result and task.store_eager_result:
+        publish_result = True
+    else:
+        publish_result = not eager and not ignore_result
+
     hostname = hostname or gethostname()
     inherit_parent_priority = app.conf.task_inherit_parent_priority
 

@@ -309,6 +309,7 @@ class Task:
         ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
+        ('store_eager_result', 'task_store_eager_result'),
         ('store_errors_even_if_ignored', 'task_store_errors_even_if_ignored'),
     )
 
