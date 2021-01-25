@@ -159,9 +159,13 @@ class TraceInfo:
 
     def handle_error_state(self, task, req,
                            eager=False, call_errbacks=True):
-        store_errors = not eager
         if task.ignore_result:
             store_errors = task.store_errors_even_if_ignored
+        elif eager and task.store_eager_result:
+            store_errors = True
+        else:
+            store_errors = not eager
+
         return {
             RETRY: self.handle_retry,
             FAILURE: self.handle_failure,

@@ -482,6 +482,32 @@ class test_TraceInfo(TraceCase):
             call_errbacks=True,
         )
 
+    def test_handle_error_state_for_eager_task(self):
+        x = self.TI(states.FAILURE)
+        x.handle_failure = Mock()
+
+        x.handle_error_state(self.add, self.add.request, eager=True)
+        x.handle_failure.assert_called_once_with(
+            self.add,
+            self.add.request,
+            store_errors=False,
+            call_errbacks=True,
+        )
+
+    def test_handle_error_for_eager_saved_to_backend(self):
+        x = self.TI(states.FAILURE)
+        x.handle_failure = Mock()
+
+        self.add.store_eager_result = True
+
+        x.handle_error_state(self.add, self.add.request, eager=True)
+        x.handle_failure.assert_called_with(
+            self.add,
+            self.add.request,
+            store_errors=True,
+            call_errbacks=True,
+        )
+
     @patch('celery.app.trace.ExceptionInfo')
     def test_handle_reject(self, ExceptionInfo):
         x = self.TI(states.FAILURE)
