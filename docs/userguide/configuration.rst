@@ -433,13 +433,13 @@ It's the same as always running ``apply()`` with ``throw=True``.
 
 Default: Disabled.
 
-If this is :const:`True`
-and :setting:`task_always_eager` is :const:`True`
+If this is :const:`True` and :setting:`task_always_eager` is :const:`True`
 and :setting:`task_ignore_result` is :const:`False`,
 the results of eagerly executed tasks will be saved to the backend.
 
 By default, even with :setting:`task_always_eager` set to :const:`True`
-and :setting:`task_ignore_result` is :const:`False`, the result will not be saved.
+and :setting:`task_ignore_result` set to :const:`False`,
+the result will not be saved.
 
 .. setting:: task_remote_tracebacks
 
