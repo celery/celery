@@ -12,7 +12,7 @@ from kombu.utils.url import _parse_url
 from celery import states
 from celery._state import task_join_will_block
 from celery.canvas import maybe_signature
-from celery.exceptions import ChordError, ImproperlyConfigured
+from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
 from celery.result import GroupResult, allow_join_result
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
@@ -192,6 +192,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     supports_autoexpire = True
     supports_native_join = True
 
+    #: Maximal length of string value in Redis.
+    #: 512 MB - https://redis.io/topics/data-types
+    _MAX_STR_VALUE_SIZE = 536870912
+
     def __init__(self, host=None, port=None, db=None, password=None,
                  max_connections=None, url=None,
                  connection_pool=None, **kwargs):
@@ -364,6 +368,9 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         return tts
 
     def set(self, key, value, **retry_policy):
+        if len(value) > self._MAX_STR_VALUE_SIZE:
+            raise BackendStoreError('value too large for Redis backend')
+
         return self.ensure(self._set, (key, value), **retry_policy)
 
     def _set(self, key, value):
