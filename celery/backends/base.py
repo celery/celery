@@ -853,7 +853,11 @@ class BaseKeyValueStoreBackend(Backend):
         if current_meta['status'] == states.SUCCESS:
             return result
 
-        self._set_with_state(self.get_key_for_task(task_id), self.encode(meta), state)
+        try:
+            self._set_with_state(self.get_key_for_task(task_id), self.encode(meta), state)
+        except BackendStoreError as ex:
+            raise BackendStoreError(str(ex), state=state, task_id=task_id) from ex
+
         return result
 
     def _save_group(self, group_id, result):

@@ -12,7 +12,7 @@ from case import ContextMock, mock
 
 from celery import signature, states, uuid
 from celery.canvas import Signature
-from celery.exceptions import ChordError, ImproperlyConfigured
+from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
 from celery.utils.collections import AttributeDict
 
 
@@ -674,6 +674,10 @@ class test_RedisBackend(basetest_RedisBackend):
         self.b.client.expire.assert_called_with(
             key, 512,
         )
+
+    def test_set_raises_error_on_large_value(self):
+        with pytest.raises(BackendStoreError):
+            self.b.set('key', 'x' * (self.b._MAX_STR_VALUE_SIZE + 1))
 
 
 class test_RedisBackend_chords_simple(basetest_RedisBackend):
