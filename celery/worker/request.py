@@ -489,7 +489,7 @@ class Request:
             raise MemoryError(f'Process got: {exc_info.exception}')
         elif isinstance(exc_info.exception, Reject):
             return self.reject(requeue=exc_info.exception.requeue)
-        elif isinstance(exc_info.exception, Ignore):
+        elif isinstance(exc_info.exception, (Ignore, Terminated)):
             return self.acknowledge()
 
         exc = exc_info.exception
@@ -518,11 +518,7 @@ class Request:
 
         # These are special cases where the process would not have had time
         # to write the result.
-        if isinstance(exc, Terminated):
-            self._announce_revoked(
-                'terminated', True, str(exc), False)
-            send_failed_event = False  # already sent revoked event
-        elif not requeue and (isinstance(exc, WorkerLostError) or not return_ok):
+        if not requeue and (isinstance(exc, WorkerLostError) or not return_ok):
             # only mark as failure if task has not been requeued
             self.task.backend.mark_as_failure(
                 self.id, exc, request=self._context,

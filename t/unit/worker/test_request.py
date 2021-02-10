@@ -254,7 +254,7 @@ class test_Request(RequestCase):
         req.on_retry(Mock())
         req.on_ack.assert_called_with(req_logger, req.connection_errors)
 
-    def test_on_failure_Terminated(self):
+    def test_on_failure_Terminated_acknowledges(self):
         einfo = None
         try:
             raise Terminated('9')
@@ -263,10 +263,7 @@ class test_Request(RequestCase):
         assert einfo is not None
         req = self.get_request(self.add.s(2, 2))
         req.on_failure(einfo)
-        req.eventer.send.assert_called_with(
-            'task-revoked',
-            uuid=req.id, terminated=True, signum='9', expired=False,
-        )
+        req.on_ack.assert_called_with(req_logger, req.connection_errors)
 
     def test_on_failure_propagates_MemoryError(self):
         einfo = None
