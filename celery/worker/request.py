@@ -485,16 +485,15 @@ class Request:
     def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
         """Handler called if the task raised an exception."""
         task_ready(self)
-        if isinstance(exc_info.exception, MemoryError):
-            raise MemoryError(f'Process got: {exc_info.exception}')
-        elif isinstance(exc_info.exception, Reject):
-            return self.reject(requeue=exc_info.exception.requeue)
-        elif isinstance(exc_info.exception, Ignore):
-            return self.acknowledge()
-
         exc = exc_info.exception
 
-        if isinstance(exc, Retry):
+        if isinstance(exc, MemoryError):
+            raise MemoryError(f'Process got: {exc}')
+        elif isinstance(exc, Reject):
+            return self.reject(requeue=exc.requeue)
+        elif isinstance(exc, Ignore):
+            return self.acknowledge()
+        elif isinstance(exc, Retry):
             return self.on_retry(exc_info)
 
         # (acks_late) acknowledge after result stored.
