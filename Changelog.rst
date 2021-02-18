@@ -111,6 +111,20 @@ an overview of what's new in Celery 4.4.
 - remove jython check
 - fix filesystem backend cannot not be serialized by picked
 
+
+4.4.2
+=======
+:release-date: March 17, 2020. UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Fix: Accept and swallow `kwargs` to handle unexpected keyword arguments 
+- Allow boto to look for credentials in S3Backend
+- Update document of revoke method in Control class 
+- Fix copy-paste error in result_compression docs
+- Make 'socket_keepalive' optional variable (#6000)
+- Fixed incorrect setting name in documentation (#6002) 
+
+
 4.4.1
 =======
 :release-date: March 2, 2020. UTC+6:00
