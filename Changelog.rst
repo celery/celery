@@ -109,7 +109,44 @@ an overview of what's new in Celery 4.4.
 - Add integration tests for Elasticsearch and fix _update
 - feat(backend): Adds cleanup to ArangoDB backend
 - remove jython check
-- fix filesystem backend cannot not be serialized by picked 
+- fix filesystem backend cannot not be serialized by picked
+
+4.4.1
+=======
+:release-date: March 2, 2020. UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Update docs regarding Redis Message Priorities (#5874) 
+- Update 4.4.0 docs (#5875) 
+- Include renamed Changelog.rst in source releases. (#5880)
+- Reorganised project_urls and classifiers. (#5884)
+- Use safequote in SQS Getting Started doc (#5885) 
+- Have appveyor build relevant versions of Python. (#5887) 
+- Use is_alive instead of isAlive for Python 3.9 compatibility. (#5898)
+- Very minor tweak to comment to improve docs (#5900)
+- Support configuring schema of a PostgreSQL database (#5910)
+- Fix raise issue to make exception message more friendly (#5912)
+- Add progress for retry connections (#5915)
+- Change xrange to range (#5926)
+- remove redundant raise from docstring (#5941)
+- added retry_on_timeout and socket_keepalive to config and doc (#5952)
+- Fixed event capture from building infinite list (#5870) 
+- Fix error propagation example (#5966)
+- bump billiard to 3.6.3.0
+- Update __init__.py for db backend (#5951)
+- Use configured db schema also for sequences (#5972)
+- Added a default value for retries in worker.strategy. (#5945)
+- pypy 7.3 (#5980)
+- Pass `interval` to `get_many` (#5931)
+- Fixed problem with conflicting autoretry_for task parameter and Task.replace() (#5934)
+- Fix #5917 (#5918)
+- merge in place the apps beat schedule in the default Schedule class. (#5908)
+- Handle Redis connection errors in result consumer (#5921)
+- Fix inspect_command documentation (#5983)
+- Use gevent and eventlet wait() functions to remove busy-wait (#5974)
+- Fix chords with chained groups (#5947)
+- kombu 4.6.8
+
 
 4.4.0
 =======
