@@ -156,11 +156,6 @@ SQS Message Broker
 To keep up with the current AWS API changes the minimum boto3 version was
 bumped to 1.9.125.
 
-Configuration
---------------
-
-`CELERY_TASK_RESULT_EXPIRES` has been replaced with `CELERY_RESULT_EXPIRES`.
-
 .. _v440-news:
 
 News
