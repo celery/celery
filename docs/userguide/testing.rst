@@ -18,6 +18,9 @@ To test task behavior in unit tests the preferred method is mocking.
     of what happens in a worker, and there are many discrepancies
     between the emulation and what happens in reality.
 
+    Note that eagerly executed tasks don't write results to backend by default.
+    If you want to enable this functionality, have a look at :setting:`task_store_eager_result`.
+
 A Celery task is much like a web view, in that it should only
 define how to perform the action in the context of being called as a task.
 
