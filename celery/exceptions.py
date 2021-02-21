@@ -44,6 +44,7 @@ Error Hierarchy
         - :class:`~celery.exceptions.DuplicateNodenameWarning`
         - :class:`~celery.exceptions.FixupWarning`
         - :class:`~celery.exceptions.NotConfigured`
+        - :class:`~celery.exceptions.SecurityWarning`
 - :exc:`BaseException`
     - :exc:`SystemExit`
         - :exc:`~celery.exceptions.WorkerTerminate`
@@ -62,7 +63,7 @@ __all__ = (
     # Warnings
     'CeleryWarning',
     'AlwaysEagerIgnored', 'DuplicateNodenameWarning',
-    'FixupWarning', 'NotConfigured',
+    'FixupWarning', 'NotConfigured', 'SecurityWarning',
 
     # Core errors
     'CeleryError',
@@ -126,6 +127,11 @@ class FixupWarning(CeleryWarning):
 
 class NotConfigured(CeleryWarning):
     """Celery hasn't been configured, as no config module has been found."""
+
+
+class SecurityWarning(CeleryWarning):
+    """Potential security issue found."""
+    pass
 
 
 class CeleryError(Exception):
