@@ -431,6 +431,8 @@ It's the same as always running ``apply()`` with ``throw=True``.
 ``task_store_eager_result``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 5.1
+
 Default: Disabled.
 
 If this is :const:`True` and :setting:`task_always_eager` is :const:`True`
