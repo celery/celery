@@ -158,6 +158,7 @@ class test_Signals:
     def test_setitem(self, set):
         def handle(*args):
             return args
+
         signals['INT'] = handle
         set.assert_called_with(signal.SIGINT, handle)
 
@@ -218,6 +219,7 @@ class test_maybe_drop_privileges:
         def raise_on_second_call(*args, **kwargs):
             setuid.side_effect = OSError()
             setuid.side_effect.errno = errno.EPERM
+
         setuid.side_effect = raise_on_second_call
         getpwuid.return_value = pw_struct()
         parse_uid.return_value = 5001
@@ -237,7 +239,9 @@ class test_maybe_drop_privileges:
             def on_first_call(*args, **kwargs):
                 ret, return_value[0] = return_value[0], 0
                 return ret
+
             mock.side_effect = on_first_call
+
         to_root_on_second_call(geteuid, 10)
         to_root_on_second_call(getuid, 10)
         with pytest.raises(SecurityError):
@@ -259,6 +263,7 @@ class test_maybe_drop_privileges:
         def raise_on_second_call(*args, **kwargs):
             setuid.side_effect = OSError()
             setuid.side_effect.errno = errno.ENOENT
+
         setuid.side_effect = raise_on_second_call
         with pytest.raises(OSError):
             maybe_drop_privileges(uid='user')
@@ -274,6 +279,7 @@ class test_maybe_drop_privileges:
         def raise_on_second_call(*args, **kwargs):
             setuid.side_effect = OSError()
             setuid.side_effect.errno = errno.EPERM
+
         setuid.side_effect = raise_on_second_call
         parse_uid.return_value = 5001
         parse_gid.return_value = 50001
@@ -327,7 +333,6 @@ class test_setget_uid_gid:
 
     @patch('pwd.getpwnam')
     def test_parse_uid_when_existing_name(self, getpwnam):
-
         class pwent:
             pw_uid = 5001
 
@@ -346,7 +351,6 @@ class test_setget_uid_gid:
 
     @patch('grp.getgrnam')
     def test_parse_gid_when_existing_name(self, getgrnam):
-
         class grent:
             gr_gid = 50001
 
@@ -739,6 +743,7 @@ class test_setgroups:
                 setgroups.return_value = True
                 return
             raise ValueError()
+
         setgroups.side_effect = on_setgroups
         _setgroups_hack(list(range(400)))
 
@@ -756,6 +761,7 @@ class test_setgroups:
                 setgroups.return_value = True
                 return
             raise exc
+
         setgroups.side_effect = on_setgroups
 
         _setgroups_hack(list(range(400)))
@@ -817,17 +823,21 @@ class test_setgroups:
             getgroups.assert_called_with()
 
 
-def test_check_privileges():
-    class Obj:
-        fchown = 13
-    prev, platforms.os = platforms.os, Obj()
-    try:
-        with pytest.raises(SecurityError):
-            check_privileges({'pickle'})
-    finally:
-        platforms.os = prev
-    prev, platforms.os = platforms.os, object()
-    try:
+@patch('celery.platforms.os')
+def test_check_privileges_suspicious_platform(os_module):
+    del os_module.getuid
+    del os_module.getgid
+    del os_module.geteuid
+    del os_module.getegid
+
+    with pytest.raises(SecurityError):
         check_privileges({'pickle'})
-    finally:
-        platforms.os = prev
+
+
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+def test_check_privileges(accept_content):
+    check_privileges(accept_content)
