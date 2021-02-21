@@ -1,4 +1,6 @@
 """Tasks auto-retry functionality."""
+import inspect
+
 from vine.utils import wraps
 
 from celery.exceptions import Ignore, Retry
@@ -7,29 +9,43 @@ from celery.utils.time import get_exponential_backoff_interval
 
 def add_autoretry_behaviour(task, **options):
     """Wrap task's `run` method with auto-retry functionality."""
-    autoretry_for = tuple(
+    _autoretry_for = tuple(
         options.get('autoretry_for',
                     getattr(task, 'autoretry_for', ()))
     )
-    retry_kwargs = options.get(
+    _retry_kwargs = options.get(
         'retry_kwargs', getattr(task, 'retry_kwargs', {})
     )
-    retry_backoff = int(
+    _retry_backoff = int(
         options.get('retry_backoff',
                     getattr(task, 'retry_backoff', False))
     )
-    retry_backoff_max = int(
+    _retry_backoff_max = int(
         options.get('retry_backoff_max',
                     getattr(task, 'retry_backoff_max', 600))
     )
-    retry_jitter = options.get(
+    _retry_jitter = options.get(
         'retry_jitter', getattr(task, 'retry_jitter', True)
     )
 
-    if autoretry_for and not hasattr(task, '_orig_run'):
+    if not hasattr(task, '_orig_run'):
+        arg_spec = inspect.getfullargspec(task.run)
+        if 'autoretry_opts' in set(arg_spec.args):
+            raise ValueError(
+                "'autoretry_opts' is a reserved argument to override "
+                "autoretry options. Use a different name for this "
+                "parameter please."
+            )
 
         @wraps(task.run)
-        def run(*args, **kwargs):
+        def run(*args, autoretry_opts=None, **kwargs):
+            if autoretry_opts is None:
+                autoretry_opts = {}
+            autoretry_for = autoretry_opts.get('autoretry_for', _autoretry_for)
+            retry_kwargs = autoretry_opts.get('retry_kwargs', _retry_kwargs)
+            retry_backoff = autoretry_opts.get('retry_backoff',_retry_backoff)
+            retry_backoff_max = autoretry_opts.get('retry_backoff_max',_retry_backoff_max)
+            retry_jitter = autoretry_opts.get('retry_jitter', _retry_jitter)
             try:
                 return task._orig_run(*args, **kwargs)
             except Ignore:
