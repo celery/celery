@@ -67,8 +67,6 @@ Seems we're already running? (pid: {1})"""
 
 _range = namedtuple('_range', ('start', 'stop'))
 
-C_FORCE_ROOT = os.environ.get('C_FORCE_ROOT', False)
-
 ROOT_DISALLOWED = """\
 Running a worker with superuser privileges when the
 worker accepts messages serialized with pickle is a very bad idea!
@@ -825,7 +823,9 @@ def check_privileges(accept_content):
 
 
 def _warn_or_raise_security_error(egid, euid, gid, uid, pickle_or_serialize):
-    if pickle_or_serialize and not C_FORCE_ROOT:
+    c_force_root = os.environ.get('C_FORCE_ROOT', False)
+
+    if pickle_or_serialize and not c_force_root:
         raise SecurityError(ROOT_DISALLOWED.format(
             uid=uid, euid=euid, gid=gid, egid=egid,
         ))
