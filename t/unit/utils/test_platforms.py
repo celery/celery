@@ -847,8 +847,10 @@ def test_check_privileges_suspicious_platform(accept_content):
     {'application/group-python-serialize'},
     {'pickle', 'application/group-python-serialize'}
 ])
-def test_check_privileges(accept_content):
+def test_check_privileges(accept_content, recwarn):
     check_privileges(accept_content)
+
+    assert len(recwarn) == 0
 
 
 @pytest.mark.parametrize('accept_content', [
