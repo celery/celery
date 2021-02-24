@@ -5,7 +5,7 @@ from billiard.einfo import ExceptionInfo
 from kombu import serialization
 from kombu.exceptions import OperationalError
 from kombu.utils.uuid import uuid
-#
+
 from celery import current_app, group, states
 from celery._state import _task_stack
 from celery.canvas import _chain, signature
@@ -917,8 +917,11 @@ class Task:
         )
         sig.freeze(self.request.id)
 
-        sig.delay()
-        raise Ignore('Replaced by new task')
+         if self.request.is_eager:
+            return sig.delay()
+        else:
+            sig.delay()
+            raise Ignore('Replaced by new task')
 
     def add_to_chord(self, sig, lazy=False):
         """Add signature to the chord the current task is a member of.
