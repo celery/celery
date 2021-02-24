@@ -917,7 +917,7 @@ class Task:
         )
         sig.freeze(self.request.id)
 
-         if self.request.is_eager:
+        if self.request.is_eager:
             return sig.delay()
         else:
             sig.delay()
