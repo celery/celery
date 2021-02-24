@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -147,6 +147,75 @@ class test_trace(TraceCase):
         add.backend.process_cleanup.side_effect = MemoryError()
         with pytest.raises(MemoryError):
             self.trace(add, (2, 2), {}, eager=False)
+
+    def test_eager_task_does_not_store_result_even_if_not_ignore_result(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        add.backend = Mock(name='backend')
+        add.ignore_result = False
+
+        self.trace(add, (2, 2), {}, eager=True)
+
+        add.backend.mark_as_done.assert_called_once_with(
+            'id-1',     # task_id
+            4,          # result
+            ANY,        # request
+            False       # store_result
+        )
+
+    def test_eager_task_does_not_call_store_result(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = BaseDictBackend(app=self.app)
+        backend.store_result = Mock()
+        add.backend = backend
+        add.ignore_result = False
+
+        self.trace(add, (2, 2), {}, eager=True)
+
+        add.backend.store_result.assert_not_called()
+
+    def test_eager_task_will_store_result_if_proper_setting_is_set(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        add.backend = Mock(name='backend')
+        add.store_eager_result = True
+        add.ignore_result = False
+
+        self.trace(add, (2, 2), {}, eager=True)
+
+        add.backend.mark_as_done.assert_called_once_with(
+            'id-1',     # task_id
+            4,          # result
+            ANY,        # request
+            True        # store_result
+        )
+
+    def test_eager_task_with_setting_will_call_store_result(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = BaseDictBackend(app=self.app)
+        backend.store_result = Mock()
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+
+        self.trace(add, (2, 2), {}, eager=True)
+
+        add.backend.store_result.assert_called_once_with(
+            'id-1',
+            4,
+            states.SUCCESS,
+            request=ANY
+        )
 
     def test_when_backend_raises_exception(self):
         @self.app.task(shared=False)
@@ -410,6 +479,32 @@ class test_TraceInfo(TraceCase):
             self.add_cast,
             self.add_cast.request,
             store_errors=self.add_cast.store_errors_even_if_ignored,
+            call_errbacks=True,
+        )
+
+    def test_handle_error_state_for_eager_task(self):
+        x = self.TI(states.FAILURE)
+        x.handle_failure = Mock()
+
+        x.handle_error_state(self.add, self.add.request, eager=True)
+        x.handle_failure.assert_called_once_with(
+            self.add,
+            self.add.request,
+            store_errors=False,
+            call_errbacks=True,
+        )
+
+    def test_handle_error_for_eager_saved_to_backend(self):
+        x = self.TI(states.FAILURE)
+        x.handle_failure = Mock()
+
+        self.add.store_eager_result = True
+
+        x.handle_error_state(self.add, self.add.request, eager=True)
+        x.handle_failure.assert_called_with(
+            self.add,
+            self.add.request,
+            store_errors=True,
             call_errbacks=True,
         )
 
