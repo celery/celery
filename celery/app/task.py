@@ -917,11 +917,8 @@ class Task:
         )
         sig.freeze(self.request.id)
 
-        if self.request.is_eager:
-            return sig.apply().get()
-        else:
-            sig.delay()
-            raise Ignore('Replaced by new task')
+        sig.delay()
+        raise Ignore('Replaced by new task')
 
     def add_to_chord(self, sig, lazy=False):
         """Add signature to the chord the current task is a member of.
