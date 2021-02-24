@@ -12,7 +12,7 @@ from celery.canvas import _chain, signature
 from celery.exceptions import (Ignore, ImproperlyConfigured,
                                MaxRetriesExceededError, Reject, Retry)
 from celery.local import class_property
-from celery.result import EagerResult, denied_join_result
+from celery.result import EagerResult, denied_join_result, allow_join_result
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
@@ -918,7 +918,9 @@ class Task:
         sig.freeze(self.request.id)
 
         if self.request.is_eager:
-            return sig.delay()
+            task_result = sig.apply()
+            with allow_join_result():
+                return task_result.get()
         else:
             sig.delay()
             raise Ignore('Replaced by new task')
