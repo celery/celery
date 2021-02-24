@@ -197,6 +197,20 @@ Example:
     def test_other(celery_worker):
         ...
 
+Heartbeats are disabled by default which means that the test worker doesn't
+send events for ``worker-online``, ``worker-offline`` and ``worker-heartbeat``.
+To enable heartbeats modify the :func:`celery_worker_parameters` fixture:
+
+.. code-block:: python
+
+    # Put this in your conftest.py
+    @pytest.fixture(scope="session")
+    def celery_worker_parameters():
+        return {"without_heartbeat": False}
+        ...
+
+
+
 Session scope
 ^^^^^^^^^^^^^
 
