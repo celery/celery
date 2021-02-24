@@ -852,6 +852,18 @@ def test_check_privileges(accept_content, recwarn):
 
     assert len(recwarn) == 0
 
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+def test_check_privileges_no_fchown(accept_content, recwarn):
+    with patch('celery.platforms.os') as os_module:
+        del os_module.fchown
+        check_privileges(accept_content)
+
+    assert len(recwarn) == 0
+
 
 @pytest.mark.parametrize('accept_content', [
     {'pickle'},
