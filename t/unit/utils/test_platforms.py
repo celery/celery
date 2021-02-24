@@ -925,3 +925,29 @@ def test_check_privileges_with_c_force_root_and_with_suspicious_group(accept_con
                                                              gid=60, egid=60))
         with pytest.warns(SecurityWarning, match=expected_message):
             check_privileges(accept_content)
+
+
+@pytest.mark.parametrize(('accept_content', 'group_name'), [
+    ({'pickle'}, 'sudo'),
+    ({'application/group-python-serialize'}, 'sudo'),
+    ({'pickle', 'application/group-python-serialize'}, 'sudo'),
+    ({'pickle'}, 'wheel'),
+    ({'application/group-python-serialize'}, 'wheel'),
+    ({'pickle', 'application/group-python-serialize'}, 'wheel'),
+])
+def test_check_privileges_without_c_force_root_and_with_suspicious_group(accept_content, group_name):
+    with patch('celery.platforms.os') as os_module, patch('celery.platforms.grp') as grp_module:
+        os_module.environ = {}
+        os_module.getuid.return_value = 60
+        os_module.getgid.return_value = 60
+        os_module.geteuid.return_value = 60
+        os_module.getegid.return_value = 60
+
+        grp_module.getgrgid.return_value = [group_name]
+        grp_module.getgrgid.return_value = [group_name]
+
+        expected_message = re.escape(ROOT_DISALLOWED.format(uid=60, euid=60,
+                                                            gid=60, egid=60))
+        with pytest.raises(SecurityError,
+                           match=expected_message):
+            check_privileges(accept_content)
