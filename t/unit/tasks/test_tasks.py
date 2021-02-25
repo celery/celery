@@ -1370,8 +1370,8 @@ class test_apply_async(TasksCase):
         self.app.conf.task_always_eager = True
 
         @self.app.task(bind=True)
-        def task(self,*args, **kwargs):
-            return self.replace(task_b.s())
+        def task(self, *args, **kwargs):
+            return self.replace(task_b.si())
 
         @self.app.task()
         def task_b(*args, **kwargs):
