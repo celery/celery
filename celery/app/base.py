@@ -302,6 +302,10 @@ class Celery:
         self.on_after_finalize = Signal(name='app.on_after_finalize')
         self.on_after_fork = Signal(name='app.on_after_fork')
 
+        # Boolean signalling, whether fast_trace_task are enabled.
+        # this attribute is set in celery.worker.trace and checked by celery.worker.request
+        self.use_fast_trace_task = False
+
         self.on_init()
         _register_app(self)
 

@@ -119,7 +119,7 @@ def _start_worker_thread(app,
         logfile=logfile,
         # not allowed to override TestWorkController.on_consumer_ready
         ready_callback=None,
-        without_heartbeat=True,
+        without_heartbeat=kwargs.pop("without_heartbeat", True),
         without_mingle=True,
         without_gossip=True,
         **kwargs)

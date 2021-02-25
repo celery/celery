@@ -288,7 +288,7 @@ class BackendGetMetaError(BackendError):
 
 
 class BackendStoreError(BackendError):
-    """An issue writing from the backend."""
+    """An issue writing to the backend."""
 
     def __init__(self, *args, **kwargs):
         self.state = kwargs.get('state', "")

@@ -94,7 +94,7 @@ class test_Inspect:
                 'no_declare': None,
                 'queue_arguments': None,
                 'routing_key': 'celery'}
-            ]
+        ]
 
     @flaky
     def test_active(self, inspect):
