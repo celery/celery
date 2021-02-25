@@ -1366,6 +1366,19 @@ class test_apply_async(TasksCase):
             pass
         task.apply_async((1, 2, 3, 4, {1}))
 
+    def test_always_eager_replace(self):
+        self.app.conf.task_always_eager = True
+
+        @self.app.task(bind=True)
+        def task(self,*args, **kwargs):
+            return self.replace(task_b.s())
+
+        @self.app.task()
+        def task_b(*args, **kwargs):
+            return 'a'
+
+        task.apply_async()
+
     def test_task_with_ignored_result(self):
         with patch.object(self.app, 'send_task') as send_task:
             self.task_with_ignored_result.apply_async()
