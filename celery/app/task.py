@@ -764,7 +764,12 @@ class Task:
             'callbacks': maybe_list(link),
             'errbacks': maybe_list(link_error),
             'headers': headers,
-            'delivery_info': {'is_eager': True},
+            'delivery_info': {
+                'is_eager': True,
+                'exchange': options.get('exchange'),
+                'routing_key': options.get('routing_key'),
+                'priority': options.get('priority'),
+            },
         }
         tb = None
         tracer = build_tracer(
