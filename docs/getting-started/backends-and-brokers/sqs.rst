@@ -150,26 +150,33 @@ setting::
         }
     }
 
-Exponential retry policy
+Exponential back-off policy
 ------------------------
 SQS visibility timeout mechanism is used in order to configure exponential
-backoff policy. Next visibility timeout period between two
-task failures would be set to 10*2^n, when n is number of retries.
+back-off policy.
 
-The default policy is:
+Configuring the queues and backoff policy::
+
+    broker_transport_options = {
+        'predefined_queues': {
+            'my-q': {
+                'url': 'https://ap-southeast-2.queue.amazonaws.com/123456/my-q',
+                'access_key_id': 'xxx',
+                'secret_access_key': 'xxx',
+                'retry_policy': {1: 10, 2: 20, 3: 40, 4: 80, 5: 320, 6: 640},
+                'exponential_retry_tasks': ['svc.tasks.tasks.task1']
+            }
+        }
+    }
+
+
+The policy is:
 
 2nd attempt 20 seconds
 3rd attempt 40 seconds
 4th attempt 80 seconds
 5th attempt 320 seconds
 6th attempt 640 seconds
-
-Policy can be altered by changing the `retry_policy` dictionary, when key is
-number of retries and value is number of seconds between each attempt.
-
-The tasks which the policy would be applied to can be set in the
-`exponential_retry_tasks` list, for instance ['svc.tasks.tasks.task1'].
-
 
 .. _sqs-caveats:
 
