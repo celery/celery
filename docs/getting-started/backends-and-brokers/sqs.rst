@@ -172,14 +172,10 @@ Configuring the queues and backoff policy::
 
 The above policy:
 
-2nd attempt 20 seconds
-
-3rd attempt 40 seconds
-
-4th attempt 80 seconds
-
-5th attempt 320 seconds
-
+2nd attempt 20 seconds,
+3rd attempt 40 seconds,
+4th attempt 80 seconds,
+5th attempt 320 seconds,
 6th attempt 640 seconds
 
 .. _sqs-caveats:
