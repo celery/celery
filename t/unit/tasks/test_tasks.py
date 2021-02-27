@@ -1282,6 +1282,26 @@ class test_apply_task(TasksCase):
         with pytest.raises(KeyError):
             f.get()
 
+    def test_apply_simulates_delivery_info(self):
+        self.task_check_request_context.request_stack.push = Mock()
+
+        self.task_check_request_context.apply(
+            priority=4,
+            routing_key='myroutingkey',
+            exchange='myexchange',
+        )
+
+        self.task_check_request_context.request_stack.push.assert_called_once()
+
+        request = self.task_check_request_context.request_stack.push.call_args[0][0]
+
+        assert request.delivery_info == {
+            'is_eager': True,
+            'exchange': 'myexchange',
+            'routing_key': 'myroutingkey',
+            'priority': 4,
+        }
+
 
 class test_apply_async(TasksCase):
     def common_send_task_arguments(self):
