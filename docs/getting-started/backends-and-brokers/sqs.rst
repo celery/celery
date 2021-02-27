@@ -150,10 +150,9 @@ setting::
         }
     }
 
-Exponential back-off policy
+Back-off policy
 ------------------------
-SQS visibility timeout mechanism is used in order to configure exponential
-back-off policy.
+Back-off policy is using SQS visibility timeout mechanism altering time diff between task retries.
 
 Configuring the queues and backoff policy::
 
@@ -163,8 +162,8 @@ Configuring the queues and backoff policy::
                 'url': 'https://ap-southeast-2.queue.amazonaws.com/123456/my-q',
                 'access_key_id': 'xxx',
                 'secret_access_key': 'xxx',
-                'retry_policy': {1: 10, 2: 20, 3: 40, 4: 80, 5: 320, 6: 640},
-                'exponential_retry_tasks': ['svc.tasks.tasks.task1']
+                'backoff_policy': {1: 10, 2: 20, 3: 40, 4: 80, 5: 320, 6: 640},
+                'backoff_tasks': ['svc.tasks.tasks.task1']
             }
         }
     }
