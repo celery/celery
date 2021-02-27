@@ -150,6 +150,26 @@ setting::
         }
     }
 
+Exponential retry policy
+------------------------
+SQS visibility timeout mechanism is used in order to configure exponential
+backoff policy. Next visibility timeout period between two
+task failures would be set to 10*2^n, when n is number of retries.
+
+The default policy is:
+
+2nd attempt 20 seconds
+3rd attempt 40 seconds
+4th attempt 80 seconds
+5th attempt 320 seconds
+6th attempt 640 seconds
+
+Policy can be altered by changing the `retry_policy` dictionary, when key is
+number of retries and value is number of seconds between each attempt.
+
+The tasks which the policy would be applied to can be set in the
+`exponential_retry_tasks` list, for instance ['svc.tasks.tasks.task1'].
+
 
 .. _sqs-caveats:
 
