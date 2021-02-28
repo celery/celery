@@ -108,6 +108,17 @@ jobs:
         ports:
           - 5432:5432
 
+      # redis service
+      redis:
+        # Docker Hub image
+        image: redis
+        # configure the instance
+        env:
+        # The hostname used to communicate with the Redis service container
+          REDIS_HOST: redis
+          # The default Redis port
+          REDIS_PORT: 6379
+
     steps:
     - name: Install apt packages
       run: |
