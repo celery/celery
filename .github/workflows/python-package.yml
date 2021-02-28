@@ -91,6 +91,8 @@ jobs:
       redis:
         # Docker Hub image
         image: redis
+        ports:
+        - 6379:6379
         # configure the instance
         env:
         # The hostname used to communicate with the Redis service container
@@ -125,9 +127,7 @@ jobs:
         python -m pip install -r requirements/dev.txt \
             -r requirements/test.txt \
             -r requirements/test-ci-default.txt \
-            -r requirements/docs.txt \
-            -r requirements/test-integration.txt \
-            -r requirements/pkgutils.txt
+            -r requirements/test-integration.txt
 
     - name: Run Integration test with pytest / tox /tox-docker
       run: |
