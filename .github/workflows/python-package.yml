@@ -65,13 +65,27 @@ jobs:
             fail_ci_if_error: true # optional (default = false)
             verbose: true # optional (default = false)
 
+
   Integration:
 
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9', 'pypy3']
+        python-version: ['3.7', '3.8', '3.9', 'pypy3']
+
+     # additional service containers to run
+    services:
+      # postgres service
+      rabbitmq:
+        # docker hub image
+        image: rabbitmq
+        # configure the instance
+        env:
+          RABBITMQ_DEFAULT_USER: craiga
+          RABBITMQ_DEFAULT_PASS: security_is_important
+        ports:
+          - 5432:5432
 
     steps:
     - name: Install apt packages
