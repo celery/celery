@@ -82,7 +82,7 @@ This option is set via the :setting:`broker_transport_options` setting::
 
     broker_transport_options = {'visibility_timeout': 3600}  # 1 hour.
 
-The default visibility timeout is 30 seconds.
+The default visibility timeout is 30 minutes.
 
 Polling Interval
 ----------------
