@@ -1251,9 +1251,7 @@ class group(Signature):
                               for group_index, task in enumerate(tasks))
 
     def _unroll_tasks(self, tasks):
-        for task in tasks:
-            task = maybe_signature(task, app=self._app).clone()
-            yield task
+       yield from (maybe_signature(task, app=self._app).clone() for task in tasks)
 
     def _freeze_unroll(self, new_tasks, group_id, chord, root_id, parent_id):
         # pylint: disable=redefined-outer-name
