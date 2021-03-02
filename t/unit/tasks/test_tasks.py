@@ -422,6 +422,12 @@ class test_task_retries(TasksCase):
         assert sig.options['exchange'] == 'testex'
         assert sig.options['routing_key'] == 'testrk'
 
+    def test_signature_from_request__shadow_name(self):
+        self.retry_task.push_request()
+        self.retry_task.request.shadow = 'test'
+        sig = self.retry_task.signature_from_request()
+        assert sig.options['shadow'] == 'test'
+
     def test_retry_kwargs_can_be_empty(self):
         self.retry_task_mockapply.push_request()
         try:

@@ -74,6 +74,7 @@ class Context:
     headers = None
     delivery_info = None
     reply_to = None
+    shadow = None
     root_id = None
     parent_id = None
     correlation_id = None
@@ -114,6 +115,7 @@ class Context:
             'parent_id': self.parent_id,
             'group_id': self.group,
             'group_index': self.group_index,
+            'shadow': self.shadow,
             'chord': self.chord,
             'chain': self.chain,
             'link': self.callbacks,
