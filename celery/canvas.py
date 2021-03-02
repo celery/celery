@@ -1166,6 +1166,10 @@ class group(Signature):
         #   XXX chord is also a class in outer scope.
         app = app or self.app
         with app.producer_or_acquire(producer) as producer:
+            # Iterate through tasks two at a time. If tasks is a generator,
+            # we are able to tell when we are at the end by checking if
+            # next_task is None.  This enables us to set the chord size
+            # without burning through the entire generator.  See #3021.
             for task_index, (current_task, next_task) in enumerate(
                 lookahead(tasks)
             ):
@@ -1219,6 +1223,7 @@ class group(Signature):
         root_id = opts.setdefault('root_id', root_id)
         parent_id = opts.setdefault('parent_id', parent_id)
         if isinstance(self.tasks, _regen):
+            # We are draining from a geneator here.
             tasks1, tasks2 = itertools.tee(self._unroll_tasks(self.tasks))
             results = regen(self._freeze_tasks(tasks1, group_id, chord, root_id, parent_id))
             self.tasks = regen(x[0] for x in zip(tasks2, results))

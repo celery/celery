@@ -370,7 +370,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         return tts
 
     def set(self, key, value, **retry_policy):
-        if len(value) > self._MAX_STR_VALUE_SIZE:
+        if isinstance(value, str) and len(value) > self._MAX_STR_VALUE_SIZE:
             raise BackendStoreError('value too large for Redis backend')
 
         return self.ensure(self._set, (key, value), **retry_policy)
