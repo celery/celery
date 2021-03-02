@@ -29,8 +29,8 @@ from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
-from celery.worker.state import (maybe_shutdown, reserved_requests,
-                                 task_reserved)
+from celery.worker.state import (active_requests, maybe_shutdown,
+                                 reserved_requests, task_reserved)
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
@@ -104,6 +104,11 @@ MESSAGE_REPORT = """\
 body: {0}
 {{content_type:{1} content_encoding:{2}
   delivery_info:{3} headers={4}}}
+"""
+
+TERMINATING_TASK_ON_RESTART_AFTER_A_CONNECTION_LOSS = """\
+Task %s cannot be acknowledged after a connection loss since late acknowledgement is enabled for it.
+Terminating it instead.
 """
 
 
@@ -257,7 +262,7 @@ class Consumer:
     def _update_qos_eventually(self, index):
         return (self.qos.decrement_eventually if index < 0
                 else self.qos.increment_eventually)(
-                    abs(index) * self.prefetch_multiplier)
+            abs(index) * self.prefetch_multiplier)
 
     def _limit_move_to_pool(self, request):
         task_reserved(request)
@@ -335,6 +340,12 @@ class Consumer:
             self.connection.collect()
         except Exception:  # pylint: disable=broad-except
             pass
+
+        for request in tuple(active_requests):
+            if request.task.acks_late and not request.acknowledged:
+                warn(TERMINATING_TASK_ON_RESTART_AFTER_A_CONNECTION_LOSS,
+                     request)
+                request.terminate(self.pool)
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
@@ -487,7 +498,8 @@ class Consumer:
         signals.task_rejected.send(sender=self, message=message, exc=None)
 
     def on_unknown_task(self, body, message, exc):
-        error(UNKNOWN_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
+        error(UNKNOWN_TASK_ERROR, exc, dump_body(message, body),
+              exc_info=True)
         try:
             id_, name = message.headers['id'], message.headers['task']
             root_id = message.headers.get('root_id')
@@ -515,7 +527,8 @@ class Consumer:
         )
 
     def on_invalid_task(self, body, message, exc):
-        error(INVALID_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
+        error(INVALID_TASK_ERROR, exc, dump_body(message, body),
+              exc_info=True)
         message.reject_log_error(logger, self.connection_errors)
         signals.task_rejected.send(sender=self, message=message, exc=exc)
 
@@ -539,7 +552,7 @@ class Consumer:
             # will defer deserializing the message body to the pool.
             payload = None
             try:
-                type_ = message.headers['task']                # protocol v2
+                type_ = message.headers['task']  # protocol v2
             except TypeError:
                 return on_unknown_message(None, message)
             except KeyError:

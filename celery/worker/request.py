@@ -579,7 +579,7 @@ class Request:
             self.humaninfo(),
             f' ETA:[{self._eta}]' if self._eta else '',
             f' expires:[{self._expires}]' if self._expires else '',
-        ])
+        ]).strip()
 
     def __repr__(self):
         """``repr(self)``."""
