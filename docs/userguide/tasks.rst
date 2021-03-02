@@ -825,7 +825,7 @@ You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff
 .. attribute:: Task.max_retries
 
     A number. Maximum number of retries before giving up. A value of ``None``
-    means task will retry forever.
+    means task will retry forever. By default, this option is set to ``3``.
 
 .. attribute:: Task.retry_backoff
 
