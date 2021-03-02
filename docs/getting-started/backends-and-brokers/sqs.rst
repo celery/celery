@@ -153,6 +153,7 @@ setting::
 Back-off policy
 ------------------------
 Back-off policy is using SQS visibility timeout mechanism altering the time difference between task retries.
+The mechanism changes message specific ``visibility timeout`` from queue ``Default visibility timeout`` to policy configured timeout.
 The number of retries is managed by SQS (specifically by the ``ApproximateReceiveCount`` message attribute) and no further action is required by the user.
 
 Configuring the queues and backoff policy::
