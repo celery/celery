@@ -1243,12 +1243,12 @@ class group(Signature):
     _freeze = freeze
 
     def _freeze_tasks(self, tasks, group_id, chord, root_id, parent_id):
-        for group_index, task in enumerate(tasks):
-            yield task.freeze(group_id=group_id,
+            yield from (task.freeze(group_id=group_id,
                               chord=chord,
                               root_id=root_id,
                               parent_id=parent_id,
                               group_index=group_index)
+                              for group_index, task in enumerate(tasks))
 
     def _unroll_tasks(self, tasks):
         for task in tasks:
