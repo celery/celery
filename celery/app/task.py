@@ -918,6 +918,7 @@ class Task:
         sig.freeze(self.request.id)
 
         if self.request.is_eager:
+            raise AssertionError
             return sig.apply().get()
             task_result = sig.apply()
             with allow_join_result():
