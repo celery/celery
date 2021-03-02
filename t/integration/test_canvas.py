@@ -18,7 +18,8 @@ from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     print_unicode, raise_error, redis_echo,
                     replace_with_chain, replace_with_chain_which_raises,
                     replace_with_empty_chain, retry_once, return_exception,
-                    return_priority, second_order_replace1, tsum)
+                    return_priority, second_order_replace1, tsum,
+                    add_replaced_eager)
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 
@@ -802,6 +803,13 @@ class test_chord:
         ], add_to_all.s(9))
         res1 = c1()
         assert res1.get(timeout=TIMEOUT) == [29, 38]
+
+    @flaky
+    def test_replaced_eager(self):
+        # previously, eager tasks that used `Task.replace` would fail
+        res1 = add_replaced_eager.delay(1, 1)
+
+        assert res1.get(timeout=TIMEOUT) == 2
 
     @flaky
     def test_add_to_chord(self, manager):

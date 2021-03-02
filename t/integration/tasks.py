@@ -85,6 +85,12 @@ def add_replaced(self, x, y):
     raise self.replace(add.s(x, y))
 
 
+@shared_task()
+def add_replaced_eager(x, y):
+    """Call `add_replaced` eagerly"""
+    return add_replaced.apply(x, y)
+
+
 @shared_task(bind=True)
 def replace_with_chain(self, *args, link_msg=None):
     c = chain(identity.s(*args), identity.s())
