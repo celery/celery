@@ -11,10 +11,10 @@ import pytest
 from case import ContextMock, mock
 
 from celery import signature, states, uuid
-from celery.result import AsyncResult, GroupResult
 from celery.canvas import Signature
 from celery.exceptions import (BackendStoreError, ChordError,
                                ImproperlyConfigured)
+from celery.result import AsyncResult, GroupResult
 from celery.utils.collections import AttributeDict
 
 
@@ -1007,7 +1007,7 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
                 AsyncResult("foo"), GroupResult("foo"),
             )), 42,
         ), True),
-        ])
+    ])
     def test_apply_chord_complex_header(self, results, assert_save_called):
         mock_group_result = Mock()
         mock_group_result.return_value.results = results

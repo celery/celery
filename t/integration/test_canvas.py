@@ -19,7 +19,8 @@ from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     print_unicode, raise_error, redis_echo,
                     replace_with_chain, replace_with_chain_which_raises,
                     replace_with_empty_chain, retry_once, return_exception,
-                    return_priority, second_order_replace1, tsum, write_to_file_and_return_int)
+                    return_priority, second_order_replace1, tsum,
+                    write_to_file_and_return_int)
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 

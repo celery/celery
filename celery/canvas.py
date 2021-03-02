@@ -26,7 +26,7 @@ from celery.utils import abstract
 from celery.utils.collections import ChainMap
 from celery.utils.functional import _regen
 from celery.utils.functional import chunks as _chunks
-from celery.utils.functional import (is_list, maybe_list, lookahead, regen,
+from celery.utils.functional import (is_list, lookahead, maybe_list, regen,
                                      seq_concat_item, seq_concat_seq)
 from celery.utils.objects import getitem_property
 from celery.utils.text import remove_repeating_from_task, truncate
@@ -1238,20 +1238,20 @@ class group(Signature):
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None, group_index=None):
         return self.app.GroupResult(*self._freeze_group_tasks(_id=_id, group_id=group_id,
-                                    chord=chord, root_id=root_id, parent_id=parent_id, group_index=group_index))
+                                                              chord=chord, root_id=root_id, parent_id=parent_id, group_index=group_index))
 
     _freeze = freeze
 
     def _freeze_tasks(self, tasks, group_id, chord, root_id, parent_id):
-            yield from (task.freeze(group_id=group_id,
-                              chord=chord,
-                              root_id=root_id,
-                              parent_id=parent_id,
-                              group_index=group_index)
-                              for group_index, task in enumerate(tasks))
+        yield from (task.freeze(group_id=group_id,
+                                chord=chord,
+                                root_id=root_id,
+                                parent_id=parent_id,
+                                group_index=group_index)
+                    for group_index, task in enumerate(tasks))
 
     def _unroll_tasks(self, tasks):
-       yield from (maybe_signature(task, app=self._app).clone() for task in tasks)
+        yield from (maybe_signature(task, app=self._app).clone() for task in tasks)
 
     def _freeze_unroll(self, new_tasks, group_id, chord, root_id, parent_id):
         # pylint: disable=redefined-outer-name

@@ -15,7 +15,7 @@ from celery.canvas import maybe_signature
 from celery.exceptions import (BackendStoreError, ChordError,
                                ImproperlyConfigured)
 from celery.result import GroupResult, allow_join_result
-from celery.utils.functional import dictfilter, _regen
+from celery.utils.functional import _regen, dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
 
