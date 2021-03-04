@@ -11,6 +11,7 @@ from celery import concurrency
 from celery.bin.base import (COMMA_SEPARATED_LIST, LOG_LEVEL,
                              CeleryDaemonCommand, CeleryOption,
                              handle_preload_options)
+from celery.exceptions import SecurityError
 from celery.platforms import (EX_FAILURE, EX_OK, detached,
                               maybe_drop_privileges)
 from celery.utils.log import get_logger
@@ -289,40 +290,44 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
     $ celery worker --autoscale=10,0
 
     """
-    app = ctx.obj.app
-    if ctx.args:
-        try:
-            app.config_from_cmdline(ctx.args, namespace='worker')
-        except (KeyError, ValueError) as e:
-            # TODO: Improve the error messages
-            raise click.UsageError(
-                "Unable to parse extra configuration from command line.\n"
-                f"Reason: {e}", ctx=ctx)
-    if kwargs.get('detach', False):
-        argv = ['-m', 'celery'] + sys.argv[1:]
-        if '--detach' in argv:
-            argv.remove('--detach')
-        if '-D' in argv:
-            argv.remove('-D')
+    try:
+        app = ctx.obj.app
+        if ctx.args:
+            try:
+                app.config_from_cmdline(ctx.args, namespace='worker')
+            except (KeyError, ValueError) as e:
+                # TODO: Improve the error messages
+                raise click.UsageError(
+                    "Unable to parse extra configuration from command line.\n"
+                    f"Reason: {e}", ctx=ctx)
+        if kwargs.get('detach', False):
+            argv = ['-m', 'celery'] + sys.argv[1:]
+            if '--detach' in argv:
+                argv.remove('--detach')
+            if '-D' in argv:
+                argv.remove('-D')
 
-        return detach(sys.executable,
-                      argv,
-                      logfile=logfile,
-                      pidfile=pidfile,
-                      uid=uid, gid=gid,
-                      umask=kwargs.get('umask', None),
-                      workdir=kwargs.get('workdir', None),
-                      app=app,
-                      executable=kwargs.get('executable', None),
-                      hostname=hostname)
+            return detach(sys.executable,
+                          argv,
+                          logfile=logfile,
+                          pidfile=pidfile,
+                          uid=uid, gid=gid,
+                          umask=kwargs.get('umask', None),
+                          workdir=kwargs.get('workdir', None),
+                          app=app,
+                          executable=kwargs.get('executable', None),
+                          hostname=hostname)
 
-    maybe_drop_privileges(uid=uid, gid=gid)
-    worker = app.Worker(
-        hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
-        logfile=logfile,  # node format handled by celery.app.log.setup
-        pidfile=node_format(pidfile, hostname),
-        statedb=node_format(statedb, hostname),
-        no_color=ctx.obj.no_color,
-        **kwargs)
-    worker.start()
-    return worker.exitcode
+        maybe_drop_privileges(uid=uid, gid=gid)
+        worker = app.Worker(
+            hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
+            logfile=logfile,  # node format handled by celery.app.log.setup
+            pidfile=node_format(pidfile, hostname),
+            statedb=node_format(statedb, hostname),
+            no_color=ctx.obj.no_color,
+            **kwargs)
+        worker.start()
+        return worker.exitcode
+    except SecurityError as e:
+        ctx.obj.error(e.args[0])
+        ctx.exit(1)
