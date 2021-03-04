@@ -48,13 +48,13 @@ sentinel in order to use the Redis result store backend.
 
 W_REDIS_SSL_CERT_OPTIONAL = """
 Setting ssl_cert_reqs=CERT_OPTIONAL when connecting to redis means that \
-celery might not valdate the identity of the redis broker when connecting. \
+celery might not validate the identity of the redis broker when connecting. \
 This leaves you vulnerable to man in the middle attacks.
 """
 
 W_REDIS_SSL_CERT_NONE = """
 Setting ssl_cert_reqs=CERT_NONE when connecting to redis means that celery \
-will not valdate the identity of the redis broker when connecting. This \
+will not validate the identity of the redis broker when connecting. This \
 leaves you vulnerable to man in the middle attacks.
 """
 
