@@ -359,7 +359,7 @@ may contain:
         def gen_task_name(self, name, module):
             if module.endswith('.tasks'):
                 module = module[:-6]
-            return super(MyCelery, self).gen_task_name(name, module)
+            return super().gen_task_name(name, module)
 
     app = MyCelery('main')
 
@@ -805,13 +805,13 @@ via options documented below.
 
 .. versionadded:: 4.4
 
-You can also set `autoretry_for`, `retry_kwargs`, `retry_backoff`, `retry_backoff_max` and `retry_jitter` options in class-based tasks:
+You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff_max` and `retry_jitter` options in class-based tasks:
 
 .. code-block:: python
 
     class BaseTaskWithRetry(Task):
         autoretry_for = (TypeError,)
-        retry_kwargs = {'max_retries': 5}
+        max_retries = 5
         retry_backoff = True
         retry_backoff_max = 700
         retry_jitter = False
@@ -822,12 +822,10 @@ You can also set `autoretry_for`, `retry_kwargs`, `retry_backoff`, `retry_backof
     during the execution of the task, the task will automatically be retried.
     By default, no exceptions will be autoretried.
 
-.. attribute:: Task.retry_kwargs
+.. attribute:: Task.max_retries
 
-    A dictionary. Use this to customize how autoretries are executed.
-    Note that if you use the exponential backoff options below, the `countdown`
-    task option will be determined by Celery's autoretry system, and any
-    `countdown` included in this dictionary will be ignored.
+    A number. Maximum number of retries before giving up. A value of ``None``
+    means task will retry forever. By default, this option is set to ``3``.
 
 .. attribute:: Task.retry_backoff
 

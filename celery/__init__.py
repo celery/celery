@@ -1,5 +1,5 @@
 """Distributed Task Queue."""
-# :copyright: (c) 2016-20206 Asif Saif Uddin, celery core and individual
+# :copyright: (c) 2016-2026 Asif Saif Uddin, celery core and individual
 #                 contributors, All rights reserved.
 # :copyright: (c) 2015-2016 Ask Solem.  All rights reserved.
 # :copyright: (c) 2012-2014 GoPivotal, Inc., All rights reserved.

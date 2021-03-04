@@ -1,4 +1,5 @@
 import re
+import tempfile
 from datetime import datetime, timedelta
 from time import sleep
 
@@ -18,7 +19,8 @@ from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     print_unicode, raise_error, redis_echo,
                     replace_with_chain, replace_with_chain_which_raises,
                     replace_with_empty_chain, retry_once, return_exception,
-                    return_priority, second_order_replace1, tsum)
+                    return_priority, second_order_replace1, tsum,
+                    write_to_file_and_return_int)
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 
@@ -1069,6 +1071,22 @@ class test_chord:
                    ) == 1
 
     @flaky
+    def test_generator(self, manager):
+        def assert_generator(file_name):
+            for i in range(3):
+                sleep(1)
+                if i == 2:
+                    with open(file_name) as file_handle:
+                        # ensures chord header generators tasks are processed incrementally #3021
+                        assert file_handle.readline() == '0\n', "Chord header was unrolled too early"
+                yield write_to_file_and_return_int.s(file_name, i)
+
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
+            file_name = tmp_file.name
+            c = chord(assert_generator(file_name), tsum.s())
+            assert c().get(timeout=TIMEOUT) == 3
+
+    @flaky
     def test_parallel_chords(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -1157,6 +1175,25 @@ class test_chord:
         assert res1.get(timeout=TIMEOUT) == [1, 1]
         res1 = c1.apply(args=(1,))
         assert res1.get(timeout=TIMEOUT) == [1, 1]
+
+    @pytest.mark.xfail(reason="Issue #6200")
+    def test_chain_in_chain_with_args(self):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c1 = chain(  # NOTE: This chain should have only 1 chain inside it
+            chain(
+                identity.s(),
+                identity.s(),
+            ),
+        )
+
+        res1 = c1.apply_async(args=(1,))
+        assert res1.get(timeout=TIMEOUT) == 1
+        res1 = c1.apply(args=(1,))
+        assert res1.get(timeout=TIMEOUT) == 1
 
     @flaky
     def test_large_header(self, manager):

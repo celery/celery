@@ -38,6 +38,10 @@ class FilesystemBackend(KeyValueStoreBackend):
         self.url = url
         path = self._find_path(url)
 
+        # Remove forwarding "/" for Windows os
+        if os.name == "nt" and path.startswith("/"):
+            path = path[1:]
+
         # We need the path and separator as bytes objects
         self.path = path.encode(encoding)
         self.sep = sep.encode(encoding)

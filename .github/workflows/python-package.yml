@@ -6,13 +6,17 @@ name: Celery
 on:
   push:
     branches: [ master ]
+    paths:
+        - '**.py'
   pull_request:
     branches: [ master ]
+    paths:
+        - '**.py'
 
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
@@ -42,15 +46,24 @@ jobs:
           ${{ matrix.python-version }}-v1-
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip tox tox-gh-actions
-        python -m pip install flake8 pytest
+        python -m pip install --upgrade pip
+        python -m pip install flake8 pytest case pytest-celery pytest-subtests pytest-timeout pytest-cov
+        python -m pip install moto boto3 msgpack PyYAML
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Run Unit test with pytest
+      run: |
+        PYTHONPATH=. pytest -xv --cov=celery --cov-report=xml --cov-report term t/unit
+
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Run Tox
-      run: |
-        tox -v
+    -   uses: codecov/codecov-action@v1
+        with:
+            token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+            flags: unittests # optional
+            fail_ci_if_error: true # optional (default = false)
+            verbose: true # optional (default = false)

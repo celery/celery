@@ -74,6 +74,7 @@ class Context:
     headers = None
     delivery_info = None
     reply_to = None
+    shadow = None
     root_id = None
     parent_id = None
     correlation_id = None
@@ -114,6 +115,7 @@ class Context:
             'parent_id': self.parent_id,
             'group_id': self.group,
             'group_index': self.group_index,
+            'shadow': self.shadow,
             'chord': self.chord,
             'chain': self.chain,
             'link': self.callbacks,
@@ -309,6 +311,7 @@ class Task:
         ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
+        ('store_eager_result', 'task_store_eager_result'),
         ('store_errors_even_if_ignored', 'task_store_errors_even_if_ignored'),
     )
 
@@ -763,7 +766,12 @@ class Task:
             'callbacks': maybe_list(link),
             'errbacks': maybe_list(link_error),
             'headers': headers,
-            'delivery_info': {'is_eager': True},
+            'delivery_info': {
+                'is_eager': True,
+                'exchange': options.get('exchange'),
+                'routing_key': options.get('routing_key'),
+                'priority': options.get('priority'),
+            },
         }
         tb = None
         tracer = build_tracer(

@@ -146,8 +146,9 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_SEND_SENT_EVENT``                 :setting:`task_send_sent_event`
 ``CELERY_SERIALIZER``                      :setting:`task_serializer`
 ``CELERYD_SOFT_TIME_LIMIT``                :setting:`task_soft_time_limit`
+``CELERY_TASK_TRACK_STARTED``              :setting:`task_track_started`
+``CELERY_TASK_REJECT_ON_WORKER_LOST``      :setting:`task_reject_on_worker_lost`
 ``CELERYD_TIME_LIMIT``                     :setting:`task_time_limit`
-``CELERY_TRACK_STARTED``                   :setting:`task_track_started`
 ``CELERYD_AGENT``                          :setting:`worker_agent`
 ``CELERYD_AUTOSCALER``                     :setting:`worker_autoscaler`
 ``CELERYD_CONCURRENCY``                    :setting:`worker_concurrency`
@@ -317,7 +318,7 @@ instead of a dict to choose the tasks to annotate:
 
 .. code-block:: python
 
-    class MyAnnotate(object):
+    class MyAnnotate:
 
         def annotate(self, task):
             if task.name.startswith('tasks.'):
@@ -425,6 +426,23 @@ or when the :setting:`task_always_eager` setting is enabled), will
 propagate exceptions.
 
 It's the same as always running ``apply()`` with ``throw=True``.
+
+.. setting:: task_store_eager_result
+
+``task_store_eager_result``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.1
+
+Default: Disabled.
+
+If this is :const:`True` and :setting:`task_always_eager` is :const:`True`
+and :setting:`task_ignore_result` is :const:`False`,
+the results of eagerly executed tasks will be saved to the backend.
+
+By default, even with :setting:`task_always_eager` set to :const:`True`
+and :setting:`task_ignore_result` set to :const:`False`,
+the result will not be saved.
 
 .. setting:: task_remote_tracebacks
 

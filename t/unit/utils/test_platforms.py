@@ -1,5 +1,6 @@
 import errno
 import os
+import re
 import signal
 import sys
 import tempfile
@@ -10,9 +11,10 @@ from case import mock
 
 import t.skip
 from celery import _find_option_with_arg, platforms
-from celery.exceptions import SecurityError
-from celery.platforms import (DaemonContext, LockFailed, Pidfile,
-                              _setgroups_hack, check_privileges,
+from celery.exceptions import SecurityError, SecurityWarning
+from celery.platforms import (ASSUMING_ROOT, ROOT_DISALLOWED,
+                              ROOT_DISCOURAGED, DaemonContext, LockFailed,
+                              Pidfile, _setgroups_hack, check_privileges,
                               close_open_fds, create_pidlock, detached,
                               fd_by_path, get_fdmax, ignore_errno, initgroups,
                               isatty, maybe_drop_privileges, parse_gid,
@@ -158,6 +160,7 @@ class test_Signals:
     def test_setitem(self, set):
         def handle(*args):
             return args
+
         signals['INT'] = handle
         set.assert_called_with(signal.SIGINT, handle)
 
@@ -218,6 +221,7 @@ class test_maybe_drop_privileges:
         def raise_on_second_call(*args, **kwargs):
             setuid.side_effect = OSError()
             setuid.side_effect.errno = errno.EPERM
+
         setuid.side_effect = raise_on_second_call
         getpwuid.return_value = pw_struct()
         parse_uid.return_value = 5001
@@ -237,7 +241,9 @@ class test_maybe_drop_privileges:
             def on_first_call(*args, **kwargs):
                 ret, return_value[0] = return_value[0], 0
                 return ret
+
             mock.side_effect = on_first_call
+
         to_root_on_second_call(geteuid, 10)
         to_root_on_second_call(getuid, 10)
         with pytest.raises(SecurityError):
@@ -259,6 +265,7 @@ class test_maybe_drop_privileges:
         def raise_on_second_call(*args, **kwargs):
             setuid.side_effect = OSError()
             setuid.side_effect.errno = errno.ENOENT
+
         setuid.side_effect = raise_on_second_call
         with pytest.raises(OSError):
             maybe_drop_privileges(uid='user')
@@ -274,6 +281,7 @@ class test_maybe_drop_privileges:
         def raise_on_second_call(*args, **kwargs):
             setuid.side_effect = OSError()
             setuid.side_effect.errno = errno.EPERM
+
         setuid.side_effect = raise_on_second_call
         parse_uid.return_value = 5001
         parse_gid.return_value = 50001
@@ -327,7 +335,6 @@ class test_setget_uid_gid:
 
     @patch('pwd.getpwnam')
     def test_parse_uid_when_existing_name(self, getpwnam):
-
         class pwent:
             pw_uid = 5001
 
@@ -346,7 +353,6 @@ class test_setget_uid_gid:
 
     @patch('grp.getgrnam')
     def test_parse_gid_when_existing_name(self, getgrnam):
-
         class grent:
             gr_gid = 50001
 
@@ -739,6 +745,7 @@ class test_setgroups:
                 setgroups.return_value = True
                 return
             raise ValueError()
+
         setgroups.side_effect = on_setgroups
         _setgroups_hack(list(range(400)))
 
@@ -756,6 +763,7 @@ class test_setgroups:
                 setgroups.return_value = True
                 return
             raise exc
+
         setgroups.side_effect = on_setgroups
 
         _setgroups_hack(list(range(400)))
@@ -817,17 +825,179 @@ class test_setgroups:
             getgroups.assert_called_with()
 
 
-def test_check_privileges():
-    class Obj:
-        fchown = 13
-    prev, platforms.os = platforms.os, Obj()
-    try:
-        with pytest.raises(SecurityError):
-            check_privileges({'pickle'})
-    finally:
-        platforms.os = prev
-    prev, platforms.os = platforms.os, object()
-    try:
-        check_privileges({'pickle'})
-    finally:
-        platforms.os = prev
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+def test_check_privileges_suspicious_platform(accept_content):
+    with patch('celery.platforms.os') as os_module:
+        del os_module.getuid
+        del os_module.getgid
+        del os_module.geteuid
+        del os_module.getegid
+
+        with pytest.raises(SecurityError,
+                           match=r'suspicious platform, contact support'):
+            check_privileges(accept_content)
+
+
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+def test_check_privileges(accept_content, recwarn):
+    check_privileges(accept_content)
+
+    assert len(recwarn) == 0
+
+
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+def test_check_privileges_no_fchown(accept_content, recwarn):
+    with patch('celery.platforms.os') as os_module:
+        del os_module.fchown
+        check_privileges(accept_content)
+
+    assert len(recwarn) == 0
+
+
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+def test_check_privileges_without_c_force_root(accept_content):
+    with patch('celery.platforms.os') as os_module:
+        os_module.environ = {}
+        os_module.getuid.return_value = 0
+        os_module.getgid.return_value = 0
+        os_module.geteuid.return_value = 0
+        os_module.getegid.return_value = 0
+
+        expected_message = re.escape(ROOT_DISALLOWED.format(uid=0, euid=0,
+                                                            gid=0, egid=0))
+        with pytest.raises(SecurityError,
+                           match=expected_message):
+            check_privileges(accept_content)
+
+
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+def test_check_privileges_with_c_force_root(accept_content):
+    with patch('celery.platforms.os') as os_module:
+        os_module.environ = {'C_FORCE_ROOT': 'true'}
+        os_module.getuid.return_value = 0
+        os_module.getgid.return_value = 0
+        os_module.geteuid.return_value = 0
+        os_module.getegid.return_value = 0
+
+        with pytest.warns(SecurityWarning):
+            check_privileges(accept_content)
+
+
+@pytest.mark.parametrize(('accept_content', 'group_name'), [
+    ({'pickle'}, 'sudo'),
+    ({'application/group-python-serialize'}, 'sudo'),
+    ({'pickle', 'application/group-python-serialize'}, 'sudo'),
+    ({'pickle'}, 'wheel'),
+    ({'application/group-python-serialize'}, 'wheel'),
+    ({'pickle', 'application/group-python-serialize'}, 'wheel'),
+])
+def test_check_privileges_with_c_force_root_and_with_suspicious_group(accept_content, group_name):
+    with patch('celery.platforms.os') as os_module, patch('celery.platforms.grp') as grp_module:
+        os_module.environ = {'C_FORCE_ROOT': 'true'}
+        os_module.getuid.return_value = 60
+        os_module.getgid.return_value = 60
+        os_module.geteuid.return_value = 60
+        os_module.getegid.return_value = 60
+
+        grp_module.getgrgid.return_value = [group_name]
+        grp_module.getgrgid.return_value = [group_name]
+
+        expected_message = re.escape(ROOT_DISCOURAGED.format(uid=60, euid=60,
+                                                             gid=60, egid=60))
+        with pytest.warns(SecurityWarning, match=expected_message):
+            check_privileges(accept_content)
+
+
+@pytest.mark.parametrize(('accept_content', 'group_name'), [
+    ({'pickle'}, 'sudo'),
+    ({'application/group-python-serialize'}, 'sudo'),
+    ({'pickle', 'application/group-python-serialize'}, 'sudo'),
+    ({'pickle'}, 'wheel'),
+    ({'application/group-python-serialize'}, 'wheel'),
+    ({'pickle', 'application/group-python-serialize'}, 'wheel'),
+])
+def test_check_privileges_without_c_force_root_and_with_suspicious_group(accept_content, group_name):
+    with patch('celery.platforms.os') as os_module, patch('celery.platforms.grp') as grp_module:
+        os_module.environ = {}
+        os_module.getuid.return_value = 60
+        os_module.getgid.return_value = 60
+        os_module.geteuid.return_value = 60
+        os_module.getegid.return_value = 60
+
+        grp_module.getgrgid.return_value = [group_name]
+        grp_module.getgrgid.return_value = [group_name]
+
+        expected_message = re.escape(ROOT_DISALLOWED.format(uid=60, euid=60,
+                                                            gid=60, egid=60))
+        with pytest.raises(SecurityError,
+                           match=expected_message):
+            check_privileges(accept_content)
+
+
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+def test_check_privileges_with_c_force_root_and_no_group_entry(accept_content, recwarn):
+    with patch('celery.platforms.os') as os_module, patch('celery.platforms.grp') as grp_module:
+        os_module.environ = {'C_FORCE_ROOT': 'true'}
+        os_module.getuid.return_value = 60
+        os_module.getgid.return_value = 60
+        os_module.geteuid.return_value = 60
+        os_module.getegid.return_value = 60
+
+        grp_module.getgrgid.side_effect = KeyError
+
+        expected_message = ROOT_DISCOURAGED.format(uid=60, euid=60,
+                                                   gid=60, egid=60)
+
+        check_privileges(accept_content)
+        assert len(recwarn) == 2
+
+        assert recwarn[0].message.args[0] == ASSUMING_ROOT
+        assert recwarn[1].message.args[0] == expected_message
+
+
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+def test_check_privileges_with_c_force_root_and_no_group_entry(accept_content, recwarn):
+    with patch('celery.platforms.os') as os_module, patch('celery.platforms.grp') as grp_module:
+        os_module.environ = {}
+        os_module.getuid.return_value = 60
+        os_module.getgid.return_value = 60
+        os_module.geteuid.return_value = 60
+        os_module.getegid.return_value = 60
+
+        grp_module.getgrgid.side_effect = KeyError
+
+        expected_message = re.escape(ROOT_DISALLOWED.format(uid=60, euid=60,
+                                                            gid=60, egid=60))
+        with pytest.raises(SecurityError,
+                           match=expected_message):
+            check_privileges(accept_content)
+
+        assert recwarn[0].message.args[0] == ASSUMING_ROOT

@@ -13,9 +13,9 @@ from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.objects import cached_property
 
-from celery import signals
+from celery import current_app, signals
 from celery.app.task import Context
-from celery.app.trace import trace_task, trace_task_ret
+from celery.app.trace import fast_trace_task, trace_task, trace_task_ret
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
@@ -323,8 +323,9 @@ class Request:
             raise TaskRevokedError(task_id)
 
         time_limit, soft_time_limit = self.time_limits
+        trace = fast_trace_task if self._app.use_fast_trace_task else trace_task_ret
         result = pool.apply_async(
-            trace_task_ret,
+            trace,
             args=(self._type, task_id, self._request_dict, self._body,
                   self._content_type, self._content_encoding),
             accept_callback=self.on_accepted,
@@ -484,16 +485,15 @@ class Request:
     def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
         """Handler called if the task raised an exception."""
         task_ready(self)
-        if isinstance(exc_info.exception, MemoryError):
-            raise MemoryError(f'Process got: {exc_info.exception}')
-        elif isinstance(exc_info.exception, Reject):
-            return self.reject(requeue=exc_info.exception.requeue)
-        elif isinstance(exc_info.exception, Ignore):
-            return self.acknowledge()
-
         exc = exc_info.exception
 
-        if isinstance(exc, Retry):
+        if isinstance(exc, MemoryError):
+            raise MemoryError(f'Process got: {exc}')
+        elif isinstance(exc, Reject):
+            return self.reject(requeue=exc.requeue)
+        elif isinstance(exc, Ignore):
+            return self.acknowledge()
+        elif isinstance(exc, Retry):
             return self.on_retry(exc_info)
 
         # (acks_late) acknowledge after result stored.
@@ -629,12 +629,15 @@ class Request:
 
 def create_request_cls(base, task, pool, hostname, eventer,
                        ref=ref, revoked_tasks=revoked_tasks,
-                       task_ready=task_ready, trace=trace_task_ret):
+                       task_ready=task_ready, trace=None, app=current_app):
     default_time_limit = task.time_limit
     default_soft_time_limit = task.soft_time_limit
     apply_async = pool.apply_async
     acks_late = task.acks_late
     events = eventer and eventer.enabled
+
+    if trace is None:
+        trace = fast_trace_task if app.use_fast_trace_task else trace_task_ret
 
     class Request(base):
 

@@ -128,11 +128,11 @@ class CacheBackend(KeyValueStoreBackend):
     def delete(self, key):
         return self.client.delete(key)
 
-    def _apply_chord_incr(self, header_result, body, **kwargs):
-        chord_key = self.get_key_for_chord(header_result.id)
+    def _apply_chord_incr(self, header_result_args, body, **kwargs):
+        chord_key = self.get_key_for_chord(header_result_args[0])
         self.client.set(chord_key, 0, time=self.expires)
         return super()._apply_chord_incr(
-            header_result, body, **kwargs)
+            header_result_args, body, **kwargs)
 
     def incr(self, key):
         return self.client.incr(key)

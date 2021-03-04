@@ -785,6 +785,17 @@ class test_group(CanvasCase):
 
 class test_chord(CanvasCase):
 
+    def test__get_app_does_not_exhaust_generator(self):
+        def build_generator():
+            yield self.add.s(1, 1)
+            self.second_item_returned = True
+            yield self.add.s(2, 2)
+
+        self.second_item_returned = False
+        c = chord(build_generator(), self.add.s(3))
+        c.app
+        assert not self.second_item_returned
+
     def test_reverse(self):
         x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
         assert isinstance(signature(x), chord)

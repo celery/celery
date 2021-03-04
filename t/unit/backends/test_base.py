@@ -189,26 +189,26 @@ class test_BaseBackend_interface:
 
     def test_apply_chord(self, unlock='celery.chord_unlock'):
         self.app.tasks[unlock] = Mock()
-        header_result = self.app.GroupResult(
+        header_result_args = (
             uuid(),
             [self.app.AsyncResult(x) for x in range(3)],
         )
-        self.b.apply_chord(header_result, self.callback.s())
+        self.b.apply_chord(header_result_args, self.callback.s())
         assert self.app.tasks[unlock].apply_async.call_count
 
     def test_chord_unlock_queue(self, unlock='celery.chord_unlock'):
         self.app.tasks[unlock] = Mock()
-        header_result = self.app.GroupResult(
+        header_result_args = (
             uuid(),
             [self.app.AsyncResult(x) for x in range(3)],
         )
         body = self.callback.s()
 
-        self.b.apply_chord(header_result, body)
+        self.b.apply_chord(header_result_args, body)
         called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
         assert called_kwargs['queue'] is None
 
-        self.b.apply_chord(header_result, body.set(queue='test_queue'))
+        self.b.apply_chord(header_result_args, body.set(queue='test_queue'))
         called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
         assert called_kwargs['queue'] == 'test_queue'
 
@@ -216,7 +216,7 @@ class test_BaseBackend_interface:
         def callback_queue(result):
             pass
 
-        self.b.apply_chord(header_result, callback_queue.s())
+        self.b.apply_chord(header_result_args, callback_queue.s())
         called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
         assert called_kwargs['queue'] == 'test_queue_two'
 
@@ -860,15 +860,15 @@ class test_KeyValueStoreBackend:
     def test_chord_apply_fallback(self):
         self.b.implements_incr = False
         self.b.fallback_chord_unlock = Mock()
-        header_result = self.app.GroupResult(
+        header_result_args = (
             'group_id',
             [self.app.AsyncResult(x) for x in range(3)],
         )
         self.b.apply_chord(
-            header_result, 'body', foo=1,
+            header_result_args, 'body', foo=1,
         )
         self.b.fallback_chord_unlock.assert_called_with(
-            header_result, 'body', foo=1,
+            self.app.GroupResult(*header_result_args), 'body', foo=1,
         )
 
     def test_get_missing_meta(self):

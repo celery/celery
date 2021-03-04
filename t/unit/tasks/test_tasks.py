@@ -422,6 +422,12 @@ class test_task_retries(TasksCase):
         assert sig.options['exchange'] == 'testex'
         assert sig.options['routing_key'] == 'testrk'
 
+    def test_signature_from_request__shadow_name(self):
+        self.retry_task.push_request()
+        self.retry_task.request.shadow = 'test'
+        sig = self.retry_task.signature_from_request()
+        assert sig.options['shadow'] == 'test'
+
     def test_retry_kwargs_can_be_empty(self):
         self.retry_task_mockapply.push_request()
         try:
@@ -1281,6 +1287,26 @@ class test_apply_task(TasksCase):
         assert f.traceback
         with pytest.raises(KeyError):
             f.get()
+
+    def test_apply_simulates_delivery_info(self):
+        self.task_check_request_context.request_stack.push = Mock()
+
+        self.task_check_request_context.apply(
+            priority=4,
+            routing_key='myroutingkey',
+            exchange='myexchange',
+        )
+
+        self.task_check_request_context.request_stack.push.assert_called_once()
+
+        request = self.task_check_request_context.request_stack.push.call_args[0][0]
+
+        assert request.delivery_info == {
+            'is_eager': True,
+            'exchange': 'myexchange',
+            'routing_key': 'myroutingkey',
+            'priority': 4,
+        }
 
 
 class test_apply_async(TasksCase):
