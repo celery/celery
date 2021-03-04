@@ -221,9 +221,6 @@ class Task:
     #: The result store backend used for this task.
     backend = None
 
-    #: If disabled this task won't be registered automatically.
-    autoregister = True
-
     #: If enabled the task will report its status as 'started' when the task
     #: is executed by a worker.  Disabled by default as the normal behavior
     #: is to not report that level of granularity.  Tasks are either pending,
