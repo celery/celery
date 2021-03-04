@@ -590,6 +590,9 @@ class Backend:
     def on_chord_part_return(self, request, state, result, **kwargs):
         pass
 
+    def set_chord_size(self, group_id, chord_size):
+        pass
+
     def fallback_chord_unlock(self, header_result, body, countdown=1,
                               **kwargs):
         kwargs['result'] = [r.as_tuple() for r in header_result]
@@ -605,8 +608,9 @@ class Backend:
     def ensure_chords_allowed(self):
         pass
 
-    def apply_chord(self, header_result, body, **kwargs):
+    def apply_chord(self, header_result_args, body, **kwargs):
         self.ensure_chords_allowed()
+        header_result = self.app.GroupResult(*header_result_args)
         self.fallback_chord_unlock(header_result, body, **kwargs)
 
     def current_task_children(self, request=None):
@@ -887,8 +891,9 @@ class BaseKeyValueStoreBackend(Backend):
             meta['result'] = result_from_tuple(result, self.app)
             return meta
 
-    def _apply_chord_incr(self, header_result, body, **kwargs):
+    def _apply_chord_incr(self, header_result_args, body, **kwargs):
         self.ensure_chords_allowed()
+        header_result = self.app.GroupResult(*header_result_args)
         header_result.save(backend=self)
 
     def on_chord_part_return(self, request, state, result, **kwargs):

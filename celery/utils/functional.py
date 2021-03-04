@@ -3,7 +3,7 @@ import inspect
 import sys
 from collections import UserList
 from functools import partial
-from itertools import islice
+from itertools import islice, tee, zip_longest
 
 from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
                                     maybe_evaluate, maybe_list, memoize)
@@ -158,6 +158,19 @@ def uniq(it):
     """Return all unique elements in ``it``, preserving order."""
     seen = set()
     return (seen.add(obj) or obj for obj in it if obj not in seen)
+
+
+def lookahead(it):
+    """Yield pairs of (current, next) items in `it`.
+
+    `next` is None if `current` is the last item.
+    Example:
+        >>> list(lookahead(x for x in range(6)))
+        [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, None)]
+    """
+    a, b = tee(it)
+    next(b, None)
+    return zip_longest(a, b)
 
 
 def regen(it):

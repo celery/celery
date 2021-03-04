@@ -24,6 +24,14 @@ def add(x, y, z=None):
         return x + y
 
 
+@shared_task
+def write_to_file_and_return_int(file_name, i):
+    with open(file_name, mode='a', buffering=1) as file_handle:
+        file_handle.write(str(i)+'\n')
+
+    return i
+
+
 @shared_task(typing=False)
 def add_not_typed(x, y):
     """Add two numbers, but don't check arguments"""
