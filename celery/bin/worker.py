@@ -325,6 +325,7 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
             pidfile=node_format(pidfile, hostname),
             statedb=node_format(statedb, hostname),
             no_color=ctx.obj.no_color,
+            quiet=ctx.obj.quiet,
             **kwargs)
         worker.start()
         return worker.exitcode
