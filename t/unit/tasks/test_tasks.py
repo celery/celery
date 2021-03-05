@@ -1375,6 +1375,7 @@ class test_apply_async(TasksCase):
 
         @self.app.task()
         def task_b(*args, **kwargs):
+            raise AssertionError
             return 'a'
 
         task.apply_async()
