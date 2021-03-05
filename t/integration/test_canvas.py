@@ -807,6 +807,7 @@ class test_chord:
     def test_replaced_eager(self):
         # previously, eager tasks that used `Task.replace` would fail
         assert add_replaced.apply(1, 1) == 2
+        raise AssertionError
 
     @flaky
     def test_add_to_chord(self, manager):
