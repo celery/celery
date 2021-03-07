@@ -8,10 +8,12 @@ on:
     branches: [ master ]
     paths:
         - '**.py'
+        - '**.txt'
   pull_request:
     branches: [ master ]
     paths:
         - '**.py'
+        - '**.txt'
 
 jobs:
   build:
