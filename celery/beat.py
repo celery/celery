@@ -381,7 +381,7 @@ class Scheduler:
 
         try:
             entry_args = [v() if isinstance(v, BeatLazyFunc) else v for v in (entry.args or [])]
-            entry_kwargs = {k: v() if isinstance(v, BeatLazyFunc) else v for k, v in (entry.kwargs.items() or {})}
+            entry_kwargs = {k: v() if isinstance(v, BeatLazyFunc) else v for k, v in (entry.kwargs or {}).items()}
             if task:
                 return task.apply_async(entry_args, entry_kwargs,
                                         producer=producer,
