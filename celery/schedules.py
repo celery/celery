@@ -314,89 +314,23 @@ class crontab_parser:
 class crontab(BaseSchedule):
     """Crontab schedule.
 
-    A Crontab can be used as the ``run_every`` value of a
-    periodic task entry to add :manpage:`crontab(5)`-like scheduling.
+    1. add 'second' argument in '__init__'method
+    2. add 'second' part in return value in '__reduce__' and '__eq__' methods
+    3. add some logic for remaining seconds in 'remaining_delta' method
 
-    Like a :manpage:`cron(5)`-job, you can specify units of time of when
-    you'd like the task to execute.  It's a reasonably complete
-    implementation of :command:`cron`'s features, so it should provide a fair
-    degree of scheduling needs.
-
-    You can specify a minute, an hour, a day of the week, a day of the
-    month, and/or a month in the year in any of the following formats:
-
-    .. attribute:: minute
-
-        - A (list of) integers from 0-59 that represent the minutes of
-          an hour of when execution should occur; or
-        - A string representing a Crontab pattern.  This may get pretty
-          advanced, like ``minute='*/15'`` (for every quarter) or
-          ``minute='1,13,30-45,50-59/2'``.
-
-    .. attribute:: hour
-
-        - A (list of) integers from 0-23 that represent the hours of
-          a day of when execution should occur; or
-        - A string representing a Crontab pattern.  This may get pretty
-          advanced, like ``hour='*/3'`` (for every three hours) or
-          ``hour='0,8-17/2'`` (at midnight, and every two hours during
-          office hours).
-
-    .. attribute:: day_of_week
-
-        - A (list of) integers from 0-6, where Sunday = 0 and Saturday =
-          6, that represent the days of a week that execution should
-          occur.
-        - A string representing a Crontab pattern.  This may get pretty
-          advanced, like ``day_of_week='mon-fri'`` (for weekdays only).
-          (Beware that ``day_of_week='*/2'`` does not literally mean
-          'every two days', but 'every day that is divisible by two'!)
-
-    .. attribute:: day_of_month
-
-        - A (list of) integers from 1-31 that represents the days of the
-          month that execution should occur.
-        - A string representing a Crontab pattern.  This may get pretty
-          advanced, such as ``day_of_month='2-30/2'`` (for every even
-          numbered day) or ``day_of_month='1-7,15-21'`` (for the first and
-          third weeks of the month).
-
-    .. attribute:: month_of_year
-
-        - A (list of) integers from 1-12 that represents the months of
-          the year during which execution can occur.
-        - A string representing a Crontab pattern.  This may get pretty
-          advanced, such as ``month_of_year='*/3'`` (for the first month
-          of every quarter) or ``month_of_year='2-12/2'`` (for every even
-          numbered month).
-
-    .. attribute:: nowfun
-
-        Function returning the current date and time
-        (:class:`~datetime.datetime`).
-
-    .. attribute:: app
-
-        The Celery app instance.
-
-    It's important to realize that any day on which execution should
-    occur must be represented by entries in all three of the day and
-    month attributes.  For example, if ``day_of_week`` is 0 and
-    ``day_of_month`` is every seventh day, only months that begin
-    on Sunday and are also in the ``month_of_year`` attribute will have
-    execution events.  Or, ``day_of_week`` is 1 and ``day_of_month``
-    is '1-7,15-21' means every first and third Monday of every month
-    present in ``month_of_year``.
     """
 
-    def __init__(self, minute='*', hour='*', day_of_week='*',
+    def __init__(self, second='*', minute='*', hour='*', day_of_week='*',
                  day_of_month='*', month_of_year='*', **kwargs):
+        self._orig_second = cronfield(second)
         self._orig_minute = cronfield(minute)
         self._orig_hour = cronfield(hour)
         self._orig_day_of_week = cronfield(day_of_week)
         self._orig_day_of_month = cronfield(day_of_month)
         self._orig_month_of_year = cronfield(month_of_year)
         self._orig_kwargs = kwargs
+
+        self.second = self._expand_cronspec(second, 60)
         self.hour = self._expand_cronspec(hour, 24)
         self.minute = self._expand_cronspec(minute, 60)
         self.day_of_week = self._expand_cronspec(day_of_week, 7)
@@ -529,7 +463,8 @@ class crontab(BaseSchedule):
         return CRON_REPR.format(self)
 
     def __reduce__(self):
-        return (self.__class__, (self._orig_minute,
+        return (self.__class__, (self._orig_second,
+                                 self._orig_minute,
                                  self._orig_hour,
                                  self._orig_day_of_week,
                                  self._orig_day_of_month,
@@ -562,41 +497,49 @@ class crontab(BaseSchedule):
             last_run_at.hour in self.hour and
             last_run_at.minute < max(self.minute)
         )
+        execute_this_minute = (
+            execute_this_hour and
+            last_run_at.second < max(self.second))
 
-        if execute_this_hour:
-            next_minute = min(minute for minute in self.minute
-                              if minute > last_run_at.minute)
-            delta = ffwd(minute=next_minute, second=0, microsecond=0)
+        if execute_this_minute:
+            next_second = min(second for second in self.second
+                              if second > last_run_at.second)
+            delta = ffwd(second=next_second, microsecond=0)
         else:
-            next_minute = min(self.minute)
-            execute_today = (execute_this_date and
-                             last_run_at.hour < max(self.hour))
-
-            if execute_today:
-                next_hour = min(hour for hour in self.hour
-                                if hour > last_run_at.hour)
-                delta = ffwd(hour=next_hour, minute=next_minute,
-                             second=0, microsecond=0)
+            if execute_this_hour:
+                next_minute = min(minute for minute in self.minute
+                                  if minute > last_run_at.minute)
+                delta = ffwd(minute=next_minute, second=0, microsecond=0)
             else:
-                next_hour = min(self.hour)
-                all_dom_moy = (self._orig_day_of_month == '*' and
-                               self._orig_month_of_year == '*')
-                if all_dom_moy:
-                    next_day = min([day for day in self.day_of_week
-                                    if day > dow_num] or self.day_of_week)
-                    add_week = next_day == dow_num
+                execute_today = (execute_this_date and
+                                 last_run_at.hour < max(self.hour))
 
-                    delta = ffwd(
-                        weeks=add_week and 1 or 0,
-                        weekday=(next_day - 1) % 7,
-                        hour=next_hour,
-                        minute=next_minute,
-                        second=0,
-                        microsecond=0,
-                    )
+                if execute_today:
+                    next_hour = min(hour for hour in self.hour
+                                    if hour > last_run_at.hour)
+                    delta = ffwd(hour=next_hour, minute=0,
+                                 second=0, microsecond=0)
                 else:
-                    delta = self._delta_to_next(last_run_at,
-                                                next_hour, next_minute)
+                    next_hour = min(self.hour)
+                    next_minute = min(self.minute)
+                    all_dom_moy = (self._orig_day_of_month == '*' and
+                                   self._orig_month_of_year == '*')
+                    if all_dom_moy:
+                        next_day = min([day for day in self.day_of_week
+                                        if day > dow_num] or self.day_of_week)
+                        add_week = next_day == dow_num
+
+                        delta = ffwd(
+                            weeks=add_week and 1 or 0,
+                            weekday=(next_day - 1) % 7,
+                            hour=next_hour,
+                            minute=next_minute,
+                            second=0,
+                            microsecond=0,
+                        )
+                    else:
+                        delta = self._delta_to_next(last_run_at,
+                                                    next_hour, next_minute)
         return self.to_local(last_run_at), delta, self.to_local(now)
 
     def remaining_estimate(self, last_run_at, ffwd=ffwd):
@@ -627,13 +570,14 @@ class crontab(BaseSchedule):
         return schedstate(due, rem)
 
     def __eq__(self, other):
-        if isinstance(other, crontab):
+        if isinstance(other, customedCrontab):
             return (
                 other.month_of_year == self.month_of_year and
                 other.day_of_month == self.day_of_month and
                 other.day_of_week == self.day_of_week and
                 other.hour == self.hour and
                 other.minute == self.minute and
+                other.second == self.second and
                 super().__eq__(other)
             )
         return NotImplemented
