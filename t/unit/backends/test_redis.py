@@ -451,6 +451,18 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['port'] == 123
         assert x.connparams['health_check_interval'] == 10
 
+    def test_backend_health_check_interval_not_set(self):
+        pytest.importorskip('redis')
+
+        x = self.Backend(
+            'redis://vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert "health_check_interval" not in x.connparams
+
     @pytest.mark.parametrize('cert_str', [
         "required",
         "CERT_REQUIRED",

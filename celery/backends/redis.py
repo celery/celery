@@ -225,8 +225,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             'retry_on_timeout': retry_on_timeout or False,
             'socket_connect_timeout':
                 socket_connect_timeout and float(socket_connect_timeout),
-            'health_check_interval': health_check_interval,
         }
+
+        if health_check_interval:
+            self.connparams["health_check_interval"] = health_check_interval
 
         # absent in redis.connection.UnixDomainSocketConnection
         if socket_keepalive:
