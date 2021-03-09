@@ -1529,6 +1529,17 @@ Default: celery.
 
 The name for the storage container in which to store the results.
 
+.. setting:: azureblockblob_base_path
+
+``azureblockblob_base_path``
+~~~~~~~~~~~~~~~~
+
+Default: None.
+
+A base path in the storage container to use to store result keys. For example::
+
+    azureblockblob_base_path = '/prefix'
+
 .. setting:: azureblockblob_retry_initial_backoff_sec
 
 ``azureblockblob_retry_initial_backoff_sec``
