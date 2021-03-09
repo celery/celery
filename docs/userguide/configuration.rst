@@ -1534,6 +1534,8 @@ The name for the storage container in which to store the results.
 ``azureblockblob_base_path``
 ~~~~~~~~~~~~~~~~
 
+.. versionadded:: 5.1
+
 Default: None.
 
 A base path in the storage container to use to store result keys. For example::
