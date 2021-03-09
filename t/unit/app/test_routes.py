@@ -16,6 +16,7 @@ def Router(app, *args, **kwargs):
 def E(app, queues):
     def expand(answer):
         return Router(app, [], queues).expand_destination(answer)
+
     return expand
 
 
@@ -46,6 +47,7 @@ class RouteCase:
         @self.app.task(shared=False)
         def mytask(*args, **kwargs):
             pass
+
         self.mytask = mytask
 
     def assert_routes_to_queue(self, queue, router, name,
@@ -56,7 +58,8 @@ class RouteCase:
             kwargs = {}
         if args is None:
             args = []
-        assert router.route(options, name, args, kwargs)['queue'].name == queue
+        assert router.route(options, name, args, kwargs)[
+                   'queue'].name == queue
 
     def assert_routes_to_default_queue(self, router, name, *args, **kwargs):
         self.assert_routes_to_queue(
@@ -85,10 +88,13 @@ class test_MapRoute(RouteCase):
         from re import compile
 
         route = routes.MapRoute([
+            ('proj.tasks.bar*', {'queue': 'routeC'}),
             ('proj.tasks.*', 'routeA'),
             ('demoapp.tasks.bar.*', {'exchange': 'routeB'}),
             (compile(r'(video|image)\.tasks\..*'), {'queue': 'media'}),
         ])
+        assert route('proj.tasks.bar') == {'queue': 'routeC'}
+        assert route('proj.tasks.bar.baz') == {'queue': 'routeC'}
         assert route('proj.tasks.foo') == {'queue': 'routeA'}
         assert route('demoapp.tasks.bar.moo') == {'exchange': 'routeB'}
         assert route('video.tasks.foo') == {'queue': 'media'}
@@ -97,7 +103,7 @@ class test_MapRoute(RouteCase):
 
     def test_expand_route_not_found(self):
         expand = E(self.app, self.app.amqp.Queues(
-                   self.app.conf.task_queues, False))
+            self.app.conf.task_queues, False))
         route = routes.MapRoute({'a': {'queue': 'x'}})
         with pytest.raises(QueueNotFound):
             expand(route('a'))
