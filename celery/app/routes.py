@@ -29,7 +29,7 @@ class MapRoute:
     def __init__(self, map):
         map = map.items() if isinstance(map, Mapping) else map
         self.map = {}
-        self.patterns = OrderedDict()
+        self.patterns = {}
         for k, v in map:
             if isinstance(k, Pattern):
                 self.patterns[k] = v
@@ -38,6 +38,12 @@ class MapRoute:
             else:
                 self.map[k] = v
 
+        # We sort by the regex pattern's length since longer regex patterns
+        # are likely to be more specific.
+        self.patterns = tuple(reversed(sorted(tuple(self.patterns.items()),
+                                              key=lambda pattern: len(
+                                                  pattern[0].pattern))))
+
     def __call__(self, name, *args, **kwargs):
         try:
             return dict(self.map[name])
@@ -45,7 +51,7 @@ class MapRoute:
             pass
         except ValueError:
             return {'queue': self.map[name]}
-        for regex, route in self.patterns.items():
+        for regex, route in self.patterns:
             if regex.match(name):
                 try:
                     return dict(route)

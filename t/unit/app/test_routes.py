@@ -59,7 +59,7 @@ class RouteCase:
         if args is None:
             args = []
         assert router.route(options, name, args, kwargs)[
-                   'queue'].name == queue
+            'queue'].name == queue
 
     def assert_routes_to_default_queue(self, router, name, *args, **kwargs):
         self.assert_routes_to_queue(
@@ -87,15 +87,21 @@ class test_MapRoute(RouteCase):
     def test_route_for_task__glob(self):
         from re import compile
 
+        # The order of the routes here matters.
+        # If ('proj.tasks.foo*', 'routeB') is specified before ('proj.tasks.*', 'routeA')
+        # the test passes anyway since the overlapping patterns are already sorted
+        # by pattern length.
         route = routes.MapRoute([
             ('proj.tasks.bar*', {'queue': 'routeC'}),
             ('proj.tasks.*', 'routeA'),
+            ('proj.tasks.foo*', 'routeB'),
             ('demoapp.tasks.bar.*', {'exchange': 'routeB'}),
             (compile(r'(video|image)\.tasks\..*'), {'queue': 'media'}),
         ])
         assert route('proj.tasks.bar') == {'queue': 'routeC'}
         assert route('proj.tasks.bar.baz') == {'queue': 'routeC'}
-        assert route('proj.tasks.foo') == {'queue': 'routeA'}
+        assert route('proj.tasks.fo') == {'queue': 'routeA'}
+        assert route('proj.tasks.foo') == {'queue': 'routeB'}
         assert route('demoapp.tasks.bar.moo') == {'exchange': 'routeB'}
         assert route('video.tasks.foo') == {'queue': 'media'}
         assert route('image.tasks.foo') == {'queue': 'media'}
