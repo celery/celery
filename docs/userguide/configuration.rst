@@ -1540,7 +1540,7 @@ Default: None.
 
 A base path in the storage container to use to store result keys. For example::
 
-    azureblockblob_base_path = '/prefix'
+    azureblockblob_base_path = 'prefix/'
 
 .. setting:: azureblockblob_retry_initial_backoff_sec
 
