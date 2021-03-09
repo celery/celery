@@ -132,6 +132,7 @@ NAMESPACES = Namespace(
         retry_initial_backoff_sec=Option(2, type='int'),
         retry_increment_base=Option(2, type='int'),
         retry_max_attempts=Option(3, type='int'),
+        base_path=Option('', type='string'),
     ),
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
