@@ -363,7 +363,7 @@ def rebuild_signature(sig_dict):
 
     def _recurse(sig):
         if not isinstance(sig, Signature):
-            raise TypeError("{!r} is not a signature object".format(sig))
+            raise TypeError(f"{sig!r} is not a signature object")
         # Most canvas types have a `tasks` attribute
         if isinstance(sig, (chain, group, chord)):
             for task in sig.tasks:

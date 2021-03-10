@@ -1041,9 +1041,9 @@ class group(Signature):
         # access elements from that dictionary later and refer to objects
         # canonicalized here
         orig_tasks = d["kwargs"]["tasks"]
-        d["kwargs"]["tasks"] = rebuilt_tasks = type(orig_tasks)((
+        d["kwargs"]["tasks"] = rebuilt_tasks = type(orig_tasks)(
             maybe_signature(task, app=app) for task in orig_tasks
-        ))
+        )
         return group(rebuilt_tasks, app=app, **d['options'])
 
     def __init__(self, *tasks, **options):
