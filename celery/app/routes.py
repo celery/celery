@@ -4,7 +4,6 @@ Contains utilities for working with task routers, (:setting:`task_routes`).
 """
 import fnmatch
 import re
-from collections import OrderedDict
 from collections.abc import Mapping
 
 from kombu import Queue
@@ -23,19 +22,27 @@ except AttributeError:  # pragma: no cover
 __all__ = ('MapRoute', 'Router', 'prepare')
 
 
+GLOB_PATTERNS = ('*', '?', '[', ']', '!')
+
 class MapRoute:
     """Creates a router out of a :class:`dict`."""
 
     def __init__(self, map):
+        # map is either a mapping or a an iterable of tuples
         map = map.items() if isinstance(map, Mapping) else map
         self.map = {}
         patterns = {}
         for k, v in map:
             if isinstance(k, Pattern):
+                # This is already a regular expression so we simply store it.
                 patterns[k] = v
-            elif '*' in k:
+            elif any(glob_pattern in k for glob_pattern in GLOB_PATTERNS):
+                # This is a glob pattern so we
+                # must to translate it into a regular expression.
                 patterns[re.compile(fnmatch.translate(k))] = v
             else:
+                # This is a direct mapping between a task and a routing
+                # so we simply store it.
                 self.map[k] = v
 
         # We sort by the regex pattern's length since longer regex patterns
