@@ -29,20 +29,19 @@ class MapRoute:
     def __init__(self, map):
         map = map.items() if isinstance(map, Mapping) else map
         self.map = {}
-        self.patterns = {}
+        patterns = {}
         for k, v in map:
             if isinstance(k, Pattern):
-                self.patterns[k] = v
+                patterns[k] = v
             elif '*' in k:
-                self.patterns[re.compile(fnmatch.translate(k))] = v
+                patterns[re.compile(fnmatch.translate(k))] = v
             else:
                 self.map[k] = v
 
         # We sort by the regex pattern's length since longer regex patterns
         # are likely to be more specific.
-        self.patterns = tuple(reversed(sorted(tuple(self.patterns.items()),
-                                              key=lambda pattern: len(
-                                                  pattern[0].pattern))))
+        self.patterns = tuple(reversed(sorted(patterns.items(),
+                                              key=lambda item: len(item[0].pattern))))
 
     def __call__(self, name, *args, **kwargs):
         try:
