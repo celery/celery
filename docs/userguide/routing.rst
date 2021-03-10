@@ -48,22 +48,43 @@ to match all tasks in the ``feed.tasks`` name-space:
 
     app.conf.task_routes = {'feed.tasks.*': {'queue': 'feeds'}}
 
-If the order of matching patterns is important you should
-specify the router in *items* format instead:
+.. versionadded:: 5.1
+
+Previously, the order of the matching patterns mattered.
+
+This configuration would route all of the tasks in the feed module to the
+``feeds`` queue.
 
 .. code-block:: python
 
     task_routes = ([
-        ('feed.tasks.*', {'queue': 'feeds'}),
-        ('web.tasks.*', {'queue': 'web'}),
-        (re.compile(r'(video|image)\.tasks\..*'), {'queue': 'media'}),
-    ],)
+        ('feed.*', {'queue': 'feeds'}),
+        ('feed.notifications.*', {'queue': 'notifications'})
+    ])
+
+This was both surprising to the user who hasn't read the documentation
+throughoutly and inconvenient as you had to ensure the order of the routes
+is correct, or else there will be a production issue.
+
+In version 5.1 we now sort the task routes by their regex pattern's length.
+This results in the more specific glob, in our example: ``feed.notifications.*``,
+to be always picked as it is matched first.
+
+This is both predicable and easy to use.
 
 .. note::
 
     The :setting:`task_routes` setting can either be a dictionary, or a
     list of router objects, so in this case we need to specify the setting
     as a tuple containing a list.
+
+.. warning::
+
+    Since 5.1, the order of the routes does not matter.
+    Therefore, using the form of a list of router objects
+    as a value for :setting:`task_routes` is deprecated.
+
+    In 6.0, support for this form will be removed.
 
 After installing the router, you can start server `z` to only process the feeds
 queue like this:
