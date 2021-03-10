@@ -21,8 +21,8 @@ except AttributeError:  # pragma: no cover
 
 __all__ = ('MapRoute', 'Router', 'prepare')
 
-
 GLOB_PATTERNS = ('*', '?', '[', ']', '!')
+
 
 class MapRoute:
     """Creates a router out of a :class:`dict`."""
@@ -56,12 +56,16 @@ class MapRoute:
         except KeyError:
             pass
         except ValueError:
+            # if self.map[name] is a string we consider it to be the queue's
+            # name.
             return {'queue': self.map[name]}
         for regex, route in self.patterns:
             if regex.match(name):
                 try:
                     return dict(route)
                 except ValueError:
+                    # if route is a string we consider it to be the queue's
+                    # name.
                     return {'queue': route}
 
 
