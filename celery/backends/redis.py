@@ -567,7 +567,6 @@ if getattr(redis, "sentinel", None):
         SSL Connection.
         """
 
-        pass
 
 
 class SentinelBackend(RedisBackend):

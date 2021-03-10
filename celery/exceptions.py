@@ -131,7 +131,6 @@ class NotConfigured(CeleryWarning):
 
 class SecurityWarning(CeleryWarning):
     """Potential security issue found."""
-    pass
 
 
 class CeleryError(Exception):
