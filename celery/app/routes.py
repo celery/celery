@@ -4,11 +4,12 @@ Contains utilities for working with task routers, (:setting:`task_routes`).
 """
 import fnmatch
 import re
+import warnings
 from collections.abc import Mapping
 
 from kombu import Queue
 
-from celery.exceptions import QueueNotFound
+from celery.exceptions import QueueNotFound, CPendingDeprecationWarning
 from celery.utils.collections import lpmerge
 from celery.utils.functional import maybe_evaluate, mlazy
 from celery.utils.imports import symbol_by_name
@@ -23,13 +24,22 @@ __all__ = ('MapRoute', 'Router', 'prepare')
 
 GLOB_PATTERNS = ('*', '?', '[', ']', '!')
 
+MAP_ROUTES_MUST_BE_A_DICTIONARY = """\
+Starting from Celery 5.1 the task_routes configuration must be a dictionary.
+Support for providing a list of router objects will be removed in 6.0.
+""".strip()
+
 
 class MapRoute:
     """Creates a router out of a :class:`dict`."""
 
     def __init__(self, map):
         # map is either a mapping or a an iterable of tuples
-        map = map.items() if isinstance(map, Mapping) else map
+        if isinstance(map, Mapping):
+            map = map.items()
+        else:
+            warnings.warn(
+                CPendingDeprecationWarning(MAP_ROUTES_MUST_BE_A_DICTIONARY))
         self.map = {}
         patterns = {}
         for k, v in map:
