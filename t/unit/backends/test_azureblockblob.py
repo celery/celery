@@ -113,3 +113,18 @@ class test_AzureBlockBlobBackend:
 
         mock_client.get_blob_client.return_value \
             .delete_blob.assert_called_once()
+
+    def test_base_path_conf(self, base_path):
+        self.app.conf.azureblockblob_base_path = base_path
+        backend = AzureBlockBlobBackend(
+            app=self.app,
+            url=self.url
+        )
+        assert backend.base_path == base_path
+
+    def test_base_path_conf_default(self):
+        backend = AzureBlockBlobBackend(
+            app=self.app,
+            url=self.url
+        )
+        assert backend.base_path == ''
