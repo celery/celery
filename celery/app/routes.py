@@ -24,10 +24,10 @@ __all__ = ('MapRoute', 'Router', 'prepare')
 
 GLOB_PATTERNS = ('*', '?', '[', ']', '!')
 
-MAP_ROUTES_MUST_BE_A_DICTIONARY = """\
-Starting from Celery 5.1 the task_routes configuration must be a dictionary.
-Support for providing a list of router objects will be removed in 6.0.
-""".strip()
+MAP_ROUTES_MUST_BE_A_DICTIONARY = (
+    "Starting from Celery 5.1 the task_routes configuration must be a dictionary. "
+    "Support for providing a list of router objects will be removed in 6.0."
+)
 
 
 class MapRoute:
