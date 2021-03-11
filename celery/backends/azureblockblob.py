@@ -105,7 +105,7 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
 
         blob_client = self._blob_service_client.get_blob_client(
             container=self._container_name,
-            blob=self.base_path + key,
+            blob=f'{self.base_path}{key}',
         )
 
         blob_client.upload_blob(value, overwrite=True)
