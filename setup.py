@@ -27,7 +27,6 @@ EXTENSIONS = {
     'eventlet',
     'gevent',
     'librabbitmq',
-    'lzma',
     'memcache',
     'mongodb',
     'msgpack',
