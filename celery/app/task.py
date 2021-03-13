@@ -454,6 +454,11 @@ class Task:
 
             retry_policy (Mapping): Override the retry policy used.
                 See the :setting:`task_publish_retry_policy` setting.
+                
+            time_limit (int): If set, overrides the default time limit.
+            
+            soft_time_limit (int): If set, overrides the default soft
+                time limit.
 
             queue (str, kombu.Queue): The queue to route the task to.
                 This must be a key present in :setting:`task_queues`, or
