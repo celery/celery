@@ -25,6 +25,10 @@ class test_AzureBlockBlobBackend:
             app=self.app,
             url=self.url)
 
+    @pytest.fixture(params=['', 'my_folder/'])
+    def base_path(self, request):
+        return request.param
+
     def test_missing_third_party_sdk(self):
         azurestorage = azureblockblob.azurestorage
         try:
@@ -57,11 +61,12 @@ class test_AzureBlockBlobBackend:
         assert mock_blob_service_client_instance.create_container.call_count == 1
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
-    def test_get(self, mock_client):
+    def test_get(self, mock_client, base_path):
+        self.backend.base_path = base_path
         self.backend.get(b"mykey")
 
         mock_client.get_blob_client \
-            .assert_called_once_with(blob="mykey", container="celery")
+            .assert_called_once_with(blob=base_path + "mykey", container="celery")
 
         mock_client.get_blob_client.return_value \
             .download_blob.return_value \
@@ -77,31 +82,49 @@ class test_AzureBlockBlobBackend:
         assert self.backend.get(b"mykey") is None
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
-    def test_set(self, mock_client):
+    def test_set(self, mock_client, base_path):
+        self.backend.base_path = base_path
         self.backend._set_with_state(b"mykey", "myvalue", states.SUCCESS)
 
         mock_client.get_blob_client.assert_called_once_with(
-            container="celery", blob="mykey")
+            container="celery", blob=base_path + "mykey")
 
         mock_client.get_blob_client.return_value \
             .upload_blob.assert_called_once_with("myvalue", overwrite=True)
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
-    def test_mget(self, mock_client):
+    def test_mget(self, mock_client, base_path):
         keys = [b"mykey1", b"mykey2"]
 
+        self.backend.base_path = base_path
         self.backend.mget(keys)
 
         mock_client.get_blob_client.assert_has_calls(
-            [call(blob=key.decode(), container='celery') for key in keys],
+            [call(blob=base_path + key.decode(), container='celery') for key in keys],
             any_order=True,)
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
-    def test_delete(self, mock_client):
+    def test_delete(self, mock_client, base_path):
+        self.backend.base_path = base_path
         self.backend.delete(b"mykey")
 
         mock_client.get_blob_client.assert_called_once_with(
-            container="celery", blob="mykey")
+            container="celery", blob=base_path + "mykey")
 
         mock_client.get_blob_client.return_value \
             .delete_blob.assert_called_once()
+
+    def test_base_path_conf(self, base_path):
+        self.app.conf.azureblockblob_base_path = base_path
+        backend = AzureBlockBlobBackend(
+            app=self.app,
+            url=self.url
+        )
+        assert backend.base_path == base_path
+
+    def test_base_path_conf_default(self):
+        backend = AzureBlockBlobBackend(
+            app=self.app,
+            url=self.url
+        )
+        assert backend.base_path == ''

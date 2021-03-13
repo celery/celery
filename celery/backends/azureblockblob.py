@@ -43,6 +43,8 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
             container_name or
             conf["azureblockblob_container_name"])
 
+        self.base_path = conf.get('azureblockblob_base_path', '')
+
     @classmethod
     def _parse_url(cls, url, prefix="azureblockblob://"):
         connection_string = url[len(prefix):]
@@ -82,7 +84,7 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
 
         blob_client = self._blob_service_client.get_blob_client(
             container=self._container_name,
-            blob=key,
+            blob=f'{self.base_path}{key}',
         )
 
         try:
@@ -103,7 +105,7 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
 
         blob_client = self._blob_service_client.get_blob_client(
             container=self._container_name,
-            blob=key,
+            blob=f'{self.base_path}{key}',
         )
 
         blob_client.upload_blob(value, overwrite=True)
@@ -129,7 +131,7 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
 
         blob_client = self._blob_service_client.get_blob_client(
             container=self._container_name,
-            blob=key,
+            blob=f'{self.base_path}{key}',
         )
 
         blob_client.delete_blob()
