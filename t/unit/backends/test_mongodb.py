@@ -663,11 +663,24 @@ class test_MongoBackend_store_get_result:
 
     @pytest.mark.parametrize("serializer",
                              ["bson", "pickle", "yaml", "json", "msgpack"])
+    def test_encode_chain_results(self, mongo_backend_factory, serializer):
+        backend = mongo_backend_factory(serializer=serializer)
+        mock_request = MagicMock(spec=['children'])
+        children = [self.app.AsyncResult(uuid()) for i in range(10)]
+        mock_request.children = children
+        backend.store_result(TASK_ID, 0, 'SUCCESS', request=mock_request)
+        recovered = backend.get_children(TASK_ID)
+        def tuple_to_list(t): return [list(t[0]), t[1]]
+        assert recovered == [tuple_to_list(c.as_tuple()) for c in children]
+
+    @pytest.mark.parametrize("serializer",
+                             ["bson", "pickle", "yaml", "json", "msgpack"])
     def test_encode_exception_error_results(self, mongo_backend_factory,
                                             serializer):
         backend = mongo_backend_factory(serializer=serializer)
         exception = Exception("Basic Exception")
-        backend.store_result(TASK_ID, exception, 'FAILURE')
+        traceback = 'Traceback:\n  Exception: Basic Exception\n'
+        backend.store_result(TASK_ID, exception, 'FAILURE', traceback)
         recovered = backend.get_result(TASK_ID)
         assert type(recovered) == type(exception)
         assert recovered.args == exception.args
