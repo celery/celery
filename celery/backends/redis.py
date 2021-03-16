@@ -219,6 +219,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         socket_connect_timeout = _get('redis_socket_connect_timeout')
         retry_on_timeout = _get('redis_retry_on_timeout')
         socket_keepalive = _get('redis_socket_keepalive')
+        health_check_interval = _get('redis_backend_health_check_interval')
 
         self.connparams = {
             'host': _get('redis_host') or 'localhost',
@@ -231,6 +232,9 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             'socket_connect_timeout':
                 socket_connect_timeout and float(socket_connect_timeout),
         }
+
+        if health_check_interval:
+            self.connparams["health_check_interval"] = health_check_interval
 
         # absent in redis.connection.UnixDomainSocketConnection
         if socket_keepalive:

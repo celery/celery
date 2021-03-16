@@ -1185,6 +1185,22 @@ Note that the ``ssl_cert_reqs`` string should be one of ``required``,
 ``optional``, or ``none`` (though, for backwards compatibility, the string
 may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
 
+
+.. setting:: redis_backend_health_check_interval
+
+.. versionadded:: 5.1.0
+
+``redis_backend_health_check_interval``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Not configured
+
+The Redis backend supports health checks.  This value must be
+set as an integer whose value is the number of seconds between
+health checks.  If a ConnectionError or a TimeoutError is
+encountered during the health check, the connection will be
+re-established and the command retried exactly once.
+
 .. setting:: redis_backend_use_ssl
 
 ``redis_backend_use_ssl``
