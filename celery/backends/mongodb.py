@@ -202,8 +202,8 @@ class MongoBackend(BaseBackend):
                 'status': obj['status'],
                 'result': self.decode(obj['result']),
                 'date_done': obj['date_done'],
-                'traceback': self.decode(obj['traceback']),
-                'children': self.decode(obj['children']),
+                'traceback': obj['traceback'],
+                'children': obj['children'],
             })
         return {'status': states.PENDING, 'result': None}
 
