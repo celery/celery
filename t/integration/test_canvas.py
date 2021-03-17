@@ -1252,7 +1252,7 @@ class test_chord:
         Sanity check that a deeply nested group is completed as expected.
 
         Groups at the end of chains nested in chords have had issues and this
-        simple test sanity check that such a tsk structure can be completed.
+        simple test sanity check that such a task structure can be completed.
         """
         try:
             manager.app.backend.ensure_chords_allowed()
