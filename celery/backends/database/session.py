@@ -4,8 +4,7 @@ import time
 from kombu.utils.compat import register_after_fork
 from sqlalchemy import create_engine
 from sqlalchemy.exc import DatabaseError
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import NullPool
 
 from celery.utils.time import get_exponential_backoff_interval
