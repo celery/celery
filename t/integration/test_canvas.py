@@ -1288,6 +1288,18 @@ class test_chord:
         with pytest.raises(ExpectedException):
             res.get(timeout=TIMEOUT)
 
+    def test_error_propagates_from_chord2(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        sig = add.s(1, 1) | add.s(1) | group(add.s(1), fail.s())
+        res = sig.delay()
+
+        with pytest.raises(ExpectedException):
+            res.get(timeout=TIMEOUT)
+
 
 class test_signature_serialization:
     """
