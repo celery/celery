@@ -11,7 +11,8 @@ from celery.exceptions import ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
 
 from . import tasks
-from .conftest import get_active_redis_channels, get_redis_connection
+from .conftest import get_active_redis_channels, get_redis_connection, \
+    TEST_BACKEND
 from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     add_to_all, add_to_all_to_chord, build_chain_inside_task,
                     chord_error, collect_ids, delayed_sum,
@@ -1273,6 +1274,31 @@ class test_chord:
         )
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [[42, 42]]
+
+    @pytest.mark.xfail(TEST_BACKEND.startswith('redis://'), reason="Issue #6437")
+    def test_error_propagates_from_chord(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        sig = add.s(1, 1) | fail.s() | group(add.s(1), add.s(1))
+        res = sig.delay()
+
+        with pytest.raises(ExpectedException):
+            res.get(timeout=TIMEOUT)
+
+    def test_error_propagates_from_chord2(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        sig = add.s(1, 1) | add.s(1) | group(add.s(1), fail.s())
+        res = sig.delay()
+
+        with pytest.raises(ExpectedException):
+            res.get(timeout=TIMEOUT)
 
 
 class test_signature_serialization:
