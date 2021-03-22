@@ -196,6 +196,22 @@ class test_Scheduler:
         scheduler.apply_async(scheduler.Entry(task=foo.name, app=self.app, args=None, kwargs=None))
         foo.apply_async.assert_called()
 
+    def test_apply_async_with_null_args_set_to_none(self):
+
+        @self.app.task(shared=False)
+        def foo():
+            pass
+        foo.apply_async = Mock(name='foo.apply_async')
+
+        scheduler = mScheduler(app=self.app)
+        entry = scheduler.Entry(task=foo.name, app=self.app, args=None,
+                                kwargs=None)
+        entry.args = None
+        entry.kwargs = None
+
+        scheduler.apply_async(entry, advance=False)
+        foo.apply_async.assert_called()
+
     def test_should_sync(self):
 
         @self.app.task(shared=False)

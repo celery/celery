@@ -203,6 +203,24 @@ class ScheduleEntry:
         return not self == other
 
 
+def _evaluate_entry_args(entry_args):
+    if not entry_args:
+        return []
+    return [
+        v() if isinstance(v, BeatLazyFunc) else v
+        for v in entry_args.args
+    ]
+
+
+def _evaluate_entry_kwargs(entry_kwargs):
+    if not entry_kwargs:
+        return {}
+    return {
+        k: v() if isinstance(v, BeatLazyFunc) else v
+        for k, v in entry_kwargs.items()
+    }
+
+
 class Scheduler:
     """Scheduler for periodic tasks.
 
@@ -380,8 +398,8 @@ class Scheduler:
         task = self.app.tasks.get(entry.task)
 
         try:
-            entry_args = [v() if isinstance(v, BeatLazyFunc) else v for v in (entry.args or [])]
-            entry_kwargs = {k: v() if isinstance(v, BeatLazyFunc) else v for k, v in entry.kwargs.items()}
+            entry_args = _evaluate_entry_args(entry.args)
+            entry_kwargs = _evaluate_entry_kwargs(entry.kwargs)
             if task:
                 return task.apply_async(entry_args, entry_kwargs,
                                         producer=producer,
