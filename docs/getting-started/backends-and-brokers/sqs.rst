@@ -192,6 +192,27 @@ The above policy:
 +-----------------------------------------+--------------------------------------------+
 
 
+SQS - STS token authentication
+------------------------
+
+AWS STS authentication is supported, by using ``sts_role_arn``, and sts_token_timeout. sts_role_arn is the assumed IAM role ARN we are trying to access with.
+``sts_token_timeout`` is the token timeout, defaults (and minimum) to 900 seconds. After the mentioned period, a new token will be created.
+
+    broker_transport_options = {
+        'predefined_queues': {
+            'my-q': {
+                'url': 'https://ap-southeast-2.queue.amazonaws.com/123456/my-q',
+                'access_key_id': 'xxx',
+                'secret_access_key': 'xxx',
+                'backoff_policy': {1: 10, 2: 20, 3: 40, 4: 80, 5: 320, 6: 640},
+                'backoff_tasks': ['svc.tasks.tasks.task1']
+            }
+        },
+    'sts_role_arn': 'arn:aws:iam::<xxx>:role/STSTest', # optional
+    'sts_token_timeout': 900 # optional
+    }
+
+
 .. _sqs-caveats:
 
 Caveats
