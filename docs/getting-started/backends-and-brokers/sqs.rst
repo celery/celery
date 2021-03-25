@@ -192,8 +192,8 @@ The above policy:
 +-----------------------------------------+--------------------------------------------+
 
 
-SQS - STS token authentication
-------------------------
+STS token authentication
+----------------------------
 
 AWS STS authentication is supported by using the ``sts_role_arn`` and ``sts_token_timeout`` broker transport options. ``sts_role_arn`` is the assumed IAM role ARN we use to authorize our access to SQS.
 ``sts_token_timeout`` is the token timeout, defaults (and minimum) to 900 seconds. After the mentioned period, a new token will be created.
