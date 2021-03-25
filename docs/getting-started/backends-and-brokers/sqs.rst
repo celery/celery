@@ -195,6 +195,8 @@ The above policy:
 SQS - STS token authentication
 ------------------------
 
+https://docs.aws.amazon.com/cli/latest/reference/sts/assume-role.html
+
 AWS STS authentication is supported, by using ``sts_role_arn``, and sts_token_timeout. sts_role_arn is the assumed IAM role ARN we are trying to access with.
 ``sts_token_timeout`` is the token timeout, defaults (and minimum) to 900 seconds. After the mentioned period, a new token will be created.
 
