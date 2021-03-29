@@ -225,6 +225,29 @@ class test_head_from_fun:
         fun = head_from_fun(A.f, bound=True)
         assert fun(1) == 1
 
+    @pytest.mark.xfail(reason="Issue #5469")
+    def test_kwonly_required_args(self):
+        local = {}
+        fun = ('def f_kwargs_required(*, a="a", b, c=None):'
+               '    return')
+        exec(fun, {}, local)
+        f_kwargs_required = local['f_kwargs_required']
+        g = head_from_fun(f_kwargs_required)
+
+        with pytest.raises(TypeError):
+            g(1)
+
+        with pytest.raises(TypeError):
+            g(a=1)
+
+        with pytest.raises(TypeError):
+            g(b=1)
+
+        with pytest.raises(TypeError):
+            g(a=2, b=1)
+
+        g(b=3)
+
 
 class test_fun_takes_argument:
 
