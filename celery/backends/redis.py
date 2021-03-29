@@ -572,7 +572,6 @@ if getattr(redis, "sentinel", None):
         """
 
 
-
 class SentinelBackend(RedisBackend):
     """Redis sentinel task result store."""
 
