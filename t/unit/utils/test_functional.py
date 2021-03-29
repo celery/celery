@@ -241,10 +241,10 @@ class test_head_from_fun:
             g(a=1)
 
         with pytest.raises(TypeError):
-            g(b=1)
+            g(c=1)
 
         with pytest.raises(TypeError):
-            g(a=2, b=1)
+            g(a=2, c=1)
 
         g(b=3)
 
