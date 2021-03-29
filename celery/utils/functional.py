@@ -90,6 +90,7 @@ def firstmethod(method, on_call=None):
     The list can also contain lazy instances
     (:class:`~kombu.utils.functional.lazy`.)
     """
+
     def _matcher(it, *args, **kwargs):
         for obj in it:
             try:
@@ -101,6 +102,7 @@ def firstmethod(method, on_call=None):
             else:
                 if reply is not None:
                     return reply
+
     return _matcher
 
 
@@ -327,24 +329,12 @@ def fun_takes_argument(name, fun, position=None):
     )
 
 
-if hasattr(inspect, 'signature'):
-    def fun_accepts_kwargs(fun):
-        """Return true if function accepts arbitrary keyword arguments."""
-        return any(
-            p for p in inspect.signature(fun).parameters.values()
-            if p.kind == p.VAR_KEYWORD
-        )
-else:
-    def fun_accepts_kwargs(fun):  # noqa
-        """Return true if function accepts arbitrary keyword arguments."""
-        try:
-            argspec = inspect.getargspec(fun)
-        except TypeError:
-            try:
-                argspec = inspect.getargspec(fun.__call__)
-            except (TypeError, AttributeError):
-                return
-        return not argspec or argspec[2] is not None
+def fun_accepts_kwargs(fun):
+    """Return true if function accepts arbitrary keyword arguments."""
+    return any(
+        p for p in inspect.signature(fun).parameters.values()
+        if p.kind == p.VAR_KEYWORD
+    )
 
 
 def maybe(typ, val):
