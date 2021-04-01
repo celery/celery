@@ -1,5 +1,5 @@
 pytz>dev
-billiard>=3.6.3.0,<4.0
+billiard>=3.6.4.0,<4.0
 kombu>=5.0.0,<6.0
 vine>=5.0.0,<6.0
 click>=7.0,<8.0
