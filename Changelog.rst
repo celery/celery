@@ -6,13 +6,15 @@
 
 This document contains change notes for bugfix & new features
 in the 5.0.x & 5.1.x series, please see :ref:`whatsnew-5.0` for
-an overview of what's new in Celery 5.0.
+an overview of what's new in Celery 5.0. 5.1.0b1 is an incremental
+pre release with lots of  bug fixes and some new features/enhancements.
+Some dependencies were upgraded to newer versions.
 
 .. _version-5.1.0b1:
 
 5.1.0b1
 =======
-:release-date: 2021-04-02 10.15 P.M UTC+6:00
+:release-date: 2021-04-02 10.25 P.M UTC+6:00
 :release-by: Asif Saif Uddin
 
 - Add sentinel_kwargs to Rendis Sentinel docs.
@@ -30,7 +32,35 @@ an overview of what's new in Celery 5.0.
 - reset_worker_optimizations and create_request_cls has now app as optional parameter.
 - Small refactor in exception handling of on_failure (#6633).
 - Fix for issue #5030 "Celery Result backend on Windows OS".
-- add store_eager_result setting so eager tasks can store result on the result backend (#6614)
+- Add store_eager_result setting so eager tasks can store result on the result backend (#6614).
+- Allow heartbeats to be sent in tests (#6632).
+- Fixed default visibility timeout note in sqs documentation.
+- Support Redis Sentinel with SSL.
+- Simulate more exhaustive delivery info in apply().
+- Start chord header tasks as soon as possible (#6576).
+- Forward shadow option for retried tasks (#6655).
+--quiet flag now actually makes celery avoid producing logs (#6599).
+- Update platforms.py "superuser privileges" check (#6600).
+- Remove unused property `autoregister` from the Task class (#6624).
+- fnmatch.translate() already translates globs for us. (#6668).
+- Upgrade some syntax to Python 3.6+.
+- Add `azureblockblob_base_path` config (#6669).
+- Fix checking expiration of X.509 certificates (#6678).
+- Drop the lzma extra.
+- Fix JSON decoding errors when using MongoDB as backend (#6675).
+- Allow configuration of RedisBackend's health_check_interval (#6666).
+- Safeguard against schedule entry without kwargs (#6619).
+- Docs only - SQS broker - add STS support (#6693) through kombu.
+- Drop fun_accepts_kwargs backport.
+- Tasks can now have required kwargs at any order (#6699).
+- Min py-amqp 5.0.6.
+- min billiard is now 3.6.4.0.
+- Minimum kombu now is5.1.0b1.
+- Numerous docs fixes.
+- Moved CI to github action.
+- Updated deployment scripts.
+- Updated docker.
+- Initial support of python 3.9 added. 
 
 
 .. _version-5.0.5:
