@@ -5,8 +5,33 @@
 ================
 
 This document contains change notes for bugfix & new features
-in the 5.0.x series, please see :ref:`whatsnew-5.0` for
+in the 5.0.x & 5.1.x series, please see :ref:`whatsnew-5.0` for
 an overview of what's new in Celery 5.0.
+
+.. _version-5.1.0b1:
+
+5.1.0b1
+=======
+:release-date: 2021-04-02 10.15 P.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Add sentinel_kwargs to Rendis Sentinel docs.
+- Depend on the maintained python-consul2 library. (#6544).
+- Use result_chord_join_timeout instead of hardcoded default value.
+- Upgrade AzureBlockBlob storage backend to use Azure blob storage library v12 (#6580).
+- Improved integration tests.
+- pass_context for handle_preload_options decorator (#6583).
+- Makes regen less greedy (#6589).
+- Pytest worker shutdown timeout (#6588).
+- Exit celery with non zero exit value if failing (#6602).
+- Raise BackendStoreError when set value is too large for Redis.
+- Trace task optimizations are now set via Celery app instance.
+- Make trace_task_ret and fast_trace_task public.
+- reset_worker_optimizations and create_request_cls has now app as optional parameter.
+- Small refactor in exception handling of on_failure (#6633).
+- Fix for issue #5030 "Celery Result backend on Windows OS".
+- add store_eager_result setting so eager tasks can store result on the result backend (#6614)
+
 
 .. _version-5.0.5:
 
