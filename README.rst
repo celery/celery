@@ -3,7 +3,7 @@
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
 :Version: 5.0.5 (singularity)
-:Web: http://celeryproject.org/
+:Web: https://docs.celeryproject.org/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
