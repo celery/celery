@@ -316,13 +316,6 @@ class AMQP:
         if kwargsrepr is None:
             kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize)
 
-        if callbacks:
-            callbacks = [utf8dict(callback) for callback in callbacks]
-        if errbacks:
-            errbacks = [utf8dict(errback) for errback in errbacks]
-        if chord:
-            chord = utf8dict(chord)
-
         if not root_id:  # empty root_id defaults to task_id
             root_id = task_id
 
@@ -394,13 +387,6 @@ class AMQP:
             expires = now + timedelta(seconds=expires)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
-
-        if callbacks:
-            callbacks = [utf8dict(callback) for callback in callbacks]
-        if errbacks:
-            errbacks = [utf8dict(errback) for errback in errbacks]
-        if chord:
-            chord = utf8dict(chord)
 
         return task_message(
             headers={},
