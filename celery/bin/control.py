@@ -95,7 +95,8 @@ def status(ctx, timeout, destination, json, **kwargs):
             nodecount, text.pluralize(nodecount, 'node')))
 
 
-@click.command(cls=CeleryCommand)
+@click.command(cls=CeleryCommand,
+               context_settings={'allow_extra_args': True})
 @click.argument("action", type=click.Choice([
     name for name, info in Panel.meta.items()
     if info.type == 'inspect' and info.visible
@@ -128,9 +129,12 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
     """
     callback = None if json else partial(_say_remote_command_reply, ctx,
                                          show_reply=True)
-    replies = ctx.obj.app.control.inspect(timeout=timeout,
+    arguments = _compile_arguments(action, ctx.args)
+    inspect = ctx.obj.app.control.inspect(timeout=timeout,
                                           destination=destination,
-                                          callback=callback)._request(action)
+                                          callback=callback)
+    replies = inspect._request(action,
+                               **arguments)
 
     if not replies:
         raise CeleryCommandException(
