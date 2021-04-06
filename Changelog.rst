@@ -17,7 +17,7 @@ Some dependencies were upgraded to newer versions.
 :release-date: 2021-04-02 10.25 P.M UTC+6:00
 :release-by: Asif Saif Uddin
 
-- Add sentinel_kwargs to Rendis Sentinel docs.
+- Add sentinel_kwargs to Redis Sentinel docs.
 - Depend on the maintained python-consul2 library. (#6544).
 - Use result_chord_join_timeout instead of hardcoded default value.
 - Upgrade AzureBlockBlob storage backend to use Azure blob storage library v12 (#6580).
