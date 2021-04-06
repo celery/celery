@@ -96,10 +96,15 @@ class test_tasks:
         assert list(ret) == list(range(120))
 
     @flaky
+    @pytest.mark.xfail(reason="Issue #5398")
     def test_ignore_result(self, manager):
         """Testing calling task with ignoring results."""
         result = add.apply_async((1, 2), ignore_result=True)
         assert result.get() is None
+        # We wait since it takes a bit of time for the result to be
+        # persisted in the result backend.
+        sleep(1)
+        assert result.result is None
 
     @flaky
     def test_timeout(self, manager):
