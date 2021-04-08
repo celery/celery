@@ -22,8 +22,6 @@ name using the fully qualified form::
     $ celery -A myapp:app worker -l INFO
 
 """
-from random import randint
-from time import sleep
 
 from celery import Celery
 
@@ -31,20 +29,13 @@ app = Celery(
     'myapp',
     broker='amqp://guest@localhost//',
     # ## add result backend here if needed.
-    backend='redis://'
+    # backend='rpc'
 )
-
-app.conf.task_acks_late = True
 
 
 @app.task
 def add(x, y):
     return x + y
-
-
-@app.task
-def s():
-    sleep(randint(30, 120))
 
 
 if __name__ == '__main__':
