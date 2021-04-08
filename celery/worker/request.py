@@ -399,6 +399,19 @@ class Request:
             if obj is not None:
                 obj.terminate(signal)
 
+    def abort(self, pool, signal=None):
+        signal = _signals.signum(signal or TERM_SIGNAME)
+        if self.time_start:
+            pool.terminate_job(self.worker_pid, signal)
+            self.task.backend.mark_as_retry(self.id,
+                                            Retry,
+                                            request=self._context)
+
+        if self._apply_result is not None:
+            obj = self._apply_result()  # is a weakref
+            if obj is not None:
+                obj.terminate(signal)
+
     def _announce_revoked(self, reason, terminated, signum, expired):
         task_ready(self)
         self.send_event('task-revoked',
