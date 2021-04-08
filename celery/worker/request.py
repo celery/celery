@@ -404,7 +404,7 @@ class Request:
         if self.time_start:
             pool.terminate_job(self.worker_pid, signal)
             self.task.backend.mark_as_retry(self.id,
-                                            Retry,
+                                            Retry(message='aborted by Celery'),
                                             request=self._context)
 
         if self._apply_result is not None:
