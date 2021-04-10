@@ -208,7 +208,7 @@ def _evaluate_entry_args(entry_args):
         return []
     return [
         v() if isinstance(v, BeatLazyFunc) else v
-        for v in entry_args.args
+        for v in entry_args
     ]
 
 

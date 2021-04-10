@@ -212,6 +212,23 @@ class test_Scheduler:
         scheduler.apply_async(entry, advance=False)
         foo.apply_async.assert_called()
 
+    def test_apply_async_without_null_args(self):
+
+        @self.app.task(shared=False)
+        def foo(moo: int):
+            return moo
+        foo.apply_async = Mock(name='foo.apply_async')
+
+        scheduler = mScheduler(app=self.app)
+        entry = scheduler.Entry(task=foo.name, app=self.app, args=None,
+                                kwargs=None)
+        entry.args = (101,)
+        entry.kwargs = None
+
+        scheduler.apply_async(entry, advance=False)
+        foo.apply_async.assert_called()
+        assert foo.apply_async.call_args[0][0] == [101]
+
     def test_should_sync(self):
 
         @self.app.task(shared=False)
