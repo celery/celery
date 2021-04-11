@@ -20,7 +20,9 @@ from celery import current_app, group, signals, states
 from celery._state import _task_stack
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
-from celery.exceptions import Ignore, InvalidTaskError, Reject, Retry
+from celery.exceptions import (BackendGetMetaError, Ignore, InvalidTaskError,
+                               Reject, Retry)
+from celery.result import AsyncResult
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import mro_lookup
@@ -327,6 +329,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     else:
         publish_result = not eager and not ignore_result
 
+    deduplicate_successful_tasks = ((app.conf.task_acks_late or task.acks_late)
+                                    and app.conf.worker_deduplicate_successful_tasks)
+
     hostname = hostname or gethostname()
     inherit_parent_priority = app.conf.task_inherit_parent_priority
 
@@ -394,6 +399,21 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             push_task(task)
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
+
+            if deduplicate_successful_tasks:
+                r = AsyncResult(task_request.id, app=app)
+                try:
+                    state = r.state
+                except BackendGetMetaError:
+                    pass
+                else:
+                    if state == SUCCESS:
+                        info(LOG_IGNORED, {
+                            'id': task_request.id,
+                            'name': get_task_name(task_request, name),
+                            'description': 'Task already completed successfully.'
+                        })
+                        return trace_ok_t(R, I, T, Rstr)
             root_id = task_request.root_id or uuid
             task_priority = task_request.delivery_info.get('priority') if \
                 inherit_parent_priority else None
