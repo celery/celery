@@ -39,7 +39,7 @@ Some dependencies were upgraded to newer versions.
 - Simulate more exhaustive delivery info in apply().
 - Start chord header tasks as soon as possible (#6576).
 - Forward shadow option for retried tasks (#6655).
---quiet flag now actually makes celery avoid producing logs (#6599).
+- --quiet flag now actually makes celery avoid producing logs (#6599).
 - Update platforms.py "superuser privileges" check (#6600).
 - Remove unused property `autoregister` from the Task class (#6624).
 - fnmatch.translate() already translates globs for us. (#6668).
