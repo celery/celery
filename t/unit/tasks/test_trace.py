@@ -1,4 +1,4 @@
-from unittest.mock import ANY, Mock, patch
+from unittest.mock import ANY, Mock, patch, PropertyMock
 from uuid import uuid4
 
 import pytest
@@ -529,7 +529,8 @@ class test_trace(TraceCase):
 
         with patch('celery.app.trace.AsyncResult') as async_result_mock:
             assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
-            async_result_mock().state.side_effect = BackendGetMetaError
+            state_property = PropertyMock(side_effect=BackendGetMetaError)
+            type(async_result_mock()).state = state_property
             assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
 
         self.app.conf.worker_deduplicate_successful_tasks = False
