@@ -1,4 +1,4 @@
-from unittest.mock import ANY, Mock, patch, PropertyMock
+from unittest.mock import ANY, Mock, PropertyMock, patch
 from uuid import uuid4
 
 import pytest
@@ -7,18 +7,19 @@ from kombu.exceptions import EncodeError
 
 from celery import group, signals, states, uuid
 from celery.app.task import Context
-from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task,
-                              get_log_policy, get_task_name,
+from celery.app.trace import (TraceInfo, build_tracer,
+                              fast_trace_task, get_log_policy, get_task_name,
                               log_policy_expected, log_policy_ignore,
                               log_policy_internal, log_policy_reject,
                               log_policy_unexpected,
                               reset_worker_optimizations,
                               setup_worker_optimizations, trace_task,
-                              trace_task_ret, traceback_clear, SUCCESS)
+                              trace_task_ret, traceback_clear)
 from celery.backends.base import BaseDictBackend
 from celery.backends.cache import CacheBackend
-from celery.exceptions import Ignore, Reject, Retry, BackendGetMetaError
+from celery.exceptions import BackendGetMetaError, Ignore, Reject, Retry
 from celery.states import PENDING
+from celery.worker.state import successful_requests
 
 
 def trace(
@@ -533,6 +534,30 @@ class test_trace(TraceCase):
             type(async_result_mock()).state = state_property
             assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
 
+        self.app.conf.worker_deduplicate_successful_tasks = False
+
+    def test_deduplicate_successful_tasks__cached_request(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+        add.acks_late = True
+
+        self.app.conf.worker_deduplicate_successful_tasks = True
+
+        task_id = str(uuid4())
+        request = {'id': task_id}
+
+        successful_requests.add(task_id)
+
+        assert trace(self.app, add, (1, 1), task_id=task_id,
+                     request=request) == (None, None)
+
+        successful_requests.clear()
         self.app.conf.worker_deduplicate_successful_tasks = False
 
 

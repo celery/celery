@@ -497,7 +497,7 @@ class Request:
             if isinstance(retval.exception, (SystemExit, KeyboardInterrupt)):
                 raise retval.exception
             return self.on_failure(retval, return_ok=True)
-        task_ready(self)
+        task_ready(self, successful=True)
 
         if self.task.acks_late:
             self.acknowledge()

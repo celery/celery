@@ -48,6 +48,8 @@ __all__ = (
     'setup_worker_optimizations', 'reset_worker_optimizations',
 )
 
+from celery.worker.state import successful_requests
+
 logger = get_logger(__name__)
 
 #: Format string used to log task success.
@@ -402,6 +404,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
             if deduplicate_successful_tasks:
                 r = AsyncResult(task_request.id, app=app)
+                if task_request.id in successful_requests:
+                    return trace_ok_t(R, I, T, Rstr)
+
                 try:
                     state = r.state
                 except BackendGetMetaError:
