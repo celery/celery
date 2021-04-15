@@ -89,8 +89,9 @@ class test_mro_lookup:
         assert mro_lookup(D, 'x') is None
 
 
-def jail(app, task_id, name, args, kwargs):
+def jail(app, task_id, name, request_opts, args, kwargs):
     request = {'id': task_id}
+    request.update(request_opts)
     task = app.tasks[name]
     task.__trace__ = None  # rebuild
     return trace_task(
@@ -115,7 +116,7 @@ class test_trace_task(RequestCase):
         self.mytask.backend = Mock()
         self.mytask.backend.process_cleanup = Mock(side_effect=KeyError())
         tid = uuid()
-        ret = jail(self.app, tid, self.mytask.name, [2], {})
+        ret = jail(self.app, tid, self.mytask.name, {}, [2], {})
         assert ret == 4
         self.mytask.backend.mark_as_done.assert_called()
         assert 'Process cleanup failed' in _logger.error.call_args[0][0]
@@ -124,10 +125,10 @@ class test_trace_task(RequestCase):
         self.mytask.backend = Mock()
         self.mytask.backend.process_cleanup = Mock(side_effect=SystemExit())
         with pytest.raises(SystemExit):
-            jail(self.app, uuid(), self.mytask.name, [2], {})
+            jail(self.app, uuid(), self.mytask.name, {}, [2], {})
 
     def test_execute_jail_success(self):
-        ret = jail(self.app, uuid(), self.mytask.name, [2], {})
+        ret = jail(self.app, uuid(), self.mytask.name, {}, [2], {})
         assert ret == 4
 
     def test_marked_as_started(self):
@@ -141,29 +142,43 @@ class test_trace_task(RequestCase):
         self.mytask.track_started = True
 
         tid = uuid()
-        jail(self.app, tid, self.mytask.name, [2], {})
+        jail(self.app, tid, self.mytask.name, {}, [2], {})
         assert tid in _started
 
         self.mytask.ignore_result = True
         tid = uuid()
-        jail(self.app, tid, self.mytask.name, [2], {})
+        jail(self.app, tid, self.mytask.name, {}, [2], {})
         assert tid not in _started
 
     def test_execute_jail_failure(self):
         ret = jail(
-            self.app, uuid(), self.mytask_raising.name, [4], {},
+            self.app, uuid(), self.mytask_raising.name, {}, [4], {},
         )
         assert isinstance(ret, ExceptionInfo)
         assert ret.exception.args == (4,)
 
-    def test_execute_ignore_result(self):
+    def test_execute_task_ignore_result(self):
 
         @self.app.task(shared=False, ignore_result=True)
         def ignores_result(i):
             return i ** i
 
         task_id = uuid()
-        ret = jail(self.app, task_id, ignores_result.name, [4], {})
+        ret = jail(self.app, task_id, ignores_result.name, {}, [4], {})
+        assert ret == 256
+        assert not self.app.AsyncResult(task_id).ready()
+
+    def test_execute_request_ignore_result(self):
+
+        @self.app.task(shared=False)
+        def ignores_result(i):
+            return i ** i
+
+        task_id = uuid()
+        ret = jail(
+            self.app, task_id, ignores_result.name,
+            {'ignore_result': True}, [4], {}
+        )
         assert ret == 256
         assert not self.app.AsyncResult(task_id).ready()
 
