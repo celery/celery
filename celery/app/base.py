@@ -716,7 +716,7 @@ class Celery:
                 'task_always_eager has no effect on send_task',
             ), stacklevel=2)
 
-        ignored_result = options.pop('ignore_result', False)
+        ignore_result = options.pop('ignore_result', False)
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
 
@@ -739,6 +739,7 @@ class Celery:
             reply_to or self.thread_oid, time_limit, soft_time_limit,
             self.conf.task_send_sent_event,
             root_id, parent_id, shadow, chain,
+            ignore_result=ignore_result,
             argsrepr=options.get('argsrepr'),
             kwargsrepr=options.get('kwargsrepr'),
         )
@@ -748,14 +749,14 @@ class Celery:
 
         with self.producer_or_acquire(producer) as P:
             with P.connection._reraise_as_library_errors():
-                if not ignored_result:
+                if not ignore_result:
                     self.backend.on_task_call(P, task_id)
                 amqp.send_task_message(P, name, message, **options)
         result = (result_cls or self.AsyncResult)(task_id)
         # We avoid using the constructor since a custom result class
         # can be used, in which case the constructor may still use
         # the old signature.
-        result.ignored = ignored_result
+        result.ignored = ignore_result
 
         if add_to_parent:
             if not have_parent:

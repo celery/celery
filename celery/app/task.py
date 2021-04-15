@@ -61,36 +61,37 @@ def _reprtask(task, fmt=None, flags=None):
 class Context:
     """Task request variables (Task.request)."""
 
-    logfile = None
-    loglevel = None
-    hostname = None
-    id = None
-    args = None
-    kwargs = None
-    retries = 0
-    eta = None
-    expires = None
-    is_eager = False
-    headers = None
-    delivery_info = None
-    reply_to = None
-    shadow = None
-    root_id = None
-    parent_id = None
-    correlation_id = None
-    taskset = None   # compat alias to group
-    group = None
-    group_index = None
-    chord = None
-    chain = None
-    utc = None
-    called_directly = True
-    callbacks = None
-    errbacks = None
-    timelimit = None
-    origin = None
     _children = None   # see property
     _protected = 0
+    args = None
+    callbacks = None
+    called_directly = True
+    chain = None
+    chord = None
+    correlation_id = None
+    delivery_info = None
+    errbacks = None
+    eta = None
+    expires = None
+    group = None
+    group_index = None
+    headers = None
+    hostname = None
+    id = None
+    ignore_result = False
+    is_eager = False
+    kwargs = None
+    logfile = None
+    loglevel = None
+    origin = None
+    parent_id = None
+    retries = 0
+    reply_to = None
+    root_id = None
+    shadow = None
+    taskset = None   # compat alias to group
+    timelimit = None
+    utc = None
 
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
