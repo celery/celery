@@ -17,7 +17,7 @@ Some dependencies were upgraded to newer versions.
 :release-date: 2021-04-02 10.25 P.M UTC+6:00
 :release-by: Asif Saif Uddin
 
-- Add sentinel_kwargs to Rendis Sentinel docs.
+- Add sentinel_kwargs to Redis Sentinel docs.
 - Depend on the maintained python-consul2 library. (#6544).
 - Use result_chord_join_timeout instead of hardcoded default value.
 - Upgrade AzureBlockBlob storage backend to use Azure blob storage library v12 (#6580).
@@ -39,7 +39,7 @@ Some dependencies were upgraded to newer versions.
 - Simulate more exhaustive delivery info in apply().
 - Start chord header tasks as soon as possible (#6576).
 - Forward shadow option for retried tasks (#6655).
---quiet flag now actually makes celery avoid producing logs (#6599).
+- --quiet flag now actually makes celery avoid producing logs (#6599).
 - Update platforms.py "superuser privileges" check (#6600).
 - Remove unused property `autoregister` from the Task class (#6624).
 - fnmatch.translate() already translates globs for us. (#6668).
