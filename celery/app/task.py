@@ -774,6 +774,7 @@ class Task:
             'callbacks': maybe_list(link),
             'errbacks': maybe_list(link_error),
             'headers': headers,
+            'ignore_result': options.get('ignore_result', False),
             'delivery_info': {
                 'is_eager': True,
                 'exchange': options.get('exchange'),
