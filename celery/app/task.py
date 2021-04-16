@@ -505,6 +505,11 @@ class Task:
                 attribute.  Trailing can also be disabled by default using the
                 :attr:`trail` attribute
 
+            ignore_result (bool): If set to `False` (default) the result
+                of a task will be stored in the backend. If set to `True`
+                the result will not be stored. This can also be set
+                using the :attr:`ignore_result` in the `app.task` decorator.
+
             publisher (kombu.Producer): Deprecated alias to ``producer``.
 
             headers (Dict): Message headers to be included in the message.
