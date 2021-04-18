@@ -505,7 +505,18 @@ class Request:
         task_ready(self)
         exc = exc_info.exception
 
-        if isinstance(exc, MemoryError):
+        is_terminated = isinstance(exc, Terminated)
+        if is_terminated:
+            # If the message no longer has a connection and the worker
+            # is terminated, we aborted it.
+            # Otherwise, it is revoked.
+            if self.message.channel.connection:
+                # This is a special case where the process
+                # would not have had time to write the result.
+                self._announce_revoked(
+                    'terminated', True, str(exc), False)
+            return
+        elif isinstance(exc, MemoryError):
             raise MemoryError(f'Process got: {exc}')
         elif isinstance(exc, Reject):
             return self.reject(requeue=exc.requeue)
@@ -516,10 +527,11 @@ class Request:
 
         # (acks_late) acknowledge after result stored.
         requeue = False
+        is_worker_lost = isinstance(exc, WorkerLostError)
         if self.task.acks_late:
             reject = (
                 self.task.reject_on_worker_lost and
-                isinstance(exc, WorkerLostError)
+                is_worker_lost
             )
             ack = self.task.acks_on_failure_or_timeout
             if reject:
@@ -533,13 +545,9 @@ class Request:
                 # need to be removed from prefetched local queue
                 self.reject(requeue=False)
 
-        # These are special cases where the process would not have had time
+        # This is a special case where the process would not have had time
         # to write the result.
-        if isinstance(exc, Terminated):
-            self._announce_revoked(
-                'terminated', True, str(exc), False)
-            send_failed_event = False  # already sent revoked event
-        elif not requeue and (isinstance(exc, WorkerLostError) or not return_ok):
+        if not requeue and (is_worker_lost or not return_ok):
             # only mark as failure if task has not been requeued
             self.task.backend.mark_as_failure(
                 self.id, exc, request=self._context,
