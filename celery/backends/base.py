@@ -76,6 +76,12 @@ class _nulldict(dict):
     __setitem__ = update = setdefault = ignore
 
 
+def _is_request_ignore_result(request):
+    if request is None:
+        return False
+    return request.ignore_result
+
+
 class Backend:
     READY_STATES = states.READY_STATES
     UNREADY_STATES = states.UNREADY_STATES
@@ -150,7 +156,7 @@ class Backend:
     def mark_as_done(self, task_id, result,
                      request=None, store_result=True, state=states.SUCCESS):
         """Mark task as successfully executed."""
-        if store_result:
+        if (store_result and not _is_request_ignore_result(request)):
             self.store_result(task_id, result, state, request=request)
         if request and request.chord:
             self.on_chord_part_return(request, state, result)

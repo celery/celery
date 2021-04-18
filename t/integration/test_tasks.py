@@ -100,6 +100,10 @@ class test_tasks:
         """Testing calling task with ignoring results."""
         result = add.apply_async((1, 2), ignore_result=True)
         assert result.get() is None
+        # We wait since it takes a bit of time for the result to be
+        # persisted in the result backend.
+        sleep(1)
+        assert result.result is None
 
     @flaky
     def test_timeout(self, manager):

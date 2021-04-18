@@ -61,36 +61,37 @@ def _reprtask(task, fmt=None, flags=None):
 class Context:
     """Task request variables (Task.request)."""
 
-    logfile = None
-    loglevel = None
-    hostname = None
-    id = None
-    args = None
-    kwargs = None
-    retries = 0
-    eta = None
-    expires = None
-    is_eager = False
-    headers = None
-    delivery_info = None
-    reply_to = None
-    shadow = None
-    root_id = None
-    parent_id = None
-    correlation_id = None
-    taskset = None   # compat alias to group
-    group = None
-    group_index = None
-    chord = None
-    chain = None
-    utc = None
-    called_directly = True
-    callbacks = None
-    errbacks = None
-    timelimit = None
-    origin = None
     _children = None   # see property
     _protected = 0
+    args = None
+    callbacks = None
+    called_directly = True
+    chain = None
+    chord = None
+    correlation_id = None
+    delivery_info = None
+    errbacks = None
+    eta = None
+    expires = None
+    group = None
+    group_index = None
+    headers = None
+    hostname = None
+    id = None
+    ignore_result = False
+    is_eager = False
+    kwargs = None
+    logfile = None
+    loglevel = None
+    origin = None
+    parent_id = None
+    retries = 0
+    reply_to = None
+    root_id = None
+    shadow = None
+    taskset = None   # compat alias to group
+    timelimit = None
+    utc = None
 
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
@@ -504,6 +505,11 @@ class Task:
                 attribute.  Trailing can also be disabled by default using the
                 :attr:`trail` attribute
 
+            ignore_result (bool): If set to `False` (default) the result
+                of a task will be stored in the backend. If set to `True`
+                the result will not be stored. This can also be set
+                using the :attr:`ignore_result` in the `app.task` decorator.
+
             publisher (kombu.Producer): Deprecated alias to ``producer``.
 
             headers (Dict): Message headers to be included in the message.
@@ -768,6 +774,7 @@ class Task:
             'callbacks': maybe_list(link),
             'errbacks': maybe_list(link_error),
             'headers': headers,
+            'ignore_result': options.get('ignore_result', False),
             'delivery_info': {
                 'is_eager': True,
                 'exchange': options.get('exchange'),

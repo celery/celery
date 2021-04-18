@@ -120,6 +120,7 @@ class Request:
         self._eventer = eventer
         self._connection_errors = connection_errors or ()
         self._task = task or self._app.tasks[self._type]
+        self._ignore_result = self._request_dict.get('ignore_result', False)
 
         # timezone means the message is timezone-aware, and the only timezone
         # supported at this point is UTC.
@@ -239,6 +240,10 @@ class Request:
     @property
     def hostname(self):
         return self._hostname
+
+    @property
+    def ignore_result(self):
+        return self._ignore_result
 
     @property
     def eventer(self):
