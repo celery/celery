@@ -1296,8 +1296,8 @@ class group(Signature):
         return app if app is not None else current_app
 
 
-@Signature.register_type()
-class chord(Signature):
+@Signature.register_type(name="chord")
+class _chord(Signature):
     r"""Barrier synchronization primitive.
 
     A chord consists of a header and a body.
@@ -1535,6 +1535,11 @@ class chord(Signature):
 
     tasks = getitem_property('kwargs.header', 'Tasks in chord header.')
     body = getitem_property('kwargs.body', 'Body task of chord.')
+
+
+# Add a back-compat alias for the previous `chord` class name which conflicts
+# with keyword arguments elsewhere in this file
+chord = _chord
 
 
 def signature(varies, *args, **kwargs):
