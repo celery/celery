@@ -345,7 +345,7 @@ class Consumer:
             if request.task.acks_late and not request.acknowledged:
                 warn(TERMINATING_TASK_ON_RESTART_AFTER_A_CONNECTION_LOSS,
                      request)
-                request.abort(self.pool)
+                request.cancel(self.pool)
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(

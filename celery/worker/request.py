@@ -399,7 +399,7 @@ class Request:
             if obj is not None:
                 obj.terminate(signal)
 
-    def abort(self, pool, signal=None):
+    def cancel(self, pool, signal=None):
         signal = _signals.signum(signal or TERM_SIGNAME)
         if self.time_start:
             pool.terminate_job(self.worker_pid, signal)
