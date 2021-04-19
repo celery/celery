@@ -1,5 +1,5 @@
 import json
-from unittest.mock import MagicMock, Mock, call, patch, sentinel
+from unittest.mock import MagicMock, Mock, call, patch, sentinel, ANY
 
 import pytest
 import pytest_subtests  # noqa: F401
@@ -781,6 +781,194 @@ class test_group(CanvasCase):
         x = group([self.add.s(1), self.add.s(x=1)])
         res = self.helper_test_get_delay(x.delay(y=1))
         assert res == [2, 2]
+
+    def test_apply_from_generator(self):
+        child_count = 42
+        child_sig = self.add.si(0, 0)
+        child_sigs_gen = (child_sig for _ in range(child_count))
+        group_sig = group(child_sigs_gen)
+        with patch("celery.canvas.Signature.apply_async") as mock_apply_async:
+            res_obj = group_sig.apply_async()
+        assert mock_apply_async.call_count == child_count
+        assert len(res_obj.children) == child_count
+
+    # This needs the current app for some reason not worth digging into
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_apply_from_generator_empty(self):
+        empty_gen = (False for _ in range(0))
+        group_sig = group(empty_gen)
+        with patch("celery.canvas.Signature.apply_async") as mock_apply_async:
+            res_obj = group_sig.apply_async()
+        assert mock_apply_async.call_count == 0
+        assert len(res_obj.children) == 0
+
+    # In the following tests, getting the group ID is a pain so we just use
+    # `ANY` to wildcard it when we're checking on calls made to our mocks
+    def test_apply_contains_chord(self):
+        gchild_count = 42
+        gchild_sig = self.add.si(0, 0)
+        gchild_sigs = (gchild_sig, ) * gchild_count
+        child_chord = chord(gchild_sigs, gchild_sig)
+        group_sig = group((child_chord, ))
+        with patch.object(
+            self.app.backend, "set_chord_size",
+        ) as mock_set_chord_size, patch(
+            "celery.canvas.Signature.apply_async",
+        ) as mock_apply_async:
+            res_obj = group_sig.apply_async()
+        # We only see applies for the header grandchildren because the tasks
+        # are never actually run due to our mocking of `apply_async()`
+        assert mock_apply_async.call_count == gchild_count
+        assert len(res_obj.children) == len(group_sig.tasks)
+        # We must have set the chord size for the group of tasks which makes up
+        # the header of the `child_chord`, just before we apply the last task.
+        mock_set_chord_size.assert_called_once_with(ANY, gchild_count)
+
+    def test_apply_contains_chords_containing_chain(self):
+        ggchild_count = 42
+        ggchild_sig = self.add.si(0, 0)
+        gchild_sig = chain((ggchild_sig, ) * ggchild_count)
+        child_count = 24
+        child_chord = chord((gchild_sig, ), ggchild_sig)
+        group_sig = group((child_chord, ) * child_count)
+        with patch.object(
+            self.app.backend, "set_chord_size",
+        ) as mock_set_chord_size, patch(
+            "celery.canvas.Signature.apply_async",
+        ) as mock_apply_async:
+            res_obj = group_sig.apply_async()
+        # We only see applies for the header grandchildren because the tasks
+        # are never actually run due to our mocking of `apply_async()`
+        assert mock_apply_async.call_count == child_count
+        assert len(res_obj.children) == child_count
+        # We must have set the chord sizes based on the number of tail tasks of
+        # the encapsulated chains - in this case 1 for each child chord
+        mock_set_chord_size.assert_has_calls((call(ANY, 1), ) * child_count)
+
+    @pytest.mark.xfail(reason="Invalid canvas setup with bad exception")
+    def test_apply_contains_chords_containing_empty_chain(self):
+        gchild_sig = chain(tuple())
+        child_count = 24
+        child_chord = chord((gchild_sig, ), self.add.si(0, 0))
+        group_sig = group((child_chord, ) * child_count)
+        # This is an invalid setup because we can't complete a chord header if
+        # there are no actual tasks which will run in it. However, the current
+        # behaviour of an `IndexError` isn't particularly helpful to a user.
+        res_obj = group_sig.apply_async()
+
+    def test_apply_contains_chords_containing_chain_with_empty_tail(self):
+        ggchild_count = 42
+        ggchild_sig = self.add.si(0, 0)
+        tail_count = 24
+        gchild_sig = chain(
+            (ggchild_sig, ) * ggchild_count +
+            (group((ggchild_sig, ) * tail_count), group(tuple()), ),
+        )
+        child_chord = chord((gchild_sig, ), ggchild_sig)
+        group_sig = group((child_chord, ))
+        with patch.object(
+            self.app.backend, "set_chord_size",
+        ) as mock_set_chord_size, patch(
+            "celery.canvas.Signature.apply_async",
+        ) as mock_apply_async:
+            res_obj = group_sig.apply_async()
+        # We only see applies for the header grandchildren because the tasks
+        # are never actually run due to our mocking of `apply_async()`
+        assert mock_apply_async.call_count == 1
+        assert len(res_obj.children) == 1
+        # We must have set the chord sizes based on the size of the last
+        # non-empty task in the encapsulated chains - in this case `tail_count`
+        # for the group preceding the empty one in each grandchild chain
+        mock_set_chord_size.assert_called_once_with(ANY, tail_count)
+
+    def test_apply_contains_chords_containing_group(self):
+        ggchild_count = 42
+        ggchild_sig = self.add.si(0, 0)
+        gchild_sig = group((ggchild_sig, ) * ggchild_count)
+        child_count = 24
+        child_chord = chord((gchild_sig, ), ggchild_sig)
+        group_sig = group((child_chord, ) * child_count)
+        with patch.object(
+            self.app.backend, "set_chord_size",
+        ) as mock_set_chord_size, patch(
+            "celery.canvas.Signature.apply_async",
+        ) as mock_apply_async:
+            res_obj = group_sig.apply_async()
+        # We see applies for all of the header grandchildren because the tasks
+        # are never actually run due to our mocking of `apply_async()`
+        assert mock_apply_async.call_count == child_count * ggchild_count
+        assert len(res_obj.children) == child_count
+        # We must have set the chord sizes based on the number of tail tasks of
+        # the encapsulated groups - in this case `ggchild_count`
+        mock_set_chord_size.assert_has_calls(
+            (call(ANY, ggchild_count), ) * child_count,
+        )
+
+    @pytest.mark.xfail(reason="Invalid canvas setup but poor behaviour")
+    def test_apply_contains_chords_containing_empty_group(self):
+        gchild_sig = group(tuple())
+        child_count = 24
+        child_chord = chord((gchild_sig, ), self.add.si(0, 0))
+        group_sig = group((child_chord, ) * child_count)
+        with patch.object(
+            self.app.backend, "set_chord_size",
+        ) as mock_set_chord_size, patch(
+            "celery.canvas.Signature.apply_async",
+        ) as mock_apply_async:
+            res_obj = group_sig.apply_async()
+        # We only see applies for the header grandchildren because the tasks
+        # are never actually run due to our mocking of `apply_async()`
+        assert mock_apply_async.call_count == child_count
+        assert len(res_obj.children) == child_count
+        # This is actually kind of meaningless because, similar to the empty
+        # chain test, this is an invalid setup. However, we should probably
+        # expect that the chords are dealt with in some other way the probably
+        # being left incomplete forever...
+        mock_set_chord_size.assert_has_calls((call(ANY, 0), ) * child_count)
+
+    def test_apply_contains_chords_containing_chord(self):
+        ggchild_count = 42
+        ggchild_sig = self.add.si(0, 0)
+        gchild_sig = chord((ggchild_sig, ) * ggchild_count, ggchild_sig)
+        child_count = 24
+        child_chord = chord((gchild_sig, ), ggchild_sig)
+        group_sig = group((child_chord, ) * child_count)
+        with patch.object(
+            self.app.backend, "set_chord_size",
+        ) as mock_set_chord_size, patch(
+            "celery.canvas.Signature.apply_async",
+        ) as mock_apply_async:
+            res_obj = group_sig.apply_async()
+        # We see applies for all of the header great-grandchildren because the
+        # tasks are never actually run due to our mocking of `apply_async()`
+        assert mock_apply_async.call_count == child_count * ggchild_count
+        assert len(res_obj.children) == child_count
+        # We must have set the chord sizes based on the number of tail tasks of
+        # the deeply encapsulated chords' header tasks, as well as for each
+        # child chord. This means we have `child_count` interleaved calls to
+        # set chord sizes of 1 and `ggchild_count`.
+        mock_set_chord_size.assert_has_calls(
+            (call(ANY, 1), call(ANY, ggchild_count), ) * child_count,
+        )
+
+    def test_apply_contains_chords_containing_empty_chord(self):
+        gchild_sig = chord(tuple(), self.add.si(0, 0))
+        child_count = 24
+        child_chord = chord((gchild_sig, ), self.add.si(0, 0))
+        group_sig = group((child_chord, ) * child_count)
+        with patch.object(
+            self.app.backend, "set_chord_size",
+        ) as mock_set_chord_size, patch(
+            "celery.canvas.Signature.apply_async",
+        ) as mock_apply_async:
+            res_obj = group_sig.apply_async()
+        # We only see applies for the header grandchildren because the tasks
+        # are never actually run due to our mocking of `apply_async()`
+        assert mock_apply_async.call_count == child_count
+        assert len(res_obj.children) == child_count
+        # We must have set the chord sizes based on the number of tail tasks of
+        # the encapsulated chains - in this case 1 for each child chord
+        mock_set_chord_size.assert_has_calls((call(ANY, 1), ) * child_count)
 
 
 class test_chord(CanvasCase):

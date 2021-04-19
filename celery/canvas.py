@@ -1170,21 +1170,25 @@ class group(Signature):
             # we are able to tell when we are at the end by checking if
             # next_task is None.  This enables us to set the chord size
             # without burning through the entire generator.  See #3021.
+            chord_size = 0
             for task_index, (current_task, next_task) in enumerate(
                 lookahead(tasks)
             ):
+                # We expect that each task must be part of the same group which
+                # seems sensible enough. If that's somehow not the case we'll
+                # end up messing up chord counts and there are all sorts of
+                # awful race conditions to think about. We'll hope it's not!
                 sig, res, group_id = current_task
-                _chord = sig.options.get("chord") or chord
-                if _chord is not None and next_task is None:
-                    chord_size = task_index + 1
-                    if isinstance(sig, _chain):
-                        if sig.tasks[-1].subtask_type == 'chord':
-                            chord_size = sig.tasks[-1].__length_hint__()
-                        else:
-                            chord_size = task_index + len(sig.tasks[-1])
+                chord_obj = sig.options.get("chord") or chord
+                # We need to check the chord size of each contributing task so
+                # that when we get to the final one, we can correctly set the
+                # size in the backend and the chord can be sensible completed.
+                chord_size += _chord._descend(sig)
+                if chord_obj is not None and next_task is None:
+                    # Per above, sanity check that we only saw one group
                     app.backend.set_chord_size(group_id, chord_size)
                 sig.apply_async(producer=producer, add_to_parent=False,
-                                chord=_chord, args=args, kwargs=kwargs,
+                                chord=chord_obj, args=args, kwargs=kwargs,
                                 **options)
                 # adding callback to result, such that it will gradually
                 # fulfill the barrier.
