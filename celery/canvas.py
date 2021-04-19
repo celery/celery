@@ -1424,8 +1424,15 @@ class _chord(Signature):
             subtasks = getattr(sig_obj.tasks, "tasks", sig_obj.tasks)
             return sum(cls._descend(task) for task in subtasks)
         elif isinstance(sig_obj, _chain):
-            # The last element in a chain counts toward this chord
-            return cls._descend(sig_obj.tasks[-1])
+            # The last non-empty element in a chain counts toward this chord
+            for child_sig in sig_obj.tasks[-1::-1]:
+                child_size = cls._descend(child_sig)
+                if child_size > 0:
+                    return child_size
+            else:
+                # We have to just hope this chain is part of some encapsulating
+                # signature which is valid and can fire the chord body
+                return 0
         elif isinstance(sig_obj, chord):
             # The child chord's body counts toward this chord
             return cls._descend(sig_obj.body)
