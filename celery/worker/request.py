@@ -55,6 +55,7 @@ __optimize__()  # noqa: E305
 # Localize
 tz_or_local = timezone.tz_or_local
 send_revoked = signals.task_revoked.send
+send_retry = signals.task_retry.send
 
 task_accepted = state.task_accepted
 task_ready = state.task_ready
@@ -69,6 +70,7 @@ class Request:
     worker_pid = None
     time_limits = (None, None)
     _already_revoked = False
+    _already_cancelled = False
     _terminate_on_ack = None
     _apply_result = None
     _tzlocal = None
@@ -403,14 +405,25 @@ class Request:
         signal = _signals.signum(signal or TERM_SIGNAME)
         if self.time_start:
             pool.terminate_job(self.worker_pid, signal)
-            self.task.backend.mark_as_retry(self.id,
-                                            Retry(message='aborted by Celery'),
-                                            request=self._context)
+            self._announce_cancelled()
 
         if self._apply_result is not None:
             obj = self._apply_result()  # is a weakref
             if obj is not None:
                 obj.terminate(signal)
+
+    def _announce_cancelled(self):
+        task_ready(self)
+        self.send_event('task-cancelled')
+        reason = 'cancelled by Celery'
+        exc = Retry(message=reason)
+        self.task.backend.mark_as_retry(self.id,
+                                        exc,
+                                        request=self._context)
+
+        self.task.on_retry(exc, self.id, self.args, self.kwargs, None)
+        self._already_cancelled = True
+        send_retry(self.task, request=self._context, einfo=None)
 
     def _announce_revoked(self, reason, terminated, signum, expired):
         task_ready(self)
@@ -515,6 +528,8 @@ class Request:
                 # would not have had time to write the result.
                 self._announce_revoked(
                     'terminated', True, str(exc), False)
+            elif not self._already_cancelled:
+                self._announce_cancelled()
             return
         elif isinstance(exc, MemoryError):
             raise MemoryError(f'Process got: {exc}')
