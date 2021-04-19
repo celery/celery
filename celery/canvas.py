@@ -1415,20 +1415,20 @@ class _chord(Signature):
         )
 
     @classmethod
-    def __descend(cls, sig_obj):
+    def _descend(cls, sig_obj):
         # Sometimes serialized signatures might make their way here
         if not isinstance(sig_obj, Signature) and isinstance(sig_obj, dict):
             sig_obj = Signature.from_dict(sig_obj)
         if isinstance(sig_obj, group):
             # Each task in a group counts toward this chord
             subtasks = getattr(sig_obj.tasks, "tasks", sig_obj.tasks)
-            return sum(cls.__descend(task) for task in subtasks)
+            return sum(cls._descend(task) for task in subtasks)
         elif isinstance(sig_obj, _chain):
             # The last element in a chain counts toward this chord
-            return cls.__descend(sig_obj.tasks[-1])
+            return cls._descend(sig_obj.tasks[-1])
         elif isinstance(sig_obj, chord):
             # The child chord's body counts toward this chord
-            return cls.__descend(sig_obj.body)
+            return cls._descend(sig_obj.body)
         elif isinstance(sig_obj, Signature):
             # Each simple signature counts as 1 completion for this chord
             return 1
@@ -1437,7 +1437,7 @@ class _chord(Signature):
 
     def __length_hint__(self):
         tasks = getattr(self.tasks, "tasks", self.tasks)
-        return sum(self.__descend(task) for task in tasks)
+        return sum(self._descend(task) for task in tasks)
 
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
