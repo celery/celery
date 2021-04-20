@@ -7,6 +7,7 @@ up and running.
 import errno
 import logging
 import os
+import warnings
 from collections import defaultdict
 from time import sleep
 
@@ -21,7 +22,8 @@ from vine import ppartial, promise
 
 from celery import bootsteps, signals
 from celery.app.trace import build_tracer
-from celery.exceptions import InvalidTaskError, NotRegistered
+from celery.exceptions import (CPendingDeprecationWarning, InvalidTaskError,
+                               NotRegistered)
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -109,6 +111,14 @@ body: {0}
 TERMINATING_TASK_ON_RESTART_AFTER_A_CONNECTION_LOSS = """\
 Task %s cannot be acknowledged after a connection loss since late acknowledgement is enabled for it.
 Terminating it instead.
+"""
+
+CANCEL_TASKS_BY_DEFAULT = """
+In Celery 5.1 we introduced an optional breaking change which
+on connection loss cancels all currently executed tasks with late acknowledgement enabled.
+These tasks cannot be acknowledged as the connection is gone, and the tasks are automatically redelivered back to the queue.
+You can enable this behavior using the worker_cancel_long_running_tasks_on_connection_loss setting.
+In Celery 5.1 it is set to False by default. The setting will be set to True by default in Celery 6.0.
 """
 
 
@@ -341,11 +351,14 @@ class Consumer:
         except Exception:  # pylint: disable=broad-except
             pass
 
-        for request in tuple(active_requests):
-            if request.task.acks_late and not request.acknowledged:
-                warn(TERMINATING_TASK_ON_RESTART_AFTER_A_CONNECTION_LOSS,
-                     request)
-                request.cancel(self.pool)
+        if self.app.conf.worker_cancel_long_running_tasks_on_connection_loss:
+            for request in tuple(active_requests):
+                if request.task.acks_late and not request.acknowledged:
+                    warn(TERMINATING_TASK_ON_RESTART_AFTER_A_CONNECTION_LOSS,
+                         request)
+                    request.cancel(self.pool)
+        else:
+            warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
