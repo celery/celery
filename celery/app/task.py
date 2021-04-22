@@ -918,11 +918,10 @@ class Task:
         sig.freeze(self.request.id)
 
         if self.request.is_eager:
-            raise AssertionError
             return sig.apply().get()
-            task_result = sig.apply()
-            with allow_join_result():
-                return task_result.get()
+            # task_result = sig.apply()
+            # with allow_join_result():
+            #     return task_result.get()
         else:
             sig.delay()
             raise Ignore('Replaced by new task')
