@@ -1383,6 +1383,9 @@ class test_apply_async(TasksCase):
         assert self.app.conf.task_always_eager, self.app.conf.task_always_eager
         assert isinstance(ret, EagerResult), ret.__class__.__name__
 
+        ret_get = ret.get()
+        assert ret_get == 'a', ret_get
+
     def test_task_with_ignored_result(self):
         with patch.object(self.app, 'send_task') as send_task:
             self.task_with_ignored_result.apply_async()
