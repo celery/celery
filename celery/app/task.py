@@ -555,9 +555,8 @@ class Task:
                     data, content_type, content_encoding,
                     accept=[content_type]
                 )
-            with denied_join_result():
-                return self.apply(args, kwargs, task_id=task_id or uuid(),
-                                  link=link, link_error=link_error, **options)
+            return self.apply(args, kwargs, task_id=task_id or uuid(),
+                              link=link, link_error=link_error, **options)
         else:
             return app.send_task(
                 self.name, args, kwargs, task_id=task_id, producer=producer,
