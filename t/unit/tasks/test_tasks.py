@@ -1378,7 +1378,9 @@ class test_apply_async(TasksCase):
             raise AssertionError
             return 'a'
 
-        task.apply_async()
+        ret = task.apply_async()
+
+        assert isinstance(ret, EagerResult), ret.__class__.__name__
 
     def test_task_with_ignored_result(self):
         with patch.object(self.app, 'send_task') as send_task:
