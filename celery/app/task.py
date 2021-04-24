@@ -969,7 +969,8 @@ class Task:
         """
         if task_id is None:
             task_id = self.request.id
-        self.backend.store_result(task_id, meta, state, request=self.request, **kwargs)
+        self.backend.store_result(
+            task_id, meta, state, request=self.request, **kwargs)
 
     def on_success(self, retval, task_id, args, kwargs):
         """Success handler.
