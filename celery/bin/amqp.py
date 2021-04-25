@@ -25,6 +25,10 @@ class AMQPContext:
         self.connection = self.cli_context.app.connection()
         self.channel = None
         self.reconnect()
+    
+    @property
+    def app(self):
+        return self.cli_context.app
 
     def respond(self, retval):
         if isinstance(retval, str):
