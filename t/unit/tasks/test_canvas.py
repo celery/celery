@@ -1,5 +1,5 @@
 import json
-from unittest.mock import MagicMock, Mock, call, patch, sentinel, ANY
+from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
 import pytest_subtests  # noqa: F401

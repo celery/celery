@@ -1,9 +1,11 @@
 import re
 import tempfile
+import uuid
 from datetime import datetime, timedelta
 from time import sleep
 
 import pytest
+import pytest_subtests  # noqa: F401
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
@@ -810,6 +812,71 @@ class test_group:
         # Re-raise the expected exception so this test will XFAIL
         raise expected_excinfo.value
 
+    def test_callback_called_by_group(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        callback_msg = str(uuid.uuid4()).encode()
+        callback = redis_echo.si(callback_msg)
+
+        group_sig = group(identity.si(42), identity.si(1337))
+        group_sig.link(callback)
+        redis_connection.delete("redis-echo")
+        with subtests.test(msg="Group result is returned"):
+            res = group_sig.delay()
+            assert res.get(timeout=TIMEOUT) == [42, 1337]
+        with subtests.test(msg="Callback is called after group is completed"):
+            maybe_key_msg = redis_connection.blpop("redis-echo", TIMEOUT)
+            if maybe_key_msg is None:
+                raise TimeoutError("Callback was not called in time")
+            _, msg = maybe_key_msg
+            assert msg == callback_msg
+
+    def test_errback_called_by_group_fail_first(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        errback_msg = str(uuid.uuid4()).encode()
+        errback = redis_echo.si(errback_msg)
+
+        group_sig = group(fail.s(), identity.si(42))
+        group_sig.link_error(errback)
+        redis_connection.delete("redis-echo")
+        with subtests.test(msg="Error propagates from group"):
+            res = group_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(msg="Errback is called after group task fails"):
+            maybe_key_msg = redis_connection.blpop("redis-echo", TIMEOUT)
+            if maybe_key_msg is None:
+                raise TimeoutError("Errback was not called in time")
+            _, msg = maybe_key_msg
+            assert msg == errback_msg
+
+    def test_errback_called_by_group_fail_last(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        errback_msg = str(uuid.uuid4()).encode()
+        errback = redis_echo.si(errback_msg)
+
+        group_sig = group(identity.si(42), fail.s())
+        group_sig.link_error(errback)
+        redis_connection.delete("redis-echo")
+        with subtests.test(msg="Error propagates from group"):
+            res = group_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(msg="Errback is called after group task fails"):
+            maybe_key_msg = redis_connection.blpop("redis-echo", TIMEOUT)
+            if maybe_key_msg is None:
+                raise TimeoutError("Errback was not called in time")
+            _, msg = maybe_key_msg
+            assert msg == errback_msg
+
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
     root_id, parent_id, value = r.get(timeout=TIMEOUT)
@@ -1405,6 +1472,262 @@ class test_chord:
 
         with pytest.raises(ExpectedException):
             res.get(timeout=TIMEOUT)
+
+    def test_error_propagates_to_chord_from_simple(self, manager, subtests):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        child_sig = fail.s()
+
+        chord_sig = chord((child_sig, ), identity.s())
+        with subtests.test(msg="Error propagates from simple header task"):
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+
+        chord_sig = chord((identity.si(42), ), child_sig)
+        with subtests.test(msg="Error propagates from simple body task"):
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+
+    def test_errback_called_by_chord_from_simple(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        errback_msg = str(uuid.uuid4()).encode()
+        errback = redis_echo.si(errback_msg)
+        child_sig = fail.s()
+
+        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig.link_error(errback)
+        with subtests.test(msg="Error propagates from simple header task"):
+            redis_connection.delete("redis-echo")
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(
+            msg="Errback is called after simple header task fails"
+        ):
+            maybe_key_msg = redis_connection.blpop("redis-echo", TIMEOUT)
+            if maybe_key_msg is None:
+                raise TimeoutError("Errback was not called in time")
+            _, msg = maybe_key_msg
+            assert msg == errback_msg
+
+        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig.link_error(errback)
+        with subtests.test(msg="Error propagates from simple body task"):
+            redis_connection.delete("redis-echo")
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(
+            msg="Errback is called after simple body task fails"
+        ):
+            maybe_key_msg = redis_connection.blpop("redis-echo", TIMEOUT)
+            if maybe_key_msg is None:
+                raise TimeoutError("Errback was not called in time")
+            _, msg = maybe_key_msg
+            assert msg == errback_msg
+
+    def test_error_propagates_to_chord_from_chain(self, manager, subtests):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        child_sig = chain(identity.si(42), fail.s(), identity.si(42))
+
+        chord_sig = chord((child_sig, ), identity.s())
+        with subtests.test(
+            msg="Error propagates from header chain which fails before the end"
+        ):
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+
+        chord_sig = chord((identity.si(42), ), child_sig)
+        with subtests.test(
+            msg="Error propagates from body chain which fails before the end"
+        ):
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+
+    def test_errback_called_by_chord_from_chain(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        errback_msg = str(uuid.uuid4()).encode()
+        errback = redis_echo.si(errback_msg)
+        child_sig = chain(identity.si(42), fail.s(), identity.si(42))
+
+        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig.link_error(errback)
+        with subtests.test(
+            msg="Error propagates from header chain which fails before the end"
+        ):
+            redis_connection.delete("redis-echo")
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(
+            msg="Errback is called after header chain which fails before the end"
+        ):
+            maybe_key_msg = redis_connection.blpop("redis-echo", TIMEOUT)
+            if maybe_key_msg is None:
+                raise TimeoutError("Errback was not called in time")
+            _, msg = maybe_key_msg
+            assert msg == errback_msg
+
+        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig.link_error(errback)
+        with subtests.test(
+            msg="Error propagates from body chain which fails before the end"
+        ):
+            redis_connection.delete("redis-echo")
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(
+            msg="Errback is called after body chain which fails before the end"
+        ):
+            maybe_key_msg = redis_connection.blpop("redis-echo", TIMEOUT)
+            if maybe_key_msg is None:
+                raise TimeoutError("Errback was not called in time")
+            _, msg = maybe_key_msg
+            assert msg == errback_msg
+
+    def test_error_propagates_to_chord_from_chain_tail(self, manager, subtests):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        child_sig = chain(identity.si(42), fail.s())
+
+        chord_sig = chord((child_sig, ), identity.s())
+        with subtests.test(
+            msg="Error propagates from header chain which fails at the end"
+        ):
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+
+        chord_sig = chord((identity.si(42), ), child_sig)
+        with subtests.test(
+            msg="Error propagates from body chain which fails at the end"
+        ):
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+
+    def test_errback_called_by_chord_from_chain_tail(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        errback_msg = str(uuid.uuid4()).encode()
+        errback = redis_echo.si(errback_msg)
+        child_sig = chain(identity.si(42), fail.s())
+
+        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig.link_error(errback)
+        with subtests.test(
+            msg="Error propagates from header chain which fails at the end"
+        ):
+            redis_connection.delete("redis-echo")
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(
+            msg="Errback is called after header chain which fails at the end"
+        ):
+            maybe_key_msg = redis_connection.blpop("redis-echo", TIMEOUT)
+            if maybe_key_msg is None:
+                raise TimeoutError("Errback was not called in time")
+            _, msg = maybe_key_msg
+            assert msg == errback_msg
+
+        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig.link_error(errback)
+        with subtests.test(
+            msg="Error propagates from body chain which fails at the end"
+        ):
+            redis_connection.delete("redis-echo")
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(
+            msg="Errback is called after body chain which fails at the end"
+        ):
+            maybe_key_msg = redis_connection.blpop("redis-echo", TIMEOUT)
+            if maybe_key_msg is None:
+                raise TimeoutError("Errback was not called in time")
+            _, msg = maybe_key_msg
+            assert msg == errback_msg
+
+    def test_error_propagates_to_chord_from_group(self, manager, subtests):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        child_sig = group(identity.si(42), fail.s())
+
+        chord_sig = chord((child_sig, ), identity.s())
+        with subtests.test(msg="Error propagates from header group"):
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+
+        chord_sig = chord((identity.si(42), ), child_sig)
+        with subtests.test(msg="Error propagates from body group"):
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+
+    def test_errback_called_by_chord_from_group(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        errback_msg = str(uuid.uuid4()).encode()
+        errback = redis_echo.si(errback_msg)
+        child_sig = group(identity.si(42), fail.s())
+
+        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig.link_error(errback)
+        with subtests.test(msg="Error propagates from header group"):
+            redis_connection.delete("redis-echo")
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(msg="Errback is called after header group fails"):
+            maybe_key_msg = redis_connection.blpop("redis-echo", TIMEOUT)
+            if maybe_key_msg is None:
+                raise TimeoutError("Errback was not called in time")
+            _, msg = maybe_key_msg
+            assert msg == errback_msg
+
+        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig.link_error(errback)
+        with subtests.test(msg="Error propagates from body group"):
+            redis_connection.delete("redis-echo")
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(msg="Errback is called after body group fails"):
+            maybe_key_msg = redis_connection.blpop("redis-echo", TIMEOUT)
+            if maybe_key_msg is None:
+                raise TimeoutError("Errback was not called in time")
+            _, msg = maybe_key_msg
+            assert msg == errback_msg
 
 
 class test_signature_serialization:
