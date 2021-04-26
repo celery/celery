@@ -9,8 +9,8 @@ from case import ContextMock
 
 from celery.utils.collections import LimitedSet
 from celery.worker.consumer.agent import Agent
-from celery.worker.consumer.consumer import CLOSE, TERMINATE, Consumer, \
-    CANCEL_TASKS_BY_DEFAULT
+from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE,
+                                             TERMINATE, Consumer)
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
