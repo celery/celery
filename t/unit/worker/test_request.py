@@ -754,6 +754,7 @@ class test_Request(RequestCase):
 
     def test_on_failure_task_cancelled(self):
         job = self.xRequest()
+        job.eventer = Mock()
         job.time_start = 1
         job.message.channel.connection = None
 
@@ -761,9 +762,14 @@ class test_Request(RequestCase):
             raise Terminated()
         except Terminated:
             exc_info = ExceptionInfo()
+
             job.on_failure(exc_info)
 
         assert job._already_cancelled
+
+        job.on_failure(exc_info)
+        job.eventer.send.assert_called_once_with('task-cancelled',
+                                                 uuid=job.id)
 
     def test_from_message_invalid_kwargs(self):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')
