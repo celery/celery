@@ -106,6 +106,12 @@ beat schedule list.
     @app.task
     def test(arg):
         print(arg)
+        
+    @app.task
+    def add(x, y):
+        z = x + y
+        print(z) 
+
 
 
 Setting these up from within the :data:`~@on_after_configure` handler means
