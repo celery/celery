@@ -4,11 +4,13 @@ from datetime import datetime, timedelta
 from time import sleep
 
 import pytest
+from msgpack.exceptions import ExtraData
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
+from kombu.exceptions import DecodeError
 
 from . import tasks
 from .conftest import (TEST_BACKEND, get_active_redis_channels,
@@ -703,6 +705,18 @@ class test_group:
         )                                       # [42, 42] due to unrolling
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
+
+    @pytest.mark.xfail(raises=DecodeError, strict=True)
+    @pytest.mark.celery(task_serializer='msgpack',
+                        accept_content=['application/x-msgpack'])
+    def test_group_msgpack(self, manager):
+        assert manager.inspect().ping()
+
+        chain(identity.si(b'arg'),
+              group([
+                    identity.si(b'arg1'),
+                    identity.si(b'arg2')
+                    ])).delay()
 
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
