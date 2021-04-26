@@ -19,7 +19,7 @@ from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task,
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated, WorkerLostError)
-from celery.signals import task_revoked
+from celery.signals import task_revoked, task_retry
 from celery.worker import request as module
 from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
@@ -35,16 +35,19 @@ class RequestCase:
         @self.app.task(shared=False)
         def add(x, y, **kw_):
             return x + y
+
         self.add = add
 
         @self.app.task(shared=False)
         def mytask(i, **kwargs):
             return i ** i
+
         self.mytask = mytask
 
         @self.app.task(shared=False)
         def mytask_raising(i):
             raise KeyError(i)
+
         self.mytask_raising = mytask_raising
 
     def xRequest(self, name=None, id=None, args=None, kwargs=None,
@@ -63,7 +66,6 @@ class RequestCase:
 class test_mro_lookup:
 
     def test_order(self):
-
         class A:
             pass
 
@@ -137,6 +139,7 @@ class test_trace_task(RequestCase):
         def store_result(tid, meta, state, **kwargs):
             if state == states.STARTED:
                 _started.append(tid)
+
         self.mytask.backend.store_result = Mock(name='store_result')
         self.mytask.backend.store_result.side_effect = store_result
         self.mytask.track_started = True
@@ -158,7 +161,6 @@ class test_trace_task(RequestCase):
         assert ret.exception.args == (4,)
 
     def test_execute_task_ignore_result(self):
-
         @self.app.task(shared=False, ignore_result=True)
         def ignores_result(i):
             return i ** i
@@ -227,14 +229,16 @@ class test_Request(RequestCase):
         import string
         kwargs = {}
         for i in range(0, 2):
-            kwargs[str(i)] = ''.join(random.choice(string.ascii_lowercase) for i in range(1000))
+            kwargs[str(i)] = ''.join(
+                random.choice(string.ascii_lowercase) for i in range(1000))
         assert self.get_request(
             self.add.s(**kwargs)).info(safe=True).get('kwargs') == kwargs
         assert self.get_request(
             self.add.s(**kwargs)).info(safe=False).get('kwargs') == kwargs
         args = []
         for i in range(0, 2):
-            args.append(''.join(random.choice(string.ascii_lowercase) for i in range(1000)))
+            args.append(''.join(
+                random.choice(string.ascii_lowercase) for i in range(1000)))
         assert list(self.get_request(
             self.add.s(*args)).info(safe=True).get('args')) == args
         assert list(self.get_request(
@@ -426,8 +430,8 @@ class test_Request(RequestCase):
         job = self.get_request(self.mytask.s(1, f='x'))
         job._apply_result = Mock(name='_apply_result')
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job._context,
-                terminated=True, expired=False, signum=signum):
+            task_revoked, sender=job.task, request=job._context,
+            terminated=True, expired=False, signum=signum):
             job.time_start = monotonic()
             job.worker_pid = 314
             job.terminate(pool, signal='TERM')
@@ -442,8 +446,8 @@ class test_Request(RequestCase):
         signum = signal.SIGTERM
         job = self.get_request(self.mytask.s(1, f='x'))
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job._context,
-                terminated=True, expired=False, signum=signum):
+            task_revoked, sender=job.task, request=job._context,
+            terminated=True, expired=False, signum=signum):
             job.time_start = monotonic()
             job.worker_pid = 313
             job.terminate(pool, signal='TERM')
@@ -458,13 +462,34 @@ class test_Request(RequestCase):
         assert job._terminate_on_ack == (pool, 15)
         job.terminate(pool, signal='TERM')
 
+    def test_cancel__task_started(self):
+        pool = Mock()
+        signum = signal.SIGTERM
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        with self.assert_signal_called(
+            task_retry, sender=job.task, request=job._context,
+            einfo=None):
+            job.time_start = monotonic()
+            job.worker_pid = 314
+            job.cancel(pool, signal='TERM')
+            job._apply_result().terminate.assert_called_with(signum)
+
+    def test_cancel__task_reserved(self):
+        pool = Mock()
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job.time_start = None
+        job.cancel(pool, signal='TERM')
+        pool.terminate_job.assert_not_called()
+        assert job._terminate_on_ack is None
+
     def test_revoked_expires_expired(self):
         job = self.get_request(self.mytask.s(1, f='x').set(
             expires=datetime.utcnow() - timedelta(days=1)
         ))
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job._context,
-                terminated=False, expired=True, signum=None):
+            task_revoked, sender=job.task, request=job._context,
+            terminated=False, expired=True, signum=None):
             job.revoked()
             assert job.id in revoked
             self.app.set_current()
@@ -495,8 +520,8 @@ class test_Request(RequestCase):
     def test_revoked(self):
         job = self.xRequest()
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job._context,
-                terminated=False, expired=False, signum=None):
+            task_revoked, sender=job.task, request=job._context,
+            terminated=False, expired=False, signum=None):
             revoked.add(job.id)
             assert job.revoked()
             assert job._already_revoked
@@ -544,8 +569,8 @@ class test_Request(RequestCase):
         pool = Mock()
         job = self.xRequest()
         with self.assert_signal_called(
-                task_revoked, sender=job.task, request=job._context,
-                terminated=True, expired=False, signum=signum):
+            task_revoked, sender=job.task, request=job._context,
+            terminated=True, expired=False, signum=signum):
             job.terminate(pool, signal='TERM')
             assert not pool.terminate_job.call_count
             job.on_accepted(pid=314, time_accepted=monotonic())
@@ -667,7 +692,8 @@ class test_Request(RequestCase):
             job.on_failure(exc_info)
 
         assert job.acknowledged is True
-        job._on_reject.assert_called_with(req_logger, job.connection_errors, False)
+        job._on_reject.assert_called_with(req_logger, job.connection_errors,
+                                          False)
 
     def test_on_failure_acks_on_failure_or_timeout_enabled_for_task(self):
         job = self.xRequest()
@@ -1087,7 +1113,8 @@ class test_create_request_class(RequestCase):
 
     def create_request_cls(self, **kwargs):
         return create_request_cls(
-            Request, self.task, self.pool, 'foo', self.eventer, app=self.app, **kwargs
+            Request, self.task, self.pool, 'foo', self.eventer, app=self.app,
+            **kwargs
         )
 
     def zRequest(self, Request=None, revoked_tasks=None, ref=None, **kwargs):
