@@ -19,7 +19,7 @@ from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task,
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated, WorkerLostError)
-from celery.signals import task_revoked, task_retry
+from celery.signals import task_retry, task_revoked
 from celery.worker import request as module
 from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
@@ -430,8 +430,8 @@ class test_Request(RequestCase):
         job = self.get_request(self.mytask.s(1, f='x'))
         job._apply_result = Mock(name='_apply_result')
         with self.assert_signal_called(
-            task_revoked, sender=job.task, request=job._context,
-            terminated=True, expired=False, signum=signum):
+                task_revoked, sender=job.task, request=job._context,
+                terminated=True, expired=False, signum=signum):
             job.time_start = monotonic()
             job.worker_pid = 314
             job.terminate(pool, signal='TERM')
@@ -446,8 +446,8 @@ class test_Request(RequestCase):
         signum = signal.SIGTERM
         job = self.get_request(self.mytask.s(1, f='x'))
         with self.assert_signal_called(
-            task_revoked, sender=job.task, request=job._context,
-            terminated=True, expired=False, signum=signum):
+                task_revoked, sender=job.task, request=job._context,
+                terminated=True, expired=False, signum=signum):
             job.time_start = monotonic()
             job.worker_pid = 313
             job.terminate(pool, signal='TERM')
@@ -468,8 +468,8 @@ class test_Request(RequestCase):
         job = self.get_request(self.mytask.s(1, f='x'))
         job._apply_result = Mock(name='_apply_result')
         with self.assert_signal_called(
-            task_retry, sender=job.task, request=job._context,
-            einfo=None):
+                task_retry, sender=job.task, request=job._context,
+                einfo=None):
             job.time_start = monotonic()
             job.worker_pid = 314
             job.cancel(pool, signal='TERM')
@@ -488,8 +488,8 @@ class test_Request(RequestCase):
             expires=datetime.utcnow() - timedelta(days=1)
         ))
         with self.assert_signal_called(
-            task_revoked, sender=job.task, request=job._context,
-            terminated=False, expired=True, signum=None):
+                task_revoked, sender=job.task, request=job._context,
+                terminated=False, expired=True, signum=None):
             job.revoked()
             assert job.id in revoked
             self.app.set_current()
@@ -520,8 +520,8 @@ class test_Request(RequestCase):
     def test_revoked(self):
         job = self.xRequest()
         with self.assert_signal_called(
-            task_revoked, sender=job.task, request=job._context,
-            terminated=False, expired=False, signum=None):
+                task_revoked, sender=job.task, request=job._context,
+                terminated=False, expired=False, signum=None):
             revoked.add(job.id)
             assert job.revoked()
             assert job._already_revoked
@@ -569,8 +569,8 @@ class test_Request(RequestCase):
         pool = Mock()
         job = self.xRequest()
         with self.assert_signal_called(
-            task_revoked, sender=job.task, request=job._context,
-            terminated=True, expired=False, signum=signum):
+                task_revoked, sender=job.task, request=job._context,
+                terminated=True, expired=False, signum=signum):
             job.terminate(pool, signal='TERM')
             assert not pool.terminate_job.call_count
             job.on_accepted(pid=314, time_accepted=monotonic())
