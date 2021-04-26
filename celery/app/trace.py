@@ -402,10 +402,11 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
 
-            if deduplicate_successful_tasks:
-                r = AsyncResult(task_request.id, app=app)
+            redelivered = task_request.delivery_info.get('redelivered', False)
+            if deduplicate_successful_tasks and redelivered:
                 if task_request.id in successful_requests:
                     return trace_ok_t(R, I, T, Rstr)
+                r = AsyncResult(task_request.id, app=app)
 
                 try:
                     state = r.state
