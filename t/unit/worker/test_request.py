@@ -453,6 +453,23 @@ class test_Request(RequestCase):
             job.terminate(pool, signal='TERM')
             pool.terminate_job.assert_called_with(job.worker_pid, signum)
 
+    def test_cancel__pool_ref(self):
+        pool = Mock()
+        signum = signal.SIGTERM
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        with self.assert_signal_called(
+                task_retry, sender=job.task, request=job._context,
+                einfo=None):
+            job.time_start = monotonic()
+            job.worker_pid = 314
+            job.cancel(pool, signal='TERM')
+            job._apply_result().terminate.assert_called_with(signum)
+
+            job._apply_result = Mock(name='_apply_result2')
+            job._apply_result.return_value = None
+            job.cancel(pool, signal='TERM')
+
     def test_terminate__task_reserved(self):
         pool = Mock()
         job = self.get_request(self.mytask.s(1, f='x'))
