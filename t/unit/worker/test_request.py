@@ -735,6 +735,19 @@ class test_Request(RequestCase):
             job.on_failure(exc_info)
         assert job.acknowledged is True
 
+    def test_on_failure_task_cancelled(self):
+        job = self.xRequest()
+        job.time_start = 1
+        job.message.channel.connection = None
+
+        try:
+            raise Terminated()
+        except Terminated:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+
+        assert job._already_cancelled
+
     def test_from_message_invalid_kwargs(self):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')
         req = Request(m, app=self.app)
