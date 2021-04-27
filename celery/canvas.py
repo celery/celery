@@ -1134,7 +1134,14 @@ class group(Signature):
             # pass a Mock object as argument.
             sig['immutable'] = True
             sig = Signature.from_dict(sig)
-        return self.tasks[0].link_error(sig)
+        # Any child task might error so we need to ensure that they are all
+        # capable of calling the linked error signature. This opens the
+        # possibility that the task is called more than once but that's better
+        # than it not being called at all.
+        #
+        # We return a concretised tuple of the signatures actually applied to
+        # each child task signature, of which there might be none!
+        return tuple(child_task.link_error(sig) for child_task in self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
                   CallableSignature=abstract.CallableSignature,
