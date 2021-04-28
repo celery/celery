@@ -484,7 +484,7 @@ class test_trace(TraceCase):
 
         self.app.conf.worker_deduplicate_successful_tasks = True
         task_id = str(uuid4())
-        request = {'id': task_id}
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
 
         assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
         assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (None, None)
@@ -504,7 +504,7 @@ class test_trace(TraceCase):
 
         self.app.conf.worker_deduplicate_successful_tasks = True
         task_id = str(uuid4())
-        request = {'id': task_id}
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
 
         with patch('celery.app.trace.AsyncResult') as async_result_mock:
             async_result_mock().state.return_value = PENDING
@@ -526,7 +526,7 @@ class test_trace(TraceCase):
 
         self.app.conf.worker_deduplicate_successful_tasks = True
         task_id = str(uuid4())
-        request = {'id': task_id}
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
 
         with patch('celery.app.trace.AsyncResult') as async_result_mock:
             assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
@@ -550,7 +550,7 @@ class test_trace(TraceCase):
         self.app.conf.worker_deduplicate_successful_tasks = True
 
         task_id = str(uuid4())
-        request = {'id': task_id}
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
 
         successful_requests.add(task_id)
 
