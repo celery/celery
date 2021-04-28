@@ -332,7 +332,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         publish_result = not eager and not ignore_result
 
     deduplicate_successful_tasks = ((app.conf.task_acks_late or task.acks_late)
-                                    and app.conf.worker_deduplicate_successful_tasks)
+                                    and app.conf.worker_deduplicate_successful_tasks
+                                    and app.backend.persistent)
 
     hostname = hostname or gethostname()
     inherit_parent_priority = app.conf.task_inherit_parent_priority
