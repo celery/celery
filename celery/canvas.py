@@ -1170,21 +1170,25 @@ class group(Signature):
             # we are able to tell when we are at the end by checking if
             # next_task is None.  This enables us to set the chord size
             # without burning through the entire generator.  See #3021.
+            chord_size = 0
             for task_index, (current_task, next_task) in enumerate(
                 lookahead(tasks)
             ):
+                # We expect that each task must be part of the same group which
+                # seems sensible enough. If that's somehow not the case we'll
+                # end up messing up chord counts and there are all sorts of
+                # awful race conditions to think about. We'll hope it's not!
                 sig, res, group_id = current_task
-                _chord = sig.options.get("chord") or chord
-                if _chord is not None and next_task is None:
-                    chord_size = task_index + 1
-                    if isinstance(sig, _chain):
-                        if sig.tasks[-1].subtask_type == 'chord':
-                            chord_size = sig.tasks[-1].__length_hint__()
-                        else:
-                            chord_size = task_index + len(sig.tasks[-1])
+                chord_obj = sig.options.get("chord") or chord
+                # We need to check the chord size of each contributing task so
+                # that when we get to the final one, we can correctly set the
+                # size in the backend and the chord can be sensible completed.
+                chord_size += _chord._descend(sig)
+                if chord_obj is not None and next_task is None:
+                    # Per above, sanity check that we only saw one group
                     app.backend.set_chord_size(group_id, chord_size)
                 sig.apply_async(producer=producer, add_to_parent=False,
-                                chord=_chord, args=args, kwargs=kwargs,
+                                chord=chord_obj, args=args, kwargs=kwargs,
                                 **options)
                 # adding callback to result, such that it will gradually
                 # fulfill the barrier.
@@ -1296,8 +1300,8 @@ class group(Signature):
         return app if app is not None else current_app
 
 
-@Signature.register_type()
-class chord(Signature):
+@Signature.register_type(name="chord")
+class _chord(Signature):
     r"""Barrier synchronization primitive.
 
     A chord consists of a header and a body.
@@ -1415,20 +1419,27 @@ class chord(Signature):
         )
 
     @classmethod
-    def __descend(cls, sig_obj):
+    def _descend(cls, sig_obj):
         # Sometimes serialized signatures might make their way here
         if not isinstance(sig_obj, Signature) and isinstance(sig_obj, dict):
             sig_obj = Signature.from_dict(sig_obj)
         if isinstance(sig_obj, group):
             # Each task in a group counts toward this chord
             subtasks = getattr(sig_obj.tasks, "tasks", sig_obj.tasks)
-            return sum(cls.__descend(task) for task in subtasks)
+            return sum(cls._descend(task) for task in subtasks)
         elif isinstance(sig_obj, _chain):
-            # The last element in a chain counts toward this chord
-            return cls.__descend(sig_obj.tasks[-1])
+            # The last non-empty element in a chain counts toward this chord
+            for child_sig in sig_obj.tasks[-1::-1]:
+                child_size = cls._descend(child_sig)
+                if child_size > 0:
+                    return child_size
+            else:
+                # We have to just hope this chain is part of some encapsulating
+                # signature which is valid and can fire the chord body
+                return 0
         elif isinstance(sig_obj, chord):
             # The child chord's body counts toward this chord
-            return cls.__descend(sig_obj.body)
+            return cls._descend(sig_obj.body)
         elif isinstance(sig_obj, Signature):
             # Each simple signature counts as 1 completion for this chord
             return 1
@@ -1437,7 +1448,7 @@ class chord(Signature):
 
     def __length_hint__(self):
         tasks = getattr(self.tasks, "tasks", self.tasks)
-        return sum(self.__descend(task) for task in tasks)
+        return sum(self._descend(task) for task in tasks)
 
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
@@ -1535,6 +1546,11 @@ class chord(Signature):
 
     tasks = getitem_property('kwargs.header', 'Tasks in chord header.')
     body = getitem_property('kwargs.body', 'Body task of chord.')
+
+
+# Add a back-compat alias for the previous `chord` class name which conflicts
+# with keyword arguments elsewhere in this file
+chord = _chord
 
 
 def signature(varies, *args, **kwargs):

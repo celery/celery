@@ -704,6 +704,112 @@ class test_group:
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
 
+    def test_nested_group_chord_counting_simple(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        gchild_sig = identity.si(42)
+        child_chord = chord((gchild_sig, ), identity.s())
+        group_sig = group((child_chord, ))
+        res = group_sig.delay()
+        # Wait for the result to land and confirm its value is as expected
+        assert res.get(timeout=TIMEOUT) == [[42]]
+
+    def test_nested_group_chord_counting_chain(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        gchild_count = 42
+        gchild_sig = chain((identity.si(1337), ) * gchild_count)
+        child_chord = chord((gchild_sig, ), identity.s())
+        group_sig = group((child_chord, ))
+        res = group_sig.delay()
+        # Wait for the result to land and confirm its value is as expected
+        assert res.get(timeout=TIMEOUT) == [[1337]]
+
+    def test_nested_group_chord_counting_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        gchild_count = 42
+        gchild_sig = group((identity.si(1337), ) * gchild_count)
+        child_chord = chord((gchild_sig, ), identity.s())
+        group_sig = group((child_chord, ))
+        res = group_sig.delay()
+        # Wait for the result to land and confirm its value is as expected
+        assert res.get(timeout=TIMEOUT) == [[1337] * gchild_count]
+
+    def test_nested_group_chord_counting_chord(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        gchild_count = 42
+        gchild_sig = chord(
+            (identity.si(1337), ) * gchild_count, identity.si(31337),
+        )
+        child_chord = chord((gchild_sig, ), identity.s())
+        group_sig = group((child_chord, ))
+        res = group_sig.delay()
+        # Wait for the result to land and confirm its value is as expected
+        assert res.get(timeout=TIMEOUT) == [[31337]]
+
+    def test_nested_group_chord_counting_mixed(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        gchild_count = 42
+        child_chord = chord(
+            (
+                identity.si(42),
+                chain((identity.si(42), ) * gchild_count),
+                group((identity.si(42), ) * gchild_count),
+                chord((identity.si(42), ) * gchild_count, identity.si(1337)),
+            ),
+            identity.s(),
+        )
+        group_sig = group((child_chord, ))
+        res = group_sig.delay()
+        # Wait for the result to land and confirm its value is as expected. The
+        # group result gets unrolled into the encapsulating chord, hence the
+        # weird unpacking below
+        assert res.get(timeout=TIMEOUT) == [
+            [42, 42, *((42, ) * gchild_count), 1337]
+        ]
+
+    @pytest.mark.xfail(raises=TimeoutError, reason="#6734")
+    def test_nested_group_chord_body_chain(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        child_chord = chord(identity.si(42), chain((identity.s(), )))
+        group_sig = group((child_chord, ))
+        res = group_sig.delay()
+        # The result can be expected to timeout since it seems like its
+        # underlying promise might not be getting fulfilled (ref #6734). Pick a
+        # short timeout since we don't want to block for ages and this is a
+        # fairly simple signature which should run pretty quickly.
+        expected_result = [[42]]
+        with pytest.raises(TimeoutError) as expected_excinfo:
+            res.get(timeout=TIMEOUT / 10)
+        # Get the child `AsyncResult` manually so that we don't have to wait
+        # again for the `GroupResult`
+        assert res.children[0].get(timeout=TIMEOUT) == expected_result[0]
+        assert res.get(timeout=TIMEOUT) == expected_result
+        # Re-raise the expected exception so this test will XFAIL
+        raise expected_excinfo.value
+
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
     root_id, parent_id, value = r.get(timeout=TIMEOUT)
