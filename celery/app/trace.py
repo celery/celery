@@ -399,11 +399,12 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             except AttributeError:
                 raise InvalidTaskError(
                     'Task keyword arguments is not a mapping')
-            push_task(task)
+
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
 
-            redelivered = task_request.delivery_info.get('redelivered', False)
+            redelivered = (task_request.delivery_info
+                           and task_request.delivery_info.get('redelivered', False))
             if deduplicate_successful_tasks and redelivered:
                 if task_request.id in successful_requests:
                     return trace_ok_t(R, I, T, Rstr)
@@ -421,6 +422,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             'description': 'Task already completed successfully.'
                         })
                         return trace_ok_t(R, I, T, Rstr)
+
+            push_task(task)
             root_id = task_request.root_id or uuid
             task_priority = task_request.delivery_info.get('priority') if \
                 inherit_parent_priority else None
