@@ -299,6 +299,9 @@ NAMESPACES = Namespace(
         disable_rate_limits=Option(
             False, type='bool', old={'celery_disable_rate_limits'},
         ),
+        deduplicate_successful_tasks=Option(
+            False, type='bool'
+        ),
         enable_remote_control=Option(
             True, type='bool', old={'celery_enable_remote_control'},
         ),

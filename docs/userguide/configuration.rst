@@ -2601,6 +2601,33 @@ to have different import categories.
 The modules in this setting are imported after the modules in
 :setting:`imports`.
 
+.. setting:: worker_deduplicate_successful_tasks
+
+``worker_deduplicate_successful_tasks``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.1
+
+Default: False
+
+Before each task execution, instruct the worker to check if this task is
+a duplicate message.
+
+Deduplication occurs only with tasks that have the same identifier,
+enabled late acknowledgment, were redelivered by the message broker
+and their state is ``SUCCESS`` in the result backend.
+
+To avoid overflowing the result backend with queries, a local cache of
+successfully executed tasks is checked before querying the result backend
+in case the task was already successfully executed by the same worker that
+received the task.
+
+This cache can be made persistent by setting the :setting:`worker_state_db`
+setting.
+
+If the result backend is not persistent (the RPC backend, for example),
+this setting is ignored.
+
 .. _conf-concurrency:
 
 .. setting:: worker_concurrency

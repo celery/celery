@@ -34,9 +34,16 @@ SOFTWARE_INFO = {
 #: maximum number of revokes to keep in memory.
 REVOKES_MAX = 50000
 
+#: maximum number of successful tasks to keep in memory.
+SUCCESSFUL_MAX = 1000
+
 #: how many seconds a revoke will be active before
 #: being expired when the max limit has been exceeded.
 REVOKE_EXPIRES = 10800
+
+#: how many seconds a successful task will be cached in memory
+#: before being expired when the max limit has been exceeded.
+SUCCESSFUL_EXPIRES = 10800
 
 #: Mapping of reserved task_id->Request.
 requests = {}
@@ -46,6 +53,10 @@ reserved_requests = weakref.WeakSet()
 
 #: set of currently active :class:`~celery.worker.request.Request`'s.
 active_requests = weakref.WeakSet()
+
+#: A limited set of successful :class:`~celery.worker.request.Request`'s.
+successful_requests = LimitedSet(maxlen=SUCCESSFUL_MAX,
+                                 expires=SUCCESSFUL_EXPIRES)
 
 #: count of tasks accepted by the worker, sorted by type.
 total_count = Counter()
@@ -64,6 +75,7 @@ def reset_state():
     requests.clear()
     reserved_requests.clear()
     active_requests.clear()
+    successful_requests.clear()
     total_count.clear()
     all_total_count[:] = [0]
     revoked.clear()
@@ -98,10 +110,14 @@ def task_accepted(request,
 
 
 def task_ready(request,
+               successful=False,
                remove_request=requests.pop,
                discard_active_request=active_requests.discard,
                discard_reserved_request=reserved_requests.discard):
     """Update global state when a task is ready."""
+    if successful:
+        successful_requests.add(request.id)
+
     remove_request(request.id, None)
     discard_active_request(request)
     discard_reserved_request(request)

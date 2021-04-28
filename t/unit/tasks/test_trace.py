@@ -1,4 +1,5 @@
-from unittest.mock import ANY, Mock, patch
+from unittest.mock import ANY, Mock, PropertyMock, patch
+from uuid import uuid4
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -6,8 +7,8 @@ from kombu.exceptions import EncodeError
 
 from celery import group, signals, states, uuid
 from celery.app.task import Context
-from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task,
-                              get_log_policy, get_task_name,
+from celery.app.trace import (TraceInfo, build_tracer,
+                              fast_trace_task, get_log_policy, get_task_name,
                               log_policy_expected, log_policy_ignore,
                               log_policy_internal, log_policy_reject,
                               log_policy_unexpected,
@@ -15,14 +16,18 @@ from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task,
                               setup_worker_optimizations, trace_task,
                               trace_task_ret, traceback_clear)
 from celery.backends.base import BaseDictBackend
-from celery.exceptions import Ignore, Reject, Retry
+from celery.backends.cache import CacheBackend
+from celery.exceptions import BackendGetMetaError, Ignore, Reject, Retry
+from celery.states import PENDING
+from celery.worker.state import successful_requests
 
 
 def trace(
-    app, task, args=(), kwargs={}, propagate=False, eager=True, request=None, **opts
+    app, task, args=(), kwargs={}, propagate=False,
+    eager=True, request=None, task_id='id-1', **opts
 ):
     t = build_tracer(task.name, task, eager=eager, propagate=propagate, app=app, **opts)
-    ret = t('id-1', args, kwargs, request)
+    ret = t(task_id, args, kwargs, request)
     return ret.retval, ret.info
 
 
@@ -465,6 +470,95 @@ class test_trace(TraceCase):
         ret, info, _, _ = trace_task(xtask, 'uuid', (), {}, app=self.app)
         assert info is not None
         assert isinstance(ret, ExceptionInfo)
+
+    def test_deduplicate_successful_tasks__deduplication(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+        add.acks_late = True
+
+        self.app.conf.worker_deduplicate_successful_tasks = True
+        task_id = str(uuid4())
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
+
+        assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
+        assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (None, None)
+
+        self.app.conf.worker_deduplicate_successful_tasks = False
+
+    def test_deduplicate_successful_tasks__no_deduplication(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+        add.acks_late = True
+
+        self.app.conf.worker_deduplicate_successful_tasks = True
+        task_id = str(uuid4())
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
+
+        with patch('celery.app.trace.AsyncResult') as async_result_mock:
+            async_result_mock().state.return_value = PENDING
+            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
+            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
+
+        self.app.conf.worker_deduplicate_successful_tasks = False
+
+    def test_deduplicate_successful_tasks__result_not_found(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+        add.acks_late = True
+
+        self.app.conf.worker_deduplicate_successful_tasks = True
+        task_id = str(uuid4())
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
+
+        with patch('celery.app.trace.AsyncResult') as async_result_mock:
+            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
+            state_property = PropertyMock(side_effect=BackendGetMetaError)
+            type(async_result_mock()).state = state_property
+            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
+
+        self.app.conf.worker_deduplicate_successful_tasks = False
+
+    def test_deduplicate_successful_tasks__cached_request(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+        add.acks_late = True
+
+        self.app.conf.worker_deduplicate_successful_tasks = True
+
+        task_id = str(uuid4())
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
+
+        successful_requests.add(task_id)
+
+        assert trace(self.app, add, (1, 1), task_id=task_id,
+                     request=request) == (None, None)
+
+        successful_requests.clear()
+        self.app.conf.worker_deduplicate_successful_tasks = False
 
 
 class test_TraceInfo(TraceCase):
