@@ -2735,6 +2735,36 @@ Default: 4.0.
 
 The timeout in seconds (int/float) when waiting for a new worker process to start up.
 
+.. setting:: worker_cancel_long_running_tasks_on_connection_loss
+
+``worker_cancel_long_running_tasks_on_connection_loss``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.1
+
+Default: Disabled by default.
+
+Kill all long-running tasks with late acknowledgment enabled on connection loss.
+
+Tasks which have not been acknowledged before the connection loss cannot do so
+anymore since their channel is gone and the task is redelivered back to the queue.
+This is why tasks with late acknowledged enabled must be idempotent as they may be executed more than once.
+In this case, the task is being executed twice per connection loss (and sometimes in parallel in other workers).
+
+When turning this option on, those tasks which have not been completed are
+cancelled and their execution is terminated.
+Tasks which have completed in any way before the connection loss
+are recorded as such in the result backend as long as :setting:`task_ignore_result` is not enabled.
+
+.. warning::
+
+    This feature was introduced as a future breaking change.
+    If it is turned off, Celery will emit a warning message.
+
+    In Celery 6.0, the :setting:`worker_cancel_long_running_tasks_on_connection_loss`
+    will be set to ``True`` by default as the current behavior leads to more
+    problems than it solves.
+
 .. _conf-events:
 
 Events

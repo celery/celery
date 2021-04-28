@@ -7,6 +7,7 @@ up and running.
 import errno
 import logging
 import os
+import warnings
 from collections import defaultdict
 from time import sleep
 
@@ -21,7 +22,8 @@ from vine import ppartial, promise
 
 from celery import bootsteps, signals
 from celery.app.trace import build_tracer
-from celery.exceptions import InvalidTaskError, NotRegistered
+from celery.exceptions import (CPendingDeprecationWarning, InvalidTaskError,
+                               NotRegistered)
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -29,8 +31,8 @@ from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
-from celery.worker.state import (maybe_shutdown, reserved_requests,
-                                 task_reserved)
+from celery.worker.state import (active_requests, maybe_shutdown,
+                                 reserved_requests, task_reserved)
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
@@ -104,6 +106,19 @@ MESSAGE_REPORT = """\
 body: {0}
 {{content_type:{1} content_encoding:{2}
   delivery_info:{3} headers={4}}}
+"""
+
+TERMINATING_TASK_ON_RESTART_AFTER_A_CONNECTION_LOSS = """\
+Task %s cannot be acknowledged after a connection loss since late acknowledgement is enabled for it.
+Terminating it instead.
+"""
+
+CANCEL_TASKS_BY_DEFAULT = """
+In Celery 5.1 we introduced an optional breaking change which
+on connection loss cancels all currently executed tasks with late acknowledgement enabled.
+These tasks cannot be acknowledged as the connection is gone, and the tasks are automatically redelivered back to the queue.
+You can enable this behavior using the worker_cancel_long_running_tasks_on_connection_loss setting.
+In Celery 5.1 it is set to False by default. The setting will be set to True by default in Celery 6.0.
 """
 
 
@@ -257,7 +272,7 @@ class Consumer:
     def _update_qos_eventually(self, index):
         return (self.qos.decrement_eventually if index < 0
                 else self.qos.increment_eventually)(
-                    abs(index) * self.prefetch_multiplier)
+            abs(index) * self.prefetch_multiplier)
 
     def _limit_move_to_pool(self, request):
         task_reserved(request)
@@ -335,6 +350,15 @@ class Consumer:
             self.connection.collect()
         except Exception:  # pylint: disable=broad-except
             pass
+
+        if self.app.conf.worker_cancel_long_running_tasks_on_connection_loss:
+            for request in tuple(active_requests):
+                if request.task.acks_late and not request.acknowledged:
+                    warn(TERMINATING_TASK_ON_RESTART_AFTER_A_CONNECTION_LOSS,
+                         request)
+                    request.cancel(self.pool)
+        else:
+            warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
@@ -487,7 +511,8 @@ class Consumer:
         signals.task_rejected.send(sender=self, message=message, exc=None)
 
     def on_unknown_task(self, body, message, exc):
-        error(UNKNOWN_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
+        error(UNKNOWN_TASK_ERROR, exc, dump_body(message, body),
+              exc_info=True)
         try:
             id_, name = message.headers['id'], message.headers['task']
             root_id = message.headers.get('root_id')
@@ -515,7 +540,8 @@ class Consumer:
         )
 
     def on_invalid_task(self, body, message, exc):
-        error(INVALID_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
+        error(INVALID_TASK_ERROR, exc, dump_body(message, body),
+              exc_info=True)
         message.reject_log_error(logger, self.connection_errors)
         signals.task_rejected.send(sender=self, message=message, exc=exc)
 
@@ -539,7 +565,7 @@ class Consumer:
             # will defer deserializing the message body to the pool.
             payload = None
             try:
-                type_ = message.headers['task']                # protocol v2
+                type_ = message.headers['task']  # protocol v2
             except TypeError:
                 return on_unknown_message(None, message)
             except KeyError:
