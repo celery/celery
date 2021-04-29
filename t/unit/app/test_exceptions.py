@@ -1,7 +1,6 @@
 import pickle
 from datetime import datetime
 
-from celery.canvas import Signature
 from celery.exceptions import Reject, Retry
 
 
