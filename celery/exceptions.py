@@ -97,6 +97,8 @@ __all__ = (
     'CeleryCommandException',
 )
 
+from celery.utils.serialization import get_pickleable_exception
+
 UNREGISTERED_FMT = """\
 Task of kind {0} never registered, please make sure it's imported.\
 """
@@ -180,7 +182,8 @@ class Retry(TaskPredicate):
         return f'Retry {self.humanize()}'
 
     def __reduce__(self):
-        return self.__class__, (self.message, self.exc, self.when)
+        exc = get_pickleable_exception(self.exc)
+        return self.__class__, (self.message, exc, self.when)
 
 
 RetryTaskError = Retry  # noqa: E305 XXX compat
