@@ -12,8 +12,7 @@ class test_Retry:
         assert x.humanize()
 
     def test_pickleable(self):
-        x = Retry('foo', KeyError(), when=datetime.utcnow(), is_eager=True,
-                  sig=Signature())
+        x = Retry('foo', KeyError(), when=datetime.utcnow())
         y = pickle.loads(pickle.dumps(x))
         assert x.message == y.message
         assert repr(x.exc) == repr(y.exc)
