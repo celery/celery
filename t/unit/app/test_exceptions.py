@@ -1,8 +1,8 @@
 import pickle
 from datetime import datetime
 
+from celery.canvas import Signature
 from celery.exceptions import Reject, Retry
-from celery.utils.serialization import UnpickleableExceptionWrapper
 
 
 class test_Retry:
@@ -12,19 +12,12 @@ class test_Retry:
         assert x.humanize()
 
     def test_pickleable(self):
-        x = Retry('foo', KeyError(), when=datetime.utcnow())
+        x = Retry('foo', KeyError(), when=datetime.utcnow(), is_eager=True,
+                  sig=Signature())
         y = pickle.loads(pickle.dumps(x))
-        assert repr(x) == repr(y)
-
-    def test_wrap_unpickleable_exception(self):
-        class Danger(Exception):
-            def __reduce__(self):
-                raise RuntimeError("reduce is broken")
-        x = Retry('foo', Danger(), when=datetime.utcnow())
-        y = pickle.loads(pickle.dumps(x))
-        assert isinstance(y.exc, UnpickleableExceptionWrapper)
-
-
+        assert x.message == y.message
+        assert repr(x.exc) == repr(y.exc)
+        assert x.when == y.when
 
 
 class test_Reject:
