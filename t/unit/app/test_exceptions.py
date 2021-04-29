@@ -12,7 +12,8 @@ class test_Retry:
 
     def test_pickleable(self):
         x = Retry('foo', KeyError(), when=datetime.utcnow())
-        assert pickle.loads(pickle.dumps(x))
+        y = pickle.loads(pickle.dumps(x))
+        assert repr(x) == repr(y)
 
 
 class test_Reject:

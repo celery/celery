@@ -180,7 +180,7 @@ class Retry(TaskPredicate):
         return f'Retry {self.humanize()}'
 
     def __reduce__(self):
-        return self.__class__, (self.message, self.excs, self.when)
+        return self.__class__, (self.message, self.exc, self.when)
 
 
 RetryTaskError = Retry  # noqa: E305 XXX compat
