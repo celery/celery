@@ -274,6 +274,10 @@ class test_App:
         with self.Celery(broker='foo://baribaz') as app:
             assert app.conf.broker_url == 'foo://baribaz'
 
+    def test_pending_confugration__kwargs(self):
+        with self.Celery(foo='bar') as app:
+            assert app.conf.foo == 'bar'
+
     def test_pending_configuration__setattr(self):
         with self.Celery(broker='foo://bar') as app:
             app.conf.task_default_delivery_mode = 44
