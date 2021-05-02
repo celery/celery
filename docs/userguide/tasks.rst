@@ -153,7 +153,7 @@ be the task instance (``self``), just like Python bound methods:
 
     logger = get_task_logger(__name__)
 
-    @task(bind=True)
+    @app.task(bind=True)
     def add(self, x, y):
         logger.info(self.request.id)
 
@@ -175,7 +175,7 @@ The ``base`` argument to the task decorator specifies the base class of the task
         def on_failure(self, exc, task_id, args, kwargs, einfo):
             print('{0!r} failed: {1!r}'.format(task_id, exc))
 
-    @task(base=MyTask)
+    @app.task(base=MyTask)
     def add(x, y):
         raise KeyError()
 
@@ -318,7 +318,7 @@ on the automatic naming:
 
 .. code-block:: python
 
-    @task(name='proj.tasks.add')
+    @app.task(name='proj.tasks.add')
     def add(x, y):
         return x + y
 
