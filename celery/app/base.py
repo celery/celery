@@ -274,8 +274,10 @@ class Celery:
         self.__autoset('broker_url', broker)
         self.__autoset('result_backend', backend)
         self.__autoset('include', include)
-        self.__autoset('broker_use_ssl', kwargs.get('broker_use_ssl'))
-        self.__autoset('redis_backend_use_ssl', kwargs.get('redis_backend_use_ssl'))
+
+        for key, value in kwargs.items():
+            self.__autoset(key, value)
+
         self._conf = Settings(
             PendingConfiguration(
                 self._preconf, self._finalize_pending_conf),
@@ -301,6 +303,10 @@ class Celery:
         )
         self.on_after_finalize = Signal(name='app.on_after_finalize')
         self.on_after_fork = Signal(name='app.on_after_fork')
+
+        # Boolean signalling, whether fast_trace_task are enabled.
+        # this attribute is set in celery.worker.trace and checked by celery.worker.request
+        self.use_fast_trace_task = False
 
         self.on_init()
         _register_app(self)
@@ -712,7 +718,7 @@ class Celery:
                 'task_always_eager has no effect on send_task',
             ), stacklevel=2)
 
-        ignored_result = options.pop('ignore_result', False)
+        ignore_result = options.pop('ignore_result', False)
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
 
@@ -735,6 +741,7 @@ class Celery:
             reply_to or self.thread_oid, time_limit, soft_time_limit,
             self.conf.task_send_sent_event,
             root_id, parent_id, shadow, chain,
+            ignore_result=ignore_result,
             argsrepr=options.get('argsrepr'),
             kwargsrepr=options.get('kwargsrepr'),
         )
@@ -744,14 +751,14 @@ class Celery:
 
         with self.producer_or_acquire(producer) as P:
             with P.connection._reraise_as_library_errors():
-                if not ignored_result:
+                if not ignore_result:
                     self.backend.on_task_call(P, task_id)
                 amqp.send_task_message(P, name, message, **options)
         result = (result_cls or self.AsyncResult)(task_id)
         # We avoid using the constructor since a custom result class
         # can be used, in which case the constructor may still use
         # the old signature.
-        result.ignored = ignored_result
+        result.ignored = ignore_result
 
         if add_to_parent:
             if not have_parent:
