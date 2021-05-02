@@ -176,6 +176,7 @@ NAMESPACES = Namespace(
         db=Option(type='int'),
         host=Option(type='string'),
         max_connections=Option(type='int'),
+        username=Option(type='string'),
         password=Option(type='string'),
         port=Option(type='int'),
         socket_timeout=Option(120.0, type='float'),

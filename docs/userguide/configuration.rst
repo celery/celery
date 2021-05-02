@@ -107,6 +107,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_REDIS_DB``                        :setting:`redis_db`
 ``CELERY_REDIS_HOST``                      :setting:`redis_host`
 ``CELERY_REDIS_MAX_CONNECTIONS``           :setting:`redis_max_connections`
+``CELERY_REDIS_USERNAME``                  :setting:`redis_username`
 ``CELERY_REDIS_PASSWORD``                  :setting:`redis_password`
 ``CELERY_REDIS_PORT``                      :setting:`redis_port`
 ``CELERY_REDIS_BACKEND_USE_SSL``           :setting:`redis_backend_use_ssl`
@@ -1127,7 +1128,7 @@ Configuring the backend URL
 This backend requires the :setting:`result_backend`
 setting to be set to a Redis or `Redis over TLS`_ URL::
 
-    result_backend = 'redis://:password@host:port/db'
+    result_backend = 'redis://username:password@host:port/db'
 
 .. _`Redis over TLS`:
     https://www.iana.org/assignments/uri-schemes/prov/rediss
@@ -1142,7 +1143,7 @@ is the same as::
 
 Use the ``rediss://`` protocol to connect to redis over TLS::
 
-    result_backend = 'rediss://:password@host:port/db?ssl_cert_reqs=required'
+    result_backend = 'rediss://username:password@host:port/db?ssl_cert_reqs=required'
 
 Note that the ``ssl_cert_reqs`` string should be one of ``required``,
 ``optional``, or ``none`` (though, for backwards compatibility, the string
@@ -1153,6 +1154,20 @@ If a Unix socket connection should be used, the URL needs to be in the format:::
     result_backend = 'socket:///path/to/redis.sock'
 
 The fields of the URL are defined as follows:
+
+#. ``username``
+
+    .. versionadded:: 5.1.0
+
+    Username used to connect to the database.
+
+    Note that this is only supported in Redis>=6.0 and with py-redis>=3.4.0
+    installed.
+
+    If you use an older database version or an older client version
+    you can omit the username::
+
+        result_backend = 'redis://:password@host:port/db'
 
 #. ``password``
 

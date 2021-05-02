@@ -233,6 +233,17 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                 socket_connect_timeout and float(socket_connect_timeout),
         }
 
+        username = _get('redis_username')
+        if username:
+            # We're extra careful to avoid including this configuration value
+            # if it wasn't specified since older versions of py-redis
+            # don't support specifying a username.
+            # Only Redis>6.0 supports username/password authentication.
+
+            # TODO: Include this in connparams' definition once we drop
+            #       support for py-redis<3.4.0.
+            self.connparams['username'] = username
+
         if health_check_interval:
             self.connparams["health_check_interval"] = health_check_interval
 
@@ -285,11 +296,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         )
 
     def _params_from_url(self, url, defaults):
-        scheme, host, port, _, password, path, query = _parse_url(url)
+        scheme, host, port, username, password, path, query = _parse_url(url)
         connparams = dict(
             defaults, **dictfilter({
-                'host': host, 'port': port, 'password': password,
-                'db': query.pop('virtual_host', None)})
+                'host': host, 'port': port, 'username': username,
+                'password': password, 'db': query.pop('virtual_host', None)})
         )
 
         if scheme == 'socket':

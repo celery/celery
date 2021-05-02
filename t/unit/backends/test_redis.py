@@ -340,6 +340,20 @@ class test_RedisBackend(basetest_RedisBackend):
         with pytest.raises(ImproperlyConfigured):
             self.Backend(app=self.app)
 
+    def test_username_password_from_redis_conf(self):
+        self.app.conf.redis_password = 'password'
+        x = self.Backend(app=self.app)
+
+        assert x.connparams
+        assert 'username' not in x.connparams
+        assert x.connparams['password'] == 'password'
+        self.app.conf.redis_username = 'username'
+        x = self.Backend(app=self.app)
+
+        assert x.connparams
+        assert x.connparams['username'] == 'username'
+        assert x.connparams['password'] == 'password'
+
     def test_url(self):
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
@@ -350,6 +364,19 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['host'] == 'vandelay.com'
         assert x.connparams['db'] == 1
         assert x.connparams['port'] == 123
+        assert x.connparams['password'] == 'bosco'
+        assert x.connparams['socket_timeout'] == 30.0
+        assert x.connparams['socket_connect_timeout'] == 100.0
+        assert 'username' not in x.connparams
+
+        x = self.Backend(
+            'redis://username:bosco@vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['username'] == 'username'
         assert x.connparams['password'] == 'bosco'
         assert x.connparams['socket_timeout'] == 30.0
         assert x.connparams['socket_connect_timeout'] == 100.0
