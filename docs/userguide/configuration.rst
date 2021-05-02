@@ -1157,6 +1157,8 @@ The fields of the URL are defined as follows:
 
 #. ``username``
 
+    .. versionadded:: 5.1.0
+
     Username used to connect to the database.
 
     Note that this is only supported in Redis>=6.0 and with py-redis>=3.4.0
