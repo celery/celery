@@ -223,6 +223,13 @@ def redis_echo(message):
     redis_connection.rpush('redis-echo', message)
 
 
+@shared_task
+def redis_count():
+    """Task that increments a well-known redis key."""
+    redis_connection = get_redis_connection()
+    redis_connection.incr('redis-count')
+
+
 @shared_task(bind=True)
 def second_order_replace1(self, state=False):
     redis_connection = get_redis_connection()

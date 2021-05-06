@@ -19,7 +19,7 @@ from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     add_to_all, add_to_all_to_chord, build_chain_inside_task,
                     chord_error, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, fail, identity, ids,
-                    print_unicode, raise_error, redis_echo,
+                    print_unicode, raise_error, redis_count, redis_echo,
                     replace_with_chain, replace_with_chain_which_raises,
                     replace_with_empty_chain, retry_once, return_exception,
                     return_priority, second_order_replace1, tsum,
@@ -877,6 +877,44 @@ class test_group:
             _, msg = maybe_key_msg
             assert msg == errback_msg
 
+    def test_errback_called_by_group_fail_multiple(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        expected_errback_count = 42
+        errback = redis_count.si()
+
+        # Include a mix of passing and failing tasks
+        group_sig = group(
+            *(identity.si(42) for _ in range(24)),  # arbitrary task count
+            *(fail.s() for _ in range(expected_errback_count)),
+        )
+        group_sig.link_error(errback)
+        redis_connection.delete("redis-count")
+        with subtests.test(msg="Error propagates from group"):
+            res = group_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(msg="Errback is called after group task fails"):
+            check_interval = 0.1
+            check_max = int(TIMEOUT * check_interval)
+            for i in range(check_max + 1):
+                maybe_count = redis_connection.get("redis-count")
+                # It's either `None` or a base-10 integer
+                count = int(maybe_count or b"0")
+                if count == expected_errback_count:
+                    # escape and pass
+                    break
+                elif i < check_max:
+                    # try again later
+                    sleep(check_interval)
+                else:
+                    # fail
+                    assert count == expected_errback_count
+            else:
+                raise TimeoutError("Errbacks were not called in time")
+
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
     root_id, parent_id, value = r.get(timeout=TIMEOUT)
@@ -1728,6 +1766,79 @@ class test_chord:
                 raise TimeoutError("Errback was not called in time")
             _, msg = maybe_key_msg
             assert msg == errback_msg
+
+    def test_errback_called_by_chord_from_group_fail_multiple(
+        self, manager, subtests
+    ):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        fail_task_count = 42
+        errback = redis_count.si()
+        # Include a mix of passing and failing tasks
+        child_sig = group(
+            *(identity.si(42) for _ in range(24)),  # arbitrary task count
+            *(fail.s() for _ in range(fail_task_count)),
+        )
+
+        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig.link_error(errback)
+        with subtests.test(msg="Error propagates from header group"):
+            redis_connection.delete("redis-count")
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(msg="Errback is called after header group fails"):
+            # NOTE: Here we only expect the errback to be called once since it
+            # is attached to the chord body which is a single task!
+            expected_errback_count = 1
+            check_interval = 0.1
+            check_max = int(TIMEOUT * check_interval)
+            for i in range(check_max + 1):
+                maybe_count = redis_connection.get("redis-count")
+                # It's either `None` or a base-10 integer
+                count = int(maybe_count or b"0")
+                if count == expected_errback_count:
+                    # escape and pass
+                    break
+                elif i < check_max:
+                    # try again later
+                    sleep(check_interval)
+                else:
+                    # fail
+                    assert count == expected_errback_count
+            else:
+                raise TimeoutError("Errbacks were not called in time")
+
+        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig.link_error(errback)
+        with subtests.test(msg="Error propagates from body group"):
+            redis_connection.delete("redis-count")
+            res = chord_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(msg="Errback is called after body group fails"):
+            # NOTE: Here we expect the errback to be called once per failing
+            # task in the chord body since it is a group
+            expected_errback_count = fail_task_count
+            check_interval = 0.1
+            check_max = int(TIMEOUT * check_interval)
+            for i in range(check_max + 1):
+                maybe_count = redis_connection.get("redis-count")
+                # It's either `None` or a base-10 integer
+                count = int(maybe_count or b"0")
+                if count == expected_errback_count:
+                    # escape and pass
+                    break
+                elif i < check_max:
+                    # try again later
+                    sleep(check_interval)
+                else:
+                    # fail
+                    assert count == expected_errback_count
+            else:
+                raise TimeoutError("Errbacks were not called in time")
 
 
 class test_signature_serialization:
