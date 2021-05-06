@@ -241,6 +241,12 @@ class test_Control:
         self.app.control.broadcast.assert_called_with(
             name, destination=destination, arguments=args, **_options or {})
 
+    def test_serializer(self):
+        self.app.conf['task_serializer'] = 'test'
+        self.app.conf['accept_content'] = ['test']
+        assert control.Control(self.app).mailbox.serializer == 'test'
+        assert control.Control(self.app).mailbox.accept == ['test']
+
     def test_purge(self):
         self.app.amqp.TaskConsumer = Mock(name='TaskConsumer')
         self.app.control.purge()
