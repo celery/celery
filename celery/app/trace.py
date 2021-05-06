@@ -52,6 +52,11 @@ from celery.worker.state import successful_requests
 
 logger = get_logger(__name__)
 
+#: Format string used to log task receipt.
+LOG_RECEIVED = """\
+Task %(name)s[%(id)s] received\
+"""
+
 #: Format string used to log task success.
 LOG_SUCCESS = """\
 Task %(name)s[%(id)s] succeeded in %(runtime)ss: %(return_value)s\
