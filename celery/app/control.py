@@ -431,7 +431,8 @@ class Control:
         self.mailbox = self.Mailbox(
             app.conf.control_exchange,
             type='fanout',
-            accept=['json'],
+            accept=app.conf.accept_content,
+            serializer=app.conf.task_serializer,
             producer_pool=lazy(lambda: self.app.amqp.producer_pool),
             queue_ttl=app.conf.control_queue_ttl,
             reply_queue_ttl=app.conf.control_queue_ttl,
