@@ -1,7 +1,7 @@
 .. _whatsnew-5.1:
 
 =======================================
- What's new in Celery 5.1 ()
+ What's new in Celery 5.1 (Sun Harmonics)
 =======================================
 :Author: Josue Balandrano Coronel (``jbc at rmcomplexity.com``)
 
