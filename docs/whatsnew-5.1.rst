@@ -1,9 +1,9 @@
-.. _whatsnew-5.0:
+.. _whatsnew-5.1:
 
 =======================================
- What's new in Celery 5.0 (singularity)
+ What's new in Celery 5.1 ()
 =======================================
-:Author: Omer Katz (``omer.drow at gmail.com``)
+:Author: Josue Balandrano Coronel (``jbc at rmcomplexity.com``)
 
 .. sidebar:: Change history
 
@@ -29,7 +29,7 @@ While this version is **mostly** backward compatible with previous versions
 it's important that you read the following section as this release
 is a new major version.
 
-This version is officially supported on CPython 3.6, 3.7 & 3.8
+This version is officially supported on CPython 3.6, 3.7 & 3.8 & 3.9
 and is also supported on PyPy3.
 
 .. _`website`: http://celeryproject.org/
@@ -45,18 +45,13 @@ and is also supported on PyPy3.
 Preface
 =======
 
-The 5.0.0 release is a new major release for Celery.
+The 5.1.0 release is a new minor release for Celery.
 
 Starting from now users should expect more frequent releases of major versions
 as we move fast and break things to bring you even better experience.
 
 Releases in the 5.x series are codenamed after songs of `Jon Hopkins <https://en.wikipedia.org/wiki/Jon_Hopkins>`_.
-This release has been codenamed `Singularity <https://www.youtube.com/watch?v=lkvnpHFajt0>`_.
-
-This version drops support for Python 2.7.x which has reached EOL
-in January 1st, 2020.
-This allows us, the maintainers to focus on innovating without worrying
-for backwards compatibility.
+This release has been codenamed `Sun Harmonics <https://www.youtube.com/watch?v=pCwjSoBm_pI>`_.
 
 From now on we only support Python 3.6 and above.
 We will maintain compatibility with Python 3.6 until it's
@@ -83,23 +78,76 @@ Watch the next "What's New" document for updates.
 Wall of Contributors
 --------------------
 
-Artem Vasilyev <artem.v.vasilyev@gmail.com>
-Ash Berlin-Taylor <ash_github@firemirror.com>
+0xflotus <0xflotus@gmail.com>
+AbdealiJK <abdealikothari@gmail.com>
+Akash Agrawal <akashrocksha@gmail.com>
+Anatoliy <apeks37@yandex.ru>
+Anna Borzenko <aaa-nn-a@mail.ru>
+Anthony Lukach <anthonylukach@gmail.com>
+Arnon Yaari <wiggin15@yahoo.com>
+Artem Bernatskyi <artem.bernatskyy@gmail.com>
+aruseni <aruseni.magiku@gmail.com>
 Asif Saif Uddin (Auvi) <auvipy@gmail.com>
 Asif Saif Uddin <auvipy@gmail.com>
+Awais Qureshi <awais.qureshi@arbisoft.com>
+bastb <bas@tenberge-ict.nl>
+Bas ten Berge <bas+github@tenberge-ict.nl>
+careljonkhout <carel.jonkhout@gmail.com>
 Christian Clauss <cclauss@me.com>
-Germain Chazot <g.chazot@gmail.com>
-Harry Moreno <morenoh149@gmail.com>
-kevinbai <kevinbai.cn@gmail.com>
-Martin Paulus <mpaulus@lequest.com>
+danthegoodman1 <xxdanthegoodmanxx@gmail.com>
+David Pärsson <david@parsson.se>
+David Schneider <schneidav81@gmail.com>
+Egor Sergeevich Poderiagin <egor@crazyrussian.pro>
+elonzh <elonzh@qq.com>
+Fahmi <fahmimodelo@gmail.com>
+Felix Yan <felixonmars@archlinux.org>
+František Zatloukal <Zatloukal.Frantisek@gmail.com>
+Frazer McLean <frazer@frazermclean.co.uk>
+Gabriel Augendre <gabriel@augendre.info>
+galcohen <gal.cohen@autodesk.com>
+gal cohen <gal.nevis@gmail.com>
+Geunsik Lim <leemgs@gmail.com>
+Guillaume DE SUSANNE D'EPINAY <guillaume.desusanne@ssi.gouv.fr>
+Hilmar Hilmarsson <hilmarh@gmail.com>
+Illia Volochii <illia.volochii@gmail.com>
+jenhaoyang <randy19962@gmail.com>
+Josue Balandrano Coronel <jbc@rmcomplexity.com>
+Jonathan Stoppani <jonathan@stoppani.name>
+Justinas Petuchovas <justinas.petuchovas@gmail.com>
+KexZh <hanbaobao2005@gmail.com>
+kosarchuksn <sergeykosarchuk@gmail.com>
+Kostya Deev <kostya.deev@bluware.com>
+laixintao <laixintaoo@gmail.com>
+Mathieu Rollet <matletix@gmail.com>
+Matt Hoffman <mjhoffman65@gmail.com>
 Matus Valo <matusvalo@gmail.com>
-Matus Valo <matusvalo@users.noreply.github.com>
-maybe-sybr <58414429+maybe-sybr@users.noreply.github.com>
+Michal Kuffa <michal.kuffa@sentry.io>
+Mike DePalatis <depalatis@gmail.com>
+Myeongseok Seo <clichedmoog@gmail.com>
+Nick Pope <nick.pope@flightdataservices.com>
+Nicolas Dandrimont <nicolas@dandrimont.eu>
+Noam <noamkush@gmail.com>
 Omer Katz <omer.drow@gmail.com>
-Patrick Cloke <clokep@users.noreply.github.com>
-qiaocc <jasonqiao36@gmail.com>
+partizan <serg.partizan@gmail.com>
+pavlos kallis <pakallis@gmail.com>
+Pavol Plaskoň <pavol.plaskon@gmail.com>
+Pengjie Song (宋鹏捷) <spengjie@sina.com>
+Safwan Rahman <safwan.rahman15@gmail.com>
+Sardorbek Imomaliev <sardorbek.imomaliev@gmail.com>
+Sergey Lyapustin <s.lyapustin@gmail.com>
+Sergey Tikhonov <zimbler@gmail.com>
+Sonya Chhabra <sonyakc.2007@gmail.com>
+Stepan Henek <stepan@henek.name>
+Stephen J. Fuhry <steve@tpastream.com>
+Stuart Axon <stuaxo2@yahoo.com>
+Swen Kooij <swen@sectorlabs.ro>
 Thomas Grainger <tagrain@gmail.com>
-Weiliang Li <to.be.impressive@gmail.com>
+Thomas Riccardi <thomas@deepomatic.com>
+tned73 <edwin@tranzer.com>
+Tomas Hrnciar <thrnciar@redhat.com>
+tumb1er <zimbler@gmail.com>
+ZubAnt <ya.zubarevanton@yandex.ru>
+Zvi Baratz <z.baratz@gmail.com>
 
 .. note::
 
@@ -163,7 +211,7 @@ Step 5: Upgrade to Celery 5.0
 
 At this point you can upgrade your workers and clients with the new version.
 
-.. _v500-important:
+.. _v510-important:
 
 Important Notes
 ===============
@@ -176,6 +224,7 @@ The supported Python Versions are:
 - CPython 3.6
 - CPython 3.7
 - CPython 3.8
+- CPython 3.9
 - PyPy3.6 7.2 (``pypy3``)
 
 Dropped support for Python 2.7 & 3.5
@@ -199,12 +248,12 @@ Python 3.5 is not supported for practical reasons.
 Kombu
 -----
 
-Starting from this release, the minimum required version is Kombu 5.0.0.
+Starting from v5.0, the minimum required version is Kombu 5.0.0.
 
 Billiard
 --------
 
-Starting from this release, the minimum required version is Billiard 3.6.3.
+Starting from v5.0, the minimum required version is Billiard 3.6.3.
 
 Eventlet Workers Pool
 ---------------------
@@ -215,7 +264,7 @@ the minimum required version is eventlet 0.26.1.
 Gevent Workers Pool
 -------------------
 
-Starting from this release, the minimum required version is gevent 1.0.0.
+Starting from v5.0, the minimum required version is gevent 1.0.0.
 
 Couchbase Result Backend
 ------------------------
@@ -224,7 +273,7 @@ The Couchbase result backend now uses the V3 Couchbase SDK.
 
 As a result, we no longer support Couchbase Server 5.x.
 
-Also, starting from this release, the minimum required version
+Also, starting from v5.0, the minimum required version
 for the database client is couchbase 3.0.0.
 
 To verify that your Couchbase Server is compatible with the V3 SDK,
@@ -262,59 +311,109 @@ you should import `kombu.utils.encoding` instead.
 If you were using the `celery.task` module before, you should import directly
 from the `celery` module instead.
 
-.. _new_command_line_interface:
-
-New Command Line Interface
---------------------------
-
-The command line interface has been revamped using Click.
-As a result a few breaking changes has been introduced:
-
-- Postfix global options like `celery worker --app path.to.app` or `celery worker --workdir /path/to/workdir` are no longer supported.
-  You should specify them as part of the global options of the main celery command.
-- :program:`celery amqp` and :program:`celery shell` require the `repl`
-  sub command to start a shell. You can now also invoke specific commands
-  without a shell. Type `celery amqp --help` or `celery shell --help` for details.
-- The API for adding user options has changed.
-  Refer to the :ref:`documentation <extending-command-options>` for details.
-
-Click provides shell completion `out of the box <https://click.palletsprojects.com/en/7.x/bashcomplete/>`_.
-This functionality replaces our previous bash completion script and adds
-completion support for the zsh and fish shells.
-
-The bash completion script was exported to `extras/celery.bash <https://github.com/celery/celery/blob/master/extra/bash-completion/celery.bash>`_
-for the packager's convenience.
-
-Pytest Integration
-------------------
-
-Starting from Celery 5.0, the pytest plugin is no longer enabled by default.
-
-Please refer to the :ref:`documentation <pytest_plugin>` for instructions.
-
-Ordered Group Results for the Redis Result Backend
---------------------------------------------------
-
-Previously group results were not ordered by their invocation order.
-Celery 4.4.7 introduced an opt-in feature to make them ordered.
-
-It is now an opt-out behavior.
-
-If you were previously using the Redis result backend, you might need to
-opt-out of this behavior.
-
-Please refer to the :ref:`documentation <redis-group-result-ordering>`
-for instructions on how to disable this feature.
-
-.. _v500-news:
+.. _v510-news:
 
 News
 ====
 
-Retry Policy for the Redis Result Backend
------------------------------------------
+Support for Azure Service Bus 7.0.0
+------------------------------------
 
-The retry policy for the Redis result backend is now exposed through
-the result backend transport options.
+With kombu v5.1.0 we now support Azure Services Bus.
 
-Please refer to the :ref:`documentation <redis-result-backend-timeout>` for details.
+Add support for SQLAlchemy 1.4
+--------------------------------
+
+Following the changes in SQLAlchemy 1.4, the declarative base is no
+longer an extension.
+Importing it from sqlalchemy.ext.declarative is deprecated and will
+be removed in SQLAlchemy 2.0.
+
+Support for Redis username authentication
+-------------------------------------------
+
+Previously, the username was ignored from the URI.
+Starting from Redis>=6.0, that shouldn't be the case since ACL support has landed.
+
+Please refer to the :ref:`documentation <_conf-redis-result-backend>` for details.
+
+SQS transport - support back off policy
+----------------------------------------
+
+SQS supports managed visibility timeout, this lets us implementing back off
+policy (for instace exponential policy) which means that time between task
+failures will dynamically chaned based on number of retries.
+
+Documentation: :doc:`reference/kombu.transport.SQS.rst`
+
+Duplicate successful tasks
+---------------------------
+
+The trace function fetches the metadata from the backend each time it
+receives a task and compares its state. If the state is SUCCESS
+we log and bail instead of executing the task.
+The task is acknowledged and everything proceeds normally.
+
+Documentation: :setting:`worker_deduplicate_successful_tasks`
+
+Terminate tasks with late acks on connection loss
+--------------------------------------------------
+
+Tasks with late acknowledgement keep running after restart
+although the connection is lost and they cannot be
+acked anymore. These tasks will now be  terminated.
+
+Documentation: :setting:`worker_cancel_long_running_tasks_on_connection_loss`
+
+`task.apply_async(ignore_result=True)` now avoids persisting the result
+-----------------------------------------------------------------------------
+
+`task.apply_async` now supports passing `ignore_result` which will act the same
+as using `@app.task(ignore_result=True)`.
+
+Use a thread-safe implementation of `cached_property`
+-----------------------------------------------------
+
+`cached_property` is heavily used in celery but it is causing
+issues in multi-threaded code since it is not thread safe.
+Celery is now using a thread-safe implementatino of `cached_property`
+
+Tasks can now have required kwargs at any order
+------------------------------------------------
+
+Tasks can now be defined like this:
+
+```python
+def my_func(*, name='default', age, city='Kyiv'):
+```
+
+SQS - support STS authentication with AWS
+-------------------------------------------
+
+STS token requires being refreshed after certain period of time.
+after `sts_token_timeout` is reached a new token will be created.
+
+Documentation: :doc:`getting-started/backends-and-brokers/sqs.rst`
+
+Support Redis `health_check_interval`
+--------------------------------------
+
+`health_check_interval` can be configured and will be passed to `redis-py`.
+
+Documentation: :setting:`redis_backend_health_check_interval`
+
+
+Update default pickle protocol version to 4
+--------------------------------------------
+
+Updating pickle protocl version allow Celery to serialize larger strings
+amongs other benefits.
+
+See: https://docs.python.org/3.9/library/pickle.html#data-stream-format
+
+
+Support Redis Sentinel with SSL
+-------------------------------
+
+See documentation for more info:
+:doc:`getting-started/backends-and-brokers/redis.rst`
