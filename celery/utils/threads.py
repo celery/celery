@@ -46,8 +46,8 @@ class bgThread(threading.Thread):
 
     def __init__(self, name=None, **kwargs):
         super().__init__()
-        self._is_shutdown = threading.Event()
-        self._is_stopped = threading.Event()
+        self.__is_shutdown = threading.Event()
+        self.__is_stopped = threading.Event()
         self.daemon = True
         self.name = name or self.__class__.__name__
 
@@ -60,7 +60,7 @@ class bgThread(threading.Thread):
 
     def run(self):
         body = self.body
-        shutdown_set = self._is_shutdown.is_set
+        shutdown_set = self.__is_shutdown.is_set
         try:
             while not shutdown_set():
                 try:
@@ -77,7 +77,7 @@ class bgThread(threading.Thread):
 
     def _set_stopped(self):
         try:
-            self._is_stopped.set()
+            self.__is_stopped.set()
         except TypeError:  # pragma: no cover
             # we lost the race at interpreter shutdown,
             # so gc collected built-in modules.
@@ -85,8 +85,8 @@ class bgThread(threading.Thread):
 
     def stop(self):
         """Graceful shutdown."""
-        self._is_shutdown.set()
-        self._is_stopped.wait()
+        self.__is_shutdown.set()
+        self.__is_stopped.wait()
         if self.is_alive():
             self.join(THREAD_TIMEOUT_MAX)
 

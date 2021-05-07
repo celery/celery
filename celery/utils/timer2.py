@@ -49,8 +49,12 @@ class Timer(threading.Thread):
         self.on_start = on_start
         self.on_tick = on_tick or self.on_tick
         threading.Thread.__init__(self)
-        self._is_shutdown = threading.Event()
-        self._is_stopped = threading.Event()
+        # `_is_stopped` is likely to be an attribute on `Thread` objects so we
+        # double underscore these names to avoid shadowing anything and
+        # potentially getting confused by the superclass turning these into
+        # something other than an `Event` instance (e.g. a `bool`)
+        self.__is_shutdown = threading.Event()
+        self.__is_stopped = threading.Event()
         self.mutex = threading.Lock()
         self.not_empty = threading.Condition(self.mutex)
         self.daemon = True
@@ -71,7 +75,7 @@ class Timer(threading.Thread):
             self.running = True
             self.scheduler = iter(self.schedule)
 
-            while not self._is_shutdown.isSet():
+            while not self.__is_shutdown.isSet():
                 delay = self._next_entry()
                 if delay:
                     if self.on_tick:
@@ -80,7 +84,7 @@ class Timer(threading.Thread):
                         break
                     sleep(delay)
             try:
-                self._is_stopped.set()
+                self.__is_stopped.set()
             except TypeError:  # pragma: no cover
                 # we lost the race at interpreter shutdown,
                 # so gc collected built-in modules.
@@ -91,9 +95,9 @@ class Timer(threading.Thread):
             os._exit(1)
 
     def stop(self):
-        self._is_shutdown.set()
+        self.__is_shutdown.set()
         if self.running:
-            self._is_stopped.wait()
+            self.__is_stopped.wait()
             self.join(THREAD_TIMEOUT_MAX)
             self.running = False
 
