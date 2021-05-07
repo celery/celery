@@ -1179,7 +1179,7 @@ class group(Signature):
                 # end up messing up chord counts and there are all sorts of
                 # awful race conditions to think about. We'll hope it's not!
                 sig, res, group_id = current_task
-                chord_obj = sig.options.get("chord") or chord
+                chord_obj = chord if chord is not None else sig.options.get("chord")
                 # We need to check the chord size of each contributing task so
                 # that when we get to the final one, we can correctly set the
                 # size in the backend and the chord can be sensible completed.
