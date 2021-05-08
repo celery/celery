@@ -1134,7 +1134,14 @@ class group(Signature):
             # pass a Mock object as argument.
             sig['immutable'] = True
             sig = Signature.from_dict(sig)
-        return self.tasks[0].link_error(sig)
+        # Any child task might error so we need to ensure that they are all
+        # capable of calling the linked error signature. This opens the
+        # possibility that the task is called more than once but that's better
+        # than it not being called at all.
+        #
+        # We return a concretised tuple of the signatures actually applied to
+        # each child task signature, of which there might be none!
+        return tuple(child_task.link_error(sig) for child_task in self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
                   CallableSignature=abstract.CallableSignature,
@@ -1179,7 +1186,7 @@ class group(Signature):
                 # end up messing up chord counts and there are all sorts of
                 # awful race conditions to think about. We'll hope it's not!
                 sig, res, group_id = current_task
-                chord_obj = sig.options.get("chord") or chord
+                chord_obj = chord if chord is not None else sig.options.get("chord")
                 # We need to check the chord size of each contributing task so
                 # that when we get to the final one, we can correctly set the
                 # size in the backend and the chord can be sensible completed.

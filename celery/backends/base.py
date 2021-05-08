@@ -22,6 +22,7 @@ from kombu.utils.url import maybe_sanitize_url
 import celery.exceptions
 from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
+from celery.app.task import Context
 from celery.exceptions import (BackendGetMetaError, BackendStoreError,
                                ChordError, ImproperlyConfigured,
                                NotRegistered, TaskRevokedError, TimeoutError)
@@ -170,8 +171,44 @@ class Backend:
             self.store_result(task_id, exc, state,
                               traceback=traceback, request=request)
         if request:
+            # This task may be part of a chord
             if request.chord:
                 self.on_chord_part_return(request, state, exc)
+            # It might also have chained tasks which need to be propagated to,
+            # this is most likely to be exclusive with being a direct part of a
+            # chord but we'll handle both cases separately.
+            #
+            # The `chain_data` try block here is a bit tortured since we might
+            # have non-iterable objects here in tests and it's easier this way.
+            try:
+                chain_data = iter(request.chain)
+            except (AttributeError, TypeError):
+                chain_data = tuple()
+            for chain_elem in chain_data:
+                chain_elem_opts = chain_elem['options']
+                # If the state should be propagated, we'll do so for all
+                # elements of the chain. This is only truly important so
+                # that the last chain element which controls completion of
+                # the chain itself is marked as completed to avoid stalls.
+                if self.store_result and state in states.PROPAGATE_STATES:
+                    try:
+                        chained_task_id = chain_elem_opts['task_id']
+                    except KeyError:
+                        pass
+                    else:
+                        self.store_result(
+                            chained_task_id, exc, state,
+                            traceback=traceback, request=chain_elem
+                        )
+                # If the chain element is a member of a chord, we also need
+                # to call `on_chord_part_return()` as well to avoid stalls.
+                if 'chord' in chain_elem_opts:
+                    failed_ctx = Context(chain_elem)
+                    failed_ctx.update(failed_ctx.options)
+                    failed_ctx.id = failed_ctx.options['task_id']
+                    failed_ctx.group = failed_ctx.options['group_id']
+                    self.on_chord_part_return(failed_ctx, state, exc)
+            # And finally we'll fire any errbacks
             if call_errbacks and request.errbacks:
                 self._call_task_errbacks(request, exc, traceback)
 
