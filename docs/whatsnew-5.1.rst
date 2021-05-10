@@ -206,7 +206,7 @@ this effort.
 After the migration is done, run your test suite with Celery 4 to ensure
 nothing has been broken.
 
-Step 5: Upgrade to Celery 5.0
+Step 5: Upgrade to Celery 5.1
 -----------------------------
 
 At this point you can upgrade your workers and clients with the new version.
