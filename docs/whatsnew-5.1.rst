@@ -311,6 +311,12 @@ you should import `kombu.utils.encoding` instead.
 If you were using the `celery.task` module before, you should import directly
 from the `celery` module instead.
 
+`azure-servicebus` 7.0.0 is now required
+-----------------------------------------
+
+Given the SDK changes between 0.50.0 and 7.0.0 Kombu deprecates support for
+older `azure-servicebus` versions
+
 .. _v510-news:
 
 News
@@ -320,6 +326,9 @@ Support for Azure Service Bus 7.0.0
 ------------------------------------
 
 With kombu v5.1.0 we now support Azure Services Bus.
+
+Azure have completely changed the Azure ServiceBus SDK between 0.50.0 and 7.0.0.
+`azure-servicebus >= 7.0.0` is now required for Kombu `5.1.0` 
 
 Add support for SQLAlchemy 1.4
 --------------------------------
