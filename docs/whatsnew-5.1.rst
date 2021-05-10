@@ -376,7 +376,7 @@ Use a thread-safe implementation of `cached_property`
 
 `cached_property` is heavily used in celery but it is causing
 issues in multi-threaded code since it is not thread safe.
-Celery is now using a thread-safe implementatino of `cached_property`
+Celery is now using a thread-safe implementation of `cached_property`
 
 Tasks can now have required kwargs at any order
 ------------------------------------------------
