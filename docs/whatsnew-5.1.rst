@@ -383,9 +383,13 @@ Tasks can now have required kwargs at any order
 
 Tasks can now be defined like this:
 
-```python
-def my_func(*, name='default', age, city='Kyiv'):
-```
+.. code-block:: python
+    from celery import shared_task
+
+    @shared_task
+    def my_func(*, name='default', age, city='Kyiv'):
+        pass
+
 
 SQS - support STS authentication with AWS
 -------------------------------------------
