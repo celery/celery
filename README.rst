@@ -117,7 +117,7 @@ Celery is...
     like at our `mailing-list`_, or the IRC channel.
 
     Here's one of the simplest applications you can make:
-    
+
     .. code-block:: python
 
         from celery import Celery
@@ -500,9 +500,9 @@ file in the top distribution directory for the full license text.
 
 .. # vim: syntax=rst expandtab tabstop=4 shiftwidth=4 shiftround
 
-.. |build-status| image:: https://api.travis-ci.com/celery/celery.png?branch=master
+.. |build-status| image:: https://github.com/celery/celery/actions/workflows/python-package.yml/badge.svg
     :alt: Build status
-    :target: https://travis-ci.com/celery/celery
+    :target: https://github.com/celery/celery/actions/workflows/python-package.yml
 
 .. |coverage| image:: https://codecov.io/github/celery/celery/coverage.svg?branch=master
     :target: https://codecov.io/github/celery/celery?branch=master
