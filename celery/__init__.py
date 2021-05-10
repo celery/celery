@@ -15,7 +15,7 @@ from collections import namedtuple
 # Lazy loading
 from . import local  # noqa
 
-SERIES = 'singularity'
+SERIES = 'sun-harmonics'
 
 __version__ = '5.1.0b2'
 __author__ = 'Ask Solem'
