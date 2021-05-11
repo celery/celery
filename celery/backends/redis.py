@@ -7,7 +7,7 @@ from urllib.parse import unquote
 
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
-from kombu.utils.url import _parse_url
+from kombu.utils.url import _parse_url, maybe_sanitize_url
 
 from celery import states
 from celery._state import task_join_will_block
@@ -585,6 +585,8 @@ if getattr(redis, "sentinel", None):
 
 class SentinelBackend(RedisBackend):
     """Redis sentinel task result store."""
+    # URL looks like `sentinel://0.0.0.0:26347/3;sentinel://0.0.0.0:26348/3`
+    _SERVER_URI_SEPARATOR = ";"
 
     sentinel = getattr(redis, "sentinel", None)
     connection_class_ssl = SentinelManagedSSLConnection if sentinel else None
@@ -595,9 +597,30 @@ class SentinelBackend(RedisBackend):
 
         super().__init__(*args, **kwargs)
 
+    def as_uri(self, include_password=False):
+        """
+        Return the server addresses as URIs, sanitizing the password or not.
+        """
+        # Allow superclass to do work if we don't need to force sanitization
+        if include_password:
+            return super(SentinelBackend, self).as_uri(
+                include_password=include_password,
+            )
+        # Otherwise we need to ensure that all components get sanitized rather
+        # by passing them one by one to the `kombu` helper
+        uri_chunks = (
+            maybe_sanitize_url(chunk)
+            for chunk in (self.url or "").split(self._SERVER_URI_SEPARATOR)
+        )
+        # Similar to the superclass, strip the trailing slash from URIs with
+        # all components empty other than the scheme
+        return self._SERVER_URI_SEPARATOR.join(
+            uri[:-1] if uri.endswith(":///") else uri
+            for uri in uri_chunks
+        )
+
     def _params_from_url(self, url, defaults):
-        # URL looks like sentinel://0.0.0.0:26347/3;sentinel://0.0.0.0:26348/3.
-        chunks = url.split(";")
+        chunks = url.split(self._SERVER_URI_SEPARATOR)
         connparams = dict(defaults, hosts=[])
         for chunk in chunks:
             data = super()._params_from_url(
