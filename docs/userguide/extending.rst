@@ -301,6 +301,32 @@ Another example could use the timer to wake up at regular intervals:
                 if req.time_start and time() - req.time_start > self.timeout:
                     raise SystemExit()
 
+Customizing Task Handling Logs
+------------------------------
+
+The Celery worker emits messages to the Python logging subsystem for various
+events throughout the lifecycle of a task.
+These messages can be customized by overriding the ``LOG_<TYPE>`` format
+strings which are defined in :file:`celery/app/trace.py`.
+For example:
+
+.. code-block:: python
+
+    import celery.app.trace
+
+    celery.app.trace.LOG_SUCCESS = "This is a custom message"
+
+The various format strings are all provided with the task name and ID for
+``%`` formatting, and some of them receive extra fields like the return value
+or the exception which caused a task to fail.
+These fields can be used in custom format strings like so:
+
+.. code-block:: python
+
+    import celery.app.trace
+
+    celery.app.trace.LOG_REJECTED = "%(name)r is cursed and I won't run it: %(exc)s"
+
 .. _extending-consumer_blueprint:
 
 Consumer
