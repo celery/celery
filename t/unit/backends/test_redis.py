@@ -1203,6 +1203,16 @@ class test_SentinelBackend:
         found_dbs = [cp['db'] for cp in x.connparams['hosts']]
         assert found_dbs == expected_dbs
 
+        # By default passwords should be sanitized
+        display_url = x.as_uri()
+        assert "test" not in display_url
+        # We can choose not to sanitize with the `include_password` argument
+        unsanitized_display_url = x.as_uri(include_password=True)
+        assert unsanitized_display_url == x.url
+        # or to explicitly sanitize
+        forcibly_sanitized_display_url = x.as_uri(include_password=False)
+        assert forcibly_sanitized_display_url == display_url
+
     def test_get_sentinel_instance(self):
         x = self.Backend(
             'sentinel://:test@github.com:123/1;'
