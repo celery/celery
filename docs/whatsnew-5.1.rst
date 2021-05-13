@@ -194,7 +194,7 @@ do not affect you. Please refer to :ref:`New Command Line Interface <new_command
 Step 4: Migrate your code to Python 3
 -------------------------------------
 
-Celery 5.0 supports only Python 3. Therefore, you must ensure your code is
+Celery 5.x supports only Python 3. Therefore, you must ensure your code is
 compatible with Python 3.
 
 If you haven't ported your code to Python 3, you must do so before upgrading.
@@ -227,8 +227,11 @@ The supported Python Versions are:
 - CPython 3.9
 - PyPy3.6 7.2 (``pypy3``)
 
+Important Notes From 5.0
+------------------------
+
 Dropped support for Python 2.7 & 3.5
-------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Celery now requires Python 3.6 and above.
 
@@ -246,28 +249,28 @@ no further security patches will be applied for Python 2.7 and as mentioned
 Python 3.5 is not supported for practical reasons.
 
 Kombu
------
+~~~~~
 
 Starting from v5.0, the minimum required version is Kombu 5.0.0.
 
 Billiard
---------
+~~~~~~~~
 
 Starting from v5.0, the minimum required version is Billiard 3.6.3.
 
 Eventlet Workers Pool
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 Due to `eventlet/eventlet#526 <https://github.com/eventlet/eventlet/issues/526>`_
 the minimum required version is eventlet 0.26.1.
 
 Gevent Workers Pool
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 Starting from v5.0, the minimum required version is gevent 1.0.0.
 
 Couchbase Result Backend
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Couchbase result backend now uses the V3 Couchbase SDK.
 
@@ -280,7 +283,7 @@ To verify that your Couchbase Server is compatible with the V3 SDK,
 please refer to their `documentation <https://docs.couchbase.com/python-sdk/3.0/project-docs/compatibility.html>`_.
 
 Riak Result Backend
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 The Riak result backend has been removed as the database is no longer maintained.
 
@@ -295,12 +298,12 @@ you'll be affected by this breaking change is minimal which is why we
 did it.
 
 AMQP Result Backend
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 The AMQP result backend has been removed as it was deprecated in version 4.0.
 
 Removed Deprecated Modules
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The `celery.utils.encoding` and the `celery.task` modules has been deprecated
 in version 4.0 and therefore are removed in 5.0.
@@ -312,10 +315,10 @@ If you were using the `celery.task` module before, you should import directly
 from the `celery` module instead.
 
 `azure-servicebus` 7.0.0 is now required
------------------------------------------
+----------------------------------------
 
 Given the SDK changes between 0.50.0 and 7.0.0 Kombu deprecates support for
-older `azure-servicebus` versions
+older `azure-servicebus` versions.
 
 .. _v510-news:
 
@@ -323,15 +326,15 @@ News
 ====
 
 Support for Azure Service Bus 7.0.0
-------------------------------------
+-----------------------------------
 
-With kombu v5.1.0 we now support Azure Services Bus.
+With Kombu v5.1.0 we now support Azure Services Bus.
 
 Azure have completely changed the Azure ServiceBus SDK between 0.50.0 and 7.0.0.
-`azure-servicebus >= 7.0.0` is now required for Kombu `5.1.0` 
+`azure-servicebus >= 7.0.0` is now required for Kombu `5.1.0`
 
 Add support for SQLAlchemy 1.4
---------------------------------
+------------------------------
 
 Following the changes in SQLAlchemy 1.4, the declarative base is no
 longer an extension.
@@ -339,7 +342,7 @@ Importing it from sqlalchemy.ext.declarative is deprecated and will
 be removed in SQLAlchemy 2.0.
 
 Support for Redis username authentication
--------------------------------------------
+-----------------------------------------
 
 Previously, the username was ignored from the URI.
 Starting from Redis>=6.0, that shouldn't be the case since ACL support has landed.
@@ -350,8 +353,8 @@ SQS transport - support back off policy
 ----------------------------------------
 
 SQS supports managed visibility timeout, this lets us implementing back off
-policy (for instace exponential policy) which means that time between task
-failures will dynamically chaned based on number of retries.
+policy (for instance exponential policy) which means that time between task
+failures will dynamically changed based on number of retries.
 
 Documentation: :doc:`reference/kombu.transport.SQS.rst`
 
@@ -365,17 +368,17 @@ The task is acknowledged and everything proceeds normally.
 
 Documentation: :setting:`worker_deduplicate_successful_tasks`
 
-Terminate tasks with late acks on connection loss
---------------------------------------------------
+Terminate tasks with late acknowledgment on connection loss
+-----------------------------------------------------------
 
 Tasks with late acknowledgement keep running after restart
 although the connection is lost and they cannot be
-acked anymore. These tasks will now be  terminated.
+acknowledged anymore. These tasks will now be terminated.
 
 Documentation: :setting:`worker_cancel_long_running_tasks_on_connection_loss`
 
 `task.apply_async(ignore_result=True)` now avoids persisting the result
------------------------------------------------------------------------------
+-----------------------------------------------------------------------
 
 `task.apply_async` now supports passing `ignore_result` which will act the same
 as using `@app.task(ignore_result=True)`.
@@ -401,7 +404,7 @@ Tasks can now be defined like this:
 
 
 SQS - support STS authentication with AWS
--------------------------------------------
+-----------------------------------------
 
 STS token requires being refreshed after certain period of time.
 after `sts_token_timeout` is reached a new token will be created.
@@ -409,7 +412,7 @@ after `sts_token_timeout` is reached a new token will be created.
 Documentation: :doc:`getting-started/backends-and-brokers/sqs.rst`
 
 Support Redis `health_check_interval`
---------------------------------------
+-------------------------------------
 
 `health_check_interval` can be configured and will be passed to `redis-py`.
 
