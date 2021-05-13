@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from contextlib import contextmanager
 from unittest.mock import ANY, Mock, patch
@@ -6,6 +7,7 @@ import pytest
 from kombu.utils.limits import TokenBucket
 
 from celery import Task, signals
+from celery.app.trace import LOG_RECEIVED
 from celery.exceptions import InvalidTaskError
 from celery.utils.time import rate
 from celery.worker import state
@@ -142,12 +144,14 @@ class test_default_strategy_proto2:
         message = self.prepare_message(message)
         yield self.Context(sig, s, reserved, consumer, message)
 
-    def test_when_logging_disabled(self):
+    def test_when_logging_disabled(self, caplog):
+        # Capture logs at any level above `NOTSET`
+        caplog.set_level(logging.NOTSET + 1, logger="celery.worker.strategy")
         with patch('celery.worker.strategy.logger') as logger:
             logger.isEnabledFor.return_value = False
             with self._context(self.add.s(2, 2)) as C:
                 C()
-                logger.info.assert_not_called()
+        assert not caplog.records
 
     def test_task_strategy(self):
         with self._context(self.add.s(2, 2)) as C:
@@ -164,6 +168,33 @@ class test_default_strategy_proto2:
             req = C.get_request()
             for callback in callbacks:
                 callback.assert_called_with(req)
+
+    def test_log_task_received(self, caplog):
+        caplog.set_level(logging.INFO, logger="celery.worker.strategy")
+        with self._context(self.add.s(2, 2)) as C:
+            C()
+        for record in caplog.records:
+            if record.msg == LOG_RECEIVED:
+                assert record.levelno == logging.INFO
+                break
+        else:
+            raise ValueError("Expected message not in captured log records")
+
+    def test_log_task_received_custom(self, caplog):
+        caplog.set_level(logging.INFO, logger="celery.worker.strategy")
+        custom_fmt = "CUSTOM MESSAGE"
+        with self._context(
+            self.add.s(2, 2)
+        ) as C, patch(
+            "celery.app.trace.LOG_RECEIVED", new=custom_fmt,
+        ):
+            C()
+        for record in caplog.records:
+            if record.msg == custom_fmt:
+                assert set(record.args) == {"id", "name"}
+                break
+        else:
+            raise ValueError("Expected message not in captured log records")
 
     def test_signal_task_received(self):
         callback = Mock()
