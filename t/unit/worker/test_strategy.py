@@ -144,12 +144,14 @@ class test_default_strategy_proto2:
         message = self.prepare_message(message)
         yield self.Context(sig, s, reserved, consumer, message)
 
-    def test_when_logging_disabled(self):
+    def test_when_logging_disabled(self, caplog):
+        # Capture logs at any level above `NOTSET`
+        caplog.set_level(logging.NOTSET + 1, logger="celery.worker.strategy")
         with patch('celery.worker.strategy.logger') as logger:
             logger.isEnabledFor.return_value = False
             with self._context(self.add.s(2, 2)) as C:
                 C()
-                logger.info.assert_not_called()
+        assert not caplog.records
 
     def test_task_strategy(self):
         with self._context(self.add.s(2, 2)) as C:
