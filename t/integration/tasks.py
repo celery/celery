@@ -295,6 +295,12 @@ def fail(*args):
     raise ExpectedException(*args)
 
 
+@shared_task(bind=True)
+def fail_replaced(self, *args):
+    """Replace this task with one which raises ExpectedException."""
+    raise self.replace(fail.si(*args))
+
+
 @shared_task
 def chord_error(*args):
     return args

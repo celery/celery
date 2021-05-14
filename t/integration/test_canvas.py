@@ -19,12 +19,12 @@ from .conftest import (TEST_BACKEND, get_active_redis_channels,
 from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
                     add_to_all, add_to_all_to_chord, build_chain_inside_task,
                     chord_error, collect_ids, delayed_sum,
-                    delayed_sum_with_soft_guard, fail, identity, ids,
-                    print_unicode, raise_error, redis_count, redis_echo,
-                    replace_with_chain, replace_with_chain_which_raises,
-                    replace_with_empty_chain, retry_once, return_exception,
-                    return_priority, second_order_replace1, tsum,
-                    write_to_file_and_return_int)
+                    delayed_sum_with_soft_guard, fail, fail_replaced,
+                    identity, ids, print_unicode, raise_error, redis_count,
+                    redis_echo, replace_with_chain,
+                    replace_with_chain_which_raises, replace_with_empty_chain,
+                    retry_once, return_exception, return_priority,
+                    second_order_replace1, tsum, write_to_file_and_return_int)
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 
@@ -574,8 +574,9 @@ class test_chain:
         assert res.get(timeout=TIMEOUT) == 'Hello world'
         await_redis_echo({link_msg, 'Hello world'})
 
-    @pytest.mark.xfail(reason="#6441")
-    def test_chain_with_eb_replaced_with_chain_with_eb(self, manager):
+    def test_chain_with_eb_replaced_with_chain_with_eb(
+        self, manager, subtests
+    ):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
@@ -586,19 +587,18 @@ class test_chain:
         outer_link_msg = 'External chain errback'
         c = chain(
             identity.s('Hello '),
-            # The replacement chain will pass its args though
+            # The replacement chain will die and break the encapsulating chain
             replace_with_chain_which_raises.s(link_msg=inner_link_msg),
             add.s('world'),
         )
-        c.link_error(redis_echo.s(outer_link_msg))
+        c.link_error(redis_echo.si(outer_link_msg))
         res = c.delay()
 
-        with pytest.raises(ValueError):
-            res.get(timeout=TIMEOUT)
-        # Shorter timeout here because we expect failure
-        await_redis_echo(
-            {inner_link_msg, outer_link_msg}, timeout=min(5, TIMEOUT)
-        )
+        with subtests.test(msg="Chain fails due to a child task dying"):
+            with pytest.raises(ValueError):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(msg="Chain and child task callbacks are called"):
+            await_redis_echo({inner_link_msg, outer_link_msg})
 
     def test_replace_chain_with_empty_chain(self, manager):
         r = chain(identity.s(1), replace_with_empty_chain.s()).delay()
@@ -606,6 +606,130 @@ class test_chain:
         with pytest.raises(ImproperlyConfigured,
                            match="Cannot replace with an empty chain"):
             r.get(timeout=TIMEOUT)
+
+    def test_chain_children_with_callbacks(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        callback = redis_count.si(redis_key=redis_key)
+
+        child_task_count = 42
+        child_sig = identity.si(1337)
+        child_sig.link(callback)
+        chain_sig = chain(child_sig for _ in range(child_task_count))
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Chain executes as expected"):
+            res_obj = chain_sig()
+            assert res_obj.get(timeout=TIMEOUT) == 1337
+        with subtests.test(msg="Chain child task callbacks are called"):
+            await_redis_count(child_task_count, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_chain_children_with_errbacks(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        errback = redis_count.si(redis_key=redis_key)
+
+        child_task_count = 42
+        child_sig = fail.si()
+        child_sig.link_error(errback)
+        chain_sig = chain(child_sig for _ in range(child_task_count))
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Chain fails due to a child task dying"):
+            res_obj = chain_sig()
+            with pytest.raises(ExpectedException):
+                res_obj.get(timeout=TIMEOUT)
+        with subtests.test(msg="Chain child task errbacks are called"):
+            # Only the first child task gets a change to run and fail
+            await_redis_count(1, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_chain_with_callback_child_replaced(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        callback = redis_count.si(redis_key=redis_key)
+
+        chain_sig = chain(add_replaced.si(42, 1337), identity.s())
+        chain_sig.link(callback)
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Chain executes as expected"):
+            res_obj = chain_sig()
+            assert res_obj.get(timeout=TIMEOUT) == 42 + 1337
+        with subtests.test(msg="Callback is called after chain finishes"):
+            await_redis_count(1, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_chain_with_errback_child_replaced(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        errback = redis_count.si(redis_key=redis_key)
+
+        chain_sig = chain(add_replaced.si(42, 1337), fail.s())
+        chain_sig.link_error(errback)
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Chain executes as expected"):
+            res_obj = chain_sig()
+            with pytest.raises(ExpectedException):
+                res_obj.get(timeout=TIMEOUT)
+        with subtests.test(msg="Errback is called after chain finishes"):
+            await_redis_count(1, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_chain_child_with_callback_replaced(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        callback = redis_count.si(redis_key=redis_key)
+
+        child_sig = add_replaced.si(42, 1337)
+        child_sig.link(callback)
+        chain_sig = chain(child_sig, identity.s())
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Chain executes as expected"):
+            res_obj = chain_sig()
+            assert res_obj.get(timeout=TIMEOUT) == 42 + 1337
+        with subtests.test(msg="Callback is called after chain finishes"):
+            await_redis_count(1, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_chain_child_with_errback_replaced(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        errback = redis_count.si(redis_key=redis_key)
+
+        child_sig = fail_replaced.si()
+        child_sig.link_error(errback)
+        chain_sig = chain(child_sig, identity.si(42))
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Chain executes as expected"):
+            res_obj = chain_sig()
+            with pytest.raises(ExpectedException):
+                res_obj.get(timeout=TIMEOUT)
+        with subtests.test(msg="Errback is called after chain finishes"):
+            await_redis_count(1, redis_key=redis_key)
+        redis_connection.delete(redis_key)
 
 
 class test_result_set:
@@ -904,6 +1028,129 @@ class test_group:
                 res.get(timeout=TIMEOUT)
         with subtests.test(msg="Errback is called after group task fails"):
             await_redis_count(expected_errback_count, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_group_children_with_callbacks(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        callback = redis_count.si(redis_key=redis_key)
+
+        child_task_count = 42
+        child_sig = identity.si(1337)
+        child_sig.link(callback)
+        group_sig = group(child_sig for _ in range(child_task_count))
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Chain executes as expected"):
+            res_obj = group_sig()
+            assert res_obj.get(timeout=TIMEOUT) == [1337] * child_task_count
+        with subtests.test(msg="Chain child task callbacks are called"):
+            await_redis_count(child_task_count, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_group_children_with_errbacks(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        errback = redis_count.si(redis_key=redis_key)
+
+        child_task_count = 42
+        child_sig = fail.si()
+        child_sig.link_error(errback)
+        group_sig = group(child_sig for _ in range(child_task_count))
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Chain fails due to a child task dying"):
+            res_obj = group_sig()
+            with pytest.raises(ExpectedException):
+                res_obj.get(timeout=TIMEOUT)
+        with subtests.test(msg="Chain child task errbacks are called"):
+            await_redis_count(child_task_count, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_group_with_callback_child_replaced(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        callback = redis_count.si(redis_key=redis_key)
+
+        group_sig = group(add_replaced.si(42, 1337), identity.si(31337))
+        group_sig.link(callback)
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Chain executes as expected"):
+            res_obj = group_sig()
+            assert res_obj.get(timeout=TIMEOUT) == [42 + 1337, 31337]
+        with subtests.test(msg="Callback is called after group finishes"):
+            await_redis_count(1, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_group_with_errback_child_replaced(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        errback = redis_count.si(redis_key=redis_key)
+
+        group_sig = group(add_replaced.si(42, 1337), fail.s())
+        group_sig.link_error(errback)
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Chain executes as expected"):
+            res_obj = group_sig()
+            with pytest.raises(ExpectedException):
+                res_obj.get(timeout=TIMEOUT)
+        with subtests.test(msg="Errback is called after group finishes"):
+            await_redis_count(1, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_group_child_with_callback_replaced(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        callback = redis_count.si(redis_key=redis_key)
+
+        child_sig = add_replaced.si(42, 1337)
+        child_sig.link(callback)
+        group_sig = group(child_sig, identity.si(31337))
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Chain executes as expected"):
+            res_obj = group_sig()
+            assert res_obj.get(timeout=TIMEOUT) == [42 + 1337, 31337]
+        with subtests.test(msg="Callback is called after group finishes"):
+            await_redis_count(1, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_group_child_with_errback_replaced(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        errback = redis_count.si(redis_key=redis_key)
+
+        child_sig = fail_replaced.si()
+        child_sig.link_error(errback)
+        group_sig = group(child_sig, identity.si(42))
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Chain executes as expected"):
+            res_obj = group_sig()
+            with pytest.raises(ExpectedException):
+                res_obj.get(timeout=TIMEOUT)
+        with subtests.test(msg="Errback is called after group finishes"):
+            await_redis_count(1, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
 
