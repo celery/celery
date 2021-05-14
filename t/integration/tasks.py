@@ -217,17 +217,17 @@ def retry_once_priority(self, *args, expires=60.0, max_retries=1,
 
 
 @shared_task
-def redis_echo(message):
+def redis_echo(message, redis_key="redis-echo"):
     """Task that appends the message to a redis list."""
     redis_connection = get_redis_connection()
-    redis_connection.rpush('redis-echo', message)
+    redis_connection.rpush(redis_key, message)
 
 
 @shared_task
-def redis_count():
-    """Task that increments a well-known redis key."""
+def redis_count(redis_key="redis-count"):
+    """Task that increments a specified or well-known redis key."""
     redis_connection = get_redis_connection()
-    redis_connection.incr('redis-count')
+    redis_connection.incr(redis_key)
 
 
 @shared_task(bind=True)
