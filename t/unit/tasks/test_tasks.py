@@ -1,7 +1,7 @@
 import socket
 import tempfile
 from datetime import datetime, timedelta
-from unittest.mock import ANY, MagicMock, Mock, patch
+from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 
 import pytest
 from case import ContextMock
@@ -992,10 +992,12 @@ class test_tasks(TasksCase):
             retry=True, retry_policy=self.app.conf.task_publish_retry_policy)
 
     def test_replace(self):
-        sig1 = Mock(name='sig1')
+        sig1 = MagicMock(name='sig1')
         sig1.options = {}
+        self.mytask.request.id = sentinel.request_id
         with pytest.raises(Ignore):
             self.mytask.replace(sig1)
+        sig1.freeze.assert_called_once_with(self.mytask.request.id)
 
     def test_replace_with_chord(self):
         sig1 = Mock(name='sig1')
