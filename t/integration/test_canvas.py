@@ -731,6 +731,28 @@ class test_chain:
             await_redis_count(1, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
+    def test_task_replaced_with_chain(self):
+        orig_sig = replace_with_chain.si(42)
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == 42
+
+    def test_chain_child_replaced_with_chain_first(self):
+        orig_sig = chain(replace_with_chain.si(42), identity.s())
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == 42
+
+    def test_chain_child_replaced_with_chain_middle(self):
+        orig_sig = chain(
+            identity.s(42), replace_with_chain.s(), identity.s()
+        )
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == 42
+
+    def test_chain_child_replaced_with_chain_last(self):
+        orig_sig = chain(identity.s(42), replace_with_chain.s())
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == 42
+
 
 class test_result_set:
 
@@ -1152,6 +1174,23 @@ class test_group:
         with subtests.test(msg="Errback is called after group finishes"):
             await_redis_count(1, redis_key=redis_key)
         redis_connection.delete(redis_key)
+
+    def test_group_child_replaced_with_chain_first(self):
+        orig_sig = group(replace_with_chain.si(42), identity.s(1337))
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == [42, 1337]
+
+    def test_group_child_replaced_with_chain_middle(self):
+        orig_sig = group(
+            identity.s(42), replace_with_chain.s(1337), identity.s(31337)
+        )
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == [42, 1337, 31337]
+
+    def test_group_child_replaced_with_chain_last(self):
+        orig_sig = group(identity.s(42), replace_with_chain.s(1337))
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == [42, 1337]
 
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
@@ -2022,6 +2061,110 @@ class test_chord:
             # task in the chord body since it is a group
             await_redis_count(fail_task_count, redis_key=redis_key)
         redis_connection.delete(redis_key)
+
+    def test_chord_header_task_replaced_with_chain(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        orig_sig = chord(
+            replace_with_chain.si(42),
+            identity.s(),
+        )
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == [42]
+
+    def test_chord_header_child_replaced_with_chain_first(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        orig_sig = chord(
+            (replace_with_chain.si(42), identity.s(1337), ),
+            identity.s(),
+        )
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == [42, 1337]
+
+    def test_chord_header_child_replaced_with_chain_middle(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        orig_sig = chord(
+            (identity.s(42), replace_with_chain.s(1337), identity.s(31337), ),
+            identity.s(),
+        )
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == [42, 1337, 31337]
+
+    def test_chord_header_child_replaced_with_chain_last(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        orig_sig = chord(
+            (identity.s(42), replace_with_chain.s(1337), ),
+            identity.s(),
+        )
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == [42, 1337]
+
+    def test_chord_body_task_replaced_with_chain(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        orig_sig = chord(
+            identity.s(42),
+            replace_with_chain.s(),
+        )
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == [42]
+
+    def test_chord_body_chain_child_replaced_with_chain_first(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        orig_sig = chord(
+            identity.s(42),
+            chain(replace_with_chain.s(), identity.s(), ),
+        )
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == [42]
+
+    def test_chord_body_chain_child_replaced_with_chain_middle(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        orig_sig = chord(
+            identity.s(42),
+            chain(identity.s(), replace_with_chain.s(), identity.s(), ),
+        )
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == [42]
+
+    def test_chord_body_chain_child_replaced_with_chain_last(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        orig_sig = chord(
+            identity.s(42),
+            chain(identity.s(), replace_with_chain.s(), ),
+        )
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == [42]
 
 
 class test_signature_serialization:
