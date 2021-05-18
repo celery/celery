@@ -90,6 +90,7 @@ def celery_session_worker(
             celery_session_app.tasks.register(class_task)
         with worker.start_worker(celery_session_app,
                                  pool=celery_worker_pool,
+                                 shutdown_timeout=60.0,
                                  **celery_worker_parameters) as w:
             yield w
 
