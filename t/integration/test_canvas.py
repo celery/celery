@@ -206,10 +206,10 @@ class test_chain:
         res = c1()
 
         with pytest.raises(ExpectedException):
-            res.get(propagate=True)
+            res.get(timeout=TIMEOUT, propagate=True)
 
         with pytest.raises(ExpectedException):
-            res.parent.get(propagate=True)
+            res.parent.get(timeout=TIMEOUT, propagate=True)
 
     @flaky
     def test_chain_inside_group_receives_arguments(self):
