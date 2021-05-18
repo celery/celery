@@ -1,4 +1,6 @@
+import itertools
 import os
+import uuid
 
 import pytest
 
@@ -42,6 +44,45 @@ def celery_config():
     }
 
 
+@pytest.fixture(scope="session")
+def requires_redis_backend(celery_config):
+    if not celery_config["result_backend"].startswith("redis://"):
+        raise pytest.skip("Skipping tests requiring a Redis backend")
+
+
+@pytest.fixture(scope="function")
+def redis_connection(requires_redis_backend):
+    return get_redis_connection()
+
+
+@pytest.fixture(scope="function")
+def unique_redis_key(redis_connection):
+    redis_key = str(uuid.uuid4())
+    redis_connection.delete(redis_key)
+    yield redis_key
+    redis_connection.delete(redis_key)
+
+
+@pytest.fixture(scope="function")
+def unique_redis_keys(redis_connection):
+    def gen_redis_keys():
+        while True:
+            key_to_yield = str(uuid.uuid4())
+            redis_connection.delete(key_to_yield)
+            yield key_to_yield
+
+    key_gen = gen_redis_keys()
+    to_yield, for_teardown = itertools.tee(key_gen, 2)
+    yield to_yield
+
+    try:
+        key_gen.throw(GeneratorExit)
+    except GeneratorExit:
+        pass
+    for redis_key in for_teardown:
+        redis_connection.delete(redis_key)
+
+
 @pytest.fixture(scope='session')
 def celery_enable_logging():
     return True
@@ -65,6 +106,14 @@ def app(celery_app):
 @pytest.fixture
 def manager(app, celery_session_worker):
     return Manager(app)
+
+
+@pytest.fixture(scope="function")
+def requires_chord_support(manager):
+    try:
+        manager.app.backend.ensure_chords_allowed()
+    except NotImplementedError as e:
+        raise pytest.skip("Skipping test requiring support for chords")
 
 
 @pytest.fixture(autouse=True)
