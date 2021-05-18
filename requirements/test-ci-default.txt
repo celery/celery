@@ -12,7 +12,7 @@
 -r extras/thread.txt
 -r extras/elasticsearch.txt
 -r extras/couchdb.txt
--r extras/couchbase.txt
+#-r extras/couchbase.txt
 -r extras/arangodb.txt
 -r extras/consul.txt
 -r extras/cosmosdbsql.txt
