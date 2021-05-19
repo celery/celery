@@ -1,4 +1,4 @@
-:Version: 5.1.0b2 (cliffs)
+:Version: 5.1.0rc1 (cliffs)
 :Web: http://celeryproject.org/
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/

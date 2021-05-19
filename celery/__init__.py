@@ -17,7 +17,7 @@ from . import local  # noqa
 
 SERIES = 'sun-harmonics'
 
-__version__ = '5.1.0b2'
+__version__ = '5.1.0rc1'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
