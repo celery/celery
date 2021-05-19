@@ -8,6 +8,18 @@ This document contains change notes for bugfix & new features
 in the & 5.1.x series, please see :ref:`whatsnew-5.1` for
 an overview of what's new in Celery 5.1.
 
+.. _version-5.1.0rc1:
+
+5.1.0rc1
+========
+:release-date: 2021-05-02 16.06 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Celery Mailbox accept and serializer parameters are initialized from configuration. (#6757)
+- Error propagation and errback calling for group-like signatures now works as expected. (#6746)
+- Fix sanitization of passwords in sentinel URIs. (#6765)
+- Add LOG_RECEIVED to customize logging. (#6758)
+
 .. _version-5.1.0b2:
 
 5.1.0b2
