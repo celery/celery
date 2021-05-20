@@ -80,29 +80,19 @@ Wall of Contributors
 
 0xflotus <0xflotus@gmail.com>
 AbdealiJK <abdealikothari@gmail.com>
-Akash Agrawal <akashrocksha@gmail.com>
 Anatoliy <apeks37@yandex.ru>
 Anna Borzenko <aaa-nn-a@mail.ru>
-Anthony Lukach <anthonylukach@gmail.com>
-Arnon Yaari <wiggin15@yahoo.com>
-Artem Bernatskyi <artem.bernatskyy@gmail.com>
 aruseni <aruseni.magiku@gmail.com>
 Asif Saif Uddin (Auvi) <auvipy@gmail.com>
 Asif Saif Uddin <auvipy@gmail.com>
 Awais Qureshi <awais.qureshi@arbisoft.com>
-bastb <bas@tenberge-ict.nl>
-Bas ten Berge <bas+github@tenberge-ict.nl>
 careljonkhout <carel.jonkhout@gmail.com>
 Christian Clauss <cclauss@me.com>
 danthegoodman1 <xxdanthegoodmanxx@gmail.com>
-David Pärsson <david@parsson.se>
+Dave Johansen <davejohansen@gmail.com>
 David Schneider <schneidav81@gmail.com>
-Egor Sergeevich Poderiagin <egor@crazyrussian.pro>
-elonzh <elonzh@qq.com>
 Fahmi <fahmimodelo@gmail.com>
 Felix Yan <felixonmars@archlinux.org>
-František Zatloukal <Zatloukal.Frantisek@gmail.com>
-Frazer McLean <frazer@frazermclean.co.uk>
 Gabriel Augendre <gabriel@augendre.info>
 galcohen <gal.cohen@autodesk.com>
 gal cohen <gal.nevis@gmail.com>
@@ -111,43 +101,26 @@ Guillaume DE SUSANNE D'EPINAY <guillaume.desusanne@ssi.gouv.fr>
 Hilmar Hilmarsson <hilmarh@gmail.com>
 Illia Volochii <illia.volochii@gmail.com>
 jenhaoyang <randy19962@gmail.com>
-Josue Balandrano Coronel <jbc@rmcomplexity.com>
 Jonathan Stoppani <jonathan@stoppani.name>
-Justinas Petuchovas <justinas.petuchovas@gmail.com>
-KexZh <hanbaobao2005@gmail.com>
+Josue Balandrano Coronel <jbc@rmcomplexity.com>
 kosarchuksn <sergeykosarchuk@gmail.com>
 Kostya Deev <kostya.deev@bluware.com>
-laixintao <laixintaoo@gmail.com>
-Mathieu Rollet <matletix@gmail.com>
 Matt Hoffman <mjhoffman65@gmail.com>
 Matus Valo <matusvalo@gmail.com>
-Michal Kuffa <michal.kuffa@sentry.io>
-Mike DePalatis <depalatis@gmail.com>
 Myeongseok Seo <clichedmoog@gmail.com>
-Nick Pope <nick.pope@flightdataservices.com>
-Nicolas Dandrimont <nicolas@dandrimont.eu>
 Noam <noamkush@gmail.com>
 Omer Katz <omer.drow@gmail.com>
-partizan <serg.partizan@gmail.com>
 pavlos kallis <pakallis@gmail.com>
 Pavol Plaskoň <pavol.plaskon@gmail.com>
 Pengjie Song (宋鹏捷) <spengjie@sina.com>
-Safwan Rahman <safwan.rahman15@gmail.com>
 Sardorbek Imomaliev <sardorbek.imomaliev@gmail.com>
 Sergey Lyapustin <s.lyapustin@gmail.com>
 Sergey Tikhonov <zimbler@gmail.com>
-Sonya Chhabra <sonyakc.2007@gmail.com>
-Stepan Henek <stepan@henek.name>
 Stephen J. Fuhry <steve@tpastream.com>
-Stuart Axon <stuaxo2@yahoo.com>
 Swen Kooij <swen@sectorlabs.ro>
-Thomas Grainger <tagrain@gmail.com>
-Thomas Riccardi <thomas@deepomatic.com>
 tned73 <edwin@tranzer.com>
 Tomas Hrnciar <thrnciar@redhat.com>
 tumb1er <zimbler@gmail.com>
-ZubAnt <ya.zubarevanton@yandex.ru>
-Zvi Baratz <z.baratz@gmail.com>
 
 .. note::
 
