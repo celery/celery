@@ -200,6 +200,19 @@ The supported Python Versions are:
 - CPython 3.9
 - PyPy3.6 7.2 (``pypy3``)
 
+Important Notes
+---------------
+
+Kombu
+~~~~~
+
+Starting from v5.1, the minimum required version is Kombu 5.1.0.
+
+Billiard
+~~~~~~~~
+
+Starting from v5.1, the minimum required version is Billiard 3.6.4.
+
 Important Notes From 5.0
 ------------------------
 
@@ -220,16 +233,6 @@ you can still use Celery 4.x.
 However we encourage you to upgrade to a supported Python version since
 no further security patches will be applied for Python 2.7 and as mentioned
 Python 3.5 is not supported for practical reasons.
-
-Kombu
-~~~~~
-
-Starting from v5.0, the minimum required version is Kombu 5.0.0.
-
-Billiard
-~~~~~~~~
-
-Starting from v5.0, the minimum required version is Billiard 3.6.3.
 
 Eventlet Workers Pool
 ~~~~~~~~~~~~~~~~~~~~~
