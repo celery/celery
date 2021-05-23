@@ -20,6 +20,9 @@ on:
 jobs:
   Unit:
 
+    # XXX: DO NOT MERGE THIS LINE
+    if: false
+
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -89,26 +92,38 @@ jobs:
 
   Integration:
 
+    needs:
+    - Unit
+    # XXX: DO NOT MERGE THIS LINE
+    if: ${{ always() }}
+
+    # XXX: We should set this to some reasonable maximum prior to merge. The
+    # default 6 hour timeout is far too long.
+    timeout-minutes: 30
+
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', 'pypy3']
+        # XXX: RESTORE THIS MATRIX PRIOR TO MERGE
+        python-version: ['3.7', ] #'3.8', '3.9', 'pypy3']
+        # XXX: Does each matrix variation get their own copy of the service
+        # containers? Test cross-talk may be an issue...
+        toxenv: ['redis', ] #'rabbitmq']
 
      # additional service containers to run
     services:
-      # postgres service
-      rabbitmq:
-        # docker hub image
-        image: rabbitmq
-        # configure the instance
-        env:
-          RABBITMQ_DEFAULT_USER: craiga
-          RABBITMQ_DEFAULT_PASS: security_is_important
-        ports:
-          - 5432:5432
+      #rabbitmq:
+      #  # docker hub image
+      #  image: rabbitmq
+      #  # configure the instance
+      #  env:
+      #    # XXX: If we set these, we need to set TEST_{BROKER,BACKEND} URIs
+      #    RABBITMQ_DEFAULT_USER: craiga
+      #    RABBITMQ_DEFAULT_PASS: security_is_important
+      #  ports:
+      #    - 5432:5432
 
-      # redis service
       redis:
         # Docker Hub image
         image: redis
@@ -135,21 +150,23 @@ jobs:
       id: pip-cache
       run: |
         echo "::set-output name=dir::$(pip cache dir)"
-    - name: Cache
-      uses: actions/cache@v2
-      with:
-        path: ${{ steps.pip-cache.outputs.dir }}
-        key:
-          ${{ matrix.python-version }}-v1-${{ hashFiles('**/setup.py') }}
-        restore-keys: |
-          ${{ matrix.python-version }}-v1-
-    - name: Install dependencies
-      run: |
-        python -m pip install -r requirements/dev.txt \
-            -r requirements/test.txt \
-            -r requirements/test-ci-default.txt \
-            -r requirements/test-integration.txt
+    # XXX: What does this do? Does using tox change its usefulness?
+    #- name: Cache
+    #  uses: actions/cache@v2
+    #  with:
+    #    path: ${{ steps.pip-cache.outputs.dir }}
+    #    key:
+    #      ${{ matrix.python-version }}-v1-${{ hashFiles('**/setup.py') }}
+    #    restore-keys: |
+    #      ${{ matrix.python-version }}-v1-
 
-    - name: Run Integration test with pytest / tox /tox-docker
-      run: |
-        PYTHONPATH=. pytest -xsv t/integration
+    - name: Install tox
+      run: python -m pip install tox
+    - name: >
+        Run tox for
+        "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"
+      timeout-minutes: 20
+      run: >
+        tox --verbose --verbose -e
+        "${{ matrix.python-version }}-integration
+-${{ matrix.toxenv }}"

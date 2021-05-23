@@ -2,6 +2,8 @@ name: lint_python
 on: [pull_request, push]
 jobs:
   lint_python:
+    # XXX: DO NOT MERGE THIS LINE
+    if: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
