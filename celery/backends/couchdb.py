@@ -75,6 +75,7 @@ class CouchBackend(KeyValueStoreBackend):
         return self._connection
 
     def get(self, key):
+        key = bytes_to_str(key)
         try:
             return self.connection.get(key)['value']
         except pycouchdb.exceptions.NotFound:
