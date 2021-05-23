@@ -8,6 +8,16 @@ This document contains change notes for bugfix & new features
 in the & 5.1.x series, please see :ref:`whatsnew-5.1` for
 an overview of what's new in Celery 5.1.
 
+.. version-5.1.0:
+
+5.1.0
+=====
+:release-date: 2021-05-23 19.20 P.M UTC+3:00
+:release-by: Omer Katz
+
+- ``celery -A app events -c camera`` now works as expected. (#6774)
+- Bump minimum required Kombu version to 5.1.0.
+
 .. _version-5.1.0rc1:
 
 5.1.0rc1
