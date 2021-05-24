@@ -59,13 +59,11 @@ jobs:
         tox --verbose --verbose -e
         "${{ matrix.python-version }}-unit"
 
-
-    -   uses: codecov/codecov-action@v1
-        with:
-            token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-            flags: unittests # optional
-            fail_ci_if_error: true # optional (default = false)
-            verbose: true # optional (default = false)
+    - uses: codecov/codecov-action@v1
+      with:
+        flags: unittests # optional
+        fail_ci_if_error: true # optional (default = false)
+        verbose: true # optional (default = false)
 
   lint:
     runs-on: ubuntu-latest
