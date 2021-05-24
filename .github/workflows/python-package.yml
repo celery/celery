@@ -170,3 +170,4 @@ jobs:
         tox --verbose --verbose -e
         "${{ matrix.python-version }}-integration
 -${{ matrix.toxenv }}"
+        -- -vv
