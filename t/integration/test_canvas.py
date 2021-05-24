@@ -101,59 +101,55 @@ def await_redis_count(expected_count, redis_key="redis-count", timeout=TIMEOUT):
 
 
 class test_link_error:
-    @flaky
+    # Eager execution shouldn't need the manager fixture
     def test_link_error_eager(self):
-        exception = ExpectedException("Task expected to fail", "test")
-        result = fail.apply(args=("test",), link_error=return_exception.s())
-        actual = result.get(timeout=TIMEOUT, propagate=False)
-        assert actual == exception
+        result = fail.apply(
+            args=("test",), link_error=return_exception.s()
+        )
+        with pytest.raises(ExpectedException):
+            result.get(timeout=TIMEOUT)
 
-    @flaky
-    def test_link_error(self):
-        exception = ExpectedException("Task expected to fail", "test")
-        result = fail.apply(args=("test",), link_error=return_exception.s())
-        actual = result.get(timeout=TIMEOUT, propagate=False)
-        assert actual == exception
-
-    @flaky
     def test_link_error_callback_error_callback_retries_eager(self):
-        exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply(
             args=("test",),
             link_error=retry_once.s(countdown=None)
         )
-        assert result.get(timeout=TIMEOUT, propagate=False) == exception
+        with pytest.raises(ExpectedException):
+            result.get(timeout=TIMEOUT)
 
-    @flaky
+    def test_link_error_using_signature_eager(self):
+        fail = signature('t.integration.tasks.fail', args=("test",))
+        retrun_exception = signature('t.integration.tasks.return_exception')
+        fail.link_error(retrun_exception)
+        result = fail.apply()
+        with pytest.raises(ExpectedException):
+            result.get(timeout=TIMEOUT)
+
+    @pytest.mark.usefixtures("manager")
+    def test_link_error(self):
+        result = fail.apply_async(
+            args=("test",), link_error=return_exception.s()
+        )
+        with pytest.raises(ExpectedException):
+            result.get(timeout=TIMEOUT)
+
+    @pytest.mark.usefixtures("manager")
     def test_link_error_callback_retries(self):
-        exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply_async(
             args=("test",),
             link_error=retry_once.s(countdown=None)
         )
-        assert result.get(timeout=TIMEOUT, propagate=False) == exception
+        with pytest.raises(ExpectedException):
+            result.get(timeout=TIMEOUT)
 
-    @flaky
-    def test_link_error_using_signature_eager(self):
-        fail = signature('t.integration.tasks.fail', args=("test",))
-        retrun_exception = signature('t.integration.tasks.return_exception')
-
-        fail.link_error(retrun_exception)
-
-        exception = ExpectedException("Task expected to fail", "test")
-        assert (fail.apply().get(timeout=TIMEOUT, propagate=False), True) == (
-            exception, True)
-
-    @flaky
+    @pytest.mark.usefixtures("manager")
     def test_link_error_using_signature(self):
         fail = signature('t.integration.tasks.fail', args=("test",))
         retrun_exception = signature('t.integration.tasks.return_exception')
-
         fail.link_error(retrun_exception)
-
-        exception = ExpectedException("Task expected to fail", "test")
-        assert (fail.delay().get(timeout=TIMEOUT, propagate=False), True) == (
-            exception, True)
+        result = fail.delay()
+        with pytest.raises(ExpectedException):
+            result.get(timeout=TIMEOUT)
 
 
 class test_chain:
