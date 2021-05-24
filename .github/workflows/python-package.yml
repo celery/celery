@@ -59,15 +59,22 @@ jobs:
         tox --verbose --verbose -e
         "${{ matrix.python-version }}-unit"
 
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
     -   uses: codecov/codecov-action@v1
         with:
             token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
             flags: unittests # optional
             fail_ci_if_error: true # optional (default = false)
             verbose: true # optional (default = false)
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      # Must match the Python version in tox.ini for flake8
+      with: { python-version: 3.9 }
+    - name: Install tox
+      run: python -m pip install tox
+    - name: Lint with flake8
+      run: tox --verbose -e flake8
