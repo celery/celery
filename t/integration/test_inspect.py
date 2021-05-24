@@ -117,7 +117,7 @@ class test_Inspect:
                     'exchange': '',
                     'routing_key': 'celery',
                     'priority': 0,
-                    'redelivered': False
+                    'redelivered': ANY,
                 },
                 'worker_pid': ANY
             }
@@ -147,7 +147,7 @@ class test_Inspect:
                         'exchange': '',
                         'routing_key': 'celery',
                         'priority': 0,
-                        'redelivered': False
+                        'redelivered': ANY,
                     },
                     'worker_pid': None
                 }
@@ -181,7 +181,7 @@ class test_Inspect:
                         'exchange': '',
                         'routing_key': 'celery',
                         'priority': 0,
-                        'redelivered': False
+                        'redelivered': ANY,
                     },
                     # worker is running in the same process as separate thread
                     'worker_pid': ANY
