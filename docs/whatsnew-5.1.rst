@@ -161,13 +161,13 @@ Step 3: Read the important notes in this document
 Make sure you are not affected by any of the important upgrade notes
 mentioned in the :ref:`following section <v500-important>`.
 
-You should mainly verify that any of the breaking changes in the CLI
+You should verify that none of the breaking changes in the CLI
 do not affect you. Please refer to :ref:`New Command Line Interface <new_command_line_interface>` for details.
 
 Step 4: Migrate your code to Python 3
 -------------------------------------
 
-Celery 5.x supports only Python 3. Therefore, you must ensure your code is
+Celery 5.x only supports Python 3. Therefore, you must ensure your code is
 compatible with Python 3.
 
 If you haven't ported your code to Python 3, you must do so before upgrading.
@@ -231,8 +231,8 @@ Therefore, we are also dropping support for Python 3.5.
 If you still require to run Celery using Python 2.7 or Python 3.5
 you can still use Celery 4.x.
 However we encourage you to upgrade to a supported Python version since
-no further security patches will be applied for Python 2.7 and as mentioned
-Python 3.5 is not supported for practical reasons.
+no further security patches will be applied for Python 2.7 or
+Python 3.5.
 
 Eventlet Workers Pool
 ~~~~~~~~~~~~~~~~~~~~~
@@ -328,9 +328,9 @@ Please refer to the :ref:`documentation <_conf-redis-result-backend>` for detail
 SQS transport - support back off policy
 ----------------------------------------
 
-SQS supports managed visibility timeout, this lets us implementing back off
-policy (for instance exponential policy) which means that time between task
-failures will dynamically changed based on number of retries.
+SQS now supports managed visibility timeout. This lets us implement a back off
+policy (for instance, an exponential policy) which means that the time between
+task failures will dynamically change based on the number of retries.
 
 Documentation: :doc:`reference/kombu.transport.SQS.rst`
 
@@ -338,7 +338,7 @@ Duplicate successful tasks
 ---------------------------
 
 The trace function fetches the metadata from the backend each time it
-receives a task and compares its state. If the state is SUCCESS
+receives a task and compares its state. If the state is SUCCESS,
 we log and bail instead of executing the task.
 The task is acknowledged and everything proceeds normally.
 
@@ -347,7 +347,7 @@ Documentation: :setting:`worker_deduplicate_successful_tasks`
 Terminate tasks with late acknowledgment on connection loss
 -----------------------------------------------------------
 
-Tasks with late acknowledgement keep running after restart
+Tasks with late acknowledgement keep running after restart,
 although the connection is lost and they cannot be
 acknowledged anymore. These tasks will now be terminated.
 
@@ -364,7 +364,7 @@ Use a thread-safe implementation of `cached_property`
 
 `cached_property` is heavily used in celery but it is causing
 issues in multi-threaded code since it is not thread safe.
-Celery is now using a thread-safe implementation of `cached_property`
+Celery is now using a thread-safe implementation of `cached_property`.
 
 Tasks can now have required kwargs at any order
 ------------------------------------------------
@@ -382,8 +382,8 @@ Tasks can now be defined like this:
 SQS - support STS authentication with AWS
 -----------------------------------------
 
-STS token requires being refreshed after certain period of time.
-after `sts_token_timeout` is reached a new token will be created.
+The STS token requires a refresh after a certain period of time.
+After `sts_token_timeout` is reached, a new token will be created.
 
 Documentation: :doc:`getting-started/backends-and-brokers/sqs.rst`
 
@@ -398,8 +398,8 @@ Documentation: :setting:`redis_backend_health_check_interval`
 Update default pickle protocol version to 4
 --------------------------------------------
 
-Updating pickle protocl version allow Celery to serialize larger strings
-amongs other benefits.
+The pickle protocol version was updated to allow Celery to serialize larger
+strings among other benefits.
 
 See: https://docs.python.org/3.9/library/pickle.html#data-stream-format
 
