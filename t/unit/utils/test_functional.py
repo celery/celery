@@ -1,3 +1,5 @@
+import collections
+
 import pytest
 from kombu.utils.functional import lazy
 
@@ -149,6 +151,15 @@ class test_regen:
 
     def test_nonzero__empty_iter(self):
         assert not regen(iter([]))
+
+    def test_deque(self):
+        original_list = [42]
+        d = collections.deque(original_list)
+        # Confirm that concretising a `regen()` instance repeatedly for an
+        # equality check always returns the original list
+        g = regen(d)
+        assert g == original_list
+        assert g == original_list
 
 
 class test_head_from_fun:
