@@ -40,7 +40,7 @@ class WorkersPool(click.Choice):
 
     def __init__(self):
         """Initialize the workers pool option with the relevant choices."""
-        super().__init__(('prefork', 'eventlet', 'gevent', 'solo'))
+        super().__init__(concurrency.get_available_pool_names())
 
     def convert(self, value, param, ctx):
         # Pools like eventlet/gevent needs to patch libs as early

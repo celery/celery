@@ -142,7 +142,8 @@ def maybe_patch_concurrency(argv=None, short_opts=None,
 
         # set up eventlet/gevent environments ASAP
         from celery import concurrency
-        concurrency.get_implementation(pool)
+        if pool in concurrency.get_available_pool_names():
+            concurrency.get_implementation(pool)
 
 
 # this just creates a new module, that imports stuff on first attribute

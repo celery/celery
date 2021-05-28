@@ -5,7 +5,7 @@
 # too much (e.g., for eventlet patching)
 from kombu.utils.imports import symbol_by_name
 
-__all__ = ('get_implementation',)
+__all__ = ('get_implementation', 'get_available_pool_names',)
 
 ALIASES = {
     'prefork': 'celery.concurrency.prefork:TaskPool',
@@ -26,3 +26,7 @@ else:
 def get_implementation(cls):
     """Return pool implementation by name."""
     return symbol_by_name(cls, ALIASES)
+
+
+def get_available_pool_names():
+    return tuple(ALIASES.keys())
