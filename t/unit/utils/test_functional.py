@@ -161,6 +161,15 @@ class test_regen:
         assert g == original_list
         assert g == original_list
 
+    def test_repr(self):
+        def die():
+            raise AssertionError("Generator died")
+            yield None
+
+        # Confirm that `regen()` instances are not concretised when represented
+        g = regen(die())
+        assert "..." in repr(g)
+
 
 class test_head_from_fun:
 
