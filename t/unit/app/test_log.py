@@ -268,9 +268,9 @@ class test_default_logger:
             p.write('foo')
             assert 'foo' not in sio.getvalue()
             p.closed = False
-            write_res = p.write('foo')
-            assert 'foo' in sio.getvalue()
-            assert write_res == 3
+            write_res = p.write('foo ')
+            assert 'foo ' in sio.getvalue()
+            assert write_res == 4
             lines = ['baz', 'xuzzy']
             p.writelines(lines)
             for line in lines:

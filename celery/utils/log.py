@@ -223,7 +223,6 @@ class LoggingProxy:
         if getattr(self._thread, 'recurse_protection', False):
             # Logger is logging back to this file, so stop recursing.
             return 0
-        data = data.strip()
         if data and not self.closed:
             self._thread.recurse_protection = True
             try:
