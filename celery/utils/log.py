@@ -214,19 +214,24 @@ class LoggingProxy:
         return [wrap_handler(h) for h in self.logger.handlers]
 
     def write(self, data):
+        # type: (AnyStr) -> int
         """Write message to logging object."""
         if _in_sighandler:
-            return print(safe_str(data), file=sys.__stderr__)
+            safe_data = safe_str(data)
+            print(safe_data, file=sys.__stderr__)
+            return len(safe_data)
         if getattr(self._thread, 'recurse_protection', False):
             # Logger is logging back to this file, so stop recursing.
-            return
-        data = data.strip()
+            return 0
         if data and not self.closed:
             self._thread.recurse_protection = True
             try:
-                self.logger.log(self.loglevel, safe_str(data))
+                safe_data = safe_str(data)
+                self.logger.log(self.loglevel, safe_data)
+                return len(safe_data)
             finally:
                 self._thread.recurse_protection = False
+        return 0
 
     def writelines(self, sequence):
         # type: (Sequence[str]) -> None

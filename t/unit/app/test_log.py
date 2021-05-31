@@ -268,8 +268,9 @@ class test_default_logger:
             p.write('foo')
             assert 'foo' not in sio.getvalue()
             p.closed = False
-            p.write('foo')
-            assert 'foo' in sio.getvalue()
+            write_res = p.write('foo ')
+            assert 'foo ' in sio.getvalue()
+            assert write_res == 4
             lines = ['baz', 'xuzzy']
             p.writelines(lines)
             for line in lines:
@@ -290,7 +291,7 @@ class test_default_logger:
         p = LoggingProxy(logger, loglevel=logging.ERROR)
         p._thread.recurse_protection = True
         try:
-            assert p.write('FOOFO') is None
+            assert p.write('FOOFO') == 0
         finally:
             p._thread.recurse_protection = False
 
