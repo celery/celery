@@ -241,12 +241,9 @@ class _regen(UserList, list):
 
     @property
     def data(self):
-        try:
-            if not self.__done:
-                self.__consumed.extend(list(self.__it))
+        if not self.__done:
+            self.__consumed.extend(self.__it)
             self.__done = True
-        except StopIteration:
-            pass
         return self.__consumed
 
     def __repr__(self):
