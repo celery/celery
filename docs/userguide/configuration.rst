@@ -1884,6 +1884,16 @@ This is a dict supporting the following keys:
 
     Password to authenticate to the ArangoDB server (optional).
 
+* ``http_protocol``
+
+    HTTP Protocol in ArangoDB server connection.
+    Defaults to ``http``.
+
+* ``verify``
+
+    HTTPS Verification check while creating the ArangoDB connection.
+    Defaults to ``False``.
+
 .. _conf-cosmosdbsql-result-backend:
 
 CosmosDB backend settings (experimental)

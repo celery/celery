@@ -48,6 +48,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
     password = None
     # protocol is not supported in backend url (http is taken as default)
     http_protocol = 'http'
+    verify = False
 
     # Use str as arangodb key not bytes
     key_t = str
@@ -88,6 +89,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
         self.host = host or config.get('host', self.host)
         self.port = int(port or config.get('port', self.port))
         self.http_protocol = config.get('http_protocol', self.http_protocol)
+        self.verify = config.get('verify', self.verify)
         self.database = database or config.get('database', self.database)
         self.collection = \
             collection or config.get('collection', self.collection)
@@ -104,7 +106,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
         if self._connection is None:
             self._connection = py_arango_connection.Connection(
                 arangoURL=self.arangodb_url, username=self.username,
-                password=self.password
+                password=self.password, verify=self.verify
             )
         return self._connection
 
