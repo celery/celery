@@ -978,11 +978,15 @@ class test_chord(CanvasCase):
             yield self.add.s(1, 1)
             self.second_item_returned = True
             yield self.add.s(2, 2)
+            raise pytest.fail("This should never be reached")
 
         self.second_item_returned = False
         c = chord(build_generator(), self.add.s(3))
         c.app
-        assert not self.second_item_returned
+        # The second task gets returned due to lookahead in `regen()`
+        assert self.second_item_returned
+        # Access it again to make sure the generator is not further evaluated
+        c.app
 
     def test_reverse(self):
         x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
