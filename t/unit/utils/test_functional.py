@@ -1,6 +1,7 @@
 import collections
 
 import pytest
+import pytest_subtests
 from kombu.utils.functional import lazy
 
 from celery.utils.functional import (DummyContext, first, firstmethod,
@@ -205,6 +206,73 @@ class test_regen:
         assert getattr(g, "_regen__done") is True
         # Finally we xfail this test to keep track of it
         raise pytest.xfail(reason="#6794")
+
+    def test_length_hint_passthrough(self, g):
+        assert g.__length_hint__() == 10
+
+    def test_getitem_repeated(self, g):
+        halfway_idx = g.__length_hint__() // 2
+        assert g[halfway_idx] == halfway_idx
+        # These are now concretised so they should be returned without any work
+        assert g[halfway_idx] == halfway_idx
+        for i in range(halfway_idx + 1):
+            assert g[i] == i
+        # This should only need to concretise one more element
+        assert g[halfway_idx + 1] == halfway_idx + 1
+
+    def test_done_does_not_lag(self, g):
+        """
+        Don't allow regen to return from `__iter__()` and check `__done`.
+        """
+        # The range we zip with here should ensure that the `regen.__iter__`
+        # call never gets to return since we never attempt a failing `next()`
+        len_g = g.__length_hint__()
+        for i, __ in zip(range(len_g), g):
+            assert getattr(g, "_regen__done") is (i == len_g - 1)
+        # Just for sanity, check against a specific `bool` here
+        assert getattr(g, "_regen__done") is True
+
+    def test_lookahead_consume(self, subtests):
+        """
+        Confirm that regen looks ahead by a single item as expected.
+        """
+        def g():
+            yield from ["foo", "bar"]
+            raise pytest.fail("This should never be reached")
+
+        with subtests.test(msg="bool does not overconsume"):
+            assert bool(regen(g()))
+        with subtests.test(msg="getitem 0th does not overconsume"):
+            assert regen(g())[0] == "foo"
+        with subtests.test(msg="single iter does not overconsume"):
+            assert next(iter(regen(g()))) == "foo"
+
+        class ExpectedException(BaseException):
+            pass
+
+        def g2():
+            yield from ["foo", "bar"]
+            raise ExpectedException()
+
+        with subtests.test(msg="getitem 1th does overconsume"):
+            r = regen(g2())
+            with pytest.raises(ExpectedException):
+                r[1]
+            # Confirm that the item was concretised anyway
+            assert r[1] == "bar"
+        with subtests.test(msg="full iter does overconsume"):
+            r = regen(g2())
+            with pytest.raises(ExpectedException):
+                for _ in r:
+                    pass
+            # Confirm that the items were concretised anyway
+            assert r == ["foo", "bar"]
+        with subtests.test(msg="data access does overconsume"):
+            r = regen(g2())
+            with pytest.raises(ExpectedException):
+                r.data
+            # Confirm that the items were concretised anyway
+            assert r == ["foo", "bar"]
 
 
 class test_head_from_fun:

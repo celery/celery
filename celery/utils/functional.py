@@ -195,7 +195,6 @@ class _regen(UserList, list):
         # UserList creates a new list and sets .data, so we don't
         # want to call init here.
         self.__it = it
-        self.__index = 0
         self.__consumed = []
         self.__done = False
 
@@ -205,28 +204,45 @@ class _regen(UserList, list):
     def __length_hint__(self):
         return self.__it.__length_hint__()
 
+    def __lookahead_consume(self, limit=None):
+        if not self.__done and (limit is None or limit > 0):
+            it = iter(self.__it)
+            try:
+                now = next(it)
+            except StopIteration:
+                return
+            self.__consumed.append(now)
+            # Maintain a single look-ahead to ensure we set `__done` when the
+            # underlying iterator gets exhausted
+            while not self.__done:
+                try:
+                    next_ = next(it)
+                    self.__consumed.append(next_)
+                except StopIteration:
+                    self.__done = True
+                    break
+                finally:
+                    yield now
+                now = next_
+                # We can break out when `limit` is exhausted
+                if limit is not None:
+                    limit -= 1
+                    if limit <= 0:
+                        break
+
     def __iter__(self):
         yield from self.__consumed
-        if not self.__done:
-            for x in self.__it:
-                self.__consumed.append(x)
-                yield x
-            self.__done = True
+        yield from self.__lookahead_consume()
 
     def __getitem__(self, index):
         if index < 0:
             return self.data[index]
-        try:
-            return self.__consumed[index]
-        except IndexError:
-            it = iter(self)
-            try:
-                for _ in range(self.__index, index + 1):
-                    next(it)
-            except StopIteration:
-                raise IndexError(index)
-            else:
-                return self.__consumed[index]
+        # Consume elements up to the desired index prior to attempting to
+        # access it from within `__consumed`
+        consume_count = index - len(self.__consumed) + 1
+        for _ in self.__lookahead_consume(limit=consume_count):
+            pass
+        return self.__consumed[index]
 
     def __bool__(self):
         if len(self.__consumed):
