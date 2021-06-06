@@ -972,6 +972,18 @@ class Task:
         self.backend.store_result(
             task_id, meta, state, request=self.request, **kwargs)
 
+    def before_start(self, task_id, args, kwargs):
+        """Handler called before the task starts.
+
+        Arguments:
+            task_id (str): Unique id of the task to execute.
+            args (Tuple): Original arguments for the retried task.
+            kwargs (Dict): Original keyword arguments for the retried task.
+
+        Returns:
+            None: The return value of this handler is ignored.
+        """
+
     def on_success(self, retval, task_id, args, kwargs):
         """Success handler.
 

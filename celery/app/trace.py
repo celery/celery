@@ -345,8 +345,11 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     loader_task_init = loader.on_task_init
     loader_cleanup = loader.on_process_cleanup
 
+    task_before_start = None
     task_on_success = None
     task_after_return = None
+    if task_has_custom(task, 'before_start'):
+        task_before_start = task.before_start
     if task_has_custom(task, 'on_success'):
         task_on_success = task.on_success
     if task_has_custom(task, 'after_return'):
@@ -442,6 +445,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
                 # -*- TRACE -*-
                 try:
+                    if task_before_start:
+                        task_before_start(uuid, args, kwargs)
+
                     R = retval = fun(*args, **kwargs)
                     state = SUCCESS
                 except Reject as exc:

@@ -61,6 +61,14 @@ class test_trace(TraceCase):
         assert info is None
         assert retval == 4
 
+    def test_trace_before_start(self):
+        @self.app.task(shared=False, before_start=Mock())
+        def add_with_before_start(x, y):
+            return x + y
+
+        self.trace(add_with_before_start, (2, 2), {})
+        add_with_before_start.before_start.assert_called()
+
     def test_trace_on_success(self):
         @self.app.task(shared=False, on_success=Mock())
         def add_with_success(x, y):
