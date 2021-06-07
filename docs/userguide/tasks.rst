@@ -1622,7 +1622,7 @@ limits, and other failures.
               )
 
        def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
-           super(MyRequest, self).on_failure(
+           super().on_failure(
                exc_info,
                send_failed_event=send_failed_event,
                return_ok=return_ok
