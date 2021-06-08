@@ -111,7 +111,7 @@ def pretty(value, width=80, nl_width=80, sep='\n', **kw):
     # type: (str, int, int, str, **Any) -> str
     """Format value for printing to console."""
     if isinstance(value, dict):
-        return '{{{0} {1}'.format(sep, pformat(value, 4, nl_width)[1:])
+        return f'{{{sep} {pformat(value, 4, nl_width)[1:]}'
     elif isinstance(value, tuple):
         return '{}{}{}'.format(
             sep, ' ' * 4, pformat(value, width=nl_width, **kw),

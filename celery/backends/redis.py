@@ -603,7 +603,7 @@ class SentinelBackend(RedisBackend):
         """
         # Allow superclass to do work if we don't need to force sanitization
         if include_password:
-            return super(SentinelBackend, self).as_uri(
+            return super().as_uri(
                 include_password=include_password,
             )
         # Otherwise we need to ensure that all components get sanitized rather

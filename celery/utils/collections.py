@@ -325,7 +325,7 @@ class ChainMap(MutableMapping):
         # changes take precedence.
         # pylint: disable=bad-reversed-sequence
         #   Someone should teach pylint about properties.
-        return chain(*[op(d) for d in reversed(self.maps)])
+        return chain(*(op(d) for d in reversed(self.maps)))
 
     def _iterate_keys(self):
         # type: () -> Iterable
