@@ -1012,8 +1012,14 @@ def test_check_privileges_with_c_force_root_and_no_group_entry(accept_content,
 
 
 def test_skip_checking_privileges_when_grp_is_unavailable(recwarn):
-    with patch('celery.platforms.try_import',
-               return_value=None):
+    with patch("celery.platforms.grp", new=None):
+        check_privileges({'pickle'})
+
+    assert len(recwarn) == 0
+
+
+def test_skip_checking_privileges_when_pwd_is_unavailable(recwarn):
+    with patch("celery.platforms.pwd", new=None):
         check_privileges({'pickle'})
 
     assert len(recwarn) == 0
