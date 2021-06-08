@@ -1289,17 +1289,20 @@ class test_apply_task(TasksCase):
             f.get()
 
     def test_apply_simulates_delivery_info(self):
-        self.task_check_request_context.request_stack.push = Mock()
+        task_to_apply = self.task_check_request_context
+        with patch.object(
+            task_to_apply.request_stack, "push",
+            wraps=task_to_apply.request_stack.push,
+        ) as mock_push:
+            task_to_apply.apply(
+                priority=4,
+                routing_key='myroutingkey',
+                exchange='myexchange',
+            )
 
-        self.task_check_request_context.apply(
-            priority=4,
-            routing_key='myroutingkey',
-            exchange='myexchange',
-        )
+        mock_push.assert_called_once()
 
-        self.task_check_request_context.request_stack.push.assert_called_once()
-
-        request = self.task_check_request_context.request_stack.push.call_args[0][0]
+        request = mock_push.call_args[0][0]
 
         assert request.delivery_info == {
             'is_eager': True,
