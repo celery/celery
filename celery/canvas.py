@@ -1253,8 +1253,10 @@ class group(Signature):
 
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None, group_index=None):
-        return self.app.GroupResult(*self._freeze_group_tasks(_id=_id, group_id=group_id,
-                                                              chord=chord, root_id=root_id, parent_id=parent_id, group_index=group_index))
+        return self.app.GroupResult(*self._freeze_group_tasks(
+            _id=_id, group_id=group_id,
+            chord=chord, root_id=root_id, parent_id=parent_id, group_index=group_index
+        ))
 
     _freeze = freeze
 

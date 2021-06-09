@@ -116,6 +116,7 @@ class CLIContext:
 
 
 def handle_preload_options(f):
+    """Extract preload options and return a wrapped callable."""
     def caller(ctx, *args, **kwargs):
         app = ctx.obj.app
 
