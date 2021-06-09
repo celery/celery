@@ -911,8 +911,10 @@ def test_check_privileges_with_c_force_root(accept_content):
     ({'application/group-python-serialize'}, 'wheel'),
     ({'pickle', 'application/group-python-serialize'}, 'wheel'),
 ])
-def test_check_privileges_with_c_force_root_and_with_suspicious_group(accept_content, group_name):
-    with patch('celery.platforms.os') as os_module, patch('celery.platforms.grp') as grp_module:
+def test_check_privileges_with_c_force_root_and_with_suspicious_group(
+    accept_content, group_name):
+    with patch('celery.platforms.os') as os_module, patch(
+        'celery.platforms.grp') as grp_module:
         os_module.environ = {'C_FORCE_ROOT': 'true'}
         os_module.getuid.return_value = 60
         os_module.getgid.return_value = 60
@@ -936,8 +938,10 @@ def test_check_privileges_with_c_force_root_and_with_suspicious_group(accept_con
     ({'application/group-python-serialize'}, 'wheel'),
     ({'pickle', 'application/group-python-serialize'}, 'wheel'),
 ])
-def test_check_privileges_without_c_force_root_and_with_suspicious_group(accept_content, group_name):
-    with patch('celery.platforms.os') as os_module, patch('celery.platforms.grp') as grp_module:
+def test_check_privileges_without_c_force_root_and_with_suspicious_group(
+    accept_content, group_name):
+    with patch('celery.platforms.os') as os_module, patch(
+        'celery.platforms.grp') as grp_module:
         os_module.environ = {}
         os_module.getuid.return_value = 60
         os_module.getgid.return_value = 60
@@ -959,8 +963,10 @@ def test_check_privileges_without_c_force_root_and_with_suspicious_group(accept_
     {'application/group-python-serialize'},
     {'pickle', 'application/group-python-serialize'}
 ])
-def test_check_privileges_with_c_force_root_and_no_group_entry(accept_content, recwarn):
-    with patch('celery.platforms.os') as os_module, patch('celery.platforms.grp') as grp_module:
+def test_check_privileges_with_c_force_root_and_no_group_entry(accept_content,
+                                                               recwarn):
+    with patch('celery.platforms.os') as os_module, patch(
+        'celery.platforms.grp') as grp_module:
         os_module.environ = {'C_FORCE_ROOT': 'true'}
         os_module.getuid.return_value = 60
         os_module.getgid.return_value = 60
@@ -984,8 +990,10 @@ def test_check_privileges_with_c_force_root_and_no_group_entry(accept_content, r
     {'application/group-python-serialize'},
     {'pickle', 'application/group-python-serialize'}
 ])
-def test_check_privileges_with_c_force_root_and_no_group_entry(accept_content, recwarn):
-    with patch('celery.platforms.os') as os_module, patch('celery.platforms.grp') as grp_module:
+def test_check_privileges_with_c_force_root_and_no_group_entry(accept_content,
+                                                               recwarn):
+    with patch('celery.platforms.os') as os_module, patch(
+        'celery.platforms.grp') as grp_module:
         os_module.environ = {}
         os_module.getuid.return_value = 60
         os_module.getgid.return_value = 60
@@ -1001,3 +1009,17 @@ def test_check_privileges_with_c_force_root_and_no_group_entry(accept_content, r
             check_privileges(accept_content)
 
         assert recwarn[0].message.args[0] == ASSUMING_ROOT
+
+
+def test_skip_checking_privileges_when_grp_is_unavailable(recwarn):
+    with patch("celery.platforms.grp", new=None):
+        check_privileges({'pickle'})
+
+    assert len(recwarn) == 0
+
+
+def test_skip_checking_privileges_when_pwd_is_unavailable(recwarn):
+    with patch("celery.platforms.pwd", new=None):
+        check_privileges({'pickle'})
+
+    assert len(recwarn) == 0

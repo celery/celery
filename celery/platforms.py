@@ -6,7 +6,6 @@ users, groups, and so on.
 
 import atexit
 import errno
-import grp
 import math
 import numbers
 import os
@@ -780,6 +779,8 @@ def ignore_errno(*errnos, **kwargs):
 
 
 def check_privileges(accept_content):
+    if grp is None or pwd is None:
+        return
     pickle_or_serialize = ('pickle' in accept_content
                            or 'application/group-python-serialize' in accept_content)
 
