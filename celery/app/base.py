@@ -1061,7 +1061,7 @@ class Celery:
         self.close()
 
     def __repr__(self):
-        return '<{} {}>'.format(type(self).__name__, appstr(self))
+        return f'<{type(self).__name__} {appstr(self)}>'
 
     def __reduce__(self):
         if self._using_v1_reduce:

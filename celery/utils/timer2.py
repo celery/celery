@@ -54,7 +54,7 @@ class Timer(threading.Thread):
         self.mutex = threading.Lock()
         self.not_empty = threading.Condition(self.mutex)
         self.daemon = True
-        self.name = 'Timer-{}'.format(next(self._timer_count))
+        self.name = f'Timer-{next(self._timer_count)}'
 
     def _next_entry(self):
         with self.not_empty:

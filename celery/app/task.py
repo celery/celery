@@ -106,7 +106,7 @@ class Context:
         return getattr(self, key, default)
 
     def __repr__(self):
-        return '<Context: {!r}>'.format(vars(self))
+        return f'<Context: {vars(self)!r}>'
 
     def as_execution_options(self):
         limit_hard, limit_soft = self.timelimit or (None, None)
