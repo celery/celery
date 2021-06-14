@@ -241,11 +241,17 @@ class _regen(UserList, list):
 
     @property
     def data(self):
-        try:
-            self.__consumed.extend(list(self.__it))
-        except StopIteration:
-            pass
+        if not self.__done:
+            self.__consumed.extend(self.__it)
+            self.__done = True
         return self.__consumed
+
+    def __repr__(self):
+        return "<{}: [{}{}]>".format(
+            self.__class__.__name__,
+            ", ".join(repr(e) for e in self.__consumed),
+            "..." if not self.__done else "",
+        )
 
 
 def _argsfromspec(spec, replace_defaults=True):

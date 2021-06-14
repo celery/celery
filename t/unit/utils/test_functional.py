@@ -1,3 +1,5 @@
+import collections
+
 import pytest
 from kombu.utils.functional import lazy
 
@@ -149,6 +151,60 @@ class test_regen:
 
     def test_nonzero__empty_iter(self):
         assert not regen(iter([]))
+
+    def test_deque(self):
+        original_list = [42]
+        d = collections.deque(original_list)
+        # Confirm that concretising a `regen()` instance repeatedly for an
+        # equality check always returns the original list
+        g = regen(d)
+        assert g == original_list
+        assert g == original_list
+
+    def test_repr(self):
+        def die():
+            raise AssertionError("Generator died")
+            yield None
+
+        # Confirm that `regen()` instances are not concretised when represented
+        g = regen(die())
+        assert "..." in repr(g)
+
+    def test_partial_reconcretisation(self):
+        class WeirdIterator():
+            def __init__(self, iter_):
+                self.iter_ = iter_
+                self._errored = False
+
+            def __iter__(self):
+                yield from self.iter_
+                if not self._errored:
+                    try:
+                        # This should stop the regen instance from marking
+                        # itself as being done
+                        raise AssertionError("Iterator errored")
+                    finally:
+                        self._errored = True
+
+        original_list = list(range(42))
+        g = regen(WeirdIterator(original_list))
+        iter_g = iter(g)
+        for e in original_list:
+            assert e == next(iter_g)
+        with pytest.raises(AssertionError, match="Iterator errored"):
+            next(iter_g)
+        # The following checks are for the known "misbehaviour"
+        assert getattr(g, "_regen__done") is False
+        # If the `regen()` instance doesn't think it's done then it'll dupe the
+        # elements from the underlying iterator if it can be re-used
+        iter_g = iter(g)
+        for e in original_list * 2:
+            assert next(iter_g) == e
+        with pytest.raises(StopIteration):
+            next(iter_g)
+        assert getattr(g, "_regen__done") is True
+        # Finally we xfail this test to keep track of it
+        raise pytest.xfail(reason="#6794")
 
 
 class test_head_from_fun:
