@@ -854,7 +854,7 @@ class test_group(CanvasCase):
         # This is an invalid setup because we can't complete a chord header if
         # there are no actual tasks which will run in it. However, the current
         # behaviour of an `IndexError` isn't particularly helpful to a user.
-        res_obj = group_sig.apply_async()
+        group_sig.apply_async()
 
     def test_apply_contains_chords_containing_chain_with_empty_tail(self):
         ggchild_count = 42

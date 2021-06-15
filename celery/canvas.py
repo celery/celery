@@ -642,7 +642,8 @@ class _chain(Signature):
 
     def run(self, args=None, kwargs=None, group_id=None, chord=None,
             task_id=None, link=None, link_error=None, publisher=None,
-            producer=None, root_id=None, parent_id=None, app=None, **options):
+            producer=None, root_id=None, parent_id=None, app=None,
+            group_index=None, **options):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         args = args if args else ()
@@ -656,7 +657,7 @@ class _chain(Signature):
 
         tasks, results_from_prepare = self.prepare_steps(
             args, kwargs, self.tasks, root_id, parent_id, link_error, app,
-            task_id, group_id, chord,
+            task_id, group_id, chord, group_index=group_index,
         )
 
         if results_from_prepare:
