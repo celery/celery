@@ -523,11 +523,12 @@ class Request:
             # If the message no longer has a connection and the worker
             # is terminated, we aborted it.
             # Otherwise, it is revoked.
-            if self.message.channel.connection and not self._already_revoked:
+            if self.message.channel.connection:
                 # This is a special case where the process
                 # would not have had time to write the result.
-                self._announce_revoked(
-                    'terminated', True, str(exc), False)
+                if not self._already_revoked:
+                    self._announce_revoked(
+                        'terminated', True, str(exc), False)
             elif not self._already_cancelled:
                 self._announce_cancelled()
             return
