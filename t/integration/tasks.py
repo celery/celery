@@ -301,11 +301,6 @@ def fail_replaced(self, *args):
     raise self.replace(fail.si(*args))
 
 
-@shared_task
-def chord_error(*args):
-    return args
-
-
 @shared_task(bind=True)
 def return_priority(self, *_args):
     return "Priority: %s" % self.request.delivery_info['priority']
@@ -385,3 +380,15 @@ def rebuild_signature(sig_dict):
         if isinstance(sig, chord):
             _recurse(sig.body)
     _recurse(sig_obj)
+
+
+@shared_task
+def errback_old_style(request_id):
+    redis_count(request_id)
+    return request_id
+
+
+@shared_task
+def errback_new_style(request, exc, tb):
+    redis_count(request.id)
+    return request.id

@@ -534,17 +534,23 @@ class test_BaseBackend_dict:
         b.on_chord_part_return.assert_called_with(request, states.REVOKED, ANY)
 
     def test_chord_error_from_stack_raises(self):
+        class ExpectedException(Exception):
+            pass
+
         b = BaseBackend(app=self.app)
-        exc = KeyError()
         callback = Mock(name='callback')
         callback.options = {'link_error': []}
+        callback.keys.return_value = []
         task = self.app.tasks[callback.task] = Mock()
         b.fail_from_current_stack = Mock()
         group = self.patching('celery.group')
-        group.side_effect = exc
-        b.chord_error_from_stack(callback, exc=ValueError())
+        with patch.object(
+            b, "_call_task_errbacks", side_effect=ExpectedException()
+        ) as mock_call_errbacks:
+            b.chord_error_from_stack(callback, exc=ValueError())
         task.backend.fail_from_current_stack.assert_called_with(
-            callback.id, exc=exc)
+            callback.id, exc=mock_call_errbacks.side_effect,
+        )
 
     def test_exception_to_python_when_None(self):
         b = BaseBackend(app=self.app)

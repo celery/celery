@@ -654,15 +654,19 @@ class test_group(CanvasCase):
         g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
         sig = Mock(name='sig')
         g1.link(sig)
+        # Only the first child signature of a group will be given the callback
+        # and it is cloned and made immutable to avoid passing results to it,
+        # since that first task can't pass along its siblings' return values
         g1.tasks[0].link.assert_called_with(sig.clone().set(immutable=True))
 
     def test_link_error(self):
         g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
         sig = Mock(name='sig')
         g1.link_error(sig)
-        g1.tasks[0].link_error.assert_called_with(
-            sig.clone().set(immutable=True),
-        )
+        # We expect that all group children will be given the errback to ensure
+        # it gets called
+        for child_sig in g1.tasks:
+            child_sig.link_error.assert_called_with(sig)
 
     def test_apply_empty(self):
         x = group(app=self.app)
