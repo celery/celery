@@ -1123,18 +1123,17 @@ class group(Signature):
             task.set_immutable(immutable)
 
     def link(self, sig):
-        # Simply link to first task
+        # Simply link to first task. Doing this is slightly misleading because
+        # the callback may be executed before all children in the group are
+        # completed and also if any children other than the first one fail.
+        #
+        # The callback signature is cloned and made immutable since it the
+        # first task isn't actually capable of passing the return values of its
+        # siblings to the callback task.
         sig = sig.clone().set(immutable=True)
         return self.tasks[0].link(sig)
 
     def link_error(self, sig):
-        try:
-            sig = sig.clone().set(immutable=True)
-        except AttributeError:
-            # See issue #5265.  I don't use isinstance because current tests
-            # pass a Mock object as argument.
-            sig['immutable'] = True
-            sig = Signature.from_dict(sig)
         # Any child task might error so we need to ensure that they are all
         # capable of calling the linked error signature. This opens the
         # possibility that the task is called more than once but that's better
