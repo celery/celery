@@ -18,7 +18,7 @@ an overview of what's new in Celery 5.1.
 
 - Fix ``--pool=threads`` support in command line options parsing. (#6787)
 - Fix ``LoggingProxy.write()`` return type. (#6791)
-- Couchdb key is now always coherced into a string. (#6781)
+- Couchdb key is now always coerced into a string. (#6781)
 - grp is no longer imported unconditionally. (#6804)
     This fixes a regression in 5.1.0 when running Celery in non-unix systems.
 - Ensure regen utility class gets marked as done when concertised. (#6789)
