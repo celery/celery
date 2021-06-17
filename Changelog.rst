@@ -24,6 +24,7 @@ an overview of what's new in Celery 5.1.
 - Ensure regen utility class gets marked as done when concertised. (#6789)
 - Preserve call/errbacks of replaced tasks. (#6770)
 - Use single-lookahead for regen consumption. (#6799)
+- Revoked tasks are no longer incorrectly marked as retried. (#6812, #6816)
 
 .. version-5.1.0:
 
