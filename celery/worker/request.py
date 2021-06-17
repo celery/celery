@@ -520,17 +520,20 @@ class Request:
 
         is_terminated = isinstance(exc, Terminated)
         if is_terminated:
-            # If the message no longer has a connection and the worker
-            # is terminated, we aborted it.
-            # Otherwise, it is revoked.
-            if self.message.channel.connection:
+            # If the task was terminated and the task was not cancelled due
+            # to a connection loss, it is revoked.
+
+            # We always cancel the tasks inside the master process.
+            # If the request was cancelled, it was not revoked and there's
+            # nothing to be done.
+            # According to the comment below, we need to check if the task
+            # is already revoked and if it wasn't, we should announce that
+            # it was.
+            if not self._already_cancelled and not self._already_revoked:
                 # This is a special case where the process
                 # would not have had time to write the result.
-                if not self._already_revoked:
-                    self._announce_revoked(
-                        'terminated', True, str(exc), False)
-            elif not self._already_cancelled:
-                self._announce_cancelled()
+                self._announce_revoked(
+                    'terminated', True, str(exc), False)
             return
         elif isinstance(exc, MemoryError):
             raise MemoryError(f'Process got: {exc}')
