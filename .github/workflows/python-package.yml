@@ -20,9 +20,6 @@ on:
 jobs:
   Unit:
 
-    # XXX: DO NOT MERGE THIS LINE
-    if: false
-
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -105,8 +102,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # XXX: RESTORE THIS MATRIX PRIOR TO MERGE
-        python-version: ['3.7', ] #'3.8', '3.9', 'pypy3']
+        python-version: ['3.7', '3.8', '3.9', 'pypy3']
         # XXX: Does each matrix variation get their own copy of the service
         # containers? Test cross-talk may be an issue...
         toxenv: ['redis', ] #'rabbitmq']
