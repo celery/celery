@@ -93,7 +93,8 @@ class Request:
                  maybe_make_aware=maybe_make_aware,
                  maybe_iso8601=maybe_iso8601, **opts):
         self._message = message
-        self._request_dict = message.headers if headers is None else headers
+        self._request_dict = (message.headers.copy() if headers is None
+                              else headers.copy())
         self._body = message.body if body is None else body
         self._app = app
         self._utc = utc
@@ -157,6 +158,7 @@ class Request:
             'redelivered': delivery_info.get('redelivered'),
         }
         self._request_dict.update({
+            'properties': properties,
             'reply_to': properties.get('reply_to'),
             'correlation_id': properties.get('correlation_id'),
             'hostname': self._hostname,
