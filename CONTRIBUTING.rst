@@ -297,7 +297,7 @@ Current active version branches:
 
 You can see the state of any branch by looking at the Changelog:
 
-    https://github.com/celery/celery/blob/master/Changelog
+    https://github.com/celery/celery/blob/master/Changelog.rst
 
 If the branch is in active development the topmost version info should
 contain meta-data like:
