@@ -29,4 +29,5 @@ def get_implementation(cls):
 
 
 def get_available_pool_names():
+    """Return all available pool type names."""
     return tuple(ALIASES.keys())

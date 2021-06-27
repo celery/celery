@@ -585,6 +585,7 @@ if getattr(redis, "sentinel", None):
 
 class SentinelBackend(RedisBackend):
     """Redis sentinel task result store."""
+
     # URL looks like `sentinel://0.0.0.0:26347/3;sentinel://0.0.0.0:26348/3`
     _SERVER_URI_SEPARATOR = ";"
 
@@ -598,9 +599,7 @@ class SentinelBackend(RedisBackend):
         super().__init__(*args, **kwargs)
 
     def as_uri(self, include_password=False):
-        """
-        Return the server addresses as URIs, sanitizing the password or not.
-        """
+        """Return the server addresses as URIs, sanitizing the password or not."""
         # Allow superclass to do work if we don't need to force sanitization
         if include_password:
             return super().as_uri(

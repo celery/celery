@@ -304,6 +304,7 @@ class BackendStoreError(BackendError):
 
 
 class CeleryCommandException(ClickException):
+    """A general command exception which stores an exit code."""
 
     def __init__(self, message, exit_code):
         super().__init__(message=message)

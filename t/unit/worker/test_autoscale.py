@@ -90,12 +90,14 @@ class test_Autoscaler:
 
         worker = Mock(name='worker')
         x = Scaler(self.pool, 10, 3, worker=worker)
-        x._is_stopped.set()
-        x.stop()
+        # Don't allow thread joining or event waiting to block the test
+        with patch("threading.Thread.join"), patch("threading.Event.wait"):
+            x.stop()
         assert x.joined
         x.joined = False
         x.alive = False
-        x.stop()
+        with patch("threading.Thread.join"), patch("threading.Event.wait"):
+            x.stop()
         assert not x.joined
 
     @mock.sleepdeprived(module=autoscale)
@@ -123,13 +125,13 @@ class test_Autoscaler:
 
             def body(self):
                 self.scale_called = True
-                self._is_shutdown.set()
+                getattr(self, "_bgThread__is_shutdown").set()
 
         worker = Mock(name='worker')
         x = Scaler(self.pool, 10, 3, worker=worker)
         x.run()
-        assert x._is_shutdown.isSet()
-        assert x._is_stopped.isSet()
+        assert getattr(x, "_bgThread__is_shutdown").isSet()
+        assert getattr(x, "_bgThread__is_stopped").isSet()
         assert x.scale_called
 
     def test_shrink_raises_exception(self):
@@ -200,7 +202,7 @@ class test_Autoscaler:
         class _Autoscaler(autoscale.Autoscaler):
 
             def body(self):
-                self._is_shutdown.set()
+                getattr(self, "_bgThread__is_shutdown").set()
                 raise OSError('foo')
         worker = Mock(name='worker')
         x = _Autoscaler(self.pool, 10, 3, worker=worker)
