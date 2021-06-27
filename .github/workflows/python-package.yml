@@ -50,14 +50,13 @@ jobs:
           ${{ matrix.python-version }}-v1-
 
     - name: Install tox
-      run: python -m pip install tox
+      run: python -m pip install tox tox-gh-actions
     - name: >
         Run tox for
         "${{ matrix.python-version }}-unit"
       timeout-minutes: 15
       run: >
-        tox --verbose --verbose -e
-        "${{ matrix.python-version }}-unit"
+        tox --verbose --verbose
 
     - uses: codecov/codecov-action@v1
       with:
