@@ -356,9 +356,16 @@ class Celery:
         _deregister_app(self)
 
     def start(self, argv=None):
+        """Run :program:`celery` using `argv`.
+
+        Uses :data:`sys.argv` if `argv` is not specified.
+        """
         from celery.bin.celery import celery
 
         celery.params[0].default = self
+
+        if argv is None:
+            argv = sys.argv
 
         try:
             celery.main(args=argv, standalone_mode=False)
@@ -368,6 +375,10 @@ class Celery:
             celery.params[0].default = None
 
     def worker_main(self, argv=None):
+        """Run :program:`celery worker` using `argv`.
+
+        Uses :data:`sys.argv` if `argv` is not specified.
+        """
         if argv is None:
             argv = sys.argv
 
