@@ -22,8 +22,8 @@ class test_ConsulBackend:
     def test_get(self):
         index = 100
         data = {'Key': 'test-consul-1', 'Value': 'mypayload'}
-        self.backend.client = Mock(name='c.client')
-        self.backend.client.kv.get.return_value = (index, data)
+        self.backend.one_client = Mock(name='c.client')
+        self.backend.one_client.kv.get.return_value = (index, data)
         assert self.backend.get(data['Key']) == 'mypayload'
 
     def test_index_bytes_key(self):
