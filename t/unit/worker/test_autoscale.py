@@ -130,8 +130,8 @@ class test_Autoscaler:
         worker = Mock(name='worker')
         x = Scaler(self.pool, 10, 3, worker=worker)
         x.run()
-        assert getattr(x, "_bgThread__is_shutdown").isSet()
-        assert getattr(x, "_bgThread__is_stopped").isSet()
+        assert getattr(x, "_bgThread__is_shutdown").is_set()
+        assert getattr(x, "_bgThread__is_stopped").is_set()
         assert x.scale_called
 
     def test_shrink_raises_exception(self):

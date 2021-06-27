@@ -739,12 +739,12 @@ class test_Service:
         s.sync()
         assert sh.closed
         assert sh.synced
-        assert s._is_stopped.isSet()
+        assert s._is_stopped.is_set()
         s.sync()
         s.stop(wait=False)
-        assert s._is_shutdown.isSet()
+        assert s._is_shutdown.is_set()
         s.stop(wait=True)
-        assert s._is_shutdown.isSet()
+        assert s._is_shutdown.is_set()
 
         p = s.scheduler._store
         s.scheduler._store = None
@@ -767,13 +767,13 @@ class test_Service:
         s, sh = self.get_service()
         s.scheduler.tick_raises_exit = True
         s.start()
-        assert s._is_shutdown.isSet()
+        assert s._is_shutdown.is_set()
 
     def test_start_manages_one_tick_before_shutdown(self):
         s, sh = self.get_service()
         s.scheduler.shutdown_service = s
         s.start()
-        assert s._is_shutdown.isSet()
+        assert s._is_shutdown.is_set()
 
 
 class test_EmbeddedService:
