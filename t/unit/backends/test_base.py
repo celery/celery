@@ -543,7 +543,7 @@ class test_BaseBackend_dict:
         callback.keys.return_value = []
         task = self.app.tasks[callback.task] = Mock()
         b.fail_from_current_stack = Mock()
-        group = self.patching('celery.group')
+        self.patching('celery.group')
         with patch.object(
             b, "_call_task_errbacks", side_effect=ExpectedException()
         ) as mock_call_errbacks:

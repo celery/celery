@@ -1,7 +1,7 @@
 import socket
 import tempfile
 from datetime import datetime, timedelta
-from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
+from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 
 import pytest
 from case import ContextMock
@@ -572,7 +572,7 @@ class test_task_retries(TasksCase):
 
         assert task.iterations == 4
         retry_call_countdowns = [
-            call[1]['countdown'] for call in fake_retry.call_args_list
+            call_[1]['countdown'] for call_ in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [1, 2, 4, 8]
 
@@ -587,7 +587,7 @@ class test_task_retries(TasksCase):
 
         assert task.iterations == 4
         retry_call_countdowns = [
-            call[1]['countdown'] for call in fake_retry.call_args_list
+            call_[1]['countdown'] for call_ in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [0, 1, 3, 7]
 
@@ -619,7 +619,7 @@ class test_task_retries(TasksCase):
 
         assert task.iterations == 6
         retry_call_countdowns = [
-            call[1]['countdown'] for call in fake_retry.call_args_list
+            call_[1]['countdown'] for call_ in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [1, 2, 4, 8, 16, 32]
 
@@ -638,7 +638,7 @@ class test_task_retries(TasksCase):
 
         assert task.iterations == 6
         retry_call_countdowns = [
-            call[1]['countdown'] for call in fake_retry.call_args_list
+            call_[1]['countdown'] for call_ in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [1, 2, 4, 8, 16, 32]
 
@@ -650,7 +650,7 @@ class test_task_retries(TasksCase):
 
         assert task.iterations == 6
         retry_call_countdowns = [
-            call[1]['countdown'] for call in fake_retry.call_args_list
+            call_[1]['countdown'] for call_ in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [1, 2, 4, 8, 16, 16]
 
@@ -662,7 +662,7 @@ class test_task_retries(TasksCase):
 
         assert task.iterations == 6
         retry_call_countdowns = [
-            call[1]['countdown'] for call in fake_retry.call_args_list
+            call_[1]['countdown'] for call_ in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [1, 2, 4, 8, 16, 32]
 
@@ -675,7 +675,7 @@ class test_task_retries(TasksCase):
 
         assert task.iterations == 6
         retry_call_countdowns = [
-            call[1]['countdown'] for call in fake_retry.call_args_list
+            call_[1]['countdown'] for call_ in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [0, 1, 3, 7, 15, 31]
 
