@@ -75,7 +75,7 @@ class Timer(threading.Thread):
             self.running = True
             self.scheduler = iter(self.schedule)
 
-            while not self.__is_shutdown.isSet():
+            while not self.__is_shutdown.is_set():
                 delay = self._next_entry()
                 if delay:
                     if self.on_tick:
