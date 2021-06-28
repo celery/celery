@@ -59,6 +59,9 @@ class _MockBackend:
     def wait_for_pending(self, *args, **kwargs):
         return True
 
+    def remove_pending_result(self, *args, **kwargs):
+        return True
+
 
 class test_AsyncResult:
 
