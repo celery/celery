@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from unittest.mock import ANY, Mock, call, patch, sentinel
+from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
 from kombu.serialization import prepare_accept_content
@@ -538,7 +538,7 @@ class test_BaseBackend_dict:
             pass
 
         b = BaseBackend(app=self.app)
-        callback = Mock(name='callback')
+        callback = MagicMock(name='callback')
         callback.options = {'link_error': []}
         callback.keys.return_value = []
         task = self.app.tasks[callback.task] = Mock()
