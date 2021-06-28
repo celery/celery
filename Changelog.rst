@@ -65,7 +65,7 @@ an overview of what's new in Celery 5.1.
 - Chord counting of group children is now accurate. (#6733)
 - Add a setting :setting:`worker_cancel_long_running_tasks_on_connection_loss`
   to terminate tasks with late acknowledgement on connection loss. (#6654)
-- The ``task-revoked`` event and the ``task_revoked` signal are not duplicated
+- The ``task-revoked`` event and the ``task_revoked`` signal are not duplicated
   when ``Request.on_failure`` is called. (#6654)
 - Restore pickling support for ``Retry``. (#6748)
 - Add support in the redis result backend for authenticating with a username. (#6750)
