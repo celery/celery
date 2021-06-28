@@ -13,7 +13,7 @@ an overview of what's new in Celery 5.1.
 5.1.1
 =====
 
-:release-date: TBD
+:release-date: 2021-06-17 16.10 P.M UTC+3:00
 :release-by: Omer Katz
 
 - Fix ``--pool=threads`` support in command line options parsing. (#6787)
