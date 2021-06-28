@@ -8,11 +8,26 @@ This document contains change notes for bugfix & new features
 in the & 5.1.x series, please see :ref:`whatsnew-5.1` for
 an overview of what's new in Celery 5.1.
 
+.. version-5.1.2:
+
+5.1.2
+=====
+:release-date: 2021-06-28 16.15 P.M UTC+3:00
+:release-by: Omer Katz
+
+- When chords fail, correctly call errbacks. (#6814)
+
+    We had a special case for calling errbacks when a chord failed which
+    assumed they were old style. This change ensures that we call the proper
+    errback dispatch method which understands new and old style errbacks,
+    and adds test to confirm that things behave as one might expect now.
+- Avoid using the ``Event.isSet()`` deprecated alias. (#6824)
+- Reintroduce sys.argv default behaviour for ``Celery.start()``. (#6825)
+
 .. version-5.1.1:
 
 5.1.1
 =====
-
 :release-date: 2021-06-17 16.10 P.M UTC+3:00
 :release-by: Omer Katz
 
