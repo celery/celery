@@ -24,7 +24,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9', 'pypy3']
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10.0-beta.3', 'pypy3']
+    continue-on-error: ${{ matrix.python-version == '3.10.0-beta.3' }}
 
     steps:
     - name: Install apt packages
@@ -50,14 +51,13 @@ jobs:
           ${{ matrix.python-version }}-v1-
 
     - name: Install tox
-      run: python -m pip install tox
+      run: python -m pip install tox tox-gh-actions
     - name: >
         Run tox for
         "${{ matrix.python-version }}-unit"
       timeout-minutes: 15
       run: >
-        tox --verbose --verbose -e
-        "${{ matrix.python-version }}-unit"
+        tox --verbose --verbose
 
     - uses: codecov/codecov-action@v1
       with:
