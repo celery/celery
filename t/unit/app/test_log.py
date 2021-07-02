@@ -268,8 +268,10 @@ class test_default_logger:
             p.write('foo')
             assert 'foo' not in sio.getvalue()
             p.closed = False
+            p.write('\n')
+            assert sio.getvalue() == ''
             write_res = p.write('foo ')
-            assert 'foo ' in sio.getvalue()
+            assert sio.getvalue() == 'foo \n'
             assert write_res == 4
             lines = ['baz', 'xuzzy']
             p.writelines(lines)
