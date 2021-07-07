@@ -14,7 +14,12 @@ jobs:
     - uses: docker://pandoc/core:2.14
       with:
         args: "Changelog.rst -f rst -t markdown -o CR_CHANGELOG.md"
-    - run: cat CR_CHANGELOG.md
+    - name: "Clean up markdown"
+      run: |
+        cat CR_CHANGELOG.md
+        sed -e ':a' -e 'N' -e '$!ba' -e 's/release-date\n\n:  /release-date:/g' CR_CHANGELOG.md > CR_CHANGELOG.md
+        sed -e ':a' -e 'N' -e '$!ba' -e 's/release-by\n\n:  /release-by:/g' CR_CHANGELOG.md > CR_CHANGELOG.md
+        cat CR_CHANGELOG.md
     - uses: dropseed/changerelease@v1
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
