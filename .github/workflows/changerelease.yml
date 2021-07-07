@@ -14,7 +14,6 @@ jobs:
     - uses: docker://pandoc/core:2.14
       with:
         args: "Changelog.rst -f rst -t markdown -o CR_CHANGELOG.md"
-      
     - name: "Clean up markdown"
       run: |
         # https://stackoverflow.com/a/1252191/1110798
