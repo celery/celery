@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: docker://pandoc/core:2.9
+    - uses: docker://pandoc/core:2.14
       with:
         args: "Changelog.rst -f rst -t markdown -o CR_CHANGELOG.md --markdown-headings=atx"
     - run: cat CR_CHANGELOG.md
