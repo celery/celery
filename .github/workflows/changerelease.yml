@@ -19,3 +19,4 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         changelog: CR_CHANGELOG.md
         remote_changelog: false
+        limit: -1
