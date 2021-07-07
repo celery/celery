@@ -12,8 +12,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: docker://pandoc/core:2.9
-        with:
-          args: "Changelog.rst -f rst -t markdown -o /tmp/CR_CHANGELOG.md"
+      with:
+        args: "Changelog.rst -f rst -t markdown -o /tmp/CR_CHANGELOG.md"
     - uses: dropseed/changerelease@v1
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
