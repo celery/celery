@@ -6,6 +6,9 @@ on:
     branches: [master]
     tags: ["*"]
 
+permissions:
+  contents: write
+
 jobs:
   sync:
     runs-on: ubuntu-latest
