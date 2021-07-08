@@ -236,7 +236,6 @@ class test_BaseBackend_interface:
             assert called_kwargs['queue'] == 'test_queue_three'
 
 
-
 class test_exception_pickle:
     def test_BaseException(self):
         assert fnpe(Exception()) is None
