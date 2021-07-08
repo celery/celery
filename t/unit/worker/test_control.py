@@ -298,6 +298,20 @@ class test_ControlPanel:
         finally:
             worker_state.active_requests.discard(r)
 
+    def test_active_safe(self):
+        kwargsrepr = '<anything>'
+        r = Request(
+            self.TaskMessage(self.mytask.name, id='do re mi',
+                             kwargsrepr=kwargsrepr),
+            app=self.app,
+        )
+        worker_state.active_requests.add(r)
+        try:
+            active_resp = self.panel.handle('dump_active', {'safe': True})
+            assert active_resp[0]['kwargs'] == kwargsrepr
+        finally:
+            worker_state.active_requests.discard(r)
+
     def test_pool_grow(self):
 
         class MockPool:

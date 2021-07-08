@@ -97,6 +97,10 @@ class test_inspect:
         self.inspect.active()
         self.assert_broadcast_called('active')
 
+    def test_active_safe(self):
+        self.inspect.active(safe=True)
+        self.assert_broadcast_called('active', safe=True)
+
     def test_clock(self):
         self.inspect.clock()
         self.assert_broadcast_called('clock')
