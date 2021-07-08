@@ -644,7 +644,11 @@ class Backend:
     def fallback_chord_unlock(self, header_result, body, countdown=1,
                               **kwargs):
         kwargs['result'] = [r.as_tuple() for r in header_result]
-        body_type = body.get('type', None)
+        try:
+            body_type = getattr(body, 'type', None)
+        except NotRegistered:
+            body_type = None
+
         queue = body.options.get('queue', getattr(body_type, 'queue', None))
         priority = body.options.get('priority', getattr(body_type, 'priority', 0))
         self.app.tasks['celery.chord_unlock'].apply_async(
