@@ -95,7 +95,7 @@ class test_inspect:
 
     def test_active(self):
         self.inspect.active()
-        self.assert_broadcast_called('active')
+        self.assert_broadcast_called('active', safe=None)
 
     def test_active_safe(self):
         self.inspect.active(safe=True)
