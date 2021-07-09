@@ -220,6 +220,21 @@ class test_BaseBackend_interface:
         called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
         assert called_kwargs['queue'] == 'test_queue_two'
 
+        with self.Celery() as app2:
+            @app2.task(name='callback_different_app', shared=False)
+            def callback_different_app(result):
+                pass
+
+            callback_different_app_signature = self.app.signature('callback_different_app')
+            self.b.apply_chord(header_result_args, callback_different_app_signature)
+            called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+            assert called_kwargs['queue'] is None
+
+            callback_different_app_signature.set(queue='test_queue_three')
+            self.b.apply_chord(header_result_args, callback_different_app_signature)
+            called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+            assert called_kwargs['queue'] == 'test_queue_three'
+
 
 class test_exception_pickle:
     def test_BaseException(self):
