@@ -362,9 +362,9 @@ def reserved(state, **kwargs):
 
 
 @inspect_command(alias='dump_active')
-def active(state, **kwargs):
+def active(state, safe=False, **kwargs):
     """List of tasks currently being executed."""
-    return [request.info()
+    return [request.info(safe=safe)
             for request in state.tset(worker_state.active_requests)]
 
 

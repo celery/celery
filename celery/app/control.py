@@ -135,6 +135,8 @@ class Inspect:
 
     def active(self, safe=None):
         """Return list of tasks currently executed by workers.
+        Arguments:
+            safe (Boolean): Set to True to disable deserialization.
 
         Returns:
             Dict: Dictionary ``{HOSTNAME: [TASK_INFO,...]}``.
@@ -142,11 +144,8 @@ class Inspect:
         See Also:
             For ``TASK_INFO`` details see :func:`query_task` return value.
 
-        Note:
-            ``safe`` is ignored since 4.0 as no objects will need
-            serialization now that we have argsrepr/kwargsrepr.
         """
-        return self._request('active')
+        return self._request('active', safe=safe)
 
     def scheduled(self, safe=None):
         """Return list of scheduled tasks with details.
