@@ -232,7 +232,7 @@ class test_Request(RequestCase):
             kwargs[str(i)] = ''.join(
                 random.choice(string.ascii_lowercase) for i in range(1000))
         assert self.get_request(
-            self.add.s(**kwargs)).info(safe=True).get('kwargs') == '' # mock message doesn't populate kwargsrepr
+            self.add.s(**kwargs)).info(safe=True).get('kwargs') == ''  # mock message doesn't populate kwargsrepr
         assert self.get_request(
             self.add.s(**kwargs)).info(safe=False).get('kwargs') == kwargs
         args = []
@@ -240,7 +240,7 @@ class test_Request(RequestCase):
             args.append(''.join(
                 random.choice(string.ascii_lowercase) for i in range(1000)))
         assert list(self.get_request(
-            self.add.s(*args)).info(safe=True).get('args')) == [] # mock message doesn't populate argsrepr
+            self.add.s(*args)).info(safe=True).get('args')) == []  # mock message doesn't populate argsrepr
         assert list(self.get_request(
             self.add.s(*args)).info(safe=False).get('args')) == args
 

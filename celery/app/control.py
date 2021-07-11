@@ -135,6 +135,7 @@ class Inspect:
 
     def active(self, safe=None):
         """Return list of tasks currently executed by workers.
+
         Arguments:
             safe (Boolean): Set to True to disable deserialization.
 
