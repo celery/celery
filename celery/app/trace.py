@@ -325,7 +325,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     fun = task if task_has_custom(task, '__call__') else task.run
 
     loader = loader or app.loader
-    backend = task.backend
     ignore_result = task.ignore_result
     track_started = task.track_started
     track_started = not eager and (task.track_started and not ignore_result)
@@ -352,10 +351,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         task_on_success = task.on_success
     if task_has_custom(task, 'after_return'):
         task_after_return = task.after_return
-
-    store_result = backend.store_result
-    mark_as_done = backend.mark_as_done
-    backend_cleanup = backend.process_cleanup
 
     pid = os.getpid()
 
@@ -440,7 +435,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 args=args, kwargs=kwargs)
                 loader_task_init(uuid, task)
                 if track_started:
-                    store_result(
+                    task.backend.store_result(
                         uuid, {'pid': pid, 'hostname': hostname}, STARTED,
                         request=task_request,
                     )
@@ -514,7 +509,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 parent_id=uuid, root_id=root_id,
                                 priority=task_priority
                             )
-                        mark_as_done(
+                        task.backend.mark_as_done(
                             uuid, retval, task_request, publish_result,
                         )
                     except EncodeError as exc:
@@ -551,7 +546,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     pop_request()
                     if not eager:
                         try:
-                            backend_cleanup()
+                            task.backend.process_cleanup()
                             loader_cleanup()
                         except (KeyboardInterrupt, SystemExit, MemoryError):
                             raise
