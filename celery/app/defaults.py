@@ -294,7 +294,7 @@ NAMESPACES = Namespace(
         cancel_long_running_tasks_on_connection_loss=Option(
             False, type='bool'
         ),
-        concurrency=Option(0, type='int'),
+        concurrency=Option(None, type='int'),
         consumer=Option('celery.worker.consumer:Consumer', type='string'),
         direct=Option(False, type='bool', old={'celery_worker_direct'}),
         disable_rate_limits=Option(
