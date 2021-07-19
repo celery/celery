@@ -23,10 +23,10 @@ to "zlib", and the serializer to "pickle".
 import re
 
 import requests
-
-from celery import group, task
 from eventlet import Timeout
 from pybloom import BloomFilter
+
+from celery import group, task
 
 try:
     from urllib.parse import urlsplit
