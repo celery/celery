@@ -13,18 +13,18 @@ from .base import BaseBackend
 try:
     import pymongo
 except ImportError:  # pragma: no cover
-    pymongo = None   # noqa
+    pymongo = None
 
 if pymongo:
     try:
         from bson.binary import Binary
     except ImportError:                     # pragma: no cover
-        from pymongo.binary import Binary  # noqa
-    from pymongo.errors import InvalidDocument  # noqa
+        from pymongo.binary import Binary
+    from pymongo.errors import InvalidDocument
 else:                                       # pragma: no cover
-    Binary = None                           # noqa
+    Binary = None
 
-    class InvalidDocument(Exception):       # noqa
+    class InvalidDocument(Exception):
         pass
 
 __all__ = ('MongoBackend',)

@@ -11,7 +11,7 @@ from celery.exceptions import ImproperlyConfigured
 try:
     import pycouchdb
 except ImportError:
-    pycouchdb = None  # noqa
+    pycouchdb = None
 
 COUCHDB_CONTAINER = 'celery_container'
 

@@ -31,7 +31,7 @@ from celery import group, task
 try:
     from urllib.parse import urlsplit
 except ImportError:
-    from urlparse import urlsplit  # noqa
+    from urlparse import urlsplit
 
 # http://daringfireball.net/2009/11/liberal_regex_for_matching_urls
 url_regex = re.compile(

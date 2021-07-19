@@ -99,7 +99,7 @@ class CallableDefaultdict(defaultdict):
         return self.fun(*args, **kwargs)
 
 
-Callable.register(CallableDefaultdict)  # noqa: E305
+Callable.register(CallableDefaultdict)
 
 
 @memoize(maxsize=1000, keyfun=lambda a, _: a[0])
@@ -517,7 +517,7 @@ class State:
         return self._event(dict(fields, type='-'.join(['worker', type_])))[0]
 
     def _create_dispatcher(self):
-        # noqa: C901
+
         # pylint: disable=too-many-statements
         # This code is highly optimized, but not for reusability.
         get_handler = self.handlers.__getitem__

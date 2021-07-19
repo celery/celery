@@ -13,7 +13,7 @@ import sys
 from collections import namedtuple
 
 # Lazy loading
-from . import local  # noqa
+from . import local
 
 SERIES = 'sun-harmonics'
 
@@ -65,15 +65,15 @@ if os.environ.get('C_IMPDEBUG'):  # pragma: no cover
 STATICA_HACK = True
 globals()['kcah_acitats'[::-1].upper()] = False
 if STATICA_HACK:  # pragma: no cover
-    from celery._state import current_app, current_task  # noqa
-    from celery.app import shared_task  # noqa
-    from celery.app.base import Celery  # noqa
-    from celery.app.task import Task  # noqa
-    from celery.app.utils import bugreport  # noqa
+    from celery._state import current_app, current_task
+    from celery.app import shared_task
+    from celery.app.base import Celery
+    from celery.app.task import Task
+    from celery.app.utils import bugreport
     from celery.canvas import (chain, chord, chunks, group,  # noqa
                                maybe_signature, signature, subtask, xmap,
                                xstarmap)
-    from celery.utils import uuid  # noqa
+    from celery.utils import uuid
 
 # Eventlet/gevent patching must happen before importing
 # anything else, so these tools must be at top-level.

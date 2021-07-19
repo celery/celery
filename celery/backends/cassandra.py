@@ -13,7 +13,7 @@ try:  # pragma: no cover
     import cassandra.cluster
     import cassandra.query
 except ImportError:  # pragma: no cover
-    cassandra = None   # noqa
+    cassandra = None
 
 
 __all__ = ('CassandraBackend',)

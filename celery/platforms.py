@@ -236,7 +236,7 @@ class Pidfile:
             rfh.close()
 
 
-PIDFile = Pidfile  # noqa: E305 XXX compat alias
+PIDFile = Pidfile  # XXX compat alias
 
 
 def create_pidlock(pidfile):
@@ -625,15 +625,15 @@ class Signals:
             _signal.setitimer(_signal.ITIMER_REAL, seconds)
     else:  # pragma: no cover
         try:
-            from itimer import alarm as _itimer_alarm  # noqa
+            from itimer import alarm as _itimer_alarm
         except ImportError:
 
-            def arm_alarm(self, seconds):  # noqa
+            def arm_alarm(self, seconds):
                 _signal.alarm(math.ceil(seconds))
         else:  # pragma: no cover
 
-            def arm_alarm(self, seconds):  # noqa
-                return _itimer_alarm(seconds)  # noqa
+            def arm_alarm(self, seconds):
+                return _itimer_alarm(seconds)
 
     def reset_alarm(self):
         return _signal.alarm(0)
@@ -731,7 +731,7 @@ if os.environ.get('NOSETPS'):  # pragma: no cover
         """Disabled feature."""
 else:
 
-    def set_mp_process_title(progname, info=None, hostname=None):  # noqa
+    def set_mp_process_title(progname, info=None, hostname=None):
         """Set the :command:`ps` name from the current process name.
 
         Only works if :pypi:`setproctitle` is installed.

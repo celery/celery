@@ -1,7 +1,7 @@
 import os
 import sys
 
-from celery import Celery  # noqa
+from celery import Celery
 
 os.environ.update(
     NOSETPS='yes',

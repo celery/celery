@@ -11,7 +11,7 @@ from kombu.utils.uuid import uuid
 
 from celery.utils.collections import AttributeDict
 from celery.utils.timer2 import Timer
-from celery.worker import WorkController as _WC  # noqa
+from celery.worker import WorkController as _WC
 from celery.worker import consumer, control
 from celery.worker import state as worker_state
 from celery.worker.pidbox import Pidbox, gPidbox

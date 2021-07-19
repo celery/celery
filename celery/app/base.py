@@ -1239,7 +1239,7 @@ class Celery:
         return self._conf
 
     @conf.setter
-    def conf(self, d):  # noqa
+    def conf(self, d):
         self._conf = d
 
     @cached_property
@@ -1301,4 +1301,4 @@ class Celery:
         return timezone.get_timezone(conf.timezone)
 
 
-App = Celery  # noqa: E305 XXX compat
+App = Celery  # XXX compat

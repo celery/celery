@@ -183,7 +183,7 @@ class Retry(TaskPredicate):
         return self.__class__, (self.message, self.exc, self.when)
 
 
-RetryTaskError = Retry  # noqa: E305 XXX compat
+RetryTaskError = Retry  # XXX compat
 
 
 class Ignore(TaskPredicate):
@@ -271,7 +271,7 @@ class WorkerTerminate(SystemExit):
     """Signals that the worker should terminate immediately."""
 
 
-SystemTerminate = WorkerTerminate  # noqa: E305 XXX compat
+SystemTerminate = WorkerTerminate  # XXX compat
 
 
 class WorkerShutdown(SystemExit):

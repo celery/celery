@@ -703,7 +703,7 @@ try:
 except NotImplementedError:     # pragma: no cover
     _Process = None
 else:
-    class _Process(Process):    # noqa
+    class _Process(Process):
 
         def __init__(self, app, **kwargs):
             super().__init__()

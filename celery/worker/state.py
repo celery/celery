@@ -153,7 +153,7 @@ if C_BENCH:  # pragma: no cover
                     sum(bench_sample) / len(bench_sample)))
                 memdump()
 
-    def task_reserved(request):  # noqa
+    def task_reserved(request):
         """Called when a task is reserved by the worker."""
         global bench_start
         global bench_first
@@ -165,7 +165,7 @@ if C_BENCH:  # pragma: no cover
 
         return __reserved(request)
 
-    def task_ready(request):  # noqa
+    def task_ready(request):
         """Called when a task is completed."""
         global all_count
         global bench_start

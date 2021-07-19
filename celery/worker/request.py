@@ -50,7 +50,7 @@ def __optimize__():
     _does_info = logger.isEnabledFor(logging.INFO)
 
 
-__optimize__()  # noqa: E305
+__optimize__()
 
 # Localize
 tz_or_local = timezone.tz_or_local
@@ -291,7 +291,7 @@ class Request:
         # XXX compat
         return self.id
 
-    @task_id.setter  # noqa
+    @task_id.setter
     def task_id(self, value):
         self.id = value
 
@@ -300,7 +300,7 @@ class Request:
         # XXX compat
         return self.name
 
-    @task_name.setter  # noqa
+    @task_name.setter
     def task_name(self, value):
         self.name = value
 
