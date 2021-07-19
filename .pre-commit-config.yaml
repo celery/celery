@@ -22,3 +22,8 @@ repos:
       - id: check-toml
       - id: check-yaml
       - id: mixed-line-ending
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.9.2
+    hooks:
+      - id: isort
