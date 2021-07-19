@@ -8,6 +8,7 @@ from click import ParamType
 from click.types import StringParamType
 
 from celery import concurrency
+from celery.concurrency.base import BasePool
 from celery.bin.base import (COMMA_SEPARATED_LIST, LOG_LEVEL,
                              CeleryDaemonCommand, CeleryOption,
                              handle_preload_options)
@@ -45,6 +46,9 @@ class WorkersPool(click.Choice):
     def convert(self, value, param, ctx):
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
+        if isinstance(value, type) and issubclass(value, BasePool):
+            return value
+
         value = super().convert(value, param, ctx)
         worker_pool = ctx.obj.app.conf.worker_pool
         if value == 'prefork' and worker_pool:
