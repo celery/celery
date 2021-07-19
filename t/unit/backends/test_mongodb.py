@@ -45,7 +45,6 @@ class test_MongoBackend:
         self.patching('celery.backends.mongodb.MongoBackend.encode')
         self.patching('celery.backends.mongodb.MongoBackend.decode')
         self.patching('celery.backends.mongodb.Binary')
-        self.patching('datetime.datetime')
         self.backend = MongoBackend(app=self.app, url=self.default_url)
 
     def test_init_no_mongodb(self, patching):

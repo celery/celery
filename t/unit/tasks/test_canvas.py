@@ -654,15 +654,19 @@ class test_group(CanvasCase):
         g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
         sig = Mock(name='sig')
         g1.link(sig)
+        # Only the first child signature of a group will be given the callback
+        # and it is cloned and made immutable to avoid passing results to it,
+        # since that first task can't pass along its siblings' return values
         g1.tasks[0].link.assert_called_with(sig.clone().set(immutable=True))
 
     def test_link_error(self):
         g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
         sig = Mock(name='sig')
         g1.link_error(sig)
-        g1.tasks[0].link_error.assert_called_with(
-            sig.clone().set(immutable=True),
-        )
+        # We expect that all group children will be given the errback to ensure
+        # it gets called
+        for child_sig in g1.tasks:
+            child_sig.link_error.assert_called_with(sig)
 
     def test_apply_empty(self):
         x = group(app=self.app)
@@ -854,7 +858,7 @@ class test_group(CanvasCase):
         # This is an invalid setup because we can't complete a chord header if
         # there are no actual tasks which will run in it. However, the current
         # behaviour of an `IndexError` isn't particularly helpful to a user.
-        res_obj = group_sig.apply_async()
+        group_sig.apply_async()
 
     def test_apply_contains_chords_containing_chain_with_empty_tail(self):
         ggchild_count = 42
@@ -978,11 +982,15 @@ class test_chord(CanvasCase):
             yield self.add.s(1, 1)
             self.second_item_returned = True
             yield self.add.s(2, 2)
+            raise pytest.fail("This should never be reached")
 
         self.second_item_returned = False
         c = chord(build_generator(), self.add.s(3))
         c.app
-        assert not self.second_item_returned
+        # The second task gets returned due to lookahead in `regen()`
+        assert self.second_item_returned
+        # Access it again to make sure the generator is not further evaluated
+        c.app
 
     def test_reverse(self):
         x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))

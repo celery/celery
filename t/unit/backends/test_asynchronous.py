@@ -12,6 +12,7 @@ from celery.backends.base import Backend
 from celery.utils import cached_property
 
 pytest.importorskip('gevent')
+pytest.importorskip('eventlet')
 
 
 @pytest.fixture(autouse=True)

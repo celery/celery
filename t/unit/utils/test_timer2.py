@@ -44,14 +44,15 @@ class test_Timer:
         t.start.assert_called_with()
 
     @patch('celery.utils.timer2.sleep')
-    def test_on_tick(self, sleep):
+    @patch('os._exit')  # To ensure the test fails gracefully
+    def test_on_tick(self, _exit, sleep):
         def next_entry_side_effect():
             # side effect simulating following scenario:
             # 3.33, 3.33, 3.33, <shutdown event set>
             for _ in range(3):
                 yield 3.33
             while True:
-                yield t._is_shutdown.set()
+                yield getattr(t, "_Timer__is_shutdown").set()
 
         on_tick = Mock(name='on_tick')
         t = timer2.Timer(on_tick=on_tick)
@@ -61,6 +62,7 @@ class test_Timer:
         t.run()
         sleep.assert_called_with(3.33)
         on_tick.assert_has_calls([call(3.33), call(3.33), call(3.33)])
+        _exit.assert_not_called()
 
     @patch('os._exit')
     def test_thread_crash(self, _exit):
@@ -72,12 +74,16 @@ class test_Timer:
 
     def test_gc_race_lost(self):
         t = timer2.Timer()
-        t._is_stopped.set = Mock()
-        t._is_stopped.set.side_effect = TypeError()
-
-        t._is_shutdown.set()
-        t.run()
-        t._is_stopped.set.assert_called_with()
+        with patch.object(t, "_Timer__is_stopped") as mock_stop_event:
+            # Mark the timer as shutting down so we escape the run loop,
+            # mocking the running state so we don't block!
+            with patch.object(t, "running", new=False):
+                t.stop()
+            # Pretend like the interpreter has shutdown and GCed built-in
+            # modules, causing an exception
+            mock_stop_event.set.side_effect = TypeError()
+            t.run()
+        mock_stop_event.set.assert_called_with()
 
     def test_test_enter(self):
         t = timer2.Timer()

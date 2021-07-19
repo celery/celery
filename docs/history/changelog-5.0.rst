@@ -6,6 +6,23 @@ This document contains change notes for bugfix & new features
 in the 5.0.x , please see :ref:`whatsnew-5.0` for
 an overview of what's new in Celery 5.0.
 
+.. _version-5.0.6:
+
+5.0.6
+=====
+:release-date: 2021-06-28 3.00 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Inspect commands accept arguments again (#6710).
+- The :setting:`worker_pool` setting is now respected correctly (#6711).
+- Ensure AMQPContext exposes an app attribute (#6741).
+- Exit celery with non zero exit value if failing (#6602).
+- --quiet flag now actually makes celery avoid producing logs (#6599).
+- pass_context for handle_preload_options decorator (#6583).
+- Fix --pool=threads support in command line options parsing (#6787).
+Fix the behavior of our json serialization which regressed in 5.0 (#6561).
+- celery -A app events -c camera now works as expected (#6774).
+
 .. _version-5.0.5:
 
 5.0.5

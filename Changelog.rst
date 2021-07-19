@@ -8,6 +8,39 @@ This document contains change notes for bugfix & new features
 in the & 5.1.x series, please see :ref:`whatsnew-5.1` for
 an overview of what's new in Celery 5.1.
 
+.. version-5.1.2:
+
+5.1.2
+=====
+:release-date: 2021-06-28 16.15 P.M UTC+3:00
+:release-by: Omer Katz
+
+- When chords fail, correctly call errbacks. (#6814)
+
+    We had a special case for calling errbacks when a chord failed which
+    assumed they were old style. This change ensures that we call the proper
+    errback dispatch method which understands new and old style errbacks,
+    and adds test to confirm that things behave as one might expect now.
+- Avoid using the ``Event.isSet()`` deprecated alias. (#6824)
+- Reintroduce sys.argv default behaviour for ``Celery.start()``. (#6825)
+
+.. version-5.1.1:
+
+5.1.1
+=====
+:release-date: 2021-06-17 16.10 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Fix ``--pool=threads`` support in command line options parsing. (#6787)
+- Fix ``LoggingProxy.write()`` return type. (#6791)
+- Couchdb key is now always coerced into a string. (#6781)
+- grp is no longer imported unconditionally. (#6804)
+    This fixes a regression in 5.1.0 when running Celery in non-unix systems.
+- Ensure regen utility class gets marked as done when concertised. (#6789)
+- Preserve call/errbacks of replaced tasks. (#6770)
+- Use single-lookahead for regen consumption. (#6799)
+- Revoked tasks are no longer incorrectly marked as retried. (#6812, #6816)
+
 .. version-5.1.0:
 
 5.1.0
@@ -47,7 +80,7 @@ an overview of what's new in Celery 5.1.
 - Chord counting of group children is now accurate. (#6733)
 - Add a setting :setting:`worker_cancel_long_running_tasks_on_connection_loss`
   to terminate tasks with late acknowledgement on connection loss. (#6654)
-- The ``task-revoked`` event and the ``task_revoked` signal are not duplicated
+- The ``task-revoked`` event and the ``task_revoked`` signal are not duplicated
   when ``Request.on_failure`` is called. (#6654)
 - Restore pickling support for ``Retry``. (#6748)
 - Add support in the redis result backend for authenticating with a username. (#6750)

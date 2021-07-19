@@ -642,7 +642,8 @@ class _chain(Signature):
 
     def run(self, args=None, kwargs=None, group_id=None, chord=None,
             task_id=None, link=None, link_error=None, publisher=None,
-            producer=None, root_id=None, parent_id=None, app=None, **options):
+            producer=None, root_id=None, parent_id=None, app=None,
+            group_index=None, **options):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         args = args if args else ()
@@ -656,7 +657,7 @@ class _chain(Signature):
 
         tasks, results_from_prepare = self.prepare_steps(
             args, kwargs, self.tasks, root_id, parent_id, link_error, app,
-            task_id, group_id, chord,
+            task_id, group_id, chord, group_index=group_index,
         )
 
         if results_from_prepare:
@@ -1122,18 +1123,17 @@ class group(Signature):
             task.set_immutable(immutable)
 
     def link(self, sig):
-        # Simply link to first task
+        # Simply link to first task. Doing this is slightly misleading because
+        # the callback may be executed before all children in the group are
+        # completed and also if any children other than the first one fail.
+        #
+        # The callback signature is cloned and made immutable since it the
+        # first task isn't actually capable of passing the return values of its
+        # siblings to the callback task.
         sig = sig.clone().set(immutable=True)
         return self.tasks[0].link(sig)
 
     def link_error(self, sig):
-        try:
-            sig = sig.clone().set(immutable=True)
-        except AttributeError:
-            # See issue #5265.  I don't use isinstance because current tests
-            # pass a Mock object as argument.
-            sig['immutable'] = True
-            sig = Signature.from_dict(sig)
         # Any child task might error so we need to ensure that they are all
         # capable of calling the linked error signature. This opens the
         # possibility that the task is called more than once but that's better
@@ -1253,8 +1253,10 @@ class group(Signature):
 
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None, group_index=None):
-        return self.app.GroupResult(*self._freeze_group_tasks(_id=_id, group_id=group_id,
-                                                              chord=chord, root_id=root_id, parent_id=parent_id, group_index=group_index))
+        return self.app.GroupResult(*self._freeze_group_tasks(
+            _id=_id, group_id=group_id,
+            chord=chord, root_id=root_id, parent_id=parent_id, group_index=group_index
+        ))
 
     _freeze = freeze
 

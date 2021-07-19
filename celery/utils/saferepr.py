@@ -100,7 +100,7 @@ def _chainlist(it, LIT_LIST_SEP=LIT_LIST_SEP):
 
 def _repr_empty_set(s):
     # type: (Set) -> str
-    return '{}()'.format(type(s).__name__)
+    return f'{type(s).__name__}()'
 
 
 def _safetext(val):

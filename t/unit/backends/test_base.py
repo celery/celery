@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from unittest.mock import ANY, Mock, call, patch, sentinel
+from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
 from kombu.serialization import prepare_accept_content
@@ -219,6 +219,21 @@ class test_BaseBackend_interface:
         self.b.apply_chord(header_result_args, callback_queue.s())
         called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
         assert called_kwargs['queue'] == 'test_queue_two'
+
+        with self.Celery() as app2:
+            @app2.task(name='callback_different_app', shared=False)
+            def callback_different_app(result):
+                pass
+
+            callback_different_app_signature = self.app.signature('callback_different_app')
+            self.b.apply_chord(header_result_args, callback_different_app_signature)
+            called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+            assert called_kwargs['queue'] is None
+
+            callback_different_app_signature.set(queue='test_queue_three')
+            self.b.apply_chord(header_result_args, callback_different_app_signature)
+            called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+            assert called_kwargs['queue'] == 'test_queue_three'
 
 
 class test_exception_pickle:
@@ -534,17 +549,23 @@ class test_BaseBackend_dict:
         b.on_chord_part_return.assert_called_with(request, states.REVOKED, ANY)
 
     def test_chord_error_from_stack_raises(self):
+        class ExpectedException(Exception):
+            pass
+
         b = BaseBackend(app=self.app)
-        exc = KeyError()
-        callback = Mock(name='callback')
+        callback = MagicMock(name='callback')
         callback.options = {'link_error': []}
+        callback.keys.return_value = []
         task = self.app.tasks[callback.task] = Mock()
         b.fail_from_current_stack = Mock()
-        group = self.patching('celery.group')
-        group.side_effect = exc
-        b.chord_error_from_stack(callback, exc=ValueError())
+        self.patching('celery.group')
+        with patch.object(
+            b, "_call_task_errbacks", side_effect=ExpectedException()
+        ) as mock_call_errbacks:
+            b.chord_error_from_stack(callback, exc=ValueError())
         task.backend.fail_from_current_stack.assert_called_with(
-            callback.id, exc=exc)
+            callback.id, exc=mock_call_errbacks.side_effect,
+        )
 
     def test_exception_to_python_when_None(self):
         b = BaseBackend(app=self.app)

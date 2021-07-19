@@ -1605,6 +1605,7 @@ limits, and other failures.
 .. code-block:: python
 
    import logging
+   from celery import Task
    from celery.worker.request import Request
 
    logger = logging.getLogger('my.package')
@@ -1621,7 +1622,7 @@ limits, and other failures.
               )
 
        def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
-           super(Request, self).on_failure(
+           super().on_failure(
                exc_info,
                send_failed_event=send_failed_event,
                return_ok=return_ok

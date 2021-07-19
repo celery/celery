@@ -4,7 +4,7 @@ pytest-celery
 pytest-subtests
 pytest-timeout~=1.4.2
 boto3>=1.9.178
-moto==1.3.7
+moto==2.0.10
 pre-commit
 -r extras/yaml.txt
 -r extras/msgpack.txt

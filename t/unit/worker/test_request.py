@@ -232,7 +232,7 @@ class test_Request(RequestCase):
             kwargs[str(i)] = ''.join(
                 random.choice(string.ascii_lowercase) for i in range(1000))
         assert self.get_request(
-            self.add.s(**kwargs)).info(safe=True).get('kwargs') == kwargs
+            self.add.s(**kwargs)).info(safe=True).get('kwargs') == ''  # mock message doesn't populate kwargsrepr
         assert self.get_request(
             self.add.s(**kwargs)).info(safe=False).get('kwargs') == kwargs
         args = []
@@ -240,7 +240,7 @@ class test_Request(RequestCase):
             args.append(''.join(
                 random.choice(string.ascii_lowercase) for i in range(1000)))
         assert list(self.get_request(
-            self.add.s(*args)).info(safe=True).get('args')) == args
+            self.add.s(*args)).info(safe=True).get('args')) == []  # mock message doesn't populate argsrepr
         assert list(self.get_request(
             self.add.s(*args)).info(safe=False).get('args')) == args
 
@@ -756,7 +756,7 @@ class test_Request(RequestCase):
         job = self.xRequest()
         job.eventer = Mock()
         job.time_start = 1
-        job.message.channel.connection = None
+        job._already_cancelled = True
 
         try:
             raise Terminated()
@@ -765,11 +765,8 @@ class test_Request(RequestCase):
 
             job.on_failure(exc_info)
 
-        assert job._already_cancelled
-
         job.on_failure(exc_info)
-        job.eventer.send.assert_called_once_with('task-cancelled',
-                                                 uuid=job.id)
+        assert not job.eventer.send.called
 
     def test_from_message_invalid_kwargs(self):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')

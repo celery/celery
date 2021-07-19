@@ -119,7 +119,7 @@ on connection loss cancels all currently executed tasks with late acknowledgemen
 These tasks cannot be acknowledged as the connection is gone, and the tasks are automatically redelivered back to the queue.
 You can enable this behavior using the worker_cancel_long_running_tasks_on_connection_loss setting.
 In Celery 5.1 it is set to False by default. The setting will be set to True by default in Celery 6.0.
-"""
+"""  # noqa: E501
 
 
 def dump_body(m, body):
