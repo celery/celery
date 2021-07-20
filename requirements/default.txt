@@ -2,8 +2,8 @@ pytz>dev
 billiard>=3.6.4.0,<4.0
 kombu>=5.1.0,<6.0
 vine>=5.0.0,<6.0
-click>=7.0,<8.0
+click>=8.0,<9.0
 click-didyoumean>=0.0.3
-click-repl>=0.1.6
+click-repl>=0.2.0
 click-plugins>=1.1.1
 setuptools
