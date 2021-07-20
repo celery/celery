@@ -279,7 +279,7 @@ class test_head_from_fun:
 
     def test_from_cls(self):
         class X:
-            def __call__(x, y, kwarg=1):  # noqa
+            def __call__(x, y, kwarg=1):
                 pass
 
         g = head_from_fun(X())
@@ -406,7 +406,7 @@ class test_fun_takes_argument:
 ])
 def test_seq_concat_seq(a, b, expected):
     res = seq_concat_seq(a, b)
-    assert type(res) is type(expected)  # noqa
+    assert type(res) is type(expected)
     assert res == expected
 
 
@@ -416,7 +416,7 @@ def test_seq_concat_seq(a, b, expected):
 ])
 def test_seq_concat_item(a, b, expected):
     res = seq_concat_item(a, b)
-    assert type(res) is type(expected)  # noqa
+    assert type(res) is type(expected)
     assert res == expected
 
 

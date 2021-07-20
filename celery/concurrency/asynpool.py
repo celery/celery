@@ -48,13 +48,13 @@ try:
 
 except ImportError:  # pragma: no cover
 
-    def __read__(fd, buf, size, read=os.read):  # noqa
+    def __read__(fd, buf, size, read=os.read):
         chunk = read(fd, size)
         n = len(chunk)
         if n != 0:
             buf.write(chunk)
         return n
-    readcanbuf = False  # noqa
+    readcanbuf = False
 
     def unpack_from(fmt, iobuf, unpack=unpack):  # noqa
         return unpack(fmt, iobuf.getvalue())  # <-- BytesIO

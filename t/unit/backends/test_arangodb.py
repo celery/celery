@@ -12,7 +12,7 @@ from celery.exceptions import ImproperlyConfigured
 try:
     import pyArango
 except ImportError:
-    pyArango = None  # noqa
+    pyArango = None
 
 pytest.importorskip('pyArango')
 

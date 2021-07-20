@@ -74,5 +74,5 @@ jobs:
       with: { python-version: 3.9 }
     - name: Install tox
       run: python -m pip install tox
-    - name: Lint with flake8
-      run: tox --verbose -e flake8
+    - name: Lint with pre-commit
+      run: tox --verbose -e lint

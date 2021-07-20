@@ -2,9 +2,9 @@
 
 import datetime
 import time
-from weakref import proxy
 from collections import deque
 from contextlib import contextmanager
+from weakref import proxy
 
 from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
@@ -483,7 +483,7 @@ class AsyncResult(ResultBase):
         """Compat. alias to :attr:`id`."""
         return self.id
 
-    @task_id.setter  # noqa
+    @task_id.setter
     def task_id(self, id):
         self.id = id
 
@@ -852,7 +852,7 @@ class ResultSet(ResultBase):
         return self._app
 
     @app.setter
-    def app(self, app):  # noqa
+    def app(self, app):
         self._app = app
 
     @property

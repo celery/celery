@@ -13,15 +13,15 @@ try:
     from greenlet import getcurrent as get_ident
 except ImportError:  # pragma: no cover
     try:
-        from _thread import get_ident  # noqa
+        from _thread import get_ident
     except ImportError:
         try:
-            from thread import get_ident  # noqa
+            from thread import get_ident
         except ImportError:  # pragma: no cover
             try:
-                from _dummy_thread import get_ident  # noqa
+                from _dummy_thread import get_ident
             except ImportError:
-                from dummy_thread import get_ident  # noqa
+                from dummy_thread import get_ident
 
 
 __all__ = (
@@ -328,4 +328,4 @@ else:  # pragma: no cover
     # since each thread has its own greenlet we can just use those as
     # identifiers for the context.  If greenlets aren't available we
     # fall back to the  current thread ident.
-    LocalStack = _LocalStack  # noqa
+    LocalStack = _LocalStack

@@ -129,7 +129,7 @@ class Backend:
 
         # precedence: accept, conf.result_accept_content, conf.accept_content
         self.accept = conf.result_accept_content if accept is None else accept
-        self.accept = conf.accept_content if self.accept is None else self.accept  # noqa: E501
+        self.accept = conf.accept_content if self.accept is None else self.accept
         self.accept = prepare_accept_content(self.accept)
 
         self.always_retry = conf.get('result_backend_always_retry', False)
@@ -758,7 +758,7 @@ class BaseBackend(Backend, SyncBackendMixin):
     """Base (synchronous) result backend."""
 
 
-BaseDictBackend = BaseBackend  # noqa: E305 XXX compat
+BaseDictBackend = BaseBackend  # XXX compat
 
 
 class BaseKeyValueStoreBackend(Backend):

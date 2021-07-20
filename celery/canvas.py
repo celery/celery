@@ -1579,7 +1579,7 @@ def signature(varies, *args, **kwargs):
     return Signature(varies, *args, **kwargs)
 
 
-subtask = signature  # noqa: E305 XXX compat
+subtask = signature  # XXX compat
 
 
 def maybe_signature(d, app=None, clone=False):
@@ -1609,4 +1609,4 @@ def maybe_signature(d, app=None, clone=False):
     return d
 
 
-maybe_subtask = maybe_signature  # noqa: E305 XXX compat
+maybe_subtask = maybe_signature  # XXX compat

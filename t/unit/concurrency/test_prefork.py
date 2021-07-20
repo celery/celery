@@ -36,8 +36,8 @@ except ImportError:
 
             def apply_async(self, *args, **kwargs):
                 pass
-    mp = _mp()  # noqa
-    asynpool = None  # noqa
+    mp = _mp()
+    asynpool = None
 
 
 class MockResult:

@@ -2,11 +2,11 @@
 import sys
 from time import monotonic
 
-from kombu.asynchronous import timer as _timer  # noqa
+from kombu.asynchronous import timer as _timer
 
-from celery import signals  # noqa
+from celery import signals
 
-from . import base  # noqa
+from . import base
 
 __all__ = ('TaskPool',)
 

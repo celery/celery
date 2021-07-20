@@ -17,7 +17,7 @@ try:
     from pydocumentdb.retry_options import RetryOptions
 except ImportError:  # pragma: no cover
     pydocumentdb = DocumentClient = ConsistencyLevel = PartitionKind = \
-        HTTPFailure = ConnectionPolicy = RetryOptions = None  # noqa
+        HTTPFailure = ConnectionPolicy = RetryOptions = None
 
 __all__ = ("CosmosDBSQLBackend",)
 

@@ -93,7 +93,7 @@ def await_redis_count(expected_count, redis_key="redis-count", timeout=TIMEOUT):
         # try again later
         sleep(check_interval)
     else:
-        raise TimeoutError("{!r} was never incremented".format(redis_key))
+        raise TimeoutError(f"{redis_key!r} was never incremented")
 
     # There should be no more increments - block momentarily
     sleep(min(1, timeout))
