@@ -830,14 +830,13 @@ make it easier for the maintainers to accept your proposed changes:
       ``pytest -xv --cov=celery --cov-report=xml --cov-report term``.
       You can check the current test coverage here: https://codecov.io/gh/celery/celery
 
-- [ ] Run ``flake8`` against the code. The following commands are valid
+- [ ] Run ``pre-commit`` against the code. The following commands are valid
       and equivalent.:
 
       .. code-block:: console
 
-          $ flake8 -j 2 celery/ t/
-          $ make flakecheck
-          $ tox -e flake8
+          $ pre-commit run --all-files
+          $ tox -e lint
 
 - [ ]  Build api docs to make sure everything is OK. The following commands are valid
       and equivalent.:

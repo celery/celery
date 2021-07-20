@@ -1,7 +1,7 @@
 import os
 import sys
 
-from celery import Celery  # noqa
+from celery import Celery
 
 os.environ.update(
     NOSETPS='yes',
@@ -48,13 +48,13 @@ def it(_, n):
     # by previous runs, or the broker.
     i = it.cur
     if i and not i % 5000:
-        print('({} so far: {}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
+        print(f'({i} so far: {tdiff(it.subt)}s)', file=sys.stderr)
         it.subt = time.monotonic()
     if not i:
         it.subt = it.time_start = time.monotonic()
     elif i > n - 2:
         total = tdiff(it.time_start)
-        print('({} so far: {}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
+        print(f'({i} so far: {tdiff(it.subt)}s)', file=sys.stderr)
         print('-- process {} tasks: {}s total, {} tasks/s'.format(
             n, total, n / (total + .0),
         ))
@@ -68,7 +68,7 @@ def bench_apply(n=DEFAULT_ITS):
     task = it._get_current_object()
     with app.producer_or_acquire() as producer:
         [task.apply_async((i, n), producer=producer) for i in range(n)]
-    print('-- apply {} tasks: {}s'.format(n, time.monotonic() - time_start))
+    print(f'-- apply {n} tasks: {time.monotonic() - time_start}s')
 
 
 def bench_work(n=DEFAULT_ITS, loglevel='CRITICAL'):

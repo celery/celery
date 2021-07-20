@@ -111,7 +111,7 @@ class Beat:
 
     def banner(self, service):
         c = self.colored
-        return str(  # flake8: noqa
+        return str(
             c.blue('__    ', c.magenta('-'),
                    c.blue('    ... __   '), c.magenta('-'),
                    c.blue('        _\n'),

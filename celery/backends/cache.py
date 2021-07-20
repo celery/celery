@@ -33,7 +33,7 @@ def import_best_memcache():
             is_pylibmc = True
         except ImportError:
             try:
-                import memcache  # noqa
+                import memcache
             except ImportError:
                 raise ImproperlyConfigured(REQUIRES_BACKEND)
         _imp[0] = (is_pylibmc, memcache, memcache_key_t)
@@ -47,7 +47,7 @@ def get_best_memcache(*args, **kwargs):
     Client = _Client = memcache.Client
 
     if not is_pylibmc:
-        def Client(*args, **kwargs):  # noqa
+        def Client(*args, **kwargs):
             kwargs.pop('behaviors', None)
             return _Client(*args, **kwargs)
 

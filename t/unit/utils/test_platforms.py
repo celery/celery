@@ -26,7 +26,7 @@ from celery.utils.text import WhateverIO
 try:
     import resource
 except ImportError:  # pragma: no cover
-    resource = None  # noqa
+    resource = None
 
 
 def test_isatty():

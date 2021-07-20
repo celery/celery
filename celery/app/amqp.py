@@ -558,7 +558,7 @@ class AMQP:
         """Queue name⇒ declaration mapping."""
         return self.Queues(self.app.conf.task_queues)
 
-    @queues.setter  # noqa
+    @queues.setter
     def queues(self, queues):
         return self.Queues(queues)
 

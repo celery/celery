@@ -20,9 +20,9 @@ except ImportError:
 try:
     from django.utils.functional import LazyObject, LazySettings
 except ImportError:
-    class LazyObject:  # noqa
+    class LazyObject:
         pass
-    LazySettings = LazyObject  # noqa
+    LazySettings = LazyObject
 
 __all__ = (
     'AttributeDictMixin', 'AttributeDict', 'BufferMap', 'ChainMap',
@@ -197,7 +197,7 @@ class DictAttribute:
     values = _iterate_values
 
 
-MutableMapping.register(DictAttribute)  # noqa: E305
+MutableMapping.register(DictAttribute)
 
 
 class ChainMap(MutableMapping):
@@ -667,7 +667,7 @@ class LimitedSet:
         return len(self._heap) * 100 / max(len(self._data), 1) - 100
 
 
-MutableSet.register(LimitedSet)  # noqa: E305
+MutableSet.register(LimitedSet)
 
 
 class Evictable:
@@ -768,7 +768,7 @@ class Messagebuffer(Evictable):
         return len(self)
 
 
-Sequence.register(Messagebuffer)  # noqa: E305
+Sequence.register(Messagebuffer)
 
 
 class BufferMap(OrderedDict, Evictable):

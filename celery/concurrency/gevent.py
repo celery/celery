@@ -8,7 +8,7 @@ from . import base
 try:
     from gevent import Timeout
 except ImportError:  # pragma: no cover
-    Timeout = None  # noqa
+    Timeout = None
 
 __all__ = ('TaskPool',)
 

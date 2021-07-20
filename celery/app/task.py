@@ -1073,7 +1073,7 @@ class Task:
         return backend
 
     @backend.setter
-    def backend(self, value):  # noqa
+    def backend(self, value):
         self._backend = value
 
     @property
@@ -1081,4 +1081,4 @@ class Task:
         return self.__class__.__name__
 
 
-BaseTask = Task  # noqa: E305 XXX compat alias
+BaseTask = Task  # XXX compat alias
