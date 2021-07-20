@@ -144,6 +144,8 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
 
     if json:
         ctx.obj.echo(dumps(replies))
+        return
+
     nodecount = len(replies)
     if not ctx.obj.quiet:
         ctx.obj.echo('\n{} {} online.'.format(
