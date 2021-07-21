@@ -825,13 +825,13 @@ class test_setgroups:
             getgroups.assert_called_with()
 
 
-fails_on_ge_py38_win32 = pytest.mark.xfail(
-    sys.version_info >= (3, 8) and sys.platform == "win32",
+fails_on_win32 = pytest.mark.xfail(
+    sys.platform == "win32",
     reason="fails on py38+ windows",
 )
 
 
-@fails_on_ge_py38_win32
+@fails_on_win32
 @pytest.mark.parametrize('accept_content', [
     {'pickle'},
     {'application/group-python-serialize'},
@@ -873,7 +873,7 @@ def test_check_privileges_no_fchown(os_module, accept_content, recwarn):
     assert len(recwarn) == 0
 
 
-@fails_on_ge_py38_win32
+@fails_on_win32
 @pytest.mark.parametrize('accept_content', [
     {'pickle'},
     {'application/group-python-serialize'},
@@ -894,7 +894,7 @@ def test_check_privileges_without_c_force_root(os_module, accept_content):
         check_privileges(accept_content)
 
 
-@fails_on_ge_py38_win32
+@fails_on_win32
 @pytest.mark.parametrize('accept_content', [
     {'pickle'},
     {'application/group-python-serialize'},
@@ -912,7 +912,7 @@ def test_check_privileges_with_c_force_root(os_module, accept_content):
         check_privileges(accept_content)
 
 
-@fails_on_ge_py38_win32
+@fails_on_win32
 @pytest.mark.parametrize(('accept_content', 'group_name'), [
     ({'pickle'}, 'sudo'),
     ({'application/group-python-serialize'}, 'sudo'),
@@ -941,7 +941,7 @@ def test_check_privileges_with_c_force_root_and_with_suspicious_group(
         check_privileges(accept_content)
 
 
-@fails_on_ge_py38_win32
+@fails_on_win32
 @pytest.mark.parametrize(('accept_content', 'group_name'), [
     ({'pickle'}, 'sudo'),
     ({'application/group-python-serialize'}, 'sudo'),
@@ -971,7 +971,7 @@ def test_check_privileges_without_c_force_root_and_with_suspicious_group(
         check_privileges(accept_content)
 
 
-@fails_on_ge_py38_win32
+@fails_on_win32
 @pytest.mark.parametrize('accept_content', [
     {'pickle'},
     {'application/group-python-serialize'},
@@ -1000,7 +1000,7 @@ def test_check_privileges_with_c_force_root_and_no_group_entry(
     assert recwarn[1].message.args[0] == expected_message
 
 
-@fails_on_ge_py38_win32
+@fails_on_win32
 @pytest.mark.parametrize('accept_content', [
     {'pickle'},
     {'application/group-python-serialize'},
