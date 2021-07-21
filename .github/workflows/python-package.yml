@@ -20,11 +20,19 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         python-version: ['3.6', '3.7', '3.8', '3.9', '3.10.0-beta.3', 'pypy3']
+        os: ["ubuntu-20.04", "windows-2019"]
+        exclude:
+          - os: windows-2019
+            python-version: "pypy3"
+          - os: windows-2019
+            python-version: "3.10.0-beta.3"
+          - os: windows-2019
+            python-version: "3.9"
     continue-on-error: ${{ matrix.python-version == '3.10.0-beta.3' }}
 
     steps:
