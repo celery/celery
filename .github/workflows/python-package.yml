@@ -55,9 +55,9 @@ jobs:
       with:
         path: ${{ steps.pip-cache.outputs.dir }}
         key:
-          ${{ matrix.python-version }}-v1-${{ hashFiles('**/setup.py') }}
+          ${{ matrix.python-version }}-${{matrix.os}}-${{ hashFiles('**/setup.py') }}
         restore-keys: |
-          ${{ matrix.python-version }}-v1-
+          ${{ matrix.python-version }}-${{matrix.os}}
 
     - name: Install tox
       run: python -m pip install tox tox-gh-actions
