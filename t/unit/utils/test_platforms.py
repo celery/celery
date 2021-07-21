@@ -825,14 +825,13 @@ class test_setgroups:
             getgroups.assert_called_with()
 
 
+@pytest.mark.xfail(
+    sys.version_info >= (3, 8) and sys.platform == "win32",
+    raises=AssertionError,
+    reason="fails on py38+ windows",
+)
 @pytest.mark.parametrize('accept_content', [
-    pytest.param(
-        {'pickle'},
-        marks=pytest.mark.skipif(
-            sys.version_info >= (3, 8) and sys.platform == "win32",
-            reason="fails on py38+ windows",
-        ),
-    ),
+    {'pickle'},
     {'application/group-python-serialize'},
     {'pickle', 'application/group-python-serialize'},
 ])
