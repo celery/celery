@@ -826,9 +826,14 @@ class test_setgroups:
 
 
 @pytest.mark.parametrize('accept_content', [
-    {'pickle'},
+    pytest.param(
+        {'pickle'},
+        marks=pytest.mark.skipif(
+            sys.version_info >= (3, 8) and sys.platform == "win32"
+        ),
+    ),
     {'application/group-python-serialize'},
-    {'pickle', 'application/group-python-serialize'}
+    {'pickle', 'application/group-python-serialize'},
 ])
 @patch('celery.platforms.os')
 def test_check_privileges_suspicious_platform(os_module, accept_content):
