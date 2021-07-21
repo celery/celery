@@ -829,7 +829,8 @@ class test_setgroups:
     pytest.param(
         {'pickle'},
         marks=pytest.mark.skipif(
-            sys.version_info >= (3, 8) and sys.platform == "win32"
+            sys.version_info >= (3, 8) and sys.platform == "win32",
+            reason="fails on py38+ windows",
         ),
     ),
     {'application/group-python-serialize'},
