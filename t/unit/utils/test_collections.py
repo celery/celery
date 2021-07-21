@@ -1,14 +1,12 @@
-from __future__ import absolute_import, unicode_literals
-
 import pickle
-from collections import Mapping
+from collections.abc import Mapping
 from itertools import count
+from time import monotonic
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from case import skip
 
-from celery.five import items, monotonic
+import t.skip
 from celery.utils.collections import (AttributeDict, BufferMap,
                                       ConfigurationView, DictAttribute,
                                       LimitedSet, Messagebuffer)
@@ -94,7 +92,7 @@ class test_ConfigurationView:
             'default_key': 1,
             'both': 2,
         }
-        assert dict(items(self.view)) == expected
+        assert dict(self.view.items()) == expected
         assert sorted(list(iter(self.view))) == sorted(list(expected.keys()))
         assert sorted(list(self.view.keys())) == sorted(list(expected.keys()))
         assert (sorted(list(self.view.values())) ==
@@ -131,11 +129,11 @@ class test_ConfigurationView:
         assert len(self.view) == 2
 
     def test_isa_mapping(self):
-        from collections import Mapping
+        from collections.abc import Mapping
         assert issubclass(ConfigurationView, Mapping)
 
     def test_isa_mutable_mapping(self):
-        from collections import MutableMapping
+        from collections.abc import MutableMapping
         assert issubclass(ConfigurationView, MutableMapping)
 
 
@@ -155,7 +153,7 @@ class test_ExceptionInfo:
             assert repr(einfo)
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_LimitedSet:
 
     def test_add(self):

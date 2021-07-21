@@ -1,30 +1,24 @@
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime
 from pickle import dumps, loads
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch, skip
 
 from celery import states, uuid
 from celery.app.task import Context
 from celery.exceptions import ImproperlyConfigured
 
-try:
-    import sqlalchemy  # noqa
-except ImportError:
-    DatabaseBackend = Task = TaskSet = retry = None  # noqa
-    SessionManager = session_cleanup = None  # noqa
-else:
-    from celery.backends.database import (
-        DatabaseBackend, retry, session_cleanup,
-    )
-    from celery.backends.database import session
-    from celery.backends.database.session import SessionManager
-    from celery.backends.database.models import Task, TaskSet
+pytest.importorskip('sqlalchemy')
+
+from celery.backends.database import (DatabaseBackend, retry, session,  # noqa
+                                      session_cleanup)
+from celery.backends.database.models import Task, TaskSet  # noqa
+from celery.backends.database.session import (  # noqa
+    PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager)
+from t import skip  # noqa
 
 
-class SomeClass(object):
+class SomeClass:
 
     def __init__(self, data):
         self.data = data
@@ -33,7 +27,6 @@ class SomeClass(object):
         return self.data == cmp.data
 
 
-@skip.unless_module('sqlalchemy')
 class test_session_cleanup:
 
     def test_context(self):
@@ -51,9 +44,7 @@ class test_session_cleanup:
         session.close.assert_called_with()
 
 
-@skip.unless_module('sqlalchemy')
-@skip.if_pypy()
-@skip.if_jython()
+@skip.if_pypy
 class test_DatabaseBackend:
 
     def setup(self):
@@ -228,9 +219,7 @@ class test_DatabaseBackend:
         assert 'foo', repr(TaskSet('foo' in None))
 
 
-@skip.unless_module('sqlalchemy')
-@skip.if_pypy()
-@skip.if_jython()
+@skip.if_pypy
 class test_DatabaseBackend_result_extended():
     def setup(self):
         self.uri = 'sqlite:///test.db'
@@ -358,7 +347,6 @@ class test_DatabaseBackend_result_extended():
         assert meta['worker'] == "celery@worker_1"
 
 
-@skip.unless_module('sqlalchemy')
 class test_SessionManager:
 
     def test_after_fork(self):
@@ -411,3 +399,28 @@ class test_SessionManager:
             SessionManager()
         finally:
             session.register_after_fork = prev
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_prepare_models_terminates(self, create_engine):
+        """SessionManager.prepare_models has retry logic because the creation
+        of database tables by multiple workers is racy. This test patches
+        the used method to always raise, so we can verify that it does
+        eventually terminate.
+        """
+        from sqlalchemy.dialects.sqlite import dialect
+        from sqlalchemy.exc import DatabaseError
+
+        sqlite = dialect.dbapi()
+        manager = SessionManager()
+        engine = manager.get_engine('dburi')
+
+        def raise_err(bind):
+            raise DatabaseError("", "", [], sqlite.DatabaseError)
+
+        patch_create_all = patch.object(
+            ResultModelBase.metadata, 'create_all', side_effect=raise_err)
+
+        with pytest.raises(DatabaseError), patch_create_all as mock_create_all:
+            manager.prepare_models(engine)
+
+        assert mock_create_all.call_count == PREPARE_MODELS_MAX_RETRIES + 1

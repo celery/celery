@@ -1,8 +1,4 @@
-# -* coding: utf-8 -*-
 """Apache Cassandra result store backend using the DataStax driver."""
-from __future__ import absolute_import, unicode_literals
-
-import sys
 import threading
 
 from celery import states
@@ -17,7 +13,7 @@ try:  # pragma: no cover
     import cassandra.cluster
     import cassandra.query
 except ImportError:  # pragma: no cover
-    cassandra = None   # noqa
+    cassandra = None
 
 
 __all__ = ('CassandraBackend',)
@@ -63,11 +59,9 @@ Q_EXPIRES = """
     USING TTL {0}
 """
 
-if sys.version_info[0] == 3:
-    def buf_t(x):
-        return bytes(x, 'utf8')
-else:
-    buf_t = buffer  # noqa
+
+def buf_t(x):
+    return bytes(x, 'utf8')
 
 
 class CassandraBackend(BaseBackend):
@@ -86,7 +80,7 @@ class CassandraBackend(BaseBackend):
 
     def __init__(self, servers=None, keyspace=None, table=None, entry_ttl=None,
                  port=9042, **kwargs):
-        super(CassandraBackend, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         if not cassandra:
             raise ImproperlyConfigured(E_NO_CASSANDRA)
@@ -235,4 +229,4 @@ class CassandraBackend(BaseBackend):
             {'servers': self.servers,
              'keyspace': self.keyspace,
              'table': self.table})
-        return super(CassandraBackend, self).__reduce__(args, kwargs)
+        return super().__reduce__(args, kwargs)

@@ -1,19 +1,17 @@
-from __future__ import absolute_import, unicode_literals
-
 import socket
 import sys
 from collections import defaultdict
 from datetime import datetime, timedelta
+from queue import Queue as FastQueue
+from unittest.mock import Mock, call, patch
 
 import pytest
-from case import Mock, call, patch
 from kombu import pidbox
 from kombu.utils.uuid import uuid
 
-from celery.five import Queue as FastQueue
 from celery.utils.collections import AttributeDict
 from celery.utils.timer2 import Timer
-from celery.worker import WorkController as _WC  # noqa
+from celery.worker import WorkController as _WC
 from celery.worker import consumer, control
 from celery.worker import state as worker_state
 from celery.worker.pidbox import Pidbox, gPidbox
@@ -23,7 +21,7 @@ from celery.worker.state import revoked
 hostname = socket.gethostname()
 
 
-class WorkController(object):
+class WorkController:
     autoscaler = None
 
     def stats(self):
@@ -300,9 +298,23 @@ class test_ControlPanel:
         finally:
             worker_state.active_requests.discard(r)
 
+    def test_active_safe(self):
+        kwargsrepr = '<anything>'
+        r = Request(
+            self.TaskMessage(self.mytask.name, id='do re mi',
+                             kwargsrepr=kwargsrepr),
+            app=self.app,
+        )
+        worker_state.active_requests.add(r)
+        try:
+            active_resp = self.panel.handle('dump_active', {'safe': True})
+            assert active_resp[0]['kwargs'] == kwargsrepr
+        finally:
+            worker_state.active_requests.discard(r)
+
     def test_pool_grow(self):
 
-        class MockPool(object):
+        class MockPool:
 
             def __init__(self, size=1):
                 self.size = size
@@ -341,7 +353,7 @@ class test_ControlPanel:
 
     def test_add__cancel_consumer(self):
 
-        class MockConsumer(object):
+        class MockConsumer:
             queues = []
             canceled = []
             consuming = False
@@ -419,7 +431,7 @@ class test_ControlPanel:
 
     def test_rate_limit(self):
 
-        class xConsumer(object):
+        class xConsumer:
             reset = False
 
             def reset_rate_limits(self):

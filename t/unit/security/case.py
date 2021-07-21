@@ -1,8 +1,7 @@
-from __future__ import absolute_import, unicode_literals
-
-from case import skip
+import pytest
 
 
-@skip.unless_module('cryptography')
 class SecurityCase:
-    pass
+
+    def setup(self):
+        pytest.importorskip('cryptography')

@@ -86,7 +86,7 @@ documentation`_:
 
 .. code-block:: console
 
-    ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 Finally, we can install RabbitMQ using :command:`brew`:
 

@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
 """Utilities related to importing modules and symbols by name."""
-from __future__ import absolute_import, unicode_literals
-
 import importlib
 import os
 import sys
 import warnings
 from contextlib import contextmanager
+from importlib import reload
 
 from kombu.utils.imports import symbol_by_name
-
-from celery.five import reload
 
 #: Billiard sets this when execv is enabled.
 #: We use it to find out the name of the original ``__main__``
@@ -29,21 +25,14 @@ class NotAPackage(Exception):
     """Raised when importing a package, but it's not a package."""
 
 
-if sys.version_info > (3, 3):  # pragma: no cover
-    def qualname(obj):
-        """Return object name."""
-        if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
-            obj = obj.__class__
-        q = getattr(obj, '__qualname__', None)
-        if '.' not in q:
-            q = '.'.join((obj.__module__, q))
-        return q
-else:
-    def qualname(obj):  # noqa
-        """Return object name."""
-        if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
-            obj = obj.__class__
-        return '.'.join((obj.__module__, obj.__name__))
+def qualname(obj):
+    """Return object name."""
+    if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
+        obj = obj.__class__
+    q = getattr(obj, '__qualname__', None)
+    if '.' not in q:
+        q = '.'.join((obj.__module__, q))
+    return q
 
 
 def instantiate(name, *args, **kwargs):
@@ -163,7 +152,6 @@ def load_extension_classes(namespace):
             cls = symbol_by_name(class_name)
         except (ImportError, SyntaxError) as exc:
             warnings.warn(
-                'Cannot load {0} extension {1!r}: {2!r}'.format(
-                    namespace, class_name, exc))
+                f'Cannot load {namespace} extension {class_name!r}: {exc!r}')
         else:
             yield name, cls

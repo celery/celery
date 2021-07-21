@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import pytest
 from kombu.utils.encoding import ensure_bytes
 

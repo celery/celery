@@ -1,33 +1,31 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 from sphinx_celery import conf
 
 globals().update(conf.build_config(
     'celery', __file__,
     project='Celery',
-    version_dev='5.0',
-    version_stable='4.0',
+    version_dev='6.0',
+    version_stable='5.0',
     canonical_url='http://docs.celeryproject.org',
     webdomain='celeryproject.org',
     github_project='celery/celery',
     author='Ask Solem & contributors',
     author_name='Ask Solem',
-    copyright='2009-2018',
+    copyright='2009-2021',
     publisher='Celery Project',
     html_logo='images/celery_512.png',
     html_favicon='images/favicon.ico',
     html_prepend_sidebars=['sidebardonations.html'],
     extra_extensions=[
+        'sphinx_click',
         'sphinx.ext.napoleon',
         'celery.contrib.sphinx',
         'celerydocs',
     ],
     extra_intersphinx_mapping={
         'cyanide': ('https://cyanide.readthedocs.io/en/latest', None),
+        'click': ('https://click.palletsprojects.com/en/7.x/', None),
     },
     apicheck_ignore_modules=[
-        'celery.five',
         'celery.__main__',
         'celery.task',
         'celery.contrib.testing',

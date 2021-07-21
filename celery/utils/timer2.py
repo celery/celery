@@ -1,23 +1,19 @@
-# -*- coding: utf-8 -*-
 """Scheduler for Python functions.
 
 .. note::
     This is used for the thread-based worker only,
     not for amqp/redis/sqs/qpid where :mod:`kombu.asynchronous.timer` is used.
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import sys
 import threading
 from itertools import count
+from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
 from time import sleep
 
 from kombu.asynchronous.timer import Entry
 from kombu.asynchronous.timer import Timer as Schedule
 from kombu.asynchronous.timer import logger, to_timestamp
-
-from celery.five import THREAD_TIMEOUT_MAX
 
 TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
 
@@ -44,7 +40,7 @@ class Timer(threading.Thread):
             import traceback
             print('- Timer starting')
             traceback.print_stack()
-            super(Timer, self).start(*args, **kwargs)
+            super().start(*args, **kwargs)
 
     def __init__(self, schedule=None, on_error=None, on_tick=None,
                  on_start=None, max_interval=None, **kwargs):
@@ -53,12 +49,16 @@ class Timer(threading.Thread):
         self.on_start = on_start
         self.on_tick = on_tick or self.on_tick
         threading.Thread.__init__(self)
-        self._is_shutdown = threading.Event()
-        self._is_stopped = threading.Event()
+        # `_is_stopped` is likely to be an attribute on `Thread` objects so we
+        # double underscore these names to avoid shadowing anything and
+        # potentially getting confused by the superclass turning these into
+        # something other than an `Event` instance (e.g. a `bool`)
+        self.__is_shutdown = threading.Event()
+        self.__is_stopped = threading.Event()
         self.mutex = threading.Lock()
         self.not_empty = threading.Condition(self.mutex)
         self.daemon = True
-        self.name = 'Timer-{0}'.format(next(self._timer_count))
+        self.name = f'Timer-{next(self._timer_count)}'
 
     def _next_entry(self):
         with self.not_empty:
@@ -75,7 +75,7 @@ class Timer(threading.Thread):
             self.running = True
             self.scheduler = iter(self.schedule)
 
-            while not self._is_shutdown.isSet():
+            while not self.__is_shutdown.is_set():
                 delay = self._next_entry()
                 if delay:
                     if self.on_tick:
@@ -84,7 +84,7 @@ class Timer(threading.Thread):
                         break
                     sleep(delay)
             try:
-                self._is_stopped.set()
+                self.__is_stopped.set()
             except TypeError:  # pragma: no cover
                 # we lost the race at interpreter shutdown,
                 # so gc collected built-in modules.
@@ -95,9 +95,9 @@ class Timer(threading.Thread):
             os._exit(1)
 
     def stop(self):
-        self._is_shutdown.set()
+        self.__is_shutdown.set()
         if self.running:
-            self._is_stopped.wait()
+            self.__is_stopped.wait()
             self.join(THREAD_TIMEOUT_MAX)
             self.running = False
 

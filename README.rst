@@ -2,8 +2,8 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 4.4.7 (cliffs)
-:Web: http://celeryproject.org/
+:Version: 5.1.2 (sun-harmonics)
+:Web: https://docs.celeryproject.org/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
@@ -57,23 +57,21 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 4.4.0 runs on,
+Celery version 5.1.2 runs on,
 
-- Python (2.7, 3.5, 3.6, 3.7, 3.8)
-- PyPy2.7 (7.2)
-- PyPy3.5 (7.1)
+- Python (3.6, 3.7, 3.8, 3.9)
 - PyPy3.6 (7.6)
 
 
-4.x.x is the last version to support Python 2.7,
-and from the next major version (Celery 5.x) Python 3.6 or newer is required.
+This is the next version of celery which will support Python 3.6 or newer.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
 
 - Python 2.6: Celery series 3.1 or earlier.
 - Python 2.5: Celery series 3.0 or earlier.
-- Python 2.4 was Celery series 2.2 or earlier.
+- Python 2.4: Celery series 2.2 or earlier.
+- Python 2.7: Celery 4.x series.
 
 Celery is a project with minimal funding,
 so we don't support Microsoft Windows.
@@ -91,7 +89,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery 4.4 coming from previous versions then you should read our
+new to Celery 5.0.5 or 5.1.2 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -107,6 +105,8 @@ getting started tutorials:
 
 .. _`Next steps`:
     http://docs.celeryproject.org/en/latest/getting-started/next-steps.html
+    
+ You can also get started with Celery by using a hosted broker transport CloudAMQP. The largest hosting provider of RabbitMQ is a proud sponsor of Celery.
 
 Celery is...
 =============
@@ -118,7 +118,9 @@ Celery is...
     It has an active, friendly community you can talk to for support,
     like at our `mailing-list`_, or the IRC channel.
 
-    Here's one of the simplest applications you can make::
+    Here's one of the simplest applications you can make:
+
+    .. code-block:: python
 
         from celery import Celery
 
@@ -419,10 +421,10 @@ please join the `celery-users`_ mailing list.
 IRC
 ---
 
-Come chat with us on IRC. The **#celery** channel is located at the `Freenode`_
-network.
+Come chat with us on IRC. The **#celery** channel is located at the
+`Libera Chat`_ network.
 
-.. _`Freenode`: https://freenode.net
+.. _`Libera Chat`: https://libera.chat/
 
 .. _bug-tracker:
 
@@ -500,9 +502,9 @@ file in the top distribution directory for the full license text.
 
 .. # vim: syntax=rst expandtab tabstop=4 shiftwidth=4 shiftround
 
-.. |build-status| image:: https://secure.travis-ci.org/celery/celery.png?branch=master
+.. |build-status| image:: https://github.com/celery/celery/actions/workflows/python-package.yml/badge.svg
     :alt: Build status
-    :target: https://travis-ci.org/celery/celery
+    :target: https://github.com/celery/celery/actions/workflows/python-package.yml
 
 .. |coverage| image:: https://codecov.io/github/celery/celery/coverage.svg?branch=master
     :target: https://codecov.io/github/celery/celery?branch=master
@@ -520,7 +522,7 @@ file in the top distribution directory for the full license text.
     :target: https://pypi.org/project/celery/
 
 .. |pyimp| image:: https://img.shields.io/pypi/implementation/celery.svg
-    :alt: Support Python implementations.
+    :alt: Supported Python implementations.
     :target: https://pypi.org/project/celery/
 
 .. |ocbackerbadge| image:: https://opencollective.com/celery/backers/badge.svg

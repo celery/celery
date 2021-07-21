@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """File-system result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 import locale
 import os
 
@@ -10,13 +7,6 @@ from kombu.utils.encoding import ensure_bytes
 from celery import uuid
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
-
-# Python 2 does not have FileNotFoundError and IsADirectoryError
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
-    IsADirectoryError = IOError
 
 default_encoding = locale.getpreferredencoding(False)
 
@@ -44,9 +34,13 @@ class FilesystemBackend(KeyValueStoreBackend):
 
     def __init__(self, url=None, open=open, unlink=os.unlink, sep=os.sep,
                  encoding=default_encoding, *args, **kwargs):
-        super(FilesystemBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
         path = self._find_path(url)
+
+        # Remove forwarding "/" for Windows os
+        if os.name == "nt" and path.startswith("/"):
+            path = path[1:]
 
         # We need the path and separator as bytes objects
         self.path = path.encode(encoding)
@@ -61,7 +55,7 @@ class FilesystemBackend(KeyValueStoreBackend):
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
             dict(url=self.url))
-        return super(FilesystemBackend, self).__reduce__(args, kwargs)
+        return super().__reduce__(args, kwargs)
 
     def _find_path(self, url):
         if not url:
@@ -77,7 +71,7 @@ class FilesystemBackend(KeyValueStoreBackend):
             self.set(key, b'test value')
             assert self.get(key) == b'test value'
             self.delete(key)
-        except IOError:
+        except OSError:
             raise ImproperlyConfigured(E_PATH_INVALID)
 
     def _filename(self, key):

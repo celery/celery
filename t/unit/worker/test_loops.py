@@ -1,25 +1,22 @@
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import socket
+from queue import Empty
+from unittest.mock import Mock
 
 import pytest
-from case import Mock
 from kombu.asynchronous import ERR, READ, WRITE, Hub
 from kombu.exceptions import DecodeError
 
 from celery.bootsteps import CLOSE, RUN
 from celery.exceptions import (InvalidTaskError, WorkerLostError,
                                WorkerShutdown, WorkerTerminate)
-from celery.five import Empty, python_2_unicode_compatible
 from celery.platforms import EX_FAILURE, EX_OK
 from celery.worker import state
 from celery.worker.consumer import Consumer
 from celery.worker.loops import _quick_drain, asynloop, synloop
 
 
-@python_2_unicode_compatible
-class PromiseEqual(object):
+class PromiseEqual:
 
     def __init__(self, fun, *args, **kwargs):
         self.fun = fun
@@ -35,7 +32,7 @@ class PromiseEqual(object):
         return '<promise: {0.fun!r} {0.args!r} {0.kwargs!r}>'.format(self)
 
 
-class X(object):
+class X:
 
     def __init__(self, app, heartbeat=None, on_task_message=None,
                  transport_driver_type=None):

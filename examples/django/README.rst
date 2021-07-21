@@ -46,7 +46,7 @@ Starting the worker
 
 .. code-block:: console
 
-    $ celery -A proj worker -l info
+    $ celery -A proj worker -l INFO
 
 Running a task
 ===================

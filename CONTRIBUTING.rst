@@ -40,7 +40,7 @@ The Code of Conduct is heavily based on the `Ubuntu Code of Conduct`_, and
 the `Pylons Code of Conduct`_.
 
 .. _`Ubuntu Code of Conduct`: https://www.ubuntu.com/community/conduct
-.. _`Pylons Code of Conduct`: http://docs.pylonshq.com/community/conduct.html
+.. _`Pylons Code of Conduct`: https://pylonsproject.org/community-code-of-conduct.html
 
 Be considerate
 --------------
@@ -292,13 +292,12 @@ Branches
 Current active version branches:
 
 * dev (which git calls "master") (https://github.com/celery/celery/tree/master)
-* 4.2 (https://github.com/celery/celery/tree/4.2)
-* 4.1 (https://github.com/celery/celery/tree/4.1)
+* 4.5 (https://github.com/celery/celery/tree/v4.5)
 * 3.1 (https://github.com/celery/celery/tree/3.1)
 
 You can see the state of any branch by looking at the Changelog:
 
-    https://github.com/celery/celery/blob/master/Changelog
+    https://github.com/celery/celery/blob/master/Changelog.rst
 
 If the branch is in active development the topmost version info should
 contain meta-data like:
@@ -345,7 +344,7 @@ Previously these were named ``releaseXX-maint``.
 The versions we currently maintain is:
 
 * 4.2
- 
+
   This is the current series.
 
 * 4.1
@@ -447,7 +446,7 @@ fetch and checkout a remote branch like this::
 
 .. _`Fork a Repo`: https://help.github.com/fork-a-repo/
 .. _`Rebasing merge commits in git`:
-    https://notes.envato.com/developers/rebasing-merge-commits-in-git/
+    https://web.archive.org/web/20150627054345/http://marketblog.envato.com/general/rebasing-merge-commits-in-git/
 .. _`Rebase`: https://help.github.com/rebase/
 
 .. _contributing-docker-development:
@@ -494,19 +493,19 @@ Some useful commands to run:
     **Note:** This command will run tests for every environment defined in :file:`tox.ini`.
     It takes a while.
 
-* ``pyenv exec python{2.7,3.5,3.6,3.7,3.8} -m pytest t/unit``
+* ``pyenv exec python{3.6,3.7,3.8,3.9} -m pytest t/unit``
 
     To run unit tests using pytest.
 
-    **Note:** ``{2.7,3.5,3.6,3.7,3.8}`` means you can use any of those options.
-    e.g. ``pyenv exec python3.6 -m pytest t/unit``
+    **Note:** ``{3.6,3.7,3.8,3.9}`` means you can use any of those options.
+    e.g. ``pyenv exec python3.7 -m pytest t/unit``
 
-* ``pyenv exec python{2.7,3.5,3.6,3.7,3.8} -m pytest t/integration``
+* ``pyenv exec python{3.6,3.7,3.8,3.9} -m pytest t/integration``
 
     To run integration tests using pytest
 
-    **Note:** ``{2.7,3.5,3.6,3.7,3.8}`` means you can use any of those options.
-    e.g. ``pyenv exec python3.6 -m pytest t/unit``
+    **Note:** ``{3.6,3.7,3.8,3.9}`` means you can use any of those options.
+    e.g. ``pyenv exec python3.7 -m pytest t/unit``
 
 By default, docker-compose will mount the Celery and test folders in the Docker
 container, allowing code changes and testing to be immediately visible inside
@@ -516,7 +515,7 @@ use are also defined in the :file:`docker/docker-compose.yml` file.
 By running ``docker-compose build celery`` an image will be created with the
 name ``celery/celery:dev``. This docker image has every dependency needed
 for development installed. ``pyenv`` is used to install multiple python
-versions, the docker image offers python 2.7, 3.5, 3.6, 3.7 and 3.8.
+versions, the docker image offers python 3.6, 3.7, 3.8 and 3.9.
 The default python version is set to 3.8.
 
 The :file:`docker-compose.yml` file defines the necessary environment variables
@@ -536,7 +535,7 @@ Assuming a folder structure such as:
 
     + celery_project
       + celery # repository cloned here.
-      + my_project 
+      + my_project
         - manage.py
         + my_project
           - views.py
@@ -592,14 +591,14 @@ To run the Celery test suite you need to install
     $ pip install -U -r requirements/default.txt
 
 After installing the dependencies required, you can now execute
-the test suite by calling :pypi:`py.test <pytest>`:
+the test suite by calling :pypi:`pytest <pytest>`:
 
 .. code-block:: console
 
-    $ py.test t/unit
-    $ py.test t/integration
+    $ pytest t/unit
+    $ pytest t/integration
 
-Some useful options to :command:`py.test` are:
+Some useful options to :command:`pytest` are:
 
 * ``-x``
 
@@ -618,7 +617,7 @@ you can do so like this:
 
 .. code-block:: console
 
-    $ py.test t/unit/worker/test_worker.py
+    $ pytest t/unit/worker/test_worker.py
 
 .. _contributing-coverage:
 
@@ -636,11 +635,11 @@ Installing the :pypi:`pytest-cov` module:
 Code coverage in HTML format
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-#. Run :command:`py.test` with the ``--cov-report=html`` argument enabled:
+#. Run :command:`pytest` with the ``--cov-report=html`` argument enabled:
 
     .. code-block:: console
 
-        $ py.test --cov=celery --cov-report=html
+        $ pytest --cov=celery --cov-report=html
 
 #. The coverage output will then be located in the :file:`htmlcov/` directory:
 
@@ -651,11 +650,11 @@ Code coverage in HTML format
 Code coverage in XML (Cobertura-style)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-#. Run :command:`py.test` with the ``--cov-report=xml`` argument enabled:
+#. Run :command:`pytest` with the ``--cov-report=xml`` argument enabled:
 
 .. code-block:: console
 
-    $ py.test --cov=celery --cov-report=xml
+    $ pytest --cov=celery --cov-report=xml
 
 #. The coverage XML output will then be located in the :file:`coverage.xml` file.
 
@@ -677,7 +676,7 @@ Use the ``tox -e`` option if you only want to test specific Python versions:
 
 .. code-block:: console
 
-    $ tox -e 2.7
+    $ tox -e 3.7
 
 Building the documentation
 --------------------------
@@ -828,26 +827,16 @@ make it easier for the maintainers to accept your proposed changes:
       ``Needs Test Coverage``.
 
 - [ ] Make sure unit test coverage does not decrease.
-      ``py.test -xv --cov=celery --cov-report=xml --cov-report term``.
+      ``pytest -xv --cov=celery --cov-report=xml --cov-report term``.
       You can check the current test coverage here: https://codecov.io/gh/celery/celery
 
-- [ ] Run ``flake8`` against the code. The following commands are valid
+- [ ] Run ``pre-commit`` against the code. The following commands are valid
       and equivalent.:
 
       .. code-block:: console
 
-          $ flake8 -j 2 celery/ t/
-          $ make flakecheck
-          $ tox -e flake8
-
-- [ ] Run ``flakeplus`` against the code. The following commands are valid
-      and equivalent.:
-
-      .. code-block:: console
-
-          $ flakeplus --2.7 celery/ t/
-          $ make flakes
-          $ tox -e flakeplus
+          $ pre-commit run --all-files
+          $ tox -e lint
 
 - [ ]  Build api docs to make sure everything is OK. The following commands are valid
       and equivalent.:
@@ -1076,7 +1065,6 @@ is following the conventions.
         from Queue import Queue, Empty
 
         from .platforms import Pidfile
-        from .five import zip_longest, items, range
         from .utils.time import maybe_timedelta
 
 * Wild-card imports must not be used (`from xxx import *`).

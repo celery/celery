@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 """A directed acyclic graph of reusable components."""
-from __future__ import absolute_import, unicode_literals
 
 from collections import deque
 from threading import Event
@@ -9,7 +7,6 @@ from kombu.common import ignore_errors
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.imports import symbol_by_name
 
-from .five import bytes_if_py2, values, with_metaclass
 from .utils.graph import DependencyGraph, GraphFormatter
 from .utils.imports import instantiate, qualname
 from .utils.log import get_logger
@@ -32,7 +29,7 @@ logger = get_logger(__name__)
 
 
 def _pre(ns, fmt):
-    return '| {0}: {1}'.format(ns.alias, fmt)
+    return f'| {ns.alias}: {fmt}'
 
 
 def _label(s):
@@ -51,7 +48,7 @@ class StepFormatter(GraphFormatter):
     }
 
     def label(self, step):
-        return step and '{0}{1}'.format(
+        return step and '{}{}'.format(
             self._get_prefix(step),
             bytes_to_str(
                 (step.label or _label(step)).encode('utf-8', 'ignore')),
@@ -74,7 +71,7 @@ class StepFormatter(GraphFormatter):
         return self.draw_edge(a, b, self.edge_scheme, attrs)
 
 
-class Blueprint(object):
+class Blueprint:
     """Blueprint containing bootsteps that can be applied to objects.
 
     Arguments:
@@ -222,12 +219,12 @@ class Blueprint(object):
         return self.steps[name]
 
     def _find_last(self):
-        return next((C for C in values(self.steps) if C.last), None)
+        return next((C for C in self.steps.values() if C.last), None)
 
     def _firstpass(self, steps):
-        for step in values(steps):
+        for step in steps.values():
             step.requires = [symbol_by_name(dep) for dep in step.requires]
-        stream = deque(step.requires for step in values(steps))
+        stream = deque(step.requires for step in steps.values())
         while stream:
             for node in stream.popleft():
                 node = symbol_by_name(node)
@@ -238,7 +235,7 @@ class Blueprint(object):
     def _finalize_steps(self, steps):
         last = self._find_last()
         self._firstpass(steps)
-        it = ((C, C.requires) for C in values(steps))
+        it = ((C, C.requires) for C in steps.values())
         G = self.graph = DependencyGraph(
             it, formatter=self.GraphFormatter(root=last),
         )
@@ -274,22 +271,21 @@ class StepType(type):
 
     def __new__(cls, name, bases, attrs):
         module = attrs.get('__module__')
-        qname = '{0}.{1}'.format(module, name) if module else name
+        qname = f'{module}.{name}' if module else name
         attrs.update(
             __qualname__=qname,
             name=attrs.get('name') or qname,
         )
-        return super(StepType, cls).__new__(cls, name, bases, attrs)
+        return super().__new__(cls, name, bases, attrs)
 
     def __str__(cls):
-        return bytes_if_py2(cls.name)
+        return cls.name
 
     def __repr__(cls):
-        return bytes_if_py2('step:{0.name}{{{0.requires!r}}}'.format(cls))
+        return 'step:{0.name}{{{0.requires!r}}}'.format(cls)
 
 
-@with_metaclass(StepType)
-class Step(object):
+class Step(metaclass=StepType):
     """A Bootstep.
 
     The :meth:`__init__` method is called when the step
@@ -346,7 +342,7 @@ class Step(object):
         """Create the step."""
 
     def __repr__(self):
-        return bytes_if_py2('<step: {0.alias}>'.format(self))
+        return f'<step: {self.alias}>'
 
     @property
     def alias(self):

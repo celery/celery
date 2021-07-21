@@ -1,15 +1,14 @@
-from __future__ import absolute_import, unicode_literals
+import pytest
 
-from case import skip
+pytest.importorskip('curses')
 
 
-class MockWindow(object):
+class MockWindow:
 
     def getmaxyx(self):
         return self.y, self.x
 
 
-@skip.unless_module('curses', import_errors=(ImportError, OSError))
 class test_CursesDisplay:
 
     def setup(self):

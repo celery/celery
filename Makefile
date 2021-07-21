@@ -1,7 +1,7 @@
 PROJ=celery
 PGPIDENT="Celery Security Team"
 PYTHON=python
-PYTEST=py.test
+PYTEST=pytest
 GIT=git
 TOX=tox
 ICONV=iconv

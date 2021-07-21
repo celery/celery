@@ -1,21 +1,21 @@
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import socket
 from collections import deque
+from unittest.mock import Mock, call, patch
 
 import pytest
 from billiard.exceptions import RestartFreqExceeded
-from case import ContextMock, Mock, call, patch, skip
+from case import ContextMock
 
 from celery.utils.collections import LimitedSet
 from celery.worker.consumer.agent import Agent
-from celery.worker.consumer.consumer import (CLOSE, TERMINATE, Consumer,
-                                             dump_body)
+from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE,
+                                             TERMINATE, Consumer)
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
 from celery.worker.consumer.tasks import Tasks
+from celery.worker.state import active_requests
 
 
 class test_Consumer:
@@ -44,12 +44,6 @@ class test_Consumer:
     def test_taskbuckets_defaultdict(self):
         c = self.get_consumer()
         assert c.task_buckets['fooxasdwx.wewe'] is None
-
-    @skip.if_python3(reason='buffer type not available')
-    def test_dump_body_buffer(self):
-        msg = Mock()
-        msg.body = 'str'
-        assert dump_body(msg, buffer(msg.body))  # noqa: F821
 
     def test_sets_heartbeat(self):
         c = self.get_consumer(amqheartbeat=10)
@@ -279,6 +273,39 @@ class test_Consumer:
         assert error.call_args[0][3] == 'Trying again in 4.00 seconds... (2/3)'
         errback(Mock(), 6)
         assert error.call_args[0][3] == 'Trying again in 6.00 seconds... (3/3)'
+
+    def test_cancel_long_running_tasks_on_connection_loss(self):
+        c = self.get_consumer()
+        c.app.conf.worker_cancel_long_running_tasks_on_connection_loss = True
+
+        mock_request_acks_late_not_acknowledged = Mock()
+        mock_request_acks_late_not_acknowledged.task.acks_late = True
+        mock_request_acks_late_not_acknowledged.acknowledged = False
+        mock_request_acks_late_acknowledged = Mock()
+        mock_request_acks_late_acknowledged.task.acks_late = True
+        mock_request_acks_late_acknowledged.acknowledged = True
+        mock_request_acks_early = Mock()
+        mock_request_acks_early.task.acks_late = False
+        mock_request_acks_early.acknowledged = False
+
+        active_requests.add(mock_request_acks_late_not_acknowledged)
+        active_requests.add(mock_request_acks_late_acknowledged)
+        active_requests.add(mock_request_acks_early)
+
+        c.on_connection_error_after_connected(Mock())
+
+        mock_request_acks_late_not_acknowledged.cancel.assert_called_once_with(c.pool)
+        mock_request_acks_late_acknowledged.cancel.assert_not_called()
+        mock_request_acks_early.cancel.assert_not_called()
+
+        active_requests.clear()
+
+    def test_cancel_long_running_tasks_on_connection_loss__warning(self):
+        c = self.get_consumer()
+        c.app.conf.worker_cancel_long_running_tasks_on_connection_loss = False
+
+        with pytest.deprecated_call(match=CANCEL_TASKS_BY_DEFAULT):
+            c.on_connection_error_after_connected(Mock())
 
 
 class test_Heart:

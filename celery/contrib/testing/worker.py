@@ -1,6 +1,4 @@
 """Embedded workers for integration tests."""
-from __future__ import absolute_import, unicode_literals
-
 import os
 import threading
 from contextlib import contextmanager
@@ -32,7 +30,7 @@ class TestWorkController(worker.WorkController):
     def __init__(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         self._on_started = threading.Event()
-        super(TestWorkController, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def on_consumer_ready(self, consumer):
         # type: (celery.worker.consumer.Consumer) -> None
@@ -61,6 +59,7 @@ def start_worker(
     logfile=None,  # type: str
     perform_ping_check=True,  # type: bool
     ping_task_timeout=10.0,  # type: float
+    shutdown_timeout=10.0,  # type: float
     **kwargs  # type: Any
 ):
     # type: (...) -> Iterable
@@ -77,6 +76,7 @@ def start_worker(
                               loglevel=loglevel,
                               logfile=logfile,
                               perform_ping_check=perform_ping_check,
+                              shutdown_timeout=shutdown_timeout,
                               **kwargs) as worker:
         if perform_ping_check:
             from .tasks import ping
@@ -95,6 +95,7 @@ def _start_worker_thread(app,
                          logfile=None,
                          WorkController=TestWorkController,
                          perform_ping_check=True,
+                         shutdown_timeout=10.0,
                          **kwargs):
     # type: (Celery, int, str, Union[str, int], str, Any, **Any) -> Iterable
     """Start Celery worker in a thread.
@@ -118,12 +119,12 @@ def _start_worker_thread(app,
         logfile=logfile,
         # not allowed to override TestWorkController.on_consumer_ready
         ready_callback=None,
-        without_heartbeat=True,
+        without_heartbeat=kwargs.pop("without_heartbeat", True),
         without_mingle=True,
         without_gossip=True,
         **kwargs)
 
-    t = threading.Thread(target=worker.start)
+    t = threading.Thread(target=worker.start, daemon=True)
     t.start()
     worker.ensure_started()
     _set_task_join_will_block(False)
@@ -132,7 +133,13 @@ def _start_worker_thread(app,
 
     from celery.worker import state
     state.should_terminate = 0
-    t.join(10)
+    t.join(shutdown_timeout)
+    if t.is_alive():
+        raise RuntimeError(
+            "Worker thread failed to exit within the allocated timeout. "
+            "Consider raising `shutdown_timeout` if your tasks take longer "
+            "to execute."
+        )
     state.should_terminate = None
 
 

@@ -1,15 +1,13 @@
-from __future__ import absolute_import, unicode_literals
-
 import socket
+from unittest.mock import Mock, call
 
 import pytest
-from case import Mock, call
 
 from celery.events import Event
 from celery.events.receiver import CLIENT_CLOCK_SKEW
 
 
-class MockProducer(object):
+class MockProducer:
 
     raise_on_publish = False
 

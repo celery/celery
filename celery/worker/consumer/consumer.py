@@ -1,15 +1,13 @@
-# -*- coding: utf-8 -*-
 """Worker Consumer Blueprint.
 
 This module contains the components responsible for consuming messages
 from the broker, processing the messages and keeping the broker connections
 up and running.
 """
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import logging
 import os
+import warnings
 from collections import defaultdict
 from time import sleep
 
@@ -18,14 +16,14 @@ from billiard.exceptions import RestartFreqExceeded
 from kombu.asynchronous.semaphore import DummyLock
 from kombu.exceptions import ContentDisallowed, DecodeError
 from kombu.utils.compat import _detect_environment
-from kombu.utils.encoding import bytes_t, safe_repr
+from kombu.utils.encoding import safe_repr
 from kombu.utils.limits import TokenBucket
 from vine import ppartial, promise
 
 from celery import bootsteps, signals
 from celery.app.trace import build_tracer
-from celery.exceptions import InvalidTaskError, NotRegistered
-from celery.five import buffer_t, items, python_2_unicode_compatible, values
+from celery.exceptions import (CPendingDeprecationWarning, InvalidTaskError,
+                               NotRegistered)
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -33,8 +31,8 @@ from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
-from celery.worker.state import (maybe_shutdown, reserved_requests,
-                                 task_reserved)
+from celery.worker.state import (active_requests, maybe_shutdown,
+                                 reserved_requests, task_reserved)
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
@@ -110,19 +108,29 @@ body: {0}
   delivery_info:{3} headers={4}}}
 """
 
+TERMINATING_TASK_ON_RESTART_AFTER_A_CONNECTION_LOSS = """\
+Task %s cannot be acknowledged after a connection loss since late acknowledgement is enabled for it.
+Terminating it instead.
+"""
+
+CANCEL_TASKS_BY_DEFAULT = """
+In Celery 5.1 we introduced an optional breaking change which
+on connection loss cancels all currently executed tasks with late acknowledgement enabled.
+These tasks cannot be acknowledged as the connection is gone, and the tasks are automatically redelivered back to the queue.
+You can enable this behavior using the worker_cancel_long_running_tasks_on_connection_loss setting.
+In Celery 5.1 it is set to False by default. The setting will be set to True by default in Celery 6.0.
+"""  # noqa: E501
+
 
 def dump_body(m, body):
     """Format message body for debugging purposes."""
     # v2 protocol does not deserialize body
     body = m.body if body is None else body
-    if isinstance(body, buffer_t):
-        body = bytes_t(body)
-    return '{0} ({1}b)'.format(truncate(safe_repr(body), 1024),
-                               len(m.body))
+    return '{} ({}b)'.format(truncate(safe_repr(body), 1024),
+                             len(m.body))
 
 
-@python_2_unicode_compatible
-class Consumer(object):
+class Consumer:
     """Consumer blueprint."""
 
     Strategies = dict
@@ -239,7 +247,7 @@ class Consumer(object):
 
     def reset_rate_limits(self):
         self.task_buckets.update(
-            (n, self.bucket_for_task(t)) for n, t in items(self.app.tasks)
+            (n, self.bucket_for_task(t)) for n, t in self.app.tasks.items()
         )
 
     def _update_prefetch_count(self, index=0):
@@ -264,7 +272,7 @@ class Consumer(object):
     def _update_qos_eventually(self, index):
         return (self.qos.decrement_eventually if index < 0
                 else self.qos.increment_eventually)(
-                    abs(index) * self.prefetch_multiplier)
+            abs(index) * self.prefetch_multiplier)
 
     def _limit_move_to_pool(self, request):
         task_reserved(request)
@@ -343,6 +351,15 @@ class Consumer(object):
         except Exception:  # pylint: disable=broad-except
             pass
 
+        if self.app.conf.worker_cancel_long_running_tasks_on_connection_loss:
+            for request in tuple(active_requests):
+                if request.task.acks_late and not request.acknowledged:
+                    warn(TERMINATING_TASK_ON_RESTART_AFTER_A_CONNECTION_LOSS,
+                         request)
+                    request.cancel(self.pool)
+        else:
+            warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
+
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
             self, 'register_with_event_loop', args=(hub,),
@@ -389,7 +406,7 @@ class Consumer(object):
             self.controller.semaphore.clear()
         if self.timer:
             self.timer.clear()
-        for bucket in values(self.task_buckets):
+        for bucket in self.task_buckets.values():
             if bucket:
                 bucket.clear_pending()
         reserved_requests.clear()
@@ -494,7 +511,8 @@ class Consumer(object):
         signals.task_rejected.send(sender=self, message=message, exc=None)
 
     def on_unknown_task(self, body, message, exc):
-        error(UNKNOWN_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
+        error(UNKNOWN_TASK_ERROR, exc, dump_body(message, body),
+              exc_info=True)
         try:
             id_, name = message.headers['id'], message.headers['task']
             root_id = message.headers.get('root_id')
@@ -515,20 +533,21 @@ class Consumer(object):
         if self.event_dispatcher:
             self.event_dispatcher.send(
                 'task-failed', uuid=id_,
-                exception='NotRegistered({0!r})'.format(name),
+                exception=f'NotRegistered({name!r})',
             )
         signals.task_unknown.send(
             sender=self, message=message, exc=exc, name=name, id=id_,
         )
 
     def on_invalid_task(self, body, message, exc):
-        error(INVALID_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
+        error(INVALID_TASK_ERROR, exc, dump_body(message, body),
+              exc_info=True)
         message.reject_log_error(logger, self.connection_errors)
         signals.task_rejected.send(sender=self, message=message, exc=exc)
 
     def update_strategies(self):
         loader = self.app.loader
-        for name, task in items(self.app.tasks):
+        for name, task in self.app.tasks.items():
             self.strategies[name] = task.start_strategy(self.app, self)
             task.__trace__ = build_tracer(name, task, loader, self.hostname,
                                           app=self.app)
@@ -546,7 +565,7 @@ class Consumer(object):
             # will defer deserializing the message body to the pool.
             payload = None
             try:
-                type_ = message.headers['task']                # protocol v2
+                type_ = message.headers['task']  # protocol v2
             except TypeError:
                 return on_unknown_message(None, message)
             except KeyError:

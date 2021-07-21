@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Logging utilities."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import logging
 import numbers
 import os
@@ -10,12 +7,9 @@ import threading
 import traceback
 from contextlib import contextmanager
 
-from kombu.five import PY3, values
 from kombu.log import LOG_LEVELS
 from kombu.log import get_logger as _get_logger
 from kombu.utils.encoding import safe_str
-
-from celery.five import string_t, text_t
 
 from .term import colored
 
@@ -49,7 +43,7 @@ def set_in_sighandler(value):
 
 def iter_open_logger_fds():
     seen = set()
-    loggers = (list(values(logging.Logger.manager.loggerDict)) +
+    loggers = (list(logging.Logger.manager.loggerDict.values()) +
                [logging.getLogger(None)])
     for l in loggers:
         try:
@@ -82,14 +76,14 @@ def logger_isa(l, p, max=1000):
         else:
             if this in seen:
                 raise RuntimeError(
-                    'Logger {0!r} parents recursive'.format(l.name),
+                    f'Logger {l.name!r} parents recursive',
                 )
             seen.add(this)
             this = this.parent
             if not this:
                 break
     else:  # pragma: no cover
-        raise RuntimeError('Logger hierarchy exceeds {0}'.format(max))
+        raise RuntimeError(f'Logger hierarchy exceeds {max}')
     return False
 
 
@@ -114,7 +108,7 @@ worker_logger = get_logger('celery.worker')
 def get_task_logger(name):
     """Get logger for task module by name."""
     if name in RESERVED_LOGGER_NAMES:
-        raise RuntimeError('Logger name {0!r} is reserved!'.format(name))
+        raise RuntimeError(f'Logger name {name!r} is reserved!')
     return _using_logger_parent(task_logger, get_logger(name))
 
 
@@ -145,8 +139,6 @@ class ColorFormatter(logging.Formatter):
         if ei and not isinstance(ei, tuple):
             ei = sys.exc_info()
         r = logging.Formatter.formatException(self, ei)
-        if isinstance(r, str) and not PY3:
-            return safe_str(r)
         return r
 
     def format(self, record):
@@ -163,14 +155,14 @@ class ColorFormatter(logging.Formatter):
                 # so need to reorder calls based on type.
                 # Issue #427
                 try:
-                    if isinstance(msg, string_t):
-                        return text_t(color(safe_str(msg)))
+                    if isinstance(msg, str):
+                        return str(color(safe_str(msg)))
                     return safe_str(color(msg))
                 except UnicodeDecodeError:  # pragma: no cover
                     return safe_str(msg)  # skip colors
             except Exception as exc:  # pylint: disable=broad-except
                 prev_msg, record.exc_info, record.msg = (
-                    record.msg, 1, '<Unrepresentable {0!r}: {1!r}>'.format(
+                    record.msg, 1, '<Unrepresentable {!r}: {!r}>'.format(
                         type(msg), exc
                     ),
                 )
@@ -182,7 +174,7 @@ class ColorFormatter(logging.Formatter):
             return safe_str(msg)
 
 
-class LoggingProxy(object):
+class LoggingProxy:
     """Forward file object to :class:`logging.Logger` instance.
 
     Arguments:
@@ -215,26 +207,32 @@ class LoggingProxy(object):
                 def handleError(self, record):
                     try:
                         traceback.print_exc(None, sys.__stderr__)
-                    except IOError:
+                    except OSError:
                         pass    # see python issue 5971
 
             handler.handleError = WithSafeHandleError().handleError
         return [wrap_handler(h) for h in self.logger.handlers]
 
     def write(self, data):
+        # type: (AnyStr) -> int
         """Write message to logging object."""
         if _in_sighandler:
-            return print(safe_str(data), file=sys.__stderr__)
+            safe_data = safe_str(data)
+            print(safe_data, file=sys.__stderr__)
+            return len(safe_data)
         if getattr(self._thread, 'recurse_protection', False):
             # Logger is logging back to this file, so stop recursing.
-            return
-        data = data.strip()
+            return 0
+        data = data.rstrip('\n')
         if data and not self.closed:
             self._thread.recurse_protection = True
             try:
-                self.logger.log(self.loglevel, safe_str(data))
+                safe_data = safe_str(data)
+                self.logger.log(self.loglevel, safe_data)
+                return len(safe_data)
             finally:
                 self._thread.recurse_protection = False
+        return 0
 
     def writelines(self, sequence):
         # type: (Sequence[str]) -> None

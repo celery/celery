@@ -106,6 +106,12 @@ beat schedule list.
     @app.task
     def test(arg):
         print(arg)
+        
+    @app.task
+    def add(x, y):
+        z = x + y
+        print(z) 
+
 
 
 Setting these up from within the :data:`~@on_after_configure` handler means
@@ -463,7 +469,7 @@ To install and use this extension:
 
     .. code-block:: console
 
-        $ celery -A proj beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+        $ celery -A proj beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
 
    Note:  You may also add this as the :setting:`beat_scheduler` setting directly.
 

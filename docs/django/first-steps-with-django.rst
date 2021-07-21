@@ -19,8 +19,8 @@ Using Celery with Django
 
 .. note::
 
-    Celery 4.0 supports Django 1.8 and newer versions. Please use Celery 3.1
-    for versions older than Django 1.8.
+    Celery 5.0.x supports Django 1.11 LTS or newer versions. Please use Celery 4.4.x
+    for versions older than Django 1.11.
 
 To use Celery with your Django project you must first define
 an instance of the Celery library (called an "app")
@@ -54,15 +54,8 @@ for simple projects you may use a single contained module that defines
 both the app and tasks, like in the :ref:`tut-celery` tutorial.
 
 Let's break down what happens in the first module,
-first we import absolute imports from the future, so that our
-``celery.py`` module won't clash with the library:
-
-.. code-block:: python
-
-    from __future__ import absolute_import
-
-Then we set the default :envvar:`DJANGO_SETTINGS_MODULE` environment variable
-for the :program:`celery` command-line program:
+first, we set the default :envvar:`DJANGO_SETTINGS_MODULE` environment
+variable for the :program:`celery` command-line program:
 
 .. code-block:: python
 
@@ -96,6 +89,18 @@ becomes ``CELERY_TASK_ALWAYS_EAGER``, and the :setting:`broker_url`
 setting becomes ``CELERY_BROKER_URL``. This also applies to the
 workers settings, for instance, the :setting:`worker_concurrency`
 setting becomes ``CELERY_WORKER_CONCURRENCY``.
+
+For example, a Django project's configuration file might include:
+
+.. code-block:: python
+    :caption: settings.py
+
+    ...
+
+    # Celery Configuration Options
+    CELERY_TIMEZONE = "Australia/Tasmania"
+    CELERY_TASK_TRACK_STARTED = True
+    CELERY_TASK_TIME_LIMIT = 30 * 60
 
 You can pass the settings object directly instead, but using a string
 is better since then the worker doesn't have to serialize the object.
@@ -205,7 +210,7 @@ To use this with your project you need to follow these steps:
 
     .. code-block:: python
 
-        CELERY_CACHE_BACKEND = 'django-cache'
+        CELERY_RESULT_BACKEND = 'django-cache'
 
     We can also use the cache defined in the CACHES setting in django.
 
@@ -242,7 +247,7 @@ development it is useful to be able to start a worker instance by using the
 
 .. code-block:: console
 
-    $ celery -A proj worker -l info
+    $ celery -A proj worker -l INFO
 
 For a complete listing of the command-line options available,
 use the help command:

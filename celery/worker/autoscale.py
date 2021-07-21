@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Pool Autoscaling.
 
 This module implements the internal thread responsible
@@ -8,16 +7,13 @@ current autoscale settings.
 The autoscale thread is only enabled if
 the :option:`celery worker --autoscale` option is used.
 """
-from __future__ import absolute_import, unicode_literals
-
 import os
 import threading
-from time import sleep
+from time import monotonic, sleep
 
 from kombu.asynchronous.semaphore import DummyLock
 
 from celery import bootsteps
-from celery.five import monotonic
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
 
@@ -68,7 +64,7 @@ class Autoscaler(bgThread):
     def __init__(self, pool, max_concurrency,
                  min_concurrency=0, worker=None,
                  keepalive=AUTOSCALE_KEEPALIVE, mutex=None):
-        super(Autoscaler, self).__init__()
+        super().__init__()
         self.pool = pool
         self.mutex = mutex or threading.Lock()
         self.max_concurrency = max_concurrency

@@ -1,11 +1,10 @@
-from __future__ import absolute_import, unicode_literals
-
 import sys
+from time import monotonic
+from unittest.mock import Mock, patch
 
-from case import Mock, mock, patch
+from case import mock
 
 from celery.concurrency.base import BasePool
-from celery.five import monotonic
 from celery.utils.objects import Bunch
 from celery.worker import autoscale, state
 
@@ -16,7 +15,7 @@ class MockPool(BasePool):
     shrink_raises_ValueError = False
 
     def __init__(self, *args, **kwargs):
-        super(MockPool, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._pool = Bunch(_processes=self.limit)
 
     def grow(self, n=1):
@@ -91,12 +90,14 @@ class test_Autoscaler:
 
         worker = Mock(name='worker')
         x = Scaler(self.pool, 10, 3, worker=worker)
-        x._is_stopped.set()
-        x.stop()
+        # Don't allow thread joining or event waiting to block the test
+        with patch("threading.Thread.join"), patch("threading.Event.wait"):
+            x.stop()
         assert x.joined
         x.joined = False
         x.alive = False
-        x.stop()
+        with patch("threading.Thread.join"), patch("threading.Event.wait"):
+            x.stop()
         assert not x.joined
 
     @mock.sleepdeprived(module=autoscale)
@@ -105,7 +106,7 @@ class test_Autoscaler:
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.body()
         assert x.pool.num_processes == 3
-        _keep = [Mock(name='req{0}'.format(i)) for i in range(20)]
+        _keep = [Mock(name=f'req{i}') for i in range(20)]
         [state.task_reserved(m) for m in _keep]
         x.body()
         x.body()
@@ -124,13 +125,13 @@ class test_Autoscaler:
 
             def body(self):
                 self.scale_called = True
-                self._is_shutdown.set()
+                getattr(self, "_bgThread__is_shutdown").set()
 
         worker = Mock(name='worker')
         x = Scaler(self.pool, 10, 3, worker=worker)
         x.run()
-        assert x._is_shutdown.isSet()
-        assert x._is_stopped.isSet()
+        assert getattr(x, "_bgThread__is_shutdown").is_set()
+        assert getattr(x, "_bgThread__is_stopped").is_set()
         assert x.scale_called
 
     def test_shrink_raises_exception(self):
@@ -201,7 +202,7 @@ class test_Autoscaler:
         class _Autoscaler(autoscale.Autoscaler):
 
             def body(self):
-                self._is_shutdown.set()
+                getattr(self, "_bgThread__is_shutdown").set()
                 raise OSError('foo')
         worker = Mock(name='worker')
         x = _Autoscaler(self.pool, 10, 3, worker=worker)
@@ -222,7 +223,7 @@ class test_Autoscaler:
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.body()  # the body func scales up or down
 
-        _keep = [Mock(name='req{0}'.format(i)) for i in range(35)]
+        _keep = [Mock(name=f'req{i}') for i in range(35)]
         for req in _keep:
             state.task_reserved(req)
             x.body()

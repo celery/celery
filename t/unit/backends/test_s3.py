@@ -1,9 +1,8 @@
-from __future__ import absolute_import, unicode_literals
+from unittest.mock import patch
 
 import boto3
 import pytest
 from botocore.exceptions import ClientError
-from case import patch
 from moto import mock_s3
 
 from celery import states
@@ -141,8 +140,9 @@ class test_S3Backend:
         with pytest.raises(ClientError):
             s3_backend.get('uuidddd')
 
+    @pytest.mark.parametrize("key", ['uuid', b'uuid'])
     @mock_s3
-    def test_delete_a_key(self):
+    def test_delete_a_key(self, key):
         self._mock_s3_resource()
 
         self.app.conf.s3_access_key_id = 'somekeyid'
@@ -150,12 +150,12 @@ class test_S3Backend:
         self.app.conf.s3_bucket = 'bucket'
 
         s3_backend = S3Backend(app=self.app)
-        s3_backend._set_with_state('uuid', 'another_status', states.SUCCESS)
-        assert s3_backend.get('uuid') == 'another_status'
+        s3_backend._set_with_state(key, 'another_status', states.SUCCESS)
+        assert s3_backend.get(key) == 'another_status'
 
-        s3_backend.delete('uuid')
+        s3_backend.delete(key)
 
-        assert s3_backend.get('uuid') is None
+        assert s3_backend.get(key) is None
 
     @mock_s3
     def test_with_a_non_existing_bucket(self):

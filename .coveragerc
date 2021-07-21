@@ -12,7 +12,6 @@ omit =
     */celery/bin/graph.py
     *celery/bin/logtool.py
     *celery/task/base.py
-    *celery/five.py
     *celery/contrib/sphinx.py
     *celery/concurrency/asynpool.py
     *celery/utils/debug.py

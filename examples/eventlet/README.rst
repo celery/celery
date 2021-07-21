@@ -18,7 +18,7 @@ Before you run any of the example tasks you need to start
 the worker::
 
     $ cd examples/eventlet
-    $ celery worker -l info --concurrency=500 --pool=eventlet
+    $ celery worker -l INFO --concurrency=500 --pool=eventlet
 
 As usual you need to have RabbitMQ running, see the Celery getting started
 guide if you haven't installed it yet.
