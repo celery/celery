@@ -424,7 +424,7 @@ IRC
 Come chat with us on IRC. The **#celery** channel is located at the
 `Libera Chat`_ network.
 
-.. _`Libera Chat`: https:/libera.chat/
+.. _`Libera Chat`: https://libera.chat/
 
 .. _bug-tracker:
 
