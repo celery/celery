@@ -5,13 +5,13 @@ name: Celery
 
 on:
   push:
-    branches: [ master ]
+    branches: [ 'master', '5.0' ]
     paths:
         - '**.py'
         - '**.txt'
         - '.github/workflows/python-package.yml'
   pull_request:
-    branches: [ master ]
+    branches: [ 'master', '5.0' ]
     paths:
         - '**.py'
         - '**.txt'
