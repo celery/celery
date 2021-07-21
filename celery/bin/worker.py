@@ -323,16 +323,16 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
             if '-D' in argv:
                 argv.remove('-D')
 
-        return detach(sys.executable,
-                      argv,
-                      logfile=logfile,
-                      pidfile=pidfile,
-                      uid=uid, gid=gid,
-                      umask=kwargs.get('umask', None),
-                      workdir=kwargs.get('workdir', None),
-                      app=app,
-                      executable=kwargs.get('executable', None),
-                      hostname=hostname)
+            return detach(sys.executable,
+                          argv,
+                          logfile=logfile,
+                          pidfile=pidfile,
+                          uid=uid, gid=gid,
+                          umask=kwargs.get('umask', None),
+                          workdir=kwargs.get('workdir', None),
+                          app=app,
+                          executable=kwargs.get('executable', None),
+                          hostname=hostname)
 
         maybe_drop_privileges(uid=uid, gid=gid)
         worker = app.Worker(
