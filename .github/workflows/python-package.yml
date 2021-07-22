@@ -24,8 +24,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10.0-beta.3', 'pypy3']
-    continue-on-error: ${{ matrix.python-version == '3.10.0-beta.3' }}
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10.0-beta.4', 'pypy3']
+    continue-on-error: ${{ startsWith(matrix.python-version, '3.10.0-beta.') }}
 
     steps:
     - name: Install apt packages
