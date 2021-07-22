@@ -27,7 +27,7 @@ __keywords__ = 'task job queue distributed messaging actor'
 # -eof meta-
 
 __all__ = (
-    'Celery', 'bugreport', 'shared_task', 'task', 'Task',
+    'Celery', 'bugreport', 'shared_task', 'Task',
     'current_app', 'current_task', 'maybe_signature',
     'chain', 'chord', 'chunks', 'group', 'signature',
     'xmap', 'xstarmap', 'uuid',
@@ -161,7 +161,6 @@ old_module, new_module = local.recreate_module(  # pragma: no cover
         ],
         'celery.utils': ['uuid'],
     },
-    direct={'task': 'celery.task'},
     __package__='celery', __file__=__file__,
     __path__=__path__, __doc__=__doc__, __version__=__version__,
     __author__=__author__, __contact__=__contact__,

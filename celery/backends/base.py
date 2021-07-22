@@ -620,11 +620,7 @@ class Backend:
         return self._delete_group(group_id)
 
     def cleanup(self):
-        """Backend cleanup.
-
-        Note:
-            This is run by :class:`celery.task.DeleteExpiredTaskMetaTask`.
-        """
+        """Backend cleanup."""
 
     def process_cleanup(self):
         """Cleanup actions to do at the end of a task worker process."""

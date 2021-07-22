@@ -536,7 +536,7 @@ class Control:
             task_name (str): Name of task to change rate limit for.
             rate_limit (int, str): The rate limit as tasks per second,
                 or a rate limit string (`'100/m'`, etc.
-                see :attr:`celery.task.base.Task.rate_limit` for
+                see :attr:`celery.app.task.Task.rate_limit` for
                 more information).
 
         See Also:

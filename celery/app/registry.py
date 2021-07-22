@@ -36,7 +36,7 @@ class TaskRegistry(dict):
 
         Arguments:
             name (str): name of the task to unregister, or a
-                :class:`celery.task.base.Task` with a valid `name` attribute.
+                :class:`celery.app.task.Task` with a valid `name` attribute.
 
         Raises:
             celery.exceptions.NotRegistered: if the task is not registered.
