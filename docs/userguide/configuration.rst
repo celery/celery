@@ -484,7 +484,7 @@ you can set :setting:`task_store_errors_even_if_ignored`.
 Default: Disabled.
 
 If set, the worker stores all task errors in the result store even if
-:attr:`Task.ignore_result <celery.task.base.Task.ignore_result>` is on.
+:attr:`Task.ignore_result <celery.app.task.Task.ignore_result>` is on.
 
 .. setting:: task_track_started
 
@@ -2132,7 +2132,7 @@ the final message options will be:
     immediate=False, exchange='video', routing_key='video.compress'
 
 (and any default message options defined in the
-:class:`~celery.task.base.Task` class)
+:class:`~celery.app.task.Task` class)
 
 Values defined in :setting:`task_routes` have precedence over values defined in
 :setting:`task_queues` when merging the two.
