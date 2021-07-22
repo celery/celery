@@ -468,16 +468,16 @@ chain breaks:
 
     .. code-block:: python
 
-        from celery import task
+        from celery import app
 
-        @task(queue='hipri')
+        @app.task(queue='hipri')
         def hello(to):
             return 'hello {0}'.format(to)
 
 Abstract Tasks
 ==============
 
-All tasks created using the :meth:`~@task` decorator
+All tasks created using the :meth:`@task` decorator
 will inherit from the application's base :attr:`~@Task` class.
 
 You can specify a different base class using the ``base`` argument:

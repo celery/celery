@@ -292,8 +292,6 @@ format:
 
 .. code-block:: javascript
 
-    // XXX: No longer applicable?
-
     {"id": "4cc7438e-afd4-4f8f-a2f3-f46567e7ca77",
      "task": "celery.task.PingTask",
      "args": [],
